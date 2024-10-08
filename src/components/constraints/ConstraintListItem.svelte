@@ -11,18 +11,25 @@
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { Status } from '../../enums/status';
-  import type { ConstraintMetadata, ConstraintPlanSpec, ConstraintResponse } from '../../types/constraint';
+  import type {
+    ConstraintDefinition,
+    ConstraintMetadata,
+    ConstraintPlanSpecification,
+    ConstraintResponse,
+  } from '../../types/constraint';
+  import type { FormParameter } from '../../types/parameter';
   import { getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { pluralize } from '../../utilities/text';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
   import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
+  import Parameters from '../parameters/Parameters.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
   import ConstraintViolationButton from './ConstraintViolationButton.svelte';
 
   export let constraint: ConstraintMetadata;
-  export let constraintPlanSpec: ConstraintPlanSpec;
+  export let constraintPlanSpec: ConstraintPlanSpecification;
   export let constraintResponse: ConstraintResponse;
   export let modelId: number | undefined;
   export let hasReadPermission: boolean = false;
@@ -32,15 +39,45 @@
   export let visible: boolean = true;
 
   const dispatch = createEventDispatcher<{
+    deleteConstraintInvocation: ConstraintPlanSpecification;
+    duplicateConstraintInvocation: ConstraintPlanSpecification;
     toggleVisibility: { id: number; visible: boolean };
-    updateConstraintPlanSpec: ConstraintPlanSpec;
+    updateConstraintPlanSpec: ConstraintPlanSpecification;
   }>();
 
+  let formParameters: FormParameter[] = [];
   let revisions: number[] = [];
+  let version: Pick<ConstraintDefinition, 'type' | 'revision' | 'parameter_schema'> | undefined = undefined;
 
   $: revisions = constraint.versions.map(({ revision }) => revision);
   $: violationCount = constraintResponse?.results?.violations?.length;
   $: success = constraintResponse?.success;
+  $: {
+    version = constraintPlanSpec.constraint_metadata?.versions[0]; // plan gql query already orders by version and limits 1
+    const schema = version?.parameter_schema;
+    if (schema && schema.type === 'struct') {
+      formParameters = Object.entries(schema.items).map(([name, subschema], i) => ({
+        errors: null,
+        name,
+        order: i,
+        required: true,
+        schema: subschema,
+        value: (constraintPlanSpec && constraintPlanSpec.arguments && constraintPlanSpec.arguments[name]) || '',
+        valueSource: 'none',
+      }));
+    } else {
+      formParameters = [];
+    }
+  }
+
+  function onDuplicateConstraintInvocation() {
+    dispatch('duplicateConstraintInvocation', {
+      ...constraintPlanSpec,
+    });
+  }
+  function onDeleteConstraintInvocation() {
+    dispatch('deleteConstraintInvocation', constraintPlanSpec);
+  }
 
   function onEnable(event: Event) {
     const { value: enabled } = getTarget(event);
@@ -55,6 +92,16 @@
     dispatch('updateConstraintPlanSpec', {
       ...constraintPlanSpec,
       constraint_revision: revision === '' ? null : parseInt(`${revision}`),
+    });
+  }
+
+  function onChangeFormParameters(event: CustomEvent<FormParameter>) {
+    const {
+      detail: { name, value },
+    } = event;
+    dispatch('updateConstraintPlanSpec', {
+      ...constraintPlanSpec,
+      arguments: { ...constraintPlanSpec.arguments, [name]: value },
     });
   }
 </script>
@@ -139,6 +186,10 @@
       </div>
     </svelte:fragment>
 
+    <Collapse title="Parameters" className="scheduling-goal-analysis-activities" defaultExpanded={true}>
+      <Parameters disabled={false} expanded={true} {formParameters} on:change={onChangeFormParameters} />
+    </Collapse>
+
     <svelte:fragment slot="contextMenuContent">
       <ContextMenuItem
         on:click={() =>
@@ -163,6 +214,11 @@
         View Constraint
       </ContextMenuItem>
     </svelte:fragment>
+
+    {#if version?.type === 'JAR'}
+      <ContextMenuItem on:click={onDuplicateConstraintInvocation}>Duplicate Invocation</ContextMenuItem>
+      <ContextMenuItem on:click={onDeleteConstraintInvocation}>Delete Invocation</ContextMenuItem>
+    {/if}
 
     <Collapse title="Description" defaultExpanded={false}>
       <div class="st-typography-label">

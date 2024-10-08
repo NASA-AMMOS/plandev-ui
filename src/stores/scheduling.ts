@@ -31,13 +31,13 @@ export const schedulingColumns: Writable<string> = writable('1fr 3px 1fr');
 
 /* Derived. */
 
-export const selectedSpecId = derived(plan, $plan => $plan?.scheduling_specification?.id ?? null);
+export const selectedSchedulingSpecId = derived(plan, $plan => $plan?.scheduling_specification?.id ?? null);
 
 /* Subscriptions. */
 
 export const schedulingRequests = gqlSubscribable<SchedulingRequest[]>(
   gql.SUB_SCHEDULING_REQUESTS,
-  { specId: selectedSpecId },
+  { specId: selectedSchedulingSpecId },
   [],
   null,
 );
@@ -72,7 +72,7 @@ export const schedulingGoalResponse = gqlSubscribable<SchedulingGoalMetadataResp
 
 export const schedulingPlanSpecification = gqlSubscribable<SchedulingPlanSpecification | null>(
   gql.SUB_SCHEDULING_PLAN_SPECIFICATION,
-  { specificationId: selectedSpecId },
+  { specificationId: selectedSchedulingSpecId },
   null,
   null,
 );
@@ -173,7 +173,7 @@ export const schedulingConditionsLoading = derived(
 );
 
 export const latestSchedulingGoalAnalyses = derived(
-  [selectedSpecId, schedulingGoalSpecifications],
+  [selectedSchedulingSpecId, schedulingGoalSpecifications],
   ([$selectedSpecId, $schedulingGoalSpecifications]) => {
     const analysisIdToSpecGoalMap: Record<number, SchedulingGoalAnalysis[]> = {};
     let latestAnalysisId = -1;

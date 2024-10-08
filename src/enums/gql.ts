@@ -120,6 +120,7 @@ export enum Queries {
   INSERT_CONSTRAINT_METADATA = 'insert_constraint_metadata_one',
   INSERT_CONSTRAINT_MODEL_SPECIFICATION = 'insert_constraint_model_specification_one',
   INSERT_CONSTRAINT_MODEL_SPECIFICATIONS = 'insert_constraint_model_specification',
+  INSERT_CONSTRAINT_SPECIFICATION = 'insert_constraint_specification_one',
   INSERT_CONSTRAINT_SPECIFICATIONS = 'insert_constraint_specification',
   INSERT_CONSTRAINT_TAGS = 'insert_constraint_tags',
   INSERT_EXPANSION_RULE = 'insert_expansion_rule_one',

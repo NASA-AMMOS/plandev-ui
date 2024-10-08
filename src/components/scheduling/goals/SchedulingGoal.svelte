@@ -117,16 +117,14 @@
     });
   }
 
-  function duplicateGoalInvocation() {
+  function onDuplicateGoalInvocation() {
     dispatch('duplicateGoalInvocation', {
       ...goalPlanSpec,
     });
   }
 
-  function deleteGoalInvocation() {
-    dispatch('deleteGoalInvocation', {
-      ...goalPlanSpec,
-    });
+  function onDeleteGoalInvocation() {
+    dispatch('deleteGoalInvocation', goalPlanSpec);
   }
 
   function updatePriority(priorityUpdate: number) {
@@ -279,8 +277,8 @@
         </div>
       </ContextMenuItem>
       {#if version?.type === 'JAR'}
-        <ContextMenuItem on:click={duplicateGoalInvocation}>Duplicate Invocation</ContextMenuItem>
-        <ContextMenuItem on:click={deleteGoalInvocation}>Delete Invocation</ContextMenuItem>
+        <ContextMenuItem on:click={onDuplicateGoalInvocation}>Duplicate Invocation</ContextMenuItem>
+        <ContextMenuItem on:click={onDeleteGoalInvocation}>Delete Invocation</ContextMenuItem>
       {/if}
     </svelte:fragment>
   </Collapse>

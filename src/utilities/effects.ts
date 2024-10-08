@@ -8,7 +8,7 @@ import {
 } from '@nasa-jpl/aerie-ampcs';
 import { get } from 'svelte/store';
 import { DictionaryTypes } from '../enums/dictionaryTypes';
-import { SchedulingType } from '../enums/scheduling';
+import { SchedulingDefinitionType } from '../enums/scheduling';
 import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
 import {
@@ -52,7 +52,7 @@ import {
 } from '../stores/plan';
 import {
   schedulingRequests as schedulingRequestsStore,
-  selectedSpecId as selectedSpecIdStore,
+  selectedSchedulingSpecId as selectedSpecIdStore,
 } from '../stores/scheduling';
 import { sequenceAdaptations as sequenceAdaptationsStore } from '../stores/sequence-adaptation';
 import {
@@ -94,8 +94,9 @@ import type {
   ConstraintMetadata,
   ConstraintMetadataSetInput,
   ConstraintModelSpecInsertInput,
-  ConstraintPlanSpec,
   ConstraintPlanSpecInsertInput,
+  ConstraintPlanSpecSetInput,
+  ConstraintPlanSpecification,
   ConstraintResponse,
   ConstraintResult,
 } from '../types/constraint';
@@ -843,6 +844,35 @@ const effects = {
     } catch (e) {
       catchError('Constraint Creation Failed', e as Error);
       showFailureToast('Constraint Creation Failed');
+      return null;
+    }
+  },
+
+  async createConstraintPlanSpecification(
+    spec_goal: ConstraintPlanSpecInsertInput,
+    user: User | null,
+  ): Promise<number | null> {
+    try {
+      if (!queryPermissions.CREATE_CONSTRAINT_PLAN_SPECIFICATION(user)) {
+        throwPermissionError('create a scheduling spec goal');
+      }
+
+      const data = await reqHasura<ConstraintPlanSpecification>(
+        gql.CREATE_CONSTRAINT_PLAN_SPECIFICATION,
+        { spec_goal },
+        user,
+      );
+      const { createConstraintSpec } = data;
+      if (createConstraintSpec != null) {
+        const { specification_id } = createConstraintSpec;
+        showSuccessToast('New Constraint Invocation Created Successfully');
+        return specification_id;
+      } else {
+        throw Error('Unable to create a constraint spec invocation');
+      }
+    } catch (e) {
+      catchError(e as Error);
+      showFailureToast('Constraint Invocation Creation Failed');
       return null;
     }
   },
@@ -1747,7 +1777,7 @@ const effects = {
     name: string,
     isPublic: boolean,
     metadataTags: SchedulingTagsInsertInput[],
-    definitionType: SchedulingType,
+    definitionType: SchedulingDefinitionType,
     definition: string | null,
     file: File | null,
     definitionTags: SchedulingTagsInsertInput[],
@@ -1762,9 +1792,9 @@ const effects = {
       let jarId: number | null = null;
       let codeDefinition: string | null = null;
 
-      if (definitionType === SchedulingType.EDSL) {
+      if (definitionType === SchedulingDefinitionType.EDSL) {
         codeDefinition = definition;
-      } else if (definitionType === SchedulingType.JAR && file) {
+      } else if (definitionType === SchedulingDefinitionType.JAR && file) {
         jarId = await effects.uploadFile(file, user);
       }
 
@@ -1808,7 +1838,7 @@ const effects = {
 
   async createSchedulingGoalDefinition(
     goalId: number,
-    definitionType: SchedulingType,
+    definitionType: SchedulingDefinitionType,
     definition: string | null,
     file: File | null,
     definitionTags: SchedulingTagsInsertInput[],
@@ -1822,9 +1852,9 @@ const effects = {
       let jarId: number | null = null;
       let codeDefinition: string | null = null;
 
-      if (definitionType === SchedulingType.EDSL) {
+      if (definitionType === SchedulingDefinitionType.EDSL) {
         codeDefinition = definition;
-      } else if (definitionType === SchedulingType.JAR && file !== null) {
+      } else if (definitionType === SchedulingDefinitionType.JAR && file !== null) {
         jarId = await effects.uploadFile(file, user);
       }
 
@@ -2440,29 +2470,33 @@ const effects = {
     return false;
   },
 
-  async deleteConstraintPlanSpecifications(plan: Plan, constraintIds: number[], user: User | null): Promise<boolean> {
+  async deleteConstraintInvocations(
+    plan: Plan,
+    constraintSpecificationId: number,
+    constraintInvocationIdsToDelete: (number | undefined)[],
+    user: User | null,
+  ) {
     try {
-      if (!queryPermissions.DELETE_CONSTRAINT_PLAN_SPECIFICATIONS(user, plan)) {
-        throwPermissionError('delete constraint plan specifications');
+      if (!queryPermissions.DELETE_CONSTRAINT_INVOCATIONS(user, plan)) {
+        throwPermissionError("delete this constraint's invocations");
       }
-
-      const data = await reqHasura<{ affected_rows: number }>(
-        gql.DELETE_CONSTRAINT_PLAN_SPECIFICATIONS,
-        { constraintIds, planId: plan.id },
+      const { deleteConstraintPlanSpecifications } = await reqHasura(
+        gql.DELETE_CONSTRAINT_INVOCATIONS,
+        {
+          constraintInvocationIdsToDelete: constraintInvocationIdsToDelete,
+          specificationId: constraintSpecificationId,
+        },
         user,
       );
-      if (data.delete_constraint_specification != null) {
-        if (data.delete_constraint_specification.affected_rows !== constraintIds.length) {
-          throw Error('Some constraint plan specifications were not successfully deleted');
-        }
-        return true;
+
+      if (deleteConstraintPlanSpecifications !== null) {
+        showSuccessToast(`Constraints Updated Successfully`);
       } else {
-        throw Error('Unable to delete constraint plan specifications');
+        throw Error('Unable to update the constraint specifications for the plan');
       }
     } catch (e) {
-      catchError('Delete Constraint Plan Specifications Failed', e as Error);
-      showFailureToast('Delete Constraint Plan Specifications Failed');
-      return false;
+      catchError('Constraint Plan Specifications Update Failed', e as Error);
+      showFailureToast('Constraint Plan Specifications Update Failed');
     }
   },
 
@@ -3095,15 +3129,15 @@ const effects = {
     }
   },
 
-  async deleteSchedulingGoalInvocation(
+  async deleteSchedulingGoalInvocations(
     plan: Plan,
     schedulingSpecificationId: number,
     goalInvocationIdsToDelete: (number | undefined)[],
     user: User | null,
   ) {
     try {
-      if (!queryPermissions.UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS(user, plan)) {
-        throwPermissionError('update this scheduling goal plan specification');
+      if (!queryPermissions.DELETE_SCHEDULING_GOAL_INVOCATIONS(user, plan)) {
+        throwPermissionError("delete this scheduling goal's invocations");
       }
       const { deleteConstraintPlanSpecifications } = await reqHasura(
         gql.DELETE_SCHEDULING_GOAL_INVOCATIONS,
@@ -5824,18 +5858,30 @@ const effects = {
 
   async updateConstraintPlanSpecification(
     plan: Plan,
-    constraintPlanSpecification: Omit<ConstraintPlanSpec, 'constraint_metadata'>,
+    constraintPlanSpecification: ConstraintPlanSpecSetInput,
     user: User | null,
   ) {
     try {
       if (!queryPermissions.UPDATE_CONSTRAINT_PLAN_SPECIFICATION(user, plan)) {
         throwPermissionError('update this constraint plan specification');
       }
-      const { enabled, constraint_id: constraintId, constraint_revision: revision } = constraintPlanSpecification;
+      const {
+        enabled,
+        constraint_id: constraintId,
+        constraint_invocation_id,
+        constraint_revision: revision,
+      } = constraintPlanSpecification;
 
       const { updateConstraintPlanSpecification } = await reqHasura(
         gql.UPDATE_CONSTRAINT_PLAN_SPECIFICATION,
-        { enabled, id: constraintId, planId: plan.id, revision },
+        {
+          arguments: constraintPlanSpecification.arguments,
+          constraint_invocation_id,
+          enabled,
+          id: constraintId,
+          planId: plan.id,
+          revision,
+        },
         user,
       );
 
@@ -5852,7 +5898,7 @@ const effects = {
 
   async updateConstraintPlanSpecifications(
     plan: Plan,
-    constraintSpecsToUpdate: ConstraintPlanSpecInsertInput[],
+    constraintSpecsToInsert: ConstraintPlanSpecInsertInput[],
     constraintSpecIdsToDelete: number[],
     user: User | null,
   ) {
@@ -5861,13 +5907,13 @@ const effects = {
         throwPermissionError('update this constraint plan specification');
       }
 
-      const { deleteConstraintPlanSpecifications, updateConstraintPlanSpecifications } = await reqHasura(
+      const { deleteConstraintPlanSpecifications, insertConstraintPlanSpecifications } = await reqHasura(
         gql.UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS,
-        { constraintSpecIdsToDelete, constraintSpecsToUpdate, planId: plan.id },
+        { constraintSpecIdsToDelete, constraintSpecsToInsert, planId: plan.id },
         user,
       );
 
-      if (updateConstraintPlanSpecifications !== null || deleteConstraintPlanSpecifications !== null) {
+      if (insertConstraintPlanSpecifications !== null || deleteConstraintPlanSpecifications !== null) {
         showSuccessToast(`Constraint Plan Specifications Updated Successfully`);
       } else {
         throw Error('Unable to update the constraint specifications for the plan');

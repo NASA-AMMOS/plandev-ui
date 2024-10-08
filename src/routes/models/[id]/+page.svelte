@@ -2,13 +2,19 @@
 
 <script lang="ts" context="module">
   function isGoalSpecification(
-    specification: ConstraintModelSpec | SchedulingGoalModelSpecification | SchedulingConditionModelSpecification,
+    specification:
+      | ConstraintModelSpecification
+      | SchedulingGoalModelSpecification
+      | SchedulingConditionModelSpecification,
   ): specification is SchedulingGoalModelSpecification {
     return !!(specification as SchedulingGoalModelSpecification).goal_metadata;
   }
 
   function isConditionSpecification(
-    specification: ConstraintModelSpec | SchedulingGoalModelSpecification | SchedulingConditionModelSpecification,
+    specification:
+      | ConstraintModelSpecification
+      | SchedulingGoalModelSpecification
+      | SchedulingConditionModelSpecification,
   ): specification is SchedulingConditionModelSpecification {
     return !!(specification as SchedulingConditionModelSpecification).condition_metadata;
   }
@@ -97,7 +103,7 @@
   import { initialUsersLoading, users } from '../../../stores/user';
   import { initialViewsLoading, views } from '../../../stores/views';
   import type { User, UserId } from '../../../types/app';
-  import type { ConstraintModelSpec, ConstraintModelSpecInsertInput } from '../../../types/constraint';
+  import type { ConstraintModelSpecification, ConstraintModelSpecInsertInput } from '../../../types/constraint';
   import type {
     Association,
     AssociationSpecification,

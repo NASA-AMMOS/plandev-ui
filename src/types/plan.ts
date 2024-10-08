@@ -1,6 +1,6 @@
 import type { ActivityDirective } from './activity';
 import type { UserId } from './app';
-import type { ConstraintPlanSpec } from './constraint';
+import type { ConstraintPlanSpecification } from './constraint';
 import type { Model } from './model';
 import type { ArgumentsMap } from './parameter';
 import type { SchedulingPlanSpecification } from './scheduling';
@@ -74,7 +74,7 @@ export type PlanMergeResolution = 'none' | 'source' | 'target';
 export type PlanSchema = {
   child_plans: Pick<PlanSchema, 'id' | 'name'>[];
   collaborators: PlanCollaboratorSlim[];
-  constraint_specification: ConstraintPlanSpec[];
+  constraint_specification: ConstraintPlanSpecification[];
   created_at: string;
   duration: string;
   id: number;

@@ -1,4 +1,4 @@
-import type { SchedulingType } from '../enums/scheduling';
+import type { SchedulingDefinitionType } from '../enums/scheduling';
 import type { PartialWith } from './app';
 import type { SchedulingError } from './errors';
 import type { BaseDefinition, BaseMetadata } from './metadata';
@@ -38,7 +38,7 @@ export type SchedulingGoalDefinition = BaseDefinition & {
   analyses?: SchedulingGoalAnalysis[];
   goal_id: number;
   parameter_schema?: ValueSchema;
-  type: SchedulingType;
+  type: SchedulingDefinitionType;
   uploaded_jar_id: number | null;
 };
 
@@ -188,7 +188,7 @@ export type SchedulingGoalPlanSpecification = {
   goal_invocation_id: number;
   goal_metadata:
     | (Pick<SchedulingGoalMetadata, 'name' | 'owner' | 'public'> & {
-        versions: Pick<SchedulingGoalDefinition, 'revision' | 'analyses' | 'type' | 'parameter_schema'>[];
+        versions: Pick<SchedulingGoalDefinition, 'analyses' | 'parameter_schema' | 'revision' | 'type'>[];
       })
     | null;
   goal_revision: number | null;

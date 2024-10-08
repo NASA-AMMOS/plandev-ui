@@ -4,7 +4,7 @@ import { Status } from '../enums/status';
 import type {
   ConstraintDefinition,
   ConstraintMetadata,
-  ConstraintPlanSpec,
+  ConstraintPlanSpecification,
   ConstraintResponse,
   ConstraintResult,
   ConstraintResultWithName,
@@ -37,7 +37,7 @@ export const constraintRuns = gqlSubscribable<ConstraintRun[] | null>(
   null,
 );
 
-export const constraintPlanSpecs = gqlSubscribable<ConstraintPlanSpec[] | null>(
+export const constraintPlanSpecs = gqlSubscribable<ConstraintPlanSpecification[] | null>(
   gql.SUB_CONSTRAINT_PLAN_SPECIFICATIONS,
   { planId },
   null,
@@ -57,18 +57,18 @@ export const constraintsMap: Readable<Record<string, ConstraintMetadata>> = deri
   keyBy($constraints, 'id'),
 );
 
-export const constraintPlanSpecsMap: Readable<Record<string, ConstraintPlanSpec>> = derived(
+export const constraintPlanSpecsMap: Readable<Record<string, ConstraintPlanSpecification>> = derived(
   [constraintPlanSpecs],
   ([$constraintPlanSpecs]) => ($constraintPlanSpecs ? keyBy($constraintPlanSpecs, 'constraint_id') : {}),
 );
 
-export const allowedConstraintSpecs: Readable<ConstraintPlanSpec[]> = derived(
+export const allowedConstraintSpecs: Readable<ConstraintPlanSpecification[]> = derived(
   [constraintPlanSpecs],
   ([$constraintPlanSpecs]) =>
     ($constraintPlanSpecs || []).filter(({ constraint_metadata: constraintMetadata }) => constraintMetadata !== null),
 );
 
-export const allowedConstraintPlanSpecMap: Readable<Record<string, ConstraintPlanSpec>> = derived(
+export const allowedConstraintPlanSpecMap: Readable<Record<string, ConstraintPlanSpecification>> = derived(
   [allowedConstraintSpecs],
   ([$allowedConstraintSpecs]) => keyBy($allowedConstraintSpecs, 'constraint_id'),
 );

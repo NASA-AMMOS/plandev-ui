@@ -96,7 +96,7 @@
     }
   }
 
-  async function duplicateGoalInvocation(event: CustomEvent<SchedulingGoalPlanSpecification>) {
+  async function onDuplicateGoalInvocation(event: CustomEvent<SchedulingGoalPlanSpecification>) {
     const {
       detail: { goal_metadata, goal_invocation_id, priority, ...goalPlanSpec },
     } = event;
@@ -112,13 +112,13 @@
     }
   }
 
-  async function deleteGoalInvocation(event: CustomEvent<SchedulingGoalPlanSpecification>) {
+  async function onDeleteGoalInvocation(event: CustomEvent<SchedulingGoalPlanSpecification>) {
     const {
       detail: { goal_metadata, specification_id, ...goalPlanSpec },
     } = event;
 
     if ($plan) {
-      await effects.deleteSchedulingGoalInvocation($plan, specification_id, [goalPlanSpec.goal_invocation_id], user);
+      await effects.deleteSchedulingGoalInvocations($plan, specification_id, [goalPlanSpec.goal_invocation_id], user);
     }
   }
 
@@ -239,8 +239,8 @@
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to edit scheduling goals for this plan.'}
               on:updateGoalPlanSpec={onUpdateGoal}
-              on:duplicateGoalInvocation={duplicateGoalInvocation}
-              on:deleteGoalInvocation={deleteGoalInvocation}
+              on:duplicateGoalInvocation={onDuplicateGoalInvocation}
+              on:deleteGoalInvocation={onDeleteGoalInvocation}
             />
           {/if}
         {/each}

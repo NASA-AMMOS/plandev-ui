@@ -201,6 +201,17 @@ const gql = {
     }
   `,
 
+  CREATE_CONSTRAINT_PLAN_SPECIFICATION: `#graphql
+    mutation CreateConstraintSpecification($constraintPlanSpecification: constraint_specification_insert_input!) {
+      createConstraintSpec: ${Queries.INSERT_CONSTRAINT_SPECIFICATION}(object: $spec_goal) {
+        enabled
+        goal_id
+        priority
+        specification_id
+      }
+    }
+  `,
+
   CREATE_DERIVATION_GROUP: `#graphql
     mutation CreateDerivationGroup($derivationGroup: derivation_group_insert_input!) {
       createDerivationGroup: ${Queries.INSERT_DERIVATION_GROUP}(object: $derivationGroup) {
@@ -686,6 +697,21 @@ const gql = {
     }
   `,
 
+  DELETE_CONSTRAINT_INVOCATIONS: `#graphql
+    mutation DeleteConstraintInvocations($constraintInvocationIdsToDelete: [Int!]! = [], $specificationId: Int!) {
+      deleteConstraintPlanSpecifications: ${Queries.DELETE_CONSTRAINT_SPECIFICATIONS}(
+        where: {
+          constraint_invocation_id: { _in: $constraintInvocationIdsToDelete },
+          _and: {
+            specification_id: { _eq: $specificationId },
+          }
+        }
+      ) {
+        affected_rows
+      }
+    }
+  `,
+
   DELETE_CONSTRAINT_METADATA: `#graphql
     mutation DeleteConstraint($id: Int!) {
       deleteConstraintMetadata: ${Queries.DELETE_CONSTRAINT_METADATA}(id: $id) {
@@ -701,21 +727,6 @@ const gql = {
           constraint_id: { _in: $constraintIds },
           _and: {
             model_id: { _eq: $modelId },
-          }
-        }
-      ) {
-        affected_rows
-      }
-    }
-  `,
-
-  DELETE_CONSTRAINT_PLAN_SPECIFICATIONS: `#graphql
-    mutation DeleteConstraintPlanSpecification($constraintIds: [Int!]!, $planId: Int!) {
-      ${Queries.DELETE_CONSTRAINT_SPECIFICATIONS}(
-        where: {
-          constraint_id: { _in: $constraintIds },
-          _and: {
-            plan_id: { _eq: $planId },
           }
         }
       ) {
@@ -997,20 +1008,20 @@ const gql = {
     }
   `,
 
-  DELETE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS: `#graphql
-    mutation DeleteSchedulingGoalPlanSpecification($goalIds: [Int!]!, $planId: Int!) {
-      ${Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS}(
-        where: {
-          goal_id: { _in: $goalIds },
-          _and: {
-            plan_id: { _eq: $planId },
-          }
-        }
-      ) {
-        affected_rows
-      }
-    }
-`,
+  // DELETE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS: `#graphql
+  //   mutation DeleteSchedulingGoalPlanSpecification($goalIds: [Int!]!, $planId: Int!) {
+  //     ${Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS}(
+  //       where: {
+  //         goal_id: { _in: $goalIds },
+  //         _and: {
+  //           plan_id: { _eq: $planId },
+  //         }
+  //       }
+  //     ) {
+  //       affected_rows
+  //     }
+  //   }
+  // `,
 
   DELETE_SEQUENCE_ADAPTATION: `#graphql
     mutation DeleteSequenceAdaptation($id: Int!) {
@@ -2153,6 +2164,7 @@ const gql = {
         versions(order_by: {revision: desc}) {
           author
           definition
+          parameter_schema
           revision
           tags {
             tag {
@@ -2161,6 +2173,7 @@ const gql = {
               name
             }
           }
+          type
         }
       }
     }
@@ -2194,6 +2207,7 @@ const gql = {
           author
           definition
           revision
+          type
         }
       }
     }
@@ -2215,6 +2229,28 @@ const gql = {
     }
   `,
 
+  SUB_CONSTRAINT_INVOCATIONS: `#graphql
+    subscription SubConstraintInvocations($planId: Int!) {
+      ${Queries.CONSTRAINT_SPECIFICATIONS} (where: {specification: {plan_id: {_eq: $planId}}}) {
+        arguments
+        constraint_id
+        constraint_invocation_id
+        constraint_revision
+        enabled
+        specification_id
+        constraint_metadata {
+          name
+          versions(order_by: {revision: desc}) {
+            author
+            revision
+            type
+            parameter_schema
+          }
+        }
+      }
+    }
+  `,
+
   SUB_CONSTRAINT_PLAN_SPECIFICATIONS: `#graphql
     subscription SubConstraintPlanSpecifications($planId: Int!) {
       constraintPlanSpecs: ${Queries.CONSTRAINT_SPECIFICATIONS}(
@@ -2222,6 +2258,7 @@ const gql = {
         order_by: { constraint_id: desc }
       ) {
         constraint_id
+        constraint_invocation_id
         constraint_revision
         enabled
         constraint_metadata {
@@ -2229,7 +2266,9 @@ const gql = {
           owner
           public
           versions {
+            parameter_schema
             revision
+            type
           }
         }
         plan_id
@@ -2950,12 +2989,12 @@ const gql = {
         versions(order_by: {revision: desc}) {
           author
           definition
-          type
-          revision
           parameter_schema
+          revision
           tags {
             tag_id
           }
+          type
           uploaded_jar_id
         }
       }
@@ -3000,10 +3039,10 @@ const gql = {
           author
           definition
           revision
-          type
           tags {
             tag_id
           }
+          type
           uploaded_jar_id
         }
       }
@@ -3026,12 +3065,12 @@ const gql = {
           versions(order_by: {revision: desc}) {
             author
             definition
+            parameter_schema
             revision
-            type
             tags {
               tag_id
             }
-            parameter_schema
+            type
           }
         }
       }
@@ -3446,10 +3485,11 @@ const gql = {
   `,
 
   UPDATE_CONSTRAINT_PLAN_SPECIFICATION: `#graphql
-    mutation UpdateConstraintPlanSpecification($id: Int!, $revision: Int!, $enabled: Boolean!, $planId: Int!) {
+    mutation UpdateConstraintPlanSpecification($arguments: jsonb, $constraint_invocation_id: Int!, $revision: Int!, $enabled: Boolean!) {
       updateConstraintPlanSpecification: ${Queries.UPDATE_CONSTRAINT_SPECIFICATION}(
-        pk_columns: { constraint_id: $id, plan_id: $planId },
+        pk_columns: { constraint_invocation_id: $constraint_invocation_id },
         _set: {
+          arguments: $arguments,
           constraint_revision: $revision,
           enabled: $enabled
         }
@@ -3461,13 +3501,9 @@ const gql = {
   `,
 
   UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS: `#graphql
-    mutation UpdateConstraintPlanSpecifications($constraintSpecsToUpdate: [constraint_specification_insert_input!]!, $constraintSpecIdsToDelete: [Int!]! = [], $planId: Int!) {
-      updateConstraintPlanSpecifications: ${Queries.INSERT_CONSTRAINT_SPECIFICATIONS}(
-        objects: $constraintSpecsToUpdate,
-        on_conflict: {
-          constraint: constraint_specification_pkey,
-          update_columns: [constraint_revision, enabled]
-        },
+    mutation UpdateConstraintPlanSpecifications($constraintSpecsToInsert: [constraint_specification_insert_input!]!, $constraintSpecIdsToDelete: [Int!]! = []) {
+      insertConstraintPlanSpecifications: ${Queries.INSERT_CONSTRAINT_SPECIFICATIONS}(
+        objects: $constraintSpecsToInsert,
       ) {
         returning {
           constraint_revision
@@ -3477,9 +3513,6 @@ const gql = {
       deleteConstraintPlanSpecifications: ${Queries.DELETE_CONSTRAINT_SPECIFICATIONS}(
         where: {
           constraint_id: { _in: $constraintSpecIdsToDelete },
-          _and: {
-            plan_id: { _eq: $planId },
-          }
         }
       ) {
         affected_rows
@@ -3753,8 +3786,8 @@ const gql = {
           arguments: $arguments
         }
       ) {
-        goal_revision
         enabled
+        goal_revision
       }
     }
   `,
@@ -3765,8 +3798,8 @@ const gql = {
         objects: $goalSpecsToInsert,
       ) {
         returning {
-          goal_revision
           enabled
+          goal_revision
         }
       }
       deleteSchedulingGoalPlanSpecifications: ${Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS}(
@@ -3800,9 +3833,9 @@ const gql = {
   UPDATE_SIMULATION_TEMPLATE: `#graphql
     mutation UpdateSimulationTemplate($id: Int!, $simulationTemplateSetInput: simulation_template_set_input!) {
       ${Queries.UPDATE_SIMULATION_TEMPLATE}(pk_columns: {id: $id}, _set: $simulationTemplateSetInput) {
+        arguments
         id
         description
-        arguments
       }
     }
   `,
