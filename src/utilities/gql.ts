@@ -475,6 +475,8 @@ const gql = {
     mutation CreateExternalEventType($eventType: external_event_type_insert_input!) {
       createExternalEventType: ${Queries.INSERT_EXTERNAL_EVENT_TYPE_ONE}(object: $eventType) {
         name
+        properties
+        required_properties
       }
     }
   `,
@@ -482,20 +484,9 @@ const gql = {
   CREATE_EXTERNAL_SOURCE: `#graphql
     mutation CreateExternalSource(
       $derivation_group: derivation_group_insert_input!,
-      $event_type: [external_event_type_insert_input!]!
       $source: external_source_insert_input!,
       $source_type: external_source_type_insert_input!,
     ) {
-      upsertExternalEventType: ${Queries.INSERT_EXTERNAL_EVENT_TYPE}(
-        objects: $event_type,
-        on_conflict: {
-          constraint: external_event_type_pkey
-        }
-      ) {
-        returning {
-          name
-        }
-      }
       upsertExternalSourceType: ${Queries.INSERT_EXTERNAL_SOURCE_TYPE} (
         object: $source_type,
         on_conflict: {
@@ -1477,21 +1468,44 @@ const gql = {
   `,
 
   GET_EXTERNAL_EVENTS: `#graphql
-    query GetExternalEvents(
-      $sourceKey: String!,
-      $derivationGroupName: String!
+  query GetExternalEvents(
+    $sourceKey: String!,
+    $derivationGroupName: String!
+  ) {
+    ${Queries.EXTERNAL_EVENT}(
+      where: {
+        source_key: {_eq: $sourceKey},
+        derivation_group_name: {_eq: $derivationGroupName}
+      }
     ) {
-      ${Queries.EXTERNAL_EVENT}(
-        where: {
-          source_key: {_eq: $sourceKey},
-          derivation_group_name: {_eq: $derivationGroupName}
-        }
-      ) {
-        event_type_name
-        key
-        duration
-        start_time
-        source_key
+      properties
+      event_type_name
+      key
+      duration
+      start_time
+      source_key
+    }
+  }
+  `,
+
+  GET_EXTERNAL_EVENT_BY_EVENT_TYPE: `#graphql
+  query GetExternalEventByEventType($event_type_name: String!) {
+    ${Queries.EXTERNAL_EVENT}(where: {event_type_name: { _eq: $event_type_name }}) {
+      key
+      event_type_name
+      start_time
+      duration
+      properties
+    }
+  }
+  `,
+
+  GET_EXTERNAL_EVENT_TYPES: `#graphql
+    query GetExternalEventTypes {
+      external_event_types: ${Queries.EXTERNAL_EVENT_TYPES} {
+        name
+        properties
+        required_properties
       }
     }
   `,
@@ -1508,6 +1522,8 @@ const gql = {
         external_events {
           external_event_type {
             name
+            properties
+            required_properties
           }
         }
       }
@@ -1718,6 +1734,8 @@ const gql = {
             external_events {
               external_event_type {
                 name
+                properties
+                required_properties
               }
             }
           }
@@ -2471,6 +2489,8 @@ const gql = {
     subscription SubExternalEventTypes {
       models: ${Queries.EXTERNAL_EVENT_TYPES}(order_by: { name: asc }) {
         name
+        properties
+        required_properties
       }
     }
   `,

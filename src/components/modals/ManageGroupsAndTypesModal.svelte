@@ -38,7 +38,9 @@
     viewExternalEventType: (eventType: ExternalEventType) => void;
     viewExternalSourceType: (sourceType: ExternalSourceType) => void;
   };
-  type ModalCellRendererParams = ICellRendererParams<DerivationGroup> & CellRendererParams;
+  type derivationGroupModalCellRendererParams = ICellRendererParams<DerivationGroup> & CellRendererParams;
+  type externalEventTypeModalCellRendererParams = ICellRendererParams<ExternalEventType> & CellRendererParams;
+  type externalSourceTypeModalCellRendererParams = ICellRendererParams<ExternalSourceType> & CellRendererParams;
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -147,7 +149,7 @@
     ...derivationGroupBaseColumnDefs,
     {
       cellClass: 'action-cell-container',
-      cellRenderer: (params: ModalCellRendererParams) => {
+      cellRenderer: (params: derivationGroupModalCellRendererParams) => {
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'actions-cell';
         new DataGridActions({
@@ -202,7 +204,7 @@
     },
     {
       cellClass: 'action-cell-container',
-      cellRenderer: (params: ModalCellRendererParams) => {
+      cellRenderer: (params: externalSourceTypeModalCellRendererParams) => {
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'actions-cell';
         new DataGridActions({
@@ -240,7 +242,7 @@
     ...externalEventTypeBaseColumnDefs,
     {
       cellClass: 'action-cell-container',
-      cellRenderer: (params: ModalCellRendererParams) => {
+      cellRenderer: (params: externalEventTypeModalCellRendererParams) => {
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'actions-cell';
         new DataGridActions({
@@ -534,6 +536,26 @@
 
   .derivation-groups-modal-content {
     height: 100%;
+  }
+
+  .external-event-type-properties {
+    display: flex;
+    width: 100%;
+  }
+
+  .property-name {
+    display: flex;
+    font-weight: bold;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .property-type {
+    color: var(--st-gray-60);
+    display: flex;
+    font-style: italic;
+    justify-content: flex-end;
+    width: 100%;
   }
 
   .filter {
