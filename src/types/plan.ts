@@ -59,9 +59,9 @@ export type PlanForMerging = Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collabo
 
 export type PlanMergeRequestSchema = {
   id: number;
-  plan_receiving_changes: PlanForMerging;
+  plan_receiving_changes?: PlanForMerging;
   plan_snapshot_supplying_changes: {
-    plan: PlanForMerging;
+    plan?: PlanForMerging;
     snapshot_id: number;
   };
   requester_username: string;

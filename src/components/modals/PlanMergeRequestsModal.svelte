@@ -77,6 +77,10 @@
   }
 
   async function onReviewOrWithdraw(planMergeRequest: PlanMergeRequest) {
+    if (!planMergeRequest.plan_snapshot_supplying_changes.plan || !planMergeRequest.plan_receiving_changes) {
+      return;
+    }
+
     if (planMergeRequest.type === 'incoming') {
       planMergeRequest.pending = true;
       filteredPlanMergeRequests = [...filteredPlanMergeRequests];
@@ -117,6 +121,10 @@
   }
 
   function hasPermission(planMergeRequest: PlanMergeRequest) {
+    if (!planMergeRequest.plan_snapshot_supplying_changes.plan || !planMergeRequest.plan_receiving_changes) {
+      return false;
+    }
+
     if (planMergeRequest.type === 'outgoing') {
       return featurePermissions.planBranch.canDeleteRequest(
         user,
@@ -190,21 +198,21 @@
                     use:tooltip={{
                       content:
                         planMergeRequest.type === 'incoming'
-                          ? planMergeRequest.plan_snapshot_supplying_changes.plan.name
-                          : planMergeRequest.plan_receiving_changes.name,
+                          ? planMergeRequest.plan_snapshot_supplying_changes.plan?.name
+                          : planMergeRequest.plan_receiving_changes?.name || 'Deleted Plan',
                       placement: 'top',
                     }}
                   >
                     {#if planMergeRequest.type === 'incoming'}
-                      {planMergeRequest.plan_snapshot_supplying_changes.plan.name}
+                      {planMergeRequest.plan_snapshot_supplying_changes.plan?.name || 'Deleted Plan'}
                     {:else if planMergeRequest.type === 'outgoing'}
-                      {planMergeRequest.plan_receiving_changes.name}
+                      {planMergeRequest.plan_receiving_changes?.name || 'Deleted Plan'}
                     {/if}
                   </div>
                   <PlanMergeRequestStatusBadge status={planMergeRequest.status} />
                 </div>
 
-                {#if planMergeRequest.status === 'pending'}
+                {#if planMergeRequest.status === 'pending' && planMergeRequest.plan_snapshot_supplying_changes.plan}
                   <button
                     on:click={() => onReviewOrWithdraw(planMergeRequest)}
                     class="st-button secondary"
@@ -223,9 +231,9 @@
                       {planMergeRequest.type === 'outgoing' ? 'Withdraw' : 'Begin Review'}
                     {/if}
                   </button>
-                {:else if planMergeRequest.status === 'in-progress'}
+                {:else if planMergeRequest.status === 'in-progress' && planMergeRequest.plan_snapshot_supplying_changes.plan}
                   <button
-                    on:click={() => goto(`${base}/plans/${planMergeRequest.plan_receiving_changes.id}/merge`)}
+                    on:click={() => goto(`${base}/plans/${planMergeRequest.plan_receiving_changes?.id}/merge`)}
                     class="st-button secondary"
                   >
                     {planMergeRequest.type === 'incoming' ? 'Review' : 'View Merge Request'}
