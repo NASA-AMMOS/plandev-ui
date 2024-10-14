@@ -417,9 +417,8 @@ Command(Stem,⚠,Args)
 CMD2 [
 CMD3 ]`,
     `Sequence(Commands(
-Command(Stem,Args(RepeatArg(⚠))),
-Command(Stem,Args(RepeatArg(⚠,Enum)))
-))`,
+    Command(Stem,Args(RepeatArg(RepeatArg,⚠))),
+    Command(Stem,Args(RepeatArg(⚠))),Command(Stem,Args(⚠))))`,
   ],
   ['locals with wrong value types', `@LOCALS "string_not_enum"`, `Sequence(LocalDeclaration(⚠(String)))`],
 ];

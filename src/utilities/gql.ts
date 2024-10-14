@@ -387,15 +387,11 @@ const gql = {
   `,
 
   CREATE_DICTIONARY: `#graphql
-    mutation CreateDictionary($dictionary: String!, $type: String!) {
-      createDictionary: ${Queries.UPLOAD_DICTIONARY}(dictionary: $dictionary, type : $type) {
-        dictionary_path
-        created_at
-        id
-        mission
-        parsed_json
-        version
-        type
+    mutation CreateDictionary($dictionary: String!) {
+      createDictionary: ${Queries.UPLOAD_DICTIONARY}(dictionary: $dictionary) {
+        command
+        parameter
+        channel
       }
     }
   `,

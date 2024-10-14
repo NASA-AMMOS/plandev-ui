@@ -35,9 +35,10 @@ export function fswCommandArgDefault(fswCommandArg: FswCommandArgument, enumMap:
       const enumArg = fswCommandArg as FswCommandArgumentEnum;
       const enumSymbolValue =
         enumMap[enumArg.enum_name]?.values[0]?.symbol ?? fswCommandArg.default_value ?? fswCommandArg.name;
-      return `"${enumSymbolValue}"` ?? 'UNKNOWN_ENUM';
+      return enumSymbolValue ? `"${enumSymbolValue}"` : 'UNKNOWN_ENUM';
     }
-    case 'fill' || 'fixed_string':
+    case 'fill':
+    case 'fixed_string':
       return '""';
     case 'float': {
       const floatArg = fswCommandArg as FswCommandArgumentFloat;
@@ -134,7 +135,7 @@ export function fswCommandArgDefault(fswCommandArg: FswCommandArgument, enumMap:
       const varStringArg = fswCommandArg as FswCommandArgumentVarString;
       const { default_value } = varStringArg;
 
-      if (default_value !== null) {
+      if (default_value) {
         return default_value;
       } else {
         return '""';

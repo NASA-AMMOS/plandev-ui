@@ -70,14 +70,14 @@ HardwareCommands {
 TimeTag { TimeAbsolute | (TimeGroundEpoch Name { String } whiteSpace)  | TimeEpoch | TimeRelative  | TimeComplete }
 
 Args {
-  (whiteSpace (arg | RepeatArg))* whiteSpace?
+  (whiteSpace (arg))* whiteSpace?
 }
 
 RepeatArg {
   "[" (whiteSpace? arg)* whiteSpace? "]"
 }
 
-arg[@isGroup=Arguments] { Number | String | Boolean | Enum }
+arg[@isGroup=Arguments] { Number | String | Boolean | Enum | RepeatArg }
 
 Command {
   TimeTag?

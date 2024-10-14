@@ -9,13 +9,11 @@
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
-  import { DictionaryTypes } from '../../enums/dictionaryTypes';
   import { sequenceAdaptations } from '../../stores/sequence-adaptation';
   import { channelDictionaries, commandDictionaries, parameterDictionaries } from '../../stores/sequencing';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import type { PageData } from './$types';
 
   export let data: PageData;
@@ -51,34 +49,7 @@
     creatingDictionary = true;
 
     try {
-      const uploadedDictionaryOrAdaptation = await effects.uploadDictionaryOrAdaptation(
-        file,
-        data.user,
-        sequenceAdaptationName,
-      );
-
-      if (uploadedDictionaryOrAdaptation === null) {
-        throw Error('Failed to upload file');
-      }
-
-      switch (uploadedDictionaryOrAdaptation.type) {
-        case DictionaryTypes.COMMAND: {
-          showSuccessToast('Command Dictionary Created Successfully');
-          break;
-        }
-        case DictionaryTypes.CHANNEL: {
-          showSuccessToast('Channel Dictionary Created Successfully');
-          break;
-        }
-        case DictionaryTypes.PARAMETER: {
-          showSuccessToast('Parameter Dictionary Created Successfully');
-          break;
-        }
-        case DictionaryTypes.ADAPTATION: {
-          showSuccessToast('Sequence Adaptation Created Successfully');
-          break;
-        }
-      }
+      await effects.uploadDictionaryOrAdaptation(file, data.user, sequenceAdaptationName);
 
       // Set files to undefined to reset the input form and set the value to empty string to clear the uploaded file.
       files = undefined;
@@ -87,7 +58,6 @@
       sequenceAdaptationName = '';
     } catch (e) {
       createDictionaryError = (e as Error).message;
-      showFailureToast('Command Dictionary Create Failed');
     }
 
     creatingDictionary = false;
@@ -130,7 +100,7 @@
           <fieldset>
             <label for="file">AMPCS XML File or Sequence Adaptation</label>
             <input
-              accept=".xml,.js"
+              accept=".xml,.js,.json"
               class="w-100 st-typography-body"
               name="file"
               required
