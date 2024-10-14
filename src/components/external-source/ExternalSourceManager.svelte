@@ -13,9 +13,11 @@
     createExternalSourceError,
     createExternalSourceTypeError,
     creatingExternalSource,
+    derivationGroups,
     externalSources,
+    externalSourceTypes,
     parsingError,
-    planDerivationGroupLinks,
+    planDerivationGroupLinks
   } from '../../stores/external-source';
   import { field } from '../../stores/form';
   import { plans } from '../../stores/plans';
@@ -331,6 +333,8 @@
         parsedExternalSource.source.key,
         $validAtDoyField.value,
         $externalEventTypes.map(externalEventType => externalEventType.name),
+        $externalSourceTypes.map(externalSourceType => externalSourceType.name),
+        $derivationGroups.map(derivationGroup => derivationGroup.name),
         user,
       );
       // Following a successful mutation...

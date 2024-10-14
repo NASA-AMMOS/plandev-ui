@@ -899,6 +899,8 @@ const effects = {
     externalSourceKey: string,
     validAt: string,
     existingExternalEventTypes: string[],
+    existingExternalSourceTypes: string[],
+    existingDerivationGroups: string[],
     user: User | null,
   ) {
     try {
@@ -907,15 +909,6 @@ const effects = {
       }
       creatingExternalSource.set(true);
       createExternalSourceError.set(null);
-
-      // Create mutation inputs for Hasura
-      const externalSourceTypeInsert: ExternalSourceTypeInsertInput = {
-        name: externalSourceTypeName,
-      };
-      const derivationGroupInsert: DerivationGroupInsertInput = {
-        name: derivationGroupName !== '' ? derivationGroupName : `${externalSourceTypeName} Default`,
-        source_type_name: externalSourceTypeName,
-      };
 
       // Convert all times, validate they exist or else throw a failure
       const startTimeFormatted: string | undefined = convertDoyToYmd(startTime.replaceAll('Z', ''))?.replace(
@@ -939,9 +932,23 @@ const effects = {
         return;
       }
 
+      // Check that the source type has already been created
+      if (!existingExternalSourceTypes.includes(externalSourceTypeName)) {
+        throw new Error(
+          `External source type '${externalSourceTypeName}' does not exist, please create it prior to uploading this external source!`,
+        );
+      }
+
+      // Check that the derivation group has already been created
+      if (!existingDerivationGroups.includes(derivationGroupName)) {
+        throw new Error(
+          `Derivation group '${derivationGroupName}' does not exist, please create it prior to uploading this external source!`,
+        );
+      }
+
       // Create external source mutation input for Hasura
       const externalSourceInsert: ExternalSourceInsertInput = {
-        derivation_group_name: derivationGroupInsert.name,
+        derivation_group_name: derivationGroupName,
         end_time: endTimeFormatted,
         external_events: {
           data: null, // updated after this map is created
@@ -1006,9 +1013,7 @@ const effects = {
       const { createExternalSource: createExternalSourceResponse } = await reqHasura(
         gql.CREATE_EXTERNAL_SOURCE,
         {
-          derivation_group: derivationGroupInsert,
           source: externalSourceInsert,
-          source_type: externalSourceTypeInsert,
         },
         user,
       );
@@ -1037,6 +1042,7 @@ const effects = {
   ): Promise<ExternalSourceType | undefined> {
     try {
       createExternalSourceTypeError.set(null);
+      console.log(sourceType);
       const { createExternalSourceType: created } = await reqHasura(
         gql.CREATE_EXTERNAL_SOURCE_TYPE,
         { sourceType },

@@ -12,6 +12,7 @@
   } from '../../stores/external-source';
   import type { User } from '../../types/app';
   import type { ExternalEventTypeInsertInput } from '../../types/external-event';
+  import type { ExternalSourceTypeInsertInput } from '../../types/external-source';
   import type { ParameterName, ParametersMap } from '../../types/parameter';
   import type { TabId } from '../../types/tabs';
   import effects from '../../utilities/effects';
@@ -43,7 +44,9 @@
 
   // External source type variables
   let hasCreateExternalSourceTypePermission: boolean = false;
+  let newExternalSourceTypeMetadataCount: number = 1;
   let newExternalSourceTypeName: string | null = null;
+  let newExternalSourceTypeMetadata: ParameterEntry[] = [];
 
   // External event type variables
   let hasCreateExternalEventTypePermission: boolean = false;
@@ -88,9 +91,30 @@
   function onCreateExternalSourceType() {
     if (newExternalSourceTypeName === null) {
       creationError = 'Please enter a new type name.';
+    } else if (newExternalSourceTypeMetadata === undefined) {
+      creationError = `Unable to create metadata of '${newExternalSourceTypeName}.'`;
     } else {
-      effects.createExternalSourceType({ name: newExternalSourceTypeName }, user);
+      // Create the ParameterMap for all of the type's metadata
+      const newExternalSourceTypeMetadataObjects = newExternalSourceTypeMetadata.map(newMetadata => newMetadata.getParameterEntry());
+      const newExternalSourceTypeMetadataParameterMap: ParametersMap = {};
+      newExternalSourceTypeMetadataObjects.forEach((newMetadata, index) => {
+        newExternalSourceTypeMetadataParameterMap[newMetadata.name] = {
+          order: index,
+          schema: newMetadata.type
+        }
+      });
+      // Create list of all required metadata for the type
+      const requiredMetadata: ParameterName[] = newExternalSourceTypeMetadataObjects.filter(metadata => metadata.isRequired === true).map(metadata => metadata.name);
+      // Generate Hasura mutation input
+      const externalSourceTypeInsertInput: ExternalSourceTypeInsertInput = {
+        metadata: newExternalSourceTypeMetadataParameterMap,
+        name: newExternalSourceTypeName,
+        required_metadata: requiredMetadata,
+      };
+      effects.createExternalSourceType(externalSourceTypeInsertInput, user);
       newExternalSourceTypeName = null;
+      newExternalSourceTypeMetadata = [];
+      newExternalSourceTypeMetadataCount = 1;
     }
   }
 
@@ -202,7 +226,7 @@
                 The newly created external source type will be empty, though you can upload sources into it.
               </p>
             </div>
-            <div class="content">
+            <div class="content parameters">
               <input
                 bind:value={newExternalSourceTypeName}
                 on:change={handleChange}
@@ -210,16 +234,17 @@
                 class="st-input w-100"
                 placeholder="New External Source Type Name"
               />
+              {#each Array(newExternalSourceTypeMetadataCount) as _, externalSourceTypeMetadataIndex}
+                <ParameterEntry
+                  bind:this={newExternalSourceTypeMetadata[externalSourceTypeMetadataIndex]}
+                  newParameterNamePlaceholder="New External Source Type Metadata Name"
+                />
+              {/each}
               <button
-                class="st-button w-10"
-                type="submit"
-                on:click|preventDefault={onCreateExternalSourceType}
-                use:permissionHandler={{
-                  hasPermission: hasCreateExternalSourceTypePermission,
-                  permissionError: 'You do not have permission to create an external source type.',
-                }}
+                class="st-button icon add-property-button"
+                on:click={() => {newExternalSourceTypeMetadataCount++;}}
               >
-                Create
+                <PlusIcon/>
               </button>
             </div>
           </TabPanel>
@@ -230,7 +255,7 @@
                 The newly created external event type will be empty, though you can upload events into it.
               </p>
             </div>
-            <div class="content external-event-type-content">
+            <div class="content parameters">
               <input
                 bind:value={newExternalEventTypeName}
                 on:change={handleChange}
@@ -339,7 +364,7 @@
     padding-top: 12px;
   }
 
-  .external-event-type-content {
+  .parameters {
     flex-direction: column;
     height: 100%;
     justify-content: flex-start;

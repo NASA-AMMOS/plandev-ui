@@ -1,5 +1,6 @@
 import type { ExternalEventDB, ExternalEventInsertInput, ExternalEventJson } from '../types/external-event';
 import type { UserId } from './app';
+import type { ParameterName, ParametersMap } from './parameter';
 
 // Represents all fields used as a composite primary key for merlin.external_source
 export type ExternalSourcePkey = {
@@ -48,7 +49,9 @@ export type PlanDerivationGroup = {
 };
 
 export type ExternalSourceType = {
+  metadata: ParametersMap;
   name: string;
+  required_metadata: ParameterName[];
 };
 
 export type DerivationGroup = {
@@ -70,7 +73,7 @@ export type ExternalSourceInsertInput = Pick<
     };
   };
 
-export type ExternalSourceTypeInsertInput = Pick<ExternalSourceType, 'name'>;
+export type ExternalSourceTypeInsertInput = ExternalSourceType;
 
 export type DerivationGroupInsertInput = Pick<DerivationGroup, 'name' | 'source_type_name'>;
 

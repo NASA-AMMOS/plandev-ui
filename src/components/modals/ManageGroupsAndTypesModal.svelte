@@ -9,6 +9,8 @@
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExternalEventType } from '../../types/external-event';
   import type { DerivationGroup, ExternalSourceSlim, ExternalSourceType } from '../../types/external-source';
+  import type { ParametersMap } from '../../types/parameter';
+  import type { TabId } from '../../types/tabs';
   import { showDeleteDerivationGroupModal, showDeleteExternalEventSourceTypeModal } from '../../utilities/modal';
   import { featurePermissions } from '../../utilities/permissions';
   import Collapse from '../Collapse.svelte';
@@ -49,6 +51,10 @@
   const modalColumnSizeNoDetail: string = '1fr 3px 0fr';
   const modalColumnSizeWithDetailDerivationGroup: string = '3fr 3px 1.3fr';
   const modalColumnSizeWithDetailExternalSourceType: string = '2fr 3px 1.2fr';
+
+  const derivationGroupTabId: TabId = 'derivationGroup';
+  const externalSourceTypeTabId: TabId = 'externalSourceType';
+  const externalEventTypeTabId: TabId = 'externalEventType';
 
   const derivationGroupBaseColumnDefs: DataGridColumnDef<DerivationGroup>[] = [
     {
@@ -129,6 +135,13 @@
 
   let selectedExternalSourceType: ExternalSourceType | undefined = undefined;
   let selectedExternalSourceTypeDerivationGroups: DerivationGroup[] = [];
+  let selectedExternalSourceTypeRequiredMetadata: ParametersMap = {};
+  let selectedExternalSourceTypeOptionalMetadata: ParametersMap = {};
+
+  let selectedExternalEventType: ExternalEventType | undefined = undefined;
+  let selectedExternalEventTypeDerivationGroups: DerivationGroup[] = [];
+  let selectedExternalEventTypeRequiredProperties: ParametersMap = {};
+  let selectedExternalEventTypeOptionalProperties: ParametersMap = {};
 
   $: hasDeleteExternalSourceTypePermission = featurePermissions.externalSourceType.canDelete(user);
   $: hasDeleteExternalEventTypePermission = featurePermissions.externalEventType.canDelete(user);
@@ -140,6 +153,34 @@
   $: selectedExternalSourceTypeDerivationGroups = $derivationGroups.filter(derivationGroup => {
     if (selectedExternalSourceType !== undefined) {
       return derivationGroup.source_type_name === selectedExternalSourceType.name;
+    } else {
+      return false;
+    }
+  });
+
+  $: if (selectedExternalSourceType !== undefined && selectedExternalSourceType.metadata !== undefined && selectedExternalSourceType?.required_metadata !== undefined) {
+    Object.entries(selectedExternalSourceType.metadata).forEach(metadata => {
+      if (selectedExternalSourceType?.required_metadata.includes(metadata[0])) {
+        selectedExternalSourceTypeRequiredMetadata[metadata[0]] = metadata[1];
+      } else {
+        selectedExternalSourceTypeOptionalMetadata[metadata[0]] = metadata[1];
+      }
+    });
+  }
+
+  $: if (selectedExternalEventType !== undefined && selectedExternalEventType.properties !== undefined && selectedExternalEventType?.required_properties !== undefined) {
+    Object.entries(selectedExternalEventType.properties).forEach(property => {
+      if (selectedExternalEventType?.required_properties.includes(property[0])) {
+        selectedExternalEventTypeRequiredProperties[property[0]] = property[1];
+      } else {
+        selectedExternalEventTypeOptionalProperties[property[0]] = property[1];
+      }
+    });
+  }
+
+  $: selectedExternalEventTypeDerivationGroups = $derivationGroups.filter(derivationGroup => {
+    if (selectedExternalEventType !== undefined) {
+      return derivationGroup.event_types.includes(selectedExternalEventType.name);
     } else {
       return false;
     }
@@ -350,6 +391,13 @@
       return featurePermissions.derivationGroup.canDelete(user, derivationGroup);
     }
   }
+
+  function handleTabChange() {
+    selectedDerivationGroup = undefined;
+    selectedExternalSourceType = undefined;
+    selectedExternalEventType = undefined;
+    modalColumnSize = modalColumnSizeNoDetail;
+  }
 </script>
 
 <Modal height={700} width={1000}>
@@ -358,11 +406,11 @@
     <CssGrid class="modal-grid" columns={modalColumnSize} minHeight="100%">
       <div class="derivation-groups-modal-filter-container">
         <div class="derivation-groups-modal-content">
-          <Tabs class="management-tabs" tabListClassName="management-tabs-list">
+          <Tabs class="management-tabs" tabListClassName="management-tabs-list" on:select-tab={handleTabChange}>
             <svelte:fragment slot="tab-list">
-              <Tab class="management-tab">Derivation Group</Tab>
-              <Tab class="management-tab">External Source Type</Tab>
-              <Tab class="management-tab">External Event Type</Tab>
+              <Tab class="management-tab" tabId={derivationGroupTabId}>Derivation Group</Tab>
+              <Tab class="management-tab" tabId={externalSourceTypeTabId}>External Source Type</Tab>
+              <Tab class="management-tab" tabId={externalEventTypeTabId}>External Event Type</Tab>
             </svelte:fragment>
             <TabPanel>
               <DerivationGroupManagementTab {derivationGroupColumnsDef} {filterString} />
@@ -434,8 +482,8 @@
         <CssGridGutter track={1} type="column" />
         <Panel borderRight padBody={true}>
           <svelte:fragment slot="header">
-            <SectionTitle overflow="hidden">
-              <ExternalSourceIcon slot="icon" />Derivation Groups of Type '{selectedExternalSourceType.name}'
+            <SectionTitle>
+              <ExternalSourceIcon slot="icon" />{selectedExternalSourceType.name} Details
             </SectionTitle>
           </svelte:fragment>
           <svelte:fragment slot="body">
@@ -467,6 +515,133 @@
             {:else}
               <p class="st-typography-body">No sources associated with this External Source Type.</p>
             {/if}
+            <Collapse
+              title="Required Metadata"
+              tooltipContent="${selectedExternalSourceType.name} Required Metadata"
+              defaultExpanded={false}
+            >
+              {#if Object.keys(selectedExternalSourceTypeRequiredMetadata).length > 0}
+                  {#each Object.entries(selectedExternalSourceTypeRequiredMetadata) as externalSourceTypeMetadata}
+                    <div class="st-typography-body parameters">
+                      <div class="parameter-name">{externalSourceTypeMetadata[0]}</div>
+                      <div class="parameter-type">{externalSourceTypeMetadata[1].schema}</div>
+                    </div>
+                  {/each}
+              {:else}
+                <div class="st-typography-body">No required metadata defined for this event type.</div>
+              {/if}
+            </Collapse>
+            <Collapse
+              title="Optional Metadata"
+              tooltipContent="${selectedExternalSourceType.name} Optional Metadata"
+              defaultExpanded={false}
+            >
+              {#if Object.keys(selectedExternalSourceTypeOptionalMetadata).length > 0}
+                  {#each Object.entries(selectedExternalSourceTypeOptionalMetadata) as externalSourceTypeMetadata}
+                    <div class="st-typography-body parameters">
+                      <div class="parameter-name">{externalSourceTypeMetadata[0]}</div>
+                      <div class="parameter-type">{externalSourceTypeMetadata[1].schema}</div>
+                    </div>
+                  {/each}
+              {:else}
+                <div class="st-typography-body">No optional metadata defined for this event type.</div>
+              {/if}
+            </Collapse>
+          </svelte:fragment>
+        </Panel>
+      {:else if selectedExternalEventType !== undefined}
+        <!--The introduction of schemas should allow this to be greatly simplified, as source types imply event types.
+              Need to think about the strictness of EE Type and ES Type pairings, and whether the former can exist
+              without an association with the former.-->
+        <CssGridGutter track={1} type="column" />
+        <Panel borderRight padBody={true}>
+          <svelte:fragment slot="header">
+            <SectionTitle>
+              <ExternalSourceIcon slot="icon" />{selectedExternalEventType.name} Details
+            </SectionTitle>
+          </svelte:fragment>
+          <svelte:fragment slot="body">
+            {#if selectedExternalEventTypeDerivationGroups.length > 0}
+              {#each selectedExternalEventTypeDerivationGroups as associatedDerivationGroup}
+                <!-- Collapsible details -->
+                <Collapse
+                  title={associatedDerivationGroup.name}
+                  tooltipContent={associatedDerivationGroup.name}
+                  defaultExpanded={false}
+                >
+                  <svelte:fragment slot="right">
+                    <p class="st-typography-body derived-event-count">
+                      {associatedDerivationGroup.derived_event_total} events
+                    </p>
+                  </svelte:fragment>
+                  <div class="st-typography-body">
+                    <div class="st-typography-bold">Name:</div>
+                    {associatedDerivationGroup.name}
+                  </div>
+
+                  <div class="st-typography-body">
+                    <div class="st-typography-bold">Source Type:</div>
+                    {associatedDerivationGroup.source_type_name}
+                  </div>
+
+                  <Collapse
+                    className="anchor-collapse"
+                    defaultExpanded={false}
+                    title="Event Types"
+                    tooltipContent="View Contained Event Types"
+                  >
+                    {#each associatedDerivationGroup.event_types as eventType}
+                      <i class="st-typography-body">{eventType}</i>
+                    {/each}
+                  </Collapse>
+
+                  <Collapse
+                    className="anchor-collapse"
+                    defaultExpanded={false}
+                    title="Sources"
+                    tooltipContent="View Contained External Sources"
+                  >
+                    {#each associatedDerivationGroup.sources as source}
+                      <i class="st-typography-body">{source[0]}</i>
+                    {/each}
+                  </Collapse>
+                </Collapse>
+              {/each}
+            {:else}
+              <div class="st-typography-body">No sources containing this event type.</div>
+            {/if}
+            <Collapse
+              title="Required Properties"
+              tooltipContent="${selectedExternalEventType.name} Required Properties"
+              defaultExpanded={false}
+            >
+              {#if Object.keys(selectedExternalEventTypeRequiredProperties).length > 0}
+                  {#each Object.entries(selectedExternalEventTypeRequiredProperties) as externalEventTypeProperty}
+                    <div class="st-typography-body parameters">
+                      <div class="parameter-name">{externalEventTypeProperty[0]}</div>
+                      <div class="parameter-type">{externalEventTypeProperty[1].schema}</div>
+                    </div>
+                  {/each}
+              {:else}
+                <div class="st-typography-body">No required properties defined for this event type.</div>
+              {/if}
+            </Collapse>
+            <Collapse
+              title="Optional Properties"
+              tooltipContent="${selectedExternalEventType.name} Optional Properties"
+              defaultExpanded={false}
+            >
+              {#if Object.keys(selectedExternalEventTypeOptionalProperties).length > 0}
+                  {#each Object.entries(selectedExternalEventTypeOptionalProperties) as externalEventTypeProperty}
+                    <div class="st-typography-body parameters">
+                      <div class="parameter-name">{externalEventTypeProperty[0]}</div>
+                      <div class="parameter-type">{externalEventTypeProperty[1].schema}</div>
+                    </div>
+                  {/each}
+              {:else}
+                <div class="st-typography-body">No optional properties defined for this event type.</div>
+              {/if}
+            </Collapse>
           </svelte:fragment>
         </Panel>
       {/if}
@@ -538,19 +713,19 @@
     height: 100%;
   }
 
-  .external-event-type-properties {
+  .parameters {
     display: flex;
     width: 100%;
   }
 
-  .property-name {
+  .parameter-name {
     display: flex;
     font-weight: bold;
     justify-content: flex-start;
     width: 100%;
   }
 
-  .property-type {
+  .parameter-type {
     color: var(--st-gray-60);
     display: flex;
     font-style: italic;

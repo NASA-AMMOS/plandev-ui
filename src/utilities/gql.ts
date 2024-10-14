@@ -483,26 +483,8 @@ const gql = {
 
   CREATE_EXTERNAL_SOURCE: `#graphql
     mutation CreateExternalSource(
-      $derivation_group: derivation_group_insert_input!,
       $source: external_source_insert_input!,
-      $source_type: external_source_type_insert_input!,
     ) {
-      upsertExternalSourceType: ${Queries.INSERT_EXTERNAL_SOURCE_TYPE} (
-        object: $source_type,
-        on_conflict: {
-          constraint: external_source_type_pkey
-        }
-      ) {
-        name
-      }
-      upsertDerivationGroup: ${Queries.INSERT_DERIVATION_GROUP} (
-        object: $derivation_group,
-        on_conflict: {
-          constraint: derivation_group_pkey
-        }
-      ) {
-        name
-      }
       createExternalSource: ${Queries.INSERT_EXTERNAL_SOURCE}(object: $source) {
         end_time,
         key,
@@ -518,6 +500,8 @@ const gql = {
     mutation CreateExternalSourceType($sourceType: external_source_type_insert_input!) {
       createExternalSourceType: ${Queries.INSERT_EXTERNAL_SOURCE_TYPE}(object: $sourceType) {
         name
+        metadata
+        required_metadata
       }
     }
   `,
@@ -2528,6 +2512,8 @@ const gql = {
     subscription SubExternalSourceTypes {
       models: ${Queries.EXTERNAL_SOURCE_TYPES}(order_by: { name: asc }) {
         name
+        metadata
+        required_metadata
       }
     }
   `,
