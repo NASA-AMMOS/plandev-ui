@@ -970,6 +970,7 @@
             selectedItemId={selectedPlanId ?? null}
             on:deleteItem={event => deletePlanContext(event, filteredPlans)}
             on:rowClicked={({ detail }) => selectPlan(detail.data.id)}
+            on:rowDoubleClicked={({ detail }) => openPlan(detail.data.id)}
           />
         {:else}
           No Plans Found
