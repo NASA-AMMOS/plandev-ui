@@ -46,22 +46,24 @@
     }
   }
 
-  $: {
-    // getFilterValuesForLayer
+  $: filterValues = getFilterValuesForLayer(layer);
+
+  function getFilterValuesForLayer(layer: Layer) {
     if (isActivityLayer(layer)) {
       const activityLayer = layer;
-      const activityTypes = activityLayer.filter?.activity?.types ?? [];
-      filterValues = [...activityTypes];
+      const activityTypes = activityLayer.filter?.activity?.static_types ?? [];
+      return [...activityTypes];
+    } else if (isLineLayer(layer) || isXRangeLayer(layer)) {
+      const resourceLayer = layer;
+      const resourceNames = resourceLayer.filter?.resource?.names ?? [];
+      return [...resourceNames];
     } else if (isExternalEventLayer(layer)) {
       // NOTE: if a derivation group is disabled, this doesn't get invoked and does not update. however, on dissociation it does.
       const externalEventLayer = layer;
       const externalEventTypes = externalEventLayer.filter?.externalEvent?.event_types ?? [];
-      filterValues = [...externalEventTypes];
-    } else if (isLineLayer(layer) || isXRangeLayer(layer)) {
-      const resourceLayer = layer;
-      const resourceNames = resourceLayer.filter?.resource?.names ?? [];
-      filterValues = [...resourceNames];
+      return [...externalEventTypes];
     }
+    return [];
   }
 
   function handleDeleteLayerFilterValue(value: string) {

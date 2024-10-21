@@ -22,14 +22,14 @@ export function generateDefaultView(
   externalEventTypes: ExternalEventType[] = [],
 ): View {
   const now = new Date().toISOString();
-  const types: string[] = activityTypes.map(({ name }) => name);
+  // const types: string[] = activityTypes.map(({ name }) => name);
 
   const timeline = createTimeline([], { marginLeft: 250, marginRight: 30 });
   const timelines = [timeline];
 
   // Start with the activity row
   const activityLayer = createTimelineActivityLayer(timelines, {
-    filter: { activity: { types } },
+    // filter: { activity: { dynamic_type_filters: [{ field: 'Type', operator: 'includes', value: 'Banana' }] } },
   });
   const activityRow = createRow(timelines, {
     autoAdjustHeight: true,

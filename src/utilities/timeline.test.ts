@@ -5,12 +5,15 @@ import {
   ViewLineLayerColorPresets,
   ViewXRangeLayerSchemePresets,
 } from '../constants/view';
-import type { ActivityDirective } from '../types/activity';
+import type { ActivityDirective, ActivityType } from '../types/activity';
 import type { ExternalEvent } from '../types/external-event';
 import type { Resource, ResourceType, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
-import type { DiscreteTreeNode, TimeRange, Timeline, XRangeLayer } from '../types/timeline';
+import type { Tag } from '../types/tags';
+import type { ActivityLayerFilter, DiscreteTreeNode, TimeRange, Timeline, XRangeLayer } from '../types/timeline';
 import { createSpanUtilityMaps } from './activities';
+import { convertUTCToMs } from './time';
 import {
+  applyActivityLayerFilter,
   createHorizontalGuide,
   createRow,
   createTimeline,
@@ -37,7 +40,6 @@ import {
   paginateNodes,
   spanInView,
 } from './timeline';
-import { convertUTCToMs } from './time';
 
 const testSpans: Span[] = [
   generateSpan({
@@ -197,6 +199,10 @@ function generateActivityDirective(properties: Partial<ActivityDirective>): Acti
   };
 }
 
+function generateTag(properties: Partial<Tag>): Tag {
+  return { color: '#FFFFFF', created_at: '', id: -1, name: '', owner: '', ...properties };
+}
+
 function generateSpan(properties: Partial<Span>): Span {
   return {
     attributes: { arguments: {}, computedAttributes: {} },
@@ -226,6 +232,30 @@ function generateExternalEvent(properties: Partial<ExternalEvent>): ExternalEven
     source: undefined,
     start_ms: 0,
     start_time: '',
+    ...properties,
+  };
+}
+
+function generateDirective(properties: Partial<ActivityDirective>): ActivityDirective {
+  return {
+    anchor_id: null,
+    anchored_to_start: true,
+    applied_preset: null,
+    arguments: {},
+    created_at: '2022-08-03T18:21:51',
+    created_by: 'admin',
+    id: 1,
+    last_modified_arguments_at: '2022-08-03T21:53:22',
+    last_modified_at: '2022-08-03T21:53:22',
+    last_modified_by: 'admin',
+    metadata: {},
+    name: 'foo 1',
+    plan_id: 1,
+    source_scheduling_goal_id: null,
+    start_offset: '10:00:00',
+    start_time_ms: 1715731443696,
+    tags: [],
+    type: 'foo',
     ...properties,
   };
 }
@@ -1234,4 +1264,54 @@ describe('getTimeRangeAroundTime', () => {
     });
     expect(timeRange.end - timeRange.start).toBe(48 * hourInMs);
   });
+});
+
+test('applyActivityLayerFilter', () => {
+  const activityTypes: ActivityType[] = [
+    {
+      computed_attributes_value_schema: { items: {}, type: 'struct' },
+      name: 'foo',
+      parameters: {},
+      required_parameters: [],
+    },
+    {
+      computed_attributes_value_schema: { items: {}, type: 'struct' },
+      name: 'bar',
+      parameters: {},
+      required_parameters: [],
+      subsystem_tag: {
+        color: '#FFFFFF',
+        created_at: '2022-08-03T18:21:51',
+        id: 1,
+        name: 'subsystem 1',
+        owner: 'frog',
+      },
+    },
+  ];
+  const tags: Tag[] = [generateTag({ id: 1 }), generateTag({ id: 2 })];
+  const filter: ActivityLayerFilter = {
+    dynamic_type_filters: [
+      { field: 'Type', operator: 'includes', value: 'oo' },
+      // { field: 'Type', operator: 'includes', value: 't' },
+      // { field: 'Type', operator: 'does not equal', value: 'bat' },
+      // { field: 'Subsystem', operator: 'does not include', value: [1] },
+    ],
+    // global_filters: [{ field: 'Tag', operator: 'includes', value: [1] }],
+    static_types: [],
+    type_subfilters: {
+      bat: [{ field: 'Tag', operator: 'includes', value: [1] }],
+    },
+  };
+  const directives: ActivityDirective[] = [
+    generateDirective({ id: 1, type: 'foo' }),
+    generateDirective({ id: 2, type: 'foo' }),
+    generateDirective({ id: 3, type: 'bar' }),
+    generateDirective({ id: 4, tags: [{ tag: generateTag({ id: 1 }) }], type: 'bat' }),
+    generateDirective({ id: 5, tags: [{ tag: generateTag({ id: 2 }) }], type: 'bat' }),
+    generateDirective({ id: 6, tags: [{ tag: generateTag({ id: 1 }) }], type: 'bop' }),
+  ];
+
+  expect(applyActivityLayerFilter(filter, directives, [], activityTypes).directives.map(d => d.id)).to.deep.eq([
+    1, 2, 3, 4,
+  ]);
 });

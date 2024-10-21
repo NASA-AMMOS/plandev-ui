@@ -576,7 +576,7 @@ export function getUpdatedLayerWithFilters(
       return {
         layer: createTimelineActivityLayer(timelines, {
           activityColor: getUniqueColorForActivityLayer(row),
-          filter: { activity: { types: itemNames } },
+          filter: { activity: { static_types: itemNames } },
         }),
       };
     } else if (type === 'externalEvent') {

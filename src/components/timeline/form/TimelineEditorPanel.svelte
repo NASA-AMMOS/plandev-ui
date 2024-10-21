@@ -330,7 +330,7 @@
             filter: {
               ...currentLayer.filter,
               activity: {
-                types: values,
+                static_types: values,
               },
             },
           };
