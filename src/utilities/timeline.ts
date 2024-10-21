@@ -13,18 +13,21 @@ import {
   type CountableTimeInterval,
   type TimeInterval,
 } from 'd3-time';
-import { groupBy } from 'lodash-es';
+import { groupBy, isArray } from 'lodash-es';
 import {
   ViewDefaultDiscreteOptions,
   ViewDiscreteLayerColorPresets,
   ViewLineLayerColorPresets,
   ViewXRangeLayerSchemePresets,
 } from '../constants/view';
-import type { ActivityDirective } from '../types/activity';
+import type { ActivityDirective, ActivityType } from '../types/activity';
 import type { ExternalEvent } from '../types/external-event';
 import type { Resource, ResourceType, ResourceValue, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type {
   ActivityLayer,
+  ActivityLayerDynamicFilter,
+  ActivityLayerFilter,
+  ActivityLayerFilterField,
   ActivityOptions,
   Axis,
   DiscreteTree,
@@ -575,11 +578,7 @@ export function createTimelineActivityLayer(timelines: Timeline[], args: Partial
   return {
     activityColor: ViewDiscreteLayerColorPresets[0],
     chartType: 'activity',
-    filter: {
-      activity: {
-        types: [],
-      },
-    },
+    filter: { activity: {} },
     id,
     name: '',
     yAxisId: null,
@@ -1386,4 +1385,129 @@ export function paginateNodes(
     node.expanded = getNodeExpanded(node.id, discreteTreeExpansionMap);
   });
   return paginateNodes(newNodes, activityOrEvent, parentId, discreteTreeExpansionMap, depth + 1);
+}
+
+export function applyActivityLayerFilter(
+  filter: ActivityLayerFilter,
+  directives: ActivityDirective[],
+  spans: Span[],
+  types: ActivityType[],
+) {
+  // const directivesByType = groupBy(directives, 'type');
+  // const spansByType = groupBy(spans, 'type');
+  const staticTypeMap: Record<string, boolean> = (filter.static_types || []).reduce((acc, cur) => {
+    acc[cur] = true;
+    return acc;
+  }, {});
+  // TODO could be passed in to avoid recomputing this
+  const typeDefMap: Record<string, ActivityType> = (types || []).reduce((acc, cur) => {
+    acc[cur.name] = cur;
+    return acc;
+  }, {});
+
+  let filteredDirectives = directives;
+  if (filter.static_types?.length || filter.dynamic_type_filters?.length) {
+    filteredDirectives = directives.filter(directive => {
+      let included = true;
+
+      // Check to see if directive is included in static list
+      if (filter.static_types?.length) {
+        included = !!staticTypeMap[directive.type];
+      }
+
+      // Check if necessary to see if directive is included in dynamic list
+      if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
+        included = directiveMatchesDynamicFilters(directive, filter.dynamic_type_filters, typeDefMap);
+      }
+
+      // Apply global filters on top of the types
+      if (filter.global_filters?.length) {
+        included = directiveMatchesDynamicFilters(directive, filter.global_filters, typeDefMap);
+      }
+
+      // Apply type specific filters if found
+      if (included && filter.type_subfilters && filter.type_subfilters[directive.type]) {
+        included = directiveMatchesDynamicFilters(directive, filter.type_subfilters[directive.type], typeDefMap);
+      }
+      return included;
+    });
+  }
+
+  console.log(
+    'filteredDirectives :>> ',
+    filteredDirectives.map(x => x.id),
+    directives,
+  );
+  return { directives: filteredDirectives, spans };
+}
+
+export function directiveMatchesDynamicFilters(
+  directive: ActivityDirective,
+  dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
+  activityTypeDefMap: Record<string, ActivityType>,
+): boolean {
+  return dynamicFilters.reduce((acc, curr) => {
+    let matches = false;
+    if (curr.field === 'Type') {
+      matches = matchesDynamicFilter(directive.type, curr.operator, curr.value);
+    } else if (curr.field === 'Subsystem') {
+      // Get subsystem tag for this directive
+      let subsystemTagId = -1;
+      const typeDef = activityTypeDefMap[directive.type];
+      if (typeDef?.subsystem_tag?.id) {
+        subsystemTagId = typeDef.subsystem_tag.id;
+      }
+      matches = matchesDynamicFilter(subsystemTagId, curr.operator, curr.value);
+    } else if (curr.field === 'Tag') {
+      const ids = directive.tags.map(tag => tag.tag.id);
+      console.log('ids :>> ', ids);
+      matches = matchesDynamicFilter(ids, curr.operator, curr.value);
+      console.log('matches :>> ', matches);
+    }
+    return acc || matches;
+  }, false);
+}
+
+export function matchesDynamicFilter(
+  itemValue: ActivityLayerDynamicFilter<ActivityLayerFilterField>['value'], // the actual value
+  operator: ActivityLayerDynamicFilter<ActivityLayerFilterField>['operator'],
+  filterValue: ActivityLayerDynamicFilter<ActivityLayerFilterField>['value'], // the value(s) we're comparing against
+) {
+  switch (operator) {
+    case 'equals':
+      return itemValue === filterValue;
+    case 'does not equal':
+      return itemValue !== filterValue;
+    case 'includes':
+      if (typeof filterValue === 'string' && typeof itemValue === 'string') {
+        return itemValue.indexOf(filterValue) > -1;
+      } else if (isArray(filterValue)) {
+        return !!(isArray(itemValue) ? itemValue : [itemValue]).find(
+          item => (filterValue as (typeof itemValue)[]).indexOf(item) > -1,
+        );
+      }
+      return false;
+    case 'does not include':
+      console.log('here', filterValue, itemValue);
+      if (typeof filterValue === 'string' && typeof itemValue === 'string') {
+        return itemValue.indexOf(filterValue) < 0;
+      } else if (isArray(filterValue)) {
+        return !(isArray(itemValue) ? itemValue : [itemValue]).find(
+          item => (filterValue as (typeof itemValue)[]).indexOf(item) > -1,
+        );
+      }
+      return false;
+    case 'is one of':
+      if (!isArray(filterValue)) {
+        return itemValue === filterValue;
+      }
+      return (filterValue as (typeof itemValue)[]).indexOf(itemValue) > -1;
+    case 'is not one of':
+      if (!isArray(filterValue)) {
+        return itemValue !== filterValue;
+      }
+      return (filterValue as (typeof itemValue)[]).indexOf(itemValue) < 0;
+    default:
+      return false;
+  }
 }

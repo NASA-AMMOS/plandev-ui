@@ -31,11 +31,42 @@ export interface ExternalEventLayer extends Layer {
 }
 
 export type ActivityLayerFilter = {
-  types: string[];
+  dynamic_type_filters?: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>>[];
+  global_filters?: ActivityLayerDynamicFilter<
+    Pick<typeof ActivityLayerFilterField, 'Tag' | 'Parameter' | 'SchedulingGoalId'>
+  >[];
+  static_types?: string[];
+  type_subfilters?: Record<string, ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[]>;
 };
 export type ExternalEventLayerFilter = {
   event_types: string[];
 };
+
+export enum ActivityLayerFilterField {
+  'Type' = 'Type',
+  'Subsystem' = 'Subsystem',
+  'Tag' = 'Tag',
+  'Parameter' = 'Parameter',
+  'SchedulingGoalId' = 'SchedulingGoalId',
+}
+
+export type ActivityLayerDynamicFilter<T> = {
+  field: keyof T;
+  operator: FilterOperator;
+  value: string | string[] | number | number[];
+};
+
+export type FilterOperator =
+  | 'equals'
+  | 'does not equal'
+  | 'includes'
+  | 'does not include'
+  | 'is one of'
+  | 'is not one of'
+  | 'greater than'
+  | 'less than'
+  | 'is within'
+  | 'is not within';
 
 export type AxisDomainFitMode = 'fitPlan' | 'fitTimeWindow' | 'manual';
 
@@ -92,7 +123,6 @@ export type ChartType = 'activity' | 'line' | 'x-range' | 'externalEvent';
 export interface Layer {
   chartType: ChartType;
   filter: {
-    // TODO refactor in next PR to a unified filter
     activity?: ActivityLayerFilter;
     externalEvent?: ExternalEventLayerFilter;
     resource?: ResourceLayerFilter;
