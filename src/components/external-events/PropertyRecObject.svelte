@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { ExternalEventProperty } from '../../types/external-event-property';
+  import type { ExternalEventMetadata } from '../../types/external-event-metadata';
   import { compare } from '../../utilities/generic';
   import Collapse from '../Collapse.svelte';
   import Highlight from '../ui/Highlight.svelte';
@@ -9,10 +9,10 @@
   import PropertyRec from './PropertyRec.svelte';
 
   export let formPropertyName: string = '';
-  export let formProperties: ExternalEventProperty[] = [];
+  export let formProperties: ExternalEventMetadata[] = [];
   export let highlightKeysMap: Record<string, boolean> = {};
 
-  let sortedFormProperties: ExternalEventProperty[] = [];
+  let sortedFormProperties: ExternalEventMetadata[] = [];
   let expanded = true;
 
   $: sortedFormProperties = formProperties.sort((a, b) => compare(a.name, b.name));

@@ -51,6 +51,7 @@
   const modalColumnSizeNoDetail: string = '1fr 3px 0fr';
   const modalColumnSizeWithDetailDerivationGroup: string = '3fr 3px 1.3fr';
   const modalColumnSizeWithDetailExternalSourceType: string = '2fr 3px 1.2fr';
+  const modalColumnSizeWithDetailExternalEventType: string = '2fr 3px 1.2fr';
 
   const derivationGroupTabId: TabId = 'derivationGroup';
   const externalSourceTypeTabId: TabId = 'externalSourceType';
@@ -140,8 +141,8 @@
 
   let selectedExternalEventType: ExternalEventType | undefined = undefined;
   let selectedExternalEventTypeDerivationGroups: DerivationGroup[] = [];
-  let selectedExternalEventTypeRequiredProperties: ParametersMap = {};
-  let selectedExternalEventTypeOptionalProperties: ParametersMap = {};
+  let selectedExternalEventTypeRequiredMetadata: ParametersMap = {};
+  let selectedExternalEventTypeOptionalMetadata: ParametersMap = {};
 
   $: hasDeleteExternalSourceTypePermission = featurePermissions.externalSourceType.canDelete(user);
   $: hasDeleteExternalEventTypePermission = featurePermissions.externalEventType.canDelete(user);
@@ -168,23 +169,24 @@
     });
   }
 
-  $: if (selectedExternalEventType !== undefined && selectedExternalEventType.properties !== undefined && selectedExternalEventType?.required_properties !== undefined) {
-    Object.entries(selectedExternalEventType.properties).forEach(property => {
-      if (selectedExternalEventType?.required_properties.includes(property[0])) {
-        selectedExternalEventTypeRequiredProperties[property[0]] = property[1];
+  $: if (selectedExternalEventType !== undefined && selectedExternalEventType.metadata !== undefined && selectedExternalEventType?.required_metadata !== undefined) {
+    Object.entries(selectedExternalEventType.metadata).forEach(metadata => {
+      if (selectedExternalEventType?.required_metadata.includes(metadata[0])) {
+        selectedExternalEventTypeRequiredMetadata[metadata[0]] = metadata[1];
       } else {
-        selectedExternalEventTypeOptionalProperties[property[0]] = property[1];
+        selectedExternalEventTypeOptionalMetadata[metadata[0]] = metadata[1];
       }
     });
   }
 
-  $: selectedExternalEventTypeDerivationGroups = $derivationGroups.filter(derivationGroup => {
+  $: selectedExternalEventTypeDerivationGroups = [];
+  /**$derivationGroups.filter(derivationGroup => {
     if (selectedExternalEventType !== undefined) {
       return derivationGroup.event_types.includes(selectedExternalEventType.name);
     } else {
       return false;
     }
-  });
+  });**/
 
   $: derivationGroupColumnsDef = [
     ...derivationGroupBaseColumnDefs,
@@ -295,6 +297,11 @@
             },
             hasDeletePermission: hasDeleteExternalEventTypePermission,
             rowData: params.data,
+            viewCallback: params.viewExternalEventType,
+            viewTooltip: {
+              content: 'View External Event Type',
+              placement: 'bottom',
+            },
           },
           target: actionsDiv,
         });
@@ -303,6 +310,7 @@
       },
       cellRendererParams: {
         deleteExternalEventType,
+        viewExternalEventType,
       } as CellRendererParams,
       headerName: '',
       resizable: false,
@@ -364,10 +372,12 @@
     ) {
       selectedDerivationGroup = derivationGroup;
       selectedExternalSourceType = undefined;
+      selectedExternalEventType = undefined;
       modalColumnSize = modalColumnSizeWithDetailDerivationGroup;
     } else {
       selectedDerivationGroup = undefined;
       selectedExternalSourceType = undefined;
+      selectedExternalEventType = undefined;
       modalColumnSize = modalColumnSizeNoDetail;
     }
   }
@@ -376,10 +386,26 @@
     if (selectedExternalSourceType === undefined || selectedExternalSourceType !== sourceType) {
       selectedDerivationGroup = undefined;
       selectedExternalSourceType = sourceType;
+      selectedExternalEventType = undefined;
       modalColumnSize = modalColumnSizeWithDetailExternalSourceType;
     } else {
       selectedDerivationGroup = undefined;
       selectedExternalSourceType = undefined;
+      selectedExternalEventType = undefined;
+      modalColumnSize = modalColumnSizeNoDetail;
+    }
+  }
+
+  function viewExternalEventType(externalEventType: ExternalEventType) {
+    if (selectedExternalEventType === undefined || selectedExternalEventType !== externalEventType) {
+      selectedDerivationGroup = undefined;
+      selectedExternalSourceType = undefined;
+      selectedExternalEventType = externalEventType;
+      modalColumnSize = modalColumnSizeWithDetailExternalEventType;
+    } else {
+      selectedDerivationGroup = undefined;
+      selectedExternalSourceType = undefined;
+      selectedExternalEventType = undefined;
       modalColumnSize = modalColumnSizeNoDetail;
     }
   }
@@ -584,6 +610,7 @@
                     {associatedDerivationGroup.source_type_name}
                   </div>
 
+                  <!--
                   <Collapse
                     className="anchor-collapse"
                     defaultExpanded={false}
@@ -594,6 +621,7 @@
                       <i class="st-typography-body">{eventType}</i>
                     {/each}
                   </Collapse>
+                  -->
 
                   <Collapse
                     className="anchor-collapse"
@@ -611,35 +639,35 @@
               <div class="st-typography-body">No sources containing this event type.</div>
             {/if}
             <Collapse
-              title="Required Properties"
-              tooltipContent="${selectedExternalEventType.name} Required Properties"
+              title="Required Metadata"
+              tooltipContent="${selectedExternalEventType.name} Required Metadata"
               defaultExpanded={false}
             >
-              {#if Object.keys(selectedExternalEventTypeRequiredProperties).length > 0}
-                  {#each Object.entries(selectedExternalEventTypeRequiredProperties) as externalEventTypeProperty}
+              {#if Object.keys(selectedExternalEventTypeRequiredMetadata).length > 0}
+                  {#each Object.entries(selectedExternalEventTypeRequiredMetadata) as externalEventTypeMetadata}
                     <div class="st-typography-body parameters">
-                      <div class="parameter-name">{externalEventTypeProperty[0]}</div>
-                      <div class="parameter-type">{externalEventTypeProperty[1].schema}</div>
+                      <div class="parameter-name">{externalEventTypeMetadata[0]}</div>
+                      <div class="parameter-type">{externalEventTypeMetadata[1].schema}</div>
                     </div>
                   {/each}
               {:else}
-                <div class="st-typography-body">No required properties defined for this event type.</div>
+                <div class="st-typography-body">No required metadata defined for this event type.</div>
               {/if}
             </Collapse>
             <Collapse
-              title="Optional Properties"
-              tooltipContent="${selectedExternalEventType.name} Optional Properties"
+              title="Optional Metadata"
+              tooltipContent="${selectedExternalEventType.name} Optional Metadata"
               defaultExpanded={false}
             >
-              {#if Object.keys(selectedExternalEventTypeOptionalProperties).length > 0}
-                  {#each Object.entries(selectedExternalEventTypeOptionalProperties) as externalEventTypeProperty}
+              {#if Object.keys(selectedExternalEventTypeOptionalMetadata).length > 0}
+                  {#each Object.entries(selectedExternalEventTypeOptionalMetadata) as externalEventTypeMetadata}
                     <div class="st-typography-body parameters">
-                      <div class="parameter-name">{externalEventTypeProperty[0]}</div>
-                      <div class="parameter-type">{externalEventTypeProperty[1].schema}</div>
+                      <div class="parameter-name">{externalEventTypeMetadata[0]}</div>
+                      <div class="parameter-type">{externalEventTypeMetadata[1].schema}</div>
                     </div>
                   {/each}
               {:else}
-                <div class="st-typography-body">No optional properties defined for this event type.</div>
+                <div class="st-typography-body">No optional metadata defined for this event type.</div>
               {/if}
             </Collapse>
           </svelte:fragment>

@@ -1,12 +1,12 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { ExternalEventProperty } from '../../types/external-event-property';
+  import type { ExternalEventMetadata } from '../../types/external-event-metadata';
   import Input from '../form/Input.svelte';
   import Highlight from '../ui/Highlight.svelte';
 
   export let disabled: boolean = true;
-  export let formProperty: ExternalEventProperty;
+  export let formProperty: ExternalEventMetadata;
   export let highlightKeysMap: Record<string, boolean> = {};
 
   let clientWidth: number;

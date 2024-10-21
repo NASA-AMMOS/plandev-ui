@@ -362,6 +362,7 @@
     try {
       try {
         parsedExternalSource = await parseJSONStream<ExternalSourceJson>(stream);
+        console.log(parsedExternalSource);
       } catch (error) {
         throw new Error('External Source has Invalid Format');
       }

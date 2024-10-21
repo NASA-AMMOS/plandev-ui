@@ -1002,6 +1002,7 @@ const effects = {
             duration: externalEvent.duration,
             event_type_name: externalEvent.event_type,
             key: externalEvent.key,
+            metadata: externalEvent.metadata,
             start_time: externalEvent.start_time,
           });
         }
@@ -1009,6 +1010,8 @@ const effects = {
 
       externalSourceInsert.external_events.data = externalEventsCreated;
       externalEventsCreated = [];
+
+      console.log(externalSourceInsert.external_events.data);
 
       const { createExternalSource: createExternalSourceResponse } = await reqHasura(
         gql.CREATE_EXTERNAL_SOURCE,
@@ -3763,6 +3766,7 @@ const effects = {
         externalEvents.push({
           duration: event.duration,
           duration_ms: getIntervalInMs(event.duration),
+          metadata: event.metadata,
           pkey: {
             derivation_group_name: event.derivation_group_name,
             event_type_name: event.event_type_name,

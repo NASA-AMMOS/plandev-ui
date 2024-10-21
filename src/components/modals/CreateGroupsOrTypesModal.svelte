@@ -50,9 +50,9 @@
 
   // External event type variables
   let hasCreateExternalEventTypePermission: boolean = false;
-  let newExternalEventTypePropertiesCount: number = 1;
+  let newExternalEventTypeMetadataCount: number = 1;
   let newExternalEventTypeName: string | null = null;
-  let newExternalEventTypeProperties: ParameterEntry[] = [];
+  let newExternalEventTypeMetadata: ParameterEntry[] = [];
 
   let creationError: string | null = null;
   let hasCreationPermissionForCurrentTab: boolean = false;
@@ -121,30 +121,30 @@
   function onCreateExternalEventType() {
     if (newExternalEventTypeName === null) {
       creationError = 'Please enter a new name.'
-    } else if (newExternalEventTypeProperties === undefined) {
-      creationError = `Unable to create the properties of '${newExternalEventTypeName}.'`;
+    } else if (newExternalEventTypeMetadata === undefined) {
+      creationError = `Unable to create the metadata of '${newExternalEventTypeName}.'`;
     } else {
-      // Create the ParameterMap for all of the type's properties
-      const newExternalEventTypePropertyObjects = newExternalEventTypeProperties.map(newProperty => newProperty.getParameterEntry());
-      const newExternalEventTypePropertyParameterMap: ParametersMap = {};
-      newExternalEventTypePropertyObjects.forEach((newProperty, index) => {
-        newExternalEventTypePropertyParameterMap[newProperty.name] = {
+      // Create the ParameterMap for all of the type's metadata
+      const newExternalEventTypeMetadataObjects = newExternalEventTypeMetadata.map(newMetadata => newMetadata.getParameterEntry());
+      const newExternalEventTypeMetadataParameterMap: ParametersMap = {};
+      newExternalEventTypeMetadataObjects.forEach((newMetadata, index) => {
+        newExternalEventTypeMetadataParameterMap[newMetadata.name] = {
           order: index,
-          schema: newProperty.type
+          schema: newMetadata.type
         }
       });
-      // Create list of all required properties for the type
-      const requiredProperties: ParameterName[] = newExternalEventTypePropertyObjects.filter(property => property.isRequired === true).map(property => property.name);
+      // Create list of all required metadata for the type
+      const requiredMetadata: ParameterName[] = newExternalEventTypeMetadataObjects.filter(metadata => metadata.isRequired === true).map(metadata => metadata.name);
       // Generate Hasura mutation input
       const externalEventTypeInsertInput: ExternalEventTypeInsertInput = {
+        metadata: newExternalEventTypeMetadataParameterMap,
         name: newExternalEventTypeName,
-        properties: newExternalEventTypePropertyParameterMap,
-        required_properties: requiredProperties,
+        required_metadata: requiredMetadata,
       };
       effects.createExternalEventType(externalEventTypeInsertInput, user);
       newExternalEventTypeName = null;
-      newExternalEventTypeProperties = [];
-      newExternalEventTypePropertiesCount = 1;
+      newExternalEventTypeMetadata = [];
+      newExternalEventTypeMetadataCount = 1;
     }
   }
 
@@ -241,7 +241,7 @@
                 />
               {/each}
               <button
-                class="st-button icon add-property-button"
+                class="st-button icon add-metadata-button"
                 on:click={() => {newExternalSourceTypeMetadataCount++;}}
               >
                 <PlusIcon/>
@@ -263,20 +263,15 @@
                 class="st-input w-100"
                 placeholder="New External Event Type Name"
               />
-              {#each Array(newExternalEventTypePropertiesCount) as _, externalEventTypePropertyIndex}
+              {#each Array(newExternalEventTypeMetadataCount) as _, externalEventTypeMetadataIndex}
                 <ParameterEntry
-                  bind:this={newExternalEventTypeProperties[externalEventTypePropertyIndex]}
-                  newParameterNamePlaceholder="New External Event Type Property Name"
+                  bind:this={newExternalEventTypeMetadata[externalEventTypeMetadataIndex]}
+                  newParameterNamePlaceholder="New External Event Type Metadata Name"
                 />
               {/each}
               <button
-                class="st-button w-10"
-                type="submit"
-                on:click|preventDefault={onCreateExternalEventType}
-                use:permissionHandler={{
-                  hasPermission: hasCreateExternalEventTypePermission,
-                  permissionError: 'You do not have permission to create an external event type.',
-                }}
+                class="st-button icon add-metadata-button"
+                on:click={() => {newExternalEventTypeMetadataCount++;}}
               >
                 <PlusIcon/>
               </button>
@@ -342,7 +337,7 @@
       -1px 0px 0px inset var(--st-gray-20);
   }
 
-  .add-property-button {
+  .add-metadata-button {
     background: var(--st-gray-20);
   }
 

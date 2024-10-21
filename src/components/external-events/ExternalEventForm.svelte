@@ -65,6 +65,24 @@
           />
         </Input>
       </Collapse>
+      <Collapse title="Metadata">
+        {#if externalEvent.metadata !== undefined}
+          {#each Object.entries(externalEvent.metadata) as externalEventMetadata}
+            <Input layout="inline">
+              {externalEventMetadata[0]}
+              <input
+                class="st-input w-100"
+                disabled={true}
+                value={externalEventMetadata[1]}
+              />
+            </Input>
+          {/each}
+        {:else}
+          <div class="st-typography-body">
+            This external event does not contain any metadata.
+          </div>
+        {/if}
+      </Collapse>
     </fieldset>
   </div>
 </div>
