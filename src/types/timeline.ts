@@ -1,33 +1,41 @@
 import type { Selection } from 'd3-selection';
-import type { ActivityDirective, ActivityType } from './activity';
+import type { ActivityDirective, ActivityDirectiveId, ActivityType } from './activity';
 import type { ConstraintResultWithName } from './constraint';
-import type { ResourceType, Span } from './simulation';
+import type { ExternalEvent, ExternalEventId, ExternalEventType } from './external-event';
+import type { ResourceType, Span, SpanId } from './simulation';
 
-export type ActivityTree = ActivityTreeNode[];
+export type DiscreteTree = DiscreteTreeNode[];
 
-export type ActivityTreeNode = {
-  children: ActivityTreeNode[]; // Child nodes of this directive/span/aggregation
+export type DiscreteTreeNode = {
+  activity_type: undefined | 'aggregation' | 'directive' | 'span'; // when items are activity related, this applies. TODO: this design is a little awkward.
+  children: DiscreteTreeNode[];
   expanded: boolean;
   id: string;
   isLeaf: boolean;
-  items: ActivityTreeNodeItem[]; // Directives and/or spans to render on the timeline at this level of the tree
+  items: DiscreteTreeNodeItem[];
   label: string;
-  type: 'aggregation' | 'directive' | 'span';
+  type: 'Activity' | 'ExternalEvent';
 };
 
-export type ActivityTreeNodeItem = { directive?: ActivityDirective; span?: Span };
+export type DiscreteTreeNodeItem = { directive?: ActivityDirective; externalEvent?: ExternalEvent; span?: Span };
 
-export type ActivityTreeNodeDrawItem = ActivityTreeNodeItem & { startX: number };
+export type DiscreteTreeNodeDrawItem = DiscreteTreeNodeItem & { startX: number };
 
-export type ActivityTreeExpansionMap = Record<string, boolean>;
+export type DiscreteTreeExpansionMap = Record<string, boolean>;
 
 export interface ActivityLayer extends Layer {
   activityColor: string;
   activityHeight: number; // @deprecated TODO how should we deprecate view properties?
 }
+export interface ExternalEventLayer extends Layer {
+  externalEventColor: string;
+}
 
 export type ActivityLayerFilter = {
   types: string[];
+};
+export type ExternalEventLayerFilter = {
+  event_types: string[];
 };
 
 export type AxisDomainFitMode = 'fitPlan' | 'fitTimeWindow' | 'manual';
@@ -80,13 +88,14 @@ export type Label = {
   text: string;
 };
 
-export type ChartType = 'activity' | 'line' | 'x-range';
+export type ChartType = 'activity' | 'line' | 'x-range' | 'externalEvent';
 
 export interface Layer {
   chartType: ChartType;
   filter: {
     // TODO refactor in next PR to a unified filter
     activity?: ActivityLayerFilter;
+    externalEvent?: ExternalEventLayerFilter;
     resource?: ResourceLayerFilter;
   };
   id: number;
@@ -108,11 +117,12 @@ export interface LinePoint extends Point {
 }
 
 export type MouseDown = {
-  activityDirectives: ActivityDirective[];
+  activityDirectives?: ActivityDirective[];
   e: MouseEvent;
+  externalEvents?: ExternalEvent[];
   layerId?: number;
   rowId?: number;
-  spans: Span[];
+  spans?: Span[];
   timelineId?: number;
 };
 
@@ -120,27 +130,30 @@ export type MouseOver = {
   activityDirectives?: ActivityDirective[];
   constraintResults?: ConstraintResultWithName[];
   e: MouseEvent;
+  externalEvents?: ExternalEvent[];
   gapsByLayer?: Record<number, Point[]>;
   layerId?: number; //TODO not relevant since we sometimes have multiple layers per click
   origin?: MouseOverOrigin; //TODO perhaps remove this
   pointsByLayer?: Record<number, Point[]>;
   row?: Row;
-  selectedActivityDirectiveId?: number;
-  selectedSpanId?: number;
+  selectedActivityDirectiveId?: ActivityDirectiveId | undefined;
+  selectedExternalEventId?: ExternalEventId | undefined;
+  selectedSpanId?: SpanId;
   spans?: Span[];
 };
 
 export type RowMouseOverEvent = Omit<
   MouseOver,
-  'activityDirectivesByLayer' | 'gapsByLayer' | 'pointsByLayer' | 'spansByLayer'
+  'activityDirectivesByLayer' | 'externalEventsByLayer' | 'gapsByLayer' | 'pointsByLayer' | 'spansByLayer'
 > & {
   activityDirectives?: ActivityDirective[];
+  externalEvents?: ExternalEvent[];
   gaps?: Point[];
   points?: Point[];
   spans?: Span[];
 };
 
-export type MouseOverOrigin = 'row-header' | 'layer-line' | 'layer-activity' | 'layer-x-range';
+export type MouseOverOrigin = 'row-header' | 'layer-line' | 'layer-discrete' | 'layer-x-range';
 
 export interface Point {
   id: number;
@@ -168,25 +181,39 @@ export type ResourceLayerFilter = {
 };
 
 export type ActivityOptions = {
-  // Height of activity subrows
-  activityHeight: number;
-
   // Whether or not to display only directives, only spans, or both in the row
   composition: 'directives' | 'spans' | 'both';
 
-  // Describes the primary method in which activities are visualized within this row
-  displayMode: 'grouped' | 'compact';
-
   // If 'directive' the activities are grouped starting with directive types, if 'flat' activities are grouped by type regardless of hierarchy
   hierarchyMode: 'directive' | 'flat';
+};
 
-  // Activity text label behavior
+// included in Discrete, bearing exclusive properties for drawing ExternalEvents
+export type ExternalEventOptions = {
+  // Determines whether to group the External Events by their event type, or their external source
+  groupBy: 'event_type_name' | 'source_key';
+};
+
+export type DiscreteOptions = {
+  // Activity-Layer-specific Options
+  activityOptions?: ActivityOptions;
+
+  // Describes the primary method in which external events are visualized within this row
+  displayMode: 'grouped' | 'compact';
+
+  // External-Event-Layer-specific Options
+  externalEventOptions?: ExternalEventOptions;
+
+  // Height of subrows
+  height: number;
+
+  // Item text label behavior
   labelVisibility: 'on' | 'off' | 'auto';
 };
 
 export type Row = {
-  activityOptions?: ActivityOptions;
   autoAdjustHeight: boolean;
+  discreteOptions: DiscreteOptions;
   expanded: boolean;
   height: number;
   horizontalGuides: HorizontalGuide[];
@@ -253,7 +280,7 @@ export interface XRangePoint extends Point {
   label: Label;
 }
 
-export type TimelineItemType = ResourceType | ActivityType;
+export type TimelineItemType = ResourceType | ActivityType | ExternalEventType;
 
 export type TimelineItemListFilterOption = {
   color?: string;

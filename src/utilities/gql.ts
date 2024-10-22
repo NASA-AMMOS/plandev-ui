@@ -35,15 +35,22 @@ export enum Queries {
   DELETE_CONSTRAINT_MODEL_SPECIFICATIONS = 'delete_constraint_model_specification',
   DELETE_CONSTRAINT_SPECIFICATIONS = 'delete_constraint_specification',
   DELETE_CONSTRAINT_TAGS = 'delete_constraint_tags',
+  DELETE_DERIVATION_GROUP = 'delete_derivation_group',
   DELETE_EXPANSION_RULE = 'delete_expansion_rule_by_pk',
   DELETE_EXPANSION_RULE_TAGS = 'delete_expansion_rule_tags',
   DELETE_EXPANSION_SET = 'delete_expansion_set_by_pk',
+  DELETE_EXTERNAL_EVENT = 'delete_external_event',
+  DELETE_EXTERNAL_EVENT_TYPE = 'delete_external_event_type_by_pk',
+  DELETE_EXTERNAL_SOURCE = 'delete_external_source',
+  DELETE_EXTERNAL_SOURCE_TYPE = 'delete_external_source_type_by_pk',
+  DELETE_UPLOADED_FILE = 'delete_uploaded_file_by_pk',
   DELETE_MISSION_MODEL = 'delete_mission_model_by_pk',
   DELETE_PARAMETER_DICTIONARY = 'delete_parameter_dictionary_by_pk',
   DELETE_PARCEL = 'delete_parcel_by_pk',
   DELETE_PARCEL_TO_DICTIONARY_ASSOCIATION = 'delete_parcel_to_parameter_dictionary',
   DELETE_PLAN = 'delete_plan_by_pk',
   DELETE_PLAN_COLLABORATOR = 'delete_plan_collaborators_by_pk',
+  DELETE_PLAN_DERIVATION_GROUP = 'delete_plan_derivation_group',
   DELETE_PLAN_SNAPSHOT = 'delete_plan_snapshot_by_pk',
   DELETE_PLAN_TAGS = 'delete_plan_tags',
   DELETE_PRESET_TO_DIRECTIVE = 'delete_preset_to_directive_by_pk',
@@ -76,6 +83,16 @@ export enum Queries {
   EXPANSION_RUNS = 'expansion_run',
   EXPANSION_SETS = 'expansion_set',
   EXTENSIONS = 'extensions',
+  DERIVED_EVENTS = 'derived_events',
+  EXTERNAL_EVENT = 'external_event',
+  EXTERNAL_EVENT_TYPES = 'external_event_type',
+  EXTERNAL_SOURCE_EVENT_TYPES = 'external_source_event_type',
+  EXTERNAL_SOURCE = 'external_source_by_pk',
+  EXTERNAL_SOURCES = 'external_source',
+  EXTERNAL_SOURCE_TYPES = 'external_source_type',
+  DERIVATION_GROUP = 'derivation_group',
+  DERIVATION_GROUP_COMP = 'derivation_group_comp',
+  PLAN_DERIVATION_GROUP = 'plan_derivation_group',
   GET_ACTIVITY_EFFECTIVE_ARGUMENTS = 'getActivityEffectiveArguments',
   GET_ACTIVITY_TYPE_SCRIPT = 'getActivityTypeScript',
   GET_COMMAND_TYPE_SCRIPT = 'getCommandTypeScript',
@@ -89,6 +106,7 @@ export enum Queries {
   INSERT_ACTIVITY_DIRECTIVE_TAGS = 'insert_activity_directive_tags',
   INSERT_ACTIVITY_PRESET = 'insert_activity_presets_one',
   INSERT_CHANNEL_DICTIONARY = 'insert_channel_dictionary_one',
+  INSERT_DERIVATION_GROUP = 'insert_derivation_group_one',
   INSERT_DICTIONARY = 'insert_dictionary_one',
   INSERT_CONSTRAINT_DEFINITION = 'insert_constraint_definition_one',
   INSERT_CONSTRAINT_DEFINITION_TAGS = 'insert_constraint_definition_tags',
@@ -99,11 +117,16 @@ export enum Queries {
   INSERT_CONSTRAINT_TAGS = 'insert_constraint_tags',
   INSERT_EXPANSION_RULE = 'insert_expansion_rule_one',
   INSERT_EXPANSION_RULE_TAGS = 'insert_expansion_rule_tags',
+  INSERT_EXTERNAL_EVENT_TYPE = 'insert_external_event_type',
+  INSERT_EXTERNAL_EVENT_TYPE_ONE = 'insert_external_event_type_one',
+  INSERT_EXTERNAL_SOURCE = 'insert_external_source_one',
+  INSERT_EXTERNAL_SOURCE_TYPE = 'insert_external_source_type_one',
   INSERT_MISSION_MODEL = 'insert_mission_model_one',
   INSERT_PARAMETER_DICTIONARY = 'insert_parameter_dictionary_one',
   INSERT_PARCEL = 'insert_parcel_one',
   INSERT_PARCEL_TO_PARAMETER_DICTIONARY = 'insert_parcel_to_parameter_dictionary',
   INSERT_PLAN = 'insert_plan_one',
+  INSERT_PLAN_DERIVATION_GROUP = 'insert_plan_derivation_group_one',
   INSERT_PLAN_SNAPSHOT_TAGS = 'insert_plan_snapshot_tags',
   INSERT_PLAN_COLLABORATORS = 'insert_plan_collaborators',
   INSERT_PLAN_TAGS = 'insert_plan_tags',
@@ -158,6 +181,7 @@ export enum Queries {
   SCHEDULING_SPECIFICATION = 'scheduling_specification_by_pk',
   SCHEDULING_SPECIFICATION_CONDITIONS = 'scheduling_specification_conditions',
   SCHEDULING_SPECIFICATION_GOALS = 'scheduling_specification_goals',
+  SEEN_SOURCES = 'seen_sources',
   SEQUENCE = 'sequence',
   SEQUENCE_ADAPTATION = 'sequence_adaptation',
   SEQUENCE_TO_SIMULATED_ACTIVITY = 'sequence_to_simulated_activity_by_pk',
@@ -176,6 +200,7 @@ export enum Queries {
   UPDATE_CONSTRAINT_METADATA = 'update_constraint_metadata_by_pk',
   UPDATE_CONSTRAINT_SPECIFICATION = 'update_constraint_specification_by_pk',
   UPDATE_CONSTRAINT_MODEL_SPECIFICATION = 'update_constraint_model_specification_by_pk',
+  UPDATE_DERIVATION_GROUP_ACKNOWLEDGED = 'update_plan_derivation_group_by_pk',
   UPDATE_EXPANSION_RULE = 'update_expansion_rule_by_pk',
   UPDATE_MISSION_MODEL = 'update_mission_model_by_pk',
   UPDATE_PARCEL = 'update_parcel_by_pk',
@@ -386,6 +411,14 @@ const gql = {
     }
   `,
 
+  CREATE_DERIVATION_GROUP: `#graphql
+    mutation CreateDerivationGroup($derivationGroup: derivation_group_insert_input!) {
+      createDerivationGroup: ${Queries.INSERT_DERIVATION_GROUP}(object: $derivationGroup) {
+        name
+      }
+    }
+  `,
+
   CREATE_DICTIONARY: `#graphql
     mutation CreateDictionary($dictionary: String!) {
       createDictionary: ${Queries.UPLOAD_DICTIONARY}(dictionary: $dictionary) {
@@ -433,6 +466,66 @@ const gql = {
         parcelId : $parcelId
       ) {
         id
+      }
+    }
+  `,
+
+  CREATE_EXTERNAL_EVENT_TYPE: `#graphql
+    mutation CreateExternalEventType($eventType: external_event_type_insert_input!) {
+      createExternalEventType: ${Queries.INSERT_EXTERNAL_EVENT_TYPE_ONE}(object: $eventType) {
+        name
+      }
+    }
+  `,
+
+  CREATE_EXTERNAL_SOURCE: `#graphql
+    mutation CreateExternalSource(
+      $derivation_group: derivation_group_insert_input!,
+      $event_type: [external_event_type_insert_input!]!
+      $source: external_source_insert_input!,
+      $source_type: external_source_type_insert_input!,
+    ) {
+      upsertExternalEventType: ${Queries.INSERT_EXTERNAL_EVENT_TYPE}(
+        objects: $event_type,
+        on_conflict: {
+          constraint: external_event_type_pkey
+        }
+      ) {
+        returning {
+          name
+        }
+      }
+      upsertExternalSourceType: ${Queries.INSERT_EXTERNAL_SOURCE_TYPE} (
+        object: $source_type,
+        on_conflict: {
+          constraint: external_source_type_pkey
+        }
+      ) {
+        name
+      }
+      upsertDerivationGroup: ${Queries.INSERT_DERIVATION_GROUP} (
+        object: $derivation_group,
+        on_conflict: {
+          constraint: derivation_group_pkey
+        }
+      ) {
+        name
+      }
+      createExternalSource: ${Queries.INSERT_EXTERNAL_SOURCE}(object: $source) {
+        end_time,
+        key,
+        derivation_group_name,
+        source_type_name,
+        start_time,
+        valid_at,
+      }
+    }
+  `,
+
+  CREATE_EXTERNAL_SOURCE_TYPE: `#graphql
+    mutation CreateExternalSourceType($sourceType: external_source_type_insert_input!) {
+      createExternalSourceType: ${Queries.INSERT_EXTERNAL_SOURCE_TYPE}(object: $sourceType) {
+        name
       }
     }
   `,
@@ -503,7 +596,20 @@ const gql = {
         affected_rows
       }
     }
-`,
+  `,
+
+  CREATE_PLAN_DERIVATION_GROUP: `#graphql
+    mutation CreatePlanDerivationGroup($source: plan_derivation_group_insert_input!) {
+      planExternalSourceLink: ${Queries.INSERT_PLAN_DERIVATION_GROUP}(
+        object: $source,
+        on_conflict: {
+          constraint: plan_derivation_group_pkey
+        }
+      ) {
+        derivation_group_name
+      }
+    }
+  `,
 
   CREATE_PLAN_MERGE_REQUEST: `#graphql
     mutation CreatePlanMergeRequest($source_plan_id: Int!, $target_plan_id: Int!) {
@@ -828,6 +934,21 @@ const gql = {
     }
   `,
 
+  DELETE_DERIVATION_GROUP: `#graphql
+    mutation DeleteDerivationGroup($name: String!) {
+      deleteDerivationGroupForPlan: ${Queries.DELETE_PLAN_DERIVATION_GROUP}(where: { derivation_group_name: { _eq: $name }}) {
+        returning {
+          derivation_group_name
+        }
+      }
+      deleteDerivationGroup: ${Queries.DELETE_DERIVATION_GROUP}(where: { name: { _eq: $name } }) {
+        returning {
+          name
+        }
+      }
+    }
+  `,
+
   DELETE_EXPANSION_RULE: `#graphql
     mutation DeleteExpansionRule($id: Int!) {
       deleteExpansionRule: ${Queries.DELETE_EXPANSION_RULE}(id: $id) {
@@ -867,6 +988,38 @@ const gql = {
     mutation DeleteExpansionSet($id: Int!) {
       deleteExpansionSet: ${Queries.DELETE_EXPANSION_SET}(id: $id) {
         id
+      }
+    }
+  `,
+
+  DELETE_EXTERNAL_EVENT_TYPE: `#graphql
+    mutation DeleteExternalEventType($name: String!) {
+      deleteExternalEventType: ${Queries.DELETE_EXTERNAL_EVENT_TYPE}(name: $name) {
+        name
+      }
+    }
+  `,
+
+  DELETE_EXTERNAL_SOURCES: `#graphql
+    mutation DeleteExternalSource(
+      $derivationGroupName: String!,
+      $sourceKeys: [String!]!
+    ) {
+      deleteExternalSource: ${Queries.DELETE_EXTERNAL_SOURCE}(
+        where: {
+          derivation_group_name: { _eq: $derivationGroupName },
+          key: { _in: $sourceKeys }
+        }
+      ) {
+        affected_rows
+      }
+    }
+  `,
+
+  DELETE_EXTERNAL_SOURCE_TYPE: `#graphql
+    mutation DeleteExternalSourceType($name: String!) {
+      deleteExternalSourceType: ${Queries.DELETE_EXTERNAL_SOURCE_TYPE}(name: $name) {
+        name
       }
     }
   `,
@@ -920,6 +1073,11 @@ const gql = {
 
   DELETE_PLAN: `#graphql
     mutation DeletePlan($id: Int!) {
+      deleteDerivationGroupForPlan: ${Queries.DELETE_PLAN_DERIVATION_GROUP}(where: { plan_id: { _eq: $id }}) {
+        returning {
+          plan_id
+        }
+      }
       deletePlan: ${Queries.DELETE_PLAN}(id: $id) {
         id
       }
@@ -935,6 +1093,16 @@ const gql = {
     mutation DeletePlanCollaborator($collaborator: String!, $planId: Int!) {
       deletePlanCollaborator: ${Queries.DELETE_PLAN_COLLABORATOR}(collaborator: $collaborator, plan_id: $planId) {
         collaborator
+      }
+    }
+  `,
+
+  DELETE_PLAN_DERIVATION_GROUP: `#graphql
+    mutation DeletePlanExternalSource($where: plan_derivation_group_bool_exp!) {
+      planDerivationGroupLink: ${Queries.DELETE_PLAN_DERIVATION_GROUP}(where: $where) {
+        returning {
+          derivation_group_name
+        }
       }
     }
   `,
@@ -1307,6 +1475,44 @@ const gql = {
     }
   `,
 
+  GET_EXTERNAL_EVENTS: `#graphql
+    query GetExternalEvents(
+      $sourceKey: String!,
+      $derivationGroupName: String!
+    ) {
+      ${Queries.EXTERNAL_EVENT}(
+        where: {
+          source_key: {_eq: $sourceKey},
+          derivation_group_name: {_eq: $derivationGroupName}
+        }
+      ) {
+        event_type_name
+        key
+        duration
+        start_time
+        source_key
+      }
+    }
+  `,
+
+  // Should be deprecated with the introduction of strict external source schemas, dictating allowable event types for given source types. But for now, this will do.
+  GET_EXTERNAL_EVENT_TYPE_BY_SOURCE: `#graphql
+    query GetExternalEventTypesBySource($derivationGroupName: String!, $sourceKey: String!) {
+      ${Queries.EXTERNAL_SOURCES} (
+        where: {
+          key: {_eq: $sourceKey},
+          derivation_group_name: {_eq: $derivationGroupName}
+        }
+      ) {
+        external_events {
+          external_event_type {
+            name
+          }
+        }
+      }
+    }
+  `,
+
   GET_MODELS: `#graphql
     query GetModels {
       models: ${Queries.MISSION_MODELS} {
@@ -1497,6 +1703,22 @@ const gql = {
             color
             id
             name
+          }
+        }
+      }
+    }
+  `,
+
+  GET_PLAN_EVENT_TYPES: `#graphql
+    query GetPlanEventTypes($plan_id: Int!){
+      ${Queries.PLAN_DERIVATION_GROUP}(where: {plan_id: {_eq: $plan_id}}) {
+        derivation_group {
+          external_sources {
+            external_events {
+              external_event_type {
+                name
+              }
+            }
           }
         }
       }
@@ -2155,6 +2377,29 @@ const gql = {
     }
   `,
 
+  SUB_DERIVATION_GROUPS: `#graphql
+    subscription SubDerivationGroups {
+      derivationGroups: ${Queries.DERIVATION_GROUP} {
+        name
+        owner
+        source_type_name
+        derived_events_aggregate {
+          aggregate {
+            count
+          }
+        }
+        external_sources {
+          key
+          external_events_aggregate {
+            aggregate {
+              count
+            }
+          }
+        }
+      }
+    }
+  `,
+
   SUB_EXPANSION_RULES: `#graphql
     subscription SubExpansionRules {
       expansionRules: ${Queries.EXPANSION_RULES}(order_by: { id: desc }) {
@@ -2216,6 +2461,51 @@ const gql = {
         parcel_id
         updated_at
         updated_by
+      }
+    }
+  `,
+
+  SUB_EXTERNAL_EVENT_TYPES: `#graphql
+    subscription SubExternalEventTypes {
+      models: ${Queries.EXTERNAL_EVENT_TYPES}(order_by: { name: asc }) {
+        name
+      }
+    }
+  `,
+
+  SUB_EXTERNAL_SOURCE: `#graphql
+    subscription SubExternalSource($id: Int!) {
+      models: ${Queries.EXTERNAL_SOURCE}(id: $id) {
+        key
+        source_type_name
+        start_time
+        end_time
+        valid_at
+        created_at
+        owner
+      }
+    }
+  `,
+
+  SUB_EXTERNAL_SOURCES: `#graphql
+    subscription SubExternalSources {
+      models: ${Queries.EXTERNAL_SOURCES}(order_by: { key: asc }) {
+        key,
+        source_type_name,
+        derivation_group_name,
+        start_time
+        end_time
+        valid_at
+        created_at
+        owner
+      }
+    }
+  `,
+
+  SUB_EXTERNAL_SOURCE_TYPES: `#graphql
+    subscription SubExternalSourceTypes {
+      models: ${Queries.EXTERNAL_SOURCE_TYPES}(order_by: { name: asc }) {
+        name
       }
     }
   `,
@@ -2423,6 +2713,32 @@ const gql = {
             name
             type
           }
+        }
+      }
+    }
+  `,
+
+  SUB_PLAN_DERIVATION_GROUP: `#graphql
+    subscription SubPlanExternalSource($plan_id: Int!) {
+      links: ${Queries.PLAN_DERIVATION_GROUP}(order_by: { plan_id: asc }, where: {plan_id: {_eq: $plan_id}}) {
+        derivation_group_name
+        plan_id
+        acknowledged
+        last_acknowledged_at
+      }
+    }
+  `,
+
+  SUB_PLAN_EXTERNAL_EVENTS_DERIVATION_GROUP: `#graphql
+    subscription SubPlanExternalEventsDerivationGroup($derivation_group_names: [String!]!){
+      events: ${Queries.DERIVED_EVENTS}(where: {derivation_group_name: {_in: $derivation_group_names}}) {
+        external_event {
+          event_type_name
+          key
+          duration
+          start_time
+          derivation_group_name
+          source_key
         }
       }
     }
@@ -3254,6 +3570,16 @@ const gql = {
     }
   `,
 
+  UPDATE_DERIVATION_GROUP_ACKNOWLEDGED: `#graphql
+    mutation UpdateDerivationGroupAcknowledged($derivation_group_name: String!, $plan_id: Int!, $acknowledged: Boolean!) {
+      updatePlanDerivationGroup: ${Queries.UPDATE_DERIVATION_GROUP_ACKNOWLEDGED}(pk_columns: {derivation_group_name: $derivation_group_name, plan_id: $plan_id}, _set: {acknowledged: $acknowledged}) {
+        derivation_group_name,
+        plan_id,
+        acknowledged
+      }
+    }
+  `,
+
   UPDATE_EXPANSION_RULE: `#graphql
     mutation UpdateExpansionRule($id: Int!, $rule: expansion_rule_set_input!) {
       updateExpansionRule: ${Queries.UPDATE_EXPANSION_RULE}(
@@ -3471,6 +3797,7 @@ const gql = {
       }
     }
   `,
+
   UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS: `#graphql
     mutation UpdateSchedulingGoalModelSpecifications($goalSpecsToUpdate: [scheduling_model_specification_goals_insert_input!]!, $goalIdsToDelete: [Int!]! = [], $modelId: Int!) {
       updateSchedulingGoalModelSpecifications: ${Queries.INSERT_SCHEDULING_MODEL_SPECIFICATION_GOALS}(

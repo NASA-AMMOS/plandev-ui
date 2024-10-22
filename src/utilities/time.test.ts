@@ -5,6 +5,7 @@ import {
   convertDurationStringToInterval,
   convertDurationStringToUs,
   convertUsToDurationString,
+  convertUTCToMs,
   getActivityDirectiveStartTimeMs,
   getBalancedDuration,
   getDaysInMonth,
@@ -38,6 +39,23 @@ test('convertDurationStringToUs', () => {
     [+/-]DOYThh:mm:ss[.sss],
     duration
     `);
+});
+
+test('convertUTCToMs', () => {
+  // standard date conversion
+  expect(convertUTCToMs('2024-01-01T00:00:00Z')).toEqual(1704067200000);
+
+  // DOY doesn't work
+  expect(convertUTCToMs('2024-001T00:00:00Z')).toEqual(NaN);
+
+  // conversion to DOY is fine if the time zone ("Z") is excluded
+  expect(convertUTCToMs(convertDoyToYmd('2024-001T00:00:00') ?? '')).toEqual(1704067200000);
+
+  // conversion without a timezone in the input - this is compared to a new Date object in order to use the test runner's machine's timezone (as the result of convertUTCToMs should follow *that* timezone)
+  expect(convertUTCToMs('2024-01-01 00:00:00')).toEqual(new Date('2024-01-01 00:00:00').getTime());
+
+  // any other string fails
+  expect(convertUTCToMs('not a date')).toEqual(NaN);
 });
 
 test('convertDurationStringToInterval', () => {

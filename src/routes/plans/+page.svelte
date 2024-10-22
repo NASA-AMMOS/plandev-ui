@@ -950,13 +950,13 @@
 
     <Panel>
       <svelte:fragment slot="header">
-        <SectionTitle>
-          <PlanIcon />
-          Plans
-        </SectionTitle>
-        <Input layout="inline">
+        <div style:display="flex" style:gap="0.5rem">
+          <SectionTitle>
+            <PlanIcon slot="icon" />
+            Plans
+          </SectionTitle>
           <input bind:value={filterText} class="st-input" placeholder="Filter plans" style="width: 300px" />
-        </Input>
+        </div>
       </svelte:fragment>
 
       <svelte:fragment slot="body">

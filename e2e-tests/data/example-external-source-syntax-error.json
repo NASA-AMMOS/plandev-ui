@@ -1,0 +1,57 @@
+{
+    "source": {
+        "key": "ExampleExternalSource:example-external-source.json",
+        "source_type": "Example External Source",
+        "valid_at": "2024-021T00:00:00Z",
+        "period": {
+            "start_time": "2024-021T00:00:00Z",
+            "end_time": "2024-028T00:00:00Z"
+        },
+        "metadata": {
+            "version": 1,
+            "spacecraft": ["sc1", "sc2"]
+        }
+    },
+    "events": [
+        {
+            "key": "ExampleEvent:1/sc/sc1:1:X/1",
+            "event_type": "ExampleEvent",
+            "start_time": "2024-022T12:05:00Z",
+            "duration": "02:10:00",
+            "properties": {
+              "example1": "value",
+              "example2": 1
+            }
+        },
+        {
+            "key": "ExampleEvent:2/sc/sc2:1:X/1",
+            "event_type: "ExampleEvent",
+            "start_time": "2024-022T13:15:00Z",
+            "duration": "02:40:00",
+            "properties": {
+              "example1": "value",
+              "example2": 1
+            }
+        },
+        {
+            "key": "ExampleEvent:3/sc/sc3:1:X/1",
+            "event_type": "ExampleEvent",
+            "start_time": "2024-022T19:15:00Z",
+            "duration": "01:40:00",
+            "properties": {
+              "example1": "value",
+              "example2": 1
+            }
+        },
+        {
+            "key": "ExampleEvent:4/sc/sc4:1:X/1",
+            "event_type": "ExampleEvent",
+            "start_time": "2024-022T21:25:00Z",
+            "duration": "01:30:00",
+            "properties": {
+              "example1": "value",
+              "example2": 1
+            }
+        }
+    ]
+}

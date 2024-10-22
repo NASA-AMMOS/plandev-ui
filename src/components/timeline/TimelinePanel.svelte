@@ -3,6 +3,7 @@
 <script lang="ts">
   import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
   import { visibleConstraintResults } from '../../stores/constraints';
+  import { selectExternalEvent, selectedExternalEventId, selectedExternalEvents } from '../../stores/external-event';
   import { maxTimeRange, plan, planReadOnly, viewTimeRange } from '../../stores/plan';
   import {
     resourceTypes,
@@ -25,8 +26,16 @@
   } from '../../stores/views';
   import type { ActivityDirectiveId } from '../../types/activity';
   import type { User } from '../../types/app';
-  import type { ActivityOptions, Axis, MouseDown, Row, Timeline as TimelineType } from '../../types/timeline';
+  import type {
+    ActivityOptions,
+    Axis,
+    MouseDown,
+    MouseOver,
+    Row,
+    Timeline as TimelineType,
+  } from '../../types/timeline';
   import effects from '../../utilities/effects';
+  import { getExternalEventRowId } from '../../utilities/externalEvents';
   import { featurePermissions } from '../../utilities/permissions';
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
@@ -63,12 +72,14 @@
     }
   }
 
-  function openSelectedActivityPanel(event: CustomEvent) {
+  function openSelectedPanel(event: CustomEvent<MouseOver>) {
     const {
-      detail: { selectedActivityDirectiveId, selectedSpanId },
+      detail: { selectedActivityDirectiveId, selectedSpanId, selectedExternalEventId },
     } = event;
-    if (selectedActivityDirectiveId !== null || selectedSpanId !== null) {
+    if (selectedActivityDirectiveId !== undefined || selectedSpanId !== undefined) {
       viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'ActivityFormPanel' } });
+    } else if (selectedExternalEventId !== undefined) {
+      viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'ExternalEventFormPanel' } });
     }
   }
 
@@ -84,13 +95,19 @@
 
   function onMouseDown(event: CustomEvent<MouseDown>) {
     const { detail } = event;
-    const { activityDirectives, spans } = detail;
-    if (spans.length) {
+    const { activityDirectives, spans, externalEvents } = detail;
+    if (externalEvents !== undefined && externalEvents.length) {
+      selectExternalEvent(getExternalEventRowId(externalEvents[0].pkey));
+      selectActivity(null, null);
+    } else if (spans != null && spans.length) {
       selectActivity(null, spans[0].span_id);
-    } else if (activityDirectives.length) {
+      selectExternalEvent(null);
+    } else if (activityDirectives != null && activityDirectives.length) {
       selectActivity(activityDirectives[0].id, null);
+      selectExternalEvent(null);
     } else {
       selectActivity(null, null);
+      selectExternalEvent(null);
     }
   }
 
@@ -98,7 +115,12 @@
     const {
       detail: { row, composition },
     } = event;
-    viewUpdateRow('activityOptions', { ...row.activityOptions, composition }, timelineId, row.id);
+    viewUpdateRow(
+      'discreteOptions',
+      { ...row.discreteOptions, activityOptions: { ...row.discreteOptions.activityOptions, composition } },
+      timelineId,
+      row.id,
+    );
   }
 
   function editRow(row: Row) {
@@ -192,6 +214,7 @@
       {limitTooltipToLine}
       {showTimelineTooltip}
       activityDirectivesMap={$activityDirectivesMap}
+      externalEvents={$selectedExternalEvents}
       constraintResults={$visibleConstraintResults}
       {hasUpdateDirectivePermission}
       {hasUpdateSimulationPermission}
@@ -203,6 +226,7 @@
       {timeline}
       timelineInteractionMode={$timelineInteractionMode}
       selectedActivityDirectiveId={$selectedActivityDirectiveId}
+      selectedExternalEventId={$selectedExternalEventId}
       selectedSpanId={$selectedSpanId}
       simulation={$simulation}
       simulationDataset={$simulationDataset}
@@ -213,7 +237,7 @@
       {user}
       viewTimeRange={$viewTimeRange}
       on:deleteActivityDirective={deleteActivityDirective}
-      on:dblClick={openSelectedActivityPanel}
+      on:dblClick={openSelectedPanel}
       on:jumpToActivityDirective={jumpToActivityDirective}
       on:jumpToSpan={jumpToSpan}
       on:mouseDown={onMouseDown}

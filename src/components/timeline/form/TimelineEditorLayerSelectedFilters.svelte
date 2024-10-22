@@ -15,12 +15,13 @@
   let verb = '';
 
   $: if (filters) {
-    if (filters.length !== 1) {
-      verb = chartType === 'activity' ? 'activities' : 'resources';
+    if (chartType === 'activity') {
+      verb = filters.length !== 1 ? 'activities' : 'activity';
+    } else if (chartType === 'externalEvent') {
+      verb = filters.length !== 1 ? 'external event types' : 'external event type';
     } else {
-      verb = chartType === 'activity' ? 'activity' : 'resource';
+      verb = filters.length !== 1 ? 'resources' : 'resource';
     }
-
     if (showAll) {
       filtersToRender = filters;
     } else {
@@ -36,7 +37,7 @@
 <div class="st-typography-medium timeline-editor-layer-selected-filters">
   {#if filters.length === 0}
     <div class="filter-items-empty">
-      No {chartType === 'activity' ? 'activities' : 'resources'} selected
+      No {verb} selected
     </div>
   {:else}
     <Collapse title={`${filters.length} ${verb}`} className="filter-items" titleClassName="filter-items-title">

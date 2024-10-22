@@ -1,32 +1,36 @@
 import { keyBy } from 'lodash-es';
 import { expect, test } from 'vitest';
 import {
-  ViewActivityLayerColorPresets,
+  ViewDiscreteLayerColorPresets,
   ViewLineLayerColorPresets,
   ViewXRangeLayerSchemePresets,
 } from '../constants/view';
 import type { ActivityDirective } from '../types/activity';
+import type { ExternalEvent } from '../types/external-event';
 import type { Resource, ResourceType, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
-import type { ActivityTreeNode, TimeRange, Timeline, XRangeLayer } from '../types/timeline';
+import type { DiscreteTreeNode, TimeRange, Timeline, XRangeLayer } from '../types/timeline';
 import { createSpanUtilityMaps } from './activities';
 import {
   createHorizontalGuide,
   createRow,
   createTimeline,
   createTimelineActivityLayer,
+  createTimelineExternalEventLayer,
   createTimelineLineLayer,
   createTimelineXRangeLayer,
   createVerticalGuide,
   createYAxis,
   directiveInView,
   duplicateRow,
+  externalEventInView,
   filterResourcesByLayer,
-  generateActivityTree,
+  generateDiscreteTreeUtil,
   getUniqueColorForActivityLayer,
   getUniqueColorForLineLayer,
   getUniqueColorSchemeForXRangeLayer,
   getYAxisBounds,
   isActivityLayer,
+  isExternalEventLayer,
   isLineLayer,
   isXRangeLayer,
   paginateNodes,
@@ -112,6 +116,8 @@ const testDirectives: ActivityDirective[] = [
   }),
 ];
 
+const testExternalEvents: ExternalEvent[] = [generateExternalEvent({})];
+
 const testSpansMap: SpansMap = keyBy(testSpans, 'span_id');
 const testSpansUtilityMap: SpanUtilityMaps = createSpanUtilityMaps(testSpans);
 
@@ -142,6 +148,7 @@ function populateTimelineLayers(timelines: Timeline[]) {
       row.layers.push(createTimelineActivityLayer(timelines));
       row.layers.push(createTimelineLineLayer(timelines, row.yAxes));
       row.layers.push(createTimelineXRangeLayer(timelines, row.yAxes));
+      row.layers.push(createTimelineExternalEventLayer(timelines));
     });
   });
   return timelines;
@@ -204,6 +211,23 @@ function generateSpan(properties: Partial<Span>): Span {
   };
 }
 
+function generateExternalEvent(properties: Partial<ExternalEvent>): ExternalEvent {
+  return {
+    duration: '',
+    duration_ms: 0,
+    pkey: {
+      derivation_group_name: 'test_derivation_group',
+      event_type_name: 'test_event_type',
+      key: 'test_event',
+      source_key: 'test_source',
+    },
+    source: undefined,
+    start_ms: 0,
+    start_time: '',
+    ...properties,
+  };
+}
+
 test('createTimeline', () => {
   const timelines = generateTimelines();
   expect(timelines[0].id).toBe(0);
@@ -241,16 +265,22 @@ test('createTimelineLayers', () => {
   expect(timelines[0].rows[0].layers[2].chartType).toBe('x-range');
   expect(timelines[0].rows[0].layers[2].id).toBe(2);
   expect(timelines[0].rows[0].layers[2].yAxisId).toBe(0);
+  expect(timelines[0].rows[0].layers[3].chartType).toBe('externalEvent');
+  expect(timelines[0].rows[0].layers[3].id).toBe(3);
+  expect(timelines[0].rows[0].layers[3].yAxisId).toBe(null);
 
   expect(timelines[1].rows[0].layers[0].chartType).toBe('activity');
-  expect(timelines[1].rows[0].layers[0].id).toBe(6);
+  expect(timelines[1].rows[0].layers[0].id).toBe(8);
   expect(timelines[1].rows[0].layers[0].yAxisId).toBe(null);
   expect(timelines[1].rows[0].layers[1].chartType).toBe('line');
-  expect(timelines[1].rows[0].layers[1].id).toBe(7);
+  expect(timelines[1].rows[0].layers[1].id).toBe(9);
   expect(timelines[1].rows[0].layers[1].yAxisId).toBe(2);
   expect(timelines[1].rows[0].layers[2].chartType).toBe('x-range');
-  expect(timelines[1].rows[0].layers[2].id).toBe(8);
+  expect(timelines[1].rows[0].layers[2].id).toBe(10);
   expect(timelines[1].rows[0].layers[2].yAxisId).toBe(2);
+  expect(timelines[1].rows[0].layers[3].chartType).toBe('externalEvent');
+  expect(timelines[1].rows[0].layers[3].id).toBe(11);
+  expect(timelines[1].rows[0].layers[3].yAxisId).toBe(null);
 });
 
 test('createTimelineHorizontalGuides', () => {
@@ -371,6 +401,8 @@ test('filterResourcesByLayer', () => {
   expect(filterResourcesByLayer(layer3, [resourceA, resourceB])).to.deep.equal([resourceA]);
 });
 
+// TODO - should we make a test case for filtering the sources in an ExternalEventsLayer?
+
 test('directiveInView', () => {
   const viewTimeRange: TimeRange = { end: 1716332383895 + 60000, start: 1716332383895 }; // One minute duration
   expect(directiveInView(generateActivityDirective({ start_time_ms: null }), viewTimeRange)).toBe(false);
@@ -408,61 +440,114 @@ test('spanInView', () => {
   );
 });
 
+test('externalEventInView', () => {
+  const viewTimeRange: TimeRange = { end: 1716332383895 + 60000, start: 1716332383895 }; // One minute duration
+  expect(externalEventInView(generateExternalEvent({ duration_ms: 1, start_ms: 0 }), viewTimeRange)).toBe(false);
+  expect(externalEventInView(generateExternalEvent({ duration_ms: 3, start_ms: 1716332383893 }), viewTimeRange)).toBe(
+    true,
+  );
+  expect(externalEventInView(generateExternalEvent({ duration_ms: 1, start_ms: 1716332383895 }), viewTimeRange)).toBe(
+    true,
+  );
+  expect(externalEventInView(generateExternalEvent({ duration_ms: 1, start_ms: 1716332383896 }), viewTimeRange)).toBe(
+    true,
+  );
+  expect(externalEventInView(generateExternalEvent({ duration_ms: 1, start_ms: 9716332383895 }), viewTimeRange)).toBe(
+    false,
+  );
+  expect(
+    externalEventInView(generateExternalEvent({ duration_ms: 1, start_ms: 1716332383895 + 60000 }), viewTimeRange),
+  ).toBe(false);
+  expect(externalEventInView(generateExternalEvent({ duration_ms: 1, start_ms: 9716332383895 }), viewTimeRange)).toBe(
+    false,
+  );
+});
+
 test('isActivityLayer', () => {
   expect(isActivityLayer(createTimelineActivityLayer([]))).toBe(true);
   expect(isActivityLayer(createTimelineLineLayer([], []))).toBe(false);
   expect(isActivityLayer(createTimelineXRangeLayer([], []))).toBe(false);
+  expect(isActivityLayer(createTimelineExternalEventLayer([]))).toBe(false);
 });
 
 test('isLineLayer', () => {
   expect(isLineLayer(createTimelineActivityLayer([]))).toBe(false);
   expect(isLineLayer(createTimelineLineLayer([], []))).toBe(true);
   expect(isLineLayer(createTimelineXRangeLayer([], []))).toBe(false);
+  expect(isLineLayer(createTimelineExternalEventLayer([]))).toBe(false);
 });
 
 test('isXRangeLayer', () => {
   expect(isXRangeLayer(createTimelineActivityLayer([]))).toBe(false);
   expect(isXRangeLayer(createTimelineLineLayer([], []))).toBe(false);
   expect(isXRangeLayer(createTimelineXRangeLayer([], []))).toBe(true);
+  expect(isXRangeLayer(createTimelineExternalEventLayer([]))).toBe(false);
+});
+
+test('isExternalEventLayer', () => {
+  expect(isExternalEventLayer(createTimelineActivityLayer([]))).toBe(false);
+  expect(isExternalEventLayer(createTimelineLineLayer([], []))).toBe(false);
+  expect(isExternalEventLayer(createTimelineXRangeLayer([], []))).toBe(false);
+  expect(isExternalEventLayer(createTimelineExternalEventLayer([]))).toBe(true);
 });
 
 test('paginateNodes', () => {
-  const testNodes: ActivityTreeNode[] = [];
+  const testNodes: DiscreteTreeNode[] = [];
   for (let i = 0; i < 1000; i++) {
     testNodes.push({
+      activity_type: 'aggregation',
       children: [],
       expanded: false,
       id: 'foo',
       isLeaf: false,
       items: [],
       label: 'bar',
-      type: 'aggregation',
+      type: 'Activity',
     });
   }
-  expect(paginateNodes([], 'foo', {})).to.deep.eq([]);
-  const paginatedNodes = paginateNodes(testNodes, 'foo', { 'foo_[0 … 99]_page': true });
+  expect(paginateNodes([], 'activity', '', {})).to.deep.eq([]);
+  const paginatedNodes = paginateNodes(testNodes, 'activity', 'foo', { 'foo_[0 … 99]_page': true });
   expect(paginatedNodes).toHaveLength(10);
   expect(paginatedNodes[0].id).toBe('foo_[0 … 99]_page');
   expect(paginatedNodes[0].expanded).toBe(true);
   expect(paginatedNodes[9].id).toBe('foo_[900 … 999]_page');
 });
 
-test('generateActivityTree', () => {
+test('generateDiscreteTree', () => {
   const time = Date.now();
+
+  // empty
   expect(
-    generateActivityTree([], [], {}, 'flat', false, testSpansUtilityMap, testSpansMap, true, true, {
-      end: time + 10000,
-      start: time,
-    }),
+    generateDiscreteTreeUtil(
+      [],
+      [],
+      [],
+      {},
+      'flat',
+      'event_type_name',
+      false,
+      testSpansUtilityMap,
+      testSpansMap,
+      false,
+      false,
+      {
+        end: time + 10000,
+        start: time,
+      },
+      false,
+      false,
+    ),
   ).to.deep.equal([]);
 
-  // Directives and spans
+  // Directives, spans, and external events
   expect(
-    generateActivityTree(
+    generateDiscreteTreeUtil(
       testDirectives,
       testSpans,
+      testExternalEvents,
       { BiteBanana: true, BiteBanana_1: true, Parent: true, Parent_1: true, Parent_1_Child: true },
       'flat',
+      'event_type_name',
       false,
       testSpansUtilityMap,
       testSpansMap,
@@ -472,15 +557,114 @@ test('generateActivityTree', () => {
         end: time + 10000,
         start: time,
       },
+      true,
+      true,
     ),
   ).to.deep.equal([
     {
+      activity_type: undefined,
       children: [
         {
-          children: [],
+          activity_type: 'aggregation',
+          children: [
+            {
+              activity_type: 'directive',
+              children: [],
+              expanded: true,
+              id: 'BiteBanana_1',
+              isLeaf: true,
+              items: [
+                {
+                  directive: {
+                    anchor_id: 0,
+                    anchored_to_start: true,
+                    arguments: {},
+                    created_at: '',
+                    created_by: 'foo',
+                    id: 1,
+                    last_modified_arguments_at: '',
+                    last_modified_at: '',
+                    metadata: {},
+                    name: 'Bar',
+                    plan_id: 1,
+                    source_scheduling_goal_id: null,
+                    start_offset: '00:10:00',
+                    start_time_ms: 0,
+                    tags: [],
+                    type: 'BiteBanana',
+                  },
+                  span: {
+                    attributes: {
+                      arguments: {},
+                      computedAttributes: {},
+                      directiveId: 1,
+                    },
+                    dataset_id: 1,
+                    duration: '04:00:00',
+                    durationMs: 14400000,
+                    endMs: 1,
+                    parent_id: null,
+                    span_id: 4,
+                    startMs: 0,
+                    start_offset: '00:05:00',
+                    type: 'BiteBanana',
+                  },
+                },
+              ],
+              label: 'Bar',
+              type: 'Activity',
+            },
+            {
+              activity_type: 'directive',
+              children: [],
+              expanded: false,
+              id: 'BiteBanana_2',
+              isLeaf: true,
+              items: [
+                {
+                  directive: {
+                    anchor_id: 0,
+                    anchored_to_start: true,
+                    arguments: {},
+                    created_at: '',
+                    created_by: 'foo',
+                    id: 2,
+                    last_modified_arguments_at: '',
+                    last_modified_at: '',
+                    metadata: {},
+                    name: 'Charlie',
+                    plan_id: 1,
+                    source_scheduling_goal_id: null,
+                    start_offset: '00:10:00',
+                    start_time_ms: 0,
+                    tags: [],
+                    type: 'BiteBanana',
+                  },
+                  span: {
+                    attributes: {
+                      arguments: {},
+                      computedAttributes: {},
+                      directiveId: 2,
+                    },
+                    dataset_id: 1,
+                    duration: '04:00:00',
+                    durationMs: 14400000,
+                    endMs: 1,
+                    parent_id: null,
+                    span_id: 5,
+                    startMs: 0,
+                    start_offset: '00:05:00',
+                    type: 'BiteBanana',
+                  },
+                },
+              ],
+              label: 'Charlie',
+              type: 'Activity',
+            },
+          ],
           expanded: true,
-          id: 'BiteBanana_1',
-          isLeaf: true,
+          id: 'BiteBanana',
+          isLeaf: false,
           items: [
             {
               directive: {
@@ -518,16 +702,6 @@ test('generateActivityTree', () => {
                 type: 'BiteBanana',
               },
             },
-          ],
-          label: 'Bar',
-          type: 'directive',
-        },
-        {
-          children: [],
-          expanded: false,
-          id: 'BiteBanana_2',
-          isLeaf: true,
-          items: [
             {
               directive: {
                 anchor_id: 0,
@@ -565,12 +739,217 @@ test('generateActivityTree', () => {
               },
             },
           ],
-          label: 'Charlie',
-          type: 'directive',
+          label: 'BiteBanana',
+          type: 'Activity',
+        },
+        {
+          activity_type: 'aggregation',
+          children: [],
+          expanded: false,
+          id: 'Child',
+          isLeaf: false,
+          items: [
+            {
+              span: {
+                attributes: {
+                  arguments: {},
+                  computedAttributes: {},
+                },
+                dataset_id: 1,
+                duration: '03:00:00',
+                durationMs: 10800000,
+                endMs: 1,
+                parent_id: 1,
+                span_id: 2,
+                startMs: 0,
+                start_offset: '00:10:00',
+                type: 'Child',
+              },
+            },
+            {
+              span: {
+                attributes: {
+                  arguments: {},
+                  computedAttributes: {},
+                },
+                dataset_id: 1,
+                duration: '04:00:00',
+                durationMs: 14400000,
+                endMs: 1,
+                parent_id: 1,
+                span_id: 3,
+                startMs: 0,
+                start_offset: '00:05:00',
+                type: 'Child',
+              },
+            },
+          ],
+          label: 'Child',
+          type: 'Activity',
+        },
+        {
+          activity_type: 'aggregation',
+          children: [
+            {
+              activity_type: 'span',
+              children: [
+                {
+                  activity_type: 'aggregation',
+                  children: [
+                    {
+                      activity_type: 'span',
+                      children: [],
+                      expanded: false,
+                      id: 'Parent_1_Child_2',
+                      isLeaf: true,
+                      items: [
+                        {
+                          span: {
+                            attributes: {
+                              arguments: {},
+                              computedAttributes: {},
+                            },
+                            dataset_id: 1,
+                            duration: '03:00:00',
+                            durationMs: 10800000,
+                            endMs: 1,
+                            parent_id: 1,
+                            span_id: 2,
+                            startMs: 0,
+                            start_offset: '00:10:00',
+                            type: 'Child',
+                          },
+                        },
+                      ],
+                      label: 'Child',
+                      type: 'Activity',
+                    },
+                    {
+                      activity_type: 'span',
+                      children: [],
+                      expanded: false,
+                      id: 'Parent_1_Child_3',
+                      isLeaf: true,
+                      items: [
+                        {
+                          span: {
+                            attributes: {
+                              arguments: {},
+                              computedAttributes: {},
+                            },
+                            dataset_id: 1,
+                            duration: '04:00:00',
+                            durationMs: 14400000,
+                            endMs: 1,
+                            parent_id: 1,
+                            span_id: 3,
+                            startMs: 0,
+                            start_offset: '00:05:00',
+                            type: 'Child',
+                          },
+                        },
+                      ],
+                      label: 'Child',
+                      type: 'Activity',
+                    },
+                  ],
+                  expanded: true,
+                  id: 'Parent_1_Child',
+                  isLeaf: false,
+                  items: [
+                    {
+                      span: {
+                        attributes: {
+                          arguments: {},
+                          computedAttributes: {},
+                        },
+                        dataset_id: 1,
+                        duration: '03:00:00',
+                        durationMs: 10800000,
+                        endMs: 1,
+                        parent_id: 1,
+                        span_id: 2,
+                        startMs: 0,
+                        start_offset: '00:10:00',
+                        type: 'Child',
+                      },
+                    },
+                    {
+                      span: {
+                        attributes: {
+                          arguments: {},
+                          computedAttributes: {},
+                        },
+                        dataset_id: 1,
+                        duration: '04:00:00',
+                        durationMs: 14400000,
+                        endMs: 1,
+                        parent_id: 1,
+                        span_id: 3,
+                        startMs: 0,
+                        start_offset: '00:05:00',
+                        type: 'Child',
+                      },
+                    },
+                  ],
+                  label: 'Child',
+                  type: 'Activity',
+                },
+              ],
+              expanded: true,
+              id: 'Parent_1',
+              isLeaf: false,
+              items: [
+                {
+                  span: {
+                    attributes: {
+                      arguments: {},
+                      computedAttributes: {},
+                    },
+                    dataset_id: 1,
+                    duration: '02:00:00',
+                    durationMs: 7200000,
+                    endMs: 1,
+                    parent_id: null,
+                    span_id: 1,
+                    startMs: 0,
+                    start_offset: '00:00:00',
+                    type: 'Parent',
+                  },
+                },
+              ],
+              label: 'Parent',
+              type: 'Activity',
+            },
+          ],
+          expanded: true,
+          id: 'Parent',
+          isLeaf: false,
+          items: [
+            {
+              span: {
+                attributes: {
+                  arguments: {},
+                  computedAttributes: {},
+                },
+                dataset_id: 1,
+                duration: '02:00:00',
+                durationMs: 7200000,
+                endMs: 1,
+                parent_id: null,
+                span_id: 1,
+                startMs: 0,
+                start_offset: '00:00:00',
+                type: 'Parent',
+              },
+            },
+          ],
+          label: 'Parent',
+          type: 'Activity',
         },
       ],
-      expanded: true,
-      id: 'BiteBanana',
+      expanded: false,
+      id: '!!activity-agg',
       isLeaf: false,
       items: [
         {
@@ -645,16 +1024,6 @@ test('generateActivityTree', () => {
             type: 'BiteBanana',
           },
         },
-      ],
-      label: 'BiteBanana',
-      type: 'aggregation',
-    },
-    {
-      children: [],
-      expanded: false,
-      id: 'Child',
-      isLeaf: false,
-      items: [
         {
           span: {
             attributes: {
@@ -689,144 +1058,6 @@ test('generateActivityTree', () => {
             type: 'Child',
           },
         },
-      ],
-      label: 'Child',
-      type: 'aggregation',
-    },
-    {
-      children: [
-        {
-          children: [
-            {
-              children: [
-                {
-                  children: [],
-                  expanded: false,
-                  id: 'Parent_1_Child_2',
-                  isLeaf: true,
-                  items: [
-                    {
-                      span: {
-                        attributes: {
-                          arguments: {},
-                          computedAttributes: {},
-                        },
-                        dataset_id: 1,
-                        duration: '03:00:00',
-                        durationMs: 10800000,
-                        endMs: 1,
-                        parent_id: 1,
-                        span_id: 2,
-                        startMs: 0,
-                        start_offset: '00:10:00',
-                        type: 'Child',
-                      },
-                    },
-                  ],
-                  label: 'Child',
-                  type: 'span',
-                },
-                {
-                  children: [],
-                  expanded: false,
-                  id: 'Parent_1_Child_3',
-                  isLeaf: true,
-                  items: [
-                    {
-                      span: {
-                        attributes: {
-                          arguments: {},
-                          computedAttributes: {},
-                        },
-                        dataset_id: 1,
-                        duration: '04:00:00',
-                        durationMs: 14400000,
-                        endMs: 1,
-                        parent_id: 1,
-                        span_id: 3,
-                        startMs: 0,
-                        start_offset: '00:05:00',
-                        type: 'Child',
-                      },
-                    },
-                  ],
-                  label: 'Child',
-                  type: 'span',
-                },
-              ],
-              expanded: true,
-              id: 'Parent_1_Child',
-              isLeaf: false,
-              items: [
-                {
-                  span: {
-                    attributes: {
-                      arguments: {},
-                      computedAttributes: {},
-                    },
-                    dataset_id: 1,
-                    duration: '03:00:00',
-                    durationMs: 10800000,
-                    endMs: 1,
-                    parent_id: 1,
-                    span_id: 2,
-                    startMs: 0,
-                    start_offset: '00:10:00',
-                    type: 'Child',
-                  },
-                },
-                {
-                  span: {
-                    attributes: {
-                      arguments: {},
-                      computedAttributes: {},
-                    },
-                    dataset_id: 1,
-                    duration: '04:00:00',
-                    durationMs: 14400000,
-                    endMs: 1,
-                    parent_id: 1,
-                    span_id: 3,
-                    startMs: 0,
-                    start_offset: '00:05:00',
-                    type: 'Child',
-                  },
-                },
-              ],
-              label: 'Child',
-              type: 'aggregation',
-            },
-          ],
-          expanded: true,
-          id: 'Parent_1',
-          isLeaf: false,
-          items: [
-            {
-              span: {
-                attributes: {
-                  arguments: {},
-                  computedAttributes: {},
-                },
-                dataset_id: 1,
-                duration: '02:00:00',
-                durationMs: 7200000,
-                endMs: 1,
-                parent_id: null,
-                span_id: 1,
-                startMs: 0,
-                start_offset: '00:00:00',
-                type: 'Parent',
-              },
-            },
-          ],
-          label: 'Parent',
-          type: 'span',
-        },
-      ],
-      expanded: true,
-      id: 'Parent',
-      isLeaf: false,
-      items: [
         {
           span: {
             attributes: {
@@ -845,17 +1076,97 @@ test('generateActivityTree', () => {
           },
         },
       ],
-      label: 'Parent',
-      type: 'aggregation',
+      label: 'Activities',
+      type: 'Activity',
+    },
+    {
+      activity_type: undefined,
+      children: [
+        {
+          activity_type: undefined,
+          children: [
+            {
+              activity_type: undefined,
+              children: [],
+              expanded: false,
+              id: 'test_event',
+              isLeaf: true,
+              items: [
+                {
+                  externalEvent: {
+                    duration: '',
+                    duration_ms: 0,
+                    pkey: {
+                      derivation_group_name: 'test_derivation_group',
+                      event_type_name: 'test_event_type',
+                      key: 'test_event',
+                      source_key: 'test_source',
+                    },
+                    source: undefined,
+                    start_ms: 0,
+                    start_time: '',
+                  },
+                },
+              ],
+              label: 'test_event',
+              type: 'ExternalEvent',
+            },
+          ],
+          expanded: false,
+          id: 'test_event_type',
+          isLeaf: false,
+          items: [
+            {
+              externalEvent: {
+                duration: '',
+                duration_ms: 0,
+                pkey: {
+                  derivation_group_name: 'test_derivation_group',
+                  event_type_name: 'test_event_type',
+                  key: 'test_event',
+                  source_key: 'test_source',
+                },
+                source: undefined,
+                start_ms: 0,
+                start_time: '',
+              },
+            },
+          ],
+          label: 'test_event_type',
+          type: 'ExternalEvent',
+        },
+      ],
+      expanded: false,
+      id: '!!ex-ev-agg',
+      isLeaf: false,
+      items: [
+        {
+          externalEvent: {
+            duration: '',
+            duration_ms: 0,
+            pkey: {
+              derivation_group_name: 'test_derivation_group',
+              event_type_name: 'test_event_type',
+              key: 'test_event',
+              source_key: 'test_source',
+            },
+            source: undefined,
+            start_ms: 0,
+            start_time: '',
+          },
+        },
+      ],
+      label: 'External Events',
+      type: 'ExternalEvent',
     },
   ]);
 });
 
 test('getUniqueColorForActivityLayer', () => {
-  expect(getUniqueColorForActivityLayer(createRow([]))).toBe(ViewActivityLayerColorPresets[0]);
+  expect(getUniqueColorForActivityLayer(createRow([]))).toBe(ViewDiscreteLayerColorPresets[0]);
   const row2 = createRow([]);
   row2.layers = [createTimelineActivityLayer([])];
-  expect(getUniqueColorForActivityLayer(row2)).toBe(ViewActivityLayerColorPresets[1]);
+  expect(getUniqueColorForActivityLayer(row2)).toBe(ViewDiscreteLayerColorPresets[1]);
 });
 
 test('getUniqueColorForLineLayer', () => {

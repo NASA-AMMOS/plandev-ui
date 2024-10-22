@@ -25,6 +25,7 @@
   export let columnStates: ColumnState[] = [];
   export let columnsToForceRefreshOnDataUpdate: (keyof RowData)[] = [];
   export let dataGrid: DataGrid<RowData> | undefined = undefined;
+  export let filterExpression: string = '';
   export let hasDeletePermission: PermissionCheck<RowData> | boolean = true;
   export let hasEdit: boolean = false;
   export let hasEditPermission: PermissionCheck<RowData> | boolean = true;
@@ -111,6 +112,7 @@
   {columnDefs}
   {columnStates}
   {columnsToForceRefreshOnDataUpdate}
+  {filterExpression}
   {getRowId}
   {isRowSelectable}
   useCustomContextMenu

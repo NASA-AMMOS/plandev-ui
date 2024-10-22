@@ -390,6 +390,10 @@ async function* streamAsyncIterable(stream: ReadableStream) {
   }
 }
 
+export function unique(list: any[]) {
+  return [...new Set(list)];
+}
+
 /**
  * Utility function for parsing a large JSON string into a JSON object
  * This function is more for very long strings that need to be broken up into chunks in order to

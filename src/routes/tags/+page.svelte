@@ -11,7 +11,6 @@
   import PageTitle from '../../components/app/PageTitle.svelte';
   import ColorPresetsPicker from '../../components/form/ColorPresetsPicker.svelte';
   import Field from '../../components/form/Field.svelte';
-  import Input from '../../components/form/Input.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
@@ -290,10 +289,17 @@
     <Panel borderRight padBody={false}>
       <svelte:fragment slot="header">
         <SectionTitle>
+          <svelte:fragment slot="icon">
+            {#if selectedTag}
+              <PenIcon slot="icon" />
+            {:else}
+              <PlusIcon slot="icon" />
+            {/if}
+          </svelte:fragment>
           {#if selectedTag}
-            <PenIcon /> Edit Tag
+            Edit Tag
           {:else}
-            <PlusIcon /> New Tag
+            New Tag
           {/if}
         </SectionTitle>
       </svelte:fragment>
@@ -428,13 +434,13 @@
 
     <Panel>
       <svelte:fragment slot="header">
-        <SectionTitle>
-          <TagsIcon />
-          Tags
-        </SectionTitle>
-        <Input layout="inline">
+        <div style:display="flex" style:gap="0.5rem">
+          <SectionTitle>
+            <TagsIcon slot="icon" />
+            Tags
+          </SectionTitle>
           <input bind:value={filterText} class="st-input" placeholder="Filter tags" style="width: 300px" />
-        </Input>
+        </div>
       </svelte:fragment>
 
       <svelte:fragment slot="body">

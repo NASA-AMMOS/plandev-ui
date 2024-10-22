@@ -18,6 +18,7 @@ export class Plan {
   constraintManageButton: Locator;
   constraintModalFilter: Locator;
   constraintNewButton: Locator;
+  externalSourceManageButton: Locator;
   gridMenu: Locator;
   gridMenuButton: Locator;
   gridMenuItem: (name: string) => Locator;
@@ -496,6 +497,7 @@ export class Plan {
     this.constraintModalFilter = page.locator('.modal').getByPlaceholder('Filter constraints');
     this.constraintNewButton = page.locator(`button[name="new-constraint"]`);
     this.consoleContainer = page.locator(`.console-container`);
+    this.externalSourceManageButton = page.getByLabel('Select derivation groups to');
     this.gridMenuButton = page.locator('.header > .grid-menu');
     this.gridMenu = this.gridMenuButton.getByRole('menu');
     this.gridMenuItem = (name: string) => this.gridMenu.getByRole('menuitem', { exact: true, name });
@@ -579,7 +581,7 @@ export class Plan {
 export enum PanelNames {
   ACTIVITY_DIRECTIVES_TABLE = 'Activity Directives Table',
   SIMULATED_ACTIVITIES_TABLE = 'Simulated Activities Table',
-  TIMELINE_ITEMS = 'Activity & Resource Types',
+  TIMELINE_ITEMS = 'Activity, Resource, Event Types',
   CONSTRAINTS = 'Constraints',
   EXPANSION = 'Expansion',
   EXTERNAL_APPLICATION = 'External Application',
@@ -589,4 +591,5 @@ export enum PanelNames {
   SELECTED_ACTIVITY = 'Selected Activity',
   SIMULATION = 'Simulation',
   TIMELINE_EDITOR = 'Timeline Editor',
+  EXTERNAL_SOURCES = 'External Sources',
 }

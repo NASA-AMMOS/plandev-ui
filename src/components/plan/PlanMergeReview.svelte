@@ -14,6 +14,7 @@
   import type { User } from '../../types/app';
   import type {
     Plan,
+    PlanForMerging,
     PlanMergeActivityDirective,
     PlanMergeActivityDirectiveSource,
     PlanMergeActivityDirectiveTarget,
@@ -79,12 +80,12 @@
   let selectedNonConflictingActivity: PlanMergeNonConflictingActivity | null;
   let unresolvedConflictsCount: number = 0;
   let userInitiatedMergeRequestResolution: boolean = false;
+  let sourcePlan: PlanForMerging;
+  let targetPlan: PlanForMerging;
 
   $: if (initialPlan && initialMergeRequest) {
-    const {
-      plan_snapshot_supplying_changes: { plan: sourcePlan },
-      plan_receiving_changes: targetPlan,
-    } = initialMergeRequest;
+    sourcePlan = initialMergeRequest.plan_snapshot_supplying_changes.plan;
+    targetPlan = initialMergeRequest.plan_receiving_changes;
 
     const { id: supplyingPlanId } = sourcePlan;
 

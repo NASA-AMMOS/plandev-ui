@@ -7,14 +7,15 @@
   import { createEventDispatcher } from 'svelte';
   import TimelineLineLayerIcon from '../../assets/timeline-line-layer.svg?component';
   import TimelineXRangeLayerIcon from '../../assets/timeline-x-range-layer.svg?component';
-  import { ViewDefaultActivityOptions } from '../../constants/view';
+  import { ViewDefaultDiscreteOptions } from '../../constants/view';
   import type { ActivityDirectiveId } from '../../types/activity';
+  import type { ExternalEventId } from '../../types/external-event';
   import type { Resource, SpanId } from '../../types/simulation';
   import type {
-    ActivityOptions,
-    ActivityTree,
     Axis,
     ChartType,
+    DiscreteOptions,
+    DiscreteTree,
     Layer,
     LineLayer,
     MouseOver,
@@ -22,12 +23,12 @@
   import { filterResourcesByLayer } from '../../utilities/timeline';
   import { tooltip } from '../../utilities/tooltip';
   import DropTarget from './DropTarget.svelte';
-  import RowHeaderActivityTree from './RowHeaderActivityTree.svelte';
+  import RowHeaderDiscreteTree from './RowHeaderDiscreteTree.svelte';
   import RowHeaderMenu from './RowHeaderMenu.svelte';
   import RowYAxes from './RowYAxes.svelte';
 
-  export let activityTree: ActivityTree = [];
-  export let activityOptions: ActivityOptions = { ...ViewDefaultActivityOptions };
+  export let discreteTree: DiscreteTree = [];
+  export let discreteOptions: DiscreteOptions = { ...ViewDefaultDiscreteOptions };
   export let expanded: boolean = true;
   export let height: number = 0;
   export let layers: Layer[];
@@ -40,6 +41,7 @@
   export let yAxes: Axis[];
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let selectedSpanId: SpanId | null = null;
+  export let selectedExternalEventId: ExternalEventId | null = null;
 
   let resourceLabels: {
     chartType: ChartType;
@@ -103,7 +105,7 @@
   class="row-header"
   style:width={`${width - rowHeaderDragHandleWidthPx}px`}
   style:margin-right={`${rowHeaderDragHandleWidthPx}px`}
-  style:height={expanded ? `${height}px` : '24px'}
+  style:height={`${height}px`}
   class:expanded
   role="banner"
   on:contextmenu={e => dispatch('contextMenu', { e, origin: 'row-header' })}
@@ -152,21 +154,20 @@
           </button>
           <slot />
         </div>
-
-        {#if activityTree.length}
-          <div class="activity-tree">
-            <RowHeaderActivityTree
-              {activityOptions}
-              {activityTree}
+        {#if discreteTree.length}
+          <div class="discrete-tree">
+            <RowHeaderDiscreteTree
+              {discreteOptions}
+              {discreteTree}
               {selectedActivityDirectiveId}
               {selectedSpanId}
-              on:activity-tree-node-change
+              {selectedExternalEventId}
+              on:discrete-tree-node-change
               on:mouseDown
               on:dblClick
             />
           </div>
         {/if}
-
         {#if resourceLabels.length > 0}
           <div class="row-header-y-axis-labels">
             {#each resourceLabels as label}
@@ -366,7 +367,19 @@
     white-space: nowrap;
   }
 
-  .activity-tree {
+  .discrete-tree {
     padding-left: 16px;
+  }
+
+  :global(.collapse.selected > .collapse-header) {
+    background-color: #e3effd !important;
+  }
+
+  :global(.collapse.selected > .collapse-header *) {
+    color: var(--st-utility-blue) !important;
+  }
+
+  :global(.collapse.selected > .collapse-header) {
+    background-color: #e3effd !important;
   }
 </style>

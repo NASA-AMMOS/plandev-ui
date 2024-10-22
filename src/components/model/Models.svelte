@@ -436,7 +436,7 @@
   <Panel>
     <svelte:fragment slot="header">
       <SectionTitle>
-        <BarChartIcon />
+        <BarChartIcon slot="icon" />
         Models
       </SectionTitle>
     </svelte:fragment>

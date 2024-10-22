@@ -1,32 +1,63 @@
 import Ajv from 'ajv';
-import { ViewDefaultActivityOptions } from '../constants/view';
+import { ViewDefaultDiscreteOptions } from '../constants/view';
 import jsonSchema from '../schemas/ui-view-schema.json';
 import type { ActivityType } from '../types/activity';
+import type { ExternalEventType } from '../types/external-event';
 import type { ResourceType } from '../types/simulation';
 import type { View, ViewGridColumns, ViewGridRows } from '../types/view';
-import { createRow, createTimeline, createTimelineActivityLayer, createTimelineResourceLayer } from './timeline';
+import {
+  createRow,
+  createTimeline,
+  createTimelineActivityLayer,
+  createTimelineExternalEventLayer,
+  createTimelineResourceLayer,
+} from './timeline';
 
 /**
  * Generates a default generic UI view.
  */
-export function generateDefaultView(activityTypes: ActivityType[] = [], resourceTypes: ResourceType[] = []): View {
+export function generateDefaultView(
+  activityTypes: ActivityType[] = [],
+  resourceTypes: ResourceType[] = [],
+  externalEventTypes: ExternalEventType[] = [],
+): View {
   const now = new Date().toISOString();
   const types: string[] = activityTypes.map(({ name }) => name);
 
   const timeline = createTimeline([], { marginLeft: 250, marginRight: 30 });
   const timelines = [timeline];
 
+  // Start with the activity row
   const activityLayer = createTimelineActivityLayer(timelines, {
     filter: { activity: { types } },
   });
   const activityRow = createRow(timelines, {
-    activityOptions: { ...ViewDefaultActivityOptions, displayMode: 'grouped' },
     autoAdjustHeight: true,
+    discreteOptions: { ...ViewDefaultDiscreteOptions, displayMode: 'grouped' },
     expanded: true,
     layers: [activityLayer],
     name: 'Activities by Type',
   });
   timeline.rows.push(activityRow);
+
+  // IF derivation groups with event_types are associated, make an external event row
+  // If there are empty derivation groups associated without any event types, this row is not added
+  //    (to change this, modify getExternalEventTypes to include derivation groups as well in its
+  //     return type, so they can be checked as well).
+  if (externalEventTypes.length) {
+    const externalEventLayer = createTimelineExternalEventLayer(timelines, {
+      filter: { externalEvent: { event_types: externalEventTypes.map(e => e.name) } },
+    });
+    const externalEventRow = createRow(timelines, {
+      autoAdjustHeight: false,
+      discreteOptions: { ...ViewDefaultDiscreteOptions, displayMode: 'grouped' },
+      expanded: true,
+      height: 100,
+      layers: [externalEventLayer],
+      name: 'External Events',
+    });
+    timeline.rows.push(externalEventRow);
+  }
 
   // Generate a row for every resource
   resourceTypes.map(resourceType => {

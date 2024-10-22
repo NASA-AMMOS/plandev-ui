@@ -13,6 +13,7 @@
   import type { Simulation, SimulationDataset, Span, SpansMap, SpanUtilityMaps } from '../../types/simulation';
   import type {
     ActivityOptions,
+    DiscreteOptions,
     MouseOver,
     MouseOverOrigin,
     Row,
@@ -47,7 +48,7 @@
   export let user: User | null;
 
   const dispatch = createEventDispatcher<{
-    collapseActivityTree: Row;
+    collapseDiscreteTree: Row;
     deleteActivityDirective: number;
     deleteRow: Row;
     duplicateRow: Row;
@@ -61,6 +62,7 @@
     viewTimeRangeChanged: TimeRange;
     viewTimeRangeReset: void;
   }>();
+  let discreteOptions: DiscreteOptions | undefined;
   let activityOptions: ActivityOptions | undefined;
   let activityDirective: ActivityDirective | null;
   let activityDirectiveSpans: Span[] | null = [];
@@ -87,7 +89,8 @@
     hasActivityLayer = false;
 
     if (row) {
-      activityOptions = row.activityOptions;
+      discreteOptions = row.discreteOptions;
+      activityOptions = row.discreteOptions?.activityOptions;
       hasActivityLayer = !!row.layers.find(isActivityLayer);
     }
 
@@ -218,9 +221,9 @@
     }
   }
 
-  function onCollapseActivityTree() {
+  function onCollapseDiscreteTree() {
     if (row) {
-      dispatch('collapseActivityTree', row);
+      dispatch('collapseDiscreteTree', row);
     }
   }
 
@@ -449,9 +452,9 @@
   <ContextMenuItem on:click={onDuplicateRow}>Duplicate Row</ContextMenuItem>
   <ContextMenuItem on:click={onDeleteRow}>Delete Row</ContextMenuItem>
   {#if hasActivityLayer}
-    {#if activityOptions?.displayMode === 'grouped'}
+    {#if discreteOptions?.displayMode === 'grouped'}
       <ContextMenuSeparator />
-      <ContextMenuItem on:click={onCollapseActivityTree}>Collapse All Hierarchies</ContextMenuItem>
+      <ContextMenuItem on:click={onCollapseDiscreteTree}>Collapse All Hierarchies</ContextMenuItem>
     {/if}
     <ContextMenuSeparator />
     <div role="radiogroup" class="st-radio-group">

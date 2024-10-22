@@ -34,6 +34,7 @@
     gap: 0.5rem;
     height: var(--nav-header-height);
     justify-content: space-between;
+    overflow: hidden;
   }
 
   .header :global(i) {

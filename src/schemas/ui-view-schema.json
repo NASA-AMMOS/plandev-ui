@@ -270,6 +270,49 @@
                       "description": "Expanded state of the timeline row",
                       "type": "boolean"
                     },
+                    "discreteOptions": {
+                      "additionalProperties": false,
+                      "description": "Defines the options used for rendering external events on the timeline",
+                      "properties": {
+                        "activityOptions": {
+                          "description": "Options for activity layers in the row",
+                          "properties": {
+                            "composition": {
+                              "description": "Whether or not to display only directives, only spans, or both in the row",
+                              "enum": ["directives", "spans", "both"]
+                            },
+                            "hierarchyMode": {
+                              "description": "If 'directive' the activities are grouped starting with directive types, if 'flat' activities are grouped by type regardless of hierarchy",
+                              "enum": ["directive", "flat"]
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "displayMode": {
+                          "description": "Describes the display mode to use for rendering external events",
+                          "enum": ["compact", "grouped"]
+                        },
+                        "externalEventOptions": {
+                          "description": "Options for external event layers in the row",
+                          "properties": {
+                            "groupBy": {
+                              "description": "Determines whether to group the external events by their event type, or their external source",
+                              "enum": ["event_type_name", "source_key"]
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "height": {
+                          "description": "Height of timeline rows",
+                          "type": "number",
+                          "minimum": 16
+                        },
+                        "labelVisibility": {
+                          "description": "External event text label behavior",
+                          "enum": ["on", "off", "auto"]
+                        }
+                      }
+                    },
                     "height": {
                       "description": "Height of the row in pixels",
                       "minimum": 0,
@@ -447,6 +490,50 @@
                             },
                             "required": ["chartType", "colorScheme", "filter", "id", "opacity", "yAxisId"],
                             "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "description": "External event layer",
+                            "properties": {
+                              "externalEventColor": {
+                                "$ref": "#/definitions/color"
+                              },
+                              "chartType": {
+                                "const": "externalEvent",
+                                "description": "Layer that visualizes external events"
+                              },
+                              "filter": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "externalEvent": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "event_types": {
+                                        "description": "Array of external event types to display in this layer",
+                                        "items": {
+                                          "type": "string"
+                                        },
+                                        "type": "array"
+                                      }
+                                    },
+                                    "required": ["event_types"],
+                                    "type": "object"
+                                  }
+                                },
+                                "required": ["externalEvent"],
+                                "type": "object"
+                              },
+                              "id": {
+                                "$ref": "#/definitions/id"
+                              },
+                              "name": {
+                                "description": "Name of the layer",
+                                "type": "string"
+                              },
+                              "yAxisId": {
+                                "$ref": "#/definitions/yAxisId"
+                              }
+                            }
                           }
                         ]
                       },

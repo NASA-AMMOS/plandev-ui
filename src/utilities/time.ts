@@ -423,6 +423,16 @@ export function convertDurationStringToInterval(durationString: string): string 
 }
 
 /**
+ * Convert a Postgres UTC string to milliseconds, for rendering purposes.
+ * @param date The date as a string to convert.
+ * @returns The number of milliseconds since epoch start for this date.
+ */
+export function convertUTCToMs(date: string): number {
+  const d = new Date(date);
+  return d.getTime();
+}
+
+/**
  * Get a number value in microseconds given a string duration of the format '2y 318d 6h 16m 19s 200ms 0us'.
  * @example convertDurationStringToUs('2y 318d 6h 16m 19s 200ms 0us') -> 90577779200000
  * @note inverse of convertUsToDurationString

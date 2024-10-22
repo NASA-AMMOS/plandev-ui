@@ -10,6 +10,10 @@
   import GripVerticalIcon from 'bootstrap-icons/icons/grip-vertical.svg?component';
   import { onMount } from 'svelte';
   import { dndzone } from 'svelte-dnd-action';
+  import {
+    default as ExternalEventIcon,
+    default as ExternalSourceIcon,
+  } from '../../../assets/external-source-box.svg?component';
   import ActivityModeTextNoneIcon from '../../../assets/text-none.svg?component';
   import ActivityModeTextIcon from '../../../assets/text.svg?component';
   import ActivityModeCompactIcon from '../../../assets/timeline-activity-mode-compact.svg?component';
@@ -20,15 +24,11 @@
   import HierarchyModeFlatIcon from '../../../assets/timeline-hierarchy-mode-flat.svg?component';
   import SpanIcon from '../../../assets/timeline-span.svg?component';
   import ActivityModeWidthIcon from '../../../assets/width.svg?component';
-  import {
-    ViewActivityLayerColorPresets,
-    ViewDefaultActivityOptions,
-    ViewLineLayerColorPresets,
-  } from '../../../constants/view';
+  import { ViewDefaultDiscreteOptions } from '../../../constants/view';
   import { ViewConstants } from '../../../enums/view';
-  import { activityTypes, maxTimeRange, viewTimeRange } from '../../../stores/plan';
+  import { maxTimeRange, viewTimeRange } from '../../../stores/plan';
   import { plugins } from '../../../stores/plugins';
-  import { externalResourceNames, resourceTypes, yAxesWithScaleDomainsCache } from '../../../stores/simulation';
+  import { yAxesWithScaleDomainsCache } from '../../../stores/simulation';
   import {
     selectedRowId,
     selectedTimelineId,
@@ -39,12 +39,14 @@
     viewUpdateRow,
     viewUpdateTimeline,
   } from '../../../stores/views';
-  import type { ActivityType } from '../../../types/activity';
   import type { RadioButtonId } from '../../../types/radio-buttons';
   import type {
     ActivityLayer,
     ActivityOptions,
     Axis,
+    DiscreteOptions,
+    ExternalEventLayer,
+    ExternalEventOptions,
     HorizontalGuide,
     Layer,
     LineLayer,
@@ -52,6 +54,7 @@
     Timeline,
     VerticalGuide,
     XRangeLayer,
+    XRangeLayerColorScheme,
   } from '../../../types/timeline';
   import type { ViewGridSection } from '../../../types/view';
   import effects from '../../../utilities/effects';
@@ -60,18 +63,18 @@
   import {
     createHorizontalGuide,
     createTimelineActivityLayer,
+    createTimelineExternalEventLayer,
     createTimelineLineLayer,
     createTimelineXRangeLayer,
     createVerticalGuide,
     createYAxis,
     isActivityLayer,
+    isExternalEventLayer,
     isLineLayer,
     isXRangeLayer,
   } from '../../../utilities/timeline';
   import { tooltip } from '../../../utilities/tooltip';
   import ColorPicker from '../../form/ColorPicker.svelte';
-  import ColorPresetsPicker from '../../form/ColorPresetsPicker.svelte';
-  import ColorSchemePicker from '../../form/ColorSchemePicker.svelte';
   import Input from '../../form/Input.svelte';
   import GridMenu from '../../menus/GridMenu.svelte';
   import ParameterUnits from '../../parameters/ParameterUnits.svelte';
@@ -80,24 +83,22 @@
   import Panel from '../../ui/Panel.svelte';
   import RadioButton from '../../ui/RadioButtons/RadioButton.svelte';
   import RadioButtons from '../../ui/RadioButtons/RadioButtons.svelte';
-  import TimelineEditorLayerFilter from './TimelineEditorLayerFilter.svelte';
-  import TimelineEditorLayerSelectedFilters from './TimelineEditorLayerSelectedFilters.svelte';
-  import TimelineEditorLayerSettings from './TimelineEditorLayerSettings.svelte';
+  import TimelineEditorLayerSection from './TimelineEditorLayerSection.svelte';
   import TimelineEditorYAxisSettings from './TimelineEditorYAxisSettings.svelte';
 
   export let gridSection: ViewGridSection;
 
-  let activityOptions: ActivityOptions = { ...ViewDefaultActivityOptions };
   let horizontalGuides: HorizontalGuide[] = [];
   let editorWidth: number;
   let layers: Layer[] = [];
   let timelines: Timeline[] = [];
-  let rowHasActivityLayer: boolean = false;
   let rowHasNonActivityChartLayer: boolean = false;
   let rows: Row[] = [];
   let selectedTimeline: Timeline | undefined;
   let selectedRow: Row | undefined;
   let verticalGuides: VerticalGuide[] = [];
+  let rowHasActivityLayer: boolean | ActivityLayer = false;
+  let rowHasExternalEventLayer: boolean | ExternalEventLayer = false;
   let yAxes: Axis[] = [];
 
   $: selectedTimeline = $view?.definition.plan.timelines.find(t => t.id === $selectedTimelineId);
@@ -109,12 +110,13 @@
   $: yAxes = selectedRow?.yAxes || [];
   $: layers = selectedRow?.layers || [];
   $: rowHasActivityLayer = !!selectedRow?.layers.find(isActivityLayer) || false;
+  $: rowHasExternalEventLayer = selectedRow?.layers.find(isExternalEventLayer) || false;
   $: rowHasNonActivityChartLayer =
     !!selectedRow?.layers.find(layer => isLineLayer(layer) || isXRangeLayer(layer)) || false;
-  $: if (rowHasActivityLayer && selectedRow && !selectedRow.activityOptions) {
-    viewUpdateRow('activityOptions', ViewDefaultActivityOptions);
+  $: if ((rowHasActivityLayer || rowHasExternalEventLayer) && selectedRow && !selectedRow.discreteOptions) {
+    viewUpdateRow('discreteOptions', ViewDefaultDiscreteOptions);
   }
-  $: activityOptions = selectedRow?.activityOptions || { ...ViewDefaultActivityOptions };
+  $: discreteOptions = selectedRow?.discreteOptions || { ...ViewDefaultDiscreteOptions };
 
   function updateRowEvent(event: Event) {
     const { name, value } = getTarget(event);
@@ -189,14 +191,28 @@
     viewUpdateRow('layers', filteredLayers);
   }
 
-  function handleDeleteLayerFilterValue(layer: Layer, value: string) {
-    const newValues = getFilterValuesForLayer(layer).filter(i => value !== i);
-    handleUpdateLayerFilter(newValues, layer);
+  function handleOptionRadioChange(event: CustomEvent<{ id: RadioButtonId }>, name: keyof DiscreteOptions) {
+    const { id } = event.detail;
+    viewUpdateRow('discreteOptions', { ...discreteOptions, [name]: id });
   }
 
   function handleActivityOptionRadioChange(event: CustomEvent<{ id: RadioButtonId }>, name: keyof ActivityOptions) {
     const { id } = event.detail;
-    viewUpdateRow('activityOptions', { ...activityOptions, [name]: id });
+    viewUpdateRow('discreteOptions', {
+      ...discreteOptions,
+      activityOptions: { ...discreteOptions.activityOptions, [name]: id },
+    });
+  }
+
+  function handleExternalEventOptionRadioChange(
+    event: CustomEvent<{ id: RadioButtonId }>,
+    name: keyof ExternalEventOptions,
+  ) {
+    const { id } = event.detail;
+    viewUpdateRow('discreteOptions', {
+      ...discreteOptions,
+      externalEventOptions: { ...discreteOptions.externalEventOptions, [name]: id },
+    });
   }
 
   function addTimelineRow() {
@@ -319,6 +335,17 @@
             },
           };
           return newLayer;
+        } else if (isExternalEventLayer(currentLayer)) {
+          const newLayer: Layer = {
+            ...currentLayer,
+            filter: {
+              ...currentLayer.filter,
+              externalEvent: {
+                event_types: values,
+              },
+            },
+          };
+          return newLayer;
         } else if (currentLayer.chartType === 'line' || currentLayer.chartType === 'x-range') {
           const newLayer: Layer = {
             ...currentLayer,
@@ -338,8 +365,7 @@
     viewUpdateRow('layers', newLayers);
   }
 
-  function handleUpdateLayerProperty(event: CustomEvent, layer: Layer) {
-    const { name, value } = event.detail;
+  function handleUpdateLayerProperty(name: string, value: string | number | boolean | null, layer: Layer) {
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
         return {
@@ -352,14 +378,14 @@
     viewUpdateRow('layers', newLayers);
   }
 
-  function handleUpdateLayerChartType(event: Event, layer: Layer) {
-    const { value } = getTarget(event);
-
+  function handleUpdateLayerChartType(value: string | number | boolean | null, layer: Layer) {
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
-        let newLayer: ActivityLayer | LineLayer | XRangeLayer | undefined;
+        let newLayer: ActivityLayer | LineLayer | XRangeLayer | ExternalEventLayer | undefined;
         if (value === 'activity') {
           newLayer = { ...createTimelineActivityLayer(timelines), id: l.id };
+        } else if (value === 'externalEvent') {
+          newLayer = { ...createTimelineExternalEventLayer(timelines), id: l.id };
         } else if (value === 'line' || value === 'x-range') {
           if (value === 'line') {
             newLayer = { ...createTimelineLineLayer(timelines, yAxes), id: l.id };
@@ -387,14 +413,15 @@
     viewUpdateRow('layers', newLayers);
   }
 
-  function handleUpdateLayerColor(event: CustomEvent, layer: Layer) {
-    const { value } = event.detail;
+  function handleUpdateLayerColor(value: string, layer: Layer) {
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
         if (isActivityLayer(l)) {
-          (l as ActivityLayer).activityColor = value as string;
+          return { ...l, activityColor: value };
+        } else if (isExternalEventLayer(l)) {
+          return { ...l, externalEventColor: value };
         } else if (l.chartType === 'line') {
-          (l as LineLayer).lineColor = value as string;
+          return { ...l, lineColor: value };
         }
       }
       return l;
@@ -402,8 +429,7 @@
     viewUpdateRow('layers', newLayers);
   }
 
-  function handleUpdateLayerColorScheme(event: CustomEvent, layer: Layer) {
-    const { value } = event.detail;
+  function handleUpdateLayerColorScheme(value: XRangeLayerColorScheme, layer: Layer) {
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
         (l as XRangeLayer).colorScheme = value;
@@ -453,42 +479,6 @@
     el.classList.add('timeline-element-dragging');
   }
 
-  function getColorForLayer(layer: Layer) {
-    if (isActivityLayer(layer)) {
-      return layer.activityColor;
-    } else if (isLineLayer(layer)) {
-      return layer.lineColor;
-    } else if (isXRangeLayer(layer)) {
-      return layer.colorScheme;
-    }
-  }
-
-  function getFilterValuesForLayer(layer: Layer) {
-    if (isActivityLayer(layer)) {
-      const activityLayer = layer;
-      const activityTypes = activityLayer.filter?.activity?.types ?? [];
-      return [...activityTypes];
-    } else if (isLineLayer(layer) || isXRangeLayer(layer)) {
-      const resourceLayer = layer;
-      const resourceNames = resourceLayer.filter?.resource?.names ?? [];
-      return [...resourceNames];
-    }
-    return [];
-  }
-
-  function getFilterOptionsForLayer(layer: Layer, activityTypes: ActivityType[], externalResourceNames: string[]) {
-    if (isActivityLayer(layer)) {
-      return activityTypes.map(t => t.name);
-    } else if (isLineLayer(layer) || isXRangeLayer(layer)) {
-      return $resourceTypes
-        .map(t => t.name)
-        .concat(externalResourceNames)
-        .sort();
-    }
-
-    return [];
-  }
-
   onMount(() => {
     if ($selectedTimelineId === null) {
       const firstTimeline = $view?.definition.plan.timelines[0];
@@ -513,8 +503,8 @@
           data-type="number"
           name="timelines"
           value={$selectedTimelineId}
-          on:change={e => {
-            const { valueAsNumber: id } = getTarget(e);
+          on:change={event => {
+            const { valueAsNumber: id } = getTarget(event);
             viewSetSelectedTimeline(id);
           }}
         >
@@ -743,8 +733,8 @@
           data-type="number"
           name="rows"
           value={$selectedRowId}
-          on:change={e => {
-            const { valueAsNumber: id } = getTarget(e);
+          on:change={event => {
+            const { valueAsNumber: id } = getTarget(event);
             viewSetSelectedRow(id);
           }}
         >
@@ -792,8 +782,8 @@
               data-type="bool"
               name="autoAdjustHeight"
               value={selectedRow.autoAdjustHeight}
-              on:change={e => {
-                const { value } = getTarget(e);
+              on:change={event => {
+                const { value } = getTarget(event);
                 viewUpdateRow('autoAdjustHeight', value === 'true');
               }}
             >
@@ -896,16 +886,40 @@
           {/if}
         </fieldset>
       {/if}
-      {#if rowHasActivityLayer}
+      {#if rowHasActivityLayer || rowHasExternalEventLayer}
         <fieldset class="editor-section">
           <div class="editor-section-header">
-            <div class="st-typography-medium">Activity Options</div>
+            <div class="st-typography-medium">Layer Options</div>
           </div>
+          <form on:submit={event => event.preventDefault()} style="flex: 1">
+            <Input layout="inline" class="editor-input">
+              <label for="text">Height</label>
+              <input
+                min={12}
+                autocomplete="off"
+                class="st-input w-100"
+                name="text"
+                type="number"
+                value={discreteOptions.height}
+                on:input={event => {
+                  const { value } = getTarget(event);
+                  if (typeof value === 'number' && !isNaN(value)) {
+                    if (value >= 12) {
+                      viewUpdateRow('discreteOptions', { ...discreteOptions, height: value });
+                    }
+                  }
+                }}
+              />
+              <ParameterUnits unit="px" slot="right" />
+            </Input>
+          </form>
           <Input layout="inline" class="editor-input">
             <label for="activity-composition">Display</label>
             <RadioButtons
-              selectedButtonId={activityOptions.displayMode}
-              on:select-radio-button={e => handleActivityOptionRadioChange(e, 'displayMode')}
+              selectedButtonId={discreteOptions.displayMode}
+              on:select-radio-button={event => {
+                handleOptionRadioChange(event, 'displayMode');
+              }}
             >
               <RadioButton
                 use={[[tooltip, { content: 'Group activities by type in collapsible rows', placement: 'top' }]]}
@@ -930,8 +944,8 @@
           <Input layout="inline" class="editor-input">
             <label for="activity-composition">Labels</label>
             <RadioButtons
-              selectedButtonId={activityOptions.labelVisibility}
-              on:select-radio-button={e => handleActivityOptionRadioChange(e, 'labelVisibility')}
+              selectedButtonId={discreteOptions.labelVisibility}
+              on:select-radio-button={event => handleOptionRadioChange(event, 'labelVisibility')}
             >
               <RadioButton use={[[tooltip, { content: 'Always show labels', placement: 'top' }]]} id="on">
                 <div class="radio-button-icon">
@@ -956,41 +970,46 @@
               </RadioButton>
             </RadioButtons>
           </Input>
-          <Input layout="inline" class="editor-input">
-            <label for="activity-composition">Show</label>
-            <RadioButtons
-              id="activity-composition"
-              selectedButtonId={activityOptions.composition}
-              on:select-radio-button={e => handleActivityOptionRadioChange(e, 'composition')}
-            >
-              <RadioButton use={[[tooltip, { content: 'Only show directives', placement: 'top' }]]} id="directives">
-                <div class="radio-button-icon">
-                  <DirectiveIcon /><span class="timeline-editor-responsive-label">Directives</span>
-                </div>
-              </RadioButton>
-              <RadioButton use={[[tooltip, { content: 'Only show simulated', placement: 'top' }]]} id="spans">
-                <div class="radio-button-icon">
-                  <SpanIcon />
-                  <span class="timeline-editor-responsive-label">Simulated</span>
-                </div>
-              </RadioButton>
-              <RadioButton
-                use={[[tooltip, { content: 'Show directives and simulated activities', placement: 'top' }]]}
-                id="both"
+          {#if rowHasActivityLayer}
+            <div class="editor-section-header activity-options">
+              <div class="st-typography-label">Activity Options</div>
+            </div>
+            <Input layout="inline" class="editor-input">
+              <label for="activity-composition">Show</label>
+              <RadioButtons
+                id="activity-composition"
+                selectedButtonId={discreteOptions?.activityOptions?.composition}
+                on:select-radio-button={event => handleActivityOptionRadioChange(event, 'composition')}
               >
-                <div class="radio-button-icon">
-                  <DirectiveAndSpanIcon />
-                  <span class="timeline-editor-responsive-label">Both</span>
-                </div>
-              </RadioButton>
-            </RadioButtons>
-          </Input>
-          {#if activityOptions.displayMode === 'grouped'}
+                <RadioButton use={[[tooltip, { content: 'Only show directives', placement: 'top' }]]} id="directives">
+                  <div class="radio-button-icon">
+                    <DirectiveIcon /><span class="timeline-editor-responsive-label">Directives</span>
+                  </div>
+                </RadioButton>
+                <RadioButton use={[[tooltip, { content: 'Only show simulated', placement: 'top' }]]} id="spans">
+                  <div class="radio-button-icon">
+                    <SpanIcon />
+                    <span class="timeline-editor-responsive-label">Simulated</span>
+                  </div>
+                </RadioButton>
+                <RadioButton
+                  use={[[tooltip, { content: 'Show directives and simulated activities', placement: 'top' }]]}
+                  id="both"
+                >
+                  <div class="radio-button-icon">
+                    <DirectiveAndSpanIcon />
+                    <span class="timeline-editor-responsive-label">Both</span>
+                  </div>
+                </RadioButton>
+              </RadioButtons>
+            </Input>
+          {/if}
+          {#if rowHasActivityLayer && discreteOptions.displayMode === 'grouped'}
             <Input layout="inline" class="editor-input">
               <label for="activity-composition">Hierarchy</label>
               <RadioButtons
-                selectedButtonId={activityOptions.hierarchyMode}
-                on:select-radio-button={e => handleActivityOptionRadioChange(e, 'hierarchyMode')}
+                selectedButtonId={discreteOptions?.activityOptions?.hierarchyMode}
+                on:select-radio-button={event => handleActivityOptionRadioChange(event, 'hierarchyMode')}
               >
                 <RadioButton
                   use={[[tooltip, { content: 'Group starting with directives', placement: 'top' }]]}
@@ -1018,28 +1037,37 @@
               </RadioButtons>
             </Input>
           {/if}
-          <form on:submit={event => event.preventDefault()} style="flex: 1">
+          {#if rowHasExternalEventLayer && discreteOptions.displayMode === 'grouped'}
+            <div class="editor-section-header external-event-options">
+              <div class="st-typography-label">External Event Options</div>
+            </div>
             <Input layout="inline" class="editor-input">
-              <label for="text">Height</label>
-              <input
-                min={12}
-                autocomplete="off"
-                class="st-input w-100"
-                name="text"
-                type="number"
-                value={activityOptions.activityHeight}
-                on:input={event => {
-                  const { value } = getTarget(event);
-                  if (typeof value === 'number' && !isNaN(value)) {
-                    if (value >= 12) {
-                      viewUpdateRow('activityOptions', { ...activityOptions, activityHeight: value });
-                    }
-                  }
-                }}
-              />
-              <ParameterUnits unit="px" slot="right" />
+              <label for="activity-composition">Group By</label>
+              <RadioButtons
+                selectedButtonId={discreteOptions?.externalEventOptions?.groupBy}
+                on:select-radio-button={event => handleExternalEventOptionRadioChange(event, 'groupBy')}
+              >
+                <RadioButton
+                  use={[[tooltip, { content: 'Group according to external source', placement: 'top' }]]}
+                  id="source_key"
+                >
+                  <div class="radio-button-icon">
+                    <ExternalSourceIcon />
+                    <span class="timeline-editor-responsive-label">By Source</span>
+                  </div>
+                </RadioButton>
+                <RadioButton
+                  use={[[tooltip, { content: 'Group according to event type', placement: 'top' }]]}
+                  id="event_type_name"
+                >
+                  <div class="radio-button-icon">
+                    <ExternalEventIcon />
+                    <span class="timeline-editor-responsive-label">By Event Type</span>
+                  </div>
+                </RadioButton>
+              </RadioButtons>
             </Input>
-          </form>
+          {/if}
         </fieldset>
       {/if}
       <!-- TODO perhaps separate out each section into a mini editor? -->
@@ -1170,70 +1198,17 @@
             <!-- TODO bug when dragging something into a different draggable area -->
             <div class="timeline-layers timeline-elements">
               {#each layers as layer (layer.id)}
-                <div class="timeline-layer timeline-element">
-                  <CssGrid columns="1fr 0.75fr 24px 24px 24px" gap="8px" class="editor-section-grid">
-                    <TimelineEditorLayerFilter
-                      values={getFilterValuesForLayer(layer)}
-                      options={getFilterOptionsForLayer(layer, $activityTypes, $externalResourceNames)}
-                      {layer}
-                      on:change={event => {
-                        const { values } = event.detail;
-                        handleUpdateLayerFilter(values, layer);
-                      }}
-                    />
-                    <select
-                      class="st-select w-100"
-                      name="chartType"
-                      value={layer.chartType}
-                      on:change={event => handleUpdateLayerChartType(event, layer)}
-                    >
-                      <option value="activity">Activity</option>
-                      <option value="line">Line</option>
-                      <option value="x-range">X-Range</option>
-                    </select>
-                    <TimelineEditorLayerSettings
-                      {layer}
-                      on:input={event => handleUpdateLayerProperty(event, layer)}
-                      on:delete={() => handleDeleteLayerClick(layer)}
-                      {yAxes}
-                    />
-
-                    {#if isActivityLayer(layer)}
-                      <ColorPresetsPicker
-                        presetColors={ViewActivityLayerColorPresets}
-                        tooltipText="Layer Color"
-                        value={getColorForLayer(layer)}
-                        on:input={event => handleUpdateLayerColor(event, layer)}
-                      />
-                    {:else if isLineLayer(layer)}
-                      <ColorPresetsPicker
-                        presetColors={ViewLineLayerColorPresets}
-                        tooltipText="Layer Color"
-                        value={getColorForLayer(layer)}
-                        on:input={event => handleUpdateLayerColor(event, layer)}
-                      />
-                    {:else if isXRangeLayer(layer)}
-                      <ColorSchemePicker
-                        layout="compact"
-                        value={getColorForLayer(layer)}
-                        on:input={event => handleUpdateLayerColorScheme(event, layer)}
-                      />
-                    {/if}
-
-                    <button
-                      on:click={() => handleDeleteLayerClick(layer)}
-                      use:tooltip={{ content: 'Delete Layer', placement: 'top' }}
-                      class="st-button icon"
-                    >
-                      <TrashIcon />
-                    </button>
-                  </CssGrid>
-                  <TimelineEditorLayerSelectedFilters
-                    chartType={layer.chartType}
-                    filters={getFilterValuesForLayer(layer)}
-                    on:remove={event => handleDeleteLayerFilterValue(layer, event.detail.filter)}
-                  />
-                </div>
+                <TimelineEditorLayerSection
+                  on:handleUpdateLayerFilter={event => handleUpdateLayerFilter(event.detail.values, layer)}
+                  on:handleUpdateLayerProperty={event =>
+                    handleUpdateLayerProperty(event.detail.name, event.detail.value, layer)}
+                  on:handleUpdateLayerChartType={event => handleUpdateLayerChartType(event.detail.value, layer)}
+                  on:handleUpdateLayerColor={event => handleUpdateLayerColor(event.detail.value, layer)}
+                  on:handleUpdateLayerColorScheme={event => handleUpdateLayerColorScheme(event.detail.value, layer)}
+                  on:handleDeleteLayerClick={() => handleDeleteLayerClick(layer)}
+                  {layer}
+                  {yAxes}
+                />
               {/each}
             </div>
           </div>
@@ -1246,6 +1221,16 @@
 </Panel>
 
 <style>
+  .activity-options {
+    border-top: 1px solid var(--st-gray-20);
+    padding-top: 16px;
+  }
+
+  .external-event-options {
+    border-top: 1px solid var(--st-gray-20);
+    padding-top: 16px;
+  }
+
   .timeline-editor {
     display: flex;
     flex-direction: column;
@@ -1276,7 +1261,6 @@
   .timeline-row .st-button.icon,
   .guide .st-button.icon,
   .timeline-y-axis .st-button.icon,
-  .timeline-layer .st-button.icon,
   :global(.timeline-editor-layer-settings.st-button.icon),
   :global(.timeline-editor-axis-settings.st-button.icon) {
     color: var(--st-gray-50);
@@ -1377,7 +1361,6 @@
     flex-direction: column;
   }
 
-  .timeline-layer,
   .timeline-y-axis {
     padding: 4px 16px;
   }
@@ -1389,8 +1372,7 @@
   }
 
   .guide,
-  .timeline-y-axis,
-  .timeline-layer {
+  .timeline-y-axis {
     align-items: flex-end;
     display: flex;
   }
@@ -1421,11 +1403,6 @@
     gap: 8px;
     height: 32px;
     justify-content: flex-start;
-  }
-
-  .timeline-layer {
-    align-items: flex-start;
-    flex-direction: column;
   }
 
   .radio-button-icon {

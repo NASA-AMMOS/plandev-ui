@@ -4,6 +4,7 @@ import type { ResourceType } from '../types/simulation';
 import type {
   ActivityLayerFilter,
   Axis,
+  ExternalEventLayerFilter,
   Layer,
   ResourceLayerFilter,
   Row,
@@ -18,6 +19,7 @@ import {
   TimelineLockStatus,
   createRow,
   createTimelineActivityLayer,
+  createTimelineExternalEventLayer,
   createTimelineLineLayer,
   createTimelineResourceLayer,
   getUniqueColorForActivityLayer,
@@ -562,7 +564,7 @@ export function viewUpdateYAxis(prop: string, value: any) {
 
 export function getUpdatedLayerWithFilters(
   timelines: Timeline[],
-  type: string /* 'activity' | 'resource' */,
+  type: string /* 'activity' | 'resource' | 'externalEvent' */,
   items: TimelineItemType[],
   layer?: Layer,
   row?: Row,
@@ -575,6 +577,12 @@ export function getUpdatedLayerWithFilters(
         layer: createTimelineActivityLayer(timelines, {
           activityColor: getUniqueColorForActivityLayer(row),
           filter: { activity: { types: itemNames } },
+        }),
+      };
+    } else if (type === 'externalEvent') {
+      return {
+        layer: createTimelineExternalEventLayer(timelines, {
+          filter: { externalEvent: { event_types: itemNames } },
         }),
       };
     } else {
@@ -599,8 +607,15 @@ export function getUpdatedLayerWithFilters(
     }
   } else {
     // Otherwise augment the filter of the specified layer
-    const prop = type === 'activity' ? 'types' : 'names';
-    const typedType = type as 'activity' | 'resource';
+    let prop: string = '';
+    if (type === 'activity') {
+      prop = 'types';
+    } else if (type === 'externalEvent') {
+      prop = 'event_types';
+    } else {
+      prop = 'names';
+    }
+    const typedType = type as 'activity' | 'resource' | 'externalEvent';
     const existingFilter = layer.filter[typedType];
     let existingFilterItems: string[] = [];
 
@@ -608,6 +623,8 @@ export function getUpdatedLayerWithFilters(
       existingFilterItems = (existingFilter as ActivityLayerFilter).types;
     } else if (existingFilter && (existingFilter as ResourceLayerFilter).names) {
       existingFilterItems = (existingFilter as ResourceLayerFilter).names;
+    } else if (existingFilter && (existingFilter as ExternalEventLayerFilter).event_types) {
+      existingFilterItems = (existingFilter as ExternalEventLayerFilter).event_types;
     }
 
     return {
@@ -642,7 +659,7 @@ export function viewAddTimelineRow(timelineId?: number | null, openEditor: boole
 
 export function viewAddFilterToRow(
   items: TimelineItemType[],
-  typeName: string /* 'activity' | 'resource' */,
+  typeName: string /* 'activity' | 'resource' | 'externalEvent' */,
   rowId?: number,
   layer?: Layer,
   index?: number, // row index to insert after
@@ -667,7 +684,7 @@ export function viewAddFilterToRow(
 
 export function viewAddFilterItemsToRow(
   items: TimelineItemType[],
-  typeName: string /* 'activity' | 'resource' */,
+  typeName: string /* 'activity' | 'resource' | 'externalEvent' */,
   rowId?: number,
   layer?: Layer,
   index?: number, // row index to insert after
@@ -680,6 +697,7 @@ export function viewAddFilterItemsToRow(
   let newRows: Row[] = timelines[0].rows;
   let returnRow: Row | undefined = undefined;
   const defaultRowName = `${capitalize(typeName)} Row`;
+  // If no row was given, but one matches the default name, attempt to use it
   const row = typeof rowId === 'number' ? newRows.find(r => r.id === rowId) : undefined;
   const targetRow = row || createRow(timelines, { name: items.length === 1 ? items[0].name : defaultRowName });
   if (!row) {
@@ -695,7 +713,8 @@ export function viewAddFilterItemsToRow(
       !layer ||
       // Case where the target layer type does not match the destination layer chart type
       (layer.chartType === 'activity' && typeName === 'resource') ||
-      (layer.chartType !== 'activity' && typeName === 'activity')
+      (layer.chartType !== 'activity' && typeName === 'activity') ||
+      (layer.chartType !== 'externalEvent' && typeName === 'externalEvent')
     ) {
       // Add to existing row
       const { layer: newLayer, yAxis } = getUpdatedLayerWithFilters(timelines, typeName, items, undefined, row);

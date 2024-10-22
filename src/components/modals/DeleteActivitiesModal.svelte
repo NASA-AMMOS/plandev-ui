@@ -183,7 +183,7 @@
         <div class="global-action">
           <div>Apply to all</div>
           <select class="st-select" name="all" value={selectedAllAction} on:change={onAllChange}>
-            <option value={'custom'}>Custom</option>
+            <option value="custom">Custom</option>
             <option value={ActivityDeletionAction.ANCHOR_PLAN}>To Plan Start</option>
             <option value={ActivityDeletionAction.ANCHOR_ROOT}>To Nearest Parent</option>
             <option value={ActivityDeletionAction.DELETE_CHAIN}>Delete Chain</option>

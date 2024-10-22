@@ -10,6 +10,7 @@
   import { plugins } from '../../stores/plugins';
   import type { ActivityDirective } from '../../types/activity';
   import type { ConstraintResult } from '../../types/constraint';
+  import type { ExternalEvent } from '../../types/external-event';
   import type { SimulationDataset, Span } from '../../types/simulation';
   import type { MouseOver, TimeRange } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
@@ -22,6 +23,7 @@
   import { tooltip } from '../../utilities/tooltip';
 
   export let activityDirectives: ActivityDirective[] = [];
+  export let externalEvents: ExternalEvent[] = [];
   export let constraintResults: ConstraintResult[] = [];
   export let cursorEnabled: boolean = true;
   export let drawHeight: number = 40;
@@ -42,13 +44,15 @@
   }>();
 
   let activityHistValues: number[] = [];
-  let activityHistMax = 0;
+  let aggregateHistogram: number[][] = [];
+  let aggregateMax = 0;
   let brush: Selection<SVGGElement, unknown, null, undefined>;
   let brushing = false;
   let constraintViolationsToRender: { width: number; x: number }[] = [];
   let cursorLeft = 0;
   let cursorTooltip = '';
   let cursorVisible = false;
+  let externalEventHistValues: number[] = [];
   let gTimeSelectorContainer: SVGGElement;
   let svgSelectorContainer: SVGElement;
   let histogramContainer: Element;
@@ -140,7 +144,7 @@
   $: windowMax = xScaleMax?.range()[0];
   $: windowMin = xScaleMax?.range()[1];
 
-  // Update histograms if xScaleMax, activities, or constraint violation changes
+  // Update histograms if any of xScaleMax, activities, external events, or constraint violations change
   $: if (
     xScaleMax &&
     (activityDirectives || constraintResults) &&
@@ -149,6 +153,7 @@
     windowMin - windowMax > 0
   ) {
     activityHistValues = [];
+    externalEventHistValues = [];
     const windowStartTime = xScaleMax.invert(windowMax).getTime();
     const windowEndTime = xScaleMax.invert(windowMin).getTime();
     const binSize = (windowEndTime - windowStartTime) / numBins;
@@ -193,8 +198,6 @@
       }
     });
 
-    activityHistMax = Math.max(...activityHistValues);
-
     // Compute constraint violations histogram
     constraintViolationsToRender = [];
     constraintResults
@@ -214,6 +217,35 @@
           });
         });
       });
+
+    // Compute external events histogram
+    // NOTE: not filtering by type or hidden derivation group, as such behavior is not implemented for activities
+    externalEventHistValues = Array(numBins).fill(0);
+
+    externalEvents.forEach(event => {
+      // Filter out events that do not fall within the plan bounds at all
+      if (event.start_ms > windowEndTime || event.start_ms + event.duration_ms < windowStartTime) {
+        return;
+      }
+
+      // Figure out which start bin this is in
+      const startBin = Math.min(Math.floor((event.start_ms - windowStartTime) / binSize), numBins - 1);
+      externalEventHistValues[startBin]++;
+
+      // Figure out which other bins this value is in
+      const x = Math.floor(event.duration_ms / binSize) + 1;
+      for (let i = 1; i < x; i++) {
+        if (startBin + i >= externalEventHistValues.length) {
+          return;
+        }
+        externalEventHistValues[startBin + i]++;
+      }
+    });
+
+    aggregateMax = Math.max(...activityHistValues.map((a, i) => a + externalEventHistValues[i]));
+    aggregateHistogram = activityHistValues.map((a, i) => {
+      return [a, externalEventHistValues[i]];
+    });
   }
 
   $: if (histogramContainer && drawWidth) {
@@ -360,15 +392,34 @@
   />
 
   <div
-    class="histogram blue"
+    class="histogram"
     style={`height: ${
       constraintViolationsToRender.length ? histogramHeight * 1.5 : histogramHeight * 2
     }px; border-bottom: ${constraintViolationsToRender.length < 1 ? '1px solid var(--st-gray-20)' : 'none'}`}
   >
-    {#each activityHistValues as bin, index (index)}
-      <div class="bin" style={`height: ${(bin / activityHistMax) * 100}%;`} />
+    {#each aggregateHistogram as binPair, index (index)}
+      <!-- TODO: MAKE THE MAX AND BINNING GLOBAL INSTEAD OF SPECIFIC TO EVENT AND ACTIVITY-->
+      {@const activityHeight = binPair[0] / aggregateMax}
+      {@const externalEventHeight = binPair[1] / aggregateMax}
+      {#if binPair[0] && !binPair[1]}
+        <div class="bin-item blue" style={`height: ${activityHeight * 100}%;`} />
+      {:else if binPair[1] && !binPair[0]}
+        <div class="bin-item orange" style={`height: ${externalEventHeight * 100}%;`} />
+      {:else if binPair[0] && binPair[1]}
+        <div class="bin-item container">
+          <div
+            class="bin-item blue"
+            style={`height: ${(1 - (activityHeight + externalEventHeight)) * 100}%; width: 0%`}
+          />
+          <div class="blue" style={`height: ${activityHeight * 100}%;`} />
+          <div class="orange" style={`height: ${externalEventHeight * 100}%;`} />
+        </div>
+      {:else}
+        <div class="bin-item gap" />
+      {/if}
     {/each}
   </div>
+
   {#if constraintViolationsToRender.length}
     <div class="constraint-violations" style={`height: ${histogramHeight / 2}px`}>
       {#each constraintViolationsToRender as violation}
@@ -423,14 +474,26 @@
     gap: 1px;
   }
 
-  .histogram.blue .bin {
+  .blue {
     background: rgba(47, 128, 237, 1);
   }
 
-  .bin {
+  .orange {
+    background: rgba(237, 158, 47);
+  }
+
+  .bin-item {
     flex: 1;
     transition: height 75ms ease-out;
     width: 2px;
+  }
+
+  .bin-item.container {
+    height: 100%;
+  }
+
+  .bin-item.gap {
+    visibility: hidden;
   }
 
   .constraint-violations {

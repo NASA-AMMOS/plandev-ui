@@ -12,6 +12,8 @@
   import CodeSquareIcon from 'bootstrap-icons/icons/code-square.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
   import WindowFullscreenIcon from 'bootstrap-icons/icons/window-fullscreen.svg?component';
+  import ExternalEventIcon from '../../assets/external-event-box-with-arrow.svg?component';
+  import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
   import { viewUpdateGrid } from '../../stores/views';
   import type { ViewGrid, ViewGridComponent, ViewGridSection } from '../../types/view';
   import Menu from './Menu.svelte';
@@ -56,7 +58,7 @@
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('TimelineItemsPanel')}>
       <BookIcon />
-      Activity & Resource Types
+      Activity, Resource, Event Types
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('ConstraintsPanel')}>
       <VerticalCollapseIcon />
@@ -65,6 +67,14 @@
     <MenuItem on:click={() => onClickMenuItem('ExpansionPanel')}>
       <CodeSquareIcon />
       Expansion
+    </MenuItem>
+    <MenuItem on:click={() => onClickMenuItem('ExternalSourcesPanel')}>
+      <ExternalSourceIcon />
+      External Sources
+    </MenuItem>
+    <MenuItem on:click={() => onClickMenuItem('ExternalEventsTablePanel')}>
+      <TableWithHeaderIcon />
+      External Events Table
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('IFramePanel')}>
       <WindowFullscreenIcon />
@@ -85,6 +95,10 @@
     <MenuItem on:click={() => onClickMenuItem('ActivityFormPanel')}>
       <ActivityIcon />
       Selected Activity
+    </MenuItem>
+    <MenuItem on:click={() => onClickMenuItem('ExternalEventFormPanel')}>
+      <ExternalEventIcon />
+      Selected External Event
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('SimulationPanel')}>
       <GearWideConnectedIcon />

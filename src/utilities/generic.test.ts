@@ -8,6 +8,7 @@ import {
   getSearchParameterNumber,
   isMacOs,
   parseJSONStream,
+  unique,
 } from './generic';
 
 const mockNavigator = {
@@ -152,6 +153,20 @@ describe('Generic utility function tests', () => {
       expect(getSearchParameterNumber(parameter as SearchParameters, new URLSearchParams(`?${parameter}=foo`))).toBe(
         null,
       );
+    });
+  });
+
+  describe('unique', () => {
+    test('Should make a list of primitives unique', () => {
+      const base = [1, 7, 1, 3, 2, 4, 3, 4, 15, 10, 10];
+      const uniqued = unique(base);
+      expect(uniqued).toEqual([1, 7, 3, 2, 4, 15, 10]);
+    });
+
+    test('Should not make a list of objects unique', () => {
+      const base = [{ a: 1 }, { a: 3 }, { a: 1 }];
+      const uniqued = unique(base);
+      expect(uniqued).toEqual([{ a: 1 }, { a: 3 }, { a: 1 }]);
     });
   });
 

@@ -9,10 +9,11 @@
   import { plugins } from '../../stores/plugins';
   import type { ActivityDirective } from '../../types/activity';
   import type { ConstraintResultWithName } from '../../types/constraint';
+  import type { ExternalEvent } from '../../types/external-event';
   import type { ResourceType, Span } from '../../types/simulation';
   import type { LineLayer, LinePoint, MouseOver, Point, Row, XRangePoint } from '../../types/timeline';
   import { addPageFocusListener } from '../../utilities/generic';
-  import { formatDate } from '../../utilities/time';
+  import { formatDate, getDoyTime } from '../../utilities/time';
   import { filterResourcesByLayer } from '../../utilities/timeline';
 
   export let interpolateHoverValue: boolean = false;
@@ -21,6 +22,7 @@
   export let resourceTypes: ResourceType[] = [];
 
   let activityDirectives: ActivityDirective[] = [];
+  let externalEvents: ExternalEvent[] = [];
   let constraintResults: ConstraintResultWithName[] = [];
   let points: Point[] = [];
   let gaps: Point[] = [];
@@ -70,6 +72,7 @@
   function onMouseOver(event: MouseOver | undefined) {
     if (event && !hidden) {
       activityDirectives = event.activityDirectives || [];
+      externalEvents = event.externalEvents || [];
       constraintResults = event?.constraintResults ?? [];
       gaps = event?.gapsByLayer ? Object.values(event.gapsByLayer).flat() : [];
       points = event?.pointsByLayer ? Object.values(event.pointsByLayer).flat() : [];
@@ -92,6 +95,7 @@
   function show(event: MouseEvent): void {
     const showTooltip =
       activityDirectives.length > 0 ||
+      externalEvents.length > 0 ||
       constraintResults.length > 0 ||
       points.length > 0 ||
       spans.length > 0 ||
@@ -146,7 +150,13 @@
     if (gaps.length) {
       // For now we render a single static "No Value" message for any number of gaps,
       // as long as there aren't other data points to render at the same location
-      if (!points.length && !constraintResults.length && !activityDirectives.length && !spans.length) {
+      if (
+        !points.length &&
+        !constraintResults.length &&
+        !activityDirectives.length &&
+        !spans.length &&
+        !externalEvents.length
+      ) {
         return `
           <div>
             No Value
@@ -158,9 +168,12 @@
     // Limit total number of directives and spans displayed to 2 to prevent visual overflow
     // Aggregate the remaining items by directive vs span and then by type
     const activityDisplayLimit = 2;
+    const externalEventDisplayLimit = 2;
     let count = 0;
     const activityDirectivesToDisplay: ActivityDirective[] = [];
     const overflowingActivityDirectives: ActivityDirective[] = [];
+    const externalEventsToDisplay: ExternalEvent[] = [];
+    const overflowingExternalEvents: ExternalEvent[] = [];
     const spansToDisplay: Span[] = [];
     const overflowingSpans: Span[] = [];
     activityDirectives.forEach(directive => {
@@ -169,6 +182,14 @@
         count++;
       } else {
         overflowingActivityDirectives.push(directive);
+      }
+    });
+    externalEvents.forEach(externalEvent => {
+      if (count < externalEventDisplayLimit) {
+        externalEventsToDisplay.push(externalEvent);
+        count++;
+      } else {
+        overflowingExternalEvents.push(externalEvent);
       }
     });
     spans.forEach(span => {
@@ -189,7 +210,22 @@
       }
     });
 
-    if (spansToDisplay.length && activityDirectivesToDisplay.length) {
+    if (externalEventsToDisplay.length && activityDirectivesToDisplay.length) {
+      tooltipText = `${tooltipText}<hr>`;
+    }
+
+    externalEventsToDisplay.forEach((externalEvent: ExternalEvent, i: number) => {
+      const text = textForExternalEvent(externalEvent);
+      tooltipText = `${tooltipText} ${text}`;
+
+      if (i !== externalEvents.length - 1) {
+        tooltipText = `${tooltipText}<hr>`;
+      }
+    });
+    if (
+      (spansToDisplay.length && activityDirectivesToDisplay.length) ||
+      (spansToDisplay.length && externalEventsToDisplay.length)
+    ) {
       tooltipText = `${tooltipText}<hr>`;
     }
     spansToDisplay.forEach((span: Span, i: number) => {
@@ -203,6 +239,17 @@
 
     if (overflowingActivityDirectives.length) {
       const groups = groupBy(overflowingActivityDirectives, 'type');
+      tooltipText += `<div class='tooltip-row-container'>
+        ${Object.entries(groups)
+          .map(([key, members]) => {
+            return `<div class='st-typography-bold' style='color: var(--st-gray-10); display: flex; gap: 4px;'>${DirectiveIcon} +${members.length} ${key}</div>`;
+          })
+          .join('')}
+      </div>`;
+    }
+
+    if (overflowingExternalEvents.length) {
+      const groups = groupBy(externalEvents, 'event_type_name');
       tooltipText += `<div class='tooltip-row-container'>
         ${Object.entries(groups)
           .map(([key, members]) => {
@@ -239,7 +286,10 @@
       }
     });
 
-    if (points.length && (constraintResults.length || activityDirectives.length || spans.length)) {
+    if (
+      points.length &&
+      (constraintResults.length || activityDirectives.length || spans.length || externalEvents.length)
+    ) {
       tooltipText = `${tooltipText}<hr>`;
     }
 
@@ -312,6 +362,51 @@
         <div class='tooltip-row'>
           <span>Anchored To ID:</span>
           <span class='tooltip-value-highlight st-typography-medium'>${anchor_id ?? 'None'}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function textForExternalEvent(externalEvent: ExternalEvent): string {
+    const { duration, pkey, start_time } = externalEvent;
+    return `
+      <div class='tooltip-row-container'>
+        <div class='st-typography-bold' style='color: var(--st-gray-10); display: flex; gap: 4px;'>${DirectiveIcon} ExternalEvent</div>
+        <div class='tooltip-row'>
+          <span>Key:</span>
+          <span class='tooltip-value-row'>
+            <span class='tooltip-value-highlight st-typography-medium'>${pkey.key}</span>
+          </span>
+        </div>
+        <div class='tooltip-row'>
+          <span>Event Type:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${pkey.event_type_name}</span>
+        </div>
+        <div class='tooltip-row'>
+          <span>Source File:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${pkey.source_key}</span>
+        </div>
+        ${
+          showAdditionalTimes
+            ? $plugins.time.additional
+                .map(
+                  f =>
+                    `<div class='tooltip-row'>
+                      <span>Start Time (${f.label}):</span>
+                      <span class='tooltip-value-highlight st-typography-medium'>
+                        ${typeof start_time === 'number' ? f.format(new Date(start_time)) : 'Unknown'}
+                      </span>
+                    </div>`,
+                )
+                .join('')
+            : `<div class='tooltip-row'>
+                <span>Start Time (${$plugins.time.primary.label}):</span>
+                <span class='tooltip-value-highlight st-typography-medium'>${getDoyTime(new Date(start_time))}</span>
+              </div>`
+        }
+        <div class='tooltip-row'>
+          <span>Duration:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${duration}</span>
         </div>
       </div>
     `;

@@ -7,11 +7,13 @@
   import { afterUpdate, createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { SOURCES, TRIGGERS, dndzone } from 'svelte-dnd-action';
   import { InvalidDate } from '../../constants/time';
+  import { planDerivationGroupLinks } from '../../stores/external-source';
   import { plugins } from '../../stores/plugins';
   import { viewAddTimelineRow, viewUpdateTimeline } from '../../stores/views';
   import type { ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { ConstraintResultWithName } from '../../types/constraint';
+  import type { ExternalEvent, ExternalEventId } from '../../types/external-event';
   import type { Plan } from '../../types/plan';
   import type {
     ResourceType,
@@ -23,7 +25,7 @@
     SpansMap,
   } from '../../types/simulation';
   import type {
-    ActivityTreeExpansionMap,
+    DiscreteTreeExpansionMap,
     MouseDown,
     MouseOver,
     Row,
@@ -45,6 +47,7 @@
   import TimelineXAxis from './XAxis.svelte';
 
   export let activityDirectivesMap: ActivityDirectivesMap = {};
+  export let externalEvents: ExternalEvent[] = [];
   export let constraintResults: ConstraintResultWithName[] = [];
   export let hasUpdateDirectivePermission: boolean = false;
   export let hasUpdateSimulationPermission: boolean = false;
@@ -54,6 +57,7 @@
   export let planStartTimeYmd: string;
   export let resourceTypes: ResourceType[] = [];
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
+  export let selectedExternalEventId: ExternalEventId | null = null;
   export let selectedSpanId: SpanId | null = null;
   export let simulation: Simulation | null = null;
   export let simulationDataset: SimulationDataset | null = null;
@@ -83,7 +87,7 @@
     viewTimeRangeChanged: TimeRange;
   }>();
 
-  let activityTreeExpansionMapByRow: Record<string, ActivityTreeExpansionMap> = {};
+  let discreteTreeExpansionMapByRow: Record<string, DiscreteTreeExpansionMap> = {};
   let timelineZoomTransform: ZoomTransform | null = null;
   let clientWidth: number = 0;
   let contextMenu: MouseOver | null;
@@ -106,6 +110,7 @@
   let xAxisDiv: HTMLDivElement;
   let xAxisDrawHeight: number = 64;
   let xTicksView: XAxisTick[] = [];
+  let derivationGroups: string[] = [];
 
   let throttledZoom = throttle(onZoom, 16, {
     leading: true,
@@ -118,7 +123,12 @@
   });
 
   $: activityDirectives = Object.values(activityDirectivesMap);
-
+  $: derivationGroups = $planDerivationGroupLinks
+    .filter(link => link.plan_id === plan?.id)
+    .map(link => link.derivation_group_name);
+  $: externalEvents = externalEvents.filter(externalEvent =>
+    derivationGroups.includes(externalEvent.pkey.derivation_group_name),
+  );
   $: rows = timeline?.rows || [];
   $: drawWidth = clientWidth > 0 ? clientWidth - (timeline?.marginLeft ?? 0) - (timeline?.marginRight ?? 0) : 0;
   $: xAxisDrawHeight = 48 + 16 * ($plugins.time.additional.length ? Math.max($plugins.time.additional.length, 1) : 1);
@@ -279,9 +289,9 @@
     histogramCursorTime = null;
   }
 
-  function onCollapseActivityTree(event: CustomEvent<Row>) {
+  function onCollapseDiscreteTree(event: CustomEvent<Row>) {
     const row = event.detail;
-    activityTreeExpansionMapByRow = { ...activityTreeExpansionMapByRow, [row.id]: {} };
+    discreteTreeExpansionMapByRow = { ...discreteTreeExpansionMapByRow, [row.id]: {} };
   }
 
   function onHistogramCursorTimeChanged(event: CustomEvent<Date | null>) {
@@ -385,6 +395,7 @@
     <div class="timeline-histogram-container">
       <TimelineHistogram
         {activityDirectives}
+        {externalEvents}
         {constraintResults}
         {cursorEnabled}
         drawHeight={timelineHistogramDrawHeight}
@@ -455,11 +466,12 @@
           <TimelineRow
             {activityDirectives}
             {activityDirectivesMap}
-            activityTreeExpansionMap={activityTreeExpansionMapByRow[row.id]}
-            on:activityTreeExpansionChange={e => {
-              activityTreeExpansionMapByRow = { ...activityTreeExpansionMapByRow, [row.id]: e.detail };
+            {externalEvents}
+            discreteTreeExpansionMap={discreteTreeExpansionMapByRow[row.id]}
+            on:discreteTreeExpansionChange={event => {
+              discreteTreeExpansionMapByRow = { ...discreteTreeExpansionMapByRow, [row.id]: event.detail };
             }}
-            {...row.activityOptions ? { activityOptions: row.activityOptions } : null}
+            discreteOptions={row.discreteOptions}
             autoAdjustHeight={row.autoAdjustHeight}
             {constraintResults}
             {dpr}
@@ -482,6 +494,7 @@
             {limitTooltipToLine}
             {rowHeaderDragHandleWidthPx}
             {selectedActivityDirectiveId}
+            {selectedExternalEventId}
             {selectedSpanId}
             {simulationDataset}
             {spanUtilityMaps}
@@ -527,7 +540,7 @@
     {hasUpdateDirectivePermission}
     {hasUpdateSimulationPermission}
     {maxTimeRange}
-    on:collapseActivityTree={onCollapseActivityTree}
+    on:collapseDiscreteTree={onCollapseDiscreteTree}
     on:deleteActivityDirective
     on:jumpToActivityDirective
     on:jumpToSpan
