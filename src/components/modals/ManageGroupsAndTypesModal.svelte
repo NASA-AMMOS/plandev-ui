@@ -4,7 +4,7 @@
   import type { ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
-  import { derivationGroups, externalSources } from '../../stores/external-source';
+  import { derivationGroups, externalSources, externalSourceTypes } from '../../stores/external-source';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExternalEventType } from '../../types/external-event';
@@ -179,14 +179,13 @@
     });
   }
 
-  $: selectedExternalEventTypeDerivationGroups = [];
-  /**$derivationGroups.filter(derivationGroup => {
+  $: selectedExternalEventTypeSourceTypes = $externalSourceTypes.filter(externalSourceType => {
     if (selectedExternalEventType !== undefined) {
-      return derivationGroup.event_types.includes(selectedExternalEventType.name);
+    return externalSourceType.allowed_event_types.includes(selectedExternalEventType.name);
     } else {
       return false;
     }
-  });**/
+  });
 
   $: derivationGroupColumnsDef = [
     ...derivationGroupBaseColumnDefs,
@@ -587,56 +586,22 @@
             </SectionTitle>
           </svelte:fragment>
           <svelte:fragment slot="body">
-            {#if selectedExternalEventTypeDerivationGroups.length > 0}
-              {#each selectedExternalEventTypeDerivationGroups as associatedDerivationGroup}
+            {#if selectedExternalEventTypeSourceTypes.length > 0}
+              {#each selectedExternalEventTypeSourceTypes as associatedSourceType}
                 <!-- Collapsible details -->
                 <Collapse
-                  title={associatedDerivationGroup.name}
-                  tooltipContent={associatedDerivationGroup.name}
+                  title={associatedSourceType.name}
+                  tooltipContent={associatedSourceType.name}
                   defaultExpanded={false}
                 >
-                  <svelte:fragment slot="right">
-                    <p class="st-typography-body derived-event-count">
-                      {associatedDerivationGroup.derived_event_total} events
-                    </p>
-                  </svelte:fragment>
                   <div class="st-typography-body">
                     <div class="st-typography-bold">Name:</div>
-                    {associatedDerivationGroup.name}
+                    {associatedSourceType.name}
                   </div>
-
-                  <div class="st-typography-body">
-                    <div class="st-typography-bold">Source Type:</div>
-                    {associatedDerivationGroup.source_type_name}
-                  </div>
-
-                  <!--
-                  <Collapse
-                    className="anchor-collapse"
-                    defaultExpanded={false}
-                    title="Event Types"
-                    tooltipContent="View Contained Event Types"
-                  >
-                    {#each associatedDerivationGroup.event_types as eventType}
-                      <i class="st-typography-body">{eventType}</i>
-                    {/each}
-                  </Collapse>
-                  -->
-
-                  <Collapse
-                    className="anchor-collapse"
-                    defaultExpanded={false}
-                    title="Sources"
-                    tooltipContent="View Contained External Sources"
-                  >
-                    {#each associatedDerivationGroup.sources as source}
-                      <i class="st-typography-body">{source[0]}</i>
-                    {/each}
-                  </Collapse>
                 </Collapse>
               {/each}
             {:else}
-              <div class="st-typography-body">No sources containing this event type.</div>
+              <div class="st-typography-body">No source types using this event type.</div>
             {/if}
             <Collapse
               title="Required Metadata"

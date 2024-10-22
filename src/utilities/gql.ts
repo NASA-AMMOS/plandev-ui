@@ -499,6 +499,7 @@ const gql = {
   CREATE_EXTERNAL_SOURCE_TYPE: `#graphql
     mutation CreateExternalSourceType($sourceType: external_source_type_insert_input!) {
       createExternalSourceType: ${Queries.INSERT_EXTERNAL_SOURCE_TYPE}(object: $sourceType) {
+        allowed_event_types
         name
         metadata
         required_metadata
@@ -2511,6 +2512,7 @@ const gql = {
   SUB_EXTERNAL_SOURCE_TYPES: `#graphql
     subscription SubExternalSourceTypes {
       models: ${Queries.EXTERNAL_SOURCE_TYPES}(order_by: { name: asc }) {
+        allowed_event_types
         name
         metadata
         required_metadata

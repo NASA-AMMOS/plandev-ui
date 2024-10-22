@@ -3,7 +3,7 @@
 <script lang="ts">
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import { createExternalEventTypeError, resetExternalEventStores } from '../../stores/external-event';
+  import { createExternalEventTypeError, externalEventTypes, resetExternalEventStores } from '../../stores/external-event';
   import {
     createDerivationGroupError,
     createExternalSourceTypeError,
@@ -14,10 +14,13 @@
   import type { ExternalEventTypeInsertInput } from '../../types/external-event';
   import type { ExternalSourceTypeInsertInput } from '../../types/external-source';
   import type { ParameterName, ParametersMap } from '../../types/parameter';
+  import type { ValueSchema } from '../../types/schema';
   import type { TabId } from '../../types/tabs';
   import effects from '../../utilities/effects';
+  import { getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import Collapse from '../Collapse.svelte';
   import AlertError from '../ui/AlertError.svelte';
   import ParameterEntry from '../ui/ParameterEntry.svelte';
   import Tab from '../ui/Tabs/Tab.svelte';
@@ -47,6 +50,7 @@
   let newExternalSourceTypeMetadataCount: number = 1;
   let newExternalSourceTypeName: string | null = null;
   let newExternalSourceTypeMetadata: ParameterEntry[] = [];
+  let newExternalSourceTypeAllowedEventTypes: Record<string, boolean> = {};
 
   // External event type variables
   let hasCreateExternalEventTypePermission: boolean = false;
@@ -97,16 +101,19 @@
       // Create the ParameterMap for all of the type's metadata
       const newExternalSourceTypeMetadataObjects = newExternalSourceTypeMetadata.map(newMetadata => newMetadata.getParameterEntry());
       const newExternalSourceTypeMetadataParameterMap: ParametersMap = {};
-      newExternalSourceTypeMetadataObjects.forEach((newMetadata, index) => {
-        newExternalSourceTypeMetadataParameterMap[newMetadata.name] = {
-          order: index,
-          schema: newMetadata.type
-        }
-      });
+      if (newExternalSourceTypeMetadataObjects.length > 0) {
+        newExternalSourceTypeMetadataObjects.forEach((newMetadata, index) => {
+          newExternalSourceTypeMetadataParameterMap[newMetadata.name] = {
+            order: index,
+            schema: newMetadata.type
+          }
+        });
+      }
       // Create list of all required metadata for the type
       const requiredMetadata: ParameterName[] = newExternalSourceTypeMetadataObjects.filter(metadata => metadata.isRequired === true).map(metadata => metadata.name);
       // Generate Hasura mutation input
       const externalSourceTypeInsertInput: ExternalSourceTypeInsertInput = {
+        allowed_event_types: Object.keys(newExternalSourceTypeAllowedEventTypes),
         metadata: newExternalSourceTypeMetadataParameterMap,
         name: newExternalSourceTypeName,
         required_metadata: requiredMetadata,
@@ -124,15 +131,18 @@
     } else if (newExternalEventTypeMetadata === undefined) {
       creationError = `Unable to create the metadata of '${newExternalEventTypeName}.'`;
     } else {
+      let newExternalEventTypeMetadataObjects: { isRequired: boolean, name: string, type: ValueSchema }[] = [];
+      let newExternalEventTypeMetadataParameterMap: ParametersMap = {};
       // Create the ParameterMap for all of the type's metadata
-      const newExternalEventTypeMetadataObjects = newExternalEventTypeMetadata.map(newMetadata => newMetadata.getParameterEntry());
-      const newExternalEventTypeMetadataParameterMap: ParametersMap = {};
-      newExternalEventTypeMetadataObjects.forEach((newMetadata, index) => {
-        newExternalEventTypeMetadataParameterMap[newMetadata.name] = {
-          order: index,
-          schema: newMetadata.type
-        }
-      });
+      if (Object.entries(newExternalEventTypeMetadata.length > 0)) {
+        newExternalEventTypeMetadataObjects = newExternalEventTypeMetadata.map(newMetadata => newMetadata.getParameterEntry());
+        newExternalEventTypeMetadataObjects.forEach((newMetadata, index) => {
+          newExternalEventTypeMetadataParameterMap[newMetadata.name] = {
+            order: index,
+            schema: newMetadata.type
+          }
+        });
+      }
       // Create list of all required metadata for the type
       const requiredMetadata: ParameterName[] = newExternalEventTypeMetadataObjects.filter(metadata => metadata.isRequired === true).map(metadata => metadata.name);
       // Generate Hasura mutation input
@@ -162,12 +172,22 @@
     resetExternalSourceStores();
     resetExternalEventStores();
     creationError = null;
+    newExternalSourceTypeAllowedEventTypes = {};
   }
 
   function handleTabChange(changeEvent: CustomEvent<{id: TabId, index: number}>) {
     const { id } = changeEvent.detail;
     selectedTab = id;
     handleChange();
+  }
+
+  function onAllowedExternalEventTypeCheckboxChanged(event: Event) {
+    const { name: externalEventTypeName, value: checked } = getTarget(event);
+    if (checked === true) {
+      newExternalSourceTypeAllowedEventTypes[externalEventTypeName] = checked;
+    } else {
+      delete newExternalSourceTypeAllowedEventTypes[externalEventTypeName];
+    }
   }
 </script>
 
@@ -234,6 +254,27 @@
                 class="st-input w-100"
                 placeholder="New External Source Type Name"
               />
+              <Collapse
+                title="Configure Allowed External Event Types"
+                tooltipContent="Select external event types that can be used by events in external sources using this external source type"
+                defaultExpanded={false}
+              >
+                {#each $externalEventTypes as externalEventType}
+                  <div style:display="flex">
+                    <label
+                      class="st-typography-body"
+                      for={externalEventType.name}
+                      >
+                      {externalEventType.name}
+                    </label>
+                    <input
+                      type="checkbox"
+                      name={externalEventType.name}
+                      on:change={onAllowedExternalEventTypeCheckboxChanged}
+                    />
+                  </div>
+                {/each}
+              </Collapse>
               {#each Array(newExternalSourceTypeMetadataCount) as _, externalSourceTypeMetadataIndex}
                 <ParameterEntry
                   bind:this={newExternalSourceTypeMetadata[externalSourceTypeMetadataIndex]}
