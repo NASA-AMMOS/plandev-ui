@@ -19,8 +19,10 @@ export const SeqLanguage = LRLanguage.define({
         GroundBlock: customFoldInside,
         GroundEvent: customFoldInside,
         Load: customFoldInside,
+        LocalDeclaration: customFoldInside,
         Metadata: customFoldInside,
         Models: customFoldInside,
+        ParameterDeclaration: customFoldInside,
         Request: customFoldInside,
       }),
       styleTags({

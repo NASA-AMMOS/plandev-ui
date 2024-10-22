@@ -81,7 +81,11 @@ describe('from-seq-json.ts', async () => {
     };
     const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "testSymbol"
-@LOCALS L00UINT L00INT L01INT
+@LOCALS_BEGIN
+L00UINT UINT
+L00INT INT
+L01INT INT
+@LOCALS_END
 
 C PYRO_FIRE L00UINT 10 # line argument
 C DDM_BANANA L00INT L01INT
@@ -175,8 +179,20 @@ C FSW_CMD_3
     };
     const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "testVariable"
-@INPUT_PARAMS L00INT { "type": "INT" } L01STR { "type": "STRING" } L02FLT { "type": "FLOAT" } L03UINT { "type": "UINT" } L01ENUM { "type": "ENUM" }
-@LOCALS L00INT L01STR L02FLT L03UINT L01ENUM
+@INPUT_PARAMS_BEGIN
+L00INT INT
+L01STR STRING
+L02FLT FLOAT
+L03UINT UINT
+L01ENUM ENUM
+@INPUT_PARAMS_END
+@LOCALS_BEGIN
+L00INT INT
+L01STR STRING
+L02FLT FLOAT
+L03UINT UINT
+L01ENUM ENUM
+@LOCALS_END
 `;
     expect(sequence).toEqual(expectedSequence);
   });

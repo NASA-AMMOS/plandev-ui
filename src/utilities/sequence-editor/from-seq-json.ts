@@ -115,30 +115,24 @@ function seqJsonVariableToSequence(
   variables: [VariableDeclaration, ...VariableDeclaration[]],
   type: 'INPUT_PARAMS' | 'LOCALS',
 ): string {
-  let sequence = `@${type}`;
+  let sequence = `@${type}_BEGIN\n`;
 
-  if (type === 'INPUT_PARAMS') {
-    variables.forEach(variable => {
-      sequence += ` ${variable.name} `;
+  sequence += variables
+    .map(variable => {
+      const name = variable.name;
+      const type = variable.type ? ` ${variable.type}` : '';
+      const enumName = variable.enum_name ? ` ${variable.enum_name}` : '';
+      const allowableRanges = variable.allowable_ranges
+        ? ` "${variable.allowable_ranges.map(range => `${range.min}...${range.max}`).join(',')}"`
+        : '';
+      const allowableValues = variable.allowable_values
+        ? ` ${allowableRanges.length === 0 ? '"" ' : ''}"${variable.allowable_values.map(value => `${value}`).join(',')}"`
+        : '';
+      return `${name}${type}${enumName}${allowableRanges}${allowableValues}`;
+    })
+    .join('\n');
 
-      if (Object.keys(variable).length > 1) {
-        sequence += '{ ';
-
-        for (const key of Object.keys(variable)) {
-          if (key !== 'name') {
-            sequence += `"${key}": "${variable[key]}", `;
-          }
-        }
-
-        // Remove the trailing space and commma from the last property.
-        sequence = `${sequence.substring(0, sequence.length - 2)} }`;
-      }
-    });
-  } else {
-    sequence += ` ${variables.map(variable => variable.name).join(' ')}`;
-  }
-
-  return sequence.trim() + '\n';
+  return sequence.trim() + `\n@${type}_END\n`;
 }
 
 function seqJsonDescriptionToSequence(description: Description): string {

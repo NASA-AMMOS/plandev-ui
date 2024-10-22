@@ -360,6 +360,114 @@ C ECHO L01STR
     expect(actual).toEqual(expectedJson);
   });
 
+  it('local and parameter block', async () => {
+    const id = 'test.sequence';
+    const seq = `@ID "test.inline"
+@LOCALS_BEGIN 
+L00STR
+L01 INT
+L02ENUM ENUM TEMPERATURE "" "hot, cold"
+OVEN_ID FLOAT  "-100...-1"
+@LOCALS_END
+
+@INPUT_PARAMS_BEGIN
+FOOT
+SHOE UNIT
+SIZE FLOAT "" "small, Large, \\"hello\\""
+@INPUT_PARAMS_END
+
+C ECHO L00STR
+C ECHO "L01"
+C ECHO SIZE
+    `;
+    const actual = JSON.parse(await sequenceToSeqJson(SeqLanguage.parser.parse(seq), seq, commandBanana, id));
+    const expectedJson = {
+      id: 'test.inline',
+      locals: [
+        {
+          name: 'L00STR',
+          type: 'STRING',
+        },
+        {
+          name: 'L01',
+          type: 'INT',
+        },
+        {
+          allowable_values: ['hot', 'cold'],
+          enum_name: 'TEMPERATURE',
+          name: 'L02ENUM',
+          type: 'ENUM',
+        },
+        {
+          allowable_ranges: [{ max: -1, min: -100 }],
+          name: 'OVEN_ID',
+          type: 'FLOAT',
+        },
+      ],
+      metadata: {},
+      parameters: [
+        {
+          name: 'FOOT',
+          type: 'INT',
+        },
+        {
+          name: 'SHOE',
+          type: 'UNIT',
+        },
+        {
+          allowable_values: ['small', 'Large', '\\"hello\\"'],
+          name: 'SIZE',
+          type: 'FLOAT',
+        },
+      ],
+      steps: [
+        {
+          args: [
+            {
+              name: 'echo_string',
+              type: 'symbol',
+              value: 'L00STR',
+            },
+          ],
+          stem: 'ECHO',
+          time: {
+            type: 'COMMAND_COMPLETE',
+          },
+          type: 'command',
+        },
+        {
+          args: [
+            {
+              name: 'echo_string',
+              type: 'string',
+              value: 'L01',
+            },
+          ],
+          stem: 'ECHO',
+          time: {
+            type: 'COMMAND_COMPLETE',
+          },
+          type: 'command',
+        },
+        {
+          args: [
+            {
+              name: 'echo_string',
+              type: 'symbol',
+              value: 'SIZE',
+            },
+          ],
+          stem: 'ECHO',
+          time: {
+            type: 'COMMAND_COMPLETE',
+          },
+          type: 'command',
+        },
+      ],
+    };
+    expect(actual).toEqual(expectedJson);
+  });
+
   it('header ordering', async () => {
     function allPermutations(inputArr: string[]) {
       const result: string[][] = [];

@@ -1,6 +1,6 @@
 import { EditorState } from '@codemirror/state';
 import { describe, expect, test } from 'vitest';
-import { foldRequest, foldSteps } from './custom-folder';
+import { foldRequest, foldSteps, foldVariables } from './custom-folder';
 import { parser } from './sequence.grammar';
 
 const COMMANDS = [
@@ -21,6 +21,21 @@ const GROUND_ACTIVITIES = [
   'A2024-001T00:00:01 @GROUND_BLOCK("load.name")',
   'R1 @GROUND_EVENT("event") false #Description',
   'E-00:00:00.001 @GROUND_EVENT("event1")',
+];
+
+const PARAMETERS = [
+  `@INPUT_PARAMS_BEGIN
+VARIABLE INT "MIN...MAX | ...MAX | MIN..." "VALUE_1, VALUE_2, ..."
+@INPUT_PARAMS_END`,
+  `@INPUT_PARAMS_BEGIN
+@INPUT_PARAMS_END`,
+];
+
+const LOCALS = [
+  `@LOCALS_BEGIN
+VARIABLE INT 
+TEST FLOAT
+@LOCALS_END`,
 ];
 
 const REQUEST_ACTIVITIES = [
@@ -340,6 +355,45 @@ describe('foldRequest', () => {
         expect(foldRequest(node, state)).toStrictEqual({
           from: doc.split('\n')[0].trimEnd().length,
           to: doc.trimEnd().length,
+        });
+      }
+    });
+  });
+});
+
+describe('foldVariables', () => {
+  test('Parameters should return the correct from and to', () => {
+    PARAMETERS.forEach((parameter: string) => {
+      const doc = parameter;
+      const tree = parser.parse(doc);
+      const state = EditorState.create({ doc });
+
+      const node = tree.topNode.getChild('ParameterDeclaration');
+      if (!node) {
+        throw new Error('node not found');
+      } else {
+        expect(node).not.toBeNull();
+        expect(foldVariables(node, state)).toStrictEqual({
+          from: '@INPUT_PARAMS_BEGIN'.length,
+          to: doc.length,
+        });
+      }
+    });
+  });
+  test('Locals should return the correct from and to', () => {
+    LOCALS.forEach((local: string) => {
+      const doc = local;
+      const tree = parser.parse(doc);
+      const state = EditorState.create({ doc });
+
+      const node = tree.topNode.getChild('LocalDeclaration');
+      if (!node) {
+        throw new Error('node not found');
+      } else {
+        expect(node).not.toBeNull();
+        expect(foldVariables(node, state)).toStrictEqual({
+          from: '@LOCALS_BEGIN'.length,
+          to: doc.length,
         });
       }
     });

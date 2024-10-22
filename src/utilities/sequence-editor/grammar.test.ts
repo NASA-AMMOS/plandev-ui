@@ -111,10 +111,10 @@ FSW_CMD 1 2
 FSW_CMD2`,
     `Sequence(
 LineComment,
-ParameterDeclaration(Enum,Object(Property(PropertyName(String),String))),
+ParameterDeclaration(Variable(Enum,Object(Property(PropertyName(String),String)))),
 LineComment,
 LineComment,
-LocalDeclaration(Enum,Enum),
+LocalDeclaration(Variable(Enum),Variable(Enum)),
 LineComment,
 Metadata(
 MetaEntry(Key(String),Value(String))
@@ -133,8 +133,8 @@ Command(Stem,Args)
 FSW_CMD 1 2
 FSW_CMD2`,
     `Sequence(
-ParameterDeclaration(Enum,Enum),
-LocalDeclaration(Enum,Enum),
+ParameterDeclaration(Variable(Enum),Variable(Enum)),
+LocalDeclaration(Variable(Enum),Variable(Enum)),
 Commands(
 Command(Stem,Args(Number,Number)),
 Command(Stem,Args)
@@ -148,8 +148,8 @@ Command(Stem,Args)
   FSW_CMD 1 2
   FSW_CMD2 "string val"`,
     `Sequence(
-ParameterDeclaration(Enum,Enum),
-LocalDeclaration(Enum,Enum),
+ParameterDeclaration(Variable(Enum),Variable(Enum)),
+LocalDeclaration(Variable(Enum),Variable(Enum)),
 Commands(
 Command(Stem,Args(Number,Number)),
 Command(Stem,Args(String))
@@ -301,9 +301,9 @@ CMD_2 "hello, it's me"
     `Sequence(
 IdDeclaration(String),
 LineComment,
-ParameterDeclaration(Enum),
+ParameterDeclaration(Variable(Enum)),
 LineComment,
-LocalDeclaration(Enum,Enum,Enum),
+LocalDeclaration(Variable(Enum),Variable(Enum),Variable(Enum)),
 Metadata(MetaEntry(Key(String),Value(String))),
 Commands(
 LoadAndGoDirective,
@@ -530,6 +530,38 @@ Command(TimeTag(TimeEpoch),Stem,Args),
 Command(TimeTag(TimeEpoch),Stem,Args),
 Command(TimeTag(TimeEpoch),Stem,Args)
   ))`,
+  ],
+  [
+    'LOCALS BLOCKS',
+    `@LOCALS_BEGIN
+VARIABLE INT
+VARIABLE INT "MIN...MAX | ...MAX | MIN..." "VALUE_1, VALUE_2, ..."
+VARIABLE INT ENUM_NAME
+VARIABLE INT ENUM_NAME "MIN...MAX | ...MAX | MIN..."
+VARIABLE INT ENUM_NAME "" "VALUE_1, VALUE_2, ..."
+VARIABLE INT ENUM_NAME "MIN...MAX | ...MAX | MIN..." "VALUE_1, VALUE_2, ..."
+@LOCALS_END`,
+    `Sequence(LocalDeclaration(Variable(Enum,Type),Variable(Enum,Type,Range(String),Values(String)),Variable(Enum,Type,EnumName),Variable(Enum,Type,EnumName,Range(String)),Variable(Enum,Type,EnumName,Range(String),Values(String)),Variable(Enum,Type,EnumName,Range(String),Values(String))))`,
+  ],
+  [
+    'PARAMETER BLOCKS',
+    `@INPUT_PARAMS_BEGIN
+VARIABLE INT
+VARIABLE INT "MIN...MAX | ...MAX | MIN..." "VALUE_1, VALUE_2, ..."
+VARIABLE INT ENUM_NAME
+VARIABLE INT ENUM_NAME "MIN...MAX | ...MAX | MIN..."
+VARIABLE INT ENUM_NAME "" "VALUE_1, VALUE_2, ..."
+VARIABLE INT ENUM_NAME "MIN...MAX | ...MAX | MIN..." "VALUE_1, VALUE_2, ..."
+@INPUT_PARAMS_END`,
+    `Sequence(ParameterDeclaration(Variable(Enum,Type),Variable(Enum,Type,Range(String),Values(String)),Variable(Enum,Type,EnumName),Variable(Enum,Type,EnumName,Range(String)),Variable(Enum,Type,EnumName,Range(String),Values(String)),Variable(Enum,Type,EnumName,Range(String),Values(String))))`,
+  ],
+  [
+    'EMPTY LOCAL AND PARAM BLOCKS',
+    `@INPUT_PARAMS_BEGIN
+@INPUT_PARAMS_END
+@LOCALS_BEGIN
+@LOCALS_END`,
+    `Sequence(ParameterDeclaration,LocalDeclaration)`,
   ],
 ];
 

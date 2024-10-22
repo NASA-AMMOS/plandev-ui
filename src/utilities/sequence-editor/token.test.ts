@@ -17,6 +17,7 @@ const METADATA_ENTRY_TOKEN = 'MetaEntry';
 const ID_DECLARATION = 'IdDeclaration';
 const PARAMETER_DECLARATION = 'ParameterDeclaration';
 const LOCAL_DECLARATION = 'LocalDeclaration';
+const VARIABLE_TOKEN = 'Variable';
 const ACTIVATE_NODE = 'Activate';
 const LOAD_NODE = 'Load';
 const GROUND_BLOCK_NODE = 'GroundBlock';
@@ -176,15 +177,15 @@ describe('header directives', () => {
       assert.deepEqual(
         parseTree.topNode
           .getChild(LOCAL_DECLARATION)
-          ?.getChildren(ENUM_TOKEN)
-          .map(node => getNodeText(node, input)),
+          ?.getChildren(VARIABLE_TOKEN)
+          .map(node => getNodeText(node.getChild(ENUM_TOKEN)!, input)),
         ['L01INT', 'L02INT', 'L01UINT', 'L02UINT'],
       );
       assert.deepEqual(
         parseTree.topNode
           .getChild(PARAMETER_DECLARATION)
-          ?.getChildren(ENUM_TOKEN)
-          .map(node => getNodeText(node, input)),
+          ?.getChildren(VARIABLE_TOKEN)
+          .map(node => getNodeText(node.getChild(ENUM_TOKEN)!, input)),
         ['L01STR', 'L02STR'],
       );
     });

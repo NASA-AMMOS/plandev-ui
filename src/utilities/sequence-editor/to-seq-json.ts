@@ -451,47 +451,83 @@ function parseVariables(
   if (!variableContainer) {
     return undefined;
   }
-  const variables = variableContainer.getChildren('Enum');
+  const variables = variableContainer.getChildren('Variable');
   if (!variables || variables.length === 0) {
     return undefined;
   }
 
-  const objects = variableContainer.getChildren('Object');
-
   return variables.map((variableNode: SyntaxNode) => {
-    const variableText = text.slice(variableNode.from, variableNode.to);
-    const variable: Omit<VariableDeclaration, 'allowable_ranges' | 'allowable_values'> & {
-      allowable_ranges?: string;
-      allowable_values?: string;
-    } = { name: variableText, type: 'UNKNOWN' };
+    const nameNode = variableNode.getChild('Enum');
+    const typeNode = variableNode.getChild('Type');
+    const enumNode = variableNode.getChild('EnumName');
+    const rangeNode = variableNode.getChild('Range');
+    const allowableValuesNode = variableNode.getChild('Values');
+    const objects = variableNode.getChildren('Object');
 
-    for (const object of objects) {
-      const properties = object.getChildren('Property');
+    const variableText = nameNode ? text.slice(nameNode.from, nameNode.to) : 'UNKNOWN';
+    const variable: VariableDeclaration = { name: variableText, type: 'INT' };
 
-      properties.forEach(property => {
-        const propertyName = property.getChild('PropertyName');
-        const propertyValue = propertyName?.nextSibling;
-        const propertyNameString = text.slice(propertyName?.from, propertyName?.to).replaceAll('"', '');
-        const propertyValueString = text.slice(propertyValue?.from, propertyValue?.to).replaceAll('"', '');
-
-        switch (propertyNameString.toLowerCase()) {
-          case 'allowable_ranges':
-            variable.allowable_ranges = propertyValueString;
-            break;
-          case 'allowable_values':
-            variable.allowable_values = propertyValueString;
-            break;
-          case 'enum_name':
-            variable.enum_name = propertyValueString;
-            break;
-          case 'sc_name':
-            variable.sc_name = propertyValueString;
-            break;
-          case 'type':
-            variable.type = propertyValueString;
-            break;
+    if (typeNode) {
+      variable.type = text.slice(typeNode.from, typeNode.to) as 'FLOAT' | 'INT' | 'STRING' | 'UINT' | 'ENUM';
+      if (enumNode) {
+        variable.enum_name = text.slice(enumNode.from, enumNode.to);
+      }
+      if (rangeNode) {
+        const allowableRanges = parseAllowableRanges(text, rangeNode);
+        if (allowableRanges && allowableRanges.length > 0) {
+          variable.allowable_ranges = allowableRanges;
         }
-      });
+      }
+      if (allowableValuesNode) {
+        const allowableValues = parseAllowableValues(text, allowableValuesNode);
+        if (allowableValues && allowableValues.length > 0) {
+          variable.allowable_values = allowableValues;
+        }
+      }
+    } else {
+      for (const object of objects) {
+        const properties = object.getChildren('Property');
+
+        properties.forEach(property => {
+          const propertyName = property.getChild('PropertyName');
+          const propertyValue = propertyName?.nextSibling;
+          const propertyNameString = text.slice(propertyName?.from, propertyName?.to).replaceAll('"', '');
+          const propertyValueString = text.slice(propertyValue?.from, propertyValue?.to).replaceAll('"', '');
+
+          switch (propertyNameString.toLowerCase()) {
+            case 'allowable_ranges': {
+              if (!propertyValue) {
+                break;
+              }
+              const allowableRanges = parseAllowableRanges(text, propertyValue);
+              if (allowableRanges && allowableRanges.length > 0) {
+                variable.allowable_ranges = allowableRanges;
+              }
+              break;
+            }
+            case 'allowable_values':
+              {
+                if (!propertyValue) {
+                  break;
+                }
+                const allowableValues = parseAllowableValues(text, propertyValue);
+                if (allowableValues && allowableValues.length > 0) {
+                  variable.allowable_values = allowableValues;
+                }
+              }
+              break;
+            case 'enum_name':
+              variable.enum_name = propertyValueString;
+              break;
+            case 'sc_name':
+              variable.sc_name = propertyValueString;
+              break;
+            case 'type':
+              variable.type = propertyValueString as 'FLOAT' | 'INT' | 'STRING' | 'UINT' | 'ENUM';
+              break;
+          }
+        });
+      }
     }
 
     const match = /(?:[a-zA-Z]*)(?:[0-9]{2})(INT|UINT|FLT|ENUM|STR)/g.exec(variableText);
@@ -505,8 +541,14 @@ function parseVariables(
         case 'FLT':
           variable.type = 'FLOAT';
           break;
-        default:
-          variable.type = kind;
+        case 'INT':
+          variable.type = 'INT';
+          break;
+        case 'UINT':
+          variable.type = 'UINT';
+          break;
+        case 'ENUM':
+          variable.type = 'ENUM';
           break;
       }
 
@@ -515,6 +557,35 @@ function parseVariables(
       return variable;
     }
   }) as VariableDeclarationArray;
+}
+
+function parseAllowableRanges(text: string, rangeNode: any): { max: number; min: number }[] {
+  return text
+    .slice(rangeNode.from, rangeNode.to)
+    .split(',')
+    .map(range => {
+      const rangeMatch = /^([-+]?\d+)?(\.\.\.)([-+]?\d+)?$/.exec(range.replaceAll('"', '').trim());
+      if (rangeMatch) {
+        const [, min, , max] = rangeMatch;
+        const parsedMaxNum = Number(max);
+        const parsedMinNum = Number(min);
+        const maxNum = !Number.isNaN(parsedMaxNum) ? parsedMaxNum : Infinity;
+        const minNum = !Number.isNaN(parsedMinNum) ? parsedMinNum : -Infinity;
+
+        return { max: maxNum, min: minNum };
+      }
+      return undefined;
+    })
+    .filter(range => range !== undefined) as { max: number; min: number }[];
+}
+
+function parseAllowableValues(text: string, allowableValuesNode: any): string[] | undefined {
+  const allowableValues = text
+    .slice(allowableValuesNode.from + 1, allowableValuesNode.to - 1)
+    .split(',')
+    .map(value => value.trim());
+
+  return allowableValues.length > 0 ? allowableValues : undefined;
 }
 
 function parseModel(node: SyntaxNode, text: string): Model[] | undefined {

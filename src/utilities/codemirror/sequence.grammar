@@ -27,11 +27,14 @@ IdDeclaration {
 }
 
 ParameterDeclaration {
-  parameterDirective whiteSpace ((Enum whiteSpace?) | (Enum whiteSpace? Object whiteSpace?))+ newLine
+  (parameterDirective whiteSpace Variable{((Enum whiteSpace?) | (Enum whiteSpace? Object whiteSpace?))}+ newLine) |
+  (parameterStartDirective newLine (whiteSpace? Variable{((Enum whiteSpace?) | (Enum whiteSpace? Type { identifier } whiteSpace? ( (EnumName { identifier}) | (Range { String } (whiteSpace Values {String})? ) |  (EnumName { identifier} whiteSpace (Range { String } (whiteSpace Values {String})?) )? whiteSpace?)) )} newLine)* parameterEndDirective newLine ) 
 }
 
 LocalDeclaration {
-  localsDirective (whiteSpace Enum)+ newLine
+  (localsDirective whiteSpace Variable{((Enum whiteSpace?) | (Enum whiteSpace? Object whiteSpace?))}+ newLine) |
+  (localsStartDirective newLine (whiteSpace? Variable{((Enum whiteSpace?) | (Enum whiteSpace? Type { identifier } whiteSpace? ( (EnumName { identifier}) | (Range { String } (whiteSpace Values {String})? ) |  (EnumName { identifier} whiteSpace (Range { String } (whiteSpace Values {String})?) )? whiteSpace?)) )} newLine)* localsEndDirective newLine ) 
+
 }
 
 commandBlock {
@@ -208,7 +211,11 @@ Stem { !stemStart identifier }
   immediateDirective { "@IMMEDIATE" }
   hardwareDirective { "@HARDWARE" }
   localsDirective { "@LOCALS" }
+  localsStartDirective { "@LOCALS_BEGIN" }
+  localsEndDirective { "@LOCALS_END" }
   parameterDirective { "@INPUT_PARAMS" }
+  parameterStartDirective { "@INPUT_PARAMS_BEGIN" }
+  parameterEndDirective { "@INPUT_PARAMS_END" }
   activateDirective { "@ACTIVATE" }
   loadDirective { "@LOAD" }
   engineDirective { "@ENGINE" }
@@ -232,7 +239,11 @@ Stem { !stemStart identifier }
     modelDirective,
     immediateDirective,
     hardwareDirective,
+    localsStartDirective
+    localsEndDirective
     localsDirective,
+    parameterStartDirective,
+    parameterEndDirective,
     parameterDirective,
     activateDirective,
     loadDirective,

@@ -20,6 +20,9 @@ export function customFoldInside(node: SyntaxNode, state: EditorState): { from: 
       return foldMetadataOrModel(node, state, '@Metadata');
     case 'Models':
       return foldMetadataOrModel(node, state, '@Model');
+    case 'ParameterDeclaration':
+    case 'LocalDeclaration':
+      return foldVariables(node, state);
   }
   return null;
 }
@@ -105,6 +108,39 @@ export function foldRequest(requestNode: SyntaxNode, state: EditorState): { from
   endRequest = from + text.lastIndexOf('\n');
 
   return { from, to: endRequest };
+}
+
+/**
+ * Calculate the fold range for a block of variables.
+ * The fold range starts after the prefix of the block (e.g. "@INPUT_PARAMETERS_BEGIN" or "@LOCALS_BEGIN")
+ * and ends of the block.
+ * If the text ends with a line break, the end of the fold range will be adjusted to the start of the line break.
+ *
+ * @param containerNode - The node containing the variables (e.g. ParameterDeclaration or LocalDeclaration).
+ * @param state - The EditorState object.
+ * @returns A fold range object with "from" and "to" properties.
+ *          Returns null if any of the necessary nodes are not present.
+ */
+export function foldVariables(containerNode: SyntaxNode, state: EditorState): { from: number; to: number } | null {
+  // Get all the Variable nodes in the container node
+  const variablesNodes = containerNode.getChildren('Variable');
+
+  // Calculate the length of the directive (e.g. "@INPUT_PARAMETERS_BEGIN" or "@LOCALS_BEGIN")
+  const directiveLength = state
+    .sliceDoc(containerNode.from, containerNode.to - variablesNodes.length ? getFromAndTo([...variablesNodes]).from : 0)
+    .split('\n')[0].length;
+
+  // Calculate the start of the fold range after the directive
+  const from = containerNode.from + directiveLength;
+
+  // Calculate the end of the fold range after the last Variable node
+  let endBlock = getFromAndTo([containerNode]).to;
+
+  // If the text ends with a line break, adjust the end of the fold range to the start of the line break
+  const text = state.sliceDoc(containerNode.from + directiveLength, endBlock).trimEnd() + '\n';
+  endBlock = from + text.lastIndexOf('\n');
+
+  return { from, to: endBlock };
 }
 
 /**

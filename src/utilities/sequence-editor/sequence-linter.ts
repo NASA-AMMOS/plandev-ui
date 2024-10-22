@@ -40,6 +40,8 @@ const KNOWN_DIRECTIVES = [
   'HARDWARE',
   'LOCALS',
   'INPUT_PARAMS',
+  'INPUT_PARAMS_BEGIN',
+  'INPUT_PARAMS_END',
   'MODEL',
   'METADATA',
 ].map(name => `@${name}`);
@@ -87,11 +89,11 @@ export function sequenceLinter(
 
   diagnostics.push(...validateId(treeNode, docText));
 
-  const localsValidation = validateLocals(treeNode.getChildren('LocalDeclaration'), docText);
+  const localsValidation = validateVariables(treeNode.getChildren('LocalDeclaration'), docText, 'LOCALS');
   variables.push(...localsValidation.variables);
   diagnostics.push(...localsValidation.diagnostics);
 
-  const parameterValidation = validateParameters(treeNode.getChildren('ParameterDeclaration'), docText);
+  const parameterValidation = validateVariables(treeNode.getChildren('ParameterDeclaration'), docText, 'INPUT_PARAMS');
   variables.push(...parameterValidation.variables);
   diagnostics.push(...parameterValidation.diagnostics);
 
@@ -302,141 +304,171 @@ function validateCommandTypeMixing(node: SyntaxNode): Diagnostic[] {
   return diagnostics;
 }
 
-function validateLocals(locals: SyntaxNode[], text: string) {
+function validateVariables(inputParams: SyntaxNode[], text: string, type: 'INPUT_PARAMS' | 'LOCALS' = 'LOCALS') {
   const variables: VariableDeclaration[] = [];
   const diagnostics: Diagnostic[] = [];
+
+  if (inputParams.length === 0) {
+    return {
+      diagnostics,
+      variables,
+    };
+  }
+
   diagnostics.push(
-    ...locals.slice(1).map(
-      local =>
+    ...inputParams.slice(1).map(
+      inputParam =>
         ({
-          ...getFromAndTo([local]),
-          message: 'There is a maximum of one @LOCALS directive per sequence',
+          ...getFromAndTo([inputParam]),
+          message: `There is a maximum of one ${type} directive per sequence`,
           severity: 'error',
         }) as const,
     ),
   );
-  locals.forEach(local => {
-    let child = local.firstChild;
-    while (child) {
-      if (child.name !== 'Enum') {
+
+  if (inputParams[0].getChildren('Variable').length === 0) {
+    diagnostics.push({
+      from: inputParams[0].from,
+      message: `Missing values for ${type} directive`,
+      severity: 'error',
+      to: inputParams[0].to,
+    });
+  }
+
+  inputParams[0].getChildren('Variable').forEach(parameter => {
+    const typeNode = parameter.getChild('Type');
+    const enumNode = parameter.getChild('EnumName');
+    const rangeNode = parameter.getChild('Range');
+    const objectNode = parameter.getChild('Object');
+
+    const { enumName, name, range, type } = getVariableInfo(parameter, text);
+
+    if (type) {
+      if (['FLOAT', 'INT', 'STRING', 'UINT', 'ENUM'].includes(type) === false) {
+        const node = typeNode ?? objectNode ?? parameter;
+        const { from, to } = node;
         diagnostics.push({
-          from: child.from,
-          message: `@LOCALS values are required to be Enums`,
+          from,
+          message: 'Invalid type. Must be FLOAT, INT, STRING, UINT, or ENUM.',
           severity: 'error',
-          to: child.to,
+          to,
         });
-      } else {
-        variables.push({
-          name: text.slice(child.from, child.to),
-          // TODO - hook to check mission specific nomenclature
-          type: 'STRING',
+      } else if (type.toLocaleLowerCase() === 'enum' && !enumName) {
+        const node = typeNode ?? objectNode ?? parameter;
+        const { from, to } = node;
+        diagnostics.push({
+          from,
+          message: '"enum_name" is required for ENUM type.',
+          severity: 'error',
+          to,
+        });
+      } else if (type.toLocaleLowerCase() !== 'enum' && enumName) {
+        const node = enumNode ?? objectNode ?? parameter;
+        const { from, to } = node;
+        diagnostics.push({
+          from,
+          message: '"enum_name" is only required for ENUM type.',
+          severity: 'error',
+          to,
+        });
+      } else if (type.toLocaleLowerCase() === 'string' && range) {
+        const node = rangeNode ?? objectNode ?? parameter;
+        const { from, to } = node;
+        diagnostics.push({
+          from,
+          message: '"allowable_ranges" is not required for STRING type',
+          severity: 'error',
+          to,
         });
       }
-      child = child.nextSibling;
     }
+
+    const variable = {
+      name,
+      type,
+    } as VariableDeclaration;
+
+    variables.push(variable);
   });
+
   return {
     diagnostics,
     variables,
   };
 }
 
-function validateParameters(inputParams: SyntaxNode[], text: string) {
-  const variables: VariableDeclaration[] = [];
-  const diagnostics: Diagnostic[] = [];
-  diagnostics.push(
-    ...inputParams.slice(1).map(
-      inputParam =>
-        ({
-          ...getFromAndTo([inputParam]),
-          message: 'There is a maximum of @INPUT_PARAMS directive per sequence',
-          severity: 'error',
-        }) as const,
-    ),
-  );
+function getVariableInfo(
+  parameter: SyntaxNode,
+  text: string,
+): {
+  enumName: string | undefined;
+  name: string | undefined;
+  range: string | undefined;
+  type: string | undefined;
+  values: string | undefined;
+} {
+  const nameNode = parameter.getChild('Enum');
+  const typeNode = parameter.getChild('Type');
+  const objectNode = parameter.getChild('Object');
 
-  inputParams.forEach(inputParam => {
-    let child = inputParam.firstChild;
+  if (typeNode) {
+    const enumNode = parameter.getChild('EnumName');
+    const rangeNode = parameter.getChild('Range');
+    const valuesNode = parameter.getChild('Values');
+    return {
+      enumName: enumNode ? text.slice(enumNode.from, enumNode.to) : undefined,
+      name: nameNode ? text.slice(nameNode.from, nameNode.to) : undefined,
+      range: rangeNode ? text.slice(rangeNode.from, rangeNode.to) : undefined,
+      type: typeNode ? text.slice(typeNode.from, typeNode.to) : undefined,
+      values: valuesNode ? text.slice(valuesNode.from, valuesNode.to) : undefined,
+    };
+  } else if (objectNode) {
+    const properties = objectNode.getChildren('Property');
+    let range: string | undefined = undefined;
+    let type: string | undefined = undefined;
+    let enumName: string | undefined = undefined;
+    let values: string | undefined = undefined;
 
-    while (child) {
-      if (child.name !== 'Enum' && child.name !== 'Object') {
-        diagnostics.push({
-          from: child.from,
-          message: `@INPUT_PARAMS values are required to be Enums`,
-          severity: 'error',
-          to: child.to,
-        });
-      } else {
-        const variable = {
-          name: text.slice(child.from, child.to),
-          type: 'STRING',
-        } as VariableDeclaration;
+    properties.forEach(property => {
+      const propertyNameNode = property.getChild('PropertyName');
+      const propertyValueNode = propertyNameNode?.nextSibling;
 
-        variables.push(variable);
+      if (propertyNameNode !== null && propertyValueNode !== null && propertyValueNode !== undefined) {
+        const propertyName = text.slice(propertyNameNode.from, propertyNameNode.to);
+        const propertyValue = text.slice(propertyValueNode.from, propertyValueNode.to);
 
-        const metadata: SyntaxNode | null = child?.nextSibling;
-
-        if (metadata !== null) {
-          const properties = metadata.getChildren('Property');
-          let allowableRanges: string | undefined = undefined;
-          let isEnum = false;
-          let isString = false;
-          let enumName: string | undefined = undefined;
-
-          properties.forEach(property => {
-            const propertyNameNode = property.getChild('PropertyName');
-            const propertyValueNode = propertyNameNode?.nextSibling;
-
-            if (propertyNameNode !== null && propertyValueNode !== null && propertyValueNode !== undefined) {
-              const propertyName = text.slice(propertyNameNode.from, propertyNameNode.to);
-              const propertyValue = text.slice(propertyValueNode.from, propertyValueNode.to);
-
-              switch (propertyName.toLowerCase()) {
-                case '"allowable_ranges"':
-                  allowableRanges = propertyValue;
-                  break;
-                case '"enum_name"':
-                  enumName = propertyValue;
-                  break;
-                case '"type"':
-                  isEnum = propertyValue === '"ENUM"';
-                  isString = propertyValue === '"STRING"';
-                  break;
-              }
-            }
-          });
-
-          if (isEnum && enumName === undefined) {
-            diagnostics.push({
-              from: child.from,
-              message: '"enum_name" is required for ENUM type.',
-              severity: 'error',
-              to: child.to,
-            });
-          } else if (!isEnum && enumName !== undefined) {
-            diagnostics.push({
-              from: child.from,
-              message: `"enum_name": ${enumName} is not required for non-ENUM type.`,
-              severity: 'error',
-              to: child.to,
-            });
-          } else if (isString && allowableRanges !== undefined) {
-            diagnostics.push({
-              from: child.from,
-              message: `'allowable_ranges' is not required for STRING type.`,
-              severity: 'error',
-              to: child.to,
-            });
-          }
+        switch (propertyName.toLowerCase()) {
+          case '"allowable_ranges"':
+            range = propertyValue;
+            break;
+          case '"enum_name"':
+            enumName = propertyValue.replaceAll('"', '');
+            break;
+          case '"type"':
+            type = propertyValue.replaceAll('"', '');
+            break;
+          case '"allowable_values"':
+            values = propertyValue;
+            break;
         }
       }
-      child = child.nextSibling;
-    }
-  });
+    });
+
+    return {
+      enumName,
+      name: nameNode ? text.slice(nameNode.from, nameNode.to) : undefined,
+      range,
+      type,
+      values,
+    };
+  }
 
   return {
-    diagnostics,
-    variables,
+    enumName: undefined,
+    name: nameNode ? text.slice(nameNode.from, nameNode.to) : undefined,
+    range: undefined,
+    type: undefined,
+    values: undefined,
   };
 }
 
