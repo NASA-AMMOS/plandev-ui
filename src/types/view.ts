@@ -87,6 +87,7 @@ export type ViewDefinition = {
     simulationEventsTable: ViewTable;
     timelines: Timeline[];
   };
+  version: number;
 };
 
 export type View = {

@@ -550,7 +550,6 @@ export function createTimelineActivityLayer(timelines: Timeline[], args: Partial
 
   return {
     activityColor: ViewDiscreteLayerColorPresets[0],
-    activityHeight: 16,
     chartType: 'activity',
     filter: {
       activity: {

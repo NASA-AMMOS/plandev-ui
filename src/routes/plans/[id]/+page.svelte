@@ -527,7 +527,7 @@
     const { detail } = event;
     const { definition, id, name, owner } = detail;
     if (id != null && hasUpdateViewPermission) {
-      const success = await effects.updateView(id, { definition, name, owner }, data.user);
+      const success = await effects.updateView(id, { definition, name, owner }, null, data.user);
       if (success) {
         resetOriginalView();
       }

@@ -12,6 +12,7 @@ export class View {
   navButtonViewSaveAsMenuButton: Locator;
   navButtonViewSavedViewsMenuButton: Locator;
   navButtonViewUploadViewMenuButton: Locator;
+  outOfDateViewFilePath: string = 'src/tests/mocks/view/v0/view.json';
   renameViewMenuSaveViewButton: Locator;
   saveAsMenuSaveAsButton: Locator;
   table: Locator;

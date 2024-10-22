@@ -69,3 +69,7 @@ export const ViewXRangeLayerSchemePresets: Record<XRangeLayerColorScheme, readon
   schemeSet3,
   schemeTableau10,
 };
+
+export const viewSchemaVersion = 1;
+
+export const viewSchemaVersionName = `v${viewSchemaVersion}`;

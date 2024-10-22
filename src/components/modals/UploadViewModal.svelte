@@ -77,6 +77,7 @@
         name="file"
         required
         type="file"
+        accept="application/json"
         bind:files
         on:click={onClick}
         on:change={onChange}

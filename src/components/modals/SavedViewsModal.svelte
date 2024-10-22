@@ -61,9 +61,9 @@
     }
   }
 
-  async function getFullView(viewId: number): Promise<View | null> {
+  async function getFullView(viewId: number, migrate: boolean = true): Promise<View | null> {
     const query = new URLSearchParams(`?${SearchParameters.VIEW_ID}=${viewId}`);
-    return await effects.getView(query, user);
+    return await effects.getView(query, user, migrate);
   }
 
   async function openView({ detail: viewId }: CustomEvent<number>) {
@@ -78,7 +78,7 @@
   }
 
   async function downloadView({ detail: viewId }: CustomEvent<number>) {
-    const view = await getFullView(viewId);
+    const view = await getFullView(viewId, false);
     if (view !== null) {
       downloadViewUtil(view);
       dispatch('close');

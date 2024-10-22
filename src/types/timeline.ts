@@ -25,7 +25,6 @@ export type DiscreteTreeExpansionMap = Record<string, boolean>;
 
 export interface ActivityLayer extends Layer {
   activityColor: string;
-  activityHeight: number; // @deprecated TODO how should we deprecate view properties?
 }
 export interface ExternalEventLayer extends Layer {
   externalEventColor: string;

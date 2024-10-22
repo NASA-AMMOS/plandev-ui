@@ -106,4 +106,15 @@ test.describe.serial('View', () => {
     await page.locator('.modal .st-button:has-text("Upload View")').click();
     await expect(page.locator('.modal')).not.toBeVisible();
   });
+
+  test(`Selecting an out of date view file should not display an error and not prevent the file from being uploaded`, async () => {
+    await view.openViewMenu();
+    await expect(view.navButtonViewUploadViewMenuButton).toBeVisible();
+    await view.navButtonViewUploadViewMenuButton.click();
+    await view.fillViewInputName();
+    await view.fillViewInputFile(view.outOfDateViewFilePath);
+    await expect(page.locator('.modal-content .error')).not.toBeVisible();
+    await page.locator('.modal .st-button:has-text("Upload View")').click();
+    await expect(page.locator('.modal')).not.toBeVisible();
+  });
 });

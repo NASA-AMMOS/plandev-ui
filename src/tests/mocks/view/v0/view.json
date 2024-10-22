@@ -1,0 +1,900 @@
+{
+  "plan": {
+    "activityDirectivesTable": {
+      "autoSizeColumns": "fill",
+      "columnDefs": [
+        {
+          "aggFunc": null,
+          "colId": "arguments",
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "field": "id",
+          "filter": "text",
+          "headerName": "ID",
+          "resizable": true,
+          "sortable": true,
+          "width": 80
+        },
+        {
+          "aggFunc": null,
+          "colId": "last_modified_at",
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "aggFunc": null,
+          "colId": "metadata",
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "field": "name",
+          "filter": "text",
+          "headerName": "Name",
+          "resizable": true,
+          "sortable": true,
+          "width": 200
+        },
+        {
+          "field": "type",
+          "filter": "text",
+          "headerName": "Type",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "aggFunc": null,
+          "colId": "source_scheduling_goal_id",
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "field": "start_offset",
+          "filter": "text",
+          "headerName": "Start Offset",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "aggFunc": null,
+          "colId": "tags",
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "aggFunc": null,
+          "colId": "type",
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 280
+        },
+        {
+          "aggFunc": null,
+          "colId": "anchor_id",
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "aggFunc": null,
+          "colId": "applied_preset",
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "aggFunc": null,
+          "colId": "anchored_to_start",
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "field": "derived_start_time",
+          "filter": "text",
+          "headerName": "Absolute Start Time (UTC)",
+          "resizable": true,
+          "sortable": true,
+          "width": 200
+        },
+        {
+          "aggFunc": null,
+          "colId": "start_offset",
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "field": "created_at",
+          "filter": "text",
+          "headerName": "Created At (UTC)",
+          "hide": true,
+          "resizable": true,
+          "sortable": true,
+          "width": 200
+        }
+      ],
+      "columnStates": [
+        {
+          "colId": "errorCounts",
+          "width": 70,
+          "hide": false,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "anchor_id",
+          "width": 200,
+          "hide": true,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "anchored_to_start",
+          "width": 200,
+          "hide": true,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "applied_preset",
+          "width": 200,
+          "hide": true,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "arguments",
+          "width": 200,
+          "hide": true,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "created_at",
+          "width": 200,
+          "hide": true,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "created_by",
+          "width": 200,
+          "hide": true,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "id",
+          "width": 85.20000000000005,
+          "hide": false,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "last_modified_at",
+          "width": 200,
+          "hide": true,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "last_modified_by",
+          "width": 200,
+          "hide": true,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "metadata",
+          "width": 200,
+          "hide": true,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "name",
+          "width": 211,
+          "hide": false,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "source_scheduling_goal_id",
+          "width": 200,
+          "hide": true,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "start_offset",
+          "width": 211,
+          "hide": false,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "start_time_ms",
+          "width": 211,
+          "hide": false,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "tags",
+          "width": 220,
+          "hide": true,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        },
+        {
+          "colId": "type",
+          "width": 211,
+          "hide": false,
+          "pinned": null,
+          "sort": null,
+          "sortIndex": null,
+          "aggFunc": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "flex": null
+        }
+      ]
+    },
+    "activitySpansTable": {
+      "autoSizeColumns": "fill",
+      "columnDefs": [
+        {
+          "field": "id",
+          "filter": "text",
+          "headerName": "ID",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "dataset_id",
+          "filter": "text",
+          "headerName": "Dataset ID",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "parent_id",
+          "filter": "text",
+          "headerName": "Parent ID",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "type",
+          "filter": "text",
+          "headerName": "Type",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "start_offset",
+          "filter": "text",
+          "headerName": "Start Offset",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "duration",
+          "filter": "text",
+          "headerName": "Duration",
+          "resizable": true,
+          "sortable": true
+        }
+      ],
+      "columnStates": []
+    },
+    "grid": {
+      "columnSizes": "1fr 3px 3fr 3px 1fr",
+      "leftComponentBottom": "ConstraintViolationsPanel",
+      "leftComponentTop": "ActivityTypesPanel",
+      "leftHidden": false,
+      "leftRowSizes": "1fr",
+      "leftSplit": false,
+      "middleComponentBottom": "ActivityDirectivesTablePanel",
+      "middleRowSizes": "2fr 3px 1fr",
+      "middleSplit": true,
+      "rightComponentBottom": "TimelineEditorPanel",
+      "rightComponentTop": "ActivityFormPanel",
+      "rightHidden": false,
+      "rightRowSizes": "1fr",
+      "rightSplit": false
+    },
+    "iFrames": [
+      {
+        "id": 0,
+        "src": "https://eyes.nasa.gov/apps/mars2020/#/home",
+        "title": "Mars-2020-EDL"
+      }
+    ],
+    "simulationEventsTable": {
+      "autoSizeColumns": "fit",
+      "columnDefs": [
+        {
+          "field": "id",
+          "filter": "text",
+          "headerName": "ID",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "dataset_id",
+          "filter": "text",
+          "headerName": "Dataset ID",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "start_offset",
+          "filter": "text",
+          "headerName": "Start Offset",
+          "hide": true,
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "dense_time",
+          "filter": "text",
+          "headerName": "Dense Time",
+          "hide": true,
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "topic",
+          "filter": "text",
+          "headerName": "Topic",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "value",
+          "filter": "text",
+          "headerName": "Value",
+          "resizable": true,
+          "sortable": true
+        }
+      ],
+      "columnStates": []
+    },
+    "timelines": [
+      {
+        "id": 0,
+        "marginLeft": 250,
+        "marginRight": 30,
+        "rows": [
+          {
+            "activityOptions": {
+              "activityHeight": 16,
+              "composition": "both",
+              "displayMode": "grouped",
+              "hierarchyMode": "flat",
+              "labelVisibility": "auto"
+            },
+            "autoAdjustHeight": true,
+            "expanded": true,
+            "height": 119,
+            "horizontalGuides": [],
+            "id": 0,
+            "layers": [
+              {
+                "activityColor": "#fcdd8f",
+                "activityHeight": 16,
+                "chartType": "activity",
+                "filter": {
+                  "activity": {
+                    "types": [
+                      "BakeBananaBread",
+                      "BananaNap",
+                      "BiteBanana",
+                      "ChangeProducer",
+                      "child",
+                      "ControllableDurationActivity",
+                      "DecomposingSpawnChild",
+                      "DecomposingSpawnParent",
+                      "DownloadBanana",
+                      "DurationParameterActivity",
+                      "ExceptionActivity",
+                      "grandchild",
+                      "GrowBanana",
+                      "LineCount",
+                      "ParameterTest",
+                      "parent",
+                      "PeelBanana",
+                      "PickBanana",
+                      "RipenBanana",
+                      "ThrowBanana"
+                    ]
+                  }
+                },
+                "id": 0,
+                "name": "",
+                "yAxisId": null
+              }
+            ],
+            "name": "Activities by Type",
+            "yAxes": []
+          },
+          {
+            "activityOptions": {
+              "activityHeight": 16,
+              "composition": "both",
+              "displayMode": "compact",
+              "hierarchyMode": "flat",
+              "labelVisibility": "auto"
+            },
+            "autoAdjustHeight": false,
+            "expanded": true,
+            "height": 100,
+            "horizontalGuides": [],
+            "id": 1,
+            "layers": [
+              {
+                "chartType": "line",
+                "filter": {
+                  "resource": {
+                    "names": ["/data/line_count"]
+                  }
+                },
+                "id": 1,
+                "lineColor": "#283593",
+                "lineWidth": 1,
+                "name": "",
+                "pointRadius": 2,
+                "yAxisId": 0
+              }
+            ],
+            "name": "/data/line_count",
+            "yAxes": [
+              {
+                "color": "#1b1d1e",
+                "domainFitMode": "fitTimeWindow",
+                "id": 0,
+                "label": {
+                  "text": "/data/line_count"
+                },
+                "renderTickLines": true,
+                "tickCount": 5
+              }
+            ]
+          },
+          {
+            "activityOptions": {
+              "activityHeight": 16,
+              "composition": "both",
+              "displayMode": "compact",
+              "hierarchyMode": "flat",
+              "labelVisibility": "auto"
+            },
+            "autoAdjustHeight": false,
+            "expanded": true,
+            "height": 100,
+            "horizontalGuides": [],
+            "id": 2,
+            "layers": [
+              {
+                "chartType": "x-range",
+                "colorScheme": "schemeTableau10",
+                "filter": {
+                  "resource": {
+                    "names": ["/flag"]
+                  }
+                },
+                "id": 2,
+                "name": "",
+                "opacity": 0.8,
+                "showAsLinePlot": false,
+                "yAxisId": 1
+              }
+            ],
+            "name": "/flag",
+            "yAxes": [
+              {
+                "color": "#1b1d1e",
+                "domainFitMode": "fitTimeWindow",
+                "id": 1,
+                "label": {
+                  "text": "/flag"
+                },
+                "renderTickLines": true,
+                "tickCount": 0
+              }
+            ]
+          },
+          {
+            "activityOptions": {
+              "activityHeight": 16,
+              "composition": "both",
+              "displayMode": "compact",
+              "hierarchyMode": "flat",
+              "labelVisibility": "auto"
+            },
+            "autoAdjustHeight": false,
+            "expanded": true,
+            "height": 100,
+            "horizontalGuides": [],
+            "id": 3,
+            "layers": [
+              {
+                "chartType": "x-range",
+                "colorScheme": "schemeTableau10",
+                "filter": {
+                  "resource": {
+                    "names": ["/flag/conflicted"]
+                  }
+                },
+                "id": 3,
+                "name": "",
+                "opacity": 0.8,
+                "showAsLinePlot": false,
+                "yAxisId": 2
+              }
+            ],
+            "name": "/flag/conflicted",
+            "yAxes": [
+              {
+                "color": "#1b1d1e",
+                "domainFitMode": "fitTimeWindow",
+                "id": 2,
+                "label": {
+                  "text": "/flag/conflicted"
+                },
+                "renderTickLines": true,
+                "tickCount": 0
+              }
+            ]
+          },
+          {
+            "activityOptions": {
+              "activityHeight": 16,
+              "composition": "both",
+              "displayMode": "compact",
+              "hierarchyMode": "flat",
+              "labelVisibility": "auto"
+            },
+            "autoAdjustHeight": false,
+            "expanded": true,
+            "height": 100,
+            "horizontalGuides": [],
+            "id": 4,
+            "layers": [
+              {
+                "chartType": "line",
+                "filter": {
+                  "resource": {
+                    "names": ["/fruit"]
+                  }
+                },
+                "id": 4,
+                "lineColor": "#283593",
+                "lineWidth": 1,
+                "name": "",
+                "pointRadius": 2,
+                "yAxisId": 3
+              }
+            ],
+            "name": "/fruit",
+            "yAxes": [
+              {
+                "color": "#1b1d1e",
+                "domainFitMode": "fitTimeWindow",
+                "id": 3,
+                "label": {
+                  "text": "/fruit (bananas)"
+                },
+                "renderTickLines": true,
+                "tickCount": 5
+              }
+            ]
+          },
+          {
+            "activityOptions": {
+              "activityHeight": 16,
+              "composition": "both",
+              "displayMode": "compact",
+              "hierarchyMode": "flat",
+              "labelVisibility": "auto"
+            },
+            "autoAdjustHeight": false,
+            "expanded": true,
+            "height": 100,
+            "horizontalGuides": [],
+            "id": 5,
+            "layers": [
+              {
+                "chartType": "line",
+                "filter": {
+                  "resource": {
+                    "names": ["/peel"]
+                  }
+                },
+                "id": 5,
+                "lineColor": "#283593",
+                "lineWidth": 1,
+                "name": "",
+                "pointRadius": 2,
+                "yAxisId": 4
+              }
+            ],
+            "name": "/peel",
+            "yAxes": [
+              {
+                "color": "#1b1d1e",
+                "domainFitMode": "fitTimeWindow",
+                "id": 4,
+                "label": {
+                  "text": "/peel (kg)"
+                },
+                "renderTickLines": true,
+                "tickCount": 5
+              }
+            ]
+          },
+          {
+            "activityOptions": {
+              "activityHeight": 16,
+              "composition": "both",
+              "displayMode": "compact",
+              "hierarchyMode": "flat",
+              "labelVisibility": "auto"
+            },
+            "autoAdjustHeight": false,
+            "expanded": true,
+            "height": 100,
+            "horizontalGuides": [],
+            "id": 6,
+            "layers": [
+              {
+                "chartType": "line",
+                "filter": {
+                  "resource": {
+                    "names": ["/plant"]
+                  }
+                },
+                "id": 6,
+                "lineColor": "#283593",
+                "lineWidth": 1,
+                "name": "",
+                "pointRadius": 2,
+                "yAxisId": 5
+              }
+            ],
+            "name": "/plant",
+            "yAxes": [
+              {
+                "color": "#1b1d1e",
+                "domainFitMode": "fitTimeWindow",
+                "id": 5,
+                "label": {
+                  "text": "/plant (count)"
+                },
+                "renderTickLines": true,
+                "tickCount": 5
+              }
+            ]
+          },
+          {
+            "activityOptions": {
+              "activityHeight": 16,
+              "composition": "both",
+              "displayMode": "compact",
+              "hierarchyMode": "flat",
+              "labelVisibility": "auto"
+            },
+            "autoAdjustHeight": false,
+            "expanded": true,
+            "height": 100,
+            "horizontalGuides": [],
+            "id": 7,
+            "layers": [
+              {
+                "chartType": "x-range",
+                "colorScheme": "schemeTableau10",
+                "filter": {
+                  "resource": {
+                    "names": ["/producer"]
+                  }
+                },
+                "id": 7,
+                "name": "",
+                "opacity": 0.8,
+                "showAsLinePlot": false,
+                "yAxisId": 6
+              }
+            ],
+            "name": "/producer",
+            "yAxes": [
+              {
+                "color": "#1b1d1e",
+                "domainFitMode": "fitTimeWindow",
+                "id": 6,
+                "label": {
+                  "text": "/producer"
+                },
+                "renderTickLines": true,
+                "tickCount": 0
+              }
+            ]
+          }
+        ],
+        "verticalGuides": []
+      }
+    ]
+  }
+}

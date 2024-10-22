@@ -315,7 +315,6 @@
             "layers": [
               {
                 "activityColor": "#283593",
-                "activityHeight": 20,
                 "chartType": "activity",
                 "filter": {
                   "activity": {

@@ -49,6 +49,7 @@ export const load: PageLoad = async ({ parent, params, url }) => {
       const initialView = await effects.getView(
         url.searchParams,
         user,
+        true,
         initialActivityTypes,
         initialResourceTypes,
         initialExternalEventTypes,
