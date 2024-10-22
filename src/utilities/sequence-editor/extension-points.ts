@@ -54,15 +54,22 @@ export async function toInputFormat(
   channelDictionary: ChannelDictionary | null,
 ) {
   const modifyOutputParse = get(sequenceAdaptation).modifyOutputParse;
-  let modifiedOutput = null;
-
   if (modifyOutputParse !== undefined) {
-    modifiedOutput = await modifyOutputParse(output, parameterDictionaries, channelDictionary);
+    let modifiedOutput = await modifyOutputParse(output, parameterDictionaries, channelDictionary);
+    if (modifiedOutput === null) {
+      modifiedOutput = 'modifyOutputParse returned null. Verify your adaptation is correct';
+    } else if (modifiedOutput === undefined) {
+      modifiedOutput = 'modifyOutputParse returned undefined. Verify your adaptation is correct';
+    } else if (typeof modifiedOutput === 'object') {
+      modifiedOutput = JSON.stringify(modifiedOutput);
+    } else {
+      modifiedOutput = `${modifiedOutput}`;
+    }
+
+    return await get(inputFormat)?.toInputFormat?.(modifiedOutput);
+  } else {
+    return await get(inputFormat)?.toInputFormat?.(output);
   }
-
-  const input = await get(inputFormat)?.toInputFormat?.(modifiedOutput ?? output);
-
-  return input;
 }
 
 export function inputLinter(
