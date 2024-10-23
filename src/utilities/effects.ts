@@ -1430,7 +1430,7 @@ const effects = {
   ): Promise<number | null> {
     try {
       if (!queryPermissions.CREATE_PLAN_SNAPSHOT_TAGS(user)) {
-        throwPermissionError('create plan tags');
+        throwPermissionError('create plan snapshot tags');
       }
 
       const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_PLAN_SNAPSHOT_TAGS, { tags }, user);
@@ -1960,29 +1960,31 @@ const effects = {
     return false;
   },
 
-  async deleteActivityDirectiveTags(ids: Tag['id'][], user: User | null): Promise<number | null> {
+  async deleteActivityDirectiveTag(
+    tagId: Tag['id'],
+    directiveId: ActivityDirectiveId,
+    planId: number,
+    user: User | null,
+  ): Promise<number | null> {
     try {
-      if (!queryPermissions.DELETE_ACTIVITY_DIRECTIVE_TAGS(user)) {
+      if (!queryPermissions.DELETE_ACTIVITY_DIRECTIVE_TAG(user)) {
         throwPermissionError('delete activity directive tags');
       }
 
-      const data = await reqHasura<{ affected_rows: number }>(gql.DELETE_ACTIVITY_DIRECTIVE_TAGS, { ids }, user);
-      const { delete_activity_directive_tags } = data;
-      if (delete_activity_directive_tags != null) {
-        const { affected_rows } = delete_activity_directive_tags;
-
-        if (affected_rows !== ids.length) {
-          throw Error('Some activity directive tags were not successfully deleted');
-        }
-
+      const data = await reqHasura<{ tag_id: number }>(
+        gql.DELETE_ACTIVITY_DIRECTIVE_TAG,
+        { directive_id: directiveId, plan_id: planId, tag_id: tagId },
+        user,
+      );
+      if (data.delete_activity_directive_tags_by_pk != null) {
         showSuccessToast('Activity Directive Updated Successfully');
-        return affected_rows;
+        return data.delete_activity_directive_tags_by_pk.tag_id;
       } else {
-        throw Error('Unable to delete activity directive tags');
+        throw Error('Unable to delete activity directive tag');
       }
     } catch (e) {
-      catchError('Delete Activity Directive Tags Failed', e as Error);
-      showFailureToast('Delete Activity Directive Tags Failed');
+      catchError('Delete Activity Directive Tag Failed', e as Error);
+      showFailureToast('Delete Activity Directive Tag Failed');
       return null;
     }
   },
@@ -2420,13 +2422,17 @@ const effects = {
     return false;
   },
 
-  async deleteExpansionRuleTags(ids: Tag['id'][], user: User | null): Promise<number | null> {
+  async deleteExpansionRuleTags(tagIds: Tag['id'][], ruleId: number, user: User | null): Promise<number | null> {
     try {
       if (!queryPermissions.DELETE_EXPANSION_RULE_TAGS(user)) {
         throwPermissionError('delete expansion rule tags');
       }
 
-      const data = await reqHasura<{ affected_rows: number }>(gql.DELETE_EXPANSION_RULE_TAGS, { ids }, user);
+      const data = await reqHasura<{ affected_rows: number }>(
+        gql.DELETE_EXPANSION_RULE_TAGS,
+        { rule_id: ruleId, tag_ids: tagIds },
+        user,
+      );
       const { delete_expansion_rule_tags } = data;
       if (delete_expansion_rule_tags != null) {
         const { affected_rows } = delete_expansion_rule_tags;
@@ -2865,27 +2871,22 @@ const effects = {
     }
   },
 
-  async deletePlanTags(ids: Tag['id'][], user: User | null): Promise<number | null> {
+  async deletePlanTag(tagId: Tag['id'], planId: number, user: User | null): Promise<number | null> {
     try {
-      if (!queryPermissions.DELETE_PLAN_TAGS(user)) {
-        throwPermissionError('delete plan tags');
+      if (!queryPermissions.DELETE_PLAN_TAG(user)) {
+        throwPermissionError('delete plan tag');
       }
 
-      const data = await reqHasura<{ affected_rows: number }>(gql.DELETE_PLAN_TAGS, { ids }, user);
-      const { delete_plan_tags } = data;
-      if (delete_plan_tags != null) {
-        const { affected_rows } = delete_plan_tags;
-        if (affected_rows !== ids.length) {
-          throw Error('Some plan tags were not successfully deleted');
-        }
+      const data = await reqHasura<{ tag_id: number }>(gql.DELETE_PLAN_TAG, { plan_id: planId, tag_id: tagId }, user);
+      if (data.delete_plan_tags_by_pk != null) {
         showSuccessToast('Plan Updated Successfully');
-        return affected_rows;
+        return data.delete_plan_tags_by_pk.tag_id;
       } else {
-        throw Error('Unable to delete plan tags');
+        throw Error('Unable to delete plan tag');
       }
     } catch (e) {
-      catchError('Delete Plan Tags Failed', e as Error);
-      showFailureToast('Delete Plan Tags Failed');
+      catchError('Delete Plan Tag Failed', e as Error);
+      showFailureToast('Delete Plan Tag Failed');
       return null;
     }
   },

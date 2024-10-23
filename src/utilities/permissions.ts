@@ -492,8 +492,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     const queries = [Queries.DELETE_ACTIVITY_DELETE_SUBTREE_BULK];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
-  DELETE_ACTIVITY_DIRECTIVE_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.DELETE_ACTIVITY_DIRECTIVE_TAGS], user);
+  DELETE_ACTIVITY_DIRECTIVE_TAG: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.DELETE_ACTIVITY_DIRECTIVE_TAG], user);
   },
   DELETE_ACTIVITY_PRESET: (user: User | null, preset: AssetWithOwner<ActivityPreset>): boolean => {
     return isUserAdmin(user) || (getPermission([Queries.DELETE_ACTIVITY_PRESET], user) && isUserOwner(user, preset));
@@ -598,8 +598,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   DELETE_PLAN_SNAPSHOT: (user: User | null): boolean => {
     return getPermission([Queries.DELETE_PLAN_SNAPSHOT], user) && isUserAdmin(user);
   },
-  DELETE_PLAN_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.DELETE_PLAN_TAGS], user);
+  DELETE_PLAN_TAG: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.DELETE_PLAN_TAG], user);
   },
   DELETE_PRESET_TO_DIRECTIVE: (user: User | null, plan: PlanWithOwners): boolean => {
     return (

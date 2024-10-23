@@ -105,8 +105,8 @@
     const {
       detail: { tag, type },
     } = event;
-    if (type === 'remove') {
-      await effects.deletePlanTags([tag.id], user);
+    if (type === 'remove' && plan) {
+      await effects.deletePlanTag(tag.id, plan.id, user);
     } else if (plan && (type === 'create' || type === 'select')) {
       let tagsToAdd: Tag[] = [tag];
       if (type === 'create') {

@@ -392,8 +392,8 @@
     const {
       detail: { tag, type },
     } = event;
-    if (type === 'remove') {
-      await effects.deleteActivityDirectiveTags([tag.id], user);
+    if (type === 'remove' && $plan) {
+      await effects.deleteActivityDirectiveTag(tag.id, activityDirective.id, $plan.id, user);
     } else if (type === 'create' || type === 'select') {
       let tagsToAdd: Tag[] = [tag];
       if (type === 'create') {
