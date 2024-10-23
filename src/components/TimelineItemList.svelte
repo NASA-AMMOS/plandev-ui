@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
+
   import GripVerticalIcon from 'bootstrap-icons/icons/grip-vertical.svg?component';
   import { capitalize } from 'lodash-es';
   import PlusCircledIcon from '../assets/plus-circled.svg?component';
@@ -145,7 +146,7 @@
       autocomplete="off"
       placeholder="Filter {typeName} types"
     />
-    <div style="position: relative">
+    <div class="filter-buttons">
       <button
         class="st-button secondary menu-button"
         style="position: relative; z-index: 1"
@@ -186,9 +187,11 @@
         </div>
       </Menu>
     </div>
+    <slot name="button" />
   </div>
 
   <div class="controls">
+    <slot name="header" />
     <div class="controls-header st-typography-medium">
       <div>{typeNamePlural} ({filteredItems.length})</div>
       <div>
@@ -394,9 +397,10 @@
     flex: 1;
   }
 
-  .controls-header .st-button {
+  .filter-buttons {
+    display: flex;
     gap: 4px;
-    height: 20px;
+    position: relative;
   }
 
   .list-items {

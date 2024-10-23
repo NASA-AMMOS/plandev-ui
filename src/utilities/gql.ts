@@ -5,6 +5,7 @@ export enum Queries {
   ACTIVITY_DIRECTIVE_VALIDATIONS = 'activity_directive_validations',
   ACTIVITY_PRESETS = 'activity_presets',
   ACTIVITY_TYPES = 'activity_type',
+  ADD_EXTERNAL_DATASET = 'addExternalDataset',
   ANCHOR_VALIDATION_STATUS = 'anchor_validation_status',
   APPLY_PRESET_TO_ACTIVITY = 'apply_preset_to_activity',
   BEGIN_MERGE = 'begin_merge',
@@ -1802,6 +1803,7 @@ const gql = {
             type
           }
         }
+        dataset_id
         offset_from_plan_start
       }
     }

@@ -40,7 +40,7 @@
     class:static={!collapsible}
     class:expanded
     style:height={`${headerHeight}px`}
-    on:click={() => {
+    on:click|stopPropagation={() => {
       if (collapsible) {
         expanded = !expanded;
         dispatch('collapse', !expanded);

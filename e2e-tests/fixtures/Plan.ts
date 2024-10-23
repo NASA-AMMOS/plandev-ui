@@ -94,6 +94,7 @@ export class Plan {
   }
 
   async addActivity(name: string = 'GrowBanana') {
+    await this.showPanel(PanelNames.TIMELINE_ITEMS);
     const currentNumOfActivitiesWithName = await this.panelActivityDirectivesTable.getByRole('row', { name }).count();
     const activityListItem = this.page.locator(`.list-item :text-is("${name}")`);
     const activityRow = this.page
@@ -251,6 +252,13 @@ export class Plan {
     await this.panelActivityForm.getByPlaceholder('Enter preset name').click();
     await this.panelActivityForm.getByPlaceholder('Enter preset name').fill(presetName);
     await this.panelActivityForm.getByPlaceholder('Enter preset name').blur();
+  }
+
+  async fillExternalDatasetFileInput(importFilePath: string) {
+    const inputFile = this.page.locator('input[name="file"]');
+    await inputFile.focus();
+    await inputFile.setInputFiles(importFilePath);
+    await inputFile.evaluate(e => e.blur());
   }
 
   async fillPlanName(name: string) {
@@ -552,6 +560,14 @@ export class Plan {
     this.schedulingGoalNewButton = page.locator(`button[name="new-scheduling-goal"]`);
     this.schedulingConditionNewButton = page.locator(`button[name="new-scheduling-condition"]`);
     this.schedulingSatisfiedActivity = page.locator('.scheduling-goal-analysis-activities-list > .satisfied-activity');
+  }
+
+  async uploadExternalDatasets(importFilePath: string) {
+    await this.panelActivityTypes.getByRole('button', { exact: true, name: 'Resources' }).click();
+    await this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload Resources' }).click();
+    await this.fillExternalDatasetFileInput(importFilePath);
+    await expect(this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload' })).toBeEnabled();
+    await this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload' }).click();
   }
 
   async waitForActivityCheckingStatus(status: Status) {

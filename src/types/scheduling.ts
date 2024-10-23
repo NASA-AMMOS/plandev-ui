@@ -1,4 +1,4 @@
-import type { SchedulingType } from '../constants/scheduling';
+import type { SchedulingType } from '../enums/scheduling';
 import type { PartialWith } from './app';
 import type { SchedulingError } from './errors';
 import type { BaseDefinition, BaseMetadata } from './metadata';

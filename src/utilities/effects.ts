@@ -7,8 +7,8 @@ import {
   type ParameterDictionary as AmpcsParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
 import { get } from 'svelte/store';
-import { SchedulingType } from '../constants/scheduling';
 import { DictionaryTypes } from '../enums/dictionaryTypes';
+import { SchedulingType } from '../enums/scheduling';
 import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
 import { activityDirectivesDB, selectedActivityDirectiveId } from '../stores/activities';
@@ -213,7 +213,7 @@ import type {
 import type { Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
-import { convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
+import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
   showConfirmModal,
@@ -4230,12 +4230,26 @@ const effects = {
       const { plan_dataset: plan_datasets } = data;
       if (plan_datasets != null) {
         let resources: Resource[] = [];
+
+        const profileMap: Set<string> = new Set();
+        plan_datasets.sort(({ dataset_id: datasetIdA }, { dataset_id: datasetIdB }) => {
+          return compare(datasetIdA, datasetIdB, false);
+        });
+
         for (const dataset of plan_datasets) {
           const {
             dataset: { profiles },
             offset_from_plan_start,
           } = dataset;
-          const sampledResources: Resource[] = sampleProfiles(profiles, startTimeYmd, offset_from_plan_start);
+          const uniqueProfiles: Profile[] = profiles.filter(profile => {
+            if (!profileMap.has(profile.name)) {
+              profileMap.add(profile.name);
+              return true;
+            }
+            return false;
+          });
+
+          const sampledResources: Resource[] = sampleProfiles(uniqueProfiles, startTimeYmd, offset_from_plan_start);
           resources = [...resources, ...sampledResources];
         }
         return { aborted: false, resources };
@@ -6402,6 +6416,39 @@ const effects = {
       if ('parameter' in uploadedDictionaries) {
         showSuccessToast('Parameter Dictionary Created Successfully');
       }
+    }
+  },
+
+  async uploadExternalDataset(
+    plan: Plan,
+    files: FileList,
+    user: User | null,
+    simulationDatasetId?: number,
+  ): Promise<number | null> {
+    try {
+      if (!gatewayPermissions.ADD_EXTERNAL_DATASET(user, plan)) {
+        throwPermissionError('add external datasets');
+      }
+
+      const file: File = files[0];
+
+      const body = new FormData();
+      body.append('plan_id', `${plan.id}`);
+      body.append('simulation_dataset_id', `${simulationDatasetId}`);
+      body.append('external_dataset', file, file.name);
+
+      const uploadedDatasetId = await reqGateway<number | null>('/uploadDataset', 'POST', body, user, true);
+
+      if (uploadedDatasetId != null) {
+        showSuccessToast('External Dataset Uploaded Successfully');
+        return uploadedDatasetId;
+      }
+
+      throw Error('External Dataset Upload Failed');
+    } catch (e) {
+      catchError(e as Error);
+      showFailureToast('External Dataset Upload Failed');
+      return null;
     }
   },
 

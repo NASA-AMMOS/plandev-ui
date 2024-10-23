@@ -7,6 +7,7 @@ import type { Subscription } from './subscribable';
 
 export type PlanDataset = {
   dataset: { profiles: Profile[] };
+  dataset_id: number;
   offset_from_plan_start: string;
 };
 

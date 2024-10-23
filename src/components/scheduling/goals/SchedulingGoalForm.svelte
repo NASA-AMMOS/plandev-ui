@@ -4,8 +4,8 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { createEventDispatcher } from 'svelte';
-  import { SchedulingType } from '../../../constants/scheduling';
   import { DefinitionType } from '../../../enums/association';
+  import { SchedulingType } from '../../../enums/scheduling';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { schedulingGoals } from '../../../stores/scheduling';
   import type { User, UserId } from '../../../types/app';

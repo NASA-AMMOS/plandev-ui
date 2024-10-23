@@ -24,7 +24,7 @@ import type {
   SchedulingGoalMetadata,
 } from '../types/scheduling';
 import type { Parcel, UserSequence, Workspace } from '../types/sequencing';
-import type { Simulation, SimulationTemplate } from '../types/simulation';
+import type { PlanDataset, Simulation, SimulationTemplate } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { View, ViewSlim } from '../types/view';
 import gql, { Queries } from './gql';
@@ -1149,6 +1149,12 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
 };
 
 const gatewayPermissions = {
+  ADD_EXTERNAL_DATASET: (user: User | null, plan: PlanWithOwners): boolean => {
+    const queries = [getFunctionPermission(Queries.ADD_EXTERNAL_DATASET)];
+    return (
+      isUserAdmin(user) || (getPermission(queries, user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
+    );
+  },
   IMPORT_PLAN: (user: User | null) => {
     return (
       isUserAdmin(user) ||
@@ -1302,6 +1308,7 @@ interface FeaturePermissions {
   expansionSequences: ExpansionSequenceCRUDPermission<AssetWithOwner<ExpansionSequence>>;
   expansionSets: ExpansionSetsCRUDPermission<AssetWithOwner<ExpansionSet>>;
   externalEventType: CRUDPermission<void>;
+  externalResources: PlanAssetCRUDPermission<PlanDataset>;
   externalSource: CRUDPermission<ExternalSourceSlim[]>;
   externalSourceType: CRUDPermission<void>;
   model: CRUDPermission<void>;
@@ -1413,6 +1420,12 @@ const featurePermissions: FeaturePermissions = {
     canDelete: user => queryPermissions.DELETE_EXTERNAL_EVENT_TYPE(user),
     canRead: user => queryPermissions.SUB_EXTERNAL_EVENT_TYPES(user),
     canUpdate: () => false, // no feature to update external event types
+  },
+  externalResources: {
+    canCreate: (user, plan) => gatewayPermissions.ADD_EXTERNAL_DATASET(user, plan),
+    canDelete: () => false,
+    canRead: () => true,
+    canUpdate: () => true,
   },
   externalSource: {
     canCreate: user => queryPermissions.CREATE_EXTERNAL_SOURCE(user),

@@ -100,6 +100,15 @@ export const selectedSimulationEventId: Writable<number | null> = writable(null)
 
 /* Derived. */
 
+export const allResourceTypes: Readable<ResourceType[]> = derived(
+  [resourceTypes, externalResources],
+  ([$resourceTypes, $externalResources]) => {
+    return $resourceTypes
+      .map(({ name, schema }) => ({ name, schema }))
+      .concat($externalResources.map(({ name, schema }) => ({ name, schema })));
+  },
+);
+
 export const spansMap: Readable<SpansMap> = derived(spans, $spans => keyBy($spans, 'span_id'));
 
 export const spanUtilityMaps: Readable<SpanUtilityMaps> = derived(spans, $spans => {
