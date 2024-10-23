@@ -49,7 +49,6 @@ export type PlanDerivationGroup = {
 };
 
 export type ExternalSourceType = {
-  allowed_event_types: string[];
   metadata: ParametersMap;
   name: string;
   required_metadata: ParameterName[];

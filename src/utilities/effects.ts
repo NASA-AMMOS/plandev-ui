@@ -1045,7 +1045,6 @@ const effects = {
   ): Promise<ExternalSourceType | undefined> {
     try {
       createExternalSourceTypeError.set(null);
-      console.log(sourceType);
       const { createExternalSourceType: created } = await reqHasura(
         gql.CREATE_EXTERNAL_SOURCE_TYPE,
         { sourceType },

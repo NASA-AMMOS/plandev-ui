@@ -4,7 +4,7 @@
   import type { ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
-  import { derivationGroups, externalSources, externalSourceTypes } from '../../stores/external-source';
+  import { derivationGroups, externalSources } from '../../stores/external-source';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExternalEventType } from '../../types/external-event';
@@ -178,14 +178,6 @@
       }
     });
   }
-
-  $: selectedExternalEventTypeSourceTypes = $externalSourceTypes.filter(externalSourceType => {
-    if (selectedExternalEventType !== undefined) {
-    return externalSourceType.allowed_event_types.includes(selectedExternalEventType.name);
-    } else {
-      return false;
-    }
-  });
 
   $: derivationGroupColumnsDef = [
     ...derivationGroupBaseColumnDefs,
@@ -586,9 +578,9 @@
             </SectionTitle>
           </svelte:fragment>
           <svelte:fragment slot="body">
+            <!--
             {#if selectedExternalEventTypeSourceTypes.length > 0}
               {#each selectedExternalEventTypeSourceTypes as associatedSourceType}
-                <!-- Collapsible details -->
                 <Collapse
                   title={associatedSourceType.name}
                   tooltipContent={associatedSourceType.name}
@@ -603,6 +595,7 @@
             {:else}
               <div class="st-typography-body">No source types using this event type.</div>
             {/if}
+            -->
             <Collapse
               title="Required Metadata"
               tooltipContent="${selectedExternalEventType.name} Required Metadata"

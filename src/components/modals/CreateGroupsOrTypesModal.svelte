@@ -11,7 +11,7 @@
     resetExternalSourceStores,
   } from '../../stores/external-source';
   import type { User } from '../../types/app';
-  import type { ExternalEventTypeInsertInput } from '../../types/external-event';
+  import type { ExternalEventType, ExternalEventTypeInsertInput } from '../../types/external-event';
   import type { ExternalSourceTypeInsertInput } from '../../types/external-source';
   import type { ParameterName, ParametersMap } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
@@ -64,6 +64,10 @@
   let selectedTab: TabId = derivationGroupTabId; // first tab that appears
   let isCreateDisabled: boolean = true;
 
+  let availableExternalEventTypes: ExternalEventType[] = [];
+
+  $: availableExternalEventTypes = $externalEventTypes;
+
   // Reactively determine deletion permissions
   $: hasCreateDerivationGroupPermission = featurePermissions.derivationGroup.canCreate(user);
   $: hasCreateExternalSourceTypePermission = featurePermissions.externalSourceType.canCreate(user);
@@ -113,7 +117,6 @@
       const requiredMetadata: ParameterName[] = newExternalSourceTypeMetadataObjects.filter(metadata => metadata.isRequired === true).map(metadata => metadata.name);
       // Generate Hasura mutation input
       const externalSourceTypeInsertInput: ExternalSourceTypeInsertInput = {
-        allowed_event_types: Object.keys(newExternalSourceTypeAllowedEventTypes),
         metadata: newExternalSourceTypeMetadataParameterMap,
         name: newExternalSourceTypeName,
         required_metadata: requiredMetadata,
@@ -259,34 +262,46 @@
                 tooltipContent="Select external event types that can be used by events in external sources using this external source type"
                 defaultExpanded={false}
               >
-                {#each $externalEventTypes as externalEventType}
-                  <div style:display="flex">
-                    <label
-                      class="st-typography-body"
-                      for={externalEventType.name}
-                      >
-                      {externalEventType.name}
-                    </label>
-                    <input
-                      type="checkbox"
-                      name={externalEventType.name}
-                      on:change={onAllowedExternalEventTypeCheckboxChanged}
-                    />
+                {#if availableExternalEventTypes.length > 0}
+                  {#each $externalEventTypes as externalEventType}
+                    <div style:display="flex">
+                      <label
+                        class="st-typography-body"
+                        for={externalEventType.name}
+                        >
+                        {externalEventType.name}
+                      </label>
+                      <input
+                        type="checkbox"
+                        name={externalEventType.name}
+                        on:change={onAllowedExternalEventTypeCheckboxChanged}
+                      />
+                    </div>
+                  {/each}
+                {:else}
+                  <div class="st-typography-body">
+                    No external event types available
                   </div>
-                {/each}
+                {/if}
               </Collapse>
-              {#each Array(newExternalSourceTypeMetadataCount) as _, externalSourceTypeMetadataIndex}
-                <ParameterEntry
-                  bind:this={newExternalSourceTypeMetadata[externalSourceTypeMetadataIndex]}
-                  newParameterNamePlaceholder="New External Source Type Metadata Name"
-                />
-              {/each}
-              <button
-                class="st-button icon add-metadata-button"
-                on:click={() => {newExternalSourceTypeMetadataCount++;}}
+              <Collapse
+                title="Configure External Source Type Metadata"
+                tooltipContent="Create a metadata schema for the new external source type"
+                defaultExpanded={false}
               >
-                <PlusIcon/>
-              </button>
+                {#each Array(newExternalSourceTypeMetadataCount) as _, externalSourceTypeMetadataIndex}
+                  <ParameterEntry
+                    bind:this={newExternalSourceTypeMetadata[externalSourceTypeMetadataIndex]}
+                    newParameterNamePlaceholder="New External Source Type Metadata Name"
+                  />
+                {/each}
+                <button
+                  class="st-button icon add-metadata-button"
+                  on:click={() => {newExternalSourceTypeMetadataCount++;}}
+                >
+                  <PlusIcon/>
+                </button>
+              </Collapse>
             </div>
           </TabPanel>
           <TabPanel>
