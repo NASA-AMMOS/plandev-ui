@@ -54,6 +54,11 @@ export type ExternalSourceType = {
   required_metadata: ParameterName[];
 };
 
+export type DerivationGroupJSON = {
+  name: string;
+  source_type_name: string;
+};
+
 export type DerivationGroup = {
   derived_event_total: number;
   name: string;

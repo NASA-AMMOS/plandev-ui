@@ -3,6 +3,7 @@
 <script lang="ts">
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import ImportIcon from '../../assets/import.svg?component';
   import { createExternalEventTypeError, externalEventTypes, resetExternalEventStores } from '../../stores/external-event';
   import {
     createDerivationGroupError,
@@ -12,12 +13,12 @@
   } from '../../stores/external-source';
   import type { User } from '../../types/app';
   import type { ExternalEventType, ExternalEventTypeInsertInput } from '../../types/external-event';
-  import type { ExternalSourceTypeInsertInput } from '../../types/external-source';
+  import type { DerivationGroupJSON, ExternalSourceTypeInsertInput } from '../../types/external-source';
   import type { ParameterName, ParametersMap } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
   import type { TabId } from '../../types/tabs';
   import effects from '../../utilities/effects';
-  import { getTarget } from '../../utilities/generic';
+  import { getTarget, parseJSONStream } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import Collapse from '../Collapse.svelte';
@@ -39,9 +40,11 @@
   const derivationGroupTabId: TabId = 'derivationGroup';
   const externalSourceTypeTabId: TabId = 'externalSourceType';
   const externalEventTypeTabId: TabId = 'externalEventType';
+  const createDerivationGroupPermissionError: string = 'You do not have permission to create a derivation group.';
 
   // Derivation group variables
   let hasCreateDerivationGroupPermission: boolean = false;
+
   let newDerivationGroupName: string | null = null;
   let newDerivationGroupSourceType: string | null = null;
 
@@ -66,6 +69,11 @@
 
   let availableExternalEventTypes: ExternalEventType[] = [];
 
+  let isUsingImportMode: boolean = false;
+  let derivationGroupUploadFiles: FileList | undefined;
+  let derivationGroupUploadFileInput: HTMLInputElement;
+  let uploadFilesError: string | null = null;
+
   $: availableExternalEventTypes = $externalEventTypes;
 
   // Reactively determine deletion permissions
@@ -75,13 +83,25 @@
 
   $: if (selectedTab === derivationGroupTabId) {
     hasCreationPermissionForCurrentTab = hasCreateDerivationGroupPermission;
-    isCreateDisabled = (hasCreateDerivationGroupPermission === false) || (newDerivationGroupName === null) || (newDerivationGroupSourceType === null);
+    if (isUsingImportMode) {
+      isCreateDisabled = derivationGroupUploadFiles === undefined;
+    } else {
+      isCreateDisabled = (hasCreateDerivationGroupPermission === false) || (newDerivationGroupName === null) || (newDerivationGroupSourceType === null);
+    }
   } else if (selectedTab === externalSourceTypeTabId) {
     hasCreationPermissionForCurrentTab = hasCreateExternalSourceTypePermission;
-    isCreateDisabled = (hasCreateExternalSourceTypePermission === false) || (newExternalSourceTypeName === null);
+    if (isUsingImportMode) {
+      console.log("TODO");
+    } else {
+      isCreateDisabled = (hasCreateExternalSourceTypePermission === false) || (newExternalSourceTypeName === null);
+    }
   } else if (selectedTab === externalEventTypeTabId) {
     hasCreationPermissionForCurrentTab = hasCreateExternalEventTypePermission;
-    isCreateDisabled = (hasCreateExternalEventTypePermission === false) || (newExternalEventTypeName === null);
+    if (isUsingImportMode) {
+      console.log("TODO");
+    } else {
+      isCreateDisabled = (hasCreateExternalEventTypePermission === false) || (newExternalEventTypeName === null);
+    }
   }
 
   function onCreateDerivationGroup() {
@@ -93,6 +113,22 @@
       effects.createDerivationGroup({ name: newDerivationGroupName, source_type_name: newDerivationGroupSourceType }, user);
       newDerivationGroupName = null;
       newDerivationGroupSourceType = null;
+    }
+  }
+
+  async function parseDerivationGroupInputFileStream(stream: ReadableStream) {
+    uploadFilesError = null;
+    try {
+      let derivationGroupJSON: DerivationGroupJSON;
+      try {
+        derivationGroupJSON = await parseJSONStream<DerivationGroupJSON>(stream);
+        newDerivationGroupName = derivationGroupJSON.name;
+        newDerivationGroupSourceType = derivationGroupJSON.source_type_name;
+      } catch (e) {
+        throw new Error('Derivation Group Schema File is not a valid JSON');
+      }
+    } catch (e) {
+      uploadFilesError = (e as Error).message;
     }
   }
 
@@ -192,6 +228,25 @@
       delete newExternalSourceTypeAllowedEventTypes[externalEventTypeName];
     }
   }
+
+  function onImportFileChanged(event: Event) {
+    const files = (event.target as HTMLInputElement).files;
+    if (files !== null && files.length) {
+      const file = files[0];
+      if (/\.json$/.test(file.name)) {
+        if (selectedTab === derivationGroupTabId) {
+          parseDerivationGroupInputFileStream(file.stream());
+        } else if (selectedTab === externalSourceTypeTabId) {
+          parseExternalSourceTypeInputFileStream();
+        } else if (selectedTab === externalEventTypeTabId) {
+          praseExternalEventTypeInputFileStream();
+        }
+        //parseInputFileStream(file.stream());
+      } else {
+        uploadFilesError = 'Plan file is not a .json file';
+      }
+    }
+  }
 </script>
 
 <Modal height={400} width={600}>
@@ -206,6 +261,33 @@
             <Tab tabId={externalEventTypeTabId} class="creation-tab">External Event Type</Tab>
           </svelte:fragment>
           <TabPanel>
+            {#if isUsingImportMode}
+              <div class="directions">
+                <p class="st-typography-body">Select a Derivation Group Schema File (JSON) to import.</p> <!-- TODO: This should link to documentation! -->
+                <p class="st-typography-label">
+                  The newly created group will be empty, though you can upload sources into it.
+                </p>
+                <a href={'../'} style:font-style="italic" class="st-typography-label" rel="noopener noreferrer">What is a Derivation Group Schema File?</a>
+                <div class="content">
+                  <input
+                    class="w-100"
+                    name="file"
+                    type="file"
+                    accept="application/json"
+                    bind:files={derivationGroupUploadFiles}
+                    bind:this={derivationGroupUploadFileInput}
+                    use:permissionHandler={{
+                      hasPermission: hasCreateDerivationGroupPermission,
+                      permissionError: createDerivationGroupPermissionError,
+                    }}
+                    on:change={onImportFileChanged}
+                  />
+                </div>
+              </div>
+              {#if uploadFilesError}
+                <div class="error">{uploadFilesError}</div>
+              {/if}
+            {/if}
             <div class="directions">
               <p class="st-typography-body">Provide a name and an external source type for the new derivation group.</p>
               <p class="st-typography-label">
@@ -216,6 +298,7 @@
               <input
                 bind:value={newDerivationGroupName}
                 on:change={handleChange}
+                disabled={isUsingImportMode}
                 autocomplete="off"
                 class="st-input w-50"
                 placeholder="New Derivation Group Name"
@@ -223,23 +306,13 @@
               <select
                 bind:value={newDerivationGroupSourceType}
                 on:change={handleChange}
+                disabled={isUsingImportMode}
                 class="st-select w-50"
               >
                 {#each $externalSourceTypes as sourceType}
                   <option value={sourceType.name}>{sourceType.name}</option>
                 {/each}
               </select>
-              <button
-                class="st-button w-10"
-                type="submit"
-                on:click|preventDefault={onCreateDerivationGroup}
-                use:permissionHandler={{
-                  hasPermission: hasCreateDerivationGroupPermission,
-                  permissionError: 'You do not have permission to create a derivation group.',
-                }}
-              >
-                Create
-              </button>
             </div>
           </TabPanel>
           <TabPanel>
@@ -344,6 +417,14 @@
     </div>
   </ModalContent>
   <ModalFooter>
+
+    <button
+      class="st-button secondary"
+      type="button"
+      on:click={() => isUsingImportMode = !isUsingImportMode}
+    >
+      <ImportIcon /> Import
+    </button>
     <button
       class="st-button primary"
       type="submit"
