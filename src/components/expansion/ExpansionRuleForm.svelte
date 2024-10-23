@@ -196,7 +196,7 @@
             const unusedTags = initialRuleTags
               .filter(tag => !(ruleTags || []).find(t => tag.id === t.id))
               .map(tag => tag.id);
-            await effects.deleteExpansionRuleTags(unusedTags, user);
+            await effects.deleteExpansionRuleTags(unusedTags, ruleId, user);
 
             ruleUpdatedAt = updated_at;
             savedRule = { ...updatedRule, tags: (ruleTags || []).map(tag => ({ tag })) };
