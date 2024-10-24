@@ -100,12 +100,12 @@
     }>,
   ) {
     const {
-      detail: { definitionCode, definitionTags, description, name, public: isPublic },
+      detail: { definitionCode, definitionTags, description, name, public: isPublic, tags: metadataTags },
     } = event;
     const newConstraintId = await effects.createConstraint(
       name,
       isPublic,
-      tags.map(({ id }) => ({ tag_id: id })),
+      metadataTags.map(({ id }) => ({ tag_id: id })),
       definitionCode ?? '',
       definitionTags.map(({ id }) => ({ tag_id: id })),
       user,
