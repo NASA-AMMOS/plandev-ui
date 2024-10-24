@@ -27,10 +27,6 @@ export const load: PageLoad = async ({ parent, params }) => {
         user,
       );
 
-      if (!initialMergeRequest?.plan_receiving_changes || !initialMergeRequest.plan_snapshot_supplying_changes.plan) {
-        redirect(302, `${base}/plans`);
-      }
-
       let initialConflictingActivities: PlanMergeConflictingActivity[] = [];
       let initialNonConflictingActivities: PlanMergeNonConflictingActivity[] = [];
 
