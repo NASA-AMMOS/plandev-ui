@@ -1,6 +1,7 @@
 import type { ExternalEventDB, ExternalEventInsertInput, ExternalEventJson } from '../types/external-event';
 import type { UserId } from './app';
 import type { ParameterName, ParametersMap } from './parameter';
+import type { ValueSchema } from './schema';
 
 // Represents all fields used as a composite primary key for merlin.external_source
 export type ExternalSourcePkey = {
@@ -15,6 +16,7 @@ export type ExternalSourceDB = {
   end_time: string;
   external_events: ExternalEventDB[];
   key: string;
+  metadata: ParametersMap;
   owner: UserId;
   source_type_name: string;
   start_time: string;
@@ -26,6 +28,7 @@ export type ExternalSourceJson = {
   events: ExternalEventJson[];
   source: {
     key: string;
+    metadata: ParametersMap;
     period: {
       end_time: string;
       start_time: string;
@@ -48,12 +51,23 @@ export type PlanDerivationGroup = {
   plan_id: number;
 };
 
+// TODO: Can condense later
+export type ExternalSourceTypeJSON = {
+  metadata: {
+    isRequired: boolean;
+    name: ParameterName;
+    schema: ValueSchema;
+  }[];
+  name: string;
+};
+
 export type ExternalSourceType = {
   metadata: ParametersMap;
   name: string;
   required_metadata: ParameterName[];
 };
 
+// TODO: Can condense later
 export type DerivationGroupJSON = {
   name: string;
   source_type_name: string;
@@ -70,7 +84,7 @@ export type DerivationGroup = {
 // This is used for the GraphQL mutation.
 export type ExternalSourceInsertInput = Pick<
   ExternalSourceDB,
-  'source_type_name' | 'start_time' | 'end_time' | 'valid_at'
+  'source_type_name' | 'start_time' | 'end_time' | 'valid_at' | 'metadata'
 > &
   Pick<ExternalSourcePkey, 'key' | 'derivation_group_name'> & {
     external_events: {

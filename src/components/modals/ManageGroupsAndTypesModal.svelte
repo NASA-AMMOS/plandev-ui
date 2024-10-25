@@ -523,9 +523,15 @@
                   </div>
 
                   <Collapse defaultExpanded={false} title="Sources" tooltipContent="View Contained External Sources">
-                    {#each associatedDerivationGroup.sources as source}
-                      <i class="st-typography-body">{source[0]}</i>
-                    {/each}
+                    {#if associatedDerivationGroup.sources.size > 0}
+                      {#each associatedDerivationGroup.sources as source}
+                        <i class="st-typography-body">{source[0]}</i>
+                      {/each}
+                    {:else}
+                      <div class="st-typography-body">
+                        No external sources using this source type.
+                      </div>
+                    {/if}
                   </Collapse>
                 </Collapse>
               {/each}
@@ -541,7 +547,7 @@
                   {#each Object.entries(selectedExternalSourceTypeRequiredMetadata) as externalSourceTypeMetadata}
                     <div class="st-typography-body parameters">
                       <div class="parameter-name">{externalSourceTypeMetadata[0]}</div>
-                      <div class="parameter-type">{externalSourceTypeMetadata[1].schema}</div>
+                      <div class="parameter-type">{externalSourceTypeMetadata[1].schema.type}</div>
                     </div>
                   {/each}
               {:else}
@@ -557,7 +563,7 @@
                   {#each Object.entries(selectedExternalSourceTypeOptionalMetadata) as externalSourceTypeMetadata}
                     <div class="st-typography-body parameters">
                       <div class="parameter-name">{externalSourceTypeMetadata[0]}</div>
-                      <div class="parameter-type">{externalSourceTypeMetadata[1].schema}</div>
+                      <div class="parameter-type">{externalSourceTypeMetadata[1].schema.type}</div>
                     </div>
                   {/each}
               {:else}
@@ -605,7 +611,7 @@
                   {#each Object.entries(selectedExternalEventTypeRequiredMetadata) as externalEventTypeMetadata}
                     <div class="st-typography-body parameters">
                       <div class="parameter-name">{externalEventTypeMetadata[0]}</div>
-                      <div class="parameter-type">{externalEventTypeMetadata[1].schema}</div>
+                      <div class="parameter-type">{externalEventTypeMetadata[1].schema.type}</div>
                     </div>
                   {/each}
               {:else}
@@ -621,7 +627,7 @@
                   {#each Object.entries(selectedExternalEventTypeOptionalMetadata) as externalEventTypeMetadata}
                     <div class="st-typography-body parameters">
                       <div class="parameter-name">{externalEventTypeMetadata[0]}</div>
-                      <div class="parameter-type">{externalEventTypeMetadata[1].schema}</div>
+                      <div class="parameter-type">{externalEventTypeMetadata[1].schema.type}</div>
                     </div>
                   {/each}
               {:else}

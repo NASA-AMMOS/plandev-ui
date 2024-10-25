@@ -4,7 +4,7 @@
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import { createEventDispatcher } from 'svelte';
   import ImportIcon from '../../assets/import.svg?component';
-  import { createExternalEventTypeError, externalEventTypes, resetExternalEventStores } from '../../stores/external-event';
+  import { createExternalEventTypeError, resetExternalEventStores } from '../../stores/external-event';
   import {
     createDerivationGroupError,
     createExternalSourceTypeError,
@@ -12,16 +12,15 @@
     resetExternalSourceStores,
   } from '../../stores/external-source';
   import type { User } from '../../types/app';
-  import type { ExternalEventType, ExternalEventTypeInsertInput } from '../../types/external-event';
-  import type { DerivationGroupJSON, ExternalSourceTypeInsertInput } from '../../types/external-source';
+  import type { ExternalEventTypeInsertInput, ExternalEventTypeJSON } from '../../types/external-event';
+  import type { DerivationGroupJSON, ExternalSourceTypeInsertInput, ExternalSourceTypeJSON } from '../../types/external-source';
   import type { ParameterName, ParametersMap } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
   import type { TabId } from '../../types/tabs';
   import effects from '../../utilities/effects';
-  import { getTarget, parseJSONStream } from '../../utilities/generic';
+  import { parseJSONStream } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import Collapse from '../Collapse.svelte';
   import AlertError from '../ui/AlertError.svelte';
   import ParameterEntry from '../ui/ParameterEntry.svelte';
   import Tab from '../ui/Tabs/Tab.svelte';
@@ -41,6 +40,8 @@
   const externalSourceTypeTabId: TabId = 'externalSourceType';
   const externalEventTypeTabId: TabId = 'externalEventType';
   const createDerivationGroupPermissionError: string = 'You do not have permission to create a derivation group.';
+  const createExternalSourceTypePermissionError: string = 'You do not have permission to create an external source type.';
+  const createExternalEventTypePermissionError: string = 'You do not have permission to create an external event type.';
 
   // Derivation group variables
   let hasCreateDerivationGroupPermission: boolean = false;
@@ -50,16 +51,13 @@
 
   // External source type variables
   let hasCreateExternalSourceTypePermission: boolean = false;
-  let newExternalSourceTypeMetadataCount: number = 1;
   let newExternalSourceTypeName: string | null = null;
-  let newExternalSourceTypeMetadata: ParameterEntry[] = [];
-  let newExternalSourceTypeAllowedEventTypes: Record<string, boolean> = {};
+  let newExternalSourceTypeMetadata: {isRequired: boolean | null, name: ParameterName | null, schema: ValueSchema | null}[] = [];
 
   // External event type variables
   let hasCreateExternalEventTypePermission: boolean = false;
-  let newExternalEventTypeMetadataCount: number = 1;
   let newExternalEventTypeName: string | null = null;
-  let newExternalEventTypeMetadata: ParameterEntry[] = [];
+  let newExternalEventTypeMetadata: {isRequired: boolean | null, name: ParameterName | null, schema: ValueSchema | null}[] = [];
 
   let creationError: string | null = null;
   let hasCreationPermissionForCurrentTab: boolean = false;
@@ -67,14 +65,16 @@
   let selectedTab: TabId = derivationGroupTabId; // first tab that appears
   let isCreateDisabled: boolean = true;
 
-  let availableExternalEventTypes: ExternalEventType[] = [];
-
   let isUsingImportMode: boolean = false;
   let derivationGroupUploadFiles: FileList | undefined;
   let derivationGroupUploadFileInput: HTMLInputElement;
+  let externalSourceTypeUploadFiles: FileList | undefined;
+  let externalSourceTypeUploadFileInput: HTMLInputElement;
+  let externalEventTypeUploadFiles: FileList | undefined;
+  let externalEventTypeUploadFileInput: HTMLInputElement;
   let uploadFilesError: string | null = null;
 
-  $: availableExternalEventTypes = $externalEventTypes;
+
 
   // Reactively determine deletion permissions
   $: hasCreateDerivationGroupPermission = featurePermissions.derivationGroup.canCreate(user);
@@ -91,14 +91,14 @@
   } else if (selectedTab === externalSourceTypeTabId) {
     hasCreationPermissionForCurrentTab = hasCreateExternalSourceTypePermission;
     if (isUsingImportMode) {
-      console.log("TODO");
+      isCreateDisabled = externalSourceTypeUploadFiles === undefined;
     } else {
       isCreateDisabled = (hasCreateExternalSourceTypePermission === false) || (newExternalSourceTypeName === null);
     }
   } else if (selectedTab === externalEventTypeTabId) {
     hasCreationPermissionForCurrentTab = hasCreateExternalEventTypePermission;
     if (isUsingImportMode) {
-      console.log("TODO");
+      isCreateDisabled = externalEventTypeUploadFiles === undefined;
     } else {
       isCreateDisabled = (hasCreateExternalEventTypePermission === false) || (newExternalEventTypeName === null);
     }
@@ -125,7 +125,39 @@
         newDerivationGroupName = derivationGroupJSON.name;
         newDerivationGroupSourceType = derivationGroupJSON.source_type_name;
       } catch (e) {
-        throw new Error('Derivation Group Schema File is not a valid JSON');
+        throw new Error('Derivation Group Definition File is not a valid JSON');
+      }
+    } catch (e) {
+      uploadFilesError = (e as Error).message;
+    }
+  }
+
+  async function parseExternalSourceTypeInputFileStream(stream: ReadableStream) {
+    uploadFilesError = null;
+    try {
+      let externalSourceTypeJSON: ExternalSourceTypeJSON;
+      try {
+        externalSourceTypeJSON = await parseJSONStream<ExternalSourceTypeJSON>(stream);
+        newExternalSourceTypeName = externalSourceTypeJSON.name;
+        newExternalSourceTypeMetadata = externalSourceTypeJSON.metadata;
+      } catch (e) {
+        throw new Error('External Source Type Definition File is not a valid JSON');
+      }
+    } catch (e) {
+      uploadFilesError = (e as Error).message;
+    }
+  }
+
+  async function praseExternalEventTypeInputFileStream(stream: ReadableStream) {
+    uploadFilesError = null;
+    try {
+      let externalEventTypeJSON: ExternalEventTypeJSON;
+      try {
+        externalEventTypeJSON = await parseJSONStream<ExternalEventTypeJSON>(stream);
+        newExternalEventTypeName = externalEventTypeJSON.name;
+        newExternalEventTypeMetadata = externalEventTypeJSON.metadata;
+      } catch (e) {
+        throw new Error('External Event Type Definition File is not a valid JSON');
       }
     } catch (e) {
       uploadFilesError = (e as Error).message;
@@ -138,29 +170,36 @@
     } else if (newExternalSourceTypeMetadata === undefined) {
       creationError = `Unable to create metadata of '${newExternalSourceTypeName}.'`;
     } else {
-      // Create the ParameterMap for all of the type's metadata
-      const newExternalSourceTypeMetadataObjects = newExternalSourceTypeMetadata.map(newMetadata => newMetadata.getParameterEntry());
+      // TODO: This probably doesn't need to exist - swap input keys?
       const newExternalSourceTypeMetadataParameterMap: ParametersMap = {};
-      if (newExternalSourceTypeMetadataObjects.length > 0) {
-        newExternalSourceTypeMetadataObjects.forEach((newMetadata, index) => {
-          newExternalSourceTypeMetadataParameterMap[newMetadata.name] = {
-            order: index,
-            schema: newMetadata.type
+      let requiredMetadata: ParameterName[] = [];
+      if (newExternalSourceTypeMetadata.length > 0) {
+        const isMetadataUnfinished: boolean = newExternalSourceTypeMetadata.map(metadata => metadata.name === null || metadata.schema === null).includes(true);
+        if (isMetadataUnfinished) {
+          creationError = 'Not all metadata entries appear to be complete - please finish or delete the entries!';
+          return;
+        }
+        newExternalSourceTypeMetadata.forEach(newMetadata => {
+          if (newMetadata.name !== null && newMetadata.schema !== null) {
+            newExternalSourceTypeMetadataParameterMap[newMetadata.name] = {
+              order: 1,
+              schema: newMetadata.schema
+            }
+            if (newMetadata.isRequired) {
+              requiredMetadata.push(newMetadata.name);
+            }
           }
         });
       }
-      // Create list of all required metadata for the type
-      const requiredMetadata: ParameterName[] = newExternalSourceTypeMetadataObjects.filter(metadata => metadata.isRequired === true).map(metadata => metadata.name);
       // Generate Hasura mutation input
       const externalSourceTypeInsertInput: ExternalSourceTypeInsertInput = {
         metadata: newExternalSourceTypeMetadataParameterMap,
         name: newExternalSourceTypeName,
-        required_metadata: requiredMetadata,
+        required_metadata: requiredMetadata
       };
       effects.createExternalSourceType(externalSourceTypeInsertInput, user);
       newExternalSourceTypeName = null;
       newExternalSourceTypeMetadata = [];
-      newExternalSourceTypeMetadataCount = 1;
     }
   }
 
@@ -170,30 +209,36 @@
     } else if (newExternalEventTypeMetadata === undefined) {
       creationError = `Unable to create the metadata of '${newExternalEventTypeName}.'`;
     } else {
-      let newExternalEventTypeMetadataObjects: { isRequired: boolean, name: string, type: ValueSchema }[] = [];
-      let newExternalEventTypeMetadataParameterMap: ParametersMap = {};
-      // Create the ParameterMap for all of the type's metadata
-      if (Object.entries(newExternalEventTypeMetadata.length > 0)) {
-        newExternalEventTypeMetadataObjects = newExternalEventTypeMetadata.map(newMetadata => newMetadata.getParameterEntry());
-        newExternalEventTypeMetadataObjects.forEach((newMetadata, index) => {
-          newExternalEventTypeMetadataParameterMap[newMetadata.name] = {
-            order: index,
-            schema: newMetadata.type
+      // TODO: This probably doesn't need to exist - swap input keys?
+      const newExternalEventTypeMetadataParameterMap: ParametersMap = {};
+      let requiredMetadata: ParameterName[] = [];
+      if (newExternalEventTypeMetadata.length > 0) {
+        const isMetadataUnfinished: boolean = newExternalEventTypeMetadata.map(metadata => metadata.name === null || metadata.schema === null).includes(true);
+        if (isMetadataUnfinished) {
+          creationError = 'Not all metadata entries appear to be complete - please finish or delete the entries!';
+          return;
+        }
+        newExternalEventTypeMetadata.forEach(newMetadata => {
+          if (newMetadata.name !== null && newMetadata.schema !== null) {
+            newExternalEventTypeMetadataParameterMap[newMetadata.name] = {
+              order: 1,
+              schema: newMetadata.schema
+            }
+            if (newMetadata.isRequired) {
+              requiredMetadata.push(newMetadata.name);
+            }
           }
         });
       }
-      // Create list of all required metadata for the type
-      const requiredMetadata: ParameterName[] = newExternalEventTypeMetadataObjects.filter(metadata => metadata.isRequired === true).map(metadata => metadata.name);
       // Generate Hasura mutation input
       const externalEventTypeInsertInput: ExternalEventTypeInsertInput = {
         metadata: newExternalEventTypeMetadataParameterMap,
         name: newExternalEventTypeName,
-        required_metadata: requiredMetadata,
+        required_metadata: requiredMetadata
       };
       effects.createExternalEventType(externalEventTypeInsertInput, user);
       newExternalEventTypeName = null;
       newExternalEventTypeMetadata = [];
-      newExternalEventTypeMetadataCount = 1;
     }
   }
 
@@ -211,22 +256,12 @@
     resetExternalSourceStores();
     resetExternalEventStores();
     creationError = null;
-    newExternalSourceTypeAllowedEventTypes = {};
   }
 
   function handleTabChange(changeEvent: CustomEvent<{id: TabId, index: number}>) {
     const { id } = changeEvent.detail;
     selectedTab = id;
     handleChange();
-  }
-
-  function onAllowedExternalEventTypeCheckboxChanged(event: Event) {
-    const { name: externalEventTypeName, value: checked } = getTarget(event);
-    if (checked === true) {
-      newExternalSourceTypeAllowedEventTypes[externalEventTypeName] = checked;
-    } else {
-      delete newExternalSourceTypeAllowedEventTypes[externalEventTypeName];
-    }
   }
 
   function onImportFileChanged(event: Event) {
@@ -237,15 +272,60 @@
         if (selectedTab === derivationGroupTabId) {
           parseDerivationGroupInputFileStream(file.stream());
         } else if (selectedTab === externalSourceTypeTabId) {
-          parseExternalSourceTypeInputFileStream();
+          parseExternalSourceTypeInputFileStream(file.stream());
         } else if (selectedTab === externalEventTypeTabId) {
-          praseExternalEventTypeInputFileStream();
+          praseExternalEventTypeInputFileStream(file.stream());
         }
-        //parseInputFileStream(file.stream());
       } else {
         uploadFilesError = 'Plan file is not a .json file';
       }
     }
+  }
+
+  function handleAddMetadataToExternalSourceType() {
+    newExternalSourceTypeMetadata = [...newExternalSourceTypeMetadata, {isRequired: null, name: null, schema: null}];
+  }
+
+  function handleExternalSourceTypeMetadataInput(event: CustomEvent<{id: number, isRequired?: boolean, name?: ParameterName, type?: string}>) {
+    const { detail: newValue } = event;
+    const metadataOfId = newExternalSourceTypeMetadata.at(newValue.id);
+    if (metadataOfId !== undefined) {
+      if (newValue?.isRequired) {
+        metadataOfId.isRequired = newValue.isRequired;
+      } else if (newValue?.name) {
+        metadataOfId.name = newValue.name;
+      } else if (newValue?.type) {
+        metadataOfId.schema = {type: newValue.type} as ValueSchema;
+      }
+    }
+  }
+
+  function handleExternalSourceTypeMetadataDelete(event: CustomEvent<number>) {
+    const { detail: metadataId } = event;
+    newExternalSourceTypeMetadata = newExternalSourceTypeMetadata.filter((_, index) => index !== metadataId);
+  }
+
+  function handleAddMetadataToExternalEventType() {
+    newExternalEventTypeMetadata = [...newExternalEventTypeMetadata, {isRequired: null, name: null, schema: null}];
+  }
+
+  function handleExternalEventTypeMetadataInput(event: CustomEvent<{id: number, isRequired?: boolean, name?: ParameterName, type?: string}>) {
+    const { detail: newValue } = event;
+    const metadataOfId = newExternalEventTypeMetadata.at(newValue.id);
+    if (metadataOfId !== undefined) {
+      if (newValue?.isRequired) {
+        metadataOfId.isRequired = newValue.isRequired;
+      } else if (newValue?.name) {
+        metadataOfId.name = newValue.name;
+      } else if (newValue?.type) {
+        metadataOfId.schema = {type: newValue.type} as ValueSchema;
+      }
+    }
+  }
+
+  function handleExternalEventTypeMetadataDelete(event: CustomEvent<number>) {
+    const { detail: metadataId } = event;
+    newExternalEventTypeMetadata = newExternalEventTypeMetadata.filter((_, index) => index !== metadataId);
   }
 </script>
 
@@ -260,14 +340,20 @@
             <Tab tabId={externalSourceTypeTabId} class="creation-tab">External Source Type</Tab>
             <Tab tabId={externalEventTypeTabId} class="creation-tab">External Event Type</Tab>
           </svelte:fragment>
+          <div>
+            <AlertError class="m-2" error={creationError} />
+            <AlertError class="m-2" error={$createExternalSourceTypeError} />
+            <AlertError class="m-2" error={$createExternalEventTypeError} />
+            <AlertError class="m-2" error={$createDerivationGroupError} />
+          </div>
           <TabPanel>
             {#if isUsingImportMode}
               <div class="directions">
-                <p class="st-typography-body">Select a Derivation Group Schema File (JSON) to import.</p> <!-- TODO: This should link to documentation! -->
+                <p class="st-typography-body">Select a Derivation Group Definition File (JSON) to import.</p> <!-- TODO: This should link to documentation! -->
                 <p class="st-typography-label">
                   The newly created group will be empty, though you can upload sources into it.
                 </p>
-                <a href={'../'} style:font-style="italic" class="st-typography-label" rel="noopener noreferrer">What is a Derivation Group Schema File?</a>
+                <a href={'../'} style:font-style="italic" class="st-typography-label" rel="noopener noreferrer">What is a Derivation Group Definition File?</a>
                 <div class="content">
                   <input
                     class="w-100"
@@ -287,13 +373,14 @@
               {#if uploadFilesError}
                 <div class="error">{uploadFilesError}</div>
               {/if}
+            {:else}
+              <div class="directions">
+                <p class="st-typography-body">Provide a name and an external source type for the new derivation group.</p>
+                <p class="st-typography-label">
+                  The newly created group will be empty, though you can upload sources into it.
+                </p>
+              </div>
             {/if}
-            <div class="directions">
-              <p class="st-typography-body">Provide a name and an external source type for the new derivation group.</p>
-              <p class="st-typography-label">
-                The newly created group will be empty, though you can upload sources into it.
-              </p>
-            </div>
             <div class="content">
               <input
                 bind:value={newDerivationGroupName}
@@ -316,91 +403,125 @@
             </div>
           </TabPanel>
           <TabPanel>
-            <div class="directions">
-              <p class="st-typography-body">Provide a name for the new external source type.</p>
-              <p class="st-typography-label">
-                The newly created external source type will be empty, though you can upload sources into it.
-              </p>
-            </div>
+            {#if isUsingImportMode}
+              <div class="directions">
+                <p class="st-typography-body">Select an External Source Type Definition File (JSON) to import.</p> <!-- TODO: This should link to documentation! -->
+                <p class="st-typography-label">
+                  The newly created external source type will be empty, though you can upload sources using it.
+                </p>
+                <a href={'../'} style:font-style="italic" class="st-typography-label" rel="noopener noreferrer">What is an External Source Type Definition File?</a>
+                <div class="content">
+                  <input
+                    class="w-100"
+                    name="file"
+                    type="file"
+                    accept="application/json"
+                    bind:files={externalSourceTypeUploadFiles}
+                    bind:this={externalSourceTypeUploadFileInput}
+                    use:permissionHandler={{
+                      hasPermission: hasCreateExternalSourceTypePermission,
+                      permissionError: createExternalSourceTypePermissionError,
+                    }}
+                    on:change={onImportFileChanged}
+                  />
+                </div>
+              </div>
+              {#if uploadFilesError}
+                <div class="error">{uploadFilesError}</div>
+              {/if}
+            {:else}
+              <div class="directions">
+                <p class="st-typography-body">Provide a name for the new external source type.</p>
+                <p class="st-typography-label">
+                  The newly created external source type will be empty, though you can upload sources into it.
+                </p>
+              </div>
+            {/if}
             <div class="content parameters">
               <input
                 bind:value={newExternalSourceTypeName}
                 on:change={handleChange}
+                disabled={isUsingImportMode}
                 autocomplete="off"
                 class="st-input w-100"
                 placeholder="New External Source Type Name"
               />
-              <Collapse
-                title="Configure Allowed External Event Types"
-                tooltipContent="Select external event types that can be used by events in external sources using this external source type"
-                defaultExpanded={false}
+              {#each newExternalSourceTypeMetadata as metadata, metadataIndex}
+                <ParameterEntry
+                  disabled={isUsingImportMode}
+                  id={metadataIndex}
+                  value={metadata}
+                  newParameterNamePlaceholder="New External Source Type Metadata Name"
+                  on:input={handleExternalSourceTypeMetadataInput}
+                  on:delete={handleExternalSourceTypeMetadataDelete}
+                />
+              {/each}
+              <button
+                disabled={isUsingImportMode}
+                style:display="grid"
+                class="st-button icon add-metadata-button"
+                on:click={handleAddMetadataToExternalSourceType}
               >
-                {#if availableExternalEventTypes.length > 0}
-                  {#each $externalEventTypes as externalEventType}
-                    <div style:display="flex">
-                      <label
-                        class="st-typography-body"
-                        for={externalEventType.name}
-                        >
-                        {externalEventType.name}
-                      </label>
-                      <input
-                        type="checkbox"
-                        name={externalEventType.name}
-                        on:change={onAllowedExternalEventTypeCheckboxChanged}
-                      />
-                    </div>
-                  {/each}
-                {:else}
-                  <div class="st-typography-body">
-                    No external event types available
-                  </div>
-                {/if}
-              </Collapse>
-              <Collapse
-                title="Configure External Source Type Metadata"
-                tooltipContent="Create a metadata schema for the new external source type"
-                defaultExpanded={false}
-              >
-                {#each Array(newExternalSourceTypeMetadataCount) as _, externalSourceTypeMetadataIndex}
-                  <ParameterEntry
-                    bind:this={newExternalSourceTypeMetadata[externalSourceTypeMetadataIndex]}
-                    newParameterNamePlaceholder="New External Source Type Metadata Name"
-                  />
-                {/each}
-                <button
-                  class="st-button icon add-metadata-button"
-                  on:click={() => {newExternalSourceTypeMetadataCount++;}}
-                >
-                  <PlusIcon/>
-                </button>
-              </Collapse>
+                <PlusIcon/>
+              </button>
             </div>
           </TabPanel>
           <TabPanel>
-            <div class="directions">
-              <p class="st-typography-body">Provide a name for the new external event type.</p>
-              <p class="st-typography-label">
-                The newly created external event type will be empty, though you can upload events into it.
-              </p>
-            </div>
+            {#if isUsingImportMode}
+              <div class="directions">
+                <p class="st-typography-body">Select an External Event Type Definition File (JSON) to import.</p> <!-- TODO: This should link to documentation! -->
+                <p class="st-typography-label">
+                  The newly created external event type will be empty, though you can upload events using it.
+                </p>
+                <a href={'../'} style:font-style="italic" class="st-typography-label" rel="noopener noreferrer">What is an External Event Type Definition File?</a>
+                <div class="content">
+                  <input
+                    class="w-100"
+                    name="file"
+                    type="file"
+                    accept="application/json"
+                    bind:files={externalEventTypeUploadFiles}
+                    bind:this={externalEventTypeUploadFileInput}
+                    use:permissionHandler={{
+                      hasPermission: hasCreateExternalEventTypePermission,
+                      permissionError: createExternalEventTypePermissionError,
+                    }}
+                    on:change={onImportFileChanged}
+                  />
+                </div>
+              </div>
+            {:else}
+              <div class="directions">
+                <p class="st-typography-body">Provide a name for the new external event type.</p>
+                <p class="st-typography-label">
+                  The newly created external event type will be empty, though you can upload events into it.
+                </p>
+              </div>
+            {/if}
             <div class="content parameters">
               <input
                 bind:value={newExternalEventTypeName}
                 on:change={handleChange}
                 autocomplete="off"
                 class="st-input w-100"
+                disabled={isUsingImportMode}
                 placeholder="New External Event Type Name"
               />
-              {#each Array(newExternalEventTypeMetadataCount) as _, externalEventTypeMetadataIndex}
+              {#each newExternalEventTypeMetadata as metadata, metadataIndex}
                 <ParameterEntry
-                  bind:this={newExternalEventTypeMetadata[externalEventTypeMetadataIndex]}
+                  disabled={isUsingImportMode}
+                  id={metadataIndex}
+                  value={metadata}
                   newParameterNamePlaceholder="New External Event Type Metadata Name"
+                  on:input={handleExternalEventTypeMetadataInput}
+                  on:delete={handleExternalEventTypeMetadataDelete}
                 />
               {/each}
               <button
+                style:display="grid"
                 class="st-button icon add-metadata-button"
-                on:click={() => {newExternalEventTypeMetadataCount++;}}
+                disabled={isUsingImportMode}
+                on:click={handleAddMetadataToExternalEventType}
               >
                 <PlusIcon/>
               </button>
@@ -408,16 +529,9 @@
           </TabPanel>
         </Tabs>
       </div>
-      <div>
-        <AlertError class="m-2" error={creationError} />
-        <AlertError class="m-2" error={$createExternalSourceTypeError} />
-        <AlertError class="m-2" error={$createExternalEventTypeError} />
-        <AlertError class="m-2" error={$createDerivationGroupError} />
-      </div>
     </div>
   </ModalContent>
   <ModalFooter>
-
     <button
       class="st-button secondary"
       type="button"

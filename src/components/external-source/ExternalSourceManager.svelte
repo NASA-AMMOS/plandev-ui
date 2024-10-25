@@ -331,6 +331,7 @@
         $endTimeDoyField.value,
         parsedExternalSource.events,
         parsedExternalSource.source.key,
+        parsedExternalSource.source.metadata,
         $validAtDoyField.value,
         $externalEventTypes.map(externalEventType => externalEventType.name),
         $externalSourceTypes.map(externalSourceType => externalSourceType.name),
@@ -381,7 +382,6 @@
       $startTimeDoyField.value = parsedExternalSource.source.period.start_time.replaceAll('Z', '');
       $endTimeDoyField.value = parsedExternalSource.source.period.end_time.replaceAll('Z', '');
       $validAtDoyField.value = parsedExternalSource.source.valid_at.replaceAll('Z', '');
-      $derivationGroupField.value = `${$sourceTypeField.value} Default`; // Include source type name because derivation group names are unique
       isDerivationGroupFieldDisabled = false;
     } catch (error) {
       catchError('External Source has Invalid Format', error as Error);
@@ -618,7 +618,7 @@
                 </div>
               {/if}
               <button
-                disabled={!parsedExternalSource}
+                disabled={!parsedExternalSource || $derivationGroupField.value === ''}
                 class="st-button w-100"
                 type="submit"
                 use:permissionHandler={{

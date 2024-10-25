@@ -1,5 +1,6 @@
 import type { ExternalSourceDB } from './external-source';
 import type { ParameterName, ParametersMap } from './parameter';
+import type { ValueSchema } from './schema';
 
 // Represents all fields used as a composite primary key for merlin.external_event
 export type ExternalEventPkey = {
@@ -52,6 +53,15 @@ export type ExternalEvent = {
 };
 
 // no analgoue to PlanExternalSource as such a link doesn't exist for external events
+
+export type ExternalEventTypeJSON = {
+  metadata: {
+    isRequired: boolean;
+    name: ParameterName;
+    schema: ValueSchema;
+  }[];
+  name: string;
+};
 
 export type ExternalEventType = {
   metadata: ParametersMap;

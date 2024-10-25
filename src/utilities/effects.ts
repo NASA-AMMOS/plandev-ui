@@ -897,6 +897,7 @@ const effects = {
     endTime: string,
     externalEvents: ExternalEventJson[],
     externalSourceKey: string,
+    metadata: ParametersMap,
     validAt: string,
     existingExternalEventTypes: string[],
     existingExternalSourceTypes: string[],
@@ -954,6 +955,7 @@ const effects = {
           data: null, // updated after this map is created
         },
         key: externalSourceKey,
+        metadata: metadata,
         source_type_name: externalSourceTypeName,
         start_time: startTimeFormatted,
         valid_at: validAtFormatted,
@@ -1011,7 +1013,7 @@ const effects = {
       externalSourceInsert.external_events.data = externalEventsCreated;
       externalEventsCreated = [];
 
-      console.log(externalSourceInsert.external_events.data);
+      console.log(externalSourceInsert);
 
       const { createExternalSource: createExternalSourceResponse } = await reqHasura(
         gql.CREATE_EXTERNAL_SOURCE,
@@ -1054,7 +1056,6 @@ const effects = {
         showSuccessToast('External Source Type Created Successfully');
         return created as ExternalSourceType;
       } else {
-        throw Error(`Unable to create external source type`);
       }
     } catch (e) {
       catchError('External Source Type Create Failed', e as Error);
