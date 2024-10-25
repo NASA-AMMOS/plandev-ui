@@ -492,6 +492,7 @@ const gql = {
         source_type_name,
         start_time,
         valid_at,
+        metadata,
       }
     }
   `,
@@ -2489,6 +2490,7 @@ const gql = {
         valid_at
         created_at
         owner
+        metadata
       }
     }
   `,
@@ -2504,6 +2506,7 @@ const gql = {
         valid_at
         created_at
         owner
+        metadata
       }
     }
   `,

@@ -17,19 +17,21 @@
     externalSources,
     externalSourceTypes,
     parsingError,
-    planDerivationGroupLinks
+    planDerivationGroupLinks,
   } from '../../stores/external-source';
   import { field } from '../../stores/form';
   import { plans } from '../../stores/plans';
   import { plugins } from '../../stores/plugins';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
-  import type { ExternalEvent, ExternalEventId } from '../../types/external-event';
+  import type { ExternalEvent, ExternalEventId, ExternalEventType } from '../../types/external-event';
   import {
     type ExternalSourceJson,
     type ExternalSourceSlim,
+    type ExternalSourceType,
     type PlanDerivationGroup,
   } from '../../types/external-source';
+  import type { ParametersMap } from '../../types/parameter';
   import effects from '../../utilities/effects';
   import {
     getExternalEventRowId,
@@ -37,6 +39,7 @@
     getExternalSourceSlimRowId,
   } from '../../utilities/externalEvents';
   import { parseJSONStream } from '../../utilities/generic';
+  import { getFormParameters } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { formatDate } from '../../utilities/time';
@@ -49,6 +52,7 @@
   import DatePickerField from '../form/DatePickerField.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
+  import Parameters from '../parameters/Parameters.svelte';
   import AlertError from '../ui/AlertError.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -136,11 +140,15 @@
   let selectedSource: ExternalSourceSlim | null = null;
   let selectedSourceId: string | null = null;
   let selectedSourceEventTypes: string[] = [];
+  let selectedSourceRequiredMetadataList: string[];
+  let selectedSourceTypeMetadata: ParametersMap;
 
   // Selected element variables
   let selectedEvent: ExternalEvent | null = null;
   let selectedRowId: ExternalEventId | null = null;
   let selectedEvents: ExternalEvent[] = [];
+  let selectedEventRequiredMetadataList: string[];
+  let selectedEventTypeMetadata: ParametersMap;
 
   // We want to parse a file selected for upload.
   let files: FileList | undefined;
@@ -173,6 +181,30 @@
     hasDeleteExternalSourcePermissionOnSelectedSource = featurePermissions.externalSource.canDelete(user, [
       selectedSource,
     ]);
+  }
+
+  $: if (selectedSource !== null) {
+    if(selectedSource.metadata !== null && Object.entries(selectedSource.metadata).length > 0) {
+      const selectedSourceType: ExternalSourceType | undefined = $externalSourceTypes.find(
+        sourceType => sourceType.name === selectedSource?.source_type_name,
+      );
+      if (selectedSourceType !== undefined) {
+        selectedSourceTypeMetadata = selectedSourceType.metadata;
+        selectedSourceRequiredMetadataList = selectedSourceType.required_metadata;
+      }
+    }
+  }
+
+  $: if (selectedEvent !== null) {
+    if (selectedEvent.metadata !== null && Object.entries(selectedEvent.metadata).length > 0) {
+      const selectedEventType: ExternalEventType | undefined = $externalEventTypes.find(
+        eventType => eventType.name === selectedEvent?.pkey.event_type_name
+      );
+      if (selectedEventType !== undefined) {
+        selectedEventTypeMetadata = selectedEventType.metadata;
+        selectedEventRequiredMetadataList = selectedEventType.required_metadata;
+      }
+    }
   }
 
   $: selectedSourceId = selectedSource
@@ -459,7 +491,13 @@
 
     <svelte:fragment slot="body">
       {#if selectedEvent}
-        <ExternalEventForm externalEvent={selectedEvent} showHeader={true} />
+        <ExternalEventForm
+          externalEvent={selectedEvent}
+          parametersMap={selectedEventTypeMetadata}
+          argumentsMap={selectedEvent.metadata}
+          requiredParameters={selectedEventRequiredMetadataList}
+          showHeader={true}
+        />
       {:else if selectedSource}
         <div class="external-source-header">
           <div class="external-source-header-title">
@@ -530,7 +568,17 @@
                 name="valid-at"
               />
             </Input>
-
+            <Collapse defaultExpanded={false} title="Metadata" tooltipContent="View Metadata">
+              {#if Object.entries(selectedSource.metadata).length > 0}
+                <Parameters
+                  disabled={true}
+                  expanded={true}
+                  formParameters={getFormParameters(selectedSourceTypeMetadata, selectedSource.metadata, selectedSourceRequiredMetadataList)}
+                />
+              {:else}
+                <div class="st-typography-body">No metadata</div>
+              {/if}
+            </Collapse>
             <Collapse defaultExpanded={false} title="Event Types" tooltipContent="View Contained Event Types">
               {#if selectedSourceEventTypes.length > 0}
                 {#each selectedSourceEventTypes as eventType}

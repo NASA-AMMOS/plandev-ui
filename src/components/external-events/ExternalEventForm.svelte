@@ -5,13 +5,19 @@
   import { plugins } from '../../stores/plugins';
   import type { ExternalEvent } from '../../types/external-event';
   import type { FieldStore } from '../../types/form';
+  import type { ArgumentsMap, ParametersMap } from '../../types/parameter';
+  import { getFormParameters } from '../../utilities/parameters';
   import { formatDate } from '../../utilities/time';
   import Collapse from '../Collapse.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
   import Input from '../form/Input.svelte';
+  import Parameters from '../parameters/Parameters.svelte';
 
   export let externalEvent: ExternalEvent;
   export let showHeader: boolean = true;
+  export let parametersMap: ParametersMap = {};
+  export let argumentsMap: ArgumentsMap = {};
+  export let requiredParameters: string[] = [];
 
   let startTimeField: FieldStore<string>;
 
@@ -66,17 +72,12 @@
         </Input>
       </Collapse>
       <Collapse title="Metadata">
-        {#if externalEvent.metadata !== undefined}
-          {#each Object.entries(externalEvent.metadata) as externalEventMetadata}
-            <Input layout="inline">
-              {externalEventMetadata[0]}
-              <input
-                class="st-input w-100"
-                disabled={true}
-                value={externalEventMetadata[1]}
-              />
-            </Input>
-          {/each}
+        {#if parametersMap !== undefined && argumentsMap !== undefined && requiredParameters !== undefined && Object.entries(externalEvent.metadata).length > 0}
+          <Parameters
+            disabled={true}
+            expanded={true}
+            formParameters={getFormParameters(parametersMap, argumentsMap, requiredParameters)}
+          />
         {:else}
           <div class="st-typography-body">
             This external event does not contain any metadata.

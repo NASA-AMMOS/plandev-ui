@@ -1,6 +1,6 @@
 import type { ExternalEventDB, ExternalEventInsertInput, ExternalEventJson } from '../types/external-event';
 import type { UserId } from './app';
-import type { ParameterName, ParametersMap } from './parameter';
+import type { ArgumentsMap, ParameterName, ParametersMap } from './parameter';
 import type { ValueSchema } from './schema';
 
 // Represents all fields used as a composite primary key for merlin.external_source
@@ -16,7 +16,7 @@ export type ExternalSourceDB = {
   end_time: string;
   external_events: ExternalEventDB[];
   key: string;
-  metadata: ParametersMap;
+  metadata: ArgumentsMap;
   owner: UserId;
   source_type_name: string;
   start_time: string;
@@ -28,7 +28,7 @@ export type ExternalSourceJson = {
   events: ExternalEventJson[];
   source: {
     key: string;
-    metadata: ParametersMap;
+    metadata: ArgumentsMap;
     period: {
       end_time: string;
       start_time: string;

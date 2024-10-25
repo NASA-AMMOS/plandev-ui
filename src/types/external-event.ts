@@ -1,5 +1,5 @@
 import type { ExternalSourceDB } from './external-source';
-import type { ParameterName, ParametersMap } from './parameter';
+import type { ArgumentsMap, ParameterName, ParametersMap } from './parameter';
 import type { ValueSchema } from './schema';
 
 // Represents all fields used as a composite primary key for merlin.external_event
@@ -45,7 +45,7 @@ export type ExternalEventJson = {
 export type ExternalEvent = {
   duration: string;
   duration_ms: number;
-  metadata: ParametersMap;
+  metadata: ArgumentsMap;
   pkey: ExternalEventPkey;
   source?: ExternalSourceDB;
   start_ms: number;
