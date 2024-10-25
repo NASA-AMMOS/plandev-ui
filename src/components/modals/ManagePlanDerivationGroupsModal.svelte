@@ -223,6 +223,7 @@
           effects.deleteDerivationGroupForPlan(derivationGroup, $plan, user);
         }
       });
+      dispatch('close');
     }
   }
 </script>
