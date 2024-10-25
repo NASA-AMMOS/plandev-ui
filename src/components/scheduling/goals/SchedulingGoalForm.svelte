@@ -112,14 +112,14 @@
         description,
         name,
         public: isPublic,
-        tags,
+        tags: metadataTags,
       },
     } = event;
 
     const newGoalId = await effects.createSchedulingGoal(
       name,
       isPublic,
-      tags.map(({ id }) => ({ tag_id: id })),
+      metadataTags.map(({ id }) => ({ tag_id: id })),
       definitionType === DefinitionType.CODE ? SchedulingType.EDSL : SchedulingType.JAR,
       definitionCode,
       definitionFile ?? null,
