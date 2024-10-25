@@ -897,7 +897,7 @@ const effects = {
     endTime: string,
     externalEvents: ExternalEventJson[],
     externalSourceKey: string,
-    metadata: ParametersMap,
+    metadata: ArgumentsMap,
     validAt: string,
     existingExternalEventTypes: string[],
     existingExternalSourceTypes: string[],
@@ -1056,6 +1056,7 @@ const effects = {
         showSuccessToast('External Source Type Created Successfully');
         return created as ExternalSourceType;
       } else {
+        throw Error('Unable to create external source type');
       }
     } catch (e) {
       catchError('External Source Type Create Failed', e as Error);
