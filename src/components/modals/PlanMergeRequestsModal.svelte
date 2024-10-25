@@ -77,11 +77,7 @@
   }
 
   async function onReviewOrWithdraw(planMergeRequest: PlanMergeRequest) {
-    if (!planMergeRequest.plan_snapshot_supplying_changes.plan || !planMergeRequest.plan_receiving_changes) {
-      return;
-    }
-
-    if (planMergeRequest.type === 'incoming') {
+    if (planMergeRequest.type === 'incoming' && planMergeRequest.plan_receiving_changes) {
       planMergeRequest.pending = true;
       filteredPlanMergeRequests = [...filteredPlanMergeRequests];
       const success = await effects.planMergeBegin(
@@ -94,7 +90,7 @@
         dispatch('close');
         goto(`${base}/plans/${planMergeRequest.plan_receiving_changes.id}/merge`);
       }
-    } else if (planMergeRequest.type === 'outgoing') {
+    } else if (planMergeRequest.type === 'outgoing' && planMergeRequest.plan_snapshot_supplying_changes.plan) {
       await effects.planMergeRequestWithdraw(
         planMergeRequest.id,
         planMergeRequest.plan_snapshot_supplying_changes.plan,
@@ -121,7 +117,10 @@
   }
 
   function hasPermission(planMergeRequest: PlanMergeRequest) {
-    if (!planMergeRequest.plan_snapshot_supplying_changes.plan || !planMergeRequest.plan_receiving_changes) {
+    const model =
+      planMergeRequest.plan_snapshot_supplying_changes.plan?.model || planMergeRequest.plan_receiving_changes?.model;
+
+    if (!model) {
       return false;
     }
 
@@ -130,14 +129,14 @@
         user,
         planMergeRequest.plan_snapshot_supplying_changes.plan,
         planMergeRequest.plan_receiving_changes,
-        planMergeRequest.plan_snapshot_supplying_changes.plan.model,
+        model,
       );
     }
     return featurePermissions.planBranch.canReviewRequest(
       user,
       planMergeRequest.plan_snapshot_supplying_changes.plan,
       planMergeRequest.plan_receiving_changes,
-      planMergeRequest.plan_snapshot_supplying_changes.plan.model,
+      model,
     );
   }
 </script>
@@ -212,7 +211,7 @@
                   <PlanMergeRequestStatusBadge status={planMergeRequest.status} />
                 </div>
 
-                {#if planMergeRequest.status === 'pending' && planMergeRequest.plan_snapshot_supplying_changes.plan}
+                {#if planMergeRequest.status === 'pending'}
                   <button
                     on:click={() => onReviewOrWithdraw(planMergeRequest)}
                     class="st-button secondary"

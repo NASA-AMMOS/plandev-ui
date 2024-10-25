@@ -4981,12 +4981,12 @@ const effects = {
 
   async planMergeBegin(
     merge_request_id: number,
-    sourcePlan: PlanForMerging,
+    sourcePlan: PlanForMerging | undefined,
     targetPlan: PlanForMerging,
     user: User | null,
   ): Promise<boolean> {
     try {
-      if (!queryPermissions.PLAN_MERGE_BEGIN(user, sourcePlan, targetPlan, sourcePlan.model)) {
+      if (!queryPermissions.PLAN_MERGE_BEGIN(user, sourcePlan, targetPlan, targetPlan.model)) {
         throwPermissionError('begin a merge');
       }
 
@@ -5081,7 +5081,7 @@ const effects = {
   async planMergeRequestWithdraw(
     merge_request_id: number,
     sourcePlan: PlanForMerging,
-    targetPlan: PlanForMerging,
+    targetPlan: PlanForMerging | undefined,
     user: User | null,
   ): Promise<boolean> {
     try {
