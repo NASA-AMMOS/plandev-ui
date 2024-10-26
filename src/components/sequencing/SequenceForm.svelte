@@ -6,7 +6,6 @@
   import { base } from '$app/paths';
   import type { ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import { SearchParameters } from '../../enums/searchParameters';
-  import { outputFormat } from '../../stores/sequence-adaptation';
   import {
     parameterDictionaries as parameterDictionariesStore,
     parcelToParameterDictionaries,
@@ -102,7 +101,7 @@
       }
     });
 
-    const [output, parsedChannelDictionary, ...parsedParameterDictionaries] = await Promise.all([
+    const [fileNameAndContents, parsedChannelDictionary, ...parsedParameterDictionaries] = await Promise.all([
       parseOutputFromFile(e.currentTarget.files),
       parcel?.channel_dictionary_id
         ? effects.getParsedAmpcsChannelDictionary(parcel?.channel_dictionary_id, user)
@@ -112,9 +111,11 @@
       }),
     ]);
 
-    if (output !== null) {
+    if (fileNameAndContents !== null) {
+      sequenceName = fileNameAndContents.name;
+
       const sequence = await toInputFormat(
-        output,
+        fileNameAndContents.contents,
         parsedParameterDictionaries.filter((pd): pd is ParameterDictionary => pd !== null),
         parsedChannelDictionary,
       );
@@ -146,13 +147,15 @@
     }
   }
 
-  async function parseOutputFromFile(files: FileList | null | undefined): Promise<string | null> {
+  async function parseOutputFromFile(
+    files: FileList | null | undefined,
+  ): Promise<{ contents: string; name: string } | null> {
     if (files) {
       const file = files.item(0);
 
       if (file) {
         try {
-          return await file.text();
+          return { contents: await file.text(), name: file.name };
         } catch (e) {
           const errorMessage = (e as Error).message;
           logError(errorMessage);
@@ -184,9 +187,9 @@
           const newSequenceId = await effects.createUserSequence(newSequence, user);
 
           if (newSequenceId !== null) {
-            goto(
-              `${base}/sequencing/edit/${newSequenceId}${'?' + SearchParameters.WORKSPACE_ID + '=' + getSearchParameterNumber(SearchParameters.WORKSPACE_ID) ?? ''}`,
-            );
+            const newSequenceUrl = `${base}/sequencing/edit/${newSequenceId}`;
+            const workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
+            goto(newSequenceUrl + (workspaceId !== null ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''));
           }
         } else if (mode === 'edit' && sequenceId !== null) {
           const updatedSequence: Partial<UserSequence> = {
@@ -220,10 +223,11 @@
       <div class="right">
         <button
           class="st-button secondary ellipsis"
-          on:click={() =>
-            goto(
-              `${base}/sequencing${'?' + SearchParameters.WORKSPACE_ID + '=' + getSearchParameterNumber(SearchParameters.WORKSPACE_ID) ?? ''}`,
-            )}
+          on:click={() => {
+            const sequencingUrl = `${base}/sequencing`;
+            const workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
+            goto(sequencingUrl + (workspaceId !== null ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''));
+          }}
         >
           {mode === 'create' ? 'Cancel' : 'Close'}
         </button>
@@ -296,7 +300,7 @@
       </fieldset>
 
       <fieldset>
-        <label for="outputFile">Create Sequence from {$outputFormat?.[0]?.name}</label>
+        <label for="outputFile">Import Sequence</label>
         <input
           bind:files={outputFiles}
           class="w-100"

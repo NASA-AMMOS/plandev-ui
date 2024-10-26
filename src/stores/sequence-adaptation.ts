@@ -18,12 +18,6 @@ const defaultAdaptation: ISequenceAdaptation = {
     name: 'SeqN',
     toInputFormat: seqJsonToSequence,
   },
-  loopKeywords: {
-    break: 'CMD_BREAK',
-    continue: 'CMD_CONTINUE',
-    endWhileLoop: 'CMD_END_WHILE_LOOP',
-    whileLoop: ['CMD_WHILE_LOOP', 'CMD_WHILE_LOOP_OR'],
-  },
   modifyOutput: undefined,
   modifyOutputParse: undefined,
   outputFormat: [
@@ -68,12 +62,6 @@ export function setSequenceAdaptation(newSequenceAdaptation: Partial<ISequenceAd
       linter: newSequenceAdaptation?.inputFormat?.linter ?? defaultAdaptation.inputFormat.linter,
       name: newSequenceAdaptation?.inputFormat?.name ?? defaultAdaptation.inputFormat.name,
       toInputFormat: newSequenceAdaptation?.inputFormat?.toInputFormat ?? defaultAdaptation.inputFormat.toInputFormat,
-    },
-    loopKeywords: {
-      break: newSequenceAdaptation?.loopKeywords?.break ?? defaultAdaptation.loopKeywords.break,
-      continue: newSequenceAdaptation?.loopKeywords?.continue ?? defaultAdaptation.loopKeywords.continue,
-      endWhileLoop: newSequenceAdaptation?.loopKeywords?.endWhileLoop ?? defaultAdaptation.loopKeywords.endWhileLoop,
-      whileLoop: newSequenceAdaptation?.loopKeywords?.whileLoop ?? defaultAdaptation.loopKeywords.whileLoop,
     },
     modifyOutput: newSequenceAdaptation?.modifyOutput ?? defaultAdaptation.modifyOutput,
     modifyOutputParse: newSequenceAdaptation?.modifyOutputParse ?? defaultAdaptation.modifyOutputParse,

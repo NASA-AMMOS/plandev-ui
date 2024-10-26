@@ -66,9 +66,14 @@ export async function toInputFormat(
       modifiedOutput = `${modifiedOutput}`;
     }
 
-    return await get(inputFormat)?.toInputFormat?.(modifiedOutput);
+    return (await get(inputFormat)?.toInputFormat?.(modifiedOutput)) ?? output;
   } else {
-    return await get(inputFormat)?.toInputFormat?.(output);
+    try {
+      return (await get(inputFormat)?.toInputFormat?.(output)) ?? output;
+    } catch (e) {
+      console.error(e);
+      return output;
+    }
   }
 }
 

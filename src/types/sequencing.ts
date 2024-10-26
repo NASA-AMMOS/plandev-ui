@@ -77,7 +77,6 @@ export interface ISequenceAdaptation {
     name: string;
     toInputFormat?(input: string): Promise<string>;
   };
-  loopKeywords: { break: string; continue: string; endWhileLoop: string; whileLoop: string[] };
   modifyOutput?: (
     output: string,
     parameterDictionaries: AmpcsParameterDictionary[],

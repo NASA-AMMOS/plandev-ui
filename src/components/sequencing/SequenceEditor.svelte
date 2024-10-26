@@ -40,7 +40,12 @@
   import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../utilities/codemirror/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../utilities/codemirror/seq-n-tree-utils';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
-  import { setupVmlLanguageSupport, vmlBlockHighlighter, vmlHighlightBlock } from '../../utilities/codemirror/vml/vml';
+  import {
+    setupVmlLanguageSupport,
+    vmlAdaptation,
+    vmlBlockHighlighter,
+    vmlHighlightBlock,
+  } from '../../utilities/codemirror/vml/vml';
   import { vmlAutoComplete } from '../../utilities/codemirror/vml/vmlAdaptation';
   import { vmlFormat } from '../../utilities/codemirror/vml/vmlFormatter';
   import { vmlLinter } from '../../utilities/codemirror/vml/vmlLinter';
@@ -292,6 +297,8 @@
           showFailureToast('Invalid sequence adaptation');
         }
       }
+    } else if (inVmlMode()) {
+      setSequenceAdaptation(vmlAdaptation);
     } else {
       resetSequenceAdaptation();
     }
