@@ -1,6 +1,6 @@
 import { syntaxTree } from '@codemirror/language';
 import { linter, type Diagnostic } from '@codemirror/lint';
-import type { Extension } from '@codemirror/state';
+import type { Extension, Text } from '@codemirror/state';
 import type { SyntaxNode, Tree } from '@lezer/common';
 import type { CommandDictionary, FswCommand, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import type { EditorView } from 'codemirror';
@@ -35,12 +35,12 @@ export function vmlLinter(commandDictionary: CommandDictionary | null = null): E
   return linter(view => {
     const diagnostics: Diagnostic[] = [];
     const tree = syntaxTree(view.state);
-    diagnostics.push(...validateParserErrors(tree));
+    const sequence = view.state.sliceDoc();
+    diagnostics.push(...validateParserErrors(tree, sequence, view.state.toText(sequence)));
     if (!commandDictionary) {
       return diagnostics;
     }
 
-    const sequence = view.state.sliceDoc();
     const parsed = VmlLanguage.parser.parse(sequence);
 
     diagnostics.push(...validateCommands(commandDictionary, sequence, parsed));
@@ -274,15 +274,16 @@ function unquote(s: string): string {
  * @param tree
  * @returns
  */
-function validateParserErrors(tree: Tree): Diagnostic[] {
+function validateParserErrors(tree: Tree, sequence: string, text: Text): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
   tree.iterate({
     enter: node => {
       if (node.name === TOKEN_ERROR && diagnostics.length < MAX_PARSER_ERRORS) {
         const { from, to } = node;
+        const line = text.lineAt(from);
         diagnostics.push({
           from,
-          message: `Unexpected token`,
+          message: `Unexpected token: "${sequence.slice(from, to)}" [Line ${line.number}, Col ${from - line.from}]`,
           severity: 'error',
           to,
         });
