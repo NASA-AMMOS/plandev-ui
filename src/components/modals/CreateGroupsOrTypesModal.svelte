@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import MinusIcon from '@nasa-jpl/stellar/icons/minus.svg?component';
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import { createEventDispatcher } from 'svelte';
   import ImportIcon from '../../assets/import.svg?component';
@@ -8,6 +9,7 @@
   import {
     createDerivationGroupError,
     createExternalSourceTypeError,
+    derivationGroups,
     externalSourceTypes,
     resetExternalSourceStores,
   } from '../../stores/external-source';
@@ -26,7 +28,6 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import AlertError from '../ui/AlertError.svelte';
-  import ParameterEntry from '../ui/ParameterEntry.svelte';
   import Tab from '../ui/Tabs/Tab.svelte';
   import TabPanel from '../ui/Tabs/TabPanel.svelte';
   import Tabs from '../ui/Tabs/Tabs.svelte';
@@ -44,18 +45,21 @@
   const externalSourceTypeTabId: TabId = 'externalSourceType';
   const externalEventTypeTabId: TabId = 'externalEventType';
   const createDerivationGroupPermissionError: string = 'You do not have permission to create a derivation group.';
-  const createExternalSourceTypePermissionError: string =
-    'You do not have permission to create an external source type.';
-  const createExternalEventTypePermissionError: string = 'You do not have permission to create an external event type.';
+  // const createExternalSourceTypePermissionError: string =
+  // 'You do not have permission to create an external source type.';
+  // const createExternalEventTypePermissionError: string = 'You do not have permission to create an external event type.';
 
   // Derivation group variables
   let hasCreateDerivationGroupPermission: boolean = false;
 
-  let newDerivationGroupName: string | null = null;
+  // let newDerivationGroupName: string | null = null;
   let newDerivationGroupSourceType: string | null = null;
+  let newDerivationGroups: { name: string; sourceType: string; valid: boolean }[] = [
+    { name: '', sourceType: '', valid: false },
+  ];
 
   // External source type variables
-  let hasCreateExternalSourceTypePermission: boolean = false;
+  // let hasCreateExternalSourceTypePermission: boolean = false;
   let newExternalSourceTypeName: string | null = null;
   let newExternalSourceTypeMetadata: {
     isRequired: boolean | null;
@@ -64,7 +68,7 @@
   }[] = [];
 
   // External event type variables
-  let hasCreateExternalEventTypePermission: boolean = false;
+  // let hasCreateExternalEventTypePermission: boolean = false;
   let newExternalEventTypeName: string | null = null;
   let newExternalEventTypeMetadata: {
     isRequired: boolean | null;
@@ -81,55 +85,59 @@
   let isUsingImportMode: boolean = false;
   let derivationGroupUploadFiles: FileList | undefined;
   let derivationGroupUploadFileInput: HTMLInputElement;
-  let externalSourceTypeUploadFiles: FileList | undefined;
-  let externalSourceTypeUploadFileInput: HTMLInputElement;
-  let externalEventTypeUploadFiles: FileList | undefined;
-  let externalEventTypeUploadFileInput: HTMLInputElement;
+  // let externalSourceTypeUploadFiles: FileList | undefined;
+  // let externalSourceTypeUploadFileInput: HTMLInputElement;
+  // let externalEventTypeUploadFiles: FileList | undefined;
+  // let externalEventTypeUploadFileInput: HTMLInputElement;
   let uploadFilesError: string | null = null;
 
   // Reactively determine deletion permissions
   $: hasCreateDerivationGroupPermission = featurePermissions.derivationGroup.canCreate(user);
-  $: hasCreateExternalSourceTypePermission = featurePermissions.externalSourceType.canCreate(user);
-  $: hasCreateExternalEventTypePermission = featurePermissions.externalEventType.canCreate(user);
+  // $: hasCreateExternalSourceTypePermission = featurePermissions.externalSourceType.canCreate(user);
+  // $: hasCreateExternalEventTypePermission = featurePermissions.externalEventType.canCreate(user);
 
-  $: if (selectedTab === derivationGroupTabId) {
-    hasCreationPermissionForCurrentTab = hasCreateDerivationGroupPermission;
-    if (isUsingImportMode) {
-      isCreateDisabled = derivationGroupUploadFiles === undefined;
-    } else {
-      isCreateDisabled =
-        hasCreateDerivationGroupPermission === false ||
-        newDerivationGroupName === null ||
-        newDerivationGroupSourceType === null;
-    }
-  } else if (selectedTab === externalSourceTypeTabId) {
-    hasCreationPermissionForCurrentTab = hasCreateExternalSourceTypePermission;
-    if (isUsingImportMode) {
-      isCreateDisabled = externalSourceTypeUploadFiles === undefined;
-    } else {
-      isCreateDisabled = hasCreateExternalSourceTypePermission === false || newExternalSourceTypeName === null;
-    }
-  } else if (selectedTab === externalEventTypeTabId) {
-    hasCreationPermissionForCurrentTab = hasCreateExternalEventTypePermission;
-    if (isUsingImportMode) {
-      isCreateDisabled = externalEventTypeUploadFiles === undefined;
-    } else {
-      isCreateDisabled = hasCreateExternalEventTypePermission === false || newExternalEventTypeName === null;
+  // TODO: update so that it matches below
+  $: {
+    if (selectedTab === derivationGroupTabId) {
+      hasCreationPermissionForCurrentTab = hasCreateDerivationGroupPermission;
+      isCreateDisabled = !newDerivationGroups.map(entry => entry.valid).reduce((prev, curr) => prev && curr, true);
+      console.log(isCreateDisabled);
     }
   }
+  // $: if (selectedTab === derivationGroupTabId) {
+  //   hasCreationPermissionForCurrentTab = hasCreateDerivationGroupPermission;
+  //   if (isUsingImportMode) {
+  //     isCreateDisabled = derivationGroupUploadFiles === undefined;
+  //   } else {
+  //     isCreateDisabled =
+  //       hasCreateDerivationGroupPermission === false ||
+  //       newDerivationGroupName === null ||
+  //       newDerivationGroupSourceType === null;
+  //   }
+  // } else if (selectedTab === externalSourceTypeTabId) {
+  //   hasCreationPermissionForCurrentTab = hasCreateExternalSourceTypePermission;
+  //   if (isUsingImportMode) {
+  //     isCreateDisabled = externalSourceTypeUploadFiles === undefined;
+  //   } else {
+  //     isCreateDisabled = hasCreateExternalSourceTypePermission === false || newExternalSourceTypeName === null;
+  //   }
+  // } else if (selectedTab === externalEventTypeTabId) {
+  //   hasCreationPermissionForCurrentTab = hasCreateExternalEventTypePermission;
+  //   if (isUsingImportMode) {
+  //     isCreateDisabled = externalEventTypeUploadFiles === undefined;
+  //   } else {
+  //     isCreateDisabled = hasCreateExternalEventTypePermission === false || newExternalEventTypeName === null;
+  //   }
+  // }
 
   function onCreateDerivationGroup() {
-    if (newDerivationGroupName === null) {
-      creationError = 'Please enter a new derivation group name.';
-    } else if (newDerivationGroupSourceType === null) {
-      creationError = 'Please select an external source type.';
+    if (isCreateDisabled) {
+      creationError = 'Please fill out all derivation group names and source types.';
     } else {
-      effects.createDerivationGroup(
-        { name: newDerivationGroupName, source_type_name: newDerivationGroupSourceType },
-        user,
-      );
-      newDerivationGroupName = null;
-      newDerivationGroupSourceType = null;
+      newDerivationGroups.forEach(entry => {
+        effects.createDerivationGroup({ name: entry.name, source_type_name: entry.sourceType }, user);
+      });
+      newDerivationGroups = [{ name: '', sourceType: '', valid: false }];
     }
   }
 
@@ -139,7 +147,9 @@
       let derivationGroupJSON: DerivationGroupJSON;
       try {
         derivationGroupJSON = await parseJSONStream<DerivationGroupJSON>(stream);
-        newDerivationGroupName = derivationGroupJSON.name;
+
+        // TODO: update
+        // newDerivationGroupName = derivationGroupJSON.name;
         newDerivationGroupSourceType = derivationGroupJSON.source_type_name;
       } catch (e) {
         throw new Error('Derivation Group Definition File is not a valid JSON');
@@ -303,54 +313,92 @@
     }
   }
 
-  function handleAddMetadataToExternalSourceType() {
-    newExternalSourceTypeMetadata = [...newExternalSourceTypeMetadata, { isRequired: null, name: null, schema: null }];
+  // function handleAddMetadataToExternalSourceType() {
+  //   newExternalSourceTypeMetadata = [...newExternalSourceTypeMetadata, { isRequired: null, name: null, schema: null }];
+  // }
+
+  function handleCreateNewDerivationGroupEntry() {
+    newDerivationGroups = [...newDerivationGroups, { name: '', sourceType: '', valid: false }];
   }
 
-  function handleExternalSourceTypeMetadataInput(
-    event: CustomEvent<{ id: number; isRequired?: boolean; name?: ParameterName; type?: string }>,
-  ) {
-    const { detail: newValue } = event;
-    const metadataOfId = newExternalSourceTypeMetadata.at(newValue.id);
-    if (metadataOfId !== undefined) {
-      if (newValue?.isRequired) {
-        metadataOfId.isRequired = newValue.isRequired;
-      } else if (newValue?.name) {
-        metadataOfId.name = newValue.name;
-      } else if (newValue?.type) {
-        metadataOfId.schema = { type: newValue.type } as ValueSchema;
-      }
+  // function handleExternalSourceTypeMetadataInput(
+  //   event: CustomEvent<{ id: number; isRequired?: boolean; name?: ParameterName; type?: string }>,
+  // ) {
+  //   const { detail: newValue } = event;
+  //   const metadataOfId = newExternalSourceTypeMetadata.at(newValue.id);
+  //   if (metadataOfId !== undefined) {
+  //     if (newValue?.isRequired) {
+  //       metadataOfId.isRequired = newValue.isRequired;
+  //     } else if (newValue?.name) {
+  //       metadataOfId.name = newValue.name;
+  //     } else if (newValue?.type) {
+  //       metadataOfId.schema = { type: newValue.type } as ValueSchema;
+  //     }
+  //   }
+  // }
+
+  // function handleExternalSourceTypeMetadataDelete(event: CustomEvent<number>) {
+  //   const { detail: metadataId } = event;
+  //   newExternalSourceTypeMetadata = newExternalSourceTypeMetadata.filter((_, index) => index !== metadataId);
+  // }
+
+  // function handleAddMetadataToExternalEventType() {
+  //   newExternalEventTypeMetadata = [...newExternalEventTypeMetadata, { isRequired: null, name: null, schema: null }];
+  // }
+
+  // function handleExternalEventTypeMetadataInput(
+  //   event: CustomEvent<{ id: number; isRequired?: boolean; name?: ParameterName; type?: string }>,
+  // ) {
+  //   const { detail: newValue } = event;
+  //   const metadataOfId = newExternalEventTypeMetadata.at(newValue.id);
+  //   if (metadataOfId !== undefined) {
+  //     if (newValue?.isRequired) {
+  //       metadataOfId.isRequired = newValue.isRequired;
+  //     } else if (newValue?.name) {
+  //       metadataOfId.name = newValue.name;
+  //     } else if (newValue?.type) {
+  //       metadataOfId.schema = { type: newValue.type } as ValueSchema;
+  //     }
+  //   }
+  // }
+
+  // function handleExternalEventTypeMetadataDelete(event: CustomEvent<number>) {
+  //   const { detail: metadataId } = event;
+  //   newExternalEventTypeMetadata = newExternalEventTypeMetadata.filter((_, index) => index !== metadataId);
+  // }
+
+  $: newDerivationGroups = newDerivationGroups.map(entry => {
+    console.log('reevaluating!');
+    return {
+      name: entry.name,
+      sourceType: entry.sourceType,
+      valid: validateDerivationGroupName(entry.name) && entry.sourceType !== '',
+    };
+  });
+
+  function validateDerivationGroupName(value: string): boolean {
+    if (value.length <= 0 || $derivationGroups.map(dg => dg.name).includes(value)) {
+      return false;
     }
+    return true;
   }
 
-  function handleExternalSourceTypeMetadataDelete(event: CustomEvent<number>) {
-    const { detail: metadataId } = event;
-    newExternalSourceTypeMetadata = newExternalSourceTypeMetadata.filter((_, index) => index !== metadataId);
+  function handleDGChange(value: string, i: number) {
+    // update element at i in list
+    newDerivationGroups[i].name = value;
+    newDerivationGroups = [...newDerivationGroups];
+
+    // clear error stores
+    handleChange();
   }
 
-  function handleAddMetadataToExternalEventType() {
-    newExternalEventTypeMetadata = [...newExternalEventTypeMetadata, { isRequired: null, name: null, schema: null }];
-  }
+  function handleDGStChange(value: string, i: number) {
+    // update element at i in list
+    newDerivationGroups[i].sourceType = value;
+    newDerivationGroups = [...newDerivationGroups];
 
-  function handleExternalEventTypeMetadataInput(
-    event: CustomEvent<{ id: number; isRequired?: boolean; name?: ParameterName; type?: string }>,
-  ) {
-    const { detail: newValue } = event;
-    const metadataOfId = newExternalEventTypeMetadata.at(newValue.id);
-    if (metadataOfId !== undefined) {
-      if (newValue?.isRequired) {
-        metadataOfId.isRequired = newValue.isRequired;
-      } else if (newValue?.name) {
-        metadataOfId.name = newValue.name;
-      } else if (newValue?.type) {
-        metadataOfId.schema = { type: newValue.type } as ValueSchema;
-      }
-    }
-  }
-
-  function handleExternalEventTypeMetadataDelete(event: CustomEvent<number>) {
-    const { detail: metadataId } = event;
-    newExternalEventTypeMetadata = newExternalEventTypeMetadata.filter((_, index) => index !== metadataId);
+    // clear error stores
+    handleChange();
   }
 </script>
 
@@ -362,8 +410,8 @@
         <Tabs class="creation-tabs" tabListClassName="creation-tabs-list" on:select-tab={handleTabChange}>
           <svelte:fragment slot="tab-list">
             <Tab tabId={derivationGroupTabId} class="creation-tab">Derivation Group</Tab>
-            <Tab tabId={externalSourceTypeTabId} class="creation-tab">External Source Type</Tab>
-            <Tab tabId={externalEventTypeTabId} class="creation-tab">External Event Type</Tab>
+            <!-- <Tab tabId={externalSourceTypeTabId} class="creation-tab">External Source Type</Tab>
+            <Tab tabId={externalEventTypeTabId} class="creation-tab">External Event Type</Tab> -->
           </svelte:fragment>
           <div>
             <AlertError class="m-2" error={creationError} />
@@ -411,32 +459,59 @@
                 </p>
               </div>
             {/if}
-            <div class="content">
-              <input
-                bind:value={newDerivationGroupName}
-                on:change={handleChange}
-                disabled={isUsingImportMode}
-                autocomplete="off"
-                class="st-input w-50"
-                placeholder="New Derivation Group Name"
-              />
-              <select
-                bind:value={newDerivationGroupSourceType}
-                on:change={handleChange}
-                disabled={isUsingImportMode}
-                class="st-select w-50"
+            {#each newDerivationGroups as derivationGroup, i}
+              <div
+                class="card content"
+                class:card-background-added={derivationGroup.valid}
+                class:card-background-deleted={!derivationGroup.valid}
+                style="padding-left:10px; padding-right: 10px; margin-top:10px"
               >
-                {#each $externalSourceTypes as sourceType}
-                  <option value={sourceType.name}>{sourceType.name}</option>
-                {/each}
-              </select>
+                <button
+                  disabled={newDerivationGroups.length <= 1}
+                  style:display="grid"
+                  class="st-button icon delete"
+                  on:click|stopPropagation={() => {
+                    newDerivationGroups = newDerivationGroups.filter((_, index) => index !== i);
+                  }}
+                >
+                  <MinusIcon />
+                </button>
+                <input
+                  value={derivationGroup.name}
+                  on:blur={e => handleDGChange(e.target.value, i)}
+                  disabled={isUsingImportMode}
+                  autocomplete="off"
+                  class="st-input w-50"
+                  placeholder="New Derivation Group Name"
+                />
+                <select
+                  value={derivationGroup.sourceType}
+                  on:change={e => handleDGStChange(e.target.value, i)}
+                  disabled={isUsingImportMode}
+                  class="st-select w-50"
+                >
+                  {#each $externalSourceTypes as sourceType}
+                    <option value={sourceType.name}>{sourceType.name}</option>
+                  {/each}
+                </select>
+              </div>
+            {/each}
+            <div class="content parameters">
+              <button
+                disabled={isUsingImportMode}
+                style:display="grid"
+                class="st-button icon add-button"
+                on:click={handleCreateNewDerivationGroupEntry}
+              >
+                <PlusIcon />
+              </button>
             </div>
           </TabPanel>
-          <TabPanel>
+          <!-- <TabPanel>
             {#if isUsingImportMode}
               <div class="directions">
                 <p class="st-typography-body">Select an External Source Type Definition File (JSON) to import.</p>
-                <!-- TODO: This should link to documentation! -->
+                <-- TODO: This should link to documentation! --
                 <p class="st-typography-label">
                   The newly created external source type will be empty, though you can upload sources using it.
                 </p>
@@ -503,7 +578,7 @@
             {#if isUsingImportMode}
               <div class="directions">
                 <p class="st-typography-body">Select an External Event Type Definition File (JSON) to import.</p>
-                <!-- TODO: This should link to documentation! -->
+                <-- TODO: This should link to documentation! --
                 <p class="st-typography-label">
                   The newly created external event type will be empty, though you can upload events using it.
                 </p>
@@ -562,7 +637,7 @@
                 <PlusIcon />
               </button>
             </div>
-          </TabPanel>
+          </TabPanel> -->
         </Tabs>
       </div>
     </div>
@@ -620,7 +695,7 @@
       -1px 0px 0px inset var(--st-gray-20);
   }
 
-  .add-metadata-button {
+  .add-button {
     background: var(--st-gray-20);
   }
 
@@ -653,5 +728,26 @@
     gap: 8px;
     padding-bottom: 12px;
     padding-top: 12px;
+  }
+
+  .card {
+    background: var(--bg-color, rgba(245, 245, 245, 0.35));
+    border: 1px solid var(--border-color, rgba(152, 101, 35, 0.5));
+    border-radius: 4px;
+    color: var(--st-gray-70);
+    cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    text-align: left;
+  }
+
+  .card-background-added {
+    background: rgb(254, 252, 234);
+    display: flex;
+  }
+
+  .card-background-deleted {
+    background: rgb(254, 234, 234);
+    display: flex;
   }
 </style>
