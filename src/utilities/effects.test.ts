@@ -281,7 +281,11 @@ describe('Handle modal and requests in effects', () => {
         '2024-007T00:00:00',
         [],
         'ExampleSource.json',
+        {},
         '2024-001T00:00:00',
+        [],
+        [],
+        [],
         mockUser,
       );
 

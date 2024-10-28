@@ -16,10 +16,9 @@
   let selectedEventRequiredMetadataList: string[];
 
   $: if ($selectedExternalEvent !== null) {
-    console.log($selectedExternalEvent);
     if ($selectedExternalEvent.metadata !== null && Object.entries($selectedExternalEvent.metadata).length > 0) {
       const selectedEventType: ExternalEventType | undefined = $externalEventTypes.find(
-        eventType => eventType.name === $selectedExternalEvent?.pkey.event_type_name
+        eventType => eventType.name === $selectedExternalEvent?.pkey.event_type_name,
       );
       if (selectedEventType !== undefined) {
         selectedEventTypeMetadata = selectedEventType.metadata;
@@ -27,7 +26,6 @@
       }
     }
   }
-
 </script>
 
 <Panel padBody={false}>

@@ -140,7 +140,6 @@
   let selectedExternalSourceTypeOptionalMetadata: ParametersMap = {};
 
   let selectedExternalEventType: ExternalEventType | undefined = undefined;
-  let selectedExternalEventTypeDerivationGroups: DerivationGroup[] = [];
   let selectedExternalEventTypeRequiredMetadata: ParametersMap = {};
   let selectedExternalEventTypeOptionalMetadata: ParametersMap = {};
 
@@ -159,7 +158,11 @@
     }
   });
 
-  $: if (selectedExternalSourceType !== undefined && selectedExternalSourceType.metadata !== undefined && selectedExternalSourceType?.required_metadata !== undefined) {
+  $: if (
+    selectedExternalSourceType !== undefined &&
+    selectedExternalSourceType.metadata !== undefined &&
+    selectedExternalSourceType?.required_metadata !== undefined
+  ) {
     Object.entries(selectedExternalSourceType.metadata).forEach(metadata => {
       if (selectedExternalSourceType?.required_metadata.includes(metadata[0])) {
         selectedExternalSourceTypeRequiredMetadata[metadata[0]] = metadata[1];
@@ -169,7 +172,11 @@
     });
   }
 
-  $: if (selectedExternalEventType !== undefined && selectedExternalEventType.metadata !== undefined && selectedExternalEventType?.required_metadata !== undefined) {
+  $: if (
+    selectedExternalEventType !== undefined &&
+    selectedExternalEventType.metadata !== undefined &&
+    selectedExternalEventType?.required_metadata !== undefined
+  ) {
     Object.entries(selectedExternalEventType.metadata).forEach(metadata => {
       if (selectedExternalEventType?.required_metadata.includes(metadata[0])) {
         selectedExternalEventTypeRequiredMetadata[metadata[0]] = metadata[1];
@@ -443,7 +450,7 @@
       </div>
       {#if selectedDerivationGroup !== undefined}
         <CssGridGutter track={1} type="column" />
-        <Panel borderRight padBody={true}>
+        <Panel borderRight>
           <svelte:fragment slot="header">
             <SectionTitle overflow="hidden">
               <ExternalSourceIcon slot="icon" />Sources in '{selectedDerivationGroup.name}'
@@ -497,7 +504,7 @@
         </Panel>
       {:else if selectedExternalSourceType !== undefined}
         <CssGridGutter track={1} type="column" />
-        <Panel borderRight padBody={true}>
+        <Panel borderRight>
           <svelte:fragment slot="header">
             <SectionTitle>
               <ExternalSourceIcon slot="icon" />{selectedExternalSourceType.name} Details
@@ -528,9 +535,7 @@
                         <i class="st-typography-body">{source[0]}</i>
                       {/each}
                     {:else}
-                      <div class="st-typography-body">
-                        No external sources using this source type.
-                      </div>
+                      <div class="st-typography-body">No external sources using this source type.</div>
                     {/if}
                   </Collapse>
                 </Collapse>
@@ -544,12 +549,12 @@
               defaultExpanded={false}
             >
               {#if Object.keys(selectedExternalSourceTypeRequiredMetadata).length > 0}
-                  {#each Object.entries(selectedExternalSourceTypeRequiredMetadata) as externalSourceTypeMetadata}
-                    <div class="st-typography-body parameters">
-                      <div class="parameter-name">{externalSourceTypeMetadata[0]}</div>
-                      <div class="parameter-type">{externalSourceTypeMetadata[1].schema.type}</div>
-                    </div>
-                  {/each}
+                {#each Object.entries(selectedExternalSourceTypeRequiredMetadata) as externalSourceTypeMetadata}
+                  <div class="st-typography-body parameters">
+                    <div class="parameter-name">{externalSourceTypeMetadata[0]}</div>
+                    <div class="parameter-type">{externalSourceTypeMetadata[1].schema.type}</div>
+                  </div>
+                {/each}
               {:else}
                 <div class="st-typography-body">No required metadata defined for this event type.</div>
               {/if}
@@ -560,12 +565,12 @@
               defaultExpanded={false}
             >
               {#if Object.keys(selectedExternalSourceTypeOptionalMetadata).length > 0}
-                  {#each Object.entries(selectedExternalSourceTypeOptionalMetadata) as externalSourceTypeMetadata}
-                    <div class="st-typography-body parameters">
-                      <div class="parameter-name">{externalSourceTypeMetadata[0]}</div>
-                      <div class="parameter-type">{externalSourceTypeMetadata[1].schema.type}</div>
-                    </div>
-                  {/each}
+                {#each Object.entries(selectedExternalSourceTypeOptionalMetadata) as externalSourceTypeMetadata}
+                  <div class="st-typography-body parameters">
+                    <div class="parameter-name">{externalSourceTypeMetadata[0]}</div>
+                    <div class="parameter-type">{externalSourceTypeMetadata[1].schema.type}</div>
+                  </div>
+                {/each}
               {:else}
                 <div class="st-typography-body">No optional metadata defined for this event type.</div>
               {/if}
@@ -577,43 +582,25 @@
               Need to think about the strictness of EE Type and ES Type pairings, and whether the former can exist
               without an association with the former.-->
         <CssGridGutter track={1} type="column" />
-        <Panel borderRight padBody={true}>
+        <Panel borderRight>
           <svelte:fragment slot="header">
             <SectionTitle>
               <ExternalSourceIcon slot="icon" />{selectedExternalEventType.name} Details
             </SectionTitle>
           </svelte:fragment>
           <svelte:fragment slot="body">
-            <!--
-            {#if selectedExternalEventTypeSourceTypes.length > 0}
-              {#each selectedExternalEventTypeSourceTypes as associatedSourceType}
-                <Collapse
-                  title={associatedSourceType.name}
-                  tooltipContent={associatedSourceType.name}
-                  defaultExpanded={false}
-                >
-                  <div class="st-typography-body">
-                    <div class="st-typography-bold">Name:</div>
-                    {associatedSourceType.name}
-                  </div>
-                </Collapse>
-              {/each}
-            {:else}
-              <div class="st-typography-body">No source types using this event type.</div>
-            {/if}
-            -->
             <Collapse
               title="Required Metadata"
               tooltipContent="${selectedExternalEventType.name} Required Metadata"
               defaultExpanded={false}
             >
               {#if Object.keys(selectedExternalEventTypeRequiredMetadata).length > 0}
-                  {#each Object.entries(selectedExternalEventTypeRequiredMetadata) as externalEventTypeMetadata}
-                    <div class="st-typography-body parameters">
-                      <div class="parameter-name">{externalEventTypeMetadata[0]}</div>
-                      <div class="parameter-type">{externalEventTypeMetadata[1].schema.type}</div>
-                    </div>
-                  {/each}
+                {#each Object.entries(selectedExternalEventTypeRequiredMetadata) as externalEventTypeMetadata}
+                  <div class="st-typography-body parameters">
+                    <div class="parameter-name">{externalEventTypeMetadata[0]}</div>
+                    <div class="parameter-type">{externalEventTypeMetadata[1].schema.type}</div>
+                  </div>
+                {/each}
               {:else}
                 <div class="st-typography-body">No required metadata defined for this event type.</div>
               {/if}
@@ -624,12 +611,12 @@
               defaultExpanded={false}
             >
               {#if Object.keys(selectedExternalEventTypeOptionalMetadata).length > 0}
-                  {#each Object.entries(selectedExternalEventTypeOptionalMetadata) as externalEventTypeMetadata}
-                    <div class="st-typography-body parameters">
-                      <div class="parameter-name">{externalEventTypeMetadata[0]}</div>
-                      <div class="parameter-type">{externalEventTypeMetadata[1].schema.type}</div>
-                    </div>
-                  {/each}
+                {#each Object.entries(selectedExternalEventTypeOptionalMetadata) as externalEventTypeMetadata}
+                  <div class="st-typography-body parameters">
+                    <div class="parameter-name">{externalEventTypeMetadata[0]}</div>
+                    <div class="parameter-type">{externalEventTypeMetadata[1].schema.type}</div>
+                  </div>
+                {/each}
               {:else}
                 <div class="st-typography-body">No optional metadata defined for this event type.</div>
               {/if}

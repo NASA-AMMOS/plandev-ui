@@ -2,26 +2,26 @@
 
 <script lang="ts">
   import MinusIcon from '@nasa-jpl/stellar/icons/minus.svg?component';
-  import { createEventDispatcher } from "svelte";
-  import type { ParameterName } from "../../types/parameter";
+  import { createEventDispatcher } from 'svelte';
+  import type { ParameterName } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
-  import { getTarget } from "../../utilities/generic";
-  import { tooltip } from "../../utilities/tooltip";
+  import { getTarget } from '../../utilities/generic';
+  import { tooltip } from '../../utilities/tooltip';
 
   export let id: number;
-  export let value: {isRequired: boolean | null, name: ParameterName | null, type: ValueSchema | null};
+  export let value: { isRequired: boolean | null; name: ParameterName | null; schema: ValueSchema | null };
   export let disabled: boolean = false;
 
-  export let newParameterNamePlaceholder: string = "New Parameter Name";
+  export let newParameterNamePlaceholder: string = 'New Parameter Name';
 
   const dispatch = createEventDispatcher<{
-    delete: number,
+    delete: number;
     input: {
-      id: number,
-      isRequired?: boolean,
-      name?: ParameterName,
-      type?: string
-    }
+      id: number;
+      isRequired?: boolean;
+      name?: ParameterName;
+      type?: string;
+    };
   }>();
 
   function handleNameChanged(event: Event) {
@@ -29,7 +29,7 @@
     if (value) {
       dispatch('input', {
         id: id,
-        name: value as string
+        name: value as string,
       });
     }
   }
@@ -39,8 +39,8 @@
     if (value) {
       dispatch('input', {
         id: id,
-        type: value as string
-      })
+        type: value as string,
+      });
     }
   }
 
@@ -49,8 +49,8 @@
     if (value) {
       dispatch('input', {
         id: id,
-        isRequired: value as boolean
-      })
+        isRequired: value as boolean,
+      });
     }
   }
 </script>
@@ -60,9 +60,11 @@
     {disabled}
     style:display="grid"
     class="st-button icon delete"
-    on:click|stopPropagation={() => {dispatch('delete', id)}}
+    on:click|stopPropagation={() => {
+      dispatch('delete', id);
+    }}
   >
-    <MinusIcon/>
+    <MinusIcon />
   </button>
   <input
     {disabled}
@@ -73,13 +75,7 @@
     placeholder={newParameterNamePlaceholder}
     value={value.name}
   />
-  <select
-    {disabled}
-    on:change={handleTypeChanged}
-    class="st-select"
-    name="parameterType"
-    value={value.type}
-  >
+  <select {disabled} on:change={handleTypeChanged} class="st-select" name="parameterType" value={value.schema?.type}>
     <option value="int">int</option>
     <option value="string">string</option>
     <option value="boolean">boolean</option>
@@ -91,7 +87,7 @@
     type="checkbox"
     value={value.isRequired}
     use:tooltip={{
-      content: "Required?",
+      content: 'Required?',
       placement: 'top',
     }}
   />

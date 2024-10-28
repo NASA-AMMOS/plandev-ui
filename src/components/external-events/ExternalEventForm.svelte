@@ -79,9 +79,7 @@
             formParameters={getFormParameters(parametersMap, argumentsMap, requiredParameters)}
           />
         {:else}
-          <div class="st-typography-body">
-            This external event does not contain any metadata.
-          </div>
+          <div class="st-typography-body">This external event does not contain any metadata.</div>
         {/if}
       </Collapse>
     </fieldset>

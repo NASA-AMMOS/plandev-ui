@@ -215,6 +215,7 @@ function generateExternalEvent(properties: Partial<ExternalEvent>): ExternalEven
   return {
     duration: '',
     duration_ms: 0,
+    metadata: {},
     pkey: {
       derivation_group_name: 'test_derivation_group',
       event_type_name: 'test_event_type',

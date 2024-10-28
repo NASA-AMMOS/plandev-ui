@@ -184,7 +184,7 @@
   }
 
   $: if (selectedSource !== null) {
-    if(selectedSource.metadata !== null && Object.entries(selectedSource.metadata).length > 0) {
+    if (selectedSource.metadata !== null && Object.entries(selectedSource.metadata).length > 0) {
       const selectedSourceType: ExternalSourceType | undefined = $externalSourceTypes.find(
         sourceType => sourceType.name === selectedSource?.source_type_name,
       );
@@ -198,7 +198,7 @@
   $: if (selectedEvent !== null) {
     if (selectedEvent.metadata !== null && Object.entries(selectedEvent.metadata).length > 0) {
       const selectedEventType: ExternalEventType | undefined = $externalEventTypes.find(
-        eventType => eventType.name === selectedEvent?.pkey.event_type_name
+        eventType => eventType.name === selectedEvent?.pkey.event_type_name,
       );
       if (selectedEventType !== undefined) {
         selectedEventTypeMetadata = selectedEventType.metadata;
@@ -572,7 +572,11 @@
                 <Parameters
                   disabled={true}
                   expanded={true}
-                  formParameters={getFormParameters(selectedSourceTypeMetadata, selectedSource.metadata, selectedSourceRequiredMetadataList)}
+                  formParameters={getFormParameters(
+                    selectedSourceTypeMetadata,
+                    selectedSource.metadata,
+                    selectedSourceRequiredMetadataList,
+                  )}
                 />
               {:else}
                 <div class="st-typography-body">No metadata</div>
