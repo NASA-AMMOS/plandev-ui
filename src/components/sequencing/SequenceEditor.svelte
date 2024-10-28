@@ -105,12 +105,15 @@
   let commandInfoMapper: CommandInfoMapper = new SeqNCommandInfoMapper();
   let selectedOutputFormat: IOutputFormat | undefined;
   let toggleSeqJsonPreview: boolean = false;
+  let isInVmlMode: boolean = false;
   let showOutputs: boolean = true;
   let editorHeights: string = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
 
   $: {
     loadSequenceAdaptation(parcel?.sequence_adaptation_id);
   }
+
+  $: isInVmlMode = inVmlMode(sequenceName);
 
   $: {
     if (editorSequenceView) {
@@ -123,7 +126,7 @@
 
   $: {
     if (compartmentSeqHighlighter && editorSequenceView) {
-      if (sequenceName && inVmlMode()) {
+      if (isInVmlMode) {
         editorSequenceView.dispatch({
           effects: compartmentSeqHighlighter.reconfigure([
             EditorView.updateListener.of(debouncedVmlHighlightBlock),
@@ -161,7 +164,7 @@
     });
 
     if (unparsedCommandDictionary) {
-      if (sequenceName && inVmlMode()) {
+      if (sequenceName && isInVmlMode) {
         getParsedCommandDictionary(unparsedCommandDictionary, user).then(parsedCommandDictionary => {
           commandDictionary = parsedCommandDictionary;
           editorSequenceView.dispatch({
@@ -223,7 +226,7 @@
     }
   }
 
-  $: showOutputs = !inVmlMode() && !!outputFormats.length;
+  $: showOutputs = !isInVmlMode && !!outputFormats.length;
   $: {
     if (showOutputs) {
       editorHeights = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
@@ -297,7 +300,7 @@
           showFailureToast('Invalid sequence adaptation');
         }
       }
-    } else if (inVmlMode()) {
+    } else if (isInVmlMode) {
       setSequenceAdaptation(vmlAdaptation);
     } else {
       resetSequenceAdaptation();
@@ -414,15 +417,15 @@
   }
 
   function formatDocument() {
-    if (inVmlMode()) {
+    if (isInVmlMode) {
       vmlFormat(editorSequenceView);
     } else {
       seqNFormat(editorSequenceView);
     }
   }
 
-  function inVmlMode(): boolean {
-    return sequenceName.endsWith('.vml');
+  function inVmlMode(sequenceName: string | undefined): boolean {
+    return !!sequenceName?.endsWith('.vml');
   }
 </script>
 
