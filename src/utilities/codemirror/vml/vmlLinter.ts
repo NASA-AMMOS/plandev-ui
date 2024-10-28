@@ -5,6 +5,7 @@ import type { SyntaxNode, Tree } from '@lezer/common';
 import type { CommandDictionary, FswCommand, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import type { EditorView } from 'codemirror';
 import { closest } from 'fastest-levenshtein';
+import { filterNodes } from '../../sequence-editor/tree-utils';
 import { VmlLanguage } from './vml';
 import {
   RULE_CALL_PARAMETER,
@@ -275,20 +276,27 @@ function unquote(s: string): string {
  * @returns
  */
 function validateParserErrors(tree: Tree, sequence: string, text: Text): Diagnostic[] {
-  const diagnostics: Diagnostic[] = [];
-  tree.iterate({
-    enter: node => {
-      if (node.name === TOKEN_ERROR && diagnostics.length < MAX_PARSER_ERRORS) {
-        const { from, to } = node;
-        const line = text.lineAt(from);
-        diagnostics.push({
-          from,
-          message: `Unexpected token: "${sequence.slice(from, to)}" [Line ${line.number}, Col ${from - line.from}]`,
-          severity: 'error',
-          to,
-        });
-      }
-    },
+  const errorRegions: { from: number; to: number }[] = [];
+  for (const node of filterNodes(tree.cursor(), node => node.name === TOKEN_ERROR)) {
+    const currentRegion = errorRegions.at(-1);
+    if (currentRegion?.to === node.from) {
+      currentRegion.to = node.to;
+    } else {
+      errorRegions.push({ from: node.from, to: node.to });
+    }
+
+    if (errorRegions.length > MAX_PARSER_ERRORS) {
+      break;
+    }
+  }
+
+  return errorRegions.slice(0, MAX_PARSER_ERRORS).map(({ from, to }) => {
+    const line = text.lineAt(from);
+    return {
+      from,
+      message: `Unexpected token: "${sequence.slice(from, to)}" [Line ${line.number}, Col ${from - line.from}]`,
+      severity: 'error',
+      to,
+    };
   });
-  return diagnostics;
 }
