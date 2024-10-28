@@ -2747,6 +2747,7 @@ const gql = {
           event_type_name
           key
           duration
+          metadata
           start_time
           derivation_group_name
           source_key

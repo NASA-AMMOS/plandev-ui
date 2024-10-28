@@ -55,6 +55,7 @@ export const selectedExternalEvents: Readable<ExternalEvent[]> = derived(
           completeExternalEvents.push({
             duration: externalEvent.duration,
             duration_ms: getIntervalInMs(externalEvent.duration),
+            metadata: externalEvent.metadata,
             pkey: {
               derivation_group_name: externalEvent.derivation_group_name,
               event_type_name: externalEvent.event_type_name,

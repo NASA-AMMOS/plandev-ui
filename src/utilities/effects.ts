@@ -1013,8 +1013,6 @@ const effects = {
       externalSourceInsert.external_events.data = externalEventsCreated;
       externalEventsCreated = [];
 
-      console.log(externalSourceInsert);
-
       const { createExternalSource: createExternalSourceResponse } = await reqHasura(
         gql.CREATE_EXTERNAL_SOURCE,
         {
