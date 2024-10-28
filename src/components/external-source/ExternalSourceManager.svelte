@@ -683,12 +683,17 @@
           </div>
           <Field field={derivationGroupField}>
             <label for="derivation-group" slot="label">Derivation Group</label>
-            <input
-              autocomplete="off"
-              class="st-input w-100"
-              name="derivation-group"
-              disabled={isDerivationGroupFieldDisabled}
-            />
+            {#if $derivationGroups.length}
+              <select disabled={isDerivationGroupFieldDisabled} class="st-select w-100">
+                {#each $derivationGroups as derivationGroup}
+                  <option value={derivationGroup.name}>{derivationGroup.name}</option>
+                {/each}
+              </select>
+            {:else}
+              <select disabled={isDerivationGroupFieldDisabled} class="st-select w-100">
+                <option disabled>No derivation groups exist. Please create one in "Create New Groups or Types".</option>
+              </select>
+            {/if}
           </Field>
           <Field field={keyField}>
             <label for="key" slot="label">Key</label>
