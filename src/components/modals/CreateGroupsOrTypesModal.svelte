@@ -5,7 +5,11 @@
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import { createEventDispatcher } from 'svelte';
   import ImportIcon from '../../assets/import.svg?component';
-  import { createExternalEventTypeError, resetExternalEventStores } from '../../stores/external-event';
+  import {
+    createExternalEventTypeError,
+    externalEventTypes,
+    resetExternalEventStores,
+  } from '../../stores/external-event';
   import {
     createDerivationGroupError,
     createExternalSourceTypeError,
@@ -14,13 +18,12 @@
     resetExternalSourceStores,
   } from '../../stores/external-source';
   import type { User } from '../../types/app';
-  import type { ExternalEventTypeInsertInput, ExternalEventTypeJSON } from '../../types/external-event';
+  import type { ExternalEventTypeInsertInput } from '../../types/external-event';
   import type { ExternalSourceTypeInsertInput } from '../../types/external-source';
   import type { ParameterName, ParametersMap } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
   import type { TabId } from '../../types/tabs';
   import effects from '../../utilities/effects';
-  import { parseJSONStream } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import AlertError from '../ui/AlertError.svelte';
@@ -74,13 +77,22 @@
   }[] = [{ metadata: [], name: '', valid: false }];
 
   // External event type variables
-  // let hasCreateExternalEventTypePermission: boolean = false;
-  let newExternalEventTypeName: string | null = null;
-  let newExternalEventTypeMetadata: {
-    isRequired: boolean | null;
-    name: ParameterName | null;
-    schema: ValueSchema | null;
-  }[] = [];
+  let hasCreateExternalEventTypePermission: boolean = false;
+  // let newExternalEventTypeName: string | null = null;
+  // let newExternalEventTypeMetadata: {
+  //   isRequired: boolean | null;
+  //   name: ParameterName | null;
+  //   schema: ValueSchema | null;
+  // }[] = [];
+  let newExternalEventTypes: {
+    metadata: {
+      isRequired: boolean | null;
+      name: ParameterName | null;
+      schema: ValueSchema | null;
+    }[];
+    name: string;
+    valid: boolean;
+  }[] = [{ metadata: [], name: '', valid: false }];
 
   let creationError: string | null = null;
   let hasCreationPermissionForCurrentTab: boolean = false;
@@ -93,14 +105,14 @@
   let derivationGroupUploadFileInput: HTMLInputElement;
   let externalSourceTypeUploadFiles: FileList | undefined;
   let externalSourceTypeUploadFileInput: HTMLInputElement;
-  // let externalEventTypeUploadFiles: FileList | undefined;
-  // let externalEventTypeUploadFileInput: HTMLInputElement;
+  let externalEventTypeUploadFiles: FileList | undefined;
+  let externalEventTypeUploadFileInput: HTMLInputElement;
   let uploadFilesError: string | null = null;
 
   // Reactively determine deletion permissions
   $: hasCreateDerivationGroupPermission = featurePermissions.derivationGroup.canCreate(user);
   $: hasCreateExternalSourceTypePermission = featurePermissions.externalSourceType.canCreate(user);
-  // $: hasCreateExternalEventTypePermission = featurePermissions.externalEventType.canCreate(user);
+  $: hasCreateExternalEventTypePermission = featurePermissions.externalEventType.canCreate(user);
 
   // TODO: update so that it matches below
   $: {
@@ -111,6 +123,10 @@
     } else if (selectedTab === externalSourceTypeTabId) {
       hasCreationPermissionForCurrentTab = hasCreateExternalSourceTypePermission;
       isCreateDisabled = !newExternalSourceTypes.map(entry => entry.valid).reduce((prev, curr) => prev && curr, true);
+      console.log('isCreateDisabled', isCreateDisabled, hasCreationPermissionForCurrentTab);
+    } else if (selectedTab === externalEventTypeTabId) {
+      hasCreationPermissionForCurrentTab = hasCreateExternalEventTypePermission;
+      isCreateDisabled = !newExternalEventTypes.map(entry => entry.valid).reduce((prev, curr) => prev && curr, true);
       console.log('isCreateDisabled', isCreateDisabled, hasCreationPermissionForCurrentTab);
     }
   }
@@ -186,14 +202,15 @@
     }
   }
 
-  async function praseExternalEventTypeInputFileStream(stream: ReadableStream) {
+  async function parseExternalEventTypeInputFileStream() {
+    //stream: ReadableStream) {
     uploadFilesError = null;
     try {
-      let externalEventTypeJSON: ExternalEventTypeJSON;
+      // let externalEventTypeJSON: ExternalEventTypeJSON;
       try {
-        externalEventTypeJSON = await parseJSONStream<ExternalEventTypeJSON>(stream);
-        newExternalEventTypeName = externalEventTypeJSON.name;
-        newExternalEventTypeMetadata = externalEventTypeJSON.metadata;
+        // externalEventTypeJSON = await parseJSONStream<ExternalEventTypeJSON>(stream);
+        // newExternalEventTypeName = externalEventTypeJSON.name;
+        // newExternalEventTypeMetadata = externalEventTypeJSON.metadata;
       } catch (e) {
         throw new Error('External Event Type Definition File is not a valid JSON');
       }
@@ -236,43 +253,35 @@
   }
 
   function onCreateExternalEventType() {
-    if (newExternalEventTypeName === null) {
-      creationError = 'Please enter a new name.';
-    } else if (newExternalEventTypeMetadata === undefined) {
-      creationError = `Unable to create the metadata of '${newExternalEventTypeName}.'`;
+    if (isCreateDisabled) {
+      creationError = 'Please ensure every type has a name, and all metadata has a name and type.';
     } else {
-      // TODO: This probably doesn't need to exist - swap input keys?
-      const newExternalEventTypeMetadataParameterMap: ParametersMap = {};
-      let requiredMetadata: ParameterName[] = [];
-      if (newExternalEventTypeMetadata.length > 0) {
-        const isMetadataUnfinished: boolean = newExternalEventTypeMetadata
-          .map(metadata => metadata.name === null || metadata.schema === null)
-          .includes(true);
-        if (isMetadataUnfinished) {
-          creationError = 'Not all metadata entries appear to be complete - please finish or delete the entries!';
-          return;
-        }
-        newExternalEventTypeMetadata.forEach(newMetadata => {
-          if (newMetadata.name !== null && newMetadata.schema !== null) {
-            newExternalEventTypeMetadataParameterMap[newMetadata.name] = {
-              order: 1,
-              schema: newMetadata.schema,
-            };
-            if (newMetadata.isRequired) {
-              requiredMetadata.push(newMetadata.name);
+      for (let eventType of newExternalEventTypes) {
+        // TODO: This probably doesn't need to exist - swap input keys?
+        const newExternalEventTypeMetadataParameterMap: ParametersMap = {};
+        let requiredMetadata: ParameterName[] = [];
+        if (eventType.metadata.length > 0) {
+          eventType.metadata.forEach(newMetadata => {
+            if (newMetadata.name !== null && newMetadata.schema !== null) {
+              newExternalEventTypeMetadataParameterMap[newMetadata.name] = {
+                order: 1,
+                schema: newMetadata.schema,
+              };
+              if (newMetadata.isRequired) {
+                requiredMetadata.push(newMetadata.name);
+              }
             }
-          }
-        });
+          });
+        }
+        // Generate Hasura mutation input
+        const externalEventTypeInsertInput: ExternalEventTypeInsertInput = {
+          metadata: newExternalEventTypeMetadataParameterMap,
+          name: eventType.name,
+          required_metadata: requiredMetadata,
+        };
+        effects.createExternalEventType(externalEventTypeInsertInput, user);
+        newExternalEventTypes = [{ metadata: [], name: '', valid: false }];
       }
-      // Generate Hasura mutation input
-      const externalEventTypeInsertInput: ExternalEventTypeInsertInput = {
-        metadata: newExternalEventTypeMetadataParameterMap,
-        name: newExternalEventTypeName,
-        required_metadata: requiredMetadata,
-      };
-      effects.createExternalEventType(externalEventTypeInsertInput, user);
-      newExternalEventTypeName = null;
-      newExternalEventTypeMetadata = [];
     }
   }
 
@@ -310,7 +319,8 @@
           // parseExternalSourceTypeInputFileStream(file.stream());
           parseExternalSourceTypeInputFileStream();
         } else if (selectedTab === externalEventTypeTabId) {
-          praseExternalEventTypeInputFileStream(file.stream());
+          // parseExternalEventTypeInputFileStream(file.stream());
+          parseExternalEventTypeInputFileStream();
         }
       } else {
         uploadFilesError = 'Plan file is not a .json file';
@@ -392,6 +402,15 @@
     };
   });
 
+  $: newExternalEventTypes = newExternalEventTypes.map(entry => {
+    console.log('reevaluating!');
+    return {
+      metadata: entry.metadata,
+      name: entry.name,
+      valid: validateEET(entry),
+    };
+  });
+
   function validateDerivationGroupName(value: string): boolean {
     if (value.length <= 0 || $derivationGroups.map(dg => dg.name).includes(value)) {
       return false;
@@ -415,6 +434,33 @@
       return true;
     } else {
       return sourceType.metadata
+        .map(metadataItem => {
+          console.log(
+            metadataItem.name,
+            metadataItem.name !== null && metadataItem.name.length >= 1 && metadataItem.schema !== null,
+          );
+          return metadataItem.name !== null && metadataItem.name.length >= 1 && metadataItem.schema !== null;
+        })
+        .reduce((prev, curr) => prev && curr, true);
+    }
+  }
+
+  function validateEET(eventType: {
+    metadata: {
+      isRequired: boolean | null;
+      name: ParameterName | null;
+      schema: ValueSchema | null;
+    }[];
+    name: string;
+    valid: boolean;
+  }) {
+    if (eventType.name.length <= 0 || $externalEventTypes.map(eet => eet.name).includes(eventType.name)) {
+      return false;
+    }
+    if (eventType.metadata.length === 0) {
+      return true;
+    } else {
+      return eventType.metadata
         .map(metadataItem => {
           console.log(
             metadataItem.name,
@@ -494,6 +540,57 @@
 
     handleChange();
   }
+
+  function handleEETChange(value: string, i: number) {
+    // update element at i in list
+    newExternalEventTypes[i].name = value;
+    newExternalEventTypes = [...newExternalEventTypes];
+
+    // clear error stores
+    handleChange();
+  }
+
+  function handleAddEETMetadata(eventType: {
+    metadata: {
+      isRequired: boolean | null;
+      name: ParameterName | null;
+      schema: ValueSchema | null;
+    }[];
+    name: string;
+    valid: boolean;
+  }) {
+    eventType.metadata = [...eventType.metadata, { isRequired: null, name: null, schema: null }];
+    newExternalEventTypes = [...newExternalEventTypes];
+
+    handleChange();
+  }
+
+  function handleUpdateEETMetadata(
+    e: CustomEvent,
+    eventType: {
+      metadata: {
+        isRequired: boolean | null;
+        name: ParameterName | null;
+        schema: ValueSchema | null;
+      }[];
+      name: string;
+      valid: boolean;
+    },
+  ) {
+    let index = e.detail.id;
+    if (e.detail) {
+      if (e.detail.name) {
+        eventType.metadata[index].name = e.detail.name;
+      } else if (e.detail.type) {
+        eventType.metadata[index].schema = { type: e.detail.type } as ValueSchema;
+      } else if (e.detail.isRequired) {
+        eventType.metadata[index].isRequired = e.detail.isRequired;
+      }
+    }
+    newExternalEventTypes = [...newExternalEventTypes];
+
+    handleChange();
+  }
 </script>
 
 <Modal height={400} width={600}>
@@ -505,7 +602,7 @@
           <svelte:fragment slot="tab-list">
             <Tab tabId={derivationGroupTabId} class="creation-tab">Derivation Group</Tab>
             <Tab tabId={externalSourceTypeTabId} class="creation-tab">External Source Type</Tab>
-            <!-- <Tab tabId={externalEventTypeTabId} class="creation-tab">External Event Type</Tab> -->
+            <Tab tabId={externalEventTypeTabId} class="creation-tab">External Event Type</Tab>
           </svelte:fragment>
           <div>
             <AlertError class="m-2" error={creationError} />
@@ -642,7 +739,6 @@
               </div>
             {/if}
             {#each newExternalSourceTypes as sourceType, i}
-              {sourceType.valid}
               <div
                 class="card content"
                 class:card-background-added={sourceType.valid}
@@ -723,11 +819,11 @@
               </button>
             </div>
           </TabPanel>
-          <!--<TabPanel>
+          <TabPanel>
             {#if isUsingImportMode}
               <div class="directions">
                 <p class="st-typography-body">Select an External Event Type Definition File (JSON) to import.</p>
-                <-- TODO: This should link to documentation! --
+                <!-- TODO: This should link to documentation! -->
                 <p class="st-typography-label">
                   The newly created external event type will be empty, though you can upload events using it.
                 </p>
@@ -758,35 +854,87 @@
                 </p>
               </div>
             {/if}
-            <div class="content parameters">
-              <input
-                bind:value={newExternalEventTypeName}
-                on:change={handleChange}
-                autocomplete="off"
-                class="st-input w-100"
-                disabled={isUsingImportMode}
-                placeholder="New External Event Type Name"
-              />
-              {#each newExternalEventTypeMetadata as metadata, metadataIndex}
-                <ParameterEntry
-                  disabled={isUsingImportMode}
-                  id={metadataIndex}
-                  value={metadata}
-                  newParameterNamePlaceholder="New External Event Type Metadata Name"
-                  on:input={handleExternalEventTypeMetadataInput}
-                  on:delete={handleExternalEventTypeMetadataDelete}
-                />
-              {/each}
+            {#each newExternalEventTypes as eventType, i}
+              <div
+                class="card content"
+                class:card-background-added={eventType.valid}
+                class:card-background-deleted={!eventType.valid}
+                style="padding-left:10px; padding-right: 10px; margin-top:10px; flex-direction: column"
+              >
+                <div style="display: flex; flex-direction: row">
+                  <button
+                    disabled={newExternalSourceTypes.length <= 1}
+                    style:display="grid"
+                    class="st-button icon delete"
+                    on:click|stopPropagation={() => {
+                      newExternalEventTypes = newExternalEventTypes.filter((_, index) => index !== i);
+
+                      handleChange();
+                    }}
+                  >
+                    <MinusIcon />
+                  </button>
+                  <input
+                    value={eventType.name}
+                    on:blur={e => {
+                      handleEETChange(e.target.value, i);
+                    }}
+                    autocomplete="off"
+                    class="st-input w-100"
+                    disabled={isUsingImportMode}
+                    placeholder="New External Event Type Name"
+                  />
+                  <button
+                    disabled={isUsingImportMode}
+                    style:display="grid"
+                    class="st-button icon add-metadata-button"
+                    on:click={() => handleAddEETMetadata(eventType)}
+                  >
+                    <PlusIcon />
+                  </button>
+                </div>
+                <div class="content" style="flex-direction: column; margin-left: 15px">
+                  {#each eventType.metadata as metadata, metadataIndex}
+                    <ParameterEntry
+                      disabled={isUsingImportMode}
+                      id={metadataIndex}
+                      value={metadata}
+                      newParameterNamePlaceholder="New External Event Type Metadata Name"
+                      on:input={e => handleUpdateEETMetadata(e, eventType)}
+                      on:delete={e => {
+                        let indexToDelete = e.detail;
+                        eventType.metadata = eventType.metadata.filter((item, index) => {
+                          console.log(item, index, indexToDelete);
+                          return index !== indexToDelete;
+                        });
+
+                        // force svelte update
+                        newExternalEventTypes = [...newExternalEventTypes];
+                        handleChange();
+                      }}
+                    />
+                  {/each}
+                </div>
+              </div>
+            {/each}
+            <div style="content parameters">
               <button
                 style:display="grid"
-                class="st-button icon add-metadata-button"
+                class="st-button icon add-external-event-type-button"
                 disabled={isUsingImportMode}
-                on:click={handleAddMetadataToExternalEventType}
+                on:click={e => {
+                  console.log('add type', e);
+                  // update element at i in list
+                  newExternalEventTypes = [...newExternalEventTypes, { metadata: [], name: '', valid: false }];
+
+                  // clear error stores
+                  handleChange();
+                }}
               >
                 <PlusIcon />
               </button>
             </div>
-          </TabPanel> -->
+          </TabPanel>
         </Tabs>
       </div>
     </div>

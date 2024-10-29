@@ -181,6 +181,10 @@
     selectedExternalEventType.metadata !== undefined &&
     selectedExternalEventType?.required_metadata !== undefined
   ) {
+    // need to clear it out before repopulating, or else metadata from previous
+    //    selections will show for the current selection
+    selectedExternalEventTypeRequiredMetadata = {};
+    selectedExternalEventTypeOptionalMetadata = {};
     Object.entries(selectedExternalEventType.metadata).forEach(metadata => {
       if (selectedExternalEventType?.required_metadata.includes(metadata[0])) {
         selectedExternalEventTypeRequiredMetadata[metadata[0]] = metadata[1];
