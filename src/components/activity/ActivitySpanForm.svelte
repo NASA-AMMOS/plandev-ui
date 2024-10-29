@@ -131,22 +131,22 @@
     <Collapse title="Definition">
       <Input layout="inline">
         <label use:tooltip={{ content: 'ID', placement: 'top' }} for="id"> ID </label>
-        <input class="st-input w-100" disabled name="id" value={span.span_id} />
+        <input class="st-input w-full" disabled name="id" value={span.span_id} />
       </Input>
 
       <Input layout="inline">
         <label use:tooltip={{ content: 'Activity Type', placement: 'top' }} for="activityType"> Activity Type </label>
-        <input class="st-input w-100" disabled name="activityType" value={span.type} />
+        <input class="st-input w-full" disabled name="activityType" value={span.type} />
       </Input>
 
       <Input layout="inline">
         <label use:tooltip={{ content: 'Parent ID', placement: 'top' }} for="parentId">Parent ID</label>
-        <input class="st-input w-100" disabled name="parentId" value={span.parent_id ?? 'None (Root)'} />
+        <input class="st-input w-full" disabled name="parentId" value={span.parent_id ?? 'None (Root)'} />
       </Input>
 
       <Input layout="inline">
         <label use:tooltip={{ content: 'Duration', placement: 'top' }} for="duration">Duration</label>
-        <input class="st-input w-100" disabled name="duration" value={span.duration ?? 'None'} />
+        <input class="st-input w-full" disabled name="duration" value={span.duration ?? 'None'} />
       </Input>
 
       <Input layout="inline">
@@ -154,7 +154,7 @@
           Simulation Status
         </label>
         <input
-          class="st-input w-100"
+          class="st-input w-full"
           disabled
           name="simulationStatus"
           value={span.duration === null ? 'Unfinished' : span.duration ? 'Finished' : 'None'}
@@ -165,14 +165,14 @@
         <label use:tooltip={{ content: 'Start Time', placement: 'top' }} for="startTime">
           Start Time ({$plugins.time.primary.label})
         </label>
-        <input class="st-input w-100" disabled name="startTime" value={startTime} />
+        <input class="st-input w-full" disabled name="startTime" value={startTime} />
       </Input>
 
       <Input layout="inline">
         <label use:tooltip={{ content: 'End Time', placement: 'top' }} for="endTime">
           End Time ({$plugins.time.primary.label})
         </label>
-        <input class="st-input w-100" disabled name="endTime" value={endTime ?? 'None'} />
+        <input class="st-input w-full" disabled name="endTime" value={endTime ?? 'None'} />
       </Input>
     </Collapse>
   </fieldset>
@@ -221,14 +221,14 @@
         <label use:tooltip={{ content: 'Simulation Dataset ID', placement: 'top' }} for="simulationDatasetId">
           Simulation Dataset ID
         </label>
-        <input class="st-input w-100" disabled name="simulationDatasetId" value={simulationDatasetId ?? 'None'} />
+        <input class="st-input w-full" disabled name="simulationDatasetId" value={simulationDatasetId ?? 'None'} />
       </Input>
 
       <Input layout="inline">
         <label use:tooltip={{ content: 'Sequence ID', placement: 'top' }} for="expansionSet">Sequence ID</label>
         <select
           bind:value={seqId}
-          class="st-select w-100"
+          class="st-select w-full"
           name="sequences"
           disabled={!filteredExpansionSequences.length}
           on:change={updateExpansionSequenceToActivity}

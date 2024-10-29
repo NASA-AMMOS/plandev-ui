@@ -226,7 +226,7 @@
       </div>
       {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
         <div class="sne-expansion-set-select">
-          <select name="expansionSetId" bind:value={selectedExpansionSetId} class="st-select w-100">
+          <select name="expansionSetId" bind:value={selectedExpansionSetId} class="st-select w-full">
             {#if !$expansionSets.length}
               <option value={null}>No Expansion Sets</option>
             {:else}

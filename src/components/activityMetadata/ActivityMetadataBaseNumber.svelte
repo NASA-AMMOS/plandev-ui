@@ -25,7 +25,7 @@
   <Input>
     <input
       bind:value={numberValue}
-      class="st-input w-100"
+      class="st-input w-full"
       {disabled}
       type="number"
       on:change={() => dispatch('change', { key, value: numberValue })}

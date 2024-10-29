@@ -26,7 +26,7 @@
   <ActivityMetadataName {key} />
   <select
     bind:value={enumValue}
-    class="st-select w-100"
+    class="st-select w-full"
     {disabled}
     on:change={() => dispatch('change', { key, value: enumValue })}
   >

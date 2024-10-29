@@ -117,7 +117,7 @@
       <Input layout="inline">
         <label for="autofitDomain">Domain Fitting</label>
         <select
-          class="st-select w-100"
+          class="st-select w-full"
           name="autofitDomain"
           value={yAxis.domainFitMode}
           on:change={event => updateYAxisAutofit(event)}
@@ -132,7 +132,7 @@
         <Input layout="inline" class="editor-input">
           <label for="domainMin">Min</label>
           <input
-            class="st-input w-100"
+            class="st-input w-full"
             name="domainMin"
             disabled={yAxis.domainFitMode !== 'manual'}
             type="number"
@@ -143,7 +143,7 @@
         <Input layout="inline" class="editor-input">
           <label for="domainMax">Max</label>
           <input
-            class="st-input w-100"
+            class="st-input w-full"
             name="domainMax"
             disabled={yAxis.domainFitMode !== 'manual'}
             type="number"
@@ -152,7 +152,7 @@
           />
         </Input>
       {/if}
-      <button class="st-button secondary w-100" style="position: relative" on:click={onDeleteAxis}>Delete Axis</button>
+      <button class="st-button secondary w-full" style="position: relative" on:click={onDeleteAxis}>Delete Axis</button>
     </div>
   </Menu>
 </button>

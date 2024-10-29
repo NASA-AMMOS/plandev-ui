@@ -21,7 +21,7 @@
 <Panel padBody={false}>
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="External Application" />
-    <input bind:value={iFrameSrc} class="st-input w-100" class:error={iFrameSrc === ''} type="text" />
+    <input bind:value={iFrameSrc} class="st-input w-full" class:error={iFrameSrc === ''} type="text" />
   </svelte:fragment>
 
   <svelte:fragment slot="body">

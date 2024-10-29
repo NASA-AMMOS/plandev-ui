@@ -279,7 +279,7 @@
               <label class="model-metadata-item-label" for="name">Model Name</label>
               <input
                 disabled
-                class="st-input w-100"
+                class="st-input w-full"
                 name="name"
                 use:tooltip={{ content: name, placement: 'top' }}
                 value={selectedModel.name}
@@ -287,29 +287,29 @@
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="id">Model ID</label>
-              <input disabled class="st-input w-100" name="id" value={selectedModel.id} />
+              <input disabled class="st-input w-full" name="id" value={selectedModel.id} />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="description">Model Description</label>
-              <textarea disabled class="st-input w-100" name="description" value={selectedModel.description} />
+              <textarea disabled class="st-input w-full" name="description" value={selectedModel.description} />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="version">Model Version</label>
-              <input disabled class="st-input w-100" name="version" value={selectedModel.version} />
+              <input disabled class="st-input w-full" name="version" value={selectedModel.version} />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="owner">Owner</label>
-              <input disabled class="st-input w-100" name="owner" value={selectedModel.owner} />
+              <input disabled class="st-input w-full" name="owner" value={selectedModel.owner} />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="defaultView">Default View</label>
-              <input disabled class="st-input w-100" name="defaultView" value={selectedModelDefaultViewName} />
+              <input disabled class="st-input w-full" name="defaultView" value={selectedModelDefaultViewName} />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="created">Date Created</label>
               <input
                 disabled
-                class="st-input w-100"
+                class="st-input w-full"
                 name="created"
                 value={getShortISOForDate(new Date(selectedModel.created_at))}
               />
@@ -343,7 +343,7 @@
         </div>
         <div class="model-buttons">
           <button
-            class="st-button secondary w-100"
+            class="st-button secondary w-full"
             on:click={createPlanWithModel}
             use:permissionHandler={{
               hasPermission: hasCreatePlanPermission,
@@ -353,7 +353,7 @@
             New plan with model
           </button>
           <button
-            class="st-button w-100"
+            class="st-button w-full"
             on:click={onEditModel}
             use:permissionHandler={{
               hasPermission: hasUpdateModelPermission,
@@ -372,7 +372,7 @@
             <input
               bind:value={name}
               autocomplete="off"
-              class="st-input w-100"
+              class="st-input w-full"
               name="name"
               required
               use:permissionHandler={{
@@ -387,7 +387,7 @@
             <input
               bind:value={version}
               autocomplete="off"
-              class="st-input w-100"
+              class="st-input w-full"
               name="version"
               placeholder="0.0.0"
               required
@@ -403,7 +403,7 @@
             <textarea
               bind:value={description}
               autocomplete="off"
-              class="st-input w-100"
+              class="st-input w-full"
               name="description"
               placeholder="Enter Model Description (optional)"
             />
@@ -412,7 +412,7 @@
           <fieldset>
             <label for="file">Jar File</label>
             <input
-              class="w-100"
+              class="w-full"
               name="file"
               required
               type="file"
@@ -426,7 +426,7 @@
 
           <fieldset>
             <button
-              class="st-button w-100"
+              class="st-button w-full"
               disabled={createButtonDisabled}
               type="submit"
               use:permissionHandler={{

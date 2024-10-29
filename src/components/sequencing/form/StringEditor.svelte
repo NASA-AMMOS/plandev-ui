@@ -26,4 +26,4 @@
   }
 </script>
 
-<input class="st-input w-100" spellcheck="false" bind:value title={argDef.description} />
+<input class="st-input w-full" spellcheck="false" bind:value title={argDef.description} />

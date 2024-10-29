@@ -44,7 +44,7 @@
   <Input>
     <input
       bind:value={durationString}
-      class="st-input w-100"
+      class="st-input w-full"
       class:error={formParameter.errors !== null || durationStringFormatError !== null}
       {disabled}
       type="text"

@@ -81,7 +81,7 @@
         bind:value={snapshotName}
         placeholder="Name of Snapshot"
         autocomplete="off"
-        class="st-input w-100"
+        class="st-input w-full"
         name="name"
         required
         type="text"
@@ -92,7 +92,7 @@
       <textarea
         bind:value={snapshotDescription}
         placeholder="Notes about this snapshot"
-        class="st-input w-100"
+        class="st-input w-full"
         name="description"
       />
     </fieldset>

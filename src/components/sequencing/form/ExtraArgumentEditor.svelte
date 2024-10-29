@@ -7,7 +7,7 @@
 </script>
 
 <div class="extra-arg-editor">
-  <input class="st-input w-100" value={initVal} disabled={true} />
+  <input class="st-input w-full" value={initVal} disabled={true} />
   <button on:click={setInEditor} class="st-button secondary">Remove</button>
 </div>
 
