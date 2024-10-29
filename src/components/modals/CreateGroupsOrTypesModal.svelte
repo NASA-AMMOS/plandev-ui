@@ -47,25 +47,17 @@
   const createDerivationGroupPermissionError: string = 'You do not have permission to create a derivation group.';
   const createExternalSourceTypePermissionError: string =
     'You do not have permission to create an external source type.';
-  // const createExternalEventTypePermissionError: string = 'You do not have permission to create an external event type.';
+  const createExternalEventTypePermissionError: string = 'You do not have permission to create an external event type.';
 
   // Derivation group variables
   let hasCreateDerivationGroupPermission: boolean = false;
 
-  // let newDerivationGroupName: string | null = null;
-  // let newDerivationGroupSourceType: string | null = null;
   let newDerivationGroups: { name: string; sourceType: string; valid: boolean }[] = [
     { name: '', sourceType: '', valid: false },
   ];
 
   // External source type variables
   let hasCreateExternalSourceTypePermission: boolean = false;
-  // let newExternalSourceTypeName: string | null = null;
-  // let newExternalSourceTypeMetadata: {
-  //   isRequired: boolean | null;
-  //   name: ParameterName | null;
-  //   schema: ValueSchema | null;
-  // }[] = [];
   let newExternalSourceTypes: {
     metadata: {
       isRequired: boolean | null;
@@ -78,12 +70,6 @@
 
   // External event type variables
   let hasCreateExternalEventTypePermission: boolean = false;
-  // let newExternalEventTypeName: string | null = null;
-  // let newExternalEventTypeMetadata: {
-  //   isRequired: boolean | null;
-  //   name: ParameterName | null;
-  //   schema: ValueSchema | null;
-  // }[] = [];
   let newExternalEventTypes: {
     metadata: {
       isRequired: boolean | null;
@@ -114,7 +100,6 @@
   $: hasCreateExternalSourceTypePermission = featurePermissions.externalSourceType.canCreate(user);
   $: hasCreateExternalEventTypePermission = featurePermissions.externalEventType.canCreate(user);
 
-  // TODO: update so that it matches below
   $: {
     if (selectedTab === derivationGroupTabId) {
       hasCreationPermissionForCurrentTab = hasCreateDerivationGroupPermission;
@@ -328,61 +313,11 @@
     }
   }
 
-  // function handleAddMetadataToExternalSourceType() {
-  //   newExternalSourceTypeMetadata = [...newExternalSourceTypeMetadata, { isRequired: null, name: null, schema: null }];
-  // }
-
   function handleCreateNewDerivationGroupEntry() {
     newDerivationGroups = [...newDerivationGroups, { name: '', sourceType: '', valid: false }];
 
     handleChange();
   }
-
-  // function handleExternalSourceTypeMetadataInput(
-  //   event: CustomEvent<{ id: number; isRequired?: boolean; name?: ParameterName; type?: string }>,
-  // ) {
-  //   const { detail: newValue } = event;
-  //   const metadataOfId = newExternalSourceTypeMetadata.at(newValue.id);
-  //   if (metadataOfId !== undefined) {
-  //     if (newValue?.isRequired) {
-  //       metadataOfId.isRequired = newValue.isRequired;
-  //     } else if (newValue?.name) {
-  //       metadataOfId.name = newValue.name;
-  //     } else if (newValue?.type) {
-  //       metadataOfId.schema = { type: newValue.type } as ValueSchema;
-  //     }
-  //   }
-  // }
-
-  // function handleExternalSourceTypeMetadataDelete(event: CustomEvent<number>) {
-  //   const { detail: metadataId } = event;
-  //   newExternalSourceTypeMetadata = newExternalSourceTypeMetadata.filter((_, index) => index !== metadataId);
-  // }
-
-  // function handleAddMetadataToExternalEventType() {
-  //   newExternalEventTypeMetadata = [...newExternalEventTypeMetadata, { isRequired: null, name: null, schema: null }];
-  // }
-
-  // function handleExternalEventTypeMetadataInput(
-  //   event: CustomEvent<{ id: number; isRequired?: boolean; name?: ParameterName; type?: string }>,
-  // ) {
-  //   const { detail: newValue } = event;
-  //   const metadataOfId = newExternalEventTypeMetadata.at(newValue.id);
-  //   if (metadataOfId !== undefined) {
-  //     if (newValue?.isRequired) {
-  //       metadataOfId.isRequired = newValue.isRequired;
-  //     } else if (newValue?.name) {
-  //       metadataOfId.name = newValue.name;
-  //     } else if (newValue?.type) {
-  //       metadataOfId.schema = { type: newValue.type } as ValueSchema;
-  //     }
-  //   }
-  // }
-
-  // function handleExternalEventTypeMetadataDelete(event: CustomEvent<number>) {
-  //   const { detail: metadataId } = event;
-  //   newExternalEventTypeMetadata = newExternalEventTypeMetadata.filter((_, index) => index !== metadataId);
-  // }
 
   $: newDerivationGroups = newDerivationGroups.map(entry => {
     console.log('reevaluating!');
@@ -618,9 +553,15 @@
                 <p class="st-typography-label">
                   The newly created group will be empty, though you can upload sources into it.
                 </p>
-                <a href={'../'} style:font-style="italic" class="st-typography-label" rel="noopener noreferrer"
-                  >What is a Derivation Group Definition File?</a
+                <a
+                  href="https://github.com/NASA-AMMOS/aerie-docs/blob/7fde649340d51852329f5b426e82b827b7672bbf/docs/planning/external-events-metadata.md"
+                  style:font-style="italic"
+                  class="st-typography-label"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
+                  What is a Derivation Group Definition File?
+                </a>
                 <div class="content">
                   <input
                     class="w-100"
