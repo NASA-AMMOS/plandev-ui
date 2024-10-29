@@ -244,6 +244,7 @@
     $planEndTimeMs = getUnixEpochTime(data.initialPlan.end_time_doy);
     $planStartTimeMs = getUnixEpochTime(data.initialPlan.start_time_doy);
     $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
+    $simulationDatasetId = -1;
 
     const querySimulationDatasetId = $page.url.searchParams.get(SearchParameters.SIMULATION_DATASET_ID);
     if (querySimulationDatasetId) {
@@ -346,12 +347,7 @@
     selectActivity(null, null);
   }
 
-  $: if (
-    $initialPlan &&
-    $simulationDataset !== null &&
-    (getSimulationStatus($simulationDataset) === Status.Complete ||
-      getSimulationStatus($simulationDataset) === Status.Complete)
-  ) {
+  $: if ($initialPlan && $simulationDataset !== null && getSimulationStatus($simulationDataset) === Status.Complete) {
     const datasetId = $simulationDataset.dataset_id;
     simulationDataAbortController?.abort();
     simulationDataAbortController = new AbortController();
