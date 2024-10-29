@@ -94,7 +94,7 @@
     </svelte:fragment>
   </Panel>
 
-  <CssGridGutter track={1} type="column" />
+  <CssGridGutter track={3} type="column" />
 
   <SequenceEditor
     {parcel}
