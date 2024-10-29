@@ -314,7 +314,7 @@
               on:keyup={onNameFieldKeyup}
               bind:this={nameInputField}
               autocomplete="off"
-              class="st-input w-100"
+              class="st-input w-full"
               name="name"
               use:permissionHandler={{
                 hasPermission: canCreate,
@@ -330,7 +330,7 @@
                 on:keyup={onColorFieldKeyup}
                 bind:this={colorInputField}
                 autocomplete="off"
-                class="st-input w-100"
+                class="st-input w-full"
                 name="color"
                 use:permissionHandler={{
                   hasPermission: canCreate,
@@ -394,7 +394,7 @@
           <fieldset>
             {#if !selectedTag}
               <button
-                class="st-button w-100"
+                class="st-button w-full"
                 disabled={!submitButtonEnabled || creatingTag}
                 type="submit"
                 use:permissionHandler={{
@@ -409,13 +409,13 @@
                 <button
                   on:click={() => exitEditing()}
                   disabled={updatingTag}
-                  class="st-button secondary w-100"
+                  class="st-button secondary w-full"
                   type="button"
                 >
                   Cancel
                 </button>
                 <button
-                  class="st-button w-100"
+                  class="st-button w-full"
                   disabled={!submitButtonEnabled || !selectedTagModified || updatingTag}
                   type="submit"
                   use:permissionHandler={{

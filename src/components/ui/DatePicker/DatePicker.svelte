@@ -257,7 +257,7 @@
 <div class="date-picker" bind:this={datePickerContainer}>
   <input
     autocomplete="off"
-    class="st-input w-100"
+    class="st-input w-full"
     class:error={!isValid || hasError}
     {disabled}
     {name}

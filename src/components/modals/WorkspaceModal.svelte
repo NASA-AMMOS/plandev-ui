@@ -53,7 +53,7 @@
 
     <fieldset>
       <label for="name">Workspace name</label>
-      <input bind:value={workspaceName} autocomplete="off" class="st-input w-100" id="name" required type="text" />
+      <input bind:value={workspaceName} autocomplete="off" class="st-input w-full" id="name" required type="text" />
     </fieldset>
   </ModalContent>
 

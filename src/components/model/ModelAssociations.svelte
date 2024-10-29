@@ -157,9 +157,9 @@
       <RadioButton id="condition"><div class="association-button">Conditions</div></RadioButton>
     </RadioButtons>
     <div class="action-buttons">
-      <button class="st-button secondary w-100" on:click={onClose}> Close </button>
+      <button class="st-button secondary w-full" on:click={onClose}> Close </button>
       <button
-        class="st-button w-100"
+        class="st-button w-full"
         disabled={!hasModelChanged}
         on:click={onSave}
         use:permissionHandler={{

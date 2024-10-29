@@ -80,7 +80,7 @@
         <Input>
           <input
             value={argumentsMap[extraArgument] ? getStringValue(argumentsMap[extraArgument]) : ''}
-            class="st-input w-100 error"
+            class="st-input w-full error"
             readonly
             type="text"
           />

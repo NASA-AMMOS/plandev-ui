@@ -32,7 +32,7 @@
   <div class="parameter-base-variant-content">
     <select
       bind:value={formParameter.value}
-      class="st-select w-100"
+      class="st-select w-full"
       class:error={formParameter.errors !== null}
       {disabled}
       use:useActions={use}

@@ -101,7 +101,7 @@
                 bind:value={newTypeName}
                 on:change={handleChange}
                 autocomplete="off"
-                class="st-input w-100"
+                class="st-input w-full"
                 placeholder="New Derivation Group Name"
               />
               <select bind:value={newTypeSourceType} on:change={handleChange} class="st-select source-type-selection">
@@ -110,7 +110,7 @@
                 {/each}
               </select>
               <button
-                class="st-button w-10"
+                class="st-button"
                 type="submit"
                 on:click|preventDefault={onCreateDerivationGroup}
                 use:permissionHandler={{
@@ -134,11 +134,11 @@
                 bind:value={newTypeName}
                 on:change={handleChange}
                 autocomplete="off"
-                class="st-input w-100"
+                class="st-input w-full"
                 placeholder="New External Source Type Name"
               />
               <button
-                class="st-button w-10"
+                class="st-button"
                 type="submit"
                 on:click|preventDefault={onCreateExternalSourceType}
                 use:permissionHandler={{
@@ -162,11 +162,11 @@
                 bind:value={newTypeName}
                 on:change={handleChange}
                 autocomplete="off"
-                class="st-input w-100"
+                class="st-input w-full"
                 placeholder="New External Event Type Name"
               />
               <button
-                class="st-button w-10"
+                class="st-button"
                 type="submit"
                 on:click|preventDefault={onCreateExternalEventType}
                 use:permissionHandler={{

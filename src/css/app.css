@@ -1,7 +1,7 @@
-@import 'bootstrap/dist/css/bootstrap-utilities.min.css';
 @import 'tippy.js/dist/tippy.css';
 @import 'toastify-js/src/toastify.css';
 @import 'ag-grid-community/styles/ag-grid.min.css';
+@import '@nasa-jpl/stellar-svelte/styles';
 
 @import '@fontsource/jetbrains-mono/index.css';
 
@@ -14,13 +14,52 @@
 @import '@nasa-jpl/stellar/css/table.css';
 @import '@nasa-jpl/stellar/css/badge.css';
 
-@import 'modern-css-reset/dist/reset.min.css';
-
 @import './stellar.css';
 @import 'ag-grid-community/styles/ag-theme-alpine.min.css';
 @import './ag-grid-stellar.css';
 @import './tooltip.css';
 @import './icon.css';
+
+/* Inherit fonts for inputs and buttons */
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+/* Make images easier to work with */
+img,
+picture {
+  display: block;
+  max-width: 100%;
+}
+
+/* A elements that don't have a class get default styles */
+a:not([class]) {
+  text-decoration-skip-ink: auto;
+}
+
+/* Box sizing rules */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Remove default margin */
+body,
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
 
 html,
 body,
@@ -29,12 +68,41 @@ body,
   width: 100vw;
 }
 
+/* Remove list styles on ul, ol elements with a list role, which suggests default styling will be removed */
+ul[role='list'],
+ol[role='list'] {
+  list-style: none;
+}
+
+/* Set core root defaults */
+html:focus-within {
+  scroll-behavior: smooth;
+}
+
+/* Remove all animations and transitions for people that prefer not to see them */
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 body {
   background-color: var(--st-primary-background-color);
   color: var(--st-primary-text-color);
   font-family: Inter, Roboto;
   font-size: 12px;
-  font-weight: 300;
+  font-weight: 400;
+  line-height: 1.5;
+  min-height: 100vh;
+  text-rendering: optimizeSpeed;
 }
 
 label.error,

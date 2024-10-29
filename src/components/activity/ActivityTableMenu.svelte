@@ -80,7 +80,7 @@
     <MenuHeader title="Columns" showBorder={false} />
     <div class="search-field">
       <Input>
-        <input class="st-input w-100" value={searchFilter} on:input={onSearchFilterChange} />
+        <input class="st-input w-full" value={searchFilter} on:input={onSearchFilterChange} />
         <div class="search-icon" slot="left"><SearchIcon /></div>
       </Input>
     </div>

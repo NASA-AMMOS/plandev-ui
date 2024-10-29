@@ -65,7 +65,7 @@
         <label use:tooltip={{ content: 'Start Time', placement: 'top' }} for="start-time">
           {label}
         </label>
-        <input autocomplete="off" class="st-input w-100" name="start-time" on:keyup={() => {}} />
+        <input autocomplete="off" class="st-input w-full" name="start-time" on:keyup={() => {}} />
       </Input>
     </Field>
   </div>

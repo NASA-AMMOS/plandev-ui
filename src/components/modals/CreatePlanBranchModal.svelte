@@ -49,7 +49,7 @@
         bind:value={newBranchName}
         placeholder="Name of branch"
         autocomplete="off"
-        class="st-input w-100"
+        class="st-input w-full"
         name="name"
         required
         type="text"

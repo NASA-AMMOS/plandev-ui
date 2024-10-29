@@ -213,7 +213,7 @@
           Offset
         </label>
         <input
-          class="st-input w-100"
+          class="st-input w-full"
           class:error={!!startOffsetError}
           {disabled}
           name="start-offset"
