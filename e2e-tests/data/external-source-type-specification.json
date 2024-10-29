@@ -1,0 +1,23 @@
+{
+  "entries": [
+    {
+      "name": "abcdefgh",
+      "metadata": [
+        {
+          "isRequired": false,
+          "name": "param",
+          "schema": {
+            "type": "boolean"
+          }
+        },
+        {
+          "isRequired": true,
+          "name": "param2",
+          "schema": {
+            "type": "boolean"
+          }
+        }
+      ]
+    }
+  ]
+}

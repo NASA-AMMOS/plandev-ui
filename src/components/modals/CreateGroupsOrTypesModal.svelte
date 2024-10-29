@@ -18,12 +18,17 @@
     resetExternalSourceStores,
   } from '../../stores/external-source';
   import type { User } from '../../types/app';
-  import type { ExternalEventTypeInsertInput } from '../../types/external-event';
-  import type { ExternalSourceTypeInsertInput } from '../../types/external-source';
+  import type { ExternalEventTypeInsertInput, ExternalEventTypeJSON } from '../../types/external-event';
+  import type {
+    DerivationGroupJSON,
+    ExternalSourceTypeInsertInput,
+    ExternalSourceTypeJSON,
+  } from '../../types/external-source';
   import type { ParameterName, ParametersMap } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
   import type { TabId } from '../../types/tabs';
   import effects from '../../utilities/effects';
+  import { parseJSONStream } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import AlertError from '../ui/AlertError.svelte';
@@ -115,31 +120,6 @@
       console.log('isCreateDisabled', isCreateDisabled, hasCreationPermissionForCurrentTab);
     }
   }
-  // $: if (selectedTab === derivationGroupTabId) {
-  //   hasCreationPermissionForCurrentTab = hasCreateDerivationGroupPermission;
-  //   if (isUsingImportMode) {
-  //     isCreateDisabled = derivationGroupUploadFiles === undefined;
-  //   } else {
-  //     isCreateDisabled =
-  //       hasCreateDerivationGroupPermission === false ||
-  //       newDerivationGroupName === null ||
-  //       newDerivationGroupSourceType === null;
-  //   }
-  // } else if (selectedTab === externalSourceTypeTabId) {
-  //   hasCreationPermissionForCurrentTab = hasCreateExternalSourceTypePermission;
-  //   if (isUsingImportMode) {
-  //     isCreateDisabled = externalSourceTypeUploadFiles === undefined;
-  //   } else {
-  //     isCreateDisabled = hasCreateExternalSourceTypePermission === false || newExternalSourceTypeName === null;
-  //   }
-  // } else if (selectedTab === externalEventTypeTabId) {
-  //   hasCreationPermissionForCurrentTab = hasCreateExternalEventTypePermission;
-  //   if (isUsingImportMode) {
-  //     isCreateDisabled = externalEventTypeUploadFiles === undefined;
-  //   } else {
-  //     isCreateDisabled = hasCreateExternalEventTypePermission === false || newExternalEventTypeName === null;
-  //   }
-  // }
 
   function onCreateDerivationGroup() {
     if (isCreateDisabled) {
@@ -152,16 +132,25 @@
     }
   }
 
-  async function parseDerivationGroupInputFileStream() {
-    //stream: ReadableStream) {
+  async function parseDerivationGroupInputFileStream(stream: ReadableStream) {
     uploadFilesError = null;
     try {
-      // let derivationGroupJSON: DerivationGroupJSON;
+      let derivationGroupJSON: { entries: DerivationGroupJSON[] };
       try {
-        // derivationGroupJSON = await parseJSONStream<DerivationGroupJSON>(stream);
-        // TODO: update
-        // newDerivationGroupName = derivationGroupJSON.name;
-        // newDerivationGroupSourceType = derivationGroupJSON.source_type_name;
+        derivationGroupJSON = await parseJSONStream<{ entries: DerivationGroupJSON[] }>(stream);
+        newDerivationGroups = [
+          ...newDerivationGroups,
+          ...derivationGroupJSON.entries.map(entry => {
+            return {
+              name: entry.name,
+              sourceType: entry.source_type_name,
+              valid:
+                validateDerivationGroupName(entry.name) &&
+                entry.source_type_name.length > 0 &&
+                $externalSourceTypes.map(est => est.name).includes(entry.source_type_name),
+            };
+          }),
+        ];
       } catch (e) {
         throw new Error('Derivation Group Definition File is not a valid JSON');
       }
@@ -170,15 +159,22 @@
     }
   }
 
-  async function parseExternalSourceTypeInputFileStream() {
-    //stream: ReadableStream) {
+  async function parseExternalSourceTypeInputFileStream(stream: ReadableStream) {
     uploadFilesError = null;
     try {
-      // let externalSourceTypeJSON: ExternalSourceTypeJSON;
+      let externalSourceTypeJSON: { entries: ExternalSourceTypeJSON[] };
       try {
-        // externalSourceTypeJSON = await parseJSONStream<ExternalSourceTypeJSON>(stream);
-        // newExternalSourceTypeName = externalSourceTypeJSON.name;
-        // newExternalSourceTypeMetadata = externalSourceTypeJSON.metadata;
+        externalSourceTypeJSON = await parseJSONStream<{ entries: ExternalSourceTypeJSON[] }>(stream);
+        newExternalSourceTypes = [
+          ...newExternalSourceTypes,
+          ...externalSourceTypeJSON.entries.map(entry => {
+            return {
+              metadata: entry.metadata,
+              name: entry.name,
+              valid: validateEST({ metadata: entry.metadata, name: entry.name, valid: false }),
+            };
+          }),
+        ];
       } catch (e) {
         throw new Error('External Source Type Definition File is not a valid JSON');
       }
@@ -187,15 +183,22 @@
     }
   }
 
-  async function parseExternalEventTypeInputFileStream() {
-    //stream: ReadableStream) {
+  async function parseExternalEventTypeInputFileStream(stream: ReadableStream) {
     uploadFilesError = null;
     try {
-      // let externalEventTypeJSON: ExternalEventTypeJSON;
+      let externalEventTypeJSON: { entries: ExternalEventTypeJSON[] };
       try {
-        // externalEventTypeJSON = await parseJSONStream<ExternalEventTypeJSON>(stream);
-        // newExternalEventTypeName = externalEventTypeJSON.name;
-        // newExternalEventTypeMetadata = externalEventTypeJSON.metadata;
+        externalEventTypeJSON = await parseJSONStream<{ entries: ExternalEventTypeJSON[] }>(stream);
+        newExternalEventTypes = [
+          ...newExternalEventTypes,
+          ...externalEventTypeJSON.entries.map(entry => {
+            return {
+              metadata: entry.metadata,
+              name: entry.name,
+              valid: validateEET({ metadata: entry.metadata, name: entry.name, valid: false }),
+            };
+          }),
+        ];
       } catch (e) {
         throw new Error('External Event Type Definition File is not a valid JSON');
       }
@@ -298,14 +301,11 @@
       const file = files[0];
       if (/\.json$/.test(file.name)) {
         if (selectedTab === derivationGroupTabId) {
-          // parseDerivationGroupInputFileStream(file.stream());
-          parseDerivationGroupInputFileStream();
+          parseDerivationGroupInputFileStream(file.stream());
         } else if (selectedTab === externalSourceTypeTabId) {
-          // parseExternalSourceTypeInputFileStream(file.stream());
-          parseExternalSourceTypeInputFileStream();
+          parseExternalSourceTypeInputFileStream(file.stream());
         } else if (selectedTab === externalEventTypeTabId) {
-          // parseExternalEventTypeInputFileStream(file.stream());
-          parseExternalEventTypeInputFileStream();
+          parseExternalEventTypeInputFileStream(file.stream());
         }
       } else {
         uploadFilesError = 'Plan file is not a .json file';
@@ -320,16 +320,17 @@
   }
 
   $: newDerivationGroups = newDerivationGroups.map(entry => {
-    console.log('reevaluating!');
     return {
       name: entry.name,
       sourceType: entry.sourceType,
-      valid: validateDerivationGroupName(entry.name) && entry.sourceType !== '',
+      valid:
+        validateDerivationGroupName(entry.name) &&
+        entry.sourceType.length > 0 &&
+        $externalSourceTypes.map(est => est.name).includes(entry.sourceType),
     };
   });
 
   $: newExternalSourceTypes = newExternalSourceTypes.map(entry => {
-    console.log('reevaluating!');
     return {
       metadata: entry.metadata,
       name: entry.name,
@@ -338,7 +339,6 @@
   });
 
   $: newExternalEventTypes = newExternalEventTypes.map(entry => {
-    console.log('reevaluating!');
     return {
       metadata: entry.metadata,
       name: entry.name,
@@ -362,12 +362,14 @@
     name: string;
     valid: boolean;
   }) {
+    // TODO: check name not elsewhere in the list of source types to be uploaded at the moment
     if (sourceType.name.length <= 0 || $externalSourceTypes.map(est => est.name).includes(sourceType.name)) {
       return false;
     }
     if (sourceType.metadata.length === 0) {
       return true;
     } else {
+      // TODO: check metadata name not elsewhere in the list of source types to be uploaded at the moment
       return sourceType.metadata
         .map(metadataItem => {
           console.log(
@@ -389,12 +391,14 @@
     name: string;
     valid: boolean;
   }) {
+    // TODO: check name not elsewhere in the list of source types to be uploaded at the moment
     if (eventType.name.length <= 0 || $externalEventTypes.map(eet => eet.name).includes(eventType.name)) {
       return false;
     }
     if (eventType.metadata.length === 0) {
       return true;
     } else {
+      // TODO: check metadata name not elsewhere in the list of source types to be uploaded at the moment
       return eventType.metadata
         .map(metadataItem => {
           console.log(
@@ -613,7 +617,6 @@
                 <input
                   value={derivationGroup.name}
                   on:blur={e => handleDGChange(e.target.value, i)}
-                  disabled={isUsingImportMode}
                   autocomplete="off"
                   class="st-input w-50"
                   placeholder="New Derivation Group Name"
@@ -621,7 +624,6 @@
                 <select
                   value={derivationGroup.sourceType}
                   on:change={e => handleDGStChange(e.target.value, i)}
-                  disabled={isUsingImportMode}
                   class="st-select w-50"
                 >
                   {#each $externalSourceTypes as sourceType}
@@ -632,7 +634,6 @@
             {/each}
             <div class="content parameters">
               <button
-                disabled={isUsingImportMode}
                 style:display="grid"
                 class="st-button icon add-button"
                 on:click={handleCreateNewDerivationGroupEntry}
@@ -704,13 +705,11 @@
                     on:blur={e => {
                       handleESTChange(e.target.value, i);
                     }}
-                    disabled={isUsingImportMode}
                     autocomplete="off"
                     class="st-input w-100"
                     placeholder="New External Source Type Name"
                   />
                   <button
-                    disabled={isUsingImportMode}
                     style:display="grid"
                     class="st-button icon add-metadata-button"
                     on:click={() => handleAddESTMetadata(sourceType)}
@@ -721,7 +720,6 @@
                 <div class="content" style="flex-direction: column; margin-left: 15px">
                   {#each sourceType.metadata as metadata, metadataIndex}
                     <ParameterEntry
-                      disabled={isUsingImportMode}
                       id={metadataIndex}
                       value={metadata}
                       newParameterNamePlaceholder="New External Source Type Metadata Name"
@@ -744,7 +742,6 @@
             {/each}
             <div style="content parameters">
               <button
-                disabled={isUsingImportMode}
                 style:display="grid"
                 class="st-button icon add-external-source-type-button"
                 on:click={e => {
@@ -822,11 +819,9 @@
                     }}
                     autocomplete="off"
                     class="st-input w-100"
-                    disabled={isUsingImportMode}
                     placeholder="New External Event Type Name"
                   />
                   <button
-                    disabled={isUsingImportMode}
                     style:display="grid"
                     class="st-button icon add-metadata-button"
                     on:click={() => handleAddEETMetadata(eventType)}
@@ -837,7 +832,6 @@
                 <div class="content" style="flex-direction: column; margin-left: 15px">
                   {#each eventType.metadata as metadata, metadataIndex}
                     <ParameterEntry
-                      disabled={isUsingImportMode}
                       id={metadataIndex}
                       value={metadata}
                       newParameterNamePlaceholder="New External Event Type Metadata Name"
@@ -862,7 +856,6 @@
               <button
                 style:display="grid"
                 class="st-button icon add-external-event-type-button"
-                disabled={isUsingImportMode}
                 on:click={e => {
                   console.log('add type', e);
                   // update element at i in list
