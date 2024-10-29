@@ -173,7 +173,7 @@
         </label>
         <select
           bind:value={$selectedExpansionSetId}
-          class="st-select w-100"
+          class="st-select w-full"
           disabled={!$expansionSets.length}
           name="expansionSet"
         >
@@ -236,7 +236,7 @@
         <Collapse className="details-container" title="Sequences">
           <Input>
             <label for="simulationDatasetId">Simulation Dataset ID</label>
-            <input class="st-input w-100" disabled name="simulationDatasetId" value={$simulationDatasetId ?? 'None'} />
+            <input class="st-input w-full" disabled name="simulationDatasetId" value={$simulationDatasetId ?? 'None'} />
           </Input>
 
           {#if $simulationDatasetId === null}

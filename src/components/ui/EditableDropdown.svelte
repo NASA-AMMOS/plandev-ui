@@ -158,7 +158,7 @@
   <svelte:fragment slot="dropdown-header">
     <div class="dropdown-header">
       <input
-        class="st-input w-100"
+        class="st-input w-full"
         placeholder={`Enter ${optionLabel.toLowerCase()} name`}
         value={optionName}
         on:input={onUpdateOptionName}

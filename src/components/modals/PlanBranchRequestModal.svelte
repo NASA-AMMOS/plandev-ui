@@ -91,7 +91,7 @@
         <div class="branch-header">{actionHeader}</div>
         <div class="branch-name">
           <MergeIcon />
-          <select bind:value={selectedPlanId} class="st-select w-100" disabled name="sequences">
+          <select bind:value={selectedPlanId} class="st-select w-full" disabled name="sequences">
             {#each planList as plan}
               <option value={plan.id}>
                 {plan.name}

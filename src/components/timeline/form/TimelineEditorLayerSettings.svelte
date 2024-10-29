@@ -64,7 +64,7 @@
           <input
             autocomplete="off"
             placeholder="Overrides resource name"
-            class="st-input w-100"
+            class="st-input w-full"
             name="name"
             type="string"
             value={layer.name || ''}
@@ -75,7 +75,7 @@
           <label for="yAxisId">Y Axis</label>
           <select
             on:input={onInput}
-            class="st-select w-100"
+            class="st-select w-full"
             data-type="number"
             name="yAxisId"
             value={layerAsLine.yAxisId}
@@ -91,7 +91,7 @@
           <label for="lineWidth">Line Width</label>
           <input
             min={0}
-            class="st-input w-100"
+            class="st-input w-full"
             name="lineWidth"
             type="number"
             value={layerAsLine.lineWidth}
@@ -102,7 +102,7 @@
           <label for="pointRadius">Point Radius</label>
           <input
             min={0}
-            class="st-input w-100"
+            class="st-input w-full"
             name="pointRadius"
             type="number"
             value={layerAsLine.pointRadius}
@@ -115,7 +115,7 @@
           <input
             autocomplete="off"
             placeholder="Overrides resource name"
-            class="st-input w-100"
+            class="st-input w-full"
             name="name"
             type="string"
             value={layer.name || ''}
@@ -126,7 +126,7 @@
           <label for="yAxisId">Y Axis</label>
           <select
             on:input={onInput}
-            class="st-select w-100"
+            class="st-select w-full"
             data-type="number"
             name="yAxisId"
             value={layerAsXRange.yAxisId}
@@ -144,7 +144,7 @@
             min={0}
             max={1}
             step={0.1}
-            class="st-input w-100"
+            class="st-input w-full"
             name="opacity"
             type="number"
             value={layerAsXRange.opacity}
@@ -165,9 +165,10 @@
       {/if}
       <Input layout="inline">
         <label for="id">Layer ID</label>
-        <input class="st-input w-100" name="id" type="number" value={layer.id} disabled />
+        <input class="st-input w-full" name="id" type="number" value={layer.id} disabled />
       </Input>
-      <button class="st-button secondary w-100" style="position: relative" on:click={onDeleteLayer}>Delete Layer</button
+      <button class="st-button secondary w-full" style="position: relative" on:click={onDeleteLayer}
+        >Delete Layer</button
       >
     </div>
   </Menu>

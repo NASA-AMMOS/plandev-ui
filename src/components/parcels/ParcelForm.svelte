@@ -240,12 +240,12 @@
       {#if mode === 'edit'}
         <fieldset>
           <label for="parcelId">ID</label>
-          <input class="st-input w-100" disabled name="parcelId" value={parcelId} />
+          <input class="st-input w-full" disabled name="parcelId" value={parcelId} />
         </fieldset>
 
         <fieldset>
           <label for="createdAt">Created At</label>
-          <input class="st-input w-100" disabled name="createdAt" value={parcelCreatedAt} />
+          <input class="st-input w-full" disabled name="createdAt" value={parcelCreatedAt} />
         </fieldset>
       {/if}
 
@@ -254,7 +254,7 @@
         <input
           bind:value={parcelName}
           autocomplete="off"
-          class="st-input w-100"
+          class="st-input w-full"
           name="parcelName"
           placeholder="Enter Parcel Name"
           required

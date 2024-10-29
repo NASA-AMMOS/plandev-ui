@@ -44,7 +44,7 @@
       searchPlaceholder="Filter values"
     />
   {:else}
-    <select class="st-select w-100" required bind:value>
+    <select class="st-select w-full" required bind:value>
       {#if !isValueInEnum}
         <option>{value}</option>
       {/if}

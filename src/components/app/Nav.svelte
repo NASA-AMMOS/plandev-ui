@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { Button, Popover } from '@nasa-jpl/stellar-svelte';
+
   import AppMenu from '../../components/menus/AppMenu.svelte';
   import type { User, UserRole } from '../../types/app';
   import { getTarget } from '../../utilities/generic';
@@ -22,6 +24,11 @@
 <div class="nav">
   <div class="left">
     <AppMenu {user} />
+    <Button>Help</Button>
+    <Popover.Root>
+      <Popover.Trigger><Button on:click={() => console.log(1)}>Popover</Button></Popover.Trigger>
+      <Popover.Content>Place content for the popover here.</Popover.Content>
+    </Popover.Root>
     <div class="divider" />
     <div class="title st-typography-medium">
       <slot name="title" />

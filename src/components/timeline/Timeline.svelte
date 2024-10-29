@@ -526,7 +526,7 @@
         </div>
       {/each}
       <div class="new-row">
-        <button on:click={_ => viewAddTimelineRow(timeline?.id, true)} class="w-100 st-button tertiary">
+        <button on:click={_ => viewAddTimelineRow(timeline?.id, true)} class="w-full st-button tertiary">
           New Row +
         </button>
       </div>

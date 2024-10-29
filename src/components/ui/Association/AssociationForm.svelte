@@ -443,6 +443,24 @@
     </svelte:fragment>
 
     <svelte:fragment slot="body">
+      <fieldset>
+        <label for="metadata-name">Name</label>
+        <input
+          bind:value={name}
+          autocomplete="off"
+          class:metadata-form-error={!!nameError}
+          class="st-input w-full"
+          name="metadata-name"
+          placeholder={`Enter ${displayName} Name (required)`}
+          required
+          use:permissionHandler={{
+            hasPermission: hasWriteMetadataPermission,
+            permissionError,
+          }}
+        />
+        <div class="metadata-form-error-message">{nameError}</div>
+      </fieldset>
+
       {#if showDefinitionTypeSelector && !!definitionTypeConfigurations}
         <fieldset>
           <RadioButtons selectedButtonId={definitionType} on:select-radio-button={onSelectDefinitionType}>
@@ -472,7 +490,7 @@
             </div>
           {:else}
             <input
-              class="w-100"
+              class="w-full"
               name="file"
               type="file"
               accept={definitionTypeConfigurations?.file.accept ?? 'application/json'}
@@ -509,7 +527,7 @@
         <label for="owner">Owner</label>
         <input
           bind:value={owner}
-          class="st-input w-100"
+          class="st-input w-full"
           name="owner"
           placeholder={`Enter ${displayName} Owner Username (required)`}
           use:permissionHandler={{
@@ -524,7 +542,7 @@
         <textarea
           bind:value={description}
           autocomplete="off"
-          class="st-input w-100"
+          class="st-input w-full"
           name="metadata-description"
           placeholder={`Enter ${displayName} Description (optional)`}
           use:permissionHandler={{
@@ -556,7 +574,7 @@
       {#if mode === 'edit'}
         <fieldset>
           <label for="id">{displayName} ID</label>
-          <input class="st-input w-100" disabled name="id" value={metadataId} />
+          <input class="st-input w-full" disabled name="id" value={metadataId} />
         </fieldset>
       {/if}
 
@@ -596,7 +614,7 @@
         <fieldset>
           <label for="versions">Version</label>
           {#if !isDefinitionModified}
-            <select value={initialRevision} class="st-select w-100" name="versions" on:change={onRevisionSelection}>
+            <select value={initialRevision} class="st-select w-full" name="versions" on:change={onRevisionSelection}>
               {#each revisions as revision}
                 <option value={revision}>
                   {revision}
@@ -604,7 +622,7 @@
               {/each}
             </select>
           {:else}
-            <select disabled class="st-select w-100" name="versions">
+            <select disabled class="st-select w-full" name="versions">
               <option value={revisions[0] + 1}>
                 {revisions[0] + 1} (Next version)
               </option>
@@ -618,7 +636,7 @@
         <input
           disabled
           value={defintionAuthor}
-          class="st-input w-100"
+          class="st-input w-full"
           name="definitionAuthor"
           use:permissionHandler={{
             hasPermission: hasWriteMetadataPermission,

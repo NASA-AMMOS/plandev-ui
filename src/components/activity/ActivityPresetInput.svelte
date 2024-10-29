@@ -103,7 +103,7 @@
 
 <Highlight highlight={highlightKeysMap.activity_preset}>
   <div class="activity-preset-input-container">
-    <div class="preset-input-container st-input w-100">
+    <div class="preset-input-container st-input w-full">
       <!-- svelte-ignore a11y-label-has-associated-control -->
       <label class="label" use:tooltip={{ content: 'Choose activity preset', placement: 'top' }}> Preset </label>
       <EditableDropdown

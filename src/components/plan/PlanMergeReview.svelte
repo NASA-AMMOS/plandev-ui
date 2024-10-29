@@ -603,7 +603,7 @@
         {#if selectedConflictingActivity}
           <div class="merge-review-button-container">
             <button
-              class="st-button secondary w-100"
+              class="st-button secondary w-full"
               class:selected={selectedConflictingActivityResolution === 'source'}
               on:click={() => {
                 const activityId =
@@ -669,7 +669,7 @@
         {#if selectedConflictingActivity}
           <div class="merge-review-button-container">
             <button
-              class="st-button secondary w-100"
+              class="st-button secondary w-full"
               class:selected={selectedConflictingActivityResolution === 'target'}
               on:click={() => {
                 const activityId =

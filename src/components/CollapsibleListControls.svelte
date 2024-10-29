@@ -19,7 +19,7 @@
 
 <div class="collapsible-list-controls">
   <div class="collapsible-list-controls-top">
-    <input autocomplete="off" bind:value class="st-input w-100" name="filter" {placeholder} on:input={onInput} />
+    <input autocomplete="off" bind:value class="st-input w-full" name="filter" {placeholder} on:input={onInput} />
     <slot name="right" />
   </div>
   <slot />

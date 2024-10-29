@@ -47,7 +47,7 @@
   <ModalContent>
     <fieldset>
       <label for="name">View name</label>
-      <input bind:value={viewName} autocomplete="off" class="st-input w-100" name="name" required type="text" />
+      <input bind:value={viewName} autocomplete="off" class="st-input w-full" name="name" required type="text" />
     </fieldset>
   </ModalContent>
   <ModalFooter>

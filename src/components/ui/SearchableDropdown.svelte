@@ -165,7 +165,7 @@
 <div class={rootClasses}>
   <!-- svelte-ignore a11y-click-events-have-key-events a11y-interactive-supports-focus -->
   <div
-    class="selected-display st-select w-100"
+    class="selected-display st-input w-full"
     class:error
     class:disabled
     {name}
@@ -208,7 +208,7 @@
           <Input>
             <div class="search-icon" slot="left"><SearchIcon /></div>
             <input
-              class="st-input w-100"
+              class="st-input w-full"
               placeholder={searchPlaceholder}
               value={searchFilter}
               on:input={onSearchPresets}

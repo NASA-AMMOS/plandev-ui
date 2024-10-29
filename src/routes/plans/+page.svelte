@@ -686,7 +686,7 @@
                 <label class="plan-metadata-item-label" for="name">Model</label>
                 <input
                   disabled
-                  class="st-input w-100"
+                  class="st-input w-full"
                   name="name"
                   use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}
                   value={selectedPlanModelName}
@@ -694,25 +694,25 @@
               </Input>
               <Input layout="inline">
                 <label class="plan-metadata-item-label" for="id">Name</label>
-                <input disabled class="st-input w-100" name="id" value={selectedPlan.name} />
+                <input disabled class="st-input w-full" name="id" value={selectedPlan.name} />
               </Input>
               <Input layout="inline">
                 <label class="plan-metadata-item-label" for="start-time">
                   Start Time - {$plugins.time.primary.label}
                 </label>
-                <input disabled class="st-input w-100" name="start-time" value={selectedPlanStartTime} />
+                <input disabled class="st-input w-full" name="start-time" value={selectedPlanStartTime} />
               </Input>
               <Input layout="inline">
                 <label class="plan-metadata-item-label" for="end-time">
                   End Time - {$plugins.time.primary.label}
                 </label>
-                <input disabled class="st-input w-100" name="end-time" value={selectedPlanEndTime} />
+                <input disabled class="st-input w-full" name="end-time" value={selectedPlanEndTime} />
               </Input>
               <Input layout="inline">
                 <label class="plan-metadata-item-label" for="duration"> Plan Duration </label>
                 <input
                   disabled
-                  class="st-input w-100"
+                  class="st-input w-full"
                   name="duration"
                   value={convertUsToDurationString(getIntervalInMs(selectedPlan.duration) * 1000)}
                 />
@@ -738,7 +738,7 @@
             </fieldset>
           </div>
           <fieldset>
-            <button class="st-button w-100" on:click={showSelectedPlan}>Open plan</button>
+            <button class="st-button w-full" on:click={showSelectedPlan}>Open plan</button>
           </fieldset>
         {:else}
           <form on:submit|preventDefault={createPlan}>
@@ -751,7 +751,7 @@
               <label for="file">Plan File (JSON)</label>
               <div class="import-input-container">
                 <input
-                  class="w-100"
+                  class="w-full"
                   name="file"
                   type="file"
                   accept="application/json"
@@ -772,7 +772,7 @@
             <Field field={modelIdField}>
               <label for="model" slot="label">Models</label>
               <select
-                class="st-select w-100"
+                class="st-select w-full"
                 data-type="number"
                 name="model"
                 use:permissionHandler={{
@@ -800,7 +800,7 @@
               <input
                 bind:this={nameInputField}
                 autocomplete="off"
-                class="st-input w-100"
+                class="st-input w-full"
                 name="name"
                 aria-label="name"
                 use:permissionHandler={{
@@ -850,13 +850,13 @@
 
             <fieldset>
               <label for="plan-duration">Plan Duration</label>
-              <input class="st-input w-100" disabled id="plan-duration" name="duration" value={durationString} />
+              <input class="st-input w-full" disabled id="plan-duration" name="duration" value={durationString} />
             </fieldset>
 
             <Field field={simTemplateField}>
               <label for="simulation-templates" slot="label"> Simulation Templates </label>
               <select
-                class="st-select w-100"
+                class="st-select w-full"
                 data-type="number"
                 disabled={!$simulationTemplates.length}
                 name="simulation-templates"
@@ -898,7 +898,7 @@
 
             <fieldset>
               <button
-                class="st-button w-100"
+                class="st-button w-full"
                 disabled={!createButtonEnabled}
                 type="submit"
                 use:permissionHandler={{

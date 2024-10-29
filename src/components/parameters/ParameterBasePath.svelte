@@ -43,7 +43,7 @@
     <Input>
       <input
         bind:value={formParameter.value}
-        class="st-input w-100"
+        class="st-input w-full"
         class:error={formParameter.errors !== null}
         disabled
         use:useActions={use}
