@@ -231,7 +231,7 @@
     if (showOutputs) {
       editorHeights = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
     } else {
-      editorHeights = toggleSeqJsonPreview ? '1fr 3px' : '1.88fr 3px';
+      editorHeights = '1fr 3px';
     }
   }
 
@@ -425,7 +425,7 @@
   }
 
   function inVmlMode(sequenceName: string | undefined): boolean {
-    return !!sequenceName?.endsWith('.vml');
+    return sequenceName !== undefined && sequenceName.endsWith('.vml');
   }
 </script>
 
