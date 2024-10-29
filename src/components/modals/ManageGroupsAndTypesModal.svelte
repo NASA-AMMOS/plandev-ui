@@ -163,6 +163,10 @@
     selectedExternalSourceType.metadata !== undefined &&
     selectedExternalSourceType?.required_metadata !== undefined
   ) {
+    // need to clear it out before repopulating, or else metadata from previous
+    //    selections will show for the current selection
+    selectedExternalSourceTypeRequiredMetadata = {};
+    selectedExternalSourceTypeOptionalMetadata = {};
     Object.entries(selectedExternalSourceType.metadata).forEach(metadata => {
       if (selectedExternalSourceType?.required_metadata.includes(metadata[0])) {
         selectedExternalSourceTypeRequiredMetadata[metadata[0]] = metadata[1];

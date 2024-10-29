@@ -15,11 +15,7 @@
   } from '../../stores/external-source';
   import type { User } from '../../types/app';
   import type { ExternalEventTypeInsertInput, ExternalEventTypeJSON } from '../../types/external-event';
-  import type {
-    DerivationGroupJSON,
-    ExternalSourceTypeInsertInput,
-    ExternalSourceTypeJSON,
-  } from '../../types/external-source';
+  import type { ExternalSourceTypeInsertInput } from '../../types/external-source';
   import type { ParameterName, ParametersMap } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
   import type { TabId } from '../../types/tabs';
@@ -28,6 +24,7 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import AlertError from '../ui/AlertError.svelte';
+  import ParameterEntry from '../ui/ParameterEntry.svelte';
   import Tab from '../ui/Tabs/Tab.svelte';
   import TabPanel from '../ui/Tabs/TabPanel.svelte';
   import Tabs from '../ui/Tabs/Tabs.svelte';
@@ -45,27 +42,36 @@
   const externalSourceTypeTabId: TabId = 'externalSourceType';
   const externalEventTypeTabId: TabId = 'externalEventType';
   const createDerivationGroupPermissionError: string = 'You do not have permission to create a derivation group.';
-  // const createExternalSourceTypePermissionError: string =
-  // 'You do not have permission to create an external source type.';
+  const createExternalSourceTypePermissionError: string =
+    'You do not have permission to create an external source type.';
   // const createExternalEventTypePermissionError: string = 'You do not have permission to create an external event type.';
 
   // Derivation group variables
   let hasCreateDerivationGroupPermission: boolean = false;
 
   // let newDerivationGroupName: string | null = null;
-  let newDerivationGroupSourceType: string | null = null;
+  // let newDerivationGroupSourceType: string | null = null;
   let newDerivationGroups: { name: string; sourceType: string; valid: boolean }[] = [
     { name: '', sourceType: '', valid: false },
   ];
 
   // External source type variables
-  // let hasCreateExternalSourceTypePermission: boolean = false;
-  let newExternalSourceTypeName: string | null = null;
-  let newExternalSourceTypeMetadata: {
-    isRequired: boolean | null;
-    name: ParameterName | null;
-    schema: ValueSchema | null;
-  }[] = [];
+  let hasCreateExternalSourceTypePermission: boolean = false;
+  // let newExternalSourceTypeName: string | null = null;
+  // let newExternalSourceTypeMetadata: {
+  //   isRequired: boolean | null;
+  //   name: ParameterName | null;
+  //   schema: ValueSchema | null;
+  // }[] = [];
+  let newExternalSourceTypes: {
+    metadata: {
+      isRequired: boolean | null;
+      name: ParameterName | null;
+      schema: ValueSchema | null;
+    }[];
+    name: string;
+    valid: boolean;
+  }[] = [{ metadata: [], name: '', valid: false }];
 
   // External event type variables
   // let hasCreateExternalEventTypePermission: boolean = false;
@@ -85,15 +91,15 @@
   let isUsingImportMode: boolean = false;
   let derivationGroupUploadFiles: FileList | undefined;
   let derivationGroupUploadFileInput: HTMLInputElement;
-  // let externalSourceTypeUploadFiles: FileList | undefined;
-  // let externalSourceTypeUploadFileInput: HTMLInputElement;
+  let externalSourceTypeUploadFiles: FileList | undefined;
+  let externalSourceTypeUploadFileInput: HTMLInputElement;
   // let externalEventTypeUploadFiles: FileList | undefined;
   // let externalEventTypeUploadFileInput: HTMLInputElement;
   let uploadFilesError: string | null = null;
 
   // Reactively determine deletion permissions
   $: hasCreateDerivationGroupPermission = featurePermissions.derivationGroup.canCreate(user);
-  // $: hasCreateExternalSourceTypePermission = featurePermissions.externalSourceType.canCreate(user);
+  $: hasCreateExternalSourceTypePermission = featurePermissions.externalSourceType.canCreate(user);
   // $: hasCreateExternalEventTypePermission = featurePermissions.externalEventType.canCreate(user);
 
   // TODO: update so that it matches below
@@ -102,6 +108,10 @@
       hasCreationPermissionForCurrentTab = hasCreateDerivationGroupPermission;
       isCreateDisabled = !newDerivationGroups.map(entry => entry.valid).reduce((prev, curr) => prev && curr, true);
       console.log(isCreateDisabled);
+    } else if (selectedTab === externalSourceTypeTabId) {
+      hasCreationPermissionForCurrentTab = hasCreateExternalSourceTypePermission;
+      isCreateDisabled = !newExternalSourceTypes.map(entry => entry.valid).reduce((prev, curr) => prev && curr, true);
+      console.log('isCreateDisabled', isCreateDisabled, hasCreationPermissionForCurrentTab);
     }
   }
   // $: if (selectedTab === derivationGroupTabId) {
@@ -141,16 +151,16 @@
     }
   }
 
-  async function parseDerivationGroupInputFileStream(stream: ReadableStream) {
+  async function parseDerivationGroupInputFileStream() {
+    //stream: ReadableStream) {
     uploadFilesError = null;
     try {
-      let derivationGroupJSON: DerivationGroupJSON;
+      // let derivationGroupJSON: DerivationGroupJSON;
       try {
-        derivationGroupJSON = await parseJSONStream<DerivationGroupJSON>(stream);
-
+        // derivationGroupJSON = await parseJSONStream<DerivationGroupJSON>(stream);
         // TODO: update
         // newDerivationGroupName = derivationGroupJSON.name;
-        newDerivationGroupSourceType = derivationGroupJSON.source_type_name;
+        // newDerivationGroupSourceType = derivationGroupJSON.source_type_name;
       } catch (e) {
         throw new Error('Derivation Group Definition File is not a valid JSON');
       }
@@ -159,14 +169,15 @@
     }
   }
 
-  async function parseExternalSourceTypeInputFileStream(stream: ReadableStream) {
+  async function parseExternalSourceTypeInputFileStream() {
+    //stream: ReadableStream) {
     uploadFilesError = null;
     try {
-      let externalSourceTypeJSON: ExternalSourceTypeJSON;
+      // let externalSourceTypeJSON: ExternalSourceTypeJSON;
       try {
-        externalSourceTypeJSON = await parseJSONStream<ExternalSourceTypeJSON>(stream);
-        newExternalSourceTypeName = externalSourceTypeJSON.name;
-        newExternalSourceTypeMetadata = externalSourceTypeJSON.metadata;
+        // externalSourceTypeJSON = await parseJSONStream<ExternalSourceTypeJSON>(stream);
+        // newExternalSourceTypeName = externalSourceTypeJSON.name;
+        // newExternalSourceTypeMetadata = externalSourceTypeJSON.metadata;
       } catch (e) {
         throw new Error('External Source Type Definition File is not a valid JSON');
       }
@@ -192,43 +203,35 @@
   }
 
   function onCreateExternalSourceType() {
-    if (newExternalSourceTypeName === null) {
-      creationError = 'Please enter a new type name.';
-    } else if (newExternalSourceTypeMetadata === undefined) {
-      creationError = `Unable to create metadata of '${newExternalSourceTypeName}.'`;
+    if (isCreateDisabled) {
+      creationError = 'Please ensure every type has a name, and all metadata has a name and type.';
     } else {
-      // TODO: This probably doesn't need to exist - swap input keys?
-      const newExternalSourceTypeMetadataParameterMap: ParametersMap = {};
-      let requiredMetadata: ParameterName[] = [];
-      if (newExternalSourceTypeMetadata.length > 0) {
-        const isMetadataUnfinished: boolean = newExternalSourceTypeMetadata
-          .map(metadata => metadata.name === null || metadata.schema === null)
-          .includes(true);
-        if (isMetadataUnfinished) {
-          creationError = 'Not all metadata entries appear to be complete - please finish or delete the entries!';
-          return;
-        }
-        newExternalSourceTypeMetadata.forEach(newMetadata => {
-          if (newMetadata.name !== null && newMetadata.schema !== null) {
-            newExternalSourceTypeMetadataParameterMap[newMetadata.name] = {
-              order: 1,
-              schema: newMetadata.schema,
-            };
-            if (newMetadata.isRequired) {
-              requiredMetadata.push(newMetadata.name);
+      for (let sourceType of newExternalSourceTypes) {
+        // TODO: This probably doesn't need to exist - swap input keys?
+        const newExternalSourceTypeMetadataParameterMap: ParametersMap = {};
+        let requiredMetadata: ParameterName[] = [];
+        if (sourceType.metadata.length > 0) {
+          sourceType.metadata.forEach(newMetadata => {
+            if (newMetadata.name !== null && newMetadata.schema !== null) {
+              newExternalSourceTypeMetadataParameterMap[newMetadata.name] = {
+                order: 1,
+                schema: newMetadata.schema,
+              };
+              if (newMetadata.isRequired) {
+                requiredMetadata.push(newMetadata.name);
+              }
             }
-          }
-        });
+          });
+        }
+        // Generate Hasura mutation input
+        const externalSourceTypeInsertInput: ExternalSourceTypeInsertInput = {
+          metadata: newExternalSourceTypeMetadataParameterMap,
+          name: sourceType.name,
+          required_metadata: requiredMetadata,
+        };
+        effects.createExternalSourceType(externalSourceTypeInsertInput, user);
+        newExternalSourceTypes = [{ metadata: [], name: '', valid: false }];
       }
-      // Generate Hasura mutation input
-      const externalSourceTypeInsertInput: ExternalSourceTypeInsertInput = {
-        metadata: newExternalSourceTypeMetadataParameterMap,
-        name: newExternalSourceTypeName,
-        required_metadata: requiredMetadata,
-      };
-      effects.createExternalSourceType(externalSourceTypeInsertInput, user);
-      newExternalSourceTypeName = null;
-      newExternalSourceTypeMetadata = [];
     }
   }
 
@@ -301,9 +304,11 @@
       const file = files[0];
       if (/\.json$/.test(file.name)) {
         if (selectedTab === derivationGroupTabId) {
-          parseDerivationGroupInputFileStream(file.stream());
+          // parseDerivationGroupInputFileStream(file.stream());
+          parseDerivationGroupInputFileStream();
         } else if (selectedTab === externalSourceTypeTabId) {
-          parseExternalSourceTypeInputFileStream(file.stream());
+          // parseExternalSourceTypeInputFileStream(file.stream());
+          parseExternalSourceTypeInputFileStream();
         } else if (selectedTab === externalEventTypeTabId) {
           praseExternalEventTypeInputFileStream(file.stream());
         }
@@ -319,6 +324,8 @@
 
   function handleCreateNewDerivationGroupEntry() {
     newDerivationGroups = [...newDerivationGroups, { name: '', sourceType: '', valid: false }];
+
+    handleChange();
   }
 
   // function handleExternalSourceTypeMetadataInput(
@@ -376,11 +383,47 @@
     };
   });
 
+  $: newExternalSourceTypes = newExternalSourceTypes.map(entry => {
+    console.log('reevaluating!');
+    return {
+      metadata: entry.metadata,
+      name: entry.name,
+      valid: validateEST(entry),
+    };
+  });
+
   function validateDerivationGroupName(value: string): boolean {
     if (value.length <= 0 || $derivationGroups.map(dg => dg.name).includes(value)) {
       return false;
     }
     return true;
+  }
+
+  function validateEST(sourceType: {
+    metadata: {
+      isRequired: boolean | null;
+      name: ParameterName | null;
+      schema: ValueSchema | null;
+    }[];
+    name: string;
+    valid: boolean;
+  }) {
+    if (sourceType.name.length <= 0 || $externalSourceTypes.map(est => est.name).includes(sourceType.name)) {
+      return false;
+    }
+    if (sourceType.metadata.length === 0) {
+      return true;
+    } else {
+      return sourceType.metadata
+        .map(metadataItem => {
+          console.log(
+            metadataItem.name,
+            metadataItem.name !== null && metadataItem.name.length >= 1 && metadataItem.schema !== null,
+          );
+          return metadataItem.name !== null && metadataItem.name.length >= 1 && metadataItem.schema !== null;
+        })
+        .reduce((prev, curr) => prev && curr, true);
+    }
   }
 
   function handleDGChange(value: string, i: number) {
@@ -400,6 +443,57 @@
     // clear error stores
     handleChange();
   }
+
+  function handleESTChange(value: string, i: number) {
+    // update element at i in list
+    newExternalSourceTypes[i].name = value;
+    newExternalSourceTypes = [...newExternalSourceTypes];
+
+    // clear error stores
+    handleChange();
+  }
+
+  function handleAddESTMetadata(sourceType: {
+    metadata: {
+      isRequired: boolean | null;
+      name: ParameterName | null;
+      schema: ValueSchema | null;
+    }[];
+    name: string;
+    valid: boolean;
+  }) {
+    sourceType.metadata = [...sourceType.metadata, { isRequired: null, name: null, schema: null }];
+    newExternalSourceTypes = [...newExternalSourceTypes];
+
+    handleChange();
+  }
+
+  function handleUpdateESTMetadata(
+    e: CustomEvent,
+    sourceType: {
+      metadata: {
+        isRequired: boolean | null;
+        name: ParameterName | null;
+        schema: ValueSchema | null;
+      }[];
+      name: string;
+      valid: boolean;
+    },
+  ) {
+    let index = e.detail.id;
+    if (e.detail) {
+      if (e.detail.name) {
+        sourceType.metadata[index].name = e.detail.name;
+      } else if (e.detail.type) {
+        sourceType.metadata[index].schema = { type: e.detail.type } as ValueSchema;
+      } else if (e.detail.isRequired) {
+        sourceType.metadata[index].isRequired = e.detail.isRequired;
+      }
+    }
+    newExternalSourceTypes = [...newExternalSourceTypes];
+
+    handleChange();
+  }
 </script>
 
 <Modal height={400} width={600}>
@@ -410,8 +504,8 @@
         <Tabs class="creation-tabs" tabListClassName="creation-tabs-list" on:select-tab={handleTabChange}>
           <svelte:fragment slot="tab-list">
             <Tab tabId={derivationGroupTabId} class="creation-tab">Derivation Group</Tab>
-            <!-- <Tab tabId={externalSourceTypeTabId} class="creation-tab">External Source Type</Tab>
-            <Tab tabId={externalEventTypeTabId} class="creation-tab">External Event Type</Tab> -->
+            <Tab tabId={externalSourceTypeTabId} class="creation-tab">External Source Type</Tab>
+            <!-- <Tab tabId={externalEventTypeTabId} class="creation-tab">External Event Type</Tab> -->
           </svelte:fragment>
           <div>
             <AlertError class="m-2" error={creationError} />
@@ -472,6 +566,8 @@
                   class="st-button icon delete"
                   on:click|stopPropagation={() => {
                     newDerivationGroups = newDerivationGroups.filter((_, index) => index !== i);
+
+                    handleChange();
                   }}
                 >
                   <MinusIcon />
@@ -507,11 +603,11 @@
               </button>
             </div>
           </TabPanel>
-          <!-- <TabPanel>
+          <TabPanel>
             {#if isUsingImportMode}
               <div class="directions">
                 <p class="st-typography-body">Select an External Source Type Definition File (JSON) to import.</p>
-                <-- TODO: This should link to documentation! --
+                <!-- TODO: This should link to documentation! -->
                 <p class="st-typography-label">
                   The newly created external source type will be empty, though you can upload sources using it.
                 </p>
@@ -545,36 +641,89 @@
                 </p>
               </div>
             {/if}
-            <div class="content parameters">
-              <input
-                bind:value={newExternalSourceTypeName}
-                on:change={handleChange}
-                disabled={isUsingImportMode}
-                autocomplete="off"
-                class="st-input w-100"
-                placeholder="New External Source Type Name"
-              />
-              {#each newExternalSourceTypeMetadata as metadata, metadataIndex}
-                <ParameterEntry
-                  disabled={isUsingImportMode}
-                  id={metadataIndex}
-                  value={metadata}
-                  newParameterNamePlaceholder="New External Source Type Metadata Name"
-                  on:input={handleExternalSourceTypeMetadataInput}
-                  on:delete={handleExternalSourceTypeMetadataDelete}
-                />
-              {/each}
+            {#each newExternalSourceTypes as sourceType, i}
+              {sourceType.valid}
+              <div
+                class="card content"
+                class:card-background-added={sourceType.valid}
+                class:card-background-deleted={!sourceType.valid}
+                style="padding-left:10px; padding-right: 10px; margin-top:10px; flex-direction: column"
+              >
+                <div style="display: flex; flex-direction: row">
+                  <button
+                    disabled={newExternalSourceTypes.length <= 1}
+                    style:display="grid"
+                    class="st-button icon delete"
+                    on:click|stopPropagation={() => {
+                      newExternalSourceTypes = newExternalSourceTypes.filter((_, index) => index !== i);
+
+                      handleChange();
+                    }}
+                  >
+                    <MinusIcon />
+                  </button>
+                  <input
+                    value={sourceType.name}
+                    on:blur={e => {
+                      handleESTChange(e.target.value, i);
+                    }}
+                    disabled={isUsingImportMode}
+                    autocomplete="off"
+                    class="st-input w-100"
+                    placeholder="New External Source Type Name"
+                  />
+                  <button
+                    disabled={isUsingImportMode}
+                    style:display="grid"
+                    class="st-button icon add-metadata-button"
+                    on:click={() => handleAddESTMetadata(sourceType)}
+                  >
+                    <PlusIcon />
+                  </button>
+                </div>
+                <div class="content" style="flex-direction: column; margin-left: 15px">
+                  {#each sourceType.metadata as metadata, metadataIndex}
+                    <ParameterEntry
+                      disabled={isUsingImportMode}
+                      id={metadataIndex}
+                      value={metadata}
+                      newParameterNamePlaceholder="New External Source Type Metadata Name"
+                      on:input={e => handleUpdateESTMetadata(e, sourceType)}
+                      on:delete={e => {
+                        let indexToDelete = e.detail;
+                        sourceType.metadata = sourceType.metadata.filter((item, index) => {
+                          console.log(item, index, indexToDelete);
+                          return index !== indexToDelete;
+                        });
+
+                        // force svelte update
+                        newExternalSourceTypes = [...newExternalSourceTypes];
+                        handleChange();
+                      }}
+                    />
+                  {/each}
+                </div>
+              </div>
+            {/each}
+            <div style="content parameters">
               <button
                 disabled={isUsingImportMode}
                 style:display="grid"
-                class="st-button icon add-metadata-button"
-                on:click={handleAddMetadataToExternalSourceType}
+                class="st-button icon add-external-source-type-button"
+                on:click={e => {
+                  console.log('add type', e);
+                  // update element at i in list
+                  newExternalSourceTypes = [...newExternalSourceTypes, { metadata: [], name: '', valid: false }];
+
+                  // clear error stores
+                  handleChange();
+                }}
               >
                 <PlusIcon />
               </button>
             </div>
           </TabPanel>
-          <TabPanel>
+          <!--<TabPanel>
             {#if isUsingImportMode}
               <div class="directions">
                 <p class="st-typography-body">Select an External Event Type Definition File (JSON) to import.</p>
