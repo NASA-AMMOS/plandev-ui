@@ -162,8 +162,8 @@
       const label = $plugins.time.primary.formatTick(date, xScaleViewDuration, tickCount) ?? InvalidDate;
       const additionalLabels = $plugins.time.additional.map(timeSystem => {
         return timeSystem.formatTick
-          ? (timeSystem.formatTick(date, xScaleViewDuration, tickCount) ?? InvalidDate)
-          : (timeSystem.format(date) ?? InvalidDate);
+          ? timeSystem.formatTick(date, xScaleViewDuration, tickCount) ?? InvalidDate
+          : timeSystem.format(date) ?? InvalidDate;
       });
       return { additionalLabels, date, label };
     });
