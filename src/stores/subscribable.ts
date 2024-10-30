@@ -44,9 +44,7 @@ export function gqlSubscribable<T>(
               await logout(EXPIRED_JWT);
             } else {
               subscribers.forEach(({ next }) => {
-                if (initialValue !== null) {
-                  next(initialValue);
-                }
+                next(initialValue as T);
               });
             }
           },
@@ -57,9 +55,7 @@ export function gqlSubscribable<T>(
               if (!isEqual(value, newValue)) {
                 value = transformer(newValue);
                 subscribers.forEach(({ next }) => {
-                  if (value !== null) {
-                    next(value);
-                  }
+                  next(value as T);
                 });
               }
             }
@@ -182,9 +178,7 @@ export function gqlSubscribable<T>(
     const unsubscribe = clientSubscribe();
     const subscriber: Subscription<T> = { next, unsubscribe };
     subscribers.add(subscriber);
-    if (value !== null) {
-      next(value);
-    }
+    next(value as T);
 
     return () => {
       subscriber.unsubscribe();
@@ -200,13 +194,9 @@ export function gqlSubscribable<T>(
   }
 
   function updateValue(fn: Updater<T>): void {
-    if (value !== null) {
-      value = fn(value);
-    }
+    value = fn(value as T);
     subscribers.forEach(({ next }) => {
-      if (value !== null) {
-        next(value);
-      }
+      next(value as T);
     });
   }
 
