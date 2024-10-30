@@ -65,8 +65,7 @@ export interface ISequenceAdaptation {
     commandDictionary: AmpcsCommandDictionary | null,
     parameterDictionaries: AmpcsParameterDictionary[],
   ) => (context: CompletionContext) => CompletionResult | null;
-  autoIndent: () => (context: IndentContext, pos: number) => number | null | undefined;
-  conditionalKeywords: { else: string; elseIf: string[]; endIf: string; if: string[] };
+  autoIndent?: () => (context: IndentContext, pos: number) => number | null | undefined;
   globals?: GlobalType[];
   inputFormat: {
     linter?: (
@@ -78,7 +77,6 @@ export interface ISequenceAdaptation {
     name: string;
     toInputFormat?(input: string): Promise<string>;
   };
-  loopKeywords: { break: string; continue: string; endWhileLoop: string; whileLoop: string[] };
   modifyOutput?: (
     output: string,
     parameterDictionaries: AmpcsParameterDictionary[],

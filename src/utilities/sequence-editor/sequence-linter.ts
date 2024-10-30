@@ -21,6 +21,7 @@ import { getGlobals } from '../../stores/sequence-adaptation';
 import { CustomErrorCodes } from '../../workers/customCodes';
 import { addDefaultArgs, isHexValue, parseNumericArg, quoteEscape } from '../codemirror/codemirror-utils';
 import { closeSuggestion, computeBlocks, openSuggestion } from '../codemirror/custom-folder';
+import { SeqNCommandInfoMapper } from '../codemirror/seq-n-tree-utils';
 import {
   getBalancedDuration,
   getDoyTime,
@@ -1025,7 +1026,13 @@ function validateAndLintArguments(
           {
             apply(view) {
               if (commandDictionary) {
-                addDefaultArgs(commandDictionary, view, command, dictArgs.slice(argNode.length));
+                addDefaultArgs(
+                  commandDictionary,
+                  view,
+                  command,
+                  dictArgs.slice(argNode.length),
+                  new SeqNCommandInfoMapper(),
+                );
               }
             },
             name: `Add default missing argument${pluralS}`,

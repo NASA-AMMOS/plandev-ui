@@ -33,7 +33,7 @@ function getParentNodeByName(view: EditorView, pos: number, name: string): Synta
  * Returns a text token range for a line in the view at a given position.
  * @see https://codemirror.net/examples/tooltip/#hover-tooltips
  */
-function getTokenPositionInLine(view: EditorView, pos: number) {
+export function getTokenPositionInLine(view: EditorView, pos: number) {
   const { from, to, text } = view.state.doc.lineAt(pos);
   const tokenRegex = /[a-zA-Z0-9_".-]/;
 

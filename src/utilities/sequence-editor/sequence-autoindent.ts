@@ -1,4 +1,6 @@
+import { indentSelection } from '@codemirror/commands';
 import { syntaxTree, type IndentContext } from '@codemirror/language';
+import { EditorView } from 'codemirror';
 import { computeBlocks } from '../codemirror/custom-folder';
 import { getNearestAncestorNodeOfType } from './tree-utils';
 
@@ -53,4 +55,23 @@ export function sequenceAutoIndent(): (context: IndentContext, pos: number) => n
     // otherwise, don't indent
     return 0;
   };
+}
+
+export function seqNFormat(editorSequenceView: EditorView) {
+  // apply indentation
+  editorSequenceView.update([
+    editorSequenceView.state.update({
+      selection: { anchor: 0, head: editorSequenceView.state.doc.length },
+    }),
+  ]);
+  indentSelection({
+    dispatch: transaction => editorSequenceView.update([transaction]),
+    state: editorSequenceView.state,
+  });
+  // clear selection
+  editorSequenceView.update([
+    editorSequenceView.state.update({
+      selection: { anchor: 0, head: 0 },
+    }),
+  ]);
 }

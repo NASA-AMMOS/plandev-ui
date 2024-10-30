@@ -3,6 +3,7 @@
 <script lang="ts">
   import type { SyntaxNode } from '@lezer/common';
   import type { CommandDictionary, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
+  import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
   import {
     getMissingArgDefs,
     isFswCommandArgumentBoolean,
@@ -24,6 +25,7 @@
   export let commandDictionary: CommandDictionary;
   export let setInEditor: (token: SyntaxNode, val: string) => void;
   export let addDefaultArgs: (commandNode: SyntaxNode, argDefs: FswCommandArgument[]) => void;
+  export let commandInfoMapper: CommandInfoMapper;
 
   $: enableRepeatAdd =
     argInfo.argDef &&
@@ -56,7 +58,7 @@
   {:else}
     <ArgTitle argDef={argInfo.argDef} />
     {#if argInfo.argDef.arg_type === 'enum' && argInfo.node}
-      {#if argInfo.node?.name === 'String'}
+      {#if commandInfoMapper.nodeTypeEnumCompatible(argInfo.node)}
         <EnumEditor
           {commandDictionary}
           argDef={argInfo.argDef}
@@ -79,7 +81,7 @@
           Convert to enum type
         </button>
       {/if}
-    {:else if isNumberArg(argInfo.argDef) && argInfo.node?.name === 'Number'}
+    {:else if isNumberArg(argInfo.argDef) && commandInfoMapper.nodeTypeNumberCompatible(argInfo.node ?? null)}
       <NumEditor
         argDef={argInfo.argDef}
         initVal={Number(argInfo.text) ?? argInfo.argDef.default_value ?? 0}
@@ -112,7 +114,7 @@
     {:else if isFswCommandArgumentRepeat(argInfo.argDef) && !!argInfo.children}
       {#each argInfo.children as childArgInfo}
         {#if childArgInfo.node}
-          <svelte:self argInfo={childArgInfo} {commandDictionary} {setInEditor} {addDefaultArgs} />
+          <svelte:self argInfo={childArgInfo} {commandInfoMapper} {commandDictionary} {setInEditor} {addDefaultArgs} />
         {/if}
       {/each}
       {#if argInfo.children.find(childArgInfo => !childArgInfo.node)}

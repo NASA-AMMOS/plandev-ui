@@ -5,13 +5,20 @@
   import { getAllEnumSymbols } from '../../utilities/sequence-editor/sequence-linter';
 
   export let arg: FswCommandArgument;
-  export let commandDictionary: CommandDictionary;
+  export let commandDictionary: CommandDictionary | null;
 
-  let enumSymbolsDisplayStr: string;
+  const MAX_ENUMS_TO_DISPLAY = 20;
+
+  let enumSymbolsDisplayStr: string = '';
 
   $: if (commandDictionary && arg?.arg_type === 'enum') {
     const enumValues = getAllEnumSymbols(commandDictionary.enumMap, arg.enum_name);
-    enumSymbolsDisplayStr = enumValues?.join('  |  ') ?? '';
+    const values = enumValues ?? [];
+    enumSymbolsDisplayStr = values.slice(0, MAX_ENUMS_TO_DISPLAY).join('  |  ');
+    const numHiddenValues = values.length - MAX_ENUMS_TO_DISPLAY;
+    if (numHiddenValues > 0) {
+      enumSymbolsDisplayStr += ` ... ${numHiddenValues} more`;
+    }
   }
 </script>
 

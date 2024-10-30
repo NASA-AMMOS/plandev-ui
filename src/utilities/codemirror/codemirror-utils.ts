@@ -13,8 +13,8 @@ import type {
   FswCommandArgumentVarString,
 } from '@nasa-jpl/aerie-ampcs';
 import type { EditorView } from 'codemirror';
-import { TOKEN_REPEAT_ARG } from '../../constants/seq-n-grammar-constants';
 import { fswCommandArgDefault } from '../sequence-editor/command-dictionary';
+import type { CommandInfoMapper } from './commandInfoMapper';
 
 export function isFswCommandArgumentEnum(arg: FswCommandArgument): arg is FswCommandArgumentEnum {
   return arg.arg_type === 'enum';
@@ -86,48 +86,39 @@ export function addDefaultArgs(
   view: EditorView,
   commandNode: SyntaxNode,
   argDefs: FswCommandArgument[],
+  commandInfoMapper: CommandInfoMapper,
 ) {
-  let insertPosition: undefined | number = undefined;
-  const str = ' ' + argDefs.map(argDef => fswCommandArgDefault(argDef, commandDictionary.enumMap)).join(' ');
-  const argsNode = commandNode.getChild('Args');
-  const stemNode = commandNode.getChild('Stem');
-  if (stemNode) {
-    insertPosition = argsNode?.to ?? stemNode.to;
-    if (insertPosition !== undefined) {
-      const transaction = view.state.update({
-        changes: { from: insertPosition, insert: str },
-      });
-      view.dispatch(transaction);
-    }
-  } else if (commandNode.name === TOKEN_REPEAT_ARG) {
-    insertPosition = commandNode.to - 1;
-    if (insertPosition !== undefined) {
-      const transaction = view.state.update({
-        changes: { from: insertPosition, insert: str },
-      });
-      view.dispatch(transaction);
-    }
+  const insertPosition = commandInfoMapper.getArgumentAppendPosition(commandNode);
+  if (insertPosition !== undefined) {
+    const str = commandInfoMapper.formatArgumentArray(
+      argDefs.map(argDef => fswCommandArgDefault(argDef, commandDictionary.enumMap)),
+      commandNode,
+    );
+    const transaction = view.state.update({
+      changes: { from: insertPosition, insert: str },
+    });
+    view.dispatch(transaction);
   }
 }
 
-export function getMissingArgDefs(argInfoArray: ArgTextDef[]) {
+export function getMissingArgDefs(argInfoArray: ArgTextDef[]): FswCommandArgument[] {
   return argInfoArray
     .filter((argInfo): argInfo is { argDef: FswCommandArgument } => !argInfo.node && !!argInfo.argDef)
     .map(argInfo => argInfo.argDef);
 }
 
-export function isQuoted(s: string) {
+export function isQuoted(s: string): boolean {
   return s.startsWith('"') && s.endsWith('"');
 }
 
-export function unquoteUnescape(s: string) {
+export function unquoteUnescape(s: string): string {
   if (isQuoted(s) && s.length > 1) {
     return s.slice(1, -1).replaceAll('\\"', '"');
   }
   return s;
 }
 
-export function quoteEscape(s: string) {
+export function quoteEscape(s: string): string {
   return `"${s.replaceAll('"', '\\"')}"`;
 }
 

@@ -1,0 +1,74 @@
+!
+! This is an example of a CDL dictionary.
+! Flight dictionaries are not suitable for release
+PROJECT : "Aerie"
+VERSION : "1.0.0"
+FIELD DELIMITER :,
+COMMAND DELIMITER :;
+BRACKETS :()
+MAXIMUM COMMANDS PER MESSAGE: 40
+MAXIMUM BITS PER MESSAGE: 2304
+
+SPACECRAFT LITERALS
+   CONVERSION : HEX
+   LENGTH : 10
+
+   1 = '1'
+END SPACECRAFT LITERALS
+
+LOOKUP ARGUMENT : lookup_arg_1
+   TITLE : "has multiple choices"
+   CONVERSION : HEX
+   LENGTH : 32
+   'CHOOSE_A' = '0'
+   'CHOOSE_B' = '1'
+   'CHOOSE_C' = '2'
+END LOOKUP ARGUMENT
+
+NUMERIC ARGUMENT : numeric_arg_1
+   TITLE : "a numeric arg whose default is in hexadecimal"
+   CONVERSION : HEX
+   LENGTH : 8
+   DEFAULT : 'F'
+   '00' to 'FF'
+END NUMERIC ARGUMENT
+
+NUMERIC ARGUMENT : numeric_arg_2
+   TITLE : "a numeric arg with a default"
+   CONVERSION : DECIMAL
+   LENGTH : 8
+   DEFAULT : '50'
+   '0' to '100'
+END NUMERIC ARGUMENT
+
+! in limited examples global arguments preceded stem definitions
+
+
+STEM : CMD_EXECUTE ()
+
+READ ARGUMENT lookup_arg_1
+READ ARGUMENT numeric_arg_1
+
+END STEM
+
+STEM : CMD_DEBUG ()
+
+LOOKUP ARGUMENT : lookup_local_arg_1
+   TITLE : "Only used by stem CMD_DEBUG"
+   CONVERSION : HEX
+   LENGTH : 3
+   'MODE_A' = '0'
+   'MODE_B' = '1'
+   'MODE_C' = '2'
+END LOOKUP ARGUMENT
+
+READ ARGUMENT numeric_arg_2
+READ ARGUMENT lookup_local_arg_1
+
+!@ ATTACHMENT : desc
+!@    "This command has a description"
+!@ END ATTACHMENT
+
+
+END STEM
+

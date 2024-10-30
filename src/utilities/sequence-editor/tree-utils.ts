@@ -1,4 +1,4 @@
-import type { SyntaxNode } from '@lezer/common';
+import type { SyntaxNode, TreeCursor } from '@lezer/common';
 
 export function numberOfChildren(node: SyntaxNode): number {
   let count = 0;
@@ -53,4 +53,39 @@ export function getNearestAncestorNodeOfType(node: SyntaxNode | null, ancestorTy
     ancestorNode = ancestorNode.parent;
   }
   return ancestorNode;
+}
+
+/**
+ *
+ * @param node
+ * @param typesOfAncestorsAndSelf - array of node types to check containment [ great-grandparent, grandparent, undefined, selfType ]
+ * @returns if node type and container matches criteria
+ */
+export function checkContainment(node: SyntaxNode, typesOfAncestorsAndSelf: (string | undefined)[]): boolean {
+  if (typesOfAncestorsAndSelf.length === 0) {
+    return true;
+  }
+
+  const comp = typesOfAncestorsAndSelf[typesOfAncestorsAndSelf.length - 1];
+  if (comp === undefined || node.name === comp) {
+    return (
+      !!node.parent &&
+      checkContainment(node.parent, typesOfAncestorsAndSelf.slice(0, typesOfAncestorsAndSelf.length - 1))
+    );
+  }
+
+  return false;
+}
+
+export function* filterNodes(cursor: TreeCursor, filter?: (name: SyntaxNode) => boolean): Generator<SyntaxNode> {
+  do {
+    const { node } = cursor;
+    if (!filter || filter(node)) {
+      yield node;
+    }
+  } while (cursor.next());
+}
+
+export function nodeContents(input: string, node: SyntaxNode): string {
+  return input.substring(node.from, node.to);
 }
