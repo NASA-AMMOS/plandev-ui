@@ -5,7 +5,6 @@
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import Ajv from 'ajv';
   import { createEventDispatcher } from 'svelte';
-  import ImportIcon from '../../assets/import.svg?component';
   import {
     derivationGroupSchema,
     externalEventTypeSchema,
@@ -97,13 +96,15 @@
   let selectedTab: TabId = derivationGroupTabId; // first tab that appears
   let isCreateDisabled: boolean = true;
 
-  let isUsingImportMode: boolean = false;
   let derivationGroupUploadFiles: FileList | undefined;
-  let derivationGroupUploadFileInput: HTMLInputElement;
+  let derivationGroupUploadFileMain: File | undefined;
+  let derivationGroupJSON: { entries: DerivationGroupJSON[] } | null = null;
   let externalSourceTypeUploadFiles: FileList | undefined;
-  let externalSourceTypeUploadFileInput: HTMLInputElement;
+  let externalSourceTypeUploadFileMain: File | undefined;
+  let externalSourceTypeJSON: { entries: ExternalSourceTypeJSON[] } | null = null;
   let externalEventTypeUploadFiles: FileList | undefined;
-  let externalEventTypeUploadFileInput: HTMLInputElement;
+  let externalEventTypeUploadFileMain: File | undefined;
+  let externalEventTypeJSON: { entries: ExternalEventTypeJSON[] } | null = null;
   let uploadFilesError: string | null = null;
   let validationError: string | null = null;
 
@@ -128,6 +129,7 @@
     }
   }
 
+  // TODO: unify this somehow?
   $: newDerivationGroups = newDerivationGroups.map(entry => {
     return {
       name: entry.name,
@@ -155,6 +157,174 @@
     };
   });
 
+  // File parse logic
+  // TODO: unify this somehow?
+  $: if (derivationGroupUploadFiles !== null && derivationGroupUploadFiles?.length) {
+    // Safeguard against infinitely executing parse logic
+    if (derivationGroupUploadFileMain !== derivationGroupUploadFiles[0]) {
+      uploadFilesError = null;
+      validationError = null;
+
+      derivationGroupUploadFileMain = derivationGroupUploadFiles[0];
+      // JUST parse it
+      parseDG(derivationGroupUploadFileMain.stream());
+    }
+  }
+
+  async function parseDG(stream: ReadableStream) {
+    console.log('parsing');
+    try {
+      try {
+        // remove this stuff
+        derivationGroupJSON = await parseJSONStream<{ entries: DerivationGroupJSON[] }>(stream);
+        const validate = ajv.compile(derivationGroupSchema);
+        const valid = validate(derivationGroupJSON); // TODO: validate the stream, and then convert to JSON after?
+        console.log(derivationGroupJSON, stream);
+        if (!valid && validate.errors) {
+          validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
+          derivationGroupJSON = null;
+        }
+        console.log('parsed!');
+      } catch (e) {
+        throw new Error('Derivation Group Definition File is not a valid JSON');
+      }
+    } catch (e) {
+      uploadFilesError = (e as Error).message;
+    }
+  }
+
+  function uploadDGs() {
+    console.log('HERE!', derivationGroupJSON, validationError);
+    if (derivationGroupJSON && validationError === null) {
+      console.log('HERE!2');
+      newDerivationGroups = [
+        ...newDerivationGroups.filter(derivationGroup => derivationGroup.name.length > 0),
+        ...derivationGroupJSON.entries.map(entry => {
+          return {
+            name: entry.name,
+            sourceType: entry.source_type_name,
+            valid:
+              validateDerivationGroupName(entry.name) &&
+              entry.source_type_name.length > 0 &&
+              $externalSourceTypes.map(est => est.name).includes(entry.source_type_name),
+          };
+        }),
+      ];
+
+      // reset files
+      derivationGroupUploadFiles = undefined;
+      derivationGroupUploadFileMain = undefined;
+      derivationGroupJSON = null;
+    }
+  }
+
+  $: if (externalSourceTypeUploadFiles !== null && externalSourceTypeUploadFiles?.length) {
+    // Safeguard against infinitely executing parse logic
+    if (externalSourceTypeUploadFileMain !== externalSourceTypeUploadFiles[0]) {
+      uploadFilesError = null;
+      validationError = null;
+
+      externalSourceTypeUploadFileMain = externalSourceTypeUploadFiles[0];
+      // JUST parse it
+      parseEST(externalSourceTypeUploadFileMain.stream());
+    }
+  }
+
+  async function parseEST(stream: ReadableStream) {
+    console.log('parsing');
+    try {
+      try {
+        // remove this stuff
+        externalSourceTypeJSON = await parseJSONStream<{ entries: ExternalSourceTypeJSON[] }>(stream);
+        const validate = ajv.compile(externalSourceTypeSchema);
+        const valid = validate(externalSourceTypeJSON); // TODO: validate the stream, and then convert to JSON after?
+        console.log(externalSourceTypeJSON, stream);
+        if (!valid && validate.errors) {
+          validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
+          externalSourceTypeJSON = null;
+        }
+        console.log('parsed!');
+      } catch (e) {
+        throw new Error('External Source Type Definition File is not a valid JSON');
+      }
+    } catch (e) {
+      uploadFilesError = (e as Error).message;
+    }
+  }
+
+  function uploadESTs() {
+    if (externalSourceTypeJSON && validationError === null) {
+      newExternalSourceTypes = [
+        ...newExternalSourceTypes.filter(sourceType => sourceType.name.length > 0),
+        ...externalSourceTypeJSON.entries.map(entry => {
+          return {
+            metadata: entry.metadata,
+            name: entry.name,
+            valid: validateEST({ metadata: entry.metadata, name: entry.name, valid: false }),
+          };
+        }),
+      ];
+
+      // reset files
+      externalSourceTypeUploadFiles = undefined;
+      externalSourceTypeUploadFileMain = undefined;
+      externalSourceTypeJSON = null;
+    }
+  }
+
+  $: if (externalEventTypeUploadFiles !== null && externalEventTypeUploadFiles?.length) {
+    // Safeguard against infinitely executing parse logic
+    if (externalEventTypeUploadFileMain !== externalEventTypeUploadFiles[0]) {
+      uploadFilesError = null;
+      validationError = null;
+
+      externalEventTypeUploadFileMain = externalEventTypeUploadFiles[0];
+      // JUST parse it
+      parseEET(externalEventTypeUploadFileMain.stream());
+    }
+  }
+
+  async function parseEET(stream: ReadableStream) {
+    try {
+      try {
+        // remove this stuff
+        externalEventTypeJSON = await parseJSONStream<{ entries: ExternalEventTypeJSON[] }>(stream);
+        const validate = ajv.compile(externalEventTypeSchema);
+        const valid = validate(externalEventTypeJSON); // TODO: validate the stream, and then convert to JSON after?
+        console.log(externalEventTypeJSON, stream);
+        if (!valid && validate.errors) {
+          validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
+          externalEventTypeJSON = null;
+        }
+        console.log('parsed!');
+      } catch (e) {
+        throw new Error('External Source Type Definition File is not a valid JSON');
+      }
+    } catch (e) {
+      uploadFilesError = (e as Error).message;
+    }
+  }
+
+  function uploadEETs() {
+    if (externalEventTypeJSON && validationError === null) {
+      newExternalEventTypes = [
+        ...newExternalEventTypes.filter(eventType => eventType.name.length > 0),
+        ...externalEventTypeJSON.entries.map(entry => {
+          return {
+            metadata: entry.metadata,
+            name: entry.name,
+            valid: validateEET({ metadata: entry.metadata, name: entry.name, valid: false }),
+          };
+        }),
+      ];
+
+      // reset files
+      externalEventTypeUploadFiles = undefined;
+      externalEventTypeUploadFileMain = undefined;
+      externalEventTypeJSON = null;
+    }
+  }
+
   function onCreateDerivationGroup() {
     if (isCreateDisabled) {
       creationError = 'Please fill out all derivation group names and source types.';
@@ -166,103 +336,103 @@
     }
   }
 
-  async function parseDerivationGroupInputFileStream(stream: ReadableStream) {
-    uploadFilesError = null;
-    validationError = null;
-    try {
-      let derivationGroupJSON: { entries: DerivationGroupJSON[] };
-      try {
-        // remove this stuff
-        derivationGroupJSON = await parseJSONStream<{ entries: DerivationGroupJSON[] }>(stream);
-        const validate = ajv.compile(derivationGroupSchema);
-        const valid = validate(derivationGroupJSON);
-        console.log(derivationGroupJSON, stream);
-        if (!valid && validate.errors) {
-          validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
-        } else {
-          newDerivationGroups = [
-            ...newDerivationGroups.filter(derivationGroup => derivationGroup.name.length > 0),
-            ...derivationGroupJSON.entries.map(entry => {
-              return {
-                name: entry.name,
-                sourceType: entry.source_type_name,
-                valid:
-                  validateDerivationGroupName(entry.name) &&
-                  entry.source_type_name.length > 0 &&
-                  $externalSourceTypes.map(est => est.name).includes(entry.source_type_name),
-              };
-            }),
-          ];
-        }
-      } catch (e) {
-        throw new Error('Derivation Group Definition File is not a valid JSON');
-      }
-    } catch (e) {
-      uploadFilesError = (e as Error).message;
-    }
-  }
+  // async function parseDerivationGroupInputFileStream(stream: ReadableStream) {
+  //   uploadFilesError = null;
+  //   validationError = null;
+  //   try {
+  //     let derivationGroupJSON: { entries: DerivationGroupJSON[] };
+  //     try {
+  //       // remove this stuff
+  //       derivationGroupJSON = await parseJSONStream<{ entries: DerivationGroupJSON[] }>(stream);
+  //       const validate = ajv.compile(derivationGroupSchema);
+  //       const valid = validate(derivationGroupJSON); // TODO: validate the stream, and then convert to JSON after?
+  //       console.log(derivationGroupJSON, stream);
+  //       if (!valid && validate.errors) {
+  //         validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
+  //       } else {
+  //         newDerivationGroups = [
+  //           ...newDerivationGroups.filter(derivationGroup => derivationGroup.name.length > 0),
+  //           ...derivationGroupJSON.entries.map(entry => {
+  //             return {
+  //               name: entry.name,
+  //               sourceType: entry.source_type_name,
+  //               valid:
+  //                 validateDerivationGroupName(entry.name) &&
+  //                 entry.source_type_name.length > 0 &&
+  //                 $externalSourceTypes.map(est => est.name).includes(entry.source_type_name),
+  //             };
+  //           }),
+  //         ];
+  //       }
+  //     } catch (e) {
+  //       throw new Error('Derivation Group Definition File is not a valid JSON');
+  //     }
+  //   } catch (e) {
+  //     uploadFilesError = (e as Error).message;
+  //   }
+  // }
 
-  async function parseExternalSourceTypeInputFileStream(stream: ReadableStream) {
-    uploadFilesError = null;
-    validationError = null;
-    try {
-      let externalSourceTypeJSON: { entries: ExternalSourceTypeJSON[] };
-      try {
-        externalSourceTypeJSON = await parseJSONStream<{ entries: ExternalSourceTypeJSON[] }>(stream);
-        const validate = ajv.compile(externalSourceTypeSchema);
-        const valid = validate(externalSourceTypeJSON);
-        if (!valid && validate.errors) {
-          validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
-        } else {
-          newExternalSourceTypes = [
-            ...newExternalSourceTypes.filter(sourceType => sourceType.name.length > 0),
-            ...externalSourceTypeJSON.entries.map(entry => {
-              return {
-                metadata: entry.metadata,
-                name: entry.name,
-                valid: validateEST({ metadata: entry.metadata, name: entry.name, valid: false }),
-              };
-            }),
-          ];
-        }
-      } catch (e) {
-        throw new Error('External Source Type Definition File is not a valid JSON');
-      }
-    } catch (e) {
-      uploadFilesError = (e as Error).message;
-    }
-  }
+  // async function parseExternalSourceTypeInputFileStream(stream: ReadableStream) {
+  //   uploadFilesError = null;
+  //   validationError = null;
+  //   try {
+  //     let externalSourceTypeJSON: { entries: ExternalSourceTypeJSON[] };
+  //     try {
+  //       externalSourceTypeJSON = await parseJSONStream<{ entries: ExternalSourceTypeJSON[] }>(stream);
+  //       const validate = ajv.compile(externalSourceTypeSchema);
+  //       const valid = validate(externalSourceTypeJSON);
+  //       if (!valid && validate.errors) {
+  //         validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
+  //       } else {
+  //         newExternalSourceTypes = [
+  //           ...newExternalSourceTypes.filter(sourceType => sourceType.name.length > 0),
+  //           ...externalSourceTypeJSON.entries.map(entry => {
+  //             return {
+  //               metadata: entry.metadata,
+  //               name: entry.name,
+  //               valid: validateEST({ metadata: entry.metadata, name: entry.name, valid: false }),
+  //             };
+  //           }),
+  //         ];
+  //       }
+  //     } catch (e) {
+  //       throw new Error('External Source Type Definition File is not a valid JSON');
+  //     }
+  //   } catch (e) {
+  //     uploadFilesError = (e as Error).message;
+  //   }
+  // }
 
-  async function parseExternalEventTypeInputFileStream(stream: ReadableStream) {
-    uploadFilesError = null;
-    validationError = null;
-    try {
-      let externalEventTypeJSON: { entries: ExternalEventTypeJSON[] };
-      try {
-        externalEventTypeJSON = await parseJSONStream<{ entries: ExternalEventTypeJSON[] }>(stream);
-        const validate = ajv.compile(externalEventTypeSchema);
-        const valid = validate(externalEventTypeJSON);
-        if (!valid && validate.errors) {
-          validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
-        } else {
-          newExternalEventTypes = [
-            ...newExternalEventTypes.filter(eventType => eventType.name.length > 0),
-            ...externalEventTypeJSON.entries.map(entry => {
-              return {
-                metadata: entry.metadata,
-                name: entry.name,
-                valid: validateEET({ metadata: entry.metadata, name: entry.name, valid: false }),
-              };
-            }),
-          ];
-        }
-      } catch (e) {
-        throw new Error('External Event Type Definition File is not a valid JSON');
-      }
-    } catch (e) {
-      uploadFilesError = (e as Error).message;
-    }
-  }
+  // async function parseExternalEventTypeInputFileStream(stream: ReadableStream) {
+  //   uploadFilesError = null;
+  //   validationError = null;
+  //   try {
+  //     let externalEventTypeJSON: { entries: ExternalEventTypeJSON[] };
+  //     try {
+  //       externalEventTypeJSON = await parseJSONStream<{ entries: ExternalEventTypeJSON[] }>(stream);
+  //       const validate = ajv.compile(externalEventTypeSchema);
+  //       const valid = validate(externalEventTypeJSON);
+  //       if (!valid && validate.errors) {
+  //         validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
+  //       } else {
+  //         newExternalEventTypes = [
+  //           ...newExternalEventTypes.filter(eventType => eventType.name.length > 0),
+  //           ...externalEventTypeJSON.entries.map(entry => {
+  //             return {
+  //               metadata: entry.metadata,
+  //               name: entry.name,
+  //               valid: validateEET({ metadata: entry.metadata, name: entry.name, valid: false }),
+  //             };
+  //           }),
+  //         ];
+  //       }
+  //     } catch (e) {
+  //       throw new Error('External Event Type Definition File is not a valid JSON');
+  //     }
+  //   } catch (e) {
+  //     uploadFilesError = (e as Error).message;
+  //   }
+  // }
 
   function onCreateExternalSourceType() {
     if (isCreateDisabled) {
@@ -352,23 +522,23 @@
     handleChange();
   }
 
-  function onImportFileChanged(event: Event) {
-    const files = (event.target as HTMLInputElement).files;
-    if (files !== null && files.length) {
-      const file = files[0];
-      if (/\.json$/.test(file.name)) {
-        if (selectedTab === derivationGroupTabId) {
-          parseDerivationGroupInputFileStream(file.stream());
-        } else if (selectedTab === externalSourceTypeTabId) {
-          parseExternalSourceTypeInputFileStream(file.stream());
-        } else if (selectedTab === externalEventTypeTabId) {
-          parseExternalEventTypeInputFileStream(file.stream());
-        }
-      } else {
-        uploadFilesError = 'Plan file is not a .json file';
-      }
-    }
-  }
+  // function onImportFileChanged(event: Event) {
+  //   const files = (event.target as HTMLInputElement).files;
+  //   if (files !== null && files.length) {
+  //     const file = files[0];
+  //     if (/\.json$/.test(file.name)) {
+  //       if (selectedTab === derivationGroupTabId) {
+  //         parseDerivationGroupInputFileStream(file.stream());
+  //       } else if (selectedTab === externalSourceTypeTabId) {
+  //         parseExternalSourceTypeInputFileStream(file.stream());
+  //       } else if (selectedTab === externalEventTypeTabId) {
+  //         parseExternalEventTypeInputFileStream(file.stream());
+  //       }
+  //     } else {
+  //       uploadFilesError = 'Plan file is not a .json file';
+  //     }
+  //   }
+  // }
 
   function handleCreateNewDerivationGroupEntry() {
     newDerivationGroups = [...newDerivationGroups, { name: '', sourceType: '', valid: false }];
@@ -562,7 +732,7 @@
   }
 </script>
 
-<Modal height={400} width={600}>
+<Modal height={500} width={600}>
   <ModalHeader on:close>Create Derivation Groups or Types</ModalHeader>
   <ModalContent style="overflow: auto;">
     <div class="creation-modal-container">
@@ -580,54 +750,68 @@
             <AlertError class="m-2" error={$createDerivationGroupError} />
           </div>
           <TabPanel>
-            {#if isUsingImportMode}
-              <div class="directions">
-                <p class="st-typography-body">Select a Derivation Group Definition File (JSON) to import.</p>
-                <!-- TODO: This should link to documentation! -->
-                <p class="st-typography-label">
-                  The newly created group will be empty, though you can upload sources into it.
-                </p>
-                <a
-                  href="https://github.com/NASA-AMMOS/aerie-docs/blob/7fde649340d51852329f5b426e82b827b7672bbf/docs/planning/external-events-metadata.md"
-                  style:font-style="italic"
-                  class="st-typography-label"
-                  target="_blank"
-                  rel="noopener noreferrer"
+            <div class="directions">
+              <p class="st-typography-body">Provide a name and an external source type for the new derivation group.</p>
+              <p class="st-typography-body">
+                Alternatively, select a Derivation Group Definition File (JSON) to import.
+              </p>
+              <a
+                href="https://github.com/NASA-AMMOS/aerie-docs/blob/7fde649340d51852329f5b426e82b827b7672bbf/docs/planning/external-events-metadata.md"
+                style:font-style="italic"
+                class="st-typography-label"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                What is a Derivation Group Definition File?
+              </a>
+              <p class="st-typography-label">
+                The newly created group will be empty, though you can upload sources into it.
+              </p>
+              <div class="content">
+                <form
+                  on:submit|preventDefault={uploadDGs}
+                  on:reset={() => {
+                    uploadFilesError = null;
+                    validationError = null;
+                    derivationGroupJSON = null;
+                  }}
+                  use:permissionHandler={{
+                    hasPermission: hasCreateDerivationGroupPermission,
+                    permissionError: createDerivationGroupPermissionError,
+                  }}
                 >
-                  What is a Derivation Group Definition File?
-                </a>
-                <div class="content">
-                  <input
-                    class="w-100"
-                    name="file"
-                    type="file"
-                    accept="application/json"
-                    bind:files={derivationGroupUploadFiles}
-                    bind:this={derivationGroupUploadFileInput}
-                    use:permissionHandler={{
-                      hasPermission: hasCreateDerivationGroupPermission,
-                      permissionError: createDerivationGroupPermissionError,
-                    }}
-                    on:change={onImportFileChanged}
-                  />
-                </div>
+                  <div class="file-upload-field">
+                    <fieldset style:flex={1}>
+                      <label for="file">Source File</label>
+                      <input
+                        class="w-100"
+                        name="file"
+                        type="file"
+                        accept="application/json"
+                        bind:files={derivationGroupUploadFiles}
+                      />
+                    </fieldset>
+                    <fieldset class="file-upload-fieldset">
+                      {#if derivationGroupJSON}
+                        <div style="padding-top:12px">
+                          <button class="st-button secondary w-100" type="reset">Dismiss</button>
+                        </div>
+                      {/if}
+                      <button disabled={!derivationGroupJSON} class="st-button w-100" type="submit">
+                        {'Add Derivation Groups'}
+                      </button>
+                    </fieldset>
+                  </div>
+                </form>
               </div>
-              {#if uploadFilesError}
-                <AlertError error={uploadFilesError} />
-              {/if}
-              {#if validationError}
-                <AlertError error={validationError} />
-              {/if}
-            {:else}
-              <div class="directions">
-                <p class="st-typography-body">
-                  Provide a name and an external source type for the new derivation group.
-                </p>
-                <p class="st-typography-label">
-                  The newly created group will be empty, though you can upload sources into it.
-                </p>
-              </div>
+            </div>
+            {#if uploadFilesError}
+              <AlertError error={uploadFilesError} />
             {/if}
+            {#if validationError}
+              <AlertError error={validationError} />
+            {/if}
+
             {#each newDerivationGroups as derivationGroup, i}
               <div
                 class="card content"
@@ -676,42 +860,66 @@
             </div>
           </TabPanel>
           <TabPanel>
-            {#if isUsingImportMode}
-              <div class="directions">
-                <p class="st-typography-body">Select an External Source Type Definition File (JSON) to import.</p>
-                <!-- TODO: This should link to documentation! -->
-                <p class="st-typography-label">
-                  The newly created external source type will be empty, though you can upload sources using it.
-                </p>
-                <a href={'../'} style:font-style="italic" class="st-typography-label" rel="noopener noreferrer"
-                  >What is an External Source Type Definition File?</a
+            <div class="directions">
+              <p class="st-typography-body">Provide a name and an external source type for the new derivation group.</p>
+              <p class="st-typography-body">
+                Alternatively, select an External Source Type Definition File (JSON) to import.
+              </p>
+              <a
+                href="https://github.com/NASA-AMMOS/aerie-docs/blob/7fde649340d51852329f5b426e82b827b7672bbf/docs/planning/external-events-metadata.md"
+                style:font-style="italic"
+                class="st-typography-label"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                What is an External Source Type Definition File?
+              </a>
+              <p class="st-typography-label">
+                The newly created external source type will be empty, though you can upload sources using it.
+              </p>
+              <div class="content">
+                <form
+                  on:submit|preventDefault={uploadESTs}
+                  on:reset={() => {
+                    uploadFilesError = null;
+                    validationError = null;
+                    externalSourceTypeJSON = null;
+                  }}
+                  use:permissionHandler={{
+                    hasPermission: hasCreateExternalSourceTypePermission,
+                    permissionError: createExternalSourceTypePermissionError,
+                  }}
                 >
-                <div class="content">
-                  <input
-                    class="w-100"
-                    name="file"
-                    type="file"
-                    accept="application/json"
-                    bind:files={externalSourceTypeUploadFiles}
-                    bind:this={externalSourceTypeUploadFileInput}
-                    use:permissionHandler={{
-                      hasPermission: hasCreateExternalSourceTypePermission,
-                      permissionError: createExternalSourceTypePermissionError,
-                    }}
-                    on:change={onImportFileChanged}
-                  />
-                </div>
+                  <div class="file-upload-field">
+                    <fieldset style:flex={1}>
+                      <label for="file">Source File</label>
+                      <input
+                        class="w-100"
+                        name="file"
+                        type="file"
+                        accept="application/json"
+                        bind:files={externalSourceTypeUploadFiles}
+                      />
+                    </fieldset>
+                    <fieldset class="file-upload-fieldset">
+                      {#if externalSourceTypeJSON}
+                        <div style="padding-top:12px">
+                          <button class="st-button secondary w-100" type="reset">Dismiss</button>
+                        </div>
+                      {/if}
+                      <button disabled={!externalSourceTypeJSON} class="st-button w-100" type="submit">
+                        {'Add External Source Types'}
+                      </button>
+                    </fieldset>
+                  </div>
+                </form>
               </div>
-              {#if uploadFilesError}
-                <div class="error">{uploadFilesError}</div>
-              {/if}
-            {:else}
-              <div class="directions">
-                <p class="st-typography-body">Provide a name for the new external source type.</p>
-                <p class="st-typography-label">
-                  The newly created external source type will be empty, though you can upload sources into it.
-                </p>
-              </div>
+            </div>
+            {#if uploadFilesError}
+              <div class="error">{uploadFilesError}</div>
+            {/if}
+            {#if validationError}
+              <AlertError error={validationError} />
             {/if}
             {#each newExternalSourceTypes as sourceType, i}
               <div
@@ -791,39 +999,60 @@
             </div>
           </TabPanel>
           <TabPanel>
-            {#if isUsingImportMode}
-              <div class="directions">
-                <p class="st-typography-body">Select an External Event Type Definition File (JSON) to import.</p>
-                <!-- TODO: This should link to documentation! -->
-                <p class="st-typography-label">
-                  The newly created external event type will be empty, though you can upload events using it.
-                </p>
-                <a href={'../'} style:font-style="italic" class="st-typography-label" rel="noopener noreferrer"
-                  >What is an External Event Type Definition File?</a
+            <div class="directions">
+              <p class="st-typography-body">Select an External Event Type Definition File (JSON) to import.</p>
+              <p class="st-typography-body">
+                Alternatively, select an External Event Type Definition File (JSON) to import.
+              </p>
+              <a href={'../'} style:font-style="italic" class="st-typography-label" rel="noopener noreferrer"
+                >What is an External Event Type Definition File?</a
+              >
+              <p class="st-typography-label">
+                The newly created external event type will be empty, though you can upload events using it.
+              </p>
+              <div class="content">
+                <form
+                  on:submit|preventDefault={uploadEETs}
+                  on:reset={() => {
+                    uploadFilesError = null;
+                    validationError = null;
+                    externalEventTypeJSON = null;
+                  }}
+                  use:permissionHandler={{
+                    hasPermission: hasCreateExternalEventTypePermission,
+                    permissionError: createExternalEventTypePermissionError,
+                  }}
                 >
-                <div class="content">
-                  <input
-                    class="w-100"
-                    name="file"
-                    type="file"
-                    accept="application/json"
-                    bind:files={externalEventTypeUploadFiles}
-                    bind:this={externalEventTypeUploadFileInput}
-                    use:permissionHandler={{
-                      hasPermission: hasCreateExternalEventTypePermission,
-                      permissionError: createExternalEventTypePermissionError,
-                    }}
-                    on:change={onImportFileChanged}
-                  />
-                </div>
+                  <div class="file-upload-field">
+                    <fieldset style:flex={1}>
+                      <label for="file">Source File</label>
+                      <input
+                        class="w-100"
+                        name="file"
+                        type="file"
+                        accept="application/json"
+                        bind:files={externalEventTypeUploadFiles}
+                      />
+                    </fieldset>
+                    <fieldset class="file-upload-fieldset">
+                      {#if externalEventTypeJSON}
+                        <div style="padding-top:12px">
+                          <button class="st-button secondary w-100" type="reset">Dismiss</button>
+                        </div>
+                      {/if}
+                      <button disabled={!externalEventTypeJSON} class="st-button w-100" type="submit">
+                        {'Add External Event Types'}
+                      </button>
+                    </fieldset>
+                  </div>
+                </form>
               </div>
-            {:else}
-              <div class="directions">
-                <p class="st-typography-body">Provide a name for the new external event type.</p>
-                <p class="st-typography-label">
-                  The newly created external event type will be empty, though you can upload events into it.
-                </p>
-              </div>
+            </div>
+            {#if uploadFilesError}
+              <div class="error">{uploadFilesError}</div>
+            {/if}
+            {#if validationError}
+              <AlertError error={validationError} />
             {/if}
             {#each newExternalEventTypes as eventType, i}
               <div
@@ -907,9 +1136,6 @@
     </div>
   </ModalContent>
   <ModalFooter>
-    <button class="st-button secondary" type="button" on:click={() => (isUsingImportMode = !isUsingImportMode)}>
-      <ImportIcon /> Import
-    </button>
     <button
       class="st-button primary"
       type="submit"
@@ -1013,5 +1239,17 @@
   .card-background-deleted {
     background: rgb(254, 234, 234);
     display: flex;
+  }
+
+  .file-upload-field {
+    display: flex;
+    flex-direction: row;
+    white-space: nowrap;
+  }
+
+  .file-upload-fieldset {
+    align-items: flex-end;
+    flex-direction: row;
+    gap: 4px;
   }
 </style>
