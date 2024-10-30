@@ -26,5 +26,8 @@
   },
   "[svelte]": {
     "editor.defaultFormatter": "svelte.svelte-vscode"
+  },
+  "files.associations": {
+    "*.css": "tailwindcss"
   }
 }

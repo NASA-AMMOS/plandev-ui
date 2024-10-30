@@ -8,6 +8,7 @@
     "GraphQL.vscode-graphql",
     "christian-kohler.path-intellisense",
     "streetsidesoftware.code-spell-checker",
-    "spmeesseman.vscode-taskexplorer"
+    "spmeesseman.vscode-taskexplorer",
+    "bradlc.vscode-tailwindcss"
   ]
 }
