@@ -346,21 +346,6 @@
     }
   }
 
-  function getLanguageName(language: any): string | null {
-    if (
-      !language ||
-      !('language' in language) ||
-      !language.language ||
-      typeof language.language !== 'object' ||
-      !('name' in language.language) ||
-      typeof language.language.name !== 'string'
-    ) {
-      return null;
-    }
-
-    return language.language.name;
-  }
-
   function selectedCommandUpdateListener(viewUpdate: ViewUpdate): void {
     // This is broken out into a different listener as debouncing this can cause cursor to move around
     const tree = syntaxTree(viewUpdate.state);
@@ -370,8 +355,7 @@
     const updatedSelectionNode = tree.resolveInner(selectionLine.from + leadingWhiteSpaceLength, 1);
     // minimize triggering selected command view
     if (selectedNode !== updatedSelectionNode) {
-      const language = compartmentSeqLanguage.get(viewUpdate.state);
-      if (getLanguageName(language) === 'vml') {
+      if (isInVmlMode) {
         commandInfoMapper = new VmlCommandInfoMapper();
       } else {
         commandInfoMapper = new SeqNCommandInfoMapper();

@@ -299,20 +299,22 @@
         />
       </fieldset>
 
-      <fieldset>
-        <label for="outputFile">Import Sequence</label>
-        <input
-          bind:files={outputFiles}
-          class="w-100"
-          name="outputFile"
-          type="file"
-          on:change={onOutputFileUpload}
-          use:permissionHandler={{
-            hasPermission,
-            permissionError,
-          }}
-        />
-      </fieldset>
+      {#if mode === 'create'}
+        <fieldset>
+          <label for="outputFile">Import Sequence</label>
+          <input
+            bind:files={outputFiles}
+            class="w-100"
+            name="outputFile"
+            type="file"
+            on:change={onOutputFileUpload}
+            use:permissionHandler={{
+              hasPermission,
+              permissionError,
+            }}
+          />
+        </fieldset>
+      {/if}
     </svelte:fragment>
   </Panel>
 
