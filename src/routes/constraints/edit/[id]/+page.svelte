@@ -94,7 +94,7 @@
   initialConstraintDefinitionAuthor={constraintDefinitionAuthor}
   initialConstraintDescription={constraintDescription}
   initialConstraintDefinitionType={constraintDefinitionType}
-  initialConstraintDefinitionCode={constraintDefinitionCode ?? ''}
+  initialConstraintDefinitionCode={constraintDefinitionCode}
   initialConstraintDefinitionFilename={constraintDefinitionFilename}
   initialConstraintId={constraintId}
   initialConstraintName={constraintName}

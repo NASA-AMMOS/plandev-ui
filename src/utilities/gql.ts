@@ -2174,6 +2174,7 @@ const gql = {
             }
           }
           type
+          uploaded_jar_id
         }
       }
     }
@@ -2208,6 +2209,7 @@ const gql = {
           definition
           revision
           type
+          uploaded_jar_id
         }
       }
     }

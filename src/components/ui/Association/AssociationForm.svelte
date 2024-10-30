@@ -88,7 +88,7 @@
   export let definitionTypeConfigurations: DefinitionConfigurations | undefined = undefined;
   export let initialDefinitionAuthor: UserId | undefined = undefined;
   export let initialDefinitionType: DefinitionType = DefinitionType.CODE;
-  export let initialDefinitionCode: string | null = '';
+  export let initialDefinitionCode: string | null = null;
   export let initialDefinitionFileName: string | null = null;
   export let initialDescription: string = '';
   export let initialId: number | null = null;

@@ -17,7 +17,7 @@
   import AssociationForm from '../ui/Association/AssociationForm.svelte';
 
   export let initialConstraintDefinitionAuthor: UserId | undefined = undefined;
-  export let initialConstraintDefinitionCode: string | null = '';
+  export let initialConstraintDefinitionCode: string | null = null;
   export let initialConstraintDefinitionFilename: string | null = null;
   export let initialConstraintDescription: string = '';
   export let initialConstraintId: number | null = null;
