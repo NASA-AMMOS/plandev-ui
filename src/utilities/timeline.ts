@@ -1393,8 +1393,6 @@ export function applyActivityLayerFilter(
   spans: Span[],
   types: ActivityType[],
 ) {
-  // const directivesByType = groupBy(directives, 'type');
-  // const spansByType = groupBy(spans, 'type');
   const staticTypeMap: Record<string, boolean> = (filter.static_types || []).reduce((acc, cur) => {
     acc[cur] = true;
     return acc;
@@ -1406,9 +1404,10 @@ export function applyActivityLayerFilter(
   }, {});
 
   let filteredDirectives = directives;
+  let filteredSpans = spans;
   if (filter.static_types?.length || filter.dynamic_type_filters?.length) {
     filteredDirectives = directives.filter(directive => {
-      let included = true;
+      let included = false;
 
       // Check to see if directive is included in static list
       if (filter.static_types?.length) {
@@ -1417,52 +1416,69 @@ export function applyActivityLayerFilter(
 
       // Check if necessary to see if directive is included in dynamic list
       if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
-        included = directiveMatchesDynamicFilters(directive, filter.dynamic_type_filters, typeDefMap);
+        included = directiveOrSpanMatchesDynamicFilters(directive, filter.dynamic_type_filters, typeDefMap);
       }
 
       // Apply global filters on top of the types
       if (filter.global_filters?.length) {
-        included = directiveMatchesDynamicFilters(directive, filter.global_filters, typeDefMap);
+        included = directiveOrSpanMatchesDynamicFilters(directive, filter.global_filters, typeDefMap);
       }
 
       // Apply type specific filters if found
       if (included && filter.type_subfilters && filter.type_subfilters[directive.type]) {
-        included = directiveMatchesDynamicFilters(directive, filter.type_subfilters[directive.type], typeDefMap);
+        included = directiveOrSpanMatchesDynamicFilters(directive, filter.type_subfilters[directive.type], typeDefMap);
+      }
+      return included;
+    });
+    filteredSpans = spans.filter(span => {
+      let included = false;
+
+      // Check to see if span is included in static list
+      if (filter.static_types?.length) {
+        included = !!staticTypeMap[span.type];
+      }
+
+      // Check if necessary to see if span is included in dynamic list
+      if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
+        included = directiveOrSpanMatchesDynamicFilters(span, filter.dynamic_type_filters, typeDefMap);
+      }
+
+      // Apply global filters on top of the types
+      if (filter.global_filters?.length) {
+        included = directiveOrSpanMatchesDynamicFilters(span, filter.global_filters, typeDefMap);
+      }
+
+      // Apply type specific filters if found
+      if (included && filter.type_subfilters && filter.type_subfilters[span.type]) {
+        included = directiveOrSpanMatchesDynamicFilters(span, filter.type_subfilters[span.type], typeDefMap);
       }
       return included;
     });
   }
 
-  console.log(
-    'filteredDirectives :>> ',
-    filteredDirectives.map(x => x.id),
-    directives,
-  );
-  return { directives: filteredDirectives, spans };
+  return { directives: filteredDirectives, spans: filteredSpans };
 }
 
-export function directiveMatchesDynamicFilters(
-  directive: ActivityDirective,
+export function directiveOrSpanMatchesDynamicFilters(
+  directiveOrSpan: ActivityDirective | Span,
   dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
   activityTypeDefMap: Record<string, ActivityType>,
 ): boolean {
   return dynamicFilters.reduce((acc, curr) => {
     let matches = false;
     if (curr.field === 'Type') {
-      matches = matchesDynamicFilter(directive.type, curr.operator, curr.value);
+      matches = matchesDynamicFilter(directiveOrSpan.type, curr.operator, curr.value);
     } else if (curr.field === 'Subsystem') {
       // Get subsystem tag for this directive
       let subsystemTagId = -1;
-      const typeDef = activityTypeDefMap[directive.type];
+      const typeDef = activityTypeDefMap[directiveOrSpan.type];
       if (typeDef?.subsystem_tag?.id) {
         subsystemTagId = typeDef.subsystem_tag.id;
       }
       matches = matchesDynamicFilter(subsystemTagId, curr.operator, curr.value);
-    } else if (curr.field === 'Tag') {
-      const ids = directive.tags.map(tag => tag.tag.id);
-      console.log('ids :>> ', ids);
+    } else if (curr.field === 'Tag' && typeof isArray((directiveOrSpan as ActivityDirective).tags)) {
+      const ids = (directiveOrSpan as ActivityDirective).tags.map(tag => tag.tag.id);
       matches = matchesDynamicFilter(ids, curr.operator, curr.value);
-      console.log('matches :>> ', matches);
     }
     return acc || matches;
   }, false);

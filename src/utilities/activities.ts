@@ -82,7 +82,7 @@ export function getAllSpansForActivityDirective(
 }
 
 /**
- * Returns thd children IDs of a span
+ * Returns the children IDs of a span
  */
 export function getAllSpanChildrenIds(spanId: number, spanUtilityMaps: SpanUtilityMaps): number[] {
   const children = spanUtilityMaps.spanIdToChildIdsMap[spanId];
