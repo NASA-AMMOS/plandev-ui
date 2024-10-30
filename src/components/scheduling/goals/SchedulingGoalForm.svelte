@@ -261,8 +261,8 @@
   {initialReferenceModelId}
   {permissionError}
   revisions={goalRevisions}
-  {tags}
   showDefinitionTypeSelector={true}
+  {tags}
   tsFiles={goalsTsFiles}
   {mode}
   {user}

@@ -157,7 +157,7 @@
   );
   $: isDefinitionModified =
     diffDefinition({ definition: initialDefinitionCode }, { definition: definitionCode }) ||
-    definitionFiles !== undefined;
+    (definitionType === DefinitionType.FILE && (definitionFiles?.length ?? 0) > 0);
   $: isDefinitionTagsModified = diffTags(initialDefinitionTags || [], definitionTags);
   $: hasUpdateDefinitionPermission = hasWriteDefinitionTagsPermission || isDefinitionModified;
   $: pageTitle = mode === 'edit' ? 's' : 'New ';
@@ -168,6 +168,9 @@
     owner !== '' &&
     definitionCode !== '' &&
     name !== '' &&
+    (mode === 'create' && definitionType === DefinitionType.FILE
+      ? !initialDefinitionFileName && (definitionFiles?.length ?? 0) > 0
+      : true) &&
     (isMetadataModified || (isDefinitionTagsModified && hasUpdateDefinitionPermission) || isDefinitionModified);
   $: saveButtonClass = saveButtonEnabled ? 'primary' : 'secondary';
   $: if (mode === 'edit' && (isMetadataModified || isDefinitionModified)) {

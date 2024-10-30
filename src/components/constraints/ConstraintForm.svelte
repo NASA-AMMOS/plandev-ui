@@ -4,7 +4,8 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { createEventDispatcher } from 'svelte';
-  import type { DefinitionType } from '../../enums/association';
+  import { DefinitionType } from '../../enums/association';
+  import { ConstraintDefinitionType } from '../../enums/constraint';
   import { SearchParameters } from '../../enums/searchParameters';
   import { constraints } from '../../stores/constraints';
   import type { User, UserId } from '../../types/app';
@@ -17,11 +18,13 @@
 
   export let initialConstraintDefinitionAuthor: UserId | undefined = undefined;
   export let initialConstraintDefinitionCode: string | null = '';
+  export let initialConstraintDefinitionFilename: string | null = null;
   export let initialConstraintDescription: string = '';
   export let initialConstraintId: number | null = null;
   export let initialConstraintName: string = '';
   export let initialConstraintPublic: boolean = true;
   export let initialConstraintDefinitionTags: Tag[] = [];
+  export let initialConstraintDefinitionType: ConstraintDefinitionType = ConstraintDefinitionType.EDSL;
   export let initialConstraintMetadataTags: Tag[] = [];
   export let initialConstraintOwner: UserId = null;
   export let initialConstraintRevision: number | null = null;
@@ -100,13 +103,24 @@
     }>,
   ) {
     const {
-      detail: { definitionCode, definitionTags, description, name, public: isPublic, tags: metadataTags },
+      detail: {
+        definitionCode,
+        definitionFile,
+        definitionTags,
+        definitionType,
+        description,
+        name,
+        public: isPublic,
+        tags: metadataTags,
+      },
     } = event;
     const newConstraintId = await effects.createConstraint(
       name,
       isPublic,
       metadataTags.map(({ id }) => ({ tag_id: id })),
+      definitionType === DefinitionType.CODE ? ConstraintDefinitionType.EDSL : ConstraintDefinitionType.JAR,
       definitionCode ?? '',
+      definitionFile ?? null,
       definitionTags.map(({ id }) => ({ tag_id: id })),
       user,
       description,
@@ -130,12 +144,14 @@
     }>,
   ) {
     const {
-      detail: { definitionCode, definitionTags },
+      detail: { definitionCode, definitionFile, definitionTags, definitionType },
     } = event;
     if (initialConstraintId !== null) {
       const definition = await effects.createConstraintDefinition(
         initialConstraintId,
+        definitionType === DefinitionType.CODE ? ConstraintDefinitionType.EDSL : ConstraintDefinitionType.JAR,
         definitionCode ?? '',
+        definitionFile ?? null,
         definitionTags.map(({ id }) => ({ tag_id: id })),
         user,
       );
@@ -228,12 +244,20 @@
 <AssociationForm
   allMetadata={$constraints || []}
   defaultDefinitionCode={`export default (): Constraint => {\n\n}\n`}
+  definitionTypeConfigurations={{
+    code: { label: 'EDSL' },
+    file: { accept: '.jar', label: 'JAR File' },
+  }}
   displayName="Constraint"
   {hasCreateDefinitionCodePermission}
   {hasWriteMetadataPermission}
   {hasWriteDefinitionTagsPermission}
   initialDefinitionAuthor={initialConstraintDefinitionAuthor}
+  initialDefinitionType={initialConstraintDefinitionType === ConstraintDefinitionType.EDSL
+    ? DefinitionType.CODE
+    : DefinitionType.FILE}
   initialDefinitionCode={initialConstraintDefinitionCode}
+  initialDefinitionFileName={initialConstraintDefinitionFilename}
   initialDescription={initialConstraintDescription}
   initialId={initialConstraintId}
   initialName={initialConstraintName}
@@ -245,6 +269,7 @@
   {initialReferenceModelId}
   {permissionError}
   revisions={constraintRevisions}
+  showDefinitionTypeSelector={true}
   {tags}
   tsFiles={constraintsTsFiles}
   {mode}

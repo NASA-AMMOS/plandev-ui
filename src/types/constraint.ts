@@ -9,11 +9,12 @@ export type ConstraintDefinition = BaseDefinition & {
   constraint_id: number;
   parameter_schema?: ValueSchema;
   type: ConstraintDefinitionType;
+  uploaded_jar_id: number | null;
 };
 
 export type ConstraintMetadataVersionDefinition = Pick<
   ConstraintDefinition,
-  'author' | 'definition' | 'revision' | 'tags'
+  'author' | 'definition' | 'revision' | 'tags' | 'type' | 'uploaded_jar_id'
 >;
 
 export type ConstraintMetadata = BaseMetadata<ConstraintDefinition>;
@@ -32,7 +33,6 @@ export type ConstraintModelSpecification = {
 export type ConstraintPlanSpecification = {
   arguments: any;
   constraint_id: number;
-  constraint_invocation_id?: number;
   constraint_metadata:
     | (Pick<ConstraintMetadata, 'name' | 'owner' | 'public'> & {
         versions: Pick<ConstraintDefinition, 'parameter_schema' | 'revision' | 'type'>[];
@@ -40,6 +40,7 @@ export type ConstraintPlanSpecification = {
     | null;
   constraint_revision: number | null;
   enabled: boolean;
+  invocation_id?: number;
   plan_id: number;
   specification_id: number;
   // constraint_definition: ConstraintDefinition;
@@ -48,9 +49,12 @@ export type ConstraintPlanSpecification = {
 
 export type ConstraintModelSpecInsertInput = Omit<ConstraintModelSpecification, 'constraint_metadata'>;
 export type ConstraintPlanSpecSetInput = Omit<ConstraintPlanSpecification, 'constraint_metadata'>;
-export type ConstraintPlanSpecInsertInput = Omit<ConstraintPlanSpecSetInput, 'constraint_invocation_id'>;
+export type ConstraintPlanSpecInsertInput = Omit<ConstraintPlanSpecSetInput, 'invocation_id'>;
 
-export type ConstraintDefinitionInsertInput = Pick<ConstraintDefinition, 'constraint_id' | 'definition'> & {
+export type ConstraintDefinitionInsertInput = Pick<
+  ConstraintDefinition,
+  'constraint_id' | 'definition' | 'type' | 'uploaded_jar_id'
+> & {
   tags: {
     data: ConstraintTagsInsertInput[];
   };

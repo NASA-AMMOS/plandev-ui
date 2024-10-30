@@ -157,7 +157,7 @@
 
   async function onDuplicateConstraintInvocation(event: CustomEvent<ConstraintPlanSpecification>) {
     const {
-      detail: { constraint_metadata, constraint_invocation_id, ...constraintPlanSpec },
+      detail: { constraint_metadata, invocation_id, ...constraintPlanSpec },
     } = event;
     if ($plan) {
       await effects.createConstraintPlanSpecification(constraintPlanSpec, user);
@@ -169,12 +169,7 @@
       detail: { constraint_metadata, specification_id, ...constraintPlanSpec },
     } = event;
     if ($plan) {
-      await effects.deleteConstraintInvocations(
-        $plan,
-        specification_id,
-        [constraintPlanSpec.constraint_invocation_id],
-        user,
-      );
+      await effects.deleteConstraintInvocations($plan, specification_id, [constraintPlanSpec.invocation_id], user);
     }
   }
 
@@ -384,7 +379,7 @@
           </button>
         </div>
 
-        {#each filteredConstraints as constraint (constraint.constraint_invocation_id)}
+        {#each filteredConstraints as constraint (constraint.invocation_id)}
           {#if $constraintsMap[constraint.constraint_id]}
             <ConstraintListItem
               constraint={$constraintsMap[constraint.constraint_id]}

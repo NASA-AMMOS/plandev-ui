@@ -7,6 +7,7 @@ import {
   type ParameterDictionary as AmpcsParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
 import { get } from 'svelte/store';
+import { ConstraintDefinitionType } from '../enums/constraint';
 import { DictionaryTypes } from '../enums/dictionaryTypes';
 import { SchedulingDefinitionType } from '../enums/scheduling';
 import { SearchParameters } from '../enums/searchParameters';
@@ -762,7 +763,9 @@ const effects = {
     name: string,
     isPublic: boolean,
     metadataTags: ConstraintTagsInsertInput[],
+    definitionType: ConstraintDefinitionType,
     definition: string,
+    file: File | null,
     definitionTags: ConstraintTagsInsertInput[],
     user: User | null,
     description?: string,
@@ -770,6 +773,15 @@ const effects = {
     try {
       if (!queryPermissions.CREATE_CONSTRAINT(user)) {
         throwPermissionError('create a constraint');
+      }
+
+      let jarId: number | null = null;
+      let codeDefinition: string | null = null;
+
+      if (definitionType === ConstraintDefinitionType.EDSL) {
+        codeDefinition = definition;
+      } else if (definitionType === ConstraintDefinitionType.JAR && file) {
+        jarId = await effects.uploadFile(file, user);
       }
 
       const constraintInsertInput: ConstraintInsertInput = {
@@ -782,10 +794,12 @@ const effects = {
         versions: {
           data: [
             {
-              definition,
+              definition: codeDefinition,
               tags: {
                 data: definitionTags,
               },
+              type: definitionType,
+              uploaded_jar_id: jarId,
             },
           ],
         },
@@ -813,7 +827,9 @@ const effects = {
 
   async createConstraintDefinition(
     constraintId: number,
+    definitionType: ConstraintDefinitionType,
     definition: string,
+    file: File | null,
     definitionTags: ConstraintTagsInsertInput[],
     user: User | null,
   ): Promise<Pick<ConstraintDefinition, 'constraint_id' | 'definition' | 'revision'> | null> {
@@ -822,12 +838,23 @@ const effects = {
         throwPermissionError('create a constraint');
       }
 
+      let jarId: number | null = null;
+      let codeDefinition: string | null = null;
+
+      if (definitionType === ConstraintDefinitionType.EDSL) {
+        codeDefinition = definition;
+      } else if (definitionType === ConstraintDefinitionType.JAR && file !== null) {
+        jarId = await effects.uploadFile(file, user);
+      }
+
       const constraintDefinitionInsertInput: ConstraintDefinitionInsertInput = {
         constraint_id: constraintId,
-        definition,
+        definition: codeDefinition,
         tags: {
           data: definitionTags,
         },
+        type: definitionType,
+        uploaded_jar_id: jarId,
       };
       const data = await reqHasura<ConstraintDefinition>(
         gql.CREATE_CONSTRAINT_DEFINITION,
@@ -5868,7 +5895,7 @@ const effects = {
       const {
         enabled,
         constraint_id: constraintId,
-        constraint_invocation_id,
+        invocation_id,
         constraint_revision: revision,
       } = constraintPlanSpecification;
 
@@ -5876,9 +5903,9 @@ const effects = {
         gql.UPDATE_CONSTRAINT_PLAN_SPECIFICATION,
         {
           arguments: constraintPlanSpecification.arguments,
-          constraint_invocation_id,
           enabled,
           id: constraintId,
+          invocation_id,
           planId: plan.id,
           revision,
         },
