@@ -314,6 +314,11 @@
         }
       });
     }
+  } else if (simulationDataset === null) {
+    Object.entries(resourceRequestMap).forEach(([_key, value]) => {
+      value.controller?.abort();
+    });
+    resourceRequestMap = {};
   }
 
   $: onDragenter(dragenter);
