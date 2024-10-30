@@ -434,6 +434,11 @@
     if (value.length <= 0 || $derivationGroups.map(dg => dg.name).includes(value)) {
       return false;
     }
+    // verify name doesn't duplicate itself too often. This is run after an upload/update, so this is correct
+    if (newDerivationGroups.filter(derivationGroup => derivationGroup.name === value).length > 1) {
+      return false;
+    }
+
     return true;
   }
 
@@ -450,6 +455,11 @@
     if (sourceType.name.length <= 0 || $externalSourceTypes.map(est => est.name).includes(sourceType.name)) {
       return false;
     }
+    // verify name doesn't duplicate itself too often. This is run after an upload/update, so this is correct
+    if (newExternalSourceTypes.filter(sourceTypeTest => sourceTypeTest.name === sourceType.name).length > 1) {
+      return false;
+    }
+
     if (sourceType.metadata.length === 0) {
       return true;
     } else {
@@ -479,10 +489,15 @@
     if (eventType.name.length <= 0 || $externalEventTypes.map(eet => eet.name).includes(eventType.name)) {
       return false;
     }
+    // verify name doesn't duplicate itself too often. This is run after an upload/update, so this is correct
+    if (newExternalEventTypes.filter(eventTypeTest => eventTypeTest.name === eventType.name).length > 1) {
+      return false;
+    }
+
     if (eventType.metadata.length === 0) {
       return true;
     } else {
-      // TODO: check metadata name not elsewhere in the list of source types to be uploaded at the moment
+      // TODO: check metadata name not elsewhere in the list of event types to be uploaded at the moment
       return eventType.metadata
         .map(metadataItem => {
           console.log(
