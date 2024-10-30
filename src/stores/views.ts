@@ -609,7 +609,7 @@ export function getUpdatedLayerWithFilters(
     // Otherwise augment the filter of the specified layer
     let prop: string = '';
     if (type === 'activity') {
-      prop = 'types';
+      prop = 'static_types';
     } else if (type === 'externalEvent') {
       prop = 'event_types';
     } else {
@@ -619,8 +619,8 @@ export function getUpdatedLayerWithFilters(
     const existingFilter = layer.filter[typedType];
     let existingFilterItems: string[] = [];
 
-    if (existingFilter && (existingFilter as ActivityLayerFilter).types) {
-      existingFilterItems = (existingFilter as ActivityLayerFilter).types;
+    if (existingFilter && (existingFilter as ActivityLayerFilter).static_types) {
+      existingFilterItems = (existingFilter as ActivityLayerFilter).static_types ?? [];
     } else if (existingFilter && (existingFilter as ResourceLayerFilter).names) {
       existingFilterItems = (existingFilter as ResourceLayerFilter).names;
     } else if (existingFilter && (existingFilter as ExternalEventLayerFilter).event_types) {

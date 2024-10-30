@@ -60,6 +60,7 @@
     TimelineItemType,
     XAxisTick,
   } from '../../types/timeline';
+  import { getAllSpansForActivityDirective } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { getExternalEventRowId } from '../../utilities/externalEvents';
   import { classNames, unique } from '../../utilities/generic';
@@ -349,7 +350,7 @@
   $: associatedActivityTypes = activityLayers
     .map(layer =>
       layer.filter.activity
-        ? ((layer.filter.activity.dynamic_type_filters?.length || layer.filter.activity.static_types?.length) ?? 0)
+        ? (layer.filter.activity.dynamic_type_filters?.length || layer.filter.activity.static_types?.length) ?? 0
         : 0,
     )
     .reduce((currentSum, newValue) => currentSum + newValue, 0);
@@ -430,8 +431,6 @@
     };
     if (activityLayers && spansMap && activityDirectives) {
       let spansList = Object.values(spansMap);
-      const directivesByType = groupBy(activityDirectives, 'type');
-      const spansByType = groupBy(spansList, 'type');
       if (activityLayers.length) {
         let directives: ActivityDirective[] = [];
         let spans: Span[] = [];
@@ -442,35 +441,41 @@
         let seenSpanIds: Record<number, boolean> = {};
         activityLayers.forEach(layer => {
           if (layer.filter && layer.filter.activity !== undefined) {
-            const { directives: matchingDirectives } = applyActivityLayerFilter(
+            const { directives: matchingDirectives, spans: matchingSpans } = applyActivityLayerFilter(
               layer.filter.activity,
               activityDirectives,
-              spans,
+              spansList,
               $activityTypes,
             );
-            if (matchingDirectives) {
-              const uniqueDirectives: ActivityDirective[] = [];
-              matchingDirectives.forEach(directive => {
-                if (!seenDirectiveIds[directive.id]) {
-                  idToColorMaps.directives[directive.id] = layer.activityColor;
-                  seenDirectiveIds[directive.id] = true;
-                  uniqueDirectives.push(directive);
-                }
-              });
-              directives = directives.concat(uniqueDirectives);
-            }
-            // const matchingSpans = spansByType[type];
-            // if (matchingSpans) {
-            //   const uniqueSpans: Span[] = [];
-            //   matchingSpans.forEach(span => {
-            //     if (!seenSpanIds[span.span_id]) {
-            //       idToColorMaps.spans[span.span_id] = layer.activityColor;
-            //       seenSpanIds[span.span_id] = true;
-            //       uniqueSpans.push(span);
-            //     }
-            //   });
-            //   spans = spans.concat(uniqueSpans);
-            // }
+            const uniqueDirectives: ActivityDirective[] = [];
+            matchingDirectives.forEach(directive => {
+              if (!seenDirectiveIds[directive.id]) {
+                idToColorMaps.directives[directive.id] = layer.activityColor;
+                seenDirectiveIds[directive.id] = true;
+                uniqueDirectives.push(directive);
+
+                // Gather spans for directive since we always show all spans for a directive
+                // TODO aplave does not know if this is a good move, needs investigation and potentially options
+                // exposed to the user re whether to apply filters to spans or always include spans
+                const childSpans = getAllSpansForActivityDirective(directive.id, spansMap, spanUtilityMaps);
+                childSpans.forEach(span => {
+                  seenSpanIds[span.span_id] = true;
+                  idToColorMaps.spans[span.span_id] = layer.activityColor;
+                });
+                spans = spans.concat(childSpans);
+              }
+            });
+            directives = directives.concat(uniqueDirectives);
+
+            const uniqueSpans: Span[] = [];
+            matchingSpans.forEach(span => {
+              if (!seenSpanIds[span.span_id]) {
+                idToColorMaps.spans[span.span_id] = layer.activityColor;
+                seenSpanIds[span.span_id] = true;
+                uniqueSpans.push(span);
+              }
+            });
+            spans = spans.concat(uniqueSpans);
           }
         });
         directives.sort((a, b) => ((a.start_time_ms ?? 0) < (b.start_time_ms ?? 0) ? -1 : 1));
@@ -725,7 +730,7 @@
           // Determine if the row will visualize all requested activities
           let activitiesInRow = new Set();
           activityLayers.forEach(layer => {
-            const layerActivities = layer.filter.activity?.types ?? [];
+            const layerActivities = layer.filter.activity?.static_types ?? [];
             activitiesInRow = new Set([...activitiesInRow, ...layerActivities]);
           });
           const missingActivity = (items as ActivityType[]).find(item => !activitiesInRow.has(item.name));
