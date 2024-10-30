@@ -336,104 +336,6 @@
     }
   }
 
-  // async function parseDerivationGroupInputFileStream(stream: ReadableStream) {
-  //   uploadFilesError = null;
-  //   validationError = null;
-  //   try {
-  //     let derivationGroupJSON: { entries: DerivationGroupJSON[] };
-  //     try {
-  //       // remove this stuff
-  //       derivationGroupJSON = await parseJSONStream<{ entries: DerivationGroupJSON[] }>(stream);
-  //       const validate = ajv.compile(derivationGroupSchema);
-  //       const valid = validate(derivationGroupJSON); // TODO: validate the stream, and then convert to JSON after?
-  //       console.log(derivationGroupJSON, stream);
-  //       if (!valid && validate.errors) {
-  //         validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
-  //       } else {
-  //         newDerivationGroups = [
-  //           ...newDerivationGroups.filter(derivationGroup => derivationGroup.name.length > 0),
-  //           ...derivationGroupJSON.entries.map(entry => {
-  //             return {
-  //               name: entry.name,
-  //               sourceType: entry.source_type_name,
-  //               valid:
-  //                 validateDerivationGroupName(entry.name) &&
-  //                 entry.source_type_name.length > 0 &&
-  //                 $externalSourceTypes.map(est => est.name).includes(entry.source_type_name),
-  //             };
-  //           }),
-  //         ];
-  //       }
-  //     } catch (e) {
-  //       throw new Error('Derivation Group Definition File is not a valid JSON');
-  //     }
-  //   } catch (e) {
-  //     uploadFilesError = (e as Error).message;
-  //   }
-  // }
-
-  // async function parseExternalSourceTypeInputFileStream(stream: ReadableStream) {
-  //   uploadFilesError = null;
-  //   validationError = null;
-  //   try {
-  //     let externalSourceTypeJSON: { entries: ExternalSourceTypeJSON[] };
-  //     try {
-  //       externalSourceTypeJSON = await parseJSONStream<{ entries: ExternalSourceTypeJSON[] }>(stream);
-  //       const validate = ajv.compile(externalSourceTypeSchema);
-  //       const valid = validate(externalSourceTypeJSON);
-  //       if (!valid && validate.errors) {
-  //         validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
-  //       } else {
-  //         newExternalSourceTypes = [
-  //           ...newExternalSourceTypes.filter(sourceType => sourceType.name.length > 0),
-  //           ...externalSourceTypeJSON.entries.map(entry => {
-  //             return {
-  //               metadata: entry.metadata,
-  //               name: entry.name,
-  //               valid: validateEST({ metadata: entry.metadata, name: entry.name, valid: false }),
-  //             };
-  //           }),
-  //         ];
-  //       }
-  //     } catch (e) {
-  //       throw new Error('External Source Type Definition File is not a valid JSON');
-  //     }
-  //   } catch (e) {
-  //     uploadFilesError = (e as Error).message;
-  //   }
-  // }
-
-  // async function parseExternalEventTypeInputFileStream(stream: ReadableStream) {
-  //   uploadFilesError = null;
-  //   validationError = null;
-  //   try {
-  //     let externalEventTypeJSON: { entries: ExternalEventTypeJSON[] };
-  //     try {
-  //       externalEventTypeJSON = await parseJSONStream<{ entries: ExternalEventTypeJSON[] }>(stream);
-  //       const validate = ajv.compile(externalEventTypeSchema);
-  //       const valid = validate(externalEventTypeJSON);
-  //       if (!valid && validate.errors) {
-  //         validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
-  //       } else {
-  //         newExternalEventTypes = [
-  //           ...newExternalEventTypes.filter(eventType => eventType.name.length > 0),
-  //           ...externalEventTypeJSON.entries.map(entry => {
-  //             return {
-  //               metadata: entry.metadata,
-  //               name: entry.name,
-  //               valid: validateEET({ metadata: entry.metadata, name: entry.name, valid: false }),
-  //             };
-  //           }),
-  //         ];
-  //       }
-  //     } catch (e) {
-  //       throw new Error('External Event Type Definition File is not a valid JSON');
-  //     }
-  //   } catch (e) {
-  //     uploadFilesError = (e as Error).message;
-  //   }
-  // }
-
   function onCreateExternalSourceType() {
     if (isCreateDisabled) {
       creationError = 'Please ensure every type has a name, and all metadata has a name and type.';
@@ -521,24 +423,6 @@
     selectedTab = id;
     handleChange();
   }
-
-  // function onImportFileChanged(event: Event) {
-  //   const files = (event.target as HTMLInputElement).files;
-  //   if (files !== null && files.length) {
-  //     const file = files[0];
-  //     if (/\.json$/.test(file.name)) {
-  //       if (selectedTab === derivationGroupTabId) {
-  //         parseDerivationGroupInputFileStream(file.stream());
-  //       } else if (selectedTab === externalSourceTypeTabId) {
-  //         parseExternalSourceTypeInputFileStream(file.stream());
-  //       } else if (selectedTab === externalEventTypeTabId) {
-  //         parseExternalEventTypeInputFileStream(file.stream());
-  //       }
-  //     } else {
-  //       uploadFilesError = 'Plan file is not a .json file';
-  //     }
-  //   }
-  // }
 
   function handleCreateNewDerivationGroupEntry() {
     newDerivationGroups = [...newDerivationGroups, { name: '', sourceType: '', valid: false }];
