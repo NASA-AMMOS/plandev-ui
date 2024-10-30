@@ -3,8 +3,14 @@
 <script lang="ts">
   import MinusIcon from '@nasa-jpl/stellar/icons/minus.svg?component';
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
+  import Ajv from 'ajv';
   import { createEventDispatcher } from 'svelte';
   import ImportIcon from '../../assets/import.svg?component';
+  import {
+    derivationGroupSchema,
+    externalEventTypeSchema,
+    externalSourceTypeSchema,
+  } from '../../constants/external-event-validation-schemae';
   import {
     createExternalEventTypeError,
     externalEventTypes,
@@ -99,6 +105,10 @@
   let externalEventTypeUploadFiles: FileList | undefined;
   let externalEventTypeUploadFileInput: HTMLInputElement;
   let uploadFilesError: string | null = null;
+  let validationError: string | null = null;
+
+  // for JSON Schema validation validation
+  const ajv = new Ajv();
 
   // Reactively determine deletion permissions
   $: hasCreateDerivationGroupPermission = featurePermissions.derivationGroup.canCreate(user);
@@ -109,17 +119,41 @@
     if (selectedTab === derivationGroupTabId) {
       hasCreationPermissionForCurrentTab = hasCreateDerivationGroupPermission;
       isCreateDisabled = !newDerivationGroups.map(entry => entry.valid).reduce((prev, curr) => prev && curr, true);
-      console.log(isCreateDisabled);
     } else if (selectedTab === externalSourceTypeTabId) {
       hasCreationPermissionForCurrentTab = hasCreateExternalSourceTypePermission;
       isCreateDisabled = !newExternalSourceTypes.map(entry => entry.valid).reduce((prev, curr) => prev && curr, true);
-      console.log('isCreateDisabled', isCreateDisabled, hasCreationPermissionForCurrentTab);
     } else if (selectedTab === externalEventTypeTabId) {
       hasCreationPermissionForCurrentTab = hasCreateExternalEventTypePermission;
       isCreateDisabled = !newExternalEventTypes.map(entry => entry.valid).reduce((prev, curr) => prev && curr, true);
-      console.log('isCreateDisabled', isCreateDisabled, hasCreationPermissionForCurrentTab);
     }
   }
+
+  $: newDerivationGroups = newDerivationGroups.map(entry => {
+    return {
+      name: entry.name,
+      sourceType: entry.sourceType,
+      valid:
+        validateDerivationGroupName(entry.name) &&
+        entry.sourceType.length > 0 &&
+        $externalSourceTypes.map(est => est.name).includes(entry.sourceType),
+    };
+  });
+
+  $: newExternalSourceTypes = newExternalSourceTypes.map(entry => {
+    return {
+      metadata: entry.metadata,
+      name: entry.name,
+      valid: validateEST(entry),
+    };
+  });
+
+  $: newExternalEventTypes = newExternalEventTypes.map(entry => {
+    return {
+      metadata: entry.metadata,
+      name: entry.name,
+      valid: validateEET(entry),
+    };
+  });
 
   function onCreateDerivationGroup() {
     if (isCreateDisabled) {
@@ -134,23 +168,32 @@
 
   async function parseDerivationGroupInputFileStream(stream: ReadableStream) {
     uploadFilesError = null;
+    validationError = null;
     try {
       let derivationGroupJSON: { entries: DerivationGroupJSON[] };
       try {
+        // remove this stuff
         derivationGroupJSON = await parseJSONStream<{ entries: DerivationGroupJSON[] }>(stream);
-        newDerivationGroups = [
-          ...newDerivationGroups,
-          ...derivationGroupJSON.entries.map(entry => {
-            return {
-              name: entry.name,
-              sourceType: entry.source_type_name,
-              valid:
-                validateDerivationGroupName(entry.name) &&
-                entry.source_type_name.length > 0 &&
-                $externalSourceTypes.map(est => est.name).includes(entry.source_type_name),
-            };
-          }),
-        ];
+        const validate = ajv.compile(derivationGroupSchema);
+        const valid = validate(derivationGroupJSON);
+        console.log(derivationGroupJSON, stream);
+        if (!valid && validate.errors) {
+          validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
+        } else {
+          newDerivationGroups = [
+            ...newDerivationGroups.filter(derivationGroup => derivationGroup.name.length > 0),
+            ...derivationGroupJSON.entries.map(entry => {
+              return {
+                name: entry.name,
+                sourceType: entry.source_type_name,
+                valid:
+                  validateDerivationGroupName(entry.name) &&
+                  entry.source_type_name.length > 0 &&
+                  $externalSourceTypes.map(est => est.name).includes(entry.source_type_name),
+              };
+            }),
+          ];
+        }
       } catch (e) {
         throw new Error('Derivation Group Definition File is not a valid JSON');
       }
@@ -161,20 +204,27 @@
 
   async function parseExternalSourceTypeInputFileStream(stream: ReadableStream) {
     uploadFilesError = null;
+    validationError = null;
     try {
       let externalSourceTypeJSON: { entries: ExternalSourceTypeJSON[] };
       try {
         externalSourceTypeJSON = await parseJSONStream<{ entries: ExternalSourceTypeJSON[] }>(stream);
-        newExternalSourceTypes = [
-          ...newExternalSourceTypes,
-          ...externalSourceTypeJSON.entries.map(entry => {
-            return {
-              metadata: entry.metadata,
-              name: entry.name,
-              valid: validateEST({ metadata: entry.metadata, name: entry.name, valid: false }),
-            };
-          }),
-        ];
+        const validate = ajv.compile(externalSourceTypeSchema);
+        const valid = validate(externalSourceTypeJSON);
+        if (!valid && validate.errors) {
+          validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
+        } else {
+          newExternalSourceTypes = [
+            ...newExternalSourceTypes.filter(sourceType => sourceType.name.length > 0),
+            ...externalSourceTypeJSON.entries.map(entry => {
+              return {
+                metadata: entry.metadata,
+                name: entry.name,
+                valid: validateEST({ metadata: entry.metadata, name: entry.name, valid: false }),
+              };
+            }),
+          ];
+        }
       } catch (e) {
         throw new Error('External Source Type Definition File is not a valid JSON');
       }
@@ -185,20 +235,27 @@
 
   async function parseExternalEventTypeInputFileStream(stream: ReadableStream) {
     uploadFilesError = null;
+    validationError = null;
     try {
       let externalEventTypeJSON: { entries: ExternalEventTypeJSON[] };
       try {
         externalEventTypeJSON = await parseJSONStream<{ entries: ExternalEventTypeJSON[] }>(stream);
-        newExternalEventTypes = [
-          ...newExternalEventTypes,
-          ...externalEventTypeJSON.entries.map(entry => {
-            return {
-              metadata: entry.metadata,
-              name: entry.name,
-              valid: validateEET({ metadata: entry.metadata, name: entry.name, valid: false }),
-            };
-          }),
-        ];
+        const validate = ajv.compile(externalEventTypeSchema);
+        const valid = validate(externalEventTypeJSON);
+        if (!valid && validate.errors) {
+          validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
+        } else {
+          newExternalEventTypes = [
+            ...newExternalEventTypes.filter(eventType => eventType.name.length > 0),
+            ...externalEventTypeJSON.entries.map(entry => {
+              return {
+                metadata: entry.metadata,
+                name: entry.name,
+                valid: validateEET({ metadata: entry.metadata, name: entry.name, valid: false }),
+              };
+            }),
+          ];
+        }
       } catch (e) {
         throw new Error('External Event Type Definition File is not a valid JSON');
       }
@@ -318,33 +375,6 @@
 
     handleChange();
   }
-
-  $: newDerivationGroups = newDerivationGroups.map(entry => {
-    return {
-      name: entry.name,
-      sourceType: entry.sourceType,
-      valid:
-        validateDerivationGroupName(entry.name) &&
-        entry.sourceType.length > 0 &&
-        $externalSourceTypes.map(est => est.name).includes(entry.sourceType),
-    };
-  });
-
-  $: newExternalSourceTypes = newExternalSourceTypes.map(entry => {
-    return {
-      metadata: entry.metadata,
-      name: entry.name,
-      valid: validateEST(entry),
-    };
-  });
-
-  $: newExternalEventTypes = newExternalEventTypes.map(entry => {
-    return {
-      metadata: entry.metadata,
-      name: entry.name,
-      valid: validateEET(entry),
-    };
-  });
 
   function validateDerivationGroupName(value: string): boolean {
     if (value.length <= 0 || $derivationGroups.map(dg => dg.name).includes(value)) {
@@ -583,7 +613,10 @@
                 </div>
               </div>
               {#if uploadFilesError}
-                <div class="error">{uploadFilesError}</div>
+                <AlertError error={uploadFilesError} />
+              {/if}
+              {#if validationError}
+                <AlertError error={validationError} />
               {/if}
             {:else}
               <div class="directions">
