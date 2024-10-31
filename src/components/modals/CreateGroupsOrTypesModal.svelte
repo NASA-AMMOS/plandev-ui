@@ -23,9 +23,14 @@
     resetExternalSourceStores,
   } from '../../stores/external-source';
   import type { User } from '../../types/app';
-  import type { ExternalEventTypeInsertInput, ExternalEventTypeJSON } from '../../types/external-event';
+  import type {
+    ExternalEventType,
+    ExternalEventTypeInsertInput,
+    ExternalEventTypeJSON,
+  } from '../../types/external-event';
   import type {
     DerivationGroupJSON,
+    ExternalSourceType,
     ExternalSourceTypeInsertInput,
     ExternalSourceTypeJSON,
   } from '../../types/external-source';
@@ -48,6 +53,18 @@
 
   export let user: User | null;
 
+  type MetadataInput = {
+    isRequired: boolean | null;
+    name: ParameterName | null;
+    schema: ValueSchema | null;
+  };
+  type TypeInput = {
+    metadata: MetadataInput[];
+    name: string;
+    valid: boolean;
+  };
+  type queryType = 'Derivation Group' | 'External Source Type' | 'External Event Type';
+
   const dispatch = createEventDispatcher<{
     close: void;
   }>();
@@ -68,27 +85,11 @@
 
   // External source type variables
   let hasCreateExternalSourceTypePermission: boolean = false;
-  let newExternalSourceTypes: {
-    metadata: {
-      isRequired: boolean | null;
-      name: ParameterName | null;
-      schema: ValueSchema | null;
-    }[];
-    name: string;
-    valid: boolean;
-  }[] = [{ metadata: [], name: '', valid: false }];
+  let newExternalSourceTypes: TypeInput[] = [{ metadata: [], name: '', valid: false }];
 
   // External event type variables
   let hasCreateExternalEventTypePermission: boolean = false;
-  let newExternalEventTypes: {
-    metadata: {
-      isRequired: boolean | null;
-      name: ParameterName | null;
-      schema: ValueSchema | null;
-    }[];
-    name: string;
-    valid: boolean;
-  }[] = [{ metadata: [], name: '', valid: false }];
+  let newExternalEventTypes: TypeInput[] = [{ metadata: [], name: '', valid: false }];
 
   let creationError: string | null = null;
   let hasCreationPermissionForCurrentTab: boolean = false;
@@ -145,7 +146,7 @@
     return {
       metadata: entry.metadata,
       name: entry.name,
-      valid: validateEST(entry),
+      valid: validateType(entry, $externalSourceTypes, newExternalSourceTypes),
     };
   });
 
@@ -153,12 +154,11 @@
     return {
       metadata: entry.metadata,
       name: entry.name,
-      valid: validateEET(entry),
+      valid: validateType(entry, $externalEventTypes, newExternalEventTypes),
     };
   });
 
   // File parse logic
-  // TODO: unify this somehow?
   $: if (derivationGroupUploadFiles !== null && derivationGroupUploadFiles?.length) {
     // Safeguard against infinitely executing parse logic
     if (derivationGroupUploadFileMain !== derivationGroupUploadFiles[0]) {
@@ -167,36 +167,72 @@
 
       derivationGroupUploadFileMain = derivationGroupUploadFiles[0];
       // JUST parse it
-      parseDG(derivationGroupUploadFileMain.stream());
+      parse(derivationGroupUploadFileMain.stream(), 'Derivation Group');
     }
   }
 
-  async function parseDG(stream: ReadableStream) {
-    console.log('parsing');
+  $: if (externalSourceTypeUploadFiles !== null && externalSourceTypeUploadFiles?.length) {
+    // Safeguard against infinitely executing parse logic
+    if (externalSourceTypeUploadFileMain !== externalSourceTypeUploadFiles[0]) {
+      uploadFilesError = null;
+      validationError = null;
+
+      externalSourceTypeUploadFileMain = externalSourceTypeUploadFiles[0];
+      // JUST parse it
+      parse(externalSourceTypeUploadFileMain.stream(), 'External Source Type');
+    }
+  }
+
+  $: if (externalEventTypeUploadFiles !== null && externalEventTypeUploadFiles?.length) {
+    // Safeguard against infinitely executing parse logic
+    if (externalEventTypeUploadFileMain !== externalEventTypeUploadFiles[0]) {
+      uploadFilesError = null;
+      validationError = null;
+
+      externalEventTypeUploadFileMain = externalEventTypeUploadFiles[0];
+      // JUST parse it
+      parse(externalEventTypeUploadFileMain.stream(), 'External Event Type');
+    }
+  }
+
+  async function parse(stream: ReadableStream, type: queryType) {
     try {
       try {
-        // remove this stuff
-        derivationGroupJSON = await parseJSONStream<{ entries: DerivationGroupJSON[] }>(stream);
-        const validate = ajv.compile(derivationGroupSchema);
-        const valid = validate(derivationGroupJSON); // TODO: validate the stream, and then convert to JSON after?
-        console.log(derivationGroupJSON, stream);
-        if (!valid && validate.errors) {
-          validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
-          derivationGroupJSON = null;
+        if (type === 'Derivation Group') {
+          derivationGroupJSON = await parseJSONStream<{ entries: DerivationGroupJSON[] }>(stream);
+          const validate = ajv.compile(derivationGroupSchema);
+          const valid = validate(derivationGroupJSON);
+          if (!valid && validate.errors) {
+            validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
+            derivationGroupJSON = null;
+          }
+        } else if (type === 'External Source Type') {
+          externalSourceTypeJSON = await parseJSONStream<{ entries: ExternalSourceTypeJSON[] }>(stream);
+          const validate = ajv.compile(externalSourceTypeSchema);
+          const valid = validate(externalSourceTypeJSON); // TODO: validate the stream, and then convert to JSON after?
+          if (!valid && validate.errors) {
+            validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
+            externalSourceTypeJSON = null;
+          }
+        } else {
+          externalEventTypeJSON = await parseJSONStream<{ entries: ExternalEventTypeJSON[] }>(stream);
+          const validate = ajv.compile(externalEventTypeSchema);
+          const valid = validate(externalEventTypeJSON);
+          if (!valid && validate.errors) {
+            validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
+            externalEventTypeJSON = null;
+          }
         }
-        console.log('parsed!');
       } catch (e) {
-        throw new Error('Derivation Group Definition File is not a valid JSON');
+        throw new Error(`${type} Definition File is not a valid JSON file.`);
       }
     } catch (e) {
       uploadFilesError = (e as Error).message;
     }
   }
 
-  function uploadDGs() {
-    console.log('HERE!', derivationGroupJSON, validationError);
-    if (derivationGroupJSON && validationError === null) {
-      console.log('HERE!2');
+  function upload(type: queryType) {
+    if (type === 'Derivation Group' && derivationGroupJSON && validationError === null) {
       newDerivationGroups = [
         ...newDerivationGroups.filter(derivationGroup => derivationGroup.name.length > 0),
         ...derivationGroupJSON.entries.map(entry => {
@@ -215,52 +251,18 @@
       derivationGroupUploadFiles = undefined;
       derivationGroupUploadFileMain = undefined;
       derivationGroupJSON = null;
-    }
-  }
-
-  $: if (externalSourceTypeUploadFiles !== null && externalSourceTypeUploadFiles?.length) {
-    // Safeguard against infinitely executing parse logic
-    if (externalSourceTypeUploadFileMain !== externalSourceTypeUploadFiles[0]) {
-      uploadFilesError = null;
-      validationError = null;
-
-      externalSourceTypeUploadFileMain = externalSourceTypeUploadFiles[0];
-      // JUST parse it
-      parseEST(externalSourceTypeUploadFileMain.stream());
-    }
-  }
-
-  async function parseEST(stream: ReadableStream) {
-    console.log('parsing');
-    try {
-      try {
-        // remove this stuff
-        externalSourceTypeJSON = await parseJSONStream<{ entries: ExternalSourceTypeJSON[] }>(stream);
-        const validate = ajv.compile(externalSourceTypeSchema);
-        const valid = validate(externalSourceTypeJSON); // TODO: validate the stream, and then convert to JSON after?
-        console.log(externalSourceTypeJSON, stream);
-        if (!valid && validate.errors) {
-          validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
-          externalSourceTypeJSON = null;
-        }
-        console.log('parsed!');
-      } catch (e) {
-        throw new Error('External Source Type Definition File is not a valid JSON');
-      }
-    } catch (e) {
-      uploadFilesError = (e as Error).message;
-    }
-  }
-
-  function uploadESTs() {
-    if (externalSourceTypeJSON && validationError === null) {
+    } else if (type === 'External Source Type' && externalSourceTypeJSON && validationError === null) {
       newExternalSourceTypes = [
         ...newExternalSourceTypes.filter(sourceType => sourceType.name.length > 0),
         ...externalSourceTypeJSON.entries.map(entry => {
           return {
             metadata: entry.metadata,
             name: entry.name,
-            valid: validateEST({ metadata: entry.metadata, name: entry.name, valid: false }),
+            valid: validateType(
+              { metadata: entry.metadata, name: entry.name, valid: false },
+              $externalSourceTypes,
+              newExternalSourceTypes,
+            ),
           };
         }),
       ];
@@ -269,51 +271,18 @@
       externalSourceTypeUploadFiles = undefined;
       externalSourceTypeUploadFileMain = undefined;
       externalSourceTypeJSON = null;
-    }
-  }
-
-  $: if (externalEventTypeUploadFiles !== null && externalEventTypeUploadFiles?.length) {
-    // Safeguard against infinitely executing parse logic
-    if (externalEventTypeUploadFileMain !== externalEventTypeUploadFiles[0]) {
-      uploadFilesError = null;
-      validationError = null;
-
-      externalEventTypeUploadFileMain = externalEventTypeUploadFiles[0];
-      // JUST parse it
-      parseEET(externalEventTypeUploadFileMain.stream());
-    }
-  }
-
-  async function parseEET(stream: ReadableStream) {
-    try {
-      try {
-        // remove this stuff
-        externalEventTypeJSON = await parseJSONStream<{ entries: ExternalEventTypeJSON[] }>(stream);
-        const validate = ajv.compile(externalEventTypeSchema);
-        const valid = validate(externalEventTypeJSON); // TODO: validate the stream, and then convert to JSON after?
-        console.log(externalEventTypeJSON, stream);
-        if (!valid && validate.errors) {
-          validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
-          externalEventTypeJSON = null;
-        }
-        console.log('parsed!');
-      } catch (e) {
-        throw new Error('External Source Type Definition File is not a valid JSON');
-      }
-    } catch (e) {
-      uploadFilesError = (e as Error).message;
-    }
-  }
-
-  function uploadEETs() {
-    if (externalEventTypeJSON && validationError === null) {
+    } else if (type === 'External Event Type' && externalEventTypeJSON && validationError === null) {
       newExternalEventTypes = [
         ...newExternalEventTypes.filter(eventType => eventType.name.length > 0),
         ...externalEventTypeJSON.entries.map(entry => {
           return {
             metadata: entry.metadata,
             name: entry.name,
-            valid: validateEET({ metadata: entry.metadata, name: entry.name, valid: false }),
+            valid: validateType(
+              { metadata: entry.metadata, name: entry.name, valid: false },
+              $externalEventTypes,
+              newExternalEventTypes,
+            ),
           };
         }),
       ];
@@ -325,90 +294,104 @@
     }
   }
 
-  function onCreateDerivationGroup() {
-    if (isCreateDisabled) {
-      creationError = 'Please fill out all derivation group names and source types.';
+  function reset(type: queryType) {
+    if (type === 'Derivation Group') {
+      uploadFilesError = null;
+      validationError = null;
+      derivationGroupJSON = null;
+    } else if (type === 'External Event Type') {
+      uploadFilesError = null;
+      validationError = null;
+      externalEventTypeJSON = null;
     } else {
-      newDerivationGroups.forEach(entry => {
-        effects.createDerivationGroup({ name: entry.name, source_type_name: entry.sourceType }, user);
-      });
-      newDerivationGroups = [{ name: '', sourceType: '', valid: false }];
+      uploadFilesError = null;
+      validationError = null;
+      externalSourceTypeJSON = null;
     }
   }
 
-  function onCreateExternalSourceType() {
+  function onCreate(type: queryType) {
     if (isCreateDisabled) {
-      creationError = 'Please ensure every type has a name, and all metadata has a name and type.';
-    } else {
-      for (let sourceType of newExternalSourceTypes) {
-        // TODO: This probably doesn't need to exist - swap input keys?
-        const newExternalSourceTypeMetadataParameterMap: ParametersMap = {};
-        let requiredMetadata: ParameterName[] = [];
-        if (sourceType.metadata.length > 0) {
-          sourceType.metadata.forEach(newMetadata => {
-            if (newMetadata.name !== null && newMetadata.schema !== null) {
-              newExternalSourceTypeMetadataParameterMap[newMetadata.name] = {
-                order: 1,
-                schema: newMetadata.schema,
-              };
-              if (newMetadata.isRequired) {
-                requiredMetadata.push(newMetadata.name);
-              }
-            }
-          });
-        }
-        // Generate Hasura mutation input
-        const externalSourceTypeInsertInput: ExternalSourceTypeInsertInput = {
-          metadata: newExternalSourceTypeMetadataParameterMap,
-          name: sourceType.name,
-          required_metadata: requiredMetadata,
-        };
-        effects.createExternalSourceType(externalSourceTypeInsertInput, user);
-        newExternalSourceTypes = [{ metadata: [], name: '', valid: false }];
+      if (type === 'Derivation Group') {
+        creationError = 'Please fill out all derivation group names and source types.';
+      } else if (type === 'External Event Type') {
+        creationError = 'Please ensure every type has a name, and all metadata has a name and type.';
+      } else {
+        creationError = 'Please ensure every type has a name, and all metadata has a name and type.';
       }
-    }
-  }
-
-  function onCreateExternalEventType() {
-    if (isCreateDisabled) {
-      creationError = 'Please ensure every type has a name, and all metadata has a name and type.';
     } else {
-      for (let eventType of newExternalEventTypes) {
-        // TODO: This probably doesn't need to exist - swap input keys?
-        const newExternalEventTypeMetadataParameterMap: ParametersMap = {};
-        let requiredMetadata: ParameterName[] = [];
-        if (eventType.metadata.length > 0) {
-          eventType.metadata.forEach(newMetadata => {
-            if (newMetadata.name !== null && newMetadata.schema !== null) {
-              newExternalEventTypeMetadataParameterMap[newMetadata.name] = {
-                order: 1,
-                schema: newMetadata.schema,
-              };
-              if (newMetadata.isRequired) {
-                requiredMetadata.push(newMetadata.name);
+      if (type === 'Derivation Group') {
+        newDerivationGroups.forEach(entry => {
+          effects.createDerivationGroup({ name: entry.name, source_type_name: entry.sourceType }, user);
+        });
+        newDerivationGroups = [{ name: '', sourceType: '', valid: false }];
+      } else if (type === 'External Event Type') {
+        // TODO: refactor to a single effect?
+        for (let eventType of newExternalEventTypes) {
+          // TODO: This probably doesn't need to exist - swap input keys?
+          const newExternalEventTypeMetadataParameterMap: ParametersMap = {};
+          let requiredMetadata: ParameterName[] = [];
+          if (eventType.metadata.length > 0) {
+            eventType.metadata.forEach(newMetadata => {
+              if (newMetadata.name !== null && newMetadata.schema !== null) {
+                newExternalEventTypeMetadataParameterMap[newMetadata.name] = {
+                  order: 1,
+                  schema: newMetadata.schema,
+                };
+                if (newMetadata.isRequired) {
+                  requiredMetadata.push(newMetadata.name);
+                }
               }
-            }
-          });
+            });
+          }
+          // Generate Hasura mutation input
+          const externalEventTypeInsertInput: ExternalEventTypeInsertInput = {
+            metadata: newExternalEventTypeMetadataParameterMap,
+            name: eventType.name,
+            required_metadata: requiredMetadata,
+          };
+          effects.createExternalEventType(externalEventTypeInsertInput, user);
+          newExternalEventTypes = [{ metadata: [], name: '', valid: false }];
         }
-        // Generate Hasura mutation input
-        const externalEventTypeInsertInput: ExternalEventTypeInsertInput = {
-          metadata: newExternalEventTypeMetadataParameterMap,
-          name: eventType.name,
-          required_metadata: requiredMetadata,
-        };
-        effects.createExternalEventType(externalEventTypeInsertInput, user);
-        newExternalEventTypes = [{ metadata: [], name: '', valid: false }];
+      } else {
+        // TODO: refactor to a single effect?
+        for (let sourceType of newExternalSourceTypes) {
+          // TODO: This probably doesn't need to exist - swap input keys?
+          const newExternalSourceTypeMetadataParameterMap: ParametersMap = {};
+          let requiredMetadata: ParameterName[] = [];
+          if (sourceType.metadata.length > 0) {
+            sourceType.metadata.forEach(newMetadata => {
+              if (newMetadata.name !== null && newMetadata.schema !== null) {
+                newExternalSourceTypeMetadataParameterMap[newMetadata.name] = {
+                  order: 1,
+                  schema: newMetadata.schema,
+                };
+                if (newMetadata.isRequired) {
+                  requiredMetadata.push(newMetadata.name);
+                }
+              }
+            });
+          }
+          // Generate Hasura mutation input
+          const externalSourceTypeInsertInput: ExternalSourceTypeInsertInput = {
+            metadata: newExternalSourceTypeMetadataParameterMap,
+            name: sourceType.name,
+            required_metadata: requiredMetadata,
+          };
+          effects.createExternalSourceType(externalSourceTypeInsertInput, user);
+          newExternalSourceTypes = [{ metadata: [], name: '', valid: false }];
+        }
       }
     }
   }
 
   function handleCreation() {
     if (selectedTab === derivationGroupTabId) {
-      onCreateDerivationGroup();
+      onCreate('Derivation Group');
     } else if (selectedTab === externalSourceTypeTabId) {
-      onCreateExternalSourceType();
+      onCreate('External Source Type');
     } else if (selectedTab === externalEventTypeTabId) {
-      onCreateExternalEventType();
+      onCreate('External Event Type');
     }
   }
 
@@ -424,12 +407,6 @@
     handleChange();
   }
 
-  function handleCreateNewDerivationGroupEntry() {
-    newDerivationGroups = [...newDerivationGroups, { name: '', sourceType: '', valid: false }];
-
-    handleChange();
-  }
-
   function validateDerivationGroupName(value: string): boolean {
     if (value.length <= 0 || $derivationGroups.map(dg => dg.name).includes(value)) {
       return false;
@@ -442,191 +419,146 @@
     return true;
   }
 
-  function validateEST(sourceType: {
-    metadata: {
-      isRequired: boolean | null;
-      name: ParameterName | null;
-      schema: ValueSchema | null;
-    }[];
-    name: string;
-    valid: boolean;
-  }) {
+  function validateType(
+    newType: TypeInput,
+    existingStore: ExternalSourceType[] | ExternalEventType[],
+    currentEntries: TypeInput[],
+  ) {
     // TODO: check name not elsewhere in the list of source types to be uploaded at the moment
-    if (sourceType.name.length <= 0 || $externalSourceTypes.map(est => est.name).includes(sourceType.name)) {
+    if (newType.name.length <= 0 || existingStore.map(typeTest => typeTest.name).includes(newType.name)) {
       return false;
     }
     // verify name doesn't duplicate itself too often. This is run after an upload/update, so this is correct
-    if (newExternalSourceTypes.filter(sourceTypeTest => sourceTypeTest.name === sourceType.name).length > 1) {
+    if (currentEntries.filter(typeTest => typeTest.name === newType.name).length > 1) {
       return false;
     }
 
-    if (sourceType.metadata.length === 0) {
+    if (newType.metadata.length === 0) {
       return true;
     } else {
-      // TODO: check metadata name not elsewhere in the list of source types to be uploaded at the moment
-      return sourceType.metadata
+      let nonNull = newType.metadata
         .map(metadataItem => {
-          console.log(
-            metadataItem.name,
-            metadataItem.name !== null && metadataItem.name.length >= 1 && metadataItem.schema !== null,
-          );
           return metadataItem.name !== null && metadataItem.name.length >= 1 && metadataItem.schema !== null;
         })
         .reduce((prev, curr) => prev && curr, true);
+      let names = newType.metadata.map(metadataItem => metadataItem.name);
+      let unique = names.map((name, i) => i === names.indexOf(name)).reduce((prev, curr) => prev && curr, true);
+      return nonNull && unique;
     }
   }
 
-  function validateEET(eventType: {
-    metadata: {
-      isRequired: boolean | null;
-      name: ParameterName | null;
-      schema: ValueSchema | null;
-    }[];
-    name: string;
-    valid: boolean;
-  }) {
-    // TODO: check name not elsewhere in the list of source types to be uploaded at the moment
-    if (eventType.name.length <= 0 || $externalEventTypes.map(eet => eet.name).includes(eventType.name)) {
-      return false;
-    }
-    // verify name doesn't duplicate itself too often. This is run after an upload/update, so this is correct
-    if (newExternalEventTypes.filter(eventTypeTest => eventTypeTest.name === eventType.name).length > 1) {
-      return false;
-    }
-
-    if (eventType.metadata.length === 0) {
-      return true;
+  function createNewEntry(type: queryType) {
+    if (type === 'Derivation Group') {
+      newDerivationGroups = [...newDerivationGroups, { name: '', sourceType: '', valid: false }];
+    } else if (type === 'External Event Type') {
+      newExternalSourceTypes = [...newExternalSourceTypes, { metadata: [], name: '', valid: false }];
     } else {
-      // TODO: check metadata name not elsewhere in the list of event types to be uploaded at the moment
-      return eventType.metadata
-        .map(metadataItem => {
-          console.log(
-            metadataItem.name,
-            metadataItem.name !== null && metadataItem.name.length >= 1 && metadataItem.schema !== null,
-          );
-          return metadataItem.name !== null && metadataItem.name.length >= 1 && metadataItem.schema !== null;
-        })
-        .reduce((prev, curr) => prev && curr, true);
+      newExternalEventTypes = [...newExternalEventTypes, { metadata: [], name: '', valid: false }];
+    }
+    // clear error stores
+    handleChange();
+  }
+
+  function deleteEntry(type: queryType, i: number) {
+    // sadly, no easy delete other than filter
+    if (type === 'Derivation Group') {
+      newDerivationGroups = newDerivationGroups.filter((_, index) => index !== i);
+    } else if (type === 'External Source Type') {
+      newExternalSourceTypes = newExternalSourceTypes.filter((_, index) => index !== i);
+    } else {
+      newExternalEventTypes = newExternalEventTypes.filter((_, index) => index !== i);
+    }
+    handleChange();
+  }
+
+  function handleDeleteMetadata(e: CustomEvent, queryType: queryType, type: TypeInput) {
+    if (queryType === 'External Source Type') {
+      let indexToDelete = e.detail;
+      type.metadata = type.metadata.filter((item, index) => {
+        console.log(item, index, indexToDelete);
+        return index !== indexToDelete;
+      });
+
+      // force svelte update
+      newExternalSourceTypes = [...newExternalSourceTypes];
+      handleChange();
+    } else {
+      let indexToDelete = e.detail;
+      type.metadata = type.metadata.filter((item, index) => {
+        console.log(item, index, indexToDelete);
+        return index !== indexToDelete;
+      });
+
+      // force svelte update
+      newExternalEventTypes = [...newExternalEventTypes];
+      handleChange();
     }
   }
 
-  function handleDGChange(value: string, i: number) {
-    // update element at i in list
-    newDerivationGroups[i].name = value;
-    newDerivationGroups = [...newDerivationGroups];
+  function handleNameChange(value: string, i: number, type: queryType | 'DG Source Type') {
+    if (type === 'Derivation Group') {
+      // update element at i in list
+      newDerivationGroups[i].name = value;
+      newDerivationGroups = [...newDerivationGroups];
+    } else if (type === 'DG Source Type') {
+      // update element at i in list
+      newDerivationGroups[i].sourceType = value;
+      newDerivationGroups = [...newDerivationGroups];
+    } else if (type === 'External Source Type') {
+      // update element at i in list
+      newExternalSourceTypes[i].name = value;
+      newExternalSourceTypes = [...newExternalSourceTypes];
+    } else {
+      // update element at i in list
+      newExternalEventTypes[i].name = value;
+      newExternalEventTypes = [...newExternalEventTypes];
+    }
 
     // clear error stores
     handleChange();
   }
 
-  function handleDGStChange(value: string, i: number) {
-    // update element at i in list
-    newDerivationGroups[i].sourceType = value;
-    newDerivationGroups = [...newDerivationGroups];
-
-    // clear error stores
+  function handleAddMetadata(type: TypeInput, queryType: 'External Source Type' | 'External Event Type') {
+    if (queryType === 'External Source Type') {
+      type.metadata = [...type.metadata, { isRequired: null, name: null, schema: null }];
+      newExternalSourceTypes = [...newExternalSourceTypes];
+    } else {
+      type.metadata = [...type.metadata, { isRequired: null, name: null, schema: null }];
+      newExternalEventTypes = [...newExternalEventTypes];
+    }
     handleChange();
   }
 
-  function handleESTChange(value: string, i: number) {
-    // update element at i in list
-    newExternalSourceTypes[i].name = value;
-    newExternalSourceTypes = [...newExternalSourceTypes];
-
-    // clear error stores
-    handleChange();
-  }
-
-  function handleAddESTMetadata(sourceType: {
-    metadata: {
-      isRequired: boolean | null;
-      name: ParameterName | null;
-      schema: ValueSchema | null;
-    }[];
-    name: string;
-    valid: boolean;
-  }) {
-    sourceType.metadata = [...sourceType.metadata, { isRequired: null, name: null, schema: null }];
-    newExternalSourceTypes = [...newExternalSourceTypes];
-
-    handleChange();
-  }
-
-  function handleUpdateESTMetadata(
+  function handleUpdateMetadata(
     e: CustomEvent,
-    sourceType: {
-      metadata: {
-        isRequired: boolean | null;
-        name: ParameterName | null;
-        schema: ValueSchema | null;
-      }[];
-      name: string;
-      valid: boolean;
-    },
+    type: TypeInput,
+    queryType: 'External Source Type' | 'External Event Type',
   ) {
-    let index = e.detail.id;
-    if (e.detail) {
-      if (e.detail.name) {
-        sourceType.metadata[index].name = e.detail.name;
-      } else if (e.detail.type) {
-        sourceType.metadata[index].schema = { type: e.detail.type } as ValueSchema;
-      } else if (e.detail.isRequired) {
-        sourceType.metadata[index].isRequired = e.detail.isRequired;
+    if (queryType === 'External Source Type') {
+      let index = e.detail.id;
+      if (e.detail) {
+        if (e.detail.name) {
+          type.metadata[index].name = e.detail.name;
+        } else if (e.detail.type) {
+          type.metadata[index].schema = { type: e.detail.type } as ValueSchema;
+        } else if (e.detail.isRequired) {
+          type.metadata[index].isRequired = e.detail.isRequired;
+        }
       }
-    }
-    newExternalSourceTypes = [...newExternalSourceTypes];
-
-    handleChange();
-  }
-
-  function handleEETChange(value: string, i: number) {
-    // update element at i in list
-    newExternalEventTypes[i].name = value;
-    newExternalEventTypes = [...newExternalEventTypes];
-
-    // clear error stores
-    handleChange();
-  }
-
-  function handleAddEETMetadata(eventType: {
-    metadata: {
-      isRequired: boolean | null;
-      name: ParameterName | null;
-      schema: ValueSchema | null;
-    }[];
-    name: string;
-    valid: boolean;
-  }) {
-    eventType.metadata = [...eventType.metadata, { isRequired: null, name: null, schema: null }];
-    newExternalEventTypes = [...newExternalEventTypes];
-
-    handleChange();
-  }
-
-  function handleUpdateEETMetadata(
-    e: CustomEvent,
-    eventType: {
-      metadata: {
-        isRequired: boolean | null;
-        name: ParameterName | null;
-        schema: ValueSchema | null;
-      }[];
-      name: string;
-      valid: boolean;
-    },
-  ) {
-    let index = e.detail.id;
-    if (e.detail) {
-      if (e.detail.name) {
-        eventType.metadata[index].name = e.detail.name;
-      } else if (e.detail.type) {
-        eventType.metadata[index].schema = { type: e.detail.type } as ValueSchema;
-      } else if (e.detail.isRequired) {
-        eventType.metadata[index].isRequired = e.detail.isRequired;
+      newExternalSourceTypes = [...newExternalSourceTypes];
+    } else {
+      let index = e.detail.id;
+      if (e.detail) {
+        if (e.detail.name) {
+          type.metadata[index].name = e.detail.name;
+        } else if (e.detail.type) {
+          type.metadata[index].schema = { type: e.detail.type } as ValueSchema;
+        } else if (e.detail.isRequired) {
+          type.metadata[index].isRequired = e.detail.isRequired;
+        }
       }
+      newExternalEventTypes = [...newExternalEventTypes];
     }
-    newExternalEventTypes = [...newExternalEventTypes];
-
     handleChange();
   }
 </script>
@@ -668,12 +600,8 @@
               </p>
               <div class="content">
                 <form
-                  on:submit|preventDefault={uploadDGs}
-                  on:reset={() => {
-                    uploadFilesError = null;
-                    validationError = null;
-                    derivationGroupJSON = null;
-                  }}
+                  on:submit|preventDefault={() => upload('Derivation Group')}
+                  on:reset={() => reset('Derivation Group')}
                   use:permissionHandler={{
                     hasPermission: hasCreateDerivationGroupPermission,
                     permissionError: createDerivationGroupPermissionError,
@@ -722,24 +650,20 @@
                   disabled={newDerivationGroups.length <= 1}
                   style:display="grid"
                   class="st-button icon delete"
-                  on:click|stopPropagation={() => {
-                    newDerivationGroups = newDerivationGroups.filter((_, index) => index !== i);
-
-                    handleChange();
-                  }}
+                  on:click|stopPropagation={() => deleteEntry('Derivation Group', i)}
                 >
                   <MinusIcon />
                 </button>
                 <input
                   value={derivationGroup.name}
-                  on:blur={e => handleDGChange(e.target.value, i)}
+                  on:blur={e => handleNameChange(e.target.value, i, 'Derivation Group')}
                   autocomplete="off"
                   class="st-input w-50"
                   placeholder="New Derivation Group Name"
                 />
                 <select
                   value={derivationGroup.sourceType}
-                  on:change={e => handleDGStChange(e.target.value, i)}
+                  on:change={e => handleNameChange(e.target.value, i, 'DG Source Type')}
                   class="st-select w-50"
                 >
                   {#each $externalSourceTypes as sourceType}
@@ -752,7 +676,7 @@
               <button
                 style:display="grid"
                 class="st-button icon add-button"
-                on:click={handleCreateNewDerivationGroupEntry}
+                on:click={() => createNewEntry('Derivation Group')}
               >
                 <PlusIcon />
               </button>
@@ -778,12 +702,8 @@
               </p>
               <div class="content">
                 <form
-                  on:submit|preventDefault={uploadESTs}
-                  on:reset={() => {
-                    uploadFilesError = null;
-                    validationError = null;
-                    externalSourceTypeJSON = null;
-                  }}
+                  on:submit|preventDefault={() => upload('External Source Type')}
+                  on:reset={() => reset('External Source Type')}
                   use:permissionHandler={{
                     hasPermission: hasCreateExternalSourceTypePermission,
                     permissionError: createExternalSourceTypePermissionError,
@@ -832,19 +752,13 @@
                     disabled={newExternalSourceTypes.length <= 1}
                     style:display="grid"
                     class="st-button icon delete"
-                    on:click|stopPropagation={() => {
-                      newExternalSourceTypes = newExternalSourceTypes.filter((_, index) => index !== i);
-
-                      handleChange();
-                    }}
+                    on:click|stopPropagation={() => deleteEntry('External Source Type', i)}
                   >
                     <MinusIcon />
                   </button>
                   <input
                     value={sourceType.name}
-                    on:blur={e => {
-                      handleESTChange(e.target.value, i);
-                    }}
+                    on:blur={e => handleNameChange(e.target.value, i, 'External Source Type')}
                     autocomplete="off"
                     class="st-input w-100"
                     placeholder="New External Source Type Name"
@@ -852,7 +766,7 @@
                   <button
                     style:display="grid"
                     class="st-button icon add-metadata-button"
-                    on:click={() => handleAddESTMetadata(sourceType)}
+                    on:click={() => handleAddMetadata(sourceType, 'External Source Type')}
                   >
                     <PlusIcon />
                   </button>
@@ -863,18 +777,8 @@
                       id={metadataIndex}
                       value={metadata}
                       newParameterNamePlaceholder="New External Source Type Metadata Name"
-                      on:input={e => handleUpdateESTMetadata(e, sourceType)}
-                      on:delete={e => {
-                        let indexToDelete = e.detail;
-                        sourceType.metadata = sourceType.metadata.filter((item, index) => {
-                          console.log(item, index, indexToDelete);
-                          return index !== indexToDelete;
-                        });
-
-                        // force svelte update
-                        newExternalSourceTypes = [...newExternalSourceTypes];
-                        handleChange();
-                      }}
+                      on:input={e => handleUpdateMetadata(e, sourceType, 'External Source Type')}
+                      on:delete={e => handleDeleteMetadata(e, 'External Source Type', sourceType)}
                     />
                   {/each}
                 </div>
@@ -884,14 +788,7 @@
               <button
                 style:display="grid"
                 class="st-button icon add-external-source-type-button"
-                on:click={e => {
-                  console.log('add type', e);
-                  // update element at i in list
-                  newExternalSourceTypes = [...newExternalSourceTypes, { metadata: [], name: '', valid: false }];
-
-                  // clear error stores
-                  handleChange();
-                }}
+                on:click={() => createNewEntry('External Source Type')}
               >
                 <PlusIcon />
               </button>
@@ -911,12 +808,8 @@
               </p>
               <div class="content">
                 <form
-                  on:submit|preventDefault={uploadEETs}
-                  on:reset={() => {
-                    uploadFilesError = null;
-                    validationError = null;
-                    externalEventTypeJSON = null;
-                  }}
+                  on:submit|preventDefault={() => upload('External Event Type')}
+                  on:reset={() => reset('External Event Type')}
                   use:permissionHandler={{
                     hasPermission: hasCreateExternalEventTypePermission,
                     permissionError: createExternalEventTypePermissionError,
@@ -965,19 +858,13 @@
                     disabled={newExternalSourceTypes.length <= 1}
                     style:display="grid"
                     class="st-button icon delete"
-                    on:click|stopPropagation={() => {
-                      newExternalEventTypes = newExternalEventTypes.filter((_, index) => index !== i);
-
-                      handleChange();
-                    }}
+                    on:click|stopPropagation={() => deleteEntry('External Event Type', i)}
                   >
                     <MinusIcon />
                   </button>
                   <input
                     value={eventType.name}
-                    on:blur={e => {
-                      handleEETChange(e.target.value, i);
-                    }}
+                    on:blur={e => handleNameChange(e.target.value, i, 'External Event Type')}
                     autocomplete="off"
                     class="st-input w-100"
                     placeholder="New External Event Type Name"
@@ -985,7 +872,7 @@
                   <button
                     style:display="grid"
                     class="st-button icon add-metadata-button"
-                    on:click={() => handleAddEETMetadata(eventType)}
+                    on:click={() => handleAddMetadata(eventType, 'External Event Type')}
                   >
                     <PlusIcon />
                   </button>
@@ -996,18 +883,8 @@
                       id={metadataIndex}
                       value={metadata}
                       newParameterNamePlaceholder="New External Event Type Metadata Name"
-                      on:input={e => handleUpdateEETMetadata(e, eventType)}
-                      on:delete={e => {
-                        let indexToDelete = e.detail;
-                        eventType.metadata = eventType.metadata.filter((item, index) => {
-                          console.log(item, index, indexToDelete);
-                          return index !== indexToDelete;
-                        });
-
-                        // force svelte update
-                        newExternalEventTypes = [...newExternalEventTypes];
-                        handleChange();
-                      }}
+                      on:input={e => handleUpdateMetadata(e, eventType, 'External Event Type')}
+                      on:delete={e => handleDeleteMetadata(e, 'External Event Type', eventType)}
                     />
                   {/each}
                 </div>
@@ -1017,14 +894,7 @@
               <button
                 style:display="grid"
                 class="st-button icon add-external-event-type-button"
-                on:click={e => {
-                  console.log('add type', e);
-                  // update element at i in list
-                  newExternalEventTypes = [...newExternalEventTypes, { metadata: [], name: '', valid: false }];
-
-                  // clear error stores
-                  handleChange();
-                }}
+                on:click={() => createNewEntry('External Event Type')}
               >
                 <PlusIcon />
               </button>
