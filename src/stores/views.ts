@@ -589,7 +589,7 @@ export function getUpdatedLayerWithFilters(
       const { layer: newLayer, yAxis } = createTimelineResourceLayer(timelines, items[0] as ResourceType);
       if (newLayer && newLayer.filter.resource) {
         // Add remaining resources if requested (generally avoided since resource layers are usually created on separate layers)
-        newLayer.filter.resource.names = itemNames;
+        newLayer.filter.resource = itemNames.length ? itemNames[0] : '';
         if (isLineLayer(newLayer)) {
           newLayer.lineColor = getUniqueColorForLineLayer(row);
         } else if (isXRangeLayer(newLayer)) {

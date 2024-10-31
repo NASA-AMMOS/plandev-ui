@@ -3,10 +3,12 @@
 <script lang="ts">
   import { classNames } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
+
   export let className: string = '';
   export let name: string = '';
   export let tooltipText: string = '';
   export let value: string = '';
+
   $: inputClasses = classNames('color-picker', {
     [className]: !!className,
   });

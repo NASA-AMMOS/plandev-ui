@@ -205,9 +205,7 @@ export type QuadtreeRect = {
   y: number;
 };
 
-export type ResourceLayerFilter = {
-  names: string[];
-};
+export type ResourceLayerFilter = string;
 
 export type ActivityOptions = {
   // Whether or not to display only directives, only spans, or both in the row
