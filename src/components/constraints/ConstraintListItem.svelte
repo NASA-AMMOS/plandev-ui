@@ -213,12 +213,11 @@
       >
         View Constraint
       </ContextMenuItem>
+      {#if version?.type === 'JAR'}
+        <ContextMenuItem on:click={onDuplicateConstraintInvocation}>Duplicate Invocation</ContextMenuItem>
+        <ContextMenuItem on:click={onDeleteConstraintInvocation}>Delete Invocation</ContextMenuItem>
+      {/if}
     </svelte:fragment>
-
-    {#if version?.type === 'JAR'}
-      <ContextMenuItem on:click={onDuplicateConstraintInvocation}>Duplicate Invocation</ContextMenuItem>
-      <ContextMenuItem on:click={onDeleteConstraintInvocation}>Delete Invocation</ContextMenuItem>
-    {/if}
 
     <Collapse title="Description" defaultExpanded={false}>
       <div class="st-typography-label">

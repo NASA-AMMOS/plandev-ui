@@ -42,7 +42,6 @@ export type ConstraintPlanSpecification = {
   enabled: boolean;
   invocation_id?: number;
   plan_id: number;
-  specification_id: number;
   // constraint_definition: ConstraintDefinition;
   // plan: Plan;
 };

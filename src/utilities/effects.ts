@@ -876,24 +876,23 @@ const effects = {
   },
 
   async createConstraintPlanSpecification(
-    spec_goal: ConstraintPlanSpecInsertInput,
+    constraintPlanSpecification: ConstraintPlanSpecInsertInput,
     user: User | null,
   ): Promise<number | null> {
     try {
       if (!queryPermissions.CREATE_CONSTRAINT_PLAN_SPECIFICATION(user)) {
         throwPermissionError('create a scheduling spec goal');
       }
-
       const data = await reqHasura<ConstraintPlanSpecification>(
         gql.CREATE_CONSTRAINT_PLAN_SPECIFICATION,
-        { spec_goal },
+        { constraintPlanSpecification },
         user,
       );
       const { createConstraintSpec } = data;
       if (createConstraintSpec != null) {
-        const { specification_id } = createConstraintSpec;
+        const { invocation_id } = createConstraintSpec;
         showSuccessToast('New Constraint Invocation Created Successfully');
-        return specification_id;
+        return invocation_id ?? null;
       } else {
         throw Error('Unable to create a constraint spec invocation');
       }
@@ -2499,7 +2498,6 @@ const effects = {
 
   async deleteConstraintInvocations(
     plan: Plan,
-    constraintSpecificationId: number,
     constraintInvocationIdsToDelete: (number | undefined)[],
     user: User | null,
   ) {
@@ -2510,8 +2508,7 @@ const effects = {
       const { deleteConstraintPlanSpecifications } = await reqHasura(
         gql.DELETE_CONSTRAINT_INVOCATIONS,
         {
-          constraintInvocationIdsToDelete: constraintInvocationIdsToDelete,
-          specificationId: constraintSpecificationId,
+          constraintInvocationIdsToDelete,
         },
         user,
       );
@@ -5906,7 +5903,6 @@ const effects = {
           enabled,
           id: constraintId,
           invocation_id,
-          planId: plan.id,
           revision,
         },
         user,
@@ -5936,7 +5932,7 @@ const effects = {
 
       const { deleteConstraintPlanSpecifications, insertConstraintPlanSpecifications } = await reqHasura(
         gql.UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS,
-        { constraintSpecIdsToDelete, constraintSpecsToInsert, planId: plan.id },
+        { constraintSpecIdsToDelete, constraintSpecsToInsert },
         user,
       );
 

@@ -203,11 +203,11 @@ const gql = {
 
   CREATE_CONSTRAINT_PLAN_SPECIFICATION: `#graphql
     mutation CreateConstraintSpecification($constraintPlanSpecification: constraint_specification_insert_input!) {
-      createConstraintSpec: ${Queries.INSERT_CONSTRAINT_SPECIFICATION}(object: $spec_goal) {
+      createConstraintSpec: ${Queries.INSERT_CONSTRAINT_SPECIFICATION}(object: $constraintPlanSpecification) {
+        arguments
+        constraint_id
         enabled
-        goal_id
-        priority
-        specification_id
+        invocation_id
       }
     }
   `,
@@ -701,7 +701,7 @@ const gql = {
     mutation DeleteConstraintInvocations($constraintInvocationIdsToDelete: [Int!]! = [], $specificationId: Int!) {
       deleteConstraintPlanSpecifications: ${Queries.DELETE_CONSTRAINT_SPECIFICATIONS}(
         where: {
-          constraint_invocation_id: { _in: $constraintInvocationIdsToDelete },
+          invocation_id: { _in: $constraintInvocationIdsToDelete },
           _and: {
             specification_id: { _eq: $specificationId },
           }
@@ -1007,21 +1007,6 @@ const gql = {
       }
     }
   `,
-
-  // DELETE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS: `#graphql
-  //   mutation DeleteSchedulingGoalPlanSpecification($goalIds: [Int!]!, $planId: Int!) {
-  //     ${Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS}(
-  //       where: {
-  //         goal_id: { _in: $goalIds },
-  //         _and: {
-  //           plan_id: { _eq: $planId },
-  //         }
-  //       }
-  //     ) {
-  //       affected_rows
-  //     }
-  //   }
-  // `,
 
   DELETE_SEQUENCE_ADAPTATION: `#graphql
     mutation DeleteSequenceAdaptation($id: Int!) {
@@ -2236,7 +2221,7 @@ const gql = {
       ${Queries.CONSTRAINT_SPECIFICATIONS} (where: {specification: {plan_id: {_eq: $planId}}}) {
         arguments
         constraint_id
-        constraint_invocation_id
+        invocation_id
         constraint_revision
         enabled
         specification_id
@@ -2260,7 +2245,7 @@ const gql = {
         order_by: { constraint_id: desc }
       ) {
         constraint_id
-        constraint_invocation_id
+        invocation_id
         constraint_revision
         enabled
         constraint_metadata {
@@ -3487,9 +3472,9 @@ const gql = {
   `,
 
   UPDATE_CONSTRAINT_PLAN_SPECIFICATION: `#graphql
-    mutation UpdateConstraintPlanSpecification($arguments: jsonb, $constraint_invocation_id: Int!, $revision: Int!, $enabled: Boolean!) {
+    mutation UpdateConstraintPlanSpecification($arguments: jsonb, $constraintInvocationId: Int!, $revision: Int!, $enabled: Boolean!) {
       updateConstraintPlanSpecification: ${Queries.UPDATE_CONSTRAINT_SPECIFICATION}(
-        pk_columns: { constraint_invocation_id: $constraint_invocation_id },
+        pk_columns: { invocation_id: $constraintInvocationId },
         _set: {
           arguments: $arguments,
           constraint_revision: $revision,

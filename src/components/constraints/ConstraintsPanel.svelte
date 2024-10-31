@@ -166,10 +166,10 @@
 
   async function onDeleteConstraintInvocation(event: CustomEvent<ConstraintPlanSpecification>) {
     const {
-      detail: { constraint_metadata, specification_id, ...constraintPlanSpec },
+      detail: { constraint_metadata, ...constraintPlanSpec },
     } = event;
     if ($plan) {
-      await effects.deleteConstraintInvocations($plan, specification_id, [constraintPlanSpec.invocation_id], user);
+      await effects.deleteConstraintInvocations($plan, [constraintPlanSpec.invocation_id], user);
     }
   }
 
