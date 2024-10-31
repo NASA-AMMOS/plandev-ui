@@ -1777,28 +1777,6 @@ const effects = {
     }
   },
 
-  // async createSchedulingConditionPlanSpecification(
-  //   spec_condition: SchedulingSpecConditionInsertInput,
-  //   user: User | null,
-  // ): Promise<void> {
-  //   try {
-  //     if (!queryPermissions.CREATE_SCHEDULING_CONDITION_PLAN_SPECIFICATION(user)) {
-  //       throwPermissionError('create a scheduling spec condition');
-  //     }
-
-  //     const data = await reqHasura<SchedulingConditionPlanSpecification>(
-  //       gql.CREATE_SCHEDULING_CONDITION_PLAN_SPECIFICATION,
-  //       { spec_condition },
-  //       user,
-  //     );
-  //     if (data.createSchedulingSpecCondition == null) {
-  //       throw Error('Unable to create a scheduling spec condition');
-  //     }
-  //   } catch (e) {
-  //     catchError(e as Error);
-  //   }
-  // },
-
   async createSchedulingGoal(
     name: string,
     isPublic: boolean,
