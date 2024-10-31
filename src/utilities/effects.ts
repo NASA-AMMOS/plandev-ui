@@ -5867,20 +5867,14 @@ const effects = {
       if (!queryPermissions.UPDATE_CONSTRAINT_PLAN_SPECIFICATION(user, plan)) {
         throwPermissionError('update this constraint plan specification');
       }
-      const {
-        enabled,
-        constraint_id: constraintId,
-        invocation_id,
-        constraint_revision: revision,
-      } = constraintPlanSpecification;
+      const { enabled, invocation_id, constraint_revision: revision } = constraintPlanSpecification;
 
       const { updateConstraintPlanSpecification } = await reqHasura(
         gql.UPDATE_CONSTRAINT_PLAN_SPECIFICATION,
         {
           arguments: constraintPlanSpecification.arguments,
+          constraintInvocationId: invocation_id,
           enabled,
-          id: constraintId,
-          invocation_id,
           revision,
         },
         user,
