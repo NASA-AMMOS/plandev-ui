@@ -627,9 +627,9 @@ export function createTimelineResourceLayer(timelines: Timeline[], resourceType:
   });
 
   const layer = isDiscreteSchema
-    ? createTimelineXRangeLayer(timelines, [yAxis], { filter: { resource: { names: [name] } } })
+    ? createTimelineXRangeLayer(timelines, [yAxis], { filter: { resource: name } })
     : isNumericSchema
-      ? createTimelineLineLayer(timelines, [yAxis], { filter: { resource: { names: [name] } } })
+      ? createTimelineLineLayer(timelines, [yAxis], { filter: { resource: name } })
       : null;
 
   return { layer, yAxis };
@@ -648,11 +648,7 @@ export function createTimelineLineLayer(
 
   return {
     chartType: 'line',
-    filter: {
-      resource: {
-        names: [],
-      },
-    },
+    filter: {},
     id,
     lineColor: ViewLineLayerColorPresets[0],
     lineWidth: 1,
@@ -677,11 +673,7 @@ export function createTimelineXRangeLayer(
   return {
     chartType: 'x-range',
     colorScheme: 'schemeTableau10',
-    filter: {
-      resource: {
-        names: [],
-      },
-    },
+    filter: {},
     id,
     name: '',
     opacity: 0.8,
@@ -944,7 +936,7 @@ export function minMaxDecimation<T>(
  * Filters list of resources by the layer's resource filter
  */
 export function filterResourcesByLayer(layer: Layer, resources: Resource[] | ResourceType[]) {
-  return resources.filter(resource => (layer.filter.resource?.names || []).indexOf(resource.name) > -1);
+  return resources.filter(resource => layer.filter.resource === resource.name);
 }
 
 /**

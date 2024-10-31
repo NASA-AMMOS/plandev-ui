@@ -66,6 +66,7 @@
     createTimelineXRangeLayer,
     createVerticalGuide,
     createYAxis,
+    getNextLayerID,
     isActivityLayer,
     isExternalEventLayer,
     isLineLayer,
@@ -82,7 +83,7 @@
   import RadioButton from '../../ui/RadioButtons/RadioButton.svelte';
   import RadioButtons from '../../ui/RadioButtons/RadioButtons.svelte';
   import EditorSection from './TimelineEditor/EditorSection.svelte';
-  import TimelineEditorLayerSection from './TimelineEditorLayerSection.svelte';
+  import TimelineLayerEditor from './TimelineEditor/TimelineLayerEditor.svelte';
   import TimelineEditorYAxisSettings from './TimelineEditorYAxisSettings.svelte';
 
   export let gridSection: ViewGridSection;
@@ -90,6 +91,9 @@
   let horizontalGuides: HorizontalGuide[] = [];
   let editorWidth: number;
   let layers: Layer[] = [];
+  let activityLayers: ActivityLayer[] = [];
+  let resourceLayers: (LineLayer | XRangeLayer)[] = [];
+  let externalEventLayers: ExternalEventLayer[] = [];
   let timelines: Timeline[] = [];
   let rowHasNonActivityChartLayer: boolean = false;
   let rows: Row[] = [];
@@ -108,6 +112,20 @@
   $: horizontalGuides = selectedRow?.horizontalGuides || [];
   $: yAxes = selectedRow?.yAxes || [];
   $: layers = selectedRow?.layers || [];
+  $: if (layers) {
+    activityLayers = [];
+    resourceLayers = [];
+    externalEventLayers = [];
+    layers.forEach(l => {
+      if (isActivityLayer(l)) {
+        activityLayers.push(l);
+      } else if (isLineLayer(l) || isXRangeLayer(l)) {
+        resourceLayers.push(l);
+      } else if (isExternalEventLayer(l)) {
+        externalEventLayers.push(l);
+      }
+    });
+  }
   $: rowHasActivityLayer = !!selectedRow?.layers.find(isActivityLayer) || false;
   $: rowHasExternalEventLayer = selectedRow?.layers.find(isExternalEventLayer) || false;
   $: rowHasNonActivityChartLayer =
@@ -175,8 +193,22 @@
     viewUpdateRow('yAxes', filteredYAxes);
   }
 
-  function handleNewLayerClick() {
-    const layer = createTimelineActivityLayer(timelines);
+  // TODO move to a util?
+  function createTimelineLayer(chartType: Layer['chartType']): Layer {
+    switch (chartType) {
+      case 'line':
+        return createTimelineLineLayer(timelines, yAxes);
+      case 'x-range':
+        return createTimelineXRangeLayer(timelines, yAxes);
+      case 'externalEvent':
+        return createTimelineExternalEventLayer(timelines);
+      default:
+        return createTimelineActivityLayer(timelines);
+    }
+  }
+
+  function handleNewLayerClick(chartType: Layer['chartType']) {
+    let layer = createTimelineLayer(chartType);
     layers = [...layers, layer];
     viewUpdateRow('layers', layers);
   }
@@ -188,6 +220,11 @@
   function handleDeleteLayerClick(layer: Layer) {
     const filteredLayers = layers.filter(l => l.id !== layer.id);
     viewUpdateRow('layers', filteredLayers);
+  }
+
+  function handleDuplicateLayer(layer: Layer) {
+    const duplicatedLayer = { ...structuredClone(layer), id: getNextLayerID(timelines) };
+    viewUpdateRow('layers', [...layers, duplicatedLayer]);
   }
 
   function handleOptionRadioChange(event: CustomEvent<{ id: RadioButtonId }>, name: keyof DiscreteOptions) {
@@ -350,9 +387,7 @@
             ...currentLayer,
             filter: {
               ...currentLayer.filter,
-              resource: {
-                names: values,
-              },
+              resource: values[0],
             },
           };
           return newLayer;
@@ -413,6 +448,7 @@
   }
 
   function handleUpdateLayerColor(value: string, layer: Layer) {
+    console.log('value :>> ', value);
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
         if (isActivityLayer(l)) {
@@ -519,8 +555,7 @@
       {#if !selectedTimeline}
         <fieldset class="editor-section">No timeline selected</fieldset>
       {:else}
-        <fieldset class="editor-section">
-          <div class="st-typography-medium editor-section-header">Margins</div>
+        <EditorSection item="Margin">
           <CssGrid columns="1fr 1fr" gap="8px" class="editor-section-grid">
             <form on:submit={event => event.preventDefault()}>
               <Input>
@@ -547,7 +582,7 @@
               />
             </Input>
           </CssGrid>
-        </fieldset>
+        </EditorSection>
 
         <EditorSection
           creatable
@@ -853,9 +888,7 @@
       {/if}
       {#if rowHasActivityLayer || rowHasExternalEventLayer}
         <EditorSection
-          creatable
           item="Layer Option"
-          itemCount={horizontalGuides.length}
           on:create={handleNewHorizontalGuideClick}
           on:removeAll={handleRemoveAllHorizontalGuidesClick}
         >
@@ -1125,36 +1158,75 @@
       {/if}
       <EditorSection
         creatable
-        item="Layer"
-        itemCount={layers.length}
-        on:create={handleNewLayerClick}
+        item="Activity Layer"
+        itemCount={activityLayers.length}
+        on:create={() => handleNewLayerClick('activity')}
         on:removeAll={handleRemoveAllLayersClick}
       >
-        {#if layers.length}
-          <div class="editor-section-labeled-grid-container">
-            <CssGrid columns="1fr 0.75fr 24px 24px 24px" gap="8px" class="editor-section-grid">
-              <div>Filter</div>
-              <div>Layer Type</div>
-            </CssGrid>
-            <!-- TODO bug when dragging something into a different draggable area -->
-            <div class="timeline-layers timeline-elements">
-              {#each layers as layer (layer.id)}
-                <TimelineEditorLayerSection
+        {#if activityLayers.length}
+          <div class="timeline-layers timeline-elements">
+            {#each activityLayers as layer (layer.id)}
+              <TimelineLayerEditor
+                {layer}
+                on:rename={({ detail: { name } }) => handleUpdateLayerProperty('name', name, layer)}
+                on:colorChange={({ detail: { color } }) => handleUpdateLayerColor(color, layer)}
+                on:remove={() => handleDeleteLayerClick(layer)}
+                on:duplicate={() => handleDuplicateLayer(layer)}
+              />
+            {/each}
+          </div>
+        {/if}
+      </EditorSection>
+      <EditorSection
+        creatable
+        item="Resource Layer"
+        itemCount={resourceLayers.length}
+        on:create={() => handleNewLayerClick('line')}
+        on:removeAll={handleRemoveAllLayersClick}
+      >
+        {#if resourceLayers.length}
+          <!-- TODO bug when dragging something into a different draggable area -->
+          <div class="timeline-layers timeline-elements">
+            {#each resourceLayers as layer (layer.id)}
+              <TimelineLayerEditor
+                {layer}
+                on:rename={({ detail: { name } }) => handleUpdateLayerProperty('name', name, layer)}
+                on:colorChange={({ detail: { color } }) => handleUpdateLayerColor(color, layer)}
+                on:remove={() => handleDeleteLayerClick(layer)}
+                on:duplicate={() => handleDuplicateLayer(layer)}
+              />
+              <!-- <TimelineEditorLayerSection
                   on:handleUpdateLayerFilter={event => handleUpdateLayerFilter(event.detail.values, layer)}
                   on:handleUpdateLayerProperty={event =>
                     handleUpdateLayerProperty(event.detail.name, event.detail.value, layer)}
-                  on:handleUpdateLayerChartType={event => handleUpdateLayerChartType(event.detail.value, layer)}
-                  on:handleUpdateLayerColor={event => handleUpdateLayerColor(event.detail.value, layer)}
                   on:handleUpdateLayerColorScheme={event => handleUpdateLayerColorScheme(event.detail.value, layer)}
                   on:handleDeleteLayerClick={() => handleDeleteLayerClick(layer)}
                   {layer}
                   {yAxes}
-                />
-              {/each}
-            </div>
+                /> -->
+            {/each}
           </div>
-        {:else}
-          <div />
+        {/if}
+      </EditorSection>
+      <EditorSection
+        creatable
+        item="Event Layer"
+        itemCount={externalEventLayers.length}
+        on:create={() => handleNewLayerClick('externalEvent')}
+        on:removeAll={handleRemoveAllLayersClick}
+      >
+        {#if externalEventLayers.length}
+          <div class="timeline-layers timeline-elements">
+            {#each externalEventLayers as layer (layer.id)}
+              <TimelineLayerEditor
+                {layer}
+                on:rename={({ detail: { name } }) => handleUpdateLayerProperty('name', name, layer)}
+                on:colorChange={({ detail: { color } }) => handleUpdateLayerColor(color, layer)}
+                on:remove={() => handleDeleteLayerClick(layer)}
+                on:duplicate={() => handleDuplicateLayer(layer)}
+              />
+            {/each}
+          </div>
         {/if}
       </EditorSection>
     {/if}
@@ -1191,7 +1263,7 @@
 
   .timeline-elements {
     display: grid;
-    gap: 4px;
+    gap: 8px;
   }
 
   .editor-section-labeled-grid-container {

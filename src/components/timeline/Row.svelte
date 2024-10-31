@@ -211,7 +211,9 @@
     const resourceNamesSet = new Set<string>();
     layers.map(layer => {
       if (layer.chartType === 'line' || layer.chartType === 'x-range') {
-        layer.filter.resource?.names.forEach(name => resourceNamesSet.add(name));
+        if (layer.filter.resource) {
+          resourceNamesSet.add(layer.filter.resource);
+        }
       }
     });
     const resourceNames = Array.from(resourceNamesSet);
@@ -817,12 +819,13 @@
       return [];
     }
     const resources: Resource[] = [];
-    layer.filter.resource.names.forEach(name => {
-      const resourceRequest = resourceRequestMap[name];
+    if (layer.filter.resource) {
+      const resourceRequest = resourceRequestMap[layer.filter.resource];
       if (resourceRequest && !resourceRequest.loading && !resourceRequest.error && resourceRequest.resource) {
         resources.push(resourceRequest.resource);
       }
-    });
+    }
+
     return resources;
   }
 
