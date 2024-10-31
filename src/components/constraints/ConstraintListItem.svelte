@@ -8,7 +8,6 @@
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { Status } from '../../enums/status';
   import type {
@@ -31,10 +30,11 @@
   export let constraint: ConstraintMetadata;
   export let constraintPlanSpec: ConstraintPlanSpecification;
   export let constraintResponse: ConstraintResponse;
+  export let editPermissionError: string = 'You do not have permission to edit constraints for this plan.';
   export let modelId: number | undefined;
   export let hasReadPermission: boolean = false;
   export let hasEditPermission: boolean = false;
-  export let readOnly: boolean = false;
+  export let readPermissionError: string = 'You do not have permission to view this constraint.';
   export let totalViolationCount: number = 0;
   export let visible: boolean = true;
 
@@ -117,9 +117,7 @@
           on:click|stopPropagation
           use:permissionHandler={{
             hasPermission: hasEditPermission,
-            permissionError: readOnly
-              ? PlanStatusMessages.READ_ONLY
-              : 'You do not have permission to edit plan constraints',
+            permissionError: editPermissionError,
           }}
           use:tooltip={{
             content: `${constraintPlanSpec.enabled ? 'Disable constraint' : 'Enable constraint'} on plan`,
@@ -173,9 +171,7 @@
           on:click|stopPropagation
           use:permissionHandler={{
             hasPermission: hasEditPermission,
-            permissionError: readOnly
-              ? PlanStatusMessages.READ_ONLY
-              : 'You do not have permission to edit plan constraints',
+            permissionError: editPermissionError,
           }}
         >
           <option value={null}>Always use latest</option>
@@ -206,7 +202,7 @@
             permissionHandler,
             {
               hasPermission: hasReadPermission,
-              permissionError: 'You do not have permission to edit this constraint',
+              permissionError: readPermissionError,
             },
           ],
         ]}
@@ -214,8 +210,34 @@
         View Constraint
       </ContextMenuItem>
       {#if version?.type === 'JAR'}
-        <ContextMenuItem on:click={onDuplicateConstraintInvocation}>Duplicate Invocation</ContextMenuItem>
-        <ContextMenuItem on:click={onDeleteConstraintInvocation}>Delete Invocation</ContextMenuItem>
+        <ContextMenuItem
+          on:click={onDuplicateConstraintInvocation}
+          use={[
+            [
+              permissionHandler,
+              {
+                hasPermission: hasEditPermission,
+                permissionError: editPermissionError,
+              },
+            ],
+          ]}
+        >
+          Duplicate Invocation
+        </ContextMenuItem>
+        <ContextMenuItem
+          on:click={onDeleteConstraintInvocation}
+          use={[
+            [
+              permissionHandler,
+              {
+                hasPermission: hasEditPermission,
+                permissionError: editPermissionError,
+              },
+            ],
+          ]}
+        >
+          Delete Invocation
+        </ContextMenuItem>
       {/if}
     </svelte:fragment>
 

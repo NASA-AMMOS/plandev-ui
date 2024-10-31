@@ -231,13 +231,14 @@
         {#each filteredSchedulingGoalSpecs as specGoal (specGoal.goal_invocation_id)}
           {#if $schedulingGoalsMap[specGoal.goal_id]}
             <SchedulingGoal
+              editPermissionError={$planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to edit scheduling goals for this plan.'}
               hasEditPermission={hasSpecEditPermission}
+              hasReadPermission={featurePermissions.schedulingGoals.canRead(user)}
               goal={$schedulingGoalsMap[specGoal.goal_id]}
               goalPlanSpec={specGoal}
               modelId={$plan?.model.id}
-              permissionError={$planReadOnly
-                ? PlanStatusMessages.READ_ONLY
-                : 'You do not have permission to edit scheduling goals for this plan.'}
               on:updateGoalPlanSpec={onUpdateGoal}
               on:duplicateGoalInvocation={onDuplicateGoalInvocation}
               on:deleteGoalInvocation={onDeleteGoalInvocation}

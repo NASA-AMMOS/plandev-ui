@@ -59,6 +59,7 @@
   let showAll: boolean = true;
   let filterText: string = '';
   let filteredConstraints: ConstraintPlanSpecification[] = [];
+  let hasSpecEditPermission: boolean;
   let endTime: string;
   let endTimeField: FieldStore<string>;
   let numOfPrivateConstraints: number = 0;
@@ -76,6 +77,7 @@
     } else {
       endTime = '';
     }
+    hasSpecEditPermission = featurePermissions.constraintsPlanSpec.canUpdate(user, $plan) && !$planReadOnly;
   }
 
   $: startTimeField = field<string>(startTime, [required, $plugins.time.primary.validate]);
@@ -385,8 +387,11 @@
               constraint={$constraintsMap[constraint.constraint_id]}
               constraintPlanSpec={$allowedConstraintPlanSpecMap[constraint.constraint_id]}
               constraintResponse={constraintToConstraintResponseMap[constraint.constraint_id]}
+              editPermissionError={$planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to edit constraints for this plan.'}
+              hasEditPermission={hasSpecEditPermission}
               hasReadPermission={featurePermissions.constraints.canRead(user)}
-              hasEditPermission={$plan ? featurePermissions.constraintsPlanSpec.canUpdate(user, $plan) : false}
               modelId={$plan?.model.id}
               totalViolationCount={$constraintResponseMap[constraint.constraint_id]?.results.violations?.length || 0}
               visible={$constraintVisibilityMap[constraint.constraint_id]}

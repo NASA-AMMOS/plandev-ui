@@ -5,7 +5,6 @@
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import { PlanStatusMessages } from '../../../enums/planStatusMessages';
   import { SearchParameters } from '../../../enums/searchParameters';
   import type { FormParameter } from '../../../types/parameter';
   import type {
@@ -22,12 +21,13 @@
   import SchedulingGoalAnalysesActivities from './SchedulingGoalAnalysesActivities.svelte';
   import SchedulingGoalAnalysesBadge from './SchedulingGoalAnalysesBadge.svelte';
 
+  export let editPermissionError: string = 'You do not have permission to edit scheduling goals for this plan.';
   export let goal: SchedulingGoalMetadata;
   export let goalPlanSpec: SchedulingGoalPlanSpecification;
   export let hasEditPermission: boolean = false;
+  export let hasReadPermission: boolean = false;
   export let modelId: number | undefined;
-  export let permissionError: string = '';
-  export let readOnly: boolean = false;
+  export let readPermissionError: string = 'You do not have permission to view this scheduling goal.';
 
   const dispatch = createEventDispatcher<{
     deleteGoalInvocation: SchedulingGoalPlanSpecification;
@@ -157,7 +157,7 @@
           on:click|stopPropagation
           use:permissionHandler={{
             hasPermission: hasEditPermission,
-            permissionError,
+            permissionError: editPermissionError,
           }}
           use:tooltip={{
             content: `${enabled ? 'Disable goal' : 'Enable goal'} on plan`,
@@ -183,7 +183,7 @@
             on:keydown={onKeyDown}
             use:permissionHandler={{
               hasPermission: hasEditPermission,
-              permissionError,
+              permissionError: editPermissionError,
             }}
           />
           {#if hasEditPermission}
@@ -214,7 +214,7 @@
           on:click|stopPropagation
           use:permissionHandler={{
             hasPermission: hasEditPermission,
-            permissionError: readOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit plan goals',
+            permissionError: editPermissionError,
           }}
         >
           <option value={null}>Always use latest</option>
@@ -246,8 +246,8 @@
           [
             permissionHandler,
             {
-              hasPermission: hasEditPermission,
-              permissionError,
+              hasPermission: hasReadPermission,
+              permissionError: readPermissionError,
             },
           ],
         ]}
@@ -260,7 +260,7 @@
             permissionHandler,
             {
               hasPermission: hasEditPermission,
-              permissionError,
+              permissionError: editPermissionError,
             },
           ],
         ]}
@@ -277,8 +277,34 @@
         </div>
       </ContextMenuItem>
       {#if version?.type === 'JAR'}
-        <ContextMenuItem on:click={onDuplicateGoalInvocation}>Duplicate Invocation</ContextMenuItem>
-        <ContextMenuItem on:click={onDeleteGoalInvocation}>Delete Invocation</ContextMenuItem>
+        <ContextMenuItem
+          on:click={onDuplicateGoalInvocation}
+          use={[
+            [
+              permissionHandler,
+              {
+                hasPermission: hasEditPermission,
+                permissionError: editPermissionError,
+              },
+            ],
+          ]}
+        >
+          Duplicate Invocation
+        </ContextMenuItem>
+        <ContextMenuItem
+          on:click={onDeleteGoalInvocation}
+          use={[
+            [
+              permissionHandler,
+              {
+                hasPermission: hasEditPermission,
+                permissionError: editPermissionError,
+              },
+            ],
+          ]}
+        >
+          Delete Invocation
+        </ContextMenuItem>
       {/if}
     </svelte:fragment>
   </Collapse>
