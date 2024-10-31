@@ -4,8 +4,6 @@
   import ArrowLeftIcon from '@nasa-jpl/stellar/icons/arrow_left.svg?component';
   import DuplicateIcon from '@nasa-jpl/stellar/icons/duplicate.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
-  import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
-  import RemoveAllIcon from '@nasa-jpl/stellar/icons/remove_all.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import GripVerticalIcon from 'bootstrap-icons/icons/grip-vertical.svg?component';
   import { onMount } from 'svelte';
@@ -83,6 +81,7 @@
   import Panel from '../../ui/Panel.svelte';
   import RadioButton from '../../ui/RadioButtons/RadioButton.svelte';
   import RadioButtons from '../../ui/RadioButtons/RadioButtons.svelte';
+  import EditorSection from './TimelineEditor/EditorSection.svelte';
   import TimelineEditorLayerSection from './TimelineEditorLayerSection.svelte';
   import TimelineEditorYAxisSettings from './TimelineEditorYAxisSettings.svelte';
 
@@ -550,28 +549,13 @@
           </CssGrid>
         </fieldset>
 
-        <fieldset class="editor-section">
-          <div class="editor-section-header editor-section-header-with-button">
-            <div class="st-typography-medium">Vertical Guides</div>
-            <div>
-              {#if verticalGuides.length}
-                <button
-                  on:click|stopPropagation={handleRemoveAllVerticalGuidesClick}
-                  use:tooltip={{ content: 'Delete All Vertical Guides', placement: 'top' }}
-                  class="st-button icon"
-                >
-                  <RemoveAllIcon />
-                </button>
-              {/if}
-              <button
-                on:click={handleNewVerticalGuideClick}
-                use:tooltip={{ content: 'New Vertical Guide', placement: 'top' }}
-                class="st-button icon"
-              >
-                <PlusIcon />
-              </button>
-            </div>
-          </div>
+        <EditorSection
+          creatable
+          item="Vertical Guide"
+          itemCount={verticalGuides.length}
+          on:create={handleNewVerticalGuideClick}
+          on:removeAll={handleRemoveAllVerticalGuidesClick}
+        >
           {#if verticalGuides.length}
             <div class="editor-section-labeled-grid-container">
               <CssGrid columns="1fr 168px 24px 24px" gap="8px" class="editor-section-grid">
@@ -632,30 +616,16 @@
               </div>
             </div>
           {/if}
-        </fieldset>
+        </EditorSection>
 
-        <fieldset class="editor-section editor-section-draggable">
-          <div class="editor-section-header editor-section-header-with-button">
-            <div class="st-typography-medium">Rows</div>
-            <div>
-              {#if rows.length}
-                <button
-                  on:click|stopPropagation={removeAllTimelineRows}
-                  use:tooltip={{ content: 'Delete All Rows', placement: 'top' }}
-                  class="st-button icon"
-                >
-                  <RemoveAllIcon />
-                </button>
-              {/if}
-              <button
-                on:click={addTimelineRow}
-                use:tooltip={{ content: 'New Row', placement: 'top' }}
-                class="st-button icon"
-              >
-                <PlusIcon />
-              </button>
-            </div>
-          </div>
+        <EditorSection
+          creatable
+          item="Row"
+          isDragContainer
+          itemCount={rows.length}
+          on:create={addTimelineRow}
+          on:removeAll={removeAllTimelineRows}
+        >
           {#if rows.length}
             <div
               class="timeline-rows timeline-elements"
@@ -714,7 +684,31 @@
           {:else}
             <div />
           {/if}
-        </fieldset>
+        </EditorSection>
+
+        <!-- <fieldset class="editor-section editor-section-draggable">
+          <div class="editor-section-header editor-section-header-with-button">
+            <div class="st-typography-medium">Rows</div>
+            <div>
+              {#if rows.length}
+                <button
+                  on:click|stopPropagation={removeAllTimelineRows}
+                  use:tooltip={{ content: 'Delete All Rows', placement: 'top' }}
+                  class="st-button icon"
+                >
+                  <RemoveAllIcon />
+                </button>
+              {/if}
+              <button
+                on:click={addTimelineRow}
+                use:tooltip={{ content: 'New Row', placement: 'top' }}
+                class="st-button icon"
+              >
+                <PlusIcon />
+              </button>
+            </div>
+          </div>
+        </fieldset> -->
       {/if}
     {:else}
       <!-- Row editing -->
@@ -745,21 +739,7 @@
           {/each}
         </select>
       </div>
-      <fieldset class="editor-section">
-        <div class="st-typography-medium editor-section-header">Details</div>
-        <div style="display: grid">
-          <Input>
-            <label for="name">Row Name</label>
-            <input
-              class="st-input w-100"
-              name="name"
-              autocomplete="off"
-              type="string"
-              value={selectedRow.name}
-              on:input|stopPropagation={updateRowEvent}
-            />
-          </Input>
-        </div>
+      <EditorSection item="Detail">
         <CssGrid columns="1fr 1fr" gap="8px" class="editor-section-grid">
           <form on:submit={event => event.preventDefault()}>
             <Input>
@@ -792,31 +772,16 @@
             </select>
           </Input>
         </CssGrid>
-      </fieldset>
+      </EditorSection>
 
       {#if rowHasNonActivityChartLayer}
-        <fieldset class="editor-section">
-          <div class="editor-section-header editor-section-header-with-button">
-            <div class="st-typography-medium">Horizontal Guides</div>
-            <div>
-              {#if horizontalGuides.length}
-                <button
-                  on:click|stopPropagation={handleRemoveAllHorizontalGuidesClick}
-                  use:tooltip={{ content: 'Delete All Horizontal Guides', placement: 'top' }}
-                  class="st-button icon"
-                >
-                  <RemoveAllIcon />
-                </button>
-              {/if}
-              <button
-                on:click={handleNewHorizontalGuideClick}
-                use:tooltip={{ content: 'New Horizontal Guide', placement: 'top' }}
-                class="st-button icon"
-              >
-                <PlusIcon />
-              </button>
-            </div>
-          </div>
+        <EditorSection
+          creatable
+          item="Horizontal Guide"
+          itemCount={horizontalGuides.length}
+          on:create={handleNewHorizontalGuideClick}
+          on:removeAll={handleRemoveAllHorizontalGuidesClick}
+        >
           {#if horizontalGuides.length}
             <div class="editor-section-labeled-grid-container">
               <CssGrid columns="1fr 1fr 1fr 24px 24px" gap="8px" class="editor-section-grid">
@@ -884,13 +849,16 @@
               </div>
             </div>
           {/if}
-        </fieldset>
+        </EditorSection>
       {/if}
       {#if rowHasActivityLayer || rowHasExternalEventLayer}
-        <fieldset class="editor-section">
-          <div class="editor-section-header">
-            <div class="st-typography-medium">Layer Options</div>
-          </div>
+        <EditorSection
+          creatable
+          item="Layer Option"
+          itemCount={horizontalGuides.length}
+          on:create={handleNewHorizontalGuideClick}
+          on:removeAll={handleRemoveAllHorizontalGuidesClick}
+        >
           <form on:submit={event => event.preventDefault()} style="flex: 1">
             <Input layout="inline" class="editor-input">
               <label for="text">Height</label>
@@ -1068,32 +1036,20 @@
               </RadioButtons>
             </Input>
           {/if}
-        </fieldset>
+        </EditorSection>
       {/if}
       <!-- TODO perhaps separate out each section into a mini editor? -->
+
       {#if yAxes.length > 0 || rowHasNonActivityChartLayer}
-        <fieldset class="editor-section editor-section-draggable">
-          <div class="editor-section-header editor-section-header-with-button">
-            <div class="st-typography-medium">Y Axes</div>
-            <div>
-              {#if yAxes.length}
-                <button
-                  on:click|stopPropagation={handleRemoveAllYAxesClick}
-                  use:tooltip={{ content: 'Delete All Y Axes', placement: 'top' }}
-                  class="st-button icon"
-                >
-                  <RemoveAllIcon />
-                </button>
-              {/if}
-              <button
-                on:click={handleNewYAxisClick}
-                use:tooltip={{ content: 'New Y Axis', placement: 'top' }}
-                class="st-button icon"
-              >
-                <PlusIcon />
-              </button>
-            </div>
-          </div>
+        <EditorSection
+          isDragContainer
+          creatable
+          item="Y Axis"
+          itemPlural="Y Axes"
+          itemCount={yAxes.length}
+          on:create={handleNewYAxisClick}
+          on:removeAll={handleRemoveAllYAxesClick}
+        >
           {#if yAxes.length}
             <div class="editor-section-labeled-grid-container">
               <CssGrid columns="1fr 56px 24px 24px" gap="8px" class="editor-section-grid-labels" padding="0px 16px">
@@ -1165,33 +1121,18 @@
           {:else}
             <div />
           {/if}
-        </fieldset>
+        </EditorSection>
       {/if}
-      <fieldset class="editor-section editor-section-draggable">
-        <div class="editor-section-header editor-section-header-with-button">
-          <div class="st-typography-medium">Layers</div>
-          <div>
-            {#if layers.length}
-              <button
-                on:click|stopPropagation={handleRemoveAllLayersClick}
-                use:tooltip={{ content: 'Delete All Layers', placement: 'top' }}
-                class="st-button icon"
-              >
-                <RemoveAllIcon />
-              </button>
-            {/if}
-            <button
-              on:click={handleNewLayerClick}
-              use:tooltip={{ content: 'New Layer', placement: 'top' }}
-              class="st-button icon"
-            >
-              <PlusIcon />
-            </button>
-          </div>
-        </div>
+      <EditorSection
+        creatable
+        item="Layer"
+        itemCount={layers.length}
+        on:create={handleNewLayerClick}
+        on:removeAll={handleRemoveAllLayersClick}
+      >
         {#if layers.length}
           <div class="editor-section-labeled-grid-container">
-            <CssGrid columns="1fr 0.75fr 24px 24px 24px" gap="8px" class="editor-section-grid" padding="0px 16px">
+            <CssGrid columns="1fr 0.75fr 24px 24px 24px" gap="8px" class="editor-section-grid">
               <div>Filter</div>
               <div>Layer Type</div>
             </CssGrid>
@@ -1215,7 +1156,7 @@
         {:else}
           <div />
         {/if}
-      </fieldset>
+      </EditorSection>
     {/if}
   </div>
 </Panel>
@@ -1240,24 +1181,6 @@
     padding: 16px 8px;
   }
 
-  .editor-section {
-    border-bottom: 1px solid var(--st-gray-20);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 16px;
-  }
-
-  .editor-section-header {
-    user-select: none;
-  }
-
-  .editor-section-draggable .timeline-rows.timeline-elements {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .editor-section-header .st-button.icon,
   .timeline-row .st-button.icon,
   .guide .st-button.icon,
   .timeline-y-axis .st-button.icon,
@@ -1266,21 +1189,7 @@
     color: var(--st-gray-50);
   }
 
-  .editor-section-header-with-button {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .editor-section-draggable {
-    padding: 0;
-  }
-
-  .editor-section-draggable .editor-section-header {
-    padding: 16px 16px 0;
-  }
-
-  .editor-section-draggable .timeline-elements {
+  .timeline-elements {
     display: grid;
     gap: 4px;
   }
@@ -1290,11 +1199,11 @@
     gap: 8px;
   }
 
-  .editor-section-draggable .editor-section-labeled-grid-container {
+  .editor-section-labeled-grid-container {
     gap: 4px;
   }
 
-  .editor-section-draggable .timeline-elements {
+  .timeline-elements {
     outline: none !important;
     overflow-x: hidden;
     overflow-y: auto;
@@ -1351,7 +1260,7 @@
     display: flex;
   }
 
-  .editor-section-draggable .timeline-element:hover .drag-icon,
+  .timeline-element:hover .drag-icon,
   :global(.timeline-element-dragging) .drag-icon {
     display: flex;
   }
