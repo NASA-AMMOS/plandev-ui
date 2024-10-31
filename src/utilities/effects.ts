@@ -714,15 +714,15 @@ const effects = {
     return null;
   },
 
-  async createDerivationGroup(
-    derivationGroup: DerivationGroupInsertInput,
+  async createDerivationGroups(
+    derivationGroups: DerivationGroupInsertInput[],
     user: User | null,
   ): Promise<DerivationGroup | undefined> {
     try {
       createDerivationGroupError.set(null);
-      const { createDerivationGroup: created } = await reqHasura(
-        gql.CREATE_DERIVATION_GROUP,
-        { derivationGroup },
+      const { createDerivationGroups: created } = await reqHasura(
+        gql.CREATE_DERIVATION_GROUPS,
+        { derivationGroups },
         user,
       );
       if (created !== null) {
@@ -862,14 +862,14 @@ const effects = {
     }
   },
 
-  async createExternalEventType(eventType: ExternalEventTypeInsertInput, user: User | null) {
+  async createExternalEventTypes(eventTypes: ExternalEventTypeInsertInput[], user: User | null) {
     try {
       creatingExternalEventType.set(true);
       createExternalEventTypeError.set(null);
-      if (eventType) {
-        const { createExternalEventType: created } = await reqHasura<ExternalEventType>(
+      if (eventTypes) {
+        const { createExternalEventTypes: created } = await reqHasura<ExternalEventType>(
           gql.CREATE_EXTERNAL_EVENT_TYPE,
-          { eventType },
+          { eventTypes },
           user,
         );
         if (created) {
@@ -1040,14 +1040,14 @@ const effects = {
   },
 
   async createExternalSourceType(
-    sourceType: ExternalSourceTypeInsertInput,
+    sourceTypes: ExternalSourceTypeInsertInput[],
     user: User | null,
   ): Promise<ExternalSourceType | undefined> {
     try {
       createExternalSourceTypeError.set(null);
-      const { createExternalSourceType: created } = await reqHasura(
+      const { createExternalSourceTypes: created } = await reqHasura(
         gql.CREATE_EXTERNAL_SOURCE_TYPE,
-        { sourceType },
+        { sourceTypes },
         user,
       );
       if (created !== null) {

@@ -28,12 +28,7 @@
     ExternalEventTypeInsertInput,
     ExternalEventTypeJSON,
   } from '../../types/external-event';
-  import type {
-    DerivationGroupJSON,
-    ExternalSourceType,
-    ExternalSourceTypeInsertInput,
-    ExternalSourceTypeJSON,
-  } from '../../types/external-source';
+  import type { DerivationGroupJSON, ExternalSourceType, ExternalSourceTypeJSON } from '../../types/external-source';
   import type { ParameterName, ParametersMap } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
   import type { TabId } from '../../types/tabs';
@@ -321,12 +316,17 @@
       }
     } else {
       if (type === 'Derivation Group') {
-        newDerivationGroups.forEach(entry => {
-          effects.createDerivationGroup({ name: entry.name, source_type_name: entry.sourceType }, user);
-        });
+        // push
+        effects.createDerivationGroups(
+          newDerivationGroups.map(entry => {
+            return { name: entry.name, source_type_name: entry.sourceType };
+          }),
+          user,
+        );
         newDerivationGroups = [{ name: '', sourceType: '', valid: false }];
       } else if (type === 'External Event Type') {
-        // TODO: refactor to a single effect?
+        // Generate Hasura mutation input
+        let externalEventTypeInsertInput: ExternalEventTypeInsertInput[] = [];
         for (let eventType of newExternalEventTypes) {
           // TODO: This probably doesn't need to exist - swap input keys?
           const newExternalEventTypeMetadataParameterMap: ParametersMap = {};
@@ -344,17 +344,19 @@
               }
             });
           }
-          // Generate Hasura mutation input
-          const externalEventTypeInsertInput: ExternalEventTypeInsertInput = {
+          externalEventTypeInsertInput = externalEventTypeInsertInput.concat({
             metadata: newExternalEventTypeMetadataParameterMap,
             name: eventType.name,
             required_metadata: requiredMetadata,
-          };
-          effects.createExternalEventType(externalEventTypeInsertInput, user);
-          newExternalEventTypes = [{ metadata: [], name: '', valid: false }];
+          });
         }
+
+        // push
+        effects.createExternalEventTypes(externalEventTypeInsertInput, user);
+        newExternalEventTypes = [{ metadata: [], name: '', valid: false }];
       } else {
-        // TODO: refactor to a single effect?
+        // Generate Hasura mutation input
+        let externalSourceTypeInsertInput: ExternalEventTypeInsertInput[] = [];
         for (let sourceType of newExternalSourceTypes) {
           // TODO: This probably doesn't need to exist - swap input keys?
           const newExternalSourceTypeMetadataParameterMap: ParametersMap = {};
@@ -372,15 +374,16 @@
               }
             });
           }
-          // Generate Hasura mutation input
-          const externalSourceTypeInsertInput: ExternalSourceTypeInsertInput = {
+          externalSourceTypeInsertInput = externalSourceTypeInsertInput.concat({
             metadata: newExternalSourceTypeMetadataParameterMap,
             name: sourceType.name,
             required_metadata: requiredMetadata,
-          };
-          effects.createExternalSourceType(externalSourceTypeInsertInput, user);
-          newExternalSourceTypes = [{ metadata: [], name: '', valid: false }];
+          });
         }
+
+        // push
+        effects.createExternalSourceType(externalSourceTypeInsertInput, user);
+        newExternalSourceTypes = [{ metadata: [], name: '', valid: false }];
       }
     }
   }
@@ -450,7 +453,7 @@
   function createNewEntry(type: queryType) {
     if (type === 'Derivation Group') {
       newDerivationGroups = [...newDerivationGroups, { name: '', sourceType: '', valid: false }];
-    } else if (type === 'External Event Type') {
+    } else if (type === 'External Source Type') {
       newExternalSourceTypes = [...newExternalSourceTypes, { metadata: [], name: '', valid: false }];
     } else {
       newExternalEventTypes = [...newExternalEventTypes, { metadata: [], name: '', valid: false }];
@@ -475,7 +478,6 @@
     if (queryType === 'External Source Type') {
       let indexToDelete = e.detail;
       type.metadata = type.metadata.filter((item, index) => {
-        console.log(item, index, indexToDelete);
         return index !== indexToDelete;
       });
 
@@ -485,7 +487,6 @@
     } else {
       let indexToDelete = e.detail;
       type.metadata = type.metadata.filter((item, index) => {
-        console.log(item, index, indexToDelete);
         return index !== indexToDelete;
       });
 

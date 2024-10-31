@@ -107,7 +107,7 @@ export enum Queries {
   INSERT_ACTIVITY_DIRECTIVE_TAGS = 'insert_activity_directive_tags',
   INSERT_ACTIVITY_PRESET = 'insert_activity_presets_one',
   INSERT_CHANNEL_DICTIONARY = 'insert_channel_dictionary_one',
-  INSERT_DERIVATION_GROUP = 'insert_derivation_group_one',
+  INSERT_DERIVATION_GROUP = 'insert_derivation_group',
   INSERT_DICTIONARY = 'insert_dictionary_one',
   INSERT_CONSTRAINT_DEFINITION = 'insert_constraint_definition_one',
   INSERT_CONSTRAINT_DEFINITION_TAGS = 'insert_constraint_definition_tags',
@@ -119,9 +119,8 @@ export enum Queries {
   INSERT_EXPANSION_RULE = 'insert_expansion_rule_one',
   INSERT_EXPANSION_RULE_TAGS = 'insert_expansion_rule_tags',
   INSERT_EXTERNAL_EVENT_TYPE = 'insert_external_event_type',
-  INSERT_EXTERNAL_EVENT_TYPE_ONE = 'insert_external_event_type_one',
   INSERT_EXTERNAL_SOURCE = 'insert_external_source_one',
-  INSERT_EXTERNAL_SOURCE_TYPE = 'insert_external_source_type_one',
+  INSERT_EXTERNAL_SOURCE_TYPE = 'insert_external_source_type',
   INSERT_MISSION_MODEL = 'insert_mission_model_one',
   INSERT_PARAMETER_DICTIONARY = 'insert_parameter_dictionary_one',
   INSERT_PARCEL = 'insert_parcel_one',
@@ -412,10 +411,12 @@ const gql = {
     }
   `,
 
-  CREATE_DERIVATION_GROUP: `#graphql
-    mutation CreateDerivationGroup($derivationGroup: derivation_group_insert_input!) {
-      createDerivationGroup: ${Queries.INSERT_DERIVATION_GROUP}(object: $derivationGroup) {
-        name
+  CREATE_DERIVATION_GROUPS: `#graphql
+    mutation CreateDerivationGroup($derivationGroups: [derivation_group_insert_input!]!) {
+      createDerivationGroups: ${Queries.INSERT_DERIVATION_GROUP}(objects: $derivationGroups) {
+        returning {
+          name
+        }
       }
     }
   `,
@@ -472,11 +473,13 @@ const gql = {
   `,
 
   CREATE_EXTERNAL_EVENT_TYPE: `#graphql
-    mutation CreateExternalEventType($eventType: external_event_type_insert_input!) {
-      createExternalEventType: ${Queries.INSERT_EXTERNAL_EVENT_TYPE_ONE}(object: $eventType) {
-        name
-        metadata
-        required_metadata
+    mutation CreateExternalEventTypes($eventTypes: [external_event_type_insert_input!]!) {
+      createExternalEventTypes: ${Queries.INSERT_EXTERNAL_EVENT_TYPE}(objects: $eventTypes) {
+        returning {
+          name
+          metadata
+          required_metadata
+        }
       }
     }
   `,
@@ -498,11 +501,13 @@ const gql = {
   `,
 
   CREATE_EXTERNAL_SOURCE_TYPE: `#graphql
-    mutation CreateExternalSourceType($sourceType: external_source_type_insert_input!) {
-      createExternalSourceType: ${Queries.INSERT_EXTERNAL_SOURCE_TYPE}(object: $sourceType) {
-        name
-        metadata
-        required_metadata
+    mutation CreateExternalSourceTypes($sourceTypes: [external_source_type_insert_input!]!) {
+      createExternalSourceTypes: ${Queries.INSERT_EXTERNAL_SOURCE_TYPE}(objects: $sourceTypes) {
+        returning {
+          name
+          metadata
+          required_metadata
+        }
       }
     }
   `,
