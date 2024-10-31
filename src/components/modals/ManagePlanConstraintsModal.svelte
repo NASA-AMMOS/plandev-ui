@@ -221,8 +221,11 @@
 
           const constraintPlanSpec = $allowedConstraintPlanSpecMap[constraintId];
 
-          if (isSelected && !constraintAlreadyExistsInPlanSpec) {
-            if (!constraintPlanSpec || constraintPlanSpec.constraint_metadata?.owner === user?.id) {
+          if (isSelected) {
+            if (
+              !constraintAlreadyExistsInPlanSpec &&
+              (!constraintPlanSpec || constraintPlanSpec.constraint_metadata?.owner === user?.id)
+            ) {
               return {
                 ...prevConstraintPlanSpecUpdates,
                 constraintPlanSpecsToAdd: [
