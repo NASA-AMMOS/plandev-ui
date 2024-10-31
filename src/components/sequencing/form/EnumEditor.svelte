@@ -10,19 +10,20 @@
   const MAX_SEARCH_ITEMS = 1_000;
 
   export let argDef: FswCommandArgumentEnum;
-  export let commandDictionary: CommandDictionary;
+  export let commandDictionary: CommandDictionary | null = null;
   export let initVal: string;
   export let setInEditor: (val: string) => void;
+  export let useQuotes: boolean = true;
 
   let enumValues: string[];
   let isValueInEnum: boolean = false;
   let value: string;
 
-  $: value = unquoteUnescape(initVal);
-  $: enumValues = commandDictionary.enumMap[argDef.enum_name]?.values?.map(v => v.symbol) ?? argDef.range ?? [];
+  $: value = useQuotes ? unquoteUnescape(initVal) : initVal;
+  $: enumValues = commandDictionary?.enumMap[argDef.enum_name]?.values?.map(v => v.symbol) ?? argDef.range ?? [];
   $: isValueInEnum = !!enumValues.find(ev => ev === value);
   $: {
-    setInEditor(quoteEscape(value));
+    setInEditor(useQuotes ? quoteEscape(value) : value);
   }
   $: options = enumValues.map(ev => ({
     display: ev,

@@ -2,11 +2,12 @@
 
 <script lang="ts">
   import type { SyntaxNode } from '@lezer/common';
-  import type { CommandDictionary, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
+  import type { CommandDictionary, FswCommandArgument, FswCommandArgumentEnum } from '@nasa-jpl/aerie-ampcs';
   import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
   import {
     getMissingArgDefs,
     isFswCommandArgumentBoolean,
+    isFswCommandArgumentEnum,
     isFswCommandArgumentRepeat,
     isFswCommandArgumentVarString,
     isNumberArg,
@@ -26,16 +27,37 @@
   export let setInEditor: (token: SyntaxNode, val: string) => void;
   export let addDefaultArgs: (commandNode: SyntaxNode, argDefs: FswCommandArgument[]) => void;
   export let commandInfoMapper: CommandInfoMapper;
+  export let variablesInScope: string[];
 
-  $: enableRepeatAdd =
-    argInfo.argDef &&
-    isFswCommandArgumentRepeat(argInfo.argDef) &&
+  let argDef: FswCommandArgument | undefined = undefined;
+  let enableRepeatAdd: boolean = false;
+
+  $: argDef = argInfo.argDef;
+
+  $: {
+    if (argDef && argInfo.node?.name === 'Enum') {
+      argDef = {
+        arg_type: 'enum',
+        bit_length: null,
+        default_value: null,
+        description: argDef.description,
+        enum_name: 'variables',
+        name: argDef.name,
+        range: variablesInScope,
+      } as FswCommandArgumentEnum;
+    }
+  }
+
+  $: enableRepeatAdd = !!(
+    argDef &&
+    isFswCommandArgumentRepeat(argDef) &&
     argInfo.children &&
-    argInfo.argDef.repeat &&
-    argInfo.children.length < argInfo.argDef.repeat.arguments.length * (argInfo.argDef.repeat.max ?? Infinity);
+    argDef.repeat &&
+    argInfo.children.length < argDef.repeat.arguments.length * (argDef.repeat.max ?? Infinity)
+  );
 
   function addRepeatTuple() {
-    const repeatArgs = argInfo.argDef && isFswCommandArgumentRepeat(argInfo.argDef) && argInfo.argDef.repeat?.arguments;
+    const repeatArgs = argDef && isFswCommandArgumentRepeat(argDef) && argDef.repeat?.arguments;
     if (argInfo.node && repeatArgs) {
       addDefaultArgs(argInfo.node, repeatArgs);
     }
@@ -43,7 +65,7 @@
 </script>
 
 <fieldset>
-  {#if !argInfo.argDef}
+  {#if !argDef}
     {#if argInfo.text}
       <div class="st-typography-medium" title="Unknown Argument">Unknown Argument</div>
       <ExtraArgumentEditor
@@ -56,12 +78,24 @@
       />
     {/if}
   {:else}
-    <ArgTitle argDef={argInfo.argDef} />
-    {#if argInfo.argDef.arg_type === 'enum' && argInfo.node}
+    <ArgTitle {argDef} />
+    {#if argInfo.node?.name === 'Enum' && isFswCommandArgumentEnum(argDef)}
+      <div class="st-typography-small-caps" title="Dictionary values must be quoted in editor">Global/Parameter</div>
+      <EnumEditor
+        {argDef}
+        initVal={argInfo.text ?? ''}
+        setInEditor={val => {
+          if (argInfo.node) {
+            setInEditor(argInfo.node, val);
+          }
+        }}
+        useQuotes={false}
+      />
+    {:else if argDef.arg_type === 'enum' && argInfo.node}
       {#if commandInfoMapper.nodeTypeEnumCompatible(argInfo.node)}
         <EnumEditor
           {commandDictionary}
-          argDef={argInfo.argDef}
+          {argDef}
           initVal={argInfo.text ?? ''}
           setInEditor={val => {
             if (argInfo.node) {
@@ -81,19 +115,19 @@
           Convert to enum type
         </button>
       {/if}
-    {:else if isNumberArg(argInfo.argDef) && commandInfoMapper.nodeTypeNumberCompatible(argInfo.node ?? null)}
+    {:else if isNumberArg(argDef) && commandInfoMapper.nodeTypeNumberCompatible(argInfo.node ?? null)}
       <NumEditor
-        argDef={argInfo.argDef}
-        initVal={Number(argInfo.text) ?? argInfo.argDef.default_value ?? 0}
+        {argDef}
+        initVal={Number(argInfo.text) ?? argDef.default_value ?? 0}
         setInEditor={val => {
           if (argInfo.node) {
             setInEditor(argInfo.node, val.toString());
           }
         }}
       />
-    {:else if isFswCommandArgumentVarString(argInfo.argDef)}
+    {:else if isFswCommandArgumentVarString(argDef)}
       <StringEditor
-        argDef={argInfo.argDef}
+        {argDef}
         initVal={argInfo.text ?? ''}
         setInEditor={val => {
           if (argInfo.node) {
@@ -101,9 +135,9 @@
           }
         }}
       />
-    {:else if isFswCommandArgumentBoolean(argInfo.argDef)}
+    {:else if isFswCommandArgumentBoolean(argDef)}
       <BooleanEditor
-        argDef={argInfo.argDef}
+        {argDef}
         initVal={argInfo.text ?? ''}
         setInEditor={val => {
           if (argInfo.node) {
@@ -111,7 +145,7 @@
           }
         }}
       />
-    {:else if isFswCommandArgumentRepeat(argInfo.argDef) && !!argInfo.children}
+    {:else if isFswCommandArgumentRepeat(argDef) && !!argInfo.children}
       {#each argInfo.children as childArgInfo}
         {#if childArgInfo.node}
           <svelte:self argInfo={childArgInfo} {commandInfoMapper} {commandDictionary} {setInEditor} {addDefaultArgs} />
@@ -125,15 +159,15 @@
             }
           }}
         />
-      {:else if !!argInfo.argDef.repeat}
+      {:else if !!argDef.repeat}
         <div>
           <button
             class="st-button secondary"
             disabled={!enableRepeatAdd}
             on:click={addRepeatTuple}
-            title={`Add additional set of argument values to ${argInfo.argDef.name} repeat array`}
+            title={`Add additional set of argument values to ${argDef.name} repeat array`}
           >
-            Add {argInfo.argDef.name} tuple
+            Add {argDef.name} tuple
           </button>
         </div>
       {/if}

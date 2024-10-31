@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { SyntaxNode } from '@lezer/common';
+  import type { SyntaxNode, Tree } from '@lezer/common';
   import type {
     ChannelDictionary,
     CommandDictionary,
@@ -16,6 +16,7 @@
   import { TOKEN_ERROR } from '../../../constants/seq-n-grammar-constants';
   import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
   import { getCustomArgDef } from '../../../utilities/sequence-editor/extension-points';
+  import { validateVariables } from '../../../utilities/sequence-editor/sequence-linter';
   import Collapse from '../../Collapse.svelte';
   import Panel from '../../ui/Panel.svelte';
   import SectionTitle from '../../ui/SectionTitle.svelte';
@@ -36,6 +37,7 @@
   export let commandDictionary: CommandDictionary;
   export let parameterDictionaries: ParameterDictionary[];
   export let node: SyntaxNode | null;
+  export let tree: Tree | null;
   export let commandInfoMapper: CommandInfoMapper;
 
   const ID_COMMAND_DETAIL_PANE = 'ID_COMMAND_DETAIL_PANE';
@@ -47,6 +49,7 @@
   let editorArgInfoArray: ArgTextDef[] = [];
   let missingArgDefArray: FswCommandArgument[] = [];
   let timeTagNode: TimeTagInfo = null;
+  let variablesInScope: string[] = [];
 
   $: commandNode = commandInfoMapper.getContainingCommand(node);
   $: commandNameNode = commandInfoMapper.getNameNode(commandNode);
@@ -61,6 +64,18 @@
   $: editorArgInfoArray = argInfoArray.filter(argInfo => !!argInfo.node);
   $: missingArgDefArray = getMissingArgDefs(argInfoArray);
   $: timeTagNode = getTimeTagInfo(commandNode);
+  $: variablesInScope = getVariablesInScope(tree);
+
+  function getVariablesInScope(tree: Tree | null): string[] {
+    if (tree) {
+      const docText = editorSequenceView.state.doc.toString();
+      return [
+        ...validateVariables(tree.topNode.getChildren('LocalDeclaration'), docText, 'LOCALS').variables,
+        ...validateVariables(tree.topNode.getChildren('ParameterDeclaration'), docText, 'INPUT_PARAMS').variables,
+      ].map(v => v.name);
+    }
+    return [];
+  }
 
   function getTimeTagInfo(commandNode: SyntaxNode | null): TimeTagInfo {
     const node = commandNode?.getChild('TimeTag');
@@ -218,6 +233,7 @@
                 {argInfo}
                 {commandDictionary}
                 {commandInfoMapper}
+                {variablesInScope}
                 setInEditor={debounce(setInEditor, 250)}
                 addDefaultArgs={(commandNode, missingArgDefArray) =>
                   addDefaultArgs(

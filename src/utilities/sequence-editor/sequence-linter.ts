@@ -305,7 +305,7 @@ function validateCommandTypeMixing(node: SyntaxNode): Diagnostic[] {
   return diagnostics;
 }
 
-function validateVariables(inputParams: SyntaxNode[], text: string, type: 'INPUT_PARAMS' | 'LOCALS' = 'LOCALS') {
+export function validateVariables(inputParams: SyntaxNode[], text: string, type: 'INPUT_PARAMS' | 'LOCALS' = 'LOCALS') {
   const variables: VariableDeclaration[] = [];
   const diagnostics: Diagnostic[] = [];
 
