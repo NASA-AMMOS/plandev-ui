@@ -146,75 +146,10 @@
 </div>
 
 <style>
-  :global(.editor-section-grid form) {
-    display: grid;
-  }
-
-  :global(.editor-section-grid) {
-    align-items: center;
-    flex: 1;
-    position: relative;
-    width: 100%;
-  }
-
-  :global(.editor-section-grid-labels > *) {
-    min-width: 40px;
-  }
-
-  :global(.input.input-stacked.editor-input) {
-    display: grid;
-    min-width: 40px;
-    width: auto;
-  }
-
-  :global(.input.input-stacked.editor-input label) {
-    display: none;
-  }
-
-  :global(.input.input-inline.editor-input) {
-    grid-template-columns: 60px auto;
-    padding: 0;
-  }
-
-  :global(.editor-section-grid form) {
-    display: grid;
-  }
-
-  :global(.editor-section-grid) {
-    align-items: center;
-    flex: 1;
-    position: relative;
-    width: 100%;
-  }
-
-  :global(.editor-section-grid-labels > *) {
-    min-width: 40px;
-  }
-
-  .timeline-layer {
-    padding: 4px 16px;
-  }
-
   .timeline-layer {
     align-items: flex-end;
     display: flex;
   }
-
-  :global(.input.input-stacked.editor-input) {
-    display: grid;
-    min-width: 40px;
-    width: auto;
-  }
-
-  :global(.input.input-stacked.editor-input label) {
-    display: none;
-  }
-
-  :global(.input.input-inline.editor-input) {
-    grid-template-columns: 60px auto;
-    padding: 0;
-  }
-
   .timeline-layer {
     align-items: flex-start;
     flex-direction: column;
