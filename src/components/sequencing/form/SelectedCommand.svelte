@@ -67,14 +67,12 @@
   $: variablesInScope = getVariablesInScope(tree, commandNode?.from);
 
   function getVariablesInScope(tree: Tree | null, cursorPosition?: number): string[] {
+    const globalNames = ($sequenceAdaptation.globals ?? []).map(v => v.name);
     if (tree && cursorPosition !== undefined) {
       const docText = editorSequenceView.state.doc.toString();
-      return [
-        ...($sequenceAdaptation.globals ?? []).map(v => v.name),
-        ...commandInfoMapper.getVariables(docText, tree, cursorPosition),
-      ];
+      return [...globalNames, ...commandInfoMapper.getVariables(docText, tree, cursorPosition)];
     }
-    return [];
+    return globalNames;
   }
 
   function getTimeTagInfo(commandNode: SyntaxNode | null): TimeTagInfo {
