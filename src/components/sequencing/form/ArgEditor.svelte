@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import type { SyntaxNode } from '@lezer/common';
-  import type { CommandDictionary, FswCommandArgument, FswCommandArgumentEnum } from '@nasa-jpl/aerie-ampcs';
+  import type { CommandDictionary, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
   import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
   import {
     getMissingArgDefs,
@@ -35,7 +35,7 @@
   $: argDef = argInfo.argDef;
 
   $: {
-    if (argDef && argInfo.node?.name === 'Enum') {
+    if (argDef && commandInfoMapper.isArgumentNodeOfVariableType(argInfo.node ?? null)) {
       argDef = {
         arg_type: 'enum',
         bit_length: null,
@@ -44,7 +44,7 @@
         enum_name: 'variables',
         name: argDef.name,
         range: variablesInScope,
-      } as FswCommandArgumentEnum;
+      };
     }
   }
 
@@ -148,7 +148,14 @@
     {:else if isFswCommandArgumentRepeat(argDef) && !!argInfo.children}
       {#each argInfo.children as childArgInfo}
         {#if childArgInfo.node}
-          <svelte:self argInfo={childArgInfo} {commandInfoMapper} {commandDictionary} {setInEditor} {addDefaultArgs} />
+          <svelte:self
+            argInfo={childArgInfo}
+            {commandInfoMapper}
+            {commandDictionary}
+            {setInEditor}
+            {addDefaultArgs}
+            {variablesInScope}
+          />
         {/if}
       {/each}
       {#if argInfo.children.find(childArgInfo => !childArgInfo.node)}

@@ -1,15 +1,22 @@
-import type { SyntaxNode } from '@lezer/common';
-import { getChildrenNode, getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
+import type { SyntaxNode, Tree } from '@lezer/common';
+import { filterNodesToArray, getChildrenNode, getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
 import type { CommandInfoMapper } from '../commandInfoMapper';
 import {
   RULE_CALL_PARAMETER,
   RULE_CALL_PARAMETERS,
+  RULE_COMMON_FUNCTION,
   RULE_CONSTANT,
   RULE_FUNCTION_NAME,
+  RULE_INPUT_OUTPUT_PARAMETER,
+  RULE_INPUT_PARAMETER,
   RULE_ISSUE,
   RULE_SIMPLE_EXPR,
   RULE_STATEMENT,
   RULE_TIME_TAGGED_STATEMENT,
+  RULE_VARIABLE_DECLARATION_TYPE,
+  RULE_VARIABLE_DECLARATION_WITH_OPTIONAL_TLM_ID,
+  RULE_VARIABLE_NAME,
+  RULE_VARIABLE_NAME_CONSTANT,
   TOKEN_COMMA,
   TOKEN_INT_CONST,
   TOKEN_STRING_CONST,
@@ -62,6 +69,43 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
     return null;
   }
 
+  getVariables(docText: string, tree: Tree, position: number): string[] {
+    // VML Variable_declaration_with_optional_tlm_id are per module (only 1 module per file)
+    // VML Common_Function may contain Parameters and Variable_declarations
+
+    const moduleVariables = filterNodesToArray(
+      tree.cursor(),
+      node => node.name === RULE_VARIABLE_DECLARATION_WITH_OPTIONAL_TLM_ID,
+    )
+      .map(node =>
+        node
+          .getChild(RULE_VARIABLE_DECLARATION_TYPE)
+          ?.getChild(RULE_VARIABLE_NAME_CONSTANT)
+          ?.getChild(RULE_VARIABLE_NAME),
+      )
+      .filter(isDefined)
+      .map(node => docText.slice(node.from, node.to));
+
+    const positionNode = tree.resolveInner(position);
+    const commonFunctionNode = getNearestAncestorNodeOfType(positionNode, [RULE_COMMON_FUNCTION]);
+    if (commonFunctionNode) {
+      const subTreeOffset = commonFunctionNode.from;
+      const commonFunctionParametersAndVariables = filterNodesToArray(commonFunctionNode.toTree().cursor(), node =>
+        [RULE_INPUT_PARAMETER, RULE_INPUT_OUTPUT_PARAMETER, RULE_VARIABLE_NAME_CONSTANT].includes(node.name),
+      )
+        .map(node => node.getChild(RULE_VARIABLE_NAME))
+        .filter(isDefined)
+        .map(node => docText.slice(subTreeOffset + node.from, subTreeOffset + node.to));
+      return [...moduleVariables, ...commonFunctionParametersAndVariables];
+    }
+
+    return moduleVariables;
+  }
+
+  isArgumentNodeOfVariableType(argNode: SyntaxNode | null): boolean {
+    return argNode?.name === RULE_VARIABLE_NAME;
+  }
+
   nodeTypeEnumCompatible(node: SyntaxNode | null): boolean {
     return !!node?.getChild(RULE_SIMPLE_EXPR)?.getChild(RULE_CONSTANT)?.getChild(TOKEN_STRING_CONST);
   }
@@ -73,6 +117,10 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
   nodeTypeNumberCompatible(node: SyntaxNode | null): boolean {
     return !!node?.getChild(RULE_SIMPLE_EXPR)?.getChild(RULE_CONSTANT)?.getChild(TOKEN_INT_CONST);
   }
+}
+
+function isDefined<Type>(maybeValue: Type | null | undefined): maybeValue is Type {
+  return maybeValue !== null && maybeValue !== undefined;
 }
 
 export function getArgumentPosition(argNode: SyntaxNode): number {

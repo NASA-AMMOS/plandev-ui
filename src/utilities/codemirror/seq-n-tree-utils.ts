@@ -1,4 +1,4 @@
-import type { SyntaxNode } from '@lezer/common';
+import type { SyntaxNode, Tree } from '@lezer/common';
 import {
   RULE_ARGS,
   RULE_COMMAND,
@@ -16,6 +16,7 @@ import {
   TOKEN_REQUEST,
   TOKEN_STRING,
 } from '../../constants/seq-n-grammar-constants';
+import { validateVariables } from '../sequence-editor/sequence-linter';
 import { getFromAndTo, getNearestAncestorNodeOfType } from '../sequence-editor/tree-utils';
 import type { CommandInfoMapper } from './commandInfoMapper';
 
@@ -87,6 +88,17 @@ export class SeqNCommandInfoMapper implements CommandInfoMapper {
 
   getNameNode(stepNode: SyntaxNode | null): SyntaxNode | null {
     return getNameNode(stepNode);
+  }
+
+  getVariables(docText: string, tree: Tree): string[] {
+    return [
+      ...validateVariables(tree.topNode.getChildren('LocalDeclaration'), docText, 'LOCALS').variables,
+      ...validateVariables(tree.topNode.getChildren('ParameterDeclaration'), docText, 'INPUT_PARAMS').variables,
+    ].map(v => v.name);
+  }
+
+  isArgumentNodeOfVariableType(argNode: SyntaxNode | null): boolean {
+    return argNode?.name === 'Enum';
   }
 
   nodeTypeEnumCompatible(node: SyntaxNode | null): boolean {

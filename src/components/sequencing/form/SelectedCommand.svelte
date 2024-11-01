@@ -14,9 +14,9 @@
   import type { EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { TOKEN_ERROR } from '../../../constants/seq-n-grammar-constants';
+  import { sequenceAdaptation } from '../../../stores/sequence-adaptation';
   import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
   import { getCustomArgDef } from '../../../utilities/sequence-editor/extension-points';
-  import { validateVariables } from '../../../utilities/sequence-editor/sequence-linter';
   import Collapse from '../../Collapse.svelte';
   import Panel from '../../ui/Panel.svelte';
   import SectionTitle from '../../ui/SectionTitle.svelte';
@@ -64,15 +64,15 @@
   $: editorArgInfoArray = argInfoArray.filter(argInfo => !!argInfo.node);
   $: missingArgDefArray = getMissingArgDefs(argInfoArray);
   $: timeTagNode = getTimeTagInfo(commandNode);
-  $: variablesInScope = getVariablesInScope(tree);
+  $: variablesInScope = getVariablesInScope(tree, commandNode?.from);
 
-  function getVariablesInScope(tree: Tree | null): string[] {
-    if (tree) {
+  function getVariablesInScope(tree: Tree | null, cursorPosition?: number): string[] {
+    if (tree && cursorPosition !== undefined) {
       const docText = editorSequenceView.state.doc.toString();
       return [
-        ...validateVariables(tree.topNode.getChildren('LocalDeclaration'), docText, 'LOCALS').variables,
-        ...validateVariables(tree.topNode.getChildren('ParameterDeclaration'), docText, 'INPUT_PARAMS').variables,
-      ].map(v => v.name);
+        ...($sequenceAdaptation.globals ?? []).map(v => v.name),
+        ...commandInfoMapper.getVariables(docText, tree, cursorPosition),
+      ];
     }
     return [];
   }

@@ -1,4 +1,4 @@
-import type { SyntaxNode } from '@lezer/common';
+import type { SyntaxNode, Tree } from '@lezer/common';
 
 export interface CommandInfoMapper {
   /** format string of multiple arguments */
@@ -18,6 +18,18 @@ export interface CommandInfoMapper {
 
   /** finds the node in the parse tree containing the name */
   getNameNode(stepNode: SyntaxNode | null): SyntaxNode | null;
+
+  /**
+   * collect variables for populating select box, cursor position is used to limit scope to containing
+   * sequence in multiple sequence per file languages
+   */
+  // Consider filtering by type or allowing adaptation to filter by type
+  // not clear at this point what FSW does in terms of type coercion and
+  // what variable types are used for enums arguments
+  getVariables(docText: string, tree: Tree, cursor: number): string[];
+
+  /** is argument node a variable, false implies literal */
+  isArgumentNodeOfVariableType(argNode: SyntaxNode | null): boolean;
 
   /** checks if select list should be used */
   nodeTypeEnumCompatible(node: SyntaxNode | null): boolean;

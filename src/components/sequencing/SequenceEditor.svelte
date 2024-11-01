@@ -227,7 +227,7 @@
     }
   }
 
-  $: showOutputs = !isInVmlMode && !!outputFormats.length;
+  $: showOutputs = !isInVmlMode && !!outputFormats?.length;
   $: {
     if (showOutputs) {
       editorHeights = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
