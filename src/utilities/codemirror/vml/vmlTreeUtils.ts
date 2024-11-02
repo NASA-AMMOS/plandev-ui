@@ -103,7 +103,11 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
   }
 
   isArgumentNodeOfVariableType(argNode: SyntaxNode | null): boolean {
-    return argNode?.name === RULE_VARIABLE_NAME;
+    if (argNode?.name === RULE_CALL_PARAMETER) {
+      const variableNameNode = argNode.getChild(RULE_SIMPLE_EXPR)?.getChild(RULE_VARIABLE_NAME);
+      return !!variableNameNode && variableNameNode.from === argNode.from && variableNameNode.to === argNode.to;
+    }
+    return false;
   }
 
   nodeTypeEnumCompatible(node: SyntaxNode | null): boolean {

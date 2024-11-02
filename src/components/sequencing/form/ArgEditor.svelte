@@ -31,11 +31,13 @@
 
   let argDef: FswCommandArgument | undefined = undefined;
   let enableRepeatAdd: boolean = false;
+  let isVariable: boolean = false;
 
   $: argDef = argInfo.argDef;
 
   $: {
-    if (argDef && commandInfoMapper.isArgumentNodeOfVariableType(argInfo.node ?? null)) {
+    isVariable = commandInfoMapper.isArgumentNodeOfVariableType(argInfo.node ?? null);
+    if (!!argDef && isVariable) {
       argDef = {
         arg_type: 'enum',
         bit_length: null,
@@ -79,7 +81,7 @@
     {/if}
   {:else}
     <ArgTitle {argDef} />
-    {#if argInfo.node?.name === 'Enum' && isFswCommandArgumentEnum(argDef)}
+    {#if isVariable && isFswCommandArgumentEnum(argDef)}
       <div class="st-typography-small-caps" title="Dictionary values must be quoted in editor">Global/Parameter</div>
       <EnumEditor
         {argDef}
@@ -91,7 +93,7 @@
         }}
         useQuotes={false}
       />
-    {:else if argDef.arg_type === 'enum' && argInfo.node}
+    {:else if isFswCommandArgumentEnum(argDef) && argInfo.node}
       {#if commandInfoMapper.nodeTypeEnumCompatible(argInfo.node)}
         <EnumEditor
           {commandDictionary}
