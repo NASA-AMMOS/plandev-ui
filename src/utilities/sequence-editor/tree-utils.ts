@@ -93,3 +93,7 @@ export function filterNodesToArray(cursor: TreeCursor, filter?: (node: SyntaxNod
 export function nodeContents(input: string, node: SyntaxNode): string {
   return input.substring(node.from, node.to);
 }
+
+export function isDefined<Type>(maybeValue: Type | null | undefined): maybeValue is Type {
+  return maybeValue !== null && maybeValue !== undefined;
+}

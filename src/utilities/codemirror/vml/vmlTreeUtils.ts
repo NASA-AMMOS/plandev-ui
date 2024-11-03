@@ -1,5 +1,10 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
-import { filterNodesToArray, getChildrenNode, getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
+import {
+  filterNodesToArray,
+  getChildrenNode,
+  getNearestAncestorNodeOfType,
+  isDefined,
+} from '../../sequence-editor/tree-utils';
 import type { CommandInfoMapper } from '../commandInfoMapper';
 import {
   RULE_CALL_PARAMETER,
@@ -121,10 +126,6 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
   nodeTypeNumberCompatible(node: SyntaxNode | null): boolean {
     return !!node?.getChild(RULE_SIMPLE_EXPR)?.getChild(RULE_CONSTANT)?.getChild(TOKEN_INT_CONST);
   }
-}
-
-function isDefined<Type>(maybeValue: Type | null | undefined): maybeValue is Type {
-  return maybeValue !== null && maybeValue !== undefined;
 }
 
 export function getArgumentPosition(argNode: SyntaxNode): number {

@@ -82,7 +82,12 @@
   {:else}
     <ArgTitle {argDef} />
     {#if isVariable && isFswCommandArgumentEnum(argDef)}
-      <div class="st-typography-small-caps" title="Dictionary values must be quoted in editor">Global/Parameter</div>
+      <div
+        class="st-typography-small-caps"
+        title="Literals are quoted in editor, Constants/Parameters/Variables are unquoted"
+      >
+        Reference
+      </div>
       <EnumEditor
         {argDef}
         initVal={argInfo.text ?? ''}
