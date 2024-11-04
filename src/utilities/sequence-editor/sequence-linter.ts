@@ -129,7 +129,11 @@ export function sequenceLinter(
   if (commandsNode) {
     diagnostics.push(
       ...commandLinter(
-        commandsNode.getChildren(TOKEN_COMMAND),
+        [
+          ...commandsNode.getChildren(TOKEN_COMMAND),
+          ...commandsNode.getChildren(TOKEN_LOAD), // TODO: remove in the library sequence PR because that check should validate load and activates
+          ...commandsNode.getChildren(TOKEN_ACTIVATE), // TODO: remove in the library sequence PR because that check should validate load and activates
+        ],
         docText,
         variableMap,
         commandDictionary,
@@ -155,7 +159,11 @@ export function sequenceLinter(
 
   diagnostics.push(
     ...immediateCommandLinter(
-      treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_COMMAND) || [],
+      [
+        ...(treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_COMMAND) || []),
+        ...(treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_LOAD) || []),
+        ...(treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_ACTIVATE) || []),
+      ],
       docText,
       variableMap,
       commandDictionary,
@@ -692,6 +700,12 @@ function commandLinter(
   for (const command of commandNodes) {
     // Get the TimeTag node for the current command
     diagnostics.push(...validateTimeTags(command, text));
+
+    // TODO: remove in the library sequence PR because that check should validate
+    // load and activates
+    if (command.name === TOKEN_ACTIVATE || command.name === TOKEN_LOAD) {
+      continue;
+    }
 
     // Validate the command and push the generated diagnostics to the array
     diagnostics.push(
