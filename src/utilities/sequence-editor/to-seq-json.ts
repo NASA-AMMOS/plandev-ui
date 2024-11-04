@@ -10,7 +10,9 @@ import type {
   GroundEvent,
   HardwareCommand,
   HexArgument,
-  ImmediateCommand,
+  ImmediateActivate,
+  ImmediateFswCommand,
+  ImmediateLoad,
   Load,
   Metadata,
   Model,
@@ -24,7 +26,7 @@ import type {
   Time,
   VariableDeclaration,
 } from '@nasa-jpl/seq-json-schema/types';
-import { TOKEN_REPEAT_ARG } from '../../constants/seq-n-grammar-constants';
+import { TOKEN_ACTIVATE, TOKEN_COMMAND, TOKEN_LOAD, TOKEN_REPEAT_ARG } from '../../constants/seq-n-grammar-constants';
 import { TimeTypes } from '../../enums/time';
 import { removeEscapedQuotes, unquoteUnescape } from '../codemirror/codemirror-utils';
 import { getBalancedDuration, getDurationTimeComponents, parseDurationString, validateTime } from '../time';
@@ -74,10 +76,8 @@ export async function sequenceToSeqJson(
     seqJson.steps = undefined;
   }
   seqJson.immediate_commands =
-    baseNode
-      .getChild('ImmediateCommands')
-      ?.getChildren('Command')
-      .map(command => parseImmediateCommand(command, text, commandDictionary)) ?? undefined;
+    parseImmediateCommand(baseNode.getChild('ImmediateCommands'), text, commandDictionary) ?? undefined;
+
   seqJson.hardware_commands =
     baseNode
       .getChild('HardwareCommands')
@@ -169,7 +169,13 @@ function parseGroundBlockEvent(stepNode: SyntaxNode, text: string): GroundBlock 
   };
 }
 
-function parseActivateLoad(stepNode: SyntaxNode, text: string): Activate | Load {
+function parseActivateLoad(stepNode: SyntaxNode, text: string): Activate | Load;
+function parseActivateLoad(stepNode: SyntaxNode, text: string, isRTC: boolean): ImmediateActivate | ImmediateLoad;
+function parseActivateLoad(
+  stepNode: SyntaxNode,
+  text: string,
+  isRTC?: boolean,
+): Activate | Load | ImmediateActivate | ImmediateLoad {
   const time = parseTime(stepNode, text);
 
   const nameNode = stepNode.getChild('SequenceName');
@@ -186,17 +192,55 @@ function parseActivateLoad(stepNode: SyntaxNode, text: string): Activate | Load 
   const metadata = parseMetadata(stepNode, text);
   const models = parseModel(stepNode, text);
 
-  return {
-    args,
-    description,
-    engine,
-    epoch,
-    metadata,
-    models,
-    sequence,
-    time,
-    type: stepNode.name === 'Load' ? 'load' : 'activate',
-  };
+  if (stepNode.name === 'Activate') {
+    if (!isRTC) {
+      return {
+        args,
+        description,
+        engine,
+        epoch,
+        metadata,
+        models,
+        sequence,
+        time,
+        type: 'activate',
+      };
+    }
+    return {
+      args,
+      description,
+      engine,
+      epoch,
+      metadata,
+      models,
+      sequence,
+      type: 'immediate_activate',
+    };
+  } else {
+    if (!isRTC) {
+      return {
+        args,
+        description,
+        engine,
+        epoch,
+        metadata,
+        models,
+        sequence,
+        time,
+        type: 'load',
+      };
+    }
+    return {
+      args,
+      description,
+      engine,
+      epoch,
+      metadata,
+      models,
+      sequence,
+      type: 'immediate_load',
+    };
+  }
 }
 
 function parseEngine(stepNode: SyntaxNode, text: string): number | undefined {
@@ -212,10 +256,10 @@ function parseEpoch(stepNode: SyntaxNode, text: string): string | undefined {
 function parseStep(child: SyntaxNode, text: string, commandDictionary: CommandDictionary | null): Step | null {
   switch (child.name) {
     case 'Command':
-      return parseCommand(child, text, commandDictionary);
+      return parseCommand(child, text, commandDictionary) as Command;
     case 'Activate':
     case 'Load':
-      return parseActivateLoad(child, text);
+      return parseActivateLoad(child, text) as Activate | Load;
     case 'GroundBlock':
     case 'GroundEvent':
       return parseGroundBlockEvent(child, text);
@@ -638,7 +682,20 @@ function parseDescription(node: SyntaxNode, text: string): string | undefined {
   return removeEscapedQuotes(description);
 }
 
-function parseCommand(commandNode: SyntaxNode, text: string, commandDictionary: CommandDictionary | null): Command {
+function parseCommand(commandNode: SyntaxNode, text: string, commandDictionary: CommandDictionary | null): Command;
+function parseCommand(
+  commandNode: SyntaxNode,
+  text: string,
+  commandDictionary: CommandDictionary | null,
+  isRTC: boolean,
+): ImmediateFswCommand;
+
+function parseCommand(
+  commandNode: SyntaxNode,
+  text: string,
+  commandDictionary: CommandDictionary | null,
+  isRTC?: boolean,
+): Command | ImmediateFswCommand {
   const time = parseTime(commandNode, text);
 
   const stemNode = commandNode.getChild('Stem');
@@ -651,37 +708,52 @@ function parseCommand(commandNode: SyntaxNode, text: string, commandDictionary: 
   const metadata: Metadata | undefined = parseMetadata(commandNode, text);
   const models: Model[] | undefined = parseModel(commandNode, text);
 
+  if (!isRTC) {
+    return {
+      args,
+      description,
+      metadata,
+      models,
+      stem,
+      time,
+      type: 'command',
+    };
+  }
   return {
     args,
     description,
     metadata,
-    models,
     stem,
-    time,
-    type: 'command',
+    type: 'immediate_command',
   };
 }
 
 function parseImmediateCommand(
-  commandNode: SyntaxNode,
+  immediateCommandNode: SyntaxNode | null,
   text: string,
   commandDictionary: CommandDictionary | null,
-): ImmediateCommand {
-  const stemNode = commandNode.getChild('Stem');
-  const stem = stemNode ? text.slice(stemNode.from, stemNode.to) : 'UNKNOWN';
+): (ImmediateFswCommand | ImmediateLoad | ImmediateActivate)[] | undefined {
+  if (!immediateCommandNode) {
+    return undefined;
+  }
 
-  const argsNode = commandNode.getChild('Args');
-  const args = argsNode ? parseArgs(argsNode, text, commandDictionary, stem) : [];
+  const steps = [
+    ...(immediateCommandNode.getChildren(TOKEN_COMMAND) || []),
+    ...(immediateCommandNode.getChildren(TOKEN_LOAD) || []),
+    ...(immediateCommandNode.getChildren(TOKEN_ACTIVATE) || []),
+  ];
 
-  const description = parseDescription(commandNode, text);
-  const metadata: Metadata | undefined = parseMetadata(commandNode, text);
-
-  return {
-    args,
-    description,
-    metadata,
-    stem,
-  };
+  return steps.map((step: SyntaxNode) => {
+    switch (step.name) {
+      case 'Command':
+        return parseCommand(step, text, commandDictionary, true);
+      case 'Load':
+      case 'Activate':
+        return parseActivateLoad(step, text, true);
+      default:
+        throw new Error(`Unexpected step type: ${step.name}`);
+    }
+  });
 }
 
 function parseHardwareCommand(commandNode: SyntaxNode, text: string): HardwareCommand {
