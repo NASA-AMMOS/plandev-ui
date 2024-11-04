@@ -385,12 +385,49 @@ function generateHardwareCompletions(commandDictionary: CommandDictionary | null
 }
 
 function generateStepCompletion(cursor: CursorInfo): Completion[] {
-  // if cursor is at the LineComment/Description don't show the command completions list
-  if (cursor.isAtLineComment || !cursor.isBeforeHDWCommands || !cursor.isBeforeImmedOrHDWCommands) {
+  // if cursor is at the LineComment/Description after hardware commands don't show the command completions list
+  if (cursor.isAtLineComment || !cursor.isBeforeHDWCommands) {
     return [];
   }
 
   const stepCompletion: Completion[] = [];
+
+  stepCompletion.push({
+    apply: (view, _completion, from: number, to: number) => {
+      view.dispatch({
+        changes: {
+          from: Math.max(0, from + (!cursor.isAfterTimeTag || cursor.isAtSymbolBefore ? -1 : 0)),
+          insert: `${!cursor.isAfterTimeTag && cursor.isBeforeImmedOrHDWCommands ? 'C ' : ''}@ACTIVATE("activate.name")`,
+          to,
+        },
+      });
+    },
+    info: 'activate command',
+    label: '@ACTIVATE',
+    section: 'Ground Commands',
+    type: 'function',
+  });
+
+  stepCompletion.push({
+    apply: (view, _completion, from: number, to: number) => {
+      view.dispatch({
+        changes: {
+          from: Math.max(0, from + (!cursor.isAfterTimeTag || cursor.isAtSymbolBefore ? -1 : 0)),
+          insert: `${!cursor.isAfterTimeTag && cursor.isBeforeImmedOrHDWCommands ? 'C ' : ''}@LOAD("load.name")`,
+          to,
+        },
+      });
+    },
+    info: 'load command',
+    label: '@LOAD',
+    section: 'Ground Commands',
+    type: 'function',
+  });
+
+  // if after immediate commands don't show the command completions list below
+  if (!cursor.isBeforeImmedOrHDWCommands) {
+    return stepCompletion;
+  }
 
   stepCompletion.push({
     apply: (view, _completion, from: number, to: number) => {
@@ -420,38 +457,6 @@ function generateStepCompletion(cursor: CursorInfo): Completion[] {
     },
     info: 'ground block command',
     label: '@GROUND_BLOCK',
-    section: 'Ground Commands',
-    type: 'function',
-  });
-
-  stepCompletion.push({
-    apply: (view, _completion, from: number, to: number) => {
-      view.dispatch({
-        changes: {
-          from: Math.max(0, from + (!cursor.isAfterTimeTag || cursor.isAtSymbolBefore ? -1 : 0)),
-          insert: `${!cursor.isAfterTimeTag ? 'C ' : ''}@ACTIVATE("activate.name")`,
-          to,
-        },
-      });
-    },
-    info: 'activate command',
-    label: '@ACTIVATE',
-    section: 'Ground Commands',
-    type: 'function',
-  });
-
-  stepCompletion.push({
-    apply: (view, _completion, from: number, to: number) => {
-      view.dispatch({
-        changes: {
-          from: Math.max(0, from + (!cursor.isAfterTimeTag || cursor.isAtSymbolBefore ? -1 : 0)),
-          insert: `${!cursor.isAfterTimeTag ? 'C ' : ''}@LOAD("load.name")`,
-          to,
-        },
-      });
-    },
-    info: 'load command',
-    label: '@LOAD',
     section: 'Ground Commands',
     type: 'function',
   });
