@@ -3,9 +3,11 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
+  import Ajv from 'ajv';
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
   import ExternalEventIcon from '../../assets/external-event-box-with-arrow.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
+  import { externalSourceSchema } from '../../constants/external-event-validation-schemae';
   import { catchError } from '../../stores/errors';
   import { externalEventTypes } from '../../stores/external-event';
   import {
@@ -154,6 +156,9 @@
   let files: FileList | undefined;
   let file: File | undefined;
   let parsedExternalSource: ExternalSourceJson | undefined;
+  let validationError: string | null = null;
+
+  $: console.log(parsedExternalSource);
 
   // For filtering purposes (modelled after TimelineEditorLayerFilter):
   let filterExpression: string = '';
@@ -168,6 +173,9 @@
   let isDerivationGroupFieldDisabled: boolean = true;
 
   let gridRowSizes: string = '1fr 3px 0fr';
+
+  // for JSON Schema validation validation
+  const ajv = new Ajv();
 
   // Clear all error stores when a source is selected as they will not be shown
   $: if (selectedSource !== null) {
@@ -395,7 +403,18 @@
     try {
       try {
         parsedExternalSource = await parseJSONStream<ExternalSourceJson>(stream);
+        const validate = ajv.compile(externalSourceSchema);
+        const valid = validate(parsedExternalSource);
+        if (!valid && validate.errors) {
+          validationError = `Invalid JSON: ${validate.errors[0].instancePath} has error "${validate.errors[0].message}".`;
+          console.log('Full Invalid JSON error dump:', validate.errors);
+          parsedExternalSource = undefined;
+          return;
+        } else {
+          validationError = null;
+        }
       } catch (error) {
+        console.log('ERROR:', error);
         throw new Error('External Source has Invalid Format');
       }
       // Check for missing fields - if any are not present, throw an error
@@ -645,6 +664,7 @@
           }}
         >
           <AlertError class="m-2" error={$createExternalSourceError} />
+          <AlertError class="m-2" error={validationError} />
           <AlertError class="m-2" error={$parsingError} />
           <div class="file-upload-field">
             <fieldset style:flex={1}>
