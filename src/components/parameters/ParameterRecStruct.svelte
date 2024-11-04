@@ -15,6 +15,7 @@
 
   export let disabled: boolean = false;
   export let expanded: boolean = false;
+  export let headerHeight: number = 24;
   export let formParameter: FormParameter<ValueSchemaStruct>;
   export let hideRightAdornments: boolean = false;
   export let labelColumnWidth: number = 200;
@@ -67,7 +68,7 @@
 </script>
 
 <div class="parameter-rec-struct">
-  <Collapse defaultExpanded={expanded}>
+  <Collapse defaultExpanded={expanded} {headerHeight}>
     <div slot="left">
       <ParameterName {formParameter} />
     </div>
@@ -88,6 +89,7 @@
           {#if isRecParameter(subFormParameter)}
             <ParameterRec
               {disabled}
+              {headerHeight}
               {hideRightAdornments}
               formParameter={subFormParameter}
               {labelColumnWidth}
@@ -144,7 +146,6 @@
 
   .parameter-rec-struct :global(.collapse > .collapse-header) {
     gap: 8px;
-    height: 24px;
   }
 
   .parameter-rec-struct :global(.collapse > .content) {

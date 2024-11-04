@@ -7,6 +7,7 @@
   export let disabled: boolean = false;
   export let expanded: boolean = false;
   export let formParameter: FormParameter;
+  export let headerHeight: number = 24;
   export let hideRightAdornments: boolean = false;
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
@@ -31,6 +32,7 @@
   this={component}
   {disabled}
   {expanded}
+  {headerHeight}
   {formParameter}
   {hideRightAdornments}
   {labelColumnWidth}
