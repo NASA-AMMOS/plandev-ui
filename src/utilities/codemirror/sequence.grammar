@@ -92,9 +92,9 @@ Command {
   Models?
 }
 
-Activate { TimeTag activateDirective commonLoadActivate }
+Activate { TimeTag? activateDirective commonLoadActivate }
 
-Load { TimeTag loadDirective commonLoadActivate }
+Load { TimeTag? loadDirective commonLoadActivate }
 
 commonLoadActivate {
   "(" SequenceName { String } ")"
