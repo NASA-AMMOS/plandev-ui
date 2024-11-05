@@ -32,10 +32,11 @@
     parcelToParameterDictionaries,
     userSequenceEditorColumns,
     userSequenceEditorColumnsWithFormBuilder,
+    userSequences,
   } from '../../stores/sequencing';
   import type { User } from '../../types/app';
-  import type { IOutputFormat, Parcel } from '../../types/sequencing';
-  import { setupLanguageSupport } from '../../utilities/codemirror';
+  import type { IOutputFormat, LibrarySequence, Parcel } from '../../types/sequencing';
+  import { SeqLanguage, setupLanguageSupport } from '../../utilities/codemirror';
   import type { CommandInfoMapper } from '../../utilities/codemirror/commandInfoMapper';
   import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../utilities/codemirror/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../utilities/codemirror/seq-n-tree-utils';
@@ -56,6 +57,7 @@
   import { inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
   import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
   import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
+  import { parseVariables } from '../../utilities/sequence-editor/to-seq-json';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import Menu from '../menus/Menu.svelte';
@@ -74,6 +76,7 @@
   export let sequenceOutput: string = '';
   export let title: string = 'Sequence - Definition Editor';
   export let user: User | null;
+  export let workspaceId: number | null;
 
   const dispatch = createEventDispatcher<{
     sequence: { input: string; output: string };
@@ -94,6 +97,7 @@
   let commandDictionary: CommandDictionary | null;
   let disableCopyAndExport: boolean = true;
   let parameterDictionaries: ParameterDictionary[] = [];
+  let librarySequences: LibrarySequence[] = [];
   let commandFormBuilderGrid: string;
   let editorOutputDiv: HTMLDivElement;
   let editorOutputView: EditorView;
@@ -164,6 +168,18 @@
       }
     });
 
+    librarySequences = $userSequences
+      .filter(sequence => sequence.workspace_id === workspaceId && sequence.name !== sequenceName)
+      .map(sequence => {
+        const tree = SeqLanguage.parser.parse(sequence.definition);
+        return {
+          name: sequence.name,
+          parameters: parseVariables(tree.topNode, sequence.definition, 'ParameterDeclaration') ?? [],
+          tree,
+          workspace_id: sequence.workspace_id,
+        };
+      });
+
     if (unparsedCommandDictionary) {
       if (sequenceName && isInVmlMode) {
         getParsedCommandDictionary(unparsedCommandDictionary, user).then(parsedCommandDictionary => {
@@ -203,11 +219,17 @@
                     parsedChannelDictionary,
                     parsedCommandDictionary,
                     nonNullParsedParameterDictionaries,
+                    librarySequences,
                   ),
                 ),
               ),
               compartmentSeqLinter.reconfigure(
-                inputLinter(parsedChannelDictionary, parsedCommandDictionary, nonNullParsedParameterDictionaries),
+                inputLinter(
+                  parsedChannelDictionary,
+                  parsedCommandDictionary,
+                  nonNullParsedParameterDictionaries,
+                  librarySequences,
+                ),
               ),
               compartmentSeqTooltip.reconfigure(
                 sequenceTooltip(parsedChannelDictionary, parsedCommandDictionary, nonNullParsedParameterDictionaries),
@@ -251,7 +273,7 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': `${clientHeightGridRightTop}px` } }),
         lintGutter(),
-        compartmentSeqLanguage.of(setupLanguageSupport($sequenceAdaptation.autoComplete(null, null, []))),
+        compartmentSeqLanguage.of(setupLanguageSupport($sequenceAdaptation.autoComplete(null, null, [], []))),
         compartmentSeqLinter.of(inputLinter()),
         compartmentSeqTooltip.of(sequenceTooltip()),
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
