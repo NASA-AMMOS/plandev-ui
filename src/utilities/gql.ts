@@ -41,6 +41,7 @@ const gql = {
       constraintResponses: ${Queries.CONSTRAINT_VIOLATIONS}(planId: $planId) {
         success
         constraintId
+        constraintInvocationId
         constraintName
         constraintRevision
         results {
