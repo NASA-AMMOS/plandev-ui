@@ -12,9 +12,11 @@
   import { tooltip } from '../../../../utilities/tooltip';
   import ColorPicker from '../../../form/ColorPicker.svelte';
   import ColorPresetsPicker from '../../../form/ColorPresetsPicker.svelte';
+  import ActivityFilterBuilder from './ActivityFilterBuilder.svelte';
 
   export let layer: Layer;
 
+  let filterMenu: ActivityFilterBuilder;
   let color: string = '';
   let isColorScheme: boolean = false;
   let name: string = '';
@@ -88,6 +90,10 @@
     // TODO review
     (event.target as HTMLInputElement).value = newName;
   }
+
+  function toggleFilterMenu() {
+    filterMenu.toggle();
+  }
 </script>
 
 <div class="timeline-layer-editor">
@@ -119,13 +125,16 @@
     >
       <CopyIcon />
     </button>
-    <button
-      on:click|stopPropagation={() => dispatch('filterChanged')}
-      use:tooltip={{ content: 'Filter', placement: 'top' }}
-      class="st-button icon"
-    >
-      <FilterIcon />
-    </button>
+    {#if isActivityLayer(layer)}
+      <ActivityFilterBuilder filter={layer.filter.activity} on:filterChange bind:this={filterMenu} />
+      <button
+        on:click|stopPropagation={toggleFilterMenu}
+        use:tooltip={{ content: 'Filter', placement: 'top' }}
+        class="st-button icon"
+      >
+        <FilterIcon />
+      </button>
+    {/if}
     <button
       on:click|stopPropagation={() => dispatch('visibilityChange')}
       use:tooltip={{ content: 'Hide', placement: 'top' }}

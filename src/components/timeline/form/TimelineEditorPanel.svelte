@@ -399,7 +399,7 @@
     viewUpdateRow('layers', newLayers);
   }
 
-  function handleUpdateLayerProperty(name: string, value: string | number | boolean | null, layer: Layer) {
+  function handleUpdateLayerProperty(name: string, value: string | number | boolean | object | null, layer: Layer) {
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
         return {
@@ -1172,6 +1172,8 @@
                 on:colorChange={({ detail: { color } }) => handleUpdateLayerColor(color, layer)}
                 on:remove={() => handleDeleteLayerClick(layer)}
                 on:duplicate={() => handleDuplicateLayer(layer)}
+                on:filterChange={({ detail: { filter } }) =>
+                  handleUpdateLayerProperty('filter', { activity: filter }, layer)}
               />
             {/each}
           </div>
