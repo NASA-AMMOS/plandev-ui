@@ -15,11 +15,27 @@ import { closest, distance } from 'fastest-levenshtein';
 
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
-import { TOKEN_COMMAND, TOKEN_ERROR, TOKEN_REPEAT_ARG, TOKEN_REQUEST } from '../../constants/seq-n-grammar-constants';
+import {
+  RULE_ARGS,
+  RULE_SEQUENCE_NAME,
+  TOKEN_ACTIVATE,
+  TOKEN_COMMAND,
+  TOKEN_ERROR,
+  TOKEN_LOAD,
+  TOKEN_REPEAT_ARG,
+  TOKEN_REQUEST,
+} from '../../constants/seq-n-grammar-constants';
 import { TimeTypes } from '../../enums/time';
 import { getGlobals } from '../../stores/sequence-adaptation';
+import type { LibrarySequence } from '../../types/sequencing';
 import { CustomErrorCodes } from '../../workers/customCodes';
-import { addDefaultArgs, isHexValue, parseNumericArg, quoteEscape } from '../codemirror/codemirror-utils';
+import {
+  addDefaultArgs,
+  addDefaultVariableArgs,
+  isHexValue,
+  parseNumericArg,
+  quoteEscape,
+} from '../codemirror/codemirror-utils';
 import { closeSuggestion, computeBlocks, openSuggestion } from '../codemirror/custom-folder';
 import { SeqNCommandInfoMapper } from '../codemirror/seq-n-tree-utils';
 import {
@@ -72,6 +88,7 @@ export function sequenceLinter(
   channelDictionary: ChannelDictionary | null = null,
   commandDictionary: CommandDictionary | null = null,
   parameterDictionaries: ParameterDictionary[] = [],
+  librarySequences: LibrarySequence[] = [],
 ): Diagnostic[] {
   const tree = syntaxTree(view.state);
   const treeNode = tree.topNode;
@@ -129,6 +146,10 @@ export function sequenceLinter(
         channelDictionary,
         parameterDictionaries,
       ),
+    );
+    diagnostics.push(
+      ...validateActivateLoad(commandsNode.getChildren(TOKEN_ACTIVATE), 'Activate', docText, librarySequences),
+      ...validateActivateLoad(commandsNode.getChildren(TOKEN_LOAD), 'Load', docText, librarySequences),
     );
   }
 
@@ -471,6 +492,201 @@ function getVariableInfo(
     type: undefined,
     values: undefined,
   };
+}
+
+function validateActivateLoad(
+  node: SyntaxNode[],
+  type: 'Activate' | 'Load',
+  text: string,
+  librarySequences: LibrarySequence[],
+): Diagnostic[] {
+  if (node.length === 0) {
+    return [];
+  }
+
+  const diagnostics: Diagnostic[] = [];
+
+  node.forEach(activate => {
+    const sequenceName = activate.getChild(RULE_SEQUENCE_NAME);
+    const argNode = activate.getChild(RULE_ARGS);
+
+    if (sequenceName === null || argNode === null) {
+      return;
+    }
+    const library = librarySequences.find(
+      library => library.name === text.slice(sequenceName.from, sequenceName.to).replace(/^"|"$/g, ''),
+    );
+    const argsNode = getChildrenNode(argNode);
+    if (!library) {
+      diagnostics.push({
+        from: sequenceName.from,
+        message: `Sequence doesn't exist ${text.slice(sequenceName.from, sequenceName.to)}`,
+        severity: 'warning',
+        to: sequenceName.to,
+      });
+    } else {
+      if (library.parameters.length > 0) {
+        if (!argNode || argsNode.length === 0) {
+          diagnostics.push({
+            actions: [],
+            from: activate.from,
+            message: `The ${type} is missing arguments.`,
+            severity: 'error',
+            to: activate.to,
+          });
+          return diagnostics;
+        }
+        if (argsNode.length > library.parameters.length) {
+          const extraArgs = argsNode.slice(library.parameters.length);
+          const { from, to } = getFromAndTo(extraArgs);
+          diagnostics.push({
+            actions: [
+              {
+                apply(view, from, to) {
+                  view.dispatch({ changes: { from, to } });
+                },
+                name: `Remove ${extraArgs.length} extra argument${extraArgs.length > 1 ? 's' : ''}`,
+              },
+            ],
+            from,
+            message: `Extra arguments, definition has ${library.parameters.length}, but ${argsNode.length} are present`,
+            severity: 'error',
+            to,
+          });
+          return diagnostics;
+        }
+        if (argsNode.length < library.parameters.length) {
+          const { from, to } = getFromAndTo(argsNode);
+          const pluralS = library.parameters.length > argsNode.length + 1 ? 's' : '';
+          diagnostics.push({
+            actions: [
+              {
+                apply(view) {
+                  addDefaultVariableArgs(library.parameters, view, activate, new SeqNCommandInfoMapper());
+                },
+                name: `Add default missing argument${pluralS}`,
+              },
+            ],
+            from,
+            message: `Missing argument${pluralS}, definition has ${argsNode.length}, but ${library.parameters.length} are present`,
+            severity: 'error',
+            to,
+          });
+          return diagnostics;
+        }
+      } else if (argNode && argsNode.length > 0) {
+        const { from, to } = getFromAndTo(argsNode);
+        diagnostics.push({
+          actions: [
+            {
+              apply(view, from, to) {
+                view.dispatch({ changes: { from, to } });
+              },
+              name: `Remove argument${argsNode.length > 1 ? 's' : ''}`,
+            },
+          ],
+          from: from,
+          message: 'The command should not have arguments',
+          severity: 'error',
+          to: to,
+        });
+        return diagnostics;
+      }
+
+      library?.parameters.forEach((parameter, index) => {
+        const arg = argsNode[index];
+        switch (parameter.type) {
+          case 'STRING': {
+            if (arg.name !== 'String') {
+              diagnostics.push({
+                from: arg.from,
+                message: `"${parameter.name}" must be a string`,
+                severity: 'error',
+                to: arg.to,
+              });
+            }
+            break;
+          }
+          case 'FLOAT':
+          case 'INT':
+          case 'UINT':
+            {
+              let value = 0;
+              const num = text.slice(arg.from, arg.to);
+              if (parameter.type === 'FLOAT') {
+                value = parseFloat(num);
+              } else {
+                value = parseInt(num);
+              }
+              parameter.allowable_ranges?.forEach(range => {
+                if (value < range.min || value > range.max) {
+                  diagnostics.push({
+                    from: arg.from,
+                    message: `Value must be between ${range.min} and ${range.max}`,
+                    severity: 'error',
+                    to: arg.to,
+                  });
+                }
+              });
+
+              if (parameter.type === 'UINT') {
+                if (value < 0) {
+                  diagnostics.push({
+                    from: arg.from,
+                    message: `UINT must be greater than or equal to zero`,
+                    severity: 'error',
+                    to: arg.to,
+                  });
+                }
+              }
+              if (arg.name !== 'Number') {
+                diagnostics.push({
+                  from: arg.from,
+                  message: `"${parameter.name}" must be a number`,
+                  severity: 'error',
+                  to: arg.to,
+                });
+              }
+            }
+            break;
+          case 'ENUM':
+            {
+              if (arg.name === 'Number' || arg.name === 'Boolean') {
+                diagnostics.push({
+                  from: arg.from,
+                  message: `"${parameter.name}" must be an enum`,
+                  severity: 'error',
+                  to: arg.to,
+                });
+              } else if (arg.name !== 'String') {
+                diagnostics.push({
+                  actions: [],
+                  from: argNode.from,
+                  message: `Incorrect type - expected double quoted 'enum' but got ${arg.name}`,
+                  severity: 'error',
+                  to: argNode.to,
+                });
+              }
+              const enumValue = text.slice(arg.from, arg.to).replace(/^"|"$/g, '');
+              if (parameter.allowable_values?.indexOf(enumValue) === -1) {
+                diagnostics.push({
+                  from: arg.from,
+                  message: `Enum should be "${parameter.allowable_values?.slice(0, MAX_ENUMS_TO_SHOW).join(' | ')}${parameter.allowable_values!.length > MAX_ENUMS_TO_SHOW ? '...' : ''}"`,
+                  severity: 'error',
+                  to: arg.to,
+                });
+              }
+            }
+
+            break;
+          default:
+            break;
+        }
+      });
+    }
+  });
+
+  return diagnostics;
 }
 
 function validateCustomDirectives(node: SyntaxNode, text: string): Diagnostic[] {
