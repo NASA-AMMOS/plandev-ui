@@ -6,8 +6,8 @@
 <div class="header" class:menu-border-bottom={showBorder}>
   <div class="title st-typography-small-caps">
     {title}
-    <slot />
   </div>
+  <slot />
 </div>
 
 <style>
