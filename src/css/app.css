@@ -83,3 +83,13 @@ fieldset {
 .st-input {
   margin: 0;
 }
+
+.st-menu {
+  background: #fff;
+  border: var(--st-border-popover);
+  border-radius: var(--st-border-radius-popover);
+  box-shadow: var(--st-shadow-popover);
+  outline: 0;
+  overflow: hidden;
+  z-index: 1000;
+}
