@@ -231,12 +231,14 @@
                     {/if}
                   </button>
                 {:else if planMergeRequest.status === 'in-progress' && planMergeRequest.plan_snapshot_supplying_changes.plan}
-                  <button
-                    on:click={() => goto(`${base}/plans/${planMergeRequest.plan_receiving_changes?.id}/merge`)}
-                    class="st-button secondary"
-                  >
-                    {planMergeRequest.type === 'incoming' ? 'Review' : 'View Merge Request'}
-                  </button>
+                  {#if typeof planMergeRequest.plan_receiving_changes?.id === 'number'}
+                    <button
+                      on:click={() => goto(`${base}/plans/${planMergeRequest.plan_receiving_changes?.id}/merge`)}
+                      class="st-button secondary"
+                    >
+                      {planMergeRequest.type === 'incoming' ? 'Review' : 'View Merge Request'}
+                    </button>
+                  {/if}
 
                   {#if planMergeRequest.type === 'outgoing'}
                     <div
