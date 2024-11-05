@@ -4,7 +4,7 @@
   import type { FswCommandArgumentVarString } from '@nasa-jpl/aerie-ampcs';
   import { isQuoted, quoteEscape, unquoteUnescape } from './../../../utilities/codemirror/codemirror-utils';
 
-  export let argDef: FswCommandArgumentVarString;
+  export let argDef: FswCommandArgumentVarString | undefined = undefined;
   export let initVal: string;
   export let setInEditor: (val: string) => void;
 
@@ -26,4 +26,4 @@
   }
 </script>
 
-<input class="st-input w-100" spellcheck="false" bind:value title={argDef.description} />
+<input class="st-input w-100" spellcheck="false" bind:value title={argDef && argDef.description} />

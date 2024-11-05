@@ -2,15 +2,16 @@
 
 <script lang="ts">
   import type { CommandDictionary, FswCommandArgumentEnum } from '@nasa-jpl/aerie-ampcs';
+  import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
   import type { SelectedDropdownOptionValue } from '../../../types/dropdown';
-  import { quoteEscape, unquoteUnescape } from '../../../utilities/codemirror/codemirror-utils';
+  import { isVariableDeclaration, quoteEscape, unquoteUnescape } from '../../../utilities/codemirror/codemirror-utils';
   import SearchableDropdown from '../../ui/SearchableDropdown.svelte';
 
   const SEARCH_THRESHOLD = 100;
   const MAX_SEARCH_ITEMS = 1_000;
 
-  export let argDef: FswCommandArgumentEnum;
-  export let commandDictionary: CommandDictionary;
+  export let argDef: FswCommandArgumentEnum | VariableDeclaration;
+  export let commandDictionary: CommandDictionary | undefined = undefined;
   export let initVal: string;
   export let setInEditor: (val: string) => void;
 
@@ -19,7 +20,7 @@
   let value: string;
 
   $: value = unquoteUnescape(initVal);
-  $: enumValues = commandDictionary.enumMap[argDef.enum_name]?.values?.map(v => v.symbol) ?? argDef.range ?? [];
+  $: enumValues = getEnumValues(argDef);
   $: isValueInEnum = !!enumValues.find(ev => ev === value);
   $: {
     setInEditor(quoteEscape(value));
@@ -35,6 +36,16 @@
     if (typeof enumVal === 'string') {
       setInEditor(quoteEscape(enumVal));
     }
+  }
+
+  function getEnumValues(argDef: FswCommandArgumentEnum | VariableDeclaration): string[] {
+    if (isVariableDeclaration(argDef)) {
+      const varDef = argDef as VariableDeclaration;
+      return (varDef.allowable_values ? varDef.allowable_values : []) as string[];
+    }
+
+    const enumDef = argDef as FswCommandArgumentEnum;
+    return commandDictionary?.enumMap[enumDef.enum_name]?.values?.map(v => v.symbol) ?? enumDef.range ?? [];
   }
 </script>
 

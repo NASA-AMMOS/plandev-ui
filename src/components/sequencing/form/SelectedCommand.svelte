@@ -11,9 +11,11 @@
     FswCommandArgumentVarString,
     ParameterDictionary,
   } from '@nasa-jpl/aerie-ampcs';
+  import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
   import type { EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
-  import { TOKEN_ERROR } from '../../../constants/seq-n-grammar-constants';
+  import { RULE_SEQUENCE_NAME, TOKEN_ERROR } from '../../../constants/seq-n-grammar-constants';
+  import type { LibrarySequence } from '../../../types/sequencing';
   import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
   import { getCustomArgDef } from '../../../utilities/sequence-editor/extension-points';
   import Collapse from '../../Collapse.svelte';
@@ -21,13 +23,17 @@
   import SectionTitle from '../../ui/SectionTitle.svelte';
   import {
     addDefaultArgs,
+    addDefaultVariableArgs,
     getMissingArgDefs,
+    getMissingVariableDefs,
     isFswCommandArgumentRepeat,
     type ArgTextDef,
+    type VariableTextDef,
   } from './../../../utilities/codemirror/codemirror-utils';
   import AddMissingArgsButton from './AddMissingArgsButton.svelte';
   import ArgEditor from './ArgEditor.svelte';
   import StringEditor from './StringEditor.svelte';
+  import VariableEditor from './VariableEditor.svelte';
 
   type TimeTagInfo = { node: SyntaxNode; text: string } | null | undefined;
 
@@ -35,6 +41,7 @@
   export let channelDictionary: ChannelDictionary | null = null;
   export let commandDictionary: CommandDictionary;
   export let parameterDictionaries: ParameterDictionary[];
+  export let librarySequences: LibrarySequence[];
   export let node: SyntaxNode | null;
   export let commandInfoMapper: CommandInfoMapper;
 
@@ -52,7 +59,7 @@
   $: commandNameNode = commandInfoMapper.getNameNode(commandNode);
   $: commandName = commandNameNode && editorSequenceView.state.sliceDoc(commandNameNode.from, commandNameNode.to);
   $: commandDef = getCommandDef(commandDictionary, commandName ?? '');
-  $: argInfoArray = getArgumentInfo(
+  $: argInfoArray = getCommandArgumentInfo(
     commandInfoMapper.getArgumentNodeContainer(commandNode),
     commandDef?.arguments,
     undefined,
@@ -60,6 +67,22 @@
   );
   $: editorArgInfoArray = argInfoArray.filter(argInfo => !!argInfo.node);
   $: missingArgDefArray = getMissingArgDefs(argInfoArray);
+
+  // Library Sequence arguments
+  $: librarySequence = librarySequences.find(sequence => {
+    const seqName = commandNode?.getChild(RULE_SEQUENCE_NAME);
+    if (!seqName) {
+      return false;
+    }
+    return sequence.name === editorSequenceView.state.sliceDoc(seqName.from, seqName.to).replace(/^"|"$/g, '');
+  }) as LibrarySequence | undefined;
+  $: variableInfoArray = getVariableArgumentInfo(
+    commandInfoMapper.getArgumentNodeContainer(commandNode),
+    librarySequence?.parameters,
+  );
+  $: editorVarInfoArray = variableInfoArray.filter(varInfo => !!varInfo.node);
+  $: missingVarDefArray = getMissingVariableDefs(variableInfoArray);
+
   $: timeTagNode = getTimeTagInfo(commandNode);
 
   function getTimeTagInfo(commandNode: SyntaxNode | null): TimeTagInfo {
@@ -73,7 +96,43 @@
     );
   }
 
-  function getArgumentInfo(
+  function getVariableArgumentInfo(
+    args: SyntaxNode | null,
+    argumentDefs: VariableDeclaration[] | undefined,
+  ): VariableTextDef[] {
+    const variableArgArray: VariableTextDef[] = [];
+
+    if (args) {
+      for (const node of commandInfoMapper.getArgumentsFromContainer(args)) {
+        if (node.name === TOKEN_ERROR) {
+          continue;
+        }
+
+        let varDef: VariableDeclaration | undefined = undefined;
+        if (argumentDefs) {
+          let argDefIndex = variableArgArray.length;
+
+          varDef = argumentDefs[argDefIndex];
+        }
+
+        const argValue = editorSequenceView.state.sliceDoc(node.from, node.to);
+        variableArgArray.push({
+          node,
+          text: argValue,
+          varDef,
+        });
+      }
+    }
+    if (argumentDefs) {
+      variableArgArray.push(...argumentDefs.slice(variableArgArray.length).map(varDef => ({ varDef })));
+    }
+
+    // add entries for defined arguments missing from editor
+
+    return variableArgArray;
+  }
+
+  function getCommandArgumentInfo(
     args: SyntaxNode | null,
     argumentDefs: FswCommandArgument[] | undefined,
     parentArgDef: FswCommandArgumentRepeat | undefined,
@@ -111,7 +170,7 @@
 
         let children: ArgTextDef[] | undefined = undefined;
         if (!!argDef && isFswCommandArgumentRepeat(argDef)) {
-          children = getArgumentInfo(node, argDef.repeat?.arguments, argDef, parameterDictionaries);
+          children = getCommandArgumentInfo(node, argDef.repeat?.arguments, argDef, parameterDictionaries);
         }
         const argValue = editorSequenceView.state.sliceDoc(node.from, node.to);
         argArray.push({
@@ -267,6 +326,20 @@
                 }}
               />
             </div>
+            {#each editorVarInfoArray as varInfo}
+              <VariableEditor {varInfo} setInEditor={debounce(setInEditor, 250)} />
+            {/each}
+            {#if missingVarDefArray.length}
+              <fieldset>
+                <AddMissingArgsButton
+                  setInEditor={() => {
+                    if (commandNode) {
+                      addDefaultVariableArgs(missingVarDefArray, editorSequenceView, commandNode, commandInfoMapper);
+                    }
+                  }}
+                />
+              </fieldset>
+            {/if}
           </fieldset>
         {/if}
       {:else}
