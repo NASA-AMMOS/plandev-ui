@@ -190,6 +190,7 @@
     sequenceOutput={selectedSequence ? JSON.stringify(selectedSequence.expanded_sequence, null, 2) : undefined}
     readOnly={true}
     title="Sequence - Definition Editor (Read-only)"
+    workspaceId={null}
     {user}
   />
 </CssGrid>

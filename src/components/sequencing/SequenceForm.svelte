@@ -327,6 +327,7 @@
     title="{mode === 'create' ? 'New' : 'Edit'} Sequence - Definition Editor"
     {user}
     readOnly={!hasPermission}
+    workspaceId={selectedWorkspaceId}
     on:sequence={onSequenceChange}
     on:didChangeModelContent={onDidChangeModelContent}
   />
