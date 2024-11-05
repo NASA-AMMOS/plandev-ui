@@ -9,7 +9,7 @@ import {
 } from '@nasa-jpl/aerie-ampcs';
 import { get } from 'svelte/store';
 import { inputFormat, sequenceAdaptation } from '../../stores/sequence-adaptation';
-import type { IOutputFormat } from '../../types/sequencing';
+import type { IOutputFormat, LibrarySequence } from '../../types/sequencing';
 import { seqJsonLinter } from './seq-json-linter';
 import { sequenceLinter } from './sequence-linter';
 
@@ -81,6 +81,7 @@ export function inputLinter(
   channelDictionary: ChannelDictionary | null = null,
   commandDictionary: CommandDictionary | null = null,
   parameterDictionaries: ParameterDictionary[] = [],
+  librarySequences: LibrarySequence[] = [],
 ): Extension {
   return linter(view => {
     const inputLinter = get(sequenceAdaptation).inputFormat.linter;
@@ -88,7 +89,7 @@ export function inputLinter(
     const treeNode = tree.topNode;
     let diagnostics: Diagnostic[];
 
-    diagnostics = sequenceLinter(view, channelDictionary, commandDictionary, parameterDictionaries);
+    diagnostics = sequenceLinter(view, channelDictionary, commandDictionary, parameterDictionaries, librarySequences);
 
     if (inputLinter !== undefined && commandDictionary !== null) {
       diagnostics = inputLinter(diagnostics, commandDictionary, view, treeNode);

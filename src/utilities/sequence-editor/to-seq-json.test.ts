@@ -7,11 +7,13 @@ import {
   type FswCommandArgumentMap,
   type HwCommand,
 } from '@nasa-jpl/aerie-ampcs';
+import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 import { SeqLanguage } from '../codemirror';
+import { parser } from '../codemirror/sequence.grammar';
 import { seqJsonToSequence } from './from-seq-json';
-import { sequenceToSeqJson } from './to-seq-json';
+import { parseVariables, sequenceToSeqJson } from './to-seq-json';
 
 function argArrToMap(cmdArgs: FswCommandArgument[]): FswCommandArgumentMap {
   return cmdArgs.reduce((argMap, arg) => ({ ...argMap, [arg.name]: arg }), {});
@@ -1174,4 +1176,60 @@ C CMD_0 true false [ false true ]
     ],
   };
   expect(actual).toEqual(expected);
+});
+
+describe('parseVariables', () => {
+  const seqN = [
+    `@LOCALS_BEGIN
+TEMPERATURE INT
+SIZE INT "-1...20, 40..."
+STORE ENUM STORE_NAME "" "MACY, ROSS, BEST_BUY"
+CHARGE
+@LOCALS_END`,
+    `@INPUT_PARAMS_BEGIN
+DOOR_ENABLED INT
+X_RANGE INT "...10" "-1,0,3,4,5,9"
+@INPUT_PARAMS_END`,
+  ];
+
+  it('should return undefined if there are no variable children', () => {
+    let tree = parser.parse(`${seqN[0]}`);
+    let variable = parseVariables(tree.topNode, seqN[0], 'LocalDeclaration');
+    expect(variable).toBeDefined();
+
+    expect(variable?.length).toEqual(4);
+    if (variable) {
+      expect(variable[0]).toEqual({ name: 'TEMPERATURE', type: 'INT' } as VariableDeclaration);
+      expect(variable[1]).toEqual({
+        allowable_ranges: [
+          { max: 20, min: -1 },
+          { max: Infinity, min: 40 },
+        ],
+        name: 'SIZE',
+        type: 'INT',
+      } as VariableDeclaration);
+      expect(variable[2]).toEqual({
+        allowable_values: ['MACY', 'ROSS', 'BEST_BUY'],
+        enum_name: 'STORE_NAME',
+        name: 'STORE',
+        type: 'ENUM',
+      });
+      expect(variable[3]).toEqual({ name: 'CHARGE', type: 'INT' });
+    }
+
+    tree = parser.parse(`${seqN[1]}`);
+    variable = parseVariables(tree.topNode, seqN[1], 'ParameterDeclaration');
+    expect(variable).toBeDefined();
+
+    expect(variable?.length).toEqual(2);
+    if (variable) {
+      expect(variable[0]).toEqual({ name: 'DOOR_ENABLED', type: 'INT' } as VariableDeclaration);
+      expect(variable[1]).toEqual({
+        allowable_ranges: [{ max: 10, min: -Infinity }],
+        allowable_values: ['-1', '0', '3', '4', '5', '9'],
+        name: 'X_RANGE',
+        type: 'INT',
+      } as VariableDeclaration);
+    }
+  });
 });

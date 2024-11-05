@@ -1,5 +1,7 @@
+import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import { describe, expect, it } from 'vitest';
 import {
+  getDefaultVariableArgs,
   isHexValue,
   isQuoted,
   parseNumericArg,
@@ -115,5 +117,19 @@ describe('isHexValue', function () {
     expect(isHexValue('0xdeadBEEF')).toBe(true);
     expect(isHexValue('0x12ab')).toBe(true);
     expect(isHexValue('0x12xx')).toBe(false);
+  });
+});
+describe('getDefaultVariableArgs', function () {
+  const mockParameters = [
+    { name: 'exampleString', type: 'STRING' },
+    { allowable_ranges: [{ min: 1.2 }], type: 'FLOAT' },
+    { allowable_ranges: [{ min: 5 }], type: 'INT' },
+    { allowable_ranges: [{ min: 7 }], type: 'UINT' },
+    { allowable_values: ['VALUE1'], enum_name: 'ExampleEnum', type: 'ENUM' },
+    { type: 'INT' },
+  ] as VariableDeclaration[];
+  it('should return default values for different types', () => {
+    const result = getDefaultVariableArgs(mockParameters);
+    expect(result).toEqual(['"exampleString"', 1.2, 5, 7, '"VALUE1"', 0]);
   });
 });

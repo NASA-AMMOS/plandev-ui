@@ -15,11 +15,27 @@ import { closest, distance } from 'fastest-levenshtein';
 
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
-import { TOKEN_COMMAND, TOKEN_ERROR, TOKEN_REPEAT_ARG, TOKEN_REQUEST } from '../../constants/seq-n-grammar-constants';
+import {
+  RULE_ARGS,
+  RULE_SEQUENCE_NAME,
+  TOKEN_ACTIVATE,
+  TOKEN_COMMAND,
+  TOKEN_ERROR,
+  TOKEN_LOAD,
+  TOKEN_REPEAT_ARG,
+  TOKEN_REQUEST,
+} from '../../constants/seq-n-grammar-constants';
 import { TimeTypes } from '../../enums/time';
 import { getGlobals } from '../../stores/sequence-adaptation';
+import type { LibrarySequence } from '../../types/sequencing';
 import { CustomErrorCodes } from '../../workers/customCodes';
-import { addDefaultArgs, isHexValue, parseNumericArg, quoteEscape } from '../codemirror/codemirror-utils';
+import {
+  addDefaultArgs,
+  addDefaultVariableArgs,
+  isHexValue,
+  parseNumericArg,
+  quoteEscape,
+} from '../codemirror/codemirror-utils';
 import { closeSuggestion, computeBlocks, openSuggestion } from '../codemirror/custom-folder';
 import { SeqNCommandInfoMapper } from '../codemirror/seq-n-tree-utils';
 import {
@@ -72,6 +88,7 @@ export function sequenceLinter(
   channelDictionary: ChannelDictionary | null = null,
   commandDictionary: CommandDictionary | null = null,
   parameterDictionaries: ParameterDictionary[] = [],
+  librarySequences: LibrarySequence[] = [],
 ): Diagnostic[] {
   const tree = syntaxTree(view.state);
   const treeNode = tree.topNode;
@@ -129,6 +146,10 @@ export function sequenceLinter(
         channelDictionary,
         parameterDictionaries,
       ),
+    );
+    diagnostics.push(
+      ...validateActivateLoad(commandsNode.getChildren(TOKEN_ACTIVATE), 'Activate', docText, librarySequences),
+      ...validateActivateLoad(commandsNode.getChildren(TOKEN_LOAD), 'Load', docText, librarySequences),
     );
   }
 
@@ -471,6 +492,141 @@ function getVariableInfo(
     type: undefined,
     values: undefined,
   };
+}
+
+function validateActivateLoad(
+  node: SyntaxNode[],
+  type: 'Activate' | 'Load',
+  text: string,
+  librarySequences: LibrarySequence[],
+): Diagnostic[] {
+  if (node.length === 0) {
+    return [];
+  }
+
+  const diagnostics: Diagnostic[] = [];
+
+  node.forEach(activate => {
+    const sequenceName = activate.getChild(RULE_SEQUENCE_NAME);
+    const argNode = activate.getChild(RULE_ARGS);
+
+    if (sequenceName === null || argNode === null) {
+      return;
+    }
+    const library = librarySequences.find(
+      library => library.name === text.slice(sequenceName.from, sequenceName.to).replace(/^"|"$/g, ''),
+    );
+    const argsNode = getChildrenNode(argNode);
+    if (!library) {
+      diagnostics.push({
+        from: sequenceName.from,
+        message: `Sequence doesn't exist ${text.slice(sequenceName.from, sequenceName.to)}`,
+        severity: 'warning',
+        to: sequenceName.to,
+      });
+    } else {
+      const structureError = validateCommandStructure(activate, argsNode, library.parameters.length, (view: any) => {
+        addDefaultVariableArgs(library.parameters.slice(argsNode.length), view, activate, new SeqNCommandInfoMapper());
+      });
+      if (structureError) {
+        diagnostics.push(structureError);
+        return diagnostics;
+      }
+
+      library?.parameters.forEach((parameter, index) => {
+        const arg = argsNode[index];
+        switch (parameter.type) {
+          case 'STRING': {
+            if (arg.name !== 'String') {
+              diagnostics.push({
+                from: arg.from,
+                message: `"${parameter.name}" must be a string`,
+                severity: 'error',
+                to: arg.to,
+              });
+            }
+            break;
+          }
+          case 'FLOAT':
+          case 'INT':
+          case 'UINT':
+            {
+              let value = 0;
+              const num = text.slice(arg.from, arg.to);
+              if (parameter.type === 'FLOAT') {
+                value = parseFloat(num);
+              } else {
+                value = parseInt(num);
+              }
+              parameter.allowable_ranges?.forEach(range => {
+                if (value < range.min || value > range.max) {
+                  diagnostics.push({
+                    from: arg.from,
+                    message: `Value must be between ${range.min} and ${range.max}`,
+                    severity: 'error',
+                    to: arg.to,
+                  });
+                }
+              });
+
+              if (parameter.type === 'UINT') {
+                if (value < 0) {
+                  diagnostics.push({
+                    from: arg.from,
+                    message: `UINT must be greater than or equal to zero`,
+                    severity: 'error',
+                    to: arg.to,
+                  });
+                }
+              }
+              if (arg.name !== 'Number') {
+                diagnostics.push({
+                  from: arg.from,
+                  message: `"${parameter.name}" must be a number`,
+                  severity: 'error',
+                  to: arg.to,
+                });
+              }
+            }
+            break;
+          case 'ENUM':
+            {
+              if (arg.name === 'Number' || arg.name === 'Boolean') {
+                diagnostics.push({
+                  from: arg.from,
+                  message: `"${parameter.name}" must be an enum`,
+                  severity: 'error',
+                  to: arg.to,
+                });
+              } else if (arg.name !== 'String') {
+                diagnostics.push({
+                  actions: [],
+                  from: argNode.from,
+                  message: `Incorrect type - expected double quoted 'enum' but got ${arg.name}`,
+                  severity: 'error',
+                  to: argNode.to,
+                });
+              }
+              const enumValue = text.slice(arg.from, arg.to).replace(/^"|"$/g, '');
+              if (parameter.allowable_values?.indexOf(enumValue) === -1) {
+                diagnostics.push({
+                  from: arg.from,
+                  message: `Enum should be "${parameter.allowable_values?.slice(0, MAX_ENUMS_TO_SHOW).join(' | ')}${parameter.allowable_values!.length > MAX_ENUMS_TO_SHOW ? '...' : ''}"`,
+                  severity: 'error',
+                  to: arg.to,
+                });
+              }
+            }
+
+            break;
+          default:
+            break;
+        }
+      });
+    }
+  });
+
+  return diagnostics;
 }
 
 function validateCustomDirectives(node: SyntaxNode, text: string): Diagnostic[] {
@@ -987,80 +1143,20 @@ function validateAndLintArguments(
   // Initialize an array to store the validation errors
   let diagnostics: Diagnostic[] = [];
 
-  // Validate argument presence based on dictionary definition
-  if (dictArgs.length > 0) {
-    if (!argNode || argNode.length === 0) {
-      diagnostics.push({
-        actions: [],
-        from: command.from,
-        message: 'The command is missing arguments.',
-        severity: 'error',
-        to: command.to,
-      });
-      return diagnostics;
+  const structureError = validateCommandStructure(command, argNode, dictArgs.length, (view: any) => {
+    if (commandDictionary) {
+      addDefaultArgs(
+        commandDictionary,
+        view,
+        command,
+        dictArgs.slice(argNode ? argNode.length : 0),
+        new SeqNCommandInfoMapper(),
+      );
     }
+  });
 
-    if (argNode.length > dictArgs.length) {
-      const extraArgs = argNode.slice(dictArgs.length);
-      const { from, to } = getFromAndTo(extraArgs);
-      diagnostics.push({
-        actions: [
-          {
-            apply(view, from, to) {
-              view.dispatch({ changes: { from, to } });
-            },
-            name: `Remove ${extraArgs.length} extra argument${extraArgs.length > 1 ? 's' : ''}`,
-          },
-        ],
-        from,
-        message: `Extra arguments, definition has ${dictArgs.length}, but ${argNode.length} are present`,
-        severity: 'error',
-        to,
-      });
-      return diagnostics;
-    } else if (argNode.length < dictArgs.length) {
-      const { from, to } = getFromAndTo(argNode);
-      const pluralS = dictArgs.length > argNode.length + 1 ? 's' : '';
-      diagnostics.push({
-        actions: [
-          {
-            apply(view) {
-              if (commandDictionary) {
-                addDefaultArgs(
-                  commandDictionary,
-                  view,
-                  command,
-                  dictArgs.slice(argNode.length),
-                  new SeqNCommandInfoMapper(),
-                );
-              }
-            },
-            name: `Add default missing argument${pluralS}`,
-          },
-        ],
-        from,
-        message: `Missing argument${pluralS}, definition has ${argNode.length}, but ${dictArgs.length} are present`,
-        severity: 'error',
-        to,
-      });
-      return diagnostics;
-    }
-  } else if (argNode && argNode.length > 0) {
-    const { from, to } = getFromAndTo(argNode);
-    diagnostics.push({
-      actions: [
-        {
-          apply(view, from, to) {
-            view.dispatch({ changes: { from, to } });
-          },
-          name: `Remove argument${argNode.length > 1 ? 's' : ''}`,
-        },
-      ],
-      from: from,
-      message: 'The command should not have arguments',
-      severity: 'error',
-      to: to,
-    });
+  if (structureError) {
+    diagnostics.push(structureError);
     return diagnostics;
   }
 
@@ -1110,6 +1206,86 @@ function validateAndLintArguments(
 
   // Return the array of validation errors
   return diagnostics;
+}
+
+/**
+ * Validates the command structure.
+ * @param stemNode - The SyntaxNode representing the command stem.
+ * @param argsNode - The SyntaxNode representing the command arguments.
+ * @param exactArgSize - The expected number of arguments.
+ * @param addDefault - The function to add default arguments.
+ * @returns A Diagnostic object representing the validation error, or undefined if there is no error.
+ */
+function validateCommandStructure(
+  stemNode: SyntaxNode,
+  argsNode: SyntaxNode[] | null,
+  exactArgSize: number,
+  addDefault: (view: any) => any,
+): Diagnostic | undefined {
+  if (arguments.length > 0) {
+    if (!argsNode || argsNode.length === 0) {
+      return {
+        actions: [],
+        from: stemNode.from,
+        message: `The stem is missing arguments.`,
+        severity: 'error',
+        to: stemNode.to,
+      };
+    }
+    if (argsNode.length > exactArgSize) {
+      const extraArgs = argsNode.slice(exactArgSize);
+      const { from, to } = getFromAndTo(extraArgs);
+      return {
+        actions: [
+          {
+            apply(view, from, to) {
+              view.dispatch({ changes: { from, to } });
+            },
+            name: `Remove ${extraArgs.length} extra argument${extraArgs.length > 1 ? 's' : ''}`,
+          },
+        ],
+        from,
+        message: `Extra arguments, definition has ${exactArgSize}, but ${argsNode.length} are present`,
+        severity: 'error',
+        to,
+      };
+    }
+    if (argsNode.length < exactArgSize) {
+      const { from, to } = getFromAndTo(argsNode);
+      const pluralS = exactArgSize > argsNode.length + 1 ? 's' : '';
+      return {
+        actions: [
+          {
+            apply(view) {
+              addDefault(view);
+            },
+            name: `Add default missing argument${pluralS}`,
+          },
+        ],
+        from,
+        message: `Missing argument${pluralS}, definition has ${argsNode.length}, but ${exactArgSize} are present`,
+        severity: 'error',
+        to,
+      };
+    }
+  } else if (argsNode && argsNode.length > 0) {
+    const { from, to } = getFromAndTo(argsNode);
+    return {
+      actions: [
+        {
+          apply(view, from, to) {
+            view.dispatch({ changes: { from, to } });
+          },
+          name: `Remove argument${argsNode.length > 1 ? 's' : ''}`,
+        },
+      ],
+      from: from,
+      message: 'The command should not have arguments',
+      severity: 'error',
+      to: to,
+    };
+  }
+  return undefined;
 }
 
 /**
