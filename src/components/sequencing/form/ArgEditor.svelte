@@ -31,13 +31,13 @@
 
   let argDef: FswCommandArgument | undefined = undefined;
   let enableRepeatAdd: boolean = false;
-  let isVariable: boolean = false;
+  let isSymbol: boolean = false;
 
   $: argDef = argInfo.argDef;
 
   $: {
-    isVariable = commandInfoMapper.isArgumentNodeOfVariableType(argInfo.node ?? null);
-    if (!!argDef && isVariable) {
+    isSymbol = commandInfoMapper.isArgumentNodeOfVariableType(argInfo.node ?? null);
+    if (!!argDef && isSymbol) {
       argDef = {
         arg_type: 'enum',
         bit_length: null,
@@ -84,7 +84,7 @@
       <ArgTitle
         argDef={argInfo.argDef}
         {commandInfoMapper}
-        argumentValueCategory={isVariable ? 'Reference' : 'Literal'}
+        argumentValueCategory={isSymbol ? 'Symbol' : 'Literal'}
         setInEditor={val => {
           if (argInfo.node) {
             setInEditor(argInfo.node, val);
@@ -92,7 +92,7 @@
         }}
       />
     {/if}
-    {#if isVariable && isFswCommandArgumentEnum(argDef)}
+    {#if isSymbol && isFswCommandArgumentEnum(argDef)}
       <div class="st-typography-small-caps">Reference</div>
       <EnumEditor
         {argDef}

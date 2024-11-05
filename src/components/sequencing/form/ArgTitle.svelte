@@ -17,7 +17,7 @@
   export let argDef: FswCommandArgument;
   export let commandInfoMapper: CommandInfoMapper;
   export let setInEditor: (val: string) => void;
-  export let argumentValueCategory: 'Literal' | 'Reference';
+  export let argumentValueCategory: 'Literal' | 'Symbol';
 
   let title: string = '';
   let typeInfo: string = '';
@@ -105,7 +105,7 @@
 
     <select class="st-select" required bind:value={argumentValueCategory} on:change={onValueTypeChange}>
       <option value="Literal"> Literal </option>
-      <option value="Reference"> Reference </option>
+      <option value="Symbol"> Symbol </option>
     </select>
   </div>
 </Collapse>
