@@ -1,12 +1,13 @@
 import type { CompletionContext, CompletionResult } from '@codemirror/autocomplete';
 import type { IndentContext } from '@codemirror/language';
 import type { Diagnostic } from '@codemirror/lint';
-import type { SyntaxNode } from '@lezer/common';
+import type { SyntaxNode, Tree } from '@lezer/common';
 import type {
   ChannelDictionary as AmpcsChannelDictionary,
   CommandDictionary as AmpcsCommandDictionary,
   ParameterDictionary as AmpcsParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
+import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
 import type { DictionaryTypes } from '../enums/dictionaryTypes';
 import type { ArgDelegator } from '../utilities/sequence-editor/extension-points';
@@ -64,6 +65,7 @@ export interface ISequenceAdaptation {
     channelDictionary: AmpcsChannelDictionary | null,
     commandDictionary: AmpcsCommandDictionary | null,
     parameterDictionaries: AmpcsParameterDictionary[],
+    librarySequences: LibrarySequence[],
   ) => (context: CompletionContext) => CompletionResult | null;
   autoIndent?: () => (context: IndentContext, pos: number) => number | null | undefined;
   globals?: GlobalType[];
@@ -138,6 +140,13 @@ export type UserSequence = {
   parcel_id: number;
   seq_json: SeqJson;
   updated_at: string;
+  workspace_id: number;
+};
+
+export type LibrarySequence = {
+  name: string;
+  parameters: VariableDeclaration[];
+  tree: Tree;
   workspace_id: number;
 };
 
