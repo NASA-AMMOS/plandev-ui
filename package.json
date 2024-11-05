@@ -85,6 +85,7 @@
     "@lezer/generator": "^1.7.0",
     "@lezer/highlight": "^1.2.0",
     "@lezer/lr": "^1.4.0",
+    "@neodrag/svelte": "^2.0.6",
     "@playwright/test": "^1.44.0",
     "@poppanator/sveltekit-svg": "^4.2.1",
     "@sveltejs/vite-plugin-svelte": "^3.0.0",
