@@ -137,7 +137,7 @@
     }}
   >
     <div
-      class="menu-slot st-typography-medium"
+      class="st-menu st-typography-medium"
       style:width={typeof width === 'number' ? `${width}px` : null}
       use:popperContent={extraOpts}
     >
@@ -153,15 +153,5 @@
     position: absolute;
     top: 4px;
     width: 100%;
-  }
-
-  .menu-slot {
-    background: #fff;
-    border: var(--st-border-popover);
-    border-radius: var(--st-border-radius-popover);
-    box-shadow: var(--st-shadow-popover);
-    outline: 0;
-    overflow: hidden;
-    z-index: 1000;
   }
 </style>
