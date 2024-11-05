@@ -40,7 +40,7 @@ export type ConstraintPlanSpecification = {
     | null;
   constraint_revision: number | null;
   enabled: boolean;
-  invocation_id?: number;
+  invocation_id: number;
   plan_id: number;
   // constraint_definition: ConstraintDefinition;
   // plan: Plan;
@@ -90,6 +90,7 @@ export type ConstraintResultWithName = ConstraintResult & { constraintName: stri
 
 export type ConstraintResponse = {
   constraintId: ConstraintMetadata['id'];
+  constraintInvocationId: ConstraintRun['constraint_invocation_id'];
   constraintName: ConstraintMetadata['name'];
   errors: UserCodeError[];
   results: ConstraintResult;
@@ -100,6 +101,7 @@ export type ConstraintResponse = {
 export type ConstraintRun = {
   arguments: any;
   constraint_id: number;
+  constraint_invocation_id: number;
   constraint_metadata: {
     name: string;
   };
@@ -107,6 +109,11 @@ export type ConstraintRun = {
   results: ConstraintResultWithName;
   simulation_data_id: number;
 };
+
+export type ConstraintInvocationMap<T> = Record<
+  ConstraintPlanSpecification['constraint_id'],
+  Record<ConstraintPlanSpecification['invocation_id'], T>
+>;
 
 export type UserCodeError = {
   location: CodeLocation;

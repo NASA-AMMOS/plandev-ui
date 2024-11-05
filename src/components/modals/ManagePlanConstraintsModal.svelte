@@ -7,8 +7,7 @@
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import {
-    allowedConstraintPlanSpecMap,
-    allowedConstraintSpecs,
+    allowedConstraintPlanSpecs,
     constraints,
     initialConstraintPlanSpecsLoading,
     initialConstraintsLoading,
@@ -114,7 +113,7 @@
     const includesName = constraint.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesId || includesName;
   });
-  $: selectedConstraints = $allowedConstraintSpecs.reduce(
+  $: selectedConstraints = $allowedConstraintPlanSpecs.reduce(
     (prevBooleanMap: Record<string, boolean>, constraintPlanSpec: ConstraintPlanSpecification) => {
       return {
         ...prevBooleanMap,
@@ -217,15 +216,10 @@
           // if we find at least one constraint invocation with the selected constraint_id, we don't want to insert this constraint_id into the plan spec
           // i.e. this constraint was already selected when we entered the modal, so we don't want to kick off an update, which would cause a duplicate invocation to appear
           const constraintAlreadyExistsInPlanSpec =
-            $allowedConstraintSpecs.find(e => e.constraint_id === constraintId) !== undefined;
-
-          const constraintPlanSpec = $allowedConstraintPlanSpecMap[constraintId];
+            $allowedConstraintPlanSpecs.find(e => e.constraint_id === constraintId) !== undefined;
 
           if (isSelected) {
-            if (
-              !constraintAlreadyExistsInPlanSpec &&
-              (!constraintPlanSpec || constraintPlanSpec.constraint_metadata?.owner === user?.id)
-            ) {
+            if (!constraintAlreadyExistsInPlanSpec) {
               return {
                 ...prevConstraintPlanSpecUpdates,
                 constraintPlanSpecsToAdd: [

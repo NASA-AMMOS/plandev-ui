@@ -86,13 +86,7 @@
     } = event;
 
     if ($plan) {
-      await effects.updateSchedulingGoalPlanSpecification(
-        $plan,
-        {
-          ...goalPlanSpec,
-        },
-        user,
-      );
+      await effects.updateSchedulingGoalPlanSpecification($plan, goalPlanSpec, user);
     }
   }
 

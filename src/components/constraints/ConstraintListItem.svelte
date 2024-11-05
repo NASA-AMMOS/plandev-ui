@@ -30,10 +30,12 @@
   export let constraint: ConstraintMetadata;
   export let constraintPlanSpec: ConstraintPlanSpecification;
   export let constraintResponse: ConstraintResponse;
+  export let deletePermissionError: string = 'You do not have permission to delete constraints for this plan.';
   export let editPermissionError: string = 'You do not have permission to edit constraints for this plan.';
   export let modelId: number | undefined;
-  export let hasReadPermission: boolean = false;
+  export let hasDeletePermission: boolean = false;
   export let hasEditPermission: boolean = false;
+  export let hasReadPermission: boolean = false;
   export let readPermissionError: string = 'You do not have permission to view this constraint.';
   export let totalViolationCount: number = 0;
   export let visible: boolean = true;
@@ -41,7 +43,7 @@
   const dispatch = createEventDispatcher<{
     deleteConstraintInvocation: ConstraintPlanSpecification;
     duplicateConstraintInvocation: ConstraintPlanSpecification;
-    toggleVisibility: { id: number; visible: boolean };
+    toggleVisibility: { constraintId: number; invocationId: number; visible: boolean };
     updateConstraintPlanSpec: ConstraintPlanSpecification;
   }>();
 
@@ -153,10 +155,16 @@
             <StatusBadge status={Status.Unchecked} />
           </span>
         {/if}
+        {constraintPlanSpec.invocation_id}
         <button
           use:tooltip={{ content: visible ? 'Hide' : 'Show', placement: 'top' }}
           class="st-button icon"
-          on:click|stopPropagation={() => dispatch('toggleVisibility', { id: constraint.id, visible: !visible })}
+          on:click|stopPropagation={() =>
+            dispatch('toggleVisibility', {
+              constraintId: constraintPlanSpec.constraint_id,
+              invocationId: constraintPlanSpec.invocation_id,
+              visible: !visible,
+            })}
         >
           {#if visible}
             <VisibleShowIcon />
@@ -230,8 +238,8 @@
             [
               permissionHandler,
               {
-                hasPermission: hasEditPermission,
-                permissionError: editPermissionError,
+                hasPermission: hasDeletePermission,
+                permissionError: deletePermissionError,
               },
             ],
           ]}

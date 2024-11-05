@@ -2,7 +2,7 @@ import { keyBy } from 'lodash-es';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 import { Status } from '../enums/status';
 import type {
-  ConstraintDefinition,
+  ConstraintInvocationMap,
   ConstraintMetadata,
   ConstraintPlanSpecification,
   ConstraintResponse,
@@ -15,11 +15,14 @@ import { planId, planStartTimeMs } from './plan';
 import { simulationDatasetLatestId } from './simulation';
 import { gqlSubscribable } from './subscribable';
 
+type ConstraintPlanSpecMap = ConstraintInvocationMap<ConstraintPlanSpecification>;
+type ConstraintPlanSpecVisibilityMap = ConstraintInvocationMap<boolean>;
+
 /* Writeable. */
 
 export const constraintMetadataId: Writable<number> = writable(-1);
 
-export const constraintVisibilityMapWritable: Writable<Record<ConstraintMetadata['id'], boolean>> = writable({});
+export const constraintPlanSpecVisibilityMapWritable: Writable<ConstraintPlanSpecVisibilityMap> = writable({});
 
 export const rawCheckConstraintsStatus: Writable<Status | null> = writable(null);
 export const rawConstraintResponses: Writable<ConstraintResponse[]> = writable([]);
@@ -62,28 +65,44 @@ export const constraintPlanSpecsMap: Readable<Record<string, ConstraintPlanSpeci
   ([$constraintPlanSpecs]) => ($constraintPlanSpecs ? keyBy($constraintPlanSpecs, 'constraint_id') : {}),
 );
 
-export const allowedConstraintSpecs: Readable<ConstraintPlanSpecification[]> = derived(
+export const allowedConstraintPlanSpecs: Readable<ConstraintPlanSpecification[]> = derived(
   [constraintPlanSpecs],
   ([$constraintPlanSpecs]) =>
     ($constraintPlanSpecs || []).filter(({ constraint_metadata: constraintMetadata }) => constraintMetadata !== null),
 );
 
-export const allowedConstraintPlanSpecMap: Readable<Record<string, ConstraintPlanSpecification>> = derived(
-  [allowedConstraintSpecs],
-  ([$allowedConstraintSpecs]) => keyBy($allowedConstraintSpecs, 'constraint_id'),
+export const allowedConstraintPlanSpecMap: Readable<ConstraintPlanSpecMap> = derived(
+  [allowedConstraintPlanSpecs],
+  ([$allowedConstraintSpecs]) =>
+    $allowedConstraintSpecs.reduce((prevPlanSpecMap: ConstraintPlanSpecMap, allowedSpec) => {
+      if (!prevPlanSpecMap[allowedSpec.constraint_id]) {
+        prevPlanSpecMap[allowedSpec.constraint_id] = {};
+      }
+      prevPlanSpecMap[allowedSpec.constraint_id][allowedSpec.invocation_id] = allowedSpec;
+      return prevPlanSpecMap;
+    }, {}),
 );
 
-export const constraintVisibilityMap: Readable<Record<ConstraintMetadata['id'], boolean>> = derived(
-  [allowedConstraintPlanSpecMap, constraintVisibilityMapWritable],
+export const constraintVisibilityMap: Readable<ConstraintPlanSpecVisibilityMap> = derived(
+  [allowedConstraintPlanSpecMap, constraintPlanSpecVisibilityMapWritable],
   ([$allowedConstraintPlanSpecMap, $constraintVisibilityMapWritable]) => {
-    return Object.values($allowedConstraintPlanSpecMap).reduce((map: Record<number, boolean>, constraint) => {
-      if (constraint.constraint_id in $constraintVisibilityMapWritable) {
-        map[constraint.constraint_id] = $constraintVisibilityMapWritable[constraint.constraint_id];
-      } else {
-        map[constraint.constraint_id] = true;
-      }
-      return map;
-    }, {});
+    return Object.keys($allowedConstraintPlanSpecMap).reduce(
+      (prevConstraintPlanSpecVisibilityMap: ConstraintPlanSpecVisibilityMap, constraintIdString: string) => {
+        const constraintId: number = parseInt(constraintIdString);
+        const invocationPlanSpecMap = $allowedConstraintPlanSpecMap[constraintId];
+        if (!prevConstraintPlanSpecVisibilityMap[constraintId]) {
+          prevConstraintPlanSpecVisibilityMap[constraintId] = {};
+        }
+        Object.values(invocationPlanSpecMap).forEach(constraintSpecification => {
+          const invocationId = constraintSpecification.invocation_id;
+          prevConstraintPlanSpecVisibilityMap[constraintId][invocationId] =
+            $constraintVisibilityMapWritable[constraintId]?.[invocationId] ?? true;
+        });
+
+        return prevConstraintPlanSpecVisibilityMap;
+      },
+      {},
+    );
   },
 );
 
@@ -119,35 +138,33 @@ export const constraintsViolationStatus: Readable<Status | null> = derived(
   },
 );
 
-export const constraintResponseMap: Readable<Record<ConstraintDefinition['constraint_id'], ConstraintResponse>> =
-  derived(
-    [constraintRuns, relevantRawConstraintResponses, planStartTimeMs],
-    ([$constraintRuns, $checkConstraintResponse, $planStartTimeMs]) => {
-      const cachedResponseMap = keyBy(
-        ($constraintRuns || []).map(
-          run =>
-            ({
-              constraintId: run.constraint_id,
-              constraintName: run.constraint_metadata.name,
-              errors: [],
-              results: {
-                ...run.results,
-                violations:
-                  run.results.violations?.map(violation => ({
-                    ...violation,
-                    windows: violation.windows.map(({ end, start }) => ({
-                      end: $planStartTimeMs + end / 1000,
-                      start: $planStartTimeMs + start / 1000,
-                    })),
-                  })) ?? null,
-              },
-              success: true,
-              type: 'plan',
-            }) as ConstraintResponse,
-        ),
-        'constraintId',
-      );
-      const checkConstraintResponse = keyBy(
+export const constraintResponses: Readable<ConstraintResponse[]> = derived(
+  [constraintRuns, relevantRawConstraintResponses, planStartTimeMs],
+  ([$constraintRuns, $checkConstraintResponse, $planStartTimeMs]) => {
+    return ($constraintRuns || [])
+      .map(
+        run =>
+          ({
+            constraintId: run.constraint_id,
+            constraintInvocationId: run.constraint_invocation_id,
+            constraintName: run.constraint_metadata.name,
+            errors: [],
+            results: {
+              ...run.results,
+              violations:
+                run.results.violations?.map(violation => ({
+                  ...violation,
+                  windows: violation.windows.map(({ end, start }) => ({
+                    end: $planStartTimeMs + end / 1000,
+                    start: $planStartTimeMs + start / 1000,
+                  })),
+                })) ?? null,
+            },
+            success: true,
+            type: 'plan',
+          }) as ConstraintResponse,
+      )
+      .concat(
         $checkConstraintResponse.map(response => ({
           ...response,
           results: {
@@ -162,20 +179,31 @@ export const constraintResponseMap: Readable<Record<ConstraintDefinition['constr
               })) ?? null,
           },
         })),
-        'constraintId',
       );
+  },
+);
 
-      return {
-        ...cachedResponseMap,
-        ...checkConstraintResponse,
-      };
+export const constraintResponseMap: Readable<
+  Record<ConstraintRun['constraint_id'], Record<ConstraintRun['constraint_invocation_id'], ConstraintResponse>>
+> = derived([constraintResponses], ([$constraintResponses]) => {
+  return $constraintResponses.reduce(
+    (prevCachedConstraintResponseMap: ConstraintInvocationMap<ConstraintResponse>, response) => {
+      const { constraintId, constraintInvocationId } = response;
+      if (!prevCachedConstraintResponseMap[constraintId]) {
+        prevCachedConstraintResponseMap[constraintId] = {};
+      }
+      prevCachedConstraintResponseMap[constraintId][constraintInvocationId] = response;
+
+      return prevCachedConstraintResponseMap;
     },
+    {},
   );
+});
 
 export const uncheckedConstraintCount: Readable<number> = derived(
-  [allowedConstraintSpecs, constraintResponseMap],
-  ([$allowedConstraintSpecs, $constraintResponseMap]) =>
-    $allowedConstraintSpecs.reduce((count, prev) => {
+  [allowedConstraintPlanSpecs, constraintResponseMap],
+  ([$allowedConstraintPlanSpecs, $constraintResponseMap]) =>
+    $allowedConstraintPlanSpecs.reduce((count, prev) => {
       if (!(prev.constraint_id in $constraintResponseMap)) {
         count++;
       }
@@ -207,16 +235,19 @@ export const relevantConstraintRuns: Readable<ConstraintRun[]> = derived(
 );
 
 export const visibleConstraintResults: Readable<ConstraintResultWithName[]> = derived(
-  [constraintResponseMap, allowedConstraintPlanSpecMap],
-  ([$constraintResponseMap, $allowedConstraintPlanSpecMap]) => {
-    return Object.values($constraintResponseMap)
-      .filter(constraintRun => {
-        return $allowedConstraintPlanSpecMap[constraintRun.constraintId];
+  [constraintResponses, allowedConstraintPlanSpecMap],
+  ([$constraintResponses, $allowedConstraintPlanSpecMap]) => {
+    return $constraintResponses
+      .filter(constraintResponse => {
+        return (
+          $allowedConstraintPlanSpecMap[constraintResponse.constraintId][constraintResponse.constraintInvocationId] !=
+          null
+        );
       })
-      .map(constraintRun => {
+      .map(constraintResponse => {
         return {
-          ...constraintRun.results,
-          constraintName: constraintRun.constraintName,
+          ...constraintResponse.results,
+          constraintName: constraintResponse.constraintName,
         };
       });
   },
@@ -288,16 +319,37 @@ export const initialConstraintPlanSpecsLoading: Readable<boolean> = derived(
 
 /* Helper Functions. */
 
-export function setConstraintVisibility(constraintId: ConstraintDefinition['constraint_id'], visible: boolean) {
-  constraintVisibilityMapWritable.set({ ...get(constraintVisibilityMapWritable), [constraintId]: visible });
+export function setConstraintVisibility(
+  constraintId: ConstraintPlanSpecification['constraint_id'],
+  invocationId: ConstraintPlanSpecification['invocation_id'],
+  visible: boolean,
+) {
+  const visibilityMap = get(constraintPlanSpecVisibilityMapWritable);
+  constraintPlanSpecVisibilityMapWritable.set({
+    ...visibilityMap,
+    [constraintId]: {
+      ...(visibilityMap[constraintId] ?? {}),
+      [invocationId]: visible,
+    },
+  });
 }
 
 export function setAllConstraintsVisible(visible: boolean) {
-  constraintVisibilityMapWritable.set(
-    Object.values(get(constraintsMap)).reduce((map: Record<number, boolean>, constraint) => {
-      map[constraint.id] = visible;
-      return map;
-    }, {}),
+  constraintPlanSpecVisibilityMapWritable.set(
+    (get(constraintPlanSpecs) || []).reduce(
+      (
+        prevConstraintPlanSpecVisibilityMap: ConstraintPlanSpecVisibilityMap,
+        { constraint_id: constraintId, invocation_id: invocationId }: ConstraintPlanSpecification,
+      ) => {
+        if (!prevConstraintPlanSpecVisibilityMap[constraintId]) {
+          prevConstraintPlanSpecVisibilityMap[constraintId] = {};
+        }
+        prevConstraintPlanSpecVisibilityMap[constraintId][invocationId] = visible;
+
+        return prevConstraintPlanSpecVisibilityMap;
+      },
+      {},
+    ),
   );
 }
 

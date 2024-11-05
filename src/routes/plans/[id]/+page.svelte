@@ -46,7 +46,7 @@
   import {
     cachedConstraintsStatus,
     checkConstraintsStatus,
-    constraintResponseMap,
+    constraintResponses,
     constraintsStatus,
     resetConstraintStores,
     resetPlanConstraintStores,
@@ -407,12 +407,8 @@
     selectedSimulationStatus = getSimulationStatus($simulationDatasetLatest);
   }
 
-  $: numConstraintsViolated = Object.values($constraintResponseMap).filter(
-    response => response.results.violations?.length,
-  ).length;
-  $: numConstraintsWithErrors = Object.values($constraintResponseMap).filter(
-    response => response.errors?.length,
-  ).length;
+  $: numConstraintsViolated = $constraintResponses.filter(response => response.results.violations?.length).length;
+  $: numConstraintsWithErrors = $constraintResponses.filter(response => response.errors?.length).length;
   $: constraintsStatusText =
     ($constraintsStatus === Status.Complete ||
       $constraintsStatus === Status.Failed ||

@@ -2244,6 +2244,7 @@ const gql = {
         where: {plan_id: {_eq: $planId}},
         order_by: { constraint_id: desc }
       ) {
+        arguments
         constraint_id
         invocation_id
         constraint_revision
@@ -2267,6 +2268,7 @@ const gql = {
     subscription SubConstraintRuns($simulationDatasetId: Int!) {
       constraintRuns: ${Queries.CONSTRAINT_RUN}(where: { simulation_dataset_id: { _eq: $simulationDatasetId }}) {
         constraint_id
+        constraint_invocation_id
         constraint_revision
         results
         constraint_metadata {
