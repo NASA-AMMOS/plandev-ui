@@ -1,16 +1,21 @@
 import type { Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete';
 import { syntaxTree } from '@codemirror/language';
 import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+import { RULE_SEQUENCE_NAME, TOKEN_ACTIVATE, TOKEN_LOAD } from '../../constants/seq-n-grammar-constants';
 import { getGlobals } from '../../stores/sequence-adaptation';
+import type { LibrarySequence } from '../../types/sequencing';
 import { SeqLanguage } from '../codemirror';
+import { getDefaultVariableArgs } from '../codemirror/codemirror-utils';
 import { getDoyTime } from '../time';
 import { fswCommandArgDefault } from './command-dictionary';
 import { getCustomArgDef } from './extension-points';
+import { getFromAndTo, getNearestAncestorNodeOfType } from './tree-utils';
 
 type CursorInfo = {
   isAfterActivateOrLoad: boolean;
   isAfterTimeTag: boolean;
   isAtLineComment: boolean;
+  isAtSequenceName: boolean;
   isAtSymbolBefore: boolean;
   isBeforeHDWCommands: boolean;
   isBeforeImmedOrHDWCommands: boolean;
@@ -25,6 +30,7 @@ export function sequenceCompletion(
   channelDictionary: ChannelDictionary | null = null,
   commandDictionary: CommandDictionary | null = null,
   parameterDictionaries: ParameterDictionary[],
+  librarySequences: LibrarySequence[],
 ) {
   return (context: CompletionContext): CompletionResult | null => {
     const nodeBefore = syntaxTree(context.state).resolveInner(context.pos, -1);
@@ -48,9 +54,11 @@ export function sequenceCompletion(
       const fswCommandsCompletions: Completion[] = [];
       const hwCommandsCompletions: Completion[] = [];
       const directivesCompletions: Completion[] = [];
+      const globalCompletions: Completion[] = [];
+      const libraryCompletions: Completion[] = [];
 
       const cursor: CursorInfo = {
-        isAfterActivateOrLoad: nodeBefore.parent?.name === 'Activate' || nodeBefore.parent?.name === 'Load',
+        isAfterActivateOrLoad: nodeBefore.parent?.name === TOKEN_ACTIVATE || nodeBefore.parent?.name === TOKEN_LOAD,
         isAfterTimeTag: (() => {
           const line = context.state.doc.lineAt(context.pos);
           const node = SeqLanguage.parser.parse(line.text).resolveInner(context.pos - line.from, -1);
@@ -58,6 +66,7 @@ export function sequenceCompletion(
           return node.parent?.getChild('TimeGroundEpoch') || node.parent?.getChild('TimeTag') ? true : false;
         })(),
         isAtLineComment: nodeCurrent.name === 'LineComment' || nodeBefore.name === 'LineComment',
+        isAtSequenceName: nodeCurrent.parent?.name === RULE_SEQUENCE_NAME,
         isAtSymbolBefore: isAtTyped(context.state.doc.toString(), word),
         isBeforeHDWCommands: context.pos < (baseNode.getChild('HardwareCommands')?.from ?? Infinity),
         isBeforeImmedOrHDWCommands:
@@ -239,7 +248,6 @@ export function sequenceCompletion(
       // }
 
       const globals = getGlobals();
-      const globalCompletions: Completion[] = [];
 
       if (globals) {
         for (const global of globals) {
@@ -253,6 +261,37 @@ export function sequenceCompletion(
         }
       }
 
+      if (cursor.isAtSequenceName) {
+        libraryCompletions.push(
+          ...librarySequences.map(sequence => {
+            const args = getDefaultVariableArgs(sequence.parameters).join(' ');
+
+            return {
+              apply: (view: any, _completion: any, from: number, to: number) => {
+                const t = getNearestAncestorNodeOfType(nodeCurrent, [TOKEN_ACTIVATE, TOKEN_LOAD]);
+                view.dispatch({
+                  changes: {
+                    from,
+                    insert: `${sequence.name}") ${args}`,
+                    to: t ? getFromAndTo([t, t?.getChild('Args')]).to : to,
+                  },
+                });
+              },
+              info: 'A library sequence',
+              label: sequence.name,
+              section: 'Sequences',
+              type: 'library',
+            };
+          }),
+        );
+        //clear all other completions
+        directivesCompletions.length = 0;
+        timeTagCompletions.length = 0;
+        fswCommandsCompletions.length = 0;
+        hwCommandsCompletions.length = 0;
+        enumerationCompletions.length = 0;
+      }
+
       return {
         from: word.from,
         options: [
@@ -262,6 +301,7 @@ export function sequenceCompletion(
           ...fswCommandsCompletions,
           ...hwCommandsCompletions,
           ...globalCompletions,
+          ...libraryCompletions,
         ],
       };
     }
