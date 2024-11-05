@@ -19,6 +19,7 @@
 
   export let disabled: boolean = false;
   export let expanded: boolean = false;
+  export let headerHeight: number = 24;
   export let formParameter: FormParameter<ValueSchemaSeries>;
   export let hideRightAdornments: boolean = false;
   export let labelColumnWidth: number = 200;
@@ -83,7 +84,7 @@
 </script>
 
 <div class="parameter-rec-series">
-  <Collapse defaultExpanded={expanded}>
+  <Collapse defaultExpanded={expanded} {headerHeight}>
     <div slot="left">
       <ParameterName {formParameter} />
     </div>
@@ -124,6 +125,7 @@
               <ParameterRec
                 {disabled}
                 hideRightAdornments
+                {headerHeight}
                 expanded
                 formParameter={subFormParameter}
                 {labelColumnWidth}
