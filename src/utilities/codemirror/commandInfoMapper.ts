@@ -1,4 +1,5 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
+import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 
 export interface CommandInfoMapper {
   /** format string of multiple arguments */
@@ -15,6 +16,8 @@ export interface CommandInfoMapper {
 
   /** ascends parse tree to find scope to display in form editor */
   getContainingCommand(node: SyntaxNode | null): SyntaxNode | null;
+
+  getDefaultValueForArgumentDef(argDef: FswCommandArgument, enumMap: EnumMap): string;
 
   /** finds the node in the parse tree containing the name */
   getNameNode(stepNode: SyntaxNode | null): SyntaxNode | null;

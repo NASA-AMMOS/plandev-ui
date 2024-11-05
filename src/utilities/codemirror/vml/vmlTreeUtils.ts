@@ -1,4 +1,5 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
+import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import {
   filterNodesToArray,
   getChildrenNode,
@@ -6,6 +7,7 @@ import {
   isDefined,
 } from '../../sequence-editor/tree-utils';
 import type { CommandInfoMapper } from '../commandInfoMapper';
+import { getDefaultArgumentValue } from './vmlAdaptation';
 import {
   RULE_CALL_PARAMETER,
   RULE_CALL_PARAMETERS,
@@ -63,6 +65,10 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
 
   getContainingCommand(node: SyntaxNode | null): SyntaxNode | null {
     return getNearestAncestorNodeOfType(node, [RULE_TIME_TAGGED_STATEMENT]);
+  }
+
+  getDefaultValueForArgumentDef(argDef: FswCommandArgument, enumMap: EnumMap): string {
+    return getDefaultArgumentValue(argDef, enumMap);
   }
 
   getNameNode(statementNode: SyntaxNode | null): SyntaxNode | null {

@@ -1,4 +1,5 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
+import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import {
   RULE_ARGS,
   RULE_COMMAND,
@@ -16,6 +17,7 @@ import {
   TOKEN_REQUEST,
   TOKEN_STRING,
 } from '../../constants/seq-n-grammar-constants';
+import { fswCommandArgDefault } from '../sequence-editor/command-dictionary';
 import { validateVariables } from '../sequence-editor/sequence-linter';
 import { getFromAndTo, getNearestAncestorNodeOfType } from '../sequence-editor/tree-utils';
 import type { CommandInfoMapper } from './commandInfoMapper';
@@ -84,6 +86,10 @@ export class SeqNCommandInfoMapper implements CommandInfoMapper {
 
   getContainingCommand(node: SyntaxNode | null): SyntaxNode | null {
     return getAncestorStepOrRequest(node);
+  }
+
+  getDefaultValueForArgumentDef(argDef: FswCommandArgument, enumMap: EnumMap): string {
+    return fswCommandArgDefault(argDef, enumMap);
   }
 
   getNameNode(stepNode: SyntaxNode | null): SyntaxNode | null {

@@ -80,14 +80,20 @@
       />
     {/if}
   {:else}
-    <ArgTitle {argDef} />
+    {#if argInfo.argDef}
+      <ArgTitle
+        argDef={argInfo.argDef}
+        {commandInfoMapper}
+        argumentValueCategory={isVariable ? 'Reference' : 'Literal'}
+        setInEditor={val => {
+          if (argInfo.node) {
+            setInEditor(argInfo.node, val);
+          }
+        }}
+      />
+    {/if}
     {#if isVariable && isFswCommandArgumentEnum(argDef)}
-      <div
-        class="st-typography-small-caps"
-        title="Literals are quoted in editor, Constants/Parameters/Variables are unquoted"
-      >
-        Reference
-      </div>
+      <div class="st-typography-small-caps">Reference</div>
       <EnumEditor
         {argDef}
         initVal={argInfo.text ?? ''}

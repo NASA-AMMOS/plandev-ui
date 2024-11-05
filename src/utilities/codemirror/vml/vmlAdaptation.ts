@@ -1,6 +1,6 @@
 import { type CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
 import { syntaxTree } from '@codemirror/language';
-import type { CommandDictionary, FswCommand, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
+import type { CommandDictionary, EnumMap, FswCommand, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import { getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
 import { RULE_FUNCTION_NAME, RULE_ISSUE, RULE_STATEMENT, TOKEN_STRING_CONST } from './vmlConstants';
 import { getArgumentPosition } from './vmlTreeUtils';
@@ -72,12 +72,12 @@ export function vmlAutoComplete(
 
 function getStemAndDefaultArguments(commandDictionary: CommandDictionary, cmd: FswCommand): string {
   if (cmd.arguments.length) {
-    return `${cmd.stem} ${cmd.arguments.map(argNode => getDefaultArgumentValue(commandDictionary, argNode)).join(',')}`;
+    return `${cmd.stem} ${cmd.arguments.map(argNode => getDefaultArgumentValue(argNode, commandDictionary.enumMap)).join(',')}`;
   }
   return cmd.stem;
 }
 
-function getDefaultArgumentValue(commandDictionary: CommandDictionary, argDef: FswCommandArgument): string {
+export function getDefaultArgumentValue(argDef: FswCommandArgument, enumMap: EnumMap): string {
   switch (argDef.arg_type) {
     case 'boolean':
       return argDef.default_value ?? 'TRUE';
@@ -88,7 +88,7 @@ function getDefaultArgumentValue(commandDictionary: CommandDictionary, argDef: F
       // ignores conversion setting
       return (argDef.default_value ?? argDef.range?.min)?.toString(10) ?? '0';
     case 'enum':
-      return `"${commandDictionary.enumMap[argDef.enum_name]?.values[0]?.symbol ?? ''}"`;
+      return `"${enumMap[argDef.enum_name]?.values[0]?.symbol ?? ''}"`;
     case 'var_string':
       return '""';
   }
