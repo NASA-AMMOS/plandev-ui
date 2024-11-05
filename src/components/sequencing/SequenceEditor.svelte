@@ -534,9 +534,8 @@
     {/if}
   </CssGrid>
 
-  <CssGridGutter track={1} type="column" />
-
   {#if showCommandFormBuilder}
+    <CssGridGutter track={1} type="column" />
     {#if !!commandDictionary && !!selectedNode}
       <SelectedCommand
         node={selectedNode}
