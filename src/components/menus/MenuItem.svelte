@@ -10,7 +10,7 @@
   export let selected: boolean = false;
 
   const dispatch = createEventDispatcher<{
-    click: MouseEvent;
+    click: MouseEvent | KeyboardEvent;
   }>();
 
   function onClick(event: MouseEvent) {
@@ -21,10 +21,26 @@
       dispatch('click', event);
     }
   }
+
+  function onKeydown(event: KeyboardEvent) {
+    const { key } = event;
+    if (key === 'Enter' && !disabled) {
+      event.preventDefault();
+      dispatch('click', event);
+    }
+  }
 </script>
 
-<!-- svelte-ignore a11y-interactive-supports-focus -->
-<div class="menu-item" class:disabled class:selected role="menuitem" use:useActions={use} on:mouseup={onClick}>
+<div
+  class="menu-item"
+  class:disabled
+  class:selected
+  role="menuitem"
+  use:useActions={use}
+  on:mouseup={onClick}
+  on:keydown={onKeydown}
+  tabindex={0}
+>
   <slot />
 </div>
 
