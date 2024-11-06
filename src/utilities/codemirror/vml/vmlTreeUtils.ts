@@ -1,11 +1,7 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
 import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
-import {
-  filterNodesToArray,
-  getChildrenNode,
-  getNearestAncestorNodeOfType,
-  isDefined,
-} from '../../sequence-editor/tree-utils';
+import { filterEmpty } from '../../generic';
+import { filterNodesToArray, getChildrenNode, getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
 import type { CommandInfoMapper } from '../commandInfoMapper';
 import { getDefaultArgumentValue } from './vmlAdaptation';
 import {
@@ -94,7 +90,7 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
           ?.getChild(RULE_VARIABLE_NAME_CONSTANT)
           ?.getChild(RULE_VARIABLE_NAME),
       )
-      .filter(isDefined)
+      .filter(filterEmpty)
       .map(node => docText.slice(node.from, node.to));
 
     const positionNode = tree.resolveInner(position);
@@ -105,7 +101,7 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
         [RULE_INPUT_PARAMETER, RULE_INPUT_OUTPUT_PARAMETER, RULE_VARIABLE_NAME_CONSTANT].includes(node.name),
       )
         .map(node => node.getChild(RULE_VARIABLE_NAME))
-        .filter(isDefined)
+        .filter(filterEmpty)
         .map(node => docText.slice(subTreeOffset + node.from, subTreeOffset + node.to));
       return [...moduleVariables, ...commonFunctionParametersAndVariables];
     }

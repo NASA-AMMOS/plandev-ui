@@ -2,7 +2,7 @@ import { syntaxTree } from '@codemirror/language';
 import type { ChangeSpec, EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
 import { EditorView } from 'codemirror';
-import { isDefined } from '../../sequence-editor/tree-utils';
+import { filterEmpty } from '../../generic';
 import {
   RULE_ASSIGNMENT,
   RULE_CALL_PARAMETERS,
@@ -143,7 +143,7 @@ export function vmlFormat(view: EditorView): void {
   const docText = state.toText(state.sliceDoc());
 
   const maybeChanges = linesToFormat.flatMap((line: LineOfNodes) => {
-    const firstNode = line.find(isDefined);
+    const firstNode = line.find(filterEmpty);
     if (firstNode === undefined) {
       // unexpected case of no nodes on line
       return [];
@@ -151,7 +151,7 @@ export function vmlFormat(view: EditorView): void {
 
     const commandLine = docText.lineAt(firstNode.from);
 
-    const filteredArray: SyntaxNode[] = line.filter(isDefined);
+    const filteredArray: SyntaxNode[] = line.filter(filterEmpty);
     const deletions: ChangeSpec[] = [];
 
     // remove indentation at start of line
@@ -210,7 +210,7 @@ export function vmlFormat(view: EditorView): void {
     return [...deletions, ...insertions];
   });
 
-  const changes = [...commandIndentChangeMap.values(), ...maybeChanges.filter(isDefined)];
+  const changes = [...commandIndentChangeMap.values(), ...maybeChanges.filter(filterEmpty)];
 
   // Consider delete end of line whitespace
   // Consider alignment of comments
