@@ -61,11 +61,8 @@
       return `${argDef.name} - [${argDef.repeat?.min}, ${argDef.repeat?.max}] sets`;
     }
 
-    let compactTypeInfo = typeInfo;
-    if (compactTypeInfo) {
-      compactTypeInfo = ` [${compactTypeInfo}]`;
-    }
-    let base = `${argDef.name}${compactTypeInfo}${formatRange(argDef)}`;
+    const bracketedTypeInfo = typeInfo && ` [${typeInfo}]`;
+    const base = `${argDef.name}${bracketedTypeInfo} ${formatRange(argDef)}`;
 
     if ('units' in argDef) {
       return `${base} – (${argDef.units})`;
