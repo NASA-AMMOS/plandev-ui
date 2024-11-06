@@ -67,7 +67,7 @@
   $: variablesInScope = getVariablesInScope(tree, commandNode?.from);
 
   function getVariablesInScope(tree: Tree | null, cursorPosition?: number): string[] {
-    const globalNames = ($sequenceAdaptation.globals ?? []).map(v => v.name);
+    const globalNames = ($sequenceAdaptation.globals ?? []).map(globalVariable => globalVariable.name);
     if (tree && cursorPosition !== undefined) {
       const docText = editorSequenceView.state.doc.toString();
       return [...globalNames, ...commandInfoMapper.getVariables(docText, tree, cursorPosition)];
