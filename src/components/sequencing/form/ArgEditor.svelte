@@ -50,13 +50,12 @@
     }
   }
 
-  $: enableRepeatAdd = !!(
-    argDef &&
+  $: enableRepeatAdd =
+    argDef !== undefined &&
     isFswCommandArgumentRepeat(argDef) &&
-    argInfo.children &&
-    argDef.repeat &&
-    argInfo.children.length < argDef.repeat.arguments.length * (argDef.repeat.max ?? Infinity)
-  );
+    argInfo.children !== undefined &&
+    argDef.repeat !== null &&
+    argInfo.children.length < argDef.repeat.arguments.length * (argDef.repeat.max ?? Infinity);
 
   function addRepeatTuple() {
     const repeatArgs = argDef && isFswCommandArgumentRepeat(argDef) && argDef.repeat?.arguments;
