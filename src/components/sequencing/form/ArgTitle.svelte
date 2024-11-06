@@ -23,8 +23,8 @@
   let typeInfo: string = '';
   let formattedRange: string = '';
 
-  $: title = getArgTitle(argDef);
   $: typeInfo = compactType(argDef);
+  $: title = getArgTitle(argDef, typeInfo);
   $: formattedRange = formatRange(argDef);
 
   function compactType(argDef: FswCommandArgument): string {
@@ -52,7 +52,7 @@
     return '';
   }
 
-  function getArgTitle(argDef: FswCommandArgument): string {
+  function getArgTitle(argDef: FswCommandArgument, typeInfo: string): string {
     if (
       isFswCommandArgumentRepeat(argDef) &&
       typeof argDef.repeat?.max === 'number' &&
@@ -96,10 +96,12 @@
       <div>{typeInfo}</div>
     {/if}
 
-    <div>Description</div>
-    <div>
-      {argDef.description}
-    </div>
+    {#if argDef.description}
+      <div>Description</div>
+      <div>
+        {argDef.description}
+      </div>
+    {/if}
 
     <div>Value Type</div>
 

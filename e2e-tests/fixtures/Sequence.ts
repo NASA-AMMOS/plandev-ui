@@ -165,14 +165,14 @@ export class Sequence {
     await this.page.waitForTimeout(1000);
 
     expect(await this.linter.count()).toBe(0);
-    await expect(this.command).toHaveText('C FSW_CMD_0 "ON" "false" 1');
+    await expect(this.command).toHaveText('C FSW_CMD_0 "ON" false 1');
     await this.page
       .locator('fieldset')
       .filter({ hasText: 'enum_arg_0 ONOFF' })
       .getByRole('combobox')
       .selectOption('OFF');
 
-    await expect(this.command).toHaveText('C FSW_CMD_0 "OFF" "false" 1');
+    await expect(this.command).toHaveText('C FSW_CMD_0 "OFF" false 1');
 
     await this.page.getByRole('button', { name: 'Save' }).click();
     await this.page.getByRole('button', { name: 'Close' }).click();
