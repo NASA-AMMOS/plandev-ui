@@ -235,14 +235,11 @@ export const relevantConstraintRuns: Readable<ConstraintRun[]> = derived(
 );
 
 export const visibleConstraintResults: Readable<ConstraintResultWithName[]> = derived(
-  [constraintResponses, allowedConstraintPlanSpecMap],
-  ([$constraintResponses, $allowedConstraintPlanSpecMap]) => {
+  [constraintResponses, constraintVisibilityMap],
+  ([$constraintResponses, $constraintVisibilityMap]) => {
     return $constraintResponses
       .filter(constraintResponse => {
-        return (
-          $allowedConstraintPlanSpecMap[constraintResponse.constraintId][constraintResponse.constraintInvocationId] !=
-          null
-        );
+        return $constraintVisibilityMap[constraintResponse.constraintId]?.[constraintResponse.constraintInvocationId];
       })
       .map(constraintResponse => {
         return {
