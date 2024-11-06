@@ -77,7 +77,7 @@
   }
 
   async function onReviewOrWithdraw(planMergeRequest: PlanMergeRequest) {
-    if (planMergeRequest.type === 'incoming') {
+    if (planMergeRequest.type === 'incoming' && planMergeRequest.plan_receiving_changes) {
       planMergeRequest.pending = true;
       filteredPlanMergeRequests = [...filteredPlanMergeRequests];
       const success = await effects.planMergeBegin(
@@ -90,7 +90,7 @@
         dispatch('close');
         goto(`${base}/plans/${planMergeRequest.plan_receiving_changes.id}/merge`);
       }
-    } else if (planMergeRequest.type === 'outgoing') {
+    } else if (planMergeRequest.type === 'outgoing' && planMergeRequest.plan_snapshot_supplying_changes.plan) {
       await effects.planMergeRequestWithdraw(
         planMergeRequest.id,
         planMergeRequest.plan_snapshot_supplying_changes.plan,
@@ -117,19 +117,26 @@
   }
 
   function hasPermission(planMergeRequest: PlanMergeRequest) {
+    const model =
+      planMergeRequest.plan_snapshot_supplying_changes.plan?.model || planMergeRequest.plan_receiving_changes?.model;
+
+    if (!model) {
+      return false;
+    }
+
     if (planMergeRequest.type === 'outgoing') {
       return featurePermissions.planBranch.canDeleteRequest(
         user,
         planMergeRequest.plan_snapshot_supplying_changes.plan,
         planMergeRequest.plan_receiving_changes,
-        planMergeRequest.plan_snapshot_supplying_changes.plan.model,
+        model,
       );
     }
     return featurePermissions.planBranch.canReviewRequest(
       user,
       planMergeRequest.plan_snapshot_supplying_changes.plan,
       planMergeRequest.plan_receiving_changes,
-      planMergeRequest.plan_snapshot_supplying_changes.plan.model,
+      model,
     );
   }
 </script>
@@ -190,15 +197,15 @@
                     use:tooltip={{
                       content:
                         planMergeRequest.type === 'incoming'
-                          ? planMergeRequest.plan_snapshot_supplying_changes.plan.name
-                          : planMergeRequest.plan_receiving_changes.name,
+                          ? planMergeRequest.plan_snapshot_supplying_changes.plan?.name
+                          : planMergeRequest.plan_receiving_changes?.name || 'Deleted Plan',
                       placement: 'top',
                     }}
                   >
                     {#if planMergeRequest.type === 'incoming'}
-                      {planMergeRequest.plan_snapshot_supplying_changes.plan.name}
+                      {planMergeRequest.plan_snapshot_supplying_changes.plan?.name || 'Deleted Plan'}
                     {:else if planMergeRequest.type === 'outgoing'}
-                      {planMergeRequest.plan_receiving_changes.name}
+                      {planMergeRequest.plan_receiving_changes?.name || 'Deleted Plan'}
                     {/if}
                   </div>
                   <PlanMergeRequestStatusBadge status={planMergeRequest.status} />
@@ -223,13 +230,15 @@
                       {planMergeRequest.type === 'outgoing' ? 'Withdraw' : 'Begin Review'}
                     {/if}
                   </button>
-                {:else if planMergeRequest.status === 'in-progress'}
-                  <button
-                    on:click={() => goto(`${base}/plans/${planMergeRequest.plan_receiving_changes.id}/merge`)}
-                    class="st-button secondary"
-                  >
-                    {planMergeRequest.type === 'incoming' ? 'Review' : 'View Merge Request'}
-                  </button>
+                {:else if planMergeRequest.status === 'in-progress' && planMergeRequest.plan_snapshot_supplying_changes.plan}
+                  {#if typeof planMergeRequest.plan_receiving_changes?.id === 'number'}
+                    <button
+                      on:click={() => goto(`${base}/plans/${planMergeRequest.plan_receiving_changes?.id}/merge`)}
+                      class="st-button secondary"
+                    >
+                      {planMergeRequest.type === 'incoming' ? 'Review' : 'View Merge Request'}
+                    </button>
+                  {/if}
 
                   {#if planMergeRequest.type === 'outgoing'}
                     <div

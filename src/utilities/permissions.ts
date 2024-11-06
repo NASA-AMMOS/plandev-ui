@@ -61,7 +61,7 @@ function isUserAuthor(user: User | null, thingWithAuthor?: AssetWithAuthor | nul
   return false;
 }
 
-function isPlanOwner(user: User | null, plan: AssetWithOwner<PlanWithOwners>): boolean {
+function isPlanOwner(user: User | null, plan: AssetWithOwner<PlanWithOwners> | undefined): boolean {
   return isUserOwner(user, plan);
 }
 
@@ -210,8 +210,8 @@ function getRolePlanPermission(
 function getRolePlanBranchPermission(
   queries: string[],
   user: User | null,
-  sourcePlan: PlanWithOwners,
-  targetPlan: PlanWithOwners,
+  sourcePlan: PlanWithOwners | undefined,
+  targetPlan: PlanWithOwners | undefined,
   model: Pick<Model, 'owner'>,
 ): boolean {
   if (user && user.rolePermissions) {
@@ -220,41 +220,45 @@ function getRolePlanBranchPermission(
       if (user.rolePermissions != null) {
         switch (user.rolePermissions[getFunctionPermission(queryName)]) {
           case 'OWNER':
-            permission = isPlanOwner(user, sourcePlan) && isPlanOwner(user, targetPlan);
+            permission =
+              (!sourcePlan || isPlanOwner(user, sourcePlan)) && (!targetPlan || isPlanOwner(user, targetPlan));
             break;
           case 'MISSION_MODEL_OWNER':
             permission = isUserOwner(user, model);
             break;
           case 'PLAN_OWNER':
-            permission = isPlanOwner(user, sourcePlan) || isPlanOwner(user, targetPlan);
+            permission =
+              (!!sourcePlan && isPlanOwner(user, sourcePlan)) || (!!targetPlan && isPlanOwner(user, targetPlan));
             break;
           case 'PLAN_COLLABORATOR':
-            permission = isPlanCollaborator(user, sourcePlan) || isPlanCollaborator(user, targetPlan);
+            permission =
+              (!!sourcePlan && isPlanCollaborator(user, sourcePlan)) ||
+              (!!targetPlan && isPlanCollaborator(user, targetPlan));
             break;
           case 'PLAN_OWNER_COLLABORATOR':
             permission =
-              isPlanOwner(user, sourcePlan) ||
-              isPlanCollaborator(user, sourcePlan) ||
-              isPlanOwner(user, targetPlan) ||
-              isPlanCollaborator(user, targetPlan);
+              (!!sourcePlan && isPlanOwner(user, sourcePlan)) ||
+              (!!sourcePlan && isPlanCollaborator(user, sourcePlan)) ||
+              (!!targetPlan && isPlanOwner(user, targetPlan)) ||
+              (!!targetPlan && isPlanCollaborator(user, targetPlan));
             break;
           case 'PLAN_OWNER_SOURCE':
-            permission = isPlanOwner(user, sourcePlan);
+            permission = !!sourcePlan && isPlanOwner(user, sourcePlan);
             break;
           case 'PLAN_COLLABORATOR_SOURCE':
-            permission = isPlanCollaborator(user, sourcePlan);
+            permission = !!sourcePlan && isPlanCollaborator(user, sourcePlan);
             break;
           case 'PLAN_OWNER_COLLABORATOR_SOURCE':
-            permission = isPlanOwner(user, sourcePlan) || isPlanCollaborator(user, sourcePlan);
+            permission = !!sourcePlan && (isPlanOwner(user, sourcePlan) || isPlanCollaborator(user, sourcePlan));
             break;
           case 'PLAN_OWNER_TARGET':
-            permission = isPlanOwner(user, targetPlan);
+            permission = !!targetPlan && isPlanOwner(user, targetPlan);
             break;
           case 'PLAN_COLLABORATOR_TARGET':
-            permission = isPlanCollaborator(user, targetPlan);
+            permission = !!targetPlan && isPlanCollaborator(user, targetPlan);
             break;
           case 'PLAN_OWNER_COLLABORATOR_TARGET':
-            permission = isPlanOwner(user, targetPlan) || isPlanCollaborator(user, targetPlan);
+            permission = !!targetPlan && (isPlanOwner(user, targetPlan) || isPlanCollaborator(user, targetPlan));
             break;
           case 'NO_CHECK':
           default:
@@ -403,7 +407,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   CREATE_PLAN_MERGE_REQUEST: (
     user: User | null,
-    sourcePlan: PlanWithOwners,
+    sourcePlan: PlanWithOwners | undefined,
     targetPlan: PlanWithOwners,
     model: ModelWithOwner,
   ): boolean => {
@@ -725,8 +729,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   PLAN_MERGE_BEGIN: (
     user: User | null,
-    sourcePlan: PlanWithOwners,
-    targetPlan: PlanWithOwners,
+    sourcePlan: PlanWithOwners | undefined,
+    targetPlan: PlanWithOwners | undefined,
     model: ModelWithOwner,
   ): boolean => {
     const queries = [Queries.BEGIN_MERGE];
@@ -737,8 +741,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   PLAN_MERGE_CANCEL: (
     user: User | null,
-    sourcePlan: PlanWithOwners,
-    targetPlan: PlanWithOwners,
+    sourcePlan: PlanWithOwners | undefined,
+    targetPlan: PlanWithOwners | undefined,
     model: ModelWithOwner,
   ): boolean => {
     const queries = [Queries.CANCEL_MERGE];
@@ -749,8 +753,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   PLAN_MERGE_COMMIT: (
     user: User | null,
-    sourcePlan: PlanWithOwners,
-    targetPlan: PlanWithOwners,
+    sourcePlan: PlanWithOwners | undefined,
+    targetPlan: PlanWithOwners | undefined,
     model: ModelWithOwner,
   ): boolean => {
     const queries = [Queries.COMMIT_MERGE];
@@ -761,8 +765,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   PLAN_MERGE_DENY: (
     user: User | null,
-    sourcePlan: PlanWithOwners,
-    targetPlan: PlanWithOwners,
+    sourcePlan: PlanWithOwners | undefined,
+    targetPlan: PlanWithOwners | undefined,
     model: ModelWithOwner,
   ): boolean => {
     const queries = [Queries.DENY_MERGE];
@@ -773,8 +777,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   PLAN_MERGE_REQUEST_WITHDRAW: (
     user: User | null,
-    sourcePlan: PlanWithOwners,
-    targetPlan: PlanWithOwners,
+    sourcePlan: PlanWithOwners | undefined,
+    targetPlan: PlanWithOwners | undefined,
     model: ModelWithOwner,
   ): boolean => {
     const queries = [Queries.WITHDRAW_MERGE_REQUEST];
@@ -1194,8 +1198,8 @@ type RolePlanPermissionCheckWithAsset<T = AssetWithOwner> = (
 
 type RolePlanBranchPermissionCheck = (
   user: User | null,
-  sourcePlan: PlanWithOwners,
-  targetPlan: PlanWithOwners,
+  sourcePlan: PlanWithOwners | undefined,
+  targetPlan: PlanWithOwners | undefined,
   model: ModelWithOwner,
 ) => boolean;
 

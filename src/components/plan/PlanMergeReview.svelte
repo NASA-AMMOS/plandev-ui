@@ -80,14 +80,14 @@
   let selectedNonConflictingActivity: PlanMergeNonConflictingActivity | null;
   let unresolvedConflictsCount: number = 0;
   let userInitiatedMergeRequestResolution: boolean = false;
-  let sourcePlan: PlanForMerging;
+  let sourcePlan: PlanForMerging | undefined;
   let targetPlan: PlanForMerging;
 
-  $: if (initialPlan && initialMergeRequest) {
-    sourcePlan = initialMergeRequest.plan_snapshot_supplying_changes.plan;
+  $: if (initialPlan && initialMergeRequest && initialMergeRequest.plan_receiving_changes) {
+    sourcePlan = initialMergeRequest.plan_snapshot_supplying_changes?.plan;
     targetPlan = initialMergeRequest.plan_receiving_changes;
 
-    const { id: supplyingPlanId } = sourcePlan;
+    let supplyingPlanId = sourcePlan?.id ?? -1;
 
     hasReviewPermission = featurePermissions.planBranch.canReviewRequest(
       user,
@@ -294,7 +294,7 @@
   }
 
   async function onApproveChanges() {
-    if (initialMergeRequest !== null) {
+    if (initialMergeRequest !== null && initialMergeRequest.plan_receiving_changes) {
       const success = await effects.planMergeCommit(
         initialMergeRequest.id,
         initialMergeRequest.plan_snapshot_supplying_changes.plan,
@@ -310,7 +310,7 @@
   }
 
   async function onDenyChanges() {
-    if (initialMergeRequest !== null) {
+    if (initialMergeRequest !== null && initialMergeRequest.plan_receiving_changes) {
       const success = await effects.planMergeDeny(
         initialMergeRequest.id,
         initialMergeRequest.plan_snapshot_supplying_changes.plan,
@@ -326,7 +326,7 @@
   }
 
   async function onCancel() {
-    if (initialMergeRequest !== null) {
+    if (initialMergeRequest !== null && initialMergeRequest.plan_receiving_changes) {
       const success = await effects.planMergeCancel(
         initialMergeRequest.id,
         initialMergeRequest.plan_snapshot_supplying_changes.plan,
@@ -344,7 +344,7 @@
   function onResolveAll(e: Event) {
     const { value } = getTarget(e);
     const resolution = value as PlanMergeResolution;
-    if (initialMergeRequest !== null) {
+    if (initialMergeRequest !== null && initialMergeRequest.plan_receiving_changes) {
       effects.planMergeResolveAllConflicts(
         initialMergeRequest.id,
         resolution,
@@ -397,7 +397,7 @@
   }
 
   async function resolveConflict(activityId: number, resolution: PlanMergeResolution) {
-    if (initialMergeRequest !== null) {
+    if (initialMergeRequest !== null && initialMergeRequest.plan_receiving_changes) {
       await effects.planMergeResolveConflict(
         initialMergeRequest.id,
         activityId,
@@ -423,12 +423,12 @@
   <Nav {user}>
     <span class="" slot="title"
       >Merge Review:
-      <a href={`${base}/plans/${initialMergeRequest?.plan_receiving_changes.id}`} class="link">
-        {initialMergeRequest?.plan_receiving_changes.name}
+      <a href={`${base}/plans/${initialMergeRequest?.plan_receiving_changes?.id}`} class="link">
+        {initialMergeRequest?.plan_receiving_changes?.name}
       </a>
       from
-      <a href={`${base}/plans/${initialMergeRequest?.plan_snapshot_supplying_changes.plan.id}`} class="link">
-        {initialMergeRequest?.plan_snapshot_supplying_changes.plan.name}
+      <a href={`${base}/plans/${initialMergeRequest?.plan_snapshot_supplying_changes?.plan?.id}`} class="link">
+        {initialMergeRequest?.plan_snapshot_supplying_changes?.plan?.name ?? 'Deleted Plan'}
       </a>
     </span>
   </Nav>
@@ -449,14 +449,14 @@
           <div class="st-typography-medium">Current Branch (Target)</div>
           <div class="merge-review-branch-metadata-content st-typography-body">
             <MergeIcon />
-            {initialMergeRequest?.plan_receiving_changes.name}
+            {initialMergeRequest?.plan_receiving_changes?.name}
           </div>
         </div>
         <div class="merge-review-branch-metadata">
           <div class="st-typography-medium">Source Branch</div>
           <div class="merge-review-branch-metadata-content st-typography-body">
             <PlanWithUpArrow />
-            {initialMergeRequest?.plan_snapshot_supplying_changes.plan.name}
+            {initialMergeRequest?.plan_snapshot_supplying_changes?.plan?.name ?? 'Deleted Plan'}
           </div>
         </div>
         <div class="merge-review-stats">
@@ -594,7 +594,9 @@
         <div class="merge-review-subheader">
           <span style="gap: 8px">
             <PlanWithUpArrow />
-            <span class="st-typography-medium">{initialMergeRequest?.plan_snapshot_supplying_changes.plan.name}</span>
+            <span class="st-typography-medium"
+              >{initialMergeRequest?.plan_snapshot_supplying_changes?.plan?.name ?? 'Deleted Plan'}</span
+            >
           </span>
           <span class="section-title st-typography-medium">Source</span>
         </div>
@@ -660,7 +662,7 @@
         <div class="merge-review-subheader">
           <span style="gap: 8px">
             <MergeIcon />
-            <span class="st-typography-medium">{initialMergeRequest?.plan_receiving_changes.name}</span>
+            <span class="st-typography-medium">{initialMergeRequest?.plan_receiving_changes?.name}</span>
           </span>
           <span class="section-title st-typography-medium">Current Branch (Target)</span>
         </div>

@@ -26,6 +26,7 @@ export const load: PageLoad = async ({ parent, params }) => {
         planId,
         user,
       );
+
       let initialConflictingActivities: PlanMergeConflictingActivity[] = [];
       let initialNonConflictingActivities: PlanMergeNonConflictingActivity[] = [];
 
