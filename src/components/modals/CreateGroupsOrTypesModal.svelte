@@ -4,192 +4,144 @@
   import { createEventDispatcher } from 'svelte';
   import { createExternalEventTypeError, resetExternalEventStores } from '../../stores/external-event';
   import {
-    createDerivationGroupError,
     createExternalSourceTypeError,
-    externalSourceTypes,
-    resetExternalSourceStores,
+
+    resetExternalSourceStores
   } from '../../stores/external-source';
-  import type { User } from '../../types/app';
+  import type { RadioButtonId } from '../../types/radio-buttons';
   import effects from '../../utilities/effects';
-  import { permissionHandler } from '../../utilities/permissionHandler';
-  import { featurePermissions } from '../../utilities/permissions';
+  import { parseJSONStream } from '../../utilities/generic';
   import AlertError from '../ui/AlertError.svelte';
-  import Tab from '../ui/Tabs/Tab.svelte';
-  import TabPanel from '../ui/Tabs/TabPanel.svelte';
-  import Tabs from '../ui/Tabs/Tabs.svelte';
+  import RadioButton from '../ui/RadioButtons/RadioButton.svelte';
+  import RadioButtons from '../ui/RadioButtons/RadioButtons.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
-  export let user: User | null;
+  // export let user: User | null;
 
   const dispatch = createEventDispatcher<{
     close: void;
   }>();
+  const EXTERNAL_EVENT_TYPE = 'External Event Type';
+  const EXTERNAL_SOURCE_TYPE = 'External Source Type';
+
+  let definitionType: RadioButtonId = EXTERNAL_EVENT_TYPE;
 
   let newTypeName: string = '';
-  let newTypeSourceType: string = '';
   let newTypeError: string | null = null;
 
+  let fileInput: HTMLInputElement;
+  let errors: string[] = [];
+  let files: FileList | undefined;
+  let file: File | undefined;
+  let parsedJSONSchema: object | undefined;
+
+  /** TODO - Re-add permissions
   let hasCreateDerivationGroupPermission: boolean = false;
   let hasCreateExternalSourceTypePermission: boolean = false;
   let hasCreateExternalEventTypePermission: boolean = false;
 
   $: hasCreateDerivationGroupPermission = featurePermissions.derivationGroup.canCreate(user);
-
   $: hasCreateExternalSourceTypePermission = featurePermissions.externalSourceType.canCreate(user);
-
   $: hasCreateExternalEventTypePermission = featurePermissions.externalEventType.canCreate(user);
+  */
 
-  function onCreateDerivationGroup() {
-    if (newTypeName === '') {
-      newTypeError = 'Please select a source type.';
-    } else if (newTypeSourceType === '') {
-      newTypeError = 'Please enter a new type name.';
-    } else {
-      effects.createDerivationGroup({ name: newTypeName, source_type_name: newTypeSourceType }, user);
-      newTypeName = '';
-      newTypeSourceType = '';
-    }
+  function onClick() {
+    fileInput.value = '';
+    errors = [];
   }
 
-  function onCreateExternalSourceType() {
-    if (newTypeName === '') {
-      newTypeError = 'Please enter a new type name.';
-    } else {
-      effects.createExternalSourceType({ name: newTypeName }, user);
-      newTypeName = '';
-    }
+  async function onChange() {
+    console.log("onChange");
   }
 
-  function onCreateExternalEventType() {
-    if (newTypeName === '') {
-      newTypeError = 'Please enter a new type name.';
-    } else {
-      effects.createExternalEventType({ name: newTypeName }, user);
-      newTypeName = '';
-    }
-  }
   function handleChange() {
     resetExternalSourceStores();
     resetExternalEventStores();
     newTypeError = null;
   }
+
+  async function handleUpload() {
+    if (files) {
+      file = files[0];
+      if (file !== undefined && /\.json$/.test(file.name)) {
+        try {
+          parsedJSONSchema = await parseJSONStream<object>(file.stream());
+          if (definitionType === EXTERNAL_EVENT_TYPE) {
+            effects.createExternalEventType(newTypeName, parsedJSONSchema, null);
+          } else if (definitionType === EXTERNAL_SOURCE_TYPE) {
+            effects.createExternalSourceType(newTypeName, parsedJSONSchema, null);
+          }
+        } catch (error) {
+          throw new Error('JSON Schema could not be read.');
+        }
+      }
+    }
+  }
+
+  function onSelectDefinitionType(event: CustomEvent<{ id: RadioButtonId }>) {
+    const {
+      detail: { id },
+    } = event;
+    definitionType = id;
+  }
 </script>
 
 <Modal height={240} width={600}>
-  <ModalHeader on:close>Create Derivation Groups or Types</ModalHeader>
+  <ModalHeader on:close>Create New External Source/Event Types</ModalHeader>
   <ModalContent>
     <div class="creation-modal-container">
-      <div class="creation-modal-tabs-container">
-        <Tabs class="creation-tabs" tabListClassName="creation-tabs-list" on:select-tab={handleChange}>
-          <svelte:fragment slot="tab-list">
-            <Tab class="creation-tab">Derivation Group</Tab>
-            <Tab class="creation-tab">External Source Type</Tab>
-            <Tab class="creation-tab">External Event Type</Tab>
-          </svelte:fragment>
-          <TabPanel>
-            <div class="creation-tab-directions">
-              <p class="st-typography-body">Provide a name and an external source type for the new derivation group.</p>
-              <p class="st-typography-label">
-                The newly created group will be empty, though you can upload sources into it.
-              </p>
+      <div class="type-creation-input">
+        <RadioButtons selectedButtonId={definitionType} on:select-radio-button={onSelectDefinitionType}>
+          <RadioButton id={EXTERNAL_EVENT_TYPE}>
+            <div class="definition-type-button">
+              <span>{EXTERNAL_EVENT_TYPE}</span>
             </div>
-            <div class="creation-tab-inputs">
-              <input
-                bind:value={newTypeName}
-                on:change={handleChange}
-                autocomplete="off"
-                class="st-input w-100"
-                placeholder="New Derivation Group Name"
-              />
-              <select bind:value={newTypeSourceType} on:change={handleChange} class="st-select source-type-selection">
-                {#each $externalSourceTypes as sourceType}
-                  <option value={sourceType.name}>{sourceType.name}</option>
-                {/each}
-              </select>
-              <button
-                class="st-button w-10"
-                type="submit"
-                on:click|preventDefault={onCreateDerivationGroup}
-                use:permissionHandler={{
-                  hasPermission: hasCreateDerivationGroupPermission,
-                  permissionError: 'You do not have permission to create a derivation group.',
-                }}
-              >
-                Create
-              </button>
+          </RadioButton>
+          <RadioButton id={EXTERNAL_SOURCE_TYPE}>
+            <div class="definition-type-button">
+              <span>{EXTERNAL_SOURCE_TYPE}</span>
             </div>
-          </TabPanel>
-          <TabPanel>
-            <div class="creation-tab-directions">
-              <p class="st-typography-body">Provide a name for the new external source type.</p>
-              <p class="st-typography-label">
-                The newly created external source type will be empty, though you can upload sources into it.
-              </p>
-            </div>
-            <div class="creation-tab-inputs">
-              <input
-                bind:value={newTypeName}
-                on:change={handleChange}
-                autocomplete="off"
-                class="st-input w-100"
-                placeholder="New External Source Type Name"
-              />
-              <button
-                class="st-button w-10"
-                type="submit"
-                on:click|preventDefault={onCreateExternalSourceType}
-                use:permissionHandler={{
-                  hasPermission: hasCreateExternalSourceTypePermission,
-                  permissionError: 'You do not have permission to create an external source type.',
-                }}
-              >
-                Create
-              </button>
-            </div>
-          </TabPanel>
-          <TabPanel>
-            <div class="creation-tab-directions">
-              <p class="st-typography-body">Provide a name for the new external event type.</p>
-              <p class="st-typography-label">
-                The newly created external event type will be empty, though you can upload events into it.
-              </p>
-            </div>
-            <div class="creation-tab-inputs">
-              <input
-                bind:value={newTypeName}
-                on:change={handleChange}
-                autocomplete="off"
-                class="st-input w-100"
-                placeholder="New External Event Type Name"
-              />
-              <button
-                class="st-button w-10"
-                type="submit"
-                on:click|preventDefault={onCreateExternalEventType}
-                use:permissionHandler={{
-                  hasPermission: hasCreateExternalEventTypePermission,
-                  permissionError: 'You do not have permission to create an external event type.',
-                }}
-              >
-                Create
-              </button>
-            </div>
-          </TabPanel>
-        </Tabs>
+          </RadioButton>
+        </RadioButtons>
       </div>
-      <div>
-        <AlertError class="m-2" error={newTypeError} />
-        <AlertError class="m-2" error={$createExternalSourceTypeError} />
-        <AlertError class="m-2" error={$createExternalEventTypeError} />
-        <AlertError class="m-2" error={$createDerivationGroupError} />
+      <div class="type-creation-input">
+        <input
+          bind:value={newTypeName}
+          on:change={handleChange}
+          autocomplete="off"
+          class="st-input w-100"
+          placeholder="New Type Name"
+        />
       </div>
+
+      <div class="type-creation-input">
+        <label for="file">Type JSON Schema File</label>
+        <input
+          bind:this={fileInput}
+          class="w-100 upload"
+          class:error={!!errors.length}
+          name="file"
+          required
+          type="file"
+          accept="application/json"
+          bind:files
+          on:click={onClick}
+          on:change={onChange}
+        />
+      </div>
+    </div>
+    <div>
+      <AlertError class="m-2" error={newTypeError} />
+      <AlertError class="m-2" error={$createExternalSourceTypeError} />
+      <AlertError class="m-2" error={$createExternalEventTypeError} />
     </div>
   </ModalContent>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Close </button>
+    <button class="st-button primary" on:click={handleUpload}> Create </button>
   </ModalFooter>
 </Modal>
 
@@ -251,5 +203,9 @@
 
   .source-type-selection {
     width: 200px;
+  }
+
+  .type-creation-input {
+    padding-bottom: 12px;
   }
 </style>
