@@ -328,6 +328,7 @@
         $endTimeDoyField.value,
         parsedExternalSource.events,
         parsedExternalSource.source.key,
+        parsedExternalSource.source.attributes,
         $validAtDoyField.value,
         user,
       );

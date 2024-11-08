@@ -9,6 +9,7 @@ export type ExternalSourcePkey = {
 
 // This is the type that conforms with the database schema. We don't really use it, as it is pretty heavyweight - instead we derive lighter types from it.
 export type ExternalSourceDB = {
+  attributes: object;
   created_at: string;
   derivation_group_name: string;
   end_time: string;
@@ -24,6 +25,7 @@ export type ExternalSourceDB = {
 export type ExternalSourceJson = {
   events: ExternalEventJson[];
   source: {
+    attributes: object;
     key: string;
     period: {
       end_time: string;
@@ -48,6 +50,7 @@ export type PlanDerivationGroup = {
 };
 
 export type ExternalSourceType = {
+  attribute_schema: object;
   name: string;
 };
 
@@ -62,7 +65,7 @@ export type DerivationGroup = {
 // This is used for the GraphQL mutation.
 export type ExternalSourceInsertInput = Pick<
   ExternalSourceDB,
-  'source_type_name' | 'start_time' | 'end_time' | 'valid_at'
+  'attributes' | 'source_type_name' | 'start_time' | 'end_time' | 'valid_at'
 > &
   Pick<ExternalSourcePkey, 'key' | 'derivation_group_name'> & {
     external_events: {
@@ -70,7 +73,7 @@ export type ExternalSourceInsertInput = Pick<
     };
   };
 
-export type ExternalSourceTypeInsertInput = Pick<ExternalSourceType, 'name'>;
+export type ExternalSourceTypeInsertInput = ExternalSourceType;
 
 export type DerivationGroupInsertInput = Pick<DerivationGroup, 'name' | 'source_type_name'>;
 

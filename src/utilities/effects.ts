@@ -128,7 +128,6 @@ import type {
   ExternalEventInsertInput,
   ExternalEventJson,
   ExternalEventType,
-  ExternalEventTypeInsertInput,
 } from '../types/external-event';
 import type {
   DerivationGroup,
@@ -136,7 +135,6 @@ import type {
   ExternalSourceInsertInput,
   ExternalSourcePkey,
   ExternalSourceSlim,
-  ExternalSourceTypeInsertInput,
   PlanDerivationGroup,
 } from '../types/external-source';
 import type { Model, ModelInsertInput, ModelLog, ModelSchema, ModelSetInput, ModelSlim } from '../types/model';
@@ -1235,6 +1233,7 @@ const effects = {
     endTime: string,
     externalEvents: ExternalEventJson[],
     externalSourceKey: string,
+    externalSourceAttributes: object,
     validAt: string,
     user: User | null,
   ) {
@@ -1246,9 +1245,6 @@ const effects = {
       createExternalSourceErrorStore.set(null);
 
       // Create mutation inputs for Hasura
-      const externalSourceTypeInsert: ExternalSourceTypeInsertInput = {
-        name: externalSourceTypeName,
-      };
       const derivationGroupInsert: DerivationGroupInsertInput = {
         name: derivationGroupName !== '' ? derivationGroupName : `${externalSourceTypeName} Default`,
         source_type_name: externalSourceTypeName,
@@ -1278,6 +1274,7 @@ const effects = {
 
       // Create external source mutation input for Hasura
       const externalSourceInsert: ExternalSourceInsertInput = {
+        attributes: externalSourceAttributes,
         derivation_group_name: derivationGroupInsert.name,
         end_time: endTimeFormatted,
         external_events: {
@@ -1290,13 +1287,8 @@ const effects = {
       };
 
       // Create external events + external event types mutation inputs for Hasura
-      const externalEventTypeInserts: ExternalEventTypeInsertInput[] = [];
       let externalEventsCreated: ExternalEventInsertInput[] = [];
       for (const externalEvent of externalEvents) {
-        externalEventTypeInserts.push({
-          name: externalEvent.event_type,
-        } as ExternalEventTypeInsertInput);
-
         // Ensure the duration is valid
         try {
           getIntervalInMs(externalEvent.duration);
@@ -1328,6 +1320,7 @@ const effects = {
           externalEvent.duration !== undefined
         ) {
           externalEventsCreated.push({
+            attributes: externalEvent.attributes,
             duration: externalEvent.duration,
             event_type_name: externalEvent.event_type,
             key: externalEvent.key,
