@@ -29,7 +29,6 @@ import { createExternalEventTypeError, creatingExternalEventType } from '../stor
 import {
   createDerivationGroupError,
   createExternalSourceError,
-  createExternalSourceTypeError,
   creatingExternalSource,
   derivationGroupPlanLinkError,
   parsingError,
@@ -99,7 +98,6 @@ import type {
   ExternalSourceInsertInput,
   ExternalSourcePkey,
   ExternalSourceSlim,
-  ExternalSourceType,
   ExternalSourceTypeInsertInput,
   PlanDerivationGroup,
 } from '../types/external-source';
@@ -926,25 +924,21 @@ const effects = {
     }
   },
 
-  async createExternalEventType(eventType: ExternalEventTypeInsertInput, user: User | null) {
+  async createExternalEventType(eventTypeName: string, eventTypeAttributesSchema: object, user: User | null) {
     try {
       creatingExternalEventType.set(true);
       createExternalEventTypeError.set(null);
-      if (eventType) {
-        const { createExternalEventType: created } = await reqHasura<ExternalEventType>(
-          gql.CREATE_EXTERNAL_EVENT_TYPE,
-          { eventType },
-          user,
-        );
-        if (created) {
-          showSuccessToast('External Event Type Created Successfully');
-          creatingExternalEventType.set(false);
-          return created.name;
-        } else {
-          throw Error('Unable to create external event type');
-        }
-      } else {
-        throw Error('Unable to create external event type');
+
+      const body = JSON.stringify({
+        attribute_schema: eventTypeAttributesSchema,
+        external_event_type_name: eventTypeName,
+      });
+
+      try {
+        await reqGateway(`/uploadExternalEventType`, 'POST', body, user, false);
+        showSuccessToast('External Event Type Created Successfully');
+      } catch (e) {
+        catchError(e as Error);
       }
     } catch (e) {
       catchError('External Event Type Create Failed', e as Error);
@@ -1094,28 +1088,27 @@ const effects = {
     }
   },
 
-  async createExternalSourceType(
-    sourceType: ExternalSourceTypeInsertInput,
-    user: User | null,
-  ): Promise<ExternalSourceType | undefined> {
+  async createExternalSourceType(sourceTypeName: string, sourceTypeAttributesSchema: object, user: User | null) {
     try {
-      createExternalSourceTypeError.set(null);
-      const { createExternalSourceType: created } = await reqHasura(
-        gql.CREATE_EXTERNAL_SOURCE_TYPE,
-        { sourceType },
-        user,
-      );
-      if (created !== null) {
+      creatingExternalEventType.set(true);
+      createExternalEventTypeError.set(null);
+
+      const body = JSON.stringify({
+        attribute_schema: sourceTypeAttributesSchema,
+        external_source_type_name: sourceTypeName,
+      });
+
+      try {
+        await reqGateway(`/uploadExternalSourceType`, 'POST', body, user, false);
         showSuccessToast('External Source Type Created Successfully');
-        return created as ExternalSourceType;
-      } else {
-        throw Error(`Unable to create external source type`);
+      } catch (e) {
+        catchError(e as Error);
       }
     } catch (e) {
-      catchError('External Source Type Create Failed', e as Error);
-      showFailureToast('External Source Type Create Failed');
-      createExternalSourceTypeError.set((e as Error).message);
-      return undefined;
+      catchError('External Event Type Create Failed', e as Error);
+      showFailureToast('External Event Type Create Failed');
+      createExternalEventTypeError.set((e as Error).message);
+      creatingExternalEventType.set(false);
     }
   },
 
@@ -6638,6 +6631,18 @@ const effects = {
       catchError(e as Error);
       const { message } = e as Error;
       return { errors: [{ message } as ParameterValidationError], success: false };
+    }
+  },
+
+  async validateSchema(jsonSchema: object): Promise<{ errors?: []; valid: boolean }> {
+    try {
+      const result = await reqGateway('/validation/schema', 'POST', JSON.stringify(jsonSchema), null, false);
+      return result;
+    } catch (e) {
+      catchError(e as Error);
+      console.log(e);
+      // TODO: Fix errors
+      return { errors: [], valid: false };
     }
   },
 
