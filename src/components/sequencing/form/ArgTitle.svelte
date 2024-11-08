@@ -112,14 +112,11 @@
 <style>
   .labeled-values {
     align-content: center;
+    align-items: top;
     column-gap: 3px;
     display: grid;
     grid-template-columns: max-content 1fr;
     row-gap: 2px;
-  }
-
-  .labeled-values > * {
-    align-self: top;
   }
 
   .labeled-values > div:nth-child(odd) {
