@@ -12,6 +12,7 @@
     isFswCommandArgumentVarString,
     isNumberArg,
     quoteEscape,
+    unquoteUnescape,
     type ArgTextDef,
   } from './../../../utilities/codemirror/codemirror-utils';
   import AddMissingArgsButton from './AddMissingArgsButton.svelte';
@@ -101,17 +102,16 @@
             setInEditor(argInfo.node, val);
           }
         }}
-        useQuotes={false}
       />
     {:else if isFswCommandArgumentEnum(argDef) && argInfo.node}
       {#if commandInfoMapper.nodeTypeEnumCompatible(argInfo.node)}
         <EnumEditor
           {commandDictionary}
           {argDef}
-          initVal={argInfo.text ?? ''}
+          initVal={unquoteUnescape(argInfo.text ?? '')}
           setInEditor={val => {
             if (argInfo.node) {
-              setInEditor(argInfo.node, val);
+              setInEditor(argInfo.node, quoteEscape(val));
             }
           }}
         />
