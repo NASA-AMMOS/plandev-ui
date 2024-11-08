@@ -136,7 +136,6 @@ import type {
   ExternalSourceInsertInput,
   ExternalSourcePkey,
   ExternalSourceSlim,
-  ExternalSourceType,
   ExternalSourceTypeInsertInput,
   PlanDerivationGroup,
 } from '../types/external-source';
@@ -1201,7 +1200,7 @@ const effects = {
     }
   },
 
-  async createExternalEventType(eventType: ExternalEventTypeInsertInput, user: User | null) {
+  async createExternalEventType(eventTypeName: string, eventTypeAttributesSchema: object, user: User | null) {
     try {
       creatingExternalEventTypeStore.set(true);
       createExternalEventTypeErrorStore.set(null);
@@ -1369,10 +1368,7 @@ const effects = {
     }
   },
 
-  async createExternalSourceType(
-    sourceType: ExternalSourceTypeInsertInput,
-    user: User | null,
-  ): Promise<ExternalSourceType | undefined> {
+  async createExternalSourceType(sourceTypeName: string, sourceTypeAttributesSchema: object, user: User | null) {
     try {
       createExternalSourceTypeErrorStore.set(null);
       const { createExternalSourceType: created } = await reqHasura(
@@ -1382,14 +1378,14 @@ const effects = {
       );
       if (created !== null) {
         showSuccessToast('External Source Type Created Successfully');
-        return created as ExternalSourceType;
-      } else {
-        throw Error(`Unable to create external source type`);
+      } catch (e) {
+        catchError(e as Error);
       }
     } catch (e) {
       catchError('External Source Type Create Failed', e as Error);
       showFailureToast('External Source Type Create Failed');
       createExternalSourceTypeErrorStore.set((e as Error).message);
+      creatingExternalSourceType.set(false);
       return undefined;
     }
   },
@@ -7343,6 +7339,18 @@ const effects = {
       catchError(e as Error);
       const { message } = e as Error;
       return { errors: [{ message } as ParameterValidationError], success: false };
+    }
+  },
+
+  async validateSchema(jsonSchema: object): Promise<{ errors?: []; valid: boolean }> {
+    try {
+      const result = await reqGateway('/validation/schema', 'POST', JSON.stringify(jsonSchema), null, false);
+      return result;
+    } catch (e) {
+      catchError(e as Error);
+      console.log(e);
+      // TODO: Fix errors
+      return { errors: [], valid: false };
     }
   },
 
