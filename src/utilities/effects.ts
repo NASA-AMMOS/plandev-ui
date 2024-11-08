@@ -90,7 +90,6 @@ import type {
   ExternalEventInsertInput,
   ExternalEventJson,
   ExternalEventType,
-  ExternalEventTypeInsertInput,
 } from '../types/external-event';
 import type {
   DerivationGroup,
@@ -98,7 +97,6 @@ import type {
   ExternalSourceInsertInput,
   ExternalSourcePkey,
   ExternalSourceSlim,
-  ExternalSourceTypeInsertInput,
   PlanDerivationGroup,
 } from '../types/external-source';
 import type { Model, ModelInsertInput, ModelLog, ModelSchema, ModelSetInput, ModelSlim } from '../types/model';
@@ -955,6 +953,7 @@ const effects = {
     endTime: string,
     externalEvents: ExternalEventJson[],
     externalSourceKey: string,
+    externalSourceAttributes: object,
     validAt: string,
     user: User | null,
   ) {
@@ -966,9 +965,6 @@ const effects = {
       createExternalSourceError.set(null);
 
       // Create mutation inputs for Hasura
-      const externalSourceTypeInsert: ExternalSourceTypeInsertInput = {
-        name: externalSourceTypeName,
-      };
       const derivationGroupInsert: DerivationGroupInsertInput = {
         name: derivationGroupName !== '' ? derivationGroupName : `${externalSourceTypeName} Default`,
         source_type_name: externalSourceTypeName,
@@ -998,6 +994,7 @@ const effects = {
 
       // Create external source mutation input for Hasura
       const externalSourceInsert: ExternalSourceInsertInput = {
+        attributes: externalSourceAttributes,
         derivation_group_name: derivationGroupInsert.name,
         end_time: endTimeFormatted,
         external_events: {
@@ -1010,13 +1007,8 @@ const effects = {
       };
 
       // Create external events + external event types mutation inputs for Hasura
-      const externalEventTypeInserts: ExternalEventTypeInsertInput[] = [];
       let externalEventsCreated: ExternalEventInsertInput[] = [];
       for (const externalEvent of externalEvents) {
-        externalEventTypeInserts.push({
-          name: externalEvent.event_type,
-        } as ExternalEventTypeInsertInput);
-
         // Ensure the duration is valid
         try {
           getIntervalInMs(externalEvent.duration);
@@ -1048,6 +1040,7 @@ const effects = {
           externalEvent.duration !== undefined
         ) {
           externalEventsCreated.push({
+            attributes: externalEvent.attributes,
             duration: externalEvent.duration,
             event_type_name: externalEvent.event_type,
             key: externalEvent.key,
@@ -1059,23 +1052,9 @@ const effects = {
       externalSourceInsert.external_events.data = externalEventsCreated;
       externalEventsCreated = [];
 
-      const { createExternalSource: createExternalSourceResponse } = await reqHasura(
-        gql.CREATE_EXTERNAL_SOURCE,
-        {
-          derivation_group: derivationGroupInsert,
-          event_type: externalEventTypeInserts,
-          source: externalSourceInsert,
-          source_type: externalSourceTypeInsert,
-        },
-        user,
-      );
-      if (createExternalSourceResponse !== undefined && createExternalSourceResponse !== null) {
-        showSuccessToast('External Source Created Successfully');
-        creatingExternalSource.set(false);
-        return createExternalSourceResponse as ExternalSourceSlim;
-      } else {
-        throw Error(`Unable to create external source`);
-      }
+      const body = JSON.stringify(externalSourceInsert);
+      await reqGateway(`/uploadExternalSource`, 'POST', body, user, false);
+      showSuccessToast('External Source Type Created Successfully');
     } catch (e) {
       catchError('External Source Create Failed', e as Error);
       showFailureToast('External Source Create Failed');
@@ -1098,12 +1077,8 @@ const effects = {
         external_source_type_name: sourceTypeName,
       });
 
-      try {
-        await reqGateway(`/uploadExternalSourceType`, 'POST', body, user, false);
-        showSuccessToast('External Source Type Created Successfully');
-      } catch (e) {
-        catchError(e as Error);
-      }
+      await reqGateway(`/uploadExternalSourceType`, 'POST', body, user, false);
+      showSuccessToast('External Source Type Created Successfully');
     } catch (e) {
       catchError('External Event Type Create Failed', e as Error);
       showFailureToast('External Event Type Create Failed');
