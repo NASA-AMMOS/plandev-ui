@@ -42,12 +42,8 @@
   }
 
   function formatRange(argDef: FswCommandArgument): string {
-    if ('range' in argDef && argDef.range) {
-      if (isArray(argDef.range)) {
-        return ` [${argDef.range.join(', ')}]`;
-      } else {
-        return ` [${argDef.range.min} – ${argDef.range.max}]`;
-      }
+    if ('range' in argDef && argDef.range !== null && !isArray(argDef.range)) {
+      return `[${argDef.range.min} – ${argDef.range.max}]`;
     }
     return '';
   }
