@@ -3,6 +3,8 @@
 <script lang="ts">
   import type { FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
   import { isArray } from 'lodash-es';
+  import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
+  import { getTarget } from '../../../utilities/generic';
   import Collapse from '../../Collapse.svelte';
   import {
     isFswCommandArgumentFloat,
@@ -13,10 +15,19 @@
   } from './../../../utilities/codemirror/codemirror-utils';
 
   export let argDef: FswCommandArgument;
+  export let commandInfoMapper: CommandInfoMapper;
+  export let setInEditor: (val: string) => void;
+  export let argumentValueCategory: 'Literal' | 'Symbol';
 
-  $: title = getArgTitle(argDef);
+  let title: string = '';
+  let typeInfo: string = '';
+  let formattedRange: string = '';
 
-  function compactType(argDef: FswCommandArgument) {
+  $: typeInfo = compactType(argDef);
+  $: title = getArgTitle(argDef, typeInfo);
+  $: formattedRange = formatRange(argDef);
+
+  function compactType(argDef: FswCommandArgument): string {
     if (isFswCommandArgumentUnsigned(argDef)) {
       return `U${argDef.bit_length}`;
     } else if (isFswCommandArgumentInteger(argDef)) {
@@ -30,7 +41,14 @@
     return '';
   }
 
-  function getArgTitle(argDef: FswCommandArgument) {
+  function formatRange(argDef: FswCommandArgument): string {
+    if ('range' in argDef && argDef.range !== null && !isArray(argDef.range)) {
+      return `[${argDef.range.min} – ${argDef.range.max}]`;
+    }
+    return '';
+  }
+
+  function getArgTitle(argDef: FswCommandArgument, typeInfo: string): string {
     if (
       isFswCommandArgumentRepeat(argDef) &&
       typeof argDef.repeat?.max === 'number' &&
@@ -39,18 +57,8 @@
       return `${argDef.name} - [${argDef.repeat?.min}, ${argDef.repeat?.max}] sets`;
     }
 
-    let compactTypeInfo = compactType(argDef);
-    if (compactTypeInfo) {
-      compactTypeInfo = ` [${compactTypeInfo}]`;
-    }
-    let base = `${argDef.name}${compactTypeInfo}`;
-    if ('range' in argDef && argDef.range) {
-      if (isArray(argDef.range)) {
-        base += ` [${argDef.range.join(', ')}]`;
-      } else {
-        base += ` [${argDef.range.min} – ${argDef.range.max}]`;
-      }
-    }
+    const bracketedTypeInfo = typeInfo && ` [${typeInfo}]`;
+    const base = `${argDef.name}${bracketedTypeInfo} ${formatRange(argDef)}`;
 
     if ('units' in argDef) {
       return `${base} – (${argDef.units})`;
@@ -58,10 +66,56 @@
 
     return base;
   }
+
+  function onValueTypeChange(event: Event) {
+    const { value } = getTarget(event);
+    if (value === 'Literal') {
+      setInEditor(commandInfoMapper.getDefaultValueForArgumentDef(argDef, {}));
+    } else {
+      setInEditor('VARIABLE_OR_CONSTANT_NAME');
+    }
+  }
 </script>
 
 <Collapse headerHeight={24} padContent={false} {title} defaultExpanded={false}>
-  <div style="padding-bottom: 4px">
-    {argDef.description}
+  <div class="w-100 labeled-values" style="padding-bottom: 4px">
+    {#if formattedRange}
+      <div>Range</div>
+      <div>{formattedRange}</div>
+    {/if}
+
+    {#if typeInfo}
+      <div>Type</div>
+      <div>{typeInfo}</div>
+    {/if}
+
+    {#if argDef.description}
+      <div>Description</div>
+      <div>
+        {argDef.description}
+      </div>
+    {/if}
+
+    <div>Value Type</div>
+
+    <select class="st-select" required bind:value={argumentValueCategory} on:change={onValueTypeChange}>
+      <option value="Literal"> Literal </option>
+      <option value="Symbol"> Symbol </option>
+    </select>
   </div>
 </Collapse>
+
+<style>
+  .labeled-values {
+    align-content: center;
+    align-items: top;
+    column-gap: 3px;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    row-gap: 2px;
+  }
+
+  .labeled-values > div:nth-child(odd) {
+    font-weight: bold;
+  }
+</style>

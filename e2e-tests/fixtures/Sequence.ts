@@ -168,7 +168,7 @@ export class Sequence {
     await expect(this.command).toHaveText('C FSW_CMD_0 "ON" false 1');
     await this.page
       .locator('fieldset')
-      .filter({ hasText: 'enum_arg_0 ONOFF' })
+      .filter({ hasText: 'enum_arg_0 Value Type Literal' })
       .getByRole('combobox')
       .selectOption('OFF');
 

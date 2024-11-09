@@ -24,6 +24,9 @@ export const RULE_END_WHILE = 'End_while';
 export const RULE_FOR = 'For_statement';
 export const RULE_END_FOR = 'End_for';
 
+export const RULE_VARIABLE_NAME_CONSTANT = 'Variable_name_constant';
+export const RULE_VARIABLE_DECLARATION_TYPE = 'Variable_declaration_type';
+export const RULE_VARIABLE_DECLARATION_WITH_OPTIONAL_TLM_ID = 'Variable_declaration_with_optional_tlm_id';
 export const RULE_ASSIGNMENT = 'Assignment';
 export const RULE_STATEMENT = 'Statement';
 export const RULE_TIME_TAGGED_STATEMENTS = 'Time_tagged_statements';
@@ -48,6 +51,7 @@ export const RULE_VARIABLE_NAME = 'Variable_name';
 export const RULE_DATA_KIND = 'Data_kind';
 export const RULE_COMMENT = 'Comment';
 export const RULE_INPUT_OUTPUT_PARAMETER = 'Input_output_parameter';
+export const RULE_INPUT_PARAMETER = 'Input_parameter';
 export const RULE_OPTIONAL_DEFAULT_INPUT_VALUE = 'Optional_default_input_value';
 export const RULE_OPTIONAL_VALUE_LIST = 'Optional_value_list';
 export const RULE_INPUT_RANGE = 'Input_Range';

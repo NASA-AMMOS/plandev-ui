@@ -6,7 +6,7 @@
   import { lintGutter } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate } from '@codemirror/view';
-  import type { SyntaxNode } from '@lezer/common';
+  import type { SyntaxNode, Tree } from '@lezer/common';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
@@ -102,6 +102,7 @@
   let menu: Menu;
   let outputFormats: IOutputFormat[];
   let selectedNode: SyntaxNode | null;
+  let currentTree: Tree;
   let commandInfoMapper: CommandInfoMapper = new SeqNCommandInfoMapper();
   let selectedOutputFormat: IOutputFormat | undefined;
   let toggleSeqJsonPreview: boolean = false;
@@ -226,7 +227,7 @@
     }
   }
 
-  $: showOutputs = !isInVmlMode && !!outputFormats.length;
+  $: showOutputs = !isInVmlMode && outputFormats.length > 0;
   $: {
     if (showOutputs) {
       editorHeights = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
@@ -361,6 +362,7 @@
         commandInfoMapper = new SeqNCommandInfoMapper();
       }
       selectedNode = updatedSelectionNode;
+      currentTree = tree;
     }
   }
 
@@ -539,6 +541,7 @@
     {#if !!commandDictionary && !!selectedNode}
       <SelectedCommand
         node={selectedNode}
+        tree={currentTree}
         {channelDictionary}
         {commandDictionary}
         {commandInfoMapper}

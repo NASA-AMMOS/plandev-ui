@@ -8,6 +8,7 @@ import type {
   HwCommand,
   NumericRange,
 } from '@nasa-jpl/aerie-ampcs';
+import { filterEmpty } from '../../generic';
 import { VmlLanguage } from './vml';
 import {
   RULE_BLOCK,
@@ -49,7 +50,7 @@ export function vmlBlockLibraryToCommandDictionary(vml: string, id?: string, pat
     ...(parsed.topNode.getChild(RULE_FUNCTIONS)?.getChildren(RULE_FUNCTION) ?? []).map(blockNode =>
       blockToCommandDef(blockNode, vml),
     ),
-  ].filter((maybeCommandDef): maybeCommandDef is FswCommand => !!maybeCommandDef);
+  ].filter(filterEmpty);
 
   const mission_name = '';
   const spacecraft_ids = [0];
@@ -84,7 +85,7 @@ function blockToCommandDef(functionNode: SyntaxNode, vml: string): FswCommand | 
   const parameterNodes = commonFunctionNode?.getChild(RULE_PARAMETERS)?.getChildren(RULE_PARAMETER) ?? [];
   const fswArguments: FswCommandArgument[] = parameterNodes
     ?.map(parameterNode => inputToArgument(parameterNode, vml))
-    .filter((maybeArg): maybeArg is FswCommandArgument => !!maybeArg);
+    .filter(filterEmpty);
 
   if (stem) {
     return {
@@ -205,7 +206,7 @@ function parseRange(parameterNode: SyntaxNode | null, vml: string): null | strin
         }
         return null;
       })
-      .filter((maybeRangeValue): maybeRangeValue is number | string | NumericRange => !!maybeRangeValue);
+      .filter(filterEmpty);
 
     // mixed arrays aren't resolved due to undefined meaning
     if (rangeValues.every(rangeValue => typeof rangeValue === 'number')) {

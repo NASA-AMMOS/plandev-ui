@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { SyntaxNode } from '@lezer/common';
+  import type { SyntaxNode, Tree } from '@lezer/common';
   import type {
     ChannelDictionary,
     CommandDictionary,
@@ -14,6 +14,8 @@
   import type { EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { TOKEN_ERROR } from '../../../constants/seq-n-grammar-constants';
+  import { sequenceAdaptation } from '../../../stores/sequence-adaptation';
+  import type { ISequenceAdaptation } from '../../../types/sequencing';
   import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
   import { getCustomArgDef } from '../../../utilities/sequence-editor/extension-points';
   import Collapse from '../../Collapse.svelte';
@@ -36,6 +38,7 @@
   export let commandDictionary: CommandDictionary;
   export let parameterDictionaries: ParameterDictionary[];
   export let node: SyntaxNode | null;
+  export let tree: Tree | null;
   export let commandInfoMapper: CommandInfoMapper;
 
   const ID_COMMAND_DETAIL_PANE = 'ID_COMMAND_DETAIL_PANE';
@@ -47,12 +50,15 @@
   let editorArgInfoArray: ArgTextDef[] = [];
   let missingArgDefArray: FswCommandArgument[] = [];
   let timeTagNode: TimeTagInfo = null;
+  let variablesInScope: string[] = [];
 
   $: commandNode = commandInfoMapper.getContainingCommand(node);
   $: commandNameNode = commandInfoMapper.getNameNode(commandNode);
   $: commandName = commandNameNode && editorSequenceView.state.sliceDoc(commandNameNode.from, commandNameNode.to);
   $: commandDef = getCommandDef(commandDictionary, commandName ?? '');
   $: argInfoArray = getArgumentInfo(
+    commandInfoMapper,
+    editorSequenceView,
     commandInfoMapper.getArgumentNodeContainer(commandNode),
     commandDef?.arguments,
     undefined,
@@ -60,20 +66,44 @@
   );
   $: editorArgInfoArray = argInfoArray.filter(argInfo => !!argInfo.node);
   $: missingArgDefArray = getMissingArgDefs(argInfoArray);
-  $: timeTagNode = getTimeTagInfo(commandNode);
+  $: timeTagNode = getTimeTagInfo(editorSequenceView, commandNode);
+  $: variablesInScope = getVariablesInScope(
+    commandInfoMapper,
+    editorSequenceView,
+    $sequenceAdaptation,
+    tree,
+    commandNode?.from,
+  );
 
-  function getTimeTagInfo(commandNode: SyntaxNode | null): TimeTagInfo {
+  function getVariablesInScope(
+    infoMapper: CommandInfoMapper,
+    seqEditorView: EditorView,
+    adaptation: ISequenceAdaptation,
+    tree: Tree | null,
+    cursorPosition?: number,
+  ): string[] {
+    const globalNames = (adaptation.globals ?? []).map(globalVariable => globalVariable.name);
+    if (tree && cursorPosition !== undefined) {
+      const docText = seqEditorView.state.doc.toString();
+      return [...globalNames, ...infoMapper.getVariables(docText, tree, cursorPosition)];
+    }
+    return globalNames;
+  }
+
+  function getTimeTagInfo(seqEditorView: EditorView, commandNode: SyntaxNode | null): TimeTagInfo {
     const node = commandNode?.getChild('TimeTag');
 
     return (
       node && {
         node,
-        text: editorSequenceView.state.sliceDoc(node.from, node.to) ?? '',
+        text: seqEditorView.state.sliceDoc(node.from, node.to) ?? '',
       }
     );
   }
 
   function getArgumentInfo(
+    infoMapper: CommandInfoMapper,
+    seqEditorView: EditorView,
     args: SyntaxNode | null,
     argumentDefs: FswCommandArgument[] | undefined,
     parentArgDef: FswCommandArgumentRepeat | undefined,
@@ -84,7 +114,7 @@
     const parentRepeatLength = parentArgDef?.repeat?.arguments.length;
 
     if (args) {
-      for (const node of commandInfoMapper.getArgumentsFromContainer(args)) {
+      for (const node of infoMapper.getArgumentsFromContainer(args)) {
         if (node.name === TOKEN_ERROR) {
           continue;
         }
@@ -111,9 +141,16 @@
 
         let children: ArgTextDef[] | undefined = undefined;
         if (!!argDef && isFswCommandArgumentRepeat(argDef)) {
-          children = getArgumentInfo(node, argDef.repeat?.arguments, argDef, parameterDictionaries);
+          children = getArgumentInfo(
+            infoMapper,
+            seqEditorView,
+            node,
+            argDef.repeat?.arguments,
+            argDef,
+            parameterDictionaries,
+          );
         }
-        const argValue = editorSequenceView.state.sliceDoc(node.from, node.to);
+        const argValue = seqEditorView.state.sliceDoc(node.from, node.to);
         argArray.push({
           argDef,
           children,
@@ -145,11 +182,11 @@
     return commandDictionary?.fswCommandMap[stemName] ?? null;
   }
 
-  function setInEditor(token: SyntaxNode, val: string) {
+  function setInEditor(seqEditorView: EditorView, token: SyntaxNode, val: string) {
     // checking that we are not in the code mirror editor
     // this breaks cycle of form edits triggering document updates and vice versa
     if (
-      editorSequenceView &&
+      seqEditorView &&
       (hasAncestorWithId(document.activeElement, ID_COMMAND_DETAIL_PANE) ||
         // Searchable Dropdown has pop out that is not a descendent
         document.activeElement?.tagName === 'BODY' ||
@@ -157,10 +194,10 @@
         document.activeElement?.tagName === 'INPUT' ||
         document.activeElement?.tagName === 'SELECT')
     ) {
-      const currentVal = editorSequenceView.state.sliceDoc(token.node.from, token.node.to);
+      const currentVal = seqEditorView.state.sliceDoc(token.node.from, token.node.to);
       if (currentVal !== val) {
-        editorSequenceView.dispatch(
-          editorSequenceView.state.update({
+        seqEditorView.dispatch(
+          seqEditorView.state.update({
             changes: { from: token.node.from, insert: val, to: token.node.to },
             userEvent: 'formView',
           }),
@@ -218,7 +255,8 @@
                 {argInfo}
                 {commandDictionary}
                 {commandInfoMapper}
-                setInEditor={debounce(setInEditor, 250)}
+                {variablesInScope}
+                setInEditor={debounce((token, val) => setInEditor(editorSequenceView, token, val), 250)}
                 addDefaultArgs={(commandNode, missingArgDefArray) =>
                   addDefaultArgs(
                     commandDictionary,
@@ -262,7 +300,7 @@
                 initVal={commandName ?? ''}
                 setInEditor={val => {
                   if (commandNameNode) {
-                    setInEditor(commandNameNode, val);
+                    setInEditor(editorSequenceView, commandNameNode, val);
                   }
                 }}
               />

@@ -3,14 +3,14 @@
 <script lang="ts">
   import type { CommandDictionary, FswCommandArgumentEnum } from '@nasa-jpl/aerie-ampcs';
   import type { SelectedDropdownOptionValue } from '../../../types/dropdown';
-  import { quoteEscape, unquoteUnescape } from '../../../utilities/codemirror/codemirror-utils';
+  import { quoteEscape } from '../../../utilities/codemirror/codemirror-utils';
   import SearchableDropdown from '../../ui/SearchableDropdown.svelte';
 
   const SEARCH_THRESHOLD = 100;
   const MAX_SEARCH_ITEMS = 1_000;
 
   export let argDef: FswCommandArgumentEnum;
-  export let commandDictionary: CommandDictionary;
+  export let commandDictionary: CommandDictionary | null = null;
   export let initVal: string;
   export let setInEditor: (val: string) => void;
 
@@ -18,12 +18,10 @@
   let isValueInEnum: boolean = false;
   let value: string;
 
-  $: value = unquoteUnescape(initVal);
-  $: enumValues = commandDictionary.enumMap[argDef.enum_name]?.values?.map(v => v.symbol) ?? argDef.range ?? [];
+  $: value = initVal;
+  $: enumValues = commandDictionary?.enumMap[argDef.enum_name]?.values?.map(v => v.symbol) ?? argDef.range ?? [];
   $: isValueInEnum = !!enumValues.find(ev => ev === value);
-  $: {
-    setInEditor(quoteEscape(value));
-  }
+  $: setInEditor(value);
   $: options = enumValues.map(ev => ({
     display: ev,
     value: ev,

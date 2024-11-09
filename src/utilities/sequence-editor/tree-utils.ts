@@ -77,13 +77,17 @@ export function checkContainment(node: SyntaxNode, typesOfAncestorsAndSelf: (str
   return false;
 }
 
-export function* filterNodes(cursor: TreeCursor, filter?: (name: SyntaxNode) => boolean): Generator<SyntaxNode> {
+export function* filterNodes(cursor: TreeCursor, filter?: (node: SyntaxNode) => boolean): Generator<SyntaxNode> {
   do {
     const { node } = cursor;
     if (!filter || filter(node)) {
       yield node;
     }
   } while (cursor.next());
+}
+
+export function filterNodesToArray(cursor: TreeCursor, filter?: (node: SyntaxNode) => boolean): SyntaxNode[] {
+  return Array.from(filterNodes(cursor, filter));
 }
 
 export function nodeContents(input: string, node: SyntaxNode): string {

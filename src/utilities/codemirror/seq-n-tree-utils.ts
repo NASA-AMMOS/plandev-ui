@@ -1,4 +1,5 @@
-import type { SyntaxNode } from '@lezer/common';
+import type { SyntaxNode, Tree } from '@lezer/common';
+import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import {
   RULE_ARGS,
   RULE_COMMAND,
@@ -16,6 +17,8 @@ import {
   TOKEN_REQUEST,
   TOKEN_STRING,
 } from '../../constants/seq-n-grammar-constants';
+import { fswCommandArgDefault } from '../sequence-editor/command-dictionary';
+import { validateVariables } from '../sequence-editor/sequence-linter';
 import { getFromAndTo, getNearestAncestorNodeOfType } from '../sequence-editor/tree-utils';
 import type { CommandInfoMapper } from './commandInfoMapper';
 
@@ -85,8 +88,23 @@ export class SeqNCommandInfoMapper implements CommandInfoMapper {
     return getAncestorStepOrRequest(node);
   }
 
+  getDefaultValueForArgumentDef(argDef: FswCommandArgument, enumMap: EnumMap): string {
+    return fswCommandArgDefault(argDef, enumMap);
+  }
+
   getNameNode(stepNode: SyntaxNode | null): SyntaxNode | null {
     return getNameNode(stepNode);
+  }
+
+  getVariables(docText: string, tree: Tree): string[] {
+    return [
+      ...validateVariables(tree.topNode.getChildren('LocalDeclaration'), docText, 'LOCALS').variables,
+      ...validateVariables(tree.topNode.getChildren('ParameterDeclaration'), docText, 'INPUT_PARAMS').variables,
+    ].map(v => v.name);
+  }
+
+  isArgumentNodeOfVariableType(argNode: SyntaxNode | null): boolean {
+    return argNode?.name === 'Enum';
   }
 
   nodeTypeEnumCompatible(node: SyntaxNode | null): boolean {
