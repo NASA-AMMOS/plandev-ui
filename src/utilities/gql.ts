@@ -3502,7 +3502,7 @@ const gql = {
       }
       deleteConstraintPlanSpecifications: ${Queries.DELETE_CONSTRAINT_SPECIFICATIONS}(
         where: {
-          constraint_id: { _in: $constraintSpecIdsToDelete },
+          invocation_id: { _in: $constraintSpecIdsToDelete },
         }
       ) {
         affected_rows
