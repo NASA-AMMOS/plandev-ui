@@ -11,7 +11,11 @@
   import { tags } from '../../../../stores/tags';
   import type { ActivityLayerDynamicFilter, ActivityLayerFilter } from '../../../../types/timeline';
   import { compare } from '../../../../utilities/generic';
-  import { applyActivityLayerFilter, getMatchingTypesForActivityLayerFilter } from '../../../../utilities/timeline';
+  import {
+    applyActivityLayerFilter,
+    getMatchingTypesForActivityLayerFilter,
+    lowercase,
+  } from '../../../../utilities/timeline';
   import { tooltip } from '../../../../utilities/tooltip';
   import Input from '../../../form/Input.svelte';
   import Menu from '../../../menus/Menu.svelte';
@@ -30,6 +34,7 @@
   let manualMenu: Menu;
   let rootRef: HTMLDivElement;
   let manualInputRef: HTMLInputElement;
+  let manualInputValue: string = '';
   let shown: boolean = false;
 
   const dispatch = createEventDispatcher<{
@@ -66,7 +71,7 @@
   }
 
   function onAddAllManualTypes() {
-    dirtyFilter = { ...dirtyFilter, static_types: $activityTypes.map(t => t.name) };
+    dirtyFilter = { ...dirtyFilter, static_types: filteredActivityTypes.map(t => t.name) };
     dispatch('filterChange', { filter: dirtyFilter });
   }
 
@@ -150,6 +155,14 @@
   $: parameterSubfields = Object.values(allParameterTypes).sort((a, b) => compare(a.label, b.label));
   // TODO support key/value for values array
 
+  $: filteredActivityTypes = $activityTypes.filter(type => {
+    if (!manualInputValue) {
+      return true;
+    }
+
+    return lowercase(type.name).indexOf(lowercase(manualInputValue)) > -1;
+  });
+
   $: if (manualInputOpen) {
     manualMenu?.show();
   } else {
@@ -195,7 +208,7 @@
                   bind:this={manualInputRef}
                   class="st-input w-100 manual-types-filter-input"
                   placeholder="Select types"
-                  value=""
+                  bind:value={manualInputValue}
                   on:click={() => {
                     requestAnimationFrame(() => {
                       if (!manualInputOpen) {
@@ -215,15 +228,26 @@
                   on:hide={() => (manualInputOpen = false)}
                 >
                   <div class="manual-types-menu">
-                    <MenuItem on:click={() => onAddAllManualTypes()}>
-                      <div class="st-typography-bold manual-types-add-all">Add All +</div>
-                    </MenuItem>
-                    {#each $activityTypes as type}
-                      <MenuItem on:click={() => onManualTypeToggled(type.name)}>
-                        <input type="checkbox" checked={(dirtyFilter.static_types || []).indexOf(type.name) > -1} />
-                        <div class="st-typography-body">{type.name}</div>
+                    {#if filteredActivityTypes.length > 0}
+                      <MenuItem on:click={() => onAddAllManualTypes()}>
+                        <div class="st-typography-bold manual-types-add-all">
+                          Add {filteredActivityTypes.length !== $activityTypes.length ? 'Matching' : 'All'} +
+                        </div>
                       </MenuItem>
-                    {/each}
+                      {#each filteredActivityTypes as type}
+                        <MenuItem on:click={() => onManualTypeToggled(type.name)}>
+                          <input
+                            type="checkbox"
+                            checked={(dirtyFilter.static_types || []).indexOf(type.name) > -1}
+                            tabindex={-1}
+                            style:pointer-events="none"
+                          />
+                          <div class="st-typography-body">{type.name}</div>
+                        </MenuItem>
+                      {/each}
+                    {:else}
+                      <MenuItem disabled>No activities matching your filter</MenuItem>
+                    {/if}
                   </div>
                 </Menu>
               </div>
