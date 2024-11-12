@@ -1625,6 +1625,16 @@ export function matchesDynamicFilter(
         return itemValue !== filterValue;
       }
       return (filterValue as (typeof itemValue)[]).indexOf(itemValue) < 0;
+    case 'greater_than':
+      if (typeof filterValue === 'number' && typeof itemValue === 'number') {
+        return itemValue > filterValue;
+      }
+      return false;
+    case 'less_than':
+      if (typeof filterValue === 'number' && typeof itemValue === 'number') {
+        return itemValue < filterValue;
+      }
+      return false;
     default:
       return false;
   }
