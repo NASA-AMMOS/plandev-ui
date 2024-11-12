@@ -185,7 +185,7 @@ export type SchedulingGoalPlanSpecification = {
   enabled: boolean;
   goal_definition?: Pick<SchedulingGoalDefinition, 'analyses'> | null;
   goal_id: number;
-  goal_invocation_id?: number;
+  goal_invocation_id: number;
   goal_metadata:
     | (Pick<SchedulingGoalMetadata, 'name' | 'owner' | 'public'> & {
         versions: Pick<SchedulingGoalDefinition, 'revision' | 'analyses' | 'type' | 'parameter_schema'>[];

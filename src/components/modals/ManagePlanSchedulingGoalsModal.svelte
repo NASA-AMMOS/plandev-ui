@@ -202,7 +202,7 @@
     }
   }
 
-  async function onUpdateGoal(selectedGoals: Record<number, boolean>) {
+  async function onUpdateGoals(selectedGoals: Record<number, boolean>) {
     if ($plan && $schedulingPlanSpecification) {
       const goalPlanSpecUpdates: {
         goalPlanSpecIdsToDelete: number[];
@@ -220,10 +220,12 @@
 
           // if we find at least one goal invocation with the selected goal_id, we don't want to insert this goal_id into the plan spec
           // i.e. this goal was already selected when we entered the modal, so we don't want to kick off an update, which would cause a duplicate invocation to appear
-          const goalAlreadyExistsInPlanSpec = $allowedSchedulingGoalSpecs.find(e => e.goal_id === goalId) !== undefined;
+          const goalsInPlanSpecification = $allowedSchedulingGoalSpecs.filter(
+            schedulingGoalPlanSpecification => schedulingGoalPlanSpecification.goal_id === goalId,
+          );
 
           if (isSelected && $schedulingPlanSpecification !== null) {
-            if (!goalAlreadyExistsInPlanSpec) {
+            if (!goalsInPlanSpecification.length) {
               return {
                 ...prevGoalPlanSpecUpdates,
                 goalPlanSpecsToAdd: [
@@ -241,7 +243,10 @@
           } else {
             return {
               ...prevGoalPlanSpecUpdates,
-              goalPlanSpecIdsToDelete: [...prevGoalPlanSpecUpdates.goalPlanSpecIdsToDelete, goalId],
+              goalPlanSpecIdsToDelete: [
+                ...prevGoalPlanSpecUpdates.goalPlanSpecIdsToDelete,
+                ...goalsInPlanSpecification.map(({ goal_invocation_id }) => goal_invocation_id),
+              ],
             };
           }
         },
@@ -296,7 +301,7 @@
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
     <button
       class="st-button"
-      on:click={() => onUpdateGoal(selectedGoals)}
+      on:click={() => onUpdateGoals(selectedGoals)}
       use:permissionHandler={{
         hasPermission: hasEditSpecPermission && !$planReadOnly,
         permissionError: $planReadOnly

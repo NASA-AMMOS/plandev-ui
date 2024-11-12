@@ -3815,7 +3815,7 @@ const gql = {
       }
       deleteSchedulingGoalModelSpecifications: ${Queries.DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS}(
         where: {
-          goal_id: { _in: $goalIdsToDelete },
+          goal_invocation_id: { _in: $goalIdsToDelete },
           _and: {
             model_id: { _eq: $modelId }
           }
@@ -3855,7 +3855,7 @@ const gql = {
         }
       }
       deleteSchedulingGoalPlanSpecifications: ${Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS}(
-        where: { goal_id: { _in: $goalSpecIdsToDelete } }
+        where: { goal_invocation_id: { _in: $goalSpecIdsToDelete } }
       ) {
         affected_rows
       }
