@@ -735,6 +735,7 @@
           // Determine if the row will visualize all requested activities
           let activitiesInRow = new Set();
           activityLayers.forEach(layer => {
+            // TODO should we consider dynamic types here? Or just static?
             const layerActivities = layer.filter.activity?.static_types ?? [];
             activitiesInRow = new Set([...activitiesInRow, ...layerActivities]);
           });
