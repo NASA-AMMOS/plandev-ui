@@ -36,7 +36,6 @@
   let currentField = dirtyFilter.field as keyof typeof ActivityLayerFilterFieldType;
   let currentOperator: keyof typeof FilterOperator | null = dirtyFilter.operator;
   let subfields: SubfieldSchema[] | null = schema.Parameter?.subfields || null;
-  // let currentSubfield = dirtyFilter.subfield;
   let currentSubfieldLabel =
     dirtyFilter.field === 'Parameter' ? `${dirtyFilter.subfield?.name} (${dirtyFilter.subfield?.type})` : '';
   let currentType: DynamicFilterDataType = 'string';
@@ -44,22 +43,7 @@
   let operatorKeys: (keyof typeof FilterOperator)[] = [];
   let currentValuePossibilities: Array<any> = [];
 
-  $: if (currentField === 'Parameter' && subfields) {
-    // let subfield = currentSubfield;
-    // let label = '';
-    // if (!currentSubfieldLabel) {
-    //   label = `${dirtyFilter.subfield?.name} (${dirtyFilter.subfield?.type})`;
-    // } else if (currentSubfield) {
-    //   label = `${currentSubfield?.name} (${currentSubfield?.type})`;
-    // }
-    // const subfield = subfields.find(subfield => subfield.label === label);
-    // if (subfield) {
-    //   // currentSubfield = subfield;
-    //   currentSubfieldLabel = subfield.label;
-    //   currentType = subfield.type;
-    // }
-  } else {
-    // currentSubfield = undefined;
+  $: if (currentField !== 'Parameter') {
     currentSubfieldLabel = '';
     operatorKeys = Object.keys(schema[currentField]) as (keyof typeof FilterOperator)[];
     currentType = (schema[currentField][currentOperator] || Object.values(schema[currentField])[0]).type;
@@ -77,7 +61,7 @@
       if (matchingSubfield.type === 'string') {
         operatorKeys = ['includes', 'does_not_include', 'equals', 'does_not_equal'];
       } else if (matchingSubfield.type === 'int' || matchingSubfield.type === 'real') {
-        operatorKeys = ['equals', 'does_not_equal'];
+        operatorKeys = ['equals', 'does_not_equal', 'greater_than', 'less_than'];
       } else if (matchingSubfield.type === 'variant') {
         operatorKeys = ['equals', 'does_not_equal'];
         currentValuePossibilities = matchingSubfield.values || [];
