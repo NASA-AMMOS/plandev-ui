@@ -5,9 +5,11 @@
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
   import { createEventDispatcher } from 'svelte';
   import FilterWithPlusIcon from '../../../../assets/filter-with-plus.svg?component';
+  import DirectiveIcon from '../../../../assets/timeline-directive.svg?component';
+  import SpanIcon from '../../../../assets/timeline-span.svg?component';
   import { activityArgumentDefaultsMap, activityDirectivesMap } from '../../../../stores/activities';
   import { activityTypes } from '../../../../stores/plan';
-  import { spans } from '../../../../stores/simulation';
+  import { spans, spanUtilityMaps } from '../../../../stores/simulation';
   import { tags } from '../../../../stores/tags';
   import type { ActivityLayerDynamicFilter, ActivityLayerFilter } from '../../../../types/timeline';
   import { compare } from '../../../../utilities/generic';
@@ -39,6 +41,7 @@
   let manualInputRef: HTMLInputElement;
   let manualInputValue: string = '';
   let shown: boolean = false;
+  let instanceCount: number = 0;
 
   const dispatch = createEventDispatcher<{
     filterChange: { filter: ActivityLayerFilter };
@@ -131,9 +134,26 @@
     $activityTypes,
     $activityArgumentDefaultsMap,
   );
-  $: resultingTypes = new Set(appliedFilter.directives.map(d => d.type).concat(appliedFilter.spans.map(s => s.type)));
+
+  $: if (appliedFilter) {
+    const seenSpans: Record<number, boolean> = {};
+    let count = appliedFilter.directives.length;
+    appliedFilter.directives.forEach(directive => {
+      const matchingSpanId = $spanUtilityMaps.directiveIdToSpanIdMap[directive.id];
+      if (typeof matchingSpanId === 'number') {
+        seenSpans[matchingSpanId] = true;
+      }
+    });
+    appliedFilter.spans.forEach(span => {
+      if (!seenSpans[span.span_id]) {
+        count++;
+      }
+    });
+    instanceCount = count;
+  }
+
   $: matchingTypes = getMatchingTypesForActivityLayerFilter(dirtyFilter, $activityTypes);
-  // TODO need to get the list of matching types and then grab the actual applied filter
+  // TODO need to get the list of matching types and then grab the actual applied filter?
   $: allParameterTypes = $activityTypes.reduce((acc, activityType) => {
     Object.entries(activityType.parameters).forEach(([parameterName, parameter]) => {
       const parameterType = parameter.schema.type;
@@ -361,7 +381,13 @@
           <CssGridGutter track={1} type="column" />
 
           <div class="resulting-types">
-            <div class="resulting-types-title st-typography-medium">Resulting Types</div>
+            <div class="resulting-types-title st-typography-medium">
+              Resulting Types
+              <div class="resulting-types-info-container">
+                <div class="resulting-types-info"><DirectiveIcon /> {matchingTypes.length} types</div>
+                <div class="resulting-types-info"><SpanIcon /> {instanceCount} instances</div>
+              </div>
+            </div>
             <Input>
               <div class="search-icon" slot="left"><SearchIcon /></div>
               <input class="st-input w-100" placeholder="Select types" value="" />
@@ -458,7 +484,20 @@
 
   .resulting-types-title {
     display: flex;
+    justify-content: space-between;
     padding-bottom: 8px;
+  }
+
+  .resulting-types-info-container {
+    display: flex;
+    gap: 8px;
+  }
+
+  .resulting-types-info {
+    color: var(--st-gray-50);
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
   }
 
   .resulting-types-list {
