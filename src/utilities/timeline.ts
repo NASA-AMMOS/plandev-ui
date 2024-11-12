@@ -22,6 +22,7 @@ import {
 } from '../constants/view';
 import type { ActivityDirective, ActivityType } from '../types/activity';
 import type { ExternalEvent } from '../types/external-event';
+import type { DefaultEffectiveArgumentsMap } from '../types/parameter';
 import type { Resource, ResourceType, ResourceValue, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type {
   ActivityLayer,
@@ -1384,6 +1385,7 @@ export function applyActivityLayerFilter(
   directives: ActivityDirective[],
   spans: Span[],
   types: ActivityType[],
+  defaultArgumentsMap: DefaultEffectiveArgumentsMap,
 ) {
   if (!filter) {
     return { directives, spans };
@@ -1399,6 +1401,7 @@ export function applyActivityLayerFilter(
     return acc;
   }, {});
 
+  const anyTypeFiltersSpecified = !!(filter.static_types?.length || filter.dynamic_type_filters?.length);
   const filteredDirectives = directives.filter(directive => {
     let included = false;
 
@@ -1409,17 +1412,29 @@ export function applyActivityLayerFilter(
 
     // Check if necessary to see if directive is included in dynamic list
     if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
-      included = directiveOrSpanMatchesDynamicFilters(directive, filter.dynamic_type_filters, typeDefMap);
+      included = directiveOrSpanMatchesDynamicFilters(
+        directive,
+        filter.dynamic_type_filters,
+        typeDefMap,
+        defaultArgumentsMap,
+      );
     }
 
     // Apply global filters on top of the types
     if (filter.global_filters?.length) {
-      included = directiveOrSpanMatchesDynamicFilters(directive, filter.global_filters, typeDefMap);
+      included =
+        directiveOrSpanMatchesDynamicFilters(directive, filter.global_filters, typeDefMap, defaultArgumentsMap) &&
+        (anyTypeFiltersSpecified ? included : true);
     }
 
     // Apply type specific filters if found
     if (included && filter.type_subfilters && filter.type_subfilters[directive.type]) {
-      included = directiveOrSpanMatchesDynamicFilters(directive, filter.type_subfilters[directive.type], typeDefMap);
+      included = directiveOrSpanMatchesDynamicFilters(
+        directive,
+        filter.type_subfilters[directive.type],
+        typeDefMap,
+        defaultArgumentsMap,
+      );
     }
     return included;
   });
@@ -1434,17 +1449,29 @@ export function applyActivityLayerFilter(
 
     // Check if necessary to see if span is included in dynamic list
     if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
-      included = directiveOrSpanMatchesDynamicFilters(span, filter.dynamic_type_filters, typeDefMap);
+      included = directiveOrSpanMatchesDynamicFilters(
+        span,
+        filter.dynamic_type_filters,
+        typeDefMap,
+        defaultArgumentsMap,
+      );
     }
 
     // Apply global filters on top of the types
     if (filter.global_filters?.length) {
-      included = directiveOrSpanMatchesDynamicFilters(span, filter.global_filters, typeDefMap);
+      included =
+        directiveOrSpanMatchesDynamicFilters(span, filter.global_filters, typeDefMap, defaultArgumentsMap) &&
+        (anyTypeFiltersSpecified ? included : true);
     }
 
     // Apply type specific filters if found
     if (included && filter.type_subfilters && filter.type_subfilters[span.type]) {
-      included = directiveOrSpanMatchesDynamicFilters(span, filter.type_subfilters[span.type], typeDefMap);
+      included = directiveOrSpanMatchesDynamicFilters(
+        span,
+        filter.type_subfilters[span.type],
+        typeDefMap,
+        defaultArgumentsMap,
+      );
     }
     return included;
   });
@@ -1484,11 +1511,14 @@ export function directiveOrSpanMatchesDynamicFilters(
   directiveOrSpan: ActivityDirective | Span,
   dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
   activityTypeDefMap: Record<string, ActivityType>,
+  defaultArgumentsMap: DefaultEffectiveArgumentsMap,
 ): boolean {
   return dynamicFilters.reduce((acc, curr) => {
     let matches = false;
     if (curr.field === 'Type') {
       matches = matchesDynamicFilter(directiveOrSpan.type, curr.operator, curr.value);
+    } else if (curr.field === 'Name') {
+      matches = matchesDynamicFilter((directiveOrSpan as ActivityDirective).name, curr.operator, curr.value);
     } else if (curr.field === 'Subsystem') {
       // Get subsystem tag for this directive
       let subsystemTagId = -1;
@@ -1497,12 +1527,27 @@ export function directiveOrSpanMatchesDynamicFilters(
         subsystemTagId = typeDef.subsystem_tag.id;
       }
       matches = matchesDynamicFilter(subsystemTagId, curr.operator, curr.value);
-    } else if (curr.field === 'Tag' && typeof isArray((directiveOrSpan as ActivityDirective).tags)) {
+    } else if (curr.field === 'Tag' && isArray((directiveOrSpan as ActivityDirective).tags)) {
       const ids = (directiveOrSpan as ActivityDirective).tags.map(tag => tag.tag.id);
       matches = matchesDynamicFilter(ids, curr.operator, curr.value);
+    } else if (curr.field === 'Parameter' && curr.subfield) {
+      const subfield = curr.subfield;
+      const args = (directiveOrSpan as ActivityDirective).arguments || (directiveOrSpan as Span).attributes.arguments;
+      let argument = args[subfield.name];
+      if (argument === undefined) {
+        const isSpan = (directiveOrSpan as Span).span_id !== undefined;
+        if (!isSpan) {
+          // Get default
+          const defaultArgsForType = defaultArgumentsMap[directiveOrSpan.type];
+          if (defaultArgsForType) {
+            argument = defaultArgsForType[subfield.name];
+          }
+        }
+      }
+      matches = matchesDynamicFilter(argument, curr.operator, curr.value);
     }
-    return acc || matches;
-  }, false);
+    return acc && matches;
+  }, true);
 }
 
 export function typeMatchesDynamicFilters(
@@ -1516,22 +1561,31 @@ export function typeMatchesDynamicFilters(
     } else if (curr.field === 'Subsystem' && typeof type.subsystem_tag?.id === 'number') {
       matches = matchesDynamicFilter(type.subsystem_tag.id, curr.operator, curr.value);
     }
-    return acc || matches;
-  }, false);
+    return acc && matches;
+  }, true);
+}
+
+export function lowercase(value: any) {
+  return typeof value === 'string' ? value.toLowerCase() : value;
 }
 
 export function matchesDynamicFilter(
-  itemValue: ActivityLayerDynamicFilter<ActivityLayerFilterField>['value'], // the actual value
+  rawItemValue: ActivityLayerDynamicFilter<ActivityLayerFilterField>['value'], // the actual value
   operator: ActivityLayerDynamicFilter<ActivityLayerFilterField>['operator'],
-  filterValue: ActivityLayerDynamicFilter<ActivityLayerFilterField>['value'], // the value(s) we're comparing against
+  rawFilterValue: ActivityLayerDynamicFilter<ActivityLayerFilterField>['value'], // the value(s) we're comparing against
 ) {
+  const itemValue = lowercase(rawItemValue);
+  const filterValue = lowercase(rawFilterValue);
   switch (operator) {
     case 'equals':
       return itemValue === filterValue;
-    case 'does not equal':
+    case 'does_not_equal':
       return itemValue !== filterValue;
     case 'includes':
       if (typeof filterValue === 'string' && typeof itemValue === 'string') {
+        if (filterValue === '') {
+          return false;
+        }
         return itemValue.indexOf(filterValue) > -1;
       } else if (isArray(filterValue)) {
         return !!(isArray(itemValue) ? itemValue : [itemValue]).find(
@@ -1539,8 +1593,7 @@ export function matchesDynamicFilter(
         );
       }
       return false;
-    case 'does not include':
-      console.log('here', filterValue, itemValue);
+    case 'does_not_include':
       if (typeof filterValue === 'string' && typeof itemValue === 'string') {
         return itemValue.indexOf(filterValue) < 0;
       } else if (isArray(filterValue)) {
@@ -1549,12 +1602,12 @@ export function matchesDynamicFilter(
         );
       }
       return false;
-    case 'is one of':
+    case 'is_one_of':
       if (!isArray(filterValue)) {
         return itemValue === filterValue;
       }
       return (filterValue as (typeof itemValue)[]).indexOf(itemValue) > -1;
-    case 'is not one of':
+    case 'is_not_one_of':
       if (!isArray(filterValue)) {
         return itemValue !== filterValue;
       }

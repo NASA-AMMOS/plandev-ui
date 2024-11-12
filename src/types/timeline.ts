@@ -2,6 +2,7 @@ import type { Selection } from 'd3-selection';
 import type { ActivityDirective, ActivityDirectiveId, ActivityType } from './activity';
 import type { ConstraintResultWithName } from './constraint';
 import type { ExternalEvent, ExternalEventId, ExternalEventType } from './external-event';
+import type { ValueSchema } from './schema';
 import type { ResourceType, Span, SpanId } from './simulation';
 
 export type DiscreteTree = DiscreteTreeNode[];
@@ -30,8 +31,21 @@ export interface ExternalEventLayer extends Layer {
   externalEventColor: string;
 }
 
+export enum ActivityLayerFilterField {
+  'Type' = 'Type',
+  'Name' = 'Name',
+  'Subsystem' = 'Subsystem',
+  'Tag' = 'Tag',
+  'Parameter' = 'Parameter',
+  'SchedulingGoalId' = 'SchedulingGoalId',
+}
+
+export type DynamicFilterDataType = ValueSchema['type'] | 'tag';
+
 export type ActivityLayerFilter = {
-  dynamic_type_filters?: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>>[];
+  dynamic_type_filters?: ActivityLayerDynamicFilter<
+    Pick<typeof ActivityLayerFilterField, 'Type' | 'Name' | 'Subsystem'>
+  >[];
   global_filters?: ActivityLayerDynamicFilter<
     Pick<typeof ActivityLayerFilterField, 'Tag' | 'Parameter' | 'SchedulingGoalId'>
   >[];
@@ -42,31 +56,26 @@ export type ExternalEventLayerFilter = {
   event_types: string[];
 };
 
-export enum ActivityLayerFilterField {
-  'Type' = 'Type',
-  'Subsystem' = 'Subsystem',
-  'Tag' = 'Tag',
-  'Parameter' = 'Parameter',
-  'SchedulingGoalId' = 'SchedulingGoalId',
-}
-
 export type ActivityLayerDynamicFilter<T> = {
   field: keyof T;
-  operator: FilterOperator;
+  id: number;
+  operator: keyof typeof FilterOperator;
+  subfield?: { name: string; type: DynamicFilterDataType };
   value: string | string[] | number | number[];
 };
 
-export type FilterOperator =
-  | 'equals'
-  | 'does not equal'
-  | 'includes'
-  | 'does not include'
-  | 'is one of'
-  | 'is not one of'
-  | 'greater than'
-  | 'less than'
-  | 'is within'
-  | 'is not within';
+export enum FilterOperator {
+  'equals' = 'equals',
+  'does_not_equal' = 'does not equal',
+  'includes' = 'includes',
+  'does_not_include' = 'does not include',
+  'is_one_of' = 'is one of',
+  'is_not_one_of' = 'is not one of',
+  'greater_than' = 'greater than',
+  'less_than' = 'less than',
+  'is_within' = 'is within',
+  'is_not_within' = 'is not within',
+}
 
 export type AxisDomainFitMode = 'fitPlan' | 'fitTimeWindow' | 'manual';
 
