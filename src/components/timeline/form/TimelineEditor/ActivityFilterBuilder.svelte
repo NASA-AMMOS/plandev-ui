@@ -5,10 +5,12 @@
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
   import { createEventDispatcher } from 'svelte';
   import FilterWithPlusIcon from '../../../../assets/filter-with-plus.svg?component';
-  import { activityDirectivesMap } from '../../../../stores/activities';
+  import { activityArgumentDefaultsMap, activityDirectivesMap } from '../../../../stores/activities';
   import { activityTypes } from '../../../../stores/plan';
   import { spans } from '../../../../stores/simulation';
-  import type { ActivityLayerFilter } from '../../../../types/timeline';
+  import { tags } from '../../../../stores/tags';
+  import type { ActivityLayerDynamicFilter, ActivityLayerFilter } from '../../../../types/timeline';
+  import { compare } from '../../../../utilities/generic';
   import { applyActivityLayerFilter, getMatchingTypesForActivityLayerFilter } from '../../../../utilities/timeline';
   import { tooltip } from '../../../../utilities/tooltip';
   import Input from '../../../form/Input.svelte';
@@ -17,10 +19,11 @@
   import MenuItem from '../../../menus/MenuItem.svelte';
   import ActivityTypeResult from './ActivityTypeResult.svelte';
   import Draggable from './Draggable.svelte';
+  import DynamicFilter from './DynamicFilter.svelte';
 
   export let filter: ActivityLayerFilter | undefined;
 
-  let newFilter: ActivityLayerFilter = filter
+  let dirtyFilter: ActivityLayerFilter = filter
     ? structuredClone(filter)
     : { global_filters: [], dynamic_type_filters: [], static_types: [] };
   let manualInputOpen: boolean = false;
@@ -50,7 +53,7 @@
   }
 
   function onManualTypeToggled(name: string) {
-    const existingStaticTypes = newFilter.static_types || [];
+    const existingStaticTypes = dirtyFilter.static_types || [];
     let newStaticTypes = [];
     const checked = existingStaticTypes.indexOf(name) > -1;
     if (checked) {
@@ -58,31 +61,97 @@
     } else {
       newStaticTypes = existingStaticTypes.concat(name);
     }
-    newFilter = { ...newFilter, static_types: newStaticTypes };
-    dispatch('filterChange', { filter: newFilter });
+    dirtyFilter = { ...dirtyFilter, static_types: newStaticTypes };
+    dispatch('filterChange', { filter: dirtyFilter });
   }
 
   function onAddAllManualTypes() {
-    newFilter = { ...newFilter, static_types: $activityTypes.map(t => t.name) };
-    dispatch('filterChange', { filter: newFilter });
+    dirtyFilter = { ...dirtyFilter, static_types: $activityTypes.map(t => t.name) };
+    dispatch('filterChange', { filter: dirtyFilter });
   }
 
   function onRemoveAllManualTypes() {
-    newFilter = { ...newFilter, static_types: [] };
-    dispatch('filterChange', { filter: newFilter });
+    dirtyFilter = { ...dirtyFilter, static_types: [] };
+    dispatch('filterChange', { filter: dirtyFilter });
+  }
+
+  function onAddDynamicFilter(list: 'dynamic_type_filters' | 'global_filters') {
+    const field = list === 'dynamic_type_filters' ? 'Type' : 'Tag';
+    const currentFilters = Array.isArray(dirtyFilter[list]) ? dirtyFilter[list] : [];
+    dirtyFilter = {
+      ...dirtyFilter,
+      [list]: [...currentFilters, { field, operator: 'includes', value: '', id: Math.random() }],
+    };
+    dispatch('filterChange', { filter: dirtyFilter });
+  }
+
+  function onDynamicFilterChange(list: 'dynamic_type_filters' | 'global_filters', { detail: { filter } }: CustomEvent) {
+    const currentFilters = Array.isArray(dirtyFilter[list]) ? dirtyFilter[list] : [];
+    dirtyFilter = {
+      ...dirtyFilter,
+      [list]: currentFilters.map(f => {
+        if (f.id === filter.id) {
+          return filter;
+        }
+        return f;
+      }),
+    };
+    dispatch('filterChange', { filter: dirtyFilter });
+  }
+
+  function onDynamicFilterRemove(
+    list: 'dynamic_type_filters' | 'global_filters',
+    filter: ActivityLayerDynamicFilter<any>,
+  ) {
+    const currentFilters = Array.isArray(dirtyFilter[list]) ? dirtyFilter[list] : [];
+    dirtyFilter = {
+      ...dirtyFilter,
+      [list]: currentFilters.filter(f => {
+        return f.id !== filter.id;
+      }),
+    };
+    dispatch('filterChange', { filter: dirtyFilter });
   }
 
   $: activityDirectives = Object.values($activityDirectivesMap);
-  $: appliedFilter = applyActivityLayerFilter(newFilter, activityDirectives, $spans, $activityTypes);
+  $: appliedFilter = applyActivityLayerFilter(
+    dirtyFilter,
+    activityDirectives,
+    $spans,
+    $activityTypes,
+    $activityArgumentDefaultsMap,
+  );
   $: resultingTypes = new Set(appliedFilter.directives.map(d => d.type).concat(appliedFilter.spans.map(s => s.type)));
-  $: matchingTypes = getMatchingTypesForActivityLayerFilter(newFilter, $activityTypes);
+  $: matchingTypes = getMatchingTypesForActivityLayerFilter(dirtyFilter, $activityTypes);
   // TODO need to get the list of matching types and then grab the actual applied filter
-  // $: console.log('newFilter :>> ', newFilter);
-  // $: console.log('appliedFilter :>> ', appliedFilter);
-  // $: console.log('matchingTypes :>> ', matchingTypes);
+  $: allParameterTypes = $activityTypes.reduce((acc, activityType) => {
+    Object.entries(activityType.parameters).forEach(([parameterName, parameter]) => {
+      const parameterType = parameter.schema.type;
+      // TODO support series and struct?
+      if (parameterType === 'series' || parameterType === 'struct') {
+        return;
+      }
+      const key = `${parameterName} (${parameterType})`;
+      const matchingName = !!acc[parameterType];
+      const matchingType = matchingName && acc[parameterType].parameter.type === parameterType;
+      if (!matchingName || !matchingType) {
+        const values = parameterType === 'variant' ? parameter.schema.variants.map(variant => variant.key) : null;
+        acc[key] = {
+          name: parameterName,
+          type: parameterType,
+          ...(values ? { values } : null),
+          label: `${parameterName} (${parameterType})`,
+        };
+      }
+    });
+    return acc;
+  }, {});
+
+  $: parameterSubfields = Object.values(allParameterTypes).sort((a, b) => compare(a.label, b.label));
+  // TODO support key/value for values array
 
   $: if (manualInputOpen) {
-    manualMenu.show();
+    manualMenu?.show();
   } else {
     manualMenu?.hide();
   }
@@ -93,11 +162,12 @@
     <!-- TODO maybe pass in dimensions? -->
     <Draggable
       className="st-menu activity-filter-builder"
-      initialWidth={700}
+      initialWidth={1000}
       initialHeight={500}
       dragOptions={{
+        // TODO activityfilterbuilder props for initial dimensions?
         defaultPosition: {
-          x: (rootRef?.getBoundingClientRect().x ?? 0) - 700,
+          x: (rootRef?.getBoundingClientRect().x ?? 0) - 1000,
           y: (rootRef?.getBoundingClientRect().y ?? 0) - 250,
         },
       }}
@@ -150,16 +220,16 @@
                     </MenuItem>
                     {#each $activityTypes as type}
                       <MenuItem on:click={() => onManualTypeToggled(type.name)}>
-                        <input type="checkbox" checked={(newFilter.static_types || []).indexOf(type.name) > -1} />
+                        <input type="checkbox" checked={(dirtyFilter.static_types || []).indexOf(type.name) > -1} />
                         <div class="st-typography-body">{type.name}</div>
                       </MenuItem>
                     {/each}
                   </div>
                 </Menu>
               </div>
-              {#if newFilter.static_types?.length}
+              {#if dirtyFilter.static_types?.length}
                 <div class="manual-types-results">
-                  {#each newFilter.static_types as name}
+                  {#each dirtyFilter.static_types as name}
                     <ActivityTypeResult {name} on:remove={() => onManualTypeToggled(name)} />
                   {/each}
                 </div>
@@ -172,21 +242,85 @@
                 Dynamically Select Types
                 <div class="hint st-typography-body">Name includes...</div>
               </div>
-              <button class="st-button icon" use:tooltip={{ content: 'Add Filter' }}>
+              <button
+                class="st-button icon"
+                on:click={() => onAddDynamicFilter('dynamic_type_filters')}
+                use:tooltip={{ content: 'Add Filter' }}
+              >
                 <FilterWithPlusIcon />
               </button>
             </div>
+            {#if dirtyFilter.dynamic_type_filters?.length}
+              <div class="filter-section-content">
+                <div class="dynamic-filter-content">
+                  {#each dirtyFilter.dynamic_type_filters as filter, i (filter.id)}
+                    <DynamicFilter
+                      {filter}
+                      on:remove={() => onDynamicFilterRemove('dynamic_type_filters', filter)}
+                      on:change={event => onDynamicFilterChange('dynamic_type_filters', event)}
+                      verb={i === 0 ? 'Where' : 'and'}
+                      schema={{
+                        /* TODO include only subsystem tags */
+                        Name: {
+                          does_not_equal: { type: 'string' },
+                          does_not_include: { type: 'string' },
+                          equals: { type: 'variant', values: $activityTypes.map(type => type.name) },
+                          includes: { type: 'string' },
+                        },
+                        Subsystem: {
+                          does_not_include: { type: 'tag', values: $tags },
+                          includes: { type: 'tag', values: $tags },
+                        },
+                        Type: {
+                          does_not_equal: { type: 'variant', values: $activityTypes.map(type => type.name) },
+                          does_not_include: { type: 'string' },
+                          equals: { type: 'variant', values: $activityTypes.map(type => type.name) },
+                          includes: { type: 'string' },
+                        },
+                      }}
+                    />
+                  {/each}
+                </div>
+              </div>
+            {/if}
           </div>
           <div class="filter-section">
             <div class="filter-section-header st-typography-medium">
               <div class="filter-section-title">
                 Global Filters
-                <div class="hint st-typography-body">Subsystem, tag, parameter, etc...</div>
+                <div class="hint st-typography-body">Tag, parameter, scheduling goal, etc...</div>
               </div>
-              <button class="st-button icon" use:tooltip={{ content: 'Add Filter' }}>
+              <button
+                class="st-button icon"
+                on:click={() => onAddDynamicFilter('global_filters')}
+                use:tooltip={{ content: 'Add Filter' }}
+              >
                 <FilterWithPlusIcon />
               </button>
             </div>
+            {#if dirtyFilter.global_filters?.length}
+              <div class="filter-section-content">
+                <div class="dynamic-filter-content">
+                  {#each dirtyFilter.global_filters as filter, i (filter.id)}
+                    <DynamicFilter
+                      {filter}
+                      on:remove={() => onDynamicFilterRemove('global_filters', filter)}
+                      on:change={event => onDynamicFilterChange('global_filters', event)}
+                      verb={i === 0 ? 'Where' : 'and'}
+                      schema={{
+                        Parameter: {
+                          subfields: parameterSubfields,
+                        },
+                        Tag: {
+                          does_not_include: { type: 'tag', values: $tags },
+                          includes: { type: 'tag', values: $tags },
+                        },
+                      }}
+                    />
+                  {/each}
+                </div>
+              </div>
+            {/if}
           </div>
         </div>
         <div class="resulting-types">
@@ -248,6 +382,7 @@
   .filter-section-title {
     display: flex;
     gap: 8px;
+    user-select: none;
   }
 
   .filter-section-title .hint {
@@ -265,7 +400,7 @@
 
   .filters {
     display: flex;
-    flex: 60%;
+    flex: 70%;
     flex-direction: column;
     gap: 8px;
     overflow: auto;
@@ -275,7 +410,7 @@
   .resulting-types {
     background: white;
     display: flex;
-    flex: 40%;
+    flex: 30%;
     flex-direction: column;
     overflow: hidden;
     padding: 8px;
@@ -321,6 +456,13 @@
 
   .manual-types-results {
     margin-top: 8px;
+    max-height: 200px;
+    overflow: auto;
+  }
+  .dynamic-filter-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     max-height: 200px;
     overflow: auto;
   }

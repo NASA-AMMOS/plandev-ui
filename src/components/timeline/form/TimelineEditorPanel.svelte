@@ -775,6 +775,19 @@
         </select>
       </div>
       <EditorSection item="Detail">
+        <div style="display: grid">
+          <Input>
+            <label for="name">Row Name</label>
+            <input
+              class="st-input w-100"
+              name="name"
+              autocomplete="off"
+              type="string"
+              value={selectedRow.name}
+              on:input|stopPropagation={updateRowEvent}
+            />
+          </Input>
+        </div>
         <CssGrid columns="1fr 1fr" gap="8px" class="editor-section-grid">
           <form on:submit={event => event.preventDefault()}>
             <Input>
