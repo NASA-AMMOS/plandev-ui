@@ -226,8 +226,8 @@
     viewUpdateRow('layers', layers);
   }
 
-  function handleRemoveAllLayersClick() {
-    effects.deleteTimelineLayers();
+  function handleRemoveAllLayersClick(chartType: 'activity' | 'resource' | 'externalEvent') {
+    effects.deleteTimelineLayers(layers, chartType);
   }
 
   function handleDeleteLayerClick(layer: Layer) {
@@ -1187,7 +1187,7 @@
         item="Activity Layer"
         itemCount={activityLayers.length}
         on:create={() => handleNewLayerClick('activity')}
-        on:removeAll={handleRemoveAllLayersClick}
+        on:removeAll={() => handleRemoveAllLayersClick('activity')}
       >
         {#if activityLayers.length}
           <div class="timeline-layers timeline-elements">
@@ -1210,7 +1210,7 @@
         item="Resource Layer"
         itemCount={resourceLayers.length}
         on:create={() => handleNewLayerClick('line')}
-        on:removeAll={handleRemoveAllLayersClick}
+        on:removeAll={() => handleRemoveAllLayersClick('resource')}
       >
         {#if resourceLayers.length}
           <!-- TODO bug when dragging something into a different draggable area -->
@@ -1242,7 +1242,7 @@
         item="Event Layer"
         itemCount={externalEventLayers.length}
         on:create={() => handleNewLayerClick('externalEvent')}
-        on:removeAll={handleRemoveAllLayersClick}
+        on:removeAll={() => handleRemoveAllLayersClick('externalEvent')}
       >
         {#if externalEventLayers.length}
           <div class="timeline-layers timeline-elements">

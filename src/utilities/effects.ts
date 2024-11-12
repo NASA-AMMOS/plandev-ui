@@ -208,7 +208,7 @@ import type {
   TagsInsertInput,
   TagsSetInput,
 } from '../types/tags';
-import type { Row, Timeline } from '../types/timeline';
+import type { Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
 import { parseCdlDictionary, toAmpcsXml } from './codemirror/cdlDictionary';
@@ -3084,15 +3084,30 @@ const effects = {
     }
   },
 
-  async deleteTimelineLayers(timelineId?: number | null, rowId?: number | null) {
+  async deleteTimelineLayers(
+    layers: Layer[],
+    chartType: 'activity' | 'resource' | 'externalEvent',
+    timelineId?: number | null,
+    rowId?: number | null,
+  ) {
     const { confirm } = await showConfirmModal(
       'Delete',
-      `Are you sure you want to delete all layers in this row?`,
+      `Are you sure you want to delete all ${chartType} layers in this row?`,
       'Delete Rows',
       true,
     );
     if (confirm) {
-      viewUpdateRow('layers', [], timelineId, rowId);
+      const filteredLayers = layers.filter(l => {
+        if (chartType === 'activity') {
+          return l.chartType !== 'activity';
+        } else if (chartType === 'externalEvent') {
+          return l.chartType !== 'externalEvent';
+        } else if (chartType === 'resource') {
+          return l.chartType !== 'line' && l.chartType !== 'x-range';
+        }
+        return true;
+      });
+      viewUpdateRow('layers', filteredLayers, timelineId, rowId);
     }
   },
 
