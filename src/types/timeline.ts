@@ -61,7 +61,7 @@ export type ActivityLayerDynamicFilter<T> = {
   id: number;
   operator: keyof typeof FilterOperator;
   subfield?: { name: string; type: DynamicFilterDataType };
-  value: string | string[] | number | number[];
+  value: string | string[] | number | number[] | boolean;
 };
 
 export enum FilterOperator {
