@@ -14,6 +14,7 @@
   import {
     applyActivityLayerFilter,
     getMatchingTypesForActivityLayerFilter,
+    getNextThingID,
     lowercase,
   } from '../../../../utilities/timeline';
   import { tooltip } from '../../../../utilities/tooltip';
@@ -31,7 +32,7 @@
 
   let dirtyFilter: ActivityLayerFilter = filter
     ? structuredClone(filter)
-    : { global_filters: [], dynamic_type_filters: [], static_types: [] };
+    : { dynamic_type_filters: [], global_filters: [], static_types: [] };
   let manualInputOpen: boolean = false;
   let manualMenu: Menu;
   let rootRef: HTMLDivElement;
@@ -84,10 +85,12 @@
 
   function onAddDynamicFilter(list: 'dynamic_type_filters' | 'global_filters') {
     const field = list === 'dynamic_type_filters' ? 'Type' : 'Tag';
-    const currentFilters = Array.isArray(dirtyFilter[list]) ? dirtyFilter[list] : [];
+    const listObj = dirtyFilter[list] || [];
+    const currentFilters = Array.isArray(listObj) ? listObj : [];
+    const id = getNextThingID(listObj);
     dirtyFilter = {
       ...dirtyFilter,
-      [list]: [...currentFilters, { field, operator: 'includes', value: '', id: Math.random() }],
+      [list]: [...currentFilters, { field, id, operator: 'includes', value: '' }],
     };
     dispatch('filterChange', { filter: dirtyFilter });
   }

@@ -379,6 +379,19 @@ export function getNextTimelineID(timelines: Timeline[]): number {
 }
 
 /**
+ * Returns the next thing ID based on all things
+ */
+export function getNextThingID(things: { id: number }[]): number {
+  let maxID = -1;
+  things.forEach(thing => {
+    if (thing.id > maxID) {
+      maxID = thing.id;
+    }
+  });
+  return maxID + 1;
+}
+
+/**
  * Returns the next unused activity color within the given row
  */
 export function getUniqueColorForActivityLayer(row?: Row): string {
