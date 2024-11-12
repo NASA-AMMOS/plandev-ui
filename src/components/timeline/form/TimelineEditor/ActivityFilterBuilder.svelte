@@ -21,6 +21,8 @@
   import Menu from '../../../menus/Menu.svelte';
   import MenuHeader from '../../../menus/MenuHeader.svelte';
   import MenuItem from '../../../menus/MenuItem.svelte';
+  import CssGrid from '../../../ui/CssGrid.svelte';
+  import CssGridGutter from '../../../ui/CssGridGutter.svelte';
   import ActivityTypeResult from './ActivityTypeResult.svelte';
   import Draggable from './Draggable.svelte';
   import DynamicFilter from './DynamicFilter.svelte';
@@ -193,172 +195,181 @@
         </MenuHeader>
       </div>
       <div class="body">
-        <div class="filters">
-          <div class="filter-section">
-            <div class="filter-section-header st-typography-medium">
-              Manually Select Types
-              <button on:click={onRemoveAllManualTypes} class="st-button icon" use:tooltip={{ content: 'Remove Type' }}>
-                <CloseIcon />
-              </button>
-            </div>
-            <div class="filter-section-content filter-section-content-bordered">
-              <Input>
-                <div class="search-icon" slot="left"><SearchIcon /></div>
-                <input
-                  bind:this={manualInputRef}
-                  class="st-input w-100 manual-types-filter-input"
-                  placeholder="Select types"
-                  bind:value={manualInputValue}
-                  on:click={() => {
-                    requestAnimationFrame(() => {
-                      if (!manualInputOpen) {
-                        manualInputOpen = true;
-                      }
-                    });
-                  }}
-                />
-              </Input>
-              <!-- TODO input menu not getting current size after resize -->
-              <div style:position="relative" style:width="0px">
-                <Menu
-                  width={manualInputRef?.clientWidth ?? 600}
-                  hideAfterClick={false}
-                  placement="right-start"
-                  bind:this={manualMenu}
-                  on:hide={() => (manualInputOpen = false)}
+        <CssGrid columns="0.7fr 3px 0.3fr" class="activity-filter-grid">
+          <div class="filters">
+            <div class="filter-section">
+              <div class="filter-section-header st-typography-medium">
+                Manually Select Types
+                <button
+                  on:click={onRemoveAllManualTypes}
+                  class="st-button icon"
+                  use:tooltip={{ content: 'Remove Type' }}
                 >
-                  <div class="manual-types-menu">
-                    {#if filteredActivityTypes.length > 0}
-                      <MenuItem on:click={() => onAddAllManualTypes()}>
-                        <div class="st-typography-bold manual-types-add-all">
-                          Add {filteredActivityTypes.length !== $activityTypes.length ? 'Matching' : 'All'} +
-                        </div>
-                      </MenuItem>
-                      {#each filteredActivityTypes as type}
-                        <MenuItem on:click={() => onManualTypeToggled(type.name)}>
-                          <input
-                            type="checkbox"
-                            checked={(dirtyFilter.static_types || []).indexOf(type.name) > -1}
-                            tabindex={-1}
-                            style:pointer-events="none"
-                          />
-                          <div class="st-typography-body">{type.name}</div>
-                        </MenuItem>
-                      {/each}
-                    {:else}
-                      <MenuItem disabled>No activities matching your filter</MenuItem>
-                    {/if}
-                  </div>
-                </Menu>
+                  <CloseIcon />
+                </button>
               </div>
-              {#if dirtyFilter.static_types?.length}
-                <div class="manual-types-results">
-                  {#each dirtyFilter.static_types as name}
-                    <ActivityTypeResult {name} on:remove={() => onManualTypeToggled(name)} />
-                  {/each}
+              <div class="filter-section-content filter-section-content-bordered">
+                <Input>
+                  <div class="search-icon" slot="left"><SearchIcon /></div>
+                  <input
+                    bind:this={manualInputRef}
+                    class="st-input w-100 manual-types-filter-input"
+                    placeholder="Select types"
+                    bind:value={manualInputValue}
+                    on:click={() => {
+                      requestAnimationFrame(() => {
+                        if (!manualInputOpen) {
+                          manualInputOpen = true;
+                        }
+                      });
+                    }}
+                  />
+                </Input>
+                <!-- TODO input menu not getting current size after resize -->
+                <div style:position="relative" style:width="0px">
+                  <Menu
+                    width={manualInputRef?.clientWidth ?? 600}
+                    hideAfterClick={false}
+                    placement="right-start"
+                    bind:this={manualMenu}
+                    on:hide={() => (manualInputOpen = false)}
+                  >
+                    <div class="manual-types-menu">
+                      {#if filteredActivityTypes.length > 0}
+                        <MenuItem on:click={() => onAddAllManualTypes()}>
+                          <div class="st-typography-bold manual-types-add-all">
+                            Add {filteredActivityTypes.length !== $activityTypes.length ? 'Matching' : 'All'} +
+                          </div>
+                        </MenuItem>
+                        {#each filteredActivityTypes as type}
+                          <MenuItem on:click={() => onManualTypeToggled(type.name)}>
+                            <input
+                              type="checkbox"
+                              checked={(dirtyFilter.static_types || []).indexOf(type.name) > -1}
+                              tabindex={-1}
+                              style:pointer-events="none"
+                            />
+                            <div class="st-typography-body">{type.name}</div>
+                          </MenuItem>
+                        {/each}
+                      {:else}
+                        <MenuItem disabled>No activities matching your filter</MenuItem>
+                      {/if}
+                    </div>
+                  </Menu>
+                </div>
+                {#if dirtyFilter.static_types?.length}
+                  <div class="manual-types-results">
+                    {#each dirtyFilter.static_types as name}
+                      <ActivityTypeResult {name} on:remove={() => onManualTypeToggled(name)} />
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            </div>
+            <div class="filter-section">
+              <div class="filter-section-header st-typography-medium">
+                <div class="filter-section-title">
+                  Dynamically Select Types
+                  <div class="hint st-typography-body">Name includes...</div>
+                </div>
+                <button
+                  class="st-button icon"
+                  on:click={() => onAddDynamicFilter('dynamic_type_filters')}
+                  use:tooltip={{ content: 'Add Filter' }}
+                >
+                  <FilterWithPlusIcon />
+                </button>
+              </div>
+              {#if dirtyFilter.dynamic_type_filters?.length}
+                <div class="filter-section-content">
+                  <div class="dynamic-filter-content">
+                    {#each dirtyFilter.dynamic_type_filters as filter, i (filter.id)}
+                      <DynamicFilter
+                        {filter}
+                        on:remove={() => onDynamicFilterRemove('dynamic_type_filters', filter)}
+                        on:change={event => onDynamicFilterChange('dynamic_type_filters', event)}
+                        verb={i === 0 ? 'Where' : 'and'}
+                        schema={{
+                          /* TODO include only subsystem tags */
+                          Name: {
+                            does_not_equal: { type: 'string' },
+                            does_not_include: { type: 'string' },
+                            equals: { type: 'variant', values: $activityTypes.map(type => type.name) },
+                            includes: { type: 'string' },
+                          },
+                          Subsystem: {
+                            does_not_include: { type: 'tag', values: $tags },
+                            includes: { type: 'tag', values: $tags },
+                          },
+                          Type: {
+                            does_not_equal: { type: 'variant', values: $activityTypes.map(type => type.name) },
+                            does_not_include: { type: 'string' },
+                            equals: { type: 'variant', values: $activityTypes.map(type => type.name) },
+                            includes: { type: 'string' },
+                          },
+                        }}
+                      />
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+            </div>
+            <div class="filter-section">
+              <div class="filter-section-header st-typography-medium">
+                <div class="filter-section-title">
+                  Global Filters
+                  <div class="hint st-typography-body">Tag, parameter, scheduling goal, etc...</div>
+                </div>
+                <button
+                  class="st-button icon"
+                  on:click={() => onAddDynamicFilter('global_filters')}
+                  use:tooltip={{ content: 'Add Filter' }}
+                >
+                  <FilterWithPlusIcon />
+                </button>
+              </div>
+              {#if dirtyFilter.global_filters?.length}
+                <div class="filter-section-content">
+                  <div class="dynamic-filter-content">
+                    {#each dirtyFilter.global_filters as filter, i (filter.id)}
+                      <DynamicFilter
+                        {filter}
+                        on:remove={() => onDynamicFilterRemove('global_filters', filter)}
+                        on:change={event => onDynamicFilterChange('global_filters', event)}
+                        verb={i === 0 ? 'Where' : 'and'}
+                        schema={{
+                          Parameter: {
+                            subfields: parameterSubfields,
+                          },
+                          Tag: {
+                            does_not_include: { type: 'tag', values: $tags },
+                            includes: { type: 'tag', values: $tags },
+                          },
+                        }}
+                      />
+                    {/each}
+                  </div>
                 </div>
               {/if}
             </div>
           </div>
-          <div class="filter-section">
-            <div class="filter-section-header st-typography-medium">
-              <div class="filter-section-title">
-                Dynamically Select Types
-                <div class="hint st-typography-body">Name includes...</div>
-              </div>
-              <button
-                class="st-button icon"
-                on:click={() => onAddDynamicFilter('dynamic_type_filters')}
-                use:tooltip={{ content: 'Add Filter' }}
-              >
-                <FilterWithPlusIcon />
-              </button>
+
+          <CssGridGutter track={1} type="column" />
+
+          <div class="resulting-types">
+            <div class="resulting-types-title st-typography-medium">Resulting Types</div>
+            <Input>
+              <div class="search-icon" slot="left"><SearchIcon /></div>
+              <input class="st-input w-100" placeholder="Select types" value="" />
+            </Input>
+            <div class="resulting-types-list">
+              {#each matchingTypes as type}
+                <ActivityTypeResult name={type.name} removable={false} />
+              {/each}
             </div>
-            {#if dirtyFilter.dynamic_type_filters?.length}
-              <div class="filter-section-content">
-                <div class="dynamic-filter-content">
-                  {#each dirtyFilter.dynamic_type_filters as filter, i (filter.id)}
-                    <DynamicFilter
-                      {filter}
-                      on:remove={() => onDynamicFilterRemove('dynamic_type_filters', filter)}
-                      on:change={event => onDynamicFilterChange('dynamic_type_filters', event)}
-                      verb={i === 0 ? 'Where' : 'and'}
-                      schema={{
-                        /* TODO include only subsystem tags */
-                        Name: {
-                          does_not_equal: { type: 'string' },
-                          does_not_include: { type: 'string' },
-                          equals: { type: 'variant', values: $activityTypes.map(type => type.name) },
-                          includes: { type: 'string' },
-                        },
-                        Subsystem: {
-                          does_not_include: { type: 'tag', values: $tags },
-                          includes: { type: 'tag', values: $tags },
-                        },
-                        Type: {
-                          does_not_equal: { type: 'variant', values: $activityTypes.map(type => type.name) },
-                          does_not_include: { type: 'string' },
-                          equals: { type: 'variant', values: $activityTypes.map(type => type.name) },
-                          includes: { type: 'string' },
-                        },
-                      }}
-                    />
-                  {/each}
-                </div>
-              </div>
-            {/if}
           </div>
-          <div class="filter-section">
-            <div class="filter-section-header st-typography-medium">
-              <div class="filter-section-title">
-                Global Filters
-                <div class="hint st-typography-body">Tag, parameter, scheduling goal, etc...</div>
-              </div>
-              <button
-                class="st-button icon"
-                on:click={() => onAddDynamicFilter('global_filters')}
-                use:tooltip={{ content: 'Add Filter' }}
-              >
-                <FilterWithPlusIcon />
-              </button>
-            </div>
-            {#if dirtyFilter.global_filters?.length}
-              <div class="filter-section-content">
-                <div class="dynamic-filter-content">
-                  {#each dirtyFilter.global_filters as filter, i (filter.id)}
-                    <DynamicFilter
-                      {filter}
-                      on:remove={() => onDynamicFilterRemove('global_filters', filter)}
-                      on:change={event => onDynamicFilterChange('global_filters', event)}
-                      verb={i === 0 ? 'Where' : 'and'}
-                      schema={{
-                        Parameter: {
-                          subfields: parameterSubfields,
-                        },
-                        Tag: {
-                          does_not_include: { type: 'tag', values: $tags },
-                          includes: { type: 'tag', values: $tags },
-                        },
-                      }}
-                    />
-                  {/each}
-                </div>
-              </div>
-            {/if}
-          </div>
-        </div>
-        <div class="resulting-types">
-          <div class="resulting-types-title st-typography-medium">Resulting Types</div>
-          <Input>
-            <div class="search-icon" slot="left"><SearchIcon /></div>
-            <input class="st-input w-100" placeholder="Select types" value="" />
-          </Input>
-          <div class="resulting-types-list">
-            {#each matchingTypes as type}
-              <ActivityTypeResult name={type.name} removable={false} />
-            {/each}
-          </div>
-        </div>
+        </CssGrid>
       </div>
     </Draggable>
   {/if}
@@ -424,7 +435,6 @@
 
   .filters {
     display: flex;
-    flex: 70%;
     flex-direction: column;
     gap: 8px;
     overflow: auto;
@@ -434,7 +444,6 @@
   .resulting-types {
     background: white;
     display: flex;
-    flex: 30%;
     flex-direction: column;
     overflow: hidden;
     padding: 8px;
@@ -495,5 +504,9 @@
     align-items: center;
     color: var(--st-gray-50);
     display: flex;
+  }
+
+  :global(.activity-filter-grid) {
+    width: 100%;
   }
 </style>
