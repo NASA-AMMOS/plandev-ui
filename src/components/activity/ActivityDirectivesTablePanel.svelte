@@ -14,7 +14,7 @@
   import { InvalidDate } from '../../constants/time';
   import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
   import { activityErrorRollupsMap } from '../../stores/errors';
-  import { plan, planReadOnly } from '../../stores/plan';
+  import { maxTimeRange, plan, planReadOnly, viewTimeRange } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import { view, viewTogglePanel, viewUpdateActivityDirectivesTable } from '../../stores/views';
   import type { ActivityDirective } from '../../types/activity';
@@ -30,6 +30,8 @@
   import Panel from '../ui/Panel.svelte';
   import ActivityDirectivesTable from './ActivityDirectivesTable.svelte';
   import ActivityTableMenu from './ActivityTableMenu.svelte';
+  import { get } from 'svelte/store';
+  import { getTimeRangeAroundTime } from '../../utilities/timeline';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -364,6 +366,16 @@
       viewUpdateActivityDirectivesTable({ autoSizeColumns: 'off' });
     }
   }
+
+  function scrollTimelineToTime({ detail }: CustomEvent<number>) {
+    const currentTimeRange = get(viewTimeRange);
+    const centeredTimeRange = getTimeRangeAroundTime(
+      detail,
+      currentTimeRange.end - currentTimeRange.start,
+      get(maxTimeRange),
+    );
+    viewTimeRange.set(centeredTimeRange);
+  }
 </script>
 
 <Panel padBody={false}>
@@ -417,6 +429,7 @@
       on:gridSizeChanged={onGridSizeChangedDebounced}
       on:rowDoubleClicked={onRowDoubleClicked}
       on:selectionChanged={onSelectionChanged}
+      on:scrollTimelineToTime={scrollTimelineToTime}
     />
   </svelte:fragment>
 </Panel>

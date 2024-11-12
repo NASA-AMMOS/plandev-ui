@@ -14,6 +14,9 @@
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
+  import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
+  import ContextMenuSeparator from '../context-menu/ContextMenuSeparator.svelte';
+  import { createEventDispatcher } from 'svelte';
 
   export let activityDirectives: ActivityDirective[] = [];
   export let activityDirectiveErrorRollupsMap: Record<ActivityDirectiveId, ActivityErrorRollup> | undefined = undefined;
@@ -22,9 +25,14 @@
   export let dataGrid: DataGrid<ActivityDirective> | undefined = undefined;
   export let plan: Plan | null;
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
+  export let bulkSelectedActivityDirectiveIds: ActivityDirectiveId[] = [];
   export let planReadOnly: boolean = false;
   export let user: User | null;
   export let filterExpression: string = '';
+
+  const dispatch = createEventDispatcher<{
+    scrollTimelineToTime: number;
+  }>();
 
   type ActivityDirectiveWithErrorCounts = ActivityDirective & { errorCounts?: ActivityErrorCounts };
   type CellRendererParams = {
@@ -129,11 +137,20 @@
   function getRowId(activityDirective: ActivityDirective): ActivityDirectiveId {
     return activityDirective.id;
   }
+
+  function scrollTimelineToActivityDirective() {
+    const directiveId = bulkSelectedActivityDirectiveIds.length > 0 && bulkSelectedActivityDirectiveIds[0];
+    const directive = activityDirectives.find(item => item.id === directiveId) ?? null;
+    if (directive?.start_time_ms !== undefined && directive?.start_time_ms !== null) {
+      dispatch('scrollTimelineToTime', directive.start_time_ms);
+    }
+  }
 </script>
 
 <BulkActionDataGrid
   bind:dataGrid
   bind:selectedItemId={selectedActivityDirectiveId}
+  bind:selectedItemIds={bulkSelectedActivityDirectiveIds}
   autoSizeColumnsToFit={false}
   columnDefs={completeColumnDefs}
   {columnStates}
@@ -155,4 +172,11 @@
   on:gridSizeChanged
   on:selectionChanged
   on:rowDoubleClicked
-/>
+>
+  <svelte:fragment slot="context-menu">
+    {#if bulkSelectedActivityDirectiveIds.length === 1}
+      <ContextMenuItem on:click={scrollTimelineToActivityDirective}>Scroll to Activity</ContextMenuItem>
+      <ContextMenuSeparator></ContextMenuSeparator>
+    {/if}
+  </svelte:fragment>
+</BulkActionDataGrid>

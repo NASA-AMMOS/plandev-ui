@@ -428,6 +428,30 @@ export function getUniqueColorForLineLayer(row?: Row): string {
   return color;
 }
 
+export function getTimeRangeAroundTime(time: number, timeRangeSpan: number, maxTimeRange?: TimeRange): TimeRange {
+  const padding = timeRangeSpan / 2;
+  let start = time - padding;
+  let end = time + padding;
+
+  // optional maxTimeRange for bounding the results bounds
+  if (maxTimeRange !== undefined && maxTimeRange !== null) {
+    //span is larger than the max time range, well it can't get larger than that
+    if (timeRangeSpan >= maxTimeRange.end - maxTimeRange.start) {
+      return maxTimeRange;
+    }
+
+    //bound the start or end of the TimeRange, but keep the timeRangeSpan the same
+    if (time - padding < maxTimeRange.start) {
+      start = maxTimeRange.start;
+      end = maxTimeRange.start + timeRangeSpan;
+    } else if (time + padding > maxTimeRange.end) {
+      start = maxTimeRange.end - timeRangeSpan;
+      end = maxTimeRange.end;
+    }
+  }
+  return { end, start };
+}
+
 /**
  * Returns a new vertical guide
  */

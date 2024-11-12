@@ -33,6 +33,7 @@
   export let pluralItemDisplayText: string = '';
   export let scrollToSelection: boolean = false;
   export let selectedItemId: RowId | null = null;
+  export let selectedItemIds: RowId[] = [];
   export let showContextMenu: boolean = true;
   export let singleItemDisplayText: string = '';
   export let suppressDragLeaveHidesColumns: boolean = true;
@@ -48,7 +49,6 @@
 
   let isFiltered: boolean = false;
   let deletePermission: boolean = true;
-  let selectedItemIds: RowId[] = [];
 
   $: if (typeof hasDeletePermission === 'function' && user) {
     if (selectedItemIds.length > 0) {
@@ -172,6 +172,8 @@
 >
   <svelte:fragment slot="context-menu">
     {#if showContextMenu}
+      <!-- to further extend context menu -->
+      <slot name="context-menu" />
       <ContextMenuHeader>Bulk Actions</ContextMenuHeader>
       <ContextMenuItem on:click={selectAllItems}>
         Select All {isFiltered ? 'Visible ' : ''}{pluralItemDisplayText}
