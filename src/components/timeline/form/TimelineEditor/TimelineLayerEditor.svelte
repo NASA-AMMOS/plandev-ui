@@ -6,7 +6,7 @@
   import CopyIcon from 'bootstrap-icons/icons/copy.svg?component';
   import EyeIcon from 'bootstrap-icons/icons/eye.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import type { Layer } from '../../../../types/timeline';
+  import type { ActivityLayer, Layer } from '../../../../types/timeline';
   import { getTarget } from '../../../../utilities/generic';
   import { isActivityLayer, isExternalEventLayer, isLineLayer, isXRangeLayer } from '../../../../utilities/timeline';
   import { tooltip } from '../../../../utilities/tooltip';
@@ -94,6 +94,15 @@
   function toggleFilterMenu() {
     filterMenu.toggle();
   }
+
+  function activityLayerHasFilters(layer: ActivityLayer) {
+    return (
+      layer.filter.activity &&
+      (layer.filter.activity.static_types?.length ||
+        layer.filter.activity.dynamic_type_filters?.length ||
+        layer.filter.activity.global_filters?.length)
+    );
+  }
 </script>
 
 <div class="timeline-layer-editor">
@@ -131,6 +140,8 @@
         on:click|stopPropagation={toggleFilterMenu}
         use:tooltip={{ content: 'Filter', placement: 'top' }}
         class="st-button icon"
+        class:filter-active={activityLayerHasFilters(layer)}
+        style:position="relative"
       >
         <FilterIcon />
       </button>
@@ -179,5 +190,17 @@
   .color {
     display: flex;
     height: min-content;
+  }
+
+  .filter-active::after {
+    background: #2f80ed;
+    border-radius: 10px;
+    content: ' ';
+    height: 5px;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: 2px;
+    width: 5px;
   }
 </style>
