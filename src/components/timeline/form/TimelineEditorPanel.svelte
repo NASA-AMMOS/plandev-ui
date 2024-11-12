@@ -84,6 +84,7 @@
   import RadioButtons from '../../ui/RadioButtons/RadioButtons.svelte';
   import EditorSection from './TimelineEditor/EditorSection.svelte';
   import TimelineLayerEditor from './TimelineEditor/TimelineLayerEditor.svelte';
+  import TimelineEditorLayerSection from './TimelineEditorLayerSection.svelte';
   import TimelineEditorYAxisSettings from './TimelineEditorYAxisSettings.svelte';
 
   export let gridSection: ViewGridSection;
@@ -209,6 +210,18 @@
 
   function handleNewLayerClick(chartType: Layer['chartType']) {
     let layer = createTimelineLayer(chartType);
+
+    // Assign yAxisId to existing value or new axis
+    if (chartType === 'line' || chartType === 'x-range') {
+      if (yAxes.length > 0) {
+        layer.yAxisId = yAxes[0].id;
+      } else {
+        handleNewYAxisClick();
+        layer.yAxisId = yAxes[0].id;
+      }
+    }
+
+    console.log('layer, values :>> ', layer);
     layers = [...layers, layer];
     viewUpdateRow('layers', layers);
   }
@@ -1203,22 +1216,23 @@
           <!-- TODO bug when dragging something into a different draggable area -->
           <div class="timeline-layers timeline-elements">
             {#each resourceLayers as layer (layer.id)}
-              <TimelineLayerEditor
+              <!-- <TimelineLayerEditor
                 {layer}
                 on:rename={({ detail: { name } }) => handleUpdateLayerProperty('name', name, layer)}
                 on:colorChange={({ detail: { color } }) => handleUpdateLayerColor(color, layer)}
                 on:remove={() => handleDeleteLayerClick(layer)}
                 on:duplicate={() => handleDuplicateLayer(layer)}
+              /> -->
+              <TimelineEditorLayerSection
+                on:handleUpdateLayerChartType={event => handleUpdateLayerChartType(event.detail.value, layer)}
+                on:handleUpdateLayerFilter={event => handleUpdateLayerFilter(event.detail.values, layer)}
+                on:handleUpdateLayerProperty={event =>
+                  handleUpdateLayerProperty(event.detail.name, event.detail.value, layer)}
+                on:handleUpdateLayerColorScheme={event => handleUpdateLayerColorScheme(event.detail.value, layer)}
+                on:handleDeleteLayerClick={() => handleDeleteLayerClick(layer)}
+                {layer}
+                {yAxes}
               />
-              <!-- <TimelineEditorLayerSection
-                  on:handleUpdateLayerFilter={event => handleUpdateLayerFilter(event.detail.values, layer)}
-                  on:handleUpdateLayerProperty={event =>
-                    handleUpdateLayerProperty(event.detail.name, event.detail.value, layer)}
-                  on:handleUpdateLayerColorScheme={event => handleUpdateLayerColorScheme(event.detail.value, layer)}
-                  on:handleDeleteLayerClick={() => handleDeleteLayerClick(layer)}
-                  {layer}
-                  {yAxes}
-                /> -->
             {/each}
           </div>
         {/if}

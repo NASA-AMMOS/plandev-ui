@@ -25,6 +25,7 @@
   let menuTitle: string = '';
   let selectedValuesMap: Record<string, boolean> = {};
   let searchText: string = '';
+  let allowMultiple = layer.chartType !== 'line' && layer.chartType !== 'x-range';
 
   $: if (layer) {
     selectedValuesMap = listToMap(values);
@@ -77,10 +78,14 @@
 
   function toggleItem(value: string) {
     let newValues = [];
-    if (selectedValuesMap[value]) {
-      newValues = values.filter(i => value !== i);
+    if (allowMultiple) {
+      if (selectedValuesMap[value]) {
+        newValues = values.filter(i => value !== i);
+      } else {
+        newValues = [...values, value];
+      }
     } else {
-      newValues = [...values, value];
+      newValues = [value];
     }
     dispatch('change', { values: newValues });
   }
@@ -126,17 +131,23 @@
           <div class="st-typography-label empty-state">No items matching filter</div>
         {/if}
       </div>
-      <div class="list-buttons menu-border-top">
-        <button class="st-button secondary list-button" on:click={selectFilteredValues}>
-          Select {filteredValues.length}
-          {#if filteredValues.length === 1}
-            {isActivityLayer(layer) ? 'activity' : isExternalEventLayer(layer) ? 'external event type' : 'resource'}
-          {:else}
-            {isActivityLayer(layer) ? 'activities' : isExternalEventLayer(layer) ? 'external event types' : 'resources'}
-          {/if}
-        </button>
-        <button class="st-button secondary list-button" on:click={unselectFilteredValues}>Unselect all</button>
-      </div>
+      {#if allowMultiple}
+        <div class="list-buttons menu-border-top">
+          <button class="st-button secondary list-button" on:click={selectFilteredValues}>
+            Select {filteredValues.length}
+            {#if filteredValues.length === 1}
+              {isActivityLayer(layer) ? 'activity' : isExternalEventLayer(layer) ? 'external event type' : 'resource'}
+            {:else}
+              {isActivityLayer(layer)
+                ? 'activities'
+                : isExternalEventLayer(layer)
+                  ? 'external event types'
+                  : 'resources'}
+            {/if}
+          </button>
+          <button class="st-button secondary list-button" on:click={unselectFilteredValues}>Unselect all</button>
+        </div>
+      {/if}
     </div>
   </Menu>
 </div>
