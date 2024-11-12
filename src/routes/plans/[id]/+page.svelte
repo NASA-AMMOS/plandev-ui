@@ -37,6 +37,7 @@
   import { SearchParameters } from '../../../enums/searchParameters';
   import { Status } from '../../../enums/status';
   import {
+    activityArgumentDefaults,
     activityDirectiveValidationStatuses,
     resetActivityStores,
     selectActivity,
@@ -281,6 +282,7 @@
     });
 
     activityTypes.updateValue(() => data.initialActivityTypes);
+    activityArgumentDefaults.set(data.initialActivityArguments);
     planTags.updateValue(() => data.initialPlanTags);
   }
   $: if (data.initialPlanSnapshotId !== null) {
