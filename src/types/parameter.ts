@@ -1,5 +1,12 @@
 import type { ValueSchema } from './schema';
 
+export type DefaultEffectiveArguments = {
+  arguments: ArgumentsMap;
+  typeName: string;
+};
+
+export type DefaultEffectiveArgumentsMap = Record<string, ArgumentsMap>;
+
 export type EffectiveArguments = {
   arguments: ArgumentsMap;
   errors: ParametersErrorMap;

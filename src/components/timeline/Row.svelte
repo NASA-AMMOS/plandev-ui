@@ -9,6 +9,7 @@
   import FilterWithXIcon from '../../assets/filter-with-x.svg?component';
   import { ViewDefaultDiscreteOptions } from '../../constants/view';
   import { Status } from '../../enums/status';
+  import { activityArgumentDefaultsMap } from '../../stores/activities';
   import { catchError } from '../../stores/errors';
   import {
     derivationGroupVisibilityMap,
@@ -349,13 +350,14 @@
   //    don't want to allocate any canvas space in the row for the layer)
 
   // TODO figure out what it means for new activities here
-  $: associatedActivityTypes = activityLayers
-    .map(layer =>
-      layer.filter.activity
-        ? (layer.filter.activity.dynamic_type_filters?.length || layer.filter.activity.static_types?.length) ?? 0
-        : 0,
-    )
-    .reduce((currentSum, newValue) => currentSum + newValue, 0);
+  // $: associatedActivityTypes = activityLayers
+  //   .map(layer =>
+  //     layer.filter.activity
+  //       ? (layer.filter.activity.dynamic_type_filters?.length || layer.filter.activity.static_types?.length) ?? 0
+  //       : 0,
+  //   )
+  //   .reduce((currentSum, newValue) => currentSum + newValue, 0);
+  $: associatedActivityTypes = 1;
   $: associatedEventTypes = externalEventLayers
     .map(layer => (layer.filter.externalEvent ? layer.filter.externalEvent.event_types.length : 0))
     .reduce((currentSum, newValue) => currentSum + newValue, 0);
@@ -442,12 +444,13 @@
         let seenDirectiveIds: Record<number, boolean> = {};
         let seenSpanIds: Record<number, boolean> = {};
         activityLayers.forEach(layer => {
-          if (layer.filter && layer.filter.activity !== undefined) {
+          if (layer.filter) {
             const { directives: matchingDirectives, spans: matchingSpans } = applyActivityLayerFilter(
               layer.filter.activity,
               activityDirectives,
               spansList,
               $activityTypes,
+              $activityArgumentDefaultsMap,
             );
             const uniqueDirectives: ActivityDirective[] = [];
             matchingDirectives.forEach(directive => {
