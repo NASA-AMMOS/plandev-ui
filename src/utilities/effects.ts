@@ -5730,13 +5730,13 @@ const effects = {
     id: number,
     model: Partial<ModelSetInput>,
     user: User | null,
-  ): Promise<Pick<Model, 'description' | 'name' | 'owner' | 'version'> | null> {
+  ): Promise<Pick<Model, 'description' | 'name' | 'owner' | 'version' | 'view'> | null> {
     try {
       if (!queryPermissions.UPDATE_MODEL(user)) {
         throwPermissionError('update this model');
       }
 
-      const data = await reqHasura<Pick<Model, 'description' | 'name' | 'owner' | 'version'>>(
+      const data = await reqHasura<Pick<Model, 'description' | 'name' | 'owner' | 'version' | 'view'>>(
         gql.UPDATE_MODEL,
         { id, model },
         user,
