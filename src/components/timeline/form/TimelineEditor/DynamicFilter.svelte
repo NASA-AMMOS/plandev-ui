@@ -154,12 +154,14 @@
       currentValuePossibilities.find(v => v.id === t),
     )}
     <!-- TODO not positioning correctly -->
-    <TagsInput
-      options={currentValuePossibilities}
-      selected={currentValueTags}
-      on:change={onTagsInputChange}
-      creatable={false}
-    />
+    <div style:width="100%">
+      <TagsInput
+        options={currentValuePossibilities}
+        selected={currentValueTags}
+        on:change={onTagsInputChange}
+        creatable={false}
+      />
+    </div>
   {/if}
   <button on:click|stopPropagation={() => dispatch('remove')} class="st-button icon">
     <CloseIcon />
