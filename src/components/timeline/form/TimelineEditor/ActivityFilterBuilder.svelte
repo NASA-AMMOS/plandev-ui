@@ -32,9 +32,7 @@
 
   export let filter: ActivityLayerFilter | undefined;
 
-  let dirtyFilter: ActivityLayerFilter = filter
-    ? structuredClone(filter)
-    : { dynamic_type_filters: [], global_filters: [], static_types: [] };
+  let dirtyFilter: ActivityLayerFilter = { dynamic_type_filters: [], global_filters: [], static_types: [] };
   let manualInputOpen: boolean = false;
   let manualMenu: Menu;
   let rootRef: HTMLDivElement;
@@ -124,6 +122,10 @@
       }),
     };
     dispatch('filterChange', { filter: dirtyFilter });
+  }
+
+  $: if (filter) {
+    dirtyFilter = structuredClone(filter);
   }
 
   $: activityDirectives = Object.values($activityDirectivesMap);
