@@ -62,6 +62,8 @@
         operatorKeys = ['includes', 'does_not_include', 'equals', 'does_not_equal'];
       } else if (matchingSubfield.type === 'int' || matchingSubfield.type === 'real') {
         operatorKeys = ['equals', 'does_not_equal', 'greater_than', 'less_than'];
+      } else if (matchingSubfield.type === 'boolean') {
+        operatorKeys = ['equals', 'does_not_equal'];
       } else if (matchingSubfield.type === 'variant') {
         operatorKeys = ['equals', 'does_not_equal'];
         currentValuePossibilities = matchingSubfield.values || [];
@@ -127,6 +129,11 @@
     <input class="st-input w-100" bind:value={currentValue} />
   {:else if currentType === 'int' || currentType === 'real'}
     <input class="st-input w-100" type="number" bind:value={currentValue} />
+  {:else if currentType === 'boolean'}
+    <select class="st-select w-100" bind:value={currentValue}>
+      <option value={true}>True</option>
+      <option value={false}>False</option>
+    </select>
   {:else if currentType === 'variant'}
     <select class="st-select w-100" bind:value={currentValue}>
       {#each currentValuePossibilities as value}
