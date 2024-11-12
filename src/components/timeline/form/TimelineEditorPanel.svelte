@@ -221,7 +221,6 @@
       }
     }
 
-    console.log('layer, values :>> ', layer);
     layers = [...layers, layer];
     viewUpdateRow('layers', layers);
   }
