@@ -27,13 +27,8 @@
   } from '../../stores/simulation';
   import { timelineInteractionMode, timelineLockStatus, viewIsModified } from '../../stores/views';
   import type { TimeRange } from '../../types/timeline';
-  import {
-    getActivityDirectiveStartTimeMs,
-    getDoyTimeFromInterval,
-    getIntervalInMs,
-    getUnixEpochTime,
-  } from '../../utilities/time';
-  import { TimelineLockStatus } from '../../utilities/timeline';
+  import { getActivityDirectiveStartTimeMs, getDoyTimeFromInterval, getUnixEpochTime } from '../../utilities/time';
+  import { getTimeRangeAroundTime, TimelineLockStatus } from '../../utilities/timeline';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
@@ -217,13 +212,9 @@
   function scrollToSelection() {
     const time = getSelectionTime();
     if (!isNaN(time) && (time < viewTimeRange.start || time > viewTimeRange.end)) {
-      const midSpan = time + getIntervalInMs($selectedSpan?.duration) / 2;
-      const start = Math.max(maxTimeRange.start, midSpan - viewDuration / 2);
-      const end = Math.min(maxTimeRange.end, midSpan + viewDuration / 2);
-      dispatch('viewTimeRangeChanged', {
-        end,
-        start,
-      });
+      const currentTimeRangeSpan = viewTimeRange.end - viewTimeRange.start;
+      const centeredTimeRange = getTimeRangeAroundTime(time, currentTimeRangeSpan, maxTimeRange);
+      dispatch('viewTimeRangeChanged', centeredTimeRange);
     }
   }
 

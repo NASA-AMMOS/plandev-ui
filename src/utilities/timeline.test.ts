@@ -1,5 +1,5 @@
 import { keyBy } from 'lodash-es';
-import { expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import {
   ViewDiscreteLayerColorPresets,
   ViewLineLayerColorPresets,
@@ -25,6 +25,7 @@ import {
   externalEventInView,
   filterResourcesByLayer,
   generateDiscreteTreeUtil,
+  getTimeRangeAroundTime,
   getUniqueColorForActivityLayer,
   getUniqueColorForLineLayer,
   getUniqueColorSchemeForXRangeLayer,
@@ -36,6 +37,7 @@ import {
   paginateNodes,
   spanInView,
 } from './timeline';
+import { convertUTCToMs } from './time';
 
 const testSpans: Span[] = [
   generateSpan({
@@ -1184,4 +1186,52 @@ test('getUniqueColorSchemeForXRangeLayer', () => {
   row2.layers = [createTimelineXRangeLayer([], [])];
   const existingScheme = (row2.layers[0] as XRangeLayer).colorScheme;
   expect(getUniqueColorSchemeForXRangeLayer(row2)).not.toBe(existingScheme);
+});
+
+describe('getTimeRangeAroundTime', () => {
+  const hourInMs = 3600000;
+  const TEST_TIME = convertUTCToMs(`2024-10-14T16:06:00Z`);
+
+  test('Should return TimeRange centered on time with +/- 1 day, unbounded', () => {
+    const timeRange = getTimeRangeAroundTime(TEST_TIME, 48 * hourInMs);
+    expect(timeRange).toStrictEqual({
+      end: convertUTCToMs(`2024-10-15T16:06:00Z`), //1 day after TEST_TIME
+      start: convertUTCToMs(`2024-10-13T16:06:00Z`), //1 day before TEST_TIME
+    });
+    expect(timeRange.end - timeRange.start).toBe(48 * hourInMs);
+  });
+
+  test('Should return TimeRange centered on time with +/- 1 hour, unbounded', () => {
+    const timeRange = getTimeRangeAroundTime(TEST_TIME, 2 * hourInMs);
+    expect(timeRange).toStrictEqual({
+      end: convertUTCToMs(`2024-10-14T17:06:00Z`), //1 hour after TEST_TIME
+      start: convertUTCToMs(`2024-10-14T15:06:00Z`), //1 hour before TEST_TIME
+    });
+    expect(timeRange.end - timeRange.start).toBe(2 * hourInMs);
+  });
+
+  test('Should return TimeRange with 48 hour span with time in it, bounded by the start', () => {
+    const timeRange = getTimeRangeAroundTime(TEST_TIME, 48 * hourInMs, {
+      end: convertUTCToMs(`2024-10-20T00:00:00Z`),
+      start: convertUTCToMs(`2024-10-14T00:00:00Z`),
+    });
+
+    expect(timeRange).toStrictEqual({
+      end: convertUTCToMs(`2024-10-16T00:00:00Z`), //bounded start + 48 hours
+      start: convertUTCToMs(`2024-10-14T00:00:00Z`), //bounded start
+    });
+    expect(timeRange.end - timeRange.start).toBe(48 * hourInMs);
+  });
+
+  test('Should return TimeRange with 48 hour span with time in it, bounded by the end', () => {
+    const timeRange = getTimeRangeAroundTime(TEST_TIME, 48 * hourInMs, {
+      end: convertUTCToMs(`2024-10-14T11:59:59Z`),
+      start: convertUTCToMs(`2024-10-10T00:00:00Z`),
+    });
+    expect(timeRange).toStrictEqual({
+      end: convertUTCToMs(`2024-10-14T11:59:59Z`), //bounded end
+      start: convertUTCToMs(`2024-10-12T11:59:59Z`), //bounded end - 48 hours
+    });
+    expect(timeRange.end - timeRange.start).toBe(48 * hourInMs);
+  });
 });
