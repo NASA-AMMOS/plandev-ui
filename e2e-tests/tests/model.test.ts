@@ -83,7 +83,7 @@ test.describe.serial('Model', () => {
     await model.updateVersion('2.0.0');
   });
 
-  test('Should be able to update the default view of a model', async () => {
+  test('Should be able to update the default view for a model', async () => {
     await await model.updateDefaultView(viewName);
   });
 
