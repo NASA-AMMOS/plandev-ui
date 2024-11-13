@@ -200,7 +200,7 @@
     </Input>
     <Input layout="inline">
       <label for="view">Default View</label>
-      <select class="st-select" bind:value={viewId}>
+      <select name="view" class="st-select w-100" bind:value={viewId}>
         <option value={null}>None</option>
         {#each views as viewOption}
           <option value={viewOption.id}>{viewOption.name} (ID: {viewOption.id})</option>

@@ -43,6 +43,7 @@ describe('Plan utility', () => {
             model: {
               constraint_specification: [],
               created_at: '2024-01-01T00:00:00',
+              default_view_id: 0,
               id: 1,
               jar_id: 123,
               mission: 'Test',
@@ -227,6 +228,7 @@ describe('Plan utility', () => {
             model: {
               constraint_specification: [],
               created_at: '2024-01-01T00:00:00',
+              default_view_id: 0,
               id: 1,
               jar_id: 123,
               mission: 'Test',
@@ -335,6 +337,7 @@ describe('Plan utility', () => {
       model: {
         constraint_specification: [],
         created_at: '2024-01-01T00:00:00',
+        default_view_id: 0,
         id: 1,
         jar_id: 123,
         mission: 'Test',

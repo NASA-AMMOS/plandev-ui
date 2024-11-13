@@ -1097,7 +1097,7 @@ const effects = {
         const { createModel } = data;
         if (createModel != null) {
           const { id, created_at, owner } = createModel;
-          const model: ModelSlim = {
+          const model: Omit<ModelSlim, 'view'> = {
             created_at,
             id,
             jar_id,

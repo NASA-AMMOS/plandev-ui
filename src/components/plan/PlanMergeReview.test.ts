@@ -57,6 +57,7 @@ const mockInitialPlan: Plan = {
   model: {
     constraint_specification: [],
     created_at: '2023-02-16T00:00:00',
+    default_view_id: 0,
     id: 1,
     jar_id: 1,
     mission: '',
