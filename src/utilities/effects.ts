@@ -1096,26 +1096,12 @@ const effects = {
         const data = await reqHasura<Model>(gql.CREATE_MODEL, { model: modelInsertInput }, user);
         const { createModel } = data;
         if (createModel != null) {
-          const { id, created_at, owner } = createModel;
-          const model: Omit<ModelSlim, 'view'> = {
-            created_at,
-            id,
-            jar_id,
-            name,
-            owner,
-            plans: [],
-            refresh_activity_type_logs: [],
-            refresh_model_parameter_logs: [],
-            refresh_resource_type_logs: [],
-            version,
-            ...(description && { description }),
-          };
+          const { id } = createModel;
 
           showSuccessToast('Model Created Successfully');
           createModelError.set(null);
           creatingModel.set(false);
 
-          models.updateValue((currentModels: ModelSlim[]) => [...currentModels, model]);
           return id;
         } else {
           throw Error(`Unable to create model "${name}"`);
