@@ -20,6 +20,7 @@ export class Model {
   newPlanButton: Locator;
   saveButton: Locator;
   versionInput: Locator;
+  viewInput: Locator;
 
   constructor(
     public page: Page,
@@ -109,6 +110,17 @@ export class Model {
     await expect(this.associationTable).not.toBeVisible();
   }
 
+  async updateDefaultView(viewName: string) {
+    await this.viewInput.selectOption('None');
+    const matchingOption = await this.viewInput
+      .getByRole('option')
+      .getByText(viewName, { exact: false })
+      .elementHandle();
+    expect(matchingOption).toBeDefined();
+    await this.viewInput.selectOption(matchingOption);
+    expect(await this.viewInput.inputValue()).toEqual(await matchingOption?.getAttribute('value'));
+  }
+
   async updateDescription(modelDescription: string) {
     await this.descriptionInput.click();
     await this.descriptionInput.fill(modelDescription);
@@ -131,6 +143,7 @@ export class Model {
     this.libraryRadioButton = page.getByRole('radio', { name: 'Library' });
     this.modelRadioButton = page.getByRole('radio', { exact: true, name: 'Model' });
     this.nameInput = page.locator('input[name="name"]');
+    this.viewInput = page.locator('select[name="view"]');
     this.newPlanButton = page.getByRole('button', { name: 'New plan with model' });
     this.versionInput = page.locator('input[name="version"]');
     this.associationTable = page.getByRole('treegrid');
