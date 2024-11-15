@@ -1290,7 +1290,7 @@ const effects = {
           },
           source_type_name: externalSourceTypeName,
           valid_at: validAtFormatted,
-        }
+        },
       };
 
       // Create external events + external event types mutation inputs for Hasura
@@ -1368,7 +1368,12 @@ const effects = {
     }
   },
 
-  async createExternalSourceType(sourceTypeName: string, sourceTypeAttributesSchema: object, allowedExternalEventTypes: string[], user: User | null) {
+  async createExternalSourceType(
+    sourceTypeName: string,
+    sourceTypeAttributesSchema: object,
+    allowedExternalEventTypes: string[],
+    user: User | null,
+  ) {
     if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
       throwPermissionError('create an external source type');
     }

@@ -4,11 +4,7 @@
   import type { SchemaObject } from 'ajv';
   import { createEventDispatcher } from 'svelte';
   import { createExternalEventTypeError, resetExternalEventStores } from '../../stores/external-event';
-  import {
-    createExternalSourceTypeError,
-
-    resetExternalSourceStores
-  } from '../../stores/external-source';
+  import { createExternalSourceTypeError, resetExternalSourceStores } from '../../stores/external-source';
   import type { User } from '../../types/app';
   import type { RadioButtonId } from '../../types/radio-buttons';
   import effects from '../../utilities/effects';
