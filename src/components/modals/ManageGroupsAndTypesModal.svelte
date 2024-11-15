@@ -43,7 +43,6 @@
   type ModalCellRendererParamsExternalSourceType = ICellRendererParams<ExternalSourceType> & CellRendererParams;
   type ModalCellRendererParamsExternalEventType = ICellRendererParams<ExternalEventType> & CellRendererParams;
 
-
   const dispatch = createEventDispatcher<{
     close: void;
   }>();
@@ -144,8 +143,14 @@
     source => selectedDerivationGroup?.name === source.derivation_group_name,
   );
 
-  $: selectedExternalEventTypeAttributesSchema = selectedExternalEventType?.attribute_schema.properties as Record<string, JsonSchemaProperty>;
-  $: selectedExternalSourceTypeAttributeSchema = selectedExternalSourceType?.attribute_schema.properties as Record<string, JsonSchemaProperty>;
+  $: selectedExternalEventTypeAttributesSchema = selectedExternalEventType?.attribute_schema.properties as Record<
+    string,
+    JsonSchemaProperty
+  >;
+  $: selectedExternalSourceTypeAttributeSchema = selectedExternalSourceType?.attribute_schema.properties as Record<
+    string,
+    JsonSchemaProperty
+  >;
 
   $: selectedExternalSourceTypeDerivationGroups = $derivationGroups.filter(derivationGroup => {
     if (selectedExternalSourceType !== undefined) {
@@ -268,7 +273,7 @@
             viewTooltip: {
               content: 'View External Event Type',
               placement: 'bottom',
-            }
+            },
           },
           target: actionsDiv,
         });
@@ -501,9 +506,13 @@
             {:else}
               <p class="st-typography-body">No sources associated with this External Source Type.</p>
             {/if}
-            <Collapse title='Attribute Schema - Definition' tooltipContent={`${selectedExternalSourceType.name} Attribute Schema Definition`} defaultExpanded={false} >
+            <Collapse
+              title="Attribute Schema - Definition"
+              tooltipContent={`${selectedExternalSourceType.name} Attribute Schema Definition`}
+              defaultExpanded={false}
+            >
               {#each Object.entries(selectedExternalSourceType.attribute_schema) as attribute}
-                {#if attribute[0] !== "properties"}
+                {#if attribute[0] !== 'properties'}
                   <div class="st-typography-body attributes">
                     <div class="attribute-name">{attribute[0]}</div>
                     <div class="attribute-value">{attribute[1]}</div>
@@ -511,49 +520,61 @@
                 {/if}
               {/each}
             </Collapse>
-            <Collapse title='Attribute Schema - Properties' tooltipContent={`${selectedExternalSourceType.name} Attribute Schema Properties`} defaultExpanded={false} >
-                {#each Object.entries(selectedExternalSourceTypeAttributeSchema) as attribute}
-                  {#if attribute[1].type !== undefined}
-                    <div class="st-typography-body attributes">
-                      <div class="attribute-name">{attribute[0]}</div>
-                      <div class="attribute-value">{attribute[1].type}</div>
-                    </div>
-                  {/if}
-                {/each}
-              </Collapse>
+            <Collapse
+              title="Attribute Schema - Properties"
+              tooltipContent={`${selectedExternalSourceType.name} Attribute Schema Properties`}
+              defaultExpanded={false}
+            >
+              {#each Object.entries(selectedExternalSourceTypeAttributeSchema) as attribute}
+                {#if attribute[1].type !== undefined}
+                  <div class="st-typography-body attributes">
+                    <div class="attribute-name">{attribute[0]}</div>
+                    <div class="attribute-value">{attribute[1].type}</div>
+                  </div>
+                {/if}
+              {/each}
+            </Collapse>
           </svelte:fragment>
         </Panel>
       {:else if selectedExternalEventType !== undefined}
         <CssGridGutter track={1} type="column" />
-          <Panel borderRight padBody={true}>
-            <svelte:fragment slot="header">
-              <SectionTitle overflow="hidden">
-                <ExternalSourceIcon slot="icon" />'{selectedExternalEventType.name}' Details
-              </SectionTitle>
-            </svelte:fragment>
-            <svelte:fragment slot="body">
-              <Collapse title='Attribute Schema - Definition' tooltipContent={`${selectedExternalEventType.name} Attribute Schema Definition`} defaultExpanded={false} >
-                {#each Object.entries(selectedExternalEventType.attribute_schema) as attribute}
-                  {#if attribute[0] !== "properties"}
-                    <div class="st-typography-body attributes">
-                      <div class="attribute-name">{attribute[0]}</div>
-                      <div class="attribute-value">{attribute[1]}</div>
-                    </div>
-                  {/if}
-                {/each}
-              </Collapse>
-              <Collapse title='Attribute Schema - Properties' tooltipContent={`${selectedExternalEventType.name} Attribute Schema Properties`} defaultExpanded={false} >
-                  {#each Object.entries(selectedExternalEventTypeAttributesSchema) as attribute}
-                    {#if attribute[1].type !== undefined}
-                      <div class="st-typography-body attributes">
-                        <div class="attribute-name">{attribute[0]}</div>
-                        <div class="attribute-value">{attribute[1].type}</div>
-                      </div>
-                    {/if}
-                  {/each}
-                </Collapse>
-              </svelte:fragment>
-            </Panel>
+        <Panel borderRight padBody={true}>
+          <svelte:fragment slot="header">
+            <SectionTitle overflow="hidden">
+              <ExternalSourceIcon slot="icon" />'{selectedExternalEventType.name}' Details
+            </SectionTitle>
+          </svelte:fragment>
+          <svelte:fragment slot="body">
+            <Collapse
+              title="Attribute Schema - Definition"
+              tooltipContent={`${selectedExternalEventType.name} Attribute Schema Definition`}
+              defaultExpanded={false}
+            >
+              {#each Object.entries(selectedExternalEventType.attribute_schema) as attribute}
+                {#if attribute[0] !== 'properties'}
+                  <div class="st-typography-body attributes">
+                    <div class="attribute-name">{attribute[0]}</div>
+                    <div class="attribute-value">{attribute[1]}</div>
+                  </div>
+                {/if}
+              {/each}
+            </Collapse>
+            <Collapse
+              title="Attribute Schema - Properties"
+              tooltipContent={`${selectedExternalEventType.name} Attribute Schema Properties`}
+              defaultExpanded={false}
+            >
+              {#each Object.entries(selectedExternalEventTypeAttributesSchema) as attribute}
+                {#if attribute[1].type !== undefined}
+                  <div class="st-typography-body attributes">
+                    <div class="attribute-name">{attribute[0]}</div>
+                    <div class="attribute-value">{attribute[1].type}</div>
+                  </div>
+                {/if}
+              {/each}
+            </Collapse>
+          </svelte:fragment>
+        </Panel>
       {/if}
     </CssGrid>
   </ModalContent>

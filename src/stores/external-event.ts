@@ -53,6 +53,7 @@ export const selectedExternalEvents: Readable<ExternalEvent[]> = derived(
           (externalEventEndTime <= planEndTime && externalEventEndTime >= planStartTime)
         ) {
           completeExternalEvents.push({
+            attributes: externalEvent.attributes,
             duration: externalEvent.duration,
             duration_ms: getIntervalInMs(externalEvent.duration),
             pkey: {

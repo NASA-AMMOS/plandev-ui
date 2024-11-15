@@ -23,7 +23,11 @@
 
   $: if (formParameter) {
     source = formParameter.valueSource;
-    unit = formParameter.schema?.metadata?.unit?.value;
+    if ('metadata' in formParameter.schema) {
+      unit = formParameter.schema?.metadata?.unit?.value;
+    } else {
+      unit = undefined;
+    }
   }
 
   function leaveCallback() {
