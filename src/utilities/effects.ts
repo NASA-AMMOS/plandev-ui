@@ -25,7 +25,6 @@ import {
   savingExpansionRule,
   savingExpansionSet,
 } from '../stores/expansion';
-import { createExternalEventTypeError, creatingExternalEventType } from '../stores/external-event';
 import {
   createDerivationGroupError,
   createExternalSourceError,
@@ -924,25 +923,25 @@ const effects = {
 
   async createExternalEventType(eventTypeName: string, eventTypeAttributesSchema: object, user: User | null) {
     try {
-      creatingExternalEventType.set(true);
-      createExternalEventTypeError.set(null);
-
       const body = JSON.stringify({
         attribute_schema: eventTypeAttributesSchema,
         external_event_type_name: eventTypeName,
       });
 
       try {
-        await reqGateway(`/uploadExternalEventType`, 'POST', body, user, false);
-        showSuccessToast('External Event Type Created Successfully');
+        const response = await reqGateway(`/uploadExternalEventType`, 'POST', body, user, false);
+        if (response?.errors === undefined) {
+          showSuccessToast('External Event Type Created Successfully');
+        } else {
+          showFailureToast('External Event Type Attribute Schema Validation Failed');
+        }
+        return response;
       } catch (e) {
         catchError(e as Error);
       }
     } catch (e) {
-      catchError('External Event Type Create Failed', e as Error);
       showFailureToast('External Event Type Create Failed');
-      createExternalEventTypeError.set((e as Error).message);
-      creatingExternalEventType.set(false);
+      catchError(e as Error);
     }
   },
 
@@ -1069,21 +1068,25 @@ const effects = {
 
   async createExternalSourceType(sourceTypeName: string, sourceTypeAttributesSchema: object, user: User | null) {
     try {
-      creatingExternalEventType.set(true);
-      createExternalEventTypeError.set(null);
-
       const body = JSON.stringify({
         attribute_schema: sourceTypeAttributesSchema,
         external_source_type_name: sourceTypeName,
       });
 
-      await reqGateway(`/uploadExternalSourceType`, 'POST', body, user, false);
-      showSuccessToast('External Source Type Created Successfully');
+      try {
+        const response = await reqGateway(`/uploadExternalSourceType`, 'POST', body, user, false);
+        if (response?.errors === undefined) {
+          showSuccessToast('External Source Type Created Successfully');
+        } else {
+          showFailureToast('External Source Type Attribute Schema Validation Failed');
+        }
+        return response;
+      } catch (e) {
+        catchError(e as Error);
+      }
     } catch (e) {
-      catchError('External Event Type Create Failed', e as Error);
-      showFailureToast('External Event Type Create Failed');
-      createExternalEventTypeError.set((e as Error).message);
-      creatingExternalEventType.set(false);
+      showFailureToast('External Source Type Create Failed');
+      catchError(e as Error);
     }
   },
 
@@ -1109,8 +1112,6 @@ const effects = {
       if (!queryPermissions.CREATE_MODEL(user)) {
         throwPermissionError('upload a model');
       }
-
-      creatingModel.set(true);
 
       const file: File = files[0];
       const jar_id = await effects.uploadFile(file, user);
@@ -3741,7 +3742,7 @@ const effects = {
     externalSourceKey: string | null,
     externalSourceDerivationGroup: string | null,
     user: User | null,
-  ): Promise<string[]> {
+  ): Promise<ExternalEventType[]> {
     if (externalSourceKey === null || externalSourceDerivationGroup === null) {
       return [];
     }
@@ -3750,6 +3751,7 @@ const effects = {
         {
           external_events: {
             external_event_type: {
+              attribute_schema: Record<string, any>;
               name: string;
             };
           }[];
@@ -3761,11 +3763,13 @@ const effects = {
       );
       const { external_source } = data;
       if (external_source != null) {
-        const event_types: string[] = [];
+        const event_types: ExternalEventType[] = [];
         for (const external_event of external_source[0].external_events) {
-          event_types.push(external_event.external_event_type.name);
+          if (!event_types.map(currentType => currentType.name).includes(external_event.external_event_type.name)) {
+            event_types.push(external_event.external_event_type);
+          }
         }
-        return Array.from(new Set(event_types));
+        return event_types;
       } else {
         throw Error('Unable to retrieve external event types for source');
       }
@@ -3800,6 +3804,7 @@ const effects = {
       const externalEvents: ExternalEvent[] = [];
       for (const event of events) {
         externalEvents.push({
+          attributes: event.attributes,
           duration: event.duration,
           duration_ms: getIntervalInMs(event.duration),
           pkey: {

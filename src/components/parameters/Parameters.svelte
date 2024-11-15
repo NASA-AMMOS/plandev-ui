@@ -29,7 +29,7 @@
   {#each sortedFormParameters as formParameter (formParameter.name)}
     <Highlight highlight={highlightKeysMap[formParameter.name]}>
       <div bind:clientWidth class="parameter">
-        {#if formParameter.schema.type === 'series' || formParameter.schema.type === 'struct'}
+        {#if formParameter.schema.type === 'series' || formParameter.schema.type === 'struct' || formParameter.schema.type === 'array' || formParameter.schema.type === 'object'}
           <ParameterRec
             {disabled}
             {expanded}

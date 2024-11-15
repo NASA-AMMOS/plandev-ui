@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { SchemaObject } from 'ajv';
   import { createEventDispatcher } from 'svelte';
   import { createExternalEventTypeError, resetExternalEventStores } from '../../stores/external-event';
   import {
@@ -8,6 +9,7 @@
 
     resetExternalSourceStores
   } from '../../stores/external-source';
+  import type { User } from '../../types/app';
   import type { RadioButtonId } from '../../types/radio-buttons';
   import effects from '../../utilities/effects';
   import { parseJSONStream } from '../../utilities/generic';
@@ -19,7 +21,7 @@
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
-  // export let user: User | null;
+  export let user: User | null;
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -28,15 +30,13 @@
   const EXTERNAL_SOURCE_TYPE = 'External Source Type';
 
   let definitionType: RadioButtonId = EXTERNAL_EVENT_TYPE;
-
   let newTypeName: string = '';
   let newTypeError: string | null = null;
-
   let fileInput: HTMLInputElement;
   let errors: string[] = [];
   let files: FileList | undefined;
   let file: File | undefined;
-  let parsedJSONSchema: object | undefined;
+  let parsedJSONSchema: SchemaObject | undefined;
 
   /** TODO - Re-add permissions
   let hasCreateDerivationGroupPermission: boolean = false;
@@ -67,16 +67,26 @@
     if (files) {
       file = files[0];
       if (file !== undefined && /\.json$/.test(file.name)) {
+        errors = [];
         try {
+          let response = null;
           parsedJSONSchema = await parseJSONStream<object>(file.stream());
           if (definitionType === EXTERNAL_EVENT_TYPE) {
-            effects.createExternalEventType(newTypeName, parsedJSONSchema, null);
+            response = await effects.createExternalEventType(newTypeName, parsedJSONSchema, null);
           } else if (definitionType === EXTERNAL_SOURCE_TYPE) {
-            effects.createExternalSourceType(newTypeName, parsedJSONSchema, null);
+            response = await effects.createExternalSourceType(newTypeName, parsedJSONSchema, null);
           }
+          errors = response?.errors.reduce((acc: string[], currentError: { message: string, schemaPath: string }) => {
+            acc.push(`ERROR: ${currentError.schemaPath}: ${currentError.message}`);
+            return acc;
+          }, []);
         } catch (error) {
           throw new Error('JSON Schema could not be read.');
         }
+        newTypeName = '';
+        files = undefined;
+        file = undefined;
+        fileInput.value = '';
       }
     }
   }
@@ -89,9 +99,9 @@
   }
 </script>
 
-<Modal height={240} width={600}>
+<Modal height={400} width={600}>
   <ModalHeader on:close>Create New External Source/Event Types</ModalHeader>
-  <ModalContent>
+  <ModalContent style="overflow: auto;">
     <div class="creation-modal-container">
       <div class="type-creation-input">
         <RadioButtons selectedButtonId={definitionType} on:select-radio-button={onSelectDefinitionType}>
@@ -132,11 +142,15 @@
           on:change={onChange}
         />
       </div>
-    </div>
-    <div>
-      <AlertError class="m-2" error={newTypeError} />
-      <AlertError class="m-2" error={$createExternalSourceTypeError} />
-      <AlertError class="m-2" error={$createExternalEventTypeError} />
+
+      <div class="errors">
+        {#each errors as currentError}
+          <AlertError class="m-2" error={currentError} />
+        {/each}
+        <AlertError class="m-2" error={newTypeError} />
+        <AlertError class="m-2" error={$createExternalSourceTypeError} />
+        <AlertError class="m-2" error={$createExternalEventTypeError} />
+      </div>
     </div>
   </ModalContent>
   <ModalFooter>
@@ -180,32 +194,15 @@
   }
 
   .creation-modal-container {
+    height: 100%;
     width: 100%;
-  }
-
-  .creation-modal-tabs-container {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    justify-content: flex-end;
-  }
-
-  .creation-tab-directions {
-    padding-top: 12px;
-  }
-
-  .creation-tab-inputs {
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
-    padding-top: 8px;
-  }
-
-  .source-type-selection {
-    width: 200px;
   }
 
   .type-creation-input {
     padding-bottom: 12px;
+  }
+
+  .errors {
+    height: 100%;
   }
 </style>
