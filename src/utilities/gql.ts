@@ -1669,7 +1669,8 @@ const gql = {
           external_sources {
             external_events {
               external_event_type {
-                name
+                attribute_schema
+                names
               }
             }
           }

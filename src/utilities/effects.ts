@@ -105,6 +105,7 @@ import type {
   ArgumentsMap,
   DefaultEffectiveArguments,
   EffectiveArguments,
+  JSONTypeSchema,
   Parameter,
   ParameterValidationError,
   ParameterValidationResponse,
@@ -922,6 +923,9 @@ const effects = {
   },
 
   async createExternalEventType(eventTypeName: string, eventTypeAttributesSchema: object, user: User | null) {
+    if (!gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user)) {
+      throwPermissionError('create an external event type');
+    }
     try {
       const body = JSON.stringify({
         attribute_schema: eventTypeAttributesSchema,
@@ -958,7 +962,7 @@ const effects = {
   ) {
     // TODO: how much of this should be done here vs. in gateway?
     try {
-      if (!queryPermissions.CREATE_EXTERNAL_SOURCE(user)) {
+      if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE(user)) {
         throwPermissionError('upload an external source');
       }
       creatingExternalSource.set(true);
@@ -1055,8 +1059,9 @@ const effects = {
       externalEventsCreated = [];
 
       const body = JSON.stringify(externalSourceInsert);
-      await reqGateway(`/uploadExternalSource`, 'POST', body, user, false);
+      const reqResponse = await reqGateway(`/uploadExternalSource`, 'POST', body, user, false);
       showSuccessToast('External Source Type Created Successfully');
+      return reqResponse;
     } catch (e) {
       catchError('External Source Create Failed', e as Error);
       showFailureToast('External Source Create Failed');
@@ -1070,6 +1075,9 @@ const effects = {
   },
 
   async createExternalSourceType(sourceTypeName: string, sourceTypeAttributesSchema: object, allowedExternalEventTypes: string[], user: User | null) {
+    if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
+      throwPermissionError('create an external source type');
+    }
     try {
       const body = JSON.stringify({
         allowed_event_types: allowedExternalEventTypes,
@@ -3712,6 +3720,7 @@ const effects = {
             external_sources: {
               external_events: {
                 external_event_type: {
+                  attribute_schema: object;
                   name: string;
                 };
               }[];
@@ -6624,7 +6633,6 @@ const effects = {
       return result;
     } catch (e) {
       catchError(e as Error);
-      console.log(e);
       // TODO: Fix errors
       return { errors: [], valid: false };
     }
@@ -6678,7 +6686,11 @@ export function replacePaths(
   return result;
 }
 
-function replacePathsHelper(schema: ValueSchema, arg: Argument, pathsToReplace: Record<string, string>) {
+function replacePathsHelper(
+  schema: ValueSchema | JSONTypeSchema,
+  arg: Argument,
+  pathsToReplace: Record<string, string>,
+) {
   switch (schema.type) {
     case 'path':
       if (arg in pathsToReplace) {

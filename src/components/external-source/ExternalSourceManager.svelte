@@ -15,7 +15,7 @@
     externalSources,
     externalSourceTypes,
     parsingError,
-    planDerivationGroupLinks
+    planDerivationGroupLinks,
   } from '../../stores/external-source';
   import { field } from '../../stores/form';
   import { plans } from '../../stores/plans';
@@ -27,7 +27,7 @@
     type ExternalSourceJson,
     type ExternalSourceSlim,
     type ExternalSourceType,
-    type PlanDerivationGroup
+    type PlanDerivationGroup,
   } from '../../types/external-source';
   import type { ArgumentsMap, JSONTypeSchema, ParametersMap } from '../../types/parameter';
   import effects from '../../utilities/effects';
@@ -187,16 +187,19 @@
     // Create a ParametersMap for the External Source Type
     selectedSourceType = $externalSourceTypes.find(sourceType => sourceType.name === selectedSource?.source_type_name);
     selectedSourceTypeAttributes = selectedSourceType?.attribute_schema.properties as Record<string, JSONTypeSchema>;
-    selectedSourceTypeParametersMap = Object.entries(selectedSourceTypeAttributes).reduce((acc: ParametersMap, currentAttribute: [string, JSONTypeSchema]) => {
-      acc[currentAttribute[0]] = {
-        order: 0,
-        schema: {
-          properties: currentAttribute[1]?.properties,
-          type: currentAttribute[1].type,
-        }
-      }
-      return acc;
-    }, {} as ParametersMap);
+    selectedSourceTypeParametersMap = Object.entries(selectedSourceTypeAttributes).reduce(
+      (acc: ParametersMap, currentAttribute: [string, JSONTypeSchema]) => {
+        acc[currentAttribute[0]] = {
+          order: 0,
+          schema: {
+            properties: currentAttribute[1]?.properties,
+            type: currentAttribute[1].type,
+          },
+        };
+        return acc;
+      },
+      {} as ParametersMap,
+    );
   }
 
   $: selectedSourceId = selectedSource
@@ -588,11 +591,7 @@
                 <Parameters
                   disabled={true}
                   expanded={false}
-                  formParameters={getFormParameters(
-                    selectedSourceTypeParametersMap,
-                    selectedSourceAttributes,
-                    []
-                  )}
+                  formParameters={getFormParameters(selectedSourceTypeParametersMap, selectedSourceAttributes, [])}
                 />
               </div>
             </Collapse>

@@ -362,26 +362,6 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     const queries = [Queries.CREATE_EXPANSION_SET];
     return isUserAdmin(user) || (getPermission(queries, user) && getRoleModelPermission(queries, user, plans, model));
   },
-  CREATE_EXTERNAL_EVENT_TYPE: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.INSERT_EXTERNAL_EVENT_TYPE_ONE], user);
-  },
-  CREATE_EXTERNAL_SOURCE: (user: User | null): boolean => {
-    return (
-      isUserAdmin(user) ||
-      getPermission(
-        [
-          Queries.INSERT_EXTERNAL_SOURCE,
-          Queries.INSERT_EXTERNAL_EVENT_TYPE,
-          Queries.INSERT_EXTERNAL_SOURCE_TYPE,
-          Queries.INSERT_DERIVATION_GROUP,
-        ],
-        user,
-      )
-    );
-  },
-  CREATE_EXTERNAL_SOURCE_TYPE: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.INSERT_EXTERNAL_SOURCE_TYPE], user);
-  },
   CREATE_MODEL: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_MISSION_MODEL], user);
   },
@@ -1173,6 +1153,15 @@ const gatewayPermissions = {
       isUserAdmin(user) || (getPermission(queries, user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
+  CREATE_EXTERNAL_EVENT_TYPE: (user: User | null) => {
+    return isUserAdmin(user) || getPermission([getFunctionPermission(Queries.INSERT_EXTERNAL_EVENT_TYPE)], user);
+  },
+  CREATE_EXTERNAL_SOURCE: (user: User | null) => {
+    return isUserAdmin(user) || getPermission([getFunctionPermission(Queries.INSERT_EXTERNAL_SOURCE)], user);
+  },
+  CREATE_EXTERNAL_SOURCE_TYPE: (user: User | null) => {
+    return isUserAdmin(user) || getPermission([getFunctionPermission(Queries.INSERT_EXTERNAL_SOURCE_TYPE)], user);
+  },
   IMPORT_PLAN: (user: User | null) => {
     return (
       isUserAdmin(user) ||
@@ -1434,7 +1423,7 @@ const featurePermissions: FeaturePermissions = {
     canUpdate: () => false, // no feature to update expansion sets exists
   },
   externalEventType: {
-    canCreate: user => queryPermissions.CREATE_EXTERNAL_EVENT_TYPE(user),
+    canCreate: user => gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user),
     canDelete: user => queryPermissions.DELETE_EXTERNAL_EVENT_TYPE(user),
     canRead: user => queryPermissions.SUB_EXTERNAL_EVENT_TYPES(user),
     canUpdate: () => false, // no feature to update external event types
@@ -1446,13 +1435,13 @@ const featurePermissions: FeaturePermissions = {
     canUpdate: () => true,
   },
   externalSource: {
-    canCreate: user => queryPermissions.CREATE_EXTERNAL_SOURCE(user),
+    canCreate: user => gatewayPermissions.CREATE_EXTERNAL_SOURCE(user),
     canDelete: (user, externalSources) => queryPermissions.DELETE_EXTERNAL_SOURCES(user, externalSources),
     canRead: user => queryPermissions.SUB_EXTERNAL_SOURCES(user),
     canUpdate: () => false, // no feature to update external sources
   },
   externalSourceType: {
-    canCreate: user => queryPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user),
+    canCreate: user => gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user),
     canDelete: user => queryPermissions.DELETE_EXTERNAL_SOURCE_TYPE(user),
     canRead: user => queryPermissions.SUB_EXTERNAL_SOURCE_TYPES(user),
     canUpdate: () => false, // no feature to update external source types

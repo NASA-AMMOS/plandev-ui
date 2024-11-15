@@ -39,7 +39,9 @@
       on:change={() => dispatch('change', formParameter)}
     />
     <div class="parameter-right" slot="right">
-      <ParameterUnits unit={formParameter.schema?.metadata?.unit?.value} />
+      {#if 'metadata' in formParameter.schema}
+        <ParameterUnits unit={formParameter.schema?.metadata?.unit?.value} />
+      {/if}
       <ParameterBaseRightAdornments
         {disabled}
         hidden={hideRightAdornments}
