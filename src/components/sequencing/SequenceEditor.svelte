@@ -84,7 +84,7 @@
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
   let menu: Menu;
-  let outputFormats: IOutputFormat[];
+  let outputFormats: IOutputFormat[] = [];
   let selectedNode: SyntaxNode | null;
   let selectedOutputFormat: IOutputFormat | undefined;
   let toggleSeqJsonPreview: boolean = false;
