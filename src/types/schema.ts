@@ -1,9 +1,16 @@
+import type { JSONType } from 'ajv';
+
 type ValueSchemaMetadata = {
   metadata?: {
     unit?: {
       value: string;
     };
   } & Record<string, any>;
+};
+
+export type JsonSchemaProperty = {
+  properties?: Record<string, JsonSchemaProperty>;
+  type: JSONType;
 };
 
 export type ValueSchemaBoolean = {

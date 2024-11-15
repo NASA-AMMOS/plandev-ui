@@ -1219,7 +1219,6 @@ const effects = {
         throw Error('Unable to create external event type');
       }
     } catch (e) {
-      catchError('External Event Type Create Failed', e as Error);
       showFailureToast('External Event Type Create Failed');
       createExternalEventTypeErrorStore.set((e as Error).message);
       creatingExternalEventTypeStore.set(false);
@@ -4182,7 +4181,7 @@ const effects = {
     externalSourceKey: string | null,
     externalSourceDerivationGroup: string | null,
     user: User | null,
-  ): Promise<string[]> {
+  ): Promise<ExternalEventType[]> {
     if (externalSourceKey === null || externalSourceDerivationGroup === null) {
       return [];
     }
@@ -4191,6 +4190,7 @@ const effects = {
         {
           external_events: {
             external_event_type: {
+              attribute_schema: Record<string, any>;
               name: string;
             };
           }[];
@@ -4204,7 +4204,9 @@ const effects = {
       if (externalSource != null) {
         const eventTypes: string[] = [];
         for (const externalEvent of externalSource[0].external_events) {
-          eventTypes.push(externalEvent.external_event_type.name);
+          if (!event_types.map(currentType => currentType.name).includes(external_event.external_event_type.name)) {
+            eventTypes.push(externalEvent.external_event_type.name);
+          }
         }
         return Array.from(new Set(eventTypes));
       } else {
@@ -4241,6 +4243,7 @@ const effects = {
       const externalEvents: ExternalEvent[] = [];
       for (const event of events) {
         externalEvents.push({
+          attributes: event.attributes,
           duration: event.duration,
           duration_ms: getIntervalInMs(event.duration),
           pkey: {

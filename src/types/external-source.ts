@@ -1,3 +1,4 @@
+import type { SchemaObject } from 'ajv';
 import type { ExternalEventDB, ExternalEventInsertInput, ExternalEventJson } from '../types/external-event';
 import type { UserId } from './app';
 
@@ -50,7 +51,7 @@ export type PlanDerivationGroup = {
 };
 
 export type ExternalSourceType = {
-  attribute_schema: object;
+  attribute_schema: SchemaObject;
   name: string;
 };
 

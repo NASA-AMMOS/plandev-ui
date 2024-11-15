@@ -9,6 +9,7 @@
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExternalEventType } from '../../types/external-event';
   import type { DerivationGroup, ExternalSourceSlim, ExternalSourceType } from '../../types/external-source';
+  import type { JsonSchemaProperty } from '../../types/schema';
   import { showDeleteDerivationGroupModal, showDeleteExternalEventSourceTypeModal } from '../../utilities/modal';
   import { featurePermissions } from '../../utilities/permissions';
   import Collapse from '../Collapse.svelte';
@@ -38,7 +39,10 @@
     viewExternalEventType: (eventType: ExternalEventType) => void;
     viewExternalSourceType: (sourceType: ExternalSourceType) => void;
   };
-  type ModalCellRendererParams = ICellRendererParams<DerivationGroup> & CellRendererParams;
+  type ModalCellRendererParamsDerivationGroup = ICellRendererParams<DerivationGroup> & CellRendererParams;
+  type ModalCellRendererParamsExternalSourceType = ICellRendererParams<ExternalSourceType> & CellRendererParams;
+  type ModalCellRendererParamsExternalEventType = ICellRendererParams<ExternalEventType> & CellRendererParams;
+
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -47,6 +51,7 @@
   const modalColumnSizeNoDetail: string = '1fr 3px 0fr';
   const modalColumnSizeWithDetailDerivationGroup: string = '3fr 3px 1.3fr';
   const modalColumnSizeWithDetailExternalSourceType: string = '2fr 3px 1.2fr';
+  const modalColumnSizeWithDetailExternalEventType: string = '2fr 3px 1.2fr';
 
   const derivationGroupBaseColumnDefs: DataGridColumnDef<DerivationGroup>[] = [
     {
@@ -127,6 +132,10 @@
 
   let selectedExternalSourceType: ExternalSourceType | undefined = undefined;
   let selectedExternalSourceTypeDerivationGroups: DerivationGroup[] = [];
+  let selectedExternalSourceTypeAttributeSchema: Record<string, JsonSchemaProperty>;
+
+  let selectedExternalEventType: ExternalEventType | undefined = undefined;
+  let selectedExternalEventTypeAttributesSchema: Record<string, JsonSchemaProperty>;
 
   $: hasDeleteExternalSourceTypePermission = featurePermissions.externalSourceType.canDelete(user);
   $: hasDeleteExternalEventTypePermission = featurePermissions.externalEventType.canDelete(user);
@@ -134,6 +143,9 @@
   $: selectedDerivationGroupSources = $externalSources.filter(
     source => selectedDerivationGroup?.name === source.derivation_group_name,
   );
+
+  $: selectedExternalEventTypeAttributesSchema = selectedExternalEventType?.attribute_schema.properties as Record<string, JsonSchemaProperty>;
+  $: selectedExternalSourceTypeAttributeSchema = selectedExternalSourceType?.attribute_schema.properties as Record<string, JsonSchemaProperty>;
 
   $: selectedExternalSourceTypeDerivationGroups = $derivationGroups.filter(derivationGroup => {
     if (selectedExternalSourceType !== undefined) {
@@ -147,7 +159,7 @@
     ...derivationGroupBaseColumnDefs,
     {
       cellClass: 'action-cell-container',
-      cellRenderer: (params: ModalCellRendererParams) => {
+      cellRenderer: (params: ModalCellRendererParamsDerivationGroup) => {
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'actions-cell';
         new DataGridActions({
@@ -202,7 +214,7 @@
     },
     {
       cellClass: 'action-cell-container',
-      cellRenderer: (params: ModalCellRendererParams) => {
+      cellRenderer: (params: ModalCellRendererParamsExternalSourceType) => {
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'actions-cell';
         new DataGridActions({
@@ -240,7 +252,7 @@
     ...externalEventTypeBaseColumnDefs,
     {
       cellClass: 'action-cell-container',
-      cellRenderer: (params: ModalCellRendererParams) => {
+      cellRenderer: (params: ModalCellRendererParamsExternalEventType) => {
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'actions-cell';
         new DataGridActions({
@@ -252,6 +264,11 @@
             },
             hasDeletePermission: hasDeleteExternalEventTypePermission,
             rowData: params.data,
+            viewCallback: params.viewExternalEventType,
+            viewTooltip: {
+              content: 'View External Event Type',
+              placement: 'bottom',
+            }
           },
           target: actionsDiv,
         });
@@ -260,6 +277,7 @@
       },
       cellRendererParams: {
         deleteExternalEventType,
+        viewExternalEventType,
       } as CellRendererParams,
       headerName: '',
       resizable: false,
@@ -321,10 +339,12 @@
     ) {
       selectedDerivationGroup = derivationGroup;
       selectedExternalSourceType = undefined;
+      selectedExternalEventType = undefined;
       modalColumnSize = modalColumnSizeWithDetailDerivationGroup;
     } else {
       selectedDerivationGroup = undefined;
       selectedExternalSourceType = undefined;
+      selectedExternalEventType = undefined;
       modalColumnSize = modalColumnSizeNoDetail;
     }
   }
@@ -333,10 +353,26 @@
     if (selectedExternalSourceType === undefined || selectedExternalSourceType !== sourceType) {
       selectedDerivationGroup = undefined;
       selectedExternalSourceType = sourceType;
+      selectedExternalEventType = undefined;
       modalColumnSize = modalColumnSizeWithDetailExternalSourceType;
     } else {
       selectedDerivationGroup = undefined;
       selectedExternalSourceType = undefined;
+      selectedExternalEventType = undefined;
+      modalColumnSize = modalColumnSizeNoDetail;
+    }
+  }
+
+  function viewExternalEventType(eventType: ExternalEventType) {
+    if (selectedExternalEventType === undefined || selectedExternalEventType !== eventType) {
+      selectedDerivationGroup = undefined;
+      selectedExternalSourceType = undefined;
+      selectedExternalEventType = eventType;
+      modalColumnSize = modalColumnSizeWithDetailExternalEventType;
+    } else {
+      selectedDerivationGroup = undefined;
+      selectedExternalSourceType = undefined;
+      selectedExternalEventType = undefined;
       modalColumnSize = modalColumnSizeNoDetail;
     }
   }
@@ -433,7 +469,7 @@
         <Panel borderRight padBody={true}>
           <svelte:fragment slot="header">
             <SectionTitle overflow="hidden">
-              <ExternalSourceIcon slot="icon" />Derivation Groups of Type '{selectedExternalSourceType.name}'
+              <ExternalSourceIcon slot="icon" />'{selectedExternalSourceType.name}' Details
             </SectionTitle>
           </svelte:fragment>
           <svelte:fragment slot="body">
@@ -465,8 +501,59 @@
             {:else}
               <p class="st-typography-body">No sources associated with this External Source Type.</p>
             {/if}
+            <Collapse title='Attribute Schema - Definition' tooltipContent={`${selectedExternalSourceType.name} Attribute Schema Definition`} defaultExpanded={false} >
+              {#each Object.entries(selectedExternalSourceType.attribute_schema) as attribute}
+                {#if attribute[0] !== "properties"}
+                  <div class="st-typography-body attributes">
+                    <div class="attribute-name">{attribute[0]}</div>
+                    <div class="attribute-value">{attribute[1]}</div>
+                  </div>
+                {/if}
+              {/each}
+            </Collapse>
+            <Collapse title='Attribute Schema - Properties' tooltipContent={`${selectedExternalSourceType.name} Attribute Schema Properties`} defaultExpanded={false} >
+                {#each Object.entries(selectedExternalSourceTypeAttributeSchema) as attribute}
+                  {#if attribute[1].type !== undefined}
+                    <div class="st-typography-body attributes">
+                      <div class="attribute-name">{attribute[0]}</div>
+                      <div class="attribute-value">{attribute[1].type}</div>
+                    </div>
+                  {/if}
+                {/each}
+              </Collapse>
           </svelte:fragment>
         </Panel>
+      {:else if selectedExternalEventType !== undefined}
+        <CssGridGutter track={1} type="column" />
+          <Panel borderRight padBody={true}>
+            <svelte:fragment slot="header">
+              <SectionTitle overflow="hidden">
+                <ExternalSourceIcon slot="icon" />'{selectedExternalEventType.name}' Details
+              </SectionTitle>
+            </svelte:fragment>
+            <svelte:fragment slot="body">
+              <Collapse title='Attribute Schema - Definition' tooltipContent={`${selectedExternalEventType.name} Attribute Schema Definition`} defaultExpanded={false} >
+                {#each Object.entries(selectedExternalEventType.attribute_schema) as attribute}
+                  {#if attribute[0] !== "properties"}
+                    <div class="st-typography-body attributes">
+                      <div class="attribute-name">{attribute[0]}</div>
+                      <div class="attribute-value">{attribute[1]}</div>
+                    </div>
+                  {/if}
+                {/each}
+              </Collapse>
+              <Collapse title='Attribute Schema - Properties' tooltipContent={`${selectedExternalEventType.name} Attribute Schema Properties`} defaultExpanded={false} >
+                  {#each Object.entries(selectedExternalEventTypeAttributesSchema) as attribute}
+                    {#if attribute[1].type !== undefined}
+                      <div class="st-typography-body attributes">
+                        <div class="attribute-name">{attribute[0]}</div>
+                        <div class="attribute-value">{attribute[1].type}</div>
+                      </div>
+                    {/if}
+                  {/each}
+                </Collapse>
+              </svelte:fragment>
+            </Panel>
       {/if}
     </CssGrid>
   </ModalContent>
@@ -485,6 +572,27 @@
 </Modal>
 
 <style>
+  .attribute-name {
+    display: flex;
+    font-weight: bold;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .attribute-value {
+    color: var(--st-gray-60);
+    display: flex;
+    font-style: italic;
+    justify-content: flex-end;
+    text-align: right;
+    width: 100%;
+  }
+
+  .attributes {
+    display: flex;
+    width: 100%;
+  }
+
   .derivation-groups-modal-content :global(.tab-list.management-tabs-list) {
     background-color: var(--st-gray-10);
   }
