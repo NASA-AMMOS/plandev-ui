@@ -78,14 +78,11 @@ export type DerivationGroup = {
 //     }
 //   };
 export type ExternalSourceInsertInput = {
-  external_events: ExternalEventInsertInput[], // updated after this map is created
-  source: Pick<ExternalSourceDB,
-               'attributes' | 'derivation_group_name' | 'key' | 'source_type_name' | 'valid_at'>
-               & {
-                period: Pick<ExternalSourceDB,
-                        'end_time' | 'start_time'>
-               }
-}
+  external_events: ExternalEventInsertInput[]; // updated after this map is created
+  source: Pick<ExternalSourceDB, 'attributes' | 'derivation_group_name' | 'key' | 'source_type_name' | 'valid_at'> & {
+    period: Pick<ExternalSourceDB, 'end_time' | 'start_time'>;
+  };
+};
 
 export type ExternalSourceTypeInsertInput = ExternalSourceType;
 
