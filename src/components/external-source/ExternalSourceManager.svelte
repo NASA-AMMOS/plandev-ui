@@ -184,6 +184,7 @@
   $: if (selectedSource !== null) {
     // Create an ArgumentsMap for the External Source
     selectedSourceAttributes = selectedSource.attributes as ArgumentsMap;
+    console.log('SELECTED SOURCE', selectedSource);
     // Create a ParametersMap for the External Source Type
     selectedSourceType = $externalSourceTypes.find(sourceType => sourceType.name === selectedSource?.source_type_name);
     selectedSourceTypeAttributes = selectedSourceType?.attribute_schema.properties as Record<string, JSONTypeSchema>;
@@ -351,22 +352,27 @@
 
   async function onFormSubmit(_e: SubmitEvent) {
     if (parsedExternalSource && file) {
-      const createExternalSourceResponse: ExternalSourceSlim | undefined = await effects.createExternalSource(
-        $sourceTypeField.value,
-        $derivationGroupField.value,
-        $startTimeDoyField.value,
-        $endTimeDoyField.value,
-        parsedExternalSource.events,
-        parsedExternalSource.source.key,
-        parsedExternalSource.source.attributes,
-        $validAtDoyField.value,
-        user,
-      );
+      // TODO: FIX, MISSING ATTRIBUTES.
+      const createExternalSourceResponse: { data: { createExternalSource: ExternalSourceSlim } } | undefined =
+        await effects.createExternalSource(
+          $sourceTypeField.value,
+          $derivationGroupField.value,
+          $startTimeDoyField.value,
+          $endTimeDoyField.value,
+          parsedExternalSource.events,
+          parsedExternalSource.source.key,
+          parsedExternalSource.source.attributes,
+          $validAtDoyField.value,
+          user,
+        );
+
+      console.log('createExternalSource', createExternalSourceResponse);
+
       // Following a successful mutation...
       if (createExternalSourceResponse !== undefined) {
         // Auto-select the new source
         selectedSource = {
-          ...createExternalSourceResponse,
+          ...createExternalSourceResponse.data.createExternalSource,
           created_at: new Date().toISOString().replace('Z', '+00:00'), // technically not the exact time it shows up in the database
         };
         gridRowSizes = gridRowSizesBottomPanel;
@@ -381,6 +387,8 @@
     validAtDoyField.reset('');
     derivationGroupField.reset('');
   }
+
+  $: console.log(parsedExternalSource, parsedExternalSource === undefined);
 
   async function parseExternalSourceFileStream(stream: ReadableStream) {
     parsingError.set(null);
@@ -644,13 +652,13 @@
             </fieldset>
 
             <fieldset class="file-upload-fieldset">
-              {#if parsedExternalSource}
+              {#if parsedExternalSource !== undefined}
                 <div style="padding-top:12px">
                   <button class="st-button secondary w-100" type="reset">Dismiss</button>
                 </div>
               {/if}
               <button
-                disabled={!parsedExternalSource}
+                disabled={parsedExternalSource === undefined}
                 class="st-button w-100"
                 type="submit"
                 use:permissionHandler={{
