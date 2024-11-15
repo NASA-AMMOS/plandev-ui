@@ -1236,6 +1236,7 @@ const effects = {
     validAt: string,
     user: User | null,
   ) {
+    // TODO: how much of this should be done here vs. in gateway?
     try {
       if (!queryPermissions.CREATE_EXTERNAL_SOURCE(user)) {
         throwPermissionError('upload an external source');
@@ -1273,16 +1274,18 @@ const effects = {
 
       // Create external source mutation input for Hasura
       const externalSourceInsert: ExternalSourceInsertInput = {
-        attributes: externalSourceAttributes,
-        derivation_group_name: derivationGroupInsert.name,
-        end_time: endTimeFormatted,
-        external_events: {
-          data: null, // updated after this map is created
-        },
-        key: externalSourceKey,
-        source_type_name: externalSourceTypeName,
-        start_time: startTimeFormatted,
-        valid_at: validAtFormatted,
+        external_events: [], // updated after this map is created
+        source: {
+          attributes: externalSourceAttributes,
+          derivation_group_name: derivationGroupInsert.name,
+          key: externalSourceKey,
+          period: {
+            end_time: endTimeFormatted,
+            start_time: startTimeFormatted,
+          },
+          source_type_name: externalSourceTypeName,
+          valid_at: validAtFormatted,
+        }
       };
 
       // Create external events + external event types mutation inputs for Hasura
@@ -1328,7 +1331,7 @@ const effects = {
         }
       }
 
-      externalSourceInsert.external_events.data = externalEventsCreated;
+      externalSourceInsert.external_events = externalEventsCreated;
       externalEventsCreated = [];
 
       const { createExternalSource: createExternalSourceResponse } = await reqHasura(
@@ -1360,12 +1363,16 @@ const effects = {
     }
   },
 
-  async createExternalSourceType(sourceTypeName: string, sourceTypeAttributesSchema: object, user: User | null) {
+  async createExternalSourceType(sourceTypeName: string, sourceTypeAttributesSchema: object, allowedExternalEventTypes: string[], user: User | null) {
     try {
       createExternalSourceTypeErrorStore.set(null);
       const { createExternalSourceType: created } = await reqHasura(
         gql.CREATE_EXTERNAL_SOURCE_TYPE,
-        { sourceType },
+        {
+          allowed_event_types: allowedExternalEventTypes,
+          attribute_schema: sourceTypeAttributesSchema,
+          external_source_type_name: sourceTypeName
+        },
         user,
       );
       if (created !== null) {

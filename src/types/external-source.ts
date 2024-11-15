@@ -64,15 +64,28 @@ export type DerivationGroup = {
 };
 
 // This is used for the GraphQL mutation.
-export type ExternalSourceInsertInput = Pick<
-  ExternalSourceDB,
-  'attributes' | 'source_type_name' | 'start_time' | 'end_time' | 'valid_at'
-> &
-  Pick<ExternalSourcePkey, 'key' | 'derivation_group_name'> & {
-    external_events: {
-      data: ExternalEventInsertInput[] | null;
-    };
-  };
+// export type ExternalSourceInsertInput = Pick<
+//   ExternalSourceDB,
+//   'attributes' | 'source_type_name' | 'valid_at'
+// > &
+//   Pick<ExternalSourcePkey, 'key' | 'derivation_group_name'> & {
+//     external_events: ExternalEventInsertInput[];
+//   }
+//   & {
+//     period: {
+//       end_time: string,
+//       start_time: string
+//     }
+//   };
+export type ExternalSourceInsertInput = {
+  external_events: ExternalEventInsertInput[], // updated after this map is created
+  source: Pick<ExternalSourceDB,
+               'attributes' | 'derivation_group_name' | 'key' | 'source_type_name' | 'valid_at'>
+               & {
+                period: Pick<ExternalSourceDB,
+                        'end_time' | 'start_time'>
+               }
+}
 
 export type ExternalSourceTypeInsertInput = ExternalSourceType;
 
