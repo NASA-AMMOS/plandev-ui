@@ -4,10 +4,16 @@
   import type { SchemaObject } from 'ajv';
   import { createEventDispatcher } from 'svelte';
   import { createExternalEventTypeError, resetExternalEventStores } from '../../stores/external-event';
-  import { createExternalSourceTypeError, resetExternalSourceStores } from '../../stores/external-source';
+  import {
+    createExternalSourceTypeError,
+
+    resetExternalSourceStores
+  } from '../../stores/external-source';
+  import type { User } from '../../types/app';
   import type { RadioButtonId } from '../../types/radio-buttons';
   import effects from '../../utilities/effects';
   import { parseJSONStream } from '../../utilities/generic';
+  import { featurePermissions } from '../../utilities/permissions';
   import AlertError from '../ui/AlertError.svelte';
   import RadioButton from '../ui/RadioButtons/RadioButton.svelte';
   import RadioButtons from '../ui/RadioButtons/RadioButtons.svelte';
@@ -15,6 +21,8 @@
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
+
+  export let user: User | null;
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -31,23 +39,17 @@
   let file: File | undefined;
   let parsedJSONSchema: SchemaObject | undefined;
 
-  /** TODO - Re-add permissions
-  let hasCreateDerivationGroupPermission: boolean = false;
   let hasCreateExternalSourceTypePermission: boolean = false;
   let hasCreateExternalEventTypePermission: boolean = false;
+  let hasCreationPermission: boolean = false;
 
-  $: hasCreateDerivationGroupPermission = featurePermissions.derivationGroup.canCreate(user);
   $: hasCreateExternalSourceTypePermission = featurePermissions.externalSourceType.canCreate(user);
   $: hasCreateExternalEventTypePermission = featurePermissions.externalEventType.canCreate(user);
-  */
+  $: hasCreationPermission = hasCreateExternalEventTypePermission && hasCreateExternalSourceTypePermission;
 
   function onClick() {
     fileInput.value = '';
     errors = [];
-  }
-
-  async function onChange() {
-    console.log('onChange');
   }
 
   function handleChange() {
@@ -62,20 +64,23 @@
       if (file !== undefined && /\.json$/.test(file.name)) {
         errors = [];
         try {
-          let response = null;
           parsedJSONSchema = await parseJSONStream<object>(file.stream());
           if (definitionType === EXTERNAL_EVENT_TYPE) {
-            response = await effects.createExternalEventType(newTypeName, parsedJSONSchema, null);
+            await effects.createExternalEventType(newTypeName, parsedJSONSchema, user);
           } else if (definitionType === EXTERNAL_SOURCE_TYPE) {
-            // TODO: fix this
-            response = await effects.createExternalSourceType(newTypeName, parsedJSONSchema, ['DSNContact'], null);
+            await effects.createExternalSourceType(newTypeName, parsedJSONSchema, ['DSNContact'], user);
           }
-          errors = response?.errors.reduce((acc: string[], currentError: { message: string; schemaPath: string }) => {
-            acc.push(`ERROR: ${currentError.schemaPath}: ${currentError.message}`);
-            return acc;
-          }, []);
+          // TODO: Handle errors in response
+          // errors = response?.errors.reduce((acc: string[], currentError: { message: string; schemaPath: string }) => {
+          //   acc.push(`ERROR: ${currentError.schemaPath}: ${currentError.message}`);
+          //   return acc;
+          // }, []);
         } catch (error) {
-          throw new Error('JSON Schema could not be read.');
+          newTypeName = '';
+          files = undefined;
+          file = undefined;
+          fileInput.value = '';
+          console.log(error); // TODO: Handle this in UI
         }
         newTypeName = '';
         files = undefined;
@@ -133,7 +138,6 @@
           accept="application/json"
           bind:files
           on:click={onClick}
-          on:change={onChange}
         />
       </div>
 
@@ -149,7 +153,7 @@
   </ModalContent>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Close </button>
-    <button class="st-button primary" on:click={handleUpload}> Create </button>
+    <button class="st-button primary" disabled={!hasCreationPermission} on:click={handleUpload}> Create </button>
   </ModalFooter>
 </Modal>
 

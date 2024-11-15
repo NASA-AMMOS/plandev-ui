@@ -6,18 +6,44 @@
   import { plugins } from '../../stores/plugins';
   import type { ExternalEvent, ExternalEventType } from '../../types/external-event';
   import type { FieldStore } from '../../types/form';
+  import type { ArgumentsMap, JSONTypeSchema, ParametersMap } from '../../types/parameter';
+  import { getFormParameters } from '../../utilities/parameters';
   import { formatDate } from '../../utilities/time';
   import Collapse from '../Collapse.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
   import Input from '../form/Input.svelte';
+  import Parameters from '../parameters/Parameters.svelte';
 
   export let externalEvent: ExternalEvent;
   export let showHeader: boolean = true;
 
+  const externalEventAttributes: ArgumentsMap = externalEvent.attributes as ArgumentsMap;
+
   let externalEventType: ExternalEventType | undefined = undefined;
+  let externalEventTypeAttributes: Record<string, JSONTypeSchema> | undefined = undefined;
+  let externalEventTypeParametersMap: ParametersMap = {};
   let startTimeField: FieldStore<string>;
 
   $: externalEventType = $externalEventTypes.find(eventType => eventType.name === externalEvent.pkey.event_type_name);
+
+  $: if (externalEventType !== undefined) {
+    // Create a ParametersMap for the External Event Type
+    externalEventTypeAttributes = externalEventType.attribute_schema.properties as Record<string, JSONTypeSchema>;
+    externalEventTypeParametersMap = Object.entries(externalEventTypeAttributes).reduce(
+      (acc: ParametersMap, currentAttribute: [string, JSONTypeSchema]) => {
+        acc[currentAttribute[0]] = {
+          order: 0,
+          schema: {
+            properties: currentAttribute[1]?.properties,
+            type: currentAttribute[1].type,
+          },
+        };
+        return acc;
+      },
+      {} as ParametersMap,
+    );
+  }
+
   $: startTimeField = field<string>(`${formatDate(new Date(externalEvent.start_time), $plugins.time.primary.format)}`);
 </script>
 
@@ -69,14 +95,13 @@
         </Input>
       </Collapse>
 
-      <Collapse defaultExpanded={false} title="Attributes" tooltipContent="View External Source Attributes">
+      <Collapse defaultExpanded={false} title="Attributes" tooltipContent="View External Event Attributes">
         <div class="st-typography-body">
-          {#each Object.entries(externalEvent.attributes) as attribute}
-            <div class="st-typography-body attributes">
-              <div class="attribute-name">{attribute[0]}</div>
-              <div class="attribute-value">{attribute[1]} ({externalEventType?.attribute_schema.properties[attribute[0]].type})</div>
-            </div>
-        {/each}
+          <Parameters
+            disabled={true}
+            expanded={false}
+            formParameters={getFormParameters(externalEventTypeParametersMap, externalEventAttributes, [])}
+          />
         </div>
       </Collapse>
     </fieldset>

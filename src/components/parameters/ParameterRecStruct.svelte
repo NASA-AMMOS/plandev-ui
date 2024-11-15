@@ -51,9 +51,8 @@
         order: -1,
         schema: { type: 'string' },
         value: null,
-        valueSource: 'none'
-
-      }
+        valueSource: 'none',
+      };
       if ('items' in schema) {
         subFormParameter = {
           errors: null,
@@ -101,7 +100,7 @@
       <ParameterName {formParameter} />
     </div>
     <div class="right" slot="right">
-      {#if "metadata" in formParameter.schema}
+      {#if 'metadata' in formParameter.schema}
         <ParameterUnits unit={formParameter.schema.metadata?.unit?.value} />
       {/if}
       <ParameterBaseRightAdornments

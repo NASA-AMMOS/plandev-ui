@@ -145,6 +145,8 @@ import type {
   DefaultEffectiveArguments,
   EffectiveArguments,
   ParametersMap,
+  JSONTypeSchema,
+  Parameter,
   ParameterValidationError,
   ParameterValidationResponse,
 } from '../types/parameter';
@@ -1199,6 +1201,9 @@ const effects = {
   },
 
   async createExternalEventType(eventTypeName: string, eventTypeAttributesSchema: object, user: User | null) {
+    if (!gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user)) {
+      throwPermissionError('create an external event type');
+    }
     try {
       creatingExternalEventTypeStore.set(true);
       createExternalEventTypeErrorStore.set(null);
@@ -1238,7 +1243,7 @@ const effects = {
   ) {
     // TODO: how much of this should be done here vs. in gateway?
     try {
-      if (!queryPermissions.CREATE_EXTERNAL_SOURCE(user)) {
+      if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE(user)) {
         throwPermissionError('upload an external source');
       }
       creatingExternalSourceStore.set(true);
@@ -1364,6 +1369,9 @@ const effects = {
   },
 
   async createExternalSourceType(sourceTypeName: string, sourceTypeAttributesSchema: object, allowedExternalEventTypes: string[], user: User | null) {
+    if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
+      throwPermissionError('create an external source type');
+    }
     try {
       createExternalSourceTypeErrorStore.set(null);
       const { createExternalSourceType: created } = await reqHasura(
@@ -4154,6 +4162,7 @@ const effects = {
             external_sources: {
               external_events: {
                 external_event_type: {
+                  attribute_schema: object;
                   name: string;
                 };
               }[];
@@ -7351,7 +7360,6 @@ const effects = {
       return result;
     } catch (e) {
       catchError(e as Error);
-      console.log(e);
       // TODO: Fix errors
       return { errors: [], valid: false };
     }
@@ -7429,7 +7437,7 @@ export function replacePathsForStructArguments(
 }
 
 function replacePathsHelper(
-  schema: ValueSchema | ActionValueSchema,
+  schema: ValueSchema | ActionValueSchema | JSONTypeSchema,
   arg: Argument,
   pathsToReplace: Record<string, string>,
 ) {

@@ -45,7 +45,9 @@
       {/each}
     </select>
     <div class="parameter-right">
-      <ParameterUnits unit={formParameter.schema?.metadata?.unit?.value} />
+      {#if 'metadata' in formParameter.schema}
+        <ParameterUnits unit={formParameter.schema?.metadata?.unit?.value} />
+      {/if}
       <ParameterBaseRightAdornments
         {disabled}
         hidden={hideRightAdornments}
