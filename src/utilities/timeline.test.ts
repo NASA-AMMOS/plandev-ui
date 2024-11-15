@@ -215,6 +215,7 @@ function generateSpan(properties: Partial<Span>): Span {
 
 function generateExternalEvent(properties: Partial<ExternalEvent>): ExternalEvent {
   return {
+    attributes: {},
     duration: '',
     duration_ms: 0,
     pkey: {

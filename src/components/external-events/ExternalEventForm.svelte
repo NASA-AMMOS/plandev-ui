@@ -1,9 +1,10 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { externalEventTypes } from '../../stores/external-event';
   import { field } from '../../stores/form';
   import { plugins } from '../../stores/plugins';
-  import type { ExternalEvent } from '../../types/external-event';
+  import type { ExternalEvent, ExternalEventType } from '../../types/external-event';
   import type { FieldStore } from '../../types/form';
   import { formatDate } from '../../utilities/time';
   import Collapse from '../Collapse.svelte';
@@ -13,8 +14,10 @@
   export let externalEvent: ExternalEvent;
   export let showHeader: boolean = true;
 
+  let externalEventType: ExternalEventType | undefined = undefined;
   let startTimeField: FieldStore<string>;
 
+  $: externalEventType = $externalEventTypes.find(eventType => eventType.name === externalEvent.pkey.event_type_name);
   $: startTimeField = field<string>(`${formatDate(new Date(externalEvent.start_time), $plugins.time.primary.format)}`);
 </script>
 
@@ -64,6 +67,17 @@
             value={externalEvent.pkey.source_key}
           />
         </Input>
+      </Collapse>
+
+      <Collapse defaultExpanded={false} title="Attributes" tooltipContent="View External Source Attributes">
+        <div class="st-typography-body">
+          {#each Object.entries(externalEvent.attributes) as attribute}
+            <div class="st-typography-body attributes">
+              <div class="attribute-name">{attribute[0]}</div>
+              <div class="attribute-value">{attribute[1]} ({externalEventType?.attribute_schema.properties[attribute[0]].type})</div>
+            </div>
+        {/each}
+        </div>
       </Collapse>
     </fieldset>
   </div>

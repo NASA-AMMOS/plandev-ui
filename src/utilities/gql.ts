@@ -471,66 +471,6 @@ const gql = {
     }
   `,
 
-  CREATE_EXTERNAL_EVENT_TYPE: `#graphql
-    mutation CreateExternalEventType($eventType: external_event_type_insert_input!) {
-      createExternalEventType: ${Queries.INSERT_EXTERNAL_EVENT_TYPE_ONE}(object: $eventType) {
-        name
-      }
-    }
-  `,
-
-  CREATE_EXTERNAL_SOURCE: `#graphql
-    mutation CreateExternalSource(
-      $derivation_group: derivation_group_insert_input!,
-      $event_type: [external_event_type_insert_input!]!
-      $source: external_source_insert_input!,
-      $source_type: external_source_type_insert_input!,
-    ) {
-      upsertExternalEventType: ${Queries.INSERT_EXTERNAL_EVENT_TYPE}(
-        objects: $event_type,
-        on_conflict: {
-          constraint: external_event_type_pkey
-        }
-      ) {
-        returning {
-          name
-        }
-      }
-      upsertExternalSourceType: ${Queries.INSERT_EXTERNAL_SOURCE_TYPE} (
-        object: $source_type,
-        on_conflict: {
-          constraint: external_source_type_pkey
-        }
-      ) {
-        name
-      }
-      upsertDerivationGroup: ${Queries.INSERT_DERIVATION_GROUP} (
-        object: $derivation_group,
-        on_conflict: {
-          constraint: derivation_group_pkey
-        }
-      ) {
-        name
-      }
-      createExternalSource: ${Queries.INSERT_EXTERNAL_SOURCE}(object: $source) {
-        end_time,
-        key,
-        derivation_group_name,
-        source_type_name,
-        start_time,
-        valid_at,
-      }
-    }
-  `,
-
-  CREATE_EXTERNAL_SOURCE_TYPE: `#graphql
-    mutation CreateExternalSourceType($sourceType: external_source_type_insert_input!) {
-      createExternalSourceType: ${Queries.INSERT_EXTERNAL_SOURCE_TYPE}(object: $sourceType) {
-        name
-      }
-    }
-  `,
-
   CREATE_MODEL: `#graphql
     mutation CreateModel($model: mission_model_insert_input!) {
       createModel: ${Queries.INSERT_MISSION_MODEL}(object: $model) {
@@ -1487,6 +1427,7 @@ const gql = {
           derivation_group_name: {_eq: $derivationGroupName}
         }
       ) {
+        attributes
         event_type_name
         key
         duration
@@ -1508,6 +1449,7 @@ const gql = {
         external_events {
           external_event_type {
             name
+            attribute_schema
           }
         }
       }
@@ -2471,6 +2413,7 @@ const gql = {
     subscription SubExternalEventTypes {
       models: ${Queries.EXTERNAL_EVENT_TYPES}(order_by: { name: asc }) {
         name
+        attribute_schema
       }
     }
   `,
@@ -2485,6 +2428,7 @@ const gql = {
         valid_at
         created_at
         owner
+        attributes
       }
     }
   `,
@@ -2500,6 +2444,7 @@ const gql = {
         valid_at
         created_at
         owner
+        attributes
       }
     }
   `,
@@ -2508,6 +2453,7 @@ const gql = {
     subscription SubExternalSourceTypes {
       models: ${Queries.EXTERNAL_SOURCE_TYPES}(order_by: { name: asc }) {
         name
+        attribute_schema
       }
     }
   `,
@@ -2735,6 +2681,7 @@ const gql = {
     subscription SubPlanExternalEventsDerivationGroup($derivation_group_names: [String!]!){
       events: ${Queries.DERIVED_EVENTS}(where: {derivation_group_name: {_in: $derivation_group_names}}) {
         external_event {
+          attributes
           event_type_name
           key
           duration

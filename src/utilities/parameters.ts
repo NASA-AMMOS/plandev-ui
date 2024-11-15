@@ -7,7 +7,7 @@ import type {
   RequiredParametersList,
   ValueSource,
 } from '../types/parameter';
-import type { ValueSchema } from '../types/schema';
+import type { JsonSchemaProperty, ValueSchema } from '../types/schema';
 import { isEmpty } from './generic';
 
 /**
@@ -19,13 +19,23 @@ import { isEmpty } from './generic';
  */
 export function getArgument(
   value: Argument,
-  schema: ValueSchema,
+  schema: ValueSchema | JsonSchemaProperty,
   presetValue?: Argument,
   defaultValue?: Argument,
 ): { value: any; valueSource: ValueSource } {
   const type = schema.type;
+  if (type === 'object') {
+    const props = schema.properties;
 
-  if (value !== null && value !== undefined) {
+    if (props !== undefined) {
+      const obj = Object.entries(props).reduce((obj, [key, subSchema]) => {
+        const { value: newValue } = getArgument(value.properties[key], subSchema);
+        return { ...obj, [key]: newValue };
+      }, {});
+      return { value: obj, valueSource: 'none' };
+    }
+    return { value: null, valueSource: 'none' };
+  } else if (value !== null && value !== undefined) {
     if (presetValue === undefined) {
       return { value, valueSource: 'user on model' };
     } else {
@@ -91,7 +101,7 @@ export function getFormParameters(
  * Returns a boolean for whether or not the provided parameter is recursive
  */
 export function isRecParameter(parameter: FormParameter) {
-  return parameter.schema.type === 'series' || parameter.schema.type === 'struct';
+  return parameter.schema.type === 'series' || parameter.schema.type === 'struct' || parameter.schema.type === 'object';
 }
 
 /**

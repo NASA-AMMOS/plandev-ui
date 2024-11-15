@@ -1,3 +1,4 @@
+import type { SchemaObject } from 'ajv';
 import type { ExternalSourceDB } from './external-source';
 
 // Represents all fields used as a composite primary key for merlin.external_event
@@ -53,7 +54,7 @@ export type ExternalEvent = {
 // no analgoue to PlanExternalSource as such a link doesn't exist for external events
 
 export type ExternalEventType = {
-  attribute_schema: object;
+  attribute_schema: SchemaObject;
   name: string;
 };
 

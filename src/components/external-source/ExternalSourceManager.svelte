@@ -13,20 +13,23 @@
     createExternalSourceTypeError,
     creatingExternalSource,
     externalSources,
+    externalSourceTypes,
     parsingError,
-    planDerivationGroupLinks,
+    planDerivationGroupLinks
   } from '../../stores/external-source';
   import { field } from '../../stores/form';
   import { plans } from '../../stores/plans';
   import { plugins } from '../../stores/plugins';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
-  import type { ExternalEvent, ExternalEventId } from '../../types/external-event';
+  import type { ExternalEvent, ExternalEventId, ExternalEventType } from '../../types/external-event';
   import {
     type ExternalSourceJson,
     type ExternalSourceSlim,
-    type PlanDerivationGroup,
+    type ExternalSourceType,
+    type PlanDerivationGroup
   } from '../../types/external-source';
+  import type { ArgumentsMap, JSONTypeSchema, ParametersMap } from '../../types/parameter';
   import effects from '../../utilities/effects';
   import {
     getExternalEventRowId,
@@ -34,6 +37,7 @@
     getExternalSourceSlimRowId,
   } from '../../utilities/externalEvents';
   import { parseJSONStream } from '../../utilities/generic';
+  import { getFormParameters } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { formatDate } from '../../utilities/time';
@@ -46,6 +50,7 @@
   import DatePickerField from '../form/DatePickerField.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
+  import Parameters from '../parameters/Parameters.svelte';
   import AlertError from '../ui/AlertError.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -131,8 +136,12 @@
 
   // source detail variables
   let selectedSource: ExternalSourceSlim | null = null;
+  let selectedSourceAttributes: ArgumentsMap = {};
+  let selectedSourceType: ExternalSourceType | undefined = undefined;
+  let selectedSourceTypeAttributes: Record<string, JSONTypeSchema> | undefined = undefined;
+  let selectedSourceTypeParametersMap: ParametersMap = {};
   let selectedSourceId: string | null = null;
-  let selectedSourceEventTypes: string[] = [];
+  let selectedSourceEventTypes: ExternalEventType[] = [];
 
   // Selected element variables
   let selectedEvent: ExternalEvent | null = null;
@@ -170,6 +179,24 @@
     hasDeleteExternalSourcePermissionOnSelectedSource = featurePermissions.externalSource.canDelete(user, [
       selectedSource,
     ]);
+  }
+
+  $: if (selectedSource !== null) {
+    // Create an ArgumentsMap for the External Source
+    selectedSourceAttributes = selectedSource.attributes as ArgumentsMap;
+    // Create a ParametersMap for the External Source Type
+    selectedSourceType = $externalSourceTypes.find(sourceType => sourceType.name === selectedSource?.source_type_name);
+    selectedSourceTypeAttributes = selectedSourceType?.attribute_schema.properties as Record<string, JSONTypeSchema>;
+    selectedSourceTypeParametersMap = Object.entries(selectedSourceTypeAttributes).reduce((acc: ParametersMap, currentAttribute: [string, JSONTypeSchema]) => {
+      acc[currentAttribute[0]] = {
+        order: 0,
+        schema: {
+          properties: currentAttribute[1]?.properties,
+          type: currentAttribute[1].type,
+        }
+      }
+      return acc;
+    }, {} as ParametersMap);
   }
 
   $: selectedSourceId = selectedSource
@@ -529,7 +556,7 @@
               {#if selectedSourceEventTypes.length > 0}
                 {#each selectedSourceEventTypes as eventType}
                   <div class="st-typography-body collapse-important-text">
-                    {eventType}
+                    {eventType.name}
                   </div>
                 {/each}
               {:else}
@@ -556,7 +583,19 @@
                 <div class="st-typography-body">Not used in any plans</div>
               {/if}
             </Collapse>
-
+            <Collapse defaultExpanded={false} title="Attributes" tooltipContent="View External Source Attributes">
+              <div class="st-typography-body">
+                <Parameters
+                  disabled={true}
+                  expanded={false}
+                  formParameters={getFormParameters(
+                    selectedSourceTypeParametersMap,
+                    selectedSourceAttributes,
+                    []
+                  )}
+                />
+              </div>
+            </Collapse>
             <div class="selected-source-delete">
               <button
                 class="st-button danger w-100"
@@ -791,6 +830,27 @@
 </CssGrid>
 
 <style>
+  :global(.attribute-name) {
+    display: flex;
+    font-weight: bold;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  :global(.attribute-value) {
+    color: var(--st-gray-60);
+    display: flex;
+    font-style: italic;
+    justify-content: flex-end;
+    text-align: right;
+    width: 100%;
+  }
+
+  :global(.attributes) {
+    display: flex;
+    width: 100%;
+  }
+
   :global(.plan-grid) {
     overflow: auto;
   }
