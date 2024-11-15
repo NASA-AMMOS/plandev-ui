@@ -4,12 +4,7 @@
   import type { SchemaObject } from 'ajv';
   import { createEventDispatcher } from 'svelte';
   import { createExternalEventTypeError, resetExternalEventStores } from '../../stores/external-event';
-  import {
-    createExternalSourceTypeError,
-
-    resetExternalSourceStores
-  } from '../../stores/external-source';
-  import type { User } from '../../types/app';
+  import { createExternalSourceTypeError, resetExternalSourceStores } from '../../stores/external-source';
   import type { RadioButtonId } from '../../types/radio-buttons';
   import effects from '../../utilities/effects';
   import { parseJSONStream } from '../../utilities/generic';
@@ -20,8 +15,6 @@
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
-
-  export let user: User | null;
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -54,7 +47,7 @@
   }
 
   async function onChange() {
-    console.log("onChange");
+    console.log('onChange');
   }
 
   function handleChange() {
@@ -74,9 +67,10 @@
           if (definitionType === EXTERNAL_EVENT_TYPE) {
             response = await effects.createExternalEventType(newTypeName, parsedJSONSchema, null);
           } else if (definitionType === EXTERNAL_SOURCE_TYPE) {
-            response = await effects.createExternalSourceType(newTypeName, parsedJSONSchema, null);
+            // TODO: fix this
+            response = await effects.createExternalSourceType(newTypeName, parsedJSONSchema, ['DSNContact'], null);
           }
-          errors = response?.errors.reduce((acc: string[], currentError: { message: string, schemaPath: string }) => {
+          errors = response?.errors.reduce((acc: string[], currentError: { message: string; schemaPath: string }) => {
             acc.push(`ERROR: ${currentError.schemaPath}: ${currentError.message}`);
             return acc;
           }, []);
