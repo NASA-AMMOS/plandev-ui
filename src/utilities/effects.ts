@@ -1088,7 +1088,6 @@ const effects = {
   async createExternalSourceType(
     sourceTypeName: string,
     sourceTypeAttributesSchema: object,
-    allowedExternalEventTypes: string[],
     user: User | null,
   ) {
     if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
@@ -1098,7 +1097,6 @@ const effects = {
 
     try {
       const body = JSON.stringify({
-        allowed_event_types: allowedExternalEventTypes,
         attribute_schema: sourceTypeAttributesSchema,
         external_source_type_name: sourceTypeName,
       });
