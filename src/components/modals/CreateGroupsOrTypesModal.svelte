@@ -61,9 +61,16 @@
         errors = [];
         parsedJSONSchema = await parseJSONStream<object>(file.stream());
         if (definitionType === EXTERNAL_EVENT_TYPE) {
-          await effects.createExternalEventType(newTypeName, parsedJSONSchema, user);
+          const creationResponse = await effects.createExternalEventType(newTypeName, parsedJSONSchema, user);
+          if (creationResponse !== null) {
+            dispatch('close');
+          }
         } else if (definitionType === EXTERNAL_SOURCE_TYPE) {
-          await effects.createExternalSourceType(newTypeName, parsedJSONSchema, user);
+          const creationResponse = await effects.createExternalSourceType(newTypeName, parsedJSONSchema, user);
+          console.log(creationResponse);
+          if (creationResponse !== null) {
+            dispatch('close');
+          }
         }
         newTypeName = '';
         files = undefined;

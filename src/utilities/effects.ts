@@ -1244,6 +1244,7 @@ const effects = {
 //         createExternalEventTypeError.set((e as Error).message);
 //       }
 //       catchError(e as Error);
+//       return null;
     }
   },
 
@@ -1258,7 +1259,6 @@ const effects = {
     validAt: string,
     user: User | null,
   ) {
-    // TODO: how much of this should be done here vs. in gateway?
     try {
       if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE(user)) {
         throwPermissionError('upload an external source');
@@ -1430,6 +1430,7 @@ const effects = {
 //            createExternalSourceTypeError.set((e as Error).message);
 //          }
 //          catchError(e as Error);
+//          return null;
 //        }
   },
 
