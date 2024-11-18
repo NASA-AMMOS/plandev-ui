@@ -76,7 +76,6 @@
           files = undefined;
           file = undefined;
           fileInput.value = '';
-          console.log(error); // TODO: Handle this in UI
         }
         newTypeName = '';
         files = undefined;

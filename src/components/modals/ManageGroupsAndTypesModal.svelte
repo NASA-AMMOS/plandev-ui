@@ -4,7 +4,7 @@
   import type { ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
-  import { derivationGroups, externalSources } from '../../stores/external-source';
+  import { derivationGroups, externalSources, sourcesUsingExternalEventTypes } from '../../stores/external-source';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExternalEventType } from '../../types/external-event';
@@ -310,8 +310,12 @@
     // makes sure all associated sources (and therefore events, as orphans are not possible) are deleted before this
     // NOTE: does not update in derivation_group_comp after removing a EE type; derivation_group_comp defaults to 0 event types after its last external source removed,
     //        as it has no awareness of external source type or paired events (as the latter don't even exist).
-    // NOTE: The 'associatedItems' argument is currently set to [] as pulling event types with derivation groups had performance issues - currently the user will not be warned that their type still has implementations, but the deletion will not succeed.
-    showDeleteExternalEventSourceTypeModal(eventType, 'External Event Type', [], user);
+    showDeleteExternalEventSourceTypeModal(
+      eventType,
+      'External Event Type',
+      $sourcesUsingExternalEventTypes.filter(entry => entry.types.includes(eventType.name)).map(entry => entry.key), // NOTE: MAY NEED TO REMOVE THIS - COULD BE A VERY SLOW OPERATION.
+      user,
+    );
   }
 
   function getAssociatedExternalSourcesBySourceType(sourceType: string | undefined) {
