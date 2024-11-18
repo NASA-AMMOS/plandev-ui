@@ -106,7 +106,6 @@ import type {
   Argument,
   ArgumentsMap,
   EffectiveArguments,
-  JSONTypeSchema,
   Parameter,
   ParameterValidationError,
   ParameterValidationResponse,
@@ -6631,11 +6630,7 @@ export function replacePaths(
   return result;
 }
 
-function replacePathsHelper(
-  schema: ValueSchema | JSONTypeSchema,
-  arg: Argument,
-  pathsToReplace: Record<string, string>,
-) {
+function replacePathsHelper(schema: ValueSchema, arg: Argument, pathsToReplace: Record<string, string>) {
   switch (schema.type) {
     case 'path':
       if (arg in pathsToReplace) {
