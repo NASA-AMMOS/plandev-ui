@@ -30,6 +30,7 @@ import {
   savingExpansionRule as savingExpansionRuleStore,
   savingExpansionSet as savingExpansionSetStore,
 } from '../stores/expansion';
+import { createExternalEventTypeError } from '../stores/external-event';
 import {
   createExternalEventTypeError as createExternalEventTypeErrorStore,
   creatingExternalEventType as creatingExternalEventTypeStore,
@@ -1204,13 +1205,18 @@ const effects = {
     if (!gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user)) {
       throwPermissionError('create an external event type');
     }
+    createExternalEventTypeError.set(null);
+
     try {
       creatingExternalEventTypeStore.set(true);
       createExternalEventTypeErrorStore.set(null);
       if (eventType) {
         const { createExternalEventType: created } = await reqHasura<ExternalEventType>(
           gql.CREATE_EXTERNAL_EVENT_TYPE,
-          { eventType },
+          {
+            attribute_schema: eventTypeAttributesSchema,
+            external_event_type_name: eventTypeName
+          },
           user,
         );
         if (created) {
@@ -1377,6 +1383,8 @@ const effects = {
     if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
       throwPermissionError('create an external source type');
     }
+    createExternalSourceTypeError.set(null);
+
     try {
       createExternalSourceTypeErrorStore.set(null);
       const { createExternalSourceType: created } = await reqHasura(
@@ -1399,7 +1407,16 @@ const effects = {
       createExternalSourceTypeErrorStore.set((e as Error).message);
       creatingExternalSourceType.set(false);
       return undefined;
-    }
+
+//       if ((e as Error).message.includes('POST /uploadExternalSourceType:')) {
+//               // error from gateway
+//               createExternalSourceTypeError.set((e as Error).message.replace('Internal Server Error\nPOST /uploadExternalSourceType: ', 'Internal Server Error: '))
+//             }
+//             else {
+//               createExternalSourceTypeError.set((e as Error).message)
+//             }
+//             catchError(e as Error);
+//     }
   },
 
   async createGroupsOrTypes(user: User | null): Promise<void> {
