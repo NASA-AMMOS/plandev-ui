@@ -29,7 +29,8 @@
     type ExternalSourceType,
     type PlanDerivationGroup,
   } from '../../types/external-source';
-  import type { ArgumentsMap, JSONTypeSchema, ParametersMap } from '../../types/parameter';
+  import type { ArgumentsMap, ParametersMap } from '../../types/parameter';
+  import type { ValueSchema } from '../../types/schema';
   import effects from '../../utilities/effects';
   import {
     getExternalEventRowId,
@@ -37,7 +38,7 @@
     getExternalSourceSlimRowId,
   } from '../../utilities/externalEvents';
   import { parseJSONStream } from '../../utilities/generic';
-  import { getFormParameters } from '../../utilities/parameters';
+  import { getFormParameters, translateJsonSchemaToValueSchema } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { formatDate } from '../../utilities/time';
@@ -138,7 +139,6 @@
   let selectedSource: ExternalSourceSlim | null = null;
   let selectedSourceAttributes: ArgumentsMap = {};
   let selectedSourceType: ExternalSourceType | undefined = undefined;
-  let selectedSourceTypeAttributes: Record<string, JSONTypeSchema> | undefined = undefined;
   let selectedSourceTypeParametersMap: ParametersMap = {};
   let selectedSourceId: string | null = null;
   let selectedSourceEventTypes: ExternalEventType[] = [];
@@ -186,19 +186,15 @@
     selectedSourceAttributes = selectedSource.attributes as ArgumentsMap;
     // Create a ParametersMap for the External Source Type
     selectedSourceType = $externalSourceTypes.find(sourceType => sourceType.name === selectedSource?.source_type_name);
-    selectedSourceTypeAttributes = selectedSourceType?.attribute_schema.properties as Record<string, JSONTypeSchema>;
-    selectedSourceTypeParametersMap = Object.entries(selectedSourceTypeAttributes).reduce(
-      (acc: ParametersMap, currentAttribute: [string, JSONTypeSchema]) => {
+    const selectedSourceTypeAttributesTranslated = translateJsonSchemaToValueSchema(selectedSourceType?.attribute_schema);
+    selectedSourceTypeParametersMap = Object.entries(selectedSourceTypeAttributesTranslated).reduce(
+      (acc: ParametersMap, currentAttribute: [string, ValueSchema], index: number) => {
         acc[currentAttribute[0]] = {
-          order: 0,
-          schema: {
-            properties: currentAttribute[1]?.properties,
-            type: currentAttribute[1].type,
-          },
+          order: index,
+          schema: currentAttribute[1]
         };
         return acc;
-      },
-      {} as ParametersMap,
+      }, {} as ParametersMap,
     );
   }
 

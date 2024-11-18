@@ -35,7 +35,7 @@
       on:didFlash
     >
       <div bind:clientWidth class="parameter">
-        {#if formParameter.schema.type === 'series' || formParameter.schema.type === 'struct' || formParameter.schema.type === 'array' || formParameter.schema.type === 'object'}
+        {#if formParameter.schema.type === 'series' || formParameter.schema.type === 'struct'}
           <ParameterRec
             {disabled}
             {expanded}

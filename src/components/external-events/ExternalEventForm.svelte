@@ -6,8 +6,9 @@
   import { plugins } from '../../stores/plugins';
   import type { ExternalEvent, ExternalEventType } from '../../types/external-event';
   import type { FieldStore } from '../../types/form';
-  import type { ArgumentsMap, JSONTypeSchema, ParametersMap } from '../../types/parameter';
-  import { getFormParameters } from '../../utilities/parameters';
+  import type { ArgumentsMap, ParametersMap } from '../../types/parameter';
+  import type { ValueSchema } from '../../types/schema';
+  import { getFormParameters, translateJsonSchemaArgumentsToValueSchema, translateJsonSchemaToValueSchema } from '../../utilities/parameters';
   import { formatDate } from '../../utilities/time';
   import Collapse from '../Collapse.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
@@ -17,10 +18,9 @@
   export let externalEvent: ExternalEvent;
   export let showHeader: boolean = true;
 
-  const externalEventAttributes: ArgumentsMap = externalEvent.attributes as ArgumentsMap;
+  const externalEventAttributes: ArgumentsMap = translateJsonSchemaArgumentsToValueSchema(externalEvent.attributes);
 
   let externalEventType: ExternalEventType | undefined = undefined;
-  let externalEventTypeAttributes: Record<string, JSONTypeSchema> | undefined = undefined;
   let externalEventTypeParametersMap: ParametersMap = {};
   let startTimeField: FieldStore<string>;
 
@@ -28,19 +28,15 @@
 
   $: if (externalEventType !== undefined) {
     // Create a ParametersMap for the External Event Type
-    externalEventTypeAttributes = externalEventType.attribute_schema.properties as Record<string, JSONTypeSchema>;
-    externalEventTypeParametersMap = Object.entries(externalEventTypeAttributes).reduce(
-      (acc: ParametersMap, currentAttribute: [string, JSONTypeSchema]) => {
+    const externalEventTypeAttributesTranslated = translateJsonSchemaToValueSchema(externalEventType?.attribute_schema);
+    externalEventTypeParametersMap = Object.entries(externalEventTypeAttributesTranslated).reduce(
+      (acc: ParametersMap, currentAttribute: [string, ValueSchema], index: number) => {
         acc[currentAttribute[0]] = {
-          order: 0,
-          schema: {
-            properties: currentAttribute[1]?.properties,
-            type: currentAttribute[1].type,
-          },
+          order: index,
+          schema: currentAttribute[1]
         };
         return acc;
-      },
-      {} as ParametersMap,
+      }, {} as ParametersMap,
     );
   }
 
