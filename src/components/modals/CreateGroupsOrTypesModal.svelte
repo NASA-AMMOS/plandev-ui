@@ -59,18 +59,11 @@
       file = files[0];
       if (file !== undefined && /\.json$/.test(file.name)) {
         errors = [];
-        try {
-          parsedJSONSchema = await parseJSONStream<object>(file.stream());
-          if (definitionType === EXTERNAL_EVENT_TYPE) {
-            await effects.createExternalEventType(newTypeName, parsedJSONSchema, user);
-          } else if (definitionType === EXTERNAL_SOURCE_TYPE) {
-            await effects.createExternalSourceType(newTypeName, parsedJSONSchema, user);
-          }
-        } catch (error) {
-          newTypeName = '';
-          files = undefined;
-          file = undefined;
-          fileInput.value = '';
+        parsedJSONSchema = await parseJSONStream<object>(file.stream());
+        if (definitionType === EXTERNAL_EVENT_TYPE) {
+          await effects.createExternalEventType(newTypeName, parsedJSONSchema, user);
+        } else if (definitionType === EXTERNAL_SOURCE_TYPE) {
+          await effects.createExternalSourceType(newTypeName, parsedJSONSchema, user);
         }
         newTypeName = '';
         files = undefined;
