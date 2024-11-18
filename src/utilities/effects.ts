@@ -1377,7 +1377,6 @@ const effects = {
   async createExternalSourceType(
     sourceTypeName: string,
     sourceTypeAttributesSchema: object,
-    allowedExternalEventTypes: string[],
     user: User | null,
   ) {
     if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
