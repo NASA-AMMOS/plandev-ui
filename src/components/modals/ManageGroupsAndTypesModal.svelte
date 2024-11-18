@@ -301,7 +301,7 @@
     showDeleteExternalEventSourceTypeModal(
       sourceType,
       'External Source Type',
-      [], // Currently set to an empty array due to issues with performance when looking up event types being used
+      $externalSources.filter(source => source.source_type_name === sourceType.name).map(source => source.key),
       user,
     );
   }
