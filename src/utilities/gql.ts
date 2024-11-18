@@ -2345,6 +2345,19 @@ const gql = {
     }
   `,
 
+  SUB_EVENT_TYPES_IN_USE: `#graphql
+  subscription EventTypesInUser {
+    external_source {
+      key
+      external_events {
+        external_event_type {
+          name
+        }
+      }
+    }
+  }
+  `,
+
   SUB_EXPANSION_RULES: `#graphql
     subscription SubExpansionRules {
       expansionRules: ${Queries.EXPANSION_RULES}(order_by: { id: desc }) {
