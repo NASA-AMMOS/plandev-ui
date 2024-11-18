@@ -64,7 +64,7 @@
           if (definitionType === EXTERNAL_EVENT_TYPE) {
             await effects.createExternalEventType(newTypeName, parsedJSONSchema, user);
           } else if (definitionType === EXTERNAL_SOURCE_TYPE) {
-            await effects.createExternalSourceType(newTypeName, parsedJSONSchema, ['DSNContact'], user);
+            await effects.createExternalSourceType(newTypeName, parsedJSONSchema, user);
           }
           // TODO: Handle errors in response
           // errors = response?.errors.reduce((acc: string[], currentError: { message: string; schemaPath: string }) => {
