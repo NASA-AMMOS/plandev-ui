@@ -66,11 +66,6 @@
           } else if (definitionType === EXTERNAL_SOURCE_TYPE) {
             await effects.createExternalSourceType(newTypeName, parsedJSONSchema, user);
           }
-          // TODO: Handle errors in response
-          // errors = response?.errors.reduce((acc: string[], currentError: { message: string; schemaPath: string }) => {
-          //   acc.push(`ERROR: ${currentError.schemaPath}: ${currentError.message}`);
-          //   return acc;
-          // }, []);
         } catch (error) {
           newTypeName = '';
           files = undefined;

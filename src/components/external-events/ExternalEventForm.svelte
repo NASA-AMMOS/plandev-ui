@@ -8,7 +8,11 @@
   import type { FieldStore } from '../../types/form';
   import type { ArgumentsMap, ParametersMap } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
-  import { getFormParameters, translateJsonSchemaArgumentsToValueSchema, translateJsonSchemaToValueSchema } from '../../utilities/parameters';
+  import {
+    getFormParameters,
+    translateJsonSchemaArgumentsToValueSchema,
+    translateJsonSchemaToValueSchema,
+  } from '../../utilities/parameters';
   import { formatDate } from '../../utilities/time';
   import Collapse from '../Collapse.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
@@ -33,10 +37,11 @@
       (acc: ParametersMap, currentAttribute: [string, ValueSchema], index: number) => {
         acc[currentAttribute[0]] = {
           order: index,
-          schema: currentAttribute[1]
+          schema: currentAttribute[1],
         };
         return acc;
-      }, {} as ParametersMap,
+      },
+      {} as ParametersMap,
     );
   }
 

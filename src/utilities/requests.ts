@@ -80,7 +80,7 @@ export async function reqGateway<T = any>(
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(response.statusText + "\n" + errorText);
+    throw new Error(response.statusText + '\n' + errorText);
   }
 
   if (asJson) {

@@ -9,8 +9,9 @@
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExternalEventType } from '../../types/external-event';
   import type { DerivationGroup, ExternalSourceSlim, ExternalSourceType } from '../../types/external-source';
-  import type { JsonSchemaProperty } from '../../types/schema';
+  import type { ValueSchema } from '../../types/schema';
   import { showDeleteDerivationGroupModal, showDeleteExternalEventSourceTypeModal } from '../../utilities/modal';
+  import { translateJsonSchemaToValueSchema } from '../../utilities/parameters';
   import { featurePermissions } from '../../utilities/permissions';
   import Collapse from '../Collapse.svelte';
   import ExternalEventTypeManagementTab from '../external-events/ExternalEventTypeManagementTab.svelte';
@@ -131,10 +132,10 @@
 
   let selectedExternalSourceType: ExternalSourceType | undefined = undefined;
   let selectedExternalSourceTypeDerivationGroups: DerivationGroup[] = [];
-  let selectedExternalSourceTypeAttributeSchema: Record<string, JsonSchemaProperty>;
+  let selectedExternalSourceTypeAttributeSchema: Record<string, ValueSchema>;
 
   let selectedExternalEventType: ExternalEventType | undefined = undefined;
-  let selectedExternalEventTypeAttributesSchema: Record<string, JsonSchemaProperty>;
+  let selectedExternalEventTypeAttributesSchema: Record<string, ValueSchema>;
 
   $: hasDeleteExternalSourceTypePermission = featurePermissions.externalSourceType.canDelete(user);
   $: hasDeleteExternalEventTypePermission = featurePermissions.externalEventType.canDelete(user);
@@ -143,14 +144,8 @@
     source => selectedDerivationGroup?.name === source.derivation_group_name,
   );
 
-  $: selectedExternalEventTypeAttributesSchema = selectedExternalEventType?.attribute_schema.properties as Record<
-    string,
-    JsonSchemaProperty
-  >;
-  $: selectedExternalSourceTypeAttributeSchema = selectedExternalSourceType?.attribute_schema.properties as Record<
-    string,
-    JsonSchemaProperty
-  >;
+  $: selectedExternalEventTypeAttributesSchema = translateJsonSchemaToValueSchema(selectedExternalEventType?.attribute_schema)
+  $: selectedExternalSourceTypeAttributeSchema = translateJsonSchemaToValueSchema(selectedExternalSourceType?.attribute_schema)
 
   $: selectedExternalSourceTypeDerivationGroups = $derivationGroups.filter(derivationGroup => {
     if (selectedExternalSourceType !== undefined) {

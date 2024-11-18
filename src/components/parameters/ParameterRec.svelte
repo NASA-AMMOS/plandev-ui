@@ -22,7 +22,7 @@
   async function loadComponent(formParameter: FormParameter) {
     if (formParameter.schema.type === 'series') {
       component = (await import('./ParameterRecSeries.svelte')).default;
-    } else if (formParameter.schema.type === 'struct' || formParameter.schema.type === 'object') {
+    } else if (formParameter.schema.type === 'struct') {
       component = (await import('./ParameterRecStruct.svelte')).default;
     }
   }
