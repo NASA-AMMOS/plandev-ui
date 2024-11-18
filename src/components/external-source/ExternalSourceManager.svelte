@@ -388,8 +388,6 @@
     derivationGroupField.reset('');
   }
 
-  $: console.log(parsedExternalSource, parsedExternalSource === undefined);
-
   async function parseExternalSourceFileStream(stream: ReadableStream) {
     parsingError.set(null);
     try {
