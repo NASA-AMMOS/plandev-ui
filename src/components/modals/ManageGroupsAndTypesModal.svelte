@@ -9,14 +9,16 @@
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExternalEventType } from '../../types/external-event';
   import type { DerivationGroup, ExternalSourceSlim, ExternalSourceType } from '../../types/external-source';
+  import type { ParametersMap } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
   import { showDeleteDerivationGroupModal, showDeleteExternalEventSourceTypeModal } from '../../utilities/modal';
-  import { translateJsonSchemaToValueSchema } from '../../utilities/parameters';
+  import { getFormParameters, translateJsonSchemaToValueSchema } from '../../utilities/parameters';
   import { featurePermissions } from '../../utilities/permissions';
   import Collapse from '../Collapse.svelte';
   import ExternalEventTypeManagementTab from '../external-events/ExternalEventTypeManagementTab.svelte';
   import DerivationGroupManagementTab from '../external-source/DerivationGroupManagementTab.svelte';
   import ExternalSourceTypeManagementTab from '../external-source/ExternalSourceTypeManagementTab.svelte';
+  import Parameters from '../parameters/Parameters.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
@@ -133,9 +135,11 @@
   let selectedExternalSourceType: ExternalSourceType | undefined = undefined;
   let selectedExternalSourceTypeDerivationGroups: DerivationGroup[] = [];
   let selectedExternalSourceTypeAttributeSchema: Record<string, ValueSchema>;
+  let selectedExternalSourceTypeParametersMap: ParametersMap = {};
 
   let selectedExternalEventType: ExternalEventType | undefined = undefined;
   let selectedExternalEventTypeAttributesSchema: Record<string, ValueSchema>;
+  let selectedExternalEventTypeParametersMap: ParametersMap = {};
 
   $: hasDeleteExternalSourceTypePermission = featurePermissions.externalSourceType.canDelete(user);
   $: hasDeleteExternalEventTypePermission = featurePermissions.externalEventType.canDelete(user);
@@ -144,8 +148,31 @@
     source => selectedDerivationGroup?.name === source.derivation_group_name,
   );
 
-  $: selectedExternalEventTypeAttributesSchema = translateJsonSchemaToValueSchema(selectedExternalEventType?.attribute_schema)
-  $: selectedExternalSourceTypeAttributeSchema = translateJsonSchemaToValueSchema(selectedExternalSourceType?.attribute_schema)
+  $: if (selectedExternalEventType !== undefined) {
+    selectedExternalEventTypeAttributesSchema = translateJsonSchemaToValueSchema(selectedExternalEventType?.attribute_schema)
+    selectedExternalEventTypeParametersMap = Object.entries(selectedExternalEventTypeAttributesSchema).reduce(
+      (acc: ParametersMap, currentAttribute: [string, ValueSchema], index: number) => {
+        acc[currentAttribute[0]] = {
+          order: index,
+          schema: currentAttribute[1],
+        };
+        return acc;
+      }, {} as ParametersMap,
+    );
+  }
+  $: if (selectedExternalSourceType !== undefined) {
+    selectedExternalSourceTypeAttributeSchema = translateJsonSchemaToValueSchema(selectedExternalSourceType?.attribute_schema)
+    selectedExternalSourceTypeParametersMap = Object.entries(selectedExternalSourceTypeAttributeSchema).reduce(
+      (acc: ParametersMap, currentAttribute: [string, ValueSchema], index: number) => {
+        acc[currentAttribute[0]] = {
+          order: index,
+          schema: currentAttribute[1],
+        };
+        return acc;
+      },
+      {} as ParametersMap,
+    );
+  }
 
   $: selectedExternalSourceTypeDerivationGroups = $derivationGroups.filter(derivationGroup => {
     if (selectedExternalSourceType !== undefined) {
@@ -524,14 +551,13 @@
               tooltipContent={`${selectedExternalSourceType.name} Attribute Schema Properties`}
               defaultExpanded={false}
             >
-              {#each Object.entries(selectedExternalSourceTypeAttributeSchema) as attribute}
-                {#if attribute[1].type !== undefined}
-                  <div class="st-typography-body attributes">
-                    <div class="attribute-name">{attribute[0]}</div>
-                    <div class="attribute-value">{attribute[1].type}</div>
-                  </div>
-                {/if}
-              {/each}
+              <div class="st-typography-body">
+                <Parameters
+                  disabled={true}
+                  expanded={false}
+                  formParameters={getFormParameters(selectedExternalSourceTypeParametersMap, {}, [])}
+                />
+              </div>
             </Collapse>
           </svelte:fragment>
         </Panel>
@@ -563,14 +589,13 @@
               tooltipContent={`${selectedExternalEventType.name} Attribute Schema Properties`}
               defaultExpanded={false}
             >
-              {#each Object.entries(selectedExternalEventTypeAttributesSchema) as attribute}
-                {#if attribute[1].type !== undefined}
-                  <div class="st-typography-body attributes">
-                    <div class="attribute-name">{attribute[0]}</div>
-                    <div class="attribute-value">{attribute[1].type}</div>
-                  </div>
-                {/if}
-              {/each}
+              <div class="st-typography-body">
+                <Parameters
+                  disabled={true}
+                  expanded={false}
+                  formParameters={getFormParameters(selectedExternalEventTypeParametersMap, {}, [])}
+                />
+              </div>
             </Collapse>
           </svelte:fragment>
         </Panel>
