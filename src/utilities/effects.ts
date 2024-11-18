@@ -25,9 +25,11 @@ import {
   savingExpansionRule,
   savingExpansionSet,
 } from '../stores/expansion';
+import { createExternalEventTypeError } from '../stores/external-event';
 import {
   createDerivationGroupError,
   createExternalSourceError,
+  createExternalSourceTypeError,
   creatingExternalSource,
   derivationGroupPlanLinkError,
   parsingError,
@@ -863,25 +865,30 @@ const effects = {
     if (!gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user)) {
       throwPermissionError('create an external event type');
     }
+    createExternalEventTypeError.set(null);
+
     try {
       const body = JSON.stringify({
         attribute_schema: eventTypeAttributesSchema,
         external_event_type_name: eventTypeName,
       });
 
-      try {
-        const response = await reqGateway(`/uploadExternalEventType`, 'POST', body, user, false);
-        if (response?.errors === undefined) {
-          showSuccessToast('External Event Type Created Successfully');
-        } else {
-          showFailureToast('External Event Type Attribute Schema Validation Failed');
-        }
-        return response;
-      } catch (e) {
-        catchError(e as Error);
+      const response = await reqGateway(`/uploadExternalEventType`, 'POST', body, user, false);
+      if (response?.errors === undefined) {
+        showSuccessToast('External Event Type Created Successfully');
+      } else {
+        showFailureToast('External Event Type Attribute Schema Validation Failed');
       }
+      return response;
     } catch (e) {
       showFailureToast('External Event Type Create Failed');
+      if ((e as Error).message.includes('POST /uploadExternalEventType:')) {
+        // error from gateway
+        createExternalEventTypeError.set((e as Error).message.replace('Internal Server Error\nPOST /uploadExternalEventType: ', 'Internal Server Error: '))
+      }
+      else {
+        createExternalEventTypeError.set((e as Error).message)
+      }
       catchError(e as Error);
     }
   },
@@ -997,7 +1004,7 @@ const effects = {
 
       const body = JSON.stringify(externalSourceInsert);
       const reqResponse = await reqGateway(`/uploadExternalSource`, 'POST', body, user, false);
-      showSuccessToast('External Source Type Created Successfully');
+      showSuccessToast('External Source Created Successfully');
       creatingExternalSource.set(false);
       return reqResponse;
     } catch (e) {
@@ -1005,6 +1012,10 @@ const effects = {
       showFailureToast('External Source Create Failed');
       if ((e as Error).message.includes('external_source_type_matches_derivation_group')) {
         createExternalSourceError.set('Cannot duplicate derivation groups!');
+      }
+      else if ((e as Error).message.includes('POST /uploadExternalSource:')) {
+        // error from gateway
+        createExternalSourceError.set((e as Error).message.replace('Internal Server Error\nPOST /uploadExternalSource: ', 'Internal Server Error: '))
       } else {
         createExternalSourceError.set((e as Error).message);
       }
@@ -1020,6 +1031,8 @@ const effects = {
     if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
       throwPermissionError('create an external source type');
     }
+    createExternalSourceTypeError.set(null);
+
     try {
       const body = JSON.stringify({
         allowed_event_types: allowedExternalEventTypes,
@@ -1027,19 +1040,22 @@ const effects = {
         external_source_type_name: sourceTypeName,
       });
 
-      try {
-        const response = await reqGateway(`/uploadExternalSourceType`, 'POST', body, user, false);
-        if (response?.errors === undefined) {
-          showSuccessToast('External Source Type Created Successfully');
-        } else {
-          showFailureToast('External Source Type Attribute Schema Validation Failed');
-        }
-        return response;
-      } catch (e) {
-        catchError(e as Error);
+      const response = await reqGateway(`/uploadExternalSourceType`, 'POST', body, user, false);
+      if (response?.errors === undefined) {
+        showSuccessToast('External Source Type Created Successfully');
+      } else {
+        showFailureToast('External Source Type Attribute Schema Validation Failed');
       }
+      return response;
     } catch (e) {
       showFailureToast('External Source Type Create Failed');
+      if ((e as Error).message.includes('POST /uploadExternalSourceType:')) {
+        // error from gateway
+        createExternalSourceTypeError.set((e as Error).message.replace('Internal Server Error\nPOST /uploadExternalSourceType: ', 'Internal Server Error: '))
+      }
+      else {
+        createExternalSourceTypeError.set((e as Error).message)
+      }
       catchError(e as Error);
     }
   },
