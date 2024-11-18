@@ -33,25 +33,11 @@
 
   function getSubFormParameters(formParameter: FormParameter<ValueSchemaStruct>): FormParameter[] {
     const { schema, value = [] } = formParameter;
-    let keys: any;
-    if ('items' in schema) {
-      ({ items: keys } = schema);
-    } else {
-      keys = {};
-    }
+    const { items: keys } = schema;
     const structKeys = Object.keys(keys).sort();
 
     const subFormParameters = structKeys.map((key, index) => {
       let subFormParameter: FormParameter = {
-        errors: null,
-        key: undefined,
-        name: '',
-        order: -1,
-        schema: { type: 'string' },
-        value: null,
-        valueSource: 'none',
-      };
-      subFormParameter = {
         errors: null,
         key,
         name: key,
@@ -86,9 +72,7 @@
       <ParameterName {formParameter} />
     </div>
     <div class="right" slot="right">
-      {#if 'metadata' in formParameter.schema}
-        <ParameterUnits unit={formParameter.schema.metadata?.unit?.value} />
-      {/if}
+      <ParameterUnits unit={formParameter.schema.metadata?.unit?.value} />
       <ParameterBaseRightAdornments
         {disabled}
         hidden={hideRightAdornments}

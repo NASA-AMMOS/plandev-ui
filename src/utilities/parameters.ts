@@ -91,7 +91,7 @@ export function getFormParameters(
  * Returns a boolean for whether or not the provided parameter is recursive
  */
 export function isRecParameter(parameter: FormParameter) {
-  return parameter.schema.type === 'series' || parameter.schema.type === 'struct' || parameter.schema.type === 'object';
+  return parameter.schema.type === 'series' || parameter.schema.type === 'struct';
 }
 
 /**

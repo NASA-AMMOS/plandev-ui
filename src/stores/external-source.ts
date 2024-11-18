@@ -37,13 +37,13 @@ export const planDerivationGroupLinks = gqlSubscribable<PlanDerivationGroup[]>(
   [],
   null,
 );
-export const sourcesUsingExternalEventTypes = gqlSubscribable<{key: string, types: string[]}[]>(
+export const sourcesUsingExternalEventTypes = gqlSubscribable<{ key: string; types: string[] }[]>(
   gql.SUB_EVENT_TYPES_IN_USE,
   {},
   [],
   null,
-  transformSourcesUsingExternalEventTypes
-)
+  transformSourcesUsingExternalEventTypes,
+);
 
 /* Derived. */
 // reorganization of unacknowledged planDerivationGroupLinks so that it is easy to the derivation groups and when their updates were last acknowledged
@@ -122,18 +122,19 @@ function transformDerivationGroups(
 }
 
 function transformSourcesUsingExternalEventTypes(
-  external_source: {
-    external_events: {
-      external_event_type: {
-        name: string
-      }
-    }[],
-    key: string
-  }[]
-  | undefined
-  | null
+  external_source:
+    | {
+        external_events: {
+          external_event_type: {
+            name: string;
+          };
+        }[];
+        key: string;
+      }[]
+    | undefined
+    | null,
 ) {
-  const results: {key: string, types: string[]}[] = [];
+  const results: { key: string; types: string[] }[] = [];
 
   if (external_source !== undefined && external_source !== null) {
     for (const source of external_source) {
@@ -142,7 +143,7 @@ function transformSourcesUsingExternalEventTypes(
       for (const external_event of source.external_events) {
         types.push(external_event.external_event_type.name);
       }
-      results.push({key, types});
+      results.push({ key, types });
     }
   }
 
