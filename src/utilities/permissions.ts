@@ -836,6 +836,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     return isUserAdmin(user) || getPermission([Queries.CONSTRAINT_RUN], user);
   },
   SUB_DERIVATION_GROUPS: () => true,
+  SUB_EVENT_TYPES_IN_USE: () => true,
   SUB_EXPANSION_RULES: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.EXPANSION_RULES], user);
   },
@@ -1591,5 +1592,6 @@ export {
   isPlanOwner,
   isUserAdmin,
   isUserOwner,
-  queryPermissions,
+  queryPermissions
 };
+

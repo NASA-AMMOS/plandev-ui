@@ -184,7 +184,6 @@
   $: if (selectedSource !== null) {
     // Create an ArgumentsMap for the External Source
     selectedSourceAttributes = selectedSource.attributes as ArgumentsMap;
-    console.log('SELECTED SOURCE', selectedSource);
     // Create a ParametersMap for the External Source Type
     selectedSourceType = $externalSourceTypes.find(sourceType => sourceType.name === selectedSource?.source_type_name);
     selectedSourceTypeAttributes = selectedSourceType?.attribute_schema.properties as Record<string, JSONTypeSchema>;
@@ -365,8 +364,6 @@
           $validAtDoyField.value,
           user,
         );
-
-      console.log('createExternalSource', createExternalSourceResponse);
 
       // Following a successful mutation...
       if (createExternalSourceResponse !== undefined) {
