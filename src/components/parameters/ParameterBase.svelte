@@ -46,7 +46,7 @@
     on:change
     on:reset
   />
-{:else if formParameter.schema.type === 'int' || formParameter.schema.type === 'integer' || formParameter.schema.type === 'number'}
+{:else if formParameter.schema.type === 'int'}
   <ParameterBaseNumber
     {disabled}
     {hideRightAdornments}

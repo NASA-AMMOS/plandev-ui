@@ -38,7 +38,7 @@
     getExternalSourceSlimRowId,
   } from '../../utilities/externalEvents';
   import { parseJSONStream } from '../../utilities/generic';
-  import { getFormParameters, translateJsonSchemaToValueSchema } from '../../utilities/parameters';
+  import { getFormParameters, translateJsonSchemaArgumentsToValueSchema, translateJsonSchemaToValueSchema } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { formatDate } from '../../utilities/time';
@@ -183,18 +183,21 @@
 
   $: if (selectedSource !== null) {
     // Create an ArgumentsMap for the External Source
-    selectedSourceAttributes = selectedSource.attributes as ArgumentsMap;
+    selectedSourceAttributes = translateJsonSchemaArgumentsToValueSchema(selectedSource.attributes);
     // Create a ParametersMap for the External Source Type
     selectedSourceType = $externalSourceTypes.find(sourceType => sourceType.name === selectedSource?.source_type_name);
-    const selectedSourceTypeAttributesTranslated = translateJsonSchemaToValueSchema(selectedSourceType?.attribute_schema);
+    const selectedSourceTypeAttributesTranslated = translateJsonSchemaToValueSchema(
+      selectedSourceType?.attribute_schema,
+    );
     selectedSourceTypeParametersMap = Object.entries(selectedSourceTypeAttributesTranslated).reduce(
       (acc: ParametersMap, currentAttribute: [string, ValueSchema], index: number) => {
         acc[currentAttribute[0]] = {
           order: index,
-          schema: currentAttribute[1]
+          schema: currentAttribute[1],
         };
         return acc;
-      }, {} as ParametersMap,
+      },
+      {} as ParametersMap,
     );
   }
 

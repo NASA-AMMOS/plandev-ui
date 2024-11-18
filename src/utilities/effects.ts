@@ -883,10 +883,14 @@ const effects = {
       showFailureToast('External Event Type Create Failed');
       if ((e as Error).message.includes('POST /uploadExternalEventType:')) {
         // error from gateway
-        createExternalEventTypeError.set((e as Error).message.replace('Internal Server Error\nPOST /uploadExternalEventType: ', 'Internal Server Error: '))
-      }
-      else {
-        createExternalEventTypeError.set((e as Error).message)
+        createExternalEventTypeError.set(
+          (e as Error).message.replace(
+            'Internal Server Error\nPOST /uploadExternalEventType: ',
+            'Internal Server Error: ',
+          ),
+        );
+      } else {
+        createExternalEventTypeError.set((e as Error).message);
       }
       catchError(e as Error);
     }
@@ -1011,21 +1015,21 @@ const effects = {
       showFailureToast('External Source Create Failed');
       if ((e as Error).message.includes('external_source_type_matches_derivation_group')) {
         createExternalSourceError.set('Cannot duplicate derivation groups!');
-      }
-      else if ((e as Error).message.includes('POST /uploadExternalSource:')) {
+      } else if ((e as Error).message.includes('POST /uploadExternalSource:')) {
         // error from gateway
-        createExternalSourceError.set((e as Error).message.replace('Internal Server Error\nPOST /uploadExternalSource: ', 'Internal Server Error: '))
+        createExternalSourceError.set(
+          (e as Error).message.replace(
+            'Internal Server Error\nPOST /uploadExternalSource: ',
+            'Internal Server Error: ',
+          ),
+        );
       } else {
         createExternalSourceError.set((e as Error).message);
       }
     }
   },
 
-  async createExternalSourceType(
-    sourceTypeName: string,
-    sourceTypeAttributesSchema: object,
-    user: User | null,
-  ) {
+  async createExternalSourceType(sourceTypeName: string, sourceTypeAttributesSchema: object, user: User | null) {
     if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
       throwPermissionError('create an external source type');
     }
@@ -1048,10 +1052,14 @@ const effects = {
       showFailureToast('External Source Type Create Failed');
       if ((e as Error).message.includes('POST /uploadExternalSourceType:')) {
         // error from gateway
-        createExternalSourceTypeError.set((e as Error).message.replace('Internal Server Error\nPOST /uploadExternalSourceType: ', 'Internal Server Error: '))
-      }
-      else {
-        createExternalSourceTypeError.set((e as Error).message)
+        createExternalSourceTypeError.set(
+          (e as Error).message.replace(
+            'Internal Server Error\nPOST /uploadExternalSourceType: ',
+            'Internal Server Error: ',
+          ),
+        );
+      } else {
+        createExternalSourceTypeError.set((e as Error).message);
       }
       catchError(e as Error);
     }
@@ -6568,17 +6576,6 @@ const effects = {
       catchError(e as Error);
       const { message } = e as Error;
       return { errors: [{ message } as ParameterValidationError], success: false };
-    }
-  },
-
-  async validateSchema(jsonSchema: object): Promise<{ errors?: []; valid: boolean }> {
-    try {
-      const result = await reqGateway('/validation/schema', 'POST', JSON.stringify(jsonSchema), null, false);
-      return result;
-    } catch (e) {
-      catchError(e as Error);
-      // TODO: Fix errors
-      return { errors: [], valid: false };
     }
   },
 

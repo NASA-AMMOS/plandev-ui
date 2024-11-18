@@ -64,5 +64,3 @@ export type ExternalEventType = {
 // https://stackoverflow.com/questions/64263271/typescript-validate-excess-keys-on-value-returned-from-function
 export type ExternalEventInsertInput = Pick<ExternalEventDB, 'attributes' | 'start_time' | 'duration'> &
   Pick<ExternalEventPkey, 'event_type_name' | 'key'>;
-
-export type ExternalEventTypeInsertInput = ExternalEventType;
