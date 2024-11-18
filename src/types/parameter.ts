@@ -1,4 +1,3 @@
-import type { JSONType } from 'ajv';
 import type { ValueSchema } from './schema';
 
 export type DefaultEffectiveArguments = {
@@ -14,13 +13,7 @@ export type EffectiveArguments = {
   success: boolean;
 };
 
-// TODO: Temporary testing, extends to possibly include properties which is then used when the type === 'object'
-export type JSONTypeSchema = {
-  properties?: Record<string, JSONTypeSchema>;
-  type: JSONType;
-};
-
-export type FormParameter<T = ValueSchema | JSONTypeSchema> = {
+export type FormParameter<T = ValueSchema> = {
   errors: string[] | null;
   file?: File;
   index?: number;
@@ -37,7 +30,7 @@ export type Argument = any;
 
 export type ArgumentsMap = Record<ParameterName, Argument>;
 
-export type Parameter = { order: number; schema: ValueSchema | JSONTypeSchema; unit?: string };
+export type Parameter = { order: number; schema: ValueSchema; unit?: string };
 export type ComputedParameter = { order: number; schema: ValueSchema; units?: Record<ParameterName, string> };
 
 export type ParameterError = { message: string; schema: ValueSchema };

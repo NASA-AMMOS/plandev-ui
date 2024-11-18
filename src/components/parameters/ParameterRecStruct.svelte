@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { FormParameter, JSONTypeSchema, ParameterType } from '../../types/parameter';
+  import type { FormParameter, ParameterType } from '../../types/parameter';
   import type { ValueSchemaStruct } from '../../types/schema';
   import { isRecParameter } from '../../utilities/parameters';
   import type { ActionArray } from '../../utilities/useActions';
@@ -16,7 +16,7 @@
   export let disabled: boolean = false;
   export let expanded: boolean = false;
   export let headerHeight: number = 24;
-  export let formParameter: FormParameter<ValueSchemaStruct | JSONTypeSchema>;
+  export let formParameter: FormParameter<ValueSchemaStruct>;
   export let hideRightAdornments: boolean = false;
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
@@ -31,13 +31,11 @@
 
   $: subFormParameters = getSubFormParameters(formParameter);
 
-  function getSubFormParameters(formParameter: FormParameter<ValueSchemaStruct | JSONTypeSchema>): FormParameter[] {
+  function getSubFormParameters(formParameter: FormParameter<ValueSchemaStruct>): FormParameter[] {
     const { schema, value = [] } = formParameter;
     let keys: any;
     if ('items' in schema) {
       ({ items: keys } = schema);
-    } else if ('properties' in schema) {
-      ({ properties: keys } = schema);
     } else {
       keys = {};
     }
@@ -53,27 +51,15 @@
         value: null,
         valueSource: 'none',
       };
-      if ('items' in schema) {
-        subFormParameter = {
-          errors: null,
-          key,
-          name: key,
-          order: index,
-          schema: schema.items[key],
-          value: value !== null ? value[key] : null,
-          valueSource: formParameter.valueSource,
-        };
-      } else if ('properties' in schema && schema.properties !== undefined) {
-        subFormParameter = {
-          errors: null,
-          key,
-          name: key,
-          order: index,
-          schema: { type: schema.properties[key].type },
-          value: value[key],
-          valueSource: formParameter.valueSource,
-        };
-      }
+      subFormParameter = {
+        errors: null,
+        key,
+        name: key,
+        order: index,
+        schema: schema.items[key],
+        value: value !== null ? value[key] : null,
+        valueSource: formParameter.valueSource,
+      };
       return subFormParameter;
     });
 
