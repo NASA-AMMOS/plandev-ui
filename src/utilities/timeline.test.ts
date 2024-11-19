@@ -10,6 +10,7 @@ import type { ExternalEvent } from '../types/external-event';
 import type { Resource, ResourceType, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type { DiscreteTreeNode, TimeRange, Timeline, XRangeLayer } from '../types/timeline';
 import { createSpanUtilityMaps } from './activities';
+import { convertUTCToMs } from './time';
 import {
   createHorizontalGuide,
   createRow,
@@ -37,7 +38,6 @@ import {
   paginateNodes,
   spanInView,
 } from './timeline';
-import { convertUTCToMs } from './time';
 
 const testSpans: Span[] = [
   generateSpan({
@@ -1097,6 +1097,7 @@ test('generateDiscreteTree', () => {
               items: [
                 {
                   externalEvent: {
+                    attributes: {},
                     duration: '',
                     duration_ms: 0,
                     pkey: {
@@ -1121,6 +1122,7 @@ test('generateDiscreteTree', () => {
           items: [
             {
               externalEvent: {
+                attributes: {},
                 duration: '',
                 duration_ms: 0,
                 pkey: {
@@ -1145,6 +1147,7 @@ test('generateDiscreteTree', () => {
       items: [
         {
           externalEvent: {
+            attributes: {},
             duration: '',
             duration_ms: 0,
             pkey: {

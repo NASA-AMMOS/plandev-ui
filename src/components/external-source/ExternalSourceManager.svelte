@@ -38,7 +38,11 @@
     getExternalSourceSlimRowId,
   } from '../../utilities/externalEvents';
   import { parseJSONStream } from '../../utilities/generic';
-  import { getFormParameters, translateJsonSchemaArgumentsToValueSchema, translateJsonSchemaToValueSchema } from '../../utilities/parameters';
+  import {
+    getFormParameters,
+    translateJsonSchemaArgumentsToValueSchema,
+    translateJsonSchemaToValueSchema,
+  } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { formatDate } from '../../utilities/time';
