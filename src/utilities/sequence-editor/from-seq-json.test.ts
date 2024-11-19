@@ -461,19 +461,19 @@ C FSW_CMD_2 10 "ENUM" # fsw cmd 2 description
           description: 'immediate command',
           metadata: {},
           stem: 'IC',
-          type: 'command',
+          type: 'immediate_command',
         },
         {
           args: [],
           stem: 'IC2',
-          type: 'command',
+          type: 'immediate_command',
         },
         {
           args: [],
           description: 'noop command, no arguments',
           metadata: { processor: 'VC1A' },
           stem: 'NOOP',
-          type: 'command',
+          type: 'immediate_command',
         },
         {
           args: [
@@ -487,12 +487,12 @@ C FSW_CMD_2 10 "ENUM" # fsw cmd 2 description
             Key: 'Value',
           },
           sequence: 'seqA',
-          type: 'load',
+          type: 'immediate_load',
         },
         {
           description: 'description',
           sequence: 'seqB',
-          type: 'activate',
+          type: 'immediate_activate',
         },
       ],
       metadata: {},
