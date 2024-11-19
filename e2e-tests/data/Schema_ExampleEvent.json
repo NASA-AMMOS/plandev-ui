@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "ExampleEvent",
+  "description": "Schema for the attributes of the ExampleEvent External Event Type.",
+  "type": "object",
+  "properties": {
+    "example1": {
+      "type": "string"
+    },
+    "example2": {
+      "type": "number"
+    }
+  }
+}

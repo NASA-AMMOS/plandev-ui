@@ -291,7 +291,7 @@
           props: {
             deleteCallback: params.deleteExternalEventType,
             deleteTooltip: {
-              content: 'Delete External Source',
+              content: 'Delete External Event Type',
               placement: 'bottom',
             },
             hasDeletePermission: hasDeleteExternalEventTypePermission,

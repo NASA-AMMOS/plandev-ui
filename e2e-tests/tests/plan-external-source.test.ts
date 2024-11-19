@@ -39,6 +39,16 @@ test.beforeAll(async ({ baseURL, browser }) => {
   await plans.goto();
   await plans.createPlan();
   await externalSources.goto();
+  await externalSources.createType(
+    externalSources.externalEventTypeName,
+    externalSources.externalEventTypeSchema,
+    false,
+  );
+  await externalSources.createType(
+    externalSources.externalSourceTypeName,
+    externalSources.externalSourceTypeSchema,
+    true,
+  );
   await externalSources.uploadExternalSource();
 });
 
@@ -144,6 +154,12 @@ test.describe.serial('Plan External Sources', () => {
   test('Cards should be shown when a new external source is uploaded', async () => {
     // Upload a test file and link its derivation group to the plan
     await externalSources.goto();
+    await externalSources.createType(externalSources.derivationATypeName, externalSources.derivationATypeSchema, false);
+    await externalSources.createType(
+      externalSources.derivationTestSourceTypeName,
+      externalSources.derivationTestSourceTypeSchema,
+      true,
+    );
     await externalSources.uploadExternalSource(
       externalSources.derivationTestFile1,
       externalSources.derivationTestFileKey1,
@@ -158,6 +174,7 @@ test.describe.serial('Plan External Sources', () => {
 
     // Upload another test
     await externalSources.goto();
+    await externalSources.createType(externalSources.derivationBTypeName, externalSources.derivationBTypeSchema, false);
     await externalSources.uploadExternalSource(
       externalSources.derivationTestFile2,
       externalSources.derivationTestFileKey2,
