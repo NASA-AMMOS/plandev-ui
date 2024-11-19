@@ -1,9 +1,19 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+
 export class ExternalSources {
   alertError: Locator;
   closeButton: Locator;
+  createTypesButton: Locator;
   deleteSourceButton: Locator;
   deleteSourceButtonConfirmation: Locator;
+  derivationATypeName: string = 'DerivationA';
+  derivationATypeSchema: string = 'e2e-tests/data/Schema_DerivationA.json';
+  derivationBTypeName: string = 'DerivationB';
+  derivationBTypeSchema: string = 'e2e-tests/data/Schema_DerivationB.json';
+  derivationCTypeName: string = 'DerivationC';
+  derivationCTypeSchema: string = 'e2e-tests/data/Schema_DerivationC.json';
+  derivationDTypeName: string = 'DerivationD';
+  derivationDTypeSchema: string = 'e2e-tests/data/Schema_DerivationD.json';
   derivationTestFile1: string = 'e2e-tests/data/external-event-derivation-1.json';
   derivationTestFile2: string = 'e2e-tests/data/external-event-derivation-2.json';
   derivationTestFile3: string = 'e2e-tests/data/external-event-derivation-3.json';
@@ -14,6 +24,8 @@ export class ExternalSources {
   derivationTestFileKey4: string = 'external-event-derivation-4.json';
   derivationTestGroupName: string = 'Derivation Test Default';
   derivationTestSourceType: string = 'Derivation Test';
+  derivationTestSourceTypeName: string = 'Derivation Test';
+  derivationTestSourceTypeSchema: string = 'e2e-tests/data/Schema_Derivation-Test.json';
   deselectEventButton: Locator;
   deselectSourceButton: Locator;
   exampleDerivationGroup: string = 'Example External Source Default';
@@ -23,14 +35,19 @@ export class ExternalSources {
   externalEventTableHeaderDuration: Locator;
   externalEventTableHeaderEventType: Locator;
   externalEventTableRow: Locator;
+  externalEventTypeName: string = 'ExampleEvent';
+  externalEventTypeSchema: string = 'e2e-tests/data/Schema_ExampleEvent.json';
   externalSourceFileName: string = 'example-external-source.json';
   externalSourceFilePath: string = 'e2e-tests/data/example-external-source.json';
   externalSourceFilePathMissingField: string = 'e2e-tests/data/example-external-source-missing-field.json';
   externalSourceFilePathSyntaxError: string = 'e2e-tests/data/example-external-source-syntax-error.json';
   externalSourceSelectedForm: Locator;
+  externalSourceTypeName: string = 'Example External Source';
+  externalSourceTypeSchema: string = 'e2e-tests/data/Schema_Example-External-Source.json';
   externalSourceUpload: Locator;
   externalSourcesTable: Locator;
   inputFile: Locator;
+  manageGroupsAndTypesButton: Locator;
   nameInput: Locator;
   panelExternalEventsTable: Locator;
   saveButton: Locator;
@@ -46,6 +63,47 @@ export class ExternalSources {
 
   async close() {
     await this.closeButton.click();
+  }
+
+  async createType(typeName: string, typeSchema: string, isSourceType: boolean) {
+    await this.createTypesButton.click();
+    if (isSourceType) {
+      await this.page.getByRole('radio', { name: 'External Source Type' }).click();
+    }
+    await this.page.getByPlaceholder('New Type Name').fill(typeName);
+    await this.page.locator('#svelte-modal input[name="file"]').focus();
+    await this.page.locator('#svelte-modal input[name="file"]').setInputFiles(typeSchema);
+    await this.page.locator('#svelte-modal input[name="file"]').evaluate(e => e.blur());
+    await this.page.getByRole('button', { exact: true, name: 'Create' }).click();
+    if (isSourceType) {
+      await this.waitForToast('External Source Type Created Successfully');
+    } else {
+      await this.waitForToast('External Event Type Created Successfully');
+    }
+  }
+
+  async deleteDerivationGroup(derivationGroupName: string) {
+    await this.page.getByRole('button', { exact: true, name: 'Derivation Group' }).click();
+    await this.page.getByRole('row', { name: derivationGroupName }).hover();
+    await this.page.getByRole('row', { name: derivationGroupName }).getByLabel('Delete Derivation Group').click();
+    await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
+    await expect(this.page.getByRole('row', { name: derivationGroupName })).not.toBeVisible();
+  }
+
+  async deleteExternalEventType(eventTypeName: string) {
+    await this.page.getByRole('button', { exact: true, name: 'External Event Type' }).click();
+    await this.page.getByRole('row', { name: eventTypeName }).hover();
+    await this.page.getByRole('row', { name: eventTypeName }).getByLabel('Delete External Event Type').click();
+    await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
+    await expect(this.page.getByRole('row', { name: eventTypeName })).not.toBeVisible();
+  }
+
+  async deleteExternalSourceType(sourceTypeName: string) {
+    await this.page.getByRole('button', { exact: true, name: 'External Source Type' }).click();
+    await this.page.getByRole('row', { name: sourceTypeName }).hover();
+    await this.page.getByRole('row', { name: sourceTypeName }).getByLabel('Delete External Source Type').click();
+    await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
+    await expect(this.page.getByRole('row', { name: sourceTypeName })).not.toBeVisible();
   }
 
   async deleteSource(sourceName: string) {
@@ -135,6 +193,8 @@ export class ExternalSources {
     this.viewEventSourceMetadata = page.getByRole('button', { name: 'View Event Source Metadata' });
     this.panelExternalEventsTable = page.locator('[data-component-name="ExternalEventsTablePanel"]');
     this.externalSourcesTable = page.locator('#external-sources-table');
+    this.createTypesButton = page.getByLabel('Create external source types or external event types.');
+    this.manageGroupsAndTypesButton = page.getByLabel('Manage and inspect existing');
   }
 
   async uploadExternalSource(
@@ -143,7 +203,12 @@ export class ExternalSources {
   ) {
     await this.fillInputFile(inputFilePath);
     await this.uploadButton.click();
+    await this.waitForToast('External Source Created Successfully');
     await expect(this.externalSourcesTable).toBeVisible();
     await expect(this.externalSourcesTable.getByRole('gridcell', { name: inputFileName })).toBeVisible();
+  }
+
+  async waitForToast(message: string) {
+    await this.page.waitForSelector(`.toastify:has-text("${message}")`, { timeout: 10000 });
   }
 }

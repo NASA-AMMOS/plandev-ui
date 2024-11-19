@@ -1007,7 +1007,13 @@ const effects = {
 
       const body = JSON.stringify(externalSourceInsert);
       const reqResponse = await reqGateway(`/uploadExternalSource`, 'POST', body, user, false);
-      showSuccessToast('External Source Created Successfully');
+      if (reqResponse?.errors === undefined) {
+        showSuccessToast('External Source Created Successfully');
+      } else {
+        const respErrors = reqResponse.errors.map((respError: { message: string }) => respError.message);
+        showFailureToast('External Source Create Failed');
+        throw new Error(respErrors);
+      }
       creatingExternalSource.set(false);
       return reqResponse;
     } catch (e) {
@@ -1026,6 +1032,7 @@ const effects = {
       } else {
         createExternalSourceError.set((e as Error).message);
       }
+      creatingExternalSource.set(false);
     }
   },
 

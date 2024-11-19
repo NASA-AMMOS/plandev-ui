@@ -23,12 +23,17 @@ test.beforeEach(async () => {
 
 test.describe.serial('External Sources', () => {
   test('Uploading an external source', async () => {
+    await externalSources.createType(
+      externalSources.externalEventTypeName,
+      externalSources.externalEventTypeSchema,
+      false,
+    );
+    await externalSources.createType(
+      externalSources.externalSourceTypeName,
+      externalSources.externalSourceTypeSchema,
+      true,
+    );
     await externalSources.uploadExternalSource();
-    await expect(
-      externalSources.externalSourcesTable.getByRole('gridcell', {
-        name: 'ExampleExternalSource:example',
-      }),
-    ).toBeVisible();
   });
 
   test('Upload button should be enabled after entering a filepath', async () => {
@@ -86,24 +91,44 @@ test.describe.serial('External Sources', () => {
   });
 
   test('Deleting an external source', async () => {
+    await expect(externalSources.externalSourcesTable).toBeVisible();
     await externalSources.deleteSource(externalSources.externalSourceFileName);
-    await expect(page.getByText('External Source Deleted')).toBeVisible();
+    await expect(page.getByText('External Source Deleted Successfully')).toBeVisible();
     await expect(externalSources.inputFile).toBeVisible();
     await expect(externalSources.externalEventSelectedForm).not.toBeVisible();
     await expect(externalSources.externalSourceSelectedForm).not.toBeVisible();
+    await externalSources.manageGroupsAndTypesButton.click();
+    await externalSources.deleteDerivationGroup(externalSources.exampleDerivationGroup);
+    await externalSources.deleteExternalEventType(externalSources.exampleEventType);
+    await externalSources.deleteExternalSourceType(externalSources.exampleSourceType);
   });
 });
 
 test.describe.serial('External Source Error Handling', () => {
   test('Duplicate keys is handled gracefully', async () => {
+    await externalSources.createType(
+      externalSources.externalEventTypeName,
+      externalSources.externalEventTypeSchema,
+      false,
+    );
+    await externalSources.createType(
+      externalSources.externalSourceTypeName,
+      externalSources.externalSourceTypeSchema,
+      true,
+    );
+    await page.waitForTimeout(5000);
     await externalSources.uploadExternalSource();
     await externalSources.deselectSourceButton.click();
+    await expect(externalSources.externalSourcesTable).toBeVisible();
+    await expect(
+      externalSources.externalSourcesTable.getByRole('gridcell', { name: externalSources.externalSourceFileName }),
+    ).toBeVisible();
     await externalSources.uploadExternalSource();
     await expect(page.getByLabel('Uniqueness violation.')).toBeVisible();
-    await expect(page.getByText('External Source Create Failed')).toBeVisible();
+    await externalSources.waitForToast('External Source Create Failed');
     await expect(page.getByRole('gridcell', { name: externalSources.externalSourceFileName })).toHaveCount(1);
     await externalSources.deleteSource(externalSources.externalSourceFileName);
-    await expect(page.getByText('External Source Deleted')).toBeVisible();
+    await expect(page.getByText('External Source Deleted Successfully')).toBeVisible();
   });
 
   test("Invalid 'source' field is handled gracefully", async () => {
