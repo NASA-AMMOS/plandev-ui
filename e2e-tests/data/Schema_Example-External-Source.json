@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Example External Source",
+  "description": "Schema for the attributes of the Example External Source External Source Type.",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "number"
+    },
+    "spacecraft": {
+      "type": "string"
+    }
+  }
+}

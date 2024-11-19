@@ -7,12 +7,9 @@
             "start_time": "2022-001T00:00:00Z",
             "end_time": "2022-002T00:00:00Z"
         },
-        "metadata": {
+        "attributes": {
             "version": 1,
-            "spacecraft": [
-                "sc1",
-                "sc2"
-            ]
+            "spacecraft": "sc1"
         }
     },
     "events": [
@@ -21,7 +18,7 @@
             "event_type": "ExampleEvent",
             "start_time": "2022-001T12:00:00Z",
             "duration": "00:00:00",
-            "properties": {
+            "attributes": {
                 "example1": "value",
                 "example2": 1
             }

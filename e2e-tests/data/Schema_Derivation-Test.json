@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Derivation Test",
+  "description": "Schema for the attributes of the Derivation Test External Source Type.",
+  "type": "object",
+  "properties": {
+    "exampleAttribute": {
+      "type": "string"
+    }
+  }
+}

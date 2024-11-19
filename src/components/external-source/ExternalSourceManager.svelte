@@ -155,6 +155,7 @@
   // We want to parse a file selected for upload.
   let files: FileList | undefined;
   let file: File | undefined;
+  let externalSourceFileInput: HTMLInputElement;
   let parsedExternalSource: ExternalSourceJson | undefined;
 
   // For filtering purposes (modelled after TimelineEditorLayerFilter):
@@ -354,7 +355,6 @@
 
   async function onFormSubmit(_e: SubmitEvent) {
     if (parsedExternalSource && file) {
-      // TODO: FIX, MISSING ATTRIBUTES.
       const createExternalSourceResponse: { data: { createExternalSource: ExternalSourceSlim } } | undefined =
         await effects.createExternalSource(
           $sourceTypeField.value,
@@ -380,6 +380,9 @@
     }
     // Reset the form behind the source
     parsedExternalSource = undefined;
+    file = undefined;
+    files = undefined;
+    externalSourceFileInput.value = '';
     keyField.reset('');
     sourceTypeField.reset('');
     startTimeDoyField.reset('');
@@ -642,6 +645,7 @@
                 required
                 type="file"
                 bind:files
+                bind:this={externalSourceFileInput}
                 use:permissionHandler={{
                   hasPermission: hasCreatePermission,
                   permissionError: createPermissionError,
@@ -745,7 +749,7 @@
             class="st-button secondary"
             on:click|stopPropagation={onCreateGroupsOrTypes}
             use:tooltip={{
-              content: 'Create derivation groups, external source types, or external event types.',
+              content: 'Create external source types or external event types.',
               placement: 'top',
             }}
           >
