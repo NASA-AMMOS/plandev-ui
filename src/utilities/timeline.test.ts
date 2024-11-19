@@ -1227,6 +1227,7 @@ test('generateDiscreteTree', () => {
               items: [
                 {
                   externalEvent: {
+                    attributes: {},
                     duration: '',
                     duration_ms: 0,
                     pkey: {
@@ -1251,6 +1252,7 @@ test('generateDiscreteTree', () => {
           items: [
             {
               externalEvent: {
+                attributes: {},
                 duration: '',
                 duration_ms: 0,
                 pkey: {
@@ -1275,6 +1277,7 @@ test('generateDiscreteTree', () => {
       items: [
         {
           externalEvent: {
+            attributes: {},
             duration: '',
             duration_ms: 0,
             pkey: {

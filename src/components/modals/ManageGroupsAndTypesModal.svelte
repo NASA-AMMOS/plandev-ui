@@ -149,7 +149,9 @@
   );
 
   $: if (selectedExternalEventType !== undefined) {
-    selectedExternalEventTypeAttributesSchema = translateJsonSchemaToValueSchema(selectedExternalEventType?.attribute_schema)
+    selectedExternalEventTypeAttributesSchema = translateJsonSchemaToValueSchema(
+      selectedExternalEventType?.attribute_schema,
+    );
     selectedExternalEventTypeParametersMap = Object.entries(selectedExternalEventTypeAttributesSchema).reduce(
       (acc: ParametersMap, currentAttribute: [string, ValueSchema], index: number) => {
         acc[currentAttribute[0]] = {
@@ -157,11 +159,14 @@
           schema: currentAttribute[1],
         };
         return acc;
-      }, {} as ParametersMap,
+      },
+      {} as ParametersMap,
     );
   }
   $: if (selectedExternalSourceType !== undefined) {
-    selectedExternalSourceTypeAttributeSchema = translateJsonSchemaToValueSchema(selectedExternalSourceType?.attribute_schema)
+    selectedExternalSourceTypeAttributeSchema = translateJsonSchemaToValueSchema(
+      selectedExternalSourceType?.attribute_schema,
+    );
     selectedExternalSourceTypeParametersMap = Object.entries(selectedExternalSourceTypeAttributeSchema).reduce(
       (acc: ParametersMap, currentAttribute: [string, ValueSchema], index: number) => {
         acc[currentAttribute[0]] = {
