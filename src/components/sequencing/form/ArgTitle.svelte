@@ -22,10 +22,12 @@
   let title: string = '';
   let typeInfo: string = '';
   let formattedRange: string = '';
+  let isSymbolAllowed: boolean = true;
 
   $: typeInfo = compactType(argDef);
   $: title = getArgTitle(argDef, typeInfo);
   $: formattedRange = formatRange(argDef);
+  $: isSymbolAllowed = !isFswCommandArgumentRepeat(argDef);
 
   function compactType(argDef: FswCommandArgument): string {
     if (isFswCommandArgumentUnsigned(argDef)) {
@@ -96,12 +98,14 @@
       </div>
     {/if}
 
-    <div>Value Type</div>
+    {#if isSymbolAllowed}
+      <div>Value Type</div>
 
-    <select class="st-select" required bind:value={argumentValueCategory} on:change={onValueTypeChange}>
-      <option value="Literal"> Literal </option>
-      <option value="Symbol"> Symbol </option>
-    </select>
+      <select class="st-select" required bind:value={argumentValueCategory} on:change={onValueTypeChange}>
+        <option value="Literal"> Literal </option>
+        <option value="Symbol"> Symbol </option>
+      </select>
+    {/if}
   </div>
 </Collapse>
 
