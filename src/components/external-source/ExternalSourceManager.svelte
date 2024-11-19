@@ -343,8 +343,12 @@
   });
 
   $: if (parsedExternalSource !== undefined) {
-    doesSourceTypeAndEventTypesExist(parsedExternalSource);
-    isUploadDisabled = false;
+    if (doesSourceTypeAndEventTypesExist(parsedExternalSource)) {
+      isUploadDisabled = false;
+      uploadDisabledMessage = null;
+    } else {
+      isUploadDisabled = true;
+    }
   } else {
     isUploadDisabled = true;
     uploadDisabledMessage = null;
@@ -511,24 +515,37 @@
     const externalSourceType = $externalSourceTypes.find(
       sourceType => sourceType.name === externalSource.source.source_type,
     );
-    if (externalSourceType === undefined) {
+    if (externalSourceType === undefined && Object.keys(externalSource.source.attributes).length === 0) {
       newExternalSourceType = externalSource.source.source_type;
     }
 
     // Check that all the External Event Types for the source to-be-uploaded exist
-    const newSourceExternalEventTypes: string[] = Array.from(
-      new Set(externalSource.events.map(event => event.event_type)),
-    );
+    const newSourceExternalEventTypes: { [event_type: string]: string[] } = {};
+    for (const event of externalSource.events) {
+      if (newSourceExternalEventTypes[event.event_type] === undefined) {
+        newSourceExternalEventTypes[event.event_type] = Object.keys(event.attributes);
+      } else if (newSourceExternalEventTypes[event.event_type] !== Object.keys(event.attributes)) {
+        // if there is a mismatch, cause error
+        console.log(newSourceExternalEventTypes[event.event_type], Object.keys(event.attributes));
+        uploadDisabledMessage = 'Event attributes are inconsistent across events of type ' + event.event_type + '.';
+        return false;
+      }
+    }
 
     let eventTypes: string[] = [];
-    for (const eventType of newSourceExternalEventTypes) {
-      if ($externalEventTypes.find(eventTypeFromDB => eventTypeFromDB.name === eventType) === undefined) {
-        eventTypes.push(eventType);
+    for (const entry of Object.entries(newSourceExternalEventTypes)) {
+      if (
+        $externalEventTypes.find(eventTypeFromDB => eventTypeFromDB.name === entry[0]) === undefined &&
+        entry[1].length === 0 // only create new types if they don't have attributes. otherwise, a schema is needed as we do not infer one
+      ) {
+        eventTypes.push(entry[0]);
       }
     }
     if (eventTypes.length > 0) {
+      console.log(externalSource.events);
       newExternalEventTypes = eventTypes;
     }
+    return true;
   }
 </script>
 
