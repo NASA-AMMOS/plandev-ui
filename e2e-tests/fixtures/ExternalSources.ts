@@ -4,6 +4,7 @@ export class ExternalSources {
   alertError: Locator;
   closeButton: Locator;
   createTypesButton: Locator;
+  createTypesModal: Locator;
   deleteSourceButton: Locator;
   deleteSourceButtonConfirmation: Locator;
   derivationATypeName: string = 'DerivationA';
@@ -67,6 +68,7 @@ export class ExternalSources {
 
   async createType(typeName: string, typeSchema: string, isSourceType: boolean) {
     await this.createTypesButton.click();
+    await expect(this.createTypesModal).toBeVisible();
     if (isSourceType) {
       await this.page.getByRole('radio', { name: 'External Source Type' }).click();
     }
@@ -80,8 +82,8 @@ export class ExternalSources {
     } else {
       await this.waitForToast('External Event Type Created Successfully');
     }
+    await expect(this.createTypesModal).not.toBeVisible();
   }
-
   async deleteDerivationGroup(derivationGroupName: string) {
     await this.page.getByRole('button', { exact: true, name: 'Derivation Group' }).click();
     await this.page.getByRole('row', { name: derivationGroupName }).hover();
@@ -195,6 +197,7 @@ export class ExternalSources {
     this.externalSourcesTable = page.locator('#external-sources-table');
     this.createTypesButton = page.getByLabel('Create external source types or external event types.');
     this.manageGroupsAndTypesButton = page.getByLabel('Manage and inspect existing');
+    this.createTypesModal = page.locator(`.modal:has-text("Create New External Source/Event Types")`);
   }
 
   async uploadExternalSource(
@@ -202,6 +205,9 @@ export class ExternalSources {
     inputFileName: string = this.externalSourceFileName,
   ) {
     await this.fillInputFile(inputFilePath);
+    // Wait for all errors to disappear, assuming stores are just taking time to load
+    await this.page.getByLabel('please create one before uploading an external source').waitFor({ state: 'hidden' });
+    await this.page.getByLabel('Please create it!').waitFor({ state: 'hidden' });
     await this.uploadButton.click();
     await this.waitForToast('External Source Created Successfully');
     await expect(this.externalSourcesTable).toBeVisible();
