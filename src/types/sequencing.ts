@@ -159,3 +159,5 @@ export type Workspace = {
   owner: UserId;
   updated_at: string;
 };
+
+export type TimeTagInfo = { node: SyntaxNode; text: string } | null | undefined;

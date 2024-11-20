@@ -39,3 +39,11 @@
   border-color: var(--st-error-red);
   color: var(--st-utility-red);
 }
+
+.st-button-link {
+  background: none;
+  border: none;
+  color: var(--st-primary-60);
+  cursor: pointer;
+  padding: 0;
+}
