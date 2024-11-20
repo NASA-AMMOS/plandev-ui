@@ -116,7 +116,6 @@ test.describe.serial('External Source Error Handling', () => {
       externalSources.externalSourceTypeSchema,
       true,
     );
-    await page.waitForTimeout(5000);
     await externalSources.uploadExternalSource();
     await externalSources.deselectSourceButton.click();
     await expect(externalSources.externalSourcesTable).toBeVisible();

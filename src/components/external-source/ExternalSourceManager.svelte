@@ -7,6 +7,7 @@
   import ExternalEventIcon from '../../assets/external-event-box-with-arrow.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
   import { catchError } from '../../stores/errors';
+  import { externalEventTypes } from '../../stores/external-event';
   import {
     createDerivationGroupError,
     createExternalSourceError,
@@ -157,6 +158,8 @@
   let file: File | undefined;
   let externalSourceFileInput: HTMLInputElement;
   let parsedExternalSource: ExternalSourceJson | undefined;
+  let isUploadDisabled: boolean = true;
+  let uploadDisabledMessage: string | null = null;
 
   // For filtering purposes (modelled after TimelineEditorLayerFilter):
   let filterExpression: string = '';
@@ -336,6 +339,20 @@
     return planDerivationGroupLink.derivation_group_name === selectedSource?.derivation_group_name;
   });
 
+  $: if (parsedExternalSource !== undefined) {
+    if ($externalEventTypes.length === 0) {
+      uploadDisabledMessage = `No external event types are currently defined, please create one before uploading an external source!`;
+      isUploadDisabled = true;
+    } else if ($externalSourceTypes.length === 0) {
+      uploadDisabledMessage = `External Source Type "${parsedExternalSource.source.source_type}" is not defined. Please create it!`;
+      isUploadDisabled = true;
+    }
+    isUploadDisabled = doesSourceTypeAndEventTypesExist(parsedExternalSource);
+  } else {
+    isUploadDisabled = true;
+    uploadDisabledMessage = null;
+  }
+
   // Permissions
   $: hasCreatePermission = featurePermissions.externalSource.canCreate(user);
 
@@ -462,6 +479,27 @@
     } else {
       return featurePermissions.externalSource.canDelete(user, [externalSource]);
     }
+  }
+
+  function doesSourceTypeAndEventTypesExist(externalSource: ExternalSourceJson): boolean {
+    // Check that the External Source Type for the source to-be-uploaded exists
+    const externalSourceType = $externalSourceTypes.find(sourceType => sourceType.name === externalSource.source.source_type);
+    if (externalSourceType === undefined) {
+      uploadDisabledMessage = `External Source Type "${externalSource.source.source_type}" is not defined. Please create it!`
+      return true;
+    }
+
+    // Check that all the External Event Types for the source to-be-uploaded exist
+    const newSourceExternalEventTypes: string[] = Array.from(new Set(externalSource.events.map(event => event.event_type)));
+    for (const eventType of newSourceExternalEventTypes) {
+      if ($externalEventTypes.find(eventTypeFromDB => eventTypeFromDB.name === eventType) === undefined) {
+        uploadDisabledMessage = `External Event Type "${eventType}" is not defined. Please create it!`
+        return true;
+      }
+    }
+
+    uploadDisabledMessage = null;
+    return false;
   }
 </script>
 
@@ -636,6 +674,7 @@
         >
           <AlertError class="m-2" error={$createExternalSourceError} />
           <AlertError class="m-2" error={$parsingError} />
+          <AlertError class="m-2" error={uploadDisabledMessage} />
           <div class="file-upload-field">
             <fieldset style:flex={1}>
               <label for="file">Source File</label>
@@ -660,7 +699,7 @@
                 </div>
               {/if}
               <button
-                disabled={parsedExternalSource === undefined}
+                disabled={isUploadDisabled}
                 class="st-button w-100"
                 type="submit"
                 use:permissionHandler={{
