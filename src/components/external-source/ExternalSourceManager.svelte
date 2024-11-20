@@ -483,17 +483,21 @@
 
   function doesSourceTypeAndEventTypesExist(externalSource: ExternalSourceJson): boolean {
     // Check that the External Source Type for the source to-be-uploaded exists
-    const externalSourceType = $externalSourceTypes.find(sourceType => sourceType.name === externalSource.source.source_type);
+    const externalSourceType = $externalSourceTypes.find(
+      sourceType => sourceType.name === externalSource.source.source_type,
+    );
     if (externalSourceType === undefined) {
-      uploadDisabledMessage = `External Source Type "${externalSource.source.source_type}" is not defined. Please create it!`
+      uploadDisabledMessage = `External Source Type "${externalSource.source.source_type}" is not defined. Please create it!`;
       return true;
     }
 
     // Check that all the External Event Types for the source to-be-uploaded exist
-    const newSourceExternalEventTypes: string[] = Array.from(new Set(externalSource.events.map(event => event.event_type)));
+    const newSourceExternalEventTypes: string[] = Array.from(
+      new Set(externalSource.events.map(event => event.event_type)),
+    );
     for (const eventType of newSourceExternalEventTypes) {
       if ($externalEventTypes.find(eventTypeFromDB => eventTypeFromDB.name === eventType) === undefined) {
-        uploadDisabledMessage = `External Event Type "${eventType}" is not defined. Please create it!`
+        uploadDisabledMessage = `External Event Type "${eventType}" is not defined. Please create it!`;
         return true;
       }
     }
