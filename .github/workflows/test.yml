@@ -14,6 +14,15 @@ on:
     tags:
       - v*
   workflow_dispatch:
+    inputs:
+      aerie_image_tag:
+        description: 'Docker image tag of backend aerie images to run e2e tests against'
+        type: string
+        required: false
+      gateway_image_tag:
+        description: 'Docker image tag of aerie-gateway image to run e2e tests against'
+        type: string
+        required: false
   workflow_call:
     inputs:
       env:
@@ -79,12 +88,20 @@ jobs:
         if: ${{ contains(env.PR_BODY, '___REQUIRES_AERIE_PR___=') }}
         run: |
           echo "AERIE_IMAGE_TAG=pr-$(echo $PR_BODY | sed -n 's/.*___REQUIRES_AERIE_PR___=\"\([0-9]\+\)\".*/\1/p')" >> $GITHUB_ENV
+      - name: Extract Aerie backend docker tag from inputs
+        # if user specifies aerie docker image tag manually via GH action input, use this instead
+        if: "${{ inputs.aerie_image_tag != '' }}"
+        run: echo "AERIE_IMAGE_TAG=${{ inputs.aerie_image_tag }}" >> $GITHUB_ENV
       - name: Extract Aerie gateway docker tag from PR body
         # look in the PR body for eg. the string ___REQUIRES_AERIE_PR___=9999, extract the number & save to env var
         # if backend PR is labeled correctly, it will publish a docker tag called 'pr-9999' to use in tests
         if: ${{ contains(env.PR_BODY, '___REQUIRES_GATEWAY_PR___=') }}
         run: |
           echo "GATEWAY_IMAGE_TAG=pr-$(echo $PR_BODY | sed -n 's/.*___REQUIRES_GATEWAY_PR___=\"\([0-9]\+\)\".*/\1/p')" >> $GITHUB_ENV
+      - name: Extract Aerie gateway docker tag from inputs
+        # if user specifies gateway docker image tag manually via GH action input, use this instead
+        if: "${{ inputs.gateway_image_tag != '' }}"
+        run: echo "GATEWAY_IMAGE_TAG=${{ inputs.gateway_image_tag }}" >> $GITHUB_ENV
       - name: Start Services (Aerie)
         run: |
           echo "AERIE_IMAGE_TAG: $AERIE_IMAGE_TAG"
