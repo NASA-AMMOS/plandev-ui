@@ -876,7 +876,7 @@ const effects = {
       if (response?.errors === undefined) {
         showSuccessToast('External Event Type Created Successfully');
       } else {
-        showFailureToast('External Event Type Attribute Schema Validation Failed');
+        showFailureToast('External Event Type Creation Failed');
       }
       return response;
     } catch (e) {
@@ -1052,7 +1052,7 @@ const effects = {
       if (response?.errors === undefined) {
         showSuccessToast('External Source Type Created Successfully');
       } else {
-        showFailureToast('External Source Type Attribute Schema Validation Failed');
+        showFailureToast('External Source Type Creation Failed');
       }
       return response;
     } catch (e) {
