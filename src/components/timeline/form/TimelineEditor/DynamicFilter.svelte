@@ -105,6 +105,8 @@
   function onFieldChange(event: Event) {
     const { value } = getTarget(event);
     if (value) {
+      // Since we changed the field we should reset the value
+      // TODO should we reset more bits than this?
       currentValue = '';
       currentField = value as keyof typeof ActivityLayerFilterFieldType;
     }
