@@ -10,6 +10,7 @@
     ActivityLayerFilterField as ActivityLayerFilterFieldType,
     FilterOperator,
   } from '../../../../types/timeline';
+  import { getTarget } from '../../../../utilities/generic';
   import TagsInput from '../../../ui/Tags/TagsInput.svelte';
 
   type Subfield = { name: string; type: DynamicFilterDataType };
@@ -50,9 +51,9 @@
     currentValuePossibilities = schema[currentField][currentOperator]
       ? schema[currentField][currentOperator].values
       : Object.values(schema[currentField])[0].values;
-    currentValue = '';
   }
 
+  $: console.log('currentField :>> ', currentField, currentSubfieldLabel, subfields);
   $: if (currentField === 'Parameter' && currentSubfieldLabel !== undefined && subfields) {
     const matchingSubfield = subfields.find(subfield => subfield.label === currentSubfieldLabel) || subfields[0];
     if (matchingSubfield) {
@@ -101,14 +102,18 @@
     }
   }
 
-  // function getSubfieldID(subfield: Subfield) {
-  //   return `${subfield.name}____${subfield.type}`;
-  // }
+  function onFieldChange(event: Event) {
+    const { value } = getTarget(event);
+    if (value) {
+      currentValue = '';
+      currentField = value as keyof typeof ActivityLayerFilterFieldType;
+    }
+  }
 </script>
 
 <div class="dynamic-filter">
   <div class="st-typography-body verb">{verb}</div>
-  <select class="st-select" bind:value={currentField}>
+  <select class="st-select" on:change={onFieldChange}>
     {#each Object.keys(schema) as key}
       <option value={key}>{key}</option>
     {/each}
