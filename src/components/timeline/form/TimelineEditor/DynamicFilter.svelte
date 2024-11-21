@@ -54,7 +54,6 @@
       : Object.values(schema[currentField])[0].values;
   }
 
-  $: console.log('currentField :>> ', currentField, currentSubfieldLabel, subfields);
   $: if (currentField === 'Parameter' && currentSubfieldLabel !== undefined && subfields) {
     const matchingSubfield = subfields.find(subfield => subfield.label === currentSubfieldLabel) || subfields[0];
     if (matchingSubfield) {
@@ -116,7 +115,7 @@
 
 <div class="dynamic-filter">
   <div class="st-typography-body verb">{verb}</div>
-  <select class="st-select" on:change={onFieldChange}>
+  <select class="st-select" on:change={onFieldChange} value={currentField}>
     {#each Object.keys(schema) as key}
       <option value={key}>{key}</option>
     {/each}
