@@ -229,7 +229,7 @@
         </MenuHeader>
       </div>
       <div class="body">
-        <CssGrid columns="0.7fr 3px 0.3fr" class="activity-filter-grid">
+        <CssGrid columns="0.7fr 3px 0.3fr" columnMinSizes={{ 0: 500, 1: 3, 2: 300 }} class="activity-filter-grid">
           <div class="filters">
             <div class="filter-section">
               <div class="filter-section-header st-typography-medium">
