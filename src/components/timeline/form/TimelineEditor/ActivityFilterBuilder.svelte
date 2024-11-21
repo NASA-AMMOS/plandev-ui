@@ -38,6 +38,7 @@
   let rootRef: HTMLDivElement;
   let manualInputRef: HTMLInputElement;
   let manualInputValue: string = '';
+  let resultingTypesInputValue: string = '';
   let shown: boolean = false;
   let instanceCount: number = 0;
 
@@ -155,6 +156,14 @@
   }
 
   $: matchingTypes = getMatchingTypesForActivityLayerFilter(dirtyFilter, $activityTypes);
+  $: filteredMatchingTypes = matchingTypes.filter(type => {
+    if (!resultingTypesInputValue) {
+      return true;
+    }
+
+    return lowercase(type.name).indexOf(lowercase(resultingTypesInputValue)) > -1;
+  });
+
   // TODO need to get the list of matching types and then grab the actual applied filter?
   $: allParameterTypes = $activityTypes.reduce((acc, activityType) => {
     Object.entries(activityType.parameters).forEach(([parameterName, parameter]) => {
@@ -392,12 +401,15 @@
             </div>
             <Input>
               <div class="search-icon" slot="left"><SearchIcon /></div>
-              <input class="st-input w-100" placeholder="Select types" value="" />
+              <input class="st-input w-100" placeholder="Filter types" bind:value={resultingTypesInputValue} />
             </Input>
             <div class="resulting-types-list">
-              {#each matchingTypes as type}
+              {#each filteredMatchingTypes as type}
                 <ActivityTypeResult name={type.name} removable={false} />
               {/each}
+              {#if matchingTypes.length && !filteredMatchingTypes.length}
+                <div class="st-typography-label p-1">No activities matching your filter</div>
+              {/if}
             </div>
           </div>
         </CssGrid>
