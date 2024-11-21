@@ -15,14 +15,15 @@
 
   let max: number = Infinity;
   let min: number = -Infinity;
-  let value: number;
+  let value: number | null = initVal;
+  let valFloat: number = Number(value);
 
   $: max = argDef.range?.max ?? Infinity;
   $: min = argDef.range?.min ?? (isFswCommandArgumentUnsigned(argDef) ? 0 : -Infinity);
   $: value = initVal;
   $: valFloat = Number(value);
   $: {
-    if (typeof value === 'number' && !isNaN(valFloat)) {
+    if (typeof value === 'number' && !isNaN(valFloat) && initVal !== value) {
       setInEditor(value);
     }
   }
