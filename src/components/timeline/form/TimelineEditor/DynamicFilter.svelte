@@ -171,6 +171,7 @@
     align-items: center;
     display: flex;
     gap: 8px;
+    min-height: 26px;
   }
 
   .verb {

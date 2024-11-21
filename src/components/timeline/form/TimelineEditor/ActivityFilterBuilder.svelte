@@ -8,7 +8,7 @@
   import DirectiveIcon from '../../../../assets/timeline-directive.svg?component';
   import SpanIcon from '../../../../assets/timeline-span.svg?component';
   import { activityArgumentDefaultsMap, activityDirectivesMap } from '../../../../stores/activities';
-  import { activityTypes } from '../../../../stores/plan';
+  import { activityTypes, subsystemTags } from '../../../../stores/plan';
   import { spans, spanUtilityMaps } from '../../../../stores/simulation';
   import { tags } from '../../../../stores/tags';
   import type { ActivityLayerDynamicFilter, ActivityLayerFilter } from '../../../../types/timeline';
@@ -333,8 +333,8 @@
                             includes: { type: 'string' },
                           },
                           Subsystem: {
-                            does_not_include: { type: 'tag', values: $tags },
-                            includes: { type: 'tag', values: $tags },
+                            does_not_include: { type: 'tag', values: $subsystemTags },
+                            includes: { type: 'tag', values: $subsystemTags },
                           },
                           Type: {
                             does_not_equal: { type: 'variant', values: $activityTypes.map(type => type.name) },
