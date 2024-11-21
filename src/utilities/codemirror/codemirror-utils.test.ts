@@ -92,15 +92,15 @@ describe('quoteEscape', () => {
   });
 });
 
-describe('parseNumericArg', function () {
-  it("should parse 'float' and 'numeric' args as floats", function () {
+describe('parseNumericArg', () => {
+  it("should parse 'float' and 'numeric' args as floats", () => {
     expect(parseNumericArg('1.23', 'float')).toEqual(1.23);
     expect(parseNumericArg('2.34', 'numeric')).toEqual(2.34);
     expect(parseNumericArg('bad', 'float')).toEqual(NaN);
     // can't parse hex numbers as float
     expect(parseNumericArg('0xabc', 'float')).toEqual(0);
   });
-  it("should parse 'integer' and 'unsigned' args as integers", function () {
+  it("should parse 'integer' and 'unsigned' args as integers", () => {
     expect(parseNumericArg('123', 'integer')).toEqual(123);
     expect(parseNumericArg('234', 'unsigned')).toEqual(234);
     expect(parseNumericArg('234.567', 'integer')).toEqual(234);
@@ -109,8 +109,8 @@ describe('parseNumericArg', function () {
     expect(parseNumericArg('0x1f', 'unsigned')).toEqual(31);
   });
 });
-describe('isHexValue', function () {
-  it('should correctly identify a hex number string', function () {
+describe('isHexValue', () => {
+  it('should correctly identify a hex number string', () => {
     expect(isHexValue('12')).toBe(false);
     expect(isHexValue('ff')).toBe(false);
     expect(isHexValue('0x99')).toBe(true);
@@ -119,7 +119,7 @@ describe('isHexValue', function () {
     expect(isHexValue('0x12xx')).toBe(false);
   });
 });
-describe('getDefaultVariableArgs', function () {
+describe('getDefaultVariableArgs', () => {
   const mockParameters = [
     { name: 'exampleString', type: 'STRING' },
     { allowable_ranges: [{ min: 1.2 }], type: 'FLOAT' },
