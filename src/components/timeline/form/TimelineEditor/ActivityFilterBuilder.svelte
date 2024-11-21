@@ -35,6 +35,7 @@
   let dirtyFilter: ActivityLayerFilter = { dynamic_type_filters: [], global_filters: [], static_types: [] };
   let manualInputOpen: boolean = false;
   let manualMenu: Menu;
+  let resultingTypesMessage: string = '';
   let rootRef: HTMLDivElement;
   let manualInputRef: HTMLInputElement;
   let manualInputValue: string = '';
@@ -203,6 +204,21 @@
     manualMenu?.show();
   } else {
     manualMenu?.hide();
+  }
+
+  $: {
+    const noFiltersApplied =
+      !filter ||
+      (!filter.dynamic_type_filters?.length && !filter.global_filters?.length && !filter.static_types?.length);
+    if (matchingTypes.length && !filteredMatchingTypes.length) {
+      resultingTypesMessage = `No types matching "${resultingTypesInputValue}"`;
+    } else if (!matchingTypes.length && !noFiltersApplied) {
+      resultingTypesMessage = 'No types matching your filter';
+    } else if (noFiltersApplied) {
+      resultingTypesMessage = 'No types selected';
+    } else {
+      resultingTypesMessage = '';
+    }
   }
 </script>
 
@@ -407,8 +423,8 @@
               {#each filteredMatchingTypes as type}
                 <ActivityTypeResult name={type.name} removable={false} />
               {/each}
-              {#if matchingTypes.length && !filteredMatchingTypes.length}
-                <div class="st-typography-label p-1">No activities matching your filter</div>
+              {#if resultingTypesMessage}
+                <div class="st-typography-label p-1">{resultingTypesMessage}</div>
               {/if}
             </div>
           </div>
