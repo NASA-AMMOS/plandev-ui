@@ -11,6 +11,7 @@
     FilterOperator,
   } from '../../../../types/timeline';
   import { getTarget } from '../../../../utilities/generic';
+  import { tooltip } from '../../../../utilities/tooltip';
   import TagsInput from '../../../ui/Tags/TagsInput.svelte';
 
   type Subfield = { name: string; type: DynamicFilterDataType };
@@ -161,7 +162,11 @@
       />
     </div>
   {/if}
-  <button on:click|stopPropagation={() => dispatch('remove')} class="st-button icon">
+  <button
+    on:click|stopPropagation={() => dispatch('remove')}
+    class="st-button icon"
+    use:tooltip={{ content: 'Remove Filter' }}
+  >
     <CloseIcon />
   </button>
 </div>

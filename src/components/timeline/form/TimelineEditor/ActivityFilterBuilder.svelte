@@ -237,7 +237,7 @@
                 <button
                   on:click={onRemoveAllManualTypes}
                   class="st-button icon"
-                  use:tooltip={{ content: 'Remove Type' }}
+                  use:tooltip={{ content: 'Remove Types' }}
                 >
                   <CloseIcon />
                 </button>
