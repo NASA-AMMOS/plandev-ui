@@ -392,6 +392,10 @@
                           Parameter: {
                             subfields: parameterSubfields,
                           },
+                          SchedulingGoalId: {
+                            does_not_equal: { type: 'int' },
+                            equals: { type: 'int' },
+                          },
                           Tag: {
                             does_not_include: { type: 'tag', values: $tags },
                             includes: { type: 'tag', values: $tags },

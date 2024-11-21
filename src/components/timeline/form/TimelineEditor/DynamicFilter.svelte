@@ -49,6 +49,8 @@
     currentSubfieldLabel = '';
     operatorKeys = Object.keys(schema[currentField]) as (keyof typeof FilterOperator)[];
     currentType = (schema[currentField][currentOperator] || Object.values(schema[currentField])[0]).type;
+    // TODO filter to only the types included
+    // TODO value possibilities should be the union of all of the variants in case foo.A and bar.A have diff variants of the same type
     currentValuePossibilities = schema[currentField][currentOperator]
       ? schema[currentField][currentOperator].values
       : Object.values(schema[currentField])[0].values;
