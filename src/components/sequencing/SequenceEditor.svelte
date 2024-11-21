@@ -44,6 +44,7 @@
   } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import type {
+    ArgTextDef,
     IOutputFormat,
     ISequenceAdaptation,
     LibrarySequence,
@@ -51,7 +52,7 @@
     TimeTagInfo,
   } from '../../types/sequencing';
   import { SeqLanguage, setupLanguageSupport } from '../../utilities/codemirror';
-  import { isFswCommandArgumentRepeat, type ArgTextDef } from '../../utilities/codemirror/codemirror-utils';
+  import { isFswCommandArgumentRepeat } from '../../utilities/codemirror/codemirror-utils';
   import type { CommandInfoMapper } from '../../utilities/codemirror/commandInfoMapper';
   import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../utilities/codemirror/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../utilities/codemirror/seq-n-tree-utils';
@@ -721,7 +722,6 @@
         {commandNameNode}
         {commandNode}
         {editorSequenceView}
-        {parameterDictionaries}
         {timeTagNode}
         {variablesInScope}
       />

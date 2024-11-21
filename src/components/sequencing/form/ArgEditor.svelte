@@ -3,6 +3,7 @@
 <script lang="ts">
   import type { SyntaxNode } from '@lezer/common';
   import type { CommandDictionary, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
+  import type { ArgTextDef } from '../../../types/sequencing';
   import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
   import {
     getMissingArgDefs,
@@ -13,7 +14,6 @@
     isNumberArg,
     quoteEscape,
     unquoteUnescape,
-    type ArgTextDef,
   } from './../../../utilities/codemirror/codemirror-utils';
   import AddMissingArgsButton from './AddMissingArgsButton.svelte';
   import ArgTitle from './ArgTitle.svelte';

@@ -2,10 +2,9 @@
 
 <script lang="ts">
   import type { SyntaxNode } from '@lezer/common';
-  import type { CommandDictionary, FswCommand, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+  import type { CommandDictionary, FswCommand, HwCommand } from '@nasa-jpl/aerie-ampcs';
   import type { EditorView } from 'codemirror';
-  import type { TimeTagInfo } from '../../../types/sequencing';
-  import type { ArgTextDef } from '../../../utilities/codemirror/codemirror-utils';
+  import type { ArgTextDef, TimeTagInfo } from '../../../types/sequencing';
   import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
   import Tab from '../../ui/Tabs/Tab.svelte';
   import TabPanel from '../../ui/Tabs/TabPanel.svelte';
@@ -21,7 +20,6 @@
   export let commandNameNode: SyntaxNode | null = null;
   export let commandNode: SyntaxNode | null = null;
   export let editorSequenceView: EditorView;
-  export let parameterDictionaries: ParameterDictionary[];
   export let timeTagNode: TimeTagInfo | null = null;
   export let variablesInScope: string[] = [];
 
@@ -33,19 +31,17 @@
   const tabContextKey: string = 'command-panel';
 
   let commandPanelTabs: Tabs;
-  let selectedCommandDefinition: FswCommand | null;
-
-  $: console.log('selectedCommandDefinition :>> ', selectedCommandDefinition);
+  let selectedCommandDefinition: (FswCommand | HwCommand) | null;
 
   function formatTypeName(s: string) {
     // add spaces to CamelCase names, 'GroundEvent' -> 'Ground Event'
     return s.replace(/([^A-Z])(?=[A-Z])/g, '$1 ');
   }
 
-  function onSelectCommandDefinition(event: CustomEvent<FswCommand | null>) {
+  function onSelectCommandDefinition(event: CustomEvent<(FswCommand | HwCommand) | null>) {
     const { detail } = event;
     selectedCommandDefinition = detail;
-
+    console.log('detail :>> ', detail);
     commandPanelTabs.selectTab(CommandPanelTabs.DEFINITION);
   }
 </script>
@@ -79,13 +75,20 @@
       />
     </TabPanel>
     <TabPanel {tabContextKey} panelId={CommandPanelTabs.DEFINITION}>
-      <CommandDictionaryComponent {commandDictionary} {parameterDictionaries} {commandInfoMapper} />
+      <CommandDictionaryComponent
+        {commandDictionary}
+        {selectedCommandDefinition}
+        on:selectCommandDefinition={onSelectCommandDefinition}
+      />
     </TabPanel>
   </Tabs>
 </div>
 
 <style>
   .command-panel {
+    display: flex;
+    overflow: hidden;
+
     --tab-height: 47px;
     --tab-background-color: none;
     --tab-text-color: var(--st-gray-50);

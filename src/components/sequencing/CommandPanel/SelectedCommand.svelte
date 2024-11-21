@@ -7,21 +7,22 @@
     FswCommand,
     FswCommandArgument,
     FswCommandArgumentVarString,
+    HwCommand,
   } from '@nasa-jpl/aerie-ampcs';
   import ArrowUpRightIcon from 'bootstrap-icons/icons/arrow-up-right.svg?component';
   import type { EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
-  import type { TimeTagInfo } from '../../../types/sequencing';
+  import type { ArgTextDef, TimeTagInfo } from '../../../types/sequencing';
   import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
   import Collapse from '../../Collapse.svelte';
   import AddMissingArgsButton from '../form/AddMissingArgsButton.svelte';
   import ArgEditor from '../form/ArgEditor.svelte';
   import StringEditor from '../form/StringEditor.svelte';
-  import { addDefaultArgs, getMissingArgDefs, type ArgTextDef } from './../../../utilities/codemirror/codemirror-utils';
+  import { addDefaultArgs, getMissingArgDefs } from './../../../utilities/codemirror/codemirror-utils';
 
   export let argInfoArray: ArgTextDef[] = [];
-  export let commandDef: FswCommand | null = null;
+  export let commandDef: (FswCommand | HwCommand) | null = null;
   export let commandDictionary: CommandDictionary;
   export let commandInfoMapper: CommandInfoMapper;
   export let commandName: string | null = null;
@@ -34,7 +35,7 @@
   const ID_COMMAND_DETAIL_PANE = 'ID_COMMAND_DETAIL_PANE';
 
   const dispatch = createEventDispatcher<{
-    selectCommandDefinition: FswCommand | null;
+    selectCommandDefinition: (FswCommand | HwCommand) | null;
   }>();
 
   const nameArgumentDef: FswCommandArgumentVarString = {
