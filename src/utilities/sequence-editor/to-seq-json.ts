@@ -442,7 +442,7 @@ function parseTime(commandNode: SyntaxNode, text: string): Time {
 // min length of one
 type VariableDeclarationArray = [VariableDeclaration, ...VariableDeclaration[]];
 
-function parseVariables(
+export function parseVariables(
   node: SyntaxNode,
   text: string,
   type: 'LocalDeclaration' | 'ParameterDeclaration' = 'LocalDeclaration',

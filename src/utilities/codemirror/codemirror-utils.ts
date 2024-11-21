@@ -12,6 +12,7 @@ import type {
   FswCommandArgumentUnsigned,
   FswCommandArgumentVarString,
 } from '@nasa-jpl/aerie-ampcs';
+import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
 import { fswCommandArgDefault } from '../sequence-editor/command-dictionary';
 import type { CommandInfoMapper } from './commandInfoMapper';
@@ -105,6 +106,48 @@ export function getMissingArgDefs(argInfoArray: ArgTextDef[]): FswCommandArgumen
   return argInfoArray
     .filter((argInfo): argInfo is { argDef: FswCommandArgument } => !argInfo.node && !!argInfo.argDef)
     .map(argInfo => argInfo.argDef);
+}
+
+export function getDefaultVariableArgs(parameters: VariableDeclaration[]): string[] {
+  return parameters.map(parameter => {
+    switch (parameter.type) {
+      case 'STRING':
+        return `"${parameter.name}"`;
+      case 'FLOAT':
+        return parameter.allowable_ranges && parameter.allowable_ranges.length > 0
+          ? parameter.allowable_ranges[0].min
+          : 0;
+      case 'INT':
+      case 'UINT':
+        return parameter.allowable_ranges && parameter.allowable_ranges.length > 0
+          ? parameter.allowable_ranges[0].min
+          : 0;
+      case 'ENUM':
+        return parameter.allowable_values && parameter.allowable_values.length > 0
+          ? `"${parameter.allowable_values[0]}"`
+          : parameter.enum_name
+            ? `${parameter.enum_name}`
+            : 'UNKNOWN';
+      default:
+        throw Error(`unknown argument type ${parameter.type}`);
+    }
+  }) as string[];
+}
+
+export function addDefaultVariableArgs(
+  parameters: VariableDeclaration[],
+  view: EditorView,
+  commandNode: SyntaxNode,
+  commandInfoMapper: CommandInfoMapper,
+) {
+  const insertPosition = commandInfoMapper.getArgumentAppendPosition(commandNode);
+  if (insertPosition !== undefined) {
+    const str = commandInfoMapper.formatArgumentArray(getDefaultVariableArgs(parameters), commandNode);
+    const transaction = view.state.update({
+      changes: { from: insertPosition, insert: str },
+    });
+    view.dispatch(transaction);
+  }
 }
 
 export function isQuoted(s: string): boolean {

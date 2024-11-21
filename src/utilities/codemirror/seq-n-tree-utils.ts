@@ -58,7 +58,11 @@ export class SeqNCommandInfoMapper implements CommandInfoMapper {
   }
 
   getArgumentAppendPosition(commandOrRepeatArgNode: SyntaxNode | null): number | undefined {
-    if (commandOrRepeatArgNode?.name === RULE_COMMAND) {
+    if (
+      commandOrRepeatArgNode?.name === RULE_COMMAND ||
+      commandOrRepeatArgNode?.name === TOKEN_ACTIVATE ||
+      commandOrRepeatArgNode?.name === TOKEN_LOAD
+    ) {
       const argsNode = commandOrRepeatArgNode.getChild('Args');
       const stemNode = commandOrRepeatArgNode.getChild('Stem');
       return getFromAndTo([stemNode, argsNode]).to;

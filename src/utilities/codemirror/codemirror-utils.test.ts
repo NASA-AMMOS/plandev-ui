@@ -1,5 +1,7 @@
+import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import { describe, expect, it } from 'vitest';
 import {
+  getDefaultVariableArgs,
   isHexValue,
   isQuoted,
   parseNumericArg,
@@ -90,15 +92,15 @@ describe('quoteEscape', () => {
   });
 });
 
-describe('parseNumericArg', function () {
-  it("should parse 'float' and 'numeric' args as floats", function () {
+describe('parseNumericArg', () => {
+  it("should parse 'float' and 'numeric' args as floats", () => {
     expect(parseNumericArg('1.23', 'float')).toEqual(1.23);
     expect(parseNumericArg('2.34', 'numeric')).toEqual(2.34);
     expect(parseNumericArg('bad', 'float')).toEqual(NaN);
     // can't parse hex numbers as float
     expect(parseNumericArg('0xabc', 'float')).toEqual(0);
   });
-  it("should parse 'integer' and 'unsigned' args as integers", function () {
+  it("should parse 'integer' and 'unsigned' args as integers", () => {
     expect(parseNumericArg('123', 'integer')).toEqual(123);
     expect(parseNumericArg('234', 'unsigned')).toEqual(234);
     expect(parseNumericArg('234.567', 'integer')).toEqual(234);
@@ -107,13 +109,27 @@ describe('parseNumericArg', function () {
     expect(parseNumericArg('0x1f', 'unsigned')).toEqual(31);
   });
 });
-describe('isHexValue', function () {
-  it('should correctly identify a hex number string', function () {
+describe('isHexValue', () => {
+  it('should correctly identify a hex number string', () => {
     expect(isHexValue('12')).toBe(false);
     expect(isHexValue('ff')).toBe(false);
     expect(isHexValue('0x99')).toBe(true);
     expect(isHexValue('0xdeadBEEF')).toBe(true);
     expect(isHexValue('0x12ab')).toBe(true);
     expect(isHexValue('0x12xx')).toBe(false);
+  });
+});
+describe('getDefaultVariableArgs', () => {
+  const mockParameters = [
+    { name: 'exampleString', type: 'STRING' },
+    { allowable_ranges: [{ min: 1.2 }], type: 'FLOAT' },
+    { allowable_ranges: [{ min: 5 }], type: 'INT' },
+    { allowable_ranges: [{ min: 7 }], type: 'UINT' },
+    { allowable_values: ['VALUE1'], enum_name: 'ExampleEnum', type: 'ENUM' },
+    { type: 'INT' },
+  ] as VariableDeclaration[];
+  it('should return default values for different types', () => {
+    const result = getDefaultVariableArgs(mockParameters);
+    expect(result).toEqual(['"exampleString"', 1.2, 5, 7, '"VALUE1"', 0]);
   });
 });

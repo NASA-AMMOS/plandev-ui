@@ -104,6 +104,7 @@
     sequenceOutput={selectedSequence?.seq_json}
     title="Sequence - Definition Editor (Read-only)"
     readOnly={true}
+    {workspaceId}
     {user}
   />
 </CssGrid>
