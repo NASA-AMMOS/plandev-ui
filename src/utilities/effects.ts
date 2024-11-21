@@ -133,7 +133,6 @@ import type {
 import type {
   DerivationGroup,
   DerivationGroupInsertInput,
-  ExternalSourceInsertInput,
   ExternalSourcePkey,
   ExternalSourceSlim,
   PlanDerivationGroup,
@@ -1266,12 +1265,6 @@ const effects = {
       creatingExternalSourceStore.set(true);
       createExternalSourceErrorStore.set(null);
 
-      // Create mutation inputs for Hasura
-      const derivationGroupInsert: DerivationGroupInsertInput = {
-        name: derivationGroupName !== '' ? derivationGroupName : `${externalSourceTypeName} Default`,
-        source_type_name: externalSourceTypeName,
-      };
-
       // Convert all times, validate they exist or else throw a failure
       const startTimeFormatted: string | undefined = convertDoyToYmd(startTime.replaceAll('Z', ''))?.replace(
         'Z',
@@ -1294,24 +1287,8 @@ const effects = {
         return;
       }
 
-      // Create external source mutation input for Hasura
-      const externalSourceInsert: ExternalSourceInsertInput = {
-        external_events: [], // updated after this map is created
-        source: {
-          attributes: externalSourceAttributes,
-          derivation_group_name: derivationGroupInsert.name,
-          key: externalSourceKey,
-          period: {
-            end_time: endTimeFormatted,
-            start_time: startTimeFormatted,
-          },
-          source_type_name: externalSourceTypeName,
-          valid_at: validAtFormatted,
-        },
-      };
-
       // Create external events + external event types mutation inputs for Hasura
-      let externalEventsCreated: ExternalEventInsertInput[] = [];
+      const externalEventsCreated: ExternalEventInsertInput[] = [];
       for (const externalEvent of externalEvents) {
         // Ensure the duration is valid
         try {
@@ -1353,8 +1330,15 @@ const effects = {
         }
       }
 
-      externalSourceInsert.external_events = externalEventsCreated;
-      externalEventsCreated = [];
+      const body = new FormData();
+      body.append('attributes', JSON.stringify(externalSourceAttributes));
+      body.append('derivation_group_name', derivationGroupName);
+      body.append('key', externalSourceKey);
+      body.append('end_time', endTimeFormatted);
+      body.append('start_time', startTimeFormatted);
+      body.append('source_type_name', externalSourceTypeName);
+      body.append('valid_at', validAtFormatted);
+      body.append('external_events', JSON.stringify(externalEventsCreated));
 
       const { createExternalSource: createExternalSourceResponse } = await reqHasura(
         gql.CREATE_EXTERNAL_SOURCE,
@@ -1386,6 +1370,20 @@ const effects = {
         createExternalSourceErrorStore.set((e as Error).message);
       }
       creatingExternalSourceStore.set(false);
+//       if ((e as Error).message.includes('external_source_type_matches_derivation_group')) {
+//         createExternalSourceError.set('Cannot duplicate derivation groups!');
+//       } else if ((e as Error).message.includes('POST /uploadExternalSource:')) {
+//         // error from gateway
+//         createExternalSourceError.set(
+//           (e as Error).message.replace(
+//             'Internal Server Error\nPOST /uploadExternalSource: ',
+//             'Internal Server Error: ',
+//           ),
+//         );
+//       } else {
+//         createExternalSourceError.set((e as Error).message);
+//       }
+//       creatingExternalSource.set(false);
     }
   },
 
