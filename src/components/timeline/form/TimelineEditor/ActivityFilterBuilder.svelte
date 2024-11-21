@@ -38,6 +38,7 @@
   let resultingTypesMessage: string = '';
   let rootRef: HTMLDivElement;
   let manualInputRef: HTMLInputElement;
+  let manualInputWidth: number = 600;
   let manualInputValue: string = '';
   let resultingTypesInputValue: string = '';
   let shown: boolean = false;
@@ -259,26 +260,27 @@
                 </button>
               </div>
               <div class="filter-section-content filter-section-content-bordered">
-                <Input>
-                  <div class="search-icon" slot="left"><SearchIcon /></div>
-                  <input
-                    bind:this={manualInputRef}
-                    class="st-input w-100 manual-types-filter-input"
-                    placeholder="Select types"
-                    bind:value={manualInputValue}
-                    on:click={() => {
-                      requestAnimationFrame(() => {
-                        if (!manualInputOpen) {
-                          manualInputOpen = true;
-                        }
-                      });
-                    }}
-                  />
-                </Input>
-                <!-- TODO input menu not getting current size after resize -->
+                <div bind:clientWidth={manualInputWidth}>
+                  <Input>
+                    <div class="search-icon" slot="left"><SearchIcon /></div>
+                    <input
+                      bind:this={manualInputRef}
+                      class="st-input w-100 manual-types-filter-input"
+                      placeholder="Select types"
+                      bind:value={manualInputValue}
+                      on:click={() => {
+                        requestAnimationFrame(() => {
+                          if (!manualInputOpen) {
+                            manualInputOpen = true;
+                          }
+                        });
+                      }}
+                    />
+                  </Input>
+                </div>
                 <div style:position="relative" style:width="0px">
                   <Menu
-                    width={manualInputRef?.clientWidth ?? 600}
+                    width={manualInputWidth}
                     hideAfterClick={false}
                     placement="right-start"
                     bind:this={manualMenu}
