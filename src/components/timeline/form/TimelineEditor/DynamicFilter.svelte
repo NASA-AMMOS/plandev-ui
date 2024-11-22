@@ -1,8 +1,10 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import type { SelectedDropdownOptionValue } from '../../../../types/dropdown';
   import type { TagsChangeEvent } from '../../../../types/tags';
   import {
     type ActivityLayerDynamicFilter,
@@ -12,6 +14,7 @@
   } from '../../../../types/timeline';
   import { getTarget } from '../../../../utilities/generic';
   import { tooltip } from '../../../../utilities/tooltip';
+  import SearchableDropdown from '../../../ui/SearchableDropdown.svelte';
   import TagsInput from '../../../ui/Tags/TagsInput.svelte';
 
   type Subfield = { name: string; type: DynamicFilterDataType };
@@ -116,6 +119,11 @@
       currentField = value as keyof typeof ActivityLayerFilterFieldType;
     }
   }
+
+  function onSelectParameter(event: CustomEvent<SelectedDropdownOptionValue>) {
+    currentSubfieldLabel = event.detail?.toString() || '';
+    currentValue = '';
+  }
 </script>
 
 <div class="dynamic-filter">
@@ -126,11 +134,18 @@
     {/each}
   </select>
   {#if currentField === 'Parameter' && subfields}
-    <select class="st-select" bind:value={currentSubfieldLabel}>
-      {#each subfields as subfield}
-        <option value={subfield.label}>{subfield.label}</option>
-      {/each}
-    </select>
+    <div class="dynamic-filter-searchable-dropdown">
+      <SearchableDropdown
+        placeholder="Select Parameter"
+        iconTooltip="Select Parameter"
+        searchPlaceholder="Filter parameters"
+        on:selectOption={onSelectParameter}
+        selectedOptionValue={currentSubfieldLabel}
+        options={subfields.map(subfield => ({ display: subfield.label, value: subfield.label }))}
+      >
+        <ChevronDownIcon slot="icon" />
+      </SearchableDropdown>
+    </div>
   {/if}
   <select class="st-select" bind:value={currentOperator}>
     {#each operatorKeys as operator}
@@ -149,7 +164,7 @@
       </select>
     {:else if currentType === 'variant'}
       <select class="st-select w-100" bind:value={currentValue}>
-        {#each currentValuePossibilities as value}
+        {#each currentValuePossibilities.sort() as value}
           <option {value}>{value}</option>
         {/each}
       </select>
@@ -188,6 +203,10 @@
   .verb {
     min-width: 40px;
     width: 40px;
+  }
+
+  .dynamic-filter-searchable-dropdown {
+    overflow: hidden;
   }
 
   .dynamic-filter-value {

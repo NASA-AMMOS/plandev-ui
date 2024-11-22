@@ -10,6 +10,19 @@
   export let initialHeight: number = 500;
 
   let rootRef: HTMLDivElement;
+
+  const marginTransform = ({
+    offsetX,
+    offsetY,
+    rootNode,
+  }: {
+    offsetX: number;
+    offsetY: number;
+    rootNode: HTMLElement;
+  }) => {
+    rootNode.style.marginLeft = `${offsetX}px`;
+    rootNode.style.marginTop = `${offsetY}px`;
+  };
 </script>
 
 <div
@@ -17,6 +30,7 @@
   use:draggable={{
     bounds: 'body',
     handle: $$slots.handle ? '.handle' : undefined,
+    transform: marginTransform,
     ...dragOptions,
   }}
   class="root"
