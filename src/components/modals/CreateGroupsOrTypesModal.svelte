@@ -1,10 +1,10 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { SchemaObject } from 'ajv';
+  import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
+  import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import { createExternalEventTypeError, resetExternalEventStores } from '../../stores/external-event';
-  import { createExternalSourceTypeError, resetExternalSourceStores } from '../../stores/external-source';
+  import { createExternalSourceEventTypeError } from '../../stores/external-source';
   import type { User } from '../../types/app';
   import effects from '../../utilities/effects';
   import { parseJSONStream } from '../../utilities/generic';
@@ -20,13 +20,12 @@
   const dispatch = createEventDispatcher<{
     close: void;
   }>();
-  let newTypeName: string = '';
-  let newTypeError: string | null = null;
+
   let fileInput: HTMLInputElement;
-  let errors: string[] = [];
+  let uploadResponseErrors: string[] = [];
   let files: FileList | undefined;
   let file: File | undefined;
-  let parsedJSONSchema: SchemaObject | undefined;
+  let parsedExternalSourceEventTypeSchema: object | undefined = undefined; // TODO: Define explicit type
 
   let hasCreateExternalSourceTypePermission: boolean = false;
   let hasCreateExternalEventTypePermission: boolean = false;
@@ -36,46 +35,46 @@
   $: hasCreateExternalEventTypePermission = featurePermissions.externalEventType.canCreate(user);
   $: hasCreationPermission = hasCreateExternalEventTypePermission && hasCreateExternalSourceTypePermission;
 
-  function onClick() {
-    fileInput.value = '';
-    errors = [];
+  $: if (files) {
+    if (file !== files[0]) {
+      file = files[0];
+      if (file !== undefined && /\.json$/.test(file.name)) {
+        parseExternalSourceEventTypeFileStream(file.stream());
+      } else {
+        createExternalSourceEventTypeError.set('External Source & Event Type(s) schema is not a .json file');
+      }
+    }
   }
 
-  function handleChange() {
-    resetExternalSourceStores();
-    resetExternalEventStores();
-    newTypeError = null;
+  function onClick() {
+    fileInput.value = '';
+    uploadResponseErrors = [];
   }
 
   async function handleUpload() {
     if (files) {
       file = files[0];
       if (file !== undefined && /\.json$/.test(file.name)) {
-        errors = [];
-        console.log('NOT PARSED YET');
-        parsedJSONSchema = await parseJSONStream<object>(file.stream());
-        console.log('PARSED');
-        const creationResponse = await effects.createExternalSourceEventType(parsedJSONSchema, user);
+        uploadResponseErrors = [];
+        const combinedSchema = await parseJSONStream<{event_types: object, source_types: object}>(file.stream());
+        const creationResponse = await effects.createExternalSourceEventTypes(combinedSchema.event_types, combinedSchema.source_types, user);
         if (creationResponse !== null) {
           dispatch('close');
         }
-        // if (definitionType === EXTERNAL_EVENT_TYPE) {
-        //   const creationResponse = await effects.createExternalEventType(newTypeName, parsedJSONSchema, user);
-        //   if (creationResponse !== null) {
-        //     dispatch('close');
-        //   }
-        // } else if (definitionType === EXTERNAL_SOURCE_TYPE) {
-        //   const creationResponse = await effects.createExternalSourceType(newTypeName, parsedJSONSchema, user);
-        //   console.log(creationResponse);
-        //   if (creationResponse !== null) {
-        //     dispatch('close');
-        //   }
-        // }
-        newTypeName = '';
         files = undefined;
         file = undefined;
         fileInput.value = '';
       }
+    }
+  }
+
+  async function parseExternalSourceEventTypeFileStream(stream: ReadableStream) {
+    createExternalSourceEventTypeError.set(null);
+
+    try {
+      parsedExternalSourceEventTypeSchema = await parseJSONStream<object>(stream);  // TODO: Define type
+    } catch (error) {
+      createExternalSourceEventTypeError.set('External Source & Event Type Schema has Invalid Format');
     }
   }
 </script>
@@ -85,21 +84,11 @@
   <ModalContent style="overflow: auto;">
     <div class="creation-modal-container">
       <div class="type-creation-input">
-        <input
-          bind:value={newTypeName}
-          on:change={handleChange}
-          autocomplete="off"
-          class="st-input w-100"
-          placeholder="New Type Name"
-        />
-      </div>
-
-      <div class="type-creation-input">
         <label for="file">Type JSON Schema File</label>
         <input
           bind:this={fileInput}
           class="w-100 upload"
-          class:error={!!errors.length}
+          class:error={!!uploadResponseErrors.length}
           name="file"
           required
           type="file"
@@ -108,14 +97,36 @@
           on:click={onClick}
         />
       </div>
-
+      {#if file !== undefined}
+        {#if parsedExternalSourceEventTypeSchema !== undefined}
+          <div class="parse-status st-typography-body">
+            <div class="check">
+              <CheckIcon />
+            </div>
+            Source & Event Type Attribute Schema Parsed
+          </div>
+        {:else}
+          <WarningIcon />
+          <div class="status-text st-typography-body">
+            Source & Event Type Attribute Schema Could Not Be Parsed
+          </div>
+        {/if}
+      {/if}
+      {#if parsedExternalSourceEventTypeSchema !== undefined}
+        <div class="to-be-created st-typography-body">
+          <div class="to-be-created-header">
+            The following External Source Type will be created
+          </div>
+          <div class="to-be-created-header">
+            The following External Event Type(s) will be created
+          </div>
+        </div>
+      {/if}
       <div class="errors">
-        {#each errors as currentError}
+        {#each uploadResponseErrors as currentError}
           <AlertError class="m-2" error={currentError} />
         {/each}
-        <AlertError class="m-2" error={newTypeError} />
-        <AlertError class="m-2" error={$createExternalSourceTypeError} />
-        <AlertError class="m-2" error={$createExternalEventTypeError} />
+        <AlertError class="m-2" error={$createExternalSourceEventTypeError} />
       </div>
     </div>
   </ModalContent>
@@ -170,5 +181,23 @@
 
   .errors {
     height: 100%;
+  }
+
+  .to-be-created-header {
+    font-weight: bold;
+  }
+
+  .parse-status {
+    display: flex;
+    margin-bottom: 12px;
+    margin-top: 12px;
+  }
+
+  .parse-status .check {
+    background-color: #0eaf0a;
+    border-radius: 50%;
+    color: var(--st-white);
+    display: flex;
+    margin-right: 6px;
   }
 </style>
