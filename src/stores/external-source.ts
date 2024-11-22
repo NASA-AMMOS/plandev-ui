@@ -14,7 +14,8 @@ import { gqlSubscribable } from './subscribable';
 export const parsingError: Writable<string | null> = writable(null);
 export const creatingExternalSource: Writable<boolean> = writable(false);
 export const createExternalSourceError: Writable<string | null> = writable(null);
-export const createExternalSourceTypeError: Writable<string | null> = writable(null);
+export const createExternalSourceTypeError: Writable<string | null> = writable(null); // TODO: Remove
+export const createExternalSourceEventTypeError: Writable<string | null> = writable(null);
 export const createDerivationGroupError: Writable<string | null> = writable(null);
 export const derivationGroupPlanLinkError: Writable<string | null> = writable(null);
 export const derivationGroupVisibilityMap: Writable<Record<DerivationGroup['name'], boolean>> = writable({});

@@ -1199,7 +1199,7 @@ const effects = {
     }
   },
 
-  async createExternalEventType(eventTypeName: string, eventTypeAttributesSchema: object, user: User | null) {
+  async createExternalEventType(eventTypeName: string, eventTypeAttributesSchema: File, user: User | null) {
     if (!gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user)) {
       throwPermissionError('create an external event type');
     }
@@ -1392,39 +1392,33 @@ const effects = {
     }
   },
 
-  async createExternalSourceEventType(all_attributes: object, user: User | null) {
-    // permissions
-    createExternalSourceTypeError.set(null);
+  // TODO: turn combinedSchema's type into a real definition
+  async createExternalSourceEventTypes(eventTypes: object, sourceTypes: object, user: User | null) {
+    if (!gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user) || !gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
+      throwPermissionError('create en external source or event type');
+    }
+    createExternalSourceEventTypeError.set(null);
 
     try {
-      const body = JSON.stringify(all_attributes);
-      const response = await reqGateway(`/uploadExternalSourceEventTypes`, 'POST', body, user, false);
+      // Extract External Source Type schema & format for request to Gateway
+      const body = new FormData();
+      body.append('event_types', JSON.stringify(eventTypes));
+      body.append('source_types', JSON.stringify(sourceTypes));
 
+      const response = await reqGateway(`/uploadExternalSourceEventTypes`, 'POST', body, user, true);
       if (response?.errors === undefined) {
-        showSuccessToast('External Source and Event Types Created Successfully');
+        showSuccessToast('External Source & Event Type Created Successfully');
       } else {
-        showFailureToast('External Source and Event Type Creation Failed');
+        showFailureToast('External Source & Event Type Create Failed');
       }
-      return response;
     } catch (e) {
-      showFailureToast('External Source and Event Type Create Failed');
-      if ((e as Error).message.includes('POST /uploadExternalSourceEventType:')) {
-        // error from gateway
-        createExternalSourceTypeError.set(
-          (e as Error).message.replace(
-            'Internal Server Error\nPOST /uploadExternalSourceEventType: ',
-            'Internal Server Error: ',
-          ),
-        );
-      } else {
-        createExternalSourceTypeError.set((e as Error).message);
-      }
+      showFailureToast('External Source & Event Type Create Failed');
+      createExternalSourceEventTypeError.set((e as Error).message);
       catchError(e as Error);
-      return null;
     }
   },
 
-  async createExternalSourceType(sourceTypeName: string, sourceTypeAttributesSchema: object, user: User | null) {
+  async createExternalSourceType(sourceTypeName: string, sourceTypeAttributesSchema: File, user: User | null) {
     if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
       throwPermissionError('create an external source type');
     }
