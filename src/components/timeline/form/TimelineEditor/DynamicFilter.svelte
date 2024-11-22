@@ -26,7 +26,6 @@
     | Record<keyof typeof ActivityLayerFilterFieldType, Partial<OperatorSchema>>
     | { Parameter: { subfields: SubfieldSchema[] } }
   > = {};
-
   export let verb: string = 'Where';
 
   const dispatch = createEventDispatcher<{
@@ -37,7 +36,7 @@
   let dirtyFilter = structuredClone(filter);
   let currentField = dirtyFilter.field as keyof typeof ActivityLayerFilterFieldType;
   let currentOperator: keyof typeof FilterOperator | null = dirtyFilter.operator;
-  let subfields: SubfieldSchema[] | null = schema.Parameter?.subfields || null;
+  let subfields: SubfieldSchema[] | null = null;
   let currentSubfieldLabel =
     dirtyFilter.field === 'Parameter' ? `${dirtyFilter.subfield?.name} (${dirtyFilter.subfield?.type})` : '';
   let currentType: DynamicFilterDataType = 'string';
@@ -45,12 +44,12 @@
   let operatorKeys: (keyof typeof FilterOperator)[] = [];
   let currentValuePossibilities: Array<any> = [];
 
+  $: subfields = schema.Parameter?.subfields;
+
   $: if (currentField !== 'Parameter') {
     currentSubfieldLabel = '';
     operatorKeys = Object.keys(schema[currentField]) as (keyof typeof FilterOperator)[];
     currentType = (schema[currentField][currentOperator] || Object.values(schema[currentField])[0]).type;
-    // TODO filter to only the types included
-    // TODO value possibilities should be the union of all of the variants in case foo.A and bar.A have diff variants of the same type
     currentValuePossibilities = schema[currentField][currentOperator]
       ? schema[currentField][currentOperator].values
       : Object.values(schema[currentField])[0].values;
@@ -89,7 +88,11 @@
         newFilter.subfield = { name: matchingSubfield.name, type: matchingSubfield.type };
       }
     }
-    dispatch('change', { filter: newFilter });
+    // Make sure the filter is different before dispatching a change
+    // since svelte reactivity will run this statement when subfields changes
+    if (JSON.stringify(newFilter) !== JSON.stringify(filter)) {
+      dispatch('change', { filter: newFilter });
+    }
   }
 
   async function onTagsInputChange(event: TagsChangeEvent) {
@@ -134,35 +137,37 @@
       <option value={operator}>{FilterOperator[operator]}</option>
     {/each}
   </select>
-  {#if currentType === 'string'}
-    <input class="st-input w-100" bind:value={currentValue} />
-  {:else if currentType === 'int' || currentType === 'real'}
-    <input class="st-input w-100" type="number" bind:value={currentValue} />
-  {:else if currentType === 'boolean'}
-    <select class="st-select w-100" bind:value={currentValue}>
-      <option value={true}>True</option>
-      <option value={false}>False</option>
-    </select>
-  {:else if currentType === 'variant'}
-    <select class="st-select w-100" bind:value={currentValue}>
-      {#each currentValuePossibilities as value}
-        <option {value}>{value}</option>
-      {/each}
-    </select>
-  {:else if currentType === 'tag'}
-    {@const currentValueTags = (Array.isArray(currentValue) ? currentValue : []).map(t =>
-      currentValuePossibilities.find(v => v.id === t),
-    )}
-    <!-- TODO not positioning correctly -->
-    <div style:width="100%">
-      <TagsInput
-        options={currentValuePossibilities}
-        selected={currentValueTags}
-        on:change={onTagsInputChange}
-        creatable={false}
-      />
-    </div>
-  {/if}
+  <div class="dynamic-filter-value">
+    {#if currentType === 'string'}
+      <input class="st-input w-100" bind:value={currentValue} />
+    {:else if currentType === 'int' || currentType === 'real'}
+      <input class="st-input w-100" type="number" bind:value={currentValue} />
+    {:else if currentType === 'boolean'}
+      <select class="st-select w-100" bind:value={currentValue}>
+        <option value={true}>True</option>
+        <option value={false}>False</option>
+      </select>
+    {:else if currentType === 'variant'}
+      <select class="st-select w-100" bind:value={currentValue}>
+        {#each currentValuePossibilities as value}
+          <option {value}>{value}</option>
+        {/each}
+      </select>
+    {:else if currentType === 'tag'}
+      {@const currentValueTags = (Array.isArray(currentValue) ? currentValue : []).map(t =>
+        currentValuePossibilities.find(v => v.id === t),
+      )}
+      <!-- TODO not positioning correctly -->
+      <div style:width="100%">
+        <TagsInput
+          options={currentValuePossibilities}
+          selected={currentValueTags}
+          on:change={onTagsInputChange}
+          creatable={false}
+        />
+      </div>
+    {/if}
+  </div>
   <button
     on:click|stopPropagation={() => dispatch('remove')}
     class="st-button icon"
@@ -183,5 +188,10 @@
   .verb {
     min-width: 40px;
     width: 40px;
+  }
+
+  .dynamic-filter-value {
+    flex: 1;
+    min-width: 40px;
   }
 </style>

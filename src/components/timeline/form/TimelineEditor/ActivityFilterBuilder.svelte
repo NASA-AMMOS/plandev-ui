@@ -11,6 +11,7 @@
   import { activityTypes, subsystemTags } from '../../../../stores/plan';
   import { spans, spanUtilityMaps } from '../../../../stores/simulation';
   import { tags } from '../../../../stores/tags';
+  import type { ValueSchemaVariant } from '../../../../types/schema';
   import type { ActivityLayerDynamicFilter, ActivityLayerFilter } from '../../../../types/timeline';
   import { compare } from '../../../../utilities/generic';
   import {
@@ -166,8 +167,7 @@
     return lowercase(type.name).indexOf(lowercase(resultingTypesInputValue)) > -1;
   });
 
-  // TODO need to get the list of matching types and then grab the actual applied filter?
-  $: allParameterTypes = $activityTypes.reduce((acc, activityType) => {
+  $: allParameterTypes = (matchingTypes.length ? matchingTypes : $activityTypes).reduce((acc, activityType) => {
     Object.entries(activityType.parameters).forEach(([parameterName, parameter]) => {
       const parameterType = parameter.schema.type;
       // TODO support series and struct?
@@ -175,10 +175,18 @@
         return;
       }
       const key = `${parameterName} (${parameterType})`;
-      const matchingName = !!acc[parameterType];
-      const matchingType = matchingName && acc[parameterType].parameter.type === parameterType;
-      if (!matchingName || !matchingType) {
-        const values = parameterType === 'variant' ? parameter.schema.variants.map(variant => variant.key) : null;
+      const matchingName = !!acc[key];
+      const matchingEntry = matchingName && acc[key].type === parameterType;
+      const isVariant = parameterType === 'variant';
+      let values = null;
+      // If we have a matching variant, add unique variants to the list
+      if (matchingEntry && isVariant) {
+        const variantValues = (parameter.schema as ValueSchemaVariant).variants.map(variant => variant.key);
+        values = Array.from(new Set([...variantValues, ...acc[key].values]));
+        acc[key].values = values;
+      }
+      if (!matchingEntry) {
+        const values = isVariant ? parameter.schema.variants.map(variant => variant.key) : null;
         acc[key] = {
           name: parameterName,
           type: parameterType,
@@ -190,8 +198,8 @@
     return acc;
   }, {});
 
+  // TODO support key/value for values array?
   $: parameterSubfields = Object.values(allParameterTypes).sort((a, b) => compare(a.label, b.label));
-  // TODO support key/value for values array
 
   $: filteredActivityTypes = $activityTypes.filter(type => {
     if (!manualInputValue) {
