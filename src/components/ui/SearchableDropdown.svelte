@@ -8,6 +8,7 @@
     selectOption: CustomEvent<SelectedDropdownOptionValue>;
   }
 
+  import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
   import SettingsIcon from '@nasa-jpl/stellar/icons/settings.svg?component';
   import { SvelteComponent, createEventDispatcher, type ComponentEvents } from 'svelte';
@@ -40,8 +41,8 @@
   export let selectedOptionValue: SelectedDropdownOptionValue | undefined = undefined;
   export let showPlaceholderOption: boolean = true;
   export let searchPlaceholder: string = 'Search Items';
-  export let settingsIconTooltip: string = 'Set Selection';
-  export let settingsIconTooltipPlacement: string = 'top';
+  export let iconTooltip: string = 'Set Selection';
+  export let iconTooltipPlacement: string = 'top';
 
   export function hideMenu() {
     if (presetMenu) {
@@ -113,7 +114,7 @@
 <div class="searchable-dropdown-container">
   <!-- svelte-ignore a11y-click-events-have-key-events a11y-interactive-supports-focus -->
   <div
-    class="selected-display st-input w-100"
+    class="selected-display st-select w-100"
     class:error
     class:disabled
     {name}
@@ -129,14 +130,18 @@
     <span class="selected-display-value" class:error>{selectedOption?.display ?? placeholder}</span>
     <button
       use:tooltip={{
-        content: settingsIconTooltip,
+        content: iconTooltip,
         disabled: !hasUpdatePermission && planReadOnly,
-        placement: settingsIconTooltipPlacement,
+        placement: iconTooltipPlacement,
       }}
-      class="icon st-button settings-icon"
+      class="icon st-button icon-right"
       on:click|stopPropagation={openMenu}
     >
-      <SettingsIcon />
+      {#if $$slots.icon}
+        <slot name="icon" />
+      {:else}
+        <SettingsIcon />
+      {/if}
     </button>
   </div>
   <Menu bind:this={presetMenu} hideAfterClick={false} placement="bottom-end" type="input" on:hide={onCloseMenu}>
@@ -161,7 +166,6 @@
         {#each displayedOptions as displayedOption}
           <MenuItem
             selected={(selectedOption?.value ?? null) === displayedOption.value}
-            disabled={(selectedOption?.value ?? null) === displayedOption.value}
             use={[
               [
                 permissionHandler,
@@ -175,7 +179,14 @@
               onSelectOption(displayedOption, event.detail);
             }}
           >
-            <span class="st-typography-body">{displayedOption.display}</span>
+            <div class="dropdown-item">
+              <div class="dropdown-item-icon">
+                {#if (selectedOption?.value ?? null) === displayedOption.value}
+                  <CheckIcon />
+                {/if}
+              </div>
+              <span class="st-typography-body">{displayedOption.display}</span>
+            </div>
           </MenuItem>
         {/each}
       </div>
@@ -192,23 +203,25 @@
   }
 
   .selected-display {
+    align-items: center;
     color: inherit;
     column-gap: 6px;
     display: grid;
     grid-template-columns: auto 16px;
+    padding: 0px 4px;
     position: relative;
   }
 
-  .st-input {
+  .dropdown-search :global(.st-input) {
     background-color: var(--aerie-dropdown-background-color, var(--st-white));
   }
 
-  .st-input.disabled {
+  .st-select.disabled {
     cursor: not-allowed;
     opacity: 0.5;
   }
 
-  .st-input.error {
+  .st-select.error {
     background-color: var(--st-input-error-background-color);
   }
 
@@ -224,7 +237,7 @@
     min-width: inherit;
   }
 
-  .settings-icon {
+  .icon-right {
     align-items: center;
     cursor: pointer;
     display: flex;
@@ -248,5 +261,16 @@
 
   .dropdown-items {
     overflow-y: auto;
+  }
+
+  .dropdown-item {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+  }
+
+  .dropdown-item-icon {
+    display: flex;
+    width: 24px;
   }
 </style>
