@@ -979,15 +979,20 @@ const effects = {
         }
       }
 
+      const sourceData = {
+        attributes: externalSourceAttributes,
+        derivation_group_name: derivationGroupName,
+        key: externalSourceKey,
+        period: {
+          end_time: endTimeFormatted,
+          start_time: startTimeFormatted
+        },
+        source_type_name: externalSourceTypeName,
+        valid_at: validAtFormatted
+      }
       const body = new FormData();
-      body.append('attributes', JSON.stringify(externalSourceAttributes));
-      body.append('derivation_group_name', derivationGroupName);
-      body.append('key', externalSourceKey);
-      body.append('end_time', endTimeFormatted);
-      body.append('start_time', startTimeFormatted);
-      body.append('source_type_name', externalSourceTypeName);
-      body.append('valid_at', validAtFormatted);
-      body.append('external_events', JSON.stringify(externalEventsCreated));
+      body.append('source', JSON.stringify(sourceData));
+      body.append('events', JSON.stringify(externalEventsCreated));
 
       const reqResponse = await reqGateway(`/uploadExternalSource`, 'POST', body, user, true);
       if (reqResponse?.errors === undefined) {
@@ -1004,6 +1009,38 @@ const effects = {
       showFailureToast('External Source Create Failed');
       createExternalSourceError.set((e as Error).message);
       creatingExternalSource.set(false);
+    }
+  },
+
+  async createExternalSourceEventType(all_attributes: object, user: User | null) {
+    // permissions
+    createExternalSourceTypeError.set(null);
+
+    try {
+      const body = JSON.stringify(all_attributes);
+      const response = await reqGateway(`/uploadExternalSourceEventTypes`, 'POST', body, user, false);
+
+      if (response?.errors === undefined) {
+        showSuccessToast('External Source and Event Types Created Successfully');
+      } else {
+        showFailureToast('External Source and Event Type Creation Failed');
+      }
+      return response;
+    } catch (e) {
+      showFailureToast('External Source and Event Type Create Failed');
+      if ((e as Error).message.includes('POST /uploadExternalSourceEventType:')) {
+        // error from gateway
+        createExternalSourceTypeError.set(
+          (e as Error).message.replace(
+            'Internal Server Error\nPOST /uploadExternalSourceEventType: ',
+            'Internal Server Error: ',
+          ),
+        );
+      } else {
+        createExternalSourceTypeError.set((e as Error).message);
+      }
+      catchError(e as Error);
+      return null;
     }
   },
 

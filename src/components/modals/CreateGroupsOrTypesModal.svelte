@@ -6,13 +6,10 @@
   import { createExternalEventTypeError, resetExternalEventStores } from '../../stores/external-event';
   import { createExternalSourceTypeError, resetExternalSourceStores } from '../../stores/external-source';
   import type { User } from '../../types/app';
-  import type { RadioButtonId } from '../../types/radio-buttons';
   import effects from '../../utilities/effects';
   import { parseJSONStream } from '../../utilities/generic';
   import { featurePermissions } from '../../utilities/permissions';
   import AlertError from '../ui/AlertError.svelte';
-  import RadioButton from '../ui/RadioButtons/RadioButton.svelte';
-  import RadioButtons from '../ui/RadioButtons/RadioButtons.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -23,10 +20,6 @@
   const dispatch = createEventDispatcher<{
     close: void;
   }>();
-  const EXTERNAL_EVENT_TYPE = 'External Event Type';
-  const EXTERNAL_SOURCE_TYPE = 'External Source Type';
-
-  let definitionType: RadioButtonId = EXTERNAL_EVENT_TYPE;
   let newTypeName: string = '';
   let newTypeError: string | null = null;
   let fileInput: HTMLInputElement;
@@ -59,19 +52,25 @@
       file = files[0];
       if (file !== undefined && /\.json$/.test(file.name)) {
         errors = [];
+        console.log('NOT PARSED YET');
         parsedJSONSchema = await parseJSONStream<object>(file.stream());
-        if (definitionType === EXTERNAL_EVENT_TYPE) {
-          const creationResponse = await effects.createExternalEventType(newTypeName, parsedJSONSchema, user);
-          if (creationResponse !== null) {
-            dispatch('close');
-          }
-        } else if (definitionType === EXTERNAL_SOURCE_TYPE) {
-          const creationResponse = await effects.createExternalSourceType(newTypeName, parsedJSONSchema, user);
-          console.log(creationResponse);
-          if (creationResponse !== null) {
-            dispatch('close');
-          }
+        console.log('PARSED');
+        const creationResponse = await effects.createExternalSourceEventType(parsedJSONSchema, user);
+        if (creationResponse !== null) {
+          dispatch('close');
         }
+        // if (definitionType === EXTERNAL_EVENT_TYPE) {
+        //   const creationResponse = await effects.createExternalEventType(newTypeName, parsedJSONSchema, user);
+        //   if (creationResponse !== null) {
+        //     dispatch('close');
+        //   }
+        // } else if (definitionType === EXTERNAL_SOURCE_TYPE) {
+        //   const creationResponse = await effects.createExternalSourceType(newTypeName, parsedJSONSchema, user);
+        //   console.log(creationResponse);
+        //   if (creationResponse !== null) {
+        //     dispatch('close');
+        //   }
+        // }
         newTypeName = '';
         files = undefined;
         file = undefined;
@@ -79,33 +78,12 @@
       }
     }
   }
-
-  function onSelectDefinitionType(event: CustomEvent<{ id: RadioButtonId }>) {
-    const {
-      detail: { id },
-    } = event;
-    definitionType = id;
-  }
 </script>
 
 <Modal height={400} width={600}>
   <ModalHeader on:close>Create New External Source/Event Types</ModalHeader>
   <ModalContent style="overflow: auto;">
     <div class="creation-modal-container">
-      <div class="type-creation-input">
-        <RadioButtons selectedButtonId={definitionType} on:select-radio-button={onSelectDefinitionType}>
-          <RadioButton id={EXTERNAL_EVENT_TYPE}>
-            <div class="definition-type-button">
-              <span>{EXTERNAL_EVENT_TYPE}</span>
-            </div>
-          </RadioButton>
-          <RadioButton id={EXTERNAL_SOURCE_TYPE}>
-            <div class="definition-type-button">
-              <span>{EXTERNAL_SOURCE_TYPE}</span>
-            </div>
-          </RadioButton>
-        </RadioButtons>
-      </div>
       <div class="type-creation-input">
         <input
           bind:value={newTypeName}
