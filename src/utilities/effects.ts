@@ -216,7 +216,6 @@ import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from
 import gql, { convertToGQLArray } from './gql';
 import {
   showConfirmModal,
-  showCreateGroupsOrTypes,
   showCreatePlanBranchModal,
   showCreatePlanSnapshotModal,
   showCreateViewModal,
@@ -1048,11 +1047,11 @@ const effects = {
         key: externalSourceKey,
         period: {
           end_time: endTimeFormatted,
-          start_time: startTimeFormatted
+          start_time: startTimeFormatted,
         },
         source_type_name: externalSourceTypeName,
-        valid_at: validAtFormatted
-      }
+        valid_at: validAtFormatted,
+      };
       const body = new FormData();
       body.append('source', JSON.stringify(sourceData));
       body.append('events', JSON.stringify(externalEventsCreated));
@@ -1134,15 +1133,6 @@ const effects = {
       }
       catchError(e as Error);
       return null;
-    }
-  },
-
-  async createGroupsOrTypes(user: User | null): Promise<void> {
-    try {
-      await showCreateGroupsOrTypes(user);
-    } catch (e) {
-      catchError('Unable To Be View Derivation Groups and External Types', e as Error);
-      showFailureToast('Derivation Group/External Type Viewing Failed');
     }
   },
 

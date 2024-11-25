@@ -469,10 +469,6 @@
     effects.manageGroupsAndTypes(user);
   }
 
-  function onCreateGroupsOrTypes() {
-    effects.createGroupsOrTypes(user);
-  }
-
   function hasDeleteExternalSourcePermissionOnRow(user: User | null, externalSource: ExternalSourceSlim | undefined) {
     if (externalSource === undefined) {
       return false;
@@ -788,23 +784,12 @@
         </slot>
         <slot name="right">
           <button
-            name="create-groups-or-types"
-            class="st-button secondary"
-            on:click|stopPropagation={onCreateGroupsOrTypes}
-            use:tooltip={{
-              content: 'Create external source types or external event types.',
-              placement: 'top',
-            }}
-          >
-            Create New Groups or Types
-          </button>
-          <button
-            name="manage-groups-or-types"
+            name="manage-groups-and-types"
             class="st-button active"
             on:click|stopPropagation={onManageGroupsAndTypes}
             use:tooltip={{
               content:
-                'Manage and inspect existing derivation groups, external source types, and external event types.',
+                'Manage, create, and inspect existing derivation groups, external source types, and external event types.',
               placement: 'top',
             }}
           >
