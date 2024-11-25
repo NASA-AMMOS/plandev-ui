@@ -1569,6 +1569,7 @@ export function directiveOrSpanMatchesDynamicFilters(
   }, true);
 }
 
+// TODO try consolidating with the function above
 export function typeMatchesDynamicFilters(
   type: ActivityType,
   dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],

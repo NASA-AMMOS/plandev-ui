@@ -58,6 +58,7 @@
     Point,
     RowMouseOverEvent,
     TimeRange,
+    TimelineItemMetadata,
     TimelineItemType,
     XAxisTick,
   } from '../../types/timeline';
@@ -729,6 +730,7 @@
         const json = JSON.parse(data || '');
         const type = json.type ?? '';
         const items = (json.items as TimelineItemType[]) ?? '';
+        const metadata = (json.metadata as TimelineItemMetadata) ?? {};
 
         // Only allow creating an activity if we have an actual activity in the drag data.
         if (type === 'activity' && items && plan) {
@@ -736,7 +738,15 @@
           let activitiesInRow = new Set();
           activityLayers.forEach(layer => {
             // TODO should we consider dynamic types here? Or just static?
-            const layerActivities = layer.filter.activity?.static_types ?? [];
+            // TODO could this be cached from the reactive statement above?
+            let spansList = Object.values(spansMap);
+            const { directives: layerActivities } = applyActivityLayerFilter(
+              layer.filter.activity,
+              activityDirectives,
+              spansList,
+              $activityTypes,
+              $activityArgumentDefaultsMap,
+            );
             activitiesInRow = new Set([...activitiesInRow, ...layerActivities]);
           });
           const missingActivity = (items as ActivityType[]).find(item => !activitiesInRow.has(item.name));
@@ -754,7 +764,14 @@
             const { confirm, value } = await showConfirmActivityCreationModal();
             if (confirm) {
               if (value?.addFilter) {
-                viewAddFilterToRow(items, type, id, activityLayers.length ? activityLayers[0] : undefined, index);
+                viewAddFilterToRow(
+                  items,
+                  type,
+                  metadata,
+                  id,
+                  activityLayers.length ? activityLayers[0] : undefined,
+                  index,
+                );
               }
               createActivities();
             }
@@ -833,7 +850,13 @@
     return resources;
   }
 
-  function onTimelineItemsDrop(rowId?: number, type?: string, items?: TimelineItemType[], index?: number) {
+  function onTimelineItemsDrop(
+    rowId?: number,
+    type?: string,
+    items?: TimelineItemType[],
+    metadata?: TimelineItemMetadata,
+    index?: number,
+  ) {
     if (!type || !items || items.length === 0) {
       return;
     }
@@ -848,7 +871,7 @@
       // adding an external event
       toAdd = externalEventLayers[0];
     }
-    viewAddFilterToRow(items, type, rowId, toAdd, index);
+    viewAddFilterToRow(items, type, metadata, rowId, toAdd, index);
   }
 </script>
 
@@ -863,7 +886,8 @@
       width={drawWidth + marginLeft}
       top={4}
       hintPosition="bottom"
-      on:drop={event => onTimelineItemsDrop(undefined, event.detail.type, event.detail.items, -1)}
+      on:drop={event =>
+        onTimelineItemsDrop(undefined, event.detail.type, event.detail.items, event.detail.metadata, -1)}
     />
   {/if}
 
@@ -874,7 +898,7 @@
       on:discrete-tree-node-change={onDiscreteTreeNodeChange}
       on:mouseDown={onMouseDown}
       on:dblClick
-      on:drop={event => onTimelineItemsDrop(id, event.detail.type, event.detail.items)}
+      on:drop={event => onTimelineItemsDrop(id, event.detail.type, event.detail.items, event.detail.metadata)}
       {discreteTree}
       width={marginLeft}
       height={computedDrawHeight}
@@ -1091,7 +1115,7 @@
 
   <RowDividerDropTarget
     width={drawWidth + marginLeft}
-    on:drop={e => onTimelineItemsDrop(undefined, e.detail.type, e.detail.items, index)}
+    on:drop={e => onTimelineItemsDrop(undefined, e.detail.type, e.detail.items, e.detail.metadata, index)}
   />
   <!-- Drag Handle for Row Height Resizing. -->
   {#if !autoAdjustHeight && expanded}

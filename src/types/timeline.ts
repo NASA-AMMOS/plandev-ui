@@ -37,7 +37,7 @@ export enum ActivityLayerFilterField {
   'Subsystem' = 'Subsystem',
   'Tag' = 'Tag',
   'Parameter' = 'Parameter',
-  'SchedulingGoalId' = 'SchedulingGoalId',
+  'SchedulingGoalId' = 'Scheduling Goal Id',
 }
 
 export type DynamicFilterDataType = ValueSchema['type'] | 'tag';
@@ -318,8 +318,13 @@ export interface XRangePoint extends Point {
 
 export type TimelineItemType = ResourceType | ActivityType | ExternalEventType;
 
+export type TimelineItemMetadata = {
+  selectedFilters?: Record<string, TimelineItemListFilterOption>;
+  textFilters?: string[];
+};
+
 export type TimelineItemListFilterOption = {
   color?: string;
   label: string;
-  value: string;
+  value: string | number;
 };
