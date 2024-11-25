@@ -22,13 +22,14 @@
   export let externalEvent: ExternalEvent;
   export let showHeader: boolean = true;
 
-  const externalEventAttributes: ArgumentsMap = translateJsonSchemaArgumentsToValueSchema(externalEvent.attributes);
+  let externalEventAttributes: ArgumentsMap = {};
 
   let externalEventType: ExternalEventType | undefined = undefined;
   let externalEventTypeParametersMap: ParametersMap = {};
   let startTimeField: FieldStore<string>;
 
   $: externalEventType = $externalEventTypes.find(eventType => eventType.name === externalEvent.pkey.event_type_name);
+  $: externalEventAttributes = translateJsonSchemaArgumentsToValueSchema(externalEvent.attributes);
 
   $: if (externalEventType !== undefined) {
     // Create a ParametersMap for the External Event Type
@@ -95,7 +96,6 @@
           />
         </Input>
       </Collapse>
-
       <Collapse defaultExpanded={false} title="Attributes" tooltipContent="View External Event Attributes">
         <div class="st-typography-body">
           <Parameters
