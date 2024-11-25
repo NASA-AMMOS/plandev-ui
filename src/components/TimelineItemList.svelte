@@ -28,7 +28,7 @@
   export let items: TimelineItemType[] = [];
   export let filterOptions: TimelineItemListFilterOption[] = [];
   export let filterName: string = 'Filter';
-  export let getFilterValueFromItem: (item: TimelineItemType) => string;
+  export let getFilterValueFromItem: (item: TimelineItemType) => string | number;
 
   let menu: Menu;
   let filteredItems: TimelineItemType[] = [];
@@ -92,8 +92,9 @@
     dragImage.className = 'st-typography-medium';
     document.body.appendChild(dragImage);
     if (event.dataTransfer) {
+      const metadata = { selectedFilters, textFilters };
       event.dataTransfer.setDragImage(dragImage, 0, 0);
-      event.dataTransfer.setData('text/plain', JSON.stringify({ items, type: typeName }));
+      event.dataTransfer.setData('text/plain', JSON.stringify({ items, metadata, type: typeName }));
       event.dataTransfer.dropEffect = typeName === 'activity' ? 'copy' : 'link';
       event.dataTransfer.effectAllowed = typeName === 'activity' ? 'copyLink' : 'link';
     }
@@ -115,7 +116,8 @@
 
   function onBulkLayerPicked(event: CustomEvent<{ layer?: Layer; row?: Row }>) {
     addTextFilter();
-    viewAddFilterToRow(filteredItems, typeName, event.detail.row?.id, event.detail.layer);
+    const metadata = { selectedFilters, textFilters };
+    viewAddFilterToRow(filteredItems, typeName, metadata, event.detail.row?.id, event.detail.layer);
   }
 
   function onBulkAddToRow(e: MouseEvent) {
@@ -126,7 +128,7 @@
 
   function onIndividualLayerPicked(event: CustomEvent<{ item?: TimelineItemType; layer?: Layer; row?: Row }>) {
     if (event.detail.item) {
-      viewAddFilterToRow([event.detail.item], typeName, event.detail.row?.id, event.detail.layer);
+      viewAddFilterToRow([event.detail.item], typeName, {}, event.detail.row?.id, event.detail.layer);
     }
   }
 
@@ -162,16 +164,16 @@
           {/if}
           {#each filterOptions as option}
             <Input layout="inline" class="timeline-item-list-filter-option">
-              <label class="st-typography-body timeline-item-list-filter-option-label" for={option.value}>
+              <label class="st-typography-body timeline-item-list-filter-option-label" for={option.value.toString()}>
                 {#if option.color}
                   <div class="color" style:background={option.color} />
                 {/if}
                 {option.label}
               </label>
               <input
-                checked={!!selectedFilters[option.value.toString()]}
-                id={option.value}
-                name={option.value}
+                checked={!!selectedFilters[option.value]}
+                id={option.value.toString()}
+                name={option.label}
                 on:change={() => {
                   if (selectedFilters[option.value]) {
                     delete selectedFilters[option.value];
@@ -226,7 +228,11 @@
           {#each Object.values(selectedFilters) as selectedFilter}
             <!-- TODO maybe pull the tag instead of recreating it? -->
             <Tag
-              tag={{ color: selectedFilter.color, id: parseInt(selectedFilter.value), name: selectedFilter.label }}
+              tag={{
+                color: selectedFilter.color,
+                id: typeof selectedFilter.value === 'string' ? parseInt(selectedFilter.value) : selectedFilter.value,
+                name: selectedFilter.label,
+              }}
               on:click={() => {
                 delete selectedFilters[selectedFilter.value];
                 selectedFilters = { ...selectedFilters };

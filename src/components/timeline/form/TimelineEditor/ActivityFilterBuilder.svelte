@@ -331,7 +331,7 @@
               <div class="filter-section-header st-typography-medium">
                 <div class="filter-section-title">
                   Dynamically Select Types
-                  <div class="hint st-typography-body">Name includes...</div>
+                  <div class="hint st-typography-body">Type includes...</div>
                 </div>
                 <button
                   class="st-button icon"
@@ -351,13 +351,6 @@
                         on:change={event => onDynamicFilterChange('dynamic_type_filters', event)}
                         verb={i === 0 ? 'Where' : 'and'}
                         schema={{
-                          /* TODO include only subsystem tags */
-                          Name: {
-                            does_not_equal: { type: 'string' },
-                            does_not_include: { type: 'string' },
-                            equals: { type: 'variant', values: $activityTypes.map(type => type.name) },
-                            includes: { type: 'string' },
-                          },
                           Subsystem: {
                             does_not_include: { type: 'tag', values: $subsystemTags },
                             includes: { type: 'tag', values: $subsystemTags },
@@ -399,6 +392,12 @@
                         on:change={event => onDynamicFilterChange('global_filters', event)}
                         verb={i === 0 ? 'Where' : 'and'}
                         schema={{
+                          Name: {
+                            does_not_equal: { type: 'string' },
+                            does_not_include: { type: 'string' },
+                            equals: { type: 'string' },
+                            includes: { type: 'string' },
+                          },
                           Parameter: {
                             subfields: parameterSubfields,
                           },
@@ -406,6 +405,7 @@
                             does_not_equal: { type: 'int' },
                             equals: { type: 'int' },
                           },
+
                           Tag: {
                             does_not_include: { type: 'tag', values: $tags },
                             includes: { type: 'tag', values: $tags },
