@@ -1,24 +1,42 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
+  import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import type { ICellRendererParams } from 'ag-grid-community';
+  import XIcon from 'bootstrap-icons/icons/x.svg?component';
   import { createEventDispatcher } from 'svelte';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
-  import { derivationGroups, externalSources, sourcesUsingExternalEventTypes } from '../../stores/external-source';
+  import {
+    createExternalSourceEventTypeError,
+    derivationGroups,
+    externalSources,
+    sourcesUsingExternalEventTypes,
+  } from '../../stores/external-source';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExternalEventType } from '../../types/external-event';
-  import type { DerivationGroup, ExternalSourceSlim, ExternalSourceType } from '../../types/external-source';
+  import type {
+    DerivationGroup,
+    ExternalSourceEventTypeSchema,
+    ExternalSourceSlim,
+    ExternalSourceType,
+  } from '../../types/external-source';
   import type { ParametersMap } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
+  import effects from '../../utilities/effects';
+  import { parseJSONStream } from '../../utilities/generic';
   import { showDeleteDerivationGroupModal, showDeleteExternalEventSourceTypeModal } from '../../utilities/modal';
   import { getFormParameters, translateJsonSchemaToValueSchema } from '../../utilities/parameters';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
   import ExternalEventTypeManagementTab from '../external-events/ExternalEventTypeManagementTab.svelte';
   import DerivationGroupManagementTab from '../external-source/DerivationGroupManagementTab.svelte';
   import ExternalSourceTypeManagementTab from '../external-source/ExternalSourceTypeManagementTab.svelte';
   import Parameters from '../parameters/Parameters.svelte';
+  import AlertError from '../ui/AlertError.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
@@ -50,10 +68,16 @@
     close: void;
   }>();
 
-  const modalColumnSizeNoDetail: string = '1fr 3px 0fr';
+  const derivationGroupTabName: string = 'Derivation Group';
+  const externalSourceTypeTabName: string = 'External Source Type';
+  const externalEventTypeTabName: string = 'External Event Type';
+
+  const modalColumnSizeNoDetail: string = '.7fr 3px 1.5fr';
   const modalColumnSizeWithDetailDerivationGroup: string = '3fr 3px 1.3fr';
   const modalColumnSizeWithDetailExternalSourceType: string = '2fr 3px 1.2fr';
   const modalColumnSizeWithDetailExternalEventType: string = '2fr 3px 1.2fr';
+
+  const creationPermissionError: string = 'You do not have permission to upload External Source & Event Types.';
 
   const derivationGroupBaseColumnDefs: DataGridColumnDef<DerivationGroup>[] = [
     {
@@ -141,8 +165,25 @@
   let selectedExternalEventTypeAttributesSchema: Record<string, ValueSchema>;
   let selectedExternalEventTypeParametersMap: ParametersMap = {};
 
+  let groupsAndTypesTabs: Tabs;
+
+  // File upload variables
+  let fileInput: HTMLInputElement;
+  let uploadResponseErrors: string[] = [];
+  let files: FileList | undefined;
+  let file: File | undefined;
+  let parsedExternalSourceEventTypeSchema: ExternalSourceEventTypeSchema | undefined = undefined;
+
+  // Upload permissions
+  let hasCreateExternalSourceTypePermission: boolean = false;
+  let hasCreateExternalEventTypePermission: boolean = false;
+  let hasCreationPermission: boolean = false;
+
   $: hasDeleteExternalSourceTypePermission = featurePermissions.externalSourceType.canDelete(user);
   $: hasDeleteExternalEventTypePermission = featurePermissions.externalEventType.canDelete(user);
+  $: hasCreateExternalSourceTypePermission = featurePermissions.externalSourceType.canCreate(user);
+  $: hasCreateExternalEventTypePermission = featurePermissions.externalEventType.canCreate(user);
+  $: hasCreationPermission = hasCreateExternalEventTypePermission && hasCreateExternalSourceTypePermission;
 
   $: selectedDerivationGroupSources = $externalSources.filter(
     source => selectedDerivationGroup?.name === source.derivation_group_name,
@@ -186,6 +227,17 @@
       return false;
     }
   });
+
+  $: if (files) {
+    if (file !== files[0]) {
+      file = files[0];
+      if (file !== undefined && /\.json$/.test(file.name)) {
+        parseExternalSourceEventTypeFileStream(file.stream());
+      } else {
+        createExternalSourceEventTypeError.set('External Source & Event Type(s) schema is not a .json file');
+      }
+    }
+  }
 
   $: derivationGroupColumnsDef = [
     ...derivationGroupBaseColumnDefs,
@@ -377,12 +429,15 @@
       selectedExternalSourceType = undefined;
       selectedExternalEventType = undefined;
       modalColumnSize = modalColumnSizeWithDetailDerivationGroup;
+      parsedExternalSourceEventTypeSchema = undefined;
     } else {
       selectedDerivationGroup = undefined;
       selectedExternalSourceType = undefined;
       selectedExternalEventType = undefined;
       modalColumnSize = modalColumnSizeNoDetail;
+      parsedExternalSourceEventTypeSchema = undefined;
     }
+    resetUploadForm();
   }
 
   function viewExternalSourceType(sourceType: ExternalSourceType) {
@@ -391,12 +446,15 @@
       selectedExternalSourceType = sourceType;
       selectedExternalEventType = undefined;
       modalColumnSize = modalColumnSizeWithDetailExternalSourceType;
+      parsedExternalSourceEventTypeSchema = undefined;
     } else {
       selectedDerivationGroup = undefined;
       selectedExternalSourceType = undefined;
       selectedExternalEventType = undefined;
       modalColumnSize = modalColumnSizeNoDetail;
+      parsedExternalSourceEventTypeSchema = undefined;
     }
+    resetUploadForm();
   }
 
   function viewExternalEventType(eventType: ExternalEventType) {
@@ -411,6 +469,7 @@
       selectedExternalEventType = undefined;
       modalColumnSize = modalColumnSizeNoDetail;
     }
+    resetUploadForm();
   }
 
   function hasDeleteDerivationGroupPermissionOnRow(derivationGroup: DerivationGroup | undefined) {
@@ -420,19 +479,139 @@
       return featurePermissions.derivationGroup.canDelete(user, derivationGroup);
     }
   }
+
+  function resetUploadForm() {
+    fileInput.value = '';
+    file = undefined;
+    files = undefined;
+    uploadResponseErrors = [];
+    parsedExternalSourceEventTypeSchema = undefined;
+  }
+
+  function onClick() {
+    resetUploadForm();
+  }
+
+  async function handleUpload() {
+    if (files) {
+      file = files[0];
+      if (file !== undefined && /\.json$/.test(file.name)) {
+        uploadResponseErrors = [];
+        const combinedSchema = await parseJSONStream<{ event_types: object; source_types: object }>(file.stream());
+        const creationResponse = await effects.createExternalSourceEventTypes(
+          combinedSchema.event_types,
+          combinedSchema.source_types,
+          user,
+        );
+        if (creationResponse !== null) {
+          groupsAndTypesTabs.selectTab(externalSourceTypeTabName);
+        }
+        files = undefined;
+        file = undefined;
+        fileInput.value = '';
+        parsedExternalSourceEventTypeSchema = undefined;
+      }
+    }
+  }
+
+  async function parseExternalSourceEventTypeFileStream(stream: ReadableStream) {
+    createExternalSourceEventTypeError.set(null);
+
+    try {
+      parsedExternalSourceEventTypeSchema = await parseJSONStream<ExternalSourceEventTypeSchema>(stream);
+      if (!parsedExternalSourceEventTypeSchema.event_types || !parsedExternalSourceEventTypeSchema.source_types) {
+        parsedExternalSourceEventTypeSchema = undefined;
+        throw new Error('External Source & Event Type Schema has Invalid Format');
+      }
+    } catch (error) {
+      createExternalSourceEventTypeError.set('External Source & Event Type Schema has Invalid Format');
+    }
+  }
 </script>
 
 <Modal height={700} width={1000}>
   <ModalHeader on:close>Manage Derivation Groups and Types</ModalHeader>
   <ModalContent style="overflow: hidden;">
     <CssGrid class="modal-grid" columns={modalColumnSize} minHeight="100%">
+      {#if selectedDerivationGroup === undefined && selectedExternalSourceType === undefined && selectedExternalEventType === undefined}
+        <Panel borderLeft borderTop padBody={true}>
+          <svelte:fragment slot="header">
+            <SectionTitle overflow="hidden">Upload Type Definition</SectionTitle>
+          </svelte:fragment>
+          <svelte:fragment slot="body">
+            <div class="creation-modal-container">
+              <div class="type-creation-input">
+                <label for="file">Type JSON Schema File</label>
+                <input
+                  bind:this={fileInput}
+                  class="w-100 upload"
+                  class:error={!!uploadResponseErrors.length}
+                  name="file"
+                  required
+                  type="file"
+                  accept="application/json"
+                  bind:files
+                  on:click={onClick}
+                />
+              </div>
+              {#if file !== undefined}
+                <button
+                  class="st-button primary"
+                  style:width="100%"
+                  disabled={parsedExternalSourceEventTypeSchema === undefined}
+                  on:click={handleUpload}
+                  use:permissionHandler={{
+                    hasPermission: hasCreationPermission,
+                    permissionError: creationPermissionError,
+                  }}
+                  use:tooltip={{ content: 'Upload External Source & Event Type(s)' }}
+                >
+                  Upload
+                </button>
+                {#if parsedExternalSourceEventTypeSchema !== undefined}
+                  <div class="parse-status st-typography-body">
+                    <div class="check">
+                      <CheckIcon />
+                    </div>
+                    Source & Event Type Attribute Schema Parsed
+                  </div>
+                {:else}
+                  <WarningIcon />
+                  <div class="status-text st-typography-body">
+                    Source & Event Type Attribute Schema Could Not Be Parsed
+                  </div>
+                {/if}
+              {/if}
+              {#if parsedExternalSourceEventTypeSchema !== undefined}
+                <div class="to-be-created st-typography-body">
+                  <div class="to-be-created-header">The following External Source Type(s) will be created</div>
+                  {#each Object.keys(parsedExternalSourceEventTypeSchema.source_types) as newSourceTypeName}
+                    <li class="st-typograph-body">{newSourceTypeName}</li>
+                  {/each}
+                  <div class="to-be-created-header">The following External Event Type(s) will be created</div>
+                  {#each Object.keys(parsedExternalSourceEventTypeSchema.event_types) as newEventTypeName}
+                    <li class="st-typograph-body">{newEventTypeName}</li>
+                  {/each}
+                </div>
+              {/if}
+              <div class="errors">
+                {#each uploadResponseErrors as currentError}
+                  <AlertError class="m-2" error={currentError} />
+                {/each}
+                <AlertError class="m-2" error={$createExternalSourceEventTypeError} />
+              </div>
+            </div>
+          </svelte:fragment>
+        </Panel>
+        <CssGridGutter track={1} type="column" />
+      {/if}
       <div class="derivation-groups-modal-filter-container">
         <div class="derivation-groups-modal-content">
-          <Tabs class="management-tabs" tabListClassName="management-tabs-list">
+          <Tabs bind:this={groupsAndTypesTabs} class="management-tabs" tabListClassName="management-tabs-list">
             <svelte:fragment slot="tab-list">
-              <Tab class="management-tab">Derivation Group</Tab>
-              <Tab class="management-tab">External Source Type</Tab>
-              <Tab class="management-tab">External Event Type</Tab>
+              <Tab tabId={derivationGroupTabName} class="management-tab">Derivation Group</Tab>
+              <Tab tabId={externalSourceTypeTabName} class="management-tab">External Source Type</Tab>
+              <Tab tabId={externalEventTypeTabName} class="management-tab">External Event Type</Tab>
             </svelte:fragment>
             <TabPanel>
               <DerivationGroupManagementTab {derivationGroupColumnsDef} {filterString} />
@@ -447,12 +626,21 @@
         </div>
       </div>
       {#if selectedDerivationGroup !== undefined}
-        <CssGridGutter track={1} type="column" />
-        <Panel borderRight padBody={true}>
+        <CssGridGutter track={2} type="column" />
+        <Panel borderRight borderTop padBody={true}>
           <svelte:fragment slot="header">
             <SectionTitle overflow="hidden">
               <ExternalSourceIcon slot="icon" />Sources in '{selectedDerivationGroup.name}'
             </SectionTitle>
+            <button
+              class="st-button icon fs-6 deselect"
+              on:click|stopPropagation={() => {
+                selectedDerivationGroup = undefined;
+                modalColumnSize = modalColumnSizeNoDetail;
+              }}
+            >
+              <XIcon />
+            </button>
           </svelte:fragment>
           <svelte:fragment slot="body">
             {#if selectedDerivationGroupSources.length > 0}
@@ -501,12 +689,21 @@
           </svelte:fragment>
         </Panel>
       {:else if selectedExternalSourceType !== undefined}
-        <CssGridGutter track={1} type="column" />
-        <Panel borderRight padBody={true}>
+        <CssGridGutter track={2} type="column" />
+        <Panel borderRight borderTop padBody={true}>
           <svelte:fragment slot="header">
             <SectionTitle overflow="hidden">
               <ExternalSourceIcon slot="icon" />'{selectedExternalSourceType.name}' Details
             </SectionTitle>
+            <button
+              class="st-button icon fs-6 deselect"
+              on:click|stopPropagation={() => {
+                selectedExternalSourceType = undefined;
+                modalColumnSize = modalColumnSizeNoDetail;
+              }}
+            >
+              <XIcon />
+            </button>
           </svelte:fragment>
           <svelte:fragment slot="body">
             {#if selectedExternalSourceTypeDerivationGroups.length > 0}
@@ -567,12 +764,21 @@
           </svelte:fragment>
         </Panel>
       {:else if selectedExternalEventType !== undefined}
-        <CssGridGutter track={1} type="column" />
-        <Panel borderRight padBody={true}>
+        <CssGridGutter track={2} type="column" />
+        <Panel borderRight borderTop padBody={true}>
           <svelte:fragment slot="header">
             <SectionTitle overflow="hidden">
               <ExternalSourceIcon slot="icon" />'{selectedExternalEventType.name}' Details
             </SectionTitle>
+            <button
+              class="st-button icon fs-6 deselect"
+              on:click|stopPropagation={() => {
+                selectedExternalEventType = undefined;
+                modalColumnSize = modalColumnSizeNoDetail;
+              }}
+            >
+              <XIcon />
+            </button>
           </svelte:fragment>
           <svelte:fragment slot="body">
             <Collapse
@@ -704,5 +910,36 @@
 
   :global(.modal-grid) {
     height: 100%;
+  }
+
+  .type-creation-input {
+    padding-bottom: 12px;
+  }
+
+  .errors {
+    height: 100%;
+  }
+
+  .to-be-created-header {
+    font-weight: bold;
+    margin-top: 12px;
+  }
+
+  .parse-status {
+    display: flex;
+    margin-top: 12px;
+  }
+
+  .parse-status .check {
+    background-color: #0eaf0a;
+    border-radius: 50%;
+    color: var(--st-white);
+    display: flex;
+    margin-right: 6px;
+  }
+
+  .deselect {
+    display: flex;
+    float: right;
   }
 </style>

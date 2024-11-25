@@ -3,7 +3,6 @@ import AboutModal from '../components/modals/AboutModal.svelte';
 import ActionCreationModal from '../components/modals/ActionCreationModal.svelte';
 import ConfirmActivityCreationModal from '../components/modals/ConfirmActivityCreationModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
-import CreateGroupsOrTypesModal from '../components/modals/CreateGroupsOrTypesModal.svelte';
 import CreatePlanBranchModal from '../components/modals/CreatePlanBranchModal.svelte';
 import CreatePlanSnapshotModal from '../components/modals/CreatePlanSnapshotModal.svelte';
 import CreateViewModal from '../components/modals/CreateViewModal.svelte';
@@ -190,40 +189,6 @@ export async function showConfirmModal(
           target.resolve = null;
           resolve({ confirm: true });
           confirmModal.$destroy();
-        });
-      }
-    } else {
-      resolve({ confirm: false });
-    }
-  });
-}
-
-/**
- * Shows a CreateGroupsOrTypesModal component with the supplied arguments.
- */
-export async function showCreateGroupsOrTypes(user: User | null): Promise<ModalElementValue> {
-  return new Promise(resolve => {
-    if (browser) {
-      const target: ModalElement | null = document.querySelector('#svelte-modal');
-
-      if (target) {
-        const manageGroupsAndTypesModal = new CreateGroupsOrTypesModal({
-          props: { user },
-          target,
-        });
-        target.resolve = resolve;
-
-        manageGroupsAndTypesModal.$on('close', () => {
-          target.replaceChildren();
-          target.resolve = null;
-          target.removeAttribute('data-dismissible');
-          manageGroupsAndTypesModal.$destroy();
-        });
-        manageGroupsAndTypesModal.$on('add', (e: CustomEvent<{ derivationGroupName: string }[]>) => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: true, value: e.detail });
-          manageGroupsAndTypesModal.$destroy();
         });
       }
     } else {
