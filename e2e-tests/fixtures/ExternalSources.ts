@@ -21,10 +21,10 @@ export class ExternalSources {
   derivationTestFileKey2: string = 'external-event-derivation-2.json';
   derivationTestFileKey3: string = 'external-event-derivation-3.json';
   derivationTestFileKey4: string = 'external-event-derivation-4.json';
-  derivationTestGroupName: string = 'Derivation Test Default';
-  derivationTestSourceType: string = 'Derivation Test';
-  derivationTestSourceTypeName: string = 'Derivation Test';
-  derivationTestSourceTypeSchema: string = 'e2e-tests/data/Schema_Derivation-Test.json';
+  derivationTestGroupName: string = 'DerivationTest Default';
+  derivationTestSourceType: string = 'DerivationTest';
+  derivationTestSourceTypeName: string = 'DerivationTest';
+  derivationTestTypeSchema: string = 'e2e-tests/data/Schema_Example_Derivation.json';
   deselectEventButton: Locator;
   deselectSourceButton: Locator;
   exampleDerivationGroup: string = 'Example External Source Default';
