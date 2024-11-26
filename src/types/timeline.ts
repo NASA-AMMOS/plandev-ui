@@ -71,8 +71,8 @@ export enum FilterOperator {
   'does_not_include' = 'does not include',
   'is_one_of' = 'is one of',
   'is_not_one_of' = 'is not one of',
-  'greater_than' = 'greater than',
-  'less_than' = 'less than',
+  'is_greater_than' = 'is greater than',
+  'is_less_than' = 'is less than',
   'is_within' = 'is within',
   'is_not_within' = 'is not within',
 }

@@ -1632,14 +1632,36 @@ export function matchesDynamicFilter(
         return itemValue !== filterValue;
       }
       return (filterValue as (typeof itemValue)[]).indexOf(itemValue) < 0;
-    case 'greater_than':
+    case 'is_greater_than':
       if (typeof filterValue === 'number' && typeof itemValue === 'number') {
         return itemValue > filterValue;
       }
       return false;
-    case 'less_than':
+    case 'is_less_than':
       if (typeof filterValue === 'number' && typeof itemValue === 'number') {
         return itemValue < filterValue;
+      }
+      return false;
+    case 'is_within':
+      if (
+        isArray(filterValue) &&
+        filterValue.length === 2 &&
+        typeof filterValue[0] === 'number' &&
+        typeof filterValue[1] === 'number'
+      ) {
+        // TODO should upper bound be inclusive or exclusive?
+        return itemValue >= filterValue[0] && itemValue <= filterValue[1];
+      }
+      return false;
+    case 'is_not_within':
+      if (
+        isArray(filterValue) &&
+        filterValue.length === 2 &&
+        typeof filterValue[0] === 'number' &&
+        typeof filterValue[1] === 'number'
+      ) {
+        // TODO should upper bound be inclusive or exclusive?
+        return itemValue < filterValue[0] || itemValue > filterValue[1];
       }
       return false;
     default:
