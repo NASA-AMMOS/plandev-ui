@@ -13,6 +13,12 @@ test.beforeAll(async ({ browser }) => {
 });
 
 test.afterAll(async () => {
+  await externalSources.goto();
+  await externalSources.deleteSource(externalSources.externalSourceFileName);
+  await externalSources.gotoTypeManager();
+  await externalSources.deleteDerivationGroup(externalSources.exampleDerivationGroup);
+  await externalSources.deleteExternalSourceType(externalSources.exampleSourceType);
+  await externalSources.deleteExternalEventType(externalSources.exampleEventType);
   await page.close();
   await context.close();
 });
