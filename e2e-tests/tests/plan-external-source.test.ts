@@ -50,12 +50,22 @@ test.afterAll(async () => {
   await models.deleteModel();
 
   await externalSources.goto();
-  // Cleanup all test files that *may* have been uploaded
   await externalSources.deleteSource(externalSources.externalSourceFileName);
   await externalSources.deleteSource(externalSources.derivationTestFileKey1);
   await externalSources.deleteSource(externalSources.derivationTestFileKey2);
   await externalSources.deleteSource(externalSources.derivationTestFileKey3);
   await externalSources.deleteSource(externalSources.derivationTestFileKey4);
+
+  await externalSources.gotoTypeManager();
+  await externalSources.deleteDerivationGroup(externalSources.exampleDerivationGroup);
+  await externalSources.deleteDerivationGroup(externalSources.derivationTestGroupName);
+  await externalSources.deleteExternalSourceType(externalSources.exampleSourceType);
+  await externalSources.deleteExternalSourceType(externalSources.derivationTestSourceTypeName);
+  await externalSources.deleteExternalEventType(externalSources.exampleEventType);
+  await externalSources.deleteExternalEventType(externalSources.derivationATypeName);
+  await externalSources.deleteExternalEventType(externalSources.derivationBTypeName);
+  await externalSources.deleteExternalEventType(externalSources.derivationCTypeName);
+  await externalSources.deleteExternalEventType(externalSources.derivationDTypeName);
 
   await page.close();
   await context.close();
