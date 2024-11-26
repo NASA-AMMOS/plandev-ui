@@ -23,22 +23,8 @@ test.beforeEach(async () => {
 
 test.describe.serial('External Sources', () => {
   test('Uploading an external source', async () => {
-    await externalSources.createType(
-      externalSources.externalEventTypeName,
-      externalSources.externalEventTypeSchema,
-      false,
-    );
-    await externalSources.createType(
-      externalSources.externalSourceTypeName,
-      externalSources.externalSourceTypeSchema,
-      true,
-    );
+    await externalSources.createType(externalSources.exampleTypeSchema, 'Example External Source', false);
     await externalSources.uploadExternalSource();
-  });
-
-  test('Upload button should be enabled after entering a filepath', async () => {
-    await externalSources.fillInputFile(externalSources.externalSourceFilePath);
-    await expect(externalSources.uploadButton).toBeVisible();
   });
 
   test('External event form should be shown when an event is selected', async () => {
@@ -69,15 +55,6 @@ test.describe.serial('External Sources', () => {
     await expect(externalSources.externalSourceSelectedForm).not.toBeVisible();
   });
 
-  // TODO: Metadata will be implemented in a future batch of work!
-  // test('Selected external source should show metadata in a collapsible', async () => {
-  //   await externalSources.selectSource();
-  //   await externalSources.viewEventSourceMetadata.click();
-  //   await expect(page.getByText('0', { exact: true })).toBeVisible();
-  //   await expect(page.getByText('1', { exact: true }).first()).toBeVisible();
-  //   await expect(page.getByText('version')).toBeVisible();
-  // });
-
   test('Selected external source should show event types in a collapsible', async () => {
     await externalSources.selectSource();
     await externalSources.viewContainedEventTypes.click();
@@ -97,7 +74,7 @@ test.describe.serial('External Sources', () => {
     await expect(externalSources.inputFile).toBeVisible();
     await expect(externalSources.externalEventSelectedForm).not.toBeVisible();
     await expect(externalSources.externalSourceSelectedForm).not.toBeVisible();
-    await externalSources.manageGroupsAndTypesButton.click();
+    await externalSources.gotoTypeManager();
     await externalSources.deleteDerivationGroup(externalSources.exampleDerivationGroup);
     await externalSources.deleteExternalEventType(externalSources.exampleEventType);
     await externalSources.deleteExternalSourceType(externalSources.exampleSourceType);
@@ -106,23 +83,17 @@ test.describe.serial('External Sources', () => {
 
 test.describe.serial('External Source Error Handling', () => {
   test('Duplicate keys is handled gracefully', async () => {
-    await externalSources.createType(
-      externalSources.externalEventTypeName,
-      externalSources.externalEventTypeSchema,
-      false,
-    );
-    await externalSources.createType(
-      externalSources.externalSourceTypeName,
-      externalSources.externalSourceTypeSchema,
-      true,
-    );
+    await externalSources.createType(externalSources.exampleTypeSchema, 'Example External Source', false);
     await externalSources.uploadExternalSource();
-    await externalSources.deselectSourceButton.click();
     await expect(externalSources.externalSourcesTable).toBeVisible();
     await expect(
       externalSources.externalSourcesTable.getByRole('gridcell', { name: externalSources.externalSourceFileName }),
     ).toBeVisible();
-    await externalSources.uploadExternalSource();
+    await externalSources.uploadExternalSource(
+      externalSources.externalSourceFilePath,
+      externalSources.externalSourceFileName,
+      false,
+    );
     await expect(page.getByLabel('Uniqueness violation.')).toBeVisible();
     await externalSources.waitForToast('External Source Create Failed');
     await expect(page.getByRole('gridcell', { name: externalSources.externalSourceFileName })).toHaveCount(1);
