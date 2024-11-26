@@ -66,7 +66,7 @@
       if (matchingSubfield.type === 'string') {
         operatorKeys = ['includes', 'does_not_include', 'equals', 'does_not_equal'];
       } else if (matchingSubfield.type === 'int' || matchingSubfield.type === 'real') {
-        operatorKeys = ['equals', 'does_not_equal', 'greater_than', 'less_than'];
+        operatorKeys = ['equals', 'does_not_equal', 'is_greater_than', 'is_less_than', 'is_within', 'is_not_within'];
       } else if (matchingSubfield.type === 'boolean') {
         operatorKeys = ['equals', 'does_not_equal'];
       } else if (matchingSubfield.type === 'variant') {
@@ -124,6 +124,30 @@
     currentSubfieldLabel = event.detail?.toString() || '';
     currentValue = '';
   }
+
+  function onOperatorChange(event: Event) {
+    const { value } = getTarget(event);
+    const operator = value as keyof typeof FilterOperator;
+    if (operator === 'is_within' || operator === 'is_not_within') {
+      currentValue = [];
+    } else {
+      currentValue = '';
+    }
+    currentOperator = operator;
+  }
+
+  function onRangeInputChange(event: Event, bound: 'min' | 'max' = 'min') {
+    const { value } = getTarget(event);
+    if (typeof value === 'number') {
+      let newValue = Array.isArray(currentValue) ? currentValue.slice() : [0, 0];
+      if (bound === 'min') {
+        newValue[0] = value;
+      } else {
+        newValue[1] = value;
+      }
+      currentValue = newValue;
+    }
+  }
 </script>
 
 <div class="dynamic-filter">
@@ -147,7 +171,7 @@
       </SearchableDropdown>
     </div>
   {/if}
-  <select class="st-select" bind:value={currentOperator}>
+  <select class="st-select" value={currentOperator} on:change={onOperatorChange}>
     {#each operatorKeys as operator}
       <option value={operator}>{FilterOperator[operator]}</option>
     {/each}
@@ -155,6 +179,14 @@
   <div class="dynamic-filter-value">
     {#if currentType === 'string'}
       <input class="st-input w-100" bind:value={currentValue} />
+    {:else if currentOperator === 'is_within' || currentOperator === 'is_not_within'}
+      {#if Array.isArray(currentValue)}
+        <div class="range-input">
+          <input class="st-input w-100" type="number" on:change={event => onRangeInputChange(event, 'min')} />
+          <div class="st-typography-label">To</div>
+          <input class="st-input w-100" type="number" on:change={event => onRangeInputChange(event, 'max')} />
+        </div>
+      {/if}
     {:else if currentType === 'int' || currentType === 'real'}
       <input class="st-input w-100" type="number" bind:value={currentValue} />
     {:else if currentType === 'boolean'}
@@ -212,5 +244,11 @@
   .dynamic-filter-value {
     flex: 1;
     min-width: 40px;
+  }
+
+  .range-input {
+    align-items: center;
+    display: flex;
+    gap: 4px;
   }
 </style>
