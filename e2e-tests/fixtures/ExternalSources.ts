@@ -3,8 +3,6 @@ import { expect, type Locator, type Page } from '@playwright/test';
 export class ExternalSources {
   alertError: Locator;
   closeButton: Locator;
-  createTypesButton: Locator;
-  createTypesModal: Locator;
   deleteSourceButton: Locator;
   deleteSourceButtonConfirmation: Locator;
   derivationATypeName: string = 'DerivationA';
@@ -32,23 +30,21 @@ export class ExternalSources {
   exampleDerivationGroup: string = 'Example External Source Default';
   exampleEventType: string = 'ExampleEvent';
   exampleSourceType: string = 'Example External Source';
+  exampleTypeSchema: string = 'e2e-tests/data/Schema_Example_Source.json';
   externalEventSelectedForm: Locator;
   externalEventTableHeaderDuration: Locator;
   externalEventTableHeaderEventType: Locator;
   externalEventTableRow: Locator;
   externalEventTypeName: string = 'ExampleEvent';
-  externalEventTypeSchema: string = 'e2e-tests/data/Schema_ExampleEvent.json';
   externalSourceFileName: string = 'example-external-source.json';
   externalSourceFilePath: string = 'e2e-tests/data/example-external-source.json';
   externalSourceFilePathMissingField: string = 'e2e-tests/data/example-external-source-missing-field.json';
   externalSourceFilePathSyntaxError: string = 'e2e-tests/data/example-external-source-syntax-error.json';
   externalSourceSelectedForm: Locator;
   externalSourceTypeName: string = 'Example External Source';
-  externalSourceTypeSchema: string = 'e2e-tests/data/Schema_Example-External-Source.json';
   externalSourceUpload: Locator;
   externalSourcesTable: Locator;
   inputFile: Locator;
-  manageGroupsAndTypesButton: Locator;
   nameInput: Locator;
   panelExternalEventsTable: Locator;
   saveButton: Locator;
@@ -66,23 +62,16 @@ export class ExternalSources {
     await this.closeButton.click();
   }
 
-  async createType(typeName: string, typeSchema: string, isSourceType: boolean) {
-    await this.createTypesButton.click();
-    await expect(this.createTypesModal).toBeVisible();
-    if (isSourceType) {
-      await this.page.getByRole('radio', { name: 'External Source Type' }).click();
+  async createType(typeSchema: string, typeName: string, isExternalEventType: boolean) {
+    await this.gotoTypeManager();
+    await this.page.getByRole('textbox').focus();
+    await this.page.getByRole('textbox').setInputFiles(typeSchema);
+    await this.page.getByRole('textbox').evaluate(e => e.blur());
+    await this.page.getByLabel('Upload External Source & Event Type(s)').click();
+    if (isExternalEventType) {
+      await this.page.getByRole('button', { name: 'External Event Type' }).click();
     }
-    await this.page.getByPlaceholder('New Type Name').fill(typeName);
-    await this.page.locator('#svelte-modal input[name="file"]').focus();
-    await this.page.locator('#svelte-modal input[name="file"]').setInputFiles(typeSchema);
-    await this.page.locator('#svelte-modal input[name="file"]').evaluate(e => e.blur());
-    await this.page.getByRole('button', { exact: true, name: 'Create' }).click();
-    if (isSourceType) {
-      await this.waitForToast('External Source Type Created Successfully');
-    } else {
-      await this.waitForToast('External Event Type Created Successfully');
-    }
-    await expect(this.createTypesModal).not.toBeVisible();
+    await expect(this.page.getByRole('row', { name: typeName })).toBeVisible();
   }
   async deleteDerivationGroup(derivationGroupName: string) {
     await this.page.getByRole('button', { exact: true, name: 'Derivation Group' }).click();
@@ -110,7 +99,7 @@ export class ExternalSources {
 
   async deleteSource(sourceName: string) {
     // Only delete a source if its visible in the table
-    if (await this.page.getByRole('gridcell', { name: sourceName }).first().isVisible()) {
+    if (await this.page.getByRole('gridcell', { name: sourceName }).isVisible()) {
       await this.selectSource(sourceName);
       await this.deleteSourceButton.click();
       await this.deleteSourceButtonConfirmation.click();
@@ -143,6 +132,11 @@ export class ExternalSources {
     await this.page.waitForTimeout(250);
   }
 
+  async gotoTypeManager() {
+    await this.page.goto('/external-sources/types', { waitUntil: 'networkidle' });
+    await this.page.waitForTimeout(250);
+  }
+
   async linkDerivationGroup(derivationGroupName: string, sourceTypeName: string) {
     // Assumes the Manage Derivation Groups modal is already showing
     await this.page.getByRole('row', { name: derivationGroupName }).getByRole('checkbox').click();
@@ -152,15 +146,15 @@ export class ExternalSources {
   }
 
   async selectEvent(eventName: string, sourceName: string = 'example-external-source.json') {
-    // Assumes the selected source was the test source, and selects the specific event from it
-    // NOTE: This may not be the case, and should be re-visited when we implement deletion for External Sources!
+    await this.goto();
     await this.selectSource(sourceName);
     await this.page.getByRole('gridcell', { name: eventName }).click();
   }
 
   async selectSource(sourceName: string = 'example-external-source.json') {
-    // Always selects the first source with the example's source type in the table
-    await this.page.getByRole('gridcell', { name: sourceName }).first().click();
+    await this.goto();
+    await this.page.getByRole('gridcell', { name: sourceName }).click();
+    await expect(this.page.getByText('Selected External Source')).toBeVisible();
   }
 
   async unlinkDerivationGroup(derivationGroupName: string, sourceTypeName: string) {
@@ -195,23 +189,24 @@ export class ExternalSources {
     this.viewEventSourceMetadata = page.getByRole('button', { name: 'View Event Source Metadata' });
     this.panelExternalEventsTable = page.locator('[data-component-name="ExternalEventsTablePanel"]');
     this.externalSourcesTable = page.locator('#external-sources-table');
-    this.createTypesButton = page.getByLabel('Create external source types or external event types.');
-    this.manageGroupsAndTypesButton = page.getByLabel('Manage and inspect existing');
-    this.createTypesModal = page.locator(`.modal:has-text("Create New External Source/Event Types")`);
   }
 
   async uploadExternalSource(
     inputFilePath: string = this.externalSourceFilePath,
     inputFileName: string = this.externalSourceFileName,
+    validateUpload: boolean = true,
   ) {
+    await this.goto();
     await this.fillInputFile(inputFilePath);
     // Wait for all errors to disappear, assuming stores are just taking time to load
     await this.page.getByLabel('please create one before uploading an external source').waitFor({ state: 'hidden' });
     await this.page.getByLabel('Please create it!').waitFor({ state: 'hidden' });
     await this.uploadButton.click();
-    await this.waitForToast('External Source Created Successfully');
-    await expect(this.externalSourcesTable).toBeVisible();
-    await expect(this.externalSourcesTable.getByRole('gridcell', { name: inputFileName })).toBeVisible();
+    if (validateUpload) {
+      await expect(this.externalSourcesTable).toBeVisible();
+      await expect(this.externalSourcesTable.getByRole('gridcell', { name: inputFileName })).toBeVisible();
+      await this.waitForToast('External Source Created Successfully');
+    }
   }
 
   async waitForToast(message: string) {
