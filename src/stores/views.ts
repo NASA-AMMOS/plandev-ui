@@ -6,9 +6,7 @@ import type {
   ActivityLayerFilter,
   ActivityLayerFilterField,
   Axis,
-  ExternalEventLayerFilter,
   Layer,
-  ResourceLayerFilter,
   Row,
   Timeline,
   TimelineItemMetadata,
@@ -566,6 +564,61 @@ export function viewUpdateYAxis(prop: string, value: any) {
   });
 }
 
+export function getUpdatedActivityLayerFilter(
+  items: TimelineItemType[],
+  metadata?: TimelineItemMetadata,
+  filter?: ActivityLayerFilter,
+): ActivityLayerFilter {
+  // Return updated activity layer filter
+  // Prefer metadata like Type and/or Subsystem filter over named types
+  const dynamicTypeFilters: ActivityLayerFilter['dynamic_type_filters'] = filter?.dynamic_type_filters || [];
+  let staticTypes: string[] = filter?.static_types || [];
+  const hasTextFilters = metadata?.textFilters && metadata?.textFilters.length;
+  const hasSelectedFilters = metadata?.selectedFilters && Object.keys(metadata?.selectedFilters).length;
+  if (hasTextFilters) {
+    (metadata.textFilters || []).forEach(textFilter => {
+      // TODO ugh types
+      const typeFilter: ActivityLayerDynamicFilter<
+        Pick<typeof ActivityLayerFilterField, 'Type' | 'Name' | 'Subsystem'>
+      > = {
+        field: 'Type',
+        id: getNextThingID(dynamicTypeFilters),
+        operator: 'includes',
+        value: textFilter,
+      };
+      dynamicTypeFilters.push(typeFilter);
+    });
+  }
+  if (hasSelectedFilters) {
+    const subsystems = Object.values(metadata.selectedFilters || {}).map(
+      selectedFilter => selectedFilter.value,
+    ) as number[];
+    if (subsystems.length) {
+      // TODO ugh types
+      const typeFilter: ActivityLayerDynamicFilter<
+        Pick<typeof ActivityLayerFilterField, 'Type' | 'Name' | 'Subsystem'>
+      > = {
+        field: 'Subsystem',
+        id: getNextThingID(dynamicTypeFilters),
+        operator: 'includes',
+        value: subsystems,
+      };
+      dynamicTypeFilters.push(typeFilter);
+    }
+  }
+  if (!hasTextFilters && !hasSelectedFilters && items.length) {
+    const newTypes = items.map(i => i.name);
+    const existingTypes = filter?.static_types || [];
+    staticTypes = Array.from(new Set([...newTypes, ...existingTypes]));
+  }
+
+  return {
+    ...(filter || {}),
+    dynamic_type_filters: dynamicTypeFilters,
+    static_types: staticTypes,
+  };
+}
+
 export function getUpdatedLayerWithFilters(
   timelines: Timeline[],
   type: string /* 'activity' | 'resource' | 'externalEvent' */,
@@ -578,47 +631,11 @@ export function getUpdatedLayerWithFilters(
   // Create a suitable layer if not provided
   if (!layer) {
     if (type === 'activity') {
-      const filter: ActivityLayerFilter = {};
-      const dynamicTypeFilters: ActivityLayerFilter['dynamic_type_filters'] = [];
-      if (metadata?.textFilters) {
-        metadata.textFilters.forEach(textFilter => {
-          // TODO ugh types
-          const typeFilter: ActivityLayerDynamicFilter<
-            Pick<typeof ActivityLayerFilterField, 'Type' | 'Name' | 'Subsystem'>
-          > = {
-            field: 'Type',
-            id: getNextThingID(dynamicTypeFilters),
-            operator: 'includes',
-            value: textFilter,
-          };
-          dynamicTypeFilters.push(typeFilter);
-        });
-      }
-      if (metadata?.selectedFilters) {
-        const subsystems = Object.values(metadata.selectedFilters).map(
-          selectedFilter => selectedFilter.value,
-        ) as number[];
-        if (subsystems.length) {
-          // TODO ugh types
-          const typeFilter: ActivityLayerDynamicFilter<
-            Pick<typeof ActivityLayerFilterField, 'Type' | 'Name' | 'Subsystem'>
-          > = {
-            field: 'Subsystem',
-            id: getNextThingID(dynamicTypeFilters),
-            operator: 'includes',
-            value: subsystems,
-          };
-          dynamicTypeFilters.push(typeFilter);
-        }
-      }
-      if (dynamicTypeFilters.length) {
-        filter.dynamic_type_filters = dynamicTypeFilters;
-      }
-      console.log('filter :>> ', filter);
+      const updatedActivityFilter = getUpdatedActivityLayerFilter(items, metadata);
       return {
         layer: createTimelineActivityLayer(timelines, {
           activityColor: getUniqueColorForActivityLayer(row),
-          filter: { activity: filter },
+          filter: { activity: updatedActivityFilter },
         }),
       };
     } else if (type === 'externalEvent') {
@@ -649,34 +666,20 @@ export function getUpdatedLayerWithFilters(
     }
   } else {
     // Otherwise augment the filter of the specified layer
-    let prop: string = '';
+    // Note that resources are skipped here since they cannot be added to existing layers
+    const updatedFilter = layer.filter;
     if (type === 'activity') {
-      prop = 'static_types';
+      updatedFilter.activity = getUpdatedActivityLayerFilter(items, metadata, layer.filter.activity);
     } else if (type === 'externalEvent') {
-      prop = 'event_types';
-    } else {
-      prop = 'names';
-    }
-    const typedType = type as 'activity' | 'resource' | 'externalEvent';
-    const existingFilter = layer.filter[typedType];
-    let existingFilterItems: string[] = [];
-
-    if (existingFilter && (existingFilter as ActivityLayerFilter).static_types) {
-      existingFilterItems = (existingFilter as ActivityLayerFilter).static_types ?? [];
-    } else if (existingFilter && (existingFilter as ResourceLayerFilter).names) {
-      existingFilterItems = (existingFilter as ResourceLayerFilter).names;
-    } else if (existingFilter && (existingFilter as ExternalEventLayerFilter).event_types) {
-      existingFilterItems = (existingFilter as ExternalEventLayerFilter).event_types;
+      updatedFilter.externalEvent = {
+        event_types: Array.from(new Set([...(updatedFilter.externalEvent?.event_types || []), ...itemNames])),
+      };
     }
 
     return {
       layer: {
         ...layer,
-        filter: {
-          [type]: {
-            [prop]: [...new Set(existingFilterItems.concat(itemNames))],
-          },
-        },
+        filter: updatedFilter,
       },
     };
   }
@@ -708,7 +711,7 @@ export function viewAddFilterToRow(
   index?: number, // row index to insert after
 ) {
   if (typeName === 'resource') {
-    // Add first to a new row
+    // Add first resource to the row
     const row = viewAddFilterItemsToRow([items[0]], typeName, metadata, rowId, layer, index);
     if (row) {
       // TODO enforcing an arbitrary limit here to avoid a poor performance scenario
@@ -784,7 +787,7 @@ export function viewAddFilterItemsToRow(
           returnRow = r;
           const newLayers = r.layers.map(l => {
             if (l.id === layer.id) {
-              return getUpdatedLayerWithFilters(timelines, typeName, items, layer, row).layer;
+              return getUpdatedLayerWithFilters(timelines, typeName, items, metadata, layer, row).layer;
             }
             return l;
           });

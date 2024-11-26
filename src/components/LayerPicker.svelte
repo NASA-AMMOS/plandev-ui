@@ -17,6 +17,9 @@
 
   let contextMenu: ContextMenu;
   let layerItem: TimelineItemType | undefined = undefined;
+  let isResourceChart: boolean = false;
+
+  $: isResourceChart = chartType === 'x-range' || chartType === 'line';
 
   export function toggle(e: MouseEvent, item?: TimelineItemType) {
     if (contextMenu.isShown()) {
@@ -50,18 +53,25 @@
       <div class="st-typography-label empty">No rows found</div>
     {/if}
     {#each rows as row}
-      <ContextSubMenuItem text={row.name} parentMenu={contextMenu} hideAfterClick={false}>
-        {#each row.layers.filter(l => l.chartType === chartType) as layer}
-          <ContextMenuItem on:click={() => onSelect(layerItem, row, layer)}>
-            <div class="layer">
-              {layer.name || `${layer.chartType} Layer`}
-            </div>
-          </ContextMenuItem>
-        {/each}
+      <!-- Limit selection to rows if resource chart  -->
+      {#if isResourceChart}
         <ContextMenuItem on:click={() => onSelect(layerItem, row)}>
-          <div class="layer-picker-context-menu-blue">New Layer +</div>
+          {row.name}
         </ContextMenuItem>
-      </ContextSubMenuItem>
+      {:else}
+        <ContextSubMenuItem text={row.name} parentMenu={contextMenu} hideAfterClick={false}>
+          {#each row.layers.filter(l => l.chartType === chartType) as layer}
+            <ContextMenuItem on:click={() => onSelect(layerItem, row, layer)}>
+              <div class="layer">
+                {layer.name || `${layer.chartType} Layer`}
+              </div>
+            </ContextMenuItem>
+          {/each}
+          <ContextMenuItem on:click={() => onSelect(layerItem, row)}>
+            <div class="layer-picker-context-menu-blue">New Layer +</div>
+          </ContextMenuItem>
+        </ContextSubMenuItem>
+      {/if}
     {/each}
     <ContextMenuItem on:click={() => onSelect(layerItem)}>
       <div class="layer-picker-context-menu-blue">New Row +</div>

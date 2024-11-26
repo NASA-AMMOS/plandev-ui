@@ -857,21 +857,20 @@
     metadata?: TimelineItemMetadata,
     index?: number,
   ) {
-    if (!type || !items || items.length === 0) {
+    if (!type || !items) {
       return;
     }
-    let toAdd: Layer;
-    if ('parameters' in items[0]) {
+    let layer: Layer | undefined;
+    // Note: skipping resource layer assignment since only one resource
+    // can be assigned to a layer
+    if (type === 'activity') {
       // adding an activity
-      toAdd = activityLayers[0];
-    } else if ('schema' in items[0]) {
-      // adding a resource
-      toAdd = activityLayers[0];
-    } else {
+      layer = activityLayers[0];
+    } else if (type === 'externalEvent' && items.length) {
       // adding an external event
-      toAdd = externalEventLayers[0];
+      layer = externalEventLayers[0];
     }
-    viewAddFilterToRow(items, type, metadata, rowId, toAdd, index);
+    viewAddFilterToRow(items, type, metadata, rowId, layer, index);
   }
 </script>
 

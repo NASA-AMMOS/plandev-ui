@@ -114,7 +114,7 @@
       </button>
     </div>
   </div>
-  <div slot="button">
+  <svelte:fragment slot="button">
     <button
       class="st-button secondary"
       on:click={onShowUpload}
@@ -126,7 +126,7 @@
     >
       <UploadIcon />
     </button>
-  </div>
+  </svelte:fragment>
   <ResourceListPrefix {item} />
 </TimelineItemList>
 

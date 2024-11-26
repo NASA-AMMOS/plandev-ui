@@ -259,13 +259,15 @@
             <div class="filter-section">
               <div class="filter-section-header st-typography-medium">
                 Manually Select Types
-                <button
-                  on:click={onRemoveAllManualTypes}
-                  class="st-button icon"
-                  use:tooltip={{ content: 'Remove Types' }}
-                >
-                  <CloseIcon />
-                </button>
+                {#if dirtyFilter.static_types?.length}
+                  <button
+                    on:click={onRemoveAllManualTypes}
+                    class="st-button icon"
+                    use:tooltip={{ content: 'Remove Types' }}
+                  >
+                    <CloseIcon />
+                  </button>
+                {/if}
               </div>
               <div class="filter-section-content filter-section-content-bordered">
                 <div bind:clientWidth={manualInputWidth}>
