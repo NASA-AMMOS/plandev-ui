@@ -263,7 +263,6 @@ import {
   showEditViewModal,
   showExpansionPanelModal,
   showLibrarySequenceModel,
-  showManageGroupsAndTypes,
   showManagePlanConstraintsModal,
   showManagePlanDerivationGroups,
   showManagePlanSchedulingConditionsModal,
@@ -5522,15 +5521,6 @@ const effects = {
         success: false,
         token: null,
       };
-    }
-  },
-
-  async manageGroupsAndTypes(user: User | null): Promise<void> {
-    try {
-      await showManageGroupsAndTypes(user);
-    } catch (e) {
-      catchError('Unable To Be View Derivation Groups and External Types', e as Error);
-      showFailureToast('Derivation Group/External Type Viewing Failed');
     }
   },
 
