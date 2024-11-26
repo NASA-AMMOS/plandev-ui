@@ -465,10 +465,6 @@
     }
   }
 
-  function onManageGroupsAndTypes() {
-    effects.manageGroupsAndTypes(user);
-  }
-
   function hasDeleteExternalSourcePermissionOnRow(user: User | null, externalSource: ExternalSourceSlim | undefined) {
     if (externalSource === undefined) {
       return false;
@@ -781,20 +777,6 @@
               </Input>
             </div>
           </div>
-        </slot>
-        <slot name="right">
-          <button
-            name="manage-groups-and-types"
-            class="st-button active"
-            on:click|stopPropagation={onManageGroupsAndTypes}
-            use:tooltip={{
-              content:
-                'Manage, create, and inspect existing derivation groups, external source types, and external event types.',
-              placement: 'top',
-            }}
-          >
-            Manage Groups and Types
-          </button>
         </slot>
       </svelte:fragment>
       <svelte:fragment slot="body">
