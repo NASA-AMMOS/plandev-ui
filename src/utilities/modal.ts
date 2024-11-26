@@ -11,7 +11,6 @@ import DeleteExternalEventSourceTypeModal from '../components/modals/DeleteExter
 import DeleteExternalSourceModal from '../components/modals/DeleteExternalSourceModal.svelte';
 import EditViewModal from '../components/modals/EditViewModal.svelte';
 import ExpansionSequenceModal from '../components/modals/ExpansionSequenceModal.svelte';
-import ManageGroupsAndTypesModal from '../components/modals/ManageGroupsAndTypesModal.svelte';
 import ManagePlanConstraintsModal from '../components/modals/ManagePlanConstraintsModal.svelte';
 import ManagePlanDerivationGroupsModal from '../components/modals/ManagePlanDerivationGroupsModal.svelte';
 import ManagePlanSchedulingConditionsModal from '../components/modals/ManagePlanSchedulingConditionsModal.svelte';
@@ -340,40 +339,6 @@ export async function showManagePlanDerivationGroups(user: User | null): Promise
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
           managePlanDerivationGroupsModal.$destroy();
-        });
-      }
-    } else {
-      resolve({ confirm: false });
-    }
-  });
-}
-
-/**
- * Shows a ManageGroupsAndTypes component with the supplied arguments.
- */
-export async function showManageGroupsAndTypes(user: User | null): Promise<ModalElementValue> {
-  return new Promise(resolve => {
-    if (browser) {
-      const target: ModalElement | null = document.querySelector('#svelte-modal');
-
-      if (target) {
-        const manageGroupsAndTypesModal = new ManageGroupsAndTypesModal({
-          props: { user },
-          target,
-        });
-        target.resolve = resolve;
-
-        manageGroupsAndTypesModal.$on('close', () => {
-          target.replaceChildren();
-          target.resolve = null;
-          target.removeAttribute('data-dismissible');
-          manageGroupsAndTypesModal.$destroy();
-        });
-        manageGroupsAndTypesModal.$on('add', (e: CustomEvent<{ derivationGroupName: string }[]>) => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: true, value: e.detail });
-          manageGroupsAndTypesModal.$destroy();
         });
       }
     } else {
