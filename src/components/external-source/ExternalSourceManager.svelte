@@ -372,7 +372,7 @@
 
   async function onFormSubmit(_e: SubmitEvent) {
     if (parsedExternalSource && file) {
-      const createExternalSourceResponse: { data: { createExternalSource: ExternalSourceSlim } } | undefined =
+      const requestResponse: { createExternalSource: ExternalSourceSlim, upsertDerivationGroup: { name: string } | null } | undefined =
         await effects.createExternalSource(
           $sourceTypeField.value,
           $derivationGroupField.value,
@@ -384,17 +384,18 @@
           $validAtDoyField.value,
           user,
         );
-
       // Following a successful mutation...
-      if (createExternalSourceResponse !== undefined) {
+      if (requestResponse !== undefined) {
+        const { createExternalSource: createExternalSourceResponse } = requestResponse;
         // Auto-select the new source
         selectedSource = {
-          ...createExternalSourceResponse.data.createExternalSource,
+          ...createExternalSourceResponse,
           created_at: new Date().toISOString().replace('Z', '+00:00'), // technically not the exact time it shows up in the database
         };
         gridRowSizes = gridRowSizesBottomPanel;
       }
     }
+
     // Reset the form behind the source
     parsedExternalSource = undefined;
     file = undefined;
