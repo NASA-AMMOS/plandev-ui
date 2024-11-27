@@ -147,7 +147,6 @@ export function translateJsonSchemaArgumentsToValueSchema(jsonArguments: Argumen
 
 /**
  * Returns a list of ValueSchema objects that represent a JSON schema's properties.
- * @param schema
  */
 export function translateJsonSchemaToValueSchema(jsonSchema: SchemaObject | undefined): Record<string, ValueSchema> {
   if (jsonSchema === undefined) {
@@ -162,11 +161,16 @@ export function translateJsonSchemaToValueSchema(jsonSchema: SchemaObject | unde
     // Handle nested objects, 'properties' => 'items'
     const propName: string = property[0];
     if ('type' in property[1]) {
-      const { type: propType, properties: propProperties } = property[1] as {
+      const {
+        type: propType,
+        properties: propProperties,
+        items: propItems,
+      } = property[1] as {
+        items?: Record<'type', JSONType>;
         properties?: Record<string, object>;
         type: JSONType;
       };
-      const propTranslated = translateJsonSchemaTypeToValueSchema(propType as JSONType, propProperties);
+      const propTranslated = translateJsonSchemaTypeToValueSchema(propType as JSONType, propProperties, propItems);
       propertiesAsValueSchema[propName] = propTranslated;
     } else {
       throw new Error('Cannot convert invalid JSON schema property - no "type" field exists');
@@ -178,6 +182,7 @@ export function translateJsonSchemaToValueSchema(jsonSchema: SchemaObject | unde
 function translateJsonSchemaTypeToValueSchema(
   jsonSchemaType: JSONType,
   jsonSchemaProperties?: Record<string, object>,
+  jsonSchemaItems?: Record<'type', JSONType>,
 ): ValueSchema {
   if (jsonSchemaType === 'number' || jsonSchemaType === 'integer') {
     return { type: 'int' } as ValueSchemaInt;
@@ -189,10 +194,15 @@ function translateJsonSchemaTypeToValueSchema(
     }
     return { items: jsonSchemaProperties, type: 'struct' } as ValueSchemaStruct;
   } else if (jsonSchemaType === 'array') {
-    if (jsonSchemaProperties === undefined) {
-      throw new Error('Cannot convert "array" from JSON Schema without any nested "properties" defined');
+    if (jsonSchemaItems === undefined) {
+      throw new Error('Cannot convert "array" from JSON Schema without any nested "items" defined');
+    } else if (Object.keys(jsonSchemaItems).length === 0) {
+      throw new Error('Cannot convert "array" from JSON Schema without an "items" field defined');
     }
-    return { type: 'series' } as ValueSchemaSeries;
+    // ValueSchema expects a singular type for the series where JSON Schema allows multiple. Take the first if the user gave multiple
+    const firstItem = Object.entries(jsonSchemaItems)[0];
+    const translatedItem: ValueSchema = translateJsonSchemaTypeToValueSchema(firstItem[1]);
+    return { items: translatedItem, type: 'series' } as ValueSchemaSeries;
   } else {
     return { type: jsonSchemaType } as ValueSchema;
   }
