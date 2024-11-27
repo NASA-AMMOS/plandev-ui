@@ -372,18 +372,19 @@
 
   async function onFormSubmit(_e: SubmitEvent) {
     if (parsedExternalSource && file) {
-      const requestResponse: { createExternalSource: ExternalSourceSlim, upsertDerivationGroup: { name: string } | null } | undefined =
-        await effects.createExternalSource(
-          $sourceTypeField.value,
-          $derivationGroupField.value,
-          $startTimeDoyField.value,
-          $endTimeDoyField.value,
-          parsedExternalSource.events,
-          parsedExternalSource.source.key,
-          parsedExternalSource.source.attributes,
-          $validAtDoyField.value,
-          user,
-        );
+      const requestResponse:
+        | { createExternalSource: ExternalSourceSlim; upsertDerivationGroup: { name: string } | null }
+        | undefined = await effects.createExternalSource(
+        $sourceTypeField.value,
+        $derivationGroupField.value,
+        $startTimeDoyField.value,
+        $endTimeDoyField.value,
+        parsedExternalSource.events,
+        parsedExternalSource.source.key,
+        parsedExternalSource.source.attributes,
+        $validAtDoyField.value,
+        user,
+      );
       // Following a successful mutation...
       if (requestResponse !== undefined) {
         const { createExternalSource: createExternalSourceResponse } = requestResponse;
