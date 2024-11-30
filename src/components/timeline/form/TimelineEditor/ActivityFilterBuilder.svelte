@@ -12,7 +12,7 @@
   import { spans, spanUtilityMaps } from '../../../../stores/simulation';
   import { tags } from '../../../../stores/tags';
   import type { ValueSchemaVariant } from '../../../../types/schema';
-  import type { ActivityLayerDynamicFilter, ActivityLayerFilter } from '../../../../types/timeline';
+  import type { ActivityLayerFilter } from '../../../../types/timeline';
   import { compare } from '../../../../utilities/generic';
   import {
     applyActivityLayerFilter,
@@ -33,7 +33,12 @@
 
   export let filter: ActivityLayerFilter | undefined;
 
-  let dirtyFilter: ActivityLayerFilter = { dynamic_type_filters: [], global_filters: [], static_types: [] };
+  let dirtyFilter: ActivityLayerFilter = {
+    dynamic_type_filters: [],
+    global_filters: [],
+    static_types: [],
+    type_subfilters: {},
+  };
   let manualInputOpen: boolean = false;
   let manualMenu: Menu;
   let resultingTypesMessage: string = '';
@@ -114,16 +119,61 @@
     dispatch('filterChange', { filter: dirtyFilter });
   }
 
-  function onDynamicFilterRemove(
-    list: 'dynamic_type_filters' | 'global_filters',
-    filter: ActivityLayerDynamicFilter<any>,
-  ) {
+  function onDynamicFilterRemove(list: 'dynamic_type_filters' | 'global_filters', id: number) {
     const currentFilters = Array.isArray(dirtyFilter[list]) ? dirtyFilter[list] : [];
     dirtyFilter = {
       ...dirtyFilter,
       [list]: currentFilters.filter(f => {
-        return f.id !== filter.id;
+        return f.id !== id;
       }),
+    };
+    dispatch('filterChange', { filter: dirtyFilter });
+  }
+
+  function onTypeSubfilterChange(type: string, { detail: { filter } }: CustomEvent) {
+    const typeSubfilters = dirtyFilter.type_subfilters || {};
+    const currentFilters = typeSubfilters[type];
+    dirtyFilter = {
+      ...dirtyFilter,
+      type_subfilters: {
+        ...typeSubfilters,
+        [type]: currentFilters.map(f => {
+          if (f.id === filter.id) {
+            return filter;
+          }
+          return f;
+        }),
+      },
+    };
+    dispatch('filterChange', { filter: dirtyFilter });
+  }
+
+  function onTypeSubfilterRemove(type: string, id: number) {
+    const typeSubfilters = dirtyFilter.type_subfilters || {};
+    const currentFilters = typeSubfilters[type];
+    dirtyFilter = {
+      ...dirtyFilter,
+      type_subfilters: {
+        ...typeSubfilters,
+        [type]: currentFilters.filter(f => f.id !== id),
+      },
+    };
+    dispatch('filterChange', { filter: dirtyFilter });
+  }
+
+  function onAddTypeSubfilter(type: string) {
+    const typeSubfilters = dirtyFilter.type_subfilters || {};
+    if (!typeSubfilters[type]) {
+      typeSubfilters[type] = [];
+    }
+    const currentFilters = typeSubfilters[type];
+    const id = getNextThingID(currentFilters);
+    dirtyFilter = {
+      ...dirtyFilter,
+      type_subfilters: {
+        ...typeSubfilters,
+        [type]: [...currentFilters, { field: 'Name', id, operator: 'includes', value: '' }],
+      },
     };
     dispatch('filterChange', { filter: dirtyFilter });
   }
@@ -179,15 +229,19 @@
       const matchingEntry = matchingName && acc[key].type === parameterType;
       const isVariant = parameterType === 'variant';
       let values = null;
-      // If we have a matching variant, add unique variants to the list
-      if (matchingEntry && isVariant) {
-        const variantValues = (parameter.schema as ValueSchemaVariant).variants.map(variant => variant.key);
-        values = Array.from(new Set([...variantValues, ...acc[key].values]));
-        acc[key].values = values;
+      if (matchingEntry) {
+        acc[key].activityTypes.push(activityType.name);
+        if (isVariant) {
+          // If we have a matching variant, add unique variants to the list
+          const variantValues = (parameter.schema as ValueSchemaVariant).variants.map(variant => variant.key);
+          values = Array.from(new Set([...variantValues, ...acc[key].values]));
+          acc[key].values = values;
+        }
       }
       if (!matchingEntry) {
         const values = isVariant ? parameter.schema.variants.map(variant => variant.key) : null;
         acc[key] = {
+          activityTypes: [activityType.name],
           name: parameterName,
           type: parameterType,
           ...(values ? { values } : null),
@@ -349,7 +403,7 @@
                     {#each dirtyFilter.dynamic_type_filters as filter, i (filter.id)}
                       <DynamicFilter
                         {filter}
-                        on:remove={() => onDynamicFilterRemove('dynamic_type_filters', filter)}
+                        on:remove={() => onDynamicFilterRemove('dynamic_type_filters', filter.id)}
                         on:change={event => onDynamicFilterChange('dynamic_type_filters', event)}
                         verb={i === 0 ? 'Where' : 'and'}
                         schema={{
@@ -390,7 +444,7 @@
                     {#each dirtyFilter.global_filters as filter, i (filter.id)}
                       <DynamicFilter
                         {filter}
-                        on:remove={() => onDynamicFilterRemove('global_filters', filter)}
+                        on:remove={() => onDynamicFilterRemove('global_filters', filter.id)}
                         on:change={event => onDynamicFilterChange('global_filters', event)}
                         verb={i === 0 ? 'Where' : 'and'}
                         schema={{
@@ -437,7 +491,53 @@
             </Input>
             <div class="resulting-types-list">
               {#each filteredMatchingTypes as type}
-                <ActivityTypeResult name={type.name} removable={false} />
+                <ActivityTypeResult name={type.name} removable={false}>
+                  <button
+                    slot="right"
+                    on:click={() => onAddTypeSubfilter(type.name)}
+                    class="st-button icon"
+                    use:tooltip={{ content: 'Add Filter' }}
+                  >
+                    <FilterWithPlusIcon />
+                  </button>
+                  <svelte:fragment slot="bottom">
+                    {#if dirtyFilter.type_subfilters && dirtyFilter.type_subfilters[type.name] && dirtyFilter.type_subfilters[type.name].length}
+                      <div class="resulting-type-filters">
+                        {#each dirtyFilter.type_subfilters[type.name] as filter (filter.id)}
+                          <DynamicFilter
+                            {filter}
+                            on:remove={() => onTypeSubfilterRemove(type.name, filter.id)}
+                            on:change={event => onTypeSubfilterChange(type.name, event)}
+                            verb={''}
+                            schema={{
+                              Name: {
+                                does_not_equal: { type: 'string' },
+                                does_not_include: { type: 'string' },
+                                equals: { type: 'string' },
+                                includes: { type: 'string' },
+                              },
+                              Parameter: {
+                                // Filter subfields to only those matching this type
+                                subfields: parameterSubfields.filter(subfield => {
+                                  return subfield.activityTypes.indexOf(type.name) > -1;
+                                }),
+                              },
+                              SchedulingGoalId: {
+                                does_not_equal: { type: 'int' },
+                                equals: { type: 'int' },
+                              },
+
+                              Tag: {
+                                does_not_include: { type: 'tag', values: $tags },
+                                includes: { type: 'tag', values: $tags },
+                              },
+                            }}
+                          />
+                        {/each}
+                      </div>
+                    {/if}
+                  </svelte:fragment>
+                </ActivityTypeResult>
               {/each}
               {#if resultingTypesMessage}
                 <div class="st-typography-label p-1">{resultingTypesMessage}</div>
@@ -596,5 +696,14 @@
 
   :global(.activity-filter-grid) {
     width: 100%;
+  }
+
+  .resulting-type-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+    padding-bottom: 8px;
+    padding-left: 16px;
   }
 </style>
