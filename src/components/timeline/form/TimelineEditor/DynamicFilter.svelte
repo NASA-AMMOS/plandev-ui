@@ -49,11 +49,20 @@
 
   $: if (currentField !== 'Parameter') {
     currentSubfieldLabel = '';
-    operatorKeys = Object.keys(schema[currentField]) as (keyof typeof FilterOperator)[];
-    currentType = (schema[currentField][currentOperator] || Object.values(schema[currentField])[0]).type;
-    currentValuePossibilities = schema[currentField][currentOperator]
-      ? schema[currentField][currentOperator].values
-      : Object.values(schema[currentField])[0].values;
+    const schemaField = schema[currentField];
+    if (schemaField) {
+      operatorKeys = Object.keys(schemaField) as (keyof typeof FilterOperator)[];
+
+      currentType = Object.values(schemaField)[0].type;
+      currentValuePossibilities = Object.values(schemaField)[0].values || [];
+      if (currentOperator) {
+        const schemaOperator = schemaField[currentOperator];
+        if (schemaOperator !== undefined) {
+          currentType = schemaOperator.type;
+          currentValuePossibilities = schemaOperator.values || [];
+        }
+      }
+    }
   }
 
   $: if (currentField === 'Parameter' && currentSubfieldLabel !== undefined && subfields) {
