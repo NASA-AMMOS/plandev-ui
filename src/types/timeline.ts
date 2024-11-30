@@ -43,14 +43,17 @@ export enum ActivityLayerFilterField {
 export type DynamicFilterDataType = ValueSchema['type'] | 'tag';
 
 export type ActivityLayerFilter = {
-  dynamic_type_filters?: ActivityLayerDynamicFilter<
-    Pick<typeof ActivityLayerFilterField, 'Type' | 'Name' | 'Subsystem'>
-  >[];
+  dynamic_type_filters?: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>>[];
   global_filters?: ActivityLayerDynamicFilter<
-    Pick<typeof ActivityLayerFilterField, 'Tag' | 'Parameter' | 'SchedulingGoalId'>
+    Pick<typeof ActivityLayerFilterField, 'Tag' | 'Parameter' | 'SchedulingGoalId' | 'Name'>
   >[];
   static_types?: string[];
-  type_subfilters?: Record<string, ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[]>;
+  type_subfilters?: Record<
+    string,
+    ActivityLayerDynamicFilter<
+      Pick<typeof ActivityLayerFilterField, 'Tag' | 'Parameter' | 'SchedulingGoalId' | 'Name'>
+    >[]
+  >;
 };
 export type ExternalEventLayerFilter = {
   event_types: string[];

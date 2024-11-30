@@ -10,32 +10,42 @@
   export let removable: boolean = true;
 
   const dispatch = createEventDispatcher<{
+    addFilter: void;
     remove: void;
   }>();
 </script>
 
 <div class="activity-type-result">
-  <div class="title st-typography-medium"><DirectiveIcon />{name}</div>
-  {#if removable}
-    <button
-      on:click|stopPropagation={() => dispatch('remove')}
-      class="st-button icon"
-      use:tooltip={{ content: 'Remove Type' }}
-    >
-      <CloseIcon />
-    </button>
-  {/if}
+  <div class="top-row">
+    <div class="title st-typography-medium"><DirectiveIcon />{name}</div>
+    <slot name="right" />
+    {#if removable}
+      <button
+        on:click|stopPropagation={() => dispatch('remove')}
+        class="st-button icon"
+        use:tooltip={{ content: 'Remove Type' }}
+      >
+        <CloseIcon />
+      </button>
+    {/if}
+  </div>
+  <slot name="bottom" />
 </div>
 
 <style>
   .activity-type-result {
-    align-items: center;
     box-shadow: 0px 0px 0px 1px var(--st-gray-20);
+    display: flex;
+    flex-direction: column;
+    margin: 1px;
+    padding-right: 4px;
+  }
+
+  .top-row {
+    align-items: center;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    margin: 1px;
-    padding-right: 4px;
   }
 
   .title {

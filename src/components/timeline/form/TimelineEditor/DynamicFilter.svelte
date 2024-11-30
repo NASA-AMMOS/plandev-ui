@@ -18,7 +18,7 @@
   import TagsInput from '../../../ui/Tags/TagsInput.svelte';
 
   type Subfield = { name: string; type: DynamicFilterDataType };
-  type SubfieldSchema = Subfield & { label: string; values?: string[] };
+  type SubfieldSchema = Subfield & { activityTypes: string[]; label: string; values?: string[] };
   type OperatorSchema<T = any> = Record<
     keyof typeof FilterOperator,
     { type: DynamicFilterDataType; values?: Array<T> }
@@ -151,7 +151,9 @@
 </script>
 
 <div class="dynamic-filter">
-  <div class="st-typography-body verb">{verb}</div>
+  {#if verb}
+    <div class="st-typography-body verb">{verb}</div>
+  {/if}
   <select class="st-select" on:change={onFieldChange} value={currentField}>
     {#each Object.keys(schema) as key}
       <option value={key}>{key}</option>
@@ -238,6 +240,7 @@
   }
 
   .dynamic-filter-searchable-dropdown {
+    min-width: 64px;
     overflow: hidden;
   }
 
