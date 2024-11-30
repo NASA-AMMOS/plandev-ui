@@ -12,7 +12,7 @@
   import { spans, spanUtilityMaps } from '../../../../stores/simulation';
   import { tags } from '../../../../stores/tags';
   import type { ValueSchemaVariant } from '../../../../types/schema';
-  import type { ActivityLayerFilter } from '../../../../types/timeline';
+  import type { ActivityLayerFilter, ActivityLayerFilterSubfieldSchema } from '../../../../types/timeline';
   import { compare } from '../../../../utilities/generic';
   import {
     applyActivityLayerFilter,
@@ -33,6 +33,7 @@
 
   export let filter: ActivityLayerFilter | undefined;
 
+  let parameterSubfields: ActivityLayerFilterSubfieldSchema[] = [];
   let dirtyFilter: ActivityLayerFilter = {
     dynamic_type_filters: [],
     global_filters: [],
@@ -217,43 +218,49 @@
     return lowercase(type.name).indexOf(lowercase(resultingTypesInputValue)) > -1;
   });
 
-  $: allParameterTypes = (matchingTypes.length ? matchingTypes : $activityTypes).reduce((acc, activityType) => {
-    Object.entries(activityType.parameters).forEach(([parameterName, parameter]) => {
-      const parameterType = parameter.schema.type;
-      // TODO support series and struct?
-      if (parameterType === 'series' || parameterType === 'struct') {
-        return;
-      }
-      const key = `${parameterName} (${parameterType})`;
-      const matchingName = !!acc[key];
-      const matchingEntry = matchingName && acc[key].type === parameterType;
-      const isVariant = parameterType === 'variant';
-      let values = null;
-      if (matchingEntry) {
-        acc[key].activityTypes.push(activityType.name);
-        if (isVariant) {
-          // If we have a matching variant, add unique variants to the list
-          const variantValues = (parameter.schema as ValueSchemaVariant).variants.map(variant => variant.key);
-          values = Array.from(new Set([...variantValues, ...acc[key].values]));
-          acc[key].values = values;
-        }
-      }
-      if (!matchingEntry) {
-        const values = isVariant ? parameter.schema.variants.map(variant => variant.key) : null;
-        acc[key] = {
-          activityTypes: [activityType.name],
-          name: parameterName,
-          type: parameterType,
-          ...(values ? { values } : null),
-          label: `${parameterName} (${parameterType})`,
-        };
-      }
-    });
-    return acc;
-  }, {});
-
-  // TODO support key/value for values array?
-  $: parameterSubfields = Object.values(allParameterTypes).sort((a, b) => compare(a.label, b.label));
+  $: {
+    const allParameterTypes = (matchingTypes.length ? matchingTypes : $activityTypes).reduce(
+      (acc: Record<string, ActivityLayerFilterSubfieldSchema>, activityType) => {
+        Object.entries(activityType.parameters).forEach(([parameterName, parameter]) => {
+          const parameterType = parameter.schema.type;
+          // TODO support series and struct?
+          if (parameterType === 'series' || parameterType === 'struct') {
+            return;
+          }
+          const key = `${parameterName} (${parameterType})`;
+          const matchingName = !!acc[key];
+          const matchingEntry = matchingName && acc[key].type === parameterType;
+          const isVariant = parameterType === 'variant';
+          let values = null;
+          if (matchingEntry) {
+            acc[key].activityTypes.push(activityType.name);
+            if (isVariant) {
+              // If we have a matching variant, add unique variants to the list
+              const variantValues = (parameter.schema as ValueSchemaVariant).variants.map(variant => variant.key);
+              values = Array.from(new Set([...variantValues, ...(acc[key].values || [])]));
+              acc[key].values = values;
+            }
+          }
+          if (!matchingEntry) {
+            const values = isVariant
+              ? (parameter.schema as ValueSchemaVariant).variants.map(variant => variant.key)
+              : null;
+            acc[key] = {
+              activityTypes: [activityType.name],
+              name: parameterName,
+              type: parameterType,
+              ...(values ? { values } : null),
+              label: `${parameterName} (${parameterType})`,
+            };
+          }
+        });
+        return acc;
+      },
+      {},
+    );
+    // TODO support key/value for values array?
+    parameterSubfields = Object.values(allParameterTypes).sort((a, b) => compare(a.label, b.label));
+  }
 
   $: filteredActivityTypes = $activityTypes.filter(type => {
     if (!manualInputValue) {
@@ -286,6 +293,7 @@
 </script>
 
 <div bind:this={rootRef}>
+  <slot name="trigger" />
   {#if shown}
     <!-- TODO maybe pass in dimensions? -->
     <Draggable

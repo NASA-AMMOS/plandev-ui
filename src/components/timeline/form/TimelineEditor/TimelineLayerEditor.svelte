@@ -4,7 +4,6 @@
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
   import CopyIcon from 'bootstrap-icons/icons/copy.svg?component';
-  import EyeIcon from 'bootstrap-icons/icons/eye.svg?component';
   import { createEventDispatcher } from 'svelte';
   import type { ActivityLayer, Layer } from '../../../../types/timeline';
   import { getTarget } from '../../../../utilities/generic';
@@ -135,24 +134,26 @@
       <CopyIcon />
     </button>
     {#if isActivityLayer(layer)}
-      <ActivityFilterBuilder filter={layer.filter.activity} on:filterChange bind:this={filterMenu} />
-      <button
-        on:click|stopPropagation={toggleFilterMenu}
-        use:tooltip={{ content: 'Filter', placement: 'top' }}
-        class="st-button icon"
-        class:filter-active={activityLayerHasFilters(layer)}
-        style:position="relative"
-      >
-        <FilterIcon />
-      </button>
+      <ActivityFilterBuilder filter={layer.filter.activity} on:filterChange bind:this={filterMenu}>
+        <button
+          slot="trigger"
+          on:click|stopPropagation={toggleFilterMenu}
+          use:tooltip={{ content: 'Filter', placement: 'top' }}
+          class="st-button icon"
+          class:filter-active={activityLayerHasFilters(layer)}
+          style:position="relative"
+        >
+          <FilterIcon />
+        </button>
+      </ActivityFilterBuilder>
     {/if}
-    <button
+    <!-- <button
       on:click|stopPropagation={() => dispatch('visibilityChange')}
       use:tooltip={{ content: 'Hide', placement: 'top' }}
       class="st-button icon"
     >
       <EyeIcon />
-    </button>
+    </button> -->
     <button
       on:click|stopPropagation={() => dispatch('remove')}
       use:tooltip={{ content: 'Delete', placement: 'top' }}
