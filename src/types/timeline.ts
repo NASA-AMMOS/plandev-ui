@@ -67,6 +67,13 @@ export type ActivityLayerDynamicFilter<T> = {
   value: string | string[] | number | number[] | boolean;
 };
 
+export type ActivityLayerFilterSubfield = { name: string; type: DynamicFilterDataType };
+export type ActivityLayerFilterSubfieldSchema = ActivityLayerFilterSubfield & {
+  activityTypes: string[];
+  label: string;
+  values?: string[];
+};
+
 export enum FilterOperator {
   'equals' = 'equals',
   'does_not_equal' = 'does not equal',

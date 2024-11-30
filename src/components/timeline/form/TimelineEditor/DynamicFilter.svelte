@@ -8,6 +8,7 @@
   import type { TagsChangeEvent } from '../../../../types/tags';
   import {
     type ActivityLayerDynamicFilter,
+    type ActivityLayerFilterSubfieldSchema,
     type DynamicFilterDataType,
     ActivityLayerFilterField as ActivityLayerFilterFieldType,
     FilterOperator,
@@ -17,18 +18,15 @@
   import SearchableDropdown from '../../../ui/SearchableDropdown.svelte';
   import TagsInput from '../../../ui/Tags/TagsInput.svelte';
 
-  type Subfield = { name: string; type: DynamicFilterDataType };
-  type SubfieldSchema = Subfield & { activityTypes: string[]; label: string; values?: string[] };
   type OperatorSchema<T = any> = Record<
     keyof typeof FilterOperator,
     { type: DynamicFilterDataType; values?: Array<T> }
   >;
 
   export let filter: ActivityLayerDynamicFilter<any>;
-  export let schema: Partial<
-    | Record<keyof typeof ActivityLayerFilterFieldType, Partial<OperatorSchema>>
-    | { Parameter: { subfields: SubfieldSchema[] } }
-  > = {};
+  export let schema: Partial<Record<keyof typeof ActivityLayerFilterFieldType, Partial<OperatorSchema>>> & {
+    Parameter?: { subfields: ActivityLayerFilterSubfieldSchema[] };
+  } = {};
   export let verb: string = 'Where';
 
   const dispatch = createEventDispatcher<{
@@ -39,7 +37,7 @@
   let dirtyFilter = structuredClone(filter);
   let currentField = dirtyFilter.field as keyof typeof ActivityLayerFilterFieldType;
   let currentOperator: keyof typeof FilterOperator | null = dirtyFilter.operator;
-  let subfields: SubfieldSchema[] | null = null;
+  let subfields: ActivityLayerFilterSubfieldSchema[] | undefined = undefined;
   let currentSubfieldLabel =
     dirtyFilter.field === 'Parameter' ? `${dirtyFilter.subfield?.name} (${dirtyFilter.subfield?.type})` : '';
   let currentType: DynamicFilterDataType = 'string';
