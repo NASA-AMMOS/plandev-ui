@@ -657,7 +657,7 @@ export function getDurationTimeComponents(duration: ParsedDurationString): Durat
     days: duration.days !== 0 ? String(duration.days).padStart(3, '0') : '',
     hours: duration.hours.toString().padStart(2, '0'),
     isNegative: duration.isNegative ? '-' : '',
-    microseconds: duration.microseconds !== 0 ? String(duration.microseconds).padStart(3, '0') : '',
+    microseconds: duration.microseconds !== 0 ? String(duration.microseconds).padStart(6, '0') : '',
     milliseconds: duration.milliseconds !== 0 ? String(duration.milliseconds).padStart(3, '0') : '',
     minutes: duration.minutes.toString().padStart(2, '0'),
     seconds: duration.seconds.toString().padStart(2, '0'),

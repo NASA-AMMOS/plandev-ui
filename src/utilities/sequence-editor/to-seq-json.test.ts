@@ -365,7 +365,7 @@ C ECHO L01STR
   it('local and parameter block', async () => {
     const id = 'test.sequence';
     const seq = `@ID "test.inline"
-@LOCALS_BEGIN 
+@LOCALS_BEGIN
 L00STR
 L01 INT
 L02ENUM ENUM TEMPERATURE "" "hot, cold"
@@ -1071,6 +1071,98 @@ G03:00:00 "GroundEpochName" @REQUEST_BEGIN("request2.name")
       ],
     };
     expect(actual).toEqual(expected);
+  });
+
+  it('should handle all time tag types', async () => {
+    const seq = `A2029-365T23:20:50 BAKE_BREAD
+A2029-365T23:21:51.123 BAKE_BREAD
+R00:00:30 BAKE_BREAD
+R10 BAKE_BREAD
+R00:00:30.500 BAKE_BREAD
+E00:06:40.333 BAKE_BREAD
+E00:00:10 BAKE_BREAD
+E-00:06:40.333 BAKE_BREAD`;
+    const id = 'test';
+    const expectedJson = {
+      id: 'test',
+      metadata: {},
+      steps: [
+        {
+          args: [],
+          stem: 'BAKE_BREAD',
+          time: {
+            tag: '2029-365T23:20:50',
+            type: 'ABSOLUTE',
+          },
+          type: 'command',
+        },
+        {
+          args: [],
+          stem: 'BAKE_BREAD',
+          time: {
+            tag: '2029-365T23:21:51.123',
+            type: 'ABSOLUTE',
+          },
+          type: 'command',
+        },
+        {
+          args: [],
+          stem: 'BAKE_BREAD',
+          time: {
+            tag: '00:00:30',
+            type: 'COMMAND_RELATIVE',
+          },
+          type: 'command',
+        },
+        {
+          args: [],
+          stem: 'BAKE_BREAD',
+          time: {
+            tag: '00:00:10',
+            type: 'COMMAND_RELATIVE',
+          },
+          type: 'command',
+        },
+        {
+          args: [],
+          stem: 'BAKE_BREAD',
+          time: {
+            tag: '00:00:30.500',
+            type: 'COMMAND_RELATIVE',
+          },
+          type: 'command',
+        },
+        {
+          args: [],
+          stem: 'BAKE_BREAD',
+          time: {
+            tag: '00:06:40.333',
+            type: 'EPOCH_RELATIVE',
+          },
+          type: 'command',
+        },
+        {
+          args: [],
+          stem: 'BAKE_BREAD',
+          time: {
+            tag: '00:00:10',
+            type: 'EPOCH_RELATIVE',
+          },
+          type: 'command',
+        },
+        {
+          args: [],
+          stem: 'BAKE_BREAD',
+          time: {
+            tag: '-00:06:40.333',
+            type: 'EPOCH_RELATIVE',
+          },
+          type: 'command',
+        },
+      ],
+    };
+    const actual = JSON.parse(await sequenceToSeqJson(SeqLanguage.parser.parse(seq), seq, commandDictionary, id));
+    expect(actual).toEqual(expectedJson);
   });
 
   describe('round trip', () => {
