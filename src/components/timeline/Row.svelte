@@ -202,7 +202,6 @@
   let hasActivityLayer: boolean = false;
   let hasExternalEventsLayer: boolean = false;
   let hasResourceLayer: boolean = false;
-  let associatedActivityTypes: number;
 
   $: if ($selectedRow?.id === id && rowRef) {
     rowRef.scrollIntoView({ block: 'nearest' });
@@ -347,24 +346,13 @@
     discreteOptions?.activityOptions?.composition === 'both' ||
     discreteOptions?.activityOptions?.composition === 'directives';
 
-  // helper for hasExternalEventsLayer; counts how many external event types are associated with this row (if all layers have 0 event types, we
-  //    don't want to allocate any canvas space in the row for the layer)
-
-  // TODO figure out what it means for new activities here
-  // $: associatedActivityTypes = activityLayers
-  //   .map(layer =>
-  //     layer.filter.activity
-  //       ? (layer.filter.activity.dynamic_type_filters?.length || layer.filter.activity.static_types?.length) ?? 0
-  //       : 0,
-  //   )
-  //   .reduce((currentSum, newValue) => currentSum + newValue, 0);
-  $: associatedActivityTypes = 1;
+  // helper for hasExternalEventsLayer; counts how many external event types are associated with this row
+  // (if all layers have 0 event types, we don't want to allocate any canvas space in the row for the layer)
   $: associatedEventTypes = externalEventLayers
     .map(layer => (layer.filter.externalEvent ? layer.filter.externalEvent.event_types.length : 0))
     .reduce((currentSum, newValue) => currentSum + newValue, 0);
 
   // only consider a layer to be present if it is defined AND it actually has types/values selected.
-  $: hasActivityLayer = activityLayers.length > 0 && associatedActivityTypes > 0;
   $: hasExternalEventsLayer = externalEventLayers.length > 0 && associatedEventTypes > 0;
   $: hasResourceLayer = lineLayers.length + xRangeLayers.length > 0;
 
@@ -500,6 +488,8 @@
           timeFilteredActivityDirectives = [];
           timeFilteredSpans = [];
         }
+
+        hasActivityLayer = timeFilteredActivityDirectives.length > 0 || timeFilteredActivityDirectives.length > 0;
       }
 
       if (hasExternalEventsLayer) {
@@ -737,8 +727,6 @@
           // Determine if the row will visualize all requested activities
           let activitiesInRow = new Set();
           activityLayers.forEach(layer => {
-            // TODO should we consider dynamic types here? Or just static?
-            // TODO could this be cached from the reactive statement above?
             let spansList = Object.values(spansMap);
             const { directives: layerActivities } = applyActivityLayerFilter(
               layer.filter.activity,

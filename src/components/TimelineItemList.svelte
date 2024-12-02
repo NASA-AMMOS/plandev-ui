@@ -127,9 +127,7 @@
   }
 
   function onIndividualLayerPicked(event: CustomEvent<{ item?: TimelineItemType; layer?: Layer; row?: Row }>) {
-    console.log('event :>> ', event);
     if (event.detail.item) {
-      console.log('object :>> ', event.detail.item);
       viewAddFilterToRow([event.detail.item], typeName, {}, event.detail.row?.id, event.detail.layer);
     }
   }

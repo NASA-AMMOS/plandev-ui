@@ -53,8 +53,9 @@
     if (schemaField) {
       operatorKeys = Object.keys(schemaField) as (keyof typeof FilterOperator)[];
 
-      currentType = Object.values(schemaField)[0].type;
-      currentValuePossibilities = Object.values(schemaField)[0].values || [];
+      const firstSchemaField = Object.values(schemaField)[0];
+      currentType = firstSchemaField.type;
+      currentValuePossibilities = firstSchemaField.values || [];
       if (currentOperator) {
         const schemaOperator = schemaField[currentOperator];
         if (schemaOperator !== undefined) {
