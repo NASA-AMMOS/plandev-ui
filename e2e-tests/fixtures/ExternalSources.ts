@@ -74,27 +74,30 @@ export class ExternalSources {
     await expect(this.page.getByRole('row', { name: typeName })).toBeVisible();
   }
   async deleteDerivationGroup(derivationGroupName: string) {
-    await this.page.getByRole('button', { exact: true, name: 'Derivation Group' }).click();
-    await this.page.getByRole('row', { name: derivationGroupName }).hover();
-    await this.page.getByRole('row', { name: derivationGroupName }).getByLabel('Delete Derivation Group').click();
-    await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
-    await expect(this.page.getByRole('row', { name: derivationGroupName })).not.toBeVisible();
+    if (await this.page.getByRole('row', { name: derivationGroupName }).isVisible()) {
+      await this.page.getByRole('row', { name: derivationGroupName }).hover();
+      await this.page.getByRole('row', { name: derivationGroupName }).getByLabel('Delete Derivation Group').click();
+      await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
+      await expect(this.page.getByRole('row', { name: derivationGroupName })).not.toBeVisible();
+    }
   }
 
   async deleteExternalEventType(eventTypeName: string) {
-    await this.page.getByRole('button', { exact: true, name: 'External Event Type' }).click();
-    await this.page.getByRole('row', { name: eventTypeName }).hover();
-    await this.page.getByRole('row', { name: eventTypeName }).getByLabel('Delete External Event Type').click();
-    await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
-    await expect(this.page.getByRole('row', { name: eventTypeName })).not.toBeVisible();
+    if (await this.page.getByRole('row', { name: eventTypeName }).isVisible()) {
+      await this.page.getByRole('row', { name: eventTypeName }).hover();
+      await this.page.getByRole('row', { name: eventTypeName }).getByLabel('Delete External Event Type').click();
+      await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
+      await expect(this.page.getByRole('row', { name: eventTypeName })).not.toBeVisible();
+    }
   }
 
   async deleteExternalSourceType(sourceTypeName: string) {
-    await this.page.getByRole('button', { exact: true, name: 'External Source Type' }).click();
-    await this.page.getByRole('row', { name: sourceTypeName }).hover();
-    await this.page.getByRole('row', { name: sourceTypeName }).getByLabel('Delete External Source Type').click();
-    await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
-    await expect(this.page.getByRole('row', { name: sourceTypeName })).not.toBeVisible();
+    if (await this.page.getByRole('row', { name: sourceTypeName }).isVisible()) {
+      await this.page.getByRole('row', { name: sourceTypeName }).hover();
+      await this.page.getByRole('row', { name: sourceTypeName }).getByLabel('Delete External Source Type').click();
+      await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
+      await expect(this.page.getByRole('row', { name: sourceTypeName })).not.toBeVisible();
+    }
   }
 
   async deleteSource(sourceName: string) {
