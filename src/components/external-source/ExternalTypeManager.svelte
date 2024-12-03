@@ -26,7 +26,11 @@
   import type { ParametersMap } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
   import effects from '../../utilities/effects';
-  import { getDerivationGroupRowId, getExternalEventTypeRowId, getExternalSourceTypeRowId } from '../../utilities/externalEvents';
+  import {
+    getDerivationGroupRowId,
+    getExternalEventTypeRowId,
+    getExternalSourceTypeRowId,
+  } from '../../utilities/externalEvents';
   import { parseJSONStream } from '../../utilities/generic';
   import { showDeleteDerivationGroupModal, showDeleteExternalEventSourceTypeModal } from '../../utilities/modal';
   import { getFormParameters, translateJsonSchemaToValueSchema } from '../../utilities/parameters';
@@ -476,11 +480,7 @@
       if (file !== undefined && /\.json$/.test(file.name)) {
         uploadResponseErrors = [];
         const combinedSchema = await parseJSONStream<{ event_types: object; source_types: object }>(file.stream());
-        await effects.createExternalSourceEventTypes(
-          combinedSchema.event_types,
-          combinedSchema.source_types,
-          user,
-        );
+        await effects.createExternalSourceEventTypes(combinedSchema.event_types, combinedSchema.source_types, user);
         files = undefined;
         file = undefined;
         if (fileInput != null) {
