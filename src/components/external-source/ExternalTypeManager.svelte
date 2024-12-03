@@ -6,10 +6,12 @@
   import type { ICellRendererParams } from 'ag-grid-community';
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
+  import { externalEventTypes } from '../../stores/external-event';
   import {
     createExternalSourceEventTypeError,
     derivationGroups,
     externalSources,
+    externalSourceTypes,
     sourcesUsingExternalEventTypes,
   } from '../../stores/external-source';
   import type { User } from '../../types/app';
@@ -24,6 +26,7 @@
   import type { ParametersMap } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
   import effects from '../../utilities/effects';
+  import { getDerivationGroupRowId, getExternalEventTypeRowId, getExternalSourceTypeRowId } from '../../utilities/externalEvents';
   import { parseJSONStream } from '../../utilities/generic';
   import { showDeleteDerivationGroupModal, showDeleteExternalEventSourceTypeModal } from '../../utilities/modal';
   import { getFormParameters, translateJsonSchemaToValueSchema } from '../../utilities/parameters';
@@ -31,19 +34,14 @@
   import { featurePermissions } from '../../utilities/permissions';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
-  import ExternalEventTypeManagementTab from '../external-events/ExternalEventTypeManagementTab.svelte';
-  import DerivationGroupManagementTab from '../external-source/DerivationGroupManagementTab.svelte';
-  import ExternalSourceTypeManagementTab from '../external-source/ExternalSourceTypeManagementTab.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import AlertError from '../ui/AlertError.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
+  import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
-  import Tab from '../ui/Tabs/Tab.svelte';
-  import TabPanel from '../ui/Tabs/TabPanel.svelte';
-  import Tabs from '../ui/Tabs/Tabs.svelte';
 
   export let user: User | null;
 
@@ -58,10 +56,6 @@
   type ModalCellRendererParamsDerivationGroup = ICellRendererParams<DerivationGroup> & CellRendererParams;
   type ModalCellRendererParamsExternalSourceType = ICellRendererParams<ExternalSourceType> & CellRendererParams;
   type ModalCellRendererParamsExternalEventType = ICellRendererParams<ExternalEventType> & CellRendererParams;
-
-  const derivationGroupTabName: string = 'Derivation Group';
-  const externalSourceTypeTabName: string = 'External Source Type';
-  const externalEventTypeTabName: string = 'External Event Type';
 
   const columnSize: string = '.55fr 3px 1.5fr';
 
@@ -134,6 +128,10 @@
   let externalSourceTypeColumnDefs: DataGridColumnDef<ExternalSourceType>[] = externalSourceTypeBaseColumnDefs;
   let externalEventTypeColumnDefs: DataGridColumnDef<ExternalEventType>[] = externalEventTypeBaseColumnDefs;
 
+  let derivationGroupDataGrid: DataGrid<DerivationGroup>;
+  let externalSourceTypeDataGrid: DataGrid<ExternalSourceType>;
+  let externalEventTypeDataGrid: DataGrid<ExternalEventType>;
+
   let hasDeleteExternalSourceTypePermission: boolean = false;
   let hasDeleteExternalEventTypePermission: boolean = false;
 
@@ -151,10 +149,8 @@
   let selectedExternalEventTypeAttributesSchema: Record<string, ValueSchema>;
   let selectedExternalEventTypeParametersMap: ParametersMap = {};
 
-  let groupsAndTypesTabs: Tabs;
-
   // File upload variables
-  let fileInput: HTMLInputElement;
+  let fileInput: HTMLInputElement | null;
   let uploadResponseErrors: string[] = [];
   let files: FileList | undefined;
   let file: File | undefined;
@@ -461,7 +457,9 @@
   }
 
   function resetUploadForm() {
-    fileInput.value = '';
+    if (fileInput !== null) {
+      fileInput.value = '';
+    }
     file = undefined;
     files = undefined;
     uploadResponseErrors = [];
@@ -478,17 +476,16 @@
       if (file !== undefined && /\.json$/.test(file.name)) {
         uploadResponseErrors = [];
         const combinedSchema = await parseJSONStream<{ event_types: object; source_types: object }>(file.stream());
-        const creationResponse = await effects.createExternalSourceEventTypes(
+        await effects.createExternalSourceEventTypes(
           combinedSchema.event_types,
           combinedSchema.source_types,
           user,
         );
-        if (creationResponse !== null) {
-          groupsAndTypesTabs.selectTab(externalSourceTypeTabName);
-        }
         files = undefined;
         file = undefined;
-        fileInput.value = '';
+        if (fileInput != null) {
+          fileInput.value = '';
+        }
         parsedExternalSourceEventTypeSchema = undefined;
       }
     }
@@ -762,29 +759,53 @@
     </Panel>
     <CssGridGutter track={1} type="column" />
   {/if}
-  <div class="tab-container">
-    <div class="tab-container-content">
-      <Tabs bind:this={groupsAndTypesTabs} class="management-tabs" tabListClassName="management-tabs-list">
-        <svelte:fragment slot="tab-list">
-          <Tab tabId={derivationGroupTabName} class="management-tab">Derivation Group</Tab>
-          <Tab tabId={externalSourceTypeTabName} class="management-tab">External Source Type</Tab>
-          <Tab tabId={externalEventTypeTabName} class="management-tab">External Event Type</Tab>
-        </svelte:fragment>
-        <TabPanel>
-          <DerivationGroupManagementTab {derivationGroupColumnsDef} {filterString} />
-        </TabPanel>
-        <TabPanel>
-          <ExternalSourceTypeManagementTab {externalSourceTypeColumnDefs} {filterString} />
-        </TabPanel>
-        <TabPanel>
-          <ExternalEventTypeManagementTab {externalEventTypeColumnDefs} {filterString} />
-        </TabPanel>
-      </Tabs>
+  <div class="grid-container">
+    <CssGridGutter track={2} type="row" />
+    <div class="derivation-group-table">
+      <DataGrid
+        bind:this={derivationGroupDataGrid}
+        columnDefs={derivationGroupColumnsDef}
+        filterExpression={filterString}
+        rowData={$derivationGroups}
+        getRowId={getDerivationGroupRowId}
+      />
+    </div>
+    <CssGridGutter track={3} type="row" />
+    <div class="external-source-type-table">
+      <DataGrid
+        bind:this={externalSourceTypeDataGrid}
+        columnDefs={externalSourceTypeColumnDefs}
+        filterExpression={filterString}
+        rowData={$externalSourceTypes}
+        getRowId={getExternalSourceTypeRowId}
+      />
+    </div>
+    <CssGridGutter track={4} type="row" />
+    <div class="external-event-type-table">
+      <DataGrid
+        bind:this={externalEventTypeDataGrid}
+        columnDefs={externalEventTypeColumnDefs}
+        filterExpression={filterString}
+        rowData={$externalEventTypes}
+        getRowId={getExternalEventTypeRowId}
+      />
     </div>
   </div>
 </CssGrid>
 
 <style>
+  .derivation-group-table {
+    height: 100%;
+  }
+
+  .external-source-type-table {
+    height: 100%;
+  }
+
+  .external-event-type-table {
+    height: 100%;
+  }
+
   :global(.type-manager-grid) {
     height: 100%;
   }
@@ -810,40 +831,7 @@
     width: 100%;
   }
 
-  .tab-container-content :global(.tab-list.management-tabs-list) {
-    background-color: var(--st-gray-10);
-  }
-
-  .tab-container-content :global(button.management-tab) {
-    align-items: center;
-    gap: 8px;
-    text-align: center;
-    width: 33%;
-  }
-
-  .tab-container-content :global(button.management-tab:last-of-type) {
-    flex: 1;
-  }
-  .tab-container-content :global(button.management-tab:last-of-type.selected) {
-    box-shadow: 1px 0px 0px inset var(--st-gray-20);
-  }
-
-  .tab-container-content :global(button.management-tab:first-of-type.selected) {
-    box-shadow: -1px 0px 0px inset var(--st-gray-20);
-  }
-
-  .tab-container-content :global(button.management-tab:not(.selected)) {
-    box-shadow: 0px -1px 0px inset var(--st-gray-20);
-  }
-
-  .tab-container-content :global(button.management-tab.selected) {
-    background-color: var(--st-gray-20);
-    box-shadow:
-      1px 0px 0px inset var(--st-gray-20),
-      -1px 0px 0px inset var(--st-gray-20);
-  }
-
-  .tab-container {
+  .grid-container {
     display: flex;
     flex: 1;
     flex-direction: column;
@@ -855,10 +843,6 @@
 
   .derived-event-count {
     color: var(--st-gray-60);
-  }
-
-  .tab-container-content {
-    height: 100%;
   }
 
   .type-creation-input {
