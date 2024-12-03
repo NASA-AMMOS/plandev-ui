@@ -77,6 +77,7 @@
     directiveInView,
     externalEventInView,
     generateDiscreteTreeUtil,
+    getMatchingTypesForActivityLayerFilter,
     getYAxesWithScaleDomains,
     isActivityLayer,
     isExternalEventLayer,
@@ -725,19 +726,12 @@
         // Only allow creating an activity if we have an actual activity in the drag data.
         if (type === 'activity' && items && plan) {
           // Determine if the row will visualize all requested activities
-          let activitiesInRow = new Set();
+          let typesInRow = new Set();
           activityLayers.forEach(layer => {
-            let spansList = Object.values(spansMap);
-            const { directives: layerActivities } = applyActivityLayerFilter(
-              layer.filter.activity,
-              activityDirectives,
-              spansList,
-              $activityTypes,
-              $activityArgumentDefaultsMap,
-            );
-            activitiesInRow = new Set([...activitiesInRow, ...layerActivities]);
+            const matchingTypes = getMatchingTypesForActivityLayerFilter(layer.filter.activity, $activityTypes);
+            typesInRow = new Set([...typesInRow, ...matchingTypes.map(t => t.name)]);
           });
-          const missingActivity = (items as ActivityType[]).find(item => !activitiesInRow.has(item.name));
+          const missingActivity = (items as ActivityType[]).find(item => !typesInRow.has(item.name));
 
           const createActivities = () => {
             items.forEach(item => {
