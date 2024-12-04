@@ -41,7 +41,6 @@
   function onSelectCommandDefinition(event: CustomEvent<(FswCommand | HwCommand) | null>) {
     const { detail } = event;
     selectedCommandDefinition = detail;
-    console.log('detail :>> ', detail);
     commandPanelTabs.selectTab(CommandPanelTabs.DEFINITION);
   }
 </script>
