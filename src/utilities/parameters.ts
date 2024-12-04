@@ -171,6 +171,29 @@ export function translateJsonSchemaToValueSchema(jsonSchema: SchemaObject | unde
         type: JSONType;
       };
       const propTranslated = translateJsonSchemaTypeToValueSchema(propType as JSONType, propProperties, propItems);
+      if ('items' in propTranslated) {
+        propTranslated.items = Object.entries(propTranslated.items).reduce(
+          (acc: Record<string, ValueSchema>, currentItem: [string, ValueSchema]) => {
+            const {
+              type: currentType,
+              properties: currentProperties,
+              items: currentItems,
+            } = currentItem[1] as {
+              items?: Record<'type', JSONType>;
+              properties?: Record<string, object>;
+              type: JSONType;
+            };
+            const translatedItem = translateJsonSchemaTypeToValueSchema(
+              currentType as JSONType,
+              currentProperties,
+              currentItems,
+            );
+            acc[currentItem[0]] = translatedItem;
+            return acc;
+          },
+          {} as Record<string, ValueSchema>,
+        );
+      }
       propertiesAsValueSchema[propName] = propTranslated;
     } else {
       throw new Error('Cannot convert invalid JSON schema property - no "type" field exists');
