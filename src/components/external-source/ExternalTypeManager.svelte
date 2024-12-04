@@ -38,6 +38,7 @@
   import { featurePermissions } from '../../utilities/permissions';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
+  import Input from '../form/Input.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import AlertError from '../ui/AlertError.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -76,7 +77,7 @@
     {
       field: 'source_type_name',
       filter: 'string',
-      headerName: 'Source type',
+      headerName: 'Source Type',
       resizable: true,
       sortable: true,
     },
@@ -139,7 +140,9 @@
   let hasDeleteExternalSourceTypePermission: boolean = false;
   let hasDeleteExternalEventTypePermission: boolean = false;
 
-  let filterString: string = '';
+  let derivationGroupFilterString: string = '';
+  let externalSourceTypeFilterString: string = '';
+  let externalEventTypeFilterString: string = '';
 
   let selectedDerivationGroup: DerivationGroup | undefined = undefined;
   let selectedDerivationGroupSources: ExternalSourceSlim[] = [];
@@ -759,43 +762,83 @@
     </Panel>
     <CssGridGutter track={1} type="column" />
   {/if}
-  <div class="grid-container">
-    <CssGridGutter track={2} type="row" />
-    <div class="derivation-group-table">
-      <DataGrid
-        bind:this={derivationGroupDataGrid}
-        columnDefs={derivationGroupColumnsDef}
-        filterExpression={filterString}
-        rowData={$derivationGroups}
-        getRowId={getDerivationGroupRowId}
-      />
-    </div>
-    <CssGridGutter track={3} type="row" />
-    <div class="external-source-type-table">
-      <DataGrid
-        bind:this={externalSourceTypeDataGrid}
-        columnDefs={externalSourceTypeColumnDefs}
-        filterExpression={filterString}
-        rowData={$externalSourceTypes}
-        getRowId={getExternalSourceTypeRowId}
-      />
-    </div>
-    <CssGridGutter track={4} type="row" />
-    <div class="external-event-type-table">
-      <DataGrid
-        bind:this={externalEventTypeDataGrid}
-        columnDefs={externalEventTypeColumnDefs}
-        filterExpression={filterString}
-        rowData={$externalEventTypes}
-        getRowId={getExternalEventTypeRowId}
-      />
-    </div>
+  <div class="table-container">
+    <Panel>
+      <svelte:fragment slot="header">
+        <SectionTitle>Derivation Groups</SectionTitle>
+        <Input>
+          <input
+            type="search"
+            bind:value={derivationGroupFilterString}
+            placeholder="Filter Derivation Groups"
+            class="st-input table-filter"
+          />
+        </Input>
+      </svelte:fragment>
+      <svelte:fragment slot="body">
+        <DataGrid
+          bind:this={derivationGroupDataGrid}
+          columnDefs={derivationGroupColumnsDef}
+          filterExpression={derivationGroupFilterString}
+          rowData={$derivationGroups}
+          getRowId={getDerivationGroupRowId}
+        />
+      </svelte:fragment>
+    </Panel>
+    <Panel borderTop>
+      <svelte:fragment slot="header">
+        <SectionTitle>External Source Types</SectionTitle>
+        <Input>
+          <input
+            type="search"
+            bind:value={externalSourceTypeFilterString}
+            placeholder="Filter External Source Types"
+            class="st-input table-filter"
+          />
+        </Input>
+      </svelte:fragment>
+      <svelte:fragment slot="body">
+        <div class="external-source-type-table">
+          <DataGrid
+            bind:this={externalSourceTypeDataGrid}
+            columnDefs={externalSourceTypeColumnDefs}
+            filterExpression={externalSourceTypeFilterString}
+            rowData={$externalSourceTypes}
+            getRowId={getExternalSourceTypeRowId}
+          />
+        </div>
+      </svelte:fragment>
+    </Panel>
+    <Panel borderTop>
+      <svelte:fragment slot="header">
+        <SectionTitle>External Event Types</SectionTitle>
+        <Input>
+          <input
+            type="search"
+            bind:value={externalEventTypeFilterString}
+            placeholder="Filter External Event Types"
+            class="st-input table-filter"
+          />
+        </Input>
+      </svelte:fragment>
+      <svelte:fragment slot="body">
+        <div class="external-event-type-table">
+          <DataGrid
+            bind:this={externalEventTypeDataGrid}
+            columnDefs={externalEventTypeColumnDefs}
+            filterExpression={externalEventTypeFilterString}
+            rowData={$externalEventTypes}
+            getRowId={getExternalEventTypeRowId}
+          />
+        </div>
+      </svelte:fragment>
+    </Panel>
   </div>
 </CssGrid>
 
 <style>
-  .derivation-group-table {
-    height: 100%;
+  .table-container {
+    display: grid;
   }
 
   .external-source-type-table {
@@ -831,16 +874,6 @@
     width: 100%;
   }
 
-  .grid-container {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    height: 100%;
-    justify-content: flex-end;
-    padding-right: 8px;
-    width: 100%;
-  }
-
   .derived-event-count {
     color: var(--st-gray-60);
   }
@@ -869,10 +902,16 @@
     color: var(--st-white);
     display: flex;
     margin-right: 6px;
+    max-height: 16px;
+    max-width: 16px;
   }
 
   .deselect {
     display: flex;
     float: right;
+  }
+
+  .table-filter {
+    width: 240px;
   }
 </style>
