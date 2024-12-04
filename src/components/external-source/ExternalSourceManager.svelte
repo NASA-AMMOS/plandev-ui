@@ -344,7 +344,7 @@
       uploadDisabledMessage = `No external event types are currently defined, please create one before uploading an external source!`;
       isUploadDisabled = true;
     } else if ($externalSourceTypes.length === 0) {
-      uploadDisabledMessage = `External Source Type "${parsedExternalSource.source.source_type}" is not defined. Please create it!`;
+      uploadDisabledMessage = `No external source types are currently defined, please create one before uploading an external source!`;
       isUploadDisabled = true;
     }
     isUploadDisabled = doesSourceTypeAndEventTypesExist(parsedExternalSource);

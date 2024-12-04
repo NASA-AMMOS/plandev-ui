@@ -139,6 +139,9 @@
 
   let hasDeleteExternalSourceTypePermission: boolean = false;
   let hasDeleteExternalEventTypePermission: boolean = false;
+  let hasCreateExternalSourceTypePermission: boolean = false;
+  let hasCreateExternalEventTypePermission: boolean = false;
+  let hasCreationPermission: boolean = false;
 
   let derivationGroupFilterString: string = '';
   let externalSourceTypeFilterString: string = '';
@@ -153,20 +156,15 @@
   let selectedExternalSourceTypeParametersMap: ParametersMap = {};
 
   let selectedExternalEventType: ExternalEventType | undefined = undefined;
+  let selectedExternalEventTypeSources: string[] = [];
   let selectedExternalEventTypeAttributesSchema: Record<string, ValueSchema>;
   let selectedExternalEventTypeParametersMap: ParametersMap = {};
 
-  // File upload variables
   let fileInput: HTMLInputElement | null;
   let uploadResponseErrors: string[] = [];
   let files: FileList | undefined;
   let file: File | undefined;
   let parsedExternalSourceEventTypeSchema: ExternalSourceEventTypeSchema | undefined = undefined;
-
-  // Upload permissions
-  let hasCreateExternalSourceTypePermission: boolean = false;
-  let hasCreateExternalEventTypePermission: boolean = false;
-  let hasCreationPermission: boolean = false;
 
   $: hasDeleteExternalSourceTypePermission = featurePermissions.externalSourceType.canDelete(user);
   $: hasDeleteExternalEventTypePermission = featurePermissions.externalEventType.canDelete(user);
@@ -177,6 +175,12 @@
   $: selectedDerivationGroupSources = $externalSources.filter(
     source => selectedDerivationGroup?.name === source.derivation_group_name,
   );
+
+  $: if (selectedExternalEventType !== undefined) {
+    selectedExternalEventTypeSources = getAssociatedExternalSourcesByEventType(selectedExternalEventType.name);
+  } else {
+    selectedExternalEventTypeSources = [];
+  }
 
   $: if (selectedExternalEventType !== undefined) {
     selectedExternalEventTypeAttributesSchema = translateJsonSchemaToValueSchema(
@@ -193,6 +197,7 @@
       {} as ParametersMap,
     );
   }
+
   $: if (selectedExternalSourceType !== undefined) {
     selectedExternalSourceTypeAttributeSchema = translateJsonSchemaToValueSchema(
       selectedExternalSourceType?.attribute_schema,
@@ -324,6 +329,15 @@
   $: externalEventTypeColumnDefs = [
     ...externalEventTypeBaseColumnDefs,
     {
+      filter: 'number',
+      headerName: 'Associated External Sources',
+      sortable: true,
+      valueFormatter: params => {
+        const associatedExternalSources = getAssociatedExternalSourcesByEventType(params.data?.name);
+        return `${associatedExternalSources.length}`;
+      },
+    },
+    {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ModalCellRendererParamsExternalEventType) => {
         const actionsDiv = document.createElement('div');
@@ -365,7 +379,7 @@
   }
 
   function deleteExternalSourceType(sourceType: ExternalSourceType) {
-    // makes sure all associated derivation groups are deleted before this
+    // Makes sure all associated derivation groups are deleted before this
     showDeleteExternalEventSourceTypeModal(
       sourceType,
       'External Source Type',
@@ -375,7 +389,7 @@
   }
 
   function deleteExternalEventType(eventType: ExternalEventType) {
-    // makes sure all associated sources (and therefore events, as orphans are not possible) are deleted before this
+    // Makes sure all associated sources (and therefore events, as orphans are not possible) are deleted before this
     // NOTE: does not update in derivation_group_comp after removing a EE type; derivation_group_comp defaults to 0 event types after its last external source removed,
     //        as it has no awareness of external source type or paired events (as the latter don't even exist).
     showDeleteExternalEventSourceTypeModal(
@@ -384,6 +398,14 @@
       $sourcesUsingExternalEventTypes.filter(entry => entry.types.includes(eventType.name)).map(entry => entry.key), // NOTE: MAY NEED TO REMOVE THIS - COULD BE A VERY SLOW OPERATION.
       user,
     );
+  }
+
+  function getAssociatedExternalSourcesByEventType(eventType: string | undefined) {
+    if (eventType === undefined) {
+      return [];
+    }
+    const associatedSources = $sourcesUsingExternalEventTypes.filter(entry => entry.types.includes(eventType)).map(entry => entry.key); // NOTE: MAY NEED TO REMOVE THIS - COULD BE A VERY SLOW OPERATION.
+    return associatedSources;
   }
 
   function getAssociatedExternalSourcesBySourceType(sourceType: string | undefined) {
@@ -694,7 +716,15 @@
             {#if attribute[0] !== 'properties'}
               <div class="st-typography-body attributes">
                 <div class="attribute-name">{attribute[0]}</div>
-                <div class="attribute-value">{attribute[1]}</div>
+                {#if Array.isArray(attribute[1])}
+                  <ul class="attribute-array">
+                    {#each attribute[1] as attributeValue}
+                      <li class="attribute-value">{attributeValue}</li>
+                    {/each}
+                  </ul>
+                {:else}
+                  <div class="attribute-value">{attribute[1]}</div>
+                {/if}
               </div>
             {/if}
           {/each}
@@ -732,6 +762,19 @@
       </svelte:fragment>
       <svelte:fragment slot="body">
         <Collapse
+          title="Associated External Sources"
+          tooltipContent={`External Sources using ${selectedExternalEventType.name}`}
+          defaultExpanded={false}
+        >
+          {#if selectedExternalEventTypeSources.length > 0}
+            {#each selectedExternalEventTypeSources as associatedSource}
+              <li class="st-typography-body associated-sources">{associatedSource}</li>
+            {/each}
+          {:else}
+            {`No External Sources using ${selectedExternalEventType.name}`}
+          {/if}
+        </Collapse>
+        <Collapse
           title="Attribute Schema - Definition"
           tooltipContent={`${selectedExternalEventType.name} Attribute Schema Definition`}
           defaultExpanded={false}
@@ -740,7 +783,15 @@
             {#if attribute[0] !== 'properties'}
               <div class="st-typography-body attributes">
                 <div class="attribute-name">{attribute[0]}</div>
-                <div class="attribute-value">{attribute[1]}</div>
+                {#if Array.isArray(attribute[1])}
+                  <ul class="attribute-array">
+                  {#each attribute[1] as attributeValue}
+                    <li class="attribute-value">{attributeValue}</li>
+                  {/each}
+                  </ul>
+                {:else}
+                  <div class="attribute-value">{attribute[1]}</div>
+                {/if}
               </div>
             {/if}
           {/each}
@@ -837,6 +888,10 @@
 </CssGrid>
 
 <style>
+  .associated-sources {
+    font-style: italic;
+  }
+
   .table-container {
     display: grid;
   }
@@ -867,6 +922,11 @@
     justify-content: flex-end;
     text-align: right;
     width: 100%;
+  }
+
+  .attribute-array {
+    margin-bottom: 0;
+    margin-top: 0;
   }
 
   .attributes {
