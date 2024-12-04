@@ -404,7 +404,9 @@
     if (eventType === undefined) {
       return [];
     }
-    const associatedSources = $sourcesUsingExternalEventTypes.filter(entry => entry.types.includes(eventType)).map(entry => entry.key); // NOTE: MAY NEED TO REMOVE THIS - COULD BE A VERY SLOW OPERATION.
+    const associatedSources = $sourcesUsingExternalEventTypes
+      .filter(entry => entry.types.includes(eventType))
+      .map(entry => entry.key); // NOTE: MAY NEED TO REMOVE THIS - COULD BE A VERY SLOW OPERATION.
     return associatedSources;
   }
 
@@ -785,9 +787,9 @@
                 <div class="attribute-name">{attribute[0]}</div>
                 {#if Array.isArray(attribute[1])}
                   <ul class="attribute-array">
-                  {#each attribute[1] as attributeValue}
-                    <li class="attribute-value">{attributeValue}</li>
-                  {/each}
+                    {#each attribute[1] as attributeValue}
+                      <li class="attribute-value">{attributeValue}</li>
+                    {/each}
                   </ul>
                 {:else}
                   <div class="attribute-value">{attribute[1]}</div>
