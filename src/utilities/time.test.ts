@@ -13,6 +13,7 @@ import {
   getDoy,
   getDoyTime,
   getDoyTimeComponents,
+  getDurationTimeComponents,
   getShortISOForDate,
   getTimeAgo,
   getUnixEpochTime,
@@ -465,6 +466,74 @@ test('parseDurationString', () => {
     minutes: 0,
     seconds: 0,
     years: 0,
+  });
+});
+
+test('getDurationTimeComponents', () => {
+  expect(
+    getDurationTimeComponents({
+      days: 3,
+      hours: 10,
+      isNegative: false,
+      microseconds: 0,
+      milliseconds: 0,
+      minutes: 30,
+      seconds: 45,
+      years: 2,
+    }),
+  ).toEqual({
+    days: '003',
+    hours: '10',
+    isNegative: '',
+    microseconds: '',
+    milliseconds: '',
+    minutes: '30',
+    seconds: '45',
+    years: '0002',
+  });
+
+  expect(
+    getDurationTimeComponents({
+      days: 300,
+      hours: 2,
+      isNegative: true,
+      microseconds: 1,
+      milliseconds: 123,
+      minutes: 1,
+      seconds: 2,
+      years: 0,
+    }),
+  ).toEqual({
+    days: '300',
+    hours: '02',
+    isNegative: '-',
+    microseconds: '001',
+    milliseconds: '123',
+    minutes: '01',
+    seconds: '02',
+    years: '0000',
+  });
+
+  expect(
+    getDurationTimeComponents({
+      days: 0,
+      hours: 0,
+      isNegative: false,
+      microseconds: 123,
+      milliseconds: 0,
+      minutes: 0,
+      seconds: 2,
+      years: 0,
+    }),
+  ).toEqual({
+    days: '',
+    hours: '00',
+    isNegative: '',
+    microseconds: '123',
+    milliseconds: '',
+    minutes: '00',
+    seconds: '02',
+    years: '0000',
   });
 });
 
