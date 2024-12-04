@@ -10,8 +10,6 @@
   let enumValues: string = '';
 
   $: enumValues = argDef.range?.join('\n') ?? '';
-
-  console.log('argDef :>> ', argDef);
 </script>
 
 <Collapse title={argDef.name}>

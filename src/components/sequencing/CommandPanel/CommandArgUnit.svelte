@@ -5,7 +5,7 @@
   import RulerIcon from '../../../assets/ruler.svg?component';
   import { tooltip } from '../../../utilities/tooltip';
 
-  export let type: 'string' | 'boolean' | 'number' | 'enum' | 'array';
+  export let type: 'string' | 'boolean' | 'number' | 'enum' | 'repeat';
   export let typeDisplay: string | undefined = undefined;
   export let unit: string | undefined = undefined;
   export let unitShortName: string | undefined = undefined;

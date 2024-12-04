@@ -21,7 +21,7 @@
   <div slot="right">
     <CommandArgUnit
       range={argDef.repeat ? { max: `${argDef.repeat.max}`, min: `${argDef.repeat.min}` } : undefined}
-      type="array"
+      type="repeat"
       unit="Sets"
     />
   </div>
