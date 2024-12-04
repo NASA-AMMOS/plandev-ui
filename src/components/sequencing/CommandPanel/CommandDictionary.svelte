@@ -3,10 +3,13 @@
 <script lang="ts">
   import type { CommandDictionary, FswCommand, HwCommand } from '@nasa-jpl/aerie-ampcs';
   import ChevronRightIcon from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
+  import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
+  import CopyIcon from 'bootstrap-icons/icons/copy.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { isFswCommand, isFswCommandArgumentEnum } from '../../../utilities/codemirror/codemirror-utils';
   import { getTarget } from '../../../utilities/generic';
+  import { tooltip } from '../../../utilities/tooltip';
   import Input from '../../form/Input.svelte';
   import CommandArgument from './CommandArg.svelte';
 
@@ -65,7 +68,15 @@
     }
   }
 
-  $: console.log('selectedCommandDefinition :>> ', selectedCommandDefinition);
+  function onClear() {
+    dispatch('selectCommandDefinition', null);
+  }
+
+  async function onCopy() {
+    if (selectedCommandDefinition) {
+      await navigator.clipboard.writeText(`${selectedCommandDefinition.stem}`);
+    }
+  }
 
   function onSearch(event: Event) {
     const { value } = getTarget(event);
@@ -74,10 +85,6 @@
 
   function onSelectCommandDefinition(commandDefinition: FswCommand | HwCommand) {
     dispatch('selectCommandDefinition', commandDefinition);
-  }
-
-  function onClear() {
-    dispatch('selectCommandDefinition', null);
   }
 </script>
 
@@ -90,6 +97,24 @@
         <div class="breadcrumb">{selectedCommandDefinition.stem}</div>
       {:else}
         {commandDictionary.id}
+      {/if}
+    </div>
+    <div class="breadcrumbs-icons">
+      {#if selectedCommandDefinition !== null}
+        <button
+          class="st-button-link"
+          on:click={onCopy}
+          use:tooltip={{ content: 'Copy command stem to clipboard', placement: 'top' }}
+        >
+          <CopyIcon />
+        </button>
+        <button
+          class="st-button-link"
+          on:click={onClear}
+          use:tooltip={{ content: 'Deselect command', placement: 'top' }}
+        >
+          <CloseIcon />
+        </button>
       {/if}
     </div>
   </div>
@@ -154,6 +179,7 @@
   }
 
   .dictionary-name {
+    align-items: center;
     background: var(--st-gray-10);
     border-bottom: 1px solid var(--st-gray-20);
     display: grid;
@@ -169,6 +195,13 @@
 
   .breadcrumbs-container :global(svg) {
     color: var(--st-gray-40);
+  }
+
+  .breadcrumbs-icons {
+    align-items: center;
+    column-gap: 4px;
+    display: grid;
+    grid-template-columns: repeat(2, min-content);
   }
 
   .breadcrumb {
