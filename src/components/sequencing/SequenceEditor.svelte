@@ -270,6 +270,10 @@
           });
         });
       }
+    } else {
+      commandDictionary = null;
+      channelDictionary = null;
+      parameterDictionaries = [];
     }
   }
 
@@ -726,9 +730,9 @@
         {variablesInScope}
       />
     {:else}
-      <Panel overflowYBody="hidden" padBody={false}>
+      <Panel overflowYBody="hidden" padBody={true}>
         <svelte:fragment slot="header">
-          <SectionTitle>Selected Command</SectionTitle>
+          <SectionTitle><span class="command-title">Selected Command</span></SectionTitle>
         </svelte:fragment>
 
         <svelte:fragment slot="body">
@@ -773,5 +777,9 @@
 
   .output-format label {
     width: 10rem;
+  }
+
+  .command-title {
+    padding: 8px;
   }
 </style>
