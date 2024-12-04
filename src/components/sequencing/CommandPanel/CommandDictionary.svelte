@@ -9,6 +9,7 @@
   import { createEventDispatcher } from 'svelte';
   import { isFswCommand, isFswCommandArgumentEnum } from '../../../utilities/codemirror/codemirror-utils';
   import { getTarget } from '../../../utilities/generic';
+  import { showFailureToast, showSuccessToast } from '../../../utilities/toast';
   import { tooltip } from '../../../utilities/tooltip';
   import Input from '../../form/Input.svelte';
   import CommandArgument from './CommandArg.svelte';
@@ -75,7 +76,12 @@
 
   async function onCopy() {
     if (selectedCommandDefinition) {
-      await navigator.clipboard.writeText(`${selectedCommandDefinition.stem}`);
+      try {
+        await navigator.clipboard.writeText(`${selectedCommandDefinition.stem}`);
+        showSuccessToast(`"${selectedCommandDefinition.stem}" copied to clipboard`);
+      } catch {
+        showFailureToast(`Error copying "${selectedCommandDefinition.stem}" to clipboard`);
+      }
     }
   }
 
