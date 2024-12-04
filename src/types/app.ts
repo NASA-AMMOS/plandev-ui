@@ -37,3 +37,4 @@ export type Version = {
 };
 
 export type PartialWith<T, K extends keyof T> = Partial<T> & Pick<T, K>;
+export type UnionOfValues<T extends Record<string, any>, K extends keyof T> = T[K] extends infer U ? U : never;

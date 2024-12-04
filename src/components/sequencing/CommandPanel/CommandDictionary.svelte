@@ -8,6 +8,7 @@
   import { isFswCommand, isFswCommandArgumentEnum } from '../../../utilities/codemirror/codemirror-utils';
   import { getTarget } from '../../../utilities/generic';
   import Input from '../../form/Input.svelte';
+  import CommandArgument from './CommandArg.svelte';
 
   export let commandDictionary: CommandDictionary;
   export let selectedCommandDefinition: (FswCommand | HwCommand) | null = null;
@@ -64,6 +65,8 @@
     }
   }
 
+  $: console.log('selectedCommandDefinition :>> ', selectedCommandDefinition);
+
   function onSearch(event: Event) {
     const { value } = getTarget(event);
     searchValue = `${value}`.toLowerCase();
@@ -119,17 +122,25 @@
     </div>
   </div>
   <div class="command-metadata-container" class:hidden={selectedCommandDefinition === null}>
-    <div class="command-description">
-      {selectedCommandDefinition?.description}
-    </div>
-    {#if selectedCommandDefinition && isFswCommand(selectedCommandDefinition)}
-      <div class="command-arguments">
-        {#each selectedCommandDefinition.arguments as argument}
-          {argument.name}
-        {/each}
+    {#if selectedCommandDefinition}
+      <div class="command-type">
+        {#if isFswCommand(selectedCommandDefinition)}
+          FSW Command
+        {:else}
+          HW Command
+        {/if}
       </div>
-    {:else}
-      <div></div>
+      <div class="command-description">
+        {selectedCommandDefinition?.description}
+      </div>
+      {#if isFswCommand(selectedCommandDefinition)}
+        <div class="title">Arguments</div>
+        <div class="command-arguments">
+          {#each selectedCommandDefinition.arguments as argument}
+            <CommandArgument commandArgumentDefinition={argument} />
+          {/each}
+        </div>
+      {/if}
     {/if}
   </div>
 </div>
@@ -202,12 +213,31 @@
     row-gap: 8px;
   }
 
-  .hidden {
+  .command-dictionary-container .hidden {
     display: none;
   }
 
   .command-metadata-container {
+    display: flex;
+    flex-flow: column;
     overflow: hidden;
     padding: 8px 16px;
+    row-gap: 8px;
+  }
+
+  .title {
+    font-weight: 500;
+  }
+
+  .command-type {
+    font-style: italic;
+  }
+
+  .command-arguments {
+    display: flex;
+    flex-flow: column;
+    height: 100%;
+    overflow: auto;
+    row-gap: 8px;
   }
 </style>
