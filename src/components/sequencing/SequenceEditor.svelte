@@ -712,7 +712,7 @@
 
   {#if showCommandFormBuilder}
     <CssGridGutter track={1} type="column" />
-    {#if !!commandDictionary && !!selectedNode && !!commandNode}
+    {#if commandDictionary !== null}
       <CommandPanel
         {argInfoArray}
         {commandDef}
