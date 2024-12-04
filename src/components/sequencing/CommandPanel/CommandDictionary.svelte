@@ -51,7 +51,8 @@
       case 'argument_name': {
         commandResults = commandList.filter(command => {
           return (
-            (command as FswCommand).arguments.find(argument => {
+            isFswCommand(command) &&
+            command.arguments.find(argument => {
               return argument.name.toLowerCase().includes(searchValue);
             }) !== undefined
           );
