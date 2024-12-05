@@ -2,12 +2,12 @@ import type { UserId } from './app';
 import type { ConstraintModelSpec } from './constraint';
 import type { ParametersMap } from './parameter';
 import type { SchedulingConditionModelSpecification, SchedulingGoalModelSpecification } from './scheduling';
-import type { View } from './view';
+import type { View, ViewSlim } from './view';
 
 export type Model = ModelSchema;
 
 export type ModelInsertInput = Pick<Model, 'description' | 'jar_id' | 'mission' | 'name' | 'version'>;
-export type ModelSetInput = Pick<Model, 'description' | 'mission' | 'name' | 'owner' | 'version'>;
+export type ModelSetInput = Pick<Model, 'default_view_id' | 'description' | 'mission' | 'name' | 'owner' | 'version'>;
 
 export type ModelStatus = 'extracting' | 'complete' | 'error' | 'none';
 export type ModelStatusRollup = {
@@ -36,6 +36,7 @@ export type ModelLog = {
 export type ModelSchema = {
   constraint_specification: ConstraintModelSpec[];
   created_at: string;
+  default_view_id: number | null;
   description?: string;
   id: number;
   jar_id: number;
@@ -66,4 +67,4 @@ export type ModelSlim = Pick<
   | 'refresh_model_parameter_logs'
   | 'refresh_resource_type_logs'
   | 'version'
->;
+> & { view: ViewSlim | null };

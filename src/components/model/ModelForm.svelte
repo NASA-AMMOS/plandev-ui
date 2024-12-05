@@ -5,6 +5,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { User, UserId } from '../../types/app';
   import type { ModelLog, ModelSlim } from '../../types/model';
+  import type { ViewSlim } from '../../types/view';
   import effects from '../../utilities/effects';
   import { getModelStatusRollup } from '../../utilities/model';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -19,6 +20,7 @@
   export let initialModelName: string = '';
   export let initialModelOwner: UserId | undefined;
   export let initialModelVersion: string | undefined;
+  export let initialModelDefaultViewId: number | null | undefined;
   export let activityTypeLogs: ModelLog[] | undefined;
   export let modelParameterLogs: ModelLog[] | undefined;
   export let resourceTypeLogs: ModelLog[] | undefined;
@@ -26,11 +28,13 @@
   export let createdAt: string | undefined;
   export let user: User | null;
   export let users: UserId[] = [];
+  export let views: ViewSlim[] = [];
 
   const dispatch = createEventDispatcher<{
     createPlan: number;
     deleteModel: void;
     hasModelChanged: {
+      default_view_id: number | null;
       description: string;
       name: string;
       owner: UserId;
@@ -60,6 +64,7 @@
   $: name = initialModelName;
   $: owner = initialModelOwner ?? null;
   $: version = initialModelVersion ?? '';
+  $: viewId = initialModelDefaultViewId ?? null;
   $: modelLogs = {
     refresh_activity_type_logs: activityTypeLogs ?? [],
     refresh_model_parameter_logs: modelParameterLogs ?? [],
@@ -83,6 +88,7 @@
   }
 
   $: dispatch('hasModelChanged', {
+    default_view_id: viewId,
     description,
     name,
     owner,
@@ -131,7 +137,7 @@
 <div class="model-form-container">
   <div class="inputs">
     <Input layout="inline">
-      <label for="name">Model name</label>
+      <label for="name">Model Name</label>
       <input
         class="st-input w-100"
         name="name"
@@ -144,11 +150,11 @@
       />
     </Input>
     <Input layout="inline">
-      <label for="id">Model id</label>
+      <label for="id">Model ID</label>
       <input class="st-input w-100" disabled name="id" value={modelId ?? ''} />
     </Input>
     <Input layout="inline">
-      <label for="description">Model description</label>
+      <label for="description">Model Description</label>
       <textarea
         class="st-input w-100"
         name="description"
@@ -160,7 +166,7 @@
       />
     </Input>
     <Input layout="inline">
-      <label for="version">Model version</label>
+      <label for="version">Model Version</label>
       <input
         class="st-input w-100"
         name="version"
@@ -192,6 +198,15 @@
         on:delete={onClearOwner}
       />
     </Input>
+    <Input layout="inline">
+      <label for="view">Default View</label>
+      <select name="view" class="st-select w-100" bind:value={viewId}>
+        <option value={null}>None</option>
+        {#each views as viewOption}
+          <option value={viewOption.id}>{viewOption.name} (ID: {viewOption.id})</option>
+        {/each}
+      </select>
+    </Input>
     {#if createdAt}
       <Input layout="inline">
         <label use:tooltip={{ content: 'Date Created', placement: 'top' }} for="createdAt">Date Created</label>
@@ -201,7 +216,7 @@
     {#if modelId}
       <Input layout="inline">
         <div class="model-jar-label">
-          <label class="model-metadata-item-label" for="status">Jar file status</label>
+          <label class="model-metadata-item-label" for="status">Jar File Status</label>
           {#if modelHasExtractionError}
             <button
               class="icon-button"

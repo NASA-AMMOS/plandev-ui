@@ -90,6 +90,7 @@
   import { initialModel, model, resetModelStores } from '../../../stores/model';
   import { schedulingConditions, schedulingGoals } from '../../../stores/scheduling';
   import { users } from '../../../stores/user';
+  import { views } from '../../../stores/views';
   import type { User, UserId } from '../../../types/app';
   import type { ConstraintModelSpec, ConstraintModelSpecInsertInput } from '../../../types/constraint';
   import type {
@@ -118,12 +119,14 @@
   let hasModelChanged: boolean = false;
   let metadataList: Pick<BaseMetadata, 'id' | 'name' | 'public' | 'versions'>[] = [];
   let modelMetadata: {
+    default_view_id: number | null;
     description?: string;
     name: string;
     owner: UserId;
     version: string;
   } | null = null;
   let initialModelMetadata: {
+    default_view_id: number | null;
     description?: string;
     name: string;
     owner: UserId;
@@ -146,6 +149,7 @@
   }
   $: if ($model) {
     initialModelMetadata = {
+      default_view_id: $model.default_view_id,
       description: $model.description,
       name: $model.name,
       owner: $model.owner,
@@ -299,6 +303,7 @@
 
   function onModelMetadataChange(
     event: CustomEvent<{
+      default_view_id: number | null;
       description: string;
       name: string;
       owner: UserId;
@@ -668,6 +673,7 @@
         initialModelName={$model?.name}
         initialModelOwner={$model?.owner}
         initialModelVersion={$model?.version}
+        initialModelDefaultViewId={$model?.default_view_id}
         activityTypeLogs={$model?.refresh_activity_type_logs}
         modelParameterLogs={$model?.refresh_model_parameter_logs}
         resourceTypeLogs={$model?.refresh_resource_type_logs}
@@ -675,6 +681,7 @@
         createdAt={$model?.created_at}
         user={data.user}
         users={$users ?? []}
+        views={$views ?? []}
         on:createPlan={onCreatePlanWithModel}
         on:deleteModel={onDeleteModel}
         on:hasModelChanged={onModelMetadataChange}

@@ -2530,6 +2530,7 @@ const gql = {
           }
         }
         created_at
+        default_view_id
         description
         jar_id
         id
@@ -2622,6 +2623,13 @@ const gql = {
           success
         }
         version
+        view {
+          created_at
+          id
+          name
+          owner
+          updated_at
+        }
       }
     }
   `,

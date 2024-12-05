@@ -150,6 +150,9 @@
     ];
   }
   $: selectedModel = $models.find(({ id }) => id === selectedModelId) ?? null;
+  $: selectedModelDefaultViewName = selectedModel?.view
+    ? `${selectedModel.view.name} (ID: ${selectedModel.view.id})`
+    : 'None';
   $: if (selectedModel) {
     const { activityLogStatus, parameterLogStatus, resourceLogStatus } = getModelStatusRollup(selectedModel);
 
@@ -271,7 +274,7 @@
         <div class="model-metadata">
           <fieldset>
             <Input layout="inline">
-              <label class="model-metadata-item-label" for="name">Model name</label>
+              <label class="model-metadata-item-label" for="name">Model Name</label>
               <input
                 disabled
                 class="st-input w-100"
@@ -281,20 +284,24 @@
               />
             </Input>
             <Input layout="inline">
-              <label class="model-metadata-item-label" for="id">Model id</label>
+              <label class="model-metadata-item-label" for="id">Model ID</label>
               <input disabled class="st-input w-100" name="id" value={selectedModel.id} />
             </Input>
             <Input layout="inline">
-              <label class="model-metadata-item-label" for="description">Description</label>
+              <label class="model-metadata-item-label" for="description">Model Description</label>
               <textarea disabled class="st-input w-100" name="description" value={selectedModel.description} />
             </Input>
             <Input layout="inline">
-              <label class="model-metadata-item-label" for="version">Model version</label>
+              <label class="model-metadata-item-label" for="version">Model Version</label>
               <input disabled class="st-input w-100" name="version" value={selectedModel.version} />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="owner">Owner</label>
               <input disabled class="st-input w-100" name="owner" value={selectedModel.owner} />
+            </Input>
+            <Input layout="inline">
+              <label class="model-metadata-item-label" for="defaultView">Default View</label>
+              <input disabled class="st-input w-100" name="defaultView" value={selectedModelDefaultViewName} />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="created">Date Created</label>
@@ -307,7 +314,7 @@
             </Input>
             <Input layout="inline">
               <div class="model-jar-label">
-                <label class="model-metadata-item-label" for="status">Jar file status</label>
+                <label class="model-metadata-item-label" for="status">Jar File Status</label>
                 {#if modelHasExtractionError}
                   <button
                     class="icon-button"
