@@ -364,6 +364,7 @@
         user,
       );
       if (deleteExternalSourceResult !== undefined && deleteExternalSourceResult !== null) {
+        deselectSource();
         selectedSources = null;
         selectedSource = null;
       }
