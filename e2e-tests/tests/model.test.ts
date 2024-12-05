@@ -84,7 +84,7 @@ test.describe.serial('Model', () => {
   });
 
   test('Should be able to update the default view for a model', async () => {
-    await await model.updateDefaultView(viewName);
+    await model.updateDefaultView(viewName);
   });
 
   test('Should be able to add a constraint to the model and specify a version', async () => {
