@@ -15,6 +15,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { ArgTextDef, TimeTagInfo } from '../../../types/sequencing';
   import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
+  import { tooltip } from '../../../utilities/tooltip';
   import Collapse from '../../Collapse.svelte';
   import AddMissingArgsButton from '../form/AddMissingArgsButton.svelte';
   import ArgEditor from '../form/ArgEditor.svelte';
@@ -101,7 +102,11 @@
   {#if commandName != null}
     <div class="command-name">
       {commandName}
-      <button class="open-dictionary" on:click={onSelectCommandDefinition}><ArrowUpRightIcon /></button>
+      <button
+        class="open-dictionary"
+        on:click={onSelectCommandDefinition}
+        use:tooltip={{ content: `View dictionary entry for ${commandDef?.stem}` }}><ArrowUpRightIcon /></button
+      >
     </div>
   {/if}
   {#if commandDef != null && commandDef.description != null}
