@@ -101,7 +101,6 @@
 
   :global(.command-items-tab) {
     align-items: center;
-    border-radius: 4px;
     display: flex;
     font-size: 13px;
     gap: 5px;
