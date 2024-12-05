@@ -144,13 +144,17 @@
       </select>
     </div>
     <div class="dictionary-results">
-      {#each commandResults as commandResult}
-        <div class="dictionary-result">
-          <button class="st-button-link" on:click={() => onSelectCommandDefinition(commandResult)}>
-            {commandResult.stem}
-          </button>
-        </div>
-      {/each}
+      {#if commandResults.length > 0}
+        {#each commandResults as commandResult}
+          <div class="dictionary-result">
+            <button class="st-button-link" on:click={() => onSelectCommandDefinition(commandResult)}>
+              {commandResult.stem}
+            </button>
+          </div>
+        {/each}
+      {:else}
+        No {searchFieldMap[searchField]} matched your search query.
+      {/if}
     </div>
   </div>
   <div class="command-metadata-container" class:hidden={selectedCommandDefinition === null}>
