@@ -108,18 +108,10 @@
     </div>
     <div class="breadcrumbs-icons">
       {#if selectedCommandDefinition !== null}
-        <button
-          class="st-button-link"
-          on:click={onCopy}
-          use:tooltip={{ content: 'Copy command stem to clipboard', placement: 'top' }}
-        >
+        <button on:click={onCopy} use:tooltip={{ content: 'Copy command stem to clipboard', placement: 'top' }}>
           <CopyIcon />
         </button>
-        <button
-          class="st-button-link"
-          on:click={onClear}
-          use:tooltip={{ content: 'Deselect command', placement: 'top' }}
-        >
+        <button on:click={onClear} use:tooltip={{ content: 'Deselect command', placement: 'top' }}>
           <CloseIcon />
         </button>
       {/if}
@@ -213,6 +205,15 @@
     column-gap: 4px;
     display: grid;
     grid-template-columns: repeat(2, min-content);
+  }
+
+  .breadcrumbs-icons button {
+    background: none;
+    border: none;
+    color: var(--st-button-icon-color);
+    cursor: pointer;
+    display: inline-flex;
+    padding: 0;
   }
 
   .breadcrumb {
