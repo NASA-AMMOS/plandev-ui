@@ -180,7 +180,9 @@
     <div class="empty-state st-typography-label">
       Select a command or open the
       <div class="no-wrap">
-        <button class="st-button-link" on:click={onSelectCommandDefinition}> command dictionary </button>.
+        <button class="st-typography-label st-button-link" on:click={onSelectCommandDefinition}>
+          command dictionary
+        </button>.
       </div>
     </div>
   {/if}
