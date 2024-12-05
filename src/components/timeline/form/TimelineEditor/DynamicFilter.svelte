@@ -10,6 +10,7 @@
     type ActivityLayerDynamicFilter,
     type ActivityLayerFilterSubfieldSchema,
     type DynamicFilterDataType,
+    ActivityLayerFilterField,
     ActivityLayerFilterField as ActivityLayerFilterFieldType,
     FilterOperator,
   } from '../../../../types/timeline';
@@ -156,6 +157,9 @@
       currentValue = newValue;
     }
   }
+  function asActivityLayerFilterField(s: string): keyof typeof ActivityLayerFilterField {
+    return s as keyof typeof ActivityLayerFilterField;
+  }
 </script>
 
 <div class="dynamic-filter">
@@ -164,7 +168,7 @@
   {/if}
   <select class="st-select" on:change={onFieldChange} value={currentField}>
     {#each Object.keys(schema) as key}
-      <option value={key}>{key}</option>
+      <option value={key}>{ActivityLayerFilterField[asActivityLayerFilterField(key)]}</option>
     {/each}
   </select>
   {#if currentField === 'Parameter' && subfields}
