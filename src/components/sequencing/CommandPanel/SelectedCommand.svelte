@@ -218,6 +218,7 @@
   }
 
   .command-name .open-dictionary {
+    align-items: center;
     background: none;
     border: none;
     color: var(--st-button-icon-color);
