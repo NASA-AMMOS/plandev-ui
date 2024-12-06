@@ -219,8 +219,10 @@
 
   .command-name .open-dictionary {
     background: none;
-    border: 0;
+    border: none;
+    color: var(--st-button-icon-color);
     cursor: pointer;
+    display: inline-flex;
     padding: 0;
   }
 
