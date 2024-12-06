@@ -135,7 +135,7 @@
         <option value={'argument_name'}>Argument name</option>
       </select>
     </div>
-    <div class="dictionary-results">
+    <div class="st-typography-body dictionary-results">
       {#if commandResults.length > 0}
         {#each commandResults as commandResult}
           <div class="dictionary-result">
