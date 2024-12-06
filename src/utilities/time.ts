@@ -261,7 +261,6 @@ export function parseDurationString(
     // Normalize microseconds
     millisecond += Math.floor(microsecond / 1000000);
     microsecond = microsecond % 1000000;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
     // Normalize milliseconds and seconds
     second += Math.floor(millisecond / 1000);

@@ -6,6 +6,14 @@ import type {
   ChannelDictionary as AmpcsChannelDictionary,
   CommandDictionary as AmpcsCommandDictionary,
   ParameterDictionary as AmpcsParameterDictionary,
+  FswCommandArgument,
+  FswCommandArgumentFixedString,
+  FswCommandArgumentFloat,
+  FswCommandArgumentInteger,
+  FswCommandArgumentNumeric,
+  FswCommandArgumentRepeat,
+  FswCommandArgumentUnsigned,
+  FswCommandArgumentVarString,
 } from '@nasa-jpl/aerie-ampcs';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
@@ -158,4 +166,22 @@ export type Workspace = {
   name: string;
   owner: UserId;
   updated_at: string;
+};
+
+export type TimeTagInfo = { node: SyntaxNode; text: string } | null | undefined;
+
+export type StringArg = FswCommandArgumentVarString | FswCommandArgumentFixedString;
+
+export type NumberArg =
+  | FswCommandArgumentFloat
+  | FswCommandArgumentInteger
+  | FswCommandArgumentNumeric
+  | FswCommandArgumentUnsigned;
+
+export type ArgTextDef = {
+  argDef?: FswCommandArgument;
+  children?: ArgTextDef[];
+  node?: SyntaxNode;
+  parentArgDef?: FswCommandArgumentRepeat;
+  text?: string;
 };

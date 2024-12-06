@@ -1,6 +1,7 @@
 import type { SyntaxNode } from '@lezer/common';
 import type {
   CommandDictionary,
+  FswCommand,
   FswCommandArgument,
   FswCommandArgumentBoolean,
   FswCommandArgumentEnum,
@@ -11,11 +12,20 @@ import type {
   FswCommandArgumentRepeat,
   FswCommandArgumentUnsigned,
   FswCommandArgumentVarString,
+  HwCommand,
 } from '@nasa-jpl/aerie-ampcs';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
+import type { ArgTextDef, NumberArg, StringArg } from '../../types/sequencing';
 import { fswCommandArgDefault } from '../sequence-editor/command-dictionary';
 import type { CommandInfoMapper } from './commandInfoMapper';
+
+export function isFswCommand(command: FswCommand | HwCommand): command is FswCommand {
+  return (command as FswCommand).type === 'fsw_command';
+}
+export function isHwCommand(command: FswCommand | HwCommand): command is HwCommand {
+  return (command as HwCommand).type === 'hw_command';
+}
 
 export function isFswCommandArgumentEnum(arg: FswCommandArgument): arg is FswCommandArgumentEnum {
   return arg.arg_type === 'enum';
@@ -65,22 +75,6 @@ export function isNumberArg(arg: FswCommandArgument): arg is NumberArg {
 export function isStringArg(arg: FswCommandArgument): arg is StringArg {
   return isFswCommandArgumentVarString(arg) || isFswCommandArgumentFixedString(arg);
 }
-
-export type StringArg = FswCommandArgumentVarString | FswCommandArgumentFixedString;
-
-export type NumberArg =
-  | FswCommandArgumentFloat
-  | FswCommandArgumentInteger
-  | FswCommandArgumentNumeric
-  | FswCommandArgumentUnsigned;
-
-export type ArgTextDef = {
-  argDef?: FswCommandArgument;
-  children?: ArgTextDef[];
-  node?: SyntaxNode;
-  parentArgDef?: FswCommandArgumentRepeat;
-  text?: string;
-};
 
 export function addDefaultArgs(
   commandDictionary: CommandDictionary,

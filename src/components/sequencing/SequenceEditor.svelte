@@ -7,7 +7,14 @@
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate } from '@codemirror/view';
   import type { SyntaxNode, Tree } from '@lezer/common';
-  import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+  import type {
+    ChannelDictionary,
+    CommandDictionary,
+    FswCommand,
+    FswCommandArgument,
+    FswCommandArgumentRepeat,
+    ParameterDictionary,
+  } from '@nasa-jpl/aerie-ampcs';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
   import ExpandIcon from 'bootstrap-icons/icons/arrow-bar-up.svg?component';
@@ -16,6 +23,7 @@
   import { EditorView, basicSetup } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+  import { TOKEN_ERROR } from '../../constants/seq-n-grammar-constants';
   import {
     inputFormat,
     outputFormat,
@@ -35,8 +43,16 @@
     userSequences,
   } from '../../stores/sequencing';
   import type { User } from '../../types/app';
-  import type { IOutputFormat, LibrarySequence, Parcel } from '../../types/sequencing';
+  import type {
+    ArgTextDef,
+    IOutputFormat,
+    ISequenceAdaptation,
+    LibrarySequence,
+    Parcel,
+    TimeTagInfo,
+  } from '../../types/sequencing';
   import { SeqLanguage, setupLanguageSupport } from '../../utilities/codemirror';
+  import { isFswCommandArgumentRepeat } from '../../utilities/codemirror/codemirror-utils';
   import type { CommandInfoMapper } from '../../utilities/codemirror/commandInfoMapper';
   import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../utilities/codemirror/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../utilities/codemirror/seq-n-tree-utils';
@@ -54,7 +70,7 @@
   import { VmlCommandInfoMapper } from '../../utilities/codemirror/vml/vmlTreeUtils';
   import effects from '../../utilities/effects';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
-  import { inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
+  import { getCustomArgDef, inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
   import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
   import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
   import { parseVariables } from '../../utilities/sequence-editor/to-seq-json';
@@ -66,7 +82,7 @@
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
-  import SelectedCommand from './form/SelectedCommand.svelte';
+  import CommandPanel from './CommandPanel/CommandPanel.svelte';
 
   export let parcel: Parcel | null;
   export let showCommandFormBuilder: boolean = false;
@@ -113,6 +129,14 @@
   let isInVmlMode: boolean = false;
   let showOutputs: boolean = true;
   let editorHeights: string = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
+
+  let argInfoArray: ArgTextDef[] = [];
+  let commandNode: SyntaxNode | null = null;
+  let commandNameNode: SyntaxNode | null = null;
+  let commandName: string | null = null;
+  let commandDef: FswCommand | null = null;
+  let timeTagNode: TimeTagInfo = null;
+  let variablesInScope: string[] = [];
 
   $: {
     loadSequenceAdaptation(parcel?.sequence_adaptation_id);
@@ -246,6 +270,10 @@
           });
         });
       }
+    } else {
+      commandDictionary = null;
+      channelDictionary = null;
+      parameterDictionaries = [];
     }
   }
 
@@ -257,6 +285,27 @@
       editorHeights = '1fr 3px';
     }
   }
+
+  $: commandNode = commandInfoMapper.getContainingCommand(selectedNode);
+  $: commandNameNode = commandInfoMapper.getNameNode(commandNode);
+  $: commandName = commandNameNode && editorSequenceView.state.sliceDoc(commandNameNode.from, commandNameNode.to);
+  $: commandDef = getCommandDef(commandDictionary, commandName ?? '');
+  $: timeTagNode = getTimeTagInfo(editorSequenceView, commandNode);
+  $: argInfoArray = getArgumentInfo(
+    commandInfoMapper,
+    editorSequenceView,
+    commandInfoMapper.getArgumentNodeContainer(commandNode),
+    commandDef?.arguments,
+    undefined,
+    parameterDictionaries,
+  );
+  $: variablesInScope = getVariablesInScope(
+    commandInfoMapper,
+    editorSequenceView,
+    $sequenceAdaptation,
+    currentTree,
+    commandNode?.from,
+  );
 
   onMount(() => {
     compartmentSeqJsonLinter = new Compartment();
@@ -435,6 +484,113 @@
   function inVmlMode(sequenceName: string | undefined): boolean {
     return sequenceName !== undefined && sequenceName.endsWith('.vml');
   }
+
+  function getTimeTagInfo(seqEditorView: EditorView, commandNode: SyntaxNode | null): TimeTagInfo {
+    const node = commandNode?.getChild('TimeTag');
+
+    return (
+      node && {
+        node,
+        text: seqEditorView.state.sliceDoc(node.from, node.to) ?? '',
+      }
+    );
+  }
+
+  function getCommandDef(commandDictionary: CommandDictionary | null, stemName: string): FswCommand | null {
+    return commandDictionary?.fswCommandMap[stemName] ?? null;
+  }
+
+  function getVariablesInScope(
+    infoMapper: CommandInfoMapper,
+    seqEditorView: EditorView,
+    adaptation: ISequenceAdaptation,
+    tree: Tree | null,
+    cursorPosition?: number,
+  ): string[] {
+    const globalNames = (adaptation.globals ?? []).map(globalVariable => globalVariable.name);
+    if (tree && cursorPosition !== undefined) {
+      const docText = seqEditorView.state.doc.toString();
+      return [...globalNames, ...infoMapper.getVariables(docText, tree, cursorPosition)];
+    }
+    return globalNames;
+  }
+
+  function getArgumentInfo(
+    infoMapper: CommandInfoMapper,
+    seqEditorView: EditorView,
+    args: SyntaxNode | null,
+    argumentDefs: FswCommandArgument[] | undefined,
+    parentArgDef: FswCommandArgumentRepeat | undefined,
+    parameterDictionaries: ParameterDictionary[],
+  ) {
+    const argArray: ArgTextDef[] = [];
+    const precedingArgValues: string[] = [];
+    const parentRepeatLength = parentArgDef?.repeat?.arguments.length;
+
+    if (args) {
+      for (const node of infoMapper.getArgumentsFromContainer(args)) {
+        if (node.name === TOKEN_ERROR) {
+          continue;
+        }
+
+        let argDef: FswCommandArgument | undefined = undefined;
+        if (argumentDefs) {
+          let argDefIndex = argArray.length;
+          if (parentRepeatLength !== undefined) {
+            // for repeat args shift index
+            argDefIndex %= parentRepeatLength;
+          }
+          argDef = argumentDefs[argDefIndex];
+        }
+
+        if (commandDef && argDef) {
+          argDef = getCustomArgDef(
+            commandDef?.stem,
+            argDef,
+            precedingArgValues,
+            parameterDictionaries,
+            channelDictionary,
+          );
+        }
+
+        let children: ArgTextDef[] | undefined = undefined;
+        if (!!argDef && isFswCommandArgumentRepeat(argDef)) {
+          children = getArgumentInfo(
+            infoMapper,
+            seqEditorView,
+            node,
+            argDef.repeat?.arguments,
+            argDef,
+            parameterDictionaries,
+          );
+        }
+        const argValue = seqEditorView.state.sliceDoc(node.from, node.to);
+        argArray.push({
+          argDef,
+          children,
+          node,
+          parentArgDef,
+          text: argValue,
+        });
+        precedingArgValues.push(argValue);
+      }
+    }
+    // add entries for defined arguments missing from editor
+    if (argumentDefs) {
+      if (!parentArgDef) {
+        argArray.push(...argumentDefs.slice(argArray.length).map(argDef => ({ argDef })));
+      } else {
+        const repeatArgs = parentArgDef?.repeat?.arguments;
+        if (repeatArgs) {
+          if (argArray.length % repeatArgs.length !== 0) {
+            argArray.push(...argumentDefs.slice(argArray.length % repeatArgs.length).map(argDef => ({ argDef })));
+          }
+        }
+      }
+    }
+
+    return argArray;
+  }
 </script>
 
 <CssGrid bind:columns={commandFormBuilderGrid} minHeight={'0'}>
@@ -560,20 +716,23 @@
 
   {#if showCommandFormBuilder}
     <CssGridGutter track={1} type="column" />
-    {#if !!commandDictionary && !!selectedNode}
-      <SelectedCommand
-        node={selectedNode}
-        tree={currentTree}
-        {channelDictionary}
+    {#if commandDictionary !== null}
+      <CommandPanel
+        {argInfoArray}
+        {commandDef}
         {commandDictionary}
         {commandInfoMapper}
+        {commandName}
+        {commandNameNode}
+        {commandNode}
         {editorSequenceView}
-        {parameterDictionaries}
+        {timeTagNode}
+        {variablesInScope}
       />
     {:else}
-      <Panel overflowYBody="hidden" padBody={false}>
+      <Panel overflowYBody="hidden" padBody={true}>
         <svelte:fragment slot="header">
-          <SectionTitle>Selected Command</SectionTitle>
+          <SectionTitle><span class="command-title">Selected Command</span></SectionTitle>
         </svelte:fragment>
 
         <svelte:fragment slot="body">
@@ -618,5 +777,9 @@
 
   .output-format label {
     width: 10rem;
+  }
+
+  .command-title {
+    padding: 8px;
   }
 </style>

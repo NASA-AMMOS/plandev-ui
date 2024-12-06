@@ -1,9 +1,35 @@
+import type {
+  FswCommand,
+  FswCommandArgumentBoolean,
+  FswCommandArgumentEnum,
+  FswCommandArgumentFixedString,
+  FswCommandArgumentFloat,
+  FswCommandArgumentInteger,
+  FswCommandArgumentNumeric,
+  FswCommandArgumentRepeat,
+  FswCommandArgumentUnsigned,
+  FswCommandArgumentVarString,
+  HwCommand,
+} from '@nasa-jpl/aerie-ampcs';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 import {
   getDefaultVariableArgs,
+  isFswCommand,
+  isFswCommandArgumentBoolean,
+  isFswCommandArgumentEnum,
+  isFswCommandArgumentFixedString,
+  isFswCommandArgumentFloat,
+  isFswCommandArgumentInteger,
+  isFswCommandArgumentNumeric,
+  isFswCommandArgumentRepeat,
+  isFswCommandArgumentUnsigned,
+  isFswCommandArgumentVarString,
   isHexValue,
+  isHwCommand,
+  isNumberArg,
   isQuoted,
+  isStringArg,
   parseNumericArg,
   quoteEscape,
   removeEscapedQuotes,
@@ -117,6 +143,210 @@ describe('isHexValue', () => {
     expect(isHexValue('0xdeadBEEF')).toBe(true);
     expect(isHexValue('0x12ab')).toBe(true);
     expect(isHexValue('0x12xx')).toBe(false);
+  });
+});
+
+describe('Command and argument typeguards', () => {
+  test('isFswCommand', () => {
+    expect(
+      isFswCommand({
+        type: 'fsw_command',
+      } as FswCommand),
+    ).toBeTruthy();
+
+    expect(
+      isFswCommand({
+        type: 'hw_command',
+      } as HwCommand),
+    ).toBeFalsy();
+  });
+
+  test('isHwCommand', () => {
+    expect(
+      isHwCommand({
+        type: 'hw_command',
+      } as HwCommand),
+    ).toBeTruthy();
+
+    expect(
+      isHwCommand({
+        type: 'fsw_command',
+      } as FswCommand),
+    ).toBeFalsy();
+  });
+
+  test('isFswCommandArgumentEnum', () => {
+    expect(
+      isFswCommandArgumentEnum({
+        arg_type: 'enum',
+      } as FswCommandArgumentEnum),
+    ).toBeTruthy();
+
+    expect(
+      isFswCommandArgumentEnum({
+        arg_type: 'boolean',
+      } as FswCommandArgumentBoolean),
+    ).toBeFalsy();
+  });
+
+  test('isFswCommandArgumentInteger', () => {
+    expect(
+      isFswCommandArgumentInteger({
+        arg_type: 'integer',
+      } as FswCommandArgumentInteger),
+    ).toBeTruthy();
+
+    expect(
+      isFswCommandArgumentInteger({
+        arg_type: 'float',
+      } as FswCommandArgumentFloat),
+    ).toBeFalsy();
+  });
+
+  test('isFswCommandArgumentFloat', () => {
+    expect(
+      isFswCommandArgumentFloat({
+        arg_type: 'float',
+      } as FswCommandArgumentFloat),
+    ).toBeTruthy();
+
+    expect(
+      isFswCommandArgumentFloat({
+        arg_type: 'integer',
+      } as FswCommandArgumentInteger),
+    ).toBeFalsy();
+  });
+
+  test('isFswCommandArgumentNumeric', () => {
+    expect(
+      isFswCommandArgumentNumeric({
+        arg_type: 'numeric',
+      } as FswCommandArgumentNumeric),
+    ).toBeTruthy();
+
+    expect(
+      isFswCommandArgumentNumeric({
+        arg_type: 'integer',
+      } as FswCommandArgumentInteger),
+    ).toBeFalsy();
+  });
+
+  test('isFswCommandArgumentUnsigned', () => {
+    expect(
+      isFswCommandArgumentUnsigned({
+        arg_type: 'unsigned',
+      } as FswCommandArgumentUnsigned),
+    ).toBeTruthy();
+
+    expect(
+      isFswCommandArgumentUnsigned({
+        arg_type: 'enum',
+      } as FswCommandArgumentEnum),
+    ).toBeFalsy();
+  });
+
+  test('isFswCommandArgumentRepeat', () => {
+    expect(
+      isFswCommandArgumentRepeat({
+        arg_type: 'repeat',
+      } as FswCommandArgumentRepeat),
+    ).toBeTruthy();
+
+    expect(
+      isFswCommandArgumentRepeat({
+        arg_type: 'enum',
+      } as FswCommandArgumentEnum),
+    ).toBeFalsy();
+  });
+
+  test('isFswCommandArgumentVarString', () => {
+    expect(
+      isFswCommandArgumentVarString({
+        arg_type: 'var_string',
+      } as FswCommandArgumentVarString),
+    ).toBeTruthy();
+
+    expect(
+      isFswCommandArgumentVarString({
+        arg_type: 'enum',
+      } as FswCommandArgumentEnum),
+    ).toBeFalsy();
+  });
+
+  test('isFswCommandArgumentFixedString', () => {
+    expect(
+      isFswCommandArgumentFixedString({
+        arg_type: 'fixed_string',
+      } as FswCommandArgumentFixedString),
+    ).toBeTruthy();
+
+    expect(
+      isFswCommandArgumentFixedString({
+        arg_type: 'enum',
+      } as FswCommandArgumentEnum),
+    ).toBeFalsy();
+  });
+
+  test('isFswCommandArgumentBoolean', () => {
+    expect(
+      isFswCommandArgumentBoolean({
+        arg_type: 'boolean',
+      } as FswCommandArgumentBoolean),
+    ).toBeTruthy();
+
+    expect(
+      isFswCommandArgumentBoolean({
+        arg_type: 'enum',
+      } as FswCommandArgumentEnum),
+    ).toBeFalsy();
+  });
+
+  test('isNumberArg', () => {
+    expect(
+      isNumberArg({
+        arg_type: 'float',
+      } as FswCommandArgumentFloat),
+    ).toBeTruthy();
+    expect(
+      isNumberArg({
+        arg_type: 'integer',
+      } as FswCommandArgumentInteger),
+    ).toBeTruthy();
+    expect(
+      isNumberArg({
+        arg_type: 'numeric',
+      } as FswCommandArgumentNumeric),
+    ).toBeTruthy();
+    expect(
+      isNumberArg({
+        arg_type: 'unsigned',
+      } as FswCommandArgumentUnsigned),
+    ).toBeTruthy();
+
+    expect(
+      isNumberArg({
+        arg_type: 'enum',
+      } as FswCommandArgumentEnum),
+    ).toBeFalsy();
+  });
+
+  test('isStringArg', () => {
+    expect(
+      isStringArg({
+        arg_type: 'var_string',
+      } as FswCommandArgumentVarString),
+    ).toBeTruthy();
+    expect(
+      isStringArg({
+        arg_type: 'fixed_string',
+      } as FswCommandArgumentFixedString),
+    ).toBeTruthy();
+
+    expect(
+      isStringArg({
+        arg_type: 'enum',
+      } as FswCommandArgumentEnum),
+    ).toBeFalsy();
   });
 });
 describe('getDefaultVariableArgs', () => {
