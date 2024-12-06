@@ -5,6 +5,7 @@
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
   import PlanLeftArrow from '@nasa-jpl/stellar/icons/plan_with_left_arrow.svg?component';
   import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
+  import RefreshIcon from '@nasa-jpl/stellar/icons/refresh.svg?component';
   import VisibleHideIcon from '@nasa-jpl/stellar/icons/visible_hide.svg?component';
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
@@ -265,10 +266,30 @@
     <GridMenu {gridSection} title="Constraints" />
     <PanelHeaderActions status={$constraintsStatus} indeterminate>
       <PanelHeaderActionButton
-        disabled={$simulationStatus !== Status.Complete}
+        title="Re-Check"
+        disabled={$simulationStatus !== Status.Complete || $constraintsStatus !== Status.Complete}
+        tooltipContent="Re-check constraints"
+        showLabel
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: $plan
+                ? featurePermissions.constraintRuns.canCreate(user, $plan, $plan.model) && !$planReadOnly
+                : false,
+              permissionError: $planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to run constraint checks',
+            },
+          ],
+        ]}
+        on:click={() => $plan && effects.checkConstraints($plan, true, user)}><RefreshIcon /></PanelHeaderActionButton
+      >
+      <PanelHeaderActionButton
+        disabled={$simulationStatus !== Status.Complete || $constraintsStatus === Status.Complete}
         tooltipContent={$simulationStatus !== Status.Complete ? 'Completed simulation required' : ''}
         title="Check Constraints"
-        on:click={() => $plan && effects.checkConstraints($plan, user)}
+        on:click={() => $plan && effects.checkConstraints($plan, false, user)}
         use={[
           [
             permissionHandler,

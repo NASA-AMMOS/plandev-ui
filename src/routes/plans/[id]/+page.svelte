@@ -719,7 +719,7 @@
             : 'You do not have permission to run a constraint check'}
           status={$constraintsStatus}
           showStatusInMenu={false}
-          on:click={() => $plan && effects.checkConstraints($plan, data.user)}
+          on:click={() => $plan && effects.checkConstraints($plan, false, data.user)}
           indeterminate
         >
           <VerticalCollapseIcon />

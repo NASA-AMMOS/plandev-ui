@@ -37,8 +37,8 @@ const gql = {
   `,
 
   CHECK_CONSTRAINTS: `#graphql
-    query CheckConstraints($planId: Int!) {
-      constraintResponses: ${Queries.CONSTRAINT_VIOLATIONS}(planId: $planId) {
+    query CheckConstraints($planId: Int!, $force: Boolean!) {
+      constraintResponses: ${Queries.CONSTRAINT_VIOLATIONS}(planId: $planId, force: $force) {
         success
         constraintId
         constraintInvocationId
@@ -2268,6 +2268,7 @@ const gql = {
   SUB_CONSTRAINT_RUNS: `#graphql
     subscription SubConstraintRuns($simulationDatasetId: Int!) {
       constraintRuns: ${Queries.CONSTRAINT_RUN}(where: { simulation_dataset_id: { _eq: $simulationDatasetId }}) {
+        arguments
         constraint_id
         constraint_invocation_id
         constraint_revision

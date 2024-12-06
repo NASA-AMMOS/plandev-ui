@@ -451,12 +451,19 @@ const effects = {
     }
   },
 
-  async checkConstraints(plan: Plan, user: User | null): Promise<void> {
+  async checkConstraints(plan: Plan, force: boolean = false, user: User | null): Promise<void> {
     try {
       rawCheckConstraintsStatusStore.set(Status.Incomplete);
       if (plan !== null) {
         const { id: planId } = plan;
-        const data = await reqHasura<ConstraintResponse[]>(gql.CHECK_CONSTRAINTS, { planId }, user);
+        const data = await reqHasura<ConstraintResponse[]>(
+          gql.CHECK_CONSTRAINTS,
+          {
+            force,
+            planId,
+          },
+          user,
+        );
         if (data.constraintResponses) {
           rawConstraintResponsesStore.set(data.constraintResponses);
 
