@@ -139,7 +139,7 @@
       {#if commandResults.length > 0}
         {#each commandResults as commandResult}
           <div class="dictionary-result">
-            <button class="st-button-link" on:click={() => onSelectCommandDefinition(commandResult)}>
+            <button class="st-button-link command-stem" on:click={() => onSelectCommandDefinition(commandResult)}>
               {commandResult.stem}
             </button>
           </div>
@@ -276,6 +276,13 @@
 
   .command-type {
     font-style: italic;
+  }
+
+  .command-stem {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .command-arguments {
