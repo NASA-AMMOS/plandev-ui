@@ -3,7 +3,6 @@
 <script lang="ts">
   import type { CommandDictionary, FswCommandArgumentEnum } from '@nasa-jpl/aerie-ampcs';
   import type { SelectedDropdownOptionValue } from '../../../types/dropdown';
-  import { quoteEscape } from '../../../utilities/codemirror/codemirror-utils';
   import SearchableDropdown from '../../ui/SearchableDropdown.svelte';
 
   const SEARCH_THRESHOLD = 100;
@@ -31,7 +30,7 @@
   function onSelectReferenceModel(event: CustomEvent<SelectedDropdownOptionValue>) {
     const { detail: enumVal } = event;
     if (typeof enumVal === 'string') {
-      setInEditor(quoteEscape(enumVal));
+      setInEditor(enumVal);
     }
   }
 </script>
