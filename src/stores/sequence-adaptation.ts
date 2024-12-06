@@ -12,6 +12,7 @@ const defaultAdaptation: ISequenceAdaptation = {
   argDelegator: undefined,
   autoComplete: sequenceCompletion,
   autoIndent: sequenceAutoIndent,
+  extensions: undefined,
   globals: [],
   inputFormat: {
     linter: undefined,
@@ -57,6 +58,7 @@ export function setSequenceAdaptation(newSequenceAdaptation: Partial<ISequenceAd
     argDelegator: newSequenceAdaptation?.argDelegator ?? defaultAdaptation.argDelegator,
     autoComplete: newSequenceAdaptation?.autoComplete ?? defaultAdaptation.autoComplete,
     autoIndent: newSequenceAdaptation?.autoIndent ?? defaultAdaptation.autoIndent,
+    extensions: newSequenceAdaptation?.extensions ?? defaultAdaptation.extensions,
     globals: newSequenceAdaptation?.globals ?? defaultAdaptation.globals,
     inputFormat: {
       linter: newSequenceAdaptation?.inputFormat?.linter ?? defaultAdaptation.inputFormat.linter,

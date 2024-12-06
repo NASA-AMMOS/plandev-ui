@@ -3,7 +3,7 @@
 <script lang="ts">
   import { json } from '@codemirror/lang-json';
   import { indentService, syntaxTree } from '@codemirror/language';
-  import { lintGutter } from '@codemirror/lint';
+  import { lintGutter, setDiagnostics, type Diagnostic } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate } from '@codemirror/view';
   import type { SyntaxNode, Tree } from '@lezer/common';
@@ -289,6 +289,19 @@
     resetSequenceAdaptation();
   });
 
+  async function callExtension(extension: {
+    callExtension: (sequence: string, sequenceOutput: string, node: SyntaxNode) => Promise<Diagnostic[]>;
+    name: string;
+  }): Promise<void> {
+    const extensionResult = await extension.callExtension(
+      editorSequenceView.state.doc.toString(),
+      sequenceOutput,
+      syntaxTree(editorSequenceView.state).topNode,
+    );
+
+    editorSequenceView.dispatch(setDiagnostics(editorSequenceView.state, extensionResult));
+  }
+
   async function loadSequenceAdaptation(id: number | null | undefined): Promise<void> {
     if (id) {
       const adaptation = await effects.getSequenceAdaptation(id, user);
@@ -482,6 +495,32 @@
                 {/each}
               </Menu>
             </div>
+
+            {#if $sequenceAdaptation.extensions !== undefined && $sequenceAdaptation.extensions.length > 0}
+              <div class="app-menu" role="none" on:click|stopPropagation={() => menu.toggle()}>
+                <button class="st-button icon-button secondary ellipsis">
+                  Extensions
+
+                  <ChevronDownIcon />
+                </button>
+
+                <Menu bind:this={menu}>
+                  {#each $sequenceAdaptation.extensions as extension}
+                    <!--<div
+                      use:tooltip={{
+                        content: `Copy sequence contents as ${outputFormatItem?.name} to clipboard`,
+                        placement: 'top',
+                      }}
+                >-->
+                    <MenuItem on:click={() => callExtension(extension)}>
+                      <ClipboardIcon />
+                      {extension.name}
+                    </MenuItem>
+                    <!--</div>-->
+                  {/each}
+                </Menu>
+              </div>
+            {/if}
 
             {#if selectedOutputFormat?.compile}
               <button class="st-button icon-button secondary ellipsis" on:click={compile}>Compile</button>

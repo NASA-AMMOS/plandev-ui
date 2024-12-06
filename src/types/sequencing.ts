@@ -66,6 +66,12 @@ export interface ISequenceAdaptation {
     parameterDictionaries: AmpcsParameterDictionary[],
   ) => (context: CompletionContext) => CompletionResult | null;
   autoIndent?: () => (context: IndentContext, pos: number) => number | null | undefined;
+  extensions?: [
+    {
+      callExtension: (sequence: string, sequenceOutput: string, node: SyntaxNode) => Promise<Diagnostic[]>;
+      name: string;
+    },
+  ];
   globals?: GlobalType[];
   inputFormat: {
     linter?: (
