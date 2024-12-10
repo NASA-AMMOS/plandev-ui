@@ -1,0 +1,422 @@
+@top satf_sasf {
+  Satf | Sasf
+ }
+
+ Satf{
+   newLine?
+   Header newLine?
+   Body {ActivityTypeDefinitions?}
+   (eof newLine?)
+ }
+
+ Sasf{
+   newLine?
+   Header newLine?
+   eod newLine?
+   Body { Requests? }
+   (eof newLine?)
+ }
+
+  Header {
+    (SfduHeader newLine?)?
+    (SeqHeader newLine?)?
+    eoh
+  }
+
+  HeaderPairs { HeaderPair* }
+  HeaderPair {Key"="Value ";" newLine}
+  Key { (identifier | ":")* }
+  Value { headerValue+ }
+  SfduHeader { headerMarker newLine HeaderPairs headerMarker}
+
+  Start { "$$"identifier identifier* newLine}
+  LineSeparator { "**" ("*" | "**")+ newLine}
+  Keyword { identifier }
+  Data { anyASCII+ }
+  HeaderRecords { HeaderRecord+ }
+  HeaderRecord { "*"Keyword Data? newLine}
+  SeqHeader { Start LineSeparator HeaderRecords? LineSeparator }
+
+  ActivityTypeDefinitions { ActivityTypeGroup (ActivityTypeGroup)*  }
+  ActivityTypeGroup {
+    identifier parentheses<
+      newLine?"`"?
+      definitions
+      (
+        Parameters{input<parameters,Entry>} |
+        Variables{ input<variables,Entry>}
+      )*
+      Steps?
+    >
+    newLine?
+  }
+
+  Requests { Request (Request)* }
+
+  RequestName {identifier}
+  Request { request parentheses<
+        newLine?
+        definition<RequestName>
+        definitionUnslashValue<startTime>definitionUnslashValue<Time{(headerValue)+}>
+        (definitionUnslashValue<requestor>definitionUnslashValue<Requestor{string}> |
+        definitionUnslashValue<processor> definitionUnslashValue<Processor{string}>? |
+        definitionUnslashValue<key> definitionUnslashValue<Key{string}>)*
+    >
+    Steps{newLine? step+ end}?
+}
+
+  definition<content> { content definitionEnd?}
+  // StartTag[closedBy="EndTag"] { "\\" }
+  // EndTag[openedBy="StartTag"] { "\\" }
+  definitionValue<content> {"\\" content "\\" definitionEnd?}
+  definitionUnslashValue<content> {content definitionEnd?}
+  definitionEnd { "," | (newLine? ",") | ("," newLine?) | newLine }
+
+  definitions {
+    (definition<ActivityTypeName> (definitionValue<ActivityTypeCode?> | definitionUnslashValue<ActivityTypeCode>))
+    ((definition<returnType> (definitionValue<ReturnType?> | definitionUnslashValue<ReturnType>)) |
+    (definition<flags> (definitionValue<Flags?> | definitionUnslashValue<Flags>)) |
+    (definition<help> definitionValue<Help?>) |
+    (definition<seqgen> definitionValue<SeqgenText?>) |
+    (definition<virtualChannel> (definitionValue<VirtualChannel?> | definitionUnslashValue<VirtualChannel>) ) |
+    (definition<onBoardFilename> (definitionValue<OnBoardFilename?> | definitionUnslashValue<OnBoardFilename>)) |
+    (definition<onBoardPath> (definitionValue<OnBoardPath?> | definitionUnslashValue<OnBoardPath>)))*
+  }
+  ActivityTypeName { path }
+  ActivityTypeCode { identifier }
+  ReturnType { identifier }
+  Flags { Flag+ }
+  Flag { identifier | ("|" identifier) } //todo
+  Help { (anyASCII | newLine)+ }
+  SeqgenText { anyASCII }
+  VirtualChannel { identifier}
+  OnBoardFilename { path }
+  OnBoardPath { path }
+
+
+  input<category,entry> { category "," newLine? (entry newLine?)+ end newLine?}
+  Entry { Name { identifier } parentheses
+    <
+      newLine?
+      paramterKeyValue<type, (definitionValue<Type?> | definitionUnslashValue<Type>)>
+      (paramterKeyValue<enumName,(definitionValue<EnumName?> | definitionUnslashValue<EnumName>)> |
+      ranges |
+      paramterKeyValue<prefix,(definitionValue<Prefix?> | definitionUnslashValue<Prefix>)> |
+      paramterKeyValue<default,(definitionValue<Default?> | definitionUnslashValue<Default> )> |
+      paramterKeyValue<help,definitionValue<Help?>>)*
+    >
+  }
+
+  paramterKeyValue<key,value> { key "," value}
+
+  Type { identifier (("[" singleDigit* "]") | "[]")? }
+  EnumName {identifier}
+  Range { anyASCII+ }
+  ranges {(paramterKeyValue<range,definitionValue<Range>>) }
+  Prefix { "YES" | "NO" }
+  Default { anyASCII }
+
+  Steps { stepsKeyword "," newLine? step+ end }
+  step { Command | Ground | CommandDynamic | Note | Activity | Loop | Assignment } // |
+
+  Command {
+    command
+    parentheses<
+      commonFields
+      stepFields{
+        definitionUnslashValue<
+          Stem{identifier}
+          parentheses<
+            Args<
+              String | Number | Enum | Global | Arithmetical
+            >?
+          >?
+        >?
+        (definition<processors> definitionUnslashValue<Processors>? end)?
+      }
+    >
+    newLine?
+  }
+
+  CommandDynamic {
+    commandDynamic
+    parentheses<
+      commonFields
+      stepFields {
+        definitionUnslashValue<
+          Stem{"\""identifier"\""}
+          parentheses<
+            Args<
+              String | Number | Enum | Global | Expression | Arithmetical
+            >?
+          >?
+        >?
+        (definition<processors> definitionUnslashValue<Processors>? end)
+      }
+    >
+    newLine?
+  }
+
+  Note {
+    note
+    parentheses<
+        commonFields
+        stepFields{
+          definitionUnslashValue<
+            Stem{ definition<"TEXT">}
+            Args{Expression} newLine?
+          >
+        }
+      >
+    newLine?
+  }
+
+  Activity {
+    activity
+    parentheses<
+        commonFields
+        stepFields{
+          Group
+        }
+      >
+    newLine?
+  }
+
+  Loop {
+    loop
+    parentheses<
+      commonFields
+      stepFields{
+        definition<count>
+        definitionValue<Count>
+      }
+    >
+    newLine?
+    Steps{Command+}
+    EndLoop{"end_loop"}
+    parentheses<
+      commonFields
+    >
+    newLine?
+  }
+
+  Count{ anyASCII+ }
+
+  Assignment {
+    assignment
+    parentheses<
+      commonFields
+      stepFields{
+        definition<Variable{identifier}>
+        definitionValue<
+          Args<
+            String | Number | Enum | Global | Expression | Arithmetical
+          >
+        >
+      }
+    >
+    newLine?
+  }
+
+  Ground {
+    ground
+    parentheses<
+      commonFields
+      stepFields{
+        definitionUnslashValue<
+          Stem{identifier}
+          parentheses<
+            Args<
+              String | Number | Enum | Global | Arithmetical
+            >?
+          >?
+        >?
+        (definition<processors> definitionUnslashValue<Processors>? end)?
+      }
+    >
+    newLine?
+  }
+
+  commonFields {
+    definitionUnslashValue<StepLabel>
+      ScheduledTime
+      ((definition<inclusionCondition> definitionValue<InclusionCondition?>) |
+      (definition<draw> (definitionValue<Draw?> | definitionUnslashValue<Draw> )) |
+      (definition<comment> definitionValue<Comment?>) |
+      (definition<ntext> definitionValue<Ntext?>) |
+      (definition<assumeModel> definitionValue<AssumedModelValues?>))*
+
+  }
+
+  parentheses<expression> { "(" newLine? expression (~newLine)? (")" | "),")}
+  StepLabel { singleDigit+ ("."singleDigit+)? }
+  ScheduledTime { definition<"SCHEDULED_TIME"> (definitionValue<Time{anyASCII+}> | definitionUnslashValue<Time{test}>) TimeRelation{identifier} newLine? ","? newLine? }
+  InclusionCondition {anyASCII+}
+  AssumedModelValues{  Model (","Model)* }
+  Model { Key"="Value{modelValue+} }
+  Draw { "VERTICAL" | "HORIZONTAL" | "HATCHED" | "STANDARD" | "DIAGONAL" }
+  Comment { (anyASCII | newLine)+ }
+  Ntext { (anyASCII | newLine)+ }
+  Enum { identifier }
+  Arithmetical { identifier "+" identifier}
+  Args<args> { args newLine? ("," newLine? args)* }
+  Expression {"\\"anyASCII+"\\"}
+  Processors {string}
+  String { string }
+  Label { string }
+  Opcode { string }
+  Pars { string }
+
+  Group{
+    (
+      TypeGroup{identifier}
+      parentheses<
+        definition<TypeName{identifier}>
+        Args<
+          String | Number | Enum | Expression
+        >?
+      >
+      newLine?
+    ) | (
+      TypeGroup{seqgenDirective}
+      parentheses<
+        (definition<TypeName{condition}> Filename{string}) |
+        (definition<TypeName{model}> Name{string}?) |
+        (definition<TypeName{ssfModel}> definition<Filename{string}> definition<SeqId{string}> definition<Title{string}> )
+      >
+      newLine?
+    ) | (
+      TypeGroup{seqTranSet}
+      parentheses<
+        definition<TypeName{identifier}>
+        definition<Label>
+        definition<Opcode>
+        definition<Pars>
+      >
+      newLine?
+    ) | (
+      TypeGroup{seqTranDirective}
+      parentheses<
+        (definition<TypeName{window | seqend}> (Args<String | Number | Enum { identifier } | Expression>)?)
+      >
+      newLine?
+    )
+  }
+
+  @skip { whiteSpace | SatfComment }
+  SatfComment { satfComment }
+  @tokens {
+
+    headerMarker { (@asciiLetter|@digit)*"$$MARK$$"(@asciiLetter|@digit)*";"}
+    identifier { (@asciiLetter | @digit) (@asciiLetter| @digit | "_" | "-")* }
+    test { (@digit) (@digit | ":")* }
+    string { '"' (!["\\] | "\\" _)* '"' }
+
+    hex { @digit | $[A-F] }
+
+    Number {
+      ("+" | "-")? (@digit ("_" | @digit)* ("." ("_" | @digit)*)? | "." @digit ("_" | @digit)*)
+      (("e" | "E") ("+" | "-")? ("_" | @digit)+)? |
+      @digit ("_" | @digit)* "n" |
+      "0x" (hex | "_")+ "n"?
+    }
+
+    headerValue { $[a-zA-Z0-9_:.-] }
+    modelValue { $[a-zA-Z0-9] | '"' | '\'' | "-" | "." }
+    anyASCII { ($[a-zA-Z0-9_:!$%&()*\+-/;<=>?@[\]^`{|}~"' ])+ }
+    singleDigit { @digit }
+    path { ("/" | identifier | ".")+}
+    request { "request"}
+    startTime { "START_TIME"}
+    requestor { "REQUESTOR"}
+    processor { "PROCESSOR"}
+    key { "KEY"}
+    returnType { "RETURN_TYPE" }
+    flags { "FLAGS" }
+    help { "HELP"}
+    seqgen { "SEQGEN_AUTO_START_OR_LOAD_TIMES"}
+    virtualChannel { "VIRTUAL_CHANNEL"}
+    onBoardFilename { "ON_BOARD_FILENAME"}
+    onBoardPath {"ON_BOARD_PATH"}
+    parameters { "PARAMETERS"}
+    variables { "VARIABLES" }
+    stepsKeyword { "STEPS"}
+    type {"TYPE"}
+    end {("end" | "end," | "end;") newLine?}
+    enumName {"ENUM_NAME"}
+    range { "RANGE"}
+    prefix {"PREFIX"}
+    default {"DEFAULT"}
+    inclusionCondition { "INCLUSION_CONDITION" }
+    draw { "DRAW" }
+    comment { "COMMENT"}
+    ntext { "NTEXT"}
+    processors { "PROCESSORS"}
+    seqgenDirective { "SEQGEN_directive" }
+    condition { "CONDITION"}
+    model { "MODEL"}
+    ssfModel { "SSF_BEGIN" }
+    seqTranSet { "SEQTRAN_SETR" }
+    window { "WINDOW" }
+    seqTranDirective{"SEQTRAN_directive"}
+    seqend { "SEQEND" }
+    assumeModel {"ASSUMED_MODEL_VALUES"}
+    Global { ("GLOBAL::" | "global::") identifier}
+    count { "COUNT" }
+    command { "command" }
+    commandDynamic {"Command_dynamic"}
+    ground { "ground" }
+    note {"note"}
+    activity { "activity"}
+    loop { "loop" }
+    assignment { "assignment" }
+
+    newLine { ("\n"+ | @eof) }
+    eoh { "$$EOH"}
+    eof { "$$EOF" }
+    eod { "$$EOD" }
+    whiteSpace { @whitespace+}
+    satfComment { "#"![\n]* }
+
+    @precedence {
+      newLine,
+      whiteSpace,
+      headerMarker,
+      returnType,
+      flags,
+      help,
+      seqgen,
+      virtualChannel,
+      onBoardFilename,
+      onBoardPath,
+      end,
+      parameters,
+      variables,
+      stepsKeyword,
+      prefix,
+      inclusionCondition,
+      draw,
+      comment,
+      ntext,
+      seqgenDirective,
+      condition,
+      eof,
+      seqTranSet,
+      window,
+      seqTranDirective,
+      assumeModel,
+      Global,
+      count,
+      processors,
+      command,
+      ground,
+      commandDynamic,
+      note,
+      activity,
+      loop,
+      assignment,
+      anyASCII,
+      Number,
+      identifier
+    }
+  }
