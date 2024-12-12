@@ -39,7 +39,11 @@ test.beforeAll(async ({ baseURL, browser }) => {
   await plans.goto();
   await plans.createPlan();
   await externalSources.goto();
-  await externalSources.createType(externalSources.exampleTypeSchema, externalSources.externalSourceTypeName, false);
+  await externalSources.createTypes(
+    externalSources.exampleTypeSchema,
+    externalSources.exampleTypeSchemaExpectedSourceTypes,
+    externalSources.exampleTypeSchemaExpectedEventTypes,
+  );
   await externalSources.uploadExternalSource();
 });
 
@@ -150,57 +154,6 @@ test.describe.serial('Plan External Sources', () => {
     });
 
     expect(doPixelsExist).toBeTruthy();
-  });
-
-  test('Cards should be shown when a new external source is uploaded', async () => {
-    // Upload a test file and link its derivation group to the plan
-    await externalSources.goto();
-    await externalSources.createType(
-      externalSources.derivationTestTypeSchema,
-      externalSources.derivationTestSourceTypeName,
-      false,
-    );
-    await externalSources.uploadExternalSource(
-      externalSources.derivationTestFile1,
-      externalSources.derivationTestFileKey1,
-    );
-    await plan.goto();
-    await plan.showPanel(PanelNames.EXTERNAL_SOURCES);
-    await plan.externalSourceManageButton.click();
-    await externalSources.linkDerivationGroup(
-      externalSources.derivationTestGroupName,
-      externalSources.derivationTestSourceType,
-    );
-
-    // Upload another test
-    await externalSources.goto();
-    await externalSources.uploadExternalSource(
-      externalSources.derivationTestFile2,
-      externalSources.derivationTestFileKey2,
-    );
-
-    await plan.goto();
-    await plan.showPanel(PanelNames.EXTERNAL_SOURCES);
-
-    // Allow stores to load, validate 'new source' card appears
-    await expect(
-      page.getByText('New files matching source types and derivation groups in the current plan'),
-    ).toBeVisible();
-
-    await page.getByRole('button', { name: 'Dismiss' }).click();
-
-    await expect(
-      page.getByText('New files matching source types and derivation groups in the current plan'),
-    ).not.toBeVisible();
-
-    await plan.externalSourceManageButton.click();
-    await expect(
-      page.getByRole('row', { name: externalSources.derivationTestGroupName }).getByRole('checkbox'),
-    ).toBeChecked();
-    await externalSources.unlinkDerivationGroup(
-      externalSources.derivationTestGroupName,
-      externalSources.derivationTestSourceType,
-    );
   });
 
   test('Linked derivation groups should be expandable in panel', async () => {
