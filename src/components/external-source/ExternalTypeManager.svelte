@@ -584,13 +584,17 @@
           {#if parsedExternalSourceEventTypeSchema !== undefined}
             <div class="to-be-created st-typography-body">
               <div class="to-be-created-header">The following External Source Type(s) will be created</div>
-              {#each Object.keys(parsedExternalSourceEventTypeSchema.source_types) as newSourceTypeName}
-                <li class="st-typograph-body">{newSourceTypeName}</li>
-              {/each}
+              <ul>
+                {#each Object.keys(parsedExternalSourceEventTypeSchema.source_types) as newSourceTypeName}
+                  <li class="st-typograph-body">{newSourceTypeName}</li>
+                {/each}
+              </ul>
               <div class="to-be-created-header">The following External Event Type(s) will be created</div>
-              {#each Object.keys(parsedExternalSourceEventTypeSchema.event_types) as newEventTypeName}
-                <li class="st-typograph-body">{newEventTypeName}</li>
-              {/each}
+              <ul>
+                {#each Object.keys(parsedExternalSourceEventTypeSchema.event_types) as newEventTypeName}
+                  <li class="st-typograph-body">{newEventTypeName}</li>
+                {/each}
+              </ul>
             </div>
           {/if}
           <div class="errors">
@@ -829,13 +833,15 @@
         </Input>
       </svelte:fragment>
       <svelte:fragment slot="body">
-        <DataGrid
-          bind:this={derivationGroupDataGrid}
-          columnDefs={derivationGroupColumnsDef}
-          filterExpression={derivationGroupFilterString}
-          rowData={$derivationGroups}
-          getRowId={getDerivationGroupRowId}
-        />
+        <div class="derivation-group-table">
+          <DataGrid
+            bind:this={derivationGroupDataGrid}
+            columnDefs={derivationGroupColumnsDef}
+            filterExpression={derivationGroupFilterString}
+            rowData={$derivationGroups}
+            getRowId={getDerivationGroupRowId}
+          />
+        </div>
       </svelte:fragment>
     </Panel>
     <Panel borderTop>
@@ -896,6 +902,10 @@
 
   .table-container {
     display: grid;
+  }
+
+  .derivation-group-table {
+    height: 100%;
   }
 
   .external-source-type-table {

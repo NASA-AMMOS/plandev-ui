@@ -29,7 +29,11 @@ test.beforeEach(async () => {
 
 test.describe.serial('External Sources', () => {
   test('Uploading an external source', async () => {
-    await externalSources.createType(externalSources.exampleTypeSchema, 'Example External Source', false);
+    await externalSources.createTypes(
+      externalSources.exampleTypeSchema,
+      externalSources.exampleTypeSchemaExpectedSourceTypes,
+      externalSources.exampleTypeSchemaExpectedEventTypes,
+    );
     await externalSources.uploadExternalSource();
   });
 
@@ -82,15 +86,23 @@ test.describe.serial('External Sources', () => {
     await expect(externalSources.externalSourceSelectedForm).not.toBeVisible();
     await externalSources.gotoTypeManager();
     await externalSources.deleteDerivationGroup(externalSources.exampleDerivationGroup);
-    await externalSources.deleteExternalEventType(externalSources.exampleEventType);
     await externalSources.deleteExternalSourceType(externalSources.exampleSourceType);
+    await externalSources.deleteExternalEventType(externalSources.exampleEventType);
   });
 });
 
 test.describe.serial('External Source Error Handling', () => {
   test('Duplicate keys is handled gracefully', async () => {
-    await externalSources.createType(externalSources.exampleTypeSchema, 'Example External Source', false);
-    await externalSources.uploadExternalSource();
+    await externalSources.createTypes(
+      externalSources.exampleTypeSchema,
+      externalSources.exampleTypeSchemaExpectedSourceTypes,
+      externalSources.exampleTypeSchemaExpectedEventTypes,
+    );
+    await externalSources.uploadExternalSource(
+      externalSources.externalSourceFilePath,
+      externalSources.externalSourceFileName,
+      true,
+    );
     await expect(externalSources.externalSourcesTable).toBeVisible();
     await expect(
       externalSources.externalSourcesTable.getByRole('gridcell', { name: externalSources.externalSourceFileName }),

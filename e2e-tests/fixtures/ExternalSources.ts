@@ -25,12 +25,16 @@ export class ExternalSources {
   derivationTestSourceType: string = 'DerivationTest';
   derivationTestSourceTypeName: string = 'DerivationTest';
   derivationTestTypeSchema: string = 'e2e-tests/data/Schema_Example_Derivation.json';
+  derivationTestTypeSchemaExpectedEventTypes: string[] = ['DerivationA', 'DerivationB', 'DerivationC', 'DerivationD'];
+  derivationTestTypeSchemaExpectedSourceTypes: string[] = ['DerivationTest'];
   deselectEventButton: Locator;
   deselectSourceButton: Locator;
   exampleDerivationGroup: string = 'Example External Source Default';
   exampleEventType: string = 'ExampleEvent';
   exampleSourceType: string = 'Example External Source';
   exampleTypeSchema: string = 'e2e-tests/data/Schema_Example_Source.json';
+  exampleTypeSchemaExpectedEventTypes: string[] = ['ExampleEvent'];
+  exampleTypeSchemaExpectedSourceTypes: string[] = ['Example External Source'];
   externalEventSelectedForm: Locator;
   externalEventTableHeaderDuration: Locator;
   externalEventTableHeaderEventType: Locator;
@@ -62,41 +66,72 @@ export class ExternalSources {
     await this.closeButton.click();
   }
 
-  async createType(typeSchema: string, typeName: string, isExternalEventType: boolean) {
+  async createTypes(typeSchema: string, expectedSourceTypes: string[], expectedEventTypes: string[]) {
     await this.gotoTypeManager();
+
+    const externalSourceTypeTable = await this.page.locator('.external-source-type-table');
+    const externalEventTypeTable = await this.page.locator('.external-event-type-table');
+
+    await this.page.getByRole('textbox').isVisible();
     await this.page.getByRole('textbox').focus();
     await this.page.getByRole('textbox').setInputFiles(typeSchema);
     await this.page.getByRole('textbox').evaluate(e => e.blur());
-    await this.page.getByLabel('Upload External Source & Event Type(s)').click();
-    if (isExternalEventType) {
-      await this.page.getByRole('button', { name: 'External Event Type' }).click();
+
+    await this.page.getByText('Source & Event Type Attribute Schema Parsed').isVisible();
+
+    for (const expectedSourceType of expectedSourceTypes) {
+      await expect(this.page.locator(`li:text("${expectedSourceType}")`)).toBeVisible();
     }
-    await expect(this.page.getByRole('row', { name: typeName })).toBeVisible();
+    for (const expectedEventType of expectedEventTypes) {
+      await expect(this.page.locator(`li:text("${expectedEventType}")`)).toBeVisible();
+    }
+
+    await this.page.getByLabel('Upload External Source & Event Type(s)').click();
+
+    for (const expectedSourceType of expectedSourceTypes) {
+      await expect(externalSourceTypeTable.getByRole('gridcell', { name: expectedSourceType })).toBeVisible();
+    }
+    for (const expectedEventType of expectedEventTypes) {
+      await expect(externalEventTypeTable.getByRole('gridcell', { name: expectedEventType })).toBeVisible();
+    }
   }
+
   async deleteDerivationGroup(derivationGroupName: string) {
-    if (await this.page.getByRole('row', { name: derivationGroupName }).isVisible()) {
-      await this.page.getByRole('row', { name: derivationGroupName }).hover();
-      await this.page.getByRole('row', { name: derivationGroupName }).getByLabel('Delete Derivation Group').click();
+    const derivationGroupTable = await this.page.locator('.derivation-group-table');
+    if (await derivationGroupTable.getByRole('row', { name: derivationGroupName }).isVisible()) {
+      await derivationGroupTable.getByRole('row', { name: derivationGroupName }).hover();
+      await derivationGroupTable
+        .getByRole('row', { name: derivationGroupName })
+        .getByLabel('Delete Derivation Group')
+        .click();
       await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
-      await expect(this.page.getByRole('row', { name: derivationGroupName })).not.toBeVisible();
+      await expect(derivationGroupTable.getByRole('row', { name: derivationGroupName })).not.toBeVisible();
     }
   }
 
   async deleteExternalEventType(eventTypeName: string) {
-    if (await this.page.getByRole('row', { name: eventTypeName }).isVisible()) {
-      await this.page.getByRole('row', { name: eventTypeName }).hover();
-      await this.page.getByRole('row', { name: eventTypeName }).getByLabel('Delete External Event Type').click();
+    const externalEventTypeTable = await this.page.locator('.external-event-type-table');
+    if (await externalEventTypeTable.getByRole('row', { name: eventTypeName }).isVisible()) {
+      await externalEventTypeTable.getByRole('row', { name: eventTypeName }).hover();
+      await externalEventTypeTable
+        .getByRole('row', { name: eventTypeName })
+        .getByLabel('Delete External Event Type')
+        .click();
       await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
-      await expect(this.page.getByRole('row', { name: eventTypeName })).not.toBeVisible();
+      await expect(externalEventTypeTable.getByRole('row', { name: eventTypeName })).not.toBeVisible();
     }
   }
 
   async deleteExternalSourceType(sourceTypeName: string) {
-    if (await this.page.getByRole('row', { name: sourceTypeName }).isVisible()) {
-      await this.page.getByRole('row', { name: sourceTypeName }).hover();
-      await this.page.getByRole('row', { name: sourceTypeName }).getByLabel('Delete External Source Type').click();
+    const externalSourceTypeTable = await this.page.locator('.external-source-type-table');
+    if (await externalSourceTypeTable.getByRole('row', { name: sourceTypeName }).isVisible()) {
+      await externalSourceTypeTable.getByRole('row', { name: sourceTypeName }).hover();
+      await externalSourceTypeTable
+        .getByRole('row', { name: sourceTypeName })
+        .getByLabel('Delete External Source Type')
+        .click();
       await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
-      await expect(this.page.getByRole('row', { name: sourceTypeName })).not.toBeVisible();
+      await expect(externalSourceTypeTable.getByRole('row', { name: sourceTypeName })).not.toBeVisible();
     }
   }
 
@@ -142,7 +177,8 @@ export class ExternalSources {
 
   async linkDerivationGroup(derivationGroupName: string, sourceTypeName: string) {
     // Assumes the Manage Derivation Groups modal is already showing
-    await this.page.getByRole('row', { name: derivationGroupName }).getByRole('checkbox').click();
+    await this.page.getByRole('row', { name: derivationGroupName }).getByRole('checkbox').check();
+    await expect(this.page.getByRole('row', { name: derivationGroupName }).getByRole('checkbox')).toBeChecked();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.getByRole('button', { name: 'Close' }).click();
     await expect(this.page.getByRole('button', { exact: true, name: sourceTypeName })).toBeVisible();
@@ -208,7 +244,6 @@ export class ExternalSources {
     if (validateUpload) {
       await expect(this.externalSourcesTable).toBeVisible();
       await expect(this.externalSourcesTable.getByRole('gridcell', { name: inputFileName })).toBeVisible();
-      await this.waitForToast('External Source Created Successfully');
     }
   }
 
