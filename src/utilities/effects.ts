@@ -1073,7 +1073,6 @@ const effects = {
     }
   },
 
-  // TODO: turn combinedSchema's type into a real definition
   async createExternalSourceEventTypes(eventTypes: object, sourceTypes: object, user: User | null) {
     if (!gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user) || !gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
       throwPermissionError('create en external source or event type');
