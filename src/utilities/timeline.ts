@@ -594,7 +594,7 @@ export function createTimelineActivityLayer(timelines: Timeline[], args: Partial
     chartType: 'activity',
     filter: { activity: {} },
     id,
-    name: '',
+    name: 'All Activities',
     yAxisId: null,
     ...args,
   };
@@ -1400,7 +1400,13 @@ export function applyActivityLayerFilter(
   types: ActivityType[],
   defaultArgumentsMap: DefaultEffectiveArgumentsMap,
 ) {
-  if (!filter) {
+  if (
+    !filter ||
+    (!filter.dynamic_type_filters?.length &&
+      !filter.global_filters?.length &&
+      !filter.static_types?.length &&
+      !filter.type_subfilters?.length)
+  ) {
     return { directives, spans };
   }
 
@@ -1488,13 +1494,17 @@ export function applyActivityLayerFilter(
     }
     return included;
   });
-  console.log('spans :>> ', spans);
   return { directives: filteredDirectives, spans: filteredSpans };
 }
 
 export function getMatchingTypesForActivityLayerFilter(filter: ActivityLayerFilter | undefined, types: ActivityType[]) {
-  if (!filter) {
-    // TODO should we return all or no types if no filter supplied?
+  if (
+    !filter ||
+    (!filter.dynamic_type_filters?.length &&
+      !filter.global_filters?.length &&
+      !filter.static_types?.length &&
+      !filter.type_subfilters?.length)
+  ) {
     return types;
   }
 

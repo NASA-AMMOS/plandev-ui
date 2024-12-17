@@ -286,12 +286,11 @@
     const noFiltersApplied =
       !filter ||
       (!filter.dynamic_type_filters?.length && !filter.global_filters?.length && !filter.static_types?.length);
+
     if (matchingTypes.length && !filteredMatchingTypes.length) {
       resultingTypesMessage = `No types matching "${resultingTypesInputValue}"`;
     } else if (!matchingTypes.length && !noFiltersApplied) {
       resultingTypesMessage = 'No types matching your filter';
-    } else if (noFiltersApplied) {
-      resultingTypesMessage = 'No types selected';
     } else {
       resultingTypesMessage = '';
     }

@@ -491,6 +491,8 @@
         }
 
         hasActivityLayer = timeFilteredActivityDirectives.length > 0 || timeFilteredActivityDirectives.length > 0;
+      } else {
+        hasActivityLayer = false;
       }
 
       if (hasExternalEventsLayer) {

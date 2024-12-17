@@ -140,7 +140,7 @@
         >
           <div class="activity-layer-name st-select">
             <div class="activity-layer-name-text">
-              {filterCount < 1 ? 'Filter Activities...' : name || 'Activity Layer'}
+              {name || 'Activity Layer'}
             </div>
             <div class="activity-layer-name-badge">
               {#if filterCount > 0}
