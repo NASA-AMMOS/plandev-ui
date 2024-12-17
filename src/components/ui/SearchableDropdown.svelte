@@ -14,7 +14,7 @@
   import { SvelteComponent, createEventDispatcher, type ComponentEvents } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import type { DropdownOption, DropdownOptions, SelectedDropdownOptionValue } from '../../types/dropdown';
-  import { getTarget } from '../../utilities/generic';
+  import { classNames, getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
@@ -28,6 +28,8 @@
   type DisplayOption = DropdownOption | PlaceholderOption;
   type DisplayOptions = DisplayOption[];
 
+  export let allowMultiple: boolean = false;
+  export let className: string = '';
   export let disabled: boolean = false;
   export let error: string | undefined = undefined;
   export let hasUpdatePermission: boolean = true;
@@ -38,7 +40,7 @@
   export let updatePermissionError: string = 'You do not have permission to update this';
   export let placeholder: string = '';
   export let planReadOnly: boolean = false;
-  export let selectedOptionValue: SelectedDropdownOptionValue | undefined = undefined;
+  export let selectedOptionValues: SelectedDropdownOptionValue[] = [];
   export let showPlaceholderOption: boolean = true;
   export let searchPlaceholder: string = 'Search Items';
   export let iconTooltip: string = 'Set Selection';
@@ -58,17 +60,20 @@
   }
 
   const dispatch = createEventDispatcher<{
+    change: SelectedDropdownOptionValue[];
     hideMenu: void;
     openMenu: void;
-    selectOption: SelectedDropdownOptionValue;
   }>();
 
   let displayedOptions: DisplayOptions = [];
   let presetMenu: Menu | undefined;
   let searchFilter: string = '';
-  let selectedOption: DropdownOption | undefined;
+  let selectedOptions: DropdownOptions = [];
 
-  $: selectedOption = options.find(option => option.value === selectedOptionValue);
+  $: selectedOptions = options.filter(option => {
+    return !!selectedOptionValues.find(value => value === option.value);
+  });
+
   $: {
     displayedOptions = !searchFilter
       ? [
@@ -92,6 +97,16 @@
   $: if (disabled) {
     hideMenu();
   }
+  $: rootClasses = classNames('searchable-dropdown-container', {
+    [className]: !!className,
+  });
+
+  $: label =
+    selectedOptions.length < 1
+      ? placeholder
+      : selectedOptions.length === 1
+        ? selectedOptions[0].display
+        : selectedOptions.map(selectedOption => selectedOption.display).join(', ');
 
   function onCloseMenu() {
     searchFilter = '';
@@ -99,19 +114,32 @@
 
   function onSearchPresets(event: Event) {
     const { value } = getTarget(event);
-
     searchFilter = `${value}`;
   }
+
   function onSelectOption(option: DisplayOption, event: MouseEvent) {
     event.stopPropagation();
     if (!disabled) {
-      dispatch('selectOption', option.value as SelectedDropdownOptionValue);
+      let newValues = [];
+      if (allowMultiple) {
+        const isSelected = selectedOptionValues.find(value => value === option.value);
+        if (isSelected) {
+          newValues = selectedOptionValues.filter(value => value !== option.value);
+        } else {
+          newValues = [...selectedOptionValues, option.value];
+        }
+      } else {
+        newValues = [option.value];
+      }
+      dispatch('change', newValues);
     }
-    hideMenu();
+    if (!allowMultiple) {
+      hideMenu();
+    }
   }
 </script>
 
-<div class="searchable-dropdown-container">
+<div class={rootClasses}>
   <!-- svelte-ignore a11y-click-events-have-key-events a11y-interactive-supports-focus -->
   <div
     class="selected-display st-select w-100"
@@ -120,14 +148,14 @@
     {name}
     on:click|stopPropagation={openMenu}
     role="textbox"
-    aria-label={selectedOption?.display ?? placeholder}
+    aria-label={label}
     use:permissionHandler={{
       hasPermission: hasUpdatePermission && !planReadOnly,
       permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : updatePermissionError,
     }}
     use:tooltip={{ content: error, placement: 'top' }}
   >
-    <span class="selected-display-value" class:error>{selectedOption?.display ?? placeholder}</span>
+    <span class="selected-display-value" class:error>{label}</span>
     <button
       use:tooltip={{
         content: iconTooltip,
@@ -165,7 +193,7 @@
       <div class="dropdown-items" style={`max-height:${maxListHeight}`}>
         {#each displayedOptions as displayedOption}
           <MenuItem
-            selected={(selectedOption?.value ?? null) === displayedOption.value}
+            selected={!!selectedOptions.find(o => o.value === displayedOption.value)}
             use={[
               [
                 permissionHandler,
@@ -181,7 +209,7 @@
           >
             <div class="dropdown-item">
               <div class="dropdown-item-icon">
-                {#if (selectedOption?.value ?? null) === displayedOption.value}
+                {#if selectedOptions.find(o => o.value === displayedOption.value)}
                   <CheckIcon />
                 {/if}
               </div>
