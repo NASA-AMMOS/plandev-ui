@@ -29,6 +29,7 @@
   bind:this={rootRef}
   use:draggable={{
     bounds: 'body',
+    cancel: '.cancel-drag',
     handle: $$slots.handle ? '.handle' : undefined,
     transform: marginTransform,
     ...dragOptions,

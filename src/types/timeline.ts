@@ -71,6 +71,7 @@ export type ActivityLayerFilterSubfield = { name: string; type: DynamicFilterDat
 export type ActivityLayerFilterSubfieldSchema = ActivityLayerFilterSubfield & {
   activityTypes: string[];
   label: string;
+  unit?: string;
   values?: string[];
 };
 

@@ -249,11 +249,13 @@
             const values = isVariant
               ? (parameter.schema as ValueSchemaVariant).variants.map(variant => variant.key)
               : null;
+            const unit = parameter.schema.metadata?.unit?.value ?? null;
             acc[key] = {
               activityTypes: [activityType.name],
               name: parameterName,
               type: parameterType,
               ...(values ? { values } : null),
+              ...(unit ? { unit } : null),
               label: `${parameterName} (${parameterType})`,
             };
           }
@@ -352,7 +354,7 @@
             slot="left"
             value={layerName}
             autocomplete="off"
-            class="st-input"
+            class="st-input cancel-drag"
             name="layer-name"
             placeholder="Enter a name for this filter..."
             style="width: 220px"

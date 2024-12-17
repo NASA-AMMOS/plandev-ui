@@ -1488,7 +1488,7 @@ export function applyActivityLayerFilter(
     }
     return included;
   });
-
+  console.log('spans :>> ', spans);
   return { directives: filteredDirectives, spans: filteredSpans };
 }
 
@@ -1633,15 +1633,9 @@ export function matchesDynamicFilter(
       }
       return (filterValue as (typeof itemValue)[]).indexOf(itemValue) < 0;
     case 'is_greater_than':
-      if (typeof filterValue === 'number' && typeof itemValue === 'number') {
-        return itemValue > filterValue;
-      }
-      return false;
+      return itemValue > filterValue;
     case 'is_less_than':
-      if (typeof filterValue === 'number' && typeof itemValue === 'number') {
-        return itemValue < filterValue;
-      }
-      return false;
+      return itemValue < filterValue;
     case 'is_within':
       if (
         isArray(filterValue) &&

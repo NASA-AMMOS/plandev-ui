@@ -104,11 +104,11 @@
   });
 
   $: {
-    if (selectedOptionValues.length < 1) {
+    if (selectedOptions.length < 1) {
       label = placeholder;
     } else if (selectedOptionLabel) {
       label = selectedOptionLabel;
-    } else if (selectedOptionValues.length === 1) {
+    } else if (selectedOptions.length === 1) {
       label = selectedOptions[0].display;
     } else {
       label = selectedOptions.map(selectedOption => selectedOption.display).join(', ');

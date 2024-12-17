@@ -3,7 +3,6 @@
 <script lang="ts">
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
-  import { capitalize } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import type { SelectedDropdownOptionValue } from '../../../../types/dropdown';
   import type { TagsChangeEvent } from '../../../../types/tags';
@@ -17,6 +16,8 @@
   } from '../../../../types/timeline';
   import { getTarget } from '../../../../utilities/generic';
   import { tooltip } from '../../../../utilities/tooltip';
+  import Input from '../../../form/Input.svelte';
+  import ParameterUnits from '../../../parameters/ParameterUnits.svelte';
   import SearchableDropdown from '../../../ui/SearchableDropdown.svelte';
   import TagsInput from '../../../ui/Tags/TagsInput.svelte';
 
@@ -46,12 +47,14 @@
   let currentValue = dirtyFilter.value;
   let currentValueAsStringOrNumber: string | number = '';
   let operatorKeys: (keyof typeof FilterOperator)[] = [];
+  let currentUnit: string = '';
   let currentValuePossibilities: Array<any> = [];
 
   $: subfields = schema.Parameter?.subfields;
 
   $: if (currentField !== 'Parameter') {
     currentSubfieldLabel = '';
+    currentUnit = '';
     const schemaField = schema[currentField];
     if (schemaField) {
       operatorKeys = Object.keys(schemaField) as (keyof typeof FilterOperator)[];
@@ -74,9 +77,12 @@
     if (matchingSubfield) {
       // Map subfield type to filter type
       currentType = matchingSubfield.type;
+      currentUnit = matchingSubfield.unit || '';
       if (matchingSubfield.type === 'string') {
         operatorKeys = ['includes', 'does_not_include', 'equals', 'does_not_equal'];
       } else if (matchingSubfield.type === 'int' || matchingSubfield.type === 'real') {
+        operatorKeys = ['equals', 'does_not_equal', 'is_greater_than', 'is_less_than', 'is_within', 'is_not_within'];
+      } else if (matchingSubfield.type === 'duration') {
         operatorKeys = ['equals', 'does_not_equal', 'is_greater_than', 'is_less_than', 'is_within', 'is_not_within'];
       } else if (matchingSubfield.type === 'boolean') {
         operatorKeys = ['equals', 'does_not_equal'];
@@ -202,13 +208,25 @@
     {:else if currentOperator === 'is_within' || currentOperator === 'is_not_within'}
       {#if Array.isArray(currentValue)}
         <div class="range-input">
-          <input class="st-input w-100" type="number" on:change={event => onRangeInputChange(event, 'min')} />
+          <input class="st-input w-100" type="number" on:input={event => onRangeInputChange(event, 'min')} />
           <div class="st-typography-label">To</div>
-          <input class="st-input w-100" type="number" on:change={event => onRangeInputChange(event, 'max')} />
+          <input class="st-input w-100" type="number" on:input={event => onRangeInputChange(event, 'max')} />
         </div>
       {/if}
     {:else if currentType === 'int' || currentType === 'real'}
-      <input class="st-input w-100" type="number" bind:value={currentValue} />
+      <Input class="dynamic-filter-input">
+        <input bind:value={currentValue} class="st-input w-100" type="number" />
+        <div class="parameter-right" slot="right">
+          <ParameterUnits unit={currentUnit} />
+        </div>
+      </Input>
+    {:else if currentType === 'duration'}
+      <Input class="dynamic-filter-input">
+        <input bind:value={currentValue} class="st-input w-100" type="number" />
+        <div class="parameter-right" slot="right">
+          <ParameterUnits unit="ms" />
+        </div>
+      </Input>
     {:else if currentType === 'boolean'}
       <select class="st-select w-100" bind:value={currentValue}>
         <option value={true}>True</option>
@@ -217,9 +235,9 @@
     {:else if currentType === 'variant'}
       <SearchableDropdown
         className="dynamic-filter-searchable-dropdown-hide-overflow"
-        placeholder="Select {capitalize(currentField)}"
-        iconTooltip="Select {capitalize(currentField)}"
-        searchPlaceholder="Filter {currentField}"
+        placeholder="Select Variant"
+        iconTooltip="Select Variant"
+        searchPlaceholder="Filter Variants"
         on:change={onSelectValue}
         selectedOptionValues={[currentValueAsStringOrNumber]}
         options={currentValuePossibilities.sort().map(value => ({ display: value, value: value }))}
@@ -277,5 +295,9 @@
     align-items: center;
     display: flex;
     gap: 4px;
+  }
+
+  :global(.dynamic-filter-input.input.input-stacked) {
+    display: grid;
   }
 </style>
