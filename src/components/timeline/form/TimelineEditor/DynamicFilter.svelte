@@ -263,7 +263,7 @@
     width: 40px;
   }
 
-  :global(.dynamic-filter-searchable-dropdown) {
+  :global(.dynamic-filter-searchable-dropdown-hide-overflow) {
     min-width: 64px;
     overflow: hidden;
   }

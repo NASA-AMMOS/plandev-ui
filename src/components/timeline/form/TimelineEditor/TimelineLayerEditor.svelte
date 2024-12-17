@@ -64,7 +64,7 @@
     } else if (isExternalEventLayer(layer)) {
       color = layer.externalEventColor;
       colorPresets = ViewDiscreteLayerColorPresets;
-      isColorScheme = true;
+      isColorScheme = false;
     }
   }
 
