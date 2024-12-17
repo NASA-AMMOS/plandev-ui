@@ -153,6 +153,7 @@
       </ActivityFilterBuilder>
     {:else if isLineLayer(layer) || isXRangeLayer(layer)}
       <SearchableDropdown
+        selectedOptionLabel={layer.name}
         showPlaceholderOption={false}
         className="w-100"
         placeholder="Select Resource"
@@ -167,6 +168,7 @@
     {:else if isExternalEventLayer(layer)}
       <SearchableDropdown
         allowMultiple
+        selectedOptionLabel={layer.name}
         showPlaceholderOption={false}
         className="w-100"
         placeholder="Select Event Types"

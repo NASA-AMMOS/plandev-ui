@@ -40,6 +40,7 @@
   export let updatePermissionError: string = 'You do not have permission to update this';
   export let placeholder: string = '';
   export let planReadOnly: boolean = false;
+  export let selectedOptionLabel: string = '';
   export let selectedOptionValues: SelectedDropdownOptionValue[] = [];
   export let showPlaceholderOption: boolean = true;
   export let searchPlaceholder: string = 'Search Items';
@@ -66,6 +67,7 @@
   }>();
 
   let displayedOptions: DisplayOptions = [];
+  let label: string = '';
   let presetMenu: Menu | undefined;
   let searchFilter: string = '';
   let selectedOptions: DropdownOptions = [];
@@ -101,12 +103,17 @@
     [className]: !!className,
   });
 
-  $: label =
-    selectedOptions.length < 1
-      ? placeholder
-      : selectedOptions.length === 1
-        ? selectedOptions[0].display
-        : selectedOptions.map(selectedOption => selectedOption.display).join(', ');
+  $: {
+    if (selectedOptionValues.length < 1) {
+      label = placeholder;
+    } else if (selectedOptionLabel) {
+      label = selectedOptionLabel;
+    } else if (selectedOptionValues.length === 1) {
+      label = selectedOptions[0].display;
+    } else {
+      label = selectedOptions.map(selectedOption => selectedOption.display).join(', ');
+    }
+  }
 
   function onCloseMenu() {
     searchFilter = '';
