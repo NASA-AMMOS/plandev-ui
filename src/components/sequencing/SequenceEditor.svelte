@@ -506,17 +506,17 @@
 
                 <Menu bind:this={menu}>
                   {#each $sequenceAdaptation.extensions as extension}
-                    <!--<div
+                    <div
                       use:tooltip={{
-                        content: `Copy sequence contents as ${outputFormatItem?.name} to clipboard`,
+                        content: extension.tooltip,
                         placement: 'top',
                       }}
-                >-->
-                    <MenuItem on:click={() => callExtension(extension)}>
-                      <ClipboardIcon />
-                      {extension.name}
-                    </MenuItem>
-                    <!--</div>-->
+                    >
+                      <MenuItem on:click={() => callExtension(extension)}>
+                        <ClipboardIcon />
+                        {extension.name}
+                      </MenuItem>
+                    </div>
                   {/each}
                 </Menu>
               </div>

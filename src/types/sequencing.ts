@@ -70,6 +70,7 @@ export interface ISequenceAdaptation {
     {
       callExtension: (sequence: string, sequenceOutput: string, node: SyntaxNode) => Promise<Diagnostic[]>;
       name: string;
+      tooltip: string;
     },
   ];
   globals?: GlobalType[];
