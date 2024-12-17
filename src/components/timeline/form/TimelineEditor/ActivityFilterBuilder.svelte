@@ -13,7 +13,7 @@
   import { tags } from '../../../../stores/tags';
   import type { ValueSchemaVariant } from '../../../../types/schema';
   import type { ActivityLayerFilter, ActivityLayerFilterSubfieldSchema } from '../../../../types/timeline';
-  import { compare } from '../../../../utilities/generic';
+  import { compare, getTarget } from '../../../../utilities/generic';
   import {
     applyActivityLayerFilter,
     getMatchingTypesForActivityLayerFilter,
@@ -32,6 +32,9 @@
   import DynamicFilter from './DynamicFilter.svelte';
 
   export let filter: ActivityLayerFilter | undefined;
+  export const filterWidth = 1000;
+  export const filterHeight = 500;
+  export let layerName: string = '';
 
   let parameterSubfields: ActivityLayerFilterSubfieldSchema[] = [];
   let dirtyFilter: ActivityLayerFilter = {
@@ -53,6 +56,7 @@
 
   const dispatch = createEventDispatcher<{
     filterChange: { filter: ActivityLayerFilter };
+    rename: { name: string };
   }>();
 
   export function toggle() {
@@ -290,26 +294,70 @@
       resultingTypesMessage = '';
     }
   }
+
+  function onLayerNameChange(event: Event) {
+    const { value } = getTarget(event);
+    dispatch('rename', { name: value as string });
+  }
+
+  function getDefaultPosition() {
+    if (!rootRef) {
+      return { x: 0, y: 0 };
+    }
+    const { x, y, width, height } = rootRef.getBoundingClientRect();
+    let defaultX = 0;
+    let defaultY = 0;
+    const padding = 16;
+
+    if (x - filterWidth > padding / 2) {
+      defaultX = x - filterWidth - padding / 2;
+    } else if (x + width + filterWidth < document.body.clientWidth - padding / 2) {
+      defaultX = x + width + padding / 2;
+    } else {
+      defaultX = Math.max(0, document.body.clientWidth / 2 - filterWidth / 2);
+    }
+
+    if (y - filterHeight / 2 > padding && y + filterHeight < document.body.clientHeight - padding) {
+      defaultY = y - filterHeight / 2;
+    } else if (y + filterHeight < document.body.clientHeight - padding) {
+      // Show below
+      defaultY = y;
+    } else if (y + height - filterHeight > padding) {
+      // Show above
+      defaultY = y + height - filterHeight;
+    } else {
+      defaultY = Math.max(0, document.body.clientHeight / 2 - filterHeight / 2);
+    }
+
+    return {
+      x: defaultX,
+      y: defaultY,
+    };
+  }
 </script>
 
-<div bind:this={rootRef}>
+<div bind:this={rootRef} class="w-100" style:display="grid">
   <slot name="trigger" />
   {#if shown}
     <!-- TODO maybe pass in dimensions? -->
     <Draggable
       className="st-menu activity-filter-builder"
-      initialWidth={1000}
-      initialHeight={500}
-      dragOptions={{
-        // TODO activityfilterbuilder props for initial dimensions?
-        defaultPosition: {
-          x: (rootRef?.getBoundingClientRect().x ?? 0) - 1000,
-          y: (rootRef?.getBoundingClientRect().y ?? 0) - 250,
-        },
-      }}
+      initialWidth={filterWidth}
+      initialHeight={filterHeight}
+      dragOptions={{ defaultPosition: getDefaultPosition() }}
     >
       <div slot="handle">
-        <MenuHeader title="Activity Filters">
+        <MenuHeader title="Activity Filtering">
+          <input
+            slot="left"
+            value={layerName}
+            autocomplete="off"
+            class="st-input"
+            name="layer-name"
+            placeholder="Enter a name for this filter..."
+            style="width: 220px"
+            on:input={onLayerNameChange}
+          />
           <button on:click|stopPropagation={hide} class="st-button icon">
             <CloseIcon />
           </button>

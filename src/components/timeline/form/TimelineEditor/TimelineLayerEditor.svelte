@@ -1,61 +1,83 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
+  import DuplicateIcon from '@nasa-jpl/stellar/icons/duplicate.svg?component';
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
-  import CopyIcon from 'bootstrap-icons/icons/copy.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import type { ActivityLayer, Layer } from '../../../../types/timeline';
-  import { getTarget } from '../../../../utilities/generic';
+  import TimelineLineLayerIcon from '../../../../assets/timeline-line-layer.svg?component';
+  import TimelineXRangeLayerIcon from '../../../../assets/timeline-x-range-layer.svg?component';
+  import { ViewDiscreteLayerColorPresets, ViewLineLayerColorPresets } from '../../../../constants/view';
+  import { externalEventTypes } from '../../../../stores/external-event';
+  import { externalResourceNames, resourceTypes } from '../../../../stores/simulation';
+  import type { RadioButtonId } from '../../../../types/radio-buttons';
+  import type {
+    ActivityLayer,
+    Axis,
+    ChartType,
+    ExternalEventLayerFilter,
+    Layer,
+    ResourceLayerFilter,
+  } from '../../../../types/timeline';
   import { isActivityLayer, isExternalEventLayer, isLineLayer, isXRangeLayer } from '../../../../utilities/timeline';
   import { tooltip } from '../../../../utilities/tooltip';
-  import ColorPicker from '../../../form/ColorPicker.svelte';
   import ColorPresetsPicker from '../../../form/ColorPresetsPicker.svelte';
+  import ColorSchemePicker from '../../../form/ColorSchemePicker.svelte';
+  import RadioButton from '../../../ui/RadioButtons/RadioButton.svelte';
+  import RadioButtons from '../../../ui/RadioButtons/RadioButtons.svelte';
+  import SearchableDropdown from '../../../ui/SearchableDropdown.svelte';
+  import TimelineEditorLayerSettings from '../TimelineEditorLayerSettings.svelte';
   import ActivityFilterBuilder from './ActivityFilterBuilder.svelte';
 
   export let layer: Layer;
+  export let yAxes: Axis[] = [];
 
   let filterMenu: ActivityFilterBuilder;
   let color: string = '';
+  let colorPresets: string[] = [];
   let isColorScheme: boolean = false;
   let name: string = '';
 
   const dispatch = createEventDispatcher<{
     colorChange: { color: string };
     duplicate: void;
-    filterChange: void;
+    filterChange: { filter: ResourceLayerFilter | ExternalEventLayerFilter };
     remove: void;
-    rename: { name: string };
-    settingsChange: void;
+    updateChartType: ChartType;
+    updateLayer: { property: string; value: string | number | boolean | object | null };
     visibilityChange: void;
   }>();
 
   $: {
     if (isActivityLayer(layer)) {
       color = layer.activityColor;
+      colorPresets = ViewDiscreteLayerColorPresets;
       isColorScheme = false;
     } else if (isLineLayer(layer)) {
       color = layer.lineColor;
+      colorPresets = ViewLineLayerColorPresets;
       isColorScheme = false;
     } else if (isXRangeLayer(layer)) {
       color = layer.colorScheme;
       isColorScheme = true;
     } else if (isExternalEventLayer(layer)) {
       color = layer.externalEventColor;
+      colorPresets = ViewDiscreteLayerColorPresets;
       isColorScheme = true;
     }
   }
 
   $: name = getLayerName(layer);
 
-  function onColorPickerInput(event: Event) {
-    const { value } = getTarget(event);
-    dispatch('colorChange', { color: value as string });
-  }
+  $: resourceNames = $resourceTypes
+    .map(type => type.name)
+    .concat($externalResourceNames)
+    .sort();
 
   function getLayerName(layer: Layer) {
     if (isActivityLayer(layer)) {
-      name = layer.name || 'Activity Layer';
+      name = layer.name;
     } else if (isLineLayer(layer)) {
       name = layer.name || layer.filter.resource || 'Line Layer';
     } else if (isXRangeLayer(layer)) {
@@ -66,41 +88,21 @@
     return name;
   }
 
-  function getDefaultLayerName(layer: Layer) {
-    if (isActivityLayer(layer)) {
-      name = 'Activity Layer';
-    } else if (isLineLayer(layer)) {
-      name = layer.filter.resource || 'Line Layer';
-    } else if (isXRangeLayer(layer)) {
-      name = layer.filter.resource || 'X-Range Layer';
-    } else if (isExternalEventLayer(layer)) {
-      name = 'Events Layer';
-    }
-    return name;
-  }
-
-  // TODO make all timeline editor inputs require enter except arrow key input? Or change this to more of a directive name editor..
-  // downside of requiring submit is that most other inputs in aerie are immmediately executed.
-  function onLayerNameChange(event: Event) {
-    const { value } = getTarget(event);
-    const newName = (value as string) || getDefaultLayerName(layer);
-    dispatch('rename', { name: newName });
-    // Catch the case where we've cleared the input and fallen back to some default value
-    // TODO review
-    (event.target as HTMLInputElement).value = newName;
-  }
-
   function toggleFilterMenu() {
     filterMenu.toggle();
   }
 
-  function activityLayerHasFilters(layer: ActivityLayer) {
+  // TODO move to util?
+  function getActivityLayerFilterCount(layer: ActivityLayer) {
     return (
-      layer.filter.activity &&
-      (layer.filter.activity.static_types?.length ||
-        layer.filter.activity.dynamic_type_filters?.length ||
-        layer.filter.activity.global_filters?.length)
+      (layer.filter.activity?.static_types?.length ?? 0) +
+      (layer.filter.activity?.dynamic_type_filters?.length ?? 0) +
+      (layer.filter.activity?.global_filters?.length ?? 0)
     );
+  }
+
+  function onUpdateChartType(event: CustomEvent<{ id: RadioButtonId }>) {
+    dispatch('updateChartType', event.detail.id as ChartType);
   }
 </script>
 
@@ -108,52 +110,102 @@
   <div class="left">
     <div class="color">
       {#if isColorScheme}
-        <ColorPresetsPicker
+        <ColorSchemePicker
+          layout="compact"
           value={color}
           on:input={({ detail: { value } }) => dispatch('colorChange', { color: value })}
         />
       {:else}
-        <ColorPicker value={color} on:input={onColorPickerInput} />
+        <ColorPresetsPicker
+          value={color}
+          presetColors={colorPresets}
+          on:input={({ detail: { value } }) => dispatch('colorChange', { color: value })}
+        />
       {/if}
     </div>
-    <input
-      value={name}
-      autocomplete="off"
-      class="st-input w-100"
-      name="layer-name"
-      placeholder="Enter layer name"
-      on:change={onLayerNameChange}
-    />
+    {#if isActivityLayer(layer)}
+      {@const filterCount = getActivityLayerFilterCount(layer)}
+      <ActivityFilterBuilder
+        layerName={layer.name}
+        filter={layer.filter.activity}
+        on:filterChange
+        on:rename={({ detail: { name: newName } }) => dispatch('updateLayer', { property: 'name', value: newName })}
+        bind:this={filterMenu}
+      >
+        <button
+          slot="trigger"
+          on:click|stopPropagation={toggleFilterMenu}
+          class="st-button icon w-100"
+          style:position="relative"
+        >
+          <div class="activity-layer-name st-select">
+            <div class="activity-layer-name-text">
+              {filterCount < 1 ? 'Filter Activities...' : name || 'Activity Layer'}
+            </div>
+            <div class="activity-layer-name-badge">
+              {#if filterCount > 0}
+                <div>{filterCount}</div>
+              {/if}
+              <FilterIcon />
+            </div>
+          </div>
+        </button>
+      </ActivityFilterBuilder>
+    {:else if isLineLayer(layer) || isXRangeLayer(layer)}
+      <SearchableDropdown
+        showPlaceholderOption={false}
+        className="w-100"
+        placeholder="Select Resource"
+        iconTooltip="Select Resource"
+        searchPlaceholder="Filter resources"
+        selectedOptionValues={layer.filter.resource ? [layer.filter.resource] : []}
+        options={resourceNames.map(resourceName => ({ display: resourceName, value: resourceName }))}
+        on:change={({ detail: values }) => dispatch('filterChange', { filter: values.length ? values[0] : '' })}
+      >
+        <ChevronDownIcon slot="icon" />
+      </SearchableDropdown>
+    {:else if isExternalEventLayer(layer)}
+      <SearchableDropdown
+        allowMultiple
+        showPlaceholderOption={false}
+        className="w-100"
+        placeholder="Select Event Types"
+        iconTooltip="Select Event Types"
+        searchPlaceholder="Filter event types"
+        selectedOptionValues={layer.filter.externalEvent?.event_types ?? []}
+        options={$externalEventTypes.map(type => ({ display: type.name, value: type.name }))}
+        on:change={({ detail: values }) => dispatch('filterChange', { filter: { event_types: values } })}
+      >
+        <ChevronDownIcon slot="icon" />
+      </SearchableDropdown>
+    {/if}
   </div>
   <div class="actions">
+    {#if isLineLayer(layer) || isXRangeLayer(layer)}
+      <RadioButtons selectedButtonId={layer.chartType} on:select-radio-button={onUpdateChartType}>
+        <RadioButton use={[[tooltip, { content: 'Line', placement: 'top' }]]} id="line">
+          <TimelineLineLayerIcon />
+        </RadioButton>
+        <RadioButton use={[[tooltip, { content: 'X-Range', placement: 'top' }]]} id="x-range">
+          <TimelineXRangeLayerIcon />
+        </RadioButton>
+      </RadioButtons>
+    {/if}
+    {#if !isActivityLayer(layer)}
+      <TimelineEditorLayerSettings
+        {layer}
+        on:input={event => dispatch('updateLayer', { property: event.detail.name, value: event.detail.value })}
+        on:delete={() => dispatch('remove')}
+        {yAxes}
+      />
+    {/if}
     <button
       on:click|stopPropagation={() => dispatch('duplicate')}
       use:tooltip={{ content: 'Duplicate', placement: 'top' }}
       class="st-button icon"
     >
-      <CopyIcon />
+      <DuplicateIcon />
     </button>
-    {#if isActivityLayer(layer)}
-      <ActivityFilterBuilder filter={layer.filter.activity} on:filterChange bind:this={filterMenu}>
-        <button
-          slot="trigger"
-          on:click|stopPropagation={toggleFilterMenu}
-          use:tooltip={{ content: 'Filter', placement: 'top' }}
-          class="st-button icon"
-          class:filter-active={activityLayerHasFilters(layer)}
-          style:position="relative"
-        >
-          <FilterIcon />
-        </button>
-      </ActivityFilterBuilder>
-    {/if}
-    <!-- <button
-      on:click|stopPropagation={() => dispatch('visibilityChange')}
-      use:tooltip={{ content: 'Hide', placement: 'top' }}
-      class="st-button icon"
-    >
-      <EyeIcon />
-    </button> -->
     <button
       on:click|stopPropagation={() => dispatch('remove')}
       use:tooltip={{ content: 'Delete', placement: 'top' }}
@@ -170,6 +222,7 @@
     display: flex;
     gap: 8px;
     justify-content: space-between;
+    padding: 4px 0px;
   }
 
   .left,
@@ -177,6 +230,10 @@
     align-items: center;
     display: flex;
     gap: 8px;
+  }
+
+  :global(.actions > .st-button) {
+    color: var(--st-gray-50);
   }
 
   .left {
@@ -193,15 +250,32 @@
     height: min-content;
   }
 
-  .filter-active::after {
-    background: #2f80ed;
-    border-radius: 10px;
-    content: ' ';
-    height: 5px;
-    pointer-events: none;
-    position: absolute;
-    right: 0;
-    top: 2px;
-    width: 5px;
+  .activity-layer-name {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    gap: 4px;
+    justify-content: space-between;
+    overflow: hidden;
+    padding: 0px 4px;
+  }
+
+  .activity-layer-name-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .activity-layer-name-badge {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+  }
+
+  .activity-layer-name-badge > div {
+    background: var(--st-gray-15);
+    border-radius: 2px;
+    min-width: 16px;
+    padding: 0px 4px;
   }
 </style>

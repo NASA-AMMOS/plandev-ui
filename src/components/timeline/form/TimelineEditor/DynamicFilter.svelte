@@ -3,6 +3,7 @@
 <script lang="ts">
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
+  import { capitalize } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import type { SelectedDropdownOptionValue } from '../../../../types/dropdown';
   import type { TagsChangeEvent } from '../../../../types/tags';
@@ -43,6 +44,7 @@
     dirtyFilter.field === 'Parameter' ? `${dirtyFilter.subfield?.name} (${dirtyFilter.subfield?.type})` : '';
   let currentType: DynamicFilterDataType = 'string';
   let currentValue = dirtyFilter.value;
+  let currentValueAsStringOrNumber: string | number = '';
   let operatorKeys: (keyof typeof FilterOperator)[] = [];
   let currentValuePossibilities: Array<any> = [];
 
@@ -134,6 +136,10 @@
     currentValue = '';
   }
 
+  function onSelectValue(event: CustomEvent<SelectedDropdownOptionValue>) {
+    currentValue = event.detail?.toString() || '';
+  }
+
   function onOperatorChange(event: Event) {
     const { value } = getTarget(event);
     const operator = value as keyof typeof FilterOperator;
@@ -160,6 +166,7 @@
   function asActivityLayerFilterField(s: string): keyof typeof ActivityLayerFilterField {
     return s as keyof typeof ActivityLayerFilterField;
   }
+  $: currentValueAsStringOrNumber = currentValue as string | number;
 </script>
 
 <div class="dynamic-filter">
@@ -172,18 +179,17 @@
     {/each}
   </select>
   {#if currentField === 'Parameter' && subfields}
-    <div class="dynamic-filter-searchable-dropdown">
-      <SearchableDropdown
-        placeholder="Select Parameter"
-        iconTooltip="Select Parameter"
-        searchPlaceholder="Filter parameters"
-        on:selectOption={onSelectParameter}
-        selectedOptionValue={currentSubfieldLabel}
-        options={subfields.map(subfield => ({ display: subfield.label, value: subfield.label }))}
-      >
-        <ChevronDownIcon slot="icon" />
-      </SearchableDropdown>
-    </div>
+    <SearchableDropdown
+      className="dynamic-filter-searchable-dropdown-hide-overflow"
+      placeholder="Select Parameter"
+      iconTooltip="Select Parameter"
+      searchPlaceholder="Filter parameters"
+      on:selectOption={onSelectParameter}
+      selectedOptionValue={currentSubfieldLabel}
+      options={subfields.map(subfield => ({ display: subfield.label, value: subfield.label }))}
+    >
+      <ChevronDownIcon slot="icon" />
+    </SearchableDropdown>
   {/if}
   <select class="st-select" value={currentOperator} on:change={onOperatorChange}>
     {#each operatorKeys as operator}
@@ -209,11 +215,17 @@
         <option value={false}>False</option>
       </select>
     {:else if currentType === 'variant'}
-      <select class="st-select w-100" bind:value={currentValue}>
-        {#each currentValuePossibilities.sort() as value}
-          <option {value}>{value}</option>
-        {/each}
-      </select>
+      <SearchableDropdown
+        className="dynamic-filter-searchable-dropdown-hide-overflow"
+        placeholder="Select {capitalize(currentField)}"
+        iconTooltip="Select {capitalize(currentField)}"
+        searchPlaceholder="Filter {currentField}"
+        on:selectOption={onSelectValue}
+        selectedOptionValue={currentValueAsStringOrNumber}
+        options={currentValuePossibilities.sort().map(value => ({ display: value, value: value }))}
+      >
+        <ChevronDownIcon slot="icon" />
+      </SearchableDropdown>
     {:else if currentType === 'tag'}
       {@const currentValueTags = (Array.isArray(currentValue) ? currentValue : []).map(t =>
         currentValuePossibilities.find(v => v.id === t),
@@ -251,7 +263,7 @@
     width: 40px;
   }
 
-  .dynamic-filter-searchable-dropdown {
+  :global(.dynamic-filter-searchable-dropdown) {
     min-width: 64px;
     overflow: hidden;
   }

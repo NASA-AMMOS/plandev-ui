@@ -2,9 +2,9 @@
 
 <script lang="ts">
   import ArrowLeftIcon from '@nasa-jpl/stellar/icons/arrow_left.svg?component';
+  import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import DuplicateIcon from '@nasa-jpl/stellar/icons/duplicate.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
-  import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import GripVerticalIcon from 'bootstrap-icons/icons/grip-vertical.svg?component';
   import { onMount } from 'svelte';
   import { dndzone } from 'svelte-dnd-action';
@@ -42,6 +42,7 @@
     ActivityLayer,
     ActivityOptions,
     Axis,
+    ChartType,
     DiscreteOptions,
     ExternalEventLayer,
     ExternalEventOptions,
@@ -52,7 +53,6 @@
     Timeline,
     VerticalGuide,
     XRangeLayer,
-    XRangeLayerColorScheme,
   } from '../../../types/timeline';
   import type { ViewGridSection } from '../../../types/view';
   import effects from '../../../utilities/effects';
@@ -84,7 +84,6 @@
   import RadioButtons from '../../ui/RadioButtons/RadioButtons.svelte';
   import EditorSection from './TimelineEditor/EditorSection.svelte';
   import TimelineLayerEditor from './TimelineEditor/TimelineLayerEditor.svelte';
-  import TimelineEditorLayerSection from './TimelineEditorLayerSection.svelte';
   import TimelineEditorYAxisSettings from './TimelineEditorYAxisSettings.svelte';
 
   export let gridSection: ViewGridSection;
@@ -411,12 +410,12 @@
     viewUpdateRow('layers', newLayers);
   }
 
-  function handleUpdateLayerProperty(name: string, value: string | number | boolean | object | null, layer: Layer) {
+  function handleUpdateLayerProperty(property: string, value: string | number | boolean | object | null, layer: Layer) {
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
         return {
           ...layer,
-          [name]: value,
+          [property]: value,
         };
       }
       return l;
@@ -424,33 +423,13 @@
     viewUpdateRow('layers', newLayers);
   }
 
-  function handleUpdateLayerChartType(value: string | number | boolean | null, layer: Layer) {
+  function handleUpdateResourceLayerChartType(value: ChartType, layer: Layer) {
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
-        let newLayer: ActivityLayer | LineLayer | XRangeLayer | ExternalEventLayer | undefined;
-        if (value === 'activity') {
-          newLayer = { ...createTimelineActivityLayer(timelines), id: l.id };
-        } else if (value === 'externalEvent') {
-          newLayer = { ...createTimelineExternalEventLayer(timelines), id: l.id };
-        } else if (value === 'line' || value === 'x-range') {
-          if (value === 'line') {
-            newLayer = { ...createTimelineLineLayer(timelines, yAxes), id: l.id };
-          } else {
-            newLayer = { ...createTimelineXRangeLayer(timelines, yAxes), id: l.id };
-          }
-
-          // Assign yAxisId to existing value or new axis
-          if (typeof layer.yAxisId === 'number') {
-            newLayer.yAxisId = l.yAxisId;
-          } else if (yAxes.length > 0) {
-            newLayer.yAxisId = yAxes[0].id;
-          } else {
-            handleNewYAxisClick();
-            newLayer.yAxisId = yAxes[0].id;
-          }
-        }
-        if (newLayer !== undefined) {
-          return newLayer;
+        if (isXRangeLayer(l) && value === 'line') {
+          return createTimelineLineLayer(timelines, yAxes, { filter: l.filter, id: l.id, name: l.name });
+        } else if (isLineLayer(l) && value === 'x-range') {
+          return createTimelineXRangeLayer(timelines, yAxes, { filter: l.filter, id: l.id, name: l.name });
         }
       }
       return l;
@@ -460,15 +439,16 @@
   }
 
   function handleUpdateLayerColor(value: string, layer: Layer) {
-    console.log('value :>> ', value);
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
         if (isActivityLayer(l)) {
           return { ...l, activityColor: value };
         } else if (isExternalEventLayer(l)) {
           return { ...l, externalEventColor: value };
-        } else if (l.chartType === 'line') {
+        } else if (isLineLayer(l)) {
           return { ...l, lineColor: value };
+        } else if (isXRangeLayer(l)) {
+          return { ...l, colorScheme: value };
         }
       }
       return l;
@@ -476,15 +456,15 @@
     viewUpdateRow('layers', newLayers);
   }
 
-  function handleUpdateLayerColorScheme(value: XRangeLayerColorScheme, layer: Layer) {
-    const newLayers = layers.map(l => {
-      if (layer.id === l.id) {
-        (l as XRangeLayer).colorScheme = value;
-      }
-      return l;
-    });
-    viewUpdateRow('layers', newLayers);
-  }
+  // function handleUpdateLayerColorScheme(value: XRangeLayerColorScheme, layer: Layer) {
+  //   const newLayers = layers.map(l => {
+  //     if (layer.id === l.id) {
+  //       (l as XRangeLayer).colorScheme = value;
+  //     }
+  //     return l;
+  //   });
+  //   viewUpdateRow('layers', newLayers);
+  // }
 
   function handleNewHorizontalGuideClick() {
     if (!selectedRow) {
@@ -655,7 +635,7 @@
                         use:tooltip={{ content: 'Delete Guide', placement: 'top' }}
                         class="st-button icon"
                       >
-                        <TrashIcon />
+                        <CloseIcon />
                       </button>
                     </CssGrid>
                   </div>
@@ -721,7 +701,7 @@
                           effects.deleteTimelineRow(row, rows, $selectedTimelineId);
                         }}
                       >
-                        <TrashIcon />
+                        <CloseIcon />
                       </button>
                     </div>
                   </div>
@@ -901,7 +881,7 @@
                         use:tooltip={{ content: 'Delete Guide', placement: 'top' }}
                         class="st-button icon"
                       >
-                        <TrashIcon />
+                        <CloseIcon />
                       </button>
                     </CssGrid>
                   </div>
@@ -1169,7 +1149,7 @@
                         use:tooltip={{ content: 'Delete Y Axis', placement: 'top' }}
                         class="st-button icon"
                       >
-                        <TrashIcon />
+                        <CloseIcon />
                       </button>
                     </CssGrid>
                   </div>
@@ -1192,8 +1172,9 @@
           <div class="timeline-layers timeline-elements">
             {#each activityLayers as layer (layer.id)}
               <TimelineLayerEditor
+                {yAxes}
                 {layer}
-                on:rename={({ detail: { name } }) => handleUpdateLayerProperty('name', name, layer)}
+                on:updateLayer={({ detail: { property, value } }) => handleUpdateLayerProperty(property, value, layer)}
                 on:colorChange={({ detail: { color } }) => handleUpdateLayerColor(color, layer)}
                 on:remove={() => handleDeleteLayerClick(layer)}
                 on:duplicate={() => handleDuplicateLayer(layer)}
@@ -1215,15 +1196,19 @@
           <!-- TODO bug when dragging something into a different draggable area -->
           <div class="timeline-layers timeline-elements">
             {#each resourceLayers as layer (layer.id)}
-              <!-- <TimelineLayerEditor
+              <TimelineLayerEditor
                 {layer}
-                on:rename={({ detail: { name } }) => handleUpdateLayerProperty('name', name, layer)}
+                {yAxes}
+                on:updateLayer={({ detail: { property, value } }) => handleUpdateLayerProperty(property, value, layer)}
+                on:updateChartType={({ detail: chartType }) => handleUpdateResourceLayerChartType(chartType, layer)}
                 on:colorChange={({ detail: { color } }) => handleUpdateLayerColor(color, layer)}
                 on:remove={() => handleDeleteLayerClick(layer)}
                 on:duplicate={() => handleDuplicateLayer(layer)}
-              /> -->
-              <TimelineEditorLayerSection
-                on:handleUpdateLayerChartType={event => handleUpdateLayerChartType(event.detail.value, layer)}
+                on:filterChange={({ detail: { filter } }) =>
+                  handleUpdateLayerProperty('filter', { resource: filter }, layer)}
+              />
+              <!-- <TimelineEditorLayerSection
+                on:handleUpdateResourceLayerChartType={event => handleUpdateResourceLayerChartType(event.detail.value, layer)}
                 on:handleUpdateLayerFilter={event => handleUpdateLayerFilter(event.detail.values, layer)}
                 on:handleUpdateLayerProperty={event =>
                   handleUpdateLayerProperty(event.detail.name, event.detail.value, layer)}
@@ -1231,7 +1216,7 @@
                 on:handleDeleteLayerClick={() => handleDeleteLayerClick(layer)}
                 {layer}
                 {yAxes}
-              />
+              /> -->
             {/each}
           </div>
         {/if}
@@ -1248,10 +1233,13 @@
             {#each externalEventLayers as layer (layer.id)}
               <TimelineLayerEditor
                 {layer}
+                on:updateLayer={({ detail: { property, value } }) => handleUpdateLayerProperty(property, value, layer)}
                 on:rename={({ detail: { name } }) => handleUpdateLayerProperty('name', name, layer)}
                 on:colorChange={({ detail: { color } }) => handleUpdateLayerColor(color, layer)}
                 on:remove={() => handleDeleteLayerClick(layer)}
                 on:duplicate={() => handleDuplicateLayer(layer)}
+                on:filterChange={({ detail: { filter } }) =>
+                  handleUpdateLayerProperty('filter', { externalEvent: filter }, layer)}
               />
             {/each}
           </div>
