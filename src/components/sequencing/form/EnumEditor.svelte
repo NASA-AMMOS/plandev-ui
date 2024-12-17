@@ -18,7 +18,7 @@
   let value: string;
 
   $: value = initVal;
-  $: enumValues = commandDictionary?.enumMap[argDef.enum_name]?.values?.map(v => v.symbol) ?? argDef.range ?? [];
+  $: enumValues = argDef.range ?? commandDictionary?.enumMap[argDef.enum_name]?.values?.map(v => v.symbol) ?? [];
   $: isValueInEnum = !!enumValues.find(ev => ev === value);
   $: setInEditor(value);
   $: options = enumValues.map(ev => ({
