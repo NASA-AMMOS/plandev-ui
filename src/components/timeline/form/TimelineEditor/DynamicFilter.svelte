@@ -131,13 +131,13 @@
     }
   }
 
-  function onSelectParameter(event: CustomEvent<SelectedDropdownOptionValue>) {
-    currentSubfieldLabel = event.detail?.toString() || '';
+  function onSelectParameter(event: CustomEvent<SelectedDropdownOptionValue[]>) {
+    currentSubfieldLabel = event.detail.length ? event.detail[0]?.toString() ?? '' : '';
     currentValue = '';
   }
 
-  function onSelectValue(event: CustomEvent<SelectedDropdownOptionValue>) {
-    currentValue = event.detail?.toString() || '';
+  function onSelectValue(event: CustomEvent<SelectedDropdownOptionValue[]>) {
+    currentValue = event.detail.length ? event.detail[0]?.toString() ?? '' : '';
   }
 
   function onOperatorChange(event: Event) {
@@ -184,8 +184,8 @@
       placeholder="Select Parameter"
       iconTooltip="Select Parameter"
       searchPlaceholder="Filter parameters"
-      on:selectOption={onSelectParameter}
-      selectedOptionValue={currentSubfieldLabel}
+      on:change={onSelectParameter}
+      selectedOptionValues={[currentSubfieldLabel]}
       options={subfields.map(subfield => ({ display: subfield.label, value: subfield.label }))}
     >
       <ChevronDownIcon slot="icon" />
@@ -220,8 +220,8 @@
         placeholder="Select {capitalize(currentField)}"
         iconTooltip="Select {capitalize(currentField)}"
         searchPlaceholder="Filter {currentField}"
-        on:selectOption={onSelectValue}
-        selectedOptionValue={currentValueAsStringOrNumber}
+        on:change={onSelectValue}
+        selectedOptionValues={[currentValueAsStringOrNumber]}
         options={currentValuePossibilities.sort().map(value => ({ display: value, value: value }))}
       >
         <ChevronDownIcon slot="icon" />

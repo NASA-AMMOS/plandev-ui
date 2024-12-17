@@ -117,7 +117,7 @@
     searchFilter = `${value}`;
   }
 
-  function onSelectOption(option: DisplayOption, event: MouseEvent) {
+  function onSelectOption(option: DisplayOption, event: MouseEvent | KeyboardEvent) {
     event.stopPropagation();
     if (!disabled) {
       let newValues = [];
@@ -203,9 +203,7 @@
                 },
               ],
             ]}
-            on:click={event => {
-              onSelectOption(displayedOption, event.detail);
-            }}
+            on:click={event => onSelectOption(displayedOption, event.detail)}
           >
             <div class="dropdown-item">
               <div class="dropdown-item-icon">

@@ -108,9 +108,9 @@
     dispatch('updateStartOffset', offset);
   }
 
-  function onSelectAnchor(event: CustomEvent<SelectedDropdownOptionValue>) {
+  function onSelectAnchor(event: CustomEvent<SelectedDropdownOptionValue[]>) {
     const { detail: anchorInputString } = event;
-    const activityToAnchorTo = getAnchorActivityDirective(anchorInputString);
+    const activityToAnchorTo = getAnchorActivityDirective(anchorInputString[0]);
     updateAnchor(activityToAnchorTo);
   }
 
@@ -159,10 +159,10 @@
           options={searchableOptions}
           placeholder="To Plan"
           searchPlaceholder="Search Directives"
-          settingsIconTooltip="Set Anchor"
-          selectedOptionValue={anchorId}
+          iconTooltip="Set Anchor"
+          selectedOptionValues={typeof anchorId === 'number' ? [anchorId] : []}
           {updatePermissionError}
-          on:selectOption={onSelectAnchor}
+          on:change={onSelectAnchor}
         />
       </Input>
     </Highlight>

@@ -45,7 +45,7 @@ describe('Searchable Dropdown component', () => {
     const { getByText, queryByText } = render(SearchableDropdown, {
       options,
       placeholder: 'None',
-      selectedOptionValue: selectedOption.value,
+      selectedOptionValues: [selectedOption.value],
     });
 
     expect(queryByText(placeholderText)).toBeNull();
@@ -57,7 +57,7 @@ describe('Searchable Dropdown component', () => {
     const { getByText, getAllByRole } = render(SearchableDropdown, {
       options,
       placeholder: 'None',
-      selectedOptionValue: selectedOption.value,
+      selectedOptionValues: [selectedOption.value],
     });
 
     await fireEvent.click(getByText(selectedOption.display));

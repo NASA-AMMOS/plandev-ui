@@ -25,12 +25,12 @@
     display: ev,
     value: ev,
   }));
-  $: selectedOptionValue = value;
+  $: selectedOptionValues = [value];
 
-  function onSelectReferenceModel(event: CustomEvent<SelectedDropdownOptionValue>) {
-    const { detail: enumVal } = event;
-    if (typeof enumVal === 'string') {
-      setInEditor(enumVal);
+  function onSelectReferenceModel(event: CustomEvent<SelectedDropdownOptionValue[]>) {
+    const { detail: values } = event;
+    if (typeof values[0] === 'string') {
+      setInEditor(values[0]);
     }
   }
 </script>
@@ -40,8 +40,8 @@
     <SearchableDropdown
       {options}
       maxItems={MAX_SEARCH_ITEMS}
-      on:selectOption={onSelectReferenceModel}
-      {selectedOptionValue}
+      on:change={onSelectReferenceModel}
+      {selectedOptionValues}
       placeholder={value}
       searchPlaceholder="Filter values"
     />

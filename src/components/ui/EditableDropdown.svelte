@@ -32,13 +32,14 @@
   export let selectedOptionValue: SelectedDropdownOptionValue | undefined = undefined;
   export let showPlaceholderOption: boolean = true;
   export let searchPlaceholder: string = `Search ${upperFirst(optionLabel)}s`;
-  export let settingsIconTooltip: string = `Set ${upperFirst(optionLabel)}`;
-  export let settingsIconTooltipPlacement: string = 'top';
+  export let iconTooltip: string = `Set ${upperFirst(optionLabel)}`;
+  export let iconTooltipPlacement: string = 'top';
 
   const dispatch = createEventDispatcher<{
     deleteOption: DropdownOptionValue;
     saveNewOption: string;
     saveOption: DropdownOption;
+    selectOption: SelectedDropdownOptionValue;
   }>();
 
   let deletePermission: boolean = true;
@@ -132,6 +133,10 @@
     const { value } = getTarget(event);
     optionName = `${value}`;
   }
+
+  function onSelectOption(event: CustomEvent<SelectedDropdownOptionValue[]>) {
+    dispatch('selectOption', event.detail[0] ?? null);
+  }
 </script>
 
 <SearchableDropdown
@@ -142,12 +147,12 @@
   {placeholder}
   {planReadOnly}
   {searchPlaceholder}
-  {selectedOptionValue}
-  {settingsIconTooltip}
-  {settingsIconTooltipPlacement}
+  selectedOptionValues={selectedOptionValue !== undefined ? [selectedOptionValue] : []}
+  {iconTooltip}
+  {iconTooltipPlacement}
   {showPlaceholderOption}
   on:openMenu={onOpenMenu}
-  on:selectOption
+  on:change={onSelectOption}
 >
   <svelte:fragment slot="dropdown-header">
     <div class="dropdown-header">
