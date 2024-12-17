@@ -4,8 +4,11 @@
 </script>
 
 <div class="header" class:menu-border-bottom={showBorder}>
-  <div class="title st-typography-small-caps">
-    {title}
+  <div class="left">
+    <div class="title st-typography-small-caps">
+      {title}
+    </div>
+    <slot name="left" />
   </div>
   <slot />
 </div>
@@ -21,8 +24,15 @@
     padding: 8px;
   }
 
+  .left {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+  }
+
   .title {
     color: var(--st-gray-40);
+    flex-shrink: 0;
     font-size: 11px;
     font-weight: 700;
   }
