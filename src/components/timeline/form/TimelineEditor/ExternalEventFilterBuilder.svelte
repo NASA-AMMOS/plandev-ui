@@ -8,7 +8,7 @@
   import DirectiveIcon from '../../../../assets/timeline-directive.svg?component';
   import SpanIcon from '../../../../assets/timeline-span.svg?component';
   import { externalEventTypes, selectedExternalEvents } from '../../../../stores/external-event';
-  import { activityTypes, subsystemTags } from '../../../../stores/plan';
+  import { activityTypes } from '../../../../stores/plan';
   import type { ExternalEventLayerFilter } from '../../../../types/timeline';
   import {
     applyExternalEventLayerFilter,
@@ -297,7 +297,7 @@
       }}
     >
       <div slot="handle">
-        <MenuHeader title="Activity Filters">
+        <MenuHeader title="External Event Filters">
           <button on:click|stopPropagation={hide} class="st-button icon">
             <CloseIcon />
           </button>
@@ -403,11 +403,6 @@
                         on:change={event => onDynamicFilterChange('dynamic_type_filters', event)}
                         verb={i === 0 ? 'Where' : 'and'}
                         schema={{
-                          Subsystem: {
-                            does_not_include: { type: 'tag', values: $subsystemTags },
-                            includes: { type: 'tag', values: $subsystemTags },
-                          },
-                          // TODO: only type
                           Type: {
                             does_not_equal: { type: 'variant', values: $activityTypes.map(type => type.name) },
                             does_not_include: { type: 'string' },
