@@ -1197,8 +1197,9 @@
                 on:colorChange={({ detail: { color } }) => handleUpdateLayerColor(color, layer)}
                 on:remove={() => handleDeleteLayerClick(layer)}
                 on:duplicate={() => handleDuplicateLayer(layer)}
-                on:filterChange={({ detail: { filter } }) =>
-                  handleUpdateLayerProperty('filter', { activity: filter }, layer)}
+                on:filterChange={(
+                  { detail: { filter } }, // TODO: update with event stuff
+                ) => handleUpdateLayerProperty('filter', { activity: filter }, layer)}
               />
             {/each}
           </div>

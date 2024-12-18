@@ -7,9 +7,9 @@
   import type { SelectedDropdownOptionValue } from '../../../../types/dropdown';
   import type { TagsChangeEvent } from '../../../../types/tags';
   import {
-    type ActivityLayerDynamicFilter,
-    type ActivityLayerFilterSubfieldSchema,
     type DynamicFilterDataType,
+    type LayerDynamicFilter,
+    type LayerFilterSubfieldSchema,
     ActivityLayerFilterField,
     ActivityLayerFilterField as ActivityLayerFilterFieldType,
     FilterOperator,
@@ -23,22 +23,24 @@
     keyof typeof FilterOperator,
     { type: DynamicFilterDataType; values?: Array<T> }
   >;
+  type FilterFieldType = 'Type' | 'Name' | 'Subsystem' | 'Tag' | 'Parameter' | 'SchedulingGoalId' | 'Attribute'; // TODO: smarter way to do this
 
-  export let filter: ActivityLayerDynamicFilter<any>;
-  export let schema: Partial<Record<keyof typeof ActivityLayerFilterFieldType, Partial<OperatorSchema>>> & {
-    Parameter?: { subfields: ActivityLayerFilterSubfieldSchema[] };
+  export let filter: LayerDynamicFilter<any>;
+  export let schema: Partial<Record<FilterFieldType, Partial<OperatorSchema>>> & {
+    Attribute?: { subfields: LayerFilterSubfieldSchema[] };
+    Parameter?: { subfields: LayerFilterSubfieldSchema[] };
   } = {};
   export let verb: string = 'Where';
 
   const dispatch = createEventDispatcher<{
-    change: { filter: ActivityLayerDynamicFilter<any> };
+    change: { filter: LayerDynamicFilter<any> };
     remove: void;
   }>();
 
   let dirtyFilter = structuredClone(filter);
   let currentField = dirtyFilter.field as keyof typeof ActivityLayerFilterFieldType;
   let currentOperator: keyof typeof FilterOperator | null = dirtyFilter.operator;
-  let subfields: ActivityLayerFilterSubfieldSchema[] | undefined = undefined;
+  let subfields: LayerFilterSubfieldSchema[] | undefined = undefined;
   let currentSubfieldLabel =
     dirtyFilter.field === 'Parameter' ? `${dirtyFilter.subfield?.name} (${dirtyFilter.subfield?.type})` : '';
   let currentType: DynamicFilterDataType = 'string';
@@ -88,7 +90,7 @@
   }
 
   $: if (currentField && currentOperator && currentValue !== undefined) {
-    const newFilter: ActivityLayerDynamicFilter<any> = {
+    const newFilter: LayerDynamicFilter<any> = {
       field: currentField,
       id: dirtyFilter.id,
       operator: currentOperator,

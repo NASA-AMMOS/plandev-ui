@@ -5,17 +5,19 @@
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
   import CopyIcon from 'bootstrap-icons/icons/copy.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import type { ActivityLayer, Layer } from '../../../../types/timeline';
+  import type { ActivityLayer, ExternalEventLayer, Layer } from '../../../../types/timeline';
   import { getTarget } from '../../../../utilities/generic';
   import { isActivityLayer, isExternalEventLayer, isLineLayer, isXRangeLayer } from '../../../../utilities/timeline';
   import { tooltip } from '../../../../utilities/tooltip';
   import ColorPicker from '../../../form/ColorPicker.svelte';
   import ColorPresetsPicker from '../../../form/ColorPresetsPicker.svelte';
   import ActivityFilterBuilder from './ActivityFilterBuilder.svelte';
+  import ExternalEventFilterBuilder from './ExternalEventFilterBuilder.svelte';
 
   export let layer: Layer;
 
-  let filterMenu: ActivityFilterBuilder;
+  let activityFilterMenu: ActivityFilterBuilder;
+  let externalEventFilterMenu: ExternalEventFilterBuilder;
   let color: string = '';
   let isColorScheme: boolean = false;
   let name: string = '';
@@ -90,8 +92,12 @@
     (event.target as HTMLInputElement).value = newName;
   }
 
-  function toggleFilterMenu() {
-    filterMenu.toggle();
+  function toggleActivityFilterMenu() {
+    activityFilterMenu.toggle();
+  }
+
+  function toggleExternalEventFilterMenu() {
+    externalEventFilterMenu.toggle();
   }
 
   function activityLayerHasFilters(layer: ActivityLayer) {
@@ -100,6 +106,15 @@
       (layer.filter.activity.static_types?.length ||
         layer.filter.activity.dynamic_type_filters?.length ||
         layer.filter.activity.global_filters?.length)
+    );
+  }
+
+  function externalEventLayerHasFilters(layer: ExternalEventLayer) {
+    return (
+      layer.filter.externalEvent && layer.filter.externalEvent.event_types?.length
+      // || TODO!!!!
+      //   layer.filter.activity.dynamic_type_filters?.length ||
+      //   layer.filter.activity.global_filters?.length)
     );
   }
 </script>
@@ -134,10 +149,10 @@
       <CopyIcon />
     </button>
     {#if isActivityLayer(layer)}
-      <ActivityFilterBuilder filter={layer.filter.activity} on:filterChange bind:this={filterMenu}>
+      <ActivityFilterBuilder filter={layer.filter.activity} on:filterChange bind:this={activityFilterMenu}>
         <button
           slot="trigger"
-          on:click|stopPropagation={toggleFilterMenu}
+          on:click|stopPropagation={toggleActivityFilterMenu}
           use:tooltip={{ content: 'Filter', placement: 'top' }}
           class="st-button icon"
           class:filter-active={activityLayerHasFilters(layer)}
@@ -146,6 +161,24 @@
           <FilterIcon />
         </button>
       </ActivityFilterBuilder>
+    {/if}
+    {#if isExternalEventLayer(layer)}
+      <ExternalEventFilterBuilder
+        filter={layer.filter.externalEvent}
+        on:filterChange
+        bind:this={externalEventFilterMenu}
+      >
+        <button
+          slot="trigger"
+          on:click|stopPropagation={toggleExternalEventFilterMenu}
+          use:tooltip={{ content: 'Filter', placement: 'top' }}
+          class="st-button icon"
+          class:filter-active={externalEventLayerHasFilters(layer)}
+          style:position="relative"
+        >
+          <FilterIcon />
+        </button>
+      </ExternalEventFilterBuilder>
     {/if}
     <!-- <button
       on:click|stopPropagation={() => dispatch('visibilityChange')}

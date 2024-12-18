@@ -40,26 +40,42 @@ export enum ActivityLayerFilterField {
   'SchedulingGoalId' = 'Scheduling Goal Id',
 }
 
+export enum ExternalEventLayerFilterField {
+  'Type' = 'Type',
+  'Name' = 'Name',
+  'Attribute' = 'Attribute',
+}
+
 export type DynamicFilterDataType = ValueSchema['type'] | 'tag';
 
 export type ActivityLayerFilter = {
-  dynamic_type_filters?: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>>[];
-  global_filters?: ActivityLayerDynamicFilter<
+  dynamic_type_filters?: LayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>>[];
+  global_filters?: LayerDynamicFilter<
     Pick<typeof ActivityLayerFilterField, 'Tag' | 'Parameter' | 'SchedulingGoalId' | 'Name'>
   >[];
   static_types?: string[];
   type_subfilters?: Record<
     string,
-    ActivityLayerDynamicFilter<
+    LayerDynamicFilter<
       Pick<typeof ActivityLayerFilterField, 'Tag' | 'Parameter' | 'SchedulingGoalId' | 'Name'>
     >[]
   >;
 };
 export type ExternalEventLayerFilter = {
-  event_types: string[];
+  dynamic_type_filters?: LayerDynamicFilter<Pick<typeof ExternalEventLayerFilterField, 'Type'>>[];
+  global_filters?: LayerDynamicFilter<
+    Pick<typeof ExternalEventLayerFilterField, 'Attribute' | 'Name'>
+  >[];
+  static_types?: string[];
+  type_subfilters?: Record< // TODO: figure out what this does
+    string,
+    LayerDynamicFilter<
+      Pick<typeof ExternalEventLayerFilterField, 'Attribute' | 'Name'>
+    >[]
+  >;
 };
 
-export type ActivityLayerDynamicFilter<T> = {
+export type LayerDynamicFilter<T> = {
   field: keyof T;
   id: number;
   operator: keyof typeof FilterOperator;
@@ -67,10 +83,10 @@ export type ActivityLayerDynamicFilter<T> = {
   value: string | string[] | number | number[] | boolean;
 };
 
-export type ActivityLayerFilterSubfield = { name: string; type: DynamicFilterDataType };
-export type ActivityLayerFilterSubfieldSchema = ActivityLayerFilterSubfield & {
-  activityTypes: string[];
+export type LayerFilterSubfield = { name: string; type: DynamicFilterDataType };
+export type LayerFilterSubfieldSchema = LayerFilterSubfield & {
   label: string;
+  types: string[];
   values?: string[];
 };
 

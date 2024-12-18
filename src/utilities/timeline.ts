@@ -21,12 +21,11 @@ import {
   ViewXRangeLayerSchemePresets,
 } from '../constants/view';
 import type { ActivityDirective, ActivityType } from '../types/activity';
-import type { ExternalEvent } from '../types/external-event';
+import type { ExternalEvent, ExternalEventType } from '../types/external-event';
 import type { DefaultEffectiveArgumentsMap } from '../types/parameter';
 import type { Resource, ResourceType, ResourceValue, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type {
   ActivityLayer,
-  ActivityLayerDynamicFilter,
   ActivityLayerFilter,
   ActivityLayerFilterField,
   ActivityOptions,
@@ -36,9 +35,12 @@ import type {
   DiscreteTreeNode,
   DiscreteTreeNodeItem,
   ExternalEventLayer,
+  ExternalEventLayerFilter,
+  ExternalEventLayerFilterField,
   ExternalEventOptions,
   HorizontalGuide,
   Layer,
+  LayerDynamicFilter,
   LineLayer,
   QuadtreePoint,
   QuadtreeRect,
@@ -614,7 +616,7 @@ export function createTimelineExternalEventLayer(
     externalEventColor: '#fcdd8f',
     filter: {
       externalEvent: {
-        event_types: [],
+        static_types: [],
       },
     },
     id,
@@ -1492,6 +1494,57 @@ export function applyActivityLayerFilter(
   return { directives: filteredDirectives, spans: filteredSpans };
 }
 
+// TODO: complete
+export function applyExternalEventLayerFilter(
+  filter: ExternalEventLayerFilter | undefined,
+  events: ExternalEvent[]
+) {
+  if (!filter) {
+    return { events };
+  }
+
+  const staticTypeMap: Record<string, boolean> = (filter.static_types || []).reduce((acc, cur) => {
+    acc[cur] = true;
+    return acc;
+  }, {});
+
+  const anyTypeFiltersSpecified = !!(filter.static_types?.length || filter.dynamic_type_filters?.length);
+  const filteredEvents = events.filter(event => {
+    let included = false;
+
+    // Check to see if span is included in static list
+    if (filter.static_types?.length) {
+      included = !!staticTypeMap[event.pkey.event_type_name];
+    }
+
+    // Check if necessary to see if span is included in dynamic list
+    if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
+      included = externalEventMatchesDynamicFilters(
+        event,
+        filter.dynamic_type_filters
+      );
+    }
+
+    // Apply global filters on top of the types
+    if (filter.global_filters?.length) {
+      included =
+        externalEventMatchesDynamicFilters(event, filter.global_filters) &&
+        (anyTypeFiltersSpecified ? included : true);
+    }
+
+    // Apply type specific filters if found
+    if (included && filter.type_subfilters && filter.type_subfilters[event.pkey.event_type_name]) {
+      included = externalEventMatchesDynamicFilters(
+        event,
+        filter.type_subfilters[event.pkey.event_type_name]
+      );
+    }
+    return included;
+  });
+
+  return { externalEvents: filteredEvents };
+}
+
 export function getMatchingTypesForActivityLayerFilter(filter: ActivityLayerFilter | undefined, types: ActivityType[]) {
   if (!filter) {
     // TODO should we return all or no types if no filter supplied?
@@ -1513,16 +1566,80 @@ export function getMatchingTypesForActivityLayerFilter(filter: ActivityLayerFilt
 
     // Check if necessary to see if type is included in dynamic list
     if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
-      included = typeMatchesDynamicFilters(type, filter.dynamic_type_filters);
+      included = activityTypeMatchesDynamicFilters(type, filter.dynamic_type_filters);
     }
 
     return included;
   });
 }
 
+export function getMatchingTypesForExternalEventLayerFilter(filter: ExternalEventLayerFilter | undefined, types: ExternalEventType[]) {
+  if (!filter) {
+    // TODO should we return all or no types if no filter supplied?
+    return types;
+  }
+
+  const staticTypeMap: Record<string, boolean> = (filter.static_types || []).reduce((acc, cur) => {
+    acc[cur] = true;
+    return acc;
+  }, {});
+
+  return types.filter(type => {
+    let included = false;
+
+    // Check to see if type is included in static list
+    if (filter.static_types?.length) {
+      included = !!staticTypeMap[type.name];
+    }
+
+    // Check if necessary to see if type is included in dynamic list
+    if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
+      included = externalEventTypeMatchesDynamicFilters(type, filter.dynamic_type_filters);
+    }
+
+    return included;
+  });
+}
+
+export function externalEventMatchesDynamicFilters(
+  externalEvent: ExternalEvent,
+  dynamicFilters: LayerDynamicFilter<typeof ExternalEventLayerFilterField>[]
+): boolean {
+  return dynamicFilters.reduce((acc, curr) => {
+    let matches = false;
+    if (curr.field === 'Type') {
+      matches = matchesDynamicFilter(externalEvent.pkey.event_type_name, curr.operator, curr.value);
+    } else if (curr.field === 'Name') {
+      matches = matchesDynamicFilter(externalEvent.pkey.key, curr.operator, curr.value);
+    }
+    // TODO: may need help here
+    // } else if (curr.field === 'Attribute' && curr.subfield) {
+    //   const subfield = curr.subfield;
+    //   const args = externalEvent.attributes;
+    //   let argument = args[subfield.name];
+    //   matches = matchesDynamicFilter(argument, curr.operator, curr.value);
+    // }
+    return acc && matches;
+  }, true);
+}
+
+// TODO try consolidating with the function above
+export function externalEventTypeMatchesDynamicFilters(
+  type: ExternalEventType,
+  dynamicFilters: LayerDynamicFilter<typeof ExternalEventLayerFilterField>[],
+): boolean {
+  return dynamicFilters.reduce((acc, curr) => {
+    let matches = false;
+    if (curr.field === 'Type') {
+      matches = matchesDynamicFilter(type.name, curr.operator, curr.value);
+    }
+    return acc && matches;
+  }, true);
+}
+
 export function directiveOrSpanMatchesDynamicFilters(
   directiveOrSpan: ActivityDirective | Span,
-  dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
+  dynamicFilters: LayerDynamicFilter<typeof ActivityLayerFilterField>[],
   activityTypeDefMap: Record<string, ActivityType>,
   defaultArgumentsMap: DefaultEffectiveArgumentsMap,
 ): boolean {
@@ -1570,9 +1687,9 @@ export function directiveOrSpanMatchesDynamicFilters(
 }
 
 // TODO try consolidating with the function above
-export function typeMatchesDynamicFilters(
+export function activityTypeMatchesDynamicFilters(
   type: ActivityType,
-  dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
+  dynamicFilters: LayerDynamicFilter<typeof ActivityLayerFilterField>[],
 ): boolean {
   return dynamicFilters.reduce((acc, curr) => {
     let matches = false;
@@ -1589,10 +1706,11 @@ export function lowercase(value: any) {
   return typeof value === 'string' ? value.toLowerCase() : value;
 }
 
+// TODO: tweak this!!!
 export function matchesDynamicFilter(
-  rawItemValue: ActivityLayerDynamicFilter<ActivityLayerFilterField>['value'], // the actual value
-  operator: ActivityLayerDynamicFilter<ActivityLayerFilterField>['operator'],
-  rawFilterValue: ActivityLayerDynamicFilter<ActivityLayerFilterField>['value'], // the value(s) we're comparing against
+  rawItemValue: LayerDynamicFilter<ActivityLayerFilterField | ExternalEventLayerFilterField>['value'], // the actual value
+  operator: LayerDynamicFilter<ActivityLayerFilterField | ExternalEventLayerFilterField>['operator'],
+  rawFilterValue: LayerDynamicFilter<ActivityLayerFilterField | ExternalEventLayerFilterField>['value'], // the value(s) we're comparing against
 ) {
   const itemValue = lowercase(rawItemValue);
   const filterValue = lowercase(rawFilterValue);
