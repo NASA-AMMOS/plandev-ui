@@ -19,6 +19,7 @@
   import Input from './form/Input.svelte';
   import LayerPicker from './LayerPicker.svelte';
   import Menu from './menus/Menu.svelte';
+  import RowVirtualizerFixed from './RowVirtualizerFixed.svelte';
   import ListItem from './ui/ListItem.svelte';
   import Tag from './ui/Tags/Tag.svelte';
 
@@ -138,6 +139,7 @@
   }
 </script>
 
+<RowVirtualizerFixed />
 <div class="timeline-item-list">
   <div class="timeline-item-list-filters">
     <input
@@ -252,7 +254,8 @@
 
   <div class="list-items">
     {#if filteredItems.length}
-      {#each filteredItems as item}
+      <RowVirtualizerFixed count={filteredItems.length} overscan={100} let:index>
+        {@const item = filteredItems[index]}
         <ListItem
           draggable
           style="cursor: move;"
@@ -276,7 +279,7 @@
             </div>
           </span>
         </ListItem>
-      {/each}
+      </RowVirtualizerFixed>
       <LayerPicker
         bind:this={layerPickerIndividual}
         rows={timelines[0].rows || []}

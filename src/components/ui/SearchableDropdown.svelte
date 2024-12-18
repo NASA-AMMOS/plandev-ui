@@ -1,4 +1,4 @@
-<svelte:options accessors={true} immutable={true} />
+<svelte:options accessors={true} />
 
 <script lang="ts">
   // eslint-disable-next-line
@@ -21,6 +21,7 @@
   import Menu from '../menus/Menu.svelte';
   import MenuHeader from '../menus/MenuHeader.svelte';
   import MenuItem from '../menus/MenuItem.svelte';
+  import RowVirtualizerFixed from '../RowVirtualizerFixed.svelte';
 
   interface PlaceholderOption extends Omit<DropdownOption, 'value'> {
     value: null;
@@ -46,17 +47,19 @@
   export let searchPlaceholder: string = 'Search Items';
   export let iconTooltip: string = 'Set Selection';
   export let iconTooltipPlacement: string = 'top';
+  export let selectTooltip: string = '';
+  export let selectTooltipPlacement: string = 'top';
 
   export function hideMenu() {
-    if (presetMenu) {
+    if (menuRef) {
       dispatch('hideMenu');
-      presetMenu.hide();
+      menuRef.hide();
     }
   }
   export function openMenu() {
-    if (!disabled && hasUpdatePermission && presetMenu) {
+    if (!disabled && hasUpdatePermission && menuRef) {
       dispatch('openMenu');
-      presetMenu.show();
+      menuRef.show();
     }
   }
 
@@ -66,18 +69,20 @@
     openMenu: void;
   }>();
 
+  let filteredOptions: DisplayOptions = [];
   let displayedOptions: DisplayOptions = [];
   let label: string = '';
-  let presetMenu: Menu | undefined;
+  let menuRef: Menu | undefined;
   let searchFilter: string = '';
   let selectedOptions: DropdownOptions = [];
+  let clientWidth: number = 0;
 
   $: selectedOptions = options.filter(option => {
     return !!selectedOptionValues.find(value => value === option.value);
   });
 
   $: {
-    displayedOptions = !searchFilter
+    filteredOptions = !searchFilter
       ? [
           ...(showPlaceholderOption && placeholder
             ? [
@@ -93,7 +98,9 @@
           return new RegExp(searchFilter, 'i').test(option.display);
         });
     if (maxItems !== undefined) {
-      displayedOptions = displayedOptions.slice(0, maxItems);
+      displayedOptions = filteredOptions.slice(0, maxItems);
+    } else {
+      displayedOptions = filteredOptions;
     }
   }
   $: if (disabled) {
@@ -113,6 +120,10 @@
     } else {
       label = selectedOptions.map(selectedOption => selectedOption.display).join(', ');
     }
+  }
+
+  $: if (typeof clientWidth === 'number') {
+    menuRef?.hide();
   }
 
   function onCloseMenu() {
@@ -146,7 +157,7 @@
   }
 </script>
 
-<div class={rootClasses}>
+<div class={rootClasses} bind:clientWidth>
   <!-- svelte-ignore a11y-click-events-have-key-events a11y-interactive-supports-focus -->
   <div
     class="selected-display st-select w-100"
@@ -160,7 +171,7 @@
       hasPermission: hasUpdatePermission && !planReadOnly,
       permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : updatePermissionError,
     }}
-    use:tooltip={{ content: error, placement: 'top' }}
+    use:tooltip={{ content: error || selectTooltip, placement: selectTooltipPlacement }}
   >
     <span class="selected-display-value" class:error>{label}</span>
     <button
@@ -179,7 +190,7 @@
       {/if}
     </button>
   </div>
-  <Menu bind:this={presetMenu} hideAfterClick={false} placement="bottom-end" type="input" on:hide={onCloseMenu}>
+  <Menu bind:this={menuRef} hideAfterClick={false} placement="bottom-end" type="input" on:hide={onCloseMenu}>
     {#if $$slots['dropdown-header']}
       <MenuHeader>
         <slot name="dropdown-header" />
@@ -197,32 +208,42 @@
           />
         </Input>
       </div>
-      <div class="dropdown-items" style={`max-height:${maxListHeight}`}>
-        {#each displayedOptions as displayedOption}
-          <MenuItem
-            selected={!!selectedOptions.find(o => o.value === displayedOption.value)}
-            use={[
-              [
-                permissionHandler,
-                {
-                  hasPermission: displayedOption.hasSelectPermission ?? true,
-                  permissionError: 'You do not have permission to select this',
-                },
-              ],
-            ]}
-            on:click={event => onSelectOption(displayedOption, event.detail)}
-          >
-            <div class="dropdown-item">
-              <div class="dropdown-item-icon">
-                {#if selectedOptions.find(o => o.value === displayedOption.value)}
-                  <CheckIcon />
-                {/if}
-              </div>
-              <span class="st-typography-body">{displayedOption.display}</span>
+      <!-- TODO instead of using clientWidth here we could pass in a width as a prop -->
+      <RowVirtualizerFixed
+        count={displayedOptions.length}
+        overscan={100}
+        maxHeight={maxListHeight}
+        minWidth="{clientWidth + 160}px"
+        selectedIndex={selectedOptions.length
+          ? displayedOptions.findIndex(o => o.value === selectedOptions[0].value)
+          : undefined}
+        let:index
+      >
+        {@const displayedOption = displayedOptions[index]}
+        <MenuItem
+          selected={!!selectedOptions.find(o => o.value === displayedOption.value)}
+          use={[
+            [
+              permissionHandler,
+              {
+                hasPermission: displayedOption.hasSelectPermission ?? true,
+                permissionError: 'You do not have permission to select this',
+              },
+            ],
+          ]}
+          on:click={event => onSelectOption(displayedOption, event.detail)}
+        >
+          <div class="dropdown-item">
+            <div class="dropdown-item-icon">
+              {#if selectedOptions.find(o => o.value === displayedOption.value)}
+                <CheckIcon />
+              {/if}
             </div>
-          </MenuItem>
-        {/each}
-      </div>
+
+            <span class="dropdown-item-text st-typography-body">{displayedOption.display}</span>
+          </div>
+        </MenuItem>
+      </RowVirtualizerFixed>
     </div>
   </Menu>
 </div>
@@ -300,10 +321,17 @@
     display: flex;
     flex-direction: row;
     gap: 4px;
+    overflow: hidden;
   }
 
   .dropdown-item-icon {
     display: flex;
+    flex-shrink: 0;
     width: 24px;
+  }
+
+  .dropdown-item-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 </style>

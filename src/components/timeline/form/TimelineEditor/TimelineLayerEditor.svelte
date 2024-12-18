@@ -153,11 +153,12 @@
       </ActivityFilterBuilder>
     {:else if isLineLayer(layer) || isXRangeLayer(layer)}
       <SearchableDropdown
+        maxListHeight="400px"
         selectedOptionLabel={layer.name}
+        selectTooltip={layer.filter.resource || 'Select Resource'}
         showPlaceholderOption={false}
         className="w-100"
         placeholder="Select Resource"
-        iconTooltip="Select Resource"
         searchPlaceholder="Filter resources"
         selectedOptionValues={layer.filter.resource ? [layer.filter.resource] : []}
         options={resourceNames.map(resourceName => ({ display: resourceName, value: resourceName }))}

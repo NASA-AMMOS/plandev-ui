@@ -17,7 +17,10 @@
 
 <div class="activity-type-result">
   <div class="top-row">
-    <div class="title st-typography-medium"><DirectiveIcon />{name}</div>
+    <div class="title st-typography-medium">
+      <DirectiveIcon />
+      <div class="title-text">{name}</div>
+    </div>
     <slot name="right" />
     {#if removable}
       <button
@@ -53,7 +56,19 @@
     display: flex;
     flex-direction: row;
     gap: 8px;
+    overflow: hidden;
     padding: 8px;
+  }
+
+  .title-text {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .title :global(svg) {
+    flex-shrink: 0;
   }
 
   button.icon {

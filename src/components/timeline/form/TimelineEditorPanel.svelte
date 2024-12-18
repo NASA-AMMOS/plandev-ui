@@ -1277,11 +1277,6 @@
     color: var(--st-gray-50);
   }
 
-  .timeline-elements {
-    display: grid;
-    gap: 8px;
-  }
-
   .editor-section-labeled-grid-container {
     display: grid;
     gap: 8px;
@@ -1292,6 +1287,7 @@
   }
 
   .timeline-elements {
+    display: block;
     outline: none !important;
     overflow-x: hidden;
     overflow-y: auto;

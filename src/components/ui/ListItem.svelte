@@ -58,7 +58,7 @@
   }
 
   .list-item-content {
-    display: flex;
+    display: block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

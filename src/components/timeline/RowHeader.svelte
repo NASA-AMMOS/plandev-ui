@@ -378,6 +378,7 @@
   }
 
   :global(.row-header-y-axis-label svg) {
+    flex-shrink: 0;
     height: 16px;
     width: 16px;
   }
