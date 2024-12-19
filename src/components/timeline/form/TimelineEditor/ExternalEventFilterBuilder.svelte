@@ -111,7 +111,6 @@
 
   // same for events
   function onDynamicFilterChange(list: 'dynamic_type_filters' | 'global_filters', { detail: { filter } }: CustomEvent) {
-    console.log('HERE, dispatching filter change dynamic');
     const currentFilters = Array.isArray(dirtyFilter[list]) ? dirtyFilter[list] : [];
     dirtyFilter = {
       ...dirtyFilter,
@@ -137,9 +136,9 @@
     dispatch('filterChange', { filter: dirtyFilter });
   }
 
+  // TODO: verify behavior
   // same for events
   function onTypeSubfilterChange(type: string, { detail: { filter } }: CustomEvent) {
-    console.log('FIRED!');
     const typeSubfilters = dirtyFilter.type_subfilters || {};
     const currentFilters = typeSubfilters[type];
     dirtyFilter = {
@@ -196,7 +195,6 @@
   $: appliedFilter = applyExternalEventLayerFilter(dirtyFilter, $selectedExternalEvents);
 
   $: if (appliedFilter) {
-    console.log(appliedFilter);
     instanceCount = appliedFilter.externalEvents ? appliedFilter.externalEvents.length : -1; // should never be -1
   }
 
@@ -211,7 +209,6 @@
 
   // TODO: analogue for attributes
   $: {
-    console.log($externalEventTypes);
     const allAttributeTypes = (matchingTypes.length ? matchingTypes : $externalEventTypes).reduce(
       (acc: Record<string, LayerFilterSubfieldSchema>, eventType) => {
         // TODO: fix to make this a real valueschema
@@ -254,7 +251,6 @@
       },
       {},
     );
-    console.log(allAttributeTypes);
     // TODO support key/value for values array?
     attributeSubfields = Object.values(allAttributeTypes).sort((a, b) => compare(a.label, b.label));
   }
