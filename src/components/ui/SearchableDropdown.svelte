@@ -34,6 +34,8 @@
   export let disabled: boolean = false;
   export let error: string | undefined = undefined;
   export let hasUpdatePermission: boolean = true;
+  export let iconTooltip: string = 'Set Selection';
+  export let iconTooltipPlacement: string = 'top';
   export let options: DropdownOptions = [];
   export let maxItems: number | undefined = undefined;
   export let maxListHeight: string = '300px';
@@ -45,8 +47,6 @@
   export let selectedOptionValues: SelectedDropdownOptionValue[] = [];
   export let showPlaceholderOption: boolean = true;
   export let searchPlaceholder: string = 'Search Items';
-  export let iconTooltip: string = 'Set Selection';
-  export let iconTooltipPlacement: string = 'top';
   export let selectTooltip: string = '';
   export let selectTooltipPlacement: string = 'top';
 
@@ -76,6 +76,18 @@
   let searchFilter: string = '';
   let selectedOptions: DropdownOptions = [];
   let clientWidth: number = 0;
+  let maxOptionChars: number = 0;
+
+  $: {
+    selectedOptions = [];
+    options.forEach(option => {
+      if (selectedOptionValues.find(value => value === option.value)) {
+        selectedOptions.push(option);
+      }
+      const optionCharacterLength = option.display.toString().length;
+      maxOptionChars = Math.max(maxOptionChars, optionCharacterLength);
+    });
+  }
 
   $: selectedOptions = options.filter(option => {
     return !!selectedOptionValues.find(value => value === option.value);
@@ -213,15 +225,18 @@
         count={displayedOptions.length}
         overscan={100}
         maxHeight={maxListHeight}
-        minWidth="{clientWidth + 160}px"
+        minWidth="{Math.max(50, maxOptionChars * 7)}px"
         selectedIndex={selectedOptions.length
           ? displayedOptions.findIndex(o => o.value === selectedOptions[0].value)
           : undefined}
         let:index
       >
         {@const displayedOption = displayedOptions[index]}
+        {@const selected =
+          !!selectedOptions.find(o => o.value === displayedOption.value) ||
+          (!!showPlaceholderOption && selectedOptions.length === 0 && index === 0)}
         <MenuItem
-          selected={!!selectedOptions.find(o => o.value === displayedOption.value)}
+          {selected}
           use={[
             [
               permissionHandler,
@@ -235,7 +250,7 @@
         >
           <div class="dropdown-item">
             <div class="dropdown-item-icon">
-              {#if selectedOptions.find(o => o.value === displayedOption.value)}
+              {#if selected}
                 <CheckIcon />
               {/if}
             </div>
@@ -244,6 +259,14 @@
           </div>
         </MenuItem>
       </RowVirtualizerFixed>
+      {#if displayedOptions.length < 1}
+        <MenuItem selectable={false}>
+          <div class="dropdown-item">
+            <div class="dropdown-item-icon" />
+            <span class="dropdown-item-text st-typography-label">No results found</span>
+          </div>
+        </MenuItem>
+      {/if}
     </div>
   </Menu>
 </div>

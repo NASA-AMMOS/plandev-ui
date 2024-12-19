@@ -7,6 +7,7 @@
   export let use: ActionArray = [];
 
   export let disabled: boolean = false;
+  export let selectable: boolean = true;
   export let selected: boolean = false;
 
   const dispatch = createEventDispatcher<{
@@ -35,6 +36,7 @@
   class="menu-item"
   class:disabled
   class:selected
+  class:selectable
   role="menuitem"
   use:useActions={use}
   on:mouseup={onClick}
@@ -61,7 +63,11 @@
     width: 100%;
   }
 
-  .menu-item:hover {
+  .menu-item:not(.selectable) {
+    cursor: auto;
+  }
+
+  .menu-item.selectable:hover {
     background: var(--st-gray-20);
   }
 

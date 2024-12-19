@@ -4,12 +4,16 @@
 </script>
 
 <div class="header" class:menu-border-bottom={showBorder}>
-  <div class="left">
-    <div class="title st-typography-small-caps">
-      {title}
+  {#if title || $$slots.left}
+    <div class="left">
+      {#if title}
+        <div class="title st-typography-small-caps">
+          {title}
+        </div>
+      {/if}
+      <slot name="left" />
     </div>
-    <slot name="left" />
-  </div>
+  {/if}
   <slot />
 </div>
 
@@ -18,8 +22,7 @@
     align-items: center;
     color: var(--st-gray-40);
     cursor: auto;
-    display: grid;
-    grid-template-columns: auto auto;
+    display: flex;
     justify-content: space-between;
     padding: 8px;
   }

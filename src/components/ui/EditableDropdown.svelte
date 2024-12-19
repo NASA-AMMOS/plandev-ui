@@ -220,8 +220,7 @@
   }
 
   .dropdown-header {
-    column-gap: 6px;
-    display: grid;
-    grid-template-columns: auto repeat(3, 16px);
+    display: flex;
+    flex: 1;
   }
 </style>

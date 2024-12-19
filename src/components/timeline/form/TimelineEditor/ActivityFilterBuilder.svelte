@@ -468,7 +468,6 @@
                             does_not_include: { type: 'tag', values: $subsystemTags },
                             includes: { type: 'tag', values: $subsystemTags },
                           },
-                          // TODO make this a searchable dropdown, same for parameter variants?
                           Type: {
                             does_not_equal: { type: 'variant', values: $activityTypes.map(type => type.name) },
                             does_not_include: { type: 'string' },
