@@ -111,10 +111,10 @@
 
   function externalEventLayerHasFilters(layer: ExternalEventLayer) {
     return (
-      layer.filter.externalEvent && layer.filter.externalEvent.event_types?.length
-      // || TODO!!!!
-      //   layer.filter.activity.dynamic_type_filters?.length ||
-      //   layer.filter.activity.global_filters?.length)
+      layer.filter.externalEvent &&
+      (layer.filter.externalEvent.static_types?.length ||
+        layer.filter.externalEvent.dynamic_type_filters?.length ||
+        layer.filter.externalEvent.global_filters?.length)
     );
   }
 </script>

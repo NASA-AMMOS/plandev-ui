@@ -389,7 +389,7 @@
             filter: {
               ...currentLayer.filter,
               externalEvent: {
-                event_types: values,
+                static_types: values,
               },
             },
           };
@@ -412,6 +412,7 @@
   }
 
   function handleUpdateLayerProperty(name: string, value: string | number | boolean | object | null, layer: Layer) {
+    console.log('LAYERS', layers);
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
         return {
@@ -1197,9 +1198,8 @@
                 on:colorChange={({ detail: { color } }) => handleUpdateLayerColor(color, layer)}
                 on:remove={() => handleDeleteLayerClick(layer)}
                 on:duplicate={() => handleDuplicateLayer(layer)}
-                on:filterChange={(
-                  { detail: { filter } }, // TODO: update with event stuff
-                ) => handleUpdateLayerProperty('filter', { activity: filter }, layer)}
+                on:filterChange={({ detail: { filter } }) =>
+                  handleUpdateLayerProperty('filter', { activity: filter }, layer)}
               />
             {/each}
           </div>
@@ -1253,6 +1253,11 @@
                 on:colorChange={({ detail: { color } }) => handleUpdateLayerColor(color, layer)}
                 on:remove={() => handleDeleteLayerClick(layer)}
                 on:duplicate={() => handleDuplicateLayer(layer)}
+                on:filterChange={(
+                  { detail: { filter } }, // TODO: update with event stuff
+                ) => {
+                  handleUpdateLayerProperty('filter', { externalEvent: filter }, layer);
+                }}
               />
             {/each}
           </div>

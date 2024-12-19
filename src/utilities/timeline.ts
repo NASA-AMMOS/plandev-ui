@@ -1402,6 +1402,7 @@ export function applyActivityLayerFilter(
   types: ActivityType[],
   defaultArgumentsMap: DefaultEffectiveArgumentsMap,
 ) {
+  console.log("APPLYING")
   if (!filter) {
     return { directives, spans };
   }
@@ -1437,6 +1438,7 @@ export function applyActivityLayerFilter(
 
     // Apply global filters on top of the types
     if (filter.global_filters?.length) {
+      console.log("APPLYING GLOBAL FILTERS TO DIRECTIVES")
       included =
         directiveOrSpanMatchesDynamicFilters(directive, filter.global_filters, typeDefMap, defaultArgumentsMap) &&
         (anyTypeFiltersSpecified ? included : true);
@@ -1474,6 +1476,7 @@ export function applyActivityLayerFilter(
 
     // Apply global filters on top of the types
     if (filter.global_filters?.length) {
+      console.log("APPLYING GLOBAL FILTERS TO SPANS")
       included =
         directiveOrSpanMatchesDynamicFilters(span, filter.global_filters, typeDefMap, defaultArgumentsMap) &&
         (anyTypeFiltersSpecified ? included : true);
@@ -1611,14 +1614,12 @@ export function externalEventMatchesDynamicFilters(
       matches = matchesDynamicFilter(externalEvent.pkey.event_type_name, curr.operator, curr.value);
     } else if (curr.field === 'Name') {
       matches = matchesDynamicFilter(externalEvent.pkey.key, curr.operator, curr.value);
+    } else if (curr.field === 'Attribute' && curr.subfield) {
+      const subfield = curr.subfield;
+      const args = externalEvent.attributes;
+      const argument = args[subfield.name];
+      matches = matchesDynamicFilter(argument, curr.operator, curr.value);
     }
-    // TODO: may need help here
-    // } else if (curr.field === 'Attribute' && curr.subfield) {
-    //   const subfield = curr.subfield;
-    //   const args = externalEvent.attributes;
-    //   let argument = args[subfield.name];
-    //   matches = matchesDynamicFilter(argument, curr.operator, curr.value);
-    // }
     return acc && matches;
   }, true);
 }
@@ -1662,6 +1663,7 @@ export function directiveOrSpanMatchesDynamicFilters(
       matches = matchesDynamicFilter(ids, curr.operator, curr.value);
     } else if (curr.field === 'Parameter' && curr.subfield) {
       const subfield = curr.subfield;
+      console.log("parameter subfield", subfield, curr.value)
       const args = (directiveOrSpan as ActivityDirective).arguments || (directiveOrSpan as Span).attributes.arguments;
       let argument = args[subfield.name];
       if (argument === undefined) {

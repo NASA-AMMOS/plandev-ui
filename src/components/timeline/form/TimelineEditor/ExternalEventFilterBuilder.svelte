@@ -9,7 +9,10 @@
   import SpanIcon from '../../../../assets/timeline-span.svg?component';
   import { externalEventTypes, selectedExternalEvents } from '../../../../stores/external-event';
   import { activityTypes } from '../../../../stores/plan';
-  import type { ExternalEventLayerFilter } from '../../../../types/timeline';
+  import type { ValueSchemaVariant } from '../../../../types/schema';
+  import type { ExternalEventLayerFilter, LayerFilterSubfieldSchema } from '../../../../types/timeline';
+  import { compare } from '../../../../utilities/generic';
+  import { translateJsonSchemaArgumentsToValueSchema } from '../../../../utilities/parameters';
   import {
     applyExternalEventLayerFilter,
     getMatchingTypesForExternalEventLayerFilter,
@@ -29,7 +32,7 @@
 
   export let filter: ExternalEventLayerFilter | undefined;
 
-  // let parameterSubfields: LayerFilterSubfieldSchema[] = [];
+  let attributeSubfields: LayerFilterSubfieldSchema[] = [];
   let dirtyFilter: ExternalEventLayerFilter = {
     dynamic_type_filters: [],
     global_filters: [],
@@ -108,6 +111,7 @@
 
   // same for events
   function onDynamicFilterChange(list: 'dynamic_type_filters' | 'global_filters', { detail: { filter } }: CustomEvent) {
+    console.log('HERE, dispatching filter change dynamic');
     const currentFilters = Array.isArray(dirtyFilter[list]) ? dirtyFilter[list] : [];
     dirtyFilter = {
       ...dirtyFilter,
@@ -192,6 +196,7 @@
   $: appliedFilter = applyExternalEventLayerFilter(dirtyFilter, $selectedExternalEvents);
 
   $: if (appliedFilter) {
+    console.log(appliedFilter);
     instanceCount = appliedFilter.externalEvents ? appliedFilter.externalEvents.length : -1; // should never be -1
   }
 
@@ -205,50 +210,54 @@
   });
 
   // TODO: analogue for attributes
-  // $: {
-  //   const allParameterTypes = (matchingTypes.length ? matchingTypes : $externalEventTypes).reduce(
-  //     (acc: Record<string, LayerFilterSubfieldSchema>, eventType) => {
-  //       Object.entries(eventType.attribute_schema).forEach(([attributeName, attribute]) => {
-  //         console.log(JSON.stringify(eventType.attribute_schema));
-  //         const parameterType = attribute.schema.type;
-  //         // TODO support series and struct?
-  //         if (parameterType === 'series' || parameterType === 'struct') {
-  //           return;
-  //         }
-  //         const key = `${attributeName} (${parameterType})`;
-  //         const matchingName = !!acc[key];
-  //         const matchingEntry = matchingName && acc[key].type === parameterType;
-  //         const isVariant = parameterType === 'variant';
-  //         let values = null;
-  //         if (matchingEntry) {
-  //           acc[key].types.push(eventType.name);
-  //           if (isVariant) {
-  //             // If we have a matching variant, add unique variants to the list
-  //             const variantValues = (attribute.schema as ValueSchemaVariant).variants.map(variant => variant.key);
-  //             values = Array.from(new Set([...variantValues, ...(acc[key].values || [])]));
-  //             acc[key].values = values;
-  //           }
-  //         }
-  //         if (!matchingEntry) {
-  //           const values = isVariant
-  //             ? (attribute.schema as ValueSchemaVariant).variants.map(variant => variant.key)
-  //             : null;
-  //           acc[key] = {
-  //             name: attributeName,
-  //             type: parameterType,
-  //             types: [eventType.name],
-  //             ...(values ? { values } : null),
-  //             label: `${attributeName} (${parameterType})`,
-  //           };
-  //         }
-  //       });
-  //       return acc;
-  //     },
-  //     {},
-  //   );
-  //   // TODO support key/value for values array?
-  //   parameterSubfields = Object.values(allParameterTypes).sort((a, b) => compare(a.label, b.label));
-  // }
+  $: {
+    console.log($externalEventTypes);
+    const allAttributeTypes = (matchingTypes.length ? matchingTypes : $externalEventTypes).reduce(
+      (acc: Record<string, LayerFilterSubfieldSchema>, eventType) => {
+        // TODO: fix to make this a real valueschema
+        Object.entries(translateJsonSchemaArgumentsToValueSchema(eventType.attribute_schema.properties)).forEach(
+          ([attributeName, attribute]) => {
+            const parameterType = attribute.type;
+            // TODO support series and struct?
+            if (parameterType === 'array' || parameterType === 'object') {
+              return;
+            }
+            const key = `${attributeName} (${parameterType})`;
+            const matchingName = !!acc[key];
+            const matchingEntry = matchingName && acc[key].type === parameterType;
+            const isVariant = parameterType === 'variant';
+            let values = null;
+            if (matchingEntry) {
+              acc[key].types.push(eventType.name);
+              if (isVariant) {
+                // If we have a matching variant, add unique variants to the list
+                const variantValues = (attribute.enum as ValueSchemaVariant).variants.map(variant => variant.key);
+                values = Array.from(new Set([...variantValues, ...(acc[key].values || [])]));
+                acc[key].values = values;
+              }
+            }
+            if (!matchingEntry) {
+              const values = isVariant
+                ? (attribute.enum as ValueSchemaVariant).variants.map(variant => variant.key)
+                : null;
+              acc[key] = {
+                name: attributeName,
+                type: parameterType,
+                types: [eventType.name],
+                ...(values ? { values } : null),
+                label: `${attributeName} (${parameterType})`,
+              };
+            }
+          },
+        );
+        return acc;
+      },
+      {},
+    );
+    console.log(allAttributeTypes);
+    // TODO support key/value for values array?
+    attributeSubfields = Object.values(allAttributeTypes).sort((a, b) => compare(a.label, b.label));
+  }
 
   $: filteredExternalEventTypes = $externalEventTypes.filter(type => {
     if (!manualInputValue) {
@@ -440,9 +449,9 @@
                         on:change={event => onDynamicFilterChange('global_filters', event)}
                         verb={i === 0 ? 'Where' : 'and'}
                         schema={{
-                          // Attribute: {
-                          //   subfields: parameterSubfields,
-                          // },
+                          Attribute: {
+                            subfields: attributeSubfields,
+                          },
                           Name: {
                             does_not_equal: { type: 'string' },
                             does_not_include: { type: 'string' },

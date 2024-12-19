@@ -46,7 +46,7 @@ export enum ExternalEventLayerFilterField {
   'Attribute' = 'Attribute',
 }
 
-export type DynamicFilterDataType = ValueSchema['type'] | 'tag';
+export type DynamicFilterDataType = ValueSchema['type'] | 'tag' | 'enum' | 'number'; // TODO: remove enum and number, after making ExternalEventFilterBuilder (and its parts in DynamicFilter) conform to valueschema
 
 export type ActivityLayerFilter = {
   dynamic_type_filters?: LayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>>[];

@@ -10,7 +10,6 @@
     type DynamicFilterDataType,
     type LayerDynamicFilter,
     type LayerFilterSubfieldSchema,
-    ActivityLayerFilterField,
     ActivityLayerFilterField as ActivityLayerFilterFieldType,
     FilterOperator,
   } from '../../../../types/timeline';
@@ -38,7 +37,7 @@
   }>();
 
   let dirtyFilter = structuredClone(filter);
-  let currentField = dirtyFilter.field as keyof typeof ActivityLayerFilterFieldType;
+  let currentField = dirtyFilter.field as FilterFieldType; //keyof typeof ActivityLayerFilterFieldType;
   let currentOperator: keyof typeof FilterOperator | null = dirtyFilter.operator;
   let subfields: LayerFilterSubfieldSchema[] | undefined = undefined;
   let currentSubfieldLabel =
@@ -48,9 +47,10 @@
   let operatorKeys: (keyof typeof FilterOperator)[] = [];
   let currentValuePossibilities: Array<any> = [];
 
-  $: subfields = schema.Parameter?.subfields;
+  $: subfields = schema.Parameter?.subfields || schema.Attribute?.subfields;
+  $: console.log('SUBFIELDS IS CURRENTLY:', subfields);
 
-  $: if (currentField !== 'Parameter') {
+  $: if (currentField !== 'Parameter' && currentField !== 'Attribute') {
     currentSubfieldLabel = '';
     const schemaField = schema[currentField];
     if (schemaField) {
@@ -81,6 +81,28 @@
       } else if (matchingSubfield.type === 'boolean') {
         operatorKeys = ['equals', 'does_not_equal'];
       } else if (matchingSubfield.type === 'variant') {
+        operatorKeys = ['equals', 'does_not_equal'];
+        currentValuePossibilities = matchingSubfield.values || [];
+      } else {
+        // Choose first possible or.. none?
+      }
+    }
+  }
+
+  $: if (currentField === 'Attribute' && currentSubfieldLabel !== undefined && subfields) {
+    const matchingSubfield = subfields.find(subfield => subfield.label === currentSubfieldLabel) || subfields[0];
+    console.log('HERE', matchingSubfield);
+    if (matchingSubfield) {
+      // Map subfield type to filter type
+      // TODO: fix to align with ValueSchema
+      currentType = matchingSubfield.type;
+      if (matchingSubfield.type === 'string') {
+        operatorKeys = ['includes', 'does_not_include', 'equals', 'does_not_equal'];
+      } else if (matchingSubfield.type === 'number') {
+        operatorKeys = ['equals', 'does_not_equal', 'is_greater_than', 'is_less_than', 'is_within', 'is_not_within'];
+      } else if (matchingSubfield.type === 'boolean') {
+        operatorKeys = ['equals', 'does_not_equal'];
+      } else if (matchingSubfield.type === 'enum') {
         operatorKeys = ['equals', 'does_not_equal'];
         currentValuePossibilities = matchingSubfield.values || [];
       } else {
@@ -131,7 +153,7 @@
     }
   }
 
-  function onSelectParameter(event: CustomEvent<SelectedDropdownOptionValue>) {
+  function onSelectParameterOrAttribute(event: CustomEvent<SelectedDropdownOptionValue>) {
     currentSubfieldLabel = event.detail?.toString() || '';
     currentValue = '';
   }
@@ -159,8 +181,8 @@
       currentValue = newValue;
     }
   }
-  function asActivityLayerFilterField(s: string): keyof typeof ActivityLayerFilterField {
-    return s as keyof typeof ActivityLayerFilterField;
+  function asFilterField(s: string): FilterFieldType {
+    return s as FilterFieldType;
   }
 </script>
 
@@ -170,7 +192,7 @@
   {/if}
   <select class="st-select" on:change={onFieldChange} value={currentField}>
     {#each Object.keys(schema) as key}
-      <option value={key}>{ActivityLayerFilterField[asActivityLayerFilterField(key)]}</option>
+      <option value={key}>{asFilterField(key)}</option>
     {/each}
   </select>
   {#if currentField === 'Parameter' && subfields}
@@ -179,7 +201,20 @@
         placeholder="Select Parameter"
         iconTooltip="Select Parameter"
         searchPlaceholder="Filter parameters"
-        on:selectOption={onSelectParameter}
+        on:selectOption={onSelectParameterOrAttribute}
+        selectedOptionValue={currentSubfieldLabel}
+        options={subfields.map(subfield => ({ display: subfield.label, value: subfield.label }))}
+      >
+        <ChevronDownIcon slot="icon" />
+      </SearchableDropdown>
+    </div>
+  {:else if currentField === 'Attribute' && subfields}
+    <div class="dynamic-filter-searchable-dropdown">
+      <SearchableDropdown
+        placeholder="Select Attribute"
+        iconTooltip="Select Attribute"
+        searchPlaceholder="Filter attributes"
+        on:selectOption={onSelectParameterOrAttribute}
         selectedOptionValue={currentSubfieldLabel}
         options={subfields.map(subfield => ({ display: subfield.label, value: subfield.label }))}
       >
@@ -205,12 +240,14 @@
       {/if}
     {:else if currentType === 'int' || currentType === 'real'}
       <input class="st-input w-100" type="number" bind:value={currentValue} />
+    {:else if currentType === 'number'}
+      <input class="st-input w-100" type="number" bind:value={currentValue} />
     {:else if currentType === 'boolean'}
       <select class="st-select w-100" bind:value={currentValue}>
         <option value={true}>True</option>
         <option value={false}>False</option>
       </select>
-    {:else if currentType === 'variant'}
+    {:else if currentType === 'enum'}
       <select class="st-select w-100" bind:value={currentValue}>
         {#each currentValuePossibilities.sort() as value}
           <option {value}>{value}</option>

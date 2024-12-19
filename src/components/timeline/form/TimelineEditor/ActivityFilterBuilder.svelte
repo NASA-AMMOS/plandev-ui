@@ -12,7 +12,7 @@
   import { spans, spanUtilityMaps } from '../../../../stores/simulation';
   import { tags } from '../../../../stores/tags';
   import type { ValueSchemaVariant } from '../../../../types/schema';
-  import type { ActivityLayerFilter, ActivityLayerFilterSubfieldSchema } from '../../../../types/timeline';
+  import type { ActivityLayerFilter, LayerFilterSubfieldSchema } from '../../../../types/timeline';
   import { compare } from '../../../../utilities/generic';
   import {
     applyActivityLayerFilter,
@@ -33,7 +33,7 @@
 
   export let filter: ActivityLayerFilter | undefined;
 
-  let parameterSubfields: ActivityLayerFilterSubfieldSchema[] = [];
+  let parameterSubfields: LayerFilterSubfieldSchema[] = [];
   let dirtyFilter: ActivityLayerFilter = {
     dynamic_type_filters: [],
     global_filters: [],
@@ -219,8 +219,9 @@
   });
 
   $: {
+    console.log(matchingTypes);
     const allParameterTypes = (matchingTypes.length ? matchingTypes : $activityTypes).reduce(
-      (acc: Record<string, ActivityLayerFilterSubfieldSchema>, activityType) => {
+      (acc: Record<string, LayerFilterSubfieldSchema>, activityType) => {
         Object.entries(activityType.parameters).forEach(([parameterName, parameter]) => {
           const parameterType = parameter.schema.type;
           // TODO support series and struct?
@@ -233,7 +234,7 @@
           const isVariant = parameterType === 'variant';
           let values = null;
           if (matchingEntry) {
-            acc[key].activityTypes.push(activityType.name);
+            acc[key].types.push(activityType.name);
             if (isVariant) {
               // If we have a matching variant, add unique variants to the list
               const variantValues = (parameter.schema as ValueSchemaVariant).variants.map(variant => variant.key);
@@ -246,9 +247,9 @@
               ? (parameter.schema as ValueSchemaVariant).variants.map(variant => variant.key)
               : null;
             acc[key] = {
-              activityTypes: [activityType.name],
               name: parameterName,
               type: parameterType,
+              types: [activityType.name],
               ...(values ? { values } : null),
               label: `${parameterName} (${parameterType})`,
             };
@@ -260,6 +261,8 @@
     );
     // TODO support key/value for values array?
     parameterSubfields = Object.values(allParameterTypes).sort((a, b) => compare(a.label, b.label));
+    console.log('allParameterTypes: ', allParameterTypes);
+    console.log('parameterSubfields: ', parameterSubfields);
   }
 
   $: filteredActivityTypes = $activityTypes.filter(type => {
@@ -528,7 +531,7 @@
                               Parameter: {
                                 // Filter subfields to only those matching this type
                                 subfields: parameterSubfields.filter(subfield => {
-                                  return subfield.activityTypes.indexOf(type.name) > -1;
+                                  return subfield.types.indexOf(type.name) > -1;
                                 }),
                               },
                               SchedulingGoalId: {
