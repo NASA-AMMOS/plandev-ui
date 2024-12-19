@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import viewV0Migrated from '../tests/mocks/view/v0/view-migrated.json';
 import viewV0 from '../tests/mocks/view/v0/view.json';
 import viewV1 from '../tests/mocks/view/v1/view.json';
+import viewV2 from '../tests/mocks/view/v2/view.json';
 import {
   applyViewDefinitionMigrations,
   generateDefaultView,
@@ -59,10 +60,10 @@ describe('migrateViewDefinition', () => {
     const { anyMigrationsApplied, error, migratedViewDefinition } = applyViewDefinitionMigrations(viewV0 as any);
     expect(anyMigrationsApplied).toBeTruthy();
     expect(error).toBeNull();
-    expect(migratedViewDefinition).to.deep.eq(viewV1);
+    expect(migratedViewDefinition).to.deep.eq(viewV2);
   });
   test('Should apply no view migrations to a migration matching current version', async () => {
-    const { anyMigrationsApplied, error, migratedViewDefinition } = applyViewDefinitionMigrations(viewV1 as any);
+    const { anyMigrationsApplied, error, migratedViewDefinition } = applyViewDefinitionMigrations(viewV2 as any);
     expect(anyMigrationsApplied).toBeFalsy();
     expect(error).toBeNull();
     expect(migratedViewDefinition).to.deep.eq(viewV1);
