@@ -56,10 +56,8 @@ export const load: PageLoad = async ({ parent, params, url }) => {
         initialPlan.model.view,
       );
       const initialPlanSnapshotId = getSearchParameterNumber(SearchParameters.SNAPSHOT_ID, url.searchParams);
-      const extensions = await effects.getExtensions(user);
 
       return {
-        extensions,
         initialActivityTypes,
         initialPlan,
         initialPlanSnapshotId,

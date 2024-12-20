@@ -3627,21 +3627,6 @@ const effects = {
     }
   },
 
-  async getExtensions(user: User | null): Promise<Extension[]> {
-    try {
-      const data = await reqHasura<Extension[]>(gql.GET_EXTENSIONS, {}, user);
-      const { extensions = [] } = data;
-      if (extensions != null) {
-        return extensions;
-      } else {
-        throw Error('Unable to retrieve extensions');
-      }
-    } catch (e) {
-      catchError(e as Error);
-      return [];
-    }
-  },
-
   async getExternalEventTypes(plan_id: number, user: User | null): Promise<ExternalEventType[]> {
     try {
       const sourceData = await reqHasura<
