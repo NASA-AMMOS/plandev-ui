@@ -1399,7 +1399,7 @@ export function applyActivityLayerFilter(
   spans: Span[],
   types: ActivityType[],
   defaultArgumentsMap: DefaultEffectiveArgumentsMap,
-) {
+): { directives: ActivityDirective[]; spans: Span[] } {
   if (
     !filter ||
     (!filter.dynamic_type_filters?.length &&
@@ -1410,15 +1410,21 @@ export function applyActivityLayerFilter(
     return { directives, spans };
   }
 
-  const staticTypeMap: Record<string, boolean> = (filter.static_types || []).reduce((acc, cur) => {
-    acc[cur] = true;
-    return acc;
-  }, {});
+  const staticTypeMap: Record<string, boolean> = (filter.static_types || []).reduce(
+    (acc: Record<string, boolean>, cur: string) => {
+      acc[cur] = true;
+      return acc;
+    },
+    {},
+  );
   // TODO could be passed in to avoid recomputing this
-  const typeDefMap: Record<string, ActivityType> = (types || []).reduce((acc, cur) => {
-    acc[cur.name] = cur;
-    return acc;
-  }, {});
+  const typeDefMap: Record<string, ActivityType> = (types || []).reduce(
+    (acc: Record<string, ActivityType>, cur: ActivityType) => {
+      acc[cur.name] = cur;
+      return acc;
+    },
+    {},
+  );
 
   const anyTypeFiltersSpecified = !!(filter.static_types?.length || filter.dynamic_type_filters?.length);
   const filteredDirectives = directives.filter(directive => {
