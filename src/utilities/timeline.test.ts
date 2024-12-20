@@ -357,30 +357,6 @@ function generateExternalEvent(properties: Partial<ExternalEvent>): ExternalEven
   };
 }
 
-function generateDirective(properties: Partial<ActivityDirective>): ActivityDirective {
-  return {
-    anchor_id: null,
-    anchored_to_start: true,
-    applied_preset: null,
-    arguments: {},
-    created_at: '2022-08-03T18:21:51',
-    created_by: 'admin',
-    id: 1,
-    last_modified_arguments_at: '2022-08-03T21:53:22',
-    last_modified_at: '2022-08-03T21:53:22',
-    last_modified_by: 'admin',
-    metadata: {},
-    name: 'foo 1',
-    plan_id: 1,
-    source_scheduling_goal_id: null,
-    start_offset: '10:00:00',
-    start_time_ms: 1715731443696,
-    tags: [],
-    type: 'foo',
-    ...properties,
-  };
-}
-
 test('createTimeline', () => {
   const timelines = generateTimelines();
   expect(timelines[0].id).toBe(0);

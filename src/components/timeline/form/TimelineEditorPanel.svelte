@@ -368,48 +368,6 @@
     viewUpdateRow('horizontalGuides', newHorizontalGuides);
   }
 
-  function handleUpdateLayerFilter(values: string[], layer: Layer) {
-    const newLayers = layers.map(currentLayer => {
-      if (layer.id === currentLayer.id) {
-        if (isActivityLayer(currentLayer)) {
-          const newLayer: Layer = {
-            ...currentLayer,
-            filter: {
-              ...currentLayer.filter,
-              activity: {
-                static_types: values,
-              },
-            },
-          };
-          return newLayer;
-        } else if (isExternalEventLayer(currentLayer)) {
-          const newLayer: Layer = {
-            ...currentLayer,
-            filter: {
-              ...currentLayer.filter,
-              externalEvent: {
-                event_types: values,
-              },
-            },
-          };
-          return newLayer;
-        } else if (currentLayer.chartType === 'line' || currentLayer.chartType === 'x-range') {
-          const newLayer: Layer = {
-            ...currentLayer,
-            filter: {
-              ...currentLayer.filter,
-              resource: values[0],
-            },
-          };
-          return newLayer;
-        }
-      }
-      return currentLayer;
-    });
-
-    viewUpdateRow('layers', newLayers);
-  }
-
   function handleUpdateLayerProperty(property: string, value: string | number | boolean | object | null, layer: Layer) {
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
