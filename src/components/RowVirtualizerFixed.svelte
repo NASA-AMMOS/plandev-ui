@@ -21,7 +21,7 @@
 
   $: if (typeof selectedIndex === 'number') {
     requestAnimationFrame(() => {
-      scrollToIndex(selectedIndex);
+      scrollToIndex(selectedIndex ?? 0);
     });
   }
 

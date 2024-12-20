@@ -577,10 +577,7 @@ export function getUpdatedActivityLayerFilter(
   const hasSelectedFilters = metadata?.selectedFilters && Object.keys(metadata?.selectedFilters).length;
   if (hasTextFilters) {
     (metadata.textFilters || []).forEach(textFilter => {
-      // TODO ugh types
-      const typeFilter: ActivityLayerDynamicFilter<
-        Pick<typeof ActivityLayerFilterField, 'Type' | 'Name' | 'Subsystem'>
-      > = {
+      const typeFilter: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>> = {
         field: 'Type',
         id: getNextThingID(dynamicTypeFilters),
         operator: 'includes',
@@ -594,10 +591,7 @@ export function getUpdatedActivityLayerFilter(
       selectedFilter => selectedFilter.value,
     ) as number[];
     if (subsystems.length) {
-      // TODO ugh types
-      const typeFilter: ActivityLayerDynamicFilter<
-        Pick<typeof ActivityLayerFilterField, 'Type' | 'Name' | 'Subsystem'>
-      > = {
+      const typeFilter: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>> = {
         field: 'Subsystem',
         id: getNextThingID(dynamicTypeFilters),
         operator: 'includes',

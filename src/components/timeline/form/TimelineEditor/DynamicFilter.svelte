@@ -121,9 +121,9 @@
     } = event;
     let newValue = Array.isArray(currentValue) ? currentValue : [];
     if (type === 'remove') {
-      currentValue = newValue.filter(tagId => tagId !== tag.id) as number[];
+      currentValue = (newValue as number[]).filter(tagId => tagId !== tag.id) as number[];
     } else if (type === 'select') {
-      currentValue = newValue.concat(tag.id) as number[];
+      currentValue = (newValue as number[]).concat(tag.id) as number[];
     }
   }
 

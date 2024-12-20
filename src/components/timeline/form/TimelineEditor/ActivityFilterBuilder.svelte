@@ -114,7 +114,7 @@
     const currentFilters = Array.isArray(dirtyFilter[list]) ? dirtyFilter[list] : [];
     dirtyFilter = {
       ...dirtyFilter,
-      [list]: currentFilters.map(f => {
+      [list]: (currentFilters || []).map(f => {
         if (f.id === filter.id) {
           return filter;
         }
@@ -125,10 +125,12 @@
   }
 
   function onDynamicFilterRemove(list: 'dynamic_type_filters' | 'global_filters', id: number) {
-    const currentFilters = Array.isArray(dirtyFilter[list]) ? dirtyFilter[list] : [];
+    const currentFilters: ActivityLayerFilter['dynamic_type_filters'] | ActivityLayerFilter['global_filters'] =
+      Array.isArray(dirtyFilter[list]) ? dirtyFilter[list] : [];
     dirtyFilter = {
       ...dirtyFilter,
-      [list]: currentFilters.filter(f => {
+      // TODO unsure how to resolve the svelte ts check errors if these basic types here don't exist
+      [list]: ((currentFilters as { id: number }[]) || []).filter((f: { id: number }) => {
         return f.id !== id;
       }),
     };
