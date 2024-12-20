@@ -1514,10 +1514,13 @@ export function getMatchingTypesForActivityLayerFilter(filter: ActivityLayerFilt
     return types;
   }
 
-  const staticTypeMap: Record<string, boolean> = (filter.static_types || []).reduce((acc, cur) => {
-    acc[cur] = true;
-    return acc;
-  }, {});
+  const staticTypeMap: Record<string, boolean> = (filter.static_types || []).reduce(
+    (acc: Record<string, boolean>, cur: string) => {
+      acc[cur] = true;
+      return acc;
+    },
+    {},
+  );
 
   return types.filter(type => {
     let included = false;
