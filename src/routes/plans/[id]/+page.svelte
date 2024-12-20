@@ -61,6 +61,7 @@
     simulationDatasetErrors,
   } from '../../../stores/errors';
   import { planExpansionStatus, resetExpansionStores, selectedExpansionSetId } from '../../../stores/expansion';
+  import { extensions } from '../../../stores/extensions';
   import {
     activityTypes,
     initialPlan,
@@ -791,7 +792,7 @@
           </svelte:fragment>
         </PlanNavButton>
         <ExtensionMenu
-          extensions={data.extensions}
+          extensions={$extensions}
           title={!compactNavMode ? 'Extensions' : ''}
           user={data.user}
           on:callExtension={onCallExtension}

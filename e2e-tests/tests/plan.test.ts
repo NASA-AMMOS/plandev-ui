@@ -137,6 +137,11 @@ test.describe.serial('Plan', () => {
     await expect(plan.navButtonSchedulingMenu).not.toBeVisible();
   });
 
+  test(`By default the extension menu should not show because there are no extensions`, async () => {
+    await expect(plan.navButtonExtension).not.toBeVisible();
+    await expect(plan.navButtonExtensionMenu).not.toBeVisible();
+  });
+
   test(`Changing to a new plan should clear the selected activity`, async ({ baseURL }) => {
     await plan.showPanel(PanelNames.TIMELINE_ITEMS);
 
