@@ -24,8 +24,6 @@
             { "const": "does_not_equal" },
             { "const": "includes" },
             { "const": "does_not_include" },
-            { "const": "is_one_of" },
-            { "const": "is_not_one_of" },
             { "const": "is_greater_than" },
             { "const": "is_less_than" },
             { "const": "is_within" },

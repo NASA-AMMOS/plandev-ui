@@ -51,7 +51,7 @@ import type {
 } from '../types/timeline';
 import { generateRandomPastelColor } from './color';
 import { getExternalEventRowId } from './externalEvents';
-import { filterEmpty } from './generic';
+import { filterEmpty, lowercase } from './generic';
 import { getDoyTime } from './time';
 
 export enum TimelineLockStatus {
@@ -1559,7 +1559,7 @@ export function directiveOrSpanMatchesDynamicFilters(
         subsystemTagId = typeDef.subsystem_tag.id;
       }
       matches = matchesDynamicFilter(subsystemTagId, curr.operator, curr.value);
-    } else if (curr.field === 'Tag' && isArray((directiveOrSpan as ActivityDirective).tags)) {
+    } else if (curr.field === 'Tags' && isArray((directiveOrSpan as ActivityDirective).tags)) {
       const ids = (directiveOrSpan as ActivityDirective).tags.map(tag => tag.tag.id);
       matches = matchesDynamicFilter(ids, curr.operator, curr.value);
     } else if (curr.field === 'Parameter' && curr.subfield) {
@@ -1604,10 +1604,6 @@ export function typeMatchesDynamicFilters(
   }, true);
 }
 
-export function lowercase(value: any) {
-  return typeof value === 'string' ? value.toLowerCase() : value;
-}
-
 export function matchesDynamicFilter(
   rawItemValue: ActivityLayerDynamicFilter<ActivityLayerFilterField>['value'], // the actual value
   operator: ActivityLayerDynamicFilter<ActivityLayerFilterField>['operator'],
@@ -1634,6 +1630,9 @@ export function matchesDynamicFilter(
       return false;
     case 'does_not_include':
       if (typeof filterValue === 'string' && typeof itemValue === 'string') {
+        if (filterValue === '') {
+          return true;
+        }
         return itemValue.indexOf(filterValue) < 0;
       } else if (isArray(filterValue)) {
         return !(isArray(itemValue) ? itemValue : [itemValue]).find(
@@ -1641,16 +1640,6 @@ export function matchesDynamicFilter(
         );
       }
       return false;
-    case 'is_one_of':
-      if (!isArray(filterValue)) {
-        return itemValue === filterValue;
-      }
-      return (filterValue as (typeof itemValue)[]).indexOf(itemValue) > -1;
-    case 'is_not_one_of':
-      if (!isArray(filterValue)) {
-        return itemValue !== filterValue;
-      }
-      return (filterValue as (typeof itemValue)[]).indexOf(itemValue) < 0;
     case 'is_greater_than':
       return itemValue > filterValue;
     case 'is_less_than':

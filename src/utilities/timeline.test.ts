@@ -38,6 +38,7 @@ import {
   isExternalEventLayer,
   isLineLayer,
   isXRangeLayer,
+  matchesDynamicFilter,
   paginateNodes,
   spanInView,
 } from './timeline';
@@ -1568,7 +1569,7 @@ describe('applyActivityLayerFilter', () => {
         {
           global_filters: [
             {
-              field: 'Tag',
+              field: 'Tags',
               id: 1,
               operator: 'includes',
               value: [1],
@@ -1585,4 +1586,25 @@ describe('applyActivityLayerFilter', () => {
       spans: [],
     });
   });
+});
+
+test.only('matchesDynamicFilter', () => {
+  expect(matchesDynamicFilter('Foo', 'equals', 'Foo')).toBeTruthy();
+  expect(matchesDynamicFilter('Foo', 'does_not_equal', 'Bar')).toBeTruthy();
+  expect(matchesDynamicFilter('Foo', 'includes', '')).toBeFalsy();
+  expect(matchesDynamicFilter('Foo', 'includes', 'oo')).toBeTruthy();
+  expect(matchesDynamicFilter([], 'includes', [1])).toBeFalsy();
+  expect(matchesDynamicFilter([1, 2, 3], 'includes', [1])).toBeTruthy();
+  expect(matchesDynamicFilter('Foo', 'does_not_include', '')).toBeTruthy();
+  expect(matchesDynamicFilter('Foo', 'does_not_include', 'oo')).toBeFalsy();
+  expect(matchesDynamicFilter([], 'does_not_include', [1])).toBeTruthy();
+  expect(matchesDynamicFilter([1, 2, 3], 'does_not_include', [1])).toBeFalsy();
+  expect(matchesDynamicFilter(2, 'is_greater_than', 1)).toBeTruthy();
+  expect(matchesDynamicFilter('2', 'is_greater_than', '1')).toBeTruthy();
+  expect(matchesDynamicFilter(2, 'is_less_than', 1)).toBeFalsy();
+  expect(matchesDynamicFilter('2', 'is_less_than', '1')).toBeFalsy();
+  expect(matchesDynamicFilter(2, 'is_within', [1, 3])).toBeTruthy();
+  expect(matchesDynamicFilter(2, 'is_not_within', [1, 3])).toBeFalsy();
+  // @ts-expect-error forcing the case where an invalid operator is specified
+  expect(matchesDynamicFilter(2, 'is_definitely_somewhere_near', [1, 3])).toBeFalsy();
 });

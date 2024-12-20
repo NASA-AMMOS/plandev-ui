@@ -431,3 +431,10 @@ export async function parseJSONStream<R>(jsonStream: ReadableStream): Promise<R>
     }
   });
 }
+
+/**
+ * Lowercase the unknown value if it is a string
+ */
+export function lowercase(value: any) {
+  return typeof value === 'string' ? value.toLowerCase() : value;
+}

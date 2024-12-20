@@ -35,7 +35,7 @@ export enum ActivityLayerFilterField {
   'Type' = 'Type',
   'Name' = 'Name',
   'Subsystem' = 'Subsystem',
-  'Tag' = 'Tag',
+  'Tags' = 'Tags',
   'Parameter' = 'Parameter',
   'SchedulingGoalId' = 'Scheduling Goal Id',
 }
@@ -45,13 +45,13 @@ export type DynamicFilterDataType = ValueSchema['type'] | 'tag';
 export type ActivityLayerFilter = {
   dynamic_type_filters?: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>>[];
   global_filters?: ActivityLayerDynamicFilter<
-    Pick<typeof ActivityLayerFilterField, 'Tag' | 'Parameter' | 'SchedulingGoalId' | 'Name'>
+    Pick<typeof ActivityLayerFilterField, 'Tags' | 'Parameter' | 'SchedulingGoalId' | 'Name'>
   >[];
   static_types?: string[];
   type_subfilters?: Record<
     string,
     ActivityLayerDynamicFilter<
-      Pick<typeof ActivityLayerFilterField, 'Tag' | 'Parameter' | 'SchedulingGoalId' | 'Name'>
+      Pick<typeof ActivityLayerFilterField, 'Tags' | 'Parameter' | 'SchedulingGoalId' | 'Name'>
     >[]
   >;
 };
@@ -80,8 +80,6 @@ export enum FilterOperator {
   'does_not_equal' = 'does not equal',
   'includes' = 'includes',
   'does_not_include' = 'does not include',
-  'is_one_of' = 'is one of',
-  'is_not_one_of' = 'is not one of',
   'is_greater_than' = 'is greater than',
   'is_less_than' = 'is less than',
   'is_within' = 'is within',

@@ -13,12 +13,11 @@
   import { tags } from '../../../../stores/tags';
   import type { ValueSchemaVariant } from '../../../../types/schema';
   import type { ActivityLayerFilter, ActivityLayerFilterSubfieldSchema } from '../../../../types/timeline';
-  import { compare, getTarget } from '../../../../utilities/generic';
+  import { compare, getTarget, lowercase } from '../../../../utilities/generic';
   import {
     applyActivityLayerFilter,
     getMatchingTypesForActivityLayerFilter,
     getNextThingID,
-    lowercase,
   } from '../../../../utilities/timeline';
   import { tooltip } from '../../../../utilities/tooltip';
   import Input from '../../../form/Input.svelte';
@@ -99,7 +98,7 @@
   }
 
   function onAddDynamicFilter(list: 'dynamic_type_filters' | 'global_filters') {
-    const field = list === 'dynamic_type_filters' ? 'Type' : 'Tag';
+    const field = list === 'dynamic_type_filters' ? 'Type' : 'Tags';
     const listObj = dirtyFilter[list] || [];
     const currentFilters = Array.isArray(listObj) ? listObj : [];
     const id = getNextThingID(listObj);
@@ -487,7 +486,7 @@
               <div class="filter-section-header st-typography-medium">
                 <div class="filter-section-title">
                   Global Filters
-                  <div class="hint st-typography-body">Tag, parameter, scheduling goal, etc...</div>
+                  <div class="hint st-typography-body">Tags, parameter, scheduling goal, etc...</div>
                 </div>
                 <button
                   class="st-button icon"
@@ -521,7 +520,7 @@
                             equals: { type: 'int' },
                           },
 
-                          Tag: {
+                          Tags: {
                             does_not_include: { type: 'tag', values: $tags },
                             includes: { type: 'tag', values: $tags },
                           },
