@@ -585,7 +585,7 @@
                                 equals: { type: 'int' },
                               },
 
-                              Tag: {
+                              Tags: {
                                 does_not_include: { type: 'tag', values: $tags },
                                 includes: { type: 'tag', values: $tags },
                               },
