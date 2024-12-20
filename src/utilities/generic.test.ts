@@ -193,7 +193,11 @@ describe('Generic utility function tests', () => {
   });
 
   describe('lowercase', () => {
-    expect(lowercase([]).to.deep.eq([]));
-    expect(lowercase('ABC').to.eq('abc'));
+    test('Should lowercase a string', () => {
+      expect(lowercase('ABC')).to.eq('abc');
+    });
+    test('Should skip lowercasing if a string not provided', () => {
+      expect(lowercase([])).to.deep.eq([]);
+    });
   });
 });
