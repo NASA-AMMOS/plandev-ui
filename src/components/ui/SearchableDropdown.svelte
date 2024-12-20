@@ -75,11 +75,11 @@
   let menuRef: Menu | undefined;
   let searchFilter: string = '';
   let selectedOptions: DropdownOptions = [];
-  let clientWidth: number = 0;
-  let maxOptionChars: number = 0;
+  let maxWidth: number = 0;
 
   $: {
     selectedOptions = [];
+    let maxOptionChars = 0;
     options.forEach(option => {
       if (selectedOptionValues.find(value => value === option.value)) {
         selectedOptions.push(option);
@@ -87,6 +87,8 @@
       const optionCharacterLength = option.display.toString().length;
       maxOptionChars = Math.max(maxOptionChars, optionCharacterLength);
     });
+    // avg char length + 48 padding for the rest of the menu
+    maxWidth = Math.max(50, maxOptionChars * 8 + 48);
   }
 
   $: selectedOptions = options.filter(option => {
@@ -134,10 +136,6 @@
     }
   }
 
-  $: if (typeof clientWidth === 'number') {
-    menuRef?.hide();
-  }
-
   function onCloseMenu() {
     searchFilter = '';
   }
@@ -169,7 +167,7 @@
   }
 </script>
 
-<div class={rootClasses} bind:clientWidth>
+<div class={rootClasses}>
   <!-- svelte-ignore a11y-click-events-have-key-events a11y-interactive-supports-focus -->
   <div
     class="selected-display st-select w-100"
@@ -220,12 +218,11 @@
           />
         </Input>
       </div>
-      <!-- TODO instead of using clientWidth here we could pass in a width as a prop -->
       <RowVirtualizerFixed
         count={displayedOptions.length}
         overscan={100}
         maxHeight={maxListHeight}
-        minWidth="{Math.max(50, maxOptionChars * 7)}px"
+        minWidth="{maxWidth}px"
         selectedIndex={selectedOptions.length
           ? displayedOptions.findIndex(o => o.value === selectedOptions[0].value)
           : undefined}

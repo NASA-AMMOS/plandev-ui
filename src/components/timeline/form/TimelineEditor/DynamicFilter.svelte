@@ -73,7 +73,7 @@
   }
 
   $: if (currentField === 'Parameter' && currentSubfieldLabel !== undefined && subfields) {
-    const matchingSubfield = subfields.find(subfield => subfield.label === currentSubfieldLabel) || subfields[0];
+    const matchingSubfield = subfields.find(subfield => subfield.label === currentSubfieldLabel);
     if (matchingSubfield) {
       // Map subfield type to filter type
       currentType = matchingSubfield.type;
@@ -208,9 +208,19 @@
     {:else if currentOperator === 'is_within' || currentOperator === 'is_not_within'}
       {#if Array.isArray(currentValue)}
         <div class="range-input">
-          <input class="st-input w-100" type="number" on:input={event => onRangeInputChange(event, 'min')} />
+          <Input class="dynamic-filter-input">
+            <input class="st-input w-100" type="number" on:input={event => onRangeInputChange(event, 'min')} />
+            <div class="parameter-right" slot="right">
+              <ParameterUnits unit={currentUnit} />
+            </div>
+          </Input>
           <div class="st-typography-label">To</div>
-          <input class="st-input w-100" type="number" on:input={event => onRangeInputChange(event, 'max')} />
+          <Input class="dynamic-filter-input">
+            <input class="st-input w-100" type="number" on:input={event => onRangeInputChange(event, 'max')} />
+            <div class="parameter-right" slot="right">
+              <ParameterUnits unit={currentUnit} />
+            </div>
+          </Input>
         </div>
       {/if}
     {:else if currentType === 'int' || currentType === 'real'}
@@ -263,6 +273,7 @@
     on:click|stopPropagation={() => dispatch('remove')}
     class="st-button icon"
     use:tooltip={{ content: 'Remove Filter' }}
+    style="min-width: min-content"
   >
     <CloseIcon />
   </button>
@@ -288,7 +299,6 @@
 
   .dynamic-filter-value {
     flex: 1;
-    min-width: 40px;
   }
 
   .range-input {
@@ -299,5 +309,6 @@
 
   :global(.dynamic-filter-input.input.input-stacked) {
     display: grid;
+    min-width: 64px;
   }
 </style>
