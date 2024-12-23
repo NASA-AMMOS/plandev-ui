@@ -68,6 +68,7 @@
   export function show(): void {
     hideAllMenus(type);
     shown = true;
+    dispatch('show');
   }
 
   export function toggle(): void {
@@ -80,6 +81,7 @@
 
   const dispatch = createEventDispatcher<{
     hide: void;
+    show: void;
   }>();
 
   const [popperRef, popperContent] = createPopperActions({
