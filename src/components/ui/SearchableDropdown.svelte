@@ -167,8 +167,6 @@
       hideMenu();
     }
   }
-
-  $: console.log('menuOpen :>> ', menuOpen);
 </script>
 
 <div class={rootClasses}>
