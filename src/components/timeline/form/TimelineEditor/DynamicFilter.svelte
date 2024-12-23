@@ -179,7 +179,7 @@
   {#if verb}
     <div class="st-typography-body verb">{verb}</div>
   {/if}
-  <select class="st-select" on:change={onFieldChange} value={currentField}>
+  <select aria-label="field" class="st-select" on:change={onFieldChange} value={currentField}>
     {#each Object.keys(schema) as key}
       <option value={key}>{ActivityLayerFilterField[asActivityLayerFilterField(key)]}</option>
     {/each}
@@ -197,7 +197,7 @@
       <ChevronDownIcon slot="icon" />
     </SearchableDropdown>
   {/if}
-  <select class="st-select" value={currentOperator} on:change={onOperatorChange}>
+  <select aria-label="operator" class="st-select" value={currentOperator} on:change={onOperatorChange}>
     {#each operatorKeys as operator}
       <option value={operator}>{FilterOperator[operator]}</option>
     {/each}
@@ -209,14 +209,24 @@
       {#if Array.isArray(currentValue)}
         <div class="range-input">
           <Input class="dynamic-filter-input">
-            <input class="st-input w-100" type="number" on:input={event => onRangeInputChange(event, 'min')} />
+            <input
+              aria-label="value-min"
+              class="st-input w-100"
+              type="number"
+              on:input={event => onRangeInputChange(event, 'min')}
+            />
             <div class="parameter-right" slot="right">
               <ParameterUnits unit={currentUnit} />
             </div>
           </Input>
           <div class="st-typography-label">To</div>
           <Input class="dynamic-filter-input">
-            <input class="st-input w-100" type="number" on:input={event => onRangeInputChange(event, 'max')} />
+            <input
+              aria-label="value-max"
+              class="st-input w-100"
+              type="number"
+              on:input={event => onRangeInputChange(event, 'max')}
+            />
             <div class="parameter-right" slot="right">
               <ParameterUnits unit={currentUnit} />
             </div>
@@ -225,20 +235,20 @@
       {/if}
     {:else if currentType === 'int' || currentType === 'real'}
       <Input class="dynamic-filter-input">
-        <input bind:value={currentValue} class="st-input w-100" type="number" />
+        <input aria-label="value" bind:value={currentValue} class="st-input w-100" type="number" />
         <div class="parameter-right" slot="right">
           <ParameterUnits unit={currentUnit} />
         </div>
       </Input>
     {:else if currentType === 'duration'}
       <Input class="dynamic-filter-input">
-        <input bind:value={currentValue} class="st-input w-100" type="number" />
+        <input aria-label="value" bind:value={currentValue} class="st-input w-100" type="number" />
         <div class="parameter-right" slot="right">
           <ParameterUnits unit="ms" />
         </div>
       </Input>
     {:else if currentType === 'boolean'}
-      <select class="st-select w-100" bind:value={currentValue}>
+      <select aria-label="value" class="st-select w-100" bind:value={currentValue}>
         <option value={true}>True</option>
         <option value={false}>False</option>
       </select>
@@ -258,7 +268,6 @@
       {@const currentValueTags = (Array.isArray(currentValue) ? currentValue : []).map(t =>
         currentValuePossibilities.find(v => v.id === t),
       )}
-      <!-- TODO not positioning correctly -->
       <div style:width="100%">
         <TagsInput
           options={currentValuePossibilities}
@@ -270,6 +279,7 @@
     {/if}
   </div>
   <button
+    aria-label="Remove filter"
     on:click|stopPropagation={() => dispatch('remove')}
     class="st-button icon"
     use:tooltip={{ content: 'Remove Filter' }}
