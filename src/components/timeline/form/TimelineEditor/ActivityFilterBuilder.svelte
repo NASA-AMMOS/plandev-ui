@@ -519,7 +519,6 @@
                             does_not_equal: { type: 'int' },
                             equals: { type: 'int' },
                           },
-
                           Tags: {
                             does_not_include: { type: 'tag', values: $tags },
                             includes: { type: 'tag', values: $tags },
@@ -584,7 +583,6 @@
                                 does_not_equal: { type: 'int' },
                                 equals: { type: 'int' },
                               },
-
                               Tags: {
                                 does_not_include: { type: 'tag', values: $tags },
                                 includes: { type: 'tag', values: $tags },
