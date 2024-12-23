@@ -1588,7 +1588,7 @@ describe('applyActivityLayerFilter', () => {
   });
 });
 
-test.only('matchesDynamicFilter', () => {
+test('matchesDynamicFilter', () => {
   expect(matchesDynamicFilter('Foo', 'equals', 'Foo')).toBeTruthy();
   expect(matchesDynamicFilter('Foo', 'does_not_equal', 'Bar')).toBeTruthy();
   expect(matchesDynamicFilter('Foo', 'includes', '')).toBeFalsy();
