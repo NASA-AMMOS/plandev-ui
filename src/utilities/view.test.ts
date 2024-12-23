@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import viewV0Migrated from '../tests/mocks/view/v0/view-migrated.json';
 import viewV0 from '../tests/mocks/view/v0/view.json';
-import viewV1 from '../tests/mocks/view/v1/view.json';
 import viewV2 from '../tests/mocks/view/v2/view.json';
 import {
   applyViewDefinitionMigrations,
@@ -66,7 +65,7 @@ describe('migrateViewDefinition', () => {
     const { anyMigrationsApplied, error, migratedViewDefinition } = applyViewDefinitionMigrations(viewV2 as any);
     expect(anyMigrationsApplied).toBeFalsy();
     expect(error).toBeNull();
-    expect(migratedViewDefinition).to.deep.eq(viewV1);
+    expect(migratedViewDefinition).to.deep.eq(viewV2);
   });
   test('Should return errors if migration fails', async () => {
     const invalidView = structuredClone(viewV0);
