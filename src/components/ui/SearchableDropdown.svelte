@@ -73,6 +73,7 @@
   let displayedOptions: DisplayOptions = [];
   let label: string = '';
   let menuRef: Menu | undefined;
+  let menuOpen: boolean = false;
   let searchFilter: string = '';
   let selectedOptions: DropdownOptions = [];
   let maxWidth: number = 0;
@@ -138,6 +139,7 @@
 
   function onCloseMenu() {
     searchFilter = '';
+    menuOpen = false;
   }
 
   function onSearchPresets(event: Event) {
@@ -165,6 +167,8 @@
       hideMenu();
     }
   }
+
+  $: console.log('menuOpen :>> ', menuOpen);
 </script>
 
 <div class={rootClasses}>
@@ -175,7 +179,9 @@
     class:disabled
     {name}
     on:click|stopPropagation={openMenu}
-    role="textbox"
+    role="combobox"
+    aria-controls="menu"
+    aria-expanded={menuOpen}
     aria-label={label}
     use:permissionHandler={{
       hasPermission: hasUpdatePermission && !planReadOnly,
@@ -200,72 +206,81 @@
       {/if}
     </button>
   </div>
-  <Menu bind:this={menuRef} hideAfterClick={false} placement="bottom-end" type="input" on:hide={onCloseMenu}>
-    {#if $$slots['dropdown-header']}
-      <MenuHeader>
-        <slot name="dropdown-header" />
-      </MenuHeader>
-    {/if}
-    <div class="dropdown-items-container">
-      <div class="dropdown-search">
-        <Input>
-          <div class="search-icon" slot="left"><SearchIcon /></div>
-          <input
-            class="st-input w-100"
-            placeholder={searchPlaceholder}
-            value={searchFilter}
-            on:input={onSearchPresets}
-          />
-        </Input>
-      </div>
-      <RowVirtualizerFixed
-        count={displayedOptions.length}
-        overscan={100}
-        maxHeight={maxListHeight}
-        minWidth="{maxWidth}px"
-        selectedIndex={selectedOptions.length
-          ? displayedOptions.findIndex(o => o.value === selectedOptions[0].value)
-          : undefined}
-        let:index
-      >
-        {@const displayedOption = displayedOptions[index]}
-        {@const selected =
-          !!selectedOptions.find(o => o.value === displayedOption.value) ||
-          (!!showPlaceholderOption && selectedOptions.length === 0 && index === 0)}
-        <MenuItem
-          {selected}
-          use={[
-            [
-              permissionHandler,
-              {
-                hasPermission: displayedOption.hasSelectPermission ?? true,
-                permissionError: 'You do not have permission to select this',
-              },
-            ],
-          ]}
-          on:click={event => onSelectOption(displayedOption, event.detail)}
-        >
-          <div class="dropdown-item">
-            <div class="dropdown-item-icon">
-              {#if selected}
-                <CheckIcon />
-              {/if}
-            </div>
-
-            <span class="dropdown-item-text st-typography-body">{displayedOption.display}</span>
-          </div>
-        </MenuItem>
-      </RowVirtualizerFixed>
-      {#if displayedOptions.length < 1}
-        <MenuItem selectable={false}>
-          <div class="dropdown-item">
-            <div class="dropdown-item-icon" />
-            <span class="dropdown-item-text st-typography-label">No results found</span>
-          </div>
-        </MenuItem>
+  <div id="menu">
+    <Menu
+      bind:this={menuRef}
+      hideAfterClick={false}
+      placement="bottom-end"
+      type="input"
+      on:hide={onCloseMenu}
+      on:show={() => (menuOpen = true)}
+    >
+      {#if $$slots['dropdown-header']}
+        <MenuHeader>
+          <slot name="dropdown-header" />
+        </MenuHeader>
       {/if}
-    </div>
-  </Menu>
+      <div class="dropdown-items-container">
+        <div class="dropdown-search">
+          <Input>
+            <div class="search-icon" slot="left"><SearchIcon /></div>
+            <input
+              class="st-input w-100"
+              placeholder={searchPlaceholder}
+              value={searchFilter}
+              on:input={onSearchPresets}
+            />
+          </Input>
+        </div>
+        <RowVirtualizerFixed
+          count={displayedOptions.length}
+          overscan={100}
+          maxHeight={maxListHeight}
+          minWidth="{maxWidth}px"
+          selectedIndex={selectedOptions.length
+            ? displayedOptions.findIndex(o => o.value === selectedOptions[0].value)
+            : undefined}
+          let:index
+        >
+          {@const displayedOption = displayedOptions[index]}
+          {@const selected =
+            !!selectedOptions.find(o => o.value === displayedOption.value) ||
+            (!!showPlaceholderOption && selectedOptions.length === 0 && index === 0)}
+          <MenuItem
+            {selected}
+            use={[
+              [
+                permissionHandler,
+                {
+                  hasPermission: displayedOption.hasSelectPermission ?? true,
+                  permissionError: 'You do not have permission to select this',
+                },
+              ],
+            ]}
+            on:click={event => onSelectOption(displayedOption, event.detail)}
+          >
+            <div class="dropdown-item">
+              <div class="dropdown-item-icon">
+                {#if selected}
+                  <CheckIcon />
+                {/if}
+              </div>
+
+              <span class="dropdown-item-text st-typography-body">{displayedOption.display}</span>
+            </div>
+          </MenuItem>
+        </RowVirtualizerFixed>
+        {#if displayedOptions.length < 1}
+          <MenuItem selectable={false}>
+            <div class="dropdown-item">
+              <div class="dropdown-item-icon" />
+              <span class="dropdown-item-text st-typography-label">No results found</span>
+            </div>
+          </MenuItem>
+        {/if}
+      </div>
+    </Menu>
+  </div>
 </div>
 
 <style>
