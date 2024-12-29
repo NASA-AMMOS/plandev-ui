@@ -127,7 +127,10 @@ export function foldVariables(containerNode: SyntaxNode, state: EditorState): { 
 
   // Calculate the length of the directive (e.g. "@INPUT_PARAMETERS_BEGIN" or "@LOCALS_BEGIN")
   const directiveLength = state
-    .sliceDoc(containerNode.from, containerNode.to - variablesNodes.length ? getFromAndTo([...variablesNodes]).from : 0)
+    .sliceDoc(
+      containerNode.from,
+      containerNode.to - (variablesNodes.length > 0 ? getFromAndTo([...variablesNodes]).from : 0),
+    )
     .split('\n')[0].length;
 
   // Calculate the start of the fold range after the directive
