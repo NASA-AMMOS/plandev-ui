@@ -670,30 +670,6 @@
             <div />
           {/if}
         </EditorSection>
-
-        <!-- <fieldset class="editor-section editor-section-draggable">
-          <div class="editor-section-header editor-section-header-with-button">
-            <div class="st-typography-medium">Rows</div>
-            <div>
-              {#if rows.length}
-                <button
-                  on:click|stopPropagation={removeAllTimelineRows}
-                  use:tooltip={{ content: 'Delete All Rows', placement: 'top' }}
-                  class="st-button icon"
-                >
-                  <RemoveAllIcon />
-                </button>
-              {/if}
-              <button
-                on:click={addTimelineRow}
-                use:tooltip={{ content: 'New Row', placement: 'top' }}
-                class="st-button icon"
-              >
-                <PlusIcon />
-              </button>
-            </div>
-          </div>
-        </fieldset> -->
       {/if}
     {:else}
       <!-- Row editing -->

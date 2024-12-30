@@ -15,7 +15,7 @@
   }>();
 </script>
 
-<div class="activity-type-result">
+<div class="activity-type-result" role="listitem" aria-label="activity-type-result-{name}">
   <div class="top-row">
     <div class="title st-typography-medium">
       <DirectiveIcon />

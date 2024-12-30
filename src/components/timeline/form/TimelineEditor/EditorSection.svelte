@@ -21,7 +21,10 @@
   }>();
 </script>
 
-<fieldset class={classNames('editor-section', { 'editor-section-draggable': isDragContainer })}>
+<fieldset
+  aria-label="{item}-editor"
+  class={classNames('editor-section', { 'editor-section-draggable': isDragContainer })}
+>
   <div class="editor-section-header">
     <div class="st-typography-medium">{pluralizedItem}</div>
     {#if creatable}
@@ -36,6 +39,7 @@
           </button>
         {/if}
         <button
+          aria-label={`New ${item}`}
           on:click|stopPropagation={() => dispatch('create')}
           use:tooltip={{ content: `New ${item}`, placement: 'top' }}
           class="st-button icon"

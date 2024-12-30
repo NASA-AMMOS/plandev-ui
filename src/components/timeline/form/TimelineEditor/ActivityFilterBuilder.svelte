@@ -14,6 +14,7 @@
   import type { ValueSchemaVariant } from '../../../../types/schema';
   import type { ActivityLayerFilter, ActivityLayerFilterSubfieldSchema } from '../../../../types/timeline';
   import { compare, getTarget, lowercase } from '../../../../utilities/generic';
+  import { pluralize } from '../../../../utilities/text';
   import {
     applyActivityLayerFilter,
     getMatchingTypesForActivityLayerFilter,
@@ -341,8 +342,8 @@
 <div bind:this={rootRef} class="w-100" style:display="grid">
   <slot name="trigger" />
   {#if shown}
-    <!-- TODO maybe pass in dimensions? -->
     <Draggable
+      ariaLabel="activity-filter-builder"
       className="st-menu activity-filter-builder"
       initialWidth={filterWidth}
       initialHeight={filterHeight}
@@ -356,11 +357,12 @@
             autocomplete="off"
             class="st-input cancel-drag"
             name="layer-name"
+            aria-label="layer-name"
             placeholder="Enter a name for this filter..."
             style="width: 220px"
             on:input={onLayerNameChange}
           />
-          <button on:click|stopPropagation={hide} class="st-button icon">
+          <button on:click|stopPropagation={hide} class="st-button icon" aria-label="close">
             <CloseIcon />
           </button>
         </MenuHeader>
@@ -368,7 +370,7 @@
       <div class="body">
         <CssGrid columns="0.7fr 3px 0.3fr" columnMinSizes={{ 0: 500, 1: 3, 2: 300 }} class="activity-filter-grid">
           <div class="filters">
-            <div class="filter-section">
+            <div class="filter-section" aria-label="manual-types">
               <div class="filter-section-header st-typography-medium">
                 Manually Select Types
                 {#if dirtyFilter.static_types?.length}
@@ -387,6 +389,7 @@
                     <div class="search-icon" slot="left"><SearchIcon /></div>
                     <input
                       bind:this={manualInputRef}
+                      name="manual-types-filter-input"
                       class="st-input w-100 manual-types-filter-input"
                       placeholder="Select types"
                       bind:value={manualInputValue}
@@ -441,7 +444,7 @@
                 {/if}
               </div>
             </div>
-            <div class="filter-section">
+            <div class="filter-section" aria-label="dynamic-types">
               <div class="filter-section-header st-typography-medium">
                 <div class="filter-section-title">
                   Dynamically Select Types
@@ -450,6 +453,7 @@
                 <button
                   class="st-button icon"
                   on:click={() => onAddDynamicFilter('dynamic_type_filters')}
+                  aria-label="Add Filter"
                   use:tooltip={{ content: 'Add Filter' }}
                 >
                   <FilterWithPlusIcon />
@@ -457,7 +461,7 @@
               </div>
               {#if dirtyFilter.dynamic_type_filters?.length}
                 <div class="filter-section-content">
-                  <div class="dynamic-filter-content">
+                  <div class="dynamic-filter-content" role="list">
                     {#each dirtyFilter.dynamic_type_filters as filter, i (filter.id)}
                       <DynamicFilter
                         {filter}
@@ -482,7 +486,7 @@
                 </div>
               {/if}
             </div>
-            <div class="filter-section">
+            <div class="filter-section" aria-label="global-filters">
               <div class="filter-section-header st-typography-medium">
                 <div class="filter-section-title">
                   Global Filters
@@ -490,6 +494,7 @@
                 </div>
                 <button
                   class="st-button icon"
+                  aria-label="Add Filter"
                   on:click={() => onAddDynamicFilter('global_filters')}
                   use:tooltip={{ content: 'Add Filter' }}
                 >
@@ -498,7 +503,7 @@
               </div>
               {#if dirtyFilter.global_filters?.length}
                 <div class="filter-section-content">
-                  <div class="dynamic-filter-content">
+                  <div class="dynamic-filter-content" role="list">
                     {#each dirtyFilter.global_filters as filter, i (filter.id)}
                       <DynamicFilter
                         {filter}
@@ -539,7 +544,7 @@
               Resulting Types
               <div class="resulting-types-info-container">
                 <div class="resulting-types-info"><DirectiveIcon /> {matchingTypes.length} types</div>
-                <div class="resulting-types-info"><SpanIcon /> {instanceCount} instances</div>
+                <div class="resulting-types-info"><SpanIcon /> {instanceCount} instance{pluralize(instanceCount)}</div>
               </div>
             </div>
             <Input>
@@ -553,6 +558,7 @@
                     slot="right"
                     on:click={() => onAddTypeSubfilter(type.name)}
                     class="st-button icon"
+                    aria-label="Add Filter"
                     use:tooltip={{ content: 'Add Filter' }}
                   >
                     <FilterWithPlusIcon />

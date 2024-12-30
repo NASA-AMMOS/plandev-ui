@@ -175,7 +175,7 @@
   $: currentValueAsStringOrNumber = currentValue as string | number;
 </script>
 
-<div class="dynamic-filter">
+<div class="dynamic-filter" role="listitem">
   {#if verb}
     <div class="st-typography-body verb">{verb}</div>
   {/if}
@@ -204,12 +204,13 @@
   </select>
   <div class="dynamic-filter-value">
     {#if currentType === 'string'}
-      <input class="st-input w-100" bind:value={currentValue} />
+      <input name="filter-value" aria-label="value" class="st-input w-100" bind:value={currentValue} />
     {:else if currentOperator === 'is_within' || currentOperator === 'is_not_within'}
       {#if Array.isArray(currentValue)}
         <div class="range-input">
           <Input class="dynamic-filter-input">
             <input
+              name="filter-value-min"
               aria-label="value-min"
               class="st-input w-100"
               type="number"
@@ -222,6 +223,7 @@
           <div class="st-typography-label">To</div>
           <Input class="dynamic-filter-input">
             <input
+              name="filter-value-max"
               aria-label="value-max"
               class="st-input w-100"
               type="number"
@@ -235,20 +237,20 @@
       {/if}
     {:else if currentType === 'int' || currentType === 'real'}
       <Input class="dynamic-filter-input">
-        <input aria-label="value" bind:value={currentValue} class="st-input w-100" type="number" />
+        <input name="filter-value" aria-label="value" bind:value={currentValue} class="st-input w-100" type="number" />
         <div class="parameter-right" slot="right">
           <ParameterUnits unit={currentUnit} />
         </div>
       </Input>
     {:else if currentType === 'duration'}
       <Input class="dynamic-filter-input">
-        <input aria-label="value" bind:value={currentValue} class="st-input w-100" type="number" />
+        <input name="filter-value" aria-label="value" bind:value={currentValue} class="st-input w-100" type="number" />
         <div class="parameter-right" slot="right">
           <ParameterUnits unit="ms" />
         </div>
       </Input>
     {:else if currentType === 'boolean'}
-      <select aria-label="value" class="st-select w-100" bind:value={currentValue}>
+      <select name="filter-value" aria-label="value" class="st-select w-100" bind:value={currentValue}>
         <option value={true}>True</option>
         <option value={false}>False</option>
       </select>
@@ -270,6 +272,7 @@
       )}
       <div style:width="100%">
         <TagsInput
+          name="filter-value"
           options={currentValuePossibilities}
           selected={currentValueTags}
           on:change={onTagsInputChange}
