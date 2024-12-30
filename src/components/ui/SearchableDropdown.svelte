@@ -34,8 +34,6 @@
   export let disabled: boolean = false;
   export let error: string | undefined = undefined;
   export let hasUpdatePermission: boolean = true;
-  export let iconTooltip: string = 'Set Selection';
-  export let iconTooltipPlacement: string = 'top';
   export let options: DropdownOptions = [];
   export let maxItems: number | undefined = undefined;
   export let maxListHeight: string = '300px';
@@ -188,15 +186,7 @@
     use:tooltip={{ content: error || selectTooltip, placement: selectTooltipPlacement }}
   >
     <span class="selected-display-value" class:error>{label}</span>
-    <button
-      use:tooltip={{
-        content: iconTooltip,
-        disabled: !hasUpdatePermission && planReadOnly,
-        placement: iconTooltipPlacement,
-      }}
-      class="icon st-button icon-right"
-      on:click|stopPropagation={openMenu}
-    >
+    <button class="icon st-button icon-right" on:click|stopPropagation={openMenu}>
       {#if $$slots.icon}
         <slot name="icon" />
       {:else}

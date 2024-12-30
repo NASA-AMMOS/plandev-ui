@@ -173,7 +173,7 @@
         showPlaceholderOption={false}
         className="w-100"
         placeholder="Select Event Types"
-        iconTooltip="Select Event Types"
+        selectTooltip="Select Event Types"
         searchPlaceholder="Filter event types"
         selectedOptionValues={layer.filter.externalEvent?.event_types ?? []}
         options={$externalEventTypes.map(type => ({ display: type.name, value: type.name }))}

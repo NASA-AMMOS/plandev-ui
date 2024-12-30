@@ -188,7 +188,7 @@
     <SearchableDropdown
       className="dynamic-filter-searchable-dropdown-hide-overflow"
       placeholder="Select Parameter"
-      iconTooltip="Select Parameter"
+      selectTooltip="Select Parameter"
       searchPlaceholder="Filter parameters"
       on:change={onSelectParameter}
       selectedOptionValues={[currentSubfieldLabel]}
@@ -256,7 +256,7 @@
       <SearchableDropdown
         className="dynamic-filter-searchable-dropdown-hide-overflow"
         placeholder="Select Variant"
-        iconTooltip="Select Variant"
+        selectTooltip="Select Variant"
         searchPlaceholder="Filter Variants"
         on:change={onSelectValue}
         selectedOptionValues={[currentValueAsStringOrNumber]}

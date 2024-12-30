@@ -32,8 +32,8 @@
   export let selectedOptionValue: SelectedDropdownOptionValue | undefined = undefined;
   export let showPlaceholderOption: boolean = true;
   export let searchPlaceholder: string = `Search ${upperFirst(optionLabel)}s`;
-  export let iconTooltip: string = `Set ${upperFirst(optionLabel)}`;
-  export let iconTooltipPlacement: string = 'top';
+  export let selectTooltip: string = `Set ${upperFirst(optionLabel)}`;
+  export let selectTooltipPlacement: string = 'top';
 
   const dispatch = createEventDispatcher<{
     deleteOption: DropdownOptionValue;
@@ -148,8 +148,8 @@
   {planReadOnly}
   {searchPlaceholder}
   selectedOptionValues={selectedOptionValue !== undefined ? [selectedOptionValue] : []}
-  {iconTooltip}
-  {iconTooltipPlacement}
+  {selectTooltip}
+  {selectTooltipPlacement}
   {showPlaceholderOption}
   on:openMenu={onOpenMenu}
   on:change={onSelectOption}

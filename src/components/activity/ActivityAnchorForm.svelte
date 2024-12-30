@@ -159,7 +159,7 @@
           options={searchableOptions}
           placeholder="To Plan"
           searchPlaceholder="Search Directives"
-          iconTooltip="Set Anchor"
+          selectTooltip="Set Anchor"
           selectedOptionValues={typeof anchorId === 'number' ? [anchorId] : []}
           {updatePermissionError}
           on:change={onSelectAnchor}
