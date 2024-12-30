@@ -506,7 +506,7 @@
       file = files[0];
       if (file !== undefined && /\.json$/.test(file.name)) {
         uploadResponseErrors = [];
-        const combinedSchema = await parseJSONStream<{ event_types: object; source_types: object }>(file.stream());
+        const combinedSchema = await parseJSONStream<ExternalSourceEventTypeSchema>(file.stream());
         await effects.createExternalSourceEventTypes(combinedSchema.event_types, combinedSchema.source_types, user);
         files = undefined;
         file = undefined;
@@ -523,7 +523,7 @@
 
     try {
       parsedExternalSourceEventTypeSchema = await parseJSONStream<ExternalSourceEventTypeSchema>(stream);
-      if (!parsedExternalSourceEventTypeSchema.event_types || !parsedExternalSourceEventTypeSchema.source_types) {
+      if (!parsedExternalSourceEventTypeSchema.event_types && !parsedExternalSourceEventTypeSchema.source_types) {
         parsedExternalSourceEventTypeSchema = undefined;
         throw new Error('External Source & Event Type Schema has Invalid Format');
       }
@@ -584,17 +584,21 @@
           {#if parsedExternalSourceEventTypeSchema !== undefined}
             <div class="to-be-created st-typography-body">
               <div class="to-be-created-header">The following External Source Type(s) will be created</div>
-              <ul>
-                {#each Object.keys(parsedExternalSourceEventTypeSchema.source_types) as newSourceTypeName}
-                  <li class="st-typograph-body">{newSourceTypeName}</li>
-                {/each}
-              </ul>
+              {#if parsedExternalSourceEventTypeSchema.source_types}
+                <ul>
+                  {#each Object.keys(parsedExternalSourceEventTypeSchema.source_types) as newSourceTypeName}
+                    <li class="st-typograph-body">{newSourceTypeName}</li>
+                  {/each}
+                </ul>
+              {/if}
               <div class="to-be-created-header">The following External Event Type(s) will be created</div>
-              <ul>
-                {#each Object.keys(parsedExternalSourceEventTypeSchema.event_types) as newEventTypeName}
-                  <li class="st-typograph-body">{newEventTypeName}</li>
-                {/each}
-              </ul>
+              {#if parsedExternalSourceEventTypeSchema.event_types}
+                <ul>
+                  {#each Object.keys(parsedExternalSourceEventTypeSchema.event_types) as newEventTypeName}
+                    <li class="st-typograph-body">{newEventTypeName}</li>
+                  {/each}
+                </ul>
+              {/if}
             </div>
           {/if}
           <div class="errors">
