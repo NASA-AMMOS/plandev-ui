@@ -210,7 +210,6 @@ test.describe.serial('Timeline View Editing', () => {
     expect(await resultingTypesList.locator('.activity-type-result').count()).toEqual(allActivityTypesCount);
 
     // Close the modal
-    await page.pause();
     await modal.getByRole('button', { name: 'close' }).click();
   });
 
