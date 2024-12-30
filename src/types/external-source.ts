@@ -51,8 +51,8 @@ export type PlanDerivationGroup = {
 };
 
 export type ExternalSourceEventTypeSchema = {
-  event_types: SchemaObject;
-  source_types: SchemaObject;
+  event_types?: SchemaObject;
+  source_types?: SchemaObject;
 };
 
 export type ExternalSourceType = {

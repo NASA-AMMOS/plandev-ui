@@ -66,6 +66,7 @@
   import DatePicker from '../ui/DatePicker/DatePicker.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
+  import ExternalSourceTypeNewCard from './ExternalSourceTypeNewCard.svelte';
 
   export let user: User | null;
 
@@ -160,6 +161,8 @@
   let parsedExternalSource: ExternalSourceJson | undefined;
   let isUploadDisabled: boolean = true;
   let uploadDisabledMessage: string | null = null;
+  let newExternalSourceType: string | null = null;
+  let newExternalEventTypes: string[] | null = null;
 
   // For filtering purposes (modelled after TimelineEditorLayerFilter):
   let filterExpression: string = '';
@@ -340,14 +343,8 @@
   });
 
   $: if (parsedExternalSource !== undefined) {
-    if ($externalEventTypes.length === 0) {
-      uploadDisabledMessage = `No external event types are currently defined, please create one before uploading an external source!`;
-      isUploadDisabled = true;
-    } else if ($externalSourceTypes.length === 0) {
-      uploadDisabledMessage = `No external source types are currently defined, please create one before uploading an external source!`;
-      isUploadDisabled = true;
-    }
-    isUploadDisabled = doesSourceTypeAndEventTypesExist(parsedExternalSource);
+    doesSourceTypeAndEventTypesExist(parsedExternalSource);
+    isUploadDisabled = false;
   } else {
     isUploadDisabled = true;
     uploadDisabledMessage = null;
@@ -373,42 +370,75 @@
 
   async function onFormSubmit(_e: SubmitEvent) {
     if (parsedExternalSource && file) {
-      const requestResponse:
-        | { createExternalSource: ExternalSourceSlim; upsertDerivationGroup: { name: string } | null }
-        | undefined = await effects.createExternalSource(
-        $sourceTypeField.value,
-        $derivationGroupField.value,
-        $startTimeDoyField.value,
-        $endTimeDoyField.value,
-        parsedExternalSource.events,
-        parsedExternalSource.source.key,
-        parsedExternalSource.source.attributes,
-        $validAtDoyField.value,
-        user,
-      );
-      // Following a successful mutation...
-      if (requestResponse !== undefined) {
-        const { createExternalSource: createExternalSourceResponse } = requestResponse;
-        // Auto-select the new source
-        selectedSource = {
-          ...createExternalSourceResponse,
-          created_at: new Date().toISOString().replace('Z', '+00:00'), // technically not the exact time it shows up in the database
-        };
-        gridRowSizes = gridRowSizesBottomPanel;
-      }
-    }
+      // Create non-existing types first:
+      // TODO: cleanup
+      let newEventTypes: { [x: string]: object } = {};
+      let newSourceType: { [x: string]: object } = {};
 
-    // Reset the form behind the source
-    parsedExternalSource = undefined;
-    file = undefined;
-    files = undefined;
-    externalSourceFileInput.value = '';
-    keyField.reset('');
-    sourceTypeField.reset('');
-    startTimeDoyField.reset('');
-    endTimeDoyField.reset('');
-    validAtDoyField.reset('');
-    derivationGroupField.reset('');
+      if (newExternalSourceType !== null) {
+        newSourceType = {
+          [newExternalSourceType]: {
+            properties: {},
+            required: [],
+            type: 'object',
+          },
+        };
+      }
+      if (newExternalEventTypes !== null) {
+        for (let type of newExternalEventTypes) {
+          newEventTypes[type] = {
+            properties: {},
+            required: [],
+            type: 'object',
+          };
+        }
+      }
+
+      const createdTypes =
+        newExternalSourceType !== null || newExternalEventTypes !== null
+          ? await effects.createExternalSourceEventTypes(newEventTypes, newSourceType, user)
+          : true;
+
+      console.log('CREATED TYPES: ', createdTypes);
+
+      if (createdTypes) {
+        const requestResponse:
+          | { createExternalSource: ExternalSourceSlim; upsertDerivationGroup: { name: string } | null }
+          | undefined = await effects.createExternalSource(
+          $sourceTypeField.value,
+          $derivationGroupField.value,
+          $startTimeDoyField.value,
+          $endTimeDoyField.value,
+          parsedExternalSource.events,
+          parsedExternalSource.source.key,
+          parsedExternalSource.source.attributes,
+          $validAtDoyField.value,
+          user,
+        );
+        // Following a successful mutation...
+        if (requestResponse !== undefined) {
+          const { createExternalSource: createExternalSourceResponse } = requestResponse;
+          // Auto-select the new source
+          selectedSource = {
+            ...createExternalSourceResponse,
+            created_at: new Date().toISOString().replace('Z', '+00:00'), // technically not the exact time it shows up in the database
+          };
+          gridRowSizes = gridRowSizesBottomPanel;
+        }
+      }
+
+      // Reset the form behind the source
+      parsedExternalSource = undefined;
+      file = undefined;
+      files = undefined;
+      externalSourceFileInput.value = '';
+      keyField.reset('');
+      sourceTypeField.reset('');
+      startTimeDoyField.reset('');
+      endTimeDoyField.reset('');
+      validAtDoyField.reset('');
+      derivationGroupField.reset('');
+    }
   }
 
   async function parseExternalSourceFileStream(stream: ReadableStream) {
@@ -476,29 +506,29 @@
     }
   }
 
-  function doesSourceTypeAndEventTypesExist(externalSource: ExternalSourceJson): boolean {
+  function doesSourceTypeAndEventTypesExist(externalSource: ExternalSourceJson) {
     // Check that the External Source Type for the source to-be-uploaded exists
     const externalSourceType = $externalSourceTypes.find(
       sourceType => sourceType.name === externalSource.source.source_type,
     );
     if (externalSourceType === undefined) {
-      uploadDisabledMessage = `External Source Type "${externalSource.source.source_type}" is not defined. Please create it!`;
-      return true;
+      newExternalSourceType = externalSource.source.source_type;
     }
 
     // Check that all the External Event Types for the source to-be-uploaded exist
     const newSourceExternalEventTypes: string[] = Array.from(
       new Set(externalSource.events.map(event => event.event_type)),
     );
+
+    let eventTypes: string[] = [];
     for (const eventType of newSourceExternalEventTypes) {
       if ($externalEventTypes.find(eventTypeFromDB => eventTypeFromDB.name === eventType) === undefined) {
-        uploadDisabledMessage = `External Event Type "${eventType}" is not defined. Please create it!`;
-        return true;
+        eventTypes.push(eventType);
       }
     }
-
-    uploadDisabledMessage = null;
-    return false;
+    if (eventTypes.length > 0) {
+      newExternalEventTypes = eventTypes;
+    }
   }
 </script>
 
@@ -674,6 +704,11 @@
           <AlertError class="m-2" error={$createExternalSourceError} />
           <AlertError class="m-2" error={$parsingError} />
           <AlertError class="m-2" error={uploadDisabledMessage} />
+          <ExternalSourceTypeNewCard
+            disabled={$sourceTypeField.value !== ''}
+            externalSourceType={newExternalSourceType}
+            externalEventTypes={newExternalEventTypes}
+          />
           <div class="file-upload-field">
             <fieldset style:flex={1}>
               <label for="file">Source File</label>
