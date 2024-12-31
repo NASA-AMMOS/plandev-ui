@@ -271,7 +271,7 @@ export class Plan {
   }
 
   async fillSimulationTemplateName(templateName: string) {
-    await this.panelSimulation.getByRole('button', { name: 'Set Template' }).click();
+    await this.panelSimulation.locator('div[name="Set Template"]').click();
     await this.panelSimulation.locator('.dropdown-header').waitFor({ state: 'attached' });
     await this.panelSimulation.getByPlaceholder('Enter template name').click();
     await this.panelSimulation.getByPlaceholder('Enter template name').fill(templateName);
@@ -420,7 +420,7 @@ export class Plan {
   }
 
   async selectSimulationTemplateByName(templateName: string) {
-    await this.panelSimulation.getByRole('button', { name: 'Set Template' }).click();
+    await this.panelSimulation.locator('div[name="Set Template"]').click();
 
     await this.panelSimulation.getByRole('menuitem', { name: templateName }).waitFor({ state: 'attached' });
     await this.panelSimulation.getByRole('menuitem', { name: templateName }).click();
@@ -447,7 +447,7 @@ export class Plan {
         templateName,
       templateName,
     );
-    await expect(this.panelSimulation.getByRole('textbox', { name: templateName })).toBeVisible();
+    await expect(this.panelSimulation.getByRole('combobox', { name: templateName })).toBeVisible();
   }
 
   async showConstraintsLayout() {

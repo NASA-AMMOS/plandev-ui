@@ -87,7 +87,7 @@ test.describe.serial('Plan Simulation Templates', async () => {
   test('Deleting an simulation template should remove it from the list of templates', async () => {
     await plan.selectSimulationTemplateByName('Template 1');
 
-    await page.getByRole('button', { name: 'Set Template' }).click();
+    await plan.panelSimulation.locator('div[name="Set Template"]').click();
 
     await page.getByRole('button', { name: 'Delete Template' }).waitFor({ state: 'attached' });
     await page.getByRole('button', { name: 'Delete Template' }).click();
