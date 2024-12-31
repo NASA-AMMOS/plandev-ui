@@ -389,7 +389,7 @@ export class Plan {
   }
 
   async selectActivityPresetByName(presetName: string) {
-    await this.panelActivityForm.getByRole('button', { name: 'Set Preset' }).click();
+    await this.panelActivityForm.getByRole('combobox', { name: 'Set Preset' }).click();
 
     await this.panelActivityForm.getByRole('menuitem', { name: presetName }).waitFor({ state: 'attached' });
     await this.panelActivityForm.getByRole('menuitem', { name: presetName }).click();
