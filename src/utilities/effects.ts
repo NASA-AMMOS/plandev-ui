@@ -178,8 +178,10 @@ import {
   type Workspace,
 } from '../types/sequencing';
 import type {
+  PartialProfile,
   PlanDataset,
   Profile,
+  ProfileSegment,
   Resource,
   ResourceType,
   SimulateResponse,
@@ -4166,13 +4168,44 @@ const effects = {
     return null;
   },
 
-  getResource(
+  async getResource(
     datasetId: number,
     name: string,
     user: User | null,
     signal: AbortSignal | undefined = undefined,
   ): Promise<Record<string, Profile[] | null>> {
-    return reqHasura<Profile[]>(gql.GET_PROFILE, { datasetId, name }, user, signal);
+    try {
+      const profileResponse = await reqHasura<PartialProfile[]>(gql.GET_PROFILE, { datasetId, name }, user, signal);
+      const { profile } = profileResponse;
+      if (profile) {
+        const profileSegmentsResponse = await reqHasura<ProfileSegment[]>(
+          gql.GET_PROFILE_SEGMENTS,
+          { datasetId },
+          user,
+          signal,
+        );
+
+        const { profile_segment } = profileSegmentsResponse;
+
+        if (profile_segment) {
+          const profiles: Profile[] = profile.map(partialProfile => {
+            const relevantProfileSegments = profile_segment.filter(
+              profileSegment => profileSegment.profile_id === partialProfile.id,
+            );
+            return {
+              ...partialProfile,
+              profile_segments: relevantProfileSegments,
+            };
+          });
+
+          return { profile: profiles };
+        }
+      }
+    } catch (e) {
+      catchError(e as Error);
+    }
+
+    return { profile: null };
   },
 
   async getResourceTypes(model_id: number, user: User | null, limit: number | null = null): Promise<ResourceType[]> {

@@ -169,6 +169,7 @@ export enum Queries {
   PLAN_SNAPSHOTS = 'plan_snapshot',
   PLAN_SNAPSHOT_ACTIVITIES = 'plan_snapshot_activities',
   PROFILES = 'profile',
+  PROFILE_SEGMENTS = 'profile_segment',
   RESOURCE_TYPES = 'resource_type',
   RESTORE_ACTIVITY_FROM_CHANGELOG = 'restoreActivityFromChangelog',
   RESTORE_FROM_SNAPSHOT = 'restore_from_snapshot',
@@ -1772,13 +1773,6 @@ const gql = {
         duration
         id
         name
-        profile_segments(where: { dataset_id: { _eq: $datasetId } }, order_by: { start_offset: asc }) {
-          dataset_id
-          dynamics
-          is_gap
-          profile_id
-          start_offset
-        }
         type
       }
     }
@@ -1805,6 +1799,18 @@ const gql = {
         }
         dataset_id
         offset_from_plan_start
+      }
+    }
+  `,
+
+  GET_PROFILE_SEGMENTS: `#graphql
+    query GetProfileSegments($datasetId: Int!) {
+      ${Queries.PROFILE_SEGMENTS}(where: { dataset_id: { _eq: $datasetId } } ) {
+        dataset_id
+        dynamics
+        is_gap
+        profile_id
+        start_offset
       }
     }
   `,

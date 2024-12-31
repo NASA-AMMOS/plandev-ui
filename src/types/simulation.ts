@@ -15,16 +15,19 @@ export type PlanDatasetNames = {
   dataset: { profiles: { name: string }[] };
 };
 
-export type Profile = {
+export type PartialProfile = {
   dataset_id: number;
   duration: string;
   id: number;
   name: string;
-  profile_segments: ProfileSegment[];
   type: {
     schema: ValueSchema;
     type: 'discrete' | 'real';
   };
+};
+
+export type Profile = PartialProfile & {
+  profile_segments: ProfileSegment[];
 };
 
 export type ProfileSegment = {

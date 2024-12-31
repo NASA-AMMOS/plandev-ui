@@ -705,6 +705,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   GET_PROFILE: () => true,
   GET_PROFILES_EXTERNAL: () => true,
+  GET_PROFILE_SEGMENTS: () => true,
   GET_RESOURCE_TYPES: () => true,
   GET_ROLE_PERMISSIONS: () => true,
   GET_SCHEDULING_SPEC_CONDITIONS_FOR_CONDITION: () => true,
