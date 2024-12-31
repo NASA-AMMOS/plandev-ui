@@ -624,7 +624,6 @@ export function migrateViewDefinitionV1toV2(viewDefinition: ViewDefinition) {
     - Activity layer filter types list changes to new complex set of filters
     - Resource layer filter names list changes to a single type string
   */
-  console.log('migrating v1->v2');
   return {
     ...viewDefinition,
     plan: {
@@ -647,12 +646,9 @@ export function migrateViewDefinitionV1toV2(viewDefinition: ViewDefinition) {
               } else if (isLineLayer(layer) || isXRangeLayer(layer)) {
                 // @ts-expect-error deprecated type def
                 const resourceNames = layer.filter.resource?.names;
-                console.log('layer :>> ', layer, resourceNames);
                 if (resourceNames && Array.isArray(resourceNames) && typeof resourceNames[0] === 'string') {
                   layer.filter.resource = resourceNames[0];
-                  console.log('setting', resourceNames[0]);
                 } else {
-                  console.log('deleting');
                   delete layer.filter.resource;
                 }
               }
