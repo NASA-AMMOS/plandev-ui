@@ -148,6 +148,7 @@
   {planReadOnly}
   {searchPlaceholder}
   selectedOptionValues={selectedOptionValue !== undefined ? [selectedOptionValue] : []}
+  name={selectTooltip}
   {selectTooltip}
   {selectTooltipPlacement}
   {showPlaceholderOption}

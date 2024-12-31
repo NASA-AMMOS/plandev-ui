@@ -69,7 +69,7 @@ test.describe.serial('Plan Activities', () => {
       () => document.querySelector('.anchor-form .selected-display-value')?.innerHTML === 'To Plan',
     );
 
-    await expect(plan.panelActivityForm.getByRole('textbox', { name: 'To Plan' })).toBeVisible();
+    await expect(plan.panelActivityForm.getByRole('combobox', { name: 'To Plan' })).toBeVisible();
   });
 
   test('Deleting multiple activity directives but only 1 has a remaining anchored dependent should prompt for just the one with a remaining dependent', async () => {

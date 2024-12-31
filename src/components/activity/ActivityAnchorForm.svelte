@@ -160,6 +160,7 @@
           placeholder="To Plan"
           searchPlaceholder="Search Directives"
           selectTooltip="Set Anchor"
+          name="Set Anchor"
           selectedOptionValues={typeof anchorId === 'number' ? [anchorId] : []}
           {updatePermissionError}
           on:change={onSelectAnchor}

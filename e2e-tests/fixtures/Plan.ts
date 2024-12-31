@@ -249,7 +249,7 @@ export class Plan {
   }
 
   async fillActivityPresetName(presetName: string) {
-    await this.panelActivityForm.getByRole('button', { name: 'Set Preset' }).click();
+    await this.panelActivityForm.getByRole('combobox', { name: 'None' }).click();
     await this.panelActivityForm.locator('.dropdown-header').waitFor({ state: 'attached' });
     await this.panelActivityForm.getByPlaceholder('Enter preset name').click();
     await this.panelActivityForm.getByPlaceholder('Enter preset name').fill(presetName);
@@ -374,22 +374,23 @@ export class Plan {
   }
 
   async selectActivityAnchorByIndex(index: number) {
-    await this.panelActivityForm.getByRole('button', { name: 'Set Anchor' }).click();
+    const anchorCollapse = this.panelActivityForm.getByRole('group', { name: 'Anchor-collapse' });
+    await anchorCollapse.getByRole('combobox').click();
 
-    await this.panelActivityForm.getByRole('menuitem').nth(index).waitFor({ state: 'attached' });
-    const anchorMenuName = await this.panelActivityForm.getByRole('menuitem').nth(index)?.innerText();
-    await this.panelActivityForm.getByRole('menuitem').nth(index).click();
-    await this.panelActivityForm.getByRole('menuitem').nth(index).waitFor({ state: 'detached' });
+    await anchorCollapse.getByRole('menuitem').nth(index).waitFor({ state: 'attached' });
+    const anchorMenuName = await anchorCollapse.getByRole('menuitem').nth(index)?.innerText();
+    await anchorCollapse.getByRole('menuitem').nth(index).click();
+    await anchorCollapse.getByRole('menuitem').nth(index).waitFor({ state: 'detached' });
 
     await this.page.waitForFunction(
       anchorMenuName => document.querySelector('.anchor-form .selected-display-value')?.innerHTML === anchorMenuName,
       anchorMenuName,
     );
-    await expect(this.panelActivityForm.getByRole('textbox', { name: anchorMenuName })).toBeVisible();
+    await expect(anchorCollapse.getByRole('combobox', { name: anchorMenuName })).toBeVisible();
   }
 
   async selectActivityPresetByName(presetName: string) {
-    await this.panelActivityForm.getByRole('combobox', { name: 'Set Preset' }).click();
+    await this.panelActivityForm.locator('div[name="Set Preset"]').click();
 
     await this.panelActivityForm.getByRole('menuitem', { name: presetName }).waitFor({ state: 'attached' });
     await this.panelActivityForm.getByRole('menuitem', { name: presetName }).click();
@@ -415,7 +416,7 @@ export class Plan {
         document.querySelector('.activity-preset-input-container .selected-display-value')?.innerHTML === presetName,
       presetName,
     );
-    await expect(this.panelActivityForm.getByRole('textbox', { name: presetName })).toBeVisible();
+    await expect(this.panelActivityForm.getByRole('combobox', { name: presetName })).toBeVisible();
   }
 
   async selectSimulationTemplateByName(templateName: string) {

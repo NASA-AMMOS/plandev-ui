@@ -209,8 +209,14 @@ test.describe.serial('Timeline View Editing', () => {
     await modal.getByRole('button', { name: 'Remove Types' }).click();
     expect(await resultingTypesList.locator('.activity-type-result').count()).toEqual(allActivityTypesCount);
 
+    // Give the layer a new name
+    await modal.locator('input[name="layer-name"]').fill('Foo');
+
     // Close the modal
     await modal.getByRole('button', { name: 'close' }).click();
+
+    // Expect name to match given name
+    expect(await activityLayerEditor.locator('.timeline-layer-editor').first()).toHaveText('Foo');
   });
 
   test('Change activity layer settings', async () => {
