@@ -1578,7 +1578,6 @@ export function directiveOrSpanMatchesDynamicFilters(
       }
       matches = matchesDynamicFilter(argument, curr.operator, curr.value);
     } else if (curr.field === 'SchedulingGoalId') {
-      // TODO need to test this once model is working
       const goalId = (directiveOrSpan as ActivityDirective).source_scheduling_goal_id;
       if (typeof goalId === 'number') {
         matches = matchesDynamicFilter(goalId, curr.operator, curr.value);

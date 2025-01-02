@@ -138,6 +138,10 @@
           on:click|stopPropagation={toggleFilterMenu}
           class="st-button icon w-100"
           style:position="relative"
+          use:tooltip={{
+            content: `Filter Activities${filterCount > 0 ? ` (${filterCount} applied)` : ''}`,
+            placement: 'top',
+          }}
         >
           <div class="activity-layer-name st-select">
             <div class="activity-layer-name-text">
