@@ -30,6 +30,9 @@ export class ExternalSources {
   deselectEventButton: Locator;
   deselectSourceButton: Locator;
   exampleDerivationGroup: string = 'Example External Source Default';
+  exampleEmptyDerivationGroup: string = 'Empty External Source Default';
+  exampleEmptyEventType: string = 'EmptyEvent';
+  exampleEmptySourceType: string = 'Empty External Source';
   exampleEventType: string = 'ExampleEvent';
   exampleSourceType: string = 'Example External Source';
   exampleTypeSchema: string = 'e2e-tests/data/Schema_Example_Source.json';
@@ -44,6 +47,8 @@ export class ExternalSources {
   externalSourceFilePath: string = 'e2e-tests/data/example-external-source.json';
   externalSourceFilePathMissingField: string = 'e2e-tests/data/example-external-source-missing-field.json';
   externalSourceFilePathSyntaxError: string = 'e2e-tests/data/example-external-source-syntax-error.json';
+  externalSourceNoAttributeFileName: string = 'example-external-source_no-attr.json';
+  externalSourceNoAttributeFilePath: string = 'e2e-tests/data/example-external-source_no-attr.json';
   externalSourceSelectedForm: Locator;
   externalSourceTypeName: string = 'Example External Source';
   externalSourceUpload: Locator;
