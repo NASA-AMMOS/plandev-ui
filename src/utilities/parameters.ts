@@ -173,27 +173,51 @@ export function translateJsonSchemaToValueSchema(jsonSchema: SchemaObject | unde
       };
       const propTranslated = translateJsonSchemaTypeToValueSchema(propType as JSONType, propProperties, propItems);
       if ('items' in propTranslated) {
-        propTranslated.items = Object.entries(propTranslated.items).reduce(
-          (acc: Record<string, ValueSchema>, currentItem: [string, ValueSchema]) => {
-            const {
-              type: currentType,
-              properties: currentProperties,
-              items: currentItems,
-            } = currentItem[1] as {
-              items?: Record<'type', JSONType>;
-              properties?: Record<string, object>;
-              type: JSONType;
-            };
-            const translatedItem = translateJsonSchemaTypeToValueSchema(
-              currentType as JSONType,
-              currentProperties,
-              currentItems,
-            );
-            acc[currentItem[0]] = translatedItem;
-            return acc;
-          },
-          {} as Record<string, ValueSchema>,
-        );
+        if (propTranslated.items.type === 'struct') {
+          propTranslated.items.items = Object.entries(propTranslated.items.items).reduce(
+            (acc: Record<string, ValueSchema>, currentItem: [string, ValueSchema]) => {
+              const {
+                type: currentType,
+                properties: currentProperties,
+                items: currentItems,
+              } = currentItem[1] as {
+                items?: Record<'type', JSONType>;
+                properties?: Record<string, object>;
+                type: JSONType;
+              };
+              const translatedItem = translateJsonSchemaTypeToValueSchema(
+                currentType as JSONType,
+                currentProperties,
+                currentItems,
+              );
+              acc[currentItem[0]] = translatedItem;
+              return acc;
+            },
+            {} as Record<string, ValueSchema>,
+          );
+        } else {
+          propTranslated.items = Object.entries(propTranslated.items).reduce(
+            (acc: Record<string, ValueSchema>, currentItem: [string, ValueSchema]) => {
+              const {
+                type: currentType,
+                properties: currentProperties,
+                items: currentItems,
+              } = currentItem[1] as {
+                items?: Record<'type', JSONType>;
+                properties?: Record<string, object>;
+                type: JSONType;
+              };
+              const translatedItem = translateJsonSchemaTypeToValueSchema(
+                currentType as JSONType,
+                currentProperties,
+                currentItems,
+              );
+              acc[currentItem[0]] = translatedItem;
+              return acc;
+            },
+            {} as Record<string, ValueSchema>,
+          );
+        }
       }
       propertiesAsValueSchema[propName] = propTranslated;
     } else {
@@ -206,7 +230,7 @@ export function translateJsonSchemaToValueSchema(jsonSchema: SchemaObject | unde
 function translateJsonSchemaTypeToValueSchema(
   jsonSchemaType: JSONType,
   jsonSchemaProperties?: Record<string, object>,
-  jsonSchemaItems?: Record<'type', JSONType>,
+  jsonSchemaItems?: Record<string, JSONType> | { properties: Record<string, object>, type: string }
 ): ValueSchema {
   if (jsonSchemaType === 'number' || jsonSchemaType === 'integer') {
     return { type: 'int' } as ValueSchemaInt;
@@ -224,8 +248,16 @@ function translateJsonSchemaTypeToValueSchema(
       throw new Error('Cannot convert "array" from JSON Schema without an "items" field defined');
     }
     // ValueSchema expects a singular type for the series where JSON Schema allows multiple. Take the first if the user gave multiple
-    const firstItem = Object.entries(jsonSchemaItems)[0];
-    const translatedItem: ValueSchema = translateJsonSchemaTypeToValueSchema(firstItem[1]);
+    const firstItemType = jsonSchemaItems.type;
+
+    let translatedItem: ValueSchema | undefined = undefined;
+    // Required to properly nest objects within arrays (i.e., structs within series)
+    if (firstItemType === 'object') {
+      const nestedProperties = jsonSchemaItems.properties as Record<string, object>;
+      translatedItem = translateJsonSchemaTypeToValueSchema(firstItemType, nestedProperties);
+    } else {
+      translatedItem = translateJsonSchemaTypeToValueSchema(firstItemType as JSONType);
+    }
     return { items: translatedItem, type: 'series' } as ValueSchemaSeries;
   } else {
     return { type: jsonSchemaType } as ValueSchema;
