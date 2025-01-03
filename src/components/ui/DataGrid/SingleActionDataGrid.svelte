@@ -32,8 +32,10 @@
   export let idKey: keyof RowData = 'id';
   export let items: RowData[];
   export let itemDisplayText: string;
+  export let loading: boolean = false;
   export let selectedItemId: RowId | null = null;
   export let scrollToSelection: boolean = false;
+  export let showLoadingSkeleton: boolean = false;
   export let user: User | null;
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => parseInt(data[idKey]);
@@ -119,6 +121,8 @@
   rowData={items}
   rowSelection="single"
   {scrollToSelection}
+  {showLoadingSkeleton}
+  {loading}
   on:blur={onBlur}
   on:cellEditingStarted
   on:cellEditingStopped
