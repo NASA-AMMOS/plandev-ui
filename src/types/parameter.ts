@@ -15,6 +15,7 @@ export type EffectiveArguments = {
 
 export type FormParameter<T = ValueSchema> = {
   errors: string[] | null;
+  externalEvent?: boolean;
   file?: File;
   index?: number;
   key?: string;

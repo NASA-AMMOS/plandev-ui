@@ -20,10 +20,14 @@
   let leaveTimeout: NodeJS.Timeout | null = null;
   let source: ValueSource;
   let unit: string | undefined = undefined;
+  let required: boolean = true;
+  let externalEvent: boolean = false;
 
   $: if (formParameter) {
     source = formParameter.valueSource;
     unit = formParameter.schema?.metadata?.unit?.value;
+    externalEvent = formParameter.externalEvent ?? false;
+    required = formParameter.required ?? true;
   }
 
   function leaveCallback() {
@@ -75,7 +79,7 @@
   }
 </script>
 
-{#if unit || source !== 'none'}
+{#if externalEvent || unit || source !== 'none'}
   <div class="parameter-info-container" role="contentinfo" on:mouseenter={onIconOver} on:mouseleave={onIconOut}>
     <div><InfoIcon /></div>
     <ContextMenu hideAfterClick={false} bind:this={contextMenu}>
@@ -91,6 +95,10 @@
             <div class="parameter-info-value">
               <ValueSourceBadge {disabled} isCompact={false} {source} on:reset={onReset} />
             </div>
+          {/if}
+          {#if externalEvent}
+            <div class="parameter-info-label">Required</div>
+            <div class="parameter-info-value"><i>{required}</i></div>
           {/if}
         </div>
       </div>

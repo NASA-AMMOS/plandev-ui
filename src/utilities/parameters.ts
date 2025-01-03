@@ -73,6 +73,7 @@ export function getFormParameters(
 
     const formParameter: FormParameter = {
       errors: null,
+      externalEvent: true,
       name,
       order,
       required,
