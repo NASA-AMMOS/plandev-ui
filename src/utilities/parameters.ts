@@ -126,7 +126,8 @@ export function getFormParameters(
     }
 
     const formParameter: FormParameter = {
-      errors,
+      errors: null,
+      externalEvent: true,
       name,
       order,
       required,

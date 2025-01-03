@@ -27,6 +27,7 @@
   let externalEventType: ExternalEventType | undefined = undefined;
   let externalEventTypeParametersMap: ParametersMap = {};
   let startTimeField: FieldStore<string>;
+  let requiredAttributes: string[] = [];
 
   $: externalEventType = $externalEventTypes.find(eventType => eventType.name === externalEvent.pkey.event_type_name);
   $: externalEventAttributes = translateJsonSchemaArgumentsToValueSchema(externalEvent.attributes);
@@ -44,6 +45,11 @@
       },
       {} as ParametersMap,
     );
+
+    // Get the set of required attribute names
+    requiredAttributes =
+      $externalEventTypes.find(eventType => eventType.name === externalEvent?.pkey.event_type_name)?.attribute_schema
+        .required ?? [];
   }
 
   $: startTimeField = field<string>(`${formatDate(new Date(externalEvent.start_time), $plugins.time.primary.format)}`);
@@ -101,7 +107,11 @@
           <Parameters
             disabled={true}
             expanded={false}
-            formParameters={getFormParameters(externalEventTypeParametersMap, externalEventAttributes, [])}
+            formParameters={getFormParameters(
+              externalEventTypeParametersMap,
+              externalEventAttributes,
+              requiredAttributes,
+            )}
           />
         </div>
       </Collapse>

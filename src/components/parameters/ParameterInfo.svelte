@@ -19,11 +19,15 @@
   let leaveTimeout: NodeJS.Timeout | null = null;
   let source: ValueSource;
   let unit: string | undefined = undefined;
+  let required: boolean = true;
+  let externalEvent: boolean = false;
   let ref: HTMLElement;
 
   $: if (formParameter) {
     source = formParameter.valueSource;
     unit = formParameter.schema?.metadata?.unit?.value;
+    externalEvent = formParameter.externalEvent ?? false;
+    required = formParameter.required ?? true;
   }
 
   function leaveCallback() {
@@ -69,8 +73,14 @@
   }
 </script>
 
-{#if unit || source !== 'none'}
-  <div bind:this={ref} class="flex h-6" role="contentinfo" on:mouseenter={onIconOver} on:mouseleave={onIconOut}>
+{#if externalEvent || unit || source !== 'none'}
+  <div
+    bind:this={ref}
+    class="parameter-info-container"
+    role="contentinfo"
+    on:mouseenter={onIconOver}
+    on:mouseleave={onIconOut}
+  >
     <Popover.Root bind:open={isIconHovered} onOpenChange={open => (isTooltipHovered = open)} portal={ref}>
       <Popover.Trigger on:click={e => e.preventDefault()}>
         <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -92,7 +102,11 @@
                 <ValueSourceBadge {disabled} isCompact={false} {source} on:reset={onReset} />
               </div>
             {/if}
-          </div>
+            {#if externalEvent}
+            <div class="parameter-info-label">Required</div>
+            <div class="parameter-info-value"><i>{required}</i></div>
+          {/if}
+        </div>
         </div>
       </Popover.Content>
     </Popover.Root>
