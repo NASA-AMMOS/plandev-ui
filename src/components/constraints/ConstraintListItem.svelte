@@ -190,7 +190,7 @@
       </div>
     </svelte:fragment>
 
-    <Collapse title="Parameters" className="scheduling-goal-analysis-activities" defaultExpanded={true}>
+    <Collapse title="Parameters" className="constraint-parameters" defaultExpanded={true}>
       <Parameters disabled={false} expanded={true} {formParameters} on:change={onChangeFormParameters} />
     </Collapse>
 

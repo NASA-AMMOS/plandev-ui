@@ -17,8 +17,7 @@ import {
   selectedActivityDirectiveId as selectedActivityDirectiveIdStore,
 } from '../stores/activities';
 import {
-  rawCheckConstraintsStatus as rawCheckConstraintsStatusStore,
-  rawConstraintResponses as rawConstraintResponsesStore,
+  checkConstraintsQueryStatus as checkConstraintsQueryStatusStore,
   resetConstraintStoresForSimulation,
 } from '../stores/constraints';
 import { catchError, catchSchedulingError } from '../stores/errors';
@@ -453,7 +452,7 @@ const effects = {
 
   async checkConstraints(plan: Plan, force: boolean = false, user: User | null): Promise<void> {
     try {
-      rawCheckConstraintsStatusStore.set(Status.Incomplete);
+      checkConstraintsQueryStatusStore.set(Status.Incomplete);
       if (plan !== null) {
         const { id: planId } = plan;
         const data = await reqHasura<ConstraintResponse[]>(
@@ -465,8 +464,6 @@ const effects = {
           user,
         );
         if (data.constraintResponses) {
-          rawConstraintResponsesStore.set(data.constraintResponses);
-
           // find only the constraints compiled.
           const successfulConstraintResults: ConstraintResult[] = data.constraintResponses
             .filter(constraintResponse => constraintResponse.success)
@@ -477,13 +474,13 @@ const effects = {
           );
           if (successfulConstraintResults.length === 0 && data.constraintResponses.length > 0) {
             showFailureToast('All Constraints Failed');
-            rawCheckConstraintsStatusStore.set(Status.Failed);
+            checkConstraintsQueryStatusStore.set(Status.Failed);
           } else if (successfulConstraintResults.length !== data.constraintResponses.length) {
             showFailureToast('Constraints Partially Checked');
-            rawCheckConstraintsStatusStore.set(Status.Failed);
+            checkConstraintsQueryStatusStore.set(Status.Failed);
           } else {
             showSuccessToast('All Constraints Checked');
-            rawCheckConstraintsStatusStore.set(Status.Complete);
+            checkConstraintsQueryStatusStore.set(Status.Complete);
           }
 
           if (failedConstraintResponses.length > 0) {
@@ -500,6 +497,7 @@ const effects = {
         throw Error('Plan is not defined.');
       }
     } catch (e) {
+      checkConstraintsQueryStatusStore.set(Status.Failed);
       catchError('Check Constraints Failed', e as Error);
       showFailureToast('Check Constraints Failed');
     }

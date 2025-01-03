@@ -6,7 +6,6 @@ import type {
   ConstraintMetadata,
   ConstraintPlanSpecification,
   ConstraintResponse,
-  ConstraintResult,
   ConstraintResultWithName,
   ConstraintRun,
 } from '../types/constraint';
@@ -24,8 +23,7 @@ export const constraintMetadataId: Writable<number> = writable(-1);
 
 export const constraintPlanSpecVisibilityMapWritable: Writable<ConstraintPlanSpecVisibilityMap> = writable({});
 
-export const rawCheckConstraintsStatus: Writable<Status | null> = writable(null);
-export const rawConstraintResponses: Writable<ConstraintResponse[]> = writable([]);
+export const checkConstraintsQueryStatus: Writable<Status | null> = writable(null);
 
 export const constraintsColumns: Writable<string> = writable('1fr 3px 1fr');
 
@@ -38,6 +36,10 @@ export const constraintRuns = gqlSubscribable<ConstraintRun[] | null>(
   { simulationDatasetId: simulationDatasetLatestId },
   null,
   null,
+  value => {
+    checkConstraintsQueryStatus.set(null);
+    return value;
+  },
 );
 
 export const constraintPlanSpecs = gqlSubscribable<ConstraintPlanSpecification[] | null>(
@@ -60,9 +62,16 @@ export const constraintsMap: Readable<Record<string, ConstraintMetadata>> = deri
   keyBy($constraints, 'id'),
 );
 
-export const constraintPlanSpecsMap: Readable<Record<string, ConstraintPlanSpecification>> = derived(
+export const constraintPlanSpecsMap: Readable<ConstraintPlanSpecMap> = derived(
   [constraintPlanSpecs],
-  ([$constraintPlanSpecs]) => ($constraintPlanSpecs ? keyBy($constraintPlanSpecs, 'constraint_id') : {}),
+  ([$constraintPlanSpecs]) =>
+    ($constraintPlanSpecs || []).reduce((prevPlanSpecMap: ConstraintPlanSpecMap, constraintPlanSpec) => {
+      if (!prevPlanSpecMap[constraintPlanSpec.constraint_id]) {
+        prevPlanSpecMap[constraintPlanSpec.constraint_id] = {};
+      }
+      prevPlanSpecMap[constraintPlanSpec.constraint_id][constraintPlanSpec.invocation_id] = constraintPlanSpec;
+      return prevPlanSpecMap;
+    }, {}),
 );
 
 export const allowedConstraintPlanSpecs: Readable<ConstraintPlanSpecification[]> = derived(
@@ -106,71 +115,20 @@ export const constraintVisibilityMap: Readable<ConstraintPlanSpecVisibilityMap> 
   },
 );
 
-export const relevantRawConstraintResponses: Readable<ConstraintResponse[]> = derived(
-  [rawConstraintResponses, constraintPlanSpecsMap],
-  ([$rawConstraintResponses, $constraintPlanSpecsMap]) => {
-    return $rawConstraintResponses.filter(response => $constraintPlanSpecsMap[response.constraintId] != null);
-  },
-);
-
-export const constraintsViolationStatus: Readable<Status | null> = derived(
-  [relevantRawConstraintResponses],
-  ([$relevantRawConstraintResponses]) => {
-    if ($relevantRawConstraintResponses.length) {
-      const successfulConstraintResults: ConstraintResult[] = $relevantRawConstraintResponses
-        .filter(constraintResponse => constraintResponse.success)
-        .map(constraintResponse => constraintResponse.results);
-
-      const anyViolations = successfulConstraintResults.reduce((bool, prev) => {
-        if (prev.violations && prev.violations.length > 0) {
-          bool = true;
-        }
-        return bool;
-      }, false);
-
-      if (successfulConstraintResults.length !== $relevantRawConstraintResponses.length) {
-        return Status.Failed;
-      }
-
-      return anyViolations ? Status.Failed : Status.Complete;
-    }
-    return null;
-  },
-);
-
 export const constraintResponses: Readable<ConstraintResponse[]> = derived(
-  [constraintRuns, relevantRawConstraintResponses, planStartTimeMs],
-  ([$constraintRuns, $checkConstraintResponse, $planStartTimeMs]) => {
-    return ($constraintRuns || [])
-      .map(
-        run =>
-          ({
-            constraintId: run.constraint_id,
-            constraintInvocationId: run.constraint_invocation_id,
-            constraintName: run.constraint_metadata.name,
-            errors: [],
-            results: {
-              ...run.results,
-              violations:
-                run.results.violations?.map(violation => ({
-                  ...violation,
-                  windows: violation.windows.map(({ end, start }) => ({
-                    end: $planStartTimeMs + end / 1000,
-                    start: $planStartTimeMs + start / 1000,
-                  })),
-                })) ?? null,
-            },
-            success: true,
-            type: 'plan',
-          }) as ConstraintResponse,
-      )
-      .concat(
-        $checkConstraintResponse.map(response => ({
-          ...response,
+  [constraintRuns, planStartTimeMs],
+  ([$constraintRuns, $planStartTimeMs]) => {
+    return ($constraintRuns || []).map(
+      run =>
+        ({
+          constraintId: run.constraint_id,
+          constraintInvocationId: run.constraint_invocation_id,
+          constraintName: run.constraint_metadata.name,
+          errors: [],
           results: {
-            ...response.results,
+            ...run.results,
             violations:
-              response.results.violations?.map(violation => ({
+              run.results.violations?.map(violation => ({
                 ...violation,
                 windows: violation.windows.map(({ end, start }) => ({
                   end: $planStartTimeMs + end / 1000,
@@ -178,8 +136,10 @@ export const constraintResponses: Readable<ConstraintResponse[]> = derived(
                 })),
               })) ?? null,
           },
-        })),
-      );
+          success: true,
+          type: 'plan',
+        }) as ConstraintResponse,
+    );
   },
 );
 
@@ -215,21 +175,10 @@ export const relevantConstraintRuns: Readable<ConstraintRun[]> = derived(
   [constraintRuns, constraintPlanSpecsMap],
   ([$constraintRuns, $constraintPlanSpecsMap]) => {
     return ($constraintRuns || []).filter(constraintRun => {
-      const constraintPlanSpec = $constraintPlanSpecsMap[constraintRun.constraint_id];
-      let revision = -1;
+      const constraintPlanSpec =
+        $constraintPlanSpecsMap[constraintRun.constraint_id][constraintRun.constraint_invocation_id];
 
-      if (constraintPlanSpec) {
-        if (constraintPlanSpec.constraint_revision === null) {
-          revision =
-            constraintPlanSpec.constraint_metadata?.versions[
-              (constraintPlanSpec.constraint_metadata?.versions.length ?? 0) - 1
-            ]?.revision ?? -1;
-        } else {
-          revision = constraintPlanSpec.constraint_revision;
-        }
-      }
-
-      return revision === constraintRun.constraint_revision;
+      return constraintPlanSpec !== undefined;
     });
   },
 );
@@ -255,6 +204,17 @@ export const cachedConstraintsStatus: Readable<Status | null> = derived(
   ([$relevantConstraintRuns, $constraintPlanSpecsMap]) => {
     return $relevantConstraintRuns.reduce(
       (status: Status | null, constraintRun: ConstraintRun) => {
+        const constraintPlanSpec =
+          $constraintPlanSpecsMap[constraintRun.constraint_id][constraintRun.constraint_invocation_id];
+
+        if (
+          constraintPlanSpec &&
+          (constraintRun.constraint_revision !== constraintPlanSpec.constraint_revision ||
+            JSON.stringify(constraintRun.arguments) !== JSON.stringify(constraintPlanSpec.arguments))
+        ) {
+          return Status.Modified;
+        }
+
         if (constraintRun.results.violations?.length) {
           return Status.Failed;
         } else if (status !== Status.Failed) {
@@ -269,7 +229,7 @@ export const cachedConstraintsStatus: Readable<Status | null> = derived(
 );
 
 export const checkConstraintsStatus: Readable<Status | null> = derived(
-  [rawCheckConstraintsStatus, cachedConstraintsStatus],
+  [checkConstraintsQueryStatus, cachedConstraintsStatus],
   ([$rawCheckConstraintsStatus, $cachedConstraintsStatus]) => {
     if ($rawCheckConstraintsStatus !== null) {
       return $rawCheckConstraintsStatus;
@@ -284,19 +244,21 @@ export const checkConstraintsStatus: Readable<Status | null> = derived(
 );
 
 export const constraintsStatus: Readable<Status | null> = derived(
-  [cachedConstraintsStatus, constraintsViolationStatus, checkConstraintsStatus, uncheckedConstraintCount],
-  ([$cachedConstraintsStatus, $constraintsViolationStatus, $checkConstraintsStatus, $uncheckedConstraintCount]) => {
-    if ($checkConstraintsStatus === Status.Incomplete) {
-      return Status.Incomplete;
-    } else if (!$cachedConstraintsStatus) {
-      return null;
-    } else if ($cachedConstraintsStatus !== Status.Complete) {
-      return $constraintsViolationStatus ?? $cachedConstraintsStatus;
-    } else if ($uncheckedConstraintCount > 0) {
-      return Status.PartialSuccess;
+  [checkConstraintsQueryStatus, cachedConstraintsStatus, uncheckedConstraintCount],
+  ([$rawCheckConstraintsStatus, $cachedConstraintsStatus, $uncheckedConstraintCount]) => {
+    if ($rawCheckConstraintsStatus) {
+      return $rawCheckConstraintsStatus;
     }
 
-    return $constraintsViolationStatus ?? $cachedConstraintsStatus;
+    if (!$cachedConstraintsStatus) {
+      return null;
+    } else if ($uncheckedConstraintCount > 0) {
+      return Status.PartialSuccess;
+    } else if ($cachedConstraintsStatus !== Status.Complete) {
+      return $cachedConstraintsStatus;
+    }
+
+    return $cachedConstraintsStatus;
   },
 );
 
@@ -355,11 +317,9 @@ export function resetPlanConstraintStores() {
 }
 
 export function resetConstraintStores(): void {
-  rawCheckConstraintsStatus.set(null);
-  rawConstraintResponses.set([]);
+  checkConstraintsQueryStatus.set(null);
 }
 
 export function resetConstraintStoresForSimulation(): void {
-  rawCheckConstraintsStatus.set(Status.Unchecked);
-  rawConstraintResponses.set([]);
+  checkConstraintsQueryStatus.set(Status.Unchecked);
 }

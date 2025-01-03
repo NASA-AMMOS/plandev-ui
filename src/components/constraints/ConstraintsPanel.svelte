@@ -283,8 +283,10 @@
             },
           ],
         ]}
-        on:click={() => $plan && effects.checkConstraints($plan, true, user)}><RefreshIcon /></PanelHeaderActionButton
+        on:click={() => $plan && effects.checkConstraints($plan, true, user)}
       >
+        <RefreshIcon />
+      </PanelHeaderActionButton>
       <PanelHeaderActionButton
         disabled={$simulationStatus !== Status.Complete || $constraintsStatus === Status.Complete}
         tooltipContent={$simulationStatus !== Status.Complete ? 'Completed simulation required' : ''}
