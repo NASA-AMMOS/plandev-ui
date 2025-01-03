@@ -65,7 +65,7 @@
   export let activityUnfinishedColor: string = '#fc674d';
   export let discreteOptions: DiscreteOptions = { ...ViewDefaultDiscreteOptions };
   export let discreteTree: DiscreteTree = [];
-  export let activityDirectivesMap: ActivityDirectivesMap = {};
+  export let activityDirectivesMap: ActivityDirectivesMap | null = {};
   export let blur: FocusEvent | undefined;
   export let contextmenu: MouseEvent | undefined;
   export let dblclick: MouseEvent | undefined;
@@ -238,7 +238,7 @@
           dragActivityDirectiveActive.id,
           planStartTimeYmd,
           planEndTimeDoy,
-          activityDirectivesMap,
+          activityDirectivesMap || {},
           spansMap,
           spanUtilityMaps,
         );

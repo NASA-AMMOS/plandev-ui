@@ -33,7 +33,7 @@ export const planSnapshotsWithSimulations: Readable<PlanSnapshot[]> = derived(
   [planSnapshots, simulationDatasetsPlan],
   ([$planSnapshots, $simulationDatasetsPlan]) => {
     return $planSnapshots.map(planSnapshot => {
-      const latestPlanSnapshotSimulation = $simulationDatasetsPlan.find(simulation => {
+      const latestPlanSnapshotSimulation = ($simulationDatasetsPlan || []).find(simulation => {
         return simulation.plan_revision === planSnapshot?.revision;
       });
       return { ...planSnapshot, simulation: latestPlanSnapshotSimulation || null };

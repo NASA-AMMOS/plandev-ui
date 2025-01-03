@@ -10,4 +10,4 @@
 
 <PageTitle title="Models" />
 
-<Models user={data.user} />
+<Models user={data.user} initialModels={data.initialModels} />

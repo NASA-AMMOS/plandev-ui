@@ -35,7 +35,7 @@ import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
 
-export const views = gqlSubscribable<ViewSlim[]>(gql.SUB_VIEWS, {}, [], null);
+export const views = gqlSubscribable<ViewSlim[] | null>(gql.SUB_VIEWS, {}, null, null);
 
 /* Writeable. */
 

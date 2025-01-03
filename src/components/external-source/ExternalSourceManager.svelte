@@ -545,7 +545,7 @@
                 {#each selectedSourceLinkedDerivationGroupsPlans as linkedPlanDerivationGroup}
                   <div class="st-typography-body collapse-important-text">
                     <a href="{base}/plans/{linkedPlanDerivationGroup.plan_id}">
-                      {$plans.find(plan => {
+                      {($plans || []).find(plan => {
                         return linkedPlanDerivationGroup.plan_id === plan.id;
                       })?.name}
                     </a>

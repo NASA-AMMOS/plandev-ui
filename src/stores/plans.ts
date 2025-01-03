@@ -5,7 +5,7 @@ import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
 
-export const plans = gqlSubscribable<PlanSlim[]>(gql.SUB_PLANS, {}, [], null, plans => {
+export const plans = gqlSubscribable<PlanSlim[] | null>(gql.SUB_PLANS, {}, null, null, plans => {
   return (plans as PlanSlim[]).map(plan => {
     return {
       ...plan,

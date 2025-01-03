@@ -106,7 +106,7 @@
       resizable: true,
       sortable: true,
       valueGetter: params => {
-        if (params.data?.span_id) {
+        if ($spansMap && params.data?.span_id) {
           const span = $spansMap[params.data?.span_id] || null;
           if (span) {
             return JSON.stringify(span);

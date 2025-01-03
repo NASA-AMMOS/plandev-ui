@@ -36,7 +36,7 @@
     delete: ActivityDirectiveDeletionMap;
   }>();
 
-  $: if (Object.keys($activityDirectivesMap).length) {
+  $: if ($activityDirectivesMap && Object.keys($activityDirectivesMap).length) {
     anchoredActivitiesMap = Object.values($activityDirectivesMap).reduce(
       (previousValue: AnchoredActivityDirectivesMap, directive: ActivityDirective) => {
         if (!activityIds.includes(directive.id)) {
@@ -230,7 +230,9 @@
               <div class="directive">
                 <div class="directive-to-delete" class:ignored={!activityDirectivesToDeleteMap[activityId]}>
                   <div class="directive-name">
-                    <ActivityDirectiveIcon label={`${activityId} - ${$activityDirectivesMap[activityId]?.name}`} />
+                    <ActivityDirectiveIcon
+                      label={`${activityId} - ${($activityDirectivesMap || {})[activityId]?.name}`}
+                    />
                   </div>
                   <div class="delete-checkbox">
                     <label>

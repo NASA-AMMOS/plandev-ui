@@ -10,7 +10,7 @@
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid<Span> | undefined = undefined;
   export let selectedSpanId: SpanId | null = null;
-  export let spans: Span[] = [];
+  export let spans: Span[] | null = [];
   export let filterExpression: string = '';
 
   let selectedItemIds: RowId[] = [];
@@ -36,7 +36,8 @@
   {filterExpression}
   {getRowId}
   useCustomContextMenu
-  rowData={spans}
+  rowData={spans || []}
+  loading={!spans}
   rowSelection="single"
   scrollToSelection={true}
   suppressDragLeaveHidesColumns={false}

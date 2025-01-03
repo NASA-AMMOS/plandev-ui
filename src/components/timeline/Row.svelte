@@ -99,9 +99,9 @@
   import RowXAxisTicks from './RowXAxisTicks.svelte';
   import RowYAxisTicks from './RowYAxisTicks.svelte';
 
-  export let activityDirectives: ActivityDirective[] = [];
+  export let activityDirectives: ActivityDirective[] | null = [];
   export let externalEvents: ExternalEvent[] = [];
-  export let activityDirectivesMap: ActivityDirectivesMap = {};
+  export let activityDirectivesMap: ActivityDirectivesMap | null = {};
   export let discreteOptions: DiscreteOptions | undefined = undefined;
   export let discreteTreeExpansionMap: DiscreteTreeExpansionMap = {};
   export let autoAdjustHeight: boolean = false;
@@ -130,7 +130,7 @@
   export let selectedSpanId: SpanId | null = null;
   export let simulationDataset: SimulationDataset | null = null;
   export let spanUtilityMaps: SpanUtilityMaps;
-  export let spansMap: SpansMap = {};
+  export let spansMap: SpansMap | null = {};
   export let timelineInteractionMode: TimelineInteractionMode;
   export let timelineLockStatus: TimelineLockStatus;
   export let timelineZoomTransform: ZoomTransform | null;
@@ -180,7 +180,7 @@
 
   let resourceRequestMap: Record<string, ResourceRequest> = {};
   let loadedResources: Resource[];
-  let loadingErrors: string[];
+  let resourceLoadingErrors: string[];
   let anyResourcesLoading: boolean = true;
   let discreteTree: DiscreteTree = [];
   let filteredActivityDirectives: ActivityDirective[] = [];
@@ -374,11 +374,12 @@
       }
     });
     loadedResources = newLoadedResources;
-    loadingErrors = newLoadingErrors;
+    resourceLoadingErrors = newLoadingErrors;
 
     // Consider row to be loading if the number of completed resource requests (loaded or error state)
     // is not equal to the total number of resource requests
-    anyResourcesLoading = loadedResources.length + loadingErrors.length !== Object.keys(resourceRequestMap).length;
+    anyResourcesLoading =
+      loadedResources.length + resourceLoadingErrors.length !== Object.keys(resourceRequestMap).length;
   }
 
   // Compute scale domains for axes since it is optionally defined in the view
@@ -539,11 +540,18 @@
     }
   }
 
-  $: if (hasActivityLayer && filterItemsByTime && filteredActivityDirectives && filteredSpans && viewTimeRange) {
+  $: if (
+    spansMap &&
+    hasActivityLayer &&
+    filteredActivityDirectives &&
+    filteredSpans &&
+    viewTimeRange &&
+    filterItemsByTime
+  ) {
     timeFilteredSpans = filteredSpans.filter(span => spanInView(span, viewTimeRange));
     timeFilteredActivityDirectives = filteredActivityDirectives.filter(directive => {
       let inView = directiveInView(directive, viewTimeRange);
-      if (inView && showSpans) {
+      if (inView && showSpans && spansMap) {
         // Get max span bounds
         const rootSpanId = spanUtilityMaps.directiveIdToSpanIdMap[directive.id];
         const rootSpan = spansMap[rootSpanId];
@@ -605,7 +613,7 @@
       groupEventsByMethod,
       filterItemsByTime,
       spanUtilityMaps,
-      spansMap,
+      spansMap || {},
       showSpans,
       showDirectives,
       viewTimeRange,
@@ -947,17 +955,17 @@
         </g>
       </svg>
       <!-- Loading indicator -->
-      {#if hasResourceLayer && anyResourcesLoading}
-        <div class="layer-message loading st-typography-label">Loading</div>
+      {#if (hasResourceLayer && anyResourcesLoading) || (hasActivityLayer && (!activityDirectivesMap || !spansMap))}
+        <div class="layer-message loading st-typography-label">Loading...</div>
       {/if}
       <!-- Empty state -->
       {#if !layers.length}
         <div class="layer-message st-typography-label">No layers added to this row</div>
       {/if}
       <!-- Resource error indicator -->
-      {#if hasResourceLayer && loadingErrors.length}
+      {#if hasResourceLayer && resourceLoadingErrors.length}
         <div class="layer-message error st-typography-label">
-          Failed to load profiles for {loadingErrors.length} layer{pluralize(loadingErrors.length)}
+          Failed to load profiles for {resourceLoadingErrors.length} layer{pluralize(resourceLoadingErrors.length)}
         </div>
       {/if}
       <!-- Layers of Canvas Visualizations. -->
@@ -1023,7 +1031,7 @@
             {selectedSpanId}
             {selectedExternalEventId}
             {spanUtilityMaps}
-            {spansMap}
+            spansMap={spansMap || {}}
             {timelineInteractionMode}
             {timelineLockStatus}
             {user}

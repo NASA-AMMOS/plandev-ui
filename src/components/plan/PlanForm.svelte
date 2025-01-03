@@ -11,7 +11,7 @@
   import { plugins } from '../../stores/plugins';
   import { simulationDataset, simulationDatasetId } from '../../stores/simulation';
   import { viewTogglePanel } from '../../stores/views';
-  import type { ActivityDirective, ActivityDirectiveId } from '../../types/activity';
+  import type { ActivityDirectivesMap } from '../../types/activity';
   import type { User, UserId } from '../../types/app';
   import type { Plan, PlanCollaborator, PlanSlimmer } from '../../types/plan';
   import type { PlanSnapshot as PlanSnapshotType } from '../../types/plan-snapshot';
@@ -35,7 +35,7 @@
   import PlanSnapshot from './PlanSnapshot.svelte';
 
   export let plan: Plan | null;
-  export let activityDirectivesMap: Record<ActivityDirectiveId, ActivityDirective> = {};
+  export let activityDirectivesMap: ActivityDirectivesMap | null = {};
   export let planTags: Tag[];
   export let tags: Tag[] = [];
   export let user: User | null;
@@ -51,7 +51,7 @@
   let planNameField = field<string>('', [
     required,
     unique(
-      $plans.filter(p => p.id !== plan?.id).map(p => p.name),
+      ($plans || []).filter(p => p.id !== plan?.id).map(p => p.name),
       'Plan name already exists',
     ),
   ]);
@@ -152,7 +152,7 @@
   }
 
   async function onExportPlan() {
-    if (plan) {
+    if (plan && activityDirectivesMap) {
       if (planExportAbortController) {
         planExportAbortController.abort();
       }

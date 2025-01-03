@@ -10,7 +10,7 @@
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
 
-  export let views: ViewSlim[] = [];
+  export let views: ViewSlim[] | null = [];
   export let user: User | null;
 
   type CellRendererParams = {
@@ -136,7 +136,8 @@
 <BulkActionDataGrid
   {columnDefs}
   isRowSelectable={rowData => rowData?.data?.owner !== 'system'}
-  items={views}
+  items={views || []}
+  loading={!views}
   pluralItemDisplayText="Views"
   singleItemDisplayText="View"
   {user}

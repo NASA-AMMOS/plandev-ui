@@ -428,7 +428,7 @@
     <ActivityDirectivesTable
       bind:dataGrid
       bind:selectedActivityDirectiveId={$selectedActivityDirectiveId}
-      activityDirectives={Object.values($activityDirectivesMap)}
+      activityDirectives={$activityDirectivesMap ? Object.values($activityDirectivesMap) : null}
       activityDirectiveErrorRollupsMap={$activityErrorRollupsMap}
       {filterExpression}
       columnDefs={derivedColumnDefs ?? []}

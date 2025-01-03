@@ -575,7 +575,7 @@ const effects = {
           const { id } = newActivityDirective;
 
           activityDirectivesDB.updateValue(directives => {
-            return directives.map(directive => {
+            return (directives || []).map(directive => {
               if (directive.id === id) {
                 return newActivityDirective;
               }
@@ -2106,7 +2106,7 @@ const effects = {
               .map(({ affected_row: { id } }) => id);
 
             activityDirectivesDB.updateValue(directives => {
-              return directives.filter(directive => {
+              return (directives || []).filter(directive => {
                 return deletedActivityIds.indexOf(directive.id) < 1;
               });
             });
@@ -2146,7 +2146,7 @@ const effects = {
               .map(({ affected_row: { id } }) => id);
 
             activityDirectivesDB.updateValue(directives => {
-              return directives.filter(directive => {
+              return (directives || []).filter(directive => {
                 return deletedActivityIds.indexOf(directive.id) < 1;
               });
             });
@@ -2184,7 +2184,7 @@ const effects = {
               .map(({ affected_row: { id } }) => id);
 
             activityDirectivesDB.updateValue(directives => {
-              return directives.filter(directive => {
+              return (directives || []).filter(directive => {
                 return deletedActivityIds.indexOf(directive.id) < 1;
               });
             });
@@ -2211,7 +2211,7 @@ const effects = {
           if (response.deleteActivityDirectives) {
             const deletedActivityIds = response.deleteActivityDirectives.returning.map(({ id }) => id);
             activityDirectivesDB.updateValue(directives => {
-              return directives.filter(directive => {
+              return (directives || []).filter(directive => {
                 return deletedActivityIds.indexOf(directive.id) < 1;
               });
             });
@@ -3891,7 +3891,8 @@ const effects = {
 
   async getModels(user: User | null): Promise<ModelSlim[]> {
     try {
-      const data = await reqHasura<ModelSlim[]>(gql.GET_MODELS, {}, user);
+      const query = convertToQuery(gql.SUB_MODELS);
+      const data = await reqHasura<ModelSlim[]>(query, {}, user);
       const { models = [] } = data;
       if (models != null) {
         return models;
@@ -5320,7 +5321,11 @@ const effects = {
         throwPermissionError('restore plan snapshot');
       }
 
-      const { confirm, value } = await showRestorePlanSnapshotModal(snapshot, get(activityDirectivesDB).length, user);
+      const { confirm, value } = await showRestorePlanSnapshotModal(
+        snapshot,
+        (get(activityDirectivesDB) || []).length,
+        user,
+      );
 
       if (confirm) {
         if (value && value.shouldCreateSnapshot) {
@@ -5573,7 +5578,7 @@ const effects = {
       if (data.update_activity_directive_by_pk) {
         const { update_activity_directive_by_pk: updatedDirective } = data;
         activityDirectivesDB.updateValue(directives => {
-          return directives.map(directive => {
+          return (directives || []).map(directive => {
             if (directive.id === id) {
               return updatedDirective;
             }

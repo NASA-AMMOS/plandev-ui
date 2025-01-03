@@ -36,7 +36,7 @@ export const resourceTypes: Writable<ResourceType[]> = writable([]);
 
 export const resourceTypesLoading: Writable<boolean> = writable(true);
 
-export const spans: Writable<Span[]> = writable([]);
+export const spans: Writable<Span[] | null> = writable(null);
 
 export const yAxesWithScaleDomainsCache: Writable<Record<number, Axis[]>> = writable({});
 
@@ -72,18 +72,18 @@ export const simulationDatasetLatest = gqlSubscribable<SimulationDataset | null>
   },
 );
 
-export const simulationDatasetsPlan = gqlSubscribable<SimulationDataset[]>(
+export const simulationDatasetsPlan = gqlSubscribable<SimulationDataset[] | null>(
   gql.SUB_SIMULATION_DATASETS,
   { planId },
-  [],
+  null,
   null,
   v => v[0]?.simulation_datasets || [],
 );
 
-export const simulationDatasetsAll = gqlSubscribable<SimulationDatasetSlim[]>(
+export const simulationDatasetsAll = gqlSubscribable<SimulationDatasetSlim[] | null>(
   gql.SUB_SIMULATION_DATASETS_ALL,
   null,
-  [],
+  null,
   null,
 );
 
@@ -109,10 +109,10 @@ export const allResourceTypes: Readable<ResourceType[]> = derived(
   },
 );
 
-export const spansMap: Readable<SpansMap> = derived(spans, $spans => keyBy($spans, 'span_id'));
+export const spansMap: Readable<SpansMap | null> = derived(spans, $spans => (!spans ? null : keyBy($spans, 'span_id')));
 
 export const spanUtilityMaps: Readable<SpanUtilityMaps> = derived(spans, $spans => {
-  return createSpanUtilityMaps($spans);
+  return createSpanUtilityMaps($spans || []);
 });
 
 export const simulationStatus: Readable<Status | null> = derived(
@@ -159,7 +159,7 @@ export const enableSimulation: Readable<boolean> = derived(simulationStatus, $si
 });
 
 export const selectedSpan = derived([spansMap, selectedSpanId], ([$spansMap, $selectedSpanId]) => {
-  if ($selectedSpanId !== null) {
+  if ($selectedSpanId !== null && $spansMap !== null) {
     return $spansMap[$selectedSpanId] || null;
   }
 
@@ -184,8 +184,8 @@ export function resetSimulationStores() {
   simulationDatasetLatest.updateValue(() => null);
   simulationEvents.set([]);
   simulationTemplates.updateValue(() => []);
-  simulationDatasetsPlan.updateValue(() => []);
-  simulationDatasetsAll.updateValue(() => []);
-  spans.set([]);
+  simulationDatasetsPlan.updateValue(() => null);
+  simulationDatasetsAll.updateValue(() => null);
+  spans.set(null);
   resourceTypes.set([]);
 }

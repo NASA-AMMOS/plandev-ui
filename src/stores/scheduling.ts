@@ -235,7 +235,9 @@ export const schedulingAnalysisStatus = derived(
     } else {
       let matchingSimDataset;
       if (typeof $latestSchedulingRequest.dataset_id === 'number') {
-        matchingSimDataset = $simulationDatasetsPlan.find(d => d.dataset_id === $latestSchedulingRequest.dataset_id);
+        matchingSimDataset = ($simulationDatasetsPlan || []).find(
+          d => d.dataset_id === $latestSchedulingRequest.dataset_id,
+        );
       }
 
       /*

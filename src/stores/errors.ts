@@ -61,7 +61,7 @@ export const activityValidationErrors: Readable<ActivityValidationErrors[]> = de
           activityId: directiveId,
           errors: [validations],
           status,
-          type: $activityDirectivesMap[directiveId]?.type,
+          type: ($activityDirectivesMap || {})[directiveId]?.type, // TODO maybe this whole thing should also be a nullable list?
         };
       } else {
         activityValidationsErrorMap[directiveId].errors.push(validations);
@@ -75,7 +75,7 @@ export const activityValidationErrors: Readable<ActivityValidationErrors[]> = de
           activityId: activityId,
           errors: [anchorValidationError],
           status: 'complete',
-          type: $activityDirectivesMap[activityId]?.type,
+          type: ($activityDirectivesMap || {})[activityId]?.type,
         };
       } else {
         activityValidationsErrorMap[activityId].errors.push(anchorValidationError);

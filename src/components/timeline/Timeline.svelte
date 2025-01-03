@@ -46,7 +46,7 @@
   import Tooltip from './Tooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
 
-  export let activityDirectivesMap: ActivityDirectivesMap = {};
+  export let activityDirectivesMap: ActivityDirectivesMap | null = null;
   export let externalEvents: ExternalEvent[] = [];
   export let constraintResults: ConstraintResultWithName[] = [];
   export let hasUpdateDirectivePermission: boolean = false;
@@ -62,8 +62,8 @@
   export let simulation: Simulation | null = null;
   export let simulationDataset: SimulationDataset | null = null;
   export let spanUtilityMaps: SpanUtilityMaps;
-  export let spansMap: SpansMap = {};
-  export let spans: Span[] = [];
+  export let spansMap: SpansMap | null = {};
+  export let spans: Span[] | null = [];
   export let timeline: Timeline | null = null;
   export let timelineInteractionMode: TimelineInteractionMode;
   export let timelineLockStatus: TimelineLockStatus;
@@ -122,7 +122,7 @@
     trailing: true,
   });
 
-  $: activityDirectives = Object.values(activityDirectivesMap);
+  $: activityDirectives = activityDirectivesMap ? Object.values(activityDirectivesMap) : null;
   $: derivationGroups = $planDerivationGroupLinks
     .filter(link => link.plan_id === plan?.id)
     .map(link => link.derivation_group_name);
@@ -393,8 +393,9 @@
       />
     {/if}
     <div class="timeline-histogram-container">
+      <!-- TODO add loading to this component -->
       <TimelineHistogram
-        {activityDirectives}
+        activityDirectives={activityDirectives || []}
         {externalEvents}
         {constraintResults}
         {cursorEnabled}
@@ -403,7 +404,7 @@
         {mouseOver}
         {planStartTimeYmd}
         {simulationDataset}
-        {spans}
+        spans={spans || []}
         {timelineZoomTransform}
         {viewTimeRange}
         {xScaleView}
@@ -534,7 +535,7 @@
 
   <!-- Timeline Context Menu. -->
   <TimelineContextMenu
-    {activityDirectivesMap}
+    activityDirectivesMap={activityDirectivesMap || {}}
     bind:this={contextMenuComponent}
     {contextMenu}
     {hasUpdateDirectivePermission}
@@ -550,7 +551,7 @@
     on:viewTimeRangeChanged={event => viewTimeRangeChanged(event.detail)}
     {simulation}
     {simulationDataset}
-    {spansMap}
+    spansMap={spansMap || {}}
     {spanUtilityMaps}
     {plan}
     {planStartTimeYmd}
@@ -596,6 +597,7 @@
   .timeline-padded-content {
     background: white;
     border-radius: 4px;
+    position: relative;
   }
 
   :global(#dnd-action-dragged-el .row-root) {

@@ -532,3 +532,22 @@
   opacity: var(--ag-icon-image-opacity-filter, 0.9);
   transition: opacity 0.1s linear;
 }
+
+.ag-overlay-loading-center {
+  border: none;
+  box-shadow: none;
+  color: var(--st-typography-label-color);
+  font-family: var(--st-typography-label-font-family);
+  font-size: var(--st-typography-label-font-size);
+  font-weight: var(--st-typography-label-font-weight);
+  letter-spacing: var(--st-typography-label-letter-spacing);
+  line-height: var(--st-typography-label-line-height);
+}
+
+.ag-overlay-no-rows-center {
+  font-family: var(--st-typography-body-font-family);
+  font-size: var(--st-typography-body-font-size);
+  font-weight: var(--st-typography-body-font-weight);
+  letter-spacing: var(--st-typography-body-letter-spacing);
+  line-height: var(--st-typography-body-line-height);
+}
