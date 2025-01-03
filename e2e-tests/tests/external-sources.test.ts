@@ -42,6 +42,16 @@ test.describe.serial('External Sources', () => {
     await expect(externalSources.inputFile).not.toBeVisible();
   });
 
+  test('Optional argument should be marked in external event form', async () => {
+    await externalSources.selectEvent('ExampleEvent:1/sc/sc1:1');
+    await page.click('text="Attributes"')
+    const parameter = page.locator('.parameter').filter({ hasText: 'optional' }).first();
+    parameter.hover();
+    const parameterInfo = parameter.getByRole('contentinfo');
+    await parameterInfo.hover();
+    await expect(page.locator('.parameter-info-values').filter({ hasText: 'Required' }).filter({ hasText: 'false' })).toBeVisible();
+  });
+
   test('External source form should be shown when a source is selected', async () => {
     await externalSources.selectSource();
     await expect(page.locator('.external-source-header-title-value')).toBeVisible();
@@ -77,17 +87,52 @@ test.describe.serial('External Sources', () => {
     await expect(externalSources.externalEventTableHeaderDuration).toBeVisible();
   });
 
-  test('Deleting an external source', async () => {
+  test('Create Empty Source and Event Type', async () => {
+    await externalSources.uploadExternalSource(
+      externalSources.externalSourceNoAttributeFilePath,
+      externalSources.externalSourceNoAttributeFileName,
+      false
+    );
+
+    await externalSources.gotoTypeManager();
+
+    const externalSourceTypeTable = await externalSources.page.locator('.external-source-type-table');
+    const externalEventTypeTable = await externalSources.page.locator('.external-event-type-table');
+
+    const sourceType = await externalSourceTypeTable.getByRole('gridcell').filter({ hasText: 'Empty External Source' });
+    await sourceType.hover();
+    await page.getByRole('button', { name: 'View External Source Type' }).click();
+    await expect(page.locator('text="Attribute Schema - Properties"')).toBeVisible()
+    const sourceTypeAttributes = await page.locator('text="Attribute Schema - Properties"');
+    await sourceTypeAttributes.click();
+    await expect(page.locator('.parameter')).toHaveCount(0);
+
+    const eventType = await externalEventTypeTable.getByRole('gridcell').filter({ hasText: 'EmptyEvent' });
+    await eventType.hover();
+    await page.getByRole('button', { name: 'View External Event Type' }).click();
+    await expect(page.locator('text="Attribute Schema - Properties"')).toBeVisible()
+    const eventTypeAttributes = await page.locator('text="Attribute Schema - Properties"');
+    await eventTypeAttributes.click();
+    await expect(page.locator('.parameter')).toHaveCount(0);
+
+    await externalSources.goto();
+  })
+
+  test('Deleting all external sources', async () => {
     await expect(externalSources.externalSourcesTable).toBeVisible();
     await externalSources.deleteSource(externalSources.externalSourceFileName);
+    await externalSources.deleteSource(externalSources.externalSourceNoAttributeFileName);
     await expect(page.getByText('External Source Deleted Successfully')).toBeVisible();
     await expect(externalSources.inputFile).toBeVisible();
     await expect(externalSources.externalEventSelectedForm).not.toBeVisible();
     await expect(externalSources.externalSourceSelectedForm).not.toBeVisible();
     await externalSources.gotoTypeManager();
     await externalSources.deleteDerivationGroup(externalSources.exampleDerivationGroup);
+    await externalSources.deleteDerivationGroup(externalSources.exampleEmptyDerivationGroup);
     await externalSources.deleteExternalSourceType(externalSources.exampleSourceType);
+    await externalSources.deleteExternalSourceType(externalSources.exampleEmptySourceType);
     await externalSources.deleteExternalEventType(externalSources.exampleEventType);
+    await externalSources.deleteExternalEventType(externalSources.exampleEmptyEventType);
   });
 });
 
