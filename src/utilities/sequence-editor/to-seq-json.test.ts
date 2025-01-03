@@ -88,6 +88,49 @@ HDW_CMD`;
     expect(actual).toEqual(expectedJson);
   });
 
+  it('immediate command', async () => {
+    const seq = `@IMMEDIATE
+ECHO "hello"
+# activate sequences
+@LOAD("seqA")
+@ACTIVATE("seqB") 10 #description`;
+    const id = 'test';
+    const expectedJson = {
+      id: 'test',
+      immediate_commands: [
+        {
+          args: [
+            {
+              type: 'string',
+              value: 'hello',
+            },
+          ],
+          stem: 'ECHO',
+          type: 'immediate_command',
+        },
+        {
+          args: [],
+          sequence: 'seqA',
+          type: 'immediate_load',
+        },
+        {
+          args: [
+            {
+              type: 'number',
+              value: 10,
+            },
+          ],
+          description: 'description',
+          sequence: 'seqB',
+          type: 'immediate_activate',
+        },
+      ],
+      metadata: {},
+    };
+    const actual = JSON.parse(await sequenceToSeqJson(SeqLanguage.parser.parse(seq), seq, commandDictionary, id));
+    expect(actual).toEqual(expectedJson);
+  });
+
   it('multiple hardware commands', async () => {
     const seq = `@HARDWARE
 HDW_CMD_1

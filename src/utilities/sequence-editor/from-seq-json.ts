@@ -7,6 +7,9 @@ import type {
   GroundBlock,
   GroundEvent,
   HexArgument,
+  ImmediateActivate,
+  ImmediateFswCommand,
+  ImmediateLoad,
   Load,
   Metadata,
   Model,
@@ -205,18 +208,22 @@ export async function seqJsonToSequence(input: string | null): Promise<string> {
     if (seqJson.immediate_commands) {
       sequence.push(`\n`);
       sequence.push(`@IMMEDIATE\n`);
-      for (const icmd of seqJson.immediate_commands) {
-        const args = seqJsonArgsToSequence(icmd.args);
-        const description = icmd.description ? seqJsonDescriptionToSequence(icmd.description) : '';
-        const metadata = icmd.metadata ? seqJsonMetadataToSequence(icmd.metadata) : '';
-        let immediateString = `${icmd.stem}${args}${description}`;
-        // add a new line if on doesn't exit at the end of the immediateString
-        if (!immediateString.endsWith('\n')) {
-          immediateString += '\n';
+      for (const realTimeCommand of seqJson.immediate_commands) {
+        switch (realTimeCommand.type) {
+          case 'immediate_command': {
+            // FSW Commands
+            sequence.push(commandToString(realTimeCommand));
+            break;
+          }
+          case 'immediate_activate':
+          case 'immediate_load': {
+            sequence.push(loadOrActivateToString(realTimeCommand));
+            break;
+          }
+          default: {
+            throw new Error(`Invalid immediate command type ${realTimeCommand.type}`);
+          }
         }
-        // Add metadata data if it exists
-        immediateString += metadata;
-        sequence.push(immediateString);
       }
     }
 
@@ -250,14 +257,24 @@ export async function seqJsonToSequence(input: string | null): Promise<string> {
   return sequence.join('');
 }
 
-function commandToString(step: Command) {
-  const time = seqJsonTimeToSequence(step.time);
+function isCommand(step: Command | ImmediateFswCommand): step is Command {
+  return (step as Command).time !== undefined;
+}
+
+function commandToString(step: Command | ImmediateFswCommand): string {
   const args = seqJsonArgsToSequence(step.args);
   const metadata = step.metadata ? seqJsonMetadataToSequence(step.metadata) : '';
-  const models = step.models ? seqJsonModelsToSequence(step.models) : '';
   const description = step.description ? seqJsonDescriptionToSequence(step.description) : '';
 
-  let commandString = `${time} ${step.stem}${args}${description}`;
+  // used for commands, ImmediateFswCommand doesn't support 'time' and 'models'
+  let time = '';
+  let models = '';
+  if (isCommand(step)) {
+    time = step.time ? `${seqJsonTimeToSequence(step.time)} ` : '';
+    models = step.models ? (step.models ? seqJsonModelsToSequence(step.models) : '') : '';
+  }
+
+  let commandString = `${time}${step.stem}${args}${description}`;
   // add a new line if on doesn't exit at the end of the commandString
   if (!commandString.endsWith('\n')) {
     commandString += '\n';
@@ -267,16 +284,27 @@ function commandToString(step: Command) {
   return commandString;
 }
 
-function loadOrActivateToString(step: Activate | Load) {
-  const time = seqJsonTimeToSequence(step.time);
+function loadOrActivateToString(step: Activate | Load | ImmediateActivate | ImmediateLoad) {
+  const time = (step as Activate | Load).time ? `${seqJsonTimeToSequence((step as Activate | Load).time)} ` : '';
   const args = step.args ? seqJsonArgsToSequence(step.args) : '';
   const metadata = step.metadata ? seqJsonMetadataToSequence(step.metadata) : '';
   const models = step.models ? seqJsonModelsToSequence(step.models) : '';
   const engine = step.engine !== undefined ? `@ENGINE ${step.engine.toString(10)}\n` : '';
   const epoch = step.epoch !== undefined ? `@EPOCH ${quoteEscape(step.epoch)}\n` : '';
   const description = step.description ? seqJsonDescriptionToSequence(step.description) : '';
-  const stepType = `@${step.type === 'activate' ? 'ACTIVATE' : 'LOAD'}(${quoteEscape(step.sequence)})`;
-  let stepString = `${time} ${stepType}${args}${description}`;
+  let stepType = '';
+  switch (step.type) {
+    case 'activate':
+    case 'immediate_activate':
+      stepType = '@ACTIVATE';
+      break;
+    case 'load':
+    case 'immediate_load':
+      stepType = '@LOAD';
+      break;
+  }
+  stepType += `(${quoteEscape(step.sequence)})`;
+  let stepString = `${time}${stepType}${args}${description}`;
   if (!stepString.endsWith('\n')) {
     stepString += '\n';
   }

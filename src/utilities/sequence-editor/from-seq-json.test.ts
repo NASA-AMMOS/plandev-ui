@@ -461,16 +461,38 @@ C FSW_CMD_2 10 "ENUM" # fsw cmd 2 description
           description: 'immediate command',
           metadata: {},
           stem: 'IC',
+          type: 'immediate_command',
         },
         {
           args: [],
           stem: 'IC2',
+          type: 'immediate_command',
         },
         {
           args: [],
           description: 'noop command, no arguments',
           metadata: { processor: 'VC1A' },
           stem: 'NOOP',
+          type: 'immediate_command',
+        },
+        {
+          args: [
+            {
+              type: 'string',
+              value: 'hi',
+            },
+          ],
+          description: 'description',
+          metadata: {
+            Key: 'Value',
+          },
+          sequence: 'seqA',
+          type: 'immediate_load',
+        },
+        {
+          description: 'description',
+          sequence: 'seqB',
+          type: 'immediate_activate',
         },
       ],
       metadata: {},
@@ -484,6 +506,9 @@ IC "1" 2 3 # immediate command
 IC2
 NOOP # noop command, no arguments
 @METADATA "processor" "VC1A"
+@LOAD("seqA") "hi" # description
+@METADATA "Key" "Value"
+@ACTIVATE("seqB") # description
 `;
     expect(sequence).toEqual(expectedSequence);
   });
