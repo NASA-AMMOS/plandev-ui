@@ -246,6 +246,7 @@
           {name}
           {disabled}
           placeholder={disabled ? '' : placeholder}
+          autocomplete="off"
           class="st-input"
           style:min-width={`${minWidth}px`}
           on:mouseup={openSuggestions}

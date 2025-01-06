@@ -78,7 +78,7 @@
       // Map subfield type to filter type
       currentType = matchingSubfield.type;
       currentUnit = matchingSubfield.unit || '';
-      if (matchingSubfield.type === 'string') {
+      if (matchingSubfield.type === 'string' || matchingSubfield.type === 'path') {
         operatorKeys = ['includes', 'does_not_include', 'equals', 'does_not_equal'];
       } else if (matchingSubfield.type === 'int' || matchingSubfield.type === 'real') {
         operatorKeys = ['equals', 'does_not_equal', 'is_greater_than', 'is_less_than', 'is_within', 'is_not_within'];
@@ -203,8 +203,14 @@
     {/each}
   </select>
   <div class="dynamic-filter-value">
-    {#if currentType === 'string'}
-      <input name="filter-value" aria-label="value" class="st-input w-100" bind:value={currentValue} />
+    {#if currentType === 'string' || currentType === 'path'}
+      <input
+        name="filter-value"
+        aria-label="value"
+        class="st-input w-100"
+        bind:value={currentValue}
+        autocomplete="off"
+      />
     {:else if currentOperator === 'is_within' || currentOperator === 'is_not_within'}
       {#if Array.isArray(currentValue)}
         <div class="range-input">
@@ -215,6 +221,7 @@
               class="st-input w-100"
               type="number"
               on:input={event => onRangeInputChange(event, 'min')}
+              autocomplete="off"
             />
             <div class="parameter-right" slot="right">
               <ParameterUnits unit={currentUnit} />
@@ -228,6 +235,7 @@
               class="st-input w-100"
               type="number"
               on:input={event => onRangeInputChange(event, 'max')}
+              autocomplete="off"
             />
             <div class="parameter-right" slot="right">
               <ParameterUnits unit={currentUnit} />
@@ -237,14 +245,28 @@
       {/if}
     {:else if currentType === 'int' || currentType === 'real'}
       <Input class="dynamic-filter-input">
-        <input name="filter-value" aria-label="value" bind:value={currentValue} class="st-input w-100" type="number" />
+        <input
+          name="filter-value"
+          aria-label="value"
+          bind:value={currentValue}
+          class="st-input w-100"
+          type="number"
+          autocomplete="off"
+        />
         <div class="parameter-right" slot="right">
           <ParameterUnits unit={currentUnit} />
         </div>
       </Input>
     {:else if currentType === 'duration'}
       <Input class="dynamic-filter-input">
-        <input name="filter-value" aria-label="value" bind:value={currentValue} class="st-input w-100" type="number" />
+        <input
+          name="filter-value"
+          aria-label="value"
+          bind:value={currentValue}
+          class="st-input w-100"
+          type="number"
+          autocomplete="off"
+        />
         <div class="parameter-right" slot="right">
           <ParameterUnits unit="ms" />
         </div>
