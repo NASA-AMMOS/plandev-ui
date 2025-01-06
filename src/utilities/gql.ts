@@ -1773,6 +1773,13 @@ const gql = {
         duration
         id
         name
+        profile_segments(where: { dataset_id: { _eq: $datasetId } }, order_by: { start_offset: asc }) {
+          dataset_id
+          dynamics
+          is_gap
+          profile_id
+          start_offset
+        }
         type
       }
     }
@@ -1787,13 +1794,6 @@ const gql = {
             duration
             id
             name
-            profile_segments(order_by: { start_offset: asc }) {
-              dataset_id
-              dynamics
-              is_gap
-              profile_id
-              start_offset
-            }
             type
           }
         }
@@ -1804,8 +1804,8 @@ const gql = {
   `,
 
   GET_PROFILE_SEGMENTS: `#graphql
-    query GetProfileSegments($datasetId: Int!) {
-      ${Queries.PROFILE_SEGMENTS}(where: { dataset_id: { _eq: $datasetId } } ) {
+    query GetProfileSegments($datasetIds: [Int!]!) {
+      ${Queries.PROFILE_SEGMENTS}(where: { dataset_id: { _in: $datasetIds } }, order_by: { start_offset: asc }) {
         dataset_id
         dynamics
         is_gap

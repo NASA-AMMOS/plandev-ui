@@ -178,7 +178,6 @@ import {
   type Workspace,
 } from '../types/sequencing';
 import type {
-  PartialProfile,
   PlanDataset,
   Profile,
   ProfileSegment,
@@ -216,7 +215,7 @@ import type { Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
 import { parseCdlDictionary, toAmpcsXml } from './codemirror/cdlDictionary';
-import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
+import { compare, convertToQuery, getSearchParameterNumber, setQueryParam, unique } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
   showConfirmModal,
@@ -4174,38 +4173,7 @@ const effects = {
     user: User | null,
     signal: AbortSignal | undefined = undefined,
   ): Promise<Record<string, Profile[] | null>> {
-    try {
-      const profileResponse = await reqHasura<PartialProfile[]>(gql.GET_PROFILE, { datasetId, name }, user, signal);
-      const { profile } = profileResponse;
-      if (profile) {
-        const profileSegmentsResponse = await reqHasura<ProfileSegment[]>(
-          gql.GET_PROFILE_SEGMENTS,
-          { datasetId },
-          user,
-          signal,
-        );
-
-        const { profile_segment } = profileSegmentsResponse;
-
-        if (profile_segment) {
-          const profiles: Profile[] = profile.map(partialProfile => {
-            const relevantProfileSegments = profile_segment.filter(
-              profileSegment => profileSegment.profile_id === partialProfile.id,
-            );
-            return {
-              ...partialProfile,
-              profile_segments: relevantProfileSegments,
-            };
-          });
-
-          return { profile: profiles };
-        }
-      }
-    } catch (e) {
-      catchError(e as Error);
-    }
-
-    return { profile: null };
+    return reqHasura<Profile[]>(gql.GET_PROFILE, { datasetId, name }, user, signal);
   },
 
   async getResourceTypes(model_id: number, user: User | null, limit: number | null = null): Promise<ResourceType[]> {
@@ -4253,25 +4221,49 @@ const effects = {
         let resources: Resource[] = [];
 
         const profileMap: Set<string> = new Set();
+
+        const datasetIds: number[] = plan_datasets.map(({ dataset_id }) => dataset_id);
+        const uniqueDatasetIds = unique(datasetIds);
+
         plan_datasets.sort(({ dataset_id: datasetIdA }, { dataset_id: datasetIdB }) => {
           return compare(datasetIdA, datasetIdB, false);
         });
 
-        for (const dataset of plan_datasets) {
-          const {
-            dataset: { profiles },
-            offset_from_plan_start,
-          } = dataset;
-          const uniqueProfiles: Profile[] = profiles.filter(profile => {
-            if (!profileMap.has(profile.name)) {
-              profileMap.add(profile.name);
-              return true;
-            }
-            return false;
-          });
+        const profileSegmentsResponse = await reqHasura<ProfileSegment[]>(
+          gql.GET_PROFILE_SEGMENTS,
+          { datasetIds: uniqueDatasetIds },
+          user,
+          signal,
+        );
 
-          const sampledResources: Resource[] = sampleProfiles(uniqueProfiles, startTimeYmd, offset_from_plan_start);
-          resources = [...resources, ...sampledResources];
+        const { profile_segment } = profileSegmentsResponse;
+
+        if (profile_segment) {
+          for (const dataset of plan_datasets) {
+            const {
+              dataset: { profiles },
+              offset_from_plan_start,
+            } = dataset;
+
+            const uniqueProfiles: Profile[] = profiles.filter(profile => {
+              if (!profileMap.has(profile.name)) {
+                profileMap.add(profile.name);
+                return true;
+              }
+              return false;
+            });
+
+            for (const profile of uniqueProfiles) {
+              const relevantProfileSegments = profile_segment.filter(
+                profileSegment => profileSegment.profile_id === profile.id,
+              );
+
+              profile.profile_segments = relevantProfileSegments;
+            }
+
+            const sampledResources: Resource[] = sampleProfiles(uniqueProfiles, startTimeYmd, offset_from_plan_start);
+            resources = [...resources, ...sampledResources];
+          }
         }
         return { aborted: false, resources };
       } else {
