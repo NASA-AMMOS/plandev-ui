@@ -240,4 +240,54 @@ test.describe.serial('Timeline View Editing', () => {
     await activityLayerEditor.locator('.timeline-layer-editor').first().getByRole('button', { name: 'Delete' }).click();
     expect(await activityLayerEditor.locator('.timeline-layer-editor').count()).toBe(0);
   });
+
+  test('Add a resource layer', async () => {
+    const resourceLayerEditor = await page.getByLabel('Resource Layer-editor');
+    const yAxisEditor = await page.getByLabel('Y Axis-editor');
+    const existingLayerCount = await resourceLayerEditor.locator('.timeline-layer-editor').count();
+    const existingYAxesCount = await yAxisEditor.locator('.timeline-y-axis').count();
+
+    // Expect no y-axis label to exist for the row in the timeline
+    expect(
+      await page.locator('.timeline-row-wrapper', { hasText: rowName }).locator('.row-header-y-axis-label').count(),
+    ).toBe(0);
+
+    // Add a resource layer
+    await resourceLayerEditor.getByRole('button', { name: 'New Resource Layer' }).click();
+    const newLayerCount = await resourceLayerEditor.locator('.timeline-layer-editor').count();
+    expect(newLayerCount - existingLayerCount).toEqual(1);
+
+    // Expect a y-axis to have been automatically created
+    const newYAxisCount = await yAxisEditor.locator('.timeline-y-axis').count();
+    expect(newYAxisCount - existingYAxesCount).toEqual(1);
+
+    await page.pause();
+
+    // Select a resource
+    await resourceLayerEditor.getByRole('combobox').click();
+    await resourceLayerEditor.getByRole('menuitem', { name: '/peel' }).waitFor({ state: 'attached' });
+    await resourceLayerEditor.getByRole('menuitem', { name: '/peel' }).click();
+    await resourceLayerEditor.getByRole('menuitem', { name: '/peel' }).waitFor({ state: 'detached' });
+
+    // Run simulation
+    await plan.showPanel(PanelNames.SIMULATION, true);
+    await plan.runSimulation();
+
+    // Expect the resource to have a y-axis label in the timline
+    expect(
+      await page.locator('.timeline-row-wrapper', { hasText: rowName }).locator('.row-header-y-axis-label').count(),
+    ).toBe(1);
+
+    // Duplicate a resource layer
+    await resourceLayerEditor
+      .locator('.timeline-layer-editor')
+      .first()
+      .getByRole('button', { name: 'Duplicate' })
+      .click();
+    expect(await resourceLayerEditor.locator('.timeline-layer-editor').count()).toBe(2);
+
+    // Delete a resource layer
+    await resourceLayerEditor.locator('.timeline-layer-editor').first().getByRole('button', { name: 'Delete' }).click();
+    expect(await resourceLayerEditor.locator('.timeline-layer-editor').count()).toBe(1);
+  });
 });
