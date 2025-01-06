@@ -1405,7 +1405,7 @@ export function applyActivityLayerFilter(
     (!filter.dynamic_type_filters?.length &&
       !filter.other_filters?.length &&
       !filter.static_types?.length &&
-      !filter.type_subfilters?.length)
+      (!filter.type_subfilters || !Object.keys(filter.type_subfilters).length))
   ) {
     return { directives, spans };
   }
@@ -1417,7 +1417,7 @@ export function applyActivityLayerFilter(
     },
     {},
   );
-  // TODO could be passed in to avoid recomputing this
+
   const typeDefMap: Record<string, ActivityType> = (types || []).reduce(
     (acc: Record<string, ActivityType>, cur: ActivityType) => {
       acc[cur.name] = cur;
@@ -1426,81 +1426,65 @@ export function applyActivityLayerFilter(
     {},
   );
 
-  const anyTypeFiltersSpecified = !!(filter.static_types?.length || filter.dynamic_type_filters?.length);
   const filteredDirectives = directives.filter(directive => {
-    let included = false;
-
-    // Check to see if directive is included in static list
-    if (filter.static_types?.length) {
-      included = !!staticTypeMap[directive.type];
-    }
-
-    // Check if necessary to see if directive is included in dynamic list
-    if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
-      included = directiveOrSpanMatchesDynamicFilters(
-        directive,
-        filter.dynamic_type_filters,
-        typeDefMap,
-        defaultArgumentsMap,
-      );
-    }
-
-    // Apply other filters on top of the types
-    if (filter.other_filters?.length) {
-      included =
-        directiveOrSpanMatchesDynamicFilters(directive, filter.other_filters, typeDefMap, defaultArgumentsMap) &&
-        (anyTypeFiltersSpecified ? included : true);
-    }
-
-    // Apply type specific filters if found
-    if (included && filter.type_subfilters && filter.type_subfilters[directive.type]) {
-      included = directiveOrSpanMatchesDynamicFilters(
-        directive,
-        filter.type_subfilters[directive.type],
-        typeDefMap,
-        defaultArgumentsMap,
-      );
-    }
-    return included;
+    return applyFiltersToDirectiveOrSpan(directive, filter, staticTypeMap, typeDefMap, defaultArgumentsMap);
   });
 
   const filteredSpans = spans.filter(span => {
-    let included = false;
-
-    // Check to see if span is included in static list
-    if (filter.static_types?.length) {
-      included = !!staticTypeMap[span.type];
-    }
-
-    // Check if necessary to see if span is included in dynamic list
-    if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
-      included = directiveOrSpanMatchesDynamicFilters(
-        span,
-        filter.dynamic_type_filters,
-        typeDefMap,
-        defaultArgumentsMap,
-      );
-    }
-
-    // Apply other filters on top of the types
-    if (filter.other_filters?.length) {
-      included =
-        directiveOrSpanMatchesDynamicFilters(span, filter.other_filters, typeDefMap, defaultArgumentsMap) &&
-        (anyTypeFiltersSpecified ? included : true);
-    }
-
-    // Apply type specific filters if found
-    if (included && filter.type_subfilters && filter.type_subfilters[span.type]) {
-      included = directiveOrSpanMatchesDynamicFilters(
-        span,
-        filter.type_subfilters[span.type],
-        typeDefMap,
-        defaultArgumentsMap,
-      );
-    }
-    return included;
+    return applyFiltersToDirectiveOrSpan(span, filter, staticTypeMap, typeDefMap, defaultArgumentsMap);
   });
   return { directives: filteredDirectives, spans: filteredSpans };
+}
+
+export function applyFiltersToDirectiveOrSpan(
+  directiveOrSpan: ActivityDirective | Span,
+  filter: ActivityLayerFilter,
+  staticTypeMap: Record<string, boolean>,
+  typeDefMap: Record<string, ActivityType>,
+  defaultArgumentsMap: DefaultEffectiveArgumentsMap,
+) {
+  const anyTypeFiltersSpecified = !!(filter.static_types?.length || filter.dynamic_type_filters?.length);
+  const anyMainFiltersSpecified = anyTypeFiltersSpecified || !!filter.other_filters?.length;
+  let included = !anyMainFiltersSpecified;
+
+  // Check to see if directive is included in static list
+  if (filter.static_types?.length) {
+    included = !!staticTypeMap[directiveOrSpan.type];
+  }
+
+  // Check if necessary to see if directive is included in dynamic list
+  if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
+    included = directiveOrSpanMatchesDynamicFilters(
+      directiveOrSpan,
+      filter.dynamic_type_filters,
+      typeDefMap,
+      defaultArgumentsMap,
+    );
+  }
+
+  // Apply other filters on top of the types
+  if (filter.other_filters?.length) {
+    included =
+      directiveOrSpanMatchesDynamicFilters(directiveOrSpan, filter.other_filters, typeDefMap, defaultArgumentsMap) &&
+      (anyTypeFiltersSpecified ? included : true);
+  }
+
+  // Apply type specific filters if found and if the type is already included or
+  // if no other filters were specified (case where all types are included by default)
+  if (
+    filter.type_subfilters &&
+    filter.type_subfilters[directiveOrSpan.type] &&
+    filter.type_subfilters[directiveOrSpan.type].length
+  ) {
+    included =
+      directiveOrSpanMatchesDynamicFilters(
+        directiveOrSpan,
+        filter.type_subfilters[directiveOrSpan.type],
+        typeDefMap,
+        defaultArgumentsMap,
+      ) && (anyMainFiltersSpecified ? included : true);
+  }
+  return included;
 }
 
 export function getMatchingTypesForActivityLayerFilter(filter: ActivityLayerFilter | undefined, types: ActivityType[]) {
@@ -1509,7 +1493,7 @@ export function getMatchingTypesForActivityLayerFilter(filter: ActivityLayerFilt
     (!filter.dynamic_type_filters?.length &&
       !filter.other_filters?.length &&
       !filter.static_types?.length &&
-      !filter.type_subfilters?.length)
+      (!filter.type_subfilters || !Object.keys(filter.type_subfilters).length))
   ) {
     return types;
   }
@@ -1522,8 +1506,10 @@ export function getMatchingTypesForActivityLayerFilter(filter: ActivityLayerFilt
     {},
   );
 
+  const anyTypeFiltersSpecified = !!(filter.static_types?.length || filter.dynamic_type_filters?.length);
+
   return types.filter(type => {
-    let included = false;
+    let included = !anyTypeFiltersSpecified;
 
     // Check to see if type is included in static list
     if (filter.static_types?.length) {
@@ -1534,7 +1520,6 @@ export function getMatchingTypesForActivityLayerFilter(filter: ActivityLayerFilt
     if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
       included = typeMatchesDynamicFilters(type, filter.dynamic_type_filters);
     }
-
     return included;
   });
 }
@@ -1596,8 +1581,8 @@ export function typeMatchesDynamicFilters(
     let matches = false;
     if (curr.field === 'Type') {
       matches = matchesDynamicFilter(type.name, curr.operator, curr.value);
-    } else if (curr.field === 'Subsystem' && typeof type.subsystem_tag?.id === 'number') {
-      matches = matchesDynamicFilter(type.subsystem_tag.id, curr.operator, curr.value);
+    } else if (curr.field === 'Subsystem') {
+      matches = matchesDynamicFilter(type.subsystem_tag?.id ?? -1, curr.operator, curr.value);
     }
     return acc && matches;
   }, true);

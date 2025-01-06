@@ -97,7 +97,8 @@
     return (
       (layer.filter.activity?.static_types?.length ?? 0) +
       (layer.filter.activity?.dynamic_type_filters?.length ?? 0) +
-      (layer.filter.activity?.other_filters?.length ?? 0)
+      (layer.filter.activity?.other_filters?.length ?? 0) +
+      (layer.filter.activity?.type_subfilters ? Object.keys(layer.filter.activity?.type_subfilters).length : 0)
     );
   }
 

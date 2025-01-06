@@ -158,13 +158,17 @@
   function onTypeSubfilterRemove(type: string, id: number) {
     const typeSubfilters = dirtyFilter.type_subfilters || {};
     const currentFilters = typeSubfilters[type];
+    const newFilters = currentFilters.filter(f => f.id !== id);
     dirtyFilter = {
       ...dirtyFilter,
       type_subfilters: {
         ...typeSubfilters,
-        [type]: currentFilters.filter(f => f.id !== id),
+        [type]: newFilters,
       },
     };
+    if (dirtyFilter.type_subfilters && newFilters.length === 0) {
+      delete dirtyFilter.type_subfilters[type];
+    }
     dispatch('filterChange', { filter: dirtyFilter });
   }
 
