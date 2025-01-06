@@ -594,7 +594,7 @@ export function createTimelineActivityLayer(timelines: Timeline[], args: Partial
     chartType: 'activity',
     filter: { activity: {} },
     id,
-    name: 'All Activities',
+    name: 'Activity Layer',
     yAxisId: null,
     ...args,
   };

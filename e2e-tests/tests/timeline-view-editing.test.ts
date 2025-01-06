@@ -121,7 +121,7 @@ test.describe.serial('Timeline View Editing', () => {
     expect(newLayerCount - existingLayerCount).toEqual(1);
 
     // Expect the activity layer to include all activities
-    expect(await activityLayerEditor.locator('.timeline-layer-editor').first()).toHaveText('All Activities');
+    expect(await activityLayerEditor.locator('.timeline-layer-editor').first()).toHaveText('Activity Layer');
   });
 
   test('Edit an activity layer', async () => {
@@ -139,7 +139,7 @@ test.describe.serial('Timeline View Editing', () => {
     expect(modal).toBeDefined();
 
     // Expect that layer name is showing in the name input
-    expect(modal.locator('input[name="layer-name"]')).toHaveValue('All Activities');
+    expect(modal.locator('input[name="layer-name"]')).toHaveValue('Activity Layer');
 
     // Expect that the resulting types list is not empty
     const resultingTypesList = modal.locator('.resulting-types-list');
