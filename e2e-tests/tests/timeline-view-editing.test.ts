@@ -162,18 +162,18 @@ test.describe.serial('Timeline View Editing', () => {
     await modal.getByLabel('dynamic-types').getByRole('listitem').locator("input[name='filter-value']").fill('banana');
     expect(await resultingTypesList.locator('.activity-type-result').count()).toEqual(11);
 
-    // Expect that global filters can be added
-    await modal.getByLabel('global-filters').getByRole('button', { name: 'Add Filter' }).click();
-    expect(await modal.getByLabel('global-filters').getByRole('listitem').count()).toBe(1);
+    // Expect that other filters can be added
+    await modal.getByLabel('other-filters').getByRole('button', { name: 'Add Filter' }).click();
+    expect(await modal.getByLabel('other-filters').getByRole('listitem').count()).toBe(1);
     // Select parameter field
-    await modal.getByLabel('global-filters').locator("select[aria-label='field']").selectOption('Parameter');
+    await modal.getByLabel('other-filters').locator("select[aria-label='field']").selectOption('Parameter');
     // Select specific parameter
-    await modal.getByLabel('global-filters').getByText('Select Parameter').click();
-    await modal.getByLabel('global-filters').getByText('quantity (int)').click();
+    await modal.getByLabel('other-filters').getByText('Select Parameter').click();
+    await modal.getByLabel('other-filters').getByText('quantity (int)').click();
     // Select operator
-    await modal.getByLabel('global-filters').locator("select[aria-label='operator']").selectOption('equals');
+    await modal.getByLabel('other-filters').locator("select[aria-label='operator']").selectOption('equals');
     // Fill filter value input
-    await modal.getByLabel('global-filters').getByRole('listitem').locator("input[name='filter-value']").fill('10');
+    await modal.getByLabel('other-filters').getByRole('listitem').locator("input[name='filter-value']").fill('10');
     // Ensure that only one instance (PickBanana) is listed
     expect(await modal.getByText('1 instance')).toBeDefined();
 
@@ -194,8 +194,8 @@ test.describe.serial('Timeline View Editing', () => {
     await activityResult.getByRole('button', { name: 'Remove filter' }).click();
     expect(await modal.getByText('1 instance')).toBeDefined();
 
-    // Expect that global filters can be removed
-    await modal.getByLabel('global-filters').getByRole('button', { name: 'Remove filter' }).click();
+    // Expect that other filters can be removed
+    await modal.getByLabel('other-filters').getByRole('button', { name: 'Remove filter' }).click();
     expect(await modal.getByText('2 instances')).toBeDefined();
 
     // Expect that dynamic types can be removed

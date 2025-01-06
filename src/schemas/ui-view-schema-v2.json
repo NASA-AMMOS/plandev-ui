@@ -79,7 +79,7 @@
               },
               "type": "array"
             },
-            "global_filters": {
+            "other_filters": {
               "description": "Array of filters with which to globally filter activities for display in this layer",
               "items": {
                 "$ref": "#/definitions/activityLayerDynamicFilter"

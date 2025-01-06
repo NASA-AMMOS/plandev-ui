@@ -39,7 +39,7 @@
   let parameterSubfields: ActivityLayerFilterSubfieldSchema[] = [];
   let dirtyFilter: ActivityLayerFilter = {
     dynamic_type_filters: [],
-    global_filters: [],
+    other_filters: [],
     static_types: [],
     type_subfilters: {},
   };
@@ -98,7 +98,7 @@
     dispatch('filterChange', { filter: dirtyFilter });
   }
 
-  function onAddDynamicFilter(list: 'dynamic_type_filters' | 'global_filters') {
+  function onAddDynamicFilter(list: 'dynamic_type_filters' | 'other_filters') {
     const field = list === 'dynamic_type_filters' ? 'Type' : 'Tags';
     const listObj = dirtyFilter[list] || [];
     const currentFilters = Array.isArray(listObj) ? listObj : [];
@@ -110,7 +110,7 @@
     dispatch('filterChange', { filter: dirtyFilter });
   }
 
-  function onDynamicFilterChange(list: 'dynamic_type_filters' | 'global_filters', { detail: { filter } }: CustomEvent) {
+  function onDynamicFilterChange(list: 'dynamic_type_filters' | 'other_filters', { detail: { filter } }: CustomEvent) {
     const currentFilters = Array.isArray(dirtyFilter[list]) ? dirtyFilter[list] : [];
     dirtyFilter = {
       ...dirtyFilter,
@@ -124,8 +124,8 @@
     dispatch('filterChange', { filter: dirtyFilter });
   }
 
-  function onDynamicFilterRemove(list: 'dynamic_type_filters' | 'global_filters', id: number) {
-    const currentFilters: ActivityLayerFilter['dynamic_type_filters'] | ActivityLayerFilter['global_filters'] =
+  function onDynamicFilterRemove(list: 'dynamic_type_filters' | 'other_filters', id: number) {
+    const currentFilters: ActivityLayerFilter['dynamic_type_filters'] | ActivityLayerFilter['other_filters'] =
       Array.isArray(dirtyFilter[list]) ? dirtyFilter[list] : [];
     dirtyFilter = {
       ...dirtyFilter,
@@ -287,7 +287,7 @@
   $: {
     const noFiltersApplied =
       !filter ||
-      (!filter.dynamic_type_filters?.length && !filter.global_filters?.length && !filter.static_types?.length);
+      (!filter.dynamic_type_filters?.length && !filter.other_filters?.length && !filter.static_types?.length);
 
     if (matchingTypes.length && !filteredMatchingTypes.length) {
       resultingTypesMessage = `No types matching "${resultingTypesInputValue}"`;
@@ -486,29 +486,29 @@
                 </div>
               {/if}
             </div>
-            <div class="filter-section" aria-label="global-filters">
+            <div class="filter-section" aria-label="other-filters">
               <div class="filter-section-header st-typography-medium">
                 <div class="filter-section-title">
-                  Global Filters
+                  Other Filters
                   <div class="hint st-typography-body">Tags, parameter, scheduling goal, etc...</div>
                 </div>
                 <button
                   class="st-button icon"
                   aria-label="Add Filter"
-                  on:click={() => onAddDynamicFilter('global_filters')}
+                  on:click={() => onAddDynamicFilter('other_filters')}
                   use:tooltip={{ content: 'Add Filter' }}
                 >
                   <FilterWithPlusIcon />
                 </button>
               </div>
-              {#if dirtyFilter.global_filters?.length}
+              {#if dirtyFilter.other_filters?.length}
                 <div class="filter-section-content">
                   <div class="dynamic-filter-content" role="list">
-                    {#each dirtyFilter.global_filters as filter, i (filter.id)}
+                    {#each dirtyFilter.other_filters as filter, i (filter.id)}
                       <DynamicFilter
                         {filter}
-                        on:remove={() => onDynamicFilterRemove('global_filters', filter.id)}
-                        on:change={event => onDynamicFilterChange('global_filters', event)}
+                        on:remove={() => onDynamicFilterRemove('other_filters', filter.id)}
+                        on:change={event => onDynamicFilterChange('other_filters', event)}
                         verb={i === 0 ? 'Where' : 'and'}
                         schema={{
                           Name: {

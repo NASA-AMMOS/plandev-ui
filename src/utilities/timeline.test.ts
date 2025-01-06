@@ -1496,11 +1496,11 @@ describe('applyActivityLayerFilter', () => {
     });
   });
 
-  test('Should apply global filters', () => {
+  test('Should apply other filters', () => {
     expect(
       applyActivityLayerFilter(
         {
-          global_filters: [
+          other_filters: [
             {
               field: 'Name',
               id: 1,
@@ -1522,7 +1522,7 @@ describe('applyActivityLayerFilter', () => {
     expect(
       applyActivityLayerFilter(
         {
-          global_filters: [
+          other_filters: [
             {
               field: 'Parameter',
               id: 1,
@@ -1545,7 +1545,7 @@ describe('applyActivityLayerFilter', () => {
     expect(
       applyActivityLayerFilter(
         {
-          global_filters: [
+          other_filters: [
             {
               field: 'SchedulingGoalId',
               id: 1,
@@ -1567,7 +1567,7 @@ describe('applyActivityLayerFilter', () => {
     expect(
       applyActivityLayerFilter(
         {
-          global_filters: [
+          other_filters: [
             {
               field: 'Tags',
               id: 1,

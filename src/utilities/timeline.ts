@@ -1403,7 +1403,7 @@ export function applyActivityLayerFilter(
   if (
     !filter ||
     (!filter.dynamic_type_filters?.length &&
-      !filter.global_filters?.length &&
+      !filter.other_filters?.length &&
       !filter.static_types?.length &&
       !filter.type_subfilters?.length)
   ) {
@@ -1445,10 +1445,10 @@ export function applyActivityLayerFilter(
       );
     }
 
-    // Apply global filters on top of the types
-    if (filter.global_filters?.length) {
+    // Apply other filters on top of the types
+    if (filter.other_filters?.length) {
       included =
-        directiveOrSpanMatchesDynamicFilters(directive, filter.global_filters, typeDefMap, defaultArgumentsMap) &&
+        directiveOrSpanMatchesDynamicFilters(directive, filter.other_filters, typeDefMap, defaultArgumentsMap) &&
         (anyTypeFiltersSpecified ? included : true);
     }
 
@@ -1482,10 +1482,10 @@ export function applyActivityLayerFilter(
       );
     }
 
-    // Apply global filters on top of the types
-    if (filter.global_filters?.length) {
+    // Apply other filters on top of the types
+    if (filter.other_filters?.length) {
       included =
-        directiveOrSpanMatchesDynamicFilters(span, filter.global_filters, typeDefMap, defaultArgumentsMap) &&
+        directiveOrSpanMatchesDynamicFilters(span, filter.other_filters, typeDefMap, defaultArgumentsMap) &&
         (anyTypeFiltersSpecified ? included : true);
     }
 
@@ -1507,7 +1507,7 @@ export function getMatchingTypesForActivityLayerFilter(filter: ActivityLayerFilt
   if (
     !filter ||
     (!filter.dynamic_type_filters?.length &&
-      !filter.global_filters?.length &&
+      !filter.other_filters?.length &&
       !filter.static_types?.length &&
       !filter.type_subfilters?.length)
   ) {

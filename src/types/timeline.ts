@@ -44,7 +44,7 @@ export type DynamicFilterDataType = ValueSchema['type'] | 'tag';
 
 export type ActivityLayerFilter = {
   dynamic_type_filters?: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>>[];
-  global_filters?: ActivityLayerDynamicFilter<
+  other_filters?: ActivityLayerDynamicFilter<
     Pick<typeof ActivityLayerFilterField, 'Tags' | 'Parameter' | 'SchedulingGoalId' | 'Name'>
   >[];
   static_types?: string[];

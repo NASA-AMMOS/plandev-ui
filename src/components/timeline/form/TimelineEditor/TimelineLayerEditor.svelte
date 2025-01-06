@@ -97,7 +97,7 @@
     return (
       (layer.filter.activity?.static_types?.length ?? 0) +
       (layer.filter.activity?.dynamic_type_filters?.length ?? 0) +
-      (layer.filter.activity?.global_filters?.length ?? 0)
+      (layer.filter.activity?.other_filters?.length ?? 0)
     );
   }
 
