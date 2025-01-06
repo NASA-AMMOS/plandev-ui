@@ -212,10 +212,11 @@
         autocomplete="off"
       />
     {:else if currentOperator === 'is_within' || currentOperator === 'is_not_within'}
-      {#if Array.isArray(currentValue)}
+      {#if Array.isArray(currentValue) && currentValue.length === 2}
         <div class="range-input">
           <Input class="dynamic-filter-input">
             <input
+              value={currentValue[0]}
               name="filter-value-min"
               aria-label="value-min"
               class="st-input w-100"
@@ -230,6 +231,7 @@
           <div class="st-typography-label">To</div>
           <Input class="dynamic-filter-input">
             <input
+              value={currentValue[1]}
               name="filter-value-max"
               aria-label="value-max"
               class="st-input w-100"
