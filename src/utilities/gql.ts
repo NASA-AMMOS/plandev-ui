@@ -1460,22 +1460,6 @@ const gql = {
     }
   `,
 
-  GET_EXTENSIONS: `#graphql
-    query GetExtensions {
-      ${Queries.EXTENSIONS} {
-        description
-        extension_roles {
-          extension_id
-          role
-        }
-        id
-        label
-        updated_at
-        url
-      }
-    }
-  `,
-
   GET_EXTERNAL_EVENTS: `#graphql
     query GetExternalEvents(
       $sourceKey: String!,
@@ -2463,6 +2447,22 @@ const gql = {
         parcel_id
         updated_at
         updated_by
+      }
+    }
+  `,
+
+  SUB_EXTENSIONS: `#graphql
+    subscription SubExtensions {
+      ${Queries.EXTENSIONS} {
+        description
+        extension_roles {
+          extension_id
+          role
+        }
+        id
+        label
+        updated_at
+        url
       }
     }
   `,

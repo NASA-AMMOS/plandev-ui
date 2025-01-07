@@ -28,6 +28,8 @@ export class Plan {
   navButtonConstraintsMenu: Locator;
   navButtonExpansion: Locator;
   navButtonExpansionMenu: Locator;
+  navButtonExtension: Locator;
+  navButtonExtensionMenu: Locator;
   navButtonScheduling: Locator;
   navButtonSchedulingMenu: Locator;
   navButtonSimulation: Locator;
@@ -513,6 +515,8 @@ export class Plan {
     this.navButtonActivityCheckingMenu = this.navButtonActivityChecking.getByRole('menu');
     this.navButtonExpansion = page.locator(`.nav-button:has-text("Expansion")`);
     this.navButtonExpansionMenu = this.navButtonExpansion.getByRole('menu');
+    this.navButtonExtension = page.locator(`.nav-button:has-text("Extensions")`);
+    this.navButtonExtensionMenu = this.navButtonExtension.getByRole('menu');
     this.navButtonConstraints = page.locator(`.nav-button:has-text("Constraints")`);
     this.navButtonConstraintsMenu = this.navButtonConstraints.getByRole('menu');
     this.navButtonScheduling = page.locator(`.nav-button:has-text("Scheduling")`);
