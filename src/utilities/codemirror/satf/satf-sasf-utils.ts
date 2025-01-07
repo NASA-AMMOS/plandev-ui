@@ -17,7 +17,6 @@ import {
   COMMAND,
   COMMANDS,
   COMMENT,
-  DEFAULT,
   ENGINE,
   ENTRY,
   ENUM,
@@ -34,6 +33,15 @@ import {
   NUMBER,
   ON_BOARD_FILENAME,
   ON_BOARD_PATH,
+  PARAM_BINARY,
+  PARAM_DURATION,
+  PARAM_ENGINEERING,
+  PARAM_HEXADECIMAL,
+  PARAM_OCTAL,
+  PARAM_QUOTED_STRING,
+  PARAM_SIGNED_DECIMAL,
+  PARAM_TIME,
+  PARAM_UNSIGNED_DECIMAL,
   PARAMETERS,
   PROCESSOR,
   RANGE,
@@ -53,6 +61,11 @@ import {
   TIME_RELATION,
   TYPE,
   VALUE,
+  VAR_ENUM,
+  VAR_FLOAT,
+  VAR_INT,
+  VAR_STRING,
+  VAR_UINT,
   VARIABLES,
   VIRTUAL_CHANNEL,
 } from './satfConstants';
@@ -510,7 +523,7 @@ export async function generateRequests(
   tree: Tree,
   sequence: string,
   commandDictionary: CommandDictionary | null,
-): string | undefined {
+): Promise<string | undefined> {
   const requests = tree.topNode.getChild('Commands')?.getChildren('Request');
   if (requests == null || requests.length === 0) {
     return undefined;
@@ -691,27 +704,58 @@ function parseParameters(
         const typeNode = param.getChild(TYPE);
         const rangesNode = param.getChildren(RANGE);
         const enumNameNode = param.getChild(ENUM_NAME);
-        const defaultNode = param.getChild(DEFAULT);
 
         const name = nameNode ? `${text.slice(nameNode.from, nameNode.to)}` : '';
-        const type = typeNode ? ` ${text.slice(typeNode.from, typeNode.to)}` : '';
         const enumName = enumNameNode ? ` ${text.slice(enumNameNode.from, enumNameNode.to)}` : '';
-        const defaultValue = defaultNode ? ` ${text.slice(defaultNode.from, defaultNode.to)}` : ' ""';
+        let type = typeNode ? text.slice(typeNode.from, typeNode.to).trim() : '';
+        switch (type) {
+          case PARAM_UNSIGNED_DECIMAL:
+            type = VAR_UINT;
+            break;
+          case PARAM_SIGNED_DECIMAL:
+            type = VAR_INT;
+            break;
+          case PARAM_HEXADECIMAL:
+          case PARAM_OCTAL:
+          case PARAM_BINARY:
+          case PARAM_TIME:
+          case PARAM_DURATION:
+          case PARAM_QUOTED_STRING:
+            type = VAR_STRING;
+            break;
+          case PARAM_ENGINEERING:
+            type = VAR_FLOAT;
+            break;
+          case VAR_STRING:
+            {
+              if (enumNameNode) {
+                type = VAR_ENUM;
+              } else {
+                type = VAR_STRING;
+              }
+            }
+            break;
+          default:
+            console.log(`type: ${type} is not supported`);
+        }
 
-        const ranges =
-          rangesNode && rangesNode.length > 0
-            ? ` ${rangesNode
-                .map((range: any) => {
-                  return `"${text
-                    .slice(range.from, range.to)
-                    .split(',')
-                    .map(v => v.replaceAll('"', '').trim())
-                    .join(', ')}"`;
-                })
-                .join(',')}`
-            : '';
+        const allowable_values: string[] = [];
+        const allowable_ranges: string[] = [];
+        rangesNode.forEach((range: any) => {
+          text
+            .slice(range.from, range.to)
+            .split(',')
+            .forEach(r => {
+              r = r.replaceAll('"', '').trim();
+              if (r.includes('...')) {
+                allowable_ranges.push(r);
+              } else {
+                allowable_values.push(r);
+              }
+            });
+        });
 
-        return `${name}${type}${enumName}${defaultValue}${ranges}`;
+        return `${name} ${type}${enumName}${allowable_ranges.length === 0 ? (allowable_values.length === 0 ? '' : ' ""') : ` "${allowable_ranges.join(', ')}"`}${allowable_values.length === 0 ? '' : ` "${allowable_values.join(', ')}"`}`;
       })
       .join('\n');
     parameter += `\n@${variableType}_END\n\n`;

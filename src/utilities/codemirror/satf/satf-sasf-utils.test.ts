@@ -212,26 +212,54 @@ describe('sasfToSequence', () => {
       $$EOH
       RT_on_board_block(/start.txt,\\start\\,
         PARAMETERS,
-        attitude_spec(
-          TYPE,ENUM,
+        unsigned_decimal(
+          TYPE,UNSIGNED_DECIMAL,
+          RANGE,\\10.01...99.99\\,
+          RANGE,\\100...199.99\\,
+        ),
+        signed_decimal(
+          TYPE,SIGNED_DECIMAL,
+          DEFAULT, 10
+          RANGE,\\10, 90000, 120000, 150000, 360001\\,
+          HELP, \\This is a help\\
+        ),
+        hex(
+          TYPE,HEXADECIMAL,
+          RANGE,\\0x00...0xff\\
+        ),
+        octal(
+          TYPE,OCTAL,
+          DEFAULT, 10
+          RANGE,\\0, 1, 2, 3, 4, 5, 6, 7\\
+        ),
+        binary(
+          TYPE,BINARY,
+          RANGE,\\0, 1\\),
+        engine(
+          TYPE,ENGINEERING,
+        ),
+        time(
+          TYPE,TIME,
+          RANGE,\\0T00:00:00...100T00:00:00\\
+        ),
+        duration(
+          TYPE,DURATION,
+          DEFAULT, \\00:01:00\\
+        ),
+        enum(
+          TYPE,STRING,
           ENUM_NAME,\\STORE_NAME\\,
           DEFAULT, \\BOB_HARDWARE\\,
           RANGE,\\BOB_HARDWARE, SALLY_FARM, "TIM_FLOWERS"\\
         ),
-        rate(
-          TYPE,UINT,
-          DEFAULT, 10,
-          RANGE,\\10, 90000, 120000, 150000, 360001\\,
-          HELP, \\This is a help\\
-        ),
-        measure(
-          TYPE,FLOAT,
-          RANGE,\\10.01...99.99\\,
-          RANGE,\\100...199.99\\,
-        ),
-        temp(
+        string(
           TYPE,STRING,
+          DEFAULT, abc
+        ),
+        quoted_string(
+          TYPE,QUOTED_STRING,
           DEFAULT, "abc"
+          RANGES,\\"abc", "123"\\
         ),
         end,
         STEPS,
@@ -247,10 +275,17 @@ describe('sasfToSequence', () => {
     expect(result.sequences[0].name).toStrictEqual('start.txt');
     expect(result.sequences[0].sequence).toStrictEqual(`## /start.txt
 @INPUT_PARAMS_BEGIN
-attitude_spec ENUM STORE_NAME BOB_HARDWARE "BOB_HARDWARE, SALLY_FARM, TIM_FLOWERS"
-rate UINT 10, "10, 90000, 120000, 150000, 360001"
-measure FLOAT "" "10.01...99.99","100...199.99"
-temp STRING "abc"
+unsigned_decimal UINT "10.01...99.99, 100...199.99"
+signed_decimal INT "" "10, 90000, 120000, 150000, 360001"
+hex STRING "0x00...0xff"
+octal STRING "" "0, 1, 2, 3, 4, 5, 6, 7"
+binary STRING "" "0, 1"
+engine FLOAT
+time STRING "0T00:00:00...100T00:00:00"
+duration STRING
+enum ENUM STORE_NAME "" "BOB_HARDWARE, SALLY_FARM, TIM_FLOWERS"
+string STRING
+quoted_string STRING "" "abc, 123"
 @INPUT_PARAMS_END
 
 R00:01:00  NOOP`);
@@ -262,7 +297,7 @@ R00:01:00  NOOP`);
       RT_on_board_block(/start.txt,\\start\\,
         PARAMETERS,
         attitude_spec(
-          TYPE,ENUM,
+          TYPE,STRING,
           ENUM_NAME,\\STORE_NAME\\,
           RANGE,\\"BOB_HARDWARE", "SALLY_FARM", "TIM_FLOWERS"\\
         ),
