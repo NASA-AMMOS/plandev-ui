@@ -585,11 +585,11 @@
               {#if parsedExternalSourceEventTypeSchema !== undefined}
                 <div class="to-be-created st-typography-body">
                   <div class="to-be-created-header">The following External Source Type(s) will be created</div>
-                  {#each Object.keys(parsedExternalSourceEventTypeSchema.source_types) as newSourceTypeName}
+                  {#each Object.keys(parsedExternalSourceEventTypeSchema.source_types ?? {}) as newSourceTypeName}
                     <li class="st-typograph-body">{newSourceTypeName}</li>
                   {/each}
                   <div class="to-be-created-header">The following External Event Type(s) will be created</div>
-                  {#each Object.keys(parsedExternalSourceEventTypeSchema.event_types) as newEventTypeName}
+                  {#each Object.keys(parsedExternalSourceEventTypeSchema.event_types ?? {}) as newEventTypeName}
                     <li class="st-typograph-body">{newEventTypeName}</li>
                   {/each}
                 </div>
