@@ -403,8 +403,6 @@
           ? await effects.createExternalSourceEventTypes(newEventTypes, newSourceType, user)
           : true;
 
-      console.log('CREATED TYPES: ', createdTypes);
-
       if (createdTypes) {
         const requestResponse:
           | { createExternalSource: ExternalSourceSlim; upsertDerivationGroup: { name: string } | null }
@@ -526,7 +524,6 @@
         newSourceExternalEventTypes[event.event_type] = Object.keys(event.attributes);
       } else if (newSourceExternalEventTypes[event.event_type] !== Object.keys(event.attributes)) {
         // if there is a mismatch, cause error
-        console.log(newSourceExternalEventTypes[event.event_type], Object.keys(event.attributes));
         uploadDisabledMessage = 'Event attributes are inconsistent across events of type ' + event.event_type + '.';
         return false;
       }
@@ -542,7 +539,6 @@
       }
     }
     if (eventTypes.length > 0) {
-      console.log(externalSource.events);
       newExternalEventTypes = eventTypes;
     }
     return true;
