@@ -308,7 +308,7 @@ export function translateJsonSchemaToValueSchema(jsonSchema: SchemaObject | unde
 function translateJsonSchemaTypeToValueSchema(
   jsonSchemaType: JSONType,
   jsonSchemaProperties?: Record<string, object>,
-  jsonSchemaItems?: Record<string, JSONType> | { properties: Record<string, object>, type: string }
+  jsonSchemaItems?: Record<string, JSONType> | { properties: Record<string, object>; type: string },
 ): ValueSchema {
   if (jsonSchemaType === 'number' || jsonSchemaType === 'integer') {
     return { type: 'int' } as ValueSchemaInt;

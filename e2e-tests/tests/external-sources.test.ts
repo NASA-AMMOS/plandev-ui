@@ -44,12 +44,14 @@ test.describe.serial('External Sources', () => {
 
   test('Optional argument should be marked in external event form', async () => {
     await externalSources.selectEvent('ExampleEvent:1/sc/sc1:1');
-    await page.click('text="Attributes"')
+    await page.click('text="Attributes"');
     const parameter = page.locator('.parameter').filter({ hasText: 'optional' }).first();
     parameter.hover();
     const parameterInfo = parameter.getByRole('contentinfo');
     await parameterInfo.hover();
-    await expect(page.locator('.parameter-info-values').filter({ hasText: 'Required' }).filter({ hasText: 'false' })).toBeVisible();
+    await expect(
+      page.locator('.parameter-info-values').filter({ hasText: 'Required' }).filter({ hasText: 'false' }),
+    ).toBeVisible();
   });
 
   test('External source form should be shown when a source is selected', async () => {
@@ -91,7 +93,7 @@ test.describe.serial('External Sources', () => {
     await externalSources.uploadExternalSource(
       externalSources.externalSourceNoAttributeFilePath,
       externalSources.externalSourceNoAttributeFileName,
-      false
+      false,
     );
 
     await externalSources.gotoTypeManager();
@@ -102,7 +104,7 @@ test.describe.serial('External Sources', () => {
     const sourceType = await externalSourceTypeTable.getByRole('gridcell').filter({ hasText: 'Empty External Source' });
     await sourceType.hover();
     await page.getByRole('button', { name: 'View External Source Type' }).click();
-    await expect(page.locator('text="Attribute Schema - Properties"')).toBeVisible()
+    await expect(page.locator('text="Attribute Schema - Properties"')).toBeVisible();
     const sourceTypeAttributes = await page.locator('text="Attribute Schema - Properties"');
     await sourceTypeAttributes.click();
     await expect(page.locator('.parameter')).toHaveCount(0);
@@ -110,13 +112,13 @@ test.describe.serial('External Sources', () => {
     const eventType = await externalEventTypeTable.getByRole('gridcell').filter({ hasText: 'EmptyEvent' });
     await eventType.hover();
     await page.getByRole('button', { name: 'View External Event Type' }).click();
-    await expect(page.locator('text="Attribute Schema - Properties"')).toBeVisible()
+    await expect(page.locator('text="Attribute Schema - Properties"')).toBeVisible();
     const eventTypeAttributes = await page.locator('text="Attribute Schema - Properties"');
     await eventTypeAttributes.click();
     await expect(page.locator('.parameter')).toHaveCount(0);
 
     await externalSources.goto();
-  })
+  });
 
   test('Deleting all external sources', async () => {
     await expect(externalSources.externalSourcesTable).toBeVisible();
