@@ -1073,7 +1073,11 @@ const effects = {
     }
   },
 
-  async createExternalSourceEventTypes(eventTypes: object | undefined, sourceTypes: object | undefined, user: User | null) {
+  async createExternalSourceEventTypes(
+    eventTypes: object | undefined,
+    sourceTypes: object | undefined,
+    user: User | null,
+  ) {
     if (!gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user) || !gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
       throwPermissionError('create en external source or event type');
     }
@@ -1099,7 +1103,7 @@ const effects = {
         return true;
       } else {
         showFailureToast('External Source & Event Type Create Failed');
-        console.log(response.errors)
+        console.log(response.errors);
         return false;
       }
     } catch (e) {
