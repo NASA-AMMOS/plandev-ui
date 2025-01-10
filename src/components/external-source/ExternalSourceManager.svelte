@@ -520,10 +520,16 @@
     // Check that all the External Event Types for the source to-be-uploaded exist
     const newSourceExternalEventTypes: { [event_type: string]: string[] } = {};
     for (const event of externalSource.events) {
+      const currentKeySet = new Set(Object.keys(event.attributes));
       if (newSourceExternalEventTypes[event.event_type] === undefined) {
         newSourceExternalEventTypes[event.event_type] = Object.keys(event.attributes);
-      } else if (newSourceExternalEventTypes[event.event_type] !== Object.keys(event.attributes)) {
-        // if there is a mismatch, cause error
+      } else if (newSourceExternalEventTypes[event.event_type].length === Object.keys(event.attributes).length) {
+        const attributeInconsistencies = currentKeySet.difference(new Set(newSourceExternalEventTypes[event.event_type]))
+        if (attributeInconsistencies.size !== 0) {
+          uploadDisabledMessage = 'Event attributes are inconsistent across events of type ' + event.event_type + '.';
+          return false;
+        }
+      } else {
         uploadDisabledMessage = 'Event attributes are inconsistent across events of type ' + event.event_type + '.';
         return false;
       }
