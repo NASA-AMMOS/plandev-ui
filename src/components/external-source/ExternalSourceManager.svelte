@@ -524,7 +524,9 @@
       if (newSourceExternalEventTypes[event.event_type] === undefined) {
         newSourceExternalEventTypes[event.event_type] = Object.keys(event.attributes);
       } else if (newSourceExternalEventTypes[event.event_type].length === Object.keys(event.attributes).length) {
-        const attributeInconsistencies = currentKeySet.difference(new Set(newSourceExternalEventTypes[event.event_type]))
+        const attributeInconsistencies = currentKeySet.difference(
+          new Set(newSourceExternalEventTypes[event.event_type]),
+        );
         if (attributeInconsistencies.size !== 0) {
           uploadDisabledMessage = 'Event attributes are inconsistent across events of type ' + event.event_type + '.';
           return false;
