@@ -9,6 +9,8 @@
   import { parcels, userSequences, userSequencesColumns, workspaces } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import type { Parcel, UserSequence, Workspace } from '../../types/sequencing';
+  import { satfToSequence } from '../../utilities/codemirror/satf/satf-sasf-utils';
+  import effects from '../../utilities/effects';
   import { getSearchParameterNumber, setQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -59,6 +61,28 @@
     const workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
     goto(`${base}/sequencing/new${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`);
   }
+
+  async function importLibrary(): Promise<void> {
+    const library = await effects.importLibrarySequences(workspaceId);
+    if (!library) {
+      return;
+    }
+
+    const parcel = library.parcel;
+    const sequences = (await satfToSequence(library.fileContents)).sequences;
+    sequences.forEach(async seqN => {
+      await effects.createUserSequence(
+        {
+          definition: seqN.sequence,
+          name: seqN.name,
+          parcel_id: parcel,
+          seq_json: '',
+          workspace_id: workspaceId !== null ? workspaceId : -1,
+        },
+        user,
+      );
+    });
+  }
 </script>
 
 <CssGrid bind:columns={$userSequencesColumns}>
@@ -85,6 +109,18 @@
           on:click={navigateToNewSequence}
         >
           New Sequence
+        </button>
+
+        <button
+          class="st-button secondary ellipsis"
+          use:permissionHandler={{
+            hasPermission: featurePermissions.sequences.canCreate(user),
+            permissionError: 'You do not have permission to upload library sequences',
+          }}
+          disabled={workspace === undefined}
+          on:click|stopPropagation={importLibrary}
+        >
+          Import Library
         </button>
       </div>
     </svelte:fragment>

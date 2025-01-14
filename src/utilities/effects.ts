@@ -226,6 +226,7 @@ import {
   showDeleteActivitiesModal,
   showDeleteExternalSourceModal,
   showEditViewModal,
+  showLibrarySequenceModel,
   showManageGroupsAndTypes,
   showManagePlanConstraintsModal,
   showManagePlanDerivationGroups,
@@ -4788,6 +4789,28 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       return null;
+    }
+  },
+
+  async importLibrarySequences(
+    workspaceId: number | null,
+  ): Promise<{ fileContents: string; parcel: number } | undefined> {
+    if (workspaceId === null) {
+      showFailureToast("Library Import: Workspace doesn't exist");
+      return undefined;
+    }
+    const { confirm, value } = await showLibrarySequenceModel();
+
+    if (!confirm || !value) {
+      return undefined;
+    }
+
+    try {
+      const contents = await value.libraryFile.text();
+      return { fileContents: contents, parcel: value.parcel };
+    } catch (e) {
+      showFailureToast('Library Import: Unable to open file');
+      return undefined;
     }
   },
 
