@@ -356,10 +356,12 @@ describe('getDefaultVariableArgs', () => {
     { allowable_ranges: [{ min: 5 }], type: 'INT' },
     { allowable_ranges: [{ min: 7 }], type: 'UINT' },
     { allowable_values: ['VALUE1'], enum_name: 'ExampleEnum', type: 'ENUM' },
+    { enum_name: 'ExampleEnum2', type: 'ENUM' },
     { type: 'INT' },
+    { name: 'hexValue', type: 'HEX' },
   ] as VariableDeclaration[];
   it('should return default values for different types', () => {
     const result = getDefaultVariableArgs(mockParameters);
-    expect(result).toEqual(['"exampleString"', 1.2, 5, 7, '"VALUE1"', 0]);
+    expect(result).toEqual(['"exampleString"', 1.2, 5, 7, '"VALUE1"', '"ExampleEnum2"', 0, 'ERROR:"hexValue"']);
   });
 });
