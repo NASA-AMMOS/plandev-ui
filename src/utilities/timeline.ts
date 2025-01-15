@@ -1524,7 +1524,7 @@ export function getMatchingTypesForActivityLayerFilter(filter: ActivityLayerFilt
   });
 }
 
-export function directiveOrSpanMatchesDynamicFilters(
+function directiveOrSpanMatchesDynamicFilters(
   directiveOrSpan: ActivityDirective | Span,
   dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
   activityTypeDefMap: Record<string, ActivityType>,
@@ -1573,7 +1573,7 @@ export function directiveOrSpanMatchesDynamicFilters(
 }
 
 // TODO try consolidating with the function above
-export function typeMatchesDynamicFilters(
+function typeMatchesDynamicFilters(
   type: ActivityType,
   dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
 ): boolean {
