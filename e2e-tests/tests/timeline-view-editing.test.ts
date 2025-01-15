@@ -131,11 +131,11 @@ test.describe.serial('Timeline View Editing', () => {
     await activityLayerEditor
       .locator('.timeline-layer-editor')
       .first()
-      .getByLabel('activity-filter-builder-trigger')
+      .getByLabel('Toggle activity filter builder modal')
       .click();
 
     // Expect that the modal is present
-    const modal = activityLayerEditor.getByLabel('activity-filter-builder');
+    const modal = activityLayerEditor.getByRole('dialog');
     expect(modal).toBeDefined();
 
     // Expect that layer name is showing in the name input
@@ -260,8 +260,6 @@ test.describe.serial('Timeline View Editing', () => {
     // Expect a y-axis to have been automatically created
     const newYAxisCount = await yAxisEditor.locator('.timeline-y-axis').count();
     expect(newYAxisCount - existingYAxesCount).toEqual(1);
-
-    await page.pause();
 
     // Select a resource
     await resourceLayerEditor.getByRole('combobox').click();
