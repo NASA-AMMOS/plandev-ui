@@ -29,6 +29,7 @@ import {
   externalEventInView,
   filterResourcesByLayer,
   generateDiscreteTreeUtil,
+  getMatchingTypesForActivityLayerFilter,
   getTimeRangeAroundTime,
   getUniqueColorForActivityLayer,
   getUniqueColorForLineLayer,
@@ -1586,6 +1587,33 @@ describe('applyActivityLayerFilter', () => {
       spans: [],
     });
   });
+});
+
+test('getMatchingTypesForActivityLayerFilter', () => {
+  expect(getMatchingTypesForActivityLayerFilter({}, [])).to.deep.eq([]);
+  expect(getMatchingTypesForActivityLayerFilter({}, testActivityTypes)).to.deep.eq(testActivityTypes);
+  expect(
+    getMatchingTypesForActivityLayerFilter({ static_types: ['parent', 'BiteBanana'] }, testActivityTypes),
+  ).to.deep.eq([
+    testActivityTypes.find(t => t.name === 'parent'),
+    testActivityTypes.find(t => t.name === 'BiteBanana'),
+  ]);
+  expect(getMatchingTypesForActivityLayerFilter({ static_types: ['Foo'] }, testActivityTypes)).to.deep.eq([]);
+  expect(
+    getMatchingTypesForActivityLayerFilter(
+      {
+        dynamic_type_filters: [
+          {
+            field: 'Type',
+            id: 1,
+            operator: 'includes',
+            value: 'banana',
+          },
+        ],
+      },
+      testActivityTypes,
+    ),
+  ).to.deep.eq(testActivityTypes.filter(t => t.name.toLowerCase().indexOf('banana') > -1));
 });
 
 test('matchesDynamicFilter', () => {
