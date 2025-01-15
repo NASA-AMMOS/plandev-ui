@@ -30,10 +30,10 @@ export const constraintsColumns: Writable<string> = writable('1fr 3px 1fr');
 
 export const constraints = gqlSubscribable<ConstraintMetadata[]>(gql.SUB_CONSTRAINTS, {}, [], null);
 
-export const constraintRuns = gqlSubscribable<ConstraintRun[]>(
+export const constraintRuns = gqlSubscribable<ConstraintRun[] | null>(
   gql.SUB_CONSTRAINT_RUNS,
   { simulationDatasetId: simulationDatasetLatestId },
-  [],
+  null,
   null,
 );
 
@@ -123,7 +123,7 @@ export const constraintResponseMap: Readable<Record<ConstraintDefinition['constr
     [constraintRuns, relevantRawConstraintResponses, planStartTimeMs],
     ([$constraintRuns, $checkConstraintResponse, $planStartTimeMs]) => {
       const cachedResponseMap = keyBy(
-        $constraintRuns.map(
+        ($constraintRuns || []).map(
           run =>
             ({
               constraintId: run.constraint_id,
@@ -185,7 +185,7 @@ export const uncheckedConstraintCount: Readable<number> = derived(
 export const relevantConstraintRuns: Readable<ConstraintRun[]> = derived(
   [constraintRuns, constraintPlanSpecsMap],
   ([$constraintRuns, $constraintPlanSpecsMap]) => {
-    return $constraintRuns.filter(constraintRun => {
+    return ($constraintRuns || []).filter(constraintRun => {
       const constraintPlanSpec = $constraintPlanSpecsMap[constraintRun.constraint_id];
       let revision = -1;
 

@@ -15,6 +15,7 @@
     cachedConstraintsStatus,
     constraintPlanSpecs,
     constraintResponseMap,
+    constraintRuns,
     constraintVisibilityMap,
     constraintsMap,
     constraintsStatus,
@@ -42,6 +43,7 @@
   import { required } from '../../utilities/validators';
   import CollapsibleListControls from '../CollapsibleListControls.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
+  import Loading from '../Loading.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import DatePickerActionButton from '../ui/DatePicker/DatePickerActionButton.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -313,7 +315,11 @@
     </CollapsibleListControls>
 
     <div class="pt-2">
-      {#if !filteredConstraints.length}
+      {#if !$constraintRuns}
+        <div class="p-1">
+          <Loading />
+        </div>
+      {:else if !filteredConstraints.length}
         <div class="pt-1 st-typography-label filter-label-row">
           <div class="filter-label">No constraints found</div>
           <div class="private-label">
