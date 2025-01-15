@@ -4,7 +4,6 @@
   import { draggable, type DragOptions } from '@neodrag/svelte';
   import Resizable from './Resizable.svelte';
 
-  export let ariaLabel: string = '';
   export let dragOptions: DragOptions = {};
   export let className: string = '';
   export let initialWidth: number = 500;
@@ -27,7 +26,6 @@
 </script>
 
 <div
-  aria-label={ariaLabel}
   bind:this={rootRef}
   use:draggable={{
     bounds: 'body',
@@ -37,6 +35,7 @@
     ...dragOptions,
   }}
   class="root"
+  role="dialog"
 >
   <Resizable {className} width={initialWidth} height={initialHeight}>
     <div class="handle">

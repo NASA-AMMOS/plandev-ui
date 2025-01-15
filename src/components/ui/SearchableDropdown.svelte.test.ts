@@ -127,9 +127,6 @@ describe('Searchable Dropdown component', () => {
     await fireEvent.input(getByPlaceholderText('Search options'), { target: { value: '2' } });
 
     expect(await findAllByRole('menuitem')).toHaveLength(2);
-    // await waitFor(() => {
-    //   expect(getAllByRole('menuitem'))
-    // });
 
     await fireEvent.input(getByPlaceholderText('Search options'), { target: { value: '1' } });
 

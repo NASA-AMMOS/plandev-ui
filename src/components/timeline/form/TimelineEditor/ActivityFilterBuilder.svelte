@@ -347,7 +347,6 @@
   <slot name="trigger" />
   {#if shown}
     <Draggable
-      ariaLabel="activity-filter-builder"
       className="st-menu activity-filter-builder"
       initialWidth={filterWidth}
       initialHeight={filterHeight}
