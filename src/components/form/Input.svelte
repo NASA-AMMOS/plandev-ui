@@ -64,8 +64,6 @@
       }
       setChildrenStyles([left]);
     }
-    // because the content of the slot might not have been fully rendered by the time this function is called
-    // we must kick it out to a timeout to wait for it to be rendered
     if (left !== null) {
       left.style.left = `${padLeft}px`;
 
