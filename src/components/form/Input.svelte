@@ -54,7 +54,7 @@
     }
   });
 
-  async function padLeftSlot() {
+  function padLeftSlot() {
     if (left !== null) {
       left.style.left = `${padLeft}px`;
       left.style.width = 'min-content';
