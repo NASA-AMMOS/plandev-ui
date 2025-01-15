@@ -179,7 +179,7 @@
   let modelErrorCount: number = 0;
   let simulationExtent: string | null;
   let selectedSimulationStatus: Status | null;
-  let windowWidth = 0;
+  let windowWidth = 1600;
   let simulationDataAbortController: AbortController;
   let resourcesExternalAbortController: AbortController;
   let schedulingStatusText: string = '';
