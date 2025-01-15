@@ -4,15 +4,17 @@
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import {
+    ActivityLayerFilterField,
+    ActivityLayerFilterField as ActivityLayerFilterFieldType,
+    FilterOperator,
+  } from '../../../../enums/timeline';
   import type { SelectedDropdownOptionValue } from '../../../../types/dropdown';
   import type { TagsChangeEvent } from '../../../../types/tags';
   import {
     type ActivityLayerDynamicFilter,
     type ActivityLayerFilterSubfieldSchema,
     type DynamicFilterDataType,
-    ActivityLayerFilterField,
-    ActivityLayerFilterField as ActivityLayerFilterFieldType,
-    FilterOperator,
   } from '../../../../types/timeline';
   import { getTarget } from '../../../../utilities/generic';
   import { tooltip } from '../../../../utilities/tooltip';

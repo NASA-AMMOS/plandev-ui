@@ -1,4 +1,5 @@
 import type { Selection } from 'd3-selection';
+import type { ActivityLayerFilterField, FilterOperator } from '../enums/timeline';
 import type { ActivityDirective, ActivityDirectiveId, ActivityType } from './activity';
 import type { ConstraintResultWithName } from './constraint';
 import type { ExternalEvent, ExternalEventId, ExternalEventType } from './external-event';
@@ -29,15 +30,6 @@ export interface ActivityLayer extends Layer {
 }
 export interface ExternalEventLayer extends Layer {
   externalEventColor: string;
-}
-
-export enum ActivityLayerFilterField {
-  'Type' = 'Type',
-  'Name' = 'Name',
-  'Subsystem' = 'Subsystem',
-  'Tags' = 'Tags',
-  'Parameter' = 'Parameter',
-  'SchedulingGoalId' = 'Scheduling Goal Id',
 }
 
 export type DynamicFilterDataType = ValueSchema['type'] | 'tag';
@@ -74,17 +66,6 @@ export type ActivityLayerFilterSubfieldSchema = ActivityLayerFilterSubfield & {
   unit?: string;
   values?: string[];
 };
-
-export enum FilterOperator {
-  'equals' = 'equals',
-  'does_not_equal' = 'does not equal',
-  'includes' = 'includes',
-  'does_not_include' = 'does not include',
-  'is_greater_than' = 'is greater than',
-  'is_less_than' = 'is less than',
-  'is_within' = 'is within',
-  'is_not_within' = 'is not within',
-}
 
 export type AxisDomainFitMode = 'fitPlan' | 'fitTimeWindow' | 'manual';
 

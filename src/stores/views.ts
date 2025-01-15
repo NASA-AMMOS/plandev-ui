@@ -1,10 +1,10 @@
 import { capitalize, isEqual } from 'lodash-es';
 import { derived, get, writable, type Writable } from 'svelte/store';
+import type { ActivityLayerFilterField } from '../enums/timeline';
 import type { ResourceType } from '../types/simulation';
 import type {
   ActivityLayerDynamicFilter,
   ActivityLayerFilter,
-  ActivityLayerFilterField,
   Axis,
   Layer,
   Row,

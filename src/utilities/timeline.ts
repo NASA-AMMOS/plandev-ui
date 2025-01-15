@@ -20,6 +20,7 @@ import {
   ViewLineLayerColorPresets,
   ViewXRangeLayerSchemePresets,
 } from '../constants/view';
+import type { ActivityLayerFilterField } from '../enums/timeline';
 import type { ActivityDirective, ActivityType } from '../types/activity';
 import type { ExternalEvent } from '../types/external-event';
 import type { DefaultEffectiveArgumentsMap } from '../types/parameter';
@@ -28,7 +29,6 @@ import type {
   ActivityLayer,
   ActivityLayerDynamicFilter,
   ActivityLayerFilter,
-  ActivityLayerFilterField,
   ActivityOptions,
   Axis,
   DiscreteTree,
