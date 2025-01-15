@@ -61,7 +61,7 @@
     "d3-shape": "^3.2.0",
     "d3-time": "^3.1.0",
     "fastest-levenshtein": "^1.0.16",
-    "graphql-ws": "^5.14.0",
+    "graphql-ws": "^5.16.2",
     "json-source-map": "^0.6.1",
     "jszip": "^3.10.1",
     "jwt-decode": "^4.0.0",
