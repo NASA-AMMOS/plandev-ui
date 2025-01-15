@@ -450,8 +450,6 @@
                 uniqueDirectives.push(directive);
 
                 // Gather spans for directive since we always show all spans for a directive
-                // TODO aplave does not know if this is a good move, needs investigation and potentially options
-                // exposed to the user re whether to apply filters to spans or always include spans
                 const childSpans = getAllSpansForActivityDirective(directive.id, spansMap, spanUtilityMaps);
                 childSpans.forEach(span => {
                   seenSpanIds[span.span_id] = true;
