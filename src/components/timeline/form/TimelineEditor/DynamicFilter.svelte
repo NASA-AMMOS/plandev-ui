@@ -87,12 +87,12 @@
       } else if (matchingSubfield.type === 'duration') {
         operatorKeys = ['equals', 'does_not_equal', 'is_greater_than', 'is_less_than', 'is_within', 'is_not_within'];
       } else if (matchingSubfield.type === 'boolean') {
-        operatorKeys = ['equals', 'does_not_equal'];
+        operatorKeys = ['equals'];
       } else if (matchingSubfield.type === 'variant') {
         operatorKeys = ['equals', 'does_not_equal'];
         currentValuePossibilities = matchingSubfield.values || [];
       } else {
-        // Choose first possible or.. none?
+        operatorKeys = [];
       }
     }
   }
@@ -117,6 +117,8 @@
     }
   }
 
+  $: currentValueAsStringOrNumber = currentValue as string | number;
+
   async function onTagsInputChange(event: TagsChangeEvent) {
     const {
       detail: { tag, type },
@@ -133,15 +135,15 @@
     const { value } = getTarget(event);
     if (value) {
       // Since we changed the field we should reset the value
-      // TODO should we reset more bits than this?
-      currentValue = '';
+      currentValue = getDefaultCurrentValue();
       currentField = value as keyof typeof ActivityLayerFilterFieldType;
     }
   }
 
   function onSelectParameter(event: CustomEvent<SelectedDropdownOptionValue[]>) {
     currentSubfieldLabel = event.detail.length ? event.detail[0]?.toString() ?? '' : '';
-    currentValue = '';
+    currentValue = getDefaultCurrentValue();
+    currentOperator = null;
   }
 
   function onSelectValue(event: CustomEvent<SelectedDropdownOptionValue[]>) {
@@ -151,12 +153,8 @@
   function onOperatorChange(event: Event) {
     const { value } = getTarget(event);
     const operator = value as keyof typeof FilterOperator;
-    if (operator === 'is_within' || operator === 'is_not_within') {
-      currentValue = [];
-    } else {
-      currentValue = '';
-    }
     currentOperator = operator;
+    currentValue = getDefaultCurrentValue();
   }
 
   function onRangeInputChange(event: Event, bound: 'min' | 'max' = 'min') {
@@ -171,10 +169,17 @@
       currentValue = newValue;
     }
   }
+
   function asActivityLayerFilterField(s: string): keyof typeof ActivityLayerFilterField {
     return s as keyof typeof ActivityLayerFilterField;
   }
-  $: currentValueAsStringOrNumber = currentValue as string | number;
+
+  function getDefaultCurrentValue() {
+    if (currentOperator === 'is_within' || currentOperator === 'is_not_within') {
+      return [];
+    }
+    return '';
+  }
 </script>
 
 <div class="dynamic-filter" role="listitem">
@@ -214,7 +219,7 @@
         autocomplete="off"
       />
     {:else if currentOperator === 'is_within' || currentOperator === 'is_not_within'}
-      {#if Array.isArray(currentValue) && currentValue.length === 2}
+      {#if Array.isArray(currentValue)}
         <div class="range-input">
           <Input class="dynamic-filter-input">
             <input
