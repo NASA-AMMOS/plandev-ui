@@ -160,6 +160,9 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         );
       }
     });
+    if (rowData.length < 1 && !isLoading()) {
+      gridApi?.setGridOption('suppressNoRowsOverlay', false);
+    }
     gridApi?.setGridOption('rowData', rowData);
 
     const previousSelectedRowIds: RowId[] = [];
@@ -251,12 +254,15 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     if (gridApi?.getGridOption('loading')) {
       gridApi?.setGridOption('loading', false);
     }
-    // gridApi?.setGridOption('suppressNoRowsOverlay', false);
   }
 
   onDestroy(() => {
     resizeObserver?.disconnect();
   });
+
+  function isLoading() {
+    return loading;
+  }
 
   function onAutoSizeContent() {
     gridApi?.autoSizeAllColumns();
@@ -299,6 +305,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       ...(shouldAutoGenerateId ? {} : { getRowId: (params: { data: RowData }) => `${getRowId(params.data)}` }),
       isExternalFilterPresent,
       isRowSelectable,
+      loading,
       maintainColumnOrder,
       onCellContextMenu,
       onCellEditingStarted(event: CellEditingStartedEvent<RowData>) {
