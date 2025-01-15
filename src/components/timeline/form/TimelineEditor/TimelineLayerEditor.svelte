@@ -134,7 +134,7 @@
         bind:this={filterMenu}
       >
         <button
-          aria-label="activity-filter-builder-trigger"
+          aria-label="Toggle activity filter builder modal"
           slot="trigger"
           on:click|stopPropagation={toggleFilterMenu}
           class="st-button icon w-100"
