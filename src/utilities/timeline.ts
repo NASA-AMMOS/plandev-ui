@@ -1436,7 +1436,7 @@ export function applyActivityLayerFilter(
   return { directives: filteredDirectives, spans: filteredSpans };
 }
 
-export function applyFiltersToDirectiveOrSpan(
+function applyFiltersToDirectiveOrSpan(
   directiveOrSpan: ActivityDirective | Span,
   filter: ActivityLayerFilter,
   staticTypeMap: Record<string, boolean>,
