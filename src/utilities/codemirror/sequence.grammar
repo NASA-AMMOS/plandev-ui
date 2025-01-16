@@ -70,7 +70,7 @@ HardwareCommands {
   commandBlock
 }
 
-TimeTag { TimeAbsolute | (TimeGroundEpoch Name { String } whiteSpace)  | TimeEpoch | TimeRelative  | TimeComplete }
+TimeTag { TimeAbsolute | (TimeGroundEpoch Name { String } whiteSpace)  | TimeEpoch | TimeRelative  | TimeComplete | TimeBlockRelative }
 
 Args {
   (whiteSpace (arg))* whiteSpace?
@@ -178,6 +178,8 @@ Stem { !stemStart identifier }
 
   TimeRelative { 'R'(timeSecond | timeDOY | timeHhmmss) whiteSpace}
 
+  TimeBlockRelative { 'B'timeHhmmss whiteSpace }
+
   TimeEpoch { 'E'$[+\-]?(timeSecond | timeDOY | timeHhmmss) whiteSpace}
 
   TimeGroundEpoch { 'G'$[+\-]?(timeSecond | timeDOY | timeHhmmss) whiteSpace}
@@ -230,7 +232,7 @@ Stem { !stemStart identifier }
 
   @precedence { newLine, whiteSpace }
 
-  @precedence{ TimeAbsolute, TimeRelative, TimeEpoch, TimeComplete, TimeGroundEpoch, Boolean, identifier }
+  @precedence{ TimeAbsolute, TimeRelative, TimeEpoch, TimeComplete, TimeGroundEpoch, TimeBlockRelative, Boolean, identifier }
 
   @precedence {
     LoadAndGoDirective,

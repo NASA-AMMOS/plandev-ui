@@ -766,6 +766,7 @@ function validateTimeTags(command: SyntaxNode, text: string): Diagnostic[] {
     const timeTagAbsoluteNode = timeTagNode?.getChild('TimeAbsolute');
     const timeTagEpochNode = timeTagNode?.getChild('TimeEpoch') ?? timeTagNode.getChild('TimeGroundEpoch');
     const timeTagRelativeNode = timeTagNode?.getChild('TimeRelative');
+    const timeTagBlockRelativeNode = timeTagNode?.getChild('TimeBlockRelative');
 
     if (timeTagAbsoluteNode) {
       const absoluteText = text.slice(timeTagAbsoluteNode.from + 1, timeTagAbsoluteNode.to).trim();
@@ -834,36 +835,50 @@ function validateTimeTags(command: SyntaxNode, text: string): Diagnostic[] {
           }
         }
       }
-    } else if (timeTagRelativeNode) {
-      const relativeText = text.slice(timeTagRelativeNode.from + 1, timeTagRelativeNode.to).trim();
+    } else if (timeTagRelativeNode || timeTagBlockRelativeNode) {
+      let relativeText = '';
+      let from = -1;
+      let to = -1;
+
+      if (timeTagRelativeNode) {
+        from = timeTagRelativeNode.from;
+        to = timeTagRelativeNode.to;
+        relativeText = text.slice(from + 1, to).trim();
+      } else if (timeTagBlockRelativeNode) {
+        from = timeTagBlockRelativeNode.from;
+        to = timeTagBlockRelativeNode.to;
+        relativeText = text.slice(from + 1, to).trim();
+      }
+
       const isValid =
-        validateTime(relativeText, TimeTypes.RELATIVE) || validateTime(relativeText, TimeTypes.RELATIVE_SIMPLE);
+        validateTime(relativeText, TimeTypes.RELATIVE) ||
+        (validateTime(relativeText, TimeTypes.RELATIVE_SIMPLE) && !timeTagBlockRelativeNode);
       if (!isValid) {
         diagnostics.push({
           actions: [],
-          from: timeTagRelativeNode.from,
+          from,
           message: CustomErrorCodes.InvalidRelativeTime().message,
           severity: 'error',
-          to: timeTagRelativeNode.to,
+          to,
         });
       } else {
         if (validateTime(relativeText, TimeTypes.RELATIVE)) {
           if (isTimeMax(relativeText, TimeTypes.RELATIVE)) {
             diagnostics.push({
               actions: [],
-              from: timeTagRelativeNode.from,
+              from,
               message: CustomErrorCodes.MaxRelativeTime().message,
               severity: 'error',
-              to: timeTagRelativeNode.to,
+              to,
             });
           } else {
             if (!isTimeBalanced(relativeText, TimeTypes.EPOCH)) {
               diagnostics.push({
                 actions: [],
-                from: timeTagRelativeNode.from,
+                from,
                 message: CustomErrorCodes.UnbalancedTime(getBalancedDuration(relativeText)).message,
                 severity: 'error',
-                to: timeTagRelativeNode.to,
+                to,
               });
             }
           }
@@ -871,6 +886,7 @@ function validateTimeTags(command: SyntaxNode, text: string): Diagnostic[] {
       }
     }
   }
+
   return diagnostics;
 }
 

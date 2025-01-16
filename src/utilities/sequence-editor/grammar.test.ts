@@ -348,6 +348,7 @@ A2024-123T12:34:56 @REQUEST_BEGIN("request2.name")
   R100 CMD_3 "1 2 3"
   C CMD_4 1 2 3
   R100 CMD_5 "1 2 3"
+  B00:00:00 CMD_6 "1 2 3"
 @REQUEST_END
 @METADATA "foo" "bar"
 `,
@@ -379,7 +380,8 @@ Sequence(Commands(
       Command(TimeTag(TimeComplete),Stem,Args(Number,Number,Number)),
       Command(TimeTag(TimeRelative),Stem,Args(String)),
       Command(TimeTag(TimeComplete),Stem,Args(Number,Number,Number)),
-      Command(TimeTag(TimeRelative),Stem,Args(String))
+      Command(TimeTag(TimeRelative),Stem,Args(String)),
+      Command(TimeTag(TimeBlockRelative),Stem,Args(String))
     ),
     Metadata(MetaEntry(Key(String),Value(String)))
   )

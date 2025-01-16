@@ -428,12 +428,13 @@ function parseTime(commandNode: SyntaxNode, text: string): Time {
   const timeTagCompleteNode = timeTagNode.getChild('TimeComplete');
   const timeTagEpochNode = timeTagNode.getChild('TimeEpoch') || timeTagNode.getChild('TimeGroundEpoch');
   const timeTagRelativeNode = timeTagNode.getChild('TimeRelative');
+  const timeTagBlockRelativeNode = timeTagNode.getChild('TimeBlockRelative');
 
   if (timeTagCompleteNode) {
     return { type: 'COMMAND_COMPLETE' };
   }
 
-  if (!timeTagAbsoluteNode && !timeTagEpochNode && !timeTagRelativeNode) {
+  if (!timeTagAbsoluteNode && !timeTagEpochNode && !timeTagRelativeNode && !timeTagBlockRelativeNode) {
     return { tag, type: 'ABSOLUTE' };
   }
 
@@ -479,7 +480,20 @@ function parseTime(commandNode: SyntaxNode, text: string): Time {
       }
       return { tag, type: 'COMMAND_RELATIVE' };
     }
+  } else if (timeTagBlockRelativeNode) {
+    const timeTagBlockRelativeText = text.slice(timeTagBlockRelativeNode.from + 1, timeTagBlockRelativeNode.to).trim();
+
+    if (validateTime(timeTagBlockRelativeText, TimeTypes.RELATIVE)) {
+      const { isNegative, days, hours, minutes, seconds, milliseconds } = getDurationTimeComponents(
+        parseDurationString(timeTagBlockRelativeText, 'seconds'),
+      );
+      tag = `${isNegative}${days}${days ? 'T' : ''}${hours}:${minutes}:${seconds}${milliseconds ? '.' : ''}${milliseconds}`;
+
+      // TODO: Update seqjson lib to include block_relative
+      return { tag, type: 'COMMAND_BLOCK_RELATIVE' };
+    }
   }
+
   return { tag, type: 'ABSOLUTE' };
 }
 
