@@ -17,6 +17,7 @@
   import Panel from '../../ui/Panel.svelte';
   import SectionTitle from '../../ui/SectionTitle.svelte';
 
+  export let loading: boolean = false;
   export let schedulingConditions: SchedulingConditionMetadata[] = [];
   export let selectedCondition: SchedulingConditionMetadata | null | undefined = null;
   export let user: User | null;
@@ -84,7 +85,6 @@
       resizable: true,
       sortable: false,
       width: 220,
-      wrapText: true,
     },
   ];
 
@@ -204,9 +204,11 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    {#if filteredConditions.length}
+    {#if loading || filteredConditions.length}
       <SingleActionDataGrid
         {columnDefs}
+        {loading}
+        showLoadingSkeleton
         hasEdit={true}
         itemDisplayText="Condition"
         items={filteredConditions}

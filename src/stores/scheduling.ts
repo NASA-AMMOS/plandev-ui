@@ -42,17 +42,17 @@ export const schedulingRequests = gqlSubscribable<SchedulingRequest[]>(
   null,
 );
 
-export const schedulingConditionResponses = gqlSubscribable<SchedulingConditionMetadataResponse[]>(
+export const schedulingConditionResponses = gqlSubscribable<SchedulingConditionMetadataResponse[] | null>(
   gql.SUB_SCHEDULING_CONDITIONS,
   {},
-  [],
+  null,
   null,
 );
 
-export const schedulingGoalResponses = gqlSubscribable<SchedulingGoalMetadataResponse[]>(
+export const schedulingGoalResponses = gqlSubscribable<SchedulingGoalMetadataResponse[] | null>(
   gql.SUB_SCHEDULING_GOALS,
   {},
-  [],
+  null,
   null,
 );
 
@@ -81,7 +81,7 @@ export const schedulingPlanSpecification = gqlSubscribable<SchedulingPlanSpecifi
 export const schedulingConditions = derivedDeeply(
   [schedulingConditionResponses, tags],
   ([$schedulingConditionResponses, $tags]) => {
-    return $schedulingConditionResponses.map(schedulingConditionResponse =>
+    return ($schedulingConditionResponses || []).map(schedulingConditionResponse =>
       convertResponseToMetadata<SchedulingConditionMetadata, SchedulingConditionDefinition>(
         schedulingConditionResponse,
         $tags,
@@ -91,7 +91,7 @@ export const schedulingConditions = derivedDeeply(
 );
 
 export const schedulingGoals = derivedDeeply([schedulingGoalResponses, tags], ([$schedulingGoalResponses, $tags]) => {
-  return $schedulingGoalResponses.map(schedulingGoalResponse =>
+  return ($schedulingGoalResponses || []).map(schedulingGoalResponse =>
     convertResponseToMetadata<SchedulingGoalMetadata, SchedulingGoalDefinition>(schedulingGoalResponse, $tags),
   );
 });

@@ -15,6 +15,7 @@
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import type { Monaco } from '../../types/monaco';
   import { ShouldRetryError, promiseRetry } from '../../utilities/generic';
+  import Loading from '../Loading.svelte';
   export { className as class };
   export { styleName as style };
   export let automaticLayout: boolean | undefined = undefined;
@@ -169,7 +170,9 @@
 
 {#if !editor}
   <slot name="loading">
-    <div style:padding="0.5rem">Loading Editor...</div>
+    <div class="loading">
+      <Loading>Loading Editor...</Loading>
+    </div>
   </slot>
 {/if}
 
@@ -178,5 +181,9 @@
 <style>
   .monaco-editor {
     height: 100%;
+  }
+
+  .loading {
+    padding: 1px 32px;
   }
 </style>

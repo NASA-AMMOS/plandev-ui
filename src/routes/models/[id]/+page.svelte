@@ -88,7 +88,12 @@
   import { SearchParameters } from '../../../enums/searchParameters';
   import { constraints } from '../../../stores/constraints';
   import { initialModel, model, resetModelStores } from '../../../stores/model';
-  import { schedulingConditions, schedulingGoals } from '../../../stores/scheduling';
+  import {
+    schedulingConditionResponses,
+    schedulingConditions,
+    schedulingGoalResponses,
+    schedulingGoals,
+  } from '../../../stores/scheduling';
   import { users } from '../../../stores/user';
   import { views } from '../../../stores/views';
   import type { User, UserId } from '../../../types/app';
@@ -117,6 +122,7 @@
   let hasCreatePermission: boolean = false;
   let hasEditSpecPermission: boolean = false;
   let hasModelChanged: boolean = false;
+  let loading: boolean = true;
   let metadataList: Pick<BaseMetadata, 'id' | 'name' | 'public' | 'versions'>[] = [];
   let modelMetadata: {
     default_view_id: number | null;
@@ -201,6 +207,7 @@
     // goals require special logic because of priority management
     // goals must have consecutive priorities starting at 0
     case 'goal': {
+      loading = !$schedulingGoalResponses;
       hasCreatePermission = featurePermissions.schedulingGoals.canCreate(user);
       hasEditSpecPermission = featurePermissions.schedulingGoalsModelSpec.canUpdate(user);
       metadataList = getMetadata($schedulingGoals, $model, 'scheduling_specification_goals').filter(goalMetadata =>
@@ -257,6 +264,7 @@
       break;
     }
     case 'condition':
+      loading = !$schedulingConditionResponses;
       hasCreatePermission = featurePermissions.schedulingConditions.canCreate(user);
       hasEditSpecPermission = featurePermissions.schedulingConditionsModelSpec.canUpdate(user);
       metadataList = getMetadata($schedulingConditions, $model, 'scheduling_specification_conditions').filter(
@@ -266,9 +274,10 @@
       break;
     case 'constraint':
     default:
+      loading = !$constraints;
       hasCreatePermission = featurePermissions.constraints.canCreate(user);
       hasEditSpecPermission = featurePermissions.constraintsModelSpec.canUpdate(user);
-      metadataList = getMetadata($constraints, $model, 'constraint_specification');
+      metadataList = getMetadata($constraints || [], $model, 'constraint_specification');
       selectedSpecifications = selectedConstraintModelSpecifications;
   }
   $: hasModelChanged =
@@ -680,8 +689,8 @@
         modelId={$model?.id}
         createdAt={$model?.created_at}
         user={data.user}
-        users={$users ?? []}
-        views={$views ?? []}
+        users={$users}
+        views={$views}
         on:createPlan={onCreatePlanWithModel}
         on:deleteModel={onDeleteModel}
         on:hasModelChanged={onModelMetadataChange}
@@ -695,6 +704,7 @@
     {hasCreatePermission}
     {hasEditSpecPermission}
     {hasModelChanged}
+    {loading}
     {metadataList}
     model={$model}
     {selectedAssociation}
