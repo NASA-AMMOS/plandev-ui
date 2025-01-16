@@ -1,4 +1,10 @@
-<div class="st-typography-label loading">Loading...</div>
+<div class="st-typography-label loading">
+  {#if $$slots.default}
+    <slot />
+  {:else}
+    Loading...
+  {/if}
+</div>
 
 <style>
   .loading {
