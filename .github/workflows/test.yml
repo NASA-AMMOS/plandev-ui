@@ -96,8 +96,6 @@ jobs:
         run: npm ci
       - name: Build (UI)
         run: npm run build
-      - name: cat /etc/os-release
-        run: cat /etc/os-release
       - name: Install Playwright Dependencies (Test - e2e)
         run: npx playwright install chromium --with-deps
       - name: Test (e2e)
