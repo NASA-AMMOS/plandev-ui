@@ -40,7 +40,7 @@
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.0.19",
     "@nasa-jpl/aerie-ampcs": "^1.0.5",
-    "@nasa-jpl/seq-json-schema": "^1.2.0",
+    "@nasa-jpl/seq-json-schema": "^1.0.20",
     "@nasa-jpl/stellar": "^1.1.18",
     "@streamparser/json": "^0.0.17",
     "@sveltejs/adapter-node": "5.0.1",
@@ -85,7 +85,7 @@
     "@lezer/generator": "^1.7.0",
     "@lezer/highlight": "^1.2.0",
     "@lezer/lr": "^1.4.0",
-    "@playwright/test": "^1.49.1",
+    "@playwright/test": "^1.44.0",
     "@poppanator/sveltekit-svg": "^4.2.1",
     "@sveltejs/vite-plugin-svelte": "^3.0.0",
     "@testing-library/svelte": "^4.0.2",
