@@ -486,9 +486,12 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     width: 100%;
   }
   :global(.tags-cell) {
-    display: inline-block;
-    line-height: 24px;
-    padding: 3px 0px;
+    align-items: center;
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    min-height: 30px;
+    padding: 2px 0px;
   }
 
   :global(.tags-cell .tag.st-chip) {

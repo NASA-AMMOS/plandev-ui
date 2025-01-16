@@ -184,7 +184,6 @@
       resizable: true,
       sortable: false,
       width: 220,
-      wrapText: true,
     },
   ];
   const permissionError: string = 'You do not have permission to create a plan';

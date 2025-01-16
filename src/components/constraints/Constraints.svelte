@@ -82,7 +82,6 @@
       resizable: true,
       sortable: false,
       width: 220,
-      wrapText: true,
     },
   ];
   const permissionError = 'You do not have permission to create a constraint.';
