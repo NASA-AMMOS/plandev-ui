@@ -99,7 +99,7 @@
   let hasEditSpecPermission: boolean = false;
   let selectedConstraints: Record<string, boolean> = {};
 
-  $: filteredConstraints = $constraints.filter(constraint => {
+  $: filteredConstraints = ($constraints || []).filter(constraint => {
     const filterTextLowerCase = filterText.toLowerCase();
     const includesId = `${constraint.id}`.includes(filterTextLowerCase);
     const includesName = constraint.name.toLocaleLowerCase().includes(filterTextLowerCase);
@@ -171,7 +171,7 @@
   }
 
   function viewConstraint({ id }: Pick<ConstraintMetadata, 'id'>) {
-    const constraint = $constraints.find(c => c.id === id);
+    const constraint = ($constraints || []).find(c => c.id === id);
     window.open(
       `${base}/constraints/edit/${constraint?.id}?${SearchParameters.REVISION}=${constraint?.versions[0].revision}&${SearchParameters.MODEL_ID}=${$plan?.model.id}`,
     );
@@ -273,8 +273,9 @@
       </div>
       <hr />
       <div class="constraints-modal-table-container">
-        {#if filteredConstraints.length}
+        {#if !$constraints || filteredConstraints.length}
           <DataGrid
+            loading={!$constraints}
             bind:this={dataGrid}
             {columnDefs}
             rowData={filteredConstraints}

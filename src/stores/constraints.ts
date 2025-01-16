@@ -28,7 +28,7 @@ export const constraintsColumns: Writable<string> = writable('1fr 3px 1fr');
 
 /* Subscriptions. */
 
-export const constraints = gqlSubscribable<ConstraintMetadata[]>(gql.SUB_CONSTRAINTS, {}, [], null);
+export const constraints = gqlSubscribable<ConstraintMetadata[] | null>(gql.SUB_CONSTRAINTS, {}, null, null);
 
 export const constraintRuns = gqlSubscribable<ConstraintRun[] | null>(
   gql.SUB_CONSTRAINT_RUNS,

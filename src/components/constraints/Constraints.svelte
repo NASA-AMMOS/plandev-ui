@@ -94,7 +94,7 @@
   let hasPermission: boolean = false;
   let selectedConstraint: ConstraintMetadata | null = null;
 
-  $: filteredConstraints = $constraints.filter(constraint => {
+  $: filteredConstraints = ($constraints || []).filter(constraint => {
     const filterTextLowerCase = filterText.toLowerCase();
     const includesId = `${constraint.id}`.includes(filterTextLowerCase);
     const includesName = constraint.name.toLocaleLowerCase().includes(filterTextLowerCase);
@@ -102,7 +102,7 @@
   });
   $: hasPermission = featurePermissions.constraints.canCreate(user);
   $: if (selectedConstraint !== null) {
-    const found = $constraints.findIndex(constraint => constraint.id === selectedConstraint?.id);
+    const found = ($constraints || []).findIndex(constraint => constraint.id === selectedConstraint?.id);
     if (found === -1) {
       selectedConstraint = null;
     }
@@ -166,14 +166,14 @@
 
   function deleteConstraintContext(event: CustomEvent<RowId[]>) {
     const id = event.detail[0] as number;
-    const constraint = $constraints.find(c => c.id === id);
+    const constraint = ($constraints || []).find(c => c.id === id);
     if (constraint) {
       deleteConstraint(constraint);
     }
   }
 
   function editConstraint({ id }: Pick<ConstraintMetadata, 'id'>) {
-    const constraint = $constraints.find(c => c.id === id);
+    const constraint = ($constraints || []).find(c => c.id === id);
     goto(`${base}/constraints/edit/${id}?${SearchParameters.REVISION}=${constraint?.versions[0].revision}`);
   }
 
@@ -230,8 +230,10 @@
     </svelte:fragment>
 
     <svelte:fragment slot="body">
-      {#if filteredConstraints.length}
+      {#if !$constraints || filteredConstraints.length}
         <SingleActionDataGrid
+          showLoadingSkeleton
+          loading={!$constraints}
           {columnDefs}
           hasEdit={true}
           {hasDeletePermission}
