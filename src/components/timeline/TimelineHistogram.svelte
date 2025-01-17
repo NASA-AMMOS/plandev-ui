@@ -25,9 +25,10 @@
   export let activityDirectives: ActivityDirective[] = [];
   export let externalEvents: ExternalEvent[] = [];
   export let constraintResults: ConstraintResult[] = [];
-  export let cursorEnabled: boolean = true;
+  export let cursorEnabled: boolean = false;
   export let drawHeight: number = 40;
   export let drawWidth: number = 0;
+  export let loading: boolean = true;
   export let mouseOver: MouseOver | null;
   export let planStartTimeYmd: string;
   export let simulationDataset: SimulationDataset | null = null;
@@ -145,8 +146,14 @@
   $: windowMin = xScaleMax?.range()[1];
 
   // Update histograms if any of xScaleMax, activities, external events, or constraint violations change
+  $: if (xScaleMax && loading && windowMin !== undefined && windowMax !== undefined && windowMin - windowMax > 0) {
+    aggregateHistogram = Array(numBins).fill([0.25, 0]);
+    aggregateMax = 1;
+  }
+
   $: if (
     xScaleMax &&
+    !loading &&
     (activityDirectives || constraintResults) &&
     windowMin !== undefined &&
     windowMax !== undefined &&
@@ -374,6 +381,7 @@
 <div
   bind:this={histogramContainer}
   class="timeline-histogram"
+  class:loading
   style={`width: ${drawWidth}px; height: ${drawHeight}px;`}
 >
   <div class="timeline-histogram-background" />
@@ -484,7 +492,9 @@
 
   .bin-item {
     flex: 1;
-    transition: height 75ms ease-out;
+    transition:
+      height 75ms ease-out,
+      background 75ms ease-out;
     width: 2px;
   }
 
@@ -494,6 +504,10 @@
 
   .bin-item.gap {
     visibility: hidden;
+  }
+
+  .loading .bin-item {
+    background-color: var(--st-gray-20);
   }
 
   .constraint-violations {

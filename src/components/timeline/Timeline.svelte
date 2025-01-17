@@ -397,6 +397,7 @@
       <!-- TODO add loading to this component -->
       <TimelineHistogram
         activityDirectives={activityDirectives || []}
+        loading={!activityDirectives || (!spans && !initialSpanLoadComplete)}
         {externalEvents}
         {constraintResults}
         {cursorEnabled}
