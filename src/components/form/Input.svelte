@@ -74,7 +74,7 @@
     }
   }
 
-  async function padRightSlot() {
+  function padRightSlot() {
     if (right !== null) {
       right.style.right = `${padRight}px`;
       right.style.width = 'min-content';
