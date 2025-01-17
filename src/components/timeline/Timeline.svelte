@@ -51,6 +51,7 @@
   export let constraintResults: ConstraintResultWithName[] = [];
   export let hasUpdateDirectivePermission: boolean = false;
   export let hasUpdateSimulationPermission: boolean = false;
+  export let initialSpanLoadComplete: boolean = false;
   export let maxTimeRange: TimeRange = { end: 0, start: 0 };
   export let planEndTimeDoy: string;
   export let plan: Plan | null = null;

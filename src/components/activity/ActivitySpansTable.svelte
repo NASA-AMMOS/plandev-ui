@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import type { ColDef, ColumnState } from 'ag-grid-community';
+  import { initialSpanLoadComplete } from '../../stores/simulation';
   import type { RowId } from '../../types/data-grid';
   import type { Span, SpanId } from '../../types/simulation';
   import DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -10,7 +11,7 @@
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid<Span> | undefined = undefined;
   export let selectedSpanId: SpanId | null = null;
-  export let spans: Span[] | null = [];
+  export let spans: Span[] | null | undefined = undefined;
   export let filterExpression: string = '';
 
   let selectedItemIds: RowId[] = [];
@@ -37,7 +38,7 @@
   {getRowId}
   useCustomContextMenu
   rowData={spans || []}
-  loading={!spans}
+  loading={!$initialSpanLoadComplete}
   rowSelection="single"
   scrollToSelection={true}
   suppressDragLeaveHidesColumns={false}

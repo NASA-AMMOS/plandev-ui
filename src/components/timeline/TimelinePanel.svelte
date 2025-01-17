@@ -6,6 +6,7 @@
   import { selectExternalEvent, selectedExternalEventId, selectedExternalEvents } from '../../stores/external-event';
   import { maxTimeRange, plan, planReadOnly, viewTimeRange } from '../../stores/plan';
   import {
+    initialSpanLoadComplete,
     resourceTypes,
     selectedSpanId,
     simulation,
@@ -218,6 +219,7 @@
       constraintResults={$visibleConstraintResults}
       {hasUpdateDirectivePermission}
       {hasUpdateSimulationPermission}
+      initialSpanLoadComplete={$initialSpanLoadComplete}
       maxTimeRange={$maxTimeRange}
       planEndTimeDoy={$plan?.end_time_doy ?? ''}
       plan={$plan}
