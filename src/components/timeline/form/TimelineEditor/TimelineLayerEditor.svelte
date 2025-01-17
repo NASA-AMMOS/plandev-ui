@@ -92,7 +92,6 @@
     filterMenu.toggle();
   }
 
-  // TODO move to util?
   function getActivityLayerFilterCount(layer: ActivityLayer) {
     return (
       (layer.filter.activity?.static_types?.length ?? 0) +
