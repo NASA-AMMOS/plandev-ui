@@ -2,7 +2,7 @@ import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
 import { createClient, type Client, type ClientOptions } from 'graphql-ws';
 import { debounce, isEqual } from 'lodash-es';
-import { type Readable, type Subscriber, type Unsubscriber, type Updater } from 'svelte/store';
+import type { Readable, Subscriber, Unsubscriber, Updater } from 'svelte/store';
 import type { BaseUser, User } from '../types/app';
 import type { GqlSubscribable, NextValue, QueryVariables, Subscription } from '../types/subscribable';
 import { logout } from '../utilities/login';
