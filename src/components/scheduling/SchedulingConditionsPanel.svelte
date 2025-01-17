@@ -6,6 +6,7 @@
   import { plan, planReadOnly } from '../../stores/plan';
   import {
     allowedSchedulingConditionSpecs,
+    schedulingConditionResponses,
     schedulingConditionSpecifications,
     schedulingConditionsMap,
   } from '../../stores/scheduling';
@@ -16,6 +17,7 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions, isAdminRole } from '../../utilities/permissions';
   import CollapsibleListControls from '../CollapsibleListControls.svelte';
+  import Loading from '../Loading.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
   import SchedulingCondition from './conditions/SchedulingCondition.svelte';
@@ -30,7 +32,7 @@
   let visibleSchedulingConditionSpecs: SchedulingConditionPlanSpecification[] = [];
 
   // TODO: remove this after db merge as it becomes redundant
-  $: visibleSchedulingConditionSpecs = $allowedSchedulingConditionSpecs.filter(
+  $: visibleSchedulingConditionSpecs = ($allowedSchedulingConditionSpecs || []).filter(
     ({ condition_metadata: conditionMetadata }) => {
       if (conditionMetadata) {
         const { public: isPublic, owner } = conditionMetadata;
@@ -47,7 +49,8 @@
     const includesName = spec.condition_metadata?.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesName;
   });
-  $: numOfPrivateConditions = $schedulingConditionSpecifications.length - visibleSchedulingConditionSpecs.length;
+  $: numOfPrivateConditions =
+    ($schedulingConditionSpecifications || []).length - visibleSchedulingConditionSpecs.length;
 
   function onManageConditions() {
     effects.managePlanSchedulingConditions(user);
@@ -83,6 +86,10 @@
       activeElement.focus();
     }
   });
+
+  $: console.log('$schedulingConditionSpecifications :>> ', $schedulingConditionSpecifications);
+  $: console.log('filteredSchedulingConditionSpecs :>> ', filteredSchedulingConditionSpecs);
+  $: console.log('$schedulingConditionsMap :>> ', $schedulingConditionsMap);
 </script>
 
 <Panel>
@@ -112,7 +119,12 @@
       </svelte:fragment>
     </CollapsibleListControls>
     <div class="pt-2">
-      {#if !filteredSchedulingConditionSpecs.length}
+      <!-- TODO should we instead have the schedulingConditionsMap be nullable or should the pattern be to look at the responses? Or do we do another derived store to say if these things have been loaded? -->
+      {#if !$allowedSchedulingConditionSpecs || !$schedulingConditionResponses}
+        <div class="pt-1">
+          <Loading />
+        </div>
+      {:else if !filteredSchedulingConditionSpecs.length}
         <div class="pt-1 st-typography-label">No scheduling conditions found</div>
         <div class="private-label">
           {#if numOfPrivateConditions > 0}

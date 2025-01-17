@@ -126,7 +126,7 @@
       const includesName = condition.name.toLocaleLowerCase().includes(filterTextLowerCase);
       return includesId || includesName;
     });
-  $: selectedConditions = $allowedSchedulingConditionSpecs.reduce(
+  $: selectedConditions = ($allowedSchedulingConditionSpecs || []).reduce(
     (prevBooleanMap: Record<string, boolean>, schedulingConditionPlanSpec: SchedulingConditionPlanSpecification) => {
       return {
         ...prevBooleanMap,
@@ -211,6 +211,7 @@
     }
   }
 
+  // TODO BUG scheduling condition management not working within a plan, something broke it in this PR.
   async function onUpdateCondition(selectedConditions: Record<number, boolean>) {
     if ($plan && $schedulingPlanSpecification) {
       const conditionPlanSpecUpdates: {

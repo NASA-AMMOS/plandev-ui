@@ -134,26 +134,28 @@ export const schedulingGoalsMap: Readable<Record<string, SchedulingGoalMetadata>
 
 export const schedulingConditionSpecifications = derived(
   [schedulingPlanSpecification],
-  ([$schedulingPlanSpecification]) => $schedulingPlanSpecification?.conditions ?? [],
+  ([$schedulingPlanSpecification]) => $schedulingPlanSpecification?.conditions ?? null,
 );
 
 export const schedulingGoalSpecifications = derived(
   [schedulingPlanSpecification],
-  ([$schedulingPlanSpecification]) => $schedulingPlanSpecification?.goals ?? [],
+  ([$schedulingPlanSpecification]) => $schedulingPlanSpecification?.goals ?? null,
 );
 
-export const allowedSchedulingConditionSpecs: Readable<SchedulingConditionPlanSpecification[]> = derived(
+export const allowedSchedulingConditionSpecs: Readable<SchedulingConditionPlanSpecification[] | null> = derived(
   [schedulingConditionSpecifications],
   ([$schedulingConditionSpecifications]) =>
-    $schedulingConditionSpecifications.filter(
-      ({ condition_metadata: conditionMetadata }) => conditionMetadata !== null,
-    ),
+    $schedulingConditionSpecifications
+      ? $schedulingConditionSpecifications.filter(
+          ({ condition_metadata: conditionMetadata }) => conditionMetadata !== null,
+        )
+      : null,
 );
 
 export const allowedSchedulingGoalSpecs: Readable<SchedulingGoalPlanSpecification[]> = derived(
   [schedulingGoalSpecifications],
   ([$schedulingGoalSpecifications]) =>
-    $schedulingGoalSpecifications.filter(({ goal_metadata: goalMetadata }) => goalMetadata !== null),
+    ($schedulingGoalSpecifications || []).filter(({ goal_metadata: goalMetadata }) => goalMetadata !== null),
 );
 
 export const latestSchedulingGoalAnalyses = derived(
@@ -162,7 +164,7 @@ export const latestSchedulingGoalAnalyses = derived(
     const analysisIdToSpecGoalMap: Record<number, SchedulingGoalAnalysis[]> = {};
     let latestAnalysisId = -1;
 
-    $schedulingGoalSpecifications.forEach(schedulingSpecGoal => {
+    ($schedulingGoalSpecifications || []).forEach(schedulingSpecGoal => {
       let analyses: SchedulingGoalAnalysis[] = [];
       if (schedulingSpecGoal.goal_definition != null) {
         analyses = schedulingSpecGoal.goal_definition.analyses ?? [];
@@ -278,7 +280,7 @@ export const schedulingAnalysisStatus = derived(
 export const enableScheduling: Readable<boolean> = derived(
   [schedulingGoalSpecifications],
   ([$schedulingGoalSpecifications]) => {
-    return $schedulingGoalSpecifications.filter(schedulingSpecGoal => schedulingSpecGoal.enabled).length > 0;
+    return ($schedulingGoalSpecifications || []).filter(schedulingSpecGoal => schedulingSpecGoal.enabled).length > 0;
   },
 );
 

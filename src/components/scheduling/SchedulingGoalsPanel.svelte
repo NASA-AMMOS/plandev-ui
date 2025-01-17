@@ -20,6 +20,7 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions, isAdminRole } from '../../utilities/permissions';
   import CollapsibleListControls from '../CollapsibleListControls.svelte';
+  import Loading from '../Loading.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
@@ -65,7 +66,7 @@
       }
       return 0;
     });
-  $: numOfPrivateGoals = $schedulingGoalSpecifications.length - visibleSchedulingGoalSpecs.length;
+  $: numOfPrivateGoals = ($schedulingGoalSpecifications || []).length - visibleSchedulingGoalSpecs.length;
   $: if ($plan) {
     hasAnalyzePermission =
       featurePermissions.schedulingGoalsPlanSpec.canAnalyze(user, $plan, $plan.model) && !$planReadOnly;
@@ -207,7 +208,11 @@
       </svelte:fragment>
     </CollapsibleListControls>
     <div class="pt-2">
-      {#if !filteredSchedulingGoalSpecs.length}
+      {#if !$schedulingGoalSpecifications}
+        <div class="pt-1">
+          <Loading />
+        </div>
+      {:else if !filteredSchedulingGoalSpecs.length}
         <div class="pt-1 st-typography-label">No scheduling goals found</div>
         <div class="private-label">
           {#if numOfPrivateGoals > 0}
