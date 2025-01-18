@@ -218,7 +218,7 @@
       <Collapse
         headerHeight={rowHeight}
         defaultExpanded={node.expanded}
-        className={classNames('row-header-discrete-group')}
+        className="row-header-discrete-group"
         on:collapse={() => dispatch('discrete-tree-node-change', node)}
       >
         <div slot="left" style="align-items: center;display: flex">

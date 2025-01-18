@@ -57,7 +57,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
 
   await plan.selectActivityPresetByName('None');
 
-  await expect(plan.panelActivityForm.getByRole('textbox', { name: 'None' })).toBeVisible();
+  await expect(plan.panelActivityForm.getByRole('combobox', { name: 'None' })).toBeVisible();
 });
 
 test.afterAll(async () => {
@@ -72,18 +72,18 @@ test.afterAll(async () => {
 test.describe.serial('Plan Activity Presets', () => {
   test(`Setting a preset to a directive should update the parameter values`, async () => {
     await plan.selectActivityPresetByName('Preset 1');
-    await expect(page.getByRole('textbox', { name: 'Preset 1' })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Preset 1' })).toBeVisible();
   });
 
   test(`Removing an activity preset from a directive should reflect that it is no longer present`, async () => {
     await plan.selectActivityPresetByName('None');
-    await expect(page.getByRole('textbox', { name: 'None' })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'None' })).toBeVisible();
   });
 
   test('Deleting an activity preset should remove it from the list of presets', async () => {
     await plan.selectActivityPresetByName('Preset 1');
 
-    await page.getByRole('button', { name: 'Set Preset' }).click();
+    await page.getByRole('combobox', { name: 'Preset 1' }).click();
 
     await page.getByRole('button', { name: 'Delete preset' }).waitFor({ state: 'attached' });
     await page.getByRole('button', { name: 'Delete preset' }).click();
@@ -96,6 +96,6 @@ test.describe.serial('Plan Activity Presets', () => {
       () => document.querySelector('.activity-preset-input-container .selected-display-value')?.innerHTML === 'None',
     );
 
-    await expect(page.getByRole('textbox', { name: 'None' })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'None' })).toBeVisible();
   });
 });

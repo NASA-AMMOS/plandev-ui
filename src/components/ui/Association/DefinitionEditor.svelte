@@ -60,8 +60,9 @@
     worker = eventWorker;
   }
 
-  function onSelectReferenceModel(event: CustomEvent<SelectedDropdownOptionValue>) {
-    const { detail: modelId } = event;
+  function onSelectReferenceModel(event: CustomEvent<SelectedDropdownOptionValue[]>) {
+    const { detail: values } = event;
+    const modelId = values[0];
     if (modelId === null) {
       dispatch('selectReferenceModel', modelId);
     } else {
@@ -77,11 +78,11 @@
       {#if !readOnly}
         <label for="models">Reference Model:</label>
         <SearchableDropdown
-          selectedOptionValue={referenceModelId}
+          selectedOptionValues={typeof referenceModelId === 'number' ? [referenceModelId] : []}
           placeholder="No Model"
           name="models"
           options={modelOptions}
-          on:selectOption={onSelectReferenceModel}
+          on:change={onSelectReferenceModel}
         />
       {/if}
     </div>

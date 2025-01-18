@@ -1,4 +1,4 @@
-import { derived, writable, type Writable } from 'svelte/store';
+import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type {
   ActivityDirectiveDB,
   ActivityDirectiveId,
@@ -6,6 +6,7 @@ import type {
   AnchorValidationStatus,
 } from '../types/activity';
 import type { ActivityMetadataDefinition } from '../types/activity-metadata';
+import type { DefaultEffectiveArguments, DefaultEffectiveArgumentsMap } from '../types/parameter';
 import type { SpanId } from '../types/simulation';
 import { computeActivityDirectivesMap } from '../utilities/activities';
 import gql from '../utilities/gql';
@@ -49,7 +50,20 @@ export const activityDirectiveValidationStatuses = gqlSubscribable<ActivityDirec
 
 export const selectedActivityDirectiveId: Writable<ActivityDirectiveId | null> = writable(null);
 
+// TODO do we even need the list or should we transform it immediately into the map?
+export const activityArgumentDefaults: Writable<DefaultEffectiveArguments[] | null> = writable(null);
+
 /* Derived. */
+export const activityArgumentDefaultsMap: Readable<DefaultEffectiveArgumentsMap> = derived(
+  [activityArgumentDefaults],
+  ([$activityArgumentDefaults]) => {
+    const argsMap: DefaultEffectiveArgumentsMap = {};
+    return ($activityArgumentDefaults || []).reduce((map, { arguments: args, typeName }) => {
+      map[typeName] = args;
+      return map;
+    }, argsMap);
+  },
+);
 
 export const activityDirectivesMap = derived(
   [activityDirectivesDB, planSnapshotId, planSnapshotActivityDirectives, initialPlan, spansMap, spanUtilityMaps],

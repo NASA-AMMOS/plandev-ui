@@ -108,6 +108,7 @@ import type { DslTypeScriptResponse, TypeScriptFile } from '../types/monaco';
 import type {
   Argument,
   ArgumentsMap,
+  DefaultEffectiveArguments,
   EffectiveArguments,
   Parameter,
   ParameterValidationError,
@@ -210,7 +211,7 @@ import type {
   TagsInsertInput,
   TagsSetInput,
 } from '../types/tags';
-import type { Row, Timeline } from '../types/timeline';
+import type { Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
 import { parseCdlDictionary, toAmpcsXml } from './codemirror/cdlDictionary';
@@ -3065,15 +3066,30 @@ const effects = {
     }
   },
 
-  async deleteTimelineLayers(timelineId?: number | null, rowId?: number | null) {
+  async deleteTimelineLayers(
+    layers: Layer[],
+    chartType: 'activity' | 'resource' | 'externalEvent',
+    timelineId?: number | null,
+    rowId?: number | null,
+  ) {
     const { confirm } = await showConfirmModal(
       'Delete',
-      `Are you sure you want to delete all layers in this row?`,
+      `Are you sure you want to delete all ${chartType} layers in this row?`,
       'Delete Rows',
       true,
     );
     if (confirm) {
-      viewUpdateRow('layers', [], timelineId, rowId);
+      const filteredLayers = layers.filter(l => {
+        if (chartType === 'activity') {
+          return l.chartType !== 'activity';
+        } else if (chartType === 'externalEvent') {
+          return l.chartType !== 'externalEvent';
+        } else if (chartType === 'resource') {
+          return l.chartType !== 'line' && l.chartType !== 'x-range';
+        }
+        return true;
+      });
+      viewUpdateRow('layers', filteredLayers, timelineId, rowId);
     }
   },
 
@@ -3445,6 +3461,32 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       return null;
+    }
+  },
+
+  async getDefaultActivityArguments(
+    modelId: number,
+    activityTypes: ActivityType[],
+    user: User | null,
+  ): Promise<DefaultEffectiveArguments[]> {
+    try {
+      const activities = activityTypes.map(type => ({ activityArguments: {}, activityTypeName: type.name }));
+      const data = await reqHasura<DefaultEffectiveArguments[]>(
+        gql.GET_EFFECTIVE_ACTIVITY_ARGUMENTS_BULK,
+        {
+          activities,
+          modelId,
+        },
+        user,
+      );
+      const { effectiveActivityArgumentsBulk } = data;
+      if (effectiveActivityArgumentsBulk !== null) {
+        return effectiveActivityArgumentsBulk;
+      }
+      return [];
+    } catch (e) {
+      catchError(e as Error);
+      return [];
     }
   },
 

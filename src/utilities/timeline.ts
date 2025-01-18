@@ -13,18 +13,22 @@ import {
   type CountableTimeInterval,
   type TimeInterval,
 } from 'd3-time';
-import { groupBy } from 'lodash-es';
+import { groupBy, isArray } from 'lodash-es';
 import {
   ViewDefaultDiscreteOptions,
   ViewDiscreteLayerColorPresets,
   ViewLineLayerColorPresets,
   ViewXRangeLayerSchemePresets,
 } from '../constants/view';
-import type { ActivityDirective } from '../types/activity';
+import type { ActivityLayerFilterField } from '../enums/timeline';
+import type { ActivityDirective, ActivityType } from '../types/activity';
 import type { ExternalEvent } from '../types/external-event';
+import type { DefaultEffectiveArgumentsMap } from '../types/parameter';
 import type { Resource, ResourceType, ResourceValue, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type {
   ActivityLayer,
+  ActivityLayerDynamicFilter,
+  ActivityLayerFilter,
   ActivityOptions,
   Axis,
   DiscreteTree,
@@ -47,7 +51,7 @@ import type {
 } from '../types/timeline';
 import { generateRandomPastelColor } from './color';
 import { getExternalEventRowId } from './externalEvents';
-import { filterEmpty } from './generic';
+import { filterEmpty, lowercase } from './generic';
 import { getDoyTime } from './time';
 
 export enum TimelineLockStatus {
@@ -375,6 +379,19 @@ export function getNextTimelineID(timelines: Timeline[]): number {
 }
 
 /**
+ * Returns the next thing ID based on all things
+ */
+export function getNextThingID(things: { id: number }[]): number {
+  let maxID = -1;
+  things.forEach(thing => {
+    if (thing.id > maxID) {
+      maxID = thing.id;
+    }
+  });
+  return maxID + 1;
+}
+
+/**
  * Returns the next unused activity color within the given row
  */
 export function getUniqueColorForActivityLayer(row?: Row): string {
@@ -575,13 +592,9 @@ export function createTimelineActivityLayer(timelines: Timeline[], args: Partial
   return {
     activityColor: ViewDiscreteLayerColorPresets[0],
     chartType: 'activity',
-    filter: {
-      activity: {
-        types: [],
-      },
-    },
+    filter: { activity: {} },
     id,
-    name: '',
+    name: 'Activity Layer',
     yAxisId: null,
     ...args,
   };
@@ -628,9 +641,9 @@ export function createTimelineResourceLayer(timelines: Timeline[], resourceType:
   });
 
   const layer = isDiscreteSchema
-    ? createTimelineXRangeLayer(timelines, [yAxis], { filter: { resource: { names: [name] } } })
+    ? createTimelineXRangeLayer(timelines, [yAxis], { filter: { resource: name } })
     : isNumericSchema
-      ? createTimelineLineLayer(timelines, [yAxis], { filter: { resource: { names: [name] } } })
+      ? createTimelineLineLayer(timelines, [yAxis], { filter: { resource: name } })
       : null;
 
   return { layer, yAxis };
@@ -649,11 +662,7 @@ export function createTimelineLineLayer(
 
   return {
     chartType: 'line',
-    filter: {
-      resource: {
-        names: [],
-      },
-    },
+    filter: {},
     id,
     lineColor: ViewLineLayerColorPresets[0],
     lineWidth: 1,
@@ -678,11 +687,7 @@ export function createTimelineXRangeLayer(
   return {
     chartType: 'x-range',
     colorScheme: 'schemeTableau10',
-    filter: {
-      resource: {
-        names: [],
-      },
-    },
+    filter: {},
     id,
     name: '',
     opacity: 0.8,
@@ -945,7 +950,7 @@ export function minMaxDecimation<T>(
  * Filters list of resources by the layer's resource filter
  */
 export function filterResourcesByLayer(layer: Layer, resources: Resource[] | ResourceType[]) {
-  return resources.filter(resource => (layer.filter.resource?.names || []).indexOf(resource.name) > -1);
+  return resources.filter(resource => layer.filter.resource === resource.name);
 }
 
 /**
@@ -1386,4 +1391,266 @@ export function paginateNodes(
     node.expanded = getNodeExpanded(node.id, discreteTreeExpansionMap);
   });
   return paginateNodes(newNodes, activityOrEvent, parentId, discreteTreeExpansionMap, depth + 1);
+}
+
+export function applyActivityLayerFilter(
+  filter: ActivityLayerFilter | undefined,
+  directives: ActivityDirective[],
+  spans: Span[],
+  types: ActivityType[],
+  defaultArgumentsMap: DefaultEffectiveArgumentsMap,
+): { directives: ActivityDirective[]; spans: Span[] } {
+  if (
+    !filter ||
+    (!filter.dynamic_type_filters?.length &&
+      !filter.other_filters?.length &&
+      !filter.static_types?.length &&
+      (!filter.type_subfilters || !Object.keys(filter.type_subfilters).length))
+  ) {
+    return { directives, spans };
+  }
+
+  const staticTypeMap: Record<string, boolean> = (filter.static_types || []).reduce(
+    (acc: Record<string, boolean>, cur: string) => {
+      acc[cur] = true;
+      return acc;
+    },
+    {},
+  );
+
+  const typeDefMap: Record<string, ActivityType> = (types || []).reduce(
+    (acc: Record<string, ActivityType>, cur: ActivityType) => {
+      acc[cur.name] = cur;
+      return acc;
+    },
+    {},
+  );
+
+  const filteredDirectives = directives.filter(directive => {
+    return applyFiltersToDirectiveOrSpan(directive, filter, staticTypeMap, typeDefMap, defaultArgumentsMap);
+  });
+
+  const filteredSpans = spans.filter(span => {
+    return applyFiltersToDirectiveOrSpan(span, filter, staticTypeMap, typeDefMap, defaultArgumentsMap);
+  });
+  return { directives: filteredDirectives, spans: filteredSpans };
+}
+
+function applyFiltersToDirectiveOrSpan(
+  directiveOrSpan: ActivityDirective | Span,
+  filter: ActivityLayerFilter,
+  staticTypeMap: Record<string, boolean>,
+  typeDefMap: Record<string, ActivityType>,
+  defaultArgumentsMap: DefaultEffectiveArgumentsMap,
+) {
+  const anyTypeFiltersSpecified = !!(filter.static_types?.length || filter.dynamic_type_filters?.length);
+  const anyMainFiltersSpecified = anyTypeFiltersSpecified || !!filter.other_filters?.length;
+  let included = !anyMainFiltersSpecified;
+
+  // Check to see if directive is included in static list
+  if (filter.static_types?.length) {
+    included = !!staticTypeMap[directiveOrSpan.type];
+  }
+
+  // Check if necessary to see if directive is included in dynamic list
+  if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
+    included = directiveOrSpanMatchesDynamicFilters(
+      directiveOrSpan,
+      filter.dynamic_type_filters,
+      typeDefMap,
+      defaultArgumentsMap,
+    );
+  }
+
+  // Apply other filters on top of the types
+  if (filter.other_filters?.length) {
+    included =
+      directiveOrSpanMatchesDynamicFilters(directiveOrSpan, filter.other_filters, typeDefMap, defaultArgumentsMap) &&
+      (anyTypeFiltersSpecified ? included : true);
+  }
+
+  // Apply type specific filters if found and if the type is already included or
+  // if no other filters were specified (case where all types are included by default)
+  if (
+    filter.type_subfilters &&
+    filter.type_subfilters[directiveOrSpan.type] &&
+    filter.type_subfilters[directiveOrSpan.type].length
+  ) {
+    included =
+      directiveOrSpanMatchesDynamicFilters(
+        directiveOrSpan,
+        filter.type_subfilters[directiveOrSpan.type],
+        typeDefMap,
+        defaultArgumentsMap,
+      ) && (anyMainFiltersSpecified ? included : true);
+  }
+  return included;
+}
+
+export function getMatchingTypesForActivityLayerFilter(filter: ActivityLayerFilter | undefined, types: ActivityType[]) {
+  if (
+    !filter ||
+    (!filter.dynamic_type_filters?.length &&
+      !filter.other_filters?.length &&
+      !filter.static_types?.length &&
+      (!filter.type_subfilters || !Object.keys(filter.type_subfilters).length))
+  ) {
+    return types;
+  }
+
+  const staticTypeMap: Record<string, boolean> = (filter.static_types || []).reduce(
+    (acc: Record<string, boolean>, cur: string) => {
+      acc[cur] = true;
+      return acc;
+    },
+    {},
+  );
+
+  const anyTypeFiltersSpecified = !!(filter.static_types?.length || filter.dynamic_type_filters?.length);
+
+  return types.filter(type => {
+    let included = !anyTypeFiltersSpecified;
+
+    // Check to see if type is included in static list
+    if (filter.static_types?.length) {
+      included = !!staticTypeMap[type.name];
+    }
+
+    // Check if necessary to see if type is included in dynamic list
+    if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
+      included = typeMatchesDynamicFilters(type, filter.dynamic_type_filters);
+    }
+    return included;
+  });
+}
+
+function directiveOrSpanMatchesDynamicFilters(
+  directiveOrSpan: ActivityDirective | Span,
+  dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
+  activityTypeDefMap: Record<string, ActivityType>,
+  defaultArgumentsMap: DefaultEffectiveArgumentsMap,
+): boolean {
+  return dynamicFilters.reduce((acc, curr) => {
+    let matches = false;
+    if (curr.field === 'Type') {
+      matches = matchesDynamicFilter(directiveOrSpan.type, curr.operator, curr.value);
+    } else if (curr.field === 'Name') {
+      matches = matchesDynamicFilter((directiveOrSpan as ActivityDirective).name, curr.operator, curr.value);
+    } else if (curr.field === 'Subsystem') {
+      // Get subsystem tag for this directive
+      let subsystemTagId = -1;
+      const typeDef = activityTypeDefMap[directiveOrSpan.type];
+      if (typeDef?.subsystem_tag?.id) {
+        subsystemTagId = typeDef.subsystem_tag.id;
+      }
+      matches = matchesDynamicFilter(subsystemTagId, curr.operator, curr.value);
+    } else if (curr.field === 'Tags' && isArray((directiveOrSpan as ActivityDirective).tags)) {
+      const ids = (directiveOrSpan as ActivityDirective).tags.map(tag => tag.tag.id);
+      matches = matchesDynamicFilter(ids, curr.operator, curr.value);
+    } else if (curr.field === 'Parameter' && curr.subfield) {
+      const subfield = curr.subfield;
+      const args = (directiveOrSpan as ActivityDirective).arguments || (directiveOrSpan as Span).attributes.arguments;
+      let argument = args[subfield.name];
+      if (argument === undefined) {
+        const isSpan = (directiveOrSpan as Span).span_id !== undefined;
+        if (!isSpan) {
+          // Get default
+          const defaultArgsForType = defaultArgumentsMap[directiveOrSpan.type];
+          if (defaultArgsForType) {
+            argument = defaultArgsForType[subfield.name];
+          }
+        }
+      }
+      matches = matchesDynamicFilter(argument, curr.operator, curr.value);
+    } else if (curr.field === 'SchedulingGoalId') {
+      const goalId = (directiveOrSpan as ActivityDirective).source_scheduling_goal_id;
+      if (typeof goalId === 'number') {
+        matches = matchesDynamicFilter(goalId, curr.operator, curr.value);
+      }
+    }
+    return acc && matches;
+  }, true);
+}
+
+// TODO try consolidating with the function above
+function typeMatchesDynamicFilters(
+  type: ActivityType,
+  dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
+): boolean {
+  return dynamicFilters.reduce((acc, curr) => {
+    let matches = false;
+    if (curr.field === 'Type') {
+      matches = matchesDynamicFilter(type.name, curr.operator, curr.value);
+    } else if (curr.field === 'Subsystem') {
+      matches = matchesDynamicFilter(type.subsystem_tag?.id ?? -1, curr.operator, curr.value);
+    }
+    return acc && matches;
+  }, true);
+}
+
+export function matchesDynamicFilter(
+  rawItemValue: ActivityLayerDynamicFilter<ActivityLayerFilterField>['value'], // the actual value
+  operator: ActivityLayerDynamicFilter<ActivityLayerFilterField>['operator'],
+  rawFilterValue: ActivityLayerDynamicFilter<ActivityLayerFilterField>['value'], // the value(s) we're comparing against
+) {
+  const itemValue = lowercase(rawItemValue);
+  const filterValue = lowercase(rawFilterValue);
+  switch (operator) {
+    case 'equals':
+      return itemValue === filterValue;
+    case 'does_not_equal':
+      return itemValue !== filterValue;
+    case 'includes':
+      if (typeof filterValue === 'string' && typeof itemValue === 'string') {
+        if (filterValue === '') {
+          return false;
+        }
+        return itemValue.indexOf(filterValue) > -1;
+      } else if (isArray(filterValue)) {
+        return !!(isArray(itemValue) ? itemValue : [itemValue]).find(
+          item => (filterValue as (typeof itemValue)[]).indexOf(item) > -1,
+        );
+      }
+      return false;
+    case 'does_not_include':
+      if (typeof filterValue === 'string' && typeof itemValue === 'string') {
+        if (filterValue === '') {
+          return true;
+        }
+        return itemValue.indexOf(filterValue) < 0;
+      } else if (isArray(filterValue)) {
+        return !(isArray(itemValue) ? itemValue : [itemValue]).find(
+          item => (filterValue as (typeof itemValue)[]).indexOf(item) > -1,
+        );
+      }
+      return false;
+    case 'is_greater_than':
+      return itemValue > filterValue;
+    case 'is_less_than':
+      return itemValue < filterValue;
+    case 'is_within':
+      if (
+        isArray(filterValue) &&
+        filterValue.length === 2 &&
+        typeof filterValue[0] === 'number' &&
+        typeof filterValue[1] === 'number'
+      ) {
+        // TODO should upper bound be inclusive or exclusive?
+        return itemValue >= filterValue[0] && itemValue <= filterValue[1];
+      }
+      return false;
+    case 'is_not_within':
+      if (
+        isArray(filterValue) &&
+        filterValue.length === 2 &&
+        typeof filterValue[0] === 'number' &&
+        typeof filterValue[1] === 'number'
+      ) {
+        // TODO should upper bound be inclusive or exclusive?
+        return itemValue < filterValue[0] || itemValue > filterValue[1];
+      }
+      return false;
+    default:
+      return false;
+  }
 }

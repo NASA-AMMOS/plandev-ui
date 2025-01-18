@@ -7,6 +7,7 @@ import {
   filterEmpty,
   getSearchParameterNumber,
   isMacOs,
+  lowercase,
   parseJSONStream,
   unique,
 } from './generic';
@@ -188,6 +189,15 @@ describe('Generic utility function tests', () => {
       writer.close();
 
       expect(await parseJSONStream(readable as unknown as ReadableStream)).toBeTypeOf('object');
+    });
+  });
+
+  describe('lowercase', () => {
+    test('Should lowercase a string', () => {
+      expect(lowercase('ABC')).to.eq('abc');
+    });
+    test('Should skip lowercasing if a string not provided', () => {
+      expect(lowercase([])).to.deep.eq([]);
     });
   });
 });

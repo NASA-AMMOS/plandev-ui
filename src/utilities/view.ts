@@ -11,6 +11,9 @@ import {
   createTimelineActivityLayer,
   createTimelineExternalEventLayer,
   createTimelineResourceLayer,
+  isActivityLayer,
+  isLineLayer,
+  isXRangeLayer,
 } from './timeline';
 
 /**
@@ -29,7 +32,7 @@ export function generateDefaultView(
 
   // Start with the activity row
   const activityLayer = createTimelineActivityLayer(timelines, {
-    filter: { activity: { types } },
+    filter: { activity: { static_types: types } },
   });
   const activityRow = createRow(timelines, {
     autoAdjustHeight: true,
@@ -517,6 +520,7 @@ export function applyViewDefinitionMigrations(viewDefinition: ViewDefinition): {
     const version = viewDefinition.version ?? 0;
     const upMigrations: Record<number, (view: ViewDefinition) => ViewDefinition> = {
       0: migrateViewDefinitionV0toV1,
+      1: migrateViewDefinitionV1toV2,
     };
 
     // Iterate through versions between view version and latest view version
@@ -525,7 +529,7 @@ export function applyViewDefinitionMigrations(viewDefinition: ViewDefinition): {
     let anyMigrationsApplied = false;
     for (let i = version; i < viewSchemaVersion; i++) {
       if (upMigrations[i]) {
-        migratedViewDefinition = upMigrations[i](viewDefinition);
+        migratedViewDefinition = upMigrations[i](migratedViewDefinition);
         anyMigrationsApplied = true;
       }
     }
@@ -544,7 +548,6 @@ export function migrateViewDefinitionV0toV1(viewDefinition: ViewDefinition) {
     - ConstraintViolationsPanel rename to ConstraintsPanel
     - Remove deprecated ActivityLayer.activityHeight
   */
-
   const updatedGrid = structuredClone(viewDefinition.plan.grid);
   const gridKeysToUpdate = [
     'leftComponentTop',
@@ -612,5 +615,50 @@ export function migrateViewDefinitionV0toV1(viewDefinition: ViewDefinition) {
       }),
     },
     version: 1,
+  };
+}
+
+export function migrateViewDefinitionV1toV2(viewDefinition: ViewDefinition) {
+  /*
+    Summary of migrations:
+    - Activity layer filter types list changes to new complex set of filters
+    - Resource layer filter names list changes to a single type string
+  */
+  return {
+    ...viewDefinition,
+    plan: {
+      ...viewDefinition.plan,
+      timelines: viewDefinition.plan.timelines.map(timeline => {
+        return {
+          ...timeline,
+          rows: timeline.rows.map(row => {
+            const newRow = structuredClone(row);
+            newRow.layers = newRow.layers.map(layer => {
+              if (isActivityLayer(layer)) {
+                // @ts-expect-error deprecated type def
+                if (layer.filter.activity?.types && Array.isArray(layer.filter.activity.types)) {
+                  // @ts-expect-error deprecated type def
+                  layer.filter.activity.static_types = [...layer.filter.activity.types];
+
+                  // @ts-expect-error deprecated type def
+                  delete layer.filter.activity.types;
+                }
+              } else if (isLineLayer(layer) || isXRangeLayer(layer)) {
+                // @ts-expect-error deprecated type def
+                const resourceNames = layer.filter.resource?.names;
+                if (resourceNames && Array.isArray(resourceNames) && typeof resourceNames[0] === 'string') {
+                  layer.filter.resource = resourceNames[0];
+                } else {
+                  delete layer.filter.resource;
+                }
+              }
+              return layer;
+            });
+            return newRow;
+          }),
+        };
+      }),
+    },
+    version: 2,
   };
 }

@@ -1,7 +1,9 @@
 import type { Selection } from 'd3-selection';
+import type { ActivityLayerFilterField, FilterOperator } from '../enums/timeline';
 import type { ActivityDirective, ActivityDirectiveId, ActivityType } from './activity';
 import type { ConstraintResultWithName } from './constraint';
 import type { ExternalEvent, ExternalEventId, ExternalEventType } from './external-event';
+import type { ValueSchema } from './schema';
 import type { ResourceType, Span, SpanId } from './simulation';
 
 export type DiscreteTree = DiscreteTreeNode[];
@@ -30,11 +32,39 @@ export interface ExternalEventLayer extends Layer {
   externalEventColor: string;
 }
 
+export type DynamicFilterDataType = ValueSchema['type'] | 'tag';
+
 export type ActivityLayerFilter = {
-  types: string[];
+  dynamic_type_filters?: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>>[];
+  other_filters?: ActivityLayerDynamicFilter<
+    Pick<typeof ActivityLayerFilterField, 'Tags' | 'Parameter' | 'SchedulingGoalId' | 'Name'>
+  >[];
+  static_types?: string[];
+  type_subfilters?: Record<
+    string,
+    ActivityLayerDynamicFilter<
+      Pick<typeof ActivityLayerFilterField, 'Tags' | 'Parameter' | 'SchedulingGoalId' | 'Name'>
+    >[]
+  >;
 };
 export type ExternalEventLayerFilter = {
   event_types: string[];
+};
+
+export type ActivityLayerDynamicFilter<T> = {
+  field: keyof T;
+  id: number;
+  operator: keyof typeof FilterOperator;
+  subfield?: { name: string; type: DynamicFilterDataType };
+  value: string | string[] | number | number[] | boolean;
+};
+
+export type ActivityLayerFilterSubfield = { name: string; type: DynamicFilterDataType };
+export type ActivityLayerFilterSubfieldSchema = ActivityLayerFilterSubfield & {
+  activityTypes: string[];
+  label: string;
+  unit?: string;
+  values?: string[];
 };
 
 export type AxisDomainFitMode = 'fitPlan' | 'fitTimeWindow' | 'manual';
@@ -92,7 +122,6 @@ export type ChartType = 'activity' | 'line' | 'x-range' | 'externalEvent';
 export interface Layer {
   chartType: ChartType;
   filter: {
-    // TODO refactor in next PR to a unified filter
     activity?: ActivityLayerFilter;
     externalEvent?: ExternalEventLayerFilter;
     resource?: ResourceLayerFilter;
@@ -175,9 +204,7 @@ export type QuadtreeRect = {
   y: number;
 };
 
-export type ResourceLayerFilter = {
-  names: string[];
-};
+export type ResourceLayerFilter = string;
 
 export type ActivityOptions = {
   // Whether or not to display only directives, only spans, or both in the row
@@ -281,8 +308,13 @@ export interface XRangePoint extends Point {
 
 export type TimelineItemType = ResourceType | ActivityType | ExternalEventType;
 
+export type TimelineItemMetadata = {
+  selectedFilters?: Record<string, TimelineItemListFilterOption>;
+  textFilters?: string[];
+};
+
 export type TimelineItemListFilterOption = {
   color?: string;
   label: string;
-  value: string;
+  value: string | number;
 };

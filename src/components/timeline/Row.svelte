@@ -9,12 +9,14 @@
   import FilterWithXIcon from '../../assets/filter-with-x.svg?component';
   import { ViewDefaultDiscreteOptions } from '../../constants/view';
   import { Status } from '../../enums/status';
+  import { activityArgumentDefaultsMap } from '../../stores/activities';
   import { catchError } from '../../stores/errors';
   import {
     derivationGroupVisibilityMap,
     externalSources,
     planDerivationGroupLinks,
   } from '../../stores/external-source';
+  import { activityTypes } from '../../stores/plan';
   import {
     externalResources,
     fetchingResourcesExternal,
@@ -56,9 +58,11 @@
     Point,
     RowMouseOverEvent,
     TimeRange,
+    TimelineItemMetadata,
     TimelineItemType,
     XAxisTick,
   } from '../../types/timeline';
+  import { getAllSpansForActivityDirective } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { getExternalEventRowId } from '../../utilities/externalEvents';
   import { classNames, unique } from '../../utilities/generic';
@@ -69,9 +73,11 @@
   import { getDoyTime } from '../../utilities/time';
   import {
     TimelineInteractionMode,
+    applyActivityLayerFilter,
     directiveInView,
     externalEventInView,
     generateDiscreteTreeUtil,
+    getMatchingTypesForActivityLayerFilter,
     getYAxesWithScaleDomains,
     isActivityLayer,
     isExternalEventLayer,
@@ -197,7 +203,6 @@
   let hasActivityLayer: boolean = false;
   let hasExternalEventsLayer: boolean = false;
   let hasResourceLayer: boolean = false;
-  let associatedActivityTypes: number;
 
   $: if ($selectedRow?.id === id && rowRef) {
     rowRef.scrollIntoView({ block: 'nearest' });
@@ -208,7 +213,9 @@
     const resourceNamesSet = new Set<string>();
     layers.map(layer => {
       if (layer.chartType === 'line' || layer.chartType === 'x-range') {
-        layer.filter.resource?.names.forEach(name => resourceNamesSet.add(name));
+        if (layer.filter.resource) {
+          resourceNamesSet.add(layer.filter.resource);
+        }
       }
     });
     const resourceNames = Array.from(resourceNamesSet);
@@ -340,17 +347,13 @@
     discreteOptions?.activityOptions?.composition === 'both' ||
     discreteOptions?.activityOptions?.composition === 'directives';
 
-  // helper for hasExternalEventsLayer; counts how many external event types are associated with this row (if all layers have 0 event types, we
-  //    don't want to allocate any canvas space in the row for the layer)
-  $: associatedActivityTypes = activityLayers
-    .map(layer => (layer.filter.activity ? layer.filter.activity.types.length : 0))
-    .reduce((currentSum, newValue) => currentSum + newValue, 0);
+  // helper for hasExternalEventsLayer; counts how many external event types are associated with this row
+  // (if all layers have 0 event types, we don't want to allocate any canvas space in the row for the layer)
   $: associatedEventTypes = externalEventLayers
     .map(layer => (layer.filter.externalEvent ? layer.filter.externalEvent.event_types.length : 0))
     .reduce((currentSum, newValue) => currentSum + newValue, 0);
 
   // only consider a layer to be present if it is defined AND it actually has types/values selected.
-  $: hasActivityLayer = activityLayers.length > 0 && associatedActivityTypes > 0;
   $: hasExternalEventsLayer = externalEventLayers.length > 0 && associatedEventTypes > 0;
   $: hasResourceLayer = lineLayers.length + xRangeLayers.length > 0;
 
@@ -422,8 +425,6 @@
     };
     if (activityLayers && spansMap && activityDirectives) {
       let spansList = Object.values(spansMap);
-      const directivesByType = groupBy(activityDirectives, 'type');
-      const spansByType = groupBy(spansList, 'type');
       if (activityLayers.length) {
         let directives: ActivityDirective[] = [];
         let spans: Span[] = [];
@@ -433,34 +434,41 @@
         let seenDirectiveIds: Record<number, boolean> = {};
         let seenSpanIds: Record<number, boolean> = {};
         activityLayers.forEach(layer => {
-          if (layer.filter && layer.filter.activity !== undefined) {
-            const types = layer.filter.activity.types || [];
-            types.forEach(type => {
-              const matchingDirectives = directivesByType[type];
-              if (matchingDirectives) {
-                const uniqueDirectives: ActivityDirective[] = [];
-                matchingDirectives.forEach(directive => {
-                  if (!seenDirectiveIds[directive.id]) {
-                    updatedIdToColorMaps.directives[directive.id] = layer.activityColor;
-                    seenDirectiveIds[directive.id] = true;
-                    uniqueDirectives.push(directive);
-                  }
+          if (layer.filter) {
+            const { directives: matchingDirectives, spans: matchingSpans } = applyActivityLayerFilter(
+              layer.filter.activity,
+              activityDirectives,
+              spansList,
+              $activityTypes,
+              $activityArgumentDefaultsMap,
+            );
+            const uniqueDirectives: ActivityDirective[] = [];
+            matchingDirectives.forEach(directive => {
+              if (!seenDirectiveIds[directive.id]) {
+                idToColorMaps.directives[directive.id] = layer.activityColor;
+                seenDirectiveIds[directive.id] = true;
+                uniqueDirectives.push(directive);
+
+                // Gather spans for directive since we always show all spans for a directive
+                const childSpans = getAllSpansForActivityDirective(directive.id, spansMap, spanUtilityMaps);
+                childSpans.forEach(span => {
+                  seenSpanIds[span.span_id] = true;
+                  idToColorMaps.spans[span.span_id] = layer.activityColor;
                 });
-                directives = directives.concat(uniqueDirectives);
-              }
-              const matchingSpans = spansByType[type];
-              if (matchingSpans) {
-                const uniqueSpans: Span[] = [];
-                matchingSpans.forEach(span => {
-                  if (!seenSpanIds[span.span_id]) {
-                    updatedIdToColorMaps.spans[span.span_id] = layer.activityColor;
-                    seenSpanIds[span.span_id] = true;
-                    uniqueSpans.push(span);
-                  }
-                });
-                spans = spans.concat(uniqueSpans);
+                spans = spans.concat(childSpans);
               }
             });
+            directives = directives.concat(uniqueDirectives);
+
+            const uniqueSpans: Span[] = [];
+            matchingSpans.forEach(span => {
+              if (!seenSpanIds[span.span_id]) {
+                idToColorMaps.spans[span.span_id] = layer.activityColor;
+                seenSpanIds[span.span_id] = true;
+                uniqueSpans.push(span);
+              }
+            });
+            spans = spans.concat(uniqueSpans);
           }
         });
         directives.sort((a, b) => ((a.start_time_ms ?? 0) < (b.start_time_ms ?? 0) ? -1 : 1));
@@ -471,69 +479,67 @@
           // regeneration upon viewTimeRange change when not in filterActivitiesByTime mode.
           filteredActivityDirectives = directives;
           filteredSpans = spans;
-          timeFilteredActivityDirectives = directives; // if not actively filtering by time
-          timeFilteredSpans = spans; // if not actively filtering by time
+          timeFilteredActivityDirectives = directives;
+          timeFilteredSpans = spans;
         } else {
           filteredActivityDirectives = [];
           filteredSpans = [];
           timeFilteredActivityDirectives = [];
           timeFilteredSpans = [];
         }
+
+        hasActivityLayer = timeFilteredActivityDirectives.length > 0 || timeFilteredActivityDirectives.length > 0;
+      } else {
+        hasActivityLayer = false;
+      }
+
+      if (hasExternalEventsLayer) {
+        let externalEventsFilteredByDG = [];
+        filteredExternalEvents = [];
+
+        let filteredDerivationGroups = $planDerivationGroupLinks
+          .filter(
+            link => link.plan_id === plan?.id && !($derivationGroupVisibilityMap[link.derivation_group_name] ?? true),
+          )
+          .map(link => link.derivation_group_name);
+
+        // Apply filter for hiding derivation groups
+        externalEventsFilteredByDG = externalEvents.filter(ee => {
+          let derivationGroup =
+            $externalSources.find(
+              externalSource =>
+                externalSource.derivation_group_name === ee.pkey.derivation_group_name &&
+                externalSource.key === ee.pkey.source_key,
+            )?.derivation_group_name ?? undefined;
+          // the statement below says return true (keep) if the plan is not null and if the filter for this plan does not include this derivation group
+          return plan && derivationGroup ? !filteredDerivationGroups.includes(derivationGroup) : false;
+        });
+        // Filter by external event type
+        const externalEventsByType = groupBy(externalEventsFilteredByDG, 'pkey.event_type_name');
+        externalEventLayers.forEach(layer => {
+          if (layer.filter && layer.filter.externalEvent !== undefined) {
+            const event_types = layer.filter.externalEvent.event_types || [];
+            event_types.forEach(type => {
+              const matchingEvents = externalEventsByType[type];
+              if (matchingEvents) {
+                matchingEvents.forEach(
+                  event =>
+                    (updatedIdToColorMaps.external_events[getExternalEventRowId(event.pkey)] =
+                      layer.externalEventColor),
+                );
+                filteredExternalEvents = filteredExternalEvents.concat(unique(matchingEvents));
+              }
+            });
+          }
+        });
+        filteredExternalEvents.sort((a, b) => (a.start_ms < b.start_ms ? -1 : 1));
+
+        timeFilteredExternalEvents = filteredExternalEvents; // if not actively filtering by time
       }
     }
-    if (hasExternalEventsLayer) {
-      let externalEventsFilteredByDG = [];
-      filteredExternalEvents = [];
-
-      let filteredDerivationGroups = $planDerivationGroupLinks
-        .filter(
-          link => link.plan_id === plan?.id && !($derivationGroupVisibilityMap[link.derivation_group_name] ?? true),
-        )
-        .map(link => link.derivation_group_name);
-
-      // Apply filter for hiding derivation groups
-      externalEventsFilteredByDG = externalEvents.filter(ee => {
-        let derivationGroup =
-          $externalSources.find(
-            externalSource =>
-              externalSource.derivation_group_name === ee.pkey.derivation_group_name &&
-              externalSource.key === ee.pkey.source_key,
-          )?.derivation_group_name ?? undefined;
-        // the statement below says return true (keep) if the plan is not null and if the filter for this plan does not include this derivation group
-        return plan && derivationGroup ? !filteredDerivationGroups.includes(derivationGroup) : false;
-      });
-      // Filter by external event type
-      const externalEventsByType = groupBy(externalEventsFilteredByDG, 'pkey.event_type_name');
-      externalEventLayers.forEach(layer => {
-        if (layer.filter && layer.filter.externalEvent !== undefined) {
-          const event_types = layer.filter.externalEvent.event_types || [];
-          event_types.forEach(type => {
-            const matchingEvents = externalEventsByType[type];
-            if (matchingEvents) {
-              matchingEvents.forEach(
-                event =>
-                  (updatedIdToColorMaps.external_events[getExternalEventRowId(event.pkey)] = layer.externalEventColor),
-              );
-              filteredExternalEvents = filteredExternalEvents.concat(unique(matchingEvents));
-            }
-          });
-        }
-      });
-      filteredExternalEvents.sort((a, b) => (a.start_ms < b.start_ms ? -1 : 1));
-
-      timeFilteredExternalEvents = filteredExternalEvents; // if not actively filtering by time
-    }
-
-    // we update idToColorMaps via reassignment instead of by mutation so that Svelte reacts to updates correctly
-    idToColorMaps = updatedIdToColorMaps;
   }
 
-  $: if (
-    ((hasActivityLayer && filteredActivityDirectives && filteredSpans) ||
-      (hasExternalEventsLayer && filteredExternalEvents)) &&
-    viewTimeRange &&
-    filterItemsByTime
-  ) {
+  $: if (hasActivityLayer && filterItemsByTime && filteredActivityDirectives && filteredSpans && viewTimeRange) {
     timeFilteredSpans = filteredSpans.filter(span => spanInView(span, viewTimeRange));
     timeFilteredActivityDirectives = filteredActivityDirectives.filter(directive => {
       let inView = directiveInView(directive, viewTimeRange);
@@ -715,16 +721,17 @@
         const json = JSON.parse(data || '');
         const type = json.type ?? '';
         const items = (json.items as TimelineItemType[]) ?? '';
+        const metadata = (json.metadata as TimelineItemMetadata) ?? {};
 
         // Only allow creating an activity if we have an actual activity in the drag data.
         if (type === 'activity' && items && plan) {
           // Determine if the row will visualize all requested activities
-          let activitiesInRow = new Set();
+          let typesInRow = new Set();
           activityLayers.forEach(layer => {
-            const layerActivities = layer.filter.activity?.types ?? [];
-            activitiesInRow = new Set([...activitiesInRow, ...layerActivities]);
+            const matchingTypes = getMatchingTypesForActivityLayerFilter(layer.filter.activity, $activityTypes);
+            typesInRow = new Set([...typesInRow, ...matchingTypes.map(t => t.name)]);
           });
-          const missingActivity = (items as ActivityType[]).find(item => !activitiesInRow.has(item.name));
+          const missingActivity = (items as ActivityType[]).find(item => !typesInRow.has(item.name));
 
           const createActivities = () => {
             items.forEach(item => {
@@ -739,7 +746,14 @@
             const { confirm, value } = await showConfirmActivityCreationModal();
             if (confirm) {
               if (value?.addFilter) {
-                viewAddFilterToRow(items, type, id, activityLayers.length ? activityLayers[0] : undefined, index);
+                viewAddFilterToRow(
+                  items,
+                  type,
+                  metadata,
+                  id,
+                  activityLayers.length ? activityLayers[0] : undefined,
+                  index,
+                );
               }
               createActivities();
             }
@@ -808,31 +822,37 @@
       return [];
     }
     const resources: Resource[] = [];
-    layer.filter.resource.names.forEach(name => {
-      const resourceRequest = resourceRequestMap[name];
+    if (layer.filter.resource) {
+      const resourceRequest = resourceRequestMap[layer.filter.resource];
       if (resourceRequest && !resourceRequest.loading && !resourceRequest.error && resourceRequest.resource) {
         resources.push(resourceRequest.resource);
       }
-    });
+    }
+
     return resources;
   }
 
-  function onTimelineItemsDrop(rowId?: number, type?: string, items?: TimelineItemType[], index?: number) {
-    if (!type || !items || items.length === 0) {
+  function onTimelineItemsDrop(
+    rowId?: number,
+    type?: string,
+    items?: TimelineItemType[],
+    metadata?: TimelineItemMetadata,
+    index?: number,
+  ) {
+    if (!type || !items) {
       return;
     }
-    let toAdd: Layer;
-    if ('parameters' in items[0]) {
+    let layer: Layer | undefined;
+    // Note: skipping resource layer assignment since only one resource
+    // can be assigned to a layer
+    if (type === 'activity') {
       // adding an activity
-      toAdd = activityLayers[0];
-    } else if ('schema' in items[0]) {
-      // adding a resource
-      toAdd = activityLayers[0];
-    } else {
+      layer = activityLayers[0];
+    } else if (type === 'externalEvent' && items.length) {
       // adding an external event
-      toAdd = externalEventLayers[0];
+      layer = externalEventLayers[0];
     }
-    viewAddFilterToRow(items, type, rowId, toAdd, index);
+    viewAddFilterToRow(items, type, metadata, rowId, layer, index);
   }
 </script>
 
@@ -847,7 +867,8 @@
       width={drawWidth + marginLeft}
       top={4}
       hintPosition="bottom"
-      on:drop={event => onTimelineItemsDrop(undefined, event.detail.type, event.detail.items, -1)}
+      on:drop={event =>
+        onTimelineItemsDrop(undefined, event.detail.type, event.detail.items, event.detail.metadata, -1)}
     />
   {/if}
 
@@ -858,7 +879,7 @@
       on:discrete-tree-node-change={onDiscreteTreeNodeChange}
       on:mouseDown={onMouseDown}
       on:dblClick
-      on:drop={event => onTimelineItemsDrop(id, event.detail.type, event.detail.items)}
+      on:drop={event => onTimelineItemsDrop(id, event.detail.type, event.detail.items, event.detail.metadata)}
       {discreteTree}
       width={marginLeft}
       height={computedDrawHeight}
@@ -1075,7 +1096,7 @@
 
   <RowDividerDropTarget
     width={drawWidth + marginLeft}
-    on:drop={e => onTimelineItemsDrop(undefined, e.detail.type, e.detail.items, index)}
+    on:drop={e => onTimelineItemsDrop(undefined, e.detail.type, e.detail.items, e.detail.metadata, index)}
   />
   <!-- Drag Handle for Row Height Resizing. -->
   {#if !autoAdjustHeight && expanded}

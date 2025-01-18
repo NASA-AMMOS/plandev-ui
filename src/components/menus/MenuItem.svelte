@@ -7,10 +7,11 @@
   export let use: ActionArray = [];
 
   export let disabled: boolean = false;
+  export let selectable: boolean = true;
   export let selected: boolean = false;
 
   const dispatch = createEventDispatcher<{
-    click: MouseEvent;
+    click: MouseEvent | KeyboardEvent;
   }>();
 
   function onClick(event: MouseEvent) {
@@ -21,10 +22,27 @@
       dispatch('click', event);
     }
   }
+
+  function onKeydown(event: KeyboardEvent) {
+    const { key } = event;
+    if (key === 'Enter' && !disabled) {
+      event.preventDefault();
+      dispatch('click', event);
+    }
+  }
 </script>
 
-<!-- svelte-ignore a11y-interactive-supports-focus -->
-<div class="menu-item" class:disabled class:selected role="menuitem" use:useActions={use} on:mouseup={onClick}>
+<div
+  class="menu-item"
+  class:disabled
+  class:selected
+  class:selectable
+  role="menuitem"
+  use:useActions={use}
+  on:mouseup={onClick}
+  on:keydown={onKeydown}
+  tabindex={0}
+>
   <slot />
 </div>
 
@@ -45,7 +63,11 @@
     width: 100%;
   }
 
-  .menu-item:hover {
+  .menu-item:not(.selectable) {
+    cursor: auto;
+  }
+
+  .menu-item.selectable:hover {
     background: var(--st-gray-20);
   }
 

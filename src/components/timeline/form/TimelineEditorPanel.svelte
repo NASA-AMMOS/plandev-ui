@@ -2,11 +2,9 @@
 
 <script lang="ts">
   import ArrowLeftIcon from '@nasa-jpl/stellar/icons/arrow_left.svg?component';
+  import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import DuplicateIcon from '@nasa-jpl/stellar/icons/duplicate.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
-  import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
-  import RemoveAllIcon from '@nasa-jpl/stellar/icons/remove_all.svg?component';
-  import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import GripVerticalIcon from 'bootstrap-icons/icons/grip-vertical.svg?component';
   import { onMount } from 'svelte';
   import { dndzone } from 'svelte-dnd-action';
@@ -44,6 +42,7 @@
     ActivityLayer,
     ActivityOptions,
     Axis,
+    ChartType,
     DiscreteOptions,
     ExternalEventLayer,
     ExternalEventOptions,
@@ -54,7 +53,6 @@
     Timeline,
     VerticalGuide,
     XRangeLayer,
-    XRangeLayerColorScheme,
   } from '../../../types/timeline';
   import type { ViewGridSection } from '../../../types/view';
   import effects from '../../../utilities/effects';
@@ -68,6 +66,7 @@
     createTimelineXRangeLayer,
     createVerticalGuide,
     createYAxis,
+    getNextLayerID,
     isActivityLayer,
     isExternalEventLayer,
     isLineLayer,
@@ -83,7 +82,8 @@
   import Panel from '../../ui/Panel.svelte';
   import RadioButton from '../../ui/RadioButtons/RadioButton.svelte';
   import RadioButtons from '../../ui/RadioButtons/RadioButtons.svelte';
-  import TimelineEditorLayerSection from './TimelineEditorLayerSection.svelte';
+  import EditorSection from './TimelineEditor/EditorSection.svelte';
+  import TimelineLayerEditor from './TimelineEditor/TimelineLayerEditor.svelte';
   import TimelineEditorYAxisSettings from './TimelineEditorYAxisSettings.svelte';
 
   export let gridSection: ViewGridSection;
@@ -91,6 +91,9 @@
   let horizontalGuides: HorizontalGuide[] = [];
   let editorWidth: number;
   let layers: Layer[] = [];
+  let activityLayers: ActivityLayer[] = [];
+  let resourceLayers: (LineLayer | XRangeLayer)[] = [];
+  let externalEventLayers: ExternalEventLayer[] = [];
   let timelines: Timeline[] = [];
   let rowHasNonActivityChartLayer: boolean = false;
   let rows: Row[] = [];
@@ -109,6 +112,20 @@
   $: horizontalGuides = selectedRow?.horizontalGuides || [];
   $: yAxes = selectedRow?.yAxes || [];
   $: layers = selectedRow?.layers || [];
+  $: if (layers) {
+    activityLayers = [];
+    resourceLayers = [];
+    externalEventLayers = [];
+    layers.forEach(l => {
+      if (isActivityLayer(l)) {
+        activityLayers.push(l);
+      } else if (isLineLayer(l) || isXRangeLayer(l)) {
+        resourceLayers.push(l);
+      } else if (isExternalEventLayer(l)) {
+        externalEventLayers.push(l);
+      }
+    });
+  }
   $: rowHasActivityLayer = !!selectedRow?.layers.find(isActivityLayer) || false;
   $: rowHasExternalEventLayer = selectedRow?.layers.find(isExternalEventLayer) || false;
   $: rowHasNonActivityChartLayer =
@@ -176,19 +193,49 @@
     viewUpdateRow('yAxes', filteredYAxes);
   }
 
-  function handleNewLayerClick() {
-    const layer = createTimelineActivityLayer(timelines);
+  // TODO move to a util?
+  function createTimelineLayer(chartType: Layer['chartType']): Layer {
+    switch (chartType) {
+      case 'line':
+        return createTimelineLineLayer(timelines, yAxes);
+      case 'x-range':
+        return createTimelineXRangeLayer(timelines, yAxes);
+      case 'externalEvent':
+        return createTimelineExternalEventLayer(timelines);
+      default:
+        return createTimelineActivityLayer(timelines);
+    }
+  }
+
+  function handleNewLayerClick(chartType: Layer['chartType']) {
+    let layer = createTimelineLayer(chartType);
+
+    // Assign yAxisId to existing value or new axis
+    if (chartType === 'line' || chartType === 'x-range') {
+      if (yAxes.length > 0) {
+        layer.yAxisId = yAxes[0].id;
+      } else {
+        handleNewYAxisClick();
+        layer.yAxisId = yAxes[0].id;
+      }
+    }
+
     layers = [...layers, layer];
     viewUpdateRow('layers', layers);
   }
 
-  function handleRemoveAllLayersClick() {
-    effects.deleteTimelineLayers();
+  function handleRemoveAllLayersClick(chartType: 'activity' | 'resource' | 'externalEvent') {
+    effects.deleteTimelineLayers(layers, chartType);
   }
 
   function handleDeleteLayerClick(layer: Layer) {
     const filteredLayers = layers.filter(l => l.id !== layer.id);
     viewUpdateRow('layers', filteredLayers);
+  }
+
+  function handleDuplicateLayer(layer: Layer) {
+    const duplicatedLayer = { ...structuredClone(layer), id: getNextLayerID(timelines) };
+    viewUpdateRow('layers', [...layers, duplicatedLayer]);
   }
 
   function handleOptionRadioChange(event: CustomEvent<{ id: RadioButtonId }>, name: keyof DiscreteOptions) {
@@ -321,56 +368,12 @@
     viewUpdateRow('horizontalGuides', newHorizontalGuides);
   }
 
-  function handleUpdateLayerFilter(values: string[], layer: Layer) {
-    const newLayers = layers.map(currentLayer => {
-      if (layer.id === currentLayer.id) {
-        if (isActivityLayer(currentLayer)) {
-          const newLayer: Layer = {
-            ...currentLayer,
-            filter: {
-              ...currentLayer.filter,
-              activity: {
-                types: values,
-              },
-            },
-          };
-          return newLayer;
-        } else if (isExternalEventLayer(currentLayer)) {
-          const newLayer: Layer = {
-            ...currentLayer,
-            filter: {
-              ...currentLayer.filter,
-              externalEvent: {
-                event_types: values,
-              },
-            },
-          };
-          return newLayer;
-        } else if (currentLayer.chartType === 'line' || currentLayer.chartType === 'x-range') {
-          const newLayer: Layer = {
-            ...currentLayer,
-            filter: {
-              ...currentLayer.filter,
-              resource: {
-                names: values,
-              },
-            },
-          };
-          return newLayer;
-        }
-      }
-      return currentLayer;
-    });
-
-    viewUpdateRow('layers', newLayers);
-  }
-
-  function handleUpdateLayerProperty(name: string, value: string | number | boolean | null, layer: Layer) {
+  function handleUpdateLayerProperty(property: string, value: string | number | boolean | object | null, layer: Layer) {
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
         return {
           ...layer,
-          [name]: value,
+          [property]: value,
         };
       }
       return l;
@@ -378,33 +381,13 @@
     viewUpdateRow('layers', newLayers);
   }
 
-  function handleUpdateLayerChartType(value: string | number | boolean | null, layer: Layer) {
+  function handleUpdateResourceLayerChartType(value: ChartType, layer: Layer) {
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
-        let newLayer: ActivityLayer | LineLayer | XRangeLayer | ExternalEventLayer | undefined;
-        if (value === 'activity') {
-          newLayer = { ...createTimelineActivityLayer(timelines), id: l.id };
-        } else if (value === 'externalEvent') {
-          newLayer = { ...createTimelineExternalEventLayer(timelines), id: l.id };
-        } else if (value === 'line' || value === 'x-range') {
-          if (value === 'line') {
-            newLayer = { ...createTimelineLineLayer(timelines, yAxes), id: l.id };
-          } else {
-            newLayer = { ...createTimelineXRangeLayer(timelines, yAxes), id: l.id };
-          }
-
-          // Assign yAxisId to existing value or new axis
-          if (typeof layer.yAxisId === 'number') {
-            newLayer.yAxisId = l.yAxisId;
-          } else if (yAxes.length > 0) {
-            newLayer.yAxisId = yAxes[0].id;
-          } else {
-            handleNewYAxisClick();
-            newLayer.yAxisId = yAxes[0].id;
-          }
-        }
-        if (newLayer !== undefined) {
-          return newLayer;
+        if (isXRangeLayer(l) && value === 'line') {
+          return createTimelineLineLayer(timelines, yAxes, { filter: l.filter, id: l.id, name: l.name });
+        } else if (isLineLayer(l) && value === 'x-range') {
+          return createTimelineXRangeLayer(timelines, yAxes, { filter: l.filter, id: l.id, name: l.name });
         }
       }
       return l;
@@ -420,8 +403,10 @@
           return { ...l, activityColor: value };
         } else if (isExternalEventLayer(l)) {
           return { ...l, externalEventColor: value };
-        } else if (l.chartType === 'line') {
+        } else if (isLineLayer(l)) {
           return { ...l, lineColor: value };
+        } else if (isXRangeLayer(l)) {
+          return { ...l, colorScheme: value };
         }
       }
       return l;
@@ -429,15 +414,15 @@
     viewUpdateRow('layers', newLayers);
   }
 
-  function handleUpdateLayerColorScheme(value: XRangeLayerColorScheme, layer: Layer) {
-    const newLayers = layers.map(l => {
-      if (layer.id === l.id) {
-        (l as XRangeLayer).colorScheme = value;
-      }
-      return l;
-    });
-    viewUpdateRow('layers', newLayers);
-  }
+  // function handleUpdateLayerColorScheme(value: XRangeLayerColorScheme, layer: Layer) {
+  //   const newLayers = layers.map(l => {
+  //     if (layer.id === l.id) {
+  //       (l as XRangeLayer).colorScheme = value;
+  //     }
+  //     return l;
+  //   });
+  //   viewUpdateRow('layers', newLayers);
+  // }
 
   function handleNewHorizontalGuideClick() {
     if (!selectedRow) {
@@ -520,8 +505,7 @@
       {#if !selectedTimeline}
         <fieldset class="editor-section">No timeline selected</fieldset>
       {:else}
-        <fieldset class="editor-section">
-          <div class="st-typography-medium editor-section-header">Margins</div>
+        <EditorSection item="Margin">
           <CssGrid columns="1fr 1fr" gap="8px" class="editor-section-grid">
             <form on:submit={event => event.preventDefault()}>
               <Input>
@@ -548,30 +532,15 @@
               />
             </Input>
           </CssGrid>
-        </fieldset>
+        </EditorSection>
 
-        <fieldset class="editor-section">
-          <div class="editor-section-header editor-section-header-with-button">
-            <div class="st-typography-medium">Vertical Guides</div>
-            <div>
-              {#if verticalGuides.length}
-                <button
-                  on:click|stopPropagation={handleRemoveAllVerticalGuidesClick}
-                  use:tooltip={{ content: 'Delete All Vertical Guides', placement: 'top' }}
-                  class="st-button icon"
-                >
-                  <RemoveAllIcon />
-                </button>
-              {/if}
-              <button
-                on:click={handleNewVerticalGuideClick}
-                use:tooltip={{ content: 'New Vertical Guide', placement: 'top' }}
-                class="st-button icon"
-              >
-                <PlusIcon />
-              </button>
-            </div>
-          </div>
+        <EditorSection
+          creatable
+          item="Vertical Guide"
+          itemCount={verticalGuides.length}
+          on:create={handleNewVerticalGuideClick}
+          on:removeAll={handleRemoveAllVerticalGuidesClick}
+        >
           {#if verticalGuides.length}
             <div class="editor-section-labeled-grid-container">
               <CssGrid columns="1fr 168px 24px 24px" gap="8px" class="editor-section-grid">
@@ -624,7 +593,7 @@
                         use:tooltip={{ content: 'Delete Guide', placement: 'top' }}
                         class="st-button icon"
                       >
-                        <TrashIcon />
+                        <CloseIcon />
                       </button>
                     </CssGrid>
                   </div>
@@ -632,30 +601,16 @@
               </div>
             </div>
           {/if}
-        </fieldset>
+        </EditorSection>
 
-        <fieldset class="editor-section editor-section-draggable">
-          <div class="editor-section-header editor-section-header-with-button">
-            <div class="st-typography-medium">Rows</div>
-            <div>
-              {#if rows.length}
-                <button
-                  on:click|stopPropagation={removeAllTimelineRows}
-                  use:tooltip={{ content: 'Delete All Rows', placement: 'top' }}
-                  class="st-button icon"
-                >
-                  <RemoveAllIcon />
-                </button>
-              {/if}
-              <button
-                on:click={addTimelineRow}
-                use:tooltip={{ content: 'New Row', placement: 'top' }}
-                class="st-button icon"
-              >
-                <PlusIcon />
-              </button>
-            </div>
-          </div>
+        <EditorSection
+          creatable
+          item="Row"
+          isDragContainer
+          itemCount={rows.length}
+          on:create={addTimelineRow}
+          on:removeAll={removeAllTimelineRows}
+        >
           {#if rows.length}
             <div
               class="timeline-rows timeline-elements"
@@ -704,7 +659,7 @@
                           effects.deleteTimelineRow(row, rows, $selectedTimelineId);
                         }}
                       >
-                        <TrashIcon />
+                        <CloseIcon />
                       </button>
                     </div>
                   </div>
@@ -714,7 +669,7 @@
           {:else}
             <div />
           {/if}
-        </fieldset>
+        </EditorSection>
       {/if}
     {:else}
       <!-- Row editing -->
@@ -745,8 +700,7 @@
           {/each}
         </select>
       </div>
-      <fieldset class="editor-section">
-        <div class="st-typography-medium editor-section-header">Details</div>
+      <EditorSection item="Detail">
         <div style="display: grid">
           <Input>
             <label for="name">Row Name</label>
@@ -792,31 +746,16 @@
             </select>
           </Input>
         </CssGrid>
-      </fieldset>
+      </EditorSection>
 
       {#if rowHasNonActivityChartLayer}
-        <fieldset class="editor-section">
-          <div class="editor-section-header editor-section-header-with-button">
-            <div class="st-typography-medium">Horizontal Guides</div>
-            <div>
-              {#if horizontalGuides.length}
-                <button
-                  on:click|stopPropagation={handleRemoveAllHorizontalGuidesClick}
-                  use:tooltip={{ content: 'Delete All Horizontal Guides', placement: 'top' }}
-                  class="st-button icon"
-                >
-                  <RemoveAllIcon />
-                </button>
-              {/if}
-              <button
-                on:click={handleNewHorizontalGuideClick}
-                use:tooltip={{ content: 'New Horizontal Guide', placement: 'top' }}
-                class="st-button icon"
-              >
-                <PlusIcon />
-              </button>
-            </div>
-          </div>
+        <EditorSection
+          creatable
+          item="Horizontal Guide"
+          itemCount={horizontalGuides.length}
+          on:create={handleNewHorizontalGuideClick}
+          on:removeAll={handleRemoveAllHorizontalGuidesClick}
+        >
           {#if horizontalGuides.length}
             <div class="editor-section-labeled-grid-container">
               <CssGrid columns="1fr 1fr 1fr 24px 24px" gap="8px" class="editor-section-grid">
@@ -876,7 +815,7 @@
                         use:tooltip={{ content: 'Delete Guide', placement: 'top' }}
                         class="st-button icon"
                       >
-                        <TrashIcon />
+                        <CloseIcon />
                       </button>
                     </CssGrid>
                   </div>
@@ -884,13 +823,14 @@
               </div>
             </div>
           {/if}
-        </fieldset>
+        </EditorSection>
       {/if}
       {#if rowHasActivityLayer || rowHasExternalEventLayer}
-        <fieldset class="editor-section">
-          <div class="editor-section-header">
-            <div class="st-typography-medium">Layer Options</div>
-          </div>
+        <EditorSection
+          item="Layer Option"
+          on:create={handleNewHorizontalGuideClick}
+          on:removeAll={handleRemoveAllHorizontalGuidesClick}
+        >
           <form on:submit={event => event.preventDefault()} style="flex: 1">
             <Input layout="inline" class="editor-input">
               <label for="text">Height</label>
@@ -1068,32 +1008,20 @@
               </RadioButtons>
             </Input>
           {/if}
-        </fieldset>
+        </EditorSection>
       {/if}
       <!-- TODO perhaps separate out each section into a mini editor? -->
+
       {#if yAxes.length > 0 || rowHasNonActivityChartLayer}
-        <fieldset class="editor-section editor-section-draggable">
-          <div class="editor-section-header editor-section-header-with-button">
-            <div class="st-typography-medium">Y Axes</div>
-            <div>
-              {#if yAxes.length}
-                <button
-                  on:click|stopPropagation={handleRemoveAllYAxesClick}
-                  use:tooltip={{ content: 'Delete All Y Axes', placement: 'top' }}
-                  class="st-button icon"
-                >
-                  <RemoveAllIcon />
-                </button>
-              {/if}
-              <button
-                on:click={handleNewYAxisClick}
-                use:tooltip={{ content: 'New Y Axis', placement: 'top' }}
-                class="st-button icon"
-              >
-                <PlusIcon />
-              </button>
-            </div>
-          </div>
+        <EditorSection
+          isDragContainer
+          creatable
+          item="Y Axis"
+          itemPlural="Y Axes"
+          itemCount={yAxes.length}
+          on:create={handleNewYAxisClick}
+          on:removeAll={handleRemoveAllYAxesClick}
+        >
           {#if yAxes.length}
             <div class="editor-section-labeled-grid-container">
               <CssGrid columns="1fr 56px 24px 24px" gap="8px" class="editor-section-grid-labels" padding="0px 16px">
@@ -1155,7 +1083,7 @@
                         use:tooltip={{ content: 'Delete Y Axis', placement: 'top' }}
                         class="st-button icon"
                       >
-                        <TrashIcon />
+                        <CloseIcon />
                       </button>
                     </CssGrid>
                   </div>
@@ -1165,57 +1093,92 @@
           {:else}
             <div />
           {/if}
-        </fieldset>
+        </EditorSection>
       {/if}
-      <fieldset class="editor-section editor-section-draggable">
-        <div class="editor-section-header editor-section-header-with-button">
-          <div class="st-typography-medium">Layers</div>
-          <div>
-            {#if layers.length}
-              <button
-                on:click|stopPropagation={handleRemoveAllLayersClick}
-                use:tooltip={{ content: 'Delete All Layers', placement: 'top' }}
-                class="st-button icon"
-              >
-                <RemoveAllIcon />
-              </button>
-            {/if}
-            <button
-              on:click={handleNewLayerClick}
-              use:tooltip={{ content: 'New Layer', placement: 'top' }}
-              class="st-button icon"
-            >
-              <PlusIcon />
-            </button>
+      <EditorSection
+        creatable
+        item="Activity Layer"
+        itemCount={activityLayers.length}
+        on:create={() => handleNewLayerClick('activity')}
+        on:removeAll={() => handleRemoveAllLayersClick('activity')}
+      >
+        {#if activityLayers.length}
+          <div class="timeline-layers timeline-elements">
+            {#each activityLayers as layer (layer.id)}
+              <TimelineLayerEditor
+                {yAxes}
+                {layer}
+                on:updateLayer={({ detail: { property, value } }) => handleUpdateLayerProperty(property, value, layer)}
+                on:colorChange={({ detail: { color } }) => handleUpdateLayerColor(color, layer)}
+                on:remove={() => handleDeleteLayerClick(layer)}
+                on:duplicate={() => handleDuplicateLayer(layer)}
+                on:filterChange={({ detail: { filter } }) =>
+                  handleUpdateLayerProperty('filter', { activity: filter }, layer)}
+              />
+            {/each}
           </div>
-        </div>
-        {#if layers.length}
-          <div class="editor-section-labeled-grid-container">
-            <CssGrid columns="1fr 0.75fr 24px 24px 24px" gap="8px" class="editor-section-grid" padding="0px 16px">
-              <div>Filter</div>
-              <div>Layer Type</div>
-            </CssGrid>
-            <!-- TODO bug when dragging something into a different draggable area -->
-            <div class="timeline-layers timeline-elements">
-              {#each layers as layer (layer.id)}
-                <TimelineEditorLayerSection
-                  on:handleUpdateLayerFilter={event => handleUpdateLayerFilter(event.detail.values, layer)}
-                  on:handleUpdateLayerProperty={event =>
-                    handleUpdateLayerProperty(event.detail.name, event.detail.value, layer)}
-                  on:handleUpdateLayerChartType={event => handleUpdateLayerChartType(event.detail.value, layer)}
-                  on:handleUpdateLayerColor={event => handleUpdateLayerColor(event.detail.value, layer)}
-                  on:handleUpdateLayerColorScheme={event => handleUpdateLayerColorScheme(event.detail.value, layer)}
-                  on:handleDeleteLayerClick={() => handleDeleteLayerClick(layer)}
-                  {layer}
-                  {yAxes}
-                />
-              {/each}
-            </div>
-          </div>
-        {:else}
-          <div />
         {/if}
-      </fieldset>
+      </EditorSection>
+      <EditorSection
+        creatable
+        item="Resource Layer"
+        itemCount={resourceLayers.length}
+        on:create={() => handleNewLayerClick('line')}
+        on:removeAll={() => handleRemoveAllLayersClick('resource')}
+      >
+        {#if resourceLayers.length}
+          <!-- TODO bug when dragging something into a different draggable area -->
+          <div class="timeline-layers timeline-elements">
+            {#each resourceLayers as layer (layer.id)}
+              <TimelineLayerEditor
+                {layer}
+                {yAxes}
+                on:updateLayer={({ detail: { property, value } }) => handleUpdateLayerProperty(property, value, layer)}
+                on:updateChartType={({ detail: chartType }) => handleUpdateResourceLayerChartType(chartType, layer)}
+                on:colorChange={({ detail: { color } }) => handleUpdateLayerColor(color, layer)}
+                on:remove={() => handleDeleteLayerClick(layer)}
+                on:duplicate={() => handleDuplicateLayer(layer)}
+                on:filterChange={({ detail: { filter } }) =>
+                  handleUpdateLayerProperty('filter', { resource: filter }, layer)}
+              />
+              <!-- <TimelineEditorLayerSection
+                on:handleUpdateResourceLayerChartType={event => handleUpdateResourceLayerChartType(event.detail.value, layer)}
+                on:handleUpdateLayerFilter={event => handleUpdateLayerFilter(event.detail.values, layer)}
+                on:handleUpdateLayerProperty={event =>
+                  handleUpdateLayerProperty(event.detail.name, event.detail.value, layer)}
+                on:handleUpdateLayerColorScheme={event => handleUpdateLayerColorScheme(event.detail.value, layer)}
+                on:handleDeleteLayerClick={() => handleDeleteLayerClick(layer)}
+                {layer}
+                {yAxes}
+              /> -->
+            {/each}
+          </div>
+        {/if}
+      </EditorSection>
+      <EditorSection
+        creatable
+        item="Event Layer"
+        itemCount={externalEventLayers.length}
+        on:create={() => handleNewLayerClick('externalEvent')}
+        on:removeAll={() => handleRemoveAllLayersClick('externalEvent')}
+      >
+        {#if externalEventLayers.length}
+          <div class="timeline-layers timeline-elements">
+            {#each externalEventLayers as layer (layer.id)}
+              <TimelineLayerEditor
+                {layer}
+                on:updateLayer={({ detail: { property, value } }) => handleUpdateLayerProperty(property, value, layer)}
+                on:rename={({ detail: { name } }) => handleUpdateLayerProperty('name', name, layer)}
+                on:colorChange={({ detail: { color } }) => handleUpdateLayerColor(color, layer)}
+                on:remove={() => handleDeleteLayerClick(layer)}
+                on:duplicate={() => handleDuplicateLayer(layer)}
+                on:filterChange={({ detail: { filter } }) =>
+                  handleUpdateLayerProperty('filter', { externalEvent: filter }, layer)}
+              />
+            {/each}
+          </div>
+        {/if}
+      </EditorSection>
     {/if}
   </div>
 </Panel>
@@ -1240,24 +1203,6 @@
     padding: 16px 8px;
   }
 
-  .editor-section {
-    border-bottom: 1px solid var(--st-gray-20);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 16px;
-  }
-
-  .editor-section-header {
-    user-select: none;
-  }
-
-  .editor-section-draggable .timeline-rows.timeline-elements {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .editor-section-header .st-button.icon,
   .timeline-row .st-button.icon,
   .guide .st-button.icon,
   .timeline-y-axis .st-button.icon,
@@ -1266,35 +1211,17 @@
     color: var(--st-gray-50);
   }
 
-  .editor-section-header-with-button {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .editor-section-draggable {
-    padding: 0;
-  }
-
-  .editor-section-draggable .editor-section-header {
-    padding: 16px 16px 0;
-  }
-
-  .editor-section-draggable .timeline-elements {
-    display: grid;
-    gap: 4px;
-  }
-
   .editor-section-labeled-grid-container {
     display: grid;
     gap: 8px;
   }
 
-  .editor-section-draggable .editor-section-labeled-grid-container {
+  .editor-section-labeled-grid-container {
     gap: 4px;
   }
 
-  .editor-section-draggable .timeline-elements {
+  .timeline-elements {
+    display: block;
     outline: none !important;
     overflow-x: hidden;
     overflow-y: auto;
@@ -1351,7 +1278,7 @@
     display: flex;
   }
 
-  .editor-section-draggable .timeline-element:hover .drag-icon,
+  .timeline-element:hover .drag-icon,
   :global(.timeline-element-dragging) .drag-icon {
     display: flex;
   }

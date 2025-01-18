@@ -95,6 +95,7 @@ export enum Queries {
   DERIVATION_GROUP_COMP = 'derivation_group_comp',
   PLAN_DERIVATION_GROUP = 'plan_derivation_group',
   GET_ACTIVITY_EFFECTIVE_ARGUMENTS = 'getActivityEffectiveArguments',
+  GET_ACTIVITY_EFFECTIVE_ARGUMENTS_BULK = 'getActivityEffectiveArgumentsBulk',
   GET_ACTIVITY_TYPE_SCRIPT = 'getActivityTypeScript',
   GET_COMMAND_TYPE_SCRIPT = 'getCommandTypeScript',
   GET_CONFLICTING_ACTIVITIES = 'get_conflicting_activities',
@@ -1335,6 +1336,18 @@ const gql = {
         arguments
         errors
         success
+      }
+    }
+  `,
+
+  GET_EFFECTIVE_ACTIVITY_ARGUMENTS_BULK: `#graphql
+    query GetEffectiveActivityArgumentsBulk($modelId: Int!, $activities: [EffectiveArgumentsInput!]!) {
+      effectiveActivityArgumentsBulk: ${Queries.GET_ACTIVITY_EFFECTIVE_ARGUMENTS_BULK}(
+        missionModelId: $modelId,
+        activities: $activities,
+      ) {
+        arguments
+        typeName
       }
     }
   `,

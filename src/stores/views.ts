@@ -1,14 +1,15 @@
 import { capitalize, isEqual } from 'lodash-es';
 import { derived, get, writable, type Writable } from 'svelte/store';
+import type { ActivityLayerFilterField } from '../enums/timeline';
 import type { ResourceType } from '../types/simulation';
 import type {
+  ActivityLayerDynamicFilter,
   ActivityLayerFilter,
   Axis,
-  ExternalEventLayerFilter,
   Layer,
-  ResourceLayerFilter,
   Row,
   Timeline,
+  TimelineItemMetadata,
   TimelineItemType,
 } from '../types/timeline';
 import type { View, ViewGrid, ViewSlim, ViewTable, ViewToggleEvent } from '../types/view';
@@ -22,6 +23,7 @@ import {
   createTimelineExternalEventLayer,
   createTimelineLineLayer,
   createTimelineResourceLayer,
+  getNextThingID,
   getUniqueColorForActivityLayer,
   getUniqueColorForLineLayer,
   getUniqueColorSchemeForXRangeLayer,
@@ -562,10 +564,60 @@ export function viewUpdateYAxis(prop: string, value: any) {
   });
 }
 
+export function getUpdatedActivityLayerFilter(
+  items: TimelineItemType[],
+  metadata?: TimelineItemMetadata,
+  filter?: ActivityLayerFilter,
+): ActivityLayerFilter {
+  // Return updated activity layer filter
+  // Prefer metadata like Type and/or Subsystem filter over named types
+  const dynamicTypeFilters: ActivityLayerFilter['dynamic_type_filters'] = filter?.dynamic_type_filters || [];
+  let staticTypes: string[] = filter?.static_types || [];
+  const hasTextFilters = metadata?.textFilters && metadata?.textFilters.length;
+  const hasSelectedFilters = metadata?.selectedFilters && Object.keys(metadata?.selectedFilters).length;
+  if (hasTextFilters) {
+    (metadata.textFilters || []).forEach(textFilter => {
+      const typeFilter: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>> = {
+        field: 'Type',
+        id: getNextThingID(dynamicTypeFilters),
+        operator: 'includes',
+        value: textFilter,
+      };
+      dynamicTypeFilters.push(typeFilter);
+    });
+  }
+  if (hasSelectedFilters) {
+    const subsystems = Object.values(metadata.selectedFilters || {}).map(
+      selectedFilter => selectedFilter.value,
+    ) as number[];
+    if (subsystems.length) {
+      const typeFilter: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>> = {
+        field: 'Subsystem',
+        id: getNextThingID(dynamicTypeFilters),
+        operator: 'includes',
+        value: subsystems,
+      };
+      dynamicTypeFilters.push(typeFilter);
+    }
+  }
+  if (!hasTextFilters && !hasSelectedFilters && items.length) {
+    const newTypes = items.map(i => i.name);
+    const existingTypes = filter?.static_types || [];
+    staticTypes = Array.from(new Set([...newTypes, ...existingTypes]));
+  }
+
+  return {
+    ...(filter || {}),
+    dynamic_type_filters: dynamicTypeFilters,
+    static_types: staticTypes,
+  };
+}
+
 export function getUpdatedLayerWithFilters(
   timelines: Timeline[],
   type: string /* 'activity' | 'resource' | 'externalEvent' */,
   items: TimelineItemType[],
+  metadata?: TimelineItemMetadata,
   layer?: Layer,
   row?: Row,
 ): { layer: Layer; yAxis?: Axis } {
@@ -573,10 +625,11 @@ export function getUpdatedLayerWithFilters(
   // Create a suitable layer if not provided
   if (!layer) {
     if (type === 'activity') {
+      const updatedActivityFilter = getUpdatedActivityLayerFilter(items, metadata);
       return {
         layer: createTimelineActivityLayer(timelines, {
           activityColor: getUniqueColorForActivityLayer(row),
-          filter: { activity: { types: itemNames } },
+          filter: { activity: updatedActivityFilter },
         }),
       };
     } else if (type === 'externalEvent') {
@@ -589,7 +642,7 @@ export function getUpdatedLayerWithFilters(
       const { layer: newLayer, yAxis } = createTimelineResourceLayer(timelines, items[0] as ResourceType);
       if (newLayer && newLayer.filter.resource) {
         // Add remaining resources if requested (generally avoided since resource layers are usually created on separate layers)
-        newLayer.filter.resource.names = itemNames;
+        newLayer.filter.resource = itemNames.length ? itemNames[0] : '';
         if (isLineLayer(newLayer)) {
           newLayer.lineColor = getUniqueColorForLineLayer(row);
         } else if (isXRangeLayer(newLayer)) {
@@ -607,34 +660,20 @@ export function getUpdatedLayerWithFilters(
     }
   } else {
     // Otherwise augment the filter of the specified layer
-    let prop: string = '';
+    // Note that resources are skipped here since they cannot be added to existing layers
+    const updatedFilter = layer.filter;
     if (type === 'activity') {
-      prop = 'types';
+      updatedFilter.activity = getUpdatedActivityLayerFilter(items, metadata, layer.filter.activity);
     } else if (type === 'externalEvent') {
-      prop = 'event_types';
-    } else {
-      prop = 'names';
-    }
-    const typedType = type as 'activity' | 'resource' | 'externalEvent';
-    const existingFilter = layer.filter[typedType];
-    let existingFilterItems: string[] = [];
-
-    if (existingFilter && (existingFilter as ActivityLayerFilter).types) {
-      existingFilterItems = (existingFilter as ActivityLayerFilter).types;
-    } else if (existingFilter && (existingFilter as ResourceLayerFilter).names) {
-      existingFilterItems = (existingFilter as ResourceLayerFilter).names;
-    } else if (existingFilter && (existingFilter as ExternalEventLayerFilter).event_types) {
-      existingFilterItems = (existingFilter as ExternalEventLayerFilter).event_types;
+      updatedFilter.externalEvent = {
+        event_types: Array.from(new Set([...(updatedFilter.externalEvent?.event_types || []), ...itemNames])),
+      };
     }
 
     return {
       layer: {
         ...layer,
-        filter: {
-          [type]: {
-            [prop]: [...new Set(existingFilterItems.concat(itemNames))],
-          },
-        },
+        filter: updatedFilter,
       },
     };
   }
@@ -660,13 +699,14 @@ export function viewAddTimelineRow(timelineId?: number | null, openEditor: boole
 export function viewAddFilterToRow(
   items: TimelineItemType[],
   typeName: string /* 'activity' | 'resource' | 'externalEvent' */,
+  metadata?: TimelineItemMetadata,
   rowId?: number,
   layer?: Layer,
   index?: number, // row index to insert after
 ) {
   if (typeName === 'resource') {
-    // Add first to a new row
-    const row = viewAddFilterItemsToRow([items[0]], typeName, rowId, layer, index);
+    // Add first resource to the row
+    const row = viewAddFilterItemsToRow([items[0]], typeName, metadata, rowId, layer, index);
     if (row) {
       // TODO enforcing an arbitrary limit here to avoid a poor performance scenario
       // where a user hits "add to / new row" for all resources which would download
@@ -674,17 +714,18 @@ export function viewAddFilterToRow(
       // Furthermore, one cannot realistically or usefully plot all resources on individual layers
       // within the same row.
       items.slice(1, 50).forEach(item => {
-        viewAddFilterItemsToRow([item], typeName, row.id, layer, index);
+        viewAddFilterItemsToRow([item], typeName, metadata, row.id, layer, index);
       });
     }
   } else {
-    viewAddFilterItemsToRow(items, typeName, rowId, layer, index);
+    viewAddFilterItemsToRow(items, typeName, metadata, rowId, layer, index);
   }
 }
 
 export function viewAddFilterItemsToRow(
   items: TimelineItemType[],
   typeName: string /* 'activity' | 'resource' | 'externalEvent' */,
+  metadata?: TimelineItemMetadata,
   rowId?: number,
   layer?: Layer,
   index?: number, // row index to insert after
@@ -702,7 +743,7 @@ export function viewAddFilterItemsToRow(
   const targetRow = row || createRow(timelines, { name: items.length === 1 ? items[0].name : defaultRowName });
   if (!row) {
     // If no row is provided we assume there is no relevant layer
-    const { layer: newLayer, yAxis } = getUpdatedLayerWithFilters(timelines, typeName, items);
+    const { layer: newLayer, yAxis } = getUpdatedLayerWithFilters(timelines, typeName, items, metadata);
     const insertIndex = index ?? newRows.length;
     returnRow = { ...targetRow, layers: [newLayer], yAxes: yAxis ? [yAxis] : [] };
     newRows = [...newRows];
@@ -717,7 +758,14 @@ export function viewAddFilterItemsToRow(
       (layer.chartType !== 'externalEvent' && typeName === 'externalEvent')
     ) {
       // Add to existing row
-      const { layer: newLayer, yAxis } = getUpdatedLayerWithFilters(timelines, typeName, items, undefined, row);
+      const { layer: newLayer, yAxis } = getUpdatedLayerWithFilters(
+        timelines,
+        typeName,
+        items,
+        metadata,
+        undefined,
+        row,
+      );
       newRows = newRows.map(r => {
         if (r.id === row.id) {
           returnRow = { ...row, layers: [...row.layers, newLayer], yAxes: yAxis ? [...row.yAxes, yAxis] : row.yAxes };
@@ -733,7 +781,7 @@ export function viewAddFilterItemsToRow(
           returnRow = r;
           const newLayers = r.layers.map(l => {
             if (l.id === layer.id) {
-              return getUpdatedLayerWithFilters(timelines, typeName, items, layer, row).layer;
+              return getUpdatedLayerWithFilters(timelines, typeName, items, metadata, layer, row).layer;
             }
             return l;
           });

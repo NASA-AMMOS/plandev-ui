@@ -32,7 +32,7 @@
   $: expanded = defaultExpanded;
 </script>
 
-<div class={collapseClasses} class:error role="group">
+<div class={collapseClasses} class:error role="group" aria-label="{title}-collapse">
   <button
     on:contextmenu|preventDefault={contextMenu?.show}
     tabindex={!collapsible ? -1 : 0}

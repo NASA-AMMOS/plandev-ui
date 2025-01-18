@@ -31,10 +31,12 @@
 
   function onMouseDown(): void {
     document.addEventListener('mousemove', onMouseMove, false);
+    document.body.classList.add('prevent-selection');
   }
 
   function onMouseUp(): void {
     document.removeEventListener('mousemove', onMouseMove, false);
+    document.body.classList.remove('prevent-selection');
   }
 </script>
 
@@ -51,6 +53,9 @@
 </div>
 
 <style>
+  :global(.prevent-selection) {
+    user-select: none;
+  }
   .row-header-drag-handle-width {
     height: 100%;
     pointer-events: none;

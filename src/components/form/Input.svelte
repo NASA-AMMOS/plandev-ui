@@ -41,6 +41,7 @@
 
     containerObserver = new MutationObserver(containerObserverCallback);
     containerObserver.observe(container, { childList: true, subtree: true });
+    containerObserverCallback();
   });
 
   onDestroy(() => {
@@ -63,18 +64,14 @@
       }
       setChildrenStyles([left]);
     }
-    // because the content of the slot might not have been fully rendered by the time this function is called
-    // we must kick it out to a timeout to wait for it to be rendered
-    setTimeout(() => {
-      if (left !== null) {
-        left.style.left = `${padLeft}px`;
+    if (left !== null) {
+      left.style.left = `${padLeft}px`;
 
-        left.style.width = `min(40%, ${left.clientWidth}px)`;
-        if (input !== null) {
-          input.style.paddingLeft = `min(40%, ${padLeft + left.clientWidth + padRight}px)`;
-        }
+      left.style.width = `min(40%, ${left.clientWidth}px)`;
+      if (input !== null) {
+        input.style.paddingLeft = `min(40%, ${padLeft + left.clientWidth + padRight}px)`;
       }
-    }, 100);
+    }
   }
 
   function padRightSlot() {
@@ -87,17 +84,13 @@
       }
       setChildrenStyles([right]);
     }
-    // because the content of the slot might not have been fully rendered by the time this function is called
-    // we must kick it out to a timeout to wait for it to be rendered
-    setTimeout(() => {
-      if (right !== null) {
-        right.style.right = `${padRight}px`;
+    if (right !== null) {
+      right.style.right = `${padRight}px`;
 
-        if (input !== null) {
-          input.style.paddingRight = `min(40%, ${padLeft + right.clientWidth + padRight}px)`;
-        }
+      if (input !== null) {
+        input.style.paddingRight = `min(40%, ${padLeft + right.clientWidth + padRight}px)`;
       }
-    }, 100);
+    }
   }
 
   function inputObserverCallback(mutations: MutationRecord[]) {

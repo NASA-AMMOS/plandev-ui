@@ -299,6 +299,16 @@
     pointer-events: auto;
   }
 
+  .row-header:hover :global(.row-header-menu),
+  :global(.row-header-menu:focus),
+  :global(.row-header-menu:active) {
+    opacity: 1;
+  }
+
+  :global(.row-header-menu) {
+    opacity: 0;
+  }
+
   .row-menu-container {
     align-items: flex-end;
     color: var(--st-gray-50);
@@ -365,6 +375,12 @@
     text-align: left;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  :global(.row-header-y-axis-label svg) {
+    flex-shrink: 0;
+    height: 16px;
+    width: 16px;
   }
 
   .discrete-tree {

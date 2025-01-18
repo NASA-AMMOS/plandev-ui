@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { TimelineItemType } from '../../types/timeline';
+  import type { TimelineItemMetadata, TimelineItemType } from '../../types/timeline';
 
   export let hint: string = '';
   export let hintPosition: 'center' | 'bottom' = 'center';
@@ -13,7 +13,7 @@
   const dispatch = createEventDispatcher<{
     dragend: DragEvent;
     dragstart: DragEvent;
-    drop: { items?: TimelineItemType[]; type?: string };
+    drop: { items?: TimelineItemType[]; metadata?: TimelineItemMetadata; type?: string };
   }>();
 
   function onDragEnter() {

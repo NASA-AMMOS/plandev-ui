@@ -43,9 +43,13 @@ export const load: PageLoad = async ({ parent, params, url }) => {
       }
 
       const initialActivityTypes = await effects.getActivityTypes(initialPlan.model_id, user);
-      const initialResourceTypes = await effects.getResourceTypes(initialPlan.model_id, user, 20);
-      const initialExternalEventTypes = await effects.getExternalEventTypes(planId, user);
-      const initialPlanTags = await effects.getPlanTags(initialPlan.id, user);
+      const [initialActivityArguments, initialResourceTypes, initialExternalEventTypes, initialPlanTags] =
+        await Promise.all([
+          await effects.getDefaultActivityArguments(initialPlan.model_id, initialActivityTypes, user),
+          await effects.getResourceTypes(initialPlan.model_id, user, 20),
+          await effects.getExternalEventTypes(planId, user),
+          await effects.getPlanTags(initialPlan.id, user),
+        ]);
       const initialView = await effects.getView(
         url.searchParams,
         user,
@@ -55,9 +59,11 @@ export const load: PageLoad = async ({ parent, params, url }) => {
         initialExternalEventTypes,
         initialPlan.model.view,
       );
+
       const initialPlanSnapshotId = getSearchParameterNumber(SearchParameters.SNAPSHOT_ID, url.searchParams);
 
       return {
+        initialActivityArguments,
         initialActivityTypes,
         initialPlan,
         initialPlanSnapshotId,

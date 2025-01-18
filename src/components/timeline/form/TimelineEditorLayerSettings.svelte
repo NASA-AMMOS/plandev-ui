@@ -67,7 +67,7 @@
             class="st-input w-100"
             name="name"
             type="string"
-            value={layerAsLine.name || ''}
+            value={layer.name || ''}
             on:input={onInput}
           />
         </Input>
@@ -118,7 +118,7 @@
             class="st-input w-100"
             name="name"
             type="string"
-            value={layerAsXRange.name || ''}
+            value={layer.name || ''}
             on:input={onInput}
           />
         </Input>

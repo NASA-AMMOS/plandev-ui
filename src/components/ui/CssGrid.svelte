@@ -1,15 +1,17 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import Split, { type SplitInstance } from 'split-grid';
+  import Split, { type MinSizes, type SplitInstance } from 'split-grid';
   import { createEventDispatcher, onMount, tick } from 'svelte';
 
   export { className as class };
   export let padding: string = '0';
   export let columns: string = 'none';
+  export let columnMinSizes: MinSizes | undefined = undefined;
   export let gap: string = '0';
   export let rows: string = 'none';
   export let minHeight: string = 'unset';
+  export let rowMinSizes: MinSizes | undefined = undefined;
 
   const dispatch = createEventDispatcher<{
     changeColumnSizes: string;
@@ -50,7 +52,7 @@
     if (split) {
       split.destroy();
     }
-    split = Split({ onDragEnd });
+    split = Split({ columnMinSizes, onDragEnd, rowMinSizes, snapOffset: 10 });
 
     if (div) {
       const columnGutters = div.querySelectorAll<HTMLDivElement>(':scope > .css-grid-gutter.column');

@@ -5,12 +5,16 @@ import {
   ViewLineLayerColorPresets,
   ViewXRangeLayerSchemePresets,
 } from '../constants/view';
-import type { ActivityDirective } from '../types/activity';
+import type { ActivityDirective, ActivityType } from '../types/activity';
 import type { ExternalEvent } from '../types/external-event';
+import type { DefaultEffectiveArgumentsMap } from '../types/parameter';
 import type { Resource, ResourceType, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
+import type { Tag } from '../types/tags';
 import type { DiscreteTreeNode, TimeRange, Timeline, XRangeLayer } from '../types/timeline';
 import { createSpanUtilityMaps } from './activities';
+import { convertUTCToMs } from './time';
 import {
+  applyActivityLayerFilter,
   createHorizontalGuide,
   createRow,
   createTimeline,
@@ -25,6 +29,7 @@ import {
   externalEventInView,
   filterResourcesByLayer,
   generateDiscreteTreeUtil,
+  getMatchingTypesForActivityLayerFilter,
   getTimeRangeAroundTime,
   getUniqueColorForActivityLayer,
   getUniqueColorForLineLayer,
@@ -34,10 +39,130 @@ import {
   isExternalEventLayer,
   isLineLayer,
   isXRangeLayer,
+  matchesDynamicFilter,
   paginateNodes,
   spanInView,
 } from './timeline';
-import { convertUTCToMs } from './time';
+
+const testActivityTypes: ActivityType[] = [
+  {
+    computed_attributes_value_schema: {
+      items: {},
+      type: 'struct',
+    },
+    name: 'child',
+    parameters: {
+      counter: {
+        order: 0,
+        schema: {
+          type: 'int',
+        },
+      },
+    },
+    required_parameters: [],
+    subsystem_tag: null,
+  },
+  {
+    computed_attributes_value_schema: {
+      items: {},
+      type: 'struct',
+    },
+    name: 'parent',
+    parameters: {
+      label: {
+        order: 0,
+        schema: {
+          type: 'string',
+        },
+      },
+    },
+    required_parameters: [],
+    subsystem_tag: {
+      color: '#FFFFFF',
+      created_at: '2022-08-03T18:21:51',
+      id: 1,
+      name: 'subsystem1',
+      owner: 'user1',
+    },
+  },
+  {
+    computed_attributes_value_schema: {
+      items: {
+        biteSizeWasBig: {
+          type: 'boolean',
+        },
+        newFlag: {
+          type: 'variant',
+          variants: [
+            {
+              key: 'A',
+              label: 'A',
+            },
+            {
+              key: 'B',
+              label: 'B',
+            },
+          ],
+        },
+      },
+      type: 'struct',
+    },
+    name: 'BiteBanana',
+    parameters: {
+      biteSize: {
+        order: 0,
+        schema: {
+          metadata: {
+            banannotation: {
+              value: 'Specifies the size of bite to take',
+            },
+            unit: {
+              value: 'm',
+            },
+          },
+          type: 'real',
+        },
+      },
+    },
+    required_parameters: [],
+    subsystem_tag: null,
+  },
+  {
+    computed_attributes_value_schema: {
+      type: 'int',
+    },
+    name: 'BakeBananaBread',
+    parameters: {
+      glutenFree: {
+        order: 2,
+        schema: {
+          type: 'boolean',
+        },
+      },
+      tbSugar: {
+        order: 1,
+        schema: {
+          type: 'int',
+        },
+      },
+      temperature: {
+        order: 0,
+        schema: {
+          type: 'real',
+        },
+      },
+    },
+    required_parameters: ['tbSugar', 'glutenFree'],
+    subsystem_tag: null,
+  },
+];
+
+const testDefaultArgumentsMap: DefaultEffectiveArgumentsMap = {
+  BakeBananaBread: { temperature: 350 },
+  BiteBanana: { biteSize: 1 },
+  child: { counter: 0 },
+  parent: { label: 'unlabeled' },
+};
 
 const testSpans: Span[] = [
   generateSpan({
@@ -48,7 +173,7 @@ const testSpans: Span[] = [
     span_id: 2,
     startMs: 0,
     start_offset: '00:10:00',
-    type: 'Child',
+    type: 'child',
   }),
   generateSpan({
     duration: '02:00:00',
@@ -58,7 +183,7 @@ const testSpans: Span[] = [
     span_id: 1,
     startMs: 0,
     start_offset: '00:00:00',
-    type: 'Parent',
+    type: 'parent',
   }),
   generateSpan({
     duration: '04:00:00',
@@ -68,7 +193,7 @@ const testSpans: Span[] = [
     span_id: 3,
     startMs: 0,
     start_offset: '00:05:00',
-    type: 'Child',
+    type: 'child',
   }),
   generateSpan({
     attributes: {
@@ -197,6 +322,10 @@ function generateActivityDirective(properties: Partial<ActivityDirective>): Acti
   };
 }
 
+function generateTag(properties: Partial<Tag>): Tag {
+  return { color: '#FFFFFF', created_at: '', id: -1, name: '', owner: '', ...properties };
+}
+
 function generateSpan(properties: Partial<Span>): Span {
   return {
     attributes: { arguments: {}, computedAttributes: {} },
@@ -312,7 +441,9 @@ test('getYAxisBounds', () => {
   populateTimelineLayers(timelines);
 
   const layer1 = timelines[0].rows[0].layers[1];
-  layer1.filter.resource = { names: ['resourceWithValues', 'resourceWithNoValues'] };
+  const layer2 = timelines[0].rows[0].layers[2];
+  layer1.filter.resource = 'resourceWithValues';
+  layer2.filter.resource = 'resourceWithNoValues';
   const yAxis = timelines[0].rows[0].yAxes[0];
   const layers = timelines[0].rows[0].layers;
   const resourceWithValues: Resource = {
@@ -395,11 +526,10 @@ test('filterResourcesByLayer', () => {
   expect(filterResourcesByLayer(layer, [resourceA, resourceB])).to.deep.equal([]);
 
   const layer2 = createTimelineLineLayer([], []);
-  layer2.filter.resource = { names: [] };
   expect(filterResourcesByLayer(layer2, [])).to.deep.equal([]);
 
   const layer3 = createTimelineLineLayer([], []);
-  layer3.filter.resource = { names: ['resourceA'] };
+  layer3.filter.resource = 'resourceA';
   expect(filterResourcesByLayer(layer3, [resourceA, resourceB])).to.deep.equal([resourceA]);
 });
 
@@ -547,7 +677,7 @@ test('generateDiscreteTree', () => {
       testDirectives,
       testSpans,
       testExternalEvents,
-      { BiteBanana: true, BiteBanana_1: true, Parent: true, Parent_1: true, Parent_1_Child: true },
+      { BiteBanana: true, BiteBanana_1: true, parent: true, parent_1: true, parent_1_child: true },
       'flat',
       'event_type_name',
       false,
@@ -748,7 +878,7 @@ test('generateDiscreteTree', () => {
           activity_type: 'aggregation',
           children: [],
           expanded: false,
-          id: 'Child',
+          id: 'child',
           isLeaf: false,
           items: [
             {
@@ -765,7 +895,7 @@ test('generateDiscreteTree', () => {
                 span_id: 2,
                 startMs: 0,
                 start_offset: '00:10:00',
-                type: 'Child',
+                type: 'child',
               },
             },
             {
@@ -782,11 +912,11 @@ test('generateDiscreteTree', () => {
                 span_id: 3,
                 startMs: 0,
                 start_offset: '00:05:00',
-                type: 'Child',
+                type: 'child',
               },
             },
           ],
-          label: 'Child',
+          label: 'child',
           type: 'Activity',
         },
         {
@@ -802,7 +932,7 @@ test('generateDiscreteTree', () => {
                       activity_type: 'span',
                       children: [],
                       expanded: false,
-                      id: 'Parent_1_Child_2',
+                      id: 'parent_1_child_2',
                       isLeaf: true,
                       items: [
                         {
@@ -819,18 +949,18 @@ test('generateDiscreteTree', () => {
                             span_id: 2,
                             startMs: 0,
                             start_offset: '00:10:00',
-                            type: 'Child',
+                            type: 'child',
                           },
                         },
                       ],
-                      label: 'Child',
+                      label: 'child',
                       type: 'Activity',
                     },
                     {
                       activity_type: 'span',
                       children: [],
                       expanded: false,
-                      id: 'Parent_1_Child_3',
+                      id: 'parent_1_child_3',
                       isLeaf: true,
                       items: [
                         {
@@ -847,16 +977,16 @@ test('generateDiscreteTree', () => {
                             span_id: 3,
                             startMs: 0,
                             start_offset: '00:05:00',
-                            type: 'Child',
+                            type: 'child',
                           },
                         },
                       ],
-                      label: 'Child',
+                      label: 'child',
                       type: 'Activity',
                     },
                   ],
                   expanded: true,
-                  id: 'Parent_1_Child',
+                  id: 'parent_1_child',
                   isLeaf: false,
                   items: [
                     {
@@ -873,7 +1003,7 @@ test('generateDiscreteTree', () => {
                         span_id: 2,
                         startMs: 0,
                         start_offset: '00:10:00',
-                        type: 'Child',
+                        type: 'child',
                       },
                     },
                     {
@@ -890,16 +1020,16 @@ test('generateDiscreteTree', () => {
                         span_id: 3,
                         startMs: 0,
                         start_offset: '00:05:00',
-                        type: 'Child',
+                        type: 'child',
                       },
                     },
                   ],
-                  label: 'Child',
+                  label: 'child',
                   type: 'Activity',
                 },
               ],
               expanded: true,
-              id: 'Parent_1',
+              id: 'parent_1',
               isLeaf: false,
               items: [
                 {
@@ -916,16 +1046,16 @@ test('generateDiscreteTree', () => {
                     span_id: 1,
                     startMs: 0,
                     start_offset: '00:00:00',
-                    type: 'Parent',
+                    type: 'parent',
                   },
                 },
               ],
-              label: 'Parent',
+              label: 'parent',
               type: 'Activity',
             },
           ],
           expanded: true,
-          id: 'Parent',
+          id: 'parent',
           isLeaf: false,
           items: [
             {
@@ -942,11 +1072,11 @@ test('generateDiscreteTree', () => {
                 span_id: 1,
                 startMs: 0,
                 start_offset: '00:00:00',
-                type: 'Parent',
+                type: 'parent',
               },
             },
           ],
-          label: 'Parent',
+          label: 'parent',
           type: 'Activity',
         },
       ],
@@ -1040,7 +1170,7 @@ test('generateDiscreteTree', () => {
             span_id: 2,
             startMs: 0,
             start_offset: '00:10:00',
-            type: 'Child',
+            type: 'child',
           },
         },
         {
@@ -1057,7 +1187,7 @@ test('generateDiscreteTree', () => {
             span_id: 3,
             startMs: 0,
             start_offset: '00:05:00',
-            type: 'Child',
+            type: 'child',
           },
         },
         {
@@ -1074,7 +1204,7 @@ test('generateDiscreteTree', () => {
             span_id: 1,
             startMs: 0,
             start_offset: '00:00:00',
-            type: 'Parent',
+            type: 'parent',
           },
         },
       ],
@@ -1234,4 +1364,275 @@ describe('getTimeRangeAroundTime', () => {
     });
     expect(timeRange.end - timeRange.start).toBe(48 * hourInMs);
   });
+});
+
+describe('applyActivityLayerFilter', () => {
+  const tags: Tag[] = [generateTag({ id: 1 }), generateTag({ id: 2 })];
+  const directives: ActivityDirective[] = [
+    generateActivityDirective({ id: 1, name: 'Foo', source_scheduling_goal_id: 1, type: 'parent' }),
+    generateActivityDirective({
+      arguments: { newFlag: 'A' },
+      id: 2,
+      source_scheduling_goal_id: 2,
+      tags: [{ tag: tags[1] }],
+      type: 'BiteBanana',
+    }),
+    generateActivityDirective({ id: 3, tags: tags.map(tag => ({ tag })), type: 'PeelBanana' }),
+    generateActivityDirective({ arguments: { newFlag: 'B' }, id: 4, type: 'BiteBanana' }),
+  ];
+  const spans: Span[] = [
+    generateSpan({ parent_id: 1, span_id: 2, type: 'child' }),
+    generateSpan({ parent_id: null, span_id: 1, type: 'parent' }),
+    generateSpan({ parent_id: 1, span_id: 3, type: 'child' }),
+    generateSpan({
+      attributes: { arguments: { newFlag: 'A' }, computedAttributes: {} },
+      parent_id: null,
+      span_id: 4,
+      type: 'BiteBanana',
+    }),
+    generateSpan({ parent_id: null, span_id: 5, type: 'PeelBanana' }),
+    generateSpan({
+      attributes: { arguments: { newFlag: 'B' }, computedAttributes: {} },
+      parent_id: null,
+      span_id: 6,
+      type: 'BiteBanana',
+    }),
+  ];
+
+  test('Should return all directives and spans if no filters applied', () => {
+    expect(
+      applyActivityLayerFilter(undefined, testDirectives, testSpans, testActivityTypes, testDefaultArgumentsMap),
+    ).to.deep.eq({
+      directives: testDirectives,
+      spans: testSpans,
+    });
+    expect(
+      applyActivityLayerFilter({}, testDirectives, testSpans, testActivityTypes, testDefaultArgumentsMap),
+    ).to.deep.eq({
+      directives: testDirectives,
+      spans: testSpans,
+    });
+  });
+
+  test('Should apply static type filters', () => {
+    expect(
+      applyActivityLayerFilter(
+        { static_types: ['parent', 'BiteBanana'] },
+        directives,
+        spans,
+        testActivityTypes,
+        testDefaultArgumentsMap,
+      ),
+    ).to.deep.eq({
+      directives: [directives[0], directives[1], directives[3]],
+      spans: [spans[1], spans[3], spans[5]],
+    });
+  });
+
+  test('Should apply dynamic type filters', () => {
+    expect(
+      applyActivityLayerFilter(
+        {
+          dynamic_type_filters: [
+            {
+              field: 'Type',
+              id: 1,
+              operator: 'includes',
+              value: 'banana',
+            },
+          ],
+        },
+        directives,
+        spans,
+        testActivityTypes,
+        testDefaultArgumentsMap,
+      ),
+    ).to.deep.eq({
+      directives: [directives[1], directives[2], directives[3]],
+      spans: [spans[3], spans[4], spans[5]],
+    });
+
+    expect(
+      applyActivityLayerFilter(
+        {
+          dynamic_type_filters: [
+            {
+              field: 'Type',
+              id: 1,
+              operator: 'equals',
+              value: 'BiteBanana',
+            },
+          ],
+        },
+        directives,
+        spans,
+        testActivityTypes,
+        testDefaultArgumentsMap,
+      ),
+    ).to.deep.eq({
+      directives: [directives[1], directives[3]],
+      spans: [spans[3], spans[5]],
+    });
+
+    expect(
+      applyActivityLayerFilter(
+        {
+          dynamic_type_filters: [
+            {
+              field: 'Subsystem',
+              id: 1,
+              operator: 'equals',
+              value: 1,
+            },
+          ],
+        },
+        directives,
+        spans,
+        testActivityTypes,
+        testDefaultArgumentsMap,
+      ),
+    ).to.deep.eq({
+      directives: [directives[0]],
+      spans: [spans[1]],
+    });
+  });
+
+  test('Should apply other filters', () => {
+    expect(
+      applyActivityLayerFilter(
+        {
+          other_filters: [
+            {
+              field: 'Name',
+              id: 1,
+              operator: 'includes',
+              value: 'oo',
+            },
+          ],
+        },
+        directives,
+        spans,
+        testActivityTypes,
+        testDefaultArgumentsMap,
+      ),
+    ).to.deep.eq({
+      directives: [directives[0]],
+      spans: [],
+    });
+
+    expect(
+      applyActivityLayerFilter(
+        {
+          other_filters: [
+            {
+              field: 'Parameter',
+              id: 1,
+              operator: 'equals',
+              subfield: { name: 'newFlag', type: 'variant' },
+              value: 'A',
+            },
+          ],
+        },
+        directives,
+        spans,
+        testActivityTypes,
+        testDefaultArgumentsMap,
+      ),
+    ).to.deep.eq({
+      directives: [directives[1]],
+      spans: [spans[3]],
+    });
+
+    expect(
+      applyActivityLayerFilter(
+        {
+          other_filters: [
+            {
+              field: 'SchedulingGoalId',
+              id: 1,
+              operator: 'equals',
+              value: 1,
+            },
+          ],
+        },
+        directives,
+        spans,
+        testActivityTypes,
+        testDefaultArgumentsMap,
+      ),
+    ).to.deep.eq({
+      directives: [directives[0]],
+      spans: [],
+    });
+
+    expect(
+      applyActivityLayerFilter(
+        {
+          other_filters: [
+            {
+              field: 'Tags',
+              id: 1,
+              operator: 'includes',
+              value: [1],
+            },
+          ],
+        },
+        directives,
+        spans,
+        testActivityTypes,
+        testDefaultArgumentsMap,
+      ),
+    ).to.deep.eq({
+      directives: [directives[2]],
+      spans: [],
+    });
+  });
+});
+
+test('getMatchingTypesForActivityLayerFilter', () => {
+  expect(getMatchingTypesForActivityLayerFilter({}, [])).to.deep.eq([]);
+  expect(getMatchingTypesForActivityLayerFilter({}, testActivityTypes)).to.deep.eq(testActivityTypes);
+  expect(
+    getMatchingTypesForActivityLayerFilter({ static_types: ['parent', 'BiteBanana'] }, testActivityTypes),
+  ).to.deep.eq([
+    testActivityTypes.find(t => t.name === 'parent'),
+    testActivityTypes.find(t => t.name === 'BiteBanana'),
+  ]);
+  expect(getMatchingTypesForActivityLayerFilter({ static_types: ['Foo'] }, testActivityTypes)).to.deep.eq([]);
+  expect(
+    getMatchingTypesForActivityLayerFilter(
+      {
+        dynamic_type_filters: [
+          {
+            field: 'Type',
+            id: 1,
+            operator: 'includes',
+            value: 'banana',
+          },
+        ],
+      },
+      testActivityTypes,
+    ),
+  ).to.deep.eq(testActivityTypes.filter(t => t.name.toLowerCase().indexOf('banana') > -1));
+});
+
+test('matchesDynamicFilter', () => {
+  expect(matchesDynamicFilter('Foo', 'equals', 'Foo')).toBeTruthy();
+  expect(matchesDynamicFilter('Foo', 'does_not_equal', 'Bar')).toBeTruthy();
+  expect(matchesDynamicFilter('Foo', 'includes', '')).toBeFalsy();
+  expect(matchesDynamicFilter('Foo', 'includes', 'oo')).toBeTruthy();
+  expect(matchesDynamicFilter([], 'includes', [1])).toBeFalsy();
+  expect(matchesDynamicFilter([1, 2, 3], 'includes', [1])).toBeTruthy();
+  expect(matchesDynamicFilter('Foo', 'does_not_include', '')).toBeTruthy();
+  expect(matchesDynamicFilter('Foo', 'does_not_include', 'oo')).toBeFalsy();
+  expect(matchesDynamicFilter([], 'does_not_include', [1])).toBeTruthy();
+  expect(matchesDynamicFilter([1, 2, 3], 'does_not_include', [1])).toBeFalsy();
+  expect(matchesDynamicFilter(2, 'is_greater_than', 1)).toBeTruthy();
+  expect(matchesDynamicFilter('2', 'is_greater_than', '1')).toBeTruthy();
+  expect(matchesDynamicFilter(2, 'is_less_than', 1)).toBeFalsy();
+  expect(matchesDynamicFilter('2', 'is_less_than', '1')).toBeFalsy();
+  expect(matchesDynamicFilter(2, 'is_within', [1, 3])).toBeTruthy();
+  expect(matchesDynamicFilter(2, 'is_not_within', [1, 3])).toBeFalsy();
+  // @ts-expect-error forcing the case where an invalid operator is specified
+  expect(matchesDynamicFilter(2, 'is_definitely_somewhere_near', [1, 3])).toBeFalsy();
 });
