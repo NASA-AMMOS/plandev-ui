@@ -21,7 +21,14 @@
     TimeRange,
     VerticalGuide,
   } from '../../types/timeline';
-  import { getAllSpansForActivityDirective, getSpanRootParent } from '../../utilities/activities';
+  import {
+    canPasteActivityDirectivesFromClipboard,
+    copyActivityDirectivesToClipboard,
+    getAllSpansForActivityDirective,
+    getSpanRootParent,
+    getPasteActivityDirectivesText,
+    getActivityDirectivesToPaste,
+  } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -31,6 +38,7 @@
   import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
   import ContextMenuSeparator from '../context-menu/ContextMenuSeparator.svelte';
   import ContextSubMenuItem from '../context-menu/ContextSubMenuItem.svelte';
+  import { featurePermissions } from '../../utilities/permissions';
 
   export let activityDirectivesMap: ActivityDirectivesMap;
   export let contextMenu: MouseOver | null;
@@ -49,6 +57,7 @@
 
   const dispatch = createEventDispatcher<{
     collapseDiscreteTree: Row;
+    createActivityDirectives: ActivityDirective[];
     deleteActivityDirective: number;
     deleteRow: Row;
     duplicateRow: Row;
@@ -57,6 +66,7 @@
     jumpToActivityDirective: number;
     jumpToSpan: number;
     moveRow: { direction: 'up' | 'down'; row: Row };
+    pasteActivityDirectivesAtTime: Date | null;
     toggleActivityComposition: { composition: ActivityOptions['composition']; row: Row };
     updateVerticalGuides: VerticalGuide[];
     viewTimeRangeChanged: TimeRange;
@@ -241,6 +251,27 @@
   export function isShown() {
     return contextMenuComponent.isShown();
   }
+
+  function copyActivityDirective(activity: ActivityDirective) {
+    plan !== null && copyActivityDirectivesToClipboard(plan, [activity]);
+  }
+
+  function canPasteActivityDirectives(): boolean {
+    return (
+      plan !== null &&
+      featurePermissions.activityDirective.canCreate(user, plan) &&
+      canPasteActivityDirectivesFromClipboard(plan)
+    );
+  }
+
+  function pasteActivityDirectivesAtTime(time: Date | false | null) {
+    if (plan !== null && featurePermissions.activityDirective.canCreate(user, plan) && time instanceof Date) {
+      const directives = getActivityDirectivesToPaste(plan, time.getTime());
+      if (directives !== undefined) {
+        effects.cloneActivityDirectives(directives, plan, user);
+      }
+    }
+  }
 </script>
 
 <ContextMenu hideAfterClick on:hide bind:this={contextMenuComponent}>
@@ -311,6 +342,9 @@
         Set Simulation End at Directive Start
       </ContextMenuItem>
       <ContextMenuSeparator />
+      <ContextMenuItem on:click={() => activityDirective !== null && copyActivityDirective(activityDirective)}>
+        Copy Activity Directive
+      </ContextMenuItem>
       <ContextMenuItem
         on:click={() => {
           if (activityDirective !== null) {
@@ -329,7 +363,7 @@
           ],
         ]}
       >
-        Delete Directive
+        Delete Activity Directive
       </ContextMenuItem>
     {:else if span}
       <ContextMenuItem on:click={jumpToActivityDirective}>Jump to Activity Directive</ContextMenuItem>
@@ -398,6 +432,18 @@
       >
         Set Simulation End
       </ContextMenuItem>
+      {#if canPasteActivityDirectives()}
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          on:click={() => {
+            if (xScaleView && offsetX !== undefined) {
+              pasteActivityDirectivesAtTime(xScaleView.invert(offsetX));
+            }
+          }}
+        >
+          {getPasteActivityDirectivesText()} at Time
+        </ContextMenuItem>
+      {/if}
     {/if}
     <ContextMenuSeparator />
     {#if span}

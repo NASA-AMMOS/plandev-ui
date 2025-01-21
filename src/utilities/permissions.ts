@@ -319,6 +319,12 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
       isUserAdmin(user) || (getPermission(queries, user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
+  CREATE_ACTIVITY_DIRECTIVES: (user: User | null, plan: PlanWithOwners): boolean => {
+    const queries = [Queries.INSERT_ACTIVITY_DIRECTIVES];
+    return (
+      isUserAdmin(user) || (getPermission(queries, user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
+    );
+  },
   CREATE_ACTIVITY_DIRECTIVE_TAGS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_ACTIVITY_DIRECTIVE_TAGS], user);
   },
@@ -930,6 +936,13 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     return (
       isUserAdmin(user) ||
       (getPermission([Queries.UPDATE_ACTIVITY_DIRECTIVE], user) &&
+        (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
+    );
+  },
+  UPDATE_ACTIVITY_DIRECTIVES: (user: User | null, plan: PlanWithOwners): boolean => {
+    return (
+      isUserAdmin(user) ||
+      (getPermission([Queries.UPDATE_ACTIVITY_DIRECTIVES], user) &&
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },

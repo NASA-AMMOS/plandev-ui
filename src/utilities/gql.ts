@@ -105,6 +105,7 @@ export enum Queries {
   GET_SEQUENCE_SEQ_JSON = 'getSequenceSeqJson',
   GET_USER_SEQUENCE_SEQ_JSON = 'getUserSequenceSeqJson',
   INSERT_ACTIVITY_DIRECTIVE = 'insert_activity_directive_one',
+  INSERT_ACTIVITY_DIRECTIVES = 'insert_activity_directive',
   INSERT_ACTIVITY_DIRECTIVE_TAGS = 'insert_activity_directive_tags',
   INSERT_ACTIVITY_PRESET = 'insert_activity_presets_one',
   INSERT_CHANNEL_DICTIONARY = 'insert_channel_dictionary_one',
@@ -198,6 +199,7 @@ export enum Queries {
   TAGS = 'tags',
   TOPIC = 'topic',
   UPDATE_ACTIVITY_DIRECTIVE = 'update_activity_directive_by_pk',
+  UPDATE_ACTIVITY_DIRECTIVES = 'update_activity_directive_many',
   UPDATE_ACTIVITY_PRESET = 'update_activity_presets_by_pk',
   UPDATE_CONSTRAINT_METADATA = 'update_constraint_metadata_by_pk',
   UPDATE_CONSTRAINT_SPECIFICATION = 'update_constraint_specification_by_pk',
@@ -331,6 +333,17 @@ const gql = {
           }
         }
         type
+      }
+    }
+  `,
+
+  CREATE_ACTIVITY_DIRECTIVES: `#graphql
+    mutation CreateActivityDirectives($activityDirectivesInsertInput: [activity_directive_insert_input!]!) {
+      ${Queries.INSERT_ACTIVITY_DIRECTIVES}(objects: $activityDirectivesInsertInput) {
+        returning {
+          id
+          type
+        }
       }
     }
   `,
@@ -3466,6 +3479,16 @@ const gql = {
           }
         }
         type
+      }
+    }
+  `,
+
+  UPDATE_ACTIVITY_DIRECTIVES: `#graphql
+    mutation UpdateActivityDirective($updates: [activity_directive_updates!]!) {
+      ${Queries.UPDATE_ACTIVITY_DIRECTIVES}(
+        updates: $updates
+      ) {
+        affected_rows
       }
     }
   `,

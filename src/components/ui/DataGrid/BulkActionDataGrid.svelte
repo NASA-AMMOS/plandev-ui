@@ -5,12 +5,14 @@
 
   // eslint-disable-next-line
   interface $$Events extends ComponentEvents<DataGrid<RowData>> {
+    bulkCopyItems: CustomEvent<RowData[]>;
     bulkDeleteItems: CustomEvent<RowData[]>;
   }
+
   import { browser } from '$app/environment';
   import type { ColDef, ColumnState, IRowNode, RedrawRowsParams } from 'ag-grid-community';
   import { keyBy } from 'lodash-es';
-  import { createEventDispatcher, onDestroy, type ComponentEvents } from 'svelte';
+  import { type ComponentEvents, createEventDispatcher, onDestroy } from 'svelte';
   import type { User } from '../../../types/app';
   import type { Dispatcher } from '../../../types/component';
   import type { RowId, TRowData } from '../../../types/data-grid';
@@ -35,6 +37,7 @@
   export let selectedItemId: RowId | null = null;
   export let selectedItemIds: RowId[] = [];
   export let showContextMenu: boolean = true;
+  export let showCopyMenu: boolean = false;
   export let singleItemDisplayText: string = '';
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
@@ -89,21 +92,31 @@
 
   onDestroy(() => onBlur());
 
+  function bulkCopyItems() {
+    const selectedRows = getRowDataFromSelectedItems();
+    if (selectedRows.length) {
+      dispatch('bulkCopyItems', selectedRows);
+    }
+  }
+
   function bulkDeleteItems() {
     if (deletePermission) {
-      const selectedItemIdsMap = keyBy(selectedItemIds);
-      const selectedRows: RowData[] = items.reduce((selectedRows: RowData[], row: RowData) => {
-        const id = getRowId(row);
-        if (selectedItemIdsMap[id] !== undefined) {
-          selectedRows.push(row);
-        }
-        return selectedRows;
-      }, []);
-
+      const selectedRows = getRowDataFromSelectedItems();
       if (selectedRows.length) {
         dispatch('bulkDeleteItems', selectedRows);
       }
     }
+  }
+
+  function getRowDataFromSelectedItems(): RowData[] {
+    const selectedItemIdsMap = keyBy(selectedItemIds);
+    return items.reduce((selectedRows: RowData[], row: RowData) => {
+      const id = getRowId(row);
+      if (selectedItemIdsMap[id] !== undefined) {
+        selectedRows.push(row);
+      }
+      return selectedRows;
+    }, []);
   }
 
   function onBlur() {
@@ -172,13 +185,20 @@
 >
   <svelte:fragment slot="context-menu">
     {#if showContextMenu}
-      <!-- to further extend context menu -->
       <slot name="context-menu" />
       <ContextMenuHeader>Bulk Actions</ContextMenuHeader>
       <ContextMenuItem on:click={selectAllItems}>
         Select All {isFiltered ? 'Visible ' : ''}{pluralItemDisplayText}
       </ContextMenuItem>
+
       {#if selectedItemIds.length}
+        {#if showCopyMenu}
+          <ContextMenuItem on:click={bulkCopyItems}>
+            Copy {selectedItemIds.length}
+            {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+          </ContextMenuItem>
+        {/if}
+
         <ContextMenuItem
           use={[
             [

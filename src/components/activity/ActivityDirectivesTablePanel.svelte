@@ -32,6 +32,7 @@
   import ActivityTableMenu from './ActivityTableMenu.svelte';
   import { get } from 'svelte/store';
   import { getTimeRangeAroundTime } from '../../utilities/timeline';
+  import effects from '../../utilities/effects';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -246,6 +247,13 @@
     dataGrid?.sizeColumnsToFit();
   }
 
+  function createActivityDirectives({ detail }: CustomEvent<ActivityDirective[]>) {
+    const p = get(plan);
+    if (p !== null) {
+      effects.cloneActivityDirectives(detail, p, user);
+    }
+  }
+
   function onGridSizeChanged() {
     if (activityDirectivesTable?.autoSizeColumns === 'fill') {
       autoSizeSpace();
@@ -426,6 +434,7 @@
       on:columnPinned={onColumnPinned}
       on:columnResized={onColumnResized}
       on:columnVisible={onColumnVisible}
+      on:createActivityDirectives={createActivityDirectives}
       on:gridSizeChanged={onGridSizeChangedDebounced}
       on:rowDoubleClicked={onRowDoubleClicked}
       on:selectionChanged={onSelectionChanged}

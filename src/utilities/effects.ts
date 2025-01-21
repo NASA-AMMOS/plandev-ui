@@ -474,6 +474,68 @@ const effects = {
     }
   },
 
+  async cloneActivityDirectives(
+    activities: ActivityDirective[],
+    plan: Plan,
+    user: User | null,
+  ): Promise<ActivityDirectiveDB[] | undefined> {
+    try {
+      if (plan === null) {
+        throw Error(`Plan is not defined`);
+      }
+      if (!queryPermissions.CREATE_ACTIVITY_DIRECTIVE(user, plan)) {
+        throwPermissionError('clone activity directives into the plan');
+      }
+
+      const activityRemap: Record<number, number> = {};
+      const activityDirectivesInsertInput = activities.map(
+        ({ anchored_to_start, arguments: activityArguments, metadata, name, start_offset, type }) => {
+          const activityDirectiveInsertInput: ActivityDirectiveInsertInput = {
+            anchor_id: null,
+            anchored_to_start,
+            arguments: activityArguments,
+            metadata,
+            name,
+            plan_id: plan.id,
+            start_offset,
+            type,
+          };
+          return activityDirectiveInsertInput;
+        },
+      );
+
+      const response = await reqHasura<{ returning: ActivityDirectiveDB[] }>(
+        gql.CREATE_ACTIVITY_DIRECTIVES,
+        { activityDirectivesInsertInput },
+        user,
+      );
+
+      // re-anchor activity directive clones
+      const { insert_activity_directive: createdActivities } = response;
+      if (createdActivities !== null) {
+        const { returning: clonedActivitiesReferences } = createdActivities;
+        clonedActivitiesReferences.forEach((directive, index) => {
+          const { id } = activities[index];
+          activityRemap[id] = directive.id;
+        });
+
+        const anchorUpdates = activities
+          .filter(({ anchor_id: anchorId }) => anchorId !== null)
+          .map(({ anchor_id: anchorId, id }) => ({
+            _set: { anchor_id: activityRemap[anchorId as number] },
+            where: { id: { _eq: activityRemap[id] }, plan_id: { _eq: (plan as PlanSchema).id } },
+          }));
+
+        await reqHasura<ActivityDirectiveDB>(gql.UPDATE_ACTIVITY_DIRECTIVES, { updates: anchorUpdates }, user);
+        showSuccessToast(`Pasted ${activities.length} Activity Directive${activities.length === 1 ? '' : 's'}`);
+        return clonedActivitiesReferences;
+      }
+    } catch (e) {
+      catchError('Activity Directive Paste Failed', e as Error);
+      showFailureToast('Activity Directive Paste Failed');
+    }
+  },
+
   async createActivityDirective(
     argumentsMap: ArgumentsMap,
     start_time_doy: string,

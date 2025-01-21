@@ -17,6 +17,12 @@
   import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
   import ContextMenuSeparator from '../context-menu/ContextMenuSeparator.svelte';
   import { createEventDispatcher } from 'svelte';
+  import {
+    canPasteActivityDirectivesFromClipboard,
+    copyActivityDirectivesToClipboard,
+    getPasteActivityDirectivesText,
+    getActivityDirectivesToPaste,
+  } from '../../utilities/activities';
 
   export let activityDirectives: ActivityDirective[] = [];
   export let activityDirectiveErrorRollupsMap: Record<ActivityDirectiveId, ActivityErrorRollup> | undefined = undefined;
@@ -31,6 +37,7 @@
   export let filterExpression: string = '';
 
   const dispatch = createEventDispatcher<{
+    createActivityDirectives: ActivityDirective[];
     scrollTimelineToTime: number;
   }>();
 
@@ -44,15 +51,22 @@
   let activityErrorColumnDef: DataGridColumnDef | null = null;
   let activityDirectivesWithErrorCounts: ActivityDirectiveWithErrorCounts[] = [];
   let completeColumnDefs: ColDef[] = columnDefs;
+  let hasCreatePermission: boolean = false;
   let hasDeletePermission: boolean = false;
   let isDeletingDirective: boolean = false;
+  let showCopyMenu: boolean = true;
 
   $: hasDeletePermission =
     plan !== null ? featurePermissions.activityDirective.canDelete(user, plan) && !planReadOnly : false;
+
+  $: hasCreatePermission =
+    plan !== null ? featurePermissions.activityDirective.canCreate(user, plan) && !planReadOnly : false;
+
   $: activityDirectivesWithErrorCounts = activityDirectives.map(activityDirective => ({
     ...activityDirective,
     errorCounts: activityDirectiveErrorRollupsMap?.[activityDirective.id]?.errorCounts,
   }));
+
   $: {
     activityActionColumnDef = {
       cellClass: 'action-cell-container',
@@ -145,6 +159,25 @@
       dispatch('scrollTimelineToTime', directive.start_time_ms);
     }
   }
+
+  function copyActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
+    if (plan !== null) {
+      copyActivityDirectivesToClipboard(plan, activities);
+    }
+  }
+
+  function canPasteActivityDirectives(): boolean {
+    return plan !== null && hasCreatePermission && canPasteActivityDirectivesFromClipboard(plan);
+  }
+
+  function pasteActivityDirectives() {
+    if (plan !== null && canPasteActivityDirectives()) {
+      const directives = getActivityDirectivesToPaste(plan);
+      if (directives !== undefined) {
+        dispatch(`createActivityDirectives`, directives);
+      }
+    }
+  }
 </script>
 
 <BulkActionDataGrid
@@ -161,10 +194,12 @@
   pluralItemDisplayText="Activity Directives"
   scrollToSelection={true}
   singleItemDisplayText="Activity Directive"
+  {showCopyMenu}
   suppressDragLeaveHidesColumns={false}
   {user}
   {filterExpression}
   on:bulkDeleteItems={deleteActivityDirectives}
+  on:bulkCopyItems={copyActivityDirectives}
   on:columnMoved
   on:columnPinned
   on:columnResized
@@ -176,6 +211,10 @@
   <svelte:fragment slot="context-menu">
     {#if bulkSelectedActivityDirectiveIds.length === 1}
       <ContextMenuItem on:click={scrollTimelineToActivityDirective}>Scroll to Activity</ContextMenuItem>
+      <ContextMenuSeparator></ContextMenuSeparator>
+    {/if}
+    {#if canPasteActivityDirectives()}
+      <ContextMenuItem on:click={pasteActivityDirectives}>{getPasteActivityDirectivesText()}</ContextMenuItem>
       <ContextMenuSeparator></ContextMenuSeparator>
     {/if}
   </svelte:fragment>
