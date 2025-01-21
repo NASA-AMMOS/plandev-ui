@@ -29,7 +29,7 @@ export function generateDefaultView(
 
   // Start with the activity row
   const activityLayer = createTimelineActivityLayer(timelines, {
-    filter: /* { activity: { static_types: types } } */ {},
+    filter: {},
   });
   const activityRow = createRow(timelines, {
     autoAdjustHeight: true,
