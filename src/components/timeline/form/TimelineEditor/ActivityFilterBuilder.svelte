@@ -391,6 +391,7 @@
                   <Input>
                     <div class="search-icon" slot="left"><SearchIcon /></div>
                     <input
+                      autocomplete="off"
                       bind:this={manualInputRef}
                       name="manual-types-filter-input"
                       class="st-input w-100 manual-types-filter-input"
