@@ -489,8 +489,7 @@ function parseTime(commandNode: SyntaxNode, text: string): Time {
       );
       tag = `${isNegative}${days}${days ? 'T' : ''}${hours}:${minutes}:${seconds}${milliseconds ? '.' : ''}${milliseconds}`;
 
-      // TODO: Update seqjson lib to include block_relative
-      return { tag, type: 'COMMAND_BLOCK_RELATIVE' };
+      return { tag, type: 'BLOCK_RELATIVE' };
     }
   }
 

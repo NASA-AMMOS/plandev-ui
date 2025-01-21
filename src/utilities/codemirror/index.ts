@@ -44,6 +44,7 @@ export const SeqLanguage = LRLanguage.define({
         LocalDeclaration: t.namespace,
         MetaEntry: t.namespace,
         Model: t.namespace,
+        Note: t.namespace,
         ParameterDeclaration: t.namespace,
         Request: t.namespace,
         Stem: t.keyword,

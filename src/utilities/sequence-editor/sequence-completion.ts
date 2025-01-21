@@ -223,6 +223,21 @@ export function sequenceCompletion(
             section: 'Directives',
             type: 'keyword',
           },
+          {
+            apply: (view, _completion, from: number, to: number) => {
+              view.dispatch({
+                changes: {
+                  from: Math.max(0, from + (!cursor.isAfterTimeTag || cursor.isAtSymbolBefore ? -1 : 0)),
+                  insert: `${!cursor.isAfterTimeTag ? 'C ' : ''}@NOTE("note_value")`,
+                  to,
+                },
+              });
+            },
+            info: 'note',
+            label: '@NOTE',
+            section: 'Directives',
+            type: 'function',
+          },
         );
       }
 

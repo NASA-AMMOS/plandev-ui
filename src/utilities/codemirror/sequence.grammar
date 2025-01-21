@@ -45,7 +45,7 @@ commandBlock {
   )+
 }
 
-step { Command | Activate | GroundBlock | GroundEvent | Load }
+step { Command | Activate | GroundBlock | GroundEvent | Load | Note }
 
 commentLine {
   LineComment newLine
@@ -120,6 +120,15 @@ commonGround {
   Models?
 }
 
+Note {
+  TimeTag
+  noteDirective "(" NoteValue { String } ")"
+  Args
+  LineComment?
+  newLine
+  Metadata?
+}
+
 Request {
   TimeTag
   requestStartDirective "(" RequestName { String } ")"
@@ -178,7 +187,7 @@ Stem { !stemStart identifier }
 
   TimeRelative { 'R'(timeSecond | timeDOY | timeHhmmss) whiteSpace}
 
-  TimeBlockRelative { 'B'timeHhmmss whiteSpace }
+  TimeBlockRelative { 'B'$[+\-]?(timeSecond | timeDOY | timeHhmmss) whiteSpace }
 
   TimeEpoch { 'E'$[+\-]?(timeSecond | timeDOY | timeHhmmss) whiteSpace}
 
@@ -228,6 +237,7 @@ Stem { !stemStart identifier }
   requestEndDirective { "@REQUEST_END" }
   metadataDirective { "@METADATA" }
   modelDirective { "@MODEL" }
+  noteDirective { "@NOTE" }
   genericDirective { "@"identifier }
 
   @precedence { newLine, whiteSpace }
@@ -251,6 +261,7 @@ Stem { !stemStart identifier }
     loadDirective,
     groundBlockDirective,
     groundEventDirective,
+    noteDirective,
     requestStartDirective,
     requestEndDirective,
     engineDirective,
