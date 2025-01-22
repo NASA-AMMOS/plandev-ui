@@ -4740,7 +4740,6 @@ const effects = {
     query: URLSearchParams | null,
     user: User | null,
     migrate: boolean = true,
-    activityTypes: ActivityType[] = [],
     resourceTypes: ResourceType[] = [],
     externalEventTypes: ExternalEventType[] = [],
     defaultView?: View | null,
@@ -4785,7 +4784,7 @@ const effects = {
           }
         }
       }
-      return generateDefaultView(activityTypes, resourceTypes, externalEventTypes);
+      return generateDefaultView(resourceTypes, externalEventTypes);
     } catch (e) {
       catchError(e as Error);
       return null;

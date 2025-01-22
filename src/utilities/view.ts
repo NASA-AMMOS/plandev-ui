@@ -1,7 +1,6 @@
 import Ajv from 'ajv';
 import { ViewDefaultDiscreteOptions, viewSchemaVersion, viewSchemaVersionName } from '../constants/view';
 import jsonSchema from '../schemas';
-import type { ActivityType } from '../types/activity';
 import type { ExternalEventType } from '../types/external-event';
 import type { ResourceType } from '../types/simulation';
 import type { View, ViewDefinition, ViewGridColumns, ViewGridRows } from '../types/view';
@@ -20,20 +19,16 @@ import {
  * Generates a default generic UI view.
  */
 export function generateDefaultView(
-  activityTypes: ActivityType[] = [],
   resourceTypes: ResourceType[] = [],
   externalEventTypes: ExternalEventType[] = [],
 ): View {
   const now = new Date().toISOString();
-  const types: string[] = activityTypes.map(({ name }) => name);
 
   const timeline = createTimeline([], { marginLeft: 250, marginRight: 30 });
   const timelines = [timeline];
 
   // Start with the activity row
-  const activityLayer = createTimelineActivityLayer(timelines, {
-    filter: { activity: { static_types: types } },
-  });
+  const activityLayer = createTimelineActivityLayer(timelines);
   const activityRow = createRow(timelines, {
     autoAdjustHeight: true,
     discreteOptions: { ...ViewDefaultDiscreteOptions, displayMode: 'grouped' },
