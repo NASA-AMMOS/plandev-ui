@@ -75,6 +75,7 @@
   import { tooltip } from '../../../utilities/tooltip';
   import ColorPicker from '../../form/ColorPicker.svelte';
   import Input from '../../form/Input.svelte';
+  import Loading from '../../Loading.svelte';
   import GridMenu from '../../menus/GridMenu.svelte';
   import ParameterUnits from '../../parameters/ParameterUnits.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
@@ -134,6 +135,8 @@
     viewUpdateRow('discreteOptions', ViewDefaultDiscreteOptions);
   }
   $: discreteOptions = selectedRow?.discreteOptions || { ...ViewDefaultDiscreteOptions };
+
+  $: loading = $selectedTimelineId === null || $view === null;
 
   function updateRowEvent(event: Event) {
     const { name, value } = getTarget(event);
@@ -414,16 +417,6 @@
     viewUpdateRow('layers', newLayers);
   }
 
-  // function handleUpdateLayerColorScheme(value: XRangeLayerColorScheme, layer: Layer) {
-  //   const newLayers = layers.map(l => {
-  //     if (layer.id === l.id) {
-  //       (l as XRangeLayer).colorScheme = value;
-  //     }
-  //     return l;
-  //   });
-  //   viewUpdateRow('layers', newLayers);
-  // }
-
   function handleNewHorizontalGuideClick() {
     if (!selectedRow) {
       return;
@@ -502,7 +495,11 @@
       </div>
 
       <!-- Timeline editing -->
-      {#if !selectedTimeline}
+      {#if loading}
+        <div class="p-3">
+          <Loading />
+        </div>
+      {:else if !selectedTimeline}
         <fieldset class="editor-section">No timeline selected</fieldset>
       {:else}
         <EditorSection item="Margin">
