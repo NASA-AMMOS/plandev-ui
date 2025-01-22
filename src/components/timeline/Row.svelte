@@ -201,12 +201,21 @@
   let timeFilteredExternalEvents: ExternalEvent[] = [];
   let rowRef: HTMLDivElement;
   let hasActivityLayer: boolean = false;
+  let hasActivityLayerFilters: boolean = false;
   let hasExternalEventsLayer: boolean = false;
   let hasResourceLayer: boolean = false;
 
   $: if ($selectedRow?.id === id && rowRef) {
     rowRef.scrollIntoView({ block: 'nearest' });
   }
+
+  $: layers.forEach(layer => {
+    if (isActivityLayer(layer)) {
+      if (layer.filter.activity) {
+        hasActivityLayerFilters = true;
+      }
+    }
+  });
 
   $: if (plan && simulationDataset !== null && layers && $externalResources && !$resourceTypesLoading) {
     const simulationDatasetId = simulationDataset.dataset_id;
@@ -955,7 +964,7 @@
         </g>
       </svg>
       <!-- Loading indicator -->
-      {#if (hasResourceLayer && anyResourcesLoading) || (hasActivityLayer && (!activityDirectivesMap || !spansMap))}
+      {#if (hasResourceLayer && anyResourcesLoading) || (hasActivityLayerFilters && (!activityDirectivesMap || !spansMap))}
         <div class="layer-message loading st-typography-label">Loading...</div>
       {/if}
       <!-- Empty state -->
