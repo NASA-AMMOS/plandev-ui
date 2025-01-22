@@ -38,7 +38,7 @@
 
   let metadataMap: Record<number, BaseMetadata> = {};
   let numOfPrivateMetadata: number = 0;
-  let selectedAssociationId: Association = 'condition';
+  let selectedAssociationId: Association = 'constraint';
   let selectedAssociationTitle = 'Constraint';
   let selectedDefinition: string | null;
   let selectedViewId: RadioButtonId = 'model';
