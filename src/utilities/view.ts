@@ -28,9 +28,7 @@ export function generateDefaultView(
   const timelines = [timeline];
 
   // Start with the activity row
-  const activityLayer = createTimelineActivityLayer(timelines, {
-    filter: {},
-  });
+  const activityLayer = createTimelineActivityLayer(timelines);
   const activityRow = createRow(timelines, {
     autoAdjustHeight: true,
     discreteOptions: { ...ViewDefaultDiscreteOptions, displayMode: 'grouped' },
