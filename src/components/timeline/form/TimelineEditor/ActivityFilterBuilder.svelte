@@ -193,11 +193,11 @@
     dirtyFilter = structuredClone(filter);
   }
 
-  $: activityDirectives = Object.values($activityDirectivesMap);
+  $: activityDirectives = Object.values($activityDirectivesMap || {});
   $: appliedFilter = applyActivityLayerFilter(
     dirtyFilter,
     activityDirectives,
-    $spans,
+    $spans || [],
     $activityTypes,
     $activityArgumentDefaultsMap,
   );

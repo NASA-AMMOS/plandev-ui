@@ -224,7 +224,7 @@
 
           // if we find at least one goal invocation with the selected goal_id, we don't want to insert this goal_id into the plan spec
           // i.e. this goal was already selected when we entered the modal, so we don't want to kick off an update, which would cause a duplicate invocation to appear
-          const goalsInPlanSpecification = $allowedSchedulingGoalSpecs.filter(
+          const goalsInPlanSpecification = ($allowedSchedulingGoalSpecs || []).filter(
             schedulingGoalPlanSpecification => schedulingGoalPlanSpecification.goal_id === goalId,
           );
 

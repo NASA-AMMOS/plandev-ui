@@ -447,7 +447,7 @@
           if (layer.filter) {
             const { directives: matchingDirectives, spans: matchingSpans } = applyActivityLayerFilter(
               layer.filter.activity,
-              activityDirectives,
+              activityDirectives || [],
               spansList,
               $activityTypes,
               $activityArgumentDefaultsMap,
@@ -460,7 +460,7 @@
                 uniqueDirectives.push(directive);
 
                 // Gather spans for directive since we always show all spans for a directive
-                const childSpans = getAllSpansForActivityDirective(directive.id, spansMap, spanUtilityMaps);
+                const childSpans = getAllSpansForActivityDirective(directive.id, spansMap || {}, spanUtilityMaps);
                 childSpans.forEach(span => {
                   seenSpanIds[span.span_id] = true;
                   idToColorMaps.spans[span.span_id] = layer.activityColor;
