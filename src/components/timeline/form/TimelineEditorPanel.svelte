@@ -6,7 +6,6 @@
   import DuplicateIcon from '@nasa-jpl/stellar/icons/duplicate.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import GripVerticalIcon from 'bootstrap-icons/icons/grip-vertical.svg?component';
-  import { onMount } from 'svelte';
   import { dndzone } from 'svelte-dnd-action';
   import {
     default as ExternalEventIcon,
@@ -75,7 +74,6 @@
   import { tooltip } from '../../../utilities/tooltip';
   import ColorPicker from '../../form/ColorPicker.svelte';
   import Input from '../../form/Input.svelte';
-  import Loading from '../../Loading.svelte';
   import GridMenu from '../../menus/GridMenu.svelte';
   import ParameterUnits from '../../parameters/ParameterUnits.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
@@ -135,8 +133,6 @@
     viewUpdateRow('discreteOptions', ViewDefaultDiscreteOptions);
   }
   $: discreteOptions = selectedRow?.discreteOptions || { ...ViewDefaultDiscreteOptions };
-
-  $: loading = $selectedTimelineId === null || $view === null;
 
   function updateRowEvent(event: Event) {
     const { name, value } = getTarget(event);
@@ -456,15 +452,6 @@
     el.style.background = 'var(--st-gray-10)';
     el.classList.add('timeline-element-dragging');
   }
-
-  onMount(() => {
-    if ($selectedTimelineId === null) {
-      const firstTimeline = $view?.definition.plan.timelines[0];
-      if (firstTimeline) {
-        viewSetSelectedTimeline(firstTimeline.id);
-      }
-    }
-  });
 </script>
 
 <Panel padBody={false}>
@@ -495,11 +482,7 @@
       </div>
 
       <!-- Timeline editing -->
-      {#if loading}
-        <div class="p-3">
-          <Loading />
-        </div>
-      {:else if !selectedTimeline}
+      {#if !selectedTimeline}
         <fieldset class="editor-section">No timeline selected</fieldset>
       {:else}
         <EditorSection item="Margin">

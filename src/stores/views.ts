@@ -47,7 +47,7 @@ export const selectedLayerId: Writable<number | null> = writable(null);
 
 export const selectedRowId: Writable<number | null> = writable(null);
 
-export const selectedTimelineId: Writable<number | null> = writable(null);
+export const selectedTimelineId: Writable<number | null> = writable(0);
 
 export const selectedYAxisId: Writable<number | null> = writable(null);
 
