@@ -13,5 +13,4 @@ export type QueryVariables = Record<string, any>;
 
 export type Subscription<T> = {
   next: Subscriber<T>;
-  unsubscribe: Unsubscriber;
 };
