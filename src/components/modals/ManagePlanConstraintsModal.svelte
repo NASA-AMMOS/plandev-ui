@@ -6,7 +6,12 @@
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
-  import { allowedConstraintPlanSpecMap, allowedConstraintSpecs, constraints } from '../../stores/constraints';
+  import {
+    allowedConstraintPlanSpecMap,
+    allowedConstraintSpecs,
+    constraints,
+    constraintsLoading,
+  } from '../../stores/constraints';
   import { plan, planId, planReadOnly } from '../../stores/plan';
   import type { User } from '../../types/app';
   import type { ConstraintMetadata, ConstraintPlanSpec, ConstraintPlanSpecInsertInput } from '../../types/constraint';
@@ -272,9 +277,9 @@
       </div>
       <hr />
       <div class="constraints-modal-table-container">
-        {#if !$constraints || filteredConstraints.length}
+        {#if $constraintsLoading || filteredConstraints.length}
           <DataGrid
-            loading={!$constraints}
+            loading={$constraintsLoading}
             bind:this={dataGrid}
             {columnDefs}
             rowData={filteredConstraints}

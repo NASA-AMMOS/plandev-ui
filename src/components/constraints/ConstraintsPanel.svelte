@@ -15,8 +15,8 @@
     cachedConstraintsStatus,
     constraintPlanSpecs,
     constraintResponseMap,
-    constraintRuns,
     constraintVisibilityMap,
+    constraintsLoading,
     constraintsMap,
     constraintsStatus,
     setAllConstraintsVisible,
@@ -315,7 +315,7 @@
     </CollapsibleListControls>
 
     <div class="pt-2">
-      {#if !$constraintRuns}
+      {#if $constraintsLoading}
         <div class="p-1">
           <Loading />
         </div>

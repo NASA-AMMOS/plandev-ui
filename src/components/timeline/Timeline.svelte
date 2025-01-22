@@ -49,6 +49,7 @@
   export let activityDirectivesMap: ActivityDirectivesMap | null = null;
   export let externalEvents: ExternalEvent[] = [];
   export let constraintResults: ConstraintResultWithName[] = [];
+  export let constraintsLoading: boolean = false;
   export let hasUpdateDirectivePermission: boolean = false;
   export let hasUpdateSimulationPermission: boolean = false;
   export let initialSpanLoadComplete: boolean = false;
@@ -394,10 +395,9 @@
       />
     {/if}
     <div class="timeline-histogram-container">
-      <!-- TODO add loading to this component -->
       <TimelineHistogram
         activityDirectives={activityDirectives || []}
-        loading={!activityDirectives || (!spans && !initialSpanLoadComplete)}
+        loading={!activityDirectives || !initialSpanLoadComplete || constraintsLoading}
         {externalEvents}
         {constraintResults}
         {cursorEnabled}

@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
-  import { visibleConstraintResults } from '../../stores/constraints';
+  import { constraintsLoading, visibleConstraintResults } from '../../stores/constraints';
   import { selectExternalEvent, selectedExternalEventId, selectedExternalEvents } from '../../stores/external-event';
   import { maxTimeRange, plan, planReadOnly, viewTimeRange } from '../../stores/plan';
   import {
@@ -217,6 +217,7 @@
       activityDirectivesMap={$activityDirectivesMap}
       externalEvents={$selectedExternalEvents}
       constraintResults={$visibleConstraintResults}
+      constraintsLoading={$constraintsLoading}
       {hasUpdateDirectivePermission}
       {hasUpdateSimulationPermission}
       initialSpanLoadComplete={$initialSpanLoadComplete}

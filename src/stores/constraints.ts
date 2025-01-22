@@ -52,6 +52,11 @@ export const constraintMetadata = gqlSubscribable<ConstraintMetadata | null>(
 );
 
 /* Derived. */
+export const constraintsLoading: Readable<boolean> = derived(
+  [constraints, constraintRuns],
+  ([$constraints, $constraintRuns]) => !$constraints || !$constraintRuns,
+);
+
 export const constraintsMap: Readable<Record<string, ConstraintMetadata>> = derived([constraints], ([$constraints]) =>
   keyBy($constraints, 'id'),
 );
