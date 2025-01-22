@@ -348,6 +348,7 @@
 
   .conditions-modal-title {
     font-weight: bold;
+    white-space: nowrap;
   }
 
   .conditions-modal-table-container {

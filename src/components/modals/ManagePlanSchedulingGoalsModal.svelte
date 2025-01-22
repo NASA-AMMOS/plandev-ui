@@ -338,6 +338,7 @@
 
   .goals-modal-title {
     font-weight: bold;
+    white-space: nowrap;
   }
 
   .goals-modal-table-container {
