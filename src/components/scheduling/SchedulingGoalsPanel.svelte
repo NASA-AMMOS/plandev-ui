@@ -11,6 +11,7 @@
     enableScheduling,
     schedulingAnalysisStatus,
     schedulingGoalSpecifications,
+    schedulingGoalsLoading,
     schedulingGoalsMap,
   } from '../../stores/scheduling';
   import type { User } from '../../types/app';
@@ -41,7 +42,7 @@
   let visibleSchedulingGoalSpecs: SchedulingGoalPlanSpecification[] = [];
 
   // TODO: remove this after db merge as it becomes redundant
-  $: visibleSchedulingGoalSpecs = $allowedSchedulingGoalSpecs.filter(({ goal_metadata: goalMetadata }) => {
+  $: visibleSchedulingGoalSpecs = ($allowedSchedulingGoalSpecs || []).filter(({ goal_metadata: goalMetadata }) => {
     if (goalMetadata) {
       const { public: isPublic, owner } = goalMetadata;
       if (!isPublic && !isAdminRole(user?.activeRole)) {
@@ -208,7 +209,7 @@
       </svelte:fragment>
     </CollapsibleListControls>
     <div class="pt-2">
-      {#if !$schedulingGoalSpecifications}
+      {#if $schedulingGoalsLoading}
         <div class="pt-1">
           <Loading />
         </div>

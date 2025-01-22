@@ -6,8 +6,8 @@
   import { plan, planReadOnly } from '../../stores/plan';
   import {
     allowedSchedulingConditionSpecs,
-    schedulingConditionResponses,
     schedulingConditionSpecifications,
+    schedulingConditionsLoading,
     schedulingConditionsMap,
   } from '../../stores/scheduling';
   import type { User } from '../../types/app';
@@ -86,10 +86,6 @@
       activeElement.focus();
     }
   });
-
-  $: console.log('$schedulingConditionSpecifications :>> ', $schedulingConditionSpecifications);
-  $: console.log('filteredSchedulingConditionSpecs :>> ', filteredSchedulingConditionSpecs);
-  $: console.log('$schedulingConditionsMap :>> ', $schedulingConditionsMap);
 </script>
 
 <Panel>
@@ -119,8 +115,7 @@
       </svelte:fragment>
     </CollapsibleListControls>
     <div class="pt-2">
-      <!-- TODO should we instead have the schedulingConditionsMap be nullable or should the pattern be to look at the responses? Or do we do another derived store to say if these things have been loaded? -->
-      {#if !$allowedSchedulingConditionSpecs || !$schedulingConditionResponses}
+      {#if $schedulingConditionsLoading}
         <div class="pt-1">
           <Loading />
         </div>

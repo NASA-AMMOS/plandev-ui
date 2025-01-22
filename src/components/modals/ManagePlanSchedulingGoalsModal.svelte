@@ -7,7 +7,12 @@
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { plan, planReadOnly } from '../../stores/plan';
-  import { allowedSchedulingGoalSpecs, schedulingGoals, schedulingPlanSpecification } from '../../stores/scheduling';
+  import {
+    allowedSchedulingGoalSpecs,
+    schedulingGoals,
+    schedulingGoalsLoading,
+    schedulingPlanSpecification,
+  } from '../../stores/scheduling';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type {
@@ -116,7 +121,7 @@
       const includesName = goal.name.toLocaleLowerCase().includes(filterTextLowerCase);
       return includesId || includesName;
     });
-  $: selectedGoals = $allowedSchedulingGoalSpecs.reduce(
+  $: selectedGoals = ($allowedSchedulingGoalSpecs || []).reduce(
     (prevBooleanMap: Record<string, boolean>, schedulingGoalPlanSpec: SchedulingGoalPlanSpecification) => {
       return {
         ...prevBooleanMap,
@@ -202,7 +207,7 @@
   }
 
   async function onUpdateGoals(selectedGoals: Record<number, boolean>) {
-    if ($plan && $schedulingPlanSpecification) {
+    if ($plan && $schedulingPlanSpecification && $allowedSchedulingGoalSpecs) {
       const goalPlanSpecUpdates: {
         goalPlanSpecIdsToDelete: number[];
         goalPlanSpecsToAdd: SchedulingGoalPlanSpecInsertInput[];
@@ -288,8 +293,14 @@
       </div>
       <hr />
       <div class="goals-modal-table-container">
-        {#if filteredGoals.length}
-          <DataGrid bind:this={dataGrid} {columnDefs} rowData={filteredGoals} on:cellEditingStopped={onToggleGoal} />
+        {#if $schedulingGoalsLoading || filteredGoals.length}
+          <DataGrid
+            bind:this={dataGrid}
+            {columnDefs}
+            rowData={filteredGoals}
+            on:cellEditingStopped={onToggleGoal}
+            loading={$schedulingGoalsLoading}
+          />
         {:else}
           <div class="p1 st-typography-label">No Scheduling Goals Found</div>
         {/if}

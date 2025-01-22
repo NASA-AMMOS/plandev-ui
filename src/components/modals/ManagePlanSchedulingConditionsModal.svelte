@@ -11,6 +11,7 @@
   import {
     allowedSchedulingConditionSpecs,
     schedulingConditions,
+    schedulingConditionsLoading,
     schedulingPlanSpecification,
   } from '../../stores/scheduling';
   import type { User } from '../../types/app';
@@ -293,10 +294,11 @@
       </div>
       <hr />
       <div class="conditions-modal-table-container">
-        {#if filteredConditions.length}
+        {#if $schedulingConditionsLoading || filteredConditions.length}
           <DataGrid
             bind:this={dataGrid}
             {columnDefs}
+            loading={$schedulingConditionsLoading}
             rowData={filteredConditions}
             on:cellEditingStopped={onToggleCondition}
           />

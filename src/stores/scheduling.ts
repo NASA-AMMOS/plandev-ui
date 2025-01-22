@@ -152,10 +152,24 @@ export const allowedSchedulingConditionSpecs: Readable<SchedulingConditionPlanSp
       : null,
 );
 
-export const allowedSchedulingGoalSpecs: Readable<SchedulingGoalPlanSpecification[]> = derived(
+export const allowedSchedulingGoalSpecs: Readable<SchedulingGoalPlanSpecification[] | null> = derived(
   [schedulingGoalSpecifications],
   ([$schedulingGoalSpecifications]) =>
     ($schedulingGoalSpecifications || []).filter(({ goal_metadata: goalMetadata }) => goalMetadata !== null),
+);
+
+export const schedulingGoalsLoading = derived(
+  [schedulingGoalSpecifications, schedulingGoalResponses],
+  ([$schedulingGoalSpecifications, $schedulingGoalResponses]) => {
+    return !$schedulingGoalSpecifications || !$schedulingGoalResponses;
+  },
+);
+
+export const schedulingConditionsLoading = derived(
+  [schedulingConditionSpecifications, schedulingConditionResponses],
+  ([$schedulingConditionSpecifications, $schedulingConditionResponses]) => {
+    return !$schedulingConditionSpecifications || !$schedulingConditionResponses;
+  },
 );
 
 export const latestSchedulingGoalAnalyses = derived(
