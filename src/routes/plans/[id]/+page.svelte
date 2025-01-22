@@ -379,7 +379,7 @@
   } else {
     simulationDataAbortController?.abort();
     $spans = null;
-    $simulationEvents = [];
+    $simulationEvents = null;
   }
 
   $: compactNavMode = windowWidth < 1100;

@@ -301,7 +301,8 @@
       columnDefs={derivedColumnDefs ?? []}
       columnStates={simulationEventsTable?.columnStates}
       {filterExpression}
-      simulationEvents={$simulationEvents}
+      loading={!$simulationEvents}
+      simulationEvents={$simulationEvents || []}
       on:columnMoved={onColumnMoved}
       on:columnPinned={onColumnPinned}
       on:columnResized={onColumnResized}

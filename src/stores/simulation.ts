@@ -42,7 +42,7 @@ export const initialSpanLoadComplete: Writable<boolean> = writable(false);
 
 export const yAxesWithScaleDomainsCache: Writable<Record<number, Axis[]>> = writable({});
 
-export const simulationEvents: Writable<SimulationEvent[]> = writable([]);
+export const simulationEvents: Writable<SimulationEvent[] | null> = writable(null);
 
 /* Subscriptions. */
 
@@ -185,7 +185,7 @@ export function resetSimulationStores() {
   simulationDatasetId.set(-1);
   simulationDataset.updateValue(() => null);
   simulationDatasetLatest.updateValue(() => null);
-  simulationEvents.set([]);
+  simulationEvents.set(null);
   simulationTemplates.updateValue(() => []);
   simulationDatasetsPlan.updateValue(() => null);
   simulationDatasetsAll.updateValue(() => null);
