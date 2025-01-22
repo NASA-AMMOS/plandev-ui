@@ -6,7 +6,12 @@
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
   import { planMetadata, planReadOnly, planReadOnlySnapshot } from '../../stores/plan';
-  import { planSnapshotId, planSnapshotsWithSimulations } from '../../stores/planSnapshots';
+  import {
+    planSnapshotId,
+    planSnapshots,
+    planSnapshotsLoading,
+    planSnapshotsWithSimulations,
+  } from '../../stores/planSnapshots';
   import { plans } from '../../stores/plans';
   import { plugins } from '../../stores/plugins';
   import { simulationDataset, simulationDatasetId } from '../../stores/simulation';
@@ -25,6 +30,7 @@
   import { tooltip } from '../../utilities/tooltip';
   import { required, unique } from '../../utilities/validators';
   import Collapse from '../Collapse.svelte';
+  import Loading from '../Loading.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
   import CancellableProgressRadial from '../ui/CancellableProgressRadial.svelte';
@@ -343,6 +349,7 @@
           {/if}
           <button
             class="st-button secondary"
+            disabled={!$planSnapshots}
             use:permissionHandler={{
               hasPermission: hasCreateSnapshotPermission,
               permissionError: $planReadOnly
@@ -355,6 +362,9 @@
           </button>
         </div>
         <div style="margin-top: 8px">
+          {#if $planSnapshotsLoading}
+            <Loading />
+          {/if}
           <CardList>
             {#each filteredPlanSnapshots as planSnapshot (planSnapshot.snapshot_id)}
               <PlanSnapshot
@@ -379,7 +389,7 @@
                 on:delete={() => effects.deletePlanSnapshot(planSnapshot, user)}
               />
             {/each}
-            {#if filteredPlanSnapshots.length < 1}
+            {#if !$planSnapshotsLoading && filteredPlanSnapshots.length < 1}
               <div class="st-typography-label">No Plan Snapshots Found</div>
             {/if}
           </CardList>
