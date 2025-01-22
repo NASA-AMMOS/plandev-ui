@@ -8,6 +8,7 @@
   import { mergeWith } from 'lodash-es';
   import { onMount } from 'svelte';
   import Nav from '../components/app/Nav.svelte';
+  import Loading from '../components/Loading.svelte';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
   import { loadPluginCode } from '../utilities/plugins';
 
@@ -48,7 +49,9 @@
           {$pluginsError}
         </div>
       {:else}
-        <div class="loading">Loading plugins...</div>
+        <div class="delay-visibility">
+          <Loading>Loading plugins...</Loading>
+        </div>
       {/if}
     </div>
   </div>
@@ -83,7 +86,7 @@
     flex-shrink: 0;
   }
 
-  .loading {
+  .delay-visibility {
     animation: 1s delayVisibility;
   }
 
