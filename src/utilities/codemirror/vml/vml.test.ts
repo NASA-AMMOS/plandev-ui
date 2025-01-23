@@ -337,6 +337,8 @@ END_MODULE`;
     const input = `MODULE
     BLOCK block1
         INPUT arg1
+        ; durations can have ranges
+        INPUT RELATIVE_TIME  iv_preheat_dur VALUES R000T00:00:00.000..R000T02:00:00.000
     BODY
     END_BODY
 
@@ -347,6 +349,8 @@ END_MODULE`;
     END_BODY
 
     END_MODULE`;
+
+    assertNoErrorNodes(input, true);
 
     const commandDictionary = vmlBlockLibraryToCommandDictionary(input, 'id', '/test');
     expect(commandDictionary.fswCommands.length).toBe(2);

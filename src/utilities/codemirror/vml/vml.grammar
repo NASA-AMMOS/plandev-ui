@@ -169,7 +169,7 @@ Issue {
 Issue_dynamic {
   ISSUE_DYNAMIC
   // Function_name not shown in schema
-  Function_name
+  // Function_name
   Call_parameters
 }
 
@@ -215,6 +215,8 @@ Input_value {
   Constant
   | Input_Range {
     INT_RANGE_CONST
+    | DAY_TIME_RANGE_CONST
+    | SHORT_TIME_RANGE_CONST
   }
 }
 
@@ -695,7 +697,7 @@ END_VARIABLES { @specialize<SYMBOL_CONST, "END_VARIABLES"> | @specialize<SYMBOL_
 END_WHILE { @specialize<SYMBOL_CONST, "END_WHILE"> | @specialize<SYMBOL_CONST, "end_while"> }
 EXTERNAL { @specialize<SYMBOL_CONST, "EXTERNAL"> | @specialize<SYMBOL_CONST, "external">}
 EXTERNAL_CALL { @specialize<SYMBOL_CONST, "EXTERNAL_CALL"> | @specialize<SYMBOL_CONST, "external_call"> }
-FALSE_CONST { @specialize<SYMBOL_CONST, "FALSE_CONST"> | @specialize<SYMBOL_CONST, "false_const"> }
+FALSE_CONST { @specialize<SYMBOL_CONST, "FALSE"> | @specialize<SYMBOL_CONST, "false"> }
 FLAGS { @specialize<SYMBOL_CONST, "FLAGS"> | @specialize<SYMBOL_CONST, "flags"> }
 FOR { @specialize<SYMBOL_CONST, "FOR"> | @specialize<SYMBOL_CONST, "for"> }
 HALT { @specialize<SYMBOL_CONST, "HALT"> | @specialize<SYMBOL_CONST, "halt"> }
@@ -736,7 +738,7 @@ TIME_COERCE { @specialize<SYMBOL_CONST, "TIME_COERCE"> | @specialize<SYMBOL_CONS
 TIMEOUT { @specialize<SYMBOL_CONST, "TIMEOUT"> | @specialize<SYMBOL_CONST, "timeout"> }
 TLM_ID { @specialize<SYMBOL_CONST, "TLM_ID"> | @specialize<SYMBOL_CONST, "tlm_id"> }
 TO { @specialize<SYMBOL_CONST, "TO"> | @specialize<SYMBOL_CONST, "to"> }
-TRUE_CONST { @specialize<SYMBOL_CONST, "TRUE_CONST"> | @specialize<SYMBOL_CONST, "true_const"> }
+TRUE_CONST { @specialize<SYMBOL_CONST, "TRUE"> | @specialize<SYMBOL_CONST, "true"> }
 UINT { @specialize<SYMBOL_CONST, "UINT"> | @specialize<SYMBOL_CONST, "uint"> }
 UINT_COERCE { @specialize<SYMBOL_CONST, "UINT_COERCE"> | @specialize<SYMBOL_CONST, "uint_coerce"> }
 UNKNOWN { @specialize<SYMBOL_CONST, "UNKNOWN"> | @specialize<SYMBOL_CONST, "unknown"> }
@@ -855,10 +857,20 @@ LOGICAL_NOT {
     INT_CONST ".." INT_CONST
   }
 
+  DAY_TIME_RANGE_CONST {
+    DAY_TIME_CONST ".." DAY_TIME_CONST
+  }
+
+  SHORT_TIME_RANGE_CONST {
+    SHORT_TIME_CONST ".." SHORT_TIME_CONST
+  }
+
   STRING_CONST { '"' (!["\\] | "\\" _)* '"' }
 
   @precedence { LESS_OR_EQUAL, SHIFT_LEFT, LESS }
   @precedence { GREATER_OR_EQUAL, SHIFT_RIGHT, GREATER }
+  @precedence { DAY_TIME_RANGE_CONST, DAY_TIME_CONST, SYMBOL_CONST }
+  @precedence { SHORT_TIME_RANGE_CONST, SHORT_TIME_CONST, SYMBOL_CONST }
   @precedence { INT_RANGE_CONST, DOUBLE_CONST, UINT_CONST, HEX_CONST, INT_CONST, ADD, SUBTRACT }
   @precedence { FULL_TIME_CONST, DAY_TIME_CONST, SHORT_TIME_CONST, SPACECRAFT_TIME_CONST, SYMBOL_CONST }
 
