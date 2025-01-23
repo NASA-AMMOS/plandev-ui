@@ -38,6 +38,7 @@ import {
 } from '../codemirror/codemirror-utils';
 import { closeSuggestion, computeBlocks, openSuggestion } from '../codemirror/custom-folder';
 import { SeqNCommandInfoMapper } from '../codemirror/seq-n-tree-utils';
+import { pluralize } from '../text';
 import {
   getBalancedDuration,
   getDoyTime,
@@ -1242,35 +1243,36 @@ function validateCommandStructure(
   if (argsNode && argsNode.length > expectedArgSize) {
     const extraArgs = argsNode.slice(expectedArgSize);
     const { from, to } = getFromAndTo(extraArgs);
+    const commandArgs = `argument${pluralize(extraArgs.length)}`;
     return {
       actions: [
         {
           apply(view, from, to) {
             view.dispatch({ changes: { from, to } });
           },
-          name: `Remove ${extraArgs.length} extra argument${extraArgs.length > 1 ? 's' : ''}`,
+          name: `Remove ${extraArgs.length} extra ${commandArgs}`,
         },
       ],
       from,
-      message: `Extra arguments, definition has ${expectedArgSize}, but ${argsNode.length} are present`,
+      message: `Extra ${commandArgs}, definition has ${expectedArgSize}, but ${argsNode.length} are present`,
       severity: 'error',
       to,
     };
   }
   if ((argsNode && argsNode.length < expectedArgSize) || (!argsNode && expectedArgSize > 0)) {
     const { from, to } = getFromAndTo(argsNode ?? [stemNode]);
-    const pluralS = expectedArgSize - (argsNode?.length ?? 0) > 1 ? 's' : '';
+    const commandArgs = `argument${pluralize(expectedArgSize - (argsNode?.length ?? 0))}`;
     return {
       actions: [
         {
           apply(view) {
             addDefault(view);
           },
-          name: `Add default missing argument${pluralS}`,
+          name: `Add default missing ${commandArgs}`,
         },
       ],
       from,
-      message: `Missing argument${pluralS}, definition has ${expectedArgSize}, but ${argsNode?.length ?? 0} are present`,
+      message: `Missing ${commandArgs}, definition has ${expectedArgSize}, but ${argsNode?.length ?? 0} are present`,
       severity: 'error',
       to,
     };
@@ -1475,7 +1477,7 @@ function validateArgument(
             diagnostics.push({
               actions: [],
               from: argNode.from,
-              message: `Repeat argument should have at least ${minCount} value${minCount !== 0 ? 's' : ''} but has ${
+              message: `Repeat argument should have at least ${minCount} value${pluralize(minCount)} but has ${
                 repeatNodes.length
               }`,
               severity: 'error',
@@ -1485,7 +1487,7 @@ function validateArgument(
             diagnostics.push({
               actions: [],
               from: argNode.from,
-              message: `Repeat argument should have at most ${maxCount} value${maxCount !== 0 ? 's' : ''} but has ${
+              message: `Repeat argument should have at most ${maxCount} value${pluralize(maxCount)} but has ${
                 repeatNodes.length
               }`,
               severity: 'error',
