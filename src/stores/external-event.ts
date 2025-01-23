@@ -6,7 +6,7 @@ import { getExternalEventWholeRowId } from '../utilities/externalEvents';
 import gql from '../utilities/gql';
 import { convertDoyToYmd, convertUTCToMs, getIntervalInMs } from '../utilities/time';
 import { selectedPlanDerivationGroupNames } from './external-source';
-import { plan } from './plan';
+import { plan, planId } from './plan';
 import { gqlSubscribable } from './subscribable';
 import { viewUpdateGrid } from './views';
 
@@ -22,6 +22,15 @@ export const selectedExternalEventsRaw = gqlSubscribable<{ external_event: Exter
   null,
 );
 export const externalEventTypes = gqlSubscribable<ExternalEventType[]>(gql.SUB_EXTERNAL_EVENT_TYPES, {}, [], null);
+export const selectedExternalEventTypesRaw = gqlSubscribable<{
+  derivation_group: {
+    external_sources: {
+      external_events: {
+        external_event_type: ExternalEventType
+      }[]
+    }[]
+  }
+}[]>(gql.SUB_PLAN_EXTERNAL_EVENT_TYPES, { plan_id: planId }, [], null);
 
 // use to track which event is selected in the plan view, as this information is shared across several sibling panels
 export const selectedExternalEventId: Writable<ExternalEventId | null> = writable(null);
@@ -88,6 +97,27 @@ export const selectedExternalEvent: Readable<ExternalEvent | null> = derived(
     return null;
   },
 );
+
+// TODO: clean this up??
+export const selectedExternalEventTypes: Readable<ExternalEventType[]> = derived(
+  [selectedExternalEventTypesRaw],
+  ([$externalEventTypesRaw]) => {
+    const result: ExternalEventType[] = [];
+    const names: Set<string> = new Set();
+    for (const derivation_group of $externalEventTypesRaw) {
+      for (const external_source of derivation_group.derivation_group.external_sources) {
+        for (const external_event of external_source.external_events) {
+          const external_event_type = external_event.external_event_type;
+          if (!(names.has(external_event_type.name))) {
+            result.push(external_event_type)
+            names.add(external_event_type.name)
+          }
+        }
+      }
+    }
+    return result;
+  }
+)
 
 /** Helper functions. */
 export function resetExternalEventStores(): void {

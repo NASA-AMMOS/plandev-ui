@@ -2741,6 +2741,23 @@ const gql = {
     }
   `,
 
+  SUB_PLAN_EXTERNAL_EVENT_TYPES: `#graphql
+    subscription GetPlanExternalEventTypes($plan_id: Int!) {
+      plan_derivation_group(where: {plan_id: {_eq: $plan_id}}) {
+        derivation_group {
+          external_sources {
+            external_events {
+              external_event_type {
+                name
+                attribute_schema
+              }
+            }
+          }
+        }
+      }
+    }
+  `,
+
   SUB_PLAN_LOCKED: `#graphql
     subscription SubPlanLocked($planId: Int!) {
       planLocked: ${Queries.PLAN}(id: $planId) {

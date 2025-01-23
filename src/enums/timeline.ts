@@ -6,6 +6,11 @@ export enum ActivityLayerFilterField {
   'Parameter' = 'Parameter',
   'SchedulingGoalId' = 'Scheduling Goal Id',
 }
+export enum ExternalEventLayerFilterField {
+  'Type' = 'Type',
+  'Name' = 'Name',
+  'Attribute' = 'Attribute'
+}
 
 export enum FilterOperator {
   'equals' = 'equals',

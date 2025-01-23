@@ -9,13 +9,13 @@
   import TimelineLineLayerIcon from '../../../../assets/timeline-line-layer.svg?component';
   import TimelineXRangeLayerIcon from '../../../../assets/timeline-x-range-layer.svg?component';
   import { ViewDiscreteLayerColorPresets, ViewLineLayerColorPresets } from '../../../../constants/view';
-  import { externalEventTypes } from '../../../../stores/external-event';
   import { externalResourceNames, resourceTypes } from '../../../../stores/simulation';
   import type { RadioButtonId } from '../../../../types/radio-buttons';
   import type {
     ActivityLayer,
     Axis,
     ChartType,
+    ExternalEventLayer,
     ExternalEventLayerFilter,
     Layer,
     ResourceLayerFilter,
@@ -29,6 +29,7 @@
   import SearchableDropdown from '../../../ui/SearchableDropdown.svelte';
   import TimelineEditorLayerSettings from '../TimelineEditorLayerSettings.svelte';
   import ActivityFilterBuilder from './ActivityFilterBuilder.svelte';
+  import ExternalEventFilterBuilder from './ExternalEventFilterBuilder.svelte';
 
   export let layer: Layer;
   export let yAxes: Axis[] = [];
@@ -98,6 +99,17 @@
       (layer.filter.activity?.dynamic_type_filters?.length ?? 0) +
       (layer.filter.activity?.other_filters?.length ?? 0) +
       (layer.filter.activity?.type_subfilters ? Object.keys(layer.filter.activity?.type_subfilters).length : 0)
+    );
+  }
+
+  function getExtrernalEventLayerFilterCount(layer: ExternalEventLayer) {
+    return (
+      (layer.filter.externalEvent?.static_types?.length ?? 0) +
+      (layer.filter.externalEvent?.dynamic_type_filters?.length ?? 0) +
+      (layer.filter.externalEvent?.other_filters?.length ?? 0) +
+      (layer.filter.externalEvent?.type_subfilters
+        ? Object.keys(layer.filter.externalEvent?.type_subfilters).length
+        : 0)
     );
   }
 
@@ -172,20 +184,38 @@
         <ChevronDownIcon slot="icon" />
       </SearchableDropdown>
     {:else if isExternalEventLayer(layer)}
-      <SearchableDropdown
-        allowMultiple
-        selectedOptionLabel={layer.name}
-        showPlaceholderOption={false}
-        className="w-100"
-        placeholder="Select Event Types"
-        selectTooltip="Select Event Types"
-        searchPlaceholder="Filter event types"
-        selectedOptionValues={layer.filter.externalEvent?.event_types ?? []}
-        options={$externalEventTypes.map(type => ({ display: type.name, value: type.name }))}
-        on:change={({ detail: values }) => dispatch('filterChange', { filter: { event_types: values } })}
+      {@const filterCount = getExtrernalEventLayerFilterCount(layer)}
+      <ExternalEventFilterBuilder
+        layerName={layer.name}
+        filter={layer.filter.activity}
+        on:filterChange
+        on:rename={({ detail: { name: newName } }) => dispatch('updateLayer', { property: 'name', value: newName })}
+        bind:this={filterMenu}
       >
-        <ChevronDownIcon slot="icon" />
-      </SearchableDropdown>
+        <button
+          aria-label="Toggle activity filter builder modal"
+          slot="trigger"
+          on:click|stopPropagation={toggleFilterMenu}
+          class="st-button icon w-100"
+          style:position="relative"
+          use:tooltip={{
+            content: `Filter Activities${filterCount > 0 ? ` (${filterCount} applied)` : ''}`,
+            placement: 'top',
+          }}
+        >
+          <div class="activity-layer-name st-select">
+            <div class="activity-layer-name-text">
+              {name || 'Activity Layer'}
+            </div>
+            <div class="activity-layer-name-badge">
+              {#if filterCount > 0}
+                <div>{filterCount}</div>
+              {/if}
+              <FilterIcon />
+            </div>
+          </div>
+        </button>
+      </ExternalEventFilterBuilder>
     {/if}
   </div>
   <div class="actions">

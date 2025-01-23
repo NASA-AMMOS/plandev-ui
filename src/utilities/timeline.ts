@@ -20,9 +20,9 @@ import {
   ViewLineLayerColorPresets,
   ViewXRangeLayerSchemePresets,
 } from '../constants/view';
-import type { ActivityLayerFilterField } from '../enums/timeline';
+import type { ActivityLayerFilterField, ExternalEventLayerFilterField } from '../enums/timeline';
 import type { ActivityDirective, ActivityType } from '../types/activity';
-import type { ExternalEvent } from '../types/external-event';
+import type { ExternalEvent, ExternalEventType } from '../types/external-event';
 import type { DefaultEffectiveArgumentsMap } from '../types/parameter';
 import type { Resource, ResourceType, ResourceValue, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type {
@@ -36,6 +36,8 @@ import type {
   DiscreteTreeNode,
   DiscreteTreeNodeItem,
   ExternalEventLayer,
+  ExternalEventLayerDynamicFilter,
+  ExternalEventLayerFilter,
   ExternalEventOptions,
   HorizontalGuide,
   Layer,
@@ -612,11 +614,7 @@ export function createTimelineExternalEventLayer(
   return {
     chartType: 'externalEvent',
     externalEventColor: '#fcdd8f',
-    filter: {
-      externalEvent: {
-        event_types: [],
-      },
-    },
+    filter: { externalEvent: {} },
     id,
     name: '',
     yAxisId: null,
@@ -1357,25 +1355,25 @@ export function paginateNodes(
       newNodes[bin] =
         activityOrEvent === 'activity'
           ? {
-              activity_type: 'aggregation',
-              children: [],
-              expanded: false,
-              id: '',
-              isLeaf: false,
-              items: [],
-              label: '',
-              type: 'Activity',
-            }
+            activity_type: 'aggregation',
+            children: [],
+            expanded: false,
+            id: '',
+            isLeaf: false,
+            items: [],
+            label: '',
+            type: 'Activity',
+          }
           : {
-              activity_type: undefined,
-              children: [],
-              expanded: false,
-              id: '',
-              isLeaf: false,
-              items: [],
-              label: '',
-              type: 'ExternalEvent',
-            };
+            activity_type: undefined,
+            children: [],
+            expanded: false,
+            id: '',
+            isLeaf: false,
+            items: [],
+            label: '',
+            type: 'ExternalEvent',
+          };
     }
     newNodes[bin].children.push(node);
     if (node.items) {
@@ -1436,6 +1434,44 @@ export function applyActivityLayerFilter(
   return { directives: filteredDirectives, spans: filteredSpans };
 }
 
+export function applyExternalEventLayerFilter(
+  filter: ExternalEventLayerFilter | undefined,
+  external_events: ExternalEvent[]
+): { external_events: ExternalEvent[] } {
+  if (
+    !filter ||
+    (!filter.dynamic_type_filters?.length &&
+      !filter.other_filters?.length &&
+      !filter.static_types?.length &&
+      (!filter.type_subfilters || !Object.keys(filter.type_subfilters).length))
+  ) {
+    return { external_events };
+  }
+
+  const staticTypeMap: Record<string, boolean> = (filter.static_types || []).reduce(
+    (acc: Record<string, boolean>, cur: string) => {
+      acc[cur] = true;
+      return acc;
+    },
+    {},
+  );
+
+  // TODO: MAYBE OBSOLETE....
+  // const typeDefMap: Record<string, ExternalEventType> = (types || []).reduce(
+  //   (acc: Record<string, ExternalEventType>, cur: ExternalEventType) => {
+  //     acc[cur.name] = cur;
+  //     return acc;
+  //   },
+  //   {},
+  // );
+
+  const filteredExternalEvents = external_events.filter(event => {
+    return applyFiltersToExternalEvent(event, filter, staticTypeMap);
+  });
+
+  return { external_events: filteredExternalEvents };
+}
+
 function applyFiltersToDirectiveOrSpan(
   directiveOrSpan: ActivityDirective | Span,
   filter: ActivityLayerFilter,
@@ -1487,6 +1523,51 @@ function applyFiltersToDirectiveOrSpan(
   return included;
 }
 
+function applyFiltersToExternalEvent(
+  externalEvent: ExternalEvent,
+  filter: ExternalEventLayerFilter,
+  staticTypeMap: Record<string, boolean>,
+) {
+  const anyTypeFiltersSpecified = !!(filter.static_types?.length || filter.dynamic_type_filters?.length);
+  const anyMainFiltersSpecified = anyTypeFiltersSpecified || !!filter.other_filters?.length;
+  let included = !anyMainFiltersSpecified;
+
+  // Check to see if directive is included in static list
+  if (filter.static_types?.length) {
+    included = !!staticTypeMap[externalEvent.pkey.event_type_name];
+  }
+
+  // Check if necessary to see if directive is included in dynamic list
+  if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
+    included = externalEventMatchesDynamicFilters(
+      externalEvent,
+      filter.dynamic_type_filters
+    );
+  }
+
+  // Apply other filters on top of the types
+  if (filter.other_filters?.length) {
+    included =
+      externalEventMatchesDynamicFilters(externalEvent, filter.other_filters) &&
+      (anyTypeFiltersSpecified ? included : true);
+  }
+
+  // Apply type specific filters if found and if the type is already included or
+  // if no other filters were specified (case where all types are included by default)
+  if (
+    filter.type_subfilters &&
+    filter.type_subfilters[externalEvent.pkey.event_type_name] &&
+    filter.type_subfilters[externalEvent.pkey.event_type_name].length
+  ) {
+    included =
+      externalEventMatchesDynamicFilters(
+        externalEvent,
+        filter.type_subfilters[externalEvent.pkey.event_type_name]
+      ) && (anyMainFiltersSpecified ? included : true);
+  }
+  return included;
+}
+
 export function getMatchingTypesForActivityLayerFilter(filter: ActivityLayerFilter | undefined, types: ActivityType[]) {
   if (
     !filter ||
@@ -1518,7 +1599,44 @@ export function getMatchingTypesForActivityLayerFilter(filter: ActivityLayerFilt
 
     // Check if necessary to see if type is included in dynamic list
     if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
-      included = typeMatchesDynamicFilters(type, filter.dynamic_type_filters);
+      included = activityTypeMatchesDynamicFilters(type, filter.dynamic_type_filters);
+    }
+    return included;
+  });
+}
+
+export function getMatchingTypesForExternalEventLayerFilter(filter: ExternalEventLayerFilter | undefined, types: ExternalEventType[]) {
+  if (
+    !filter ||
+    (!filter.dynamic_type_filters?.length &&
+      !filter.other_filters?.length &&
+      !filter.static_types?.length &&
+      (!filter.type_subfilters || !Object.keys(filter.type_subfilters).length))
+  ) {
+    return types;
+  }
+
+  const staticTypeMap: Record<string, boolean> = (filter.static_types || []).reduce(
+    (acc: Record<string, boolean>, cur: string) => {
+      acc[cur] = true;
+      return acc;
+    },
+    {},
+  );
+
+  const anyTypeFiltersSpecified = !!(filter.static_types?.length || filter.dynamic_type_filters?.length);
+
+  return types.filter(type => {
+    let included = !anyTypeFiltersSpecified;
+
+    // Check to see if type is included in static list
+    if (filter.static_types?.length) {
+      included = !!staticTypeMap[type.name];
+    }
+
+    // Check if necessary to see if type is included in dynamic list
+    if ((!filter.static_types?.length || !included) && filter.dynamic_type_filters?.length) {
+      included = externalEventTypeMatchesDynamicFilters(type, filter.dynamic_type_filters);
     }
     return included;
   });
@@ -1572,8 +1690,38 @@ function directiveOrSpanMatchesDynamicFilters(
   }, true);
 }
 
+function externalEventMatchesDynamicFilters(
+  externalEvent: ExternalEvent,
+  dynamicFilters: ExternalEventLayerDynamicFilter<typeof ExternalEventLayerFilterField>[],
+): boolean {
+  return dynamicFilters.reduce((acc, curr) => {
+    let matches = false;
+    if (curr.field === 'Type') {
+      matches = matchesDynamicFilter(externalEvent.pkey.event_type_name, curr.operator, curr.value);
+    } else if (curr.field === 'Name') {
+      matches = matchesDynamicFilter(externalEvent.pkey.key, curr.operator, curr.value);
+    } /* else if (curr.field === 'Parameter' && curr.subfield) {
+      const subfield = curr.subfield;
+      const args = (directiveOrSpan as ActivityDirective).arguments || (directiveOrSpan as Span).attributes.arguments;
+      let argument = args[subfield.name];
+      if (argument === undefined) {
+        const isSpan = (directiveOrSpan as Span).span_id !== undefined;
+        if (!isSpan) {
+          // Get default
+          const defaultArgsForType = defaultArgumentsMap[directiveOrSpan.type];
+          if (defaultArgsForType) {
+            argument = defaultArgsForType[subfield.name];
+          }
+        }
+      }
+      matches = matchesDynamicFilter(argument, curr.operator, curr.value); // TODO!!!! 
+    } */
+    return acc && matches;
+  }, true);
+}
+
 // TODO try consolidating with the function above
-function typeMatchesDynamicFilters(
+function activityTypeMatchesDynamicFilters(
   type: ActivityType,
   dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
 ): boolean {
@@ -1583,6 +1731,20 @@ function typeMatchesDynamicFilters(
       matches = matchesDynamicFilter(type.name, curr.operator, curr.value);
     } else if (curr.field === 'Subsystem') {
       matches = matchesDynamicFilter(type.subsystem_tag?.id ?? -1, curr.operator, curr.value);
+    }
+    return acc && matches;
+  }, true);
+}
+
+// TODO try consolidating with the function above
+function externalEventTypeMatchesDynamicFilters(
+  type: ExternalEventType,
+  dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
+): boolean {
+  return dynamicFilters.reduce((acc, curr) => {
+    let matches = false;
+    if (curr.field === 'Type') {
+      matches = matchesDynamicFilter(type.name, curr.operator, curr.value);
     }
     return acc && matches;
   }, true);

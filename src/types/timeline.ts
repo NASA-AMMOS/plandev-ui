@@ -1,5 +1,5 @@
 import type { Selection } from 'd3-selection';
-import type { ActivityLayerFilterField, FilterOperator } from '../enums/timeline';
+import type { ActivityLayerFilterField, ExternalEventLayerFilterField, FilterOperator } from '../enums/timeline';
 import type { ActivityDirective, ActivityDirectiveId, ActivityType } from './activity';
 import type { ConstraintResultWithName } from './constraint';
 import type { ExternalEvent, ExternalEventId, ExternalEventType } from './external-event';
@@ -48,10 +48,27 @@ export type ActivityLayerFilter = {
   >;
 };
 export type ExternalEventLayerFilter = {
-  event_types: string[];
+  dynamic_type_filters?: ExternalEventLayerDynamicFilter<Pick<typeof ExternalEventLayerFilterField, 'Type'>>[];
+  other_filters?: ExternalEventLayerDynamicFilter<
+    Pick<typeof ExternalEventLayerFilterField, 'Attribute' | 'Name'>
+  >[];
+  static_types?: string[];
+  type_subfilters?: Record<
+    string,
+    ExternalEventLayerDynamicFilter<
+      Pick<typeof ExternalEventLayerFilterField, 'Attribute' | 'Name'>
+    >[]
+  >;
 };
 
 export type ActivityLayerDynamicFilter<T> = {
+  field: keyof T;
+  id: number;
+  operator: keyof typeof FilterOperator;
+  subfield?: { name: string; type: DynamicFilterDataType };
+  value: string | string[] | number | number[] | boolean;
+};
+export type ExternalEventLayerDynamicFilter<T> = {
   field: keyof T;
   id: number;
   operator: keyof typeof FilterOperator;
@@ -62,6 +79,13 @@ export type ActivityLayerDynamicFilter<T> = {
 export type ActivityLayerFilterSubfield = { name: string; type: DynamicFilterDataType };
 export type ActivityLayerFilterSubfieldSchema = ActivityLayerFilterSubfield & {
   activityTypes: string[];
+  label: string;
+  unit?: string;
+  values?: string[];
+};
+export type ExternalEventLayerFilterSubfield = { name: string; type: DynamicFilterDataType };
+export type ExternalEventLayerFilterSubfieldSchema = ExternalEventLayerFilterSubfield & {
+  externalEventTypes: string[];
   label: string;
   unit?: string;
   values?: string[];
@@ -139,9 +163,9 @@ export interface LineLayer extends Layer {
 
 export interface LinePoint extends Point {
   y:
-    | number
-    | string
-    | null /* TODO this type leaves much to be desired – could make an OrdinalLinePoint and a NumericLinePoint? */;
+  | number
+  | string
+  | null /* TODO this type leaves much to be desired – could make an OrdinalLinePoint and a NumericLinePoint? */;
 }
 
 export type MouseDown = {
