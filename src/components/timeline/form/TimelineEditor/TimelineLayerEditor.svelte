@@ -34,7 +34,8 @@
   export let layer: Layer;
   export let yAxes: Axis[] = [];
 
-  let filterMenu: ActivityFilterBuilder;
+  let activityFilterMenu: ActivityFilterBuilder;
+  let externalEventFilterMenu: ExternalEventFilterBuilder;
   let color: string = '';
   let colorPresets: string[] = [];
   let isColorScheme: boolean = false;
@@ -89,10 +90,6 @@
     return name;
   }
 
-  function toggleFilterMenu() {
-    filterMenu.toggle();
-  }
-
   function getActivityLayerFilterCount(layer: ActivityLayer) {
     return (
       (layer.filter.activity?.static_types?.length ?? 0) +
@@ -142,12 +139,12 @@
         filter={layer.filter.activity}
         on:filterChange
         on:rename={({ detail: { name: newName } }) => dispatch('updateLayer', { property: 'name', value: newName })}
-        bind:this={filterMenu}
+        bind:this={activityFilterMenu}
       >
         <button
           aria-label="Toggle activity filter builder modal"
           slot="trigger"
-          on:click|stopPropagation={toggleFilterMenu}
+          on:click|stopPropagation={() => activityFilterMenu.toggle()}
           class="st-button icon w-100"
           style:position="relative"
           use:tooltip={{
@@ -187,15 +184,15 @@
       {@const filterCount = getExtrernalEventLayerFilterCount(layer)}
       <ExternalEventFilterBuilder
         layerName={layer.name}
-        filter={layer.filter.activity}
+        filter={layer.filter.externalEvent}
         on:filterChange
         on:rename={({ detail: { name: newName } }) => dispatch('updateLayer', { property: 'name', value: newName })}
-        bind:this={filterMenu}
+        bind:this={externalEventFilterMenu}
       >
         <button
           aria-label="Toggle activity filter builder modal"
           slot="trigger"
-          on:click|stopPropagation={toggleFilterMenu}
+          on:click|stopPropagation={() => externalEventFilterMenu.toggle()}
           class="st-button icon w-100"
           style:position="relative"
           use:tooltip={{
