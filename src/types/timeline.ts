@@ -35,40 +35,33 @@ export interface ExternalEventLayer extends Layer {
 export type DynamicFilterDataType = ValueSchema['type'] | 'tag';
 
 export type ActivityLayerFilter = {
-  dynamic_type_filters?: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>>[];
-  other_filters?: ActivityLayerDynamicFilter<
+  dynamic_type_filters?: LayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>>[];
+  other_filters?: LayerDynamicFilter<
     Pick<typeof ActivityLayerFilterField, 'Tags' | 'Parameter' | 'SchedulingGoalId' | 'Name'>
   >[];
   static_types?: string[];
   type_subfilters?: Record<
     string,
-    ActivityLayerDynamicFilter<
+    LayerDynamicFilter<
       Pick<typeof ActivityLayerFilterField, 'Tags' | 'Parameter' | 'SchedulingGoalId' | 'Name'>
     >[]
   >;
 };
 export type ExternalEventLayerFilter = {
-  dynamic_type_filters?: ExternalEventLayerDynamicFilter<Pick<typeof ExternalEventLayerFilterField, 'Type'>>[];
-  other_filters?: ExternalEventLayerDynamicFilter<
+  dynamic_type_filters?: LayerDynamicFilter<Pick<typeof ExternalEventLayerFilterField, 'Type'>>[]; // TODO: add external source type, source info, derivation group??
+  other_filters?: LayerDynamicFilter<
     Pick<typeof ExternalEventLayerFilterField, 'Attribute' | 'Name'>
   >[];
   static_types?: string[];
   type_subfilters?: Record<
     string,
-    ExternalEventLayerDynamicFilter<
-      Pick<typeof ExternalEventLayerFilterField, 'Attribute' | 'Name'>
+    LayerDynamicFilter<
+      Pick<typeof ExternalEventLayerFilterField, 'Attribute' | 'Name'> // TODO: add scheduling goal id later, when we have traceability?
     >[]
   >;
 };
 
-export type ActivityLayerDynamicFilter<T> = {
-  field: keyof T;
-  id: number;
-  operator: keyof typeof FilterOperator;
-  subfield?: { name: string; type: DynamicFilterDataType };
-  value: string | string[] | number | number[] | boolean;
-};
-export type ExternalEventLayerDynamicFilter<T> = {
+export type LayerDynamicFilter<T> = {
   field: keyof T;
   id: number;
   operator: keyof typeof FilterOperator;

@@ -4,17 +4,14 @@
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import {
-    ActivityLayerFilterField,
-    ActivityLayerFilterField as ActivityLayerFilterFieldType,
-    FilterOperator,
-  } from '../../../../enums/timeline';
+  import { ActivityLayerFilterField as ActivityLayerFilterFieldType, FilterOperator } from '../../../../enums/timeline';
   import type { SelectedDropdownOptionValue } from '../../../../types/dropdown';
   import type { TagsChangeEvent } from '../../../../types/tags';
   import {
-    type ActivityLayerDynamicFilter,
     type ActivityLayerFilterSubfieldSchema,
     type DynamicFilterDataType,
+    type ExternalEventLayerFilterSubfieldSchema,
+    type LayerDynamicFilter,
   } from '../../../../types/timeline';
   import { getTarget } from '../../../../utilities/generic';
   import { tooltip } from '../../../../utilities/tooltip';
@@ -28,23 +25,38 @@
     { type: DynamicFilterDataType; values?: Array<T> }
   >;
 
-  export let filter: ActivityLayerDynamicFilter<any>;
-  export let schema: Partial<Record<keyof typeof ActivityLayerFilterFieldType, Partial<OperatorSchema>>> & {
+  // TODO: update with ExternalEvent stuff, either by duplicating this class or with inheritance
+  export let filter: LayerDynamicFilter<any>;
+  // type LayerFilterFieldType = ActivityLayerFilterFieldType & ExternalEventLayerFilterFieldType;
+  enum LayerFilterField { // TODO: fix this so the above works, or it uses the above
+    'Type' = 'Type',
+    'Name' = 'Name',
+    'Subsystem' = 'Subsystem',
+    'Tags' = 'Tags',
+    'Parameter' = 'Parameter',
+    'SchedulingGoalId' = 'Scheduling Goal Id',
+    'Attribute' = 'Attribute',
+  }
+  export let schema: Partial<Record<keyof typeof LayerFilterField, Partial<OperatorSchema>>> & {
+    Attribute?: { subfields: ExternalEventLayerFilterSubfieldSchema[] };
     Parameter?: { subfields: ActivityLayerFilterSubfieldSchema[] };
   } = {};
   export let verb: string = 'Where';
 
   const dispatch = createEventDispatcher<{
-    change: { filter: ActivityLayerDynamicFilter<any> };
+    change: { filter: LayerDynamicFilter<any> };
     remove: void;
   }>();
 
   let dirtyFilter = structuredClone(filter);
-  let currentField = dirtyFilter.field as keyof typeof ActivityLayerFilterFieldType;
+  let currentField = dirtyFilter.field as keyof typeof LayerFilterField;
   let currentOperator: keyof typeof FilterOperator | null = dirtyFilter.operator;
-  let subfields: ActivityLayerFilterSubfieldSchema[] | undefined = undefined;
+  let parameterSubfields: ActivityLayerFilterSubfieldSchema[] | undefined = undefined;
+  let attributeSubfields: ExternalEventLayerFilterSubfieldSchema[] | undefined = undefined;
   let currentSubfieldLabel =
-    dirtyFilter.field === 'Parameter' ? `${dirtyFilter.subfield?.name} (${dirtyFilter.subfield?.type})` : '';
+    dirtyFilter.field === 'Parameter' || dirtyFilter.field === 'Attribute'
+      ? `${dirtyFilter.subfield?.name} (${dirtyFilter.subfield?.type})`
+      : '';
   let currentType: DynamicFilterDataType = 'string';
   let currentValue = dirtyFilter.value;
   let currentValueAsStringOrNumber: string | number = '';
@@ -52,9 +64,10 @@
   let currentUnit: string = '';
   let currentValuePossibilities: Array<any> = [];
 
-  $: subfields = schema.Parameter?.subfields;
+  $: parameterSubfields = schema.Parameter?.subfields;
+  $: attributeSubfields = schema.Attribute?.subfields;
 
-  $: if (currentField !== 'Parameter') {
+  $: if (currentField !== 'Parameter' && currentField !== 'Attribute') {
     currentSubfieldLabel = '';
     currentUnit = '';
     const schemaField = schema[currentField];
@@ -74,8 +87,31 @@
     }
   }
 
-  $: if (currentField === 'Parameter' && currentSubfieldLabel !== undefined && subfields) {
-    const matchingSubfield = subfields.find(subfield => subfield.label === currentSubfieldLabel);
+  $: if (currentField === 'Parameter' && currentSubfieldLabel !== undefined && parameterSubfields) {
+    const matchingSubfield = parameterSubfields.find(subfield => subfield.label === currentSubfieldLabel);
+    if (matchingSubfield) {
+      // Map subfield type to filter type
+      currentType = matchingSubfield.type;
+      currentUnit = matchingSubfield.unit || '';
+      if (matchingSubfield.type === 'string' || matchingSubfield.type === 'path') {
+        operatorKeys = ['includes', 'does_not_include', 'equals', 'does_not_equal'];
+      } else if (matchingSubfield.type === 'int' || matchingSubfield.type === 'real') {
+        operatorKeys = ['equals', 'does_not_equal', 'is_greater_than', 'is_less_than', 'is_within', 'is_not_within'];
+      } else if (matchingSubfield.type === 'duration') {
+        operatorKeys = ['equals', 'does_not_equal', 'is_greater_than', 'is_less_than', 'is_within', 'is_not_within'];
+      } else if (matchingSubfield.type === 'boolean') {
+        operatorKeys = ['equals'];
+      } else if (matchingSubfield.type === 'variant') {
+        operatorKeys = ['equals', 'does_not_equal'];
+        currentValuePossibilities = matchingSubfield.values || [];
+      } else {
+        operatorKeys = [];
+      }
+    }
+  }
+
+  $: if (currentField === 'Attribute' && currentSubfieldLabel !== undefined && attributeSubfields) {
+    const matchingSubfield = attributeSubfields.find(subfield => subfield.label === currentSubfieldLabel);
     if (matchingSubfield) {
       // Map subfield type to filter type
       currentType = matchingSubfield.type;
@@ -98,14 +134,19 @@
   }
 
   $: if (currentField && currentOperator && currentValue !== undefined) {
-    const newFilter: ActivityLayerDynamicFilter<any> = {
+    const newFilter: LayerDynamicFilter<any> = {
       field: currentField,
       id: dirtyFilter.id,
       operator: currentOperator,
       value: currentValue,
     };
-    if (currentSubfieldLabel) {
-      const matchingSubfield = (subfields || []).find(subfield => subfield.label === currentSubfieldLabel);
+    if (currentSubfieldLabel && parameterSubfields) {
+      const matchingSubfield = (parameterSubfields || []).find(subfield => subfield.label === currentSubfieldLabel);
+      if (matchingSubfield) {
+        newFilter.subfield = { name: matchingSubfield.name, type: matchingSubfield.type };
+      }
+    } else if (currentSubfieldLabel && attributeSubfields) {
+      const matchingSubfield = (attributeSubfields || []).find(subfield => subfield.label === currentSubfieldLabel);
       if (matchingSubfield) {
         newFilter.subfield = { name: matchingSubfield.name, type: matchingSubfield.type };
       }
@@ -140,7 +181,7 @@
     }
   }
 
-  function onSelectParameter(event: CustomEvent<SelectedDropdownOptionValue[]>) {
+  function onSelectParameterOrAttribute(event: CustomEvent<SelectedDropdownOptionValue[]>) {
     currentSubfieldLabel = event.detail.length ? event.detail[0]?.toString() ?? '' : '';
     currentValue = getDefaultCurrentValue();
     currentOperator = null;
@@ -170,8 +211,8 @@
     }
   }
 
-  function asActivityLayerFilterField(s: string): keyof typeof ActivityLayerFilterField {
-    return s as keyof typeof ActivityLayerFilterField;
+  function asLayerFilterField(s: string): keyof typeof LayerFilterField {
+    return s as keyof typeof LayerFilterField;
   }
 
   function getDefaultCurrentValue() {
@@ -188,18 +229,31 @@
   {/if}
   <select aria-label="field" class="st-select" on:change={onFieldChange} value={currentField}>
     {#each Object.keys(schema) as key}
-      <option value={key}>{ActivityLayerFilterField[asActivityLayerFilterField(key)]}</option>
+      <option value={key}>{LayerFilterField[asLayerFilterField(key)]}</option>
     {/each}
   </select>
-  {#if currentField === 'Parameter' && subfields}
+  {#if currentField === 'Parameter' && parameterSubfields}
     <SearchableDropdown
       className="dynamic-filter-searchable-dropdown-hide-overflow"
       placeholder="Select Parameter"
       selectTooltip="Select Parameter"
       searchPlaceholder="Filter parameters"
-      on:change={onSelectParameter}
+      on:change={onSelectParameterOrAttribute}
       selectedOptionValues={[currentSubfieldLabel]}
-      options={subfields.map(subfield => ({ display: subfield.label, value: subfield.label }))}
+      options={parameterSubfields.map(subfield => ({ display: subfield.label, value: subfield.label }))}
+    >
+      <ChevronDownIcon slot="icon" />
+    </SearchableDropdown>
+  {/if}
+  {#if currentField === 'Attribute' && attributeSubfields}
+    <SearchableDropdown
+      className="dynamic-filter-searchable-dropdown-hide-overflow"
+      placeholder="Select Attribute"
+      selectTooltip="Select Attribute"
+      searchPlaceholder="Filter attributes"
+      on:change={onSelectParameterOrAttribute}
+      selectedOptionValues={[currentSubfieldLabel]}
+      options={attributeSubfields.map(subfield => ({ display: subfield.label, value: subfield.label }))}
     >
       <ChevronDownIcon slot="icon" />
     </SearchableDropdown>

@@ -1,12 +1,13 @@
 import { capitalize, isEqual } from 'lodash-es';
 import { derived, get, writable, type Writable } from 'svelte/store';
-import type { ActivityLayerFilterField } from '../enums/timeline';
+import type { ActivityLayerFilterField, ExternalEventLayerFilterField } from '../enums/timeline';
 import type { ResourceType } from '../types/simulation';
 import type {
-  ActivityLayerDynamicFilter,
   ActivityLayerFilter,
   Axis,
+  ExternalEventLayerFilter,
   Layer,
+  LayerDynamicFilter,
   Row,
   Timeline,
   TimelineItemMetadata,
@@ -577,7 +578,7 @@ export function getUpdatedActivityLayerFilter(
   const hasSelectedFilters = metadata?.selectedFilters && Object.keys(metadata?.selectedFilters).length;
   if (hasTextFilters) {
     (metadata.textFilters || []).forEach(textFilter => {
-      const typeFilter: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>> = {
+      const typeFilter: LayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>> = {
         field: 'Type',
         id: getNextThingID(dynamicTypeFilters),
         operator: 'includes',
@@ -591,7 +592,7 @@ export function getUpdatedActivityLayerFilter(
       selectedFilter => selectedFilter.value,
     ) as number[];
     if (subsystems.length) {
-      const typeFilter: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>> = {
+      const typeFilter: LayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>> = {
         field: 'Subsystem',
         id: getNextThingID(dynamicTypeFilters),
         operator: 'includes',
@@ -601,6 +602,40 @@ export function getUpdatedActivityLayerFilter(
     }
   }
   if (!hasTextFilters && !hasSelectedFilters && items.length) {
+    const newTypes = items.map(i => i.name);
+    const existingTypes = filter?.static_types || [];
+    staticTypes = Array.from(new Set([...newTypes, ...existingTypes]));
+  }
+
+  return {
+    ...(filter || {}),
+    dynamic_type_filters: dynamicTypeFilters,
+    static_types: staticTypes,
+  };
+}
+
+export function getUpdatedExternalEventLayerFilter(
+  items: TimelineItemType[],
+  metadata?: TimelineItemMetadata,
+  filter?: ExternalEventLayerFilter,
+): ExternalEventLayerFilter {
+  // Return updated activity layer filter
+  // Prefer metadata like Type and/or Subsystem filter over named types
+  const dynamicTypeFilters: ExternalEventLayerFilter['dynamic_type_filters'] = filter?.dynamic_type_filters || [];
+  let staticTypes: string[] = filter?.static_types || [];
+  const hasTextFilters = metadata?.textFilters && metadata?.textFilters.length;
+  if (hasTextFilters) {
+    (metadata.textFilters || []).forEach(textFilter => {
+      const typeFilter: LayerDynamicFilter<Pick<typeof ExternalEventLayerFilterField, 'Type'>> = {
+        field: 'Type',
+        id: getNextThingID(dynamicTypeFilters),
+        operator: 'includes',
+        value: textFilter,
+      };
+      dynamicTypeFilters.push(typeFilter);
+    });
+  }
+  if (!hasTextFilters && items.length) {
     const newTypes = items.map(i => i.name);
     const existingTypes = filter?.static_types || [];
     staticTypes = Array.from(new Set([...newTypes, ...existingTypes]));
@@ -633,9 +668,10 @@ export function getUpdatedLayerWithFilters(
         }),
       };
     } else if (type === 'externalEvent') {
+      const updatedExternalEventFilter = getUpdatedExternalEventLayerFilter(items, metadata);
       return {
         layer: createTimelineExternalEventLayer(timelines, {
-          filter: { externalEvent: { event_types: itemNames } },
+          filter: { externalEvent: updatedExternalEventFilter },
         }),
       };
     } else {
@@ -665,9 +701,7 @@ export function getUpdatedLayerWithFilters(
     if (type === 'activity') {
       updatedFilter.activity = getUpdatedActivityLayerFilter(items, metadata, layer.filter.activity);
     } else if (type === 'externalEvent') {
-      updatedFilter.externalEvent = {
-        event_types: Array.from(new Set([...(updatedFilter.externalEvent?.event_types || []), ...itemNames])),
-      };
+      updatedFilter.externalEvent = getUpdatedExternalEventLayerFilter(items, metadata, layer.filter.externalEvent);
     }
 
     return {

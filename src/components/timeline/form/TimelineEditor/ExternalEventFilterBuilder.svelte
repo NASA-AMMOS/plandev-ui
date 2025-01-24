@@ -8,10 +8,10 @@
   import DirectiveIcon from '../../../../assets/timeline-directive.svg?component';
   import SpanIcon from '../../../../assets/timeline-span.svg?component';
   import { externalEventsMap, selectedExternalEventTypes } from '../../../../stores/external-event';
-  import { activityTypes, subsystemTags } from '../../../../stores/plan';
-  import { tags } from '../../../../stores/tags';
-  import type { ActivityLayerFilterSubfieldSchema, ExternalEventLayerFilter } from '../../../../types/timeline';
-  import { getTarget, lowercase } from '../../../../utilities/generic';
+  import { activityTypes } from '../../../../stores/plan';
+  import type { ExternalEventLayerFilter, ExternalEventLayerFilterSubfieldSchema } from '../../../../types/timeline';
+  import { compare, getTarget, lowercase } from '../../../../utilities/generic';
+  import { translateJsonSchemaToValueSchema } from '../../../../utilities/parameters';
   import { pluralize } from '../../../../utilities/text';
   import {
     applyExternalEventLayerFilter,
@@ -34,7 +34,7 @@
   export const filterHeight = 500;
   export let layerName: string = '';
 
-  let parameterSubfields: ActivityLayerFilterSubfieldSchema[] = [];
+  let attributeSubfields: ExternalEventLayerFilterSubfieldSchema[] = [];
   let dirtyFilter: ExternalEventLayerFilter = {
     dynamic_type_filters: [],
     other_filters: [],
@@ -220,51 +220,51 @@
     return lowercase(type.name).indexOf(lowercase(resultingTypesInputValue)) > -1;
   });
 
-  // $: {
-  //   const allParameterTypes = (matchingTypes.length ? matchingTypes : $activityTypes).reduce(
-  //     (acc: Record<string, ActivityLayerFilterSubfieldSchema>, activityType) => {
-  //       Object.entries(activityType.parameters).forEach(([parameterName, parameter]) => {
-  //         const parameterType = parameter.schema.type;
-  //         // TODO support series and struct?
-  //         if (parameterType === 'series' || parameterType === 'struct') {
-  //           return;
-  //         }
-  //         const key = `${parameterName} (${parameterType})`;
-  //         const matchingName = !!acc[key];
-  //         const matchingEntry = matchingName && acc[key].type === parameterType;
-  //         const isVariant = parameterType === 'variant';
-  //         let values = null;
-  //         if (matchingEntry) {
-  //           acc[key].activityTypes.push(activityType.name);
-  //           if (isVariant) {
-  //             // If we have a matching variant, add unique variants to the list
-  //             const variantValues = (parameter.schema as ValueSchemaVariant).variants.map(variant => variant.key);
-  //             values = Array.from(new Set([...variantValues, ...(acc[key].values || [])]));
-  //             acc[key].values = values;
-  //           }
-  //         }
-  //         if (!matchingEntry) {
-  //           const values = isVariant
-  //             ? (parameter.schema as ValueSchemaVariant).variants.map(variant => variant.key)
-  //             : null;
-  //           const unit = parameter.schema.metadata?.unit?.value ?? null;
-  //           acc[key] = {
-  //             activityTypes: [activityType.name],
-  //             name: parameterName,
-  //             type: parameterType,
-  //             ...(values ? { values } : null),
-  //             ...(unit ? { unit } : null),
-  //             label: `${parameterName} (${parameterType})`,
-  //           };
-  //         }
-  //       });
-  //       return acc;
-  //     },
-  //     {},
-  //   );
-  //   // TODO support key/value for values array?
-  //   parameterSubfields = Object.values(allParameterTypes).sort((a, b) => compare(a.label, b.label));
-  // }
+  $: {
+    const allAttributeTypes = (matchingTypes.length ? matchingTypes : $selectedExternalEventTypes).reduce(
+      (acc: Record<string, ExternalEventLayerFilterSubfieldSchema>, eventType) => {
+        // TODO: does this ignore non-required types? I don't believe it does, but it seems to place required and non-required at equivalent levels...is that okay?
+        const attribute_list = translateJsonSchemaToValueSchema(eventType.attribute_schema);
+        Object.entries(attribute_list).forEach(([attributeName, attribute]) => {
+          const attributeType = attribute.type;
+          // TODO support series and struct?
+          if (attributeType === 'series' || attributeType === 'struct') {
+            return;
+          }
+          const key = `${attributeName} (${attributeType})`;
+          const matchingName = !!acc[key];
+          const matchingEntry = matchingName && acc[key].type === attributeType;
+          const isVariant = attributeType === 'variant';
+          let values = null;
+          if (matchingEntry) {
+            acc[key].externalEventTypes.push(eventType.name);
+            if (isVariant) {
+              // If we have a matching variant, add unique variants to the list
+              const variantValues = attribute.variants.map(variant => variant.key);
+              values = Array.from(new Set([...variantValues, ...(acc[key].values || [])]));
+              acc[key].values = values;
+            }
+          }
+          if (!matchingEntry) {
+            const values = isVariant ? attribute.variants.map(variant => variant.key) : null;
+            const unit = attribute.metadata?.unit?.value ?? null;
+            acc[key] = {
+              externalEventTypes: [eventType.name],
+              name: attributeName,
+              type: attributeType,
+              ...(values ? { values } : null),
+              ...(unit ? { unit } : null),
+              label: key,
+            };
+          }
+        });
+        return acc;
+      },
+      {},
+    );
+    // TODO support key/value for values array?
+    attributeSubfields = Object.values(allAttributeTypes).sort((a, b) => compare(a.label, b.label));
+  }
 
   $: filteredExternalEventTypes = $selectedExternalEventTypes.filter(type => {
     if (!manualInputValue) {
@@ -468,10 +468,7 @@
                         on:change={event => onDynamicFilterChange('dynamic_type_filters', event)}
                         verb={i === 0 ? 'Where' : 'and'}
                         schema={{
-                          Subsystem: {
-                            does_not_include: { type: 'tag', values: $subsystemTags },
-                            includes: { type: 'tag', values: $subsystemTags },
-                          },
+                          // TODO: something involving external source type??
                           Type: {
                             does_not_equal: { type: 'variant', values: $activityTypes.map(type => type.name) },
                             does_not_include: { type: 'string' },
@@ -489,7 +486,7 @@
               <div class="filter-section-header st-typography-medium">
                 <div class="filter-section-title">
                   Other Filters
-                  <div class="hint st-typography-body">Tags, parameter, scheduling goal, etc...</div>
+                  <div class="hint st-typography-body">Attribute, etc...</div>
                 </div>
                 <button
                   class="st-button icon"
@@ -510,22 +507,14 @@
                         on:change={event => onDynamicFilterChange('other_filters', event)}
                         verb={i === 0 ? 'Where' : 'and'}
                         schema={{
+                          Attribute: {
+                            subfields: attributeSubfields,
+                          },
                           Name: {
                             does_not_equal: { type: 'string' },
                             does_not_include: { type: 'string' },
                             equals: { type: 'string' },
                             includes: { type: 'string' },
-                          },
-                          Parameter: {
-                            subfields: parameterSubfields,
-                          },
-                          SchedulingGoalId: {
-                            does_not_equal: { type: 'int' },
-                            equals: { type: 'int' },
-                          },
-                          Tags: {
-                            does_not_include: { type: 'tag', values: $tags },
-                            includes: { type: 'tag', values: $tags },
                           },
                         }}
                       />
@@ -572,25 +561,17 @@
                             on:change={event => onTypeSubfilterChange(type.name, event)}
                             verb={''}
                             schema={{
+                              Attribute: {
+                                // Filter subfields to only those matching this type
+                                subfields: attributeSubfields.filter(subfield => {
+                                  return subfield.externalEventTypes.indexOf(type.name) > -1;
+                                }),
+                              },
                               Name: {
                                 does_not_equal: { type: 'string' },
                                 does_not_include: { type: 'string' },
                                 equals: { type: 'string' },
                                 includes: { type: 'string' },
-                              },
-                              Parameter: {
-                                // Filter subfields to only those matching this type
-                                subfields: parameterSubfields.filter(subfield => {
-                                  return subfield.activityTypes.indexOf(type.name) > -1;
-                                }),
-                              },
-                              SchedulingGoalId: {
-                                does_not_equal: { type: 'int' },
-                                equals: { type: 'int' },
-                              },
-                              Tags: {
-                                does_not_include: { type: 'tag', values: $tags },
-                                includes: { type: 'tag', values: $tags },
                               },
                             }}
                           />

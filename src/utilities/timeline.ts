@@ -27,7 +27,6 @@ import type { DefaultEffectiveArgumentsMap } from '../types/parameter';
 import type { Resource, ResourceType, ResourceValue, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type {
   ActivityLayer,
-  ActivityLayerDynamicFilter,
   ActivityLayerFilter,
   ActivityOptions,
   Axis,
@@ -36,11 +35,11 @@ import type {
   DiscreteTreeNode,
   DiscreteTreeNodeItem,
   ExternalEventLayer,
-  ExternalEventLayerDynamicFilter,
   ExternalEventLayerFilter,
   ExternalEventOptions,
   HorizontalGuide,
   Layer,
+  LayerDynamicFilter,
   LineLayer,
   QuadtreePoint,
   QuadtreeRect,
@@ -1644,7 +1643,7 @@ export function getMatchingTypesForExternalEventLayerFilter(filter: ExternalEven
 
 function directiveOrSpanMatchesDynamicFilters(
   directiveOrSpan: ActivityDirective | Span,
-  dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
+  dynamicFilters: LayerDynamicFilter<typeof ActivityLayerFilterField>[],
   activityTypeDefMap: Record<string, ActivityType>,
   defaultArgumentsMap: DefaultEffectiveArgumentsMap,
 ): boolean {
@@ -1692,7 +1691,7 @@ function directiveOrSpanMatchesDynamicFilters(
 
 function externalEventMatchesDynamicFilters(
   externalEvent: ExternalEvent,
-  dynamicFilters: ExternalEventLayerDynamicFilter<typeof ExternalEventLayerFilterField>[],
+  dynamicFilters: LayerDynamicFilter<typeof ExternalEventLayerFilterField>[],
 ): boolean {
   return dynamicFilters.reduce((acc, curr) => {
     let matches = false;
@@ -1700,22 +1699,12 @@ function externalEventMatchesDynamicFilters(
       matches = matchesDynamicFilter(externalEvent.pkey.event_type_name, curr.operator, curr.value);
     } else if (curr.field === 'Name') {
       matches = matchesDynamicFilter(externalEvent.pkey.key, curr.operator, curr.value);
-    } /* else if (curr.field === 'Parameter' && curr.subfield) {
+    } else if (curr.field === 'Attribute' && curr.subfield) {
       const subfield = curr.subfield;
-      const args = (directiveOrSpan as ActivityDirective).arguments || (directiveOrSpan as Span).attributes.arguments;
-      let argument = args[subfield.name];
-      if (argument === undefined) {
-        const isSpan = (directiveOrSpan as Span).span_id !== undefined;
-        if (!isSpan) {
-          // Get default
-          const defaultArgsForType = defaultArgumentsMap[directiveOrSpan.type];
-          if (defaultArgsForType) {
-            argument = defaultArgsForType[subfield.name];
-          }
-        }
-      }
-      matches = matchesDynamicFilter(argument, curr.operator, curr.value); // TODO!!!! 
-    } */
+      const attributes: { [name: string]: object } = externalEvent.attributes; // TODO: figure out typing here
+      const attribute = attributes[subfield.name]
+      matches = matchesDynamicFilter(attribute, curr.operator, curr.value);
+    }
     return acc && matches;
   }, true);
 }
@@ -1723,7 +1712,7 @@ function externalEventMatchesDynamicFilters(
 // TODO try consolidating with the function above
 function activityTypeMatchesDynamicFilters(
   type: ActivityType,
-  dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
+  dynamicFilters: LayerDynamicFilter<typeof ActivityLayerFilterField>[],
 ): boolean {
   return dynamicFilters.reduce((acc, curr) => {
     let matches = false;
@@ -1739,7 +1728,7 @@ function activityTypeMatchesDynamicFilters(
 // TODO try consolidating with the function above
 function externalEventTypeMatchesDynamicFilters(
   type: ExternalEventType,
-  dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
+  dynamicFilters: LayerDynamicFilter<typeof ExternalEventLayerFilterField>[],
 ): boolean {
   return dynamicFilters.reduce((acc, curr) => {
     let matches = false;
@@ -1751,9 +1740,9 @@ function externalEventTypeMatchesDynamicFilters(
 }
 
 export function matchesDynamicFilter(
-  rawItemValue: ActivityLayerDynamicFilter<ActivityLayerFilterField>['value'], // the actual value
-  operator: ActivityLayerDynamicFilter<ActivityLayerFilterField>['operator'],
-  rawFilterValue: ActivityLayerDynamicFilter<ActivityLayerFilterField>['value'], // the value(s) we're comparing against
+  rawItemValue: LayerDynamicFilter<ActivityLayerFilterField>['value'], // the actual value
+  operator: LayerDynamicFilter<ActivityLayerFilterField>['operator'],
+  rawFilterValue: LayerDynamicFilter<ActivityLayerFilterField>['value'], // the value(s) we're comparing against
 ) {
   const itemValue = lowercase(rawItemValue);
   const filterValue = lowercase(rawFilterValue);
