@@ -342,25 +342,8 @@
     discreteOptions?.activityOptions?.composition === 'both' ||
     discreteOptions?.activityOptions?.composition === 'directives';
 
-  // helper for hasExternalEventsLayer; counts how many external event types are associated with this row
-  // (if all layers have 0 event types, we don't want to allocate any canvas space in the row for the layer)
-  $: associatedEventTypes = externalEventLayers
-    .map(layer =>
-      layer.filter.externalEvent
-        ? (layer.filter.externalEvent.static_types ? layer.filter.externalEvent.static_types.length : 0) +
-          (layer.filter.externalEvent.dynamic_type_filters
-            ? layer.filter.externalEvent.dynamic_type_filters.length
-            : 0) +
-          (layer.filter.externalEvent.other_filters ? layer.filter.externalEvent.other_filters.length : 0) +
-          (layer.filter.externalEvent.type_subfilters
-            ? Object.keys(layer.filter.externalEvent.type_subfilters).length
-            : 0)
-        : 0,
-    )
-    .reduce((currentSum, newValue) => currentSum + newValue, 0);
-
-  // only consider a layer to be present if it is defined AND it actually has types/values selected.
-  $: hasExternalEventsLayer = externalEventLayers.length > 0 && associatedEventTypes > 0;
+  // only consider a layer to be present if it is defined
+  $: hasExternalEventsLayer = externalEventLayers.length > 0;
   $: hasResourceLayer = lineLayers.length + xRangeLayers.length > 0;
 
   $: if (discreteTreeExpansionMap === undefined) {
