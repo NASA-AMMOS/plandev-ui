@@ -524,8 +524,11 @@
       if (newSourceExternalEventTypes[event.event_type] === undefined) {
         newSourceExternalEventTypes[event.event_type] = Object.keys(event.attributes);
       } else if (newSourceExternalEventTypes[event.event_type].length === Object.keys(event.attributes).length) {
-        const attributeConsistency = currentKeySet.intersection(new Set(newSourceExternalEventTypes[event.event_type]));
-        if (attributeConsistency.size !== currentKeySet.size) {
+        const attributeConsistency = getNonSharedSetElements(
+          currentKeySet,
+          new Set(newSourceExternalEventTypes[event.event_type]),
+        );
+        if (attributeConsistency.length > 0) {
           uploadDisabledMessage = 'Event attributes are inconsistent across events of type ' + event.event_type + '.';
           return false;
         }
@@ -548,6 +551,21 @@
       newExternalEventTypes = eventTypes;
     }
     return true;
+  }
+
+  function getNonSharedSetElements(firstSet: Set<string>, secondSet: Set<string>): string[] {
+    const nonSharedElements: string[] = [];
+    for (const setItem of firstSet) {
+      if (!secondSet.has(setItem)) {
+        nonSharedElements.push(setItem);
+      }
+    }
+    for (const setItem of secondSet) {
+      if (!firstSet.has(setItem)) {
+        nonSharedElements.push(setItem);
+      }
+    }
+    return nonSharedElements;
   }
 </script>
 
