@@ -1687,26 +1687,10 @@ const gql = {
   GET_PLANS_AND_MODELS: `#graphql
     query GetPlansAndModels {
       models: ${Queries.MISSION_MODELS}(order_by: { id: desc }) {
-        constraint_specification {
-          constraint_id
-          constraint_revision
-          constraint_definition {
-            definition
-            tags {
-              tag_id
-            }
-          }
-          constraint_metadata {
-            id
-            name
-          }
-        }
         created_at
-        default_view_id
         description
-        jar_id
         id
-        mission
+        jar_id
         name
         owner
         plans {
@@ -1730,36 +1714,14 @@ const gql = {
           pending
           success
         }
-        scheduling_specification_conditions {
-          condition_id
-          condition_revision
-          condition_definition {
-            definition
-            tags {
-              tag_id
-            }
-          }
-          condition_metadata {
-            id
-            name
-          }
-        }
-        scheduling_specification_goals {
-          goal_id
-          goal_revision
-          goal_definition {
-            definition
-            tags {
-              tag_id
-            }
-          }
-          goal_metadata {
-            id
-            name
-          }
-          priority
-        }
         version
+        view {
+          created_at
+          id
+          name
+          owner
+          updated_at
+        }
       }
       plans: ${Queries.PLANS}(order_by: { id: desc }) {
         collaborators {
