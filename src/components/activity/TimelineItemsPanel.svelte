@@ -72,8 +72,8 @@
     box-shadow: 0px -1px 0px inset var(--st-gray-20);
   }
 
-  :global(button.timeline-items-tab.selected) {
-    background-color: white !important;
+  :global(.timeline-items-tabs .timeline-items-tabs-list button.timeline-items-tab.selected) {
+    background-color: white;
     box-shadow:
       1px 0px 0px inset var(--st-gray-20),
       -1px 0px 0px inset var(--st-gray-20);
