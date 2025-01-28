@@ -144,3 +144,11 @@
     {user}
   />
 </CssGrid>
+
+<style>
+  .right {
+    column-gap: 5px;
+    display: flex;
+    flex-wrap: nowrap;
+  }
+</style>
