@@ -18,7 +18,10 @@ export const planSnapshotId: Writable<number | null> = writable(null);
 
 /* Derived. */
 
-export const planSnapshotsLoading: Readable<boolean> = derived([planSnapshots], ([$planSnapshots]) => !$planSnapshots);
+export const initialPlanSnapshotsLoading: Readable<boolean> = derived(
+  [planSnapshots],
+  ([$planSnapshots]) => !$planSnapshots,
+);
 
 export const planSnapshot: Readable<PlanSnapshot | null> = derived(
   [planSnapshots, planSnapshotId],

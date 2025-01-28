@@ -7,9 +7,9 @@
   import { field } from '../../stores/form';
   import { planMetadata, planReadOnly, planReadOnlySnapshot } from '../../stores/plan';
   import {
+    initialPlanSnapshotsLoading,
     planSnapshotId,
     planSnapshots,
-    planSnapshotsLoading,
     planSnapshotsWithSimulations,
   } from '../../stores/planSnapshots';
   import { plans } from '../../stores/plans';
@@ -362,7 +362,7 @@
           </button>
         </div>
         <div style="margin-top: 8px">
-          {#if $planSnapshotsLoading}
+          {#if $initialPlanSnapshotsLoading}
             <Loading />
           {/if}
           <CardList>
@@ -389,7 +389,7 @@
                 on:delete={() => effects.deletePlanSnapshot(planSnapshot, user)}
               />
             {/each}
-            {#if !$planSnapshotsLoading && filteredPlanSnapshots.length < 1}
+            {#if !$initialPlanSnapshotsLoading && filteredPlanSnapshots.length < 1}
               <div class="st-typography-label">No Plan Snapshots Found</div>
             {/if}
           </CardList>

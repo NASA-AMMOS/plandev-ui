@@ -10,7 +10,8 @@
     allowedConstraintPlanSpecMap,
     allowedConstraintSpecs,
     constraints,
-    constraintsLoading,
+    initialConstraintPlanSpecsLoading,
+    initialConstraintsLoading,
   } from '../../stores/constraints';
   import { plan, planId, planReadOnly } from '../../stores/plan';
   import type { User } from '../../types/app';
@@ -277,9 +278,9 @@
       </div>
       <hr />
       <div class="constraints-modal-table-container">
-        {#if $constraintsLoading || filteredConstraints.length}
+        {#if $initialConstraintsLoading || $initialConstraintPlanSpecsLoading || filteredConstraints.length}
           <DataGrid
-            loading={$constraintsLoading}
+            loading={$initialConstraintsLoading || $initialConstraintPlanSpecsLoading}
             bind:this={dataGrid}
             {columnDefs}
             rowData={filteredConstraints}

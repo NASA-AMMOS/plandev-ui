@@ -37,10 +37,10 @@ export const constraintRuns = gqlSubscribable<ConstraintRun[] | null>(
   null,
 );
 
-export const constraintPlanSpecs = gqlSubscribable<ConstraintPlanSpec[]>(
+export const constraintPlanSpecs = gqlSubscribable<ConstraintPlanSpec[] | null>(
   gql.SUB_CONSTRAINT_PLAN_SPECIFICATIONS,
   { planId },
-  [],
+  null,
   null,
 );
 
@@ -52,10 +52,6 @@ export const constraintMetadata = gqlSubscribable<ConstraintMetadata | null>(
 );
 
 /* Derived. */
-export const constraintsLoading: Readable<boolean> = derived(
-  [constraints, constraintRuns],
-  ([$constraints, $constraintRuns]) => !$constraints || !$constraintRuns,
-);
 
 export const constraintsMap: Readable<Record<string, ConstraintMetadata>> = derived([constraints], ([$constraints]) =>
   keyBy($constraints, 'id'),
@@ -63,13 +59,13 @@ export const constraintsMap: Readable<Record<string, ConstraintMetadata>> = deri
 
 export const constraintPlanSpecsMap: Readable<Record<string, ConstraintPlanSpec>> = derived(
   [constraintPlanSpecs],
-  ([$constraintPlanSpecs]) => keyBy($constraintPlanSpecs, 'constraint_id'),
+  ([$constraintPlanSpecs]) => ($constraintPlanSpecs ? keyBy($constraintPlanSpecs, 'constraint_id') : {}),
 );
 
 export const allowedConstraintSpecs: Readable<ConstraintPlanSpec[]> = derived(
   [constraintPlanSpecs],
   ([$constraintPlanSpecs]) =>
-    $constraintPlanSpecs.filter(({ constraint_metadata: constraintMetadata }) => constraintMetadata !== null),
+    ($constraintPlanSpecs || []).filter(({ constraint_metadata: constraintMetadata }) => constraintMetadata !== null),
 );
 
 export const allowedConstraintPlanSpecMap: Readable<Record<string, ConstraintPlanSpec>> = derived(
@@ -274,6 +270,20 @@ export const constraintsStatus: Readable<Status | null> = derived(
 
     return $constraintsViolationStatus ?? $cachedConstraintsStatus;
   },
+);
+
+/* Loading stores */
+
+export const initialConstraintsLoading: Readable<boolean> = derived([constraints], ([$constraints]) => !$constraints);
+
+export const initialConstraintRunsLoading: Readable<boolean> = derived(
+  [constraintRuns],
+  ([$constraintRuns]) => !$constraintRuns,
+);
+
+export const initialConstraintPlanSpecsLoading: Readable<boolean> = derived(
+  [constraintPlanSpecs],
+  ([$constraintPlanSpecs]) => !$constraintPlanSpecs,
 );
 
 /* Helper Functions. */

@@ -98,7 +98,7 @@
     externalResourceNames,
     externalResources,
     fetchingResourcesExternal,
-    initialSpanLoadComplete,
+    initialSpansLoading,
     resetSimulationStores,
     resourceTypes,
     resourceTypesLoading,
@@ -256,10 +256,10 @@
       const latestSimulationDatasetId = data.initialPlan.simulations[0]?.simulation_datasets[0]?.id;
       $simulationDatasetId = latestSimulationDatasetId ?? -1;
       if (typeof latestSimulationDatasetId !== 'number') {
-        $initialSpanLoadComplete = true;
+        $initialSpansLoading = false;
       }
     } else {
-      $initialSpanLoadComplete = true;
+      $initialSpansLoading = false;
     }
 
     const queryActivityId = getSearchParameterNumber(SearchParameters.ACTIVITY_ID, $page.url.searchParams);
@@ -361,7 +361,7 @@
     const datasetId = $simulationDataset.dataset_id;
     simulationDataAbortController?.abort();
     simulationDataAbortController = new AbortController();
-    $initialSpanLoadComplete = false;
+    $initialSpansLoading = true;
     effects
       .getSpans(
         datasetId,
@@ -371,7 +371,7 @@
       )
       .then(newSpans => {
         $spans = newSpans;
-        $initialSpanLoadComplete = true;
+        $initialSpansLoading = false;
       });
     effects
       .getEvents(datasetId, data.user, simulationDataAbortController.signal)

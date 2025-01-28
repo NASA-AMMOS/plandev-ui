@@ -5,7 +5,7 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { SearchParameters } from '../../enums/searchParameters';
-  import { constraints, constraintsColumns } from '../../stores/constraints';
+  import { constraints, constraintsColumns, initialConstraintsLoading } from '../../stores/constraints';
   import type { User } from '../../types/app';
   import type { ConstraintMetadata } from '../../types/constraint';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
@@ -229,10 +229,10 @@
     </svelte:fragment>
 
     <svelte:fragment slot="body">
-      {#if !$constraints || filteredConstraints.length}
+      {#if $initialConstraintsLoading || filteredConstraints.length}
         <SingleActionDataGrid
           showLoadingSkeleton
-          loading={!$constraints}
+          loading={$initialConstraintsLoading}
           {columnDefs}
           hasEdit={true}
           {hasDeletePermission}

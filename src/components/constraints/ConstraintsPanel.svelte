@@ -16,9 +16,11 @@
     constraintPlanSpecs,
     constraintResponseMap,
     constraintVisibilityMap,
-    constraintsLoading,
     constraintsMap,
     constraintsStatus,
+    initialConstraintPlanSpecsLoading,
+    initialConstraintRunsLoading,
+    initialConstraintsLoading,
     setAllConstraintsVisible,
     setConstraintVisibility,
   } from '../../stores/constraints';
@@ -115,7 +117,7 @@
   $: filteredConstraintResponses = Object.values(constraintToConstraintResponseMap).filter(r =>
     filteredConstraints.find(c => c.constraint_id === r.constraintId),
   );
-  $: numOfPrivateConstraints = $constraintPlanSpecs.length - $allowedConstraintSpecs.length;
+  $: numOfPrivateConstraints = ($constraintPlanSpecs || []).length - $allowedConstraintSpecs.length;
 
   $: totalViolationCount = getViolationCount(Object.values($constraintResponseMap));
   $: filteredViolationCount = getViolationCount(Object.values(filteredConstraintResponses));
@@ -315,7 +317,7 @@
     </CollapsibleListControls>
 
     <div class="pt-2">
-      {#if $constraintsLoading}
+      {#if $initialConstraintsLoading || $initialConstraintPlanSpecsLoading || $initialConstraintRunsLoading}
         <div class="p-1">
           <Loading />
         </div>

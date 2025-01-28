@@ -53,7 +53,6 @@ export const selectedActivityDirectiveId: Writable<ActivityDirectiveId | null> =
 // TODO do we even need the list or should we transform it immediately into the map?
 export const activityArgumentDefaults: Writable<DefaultEffectiveArguments[] | null> = writable(null);
 
-/* Derived. */
 export const activityArgumentDefaultsMap: Readable<DefaultEffectiveArgumentsMap> = derived(
   [activityArgumentDefaults],
   ([$activityArgumentDefaults]) => {
@@ -89,6 +88,14 @@ export const activityDirectivesMap = derived(
     );
   },
 );
+
+/* Loading stores. */
+export const initialActivityDirectivesLoading: Readable<boolean> = derived(
+  [activityDirectivesMap],
+  ([$activityDirectivesMap]) => !$activityDirectivesMap,
+);
+
+/* Derived. */
 
 export const selectedActivityDirective = derived(
   [activityDirectivesMap, selectedActivityDirectiveId],

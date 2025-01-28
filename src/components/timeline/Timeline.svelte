@@ -49,10 +49,11 @@
   export let activityDirectivesMap: ActivityDirectivesMap | null = null;
   export let externalEvents: ExternalEvent[] = [];
   export let constraintResults: ConstraintResultWithName[] = [];
-  export let constraintsLoading: boolean = false;
   export let hasUpdateDirectivePermission: boolean = false;
   export let hasUpdateSimulationPermission: boolean = false;
-  export let initialSpanLoadComplete: boolean = false;
+  export let initialActivityDirectivesLoading: boolean = false;
+  export let initialConstraintsLoading: boolean = false;
+  export let initialSpansLoading: boolean = false;
   export let maxTimeRange: TimeRange = { end: 0, start: 0 };
   export let planEndTimeDoy: string;
   export let plan: Plan | null = null;
@@ -397,7 +398,7 @@
     <div class="timeline-histogram-container">
       <TimelineHistogram
         activityDirectives={activityDirectives || []}
-        loading={!activityDirectives || !initialSpanLoadComplete || constraintsLoading}
+        loading={initialActivityDirectivesLoading || initialSpansLoading || initialConstraintsLoading}
         {externalEvents}
         {constraintResults}
         {cursorEnabled}

@@ -86,7 +86,7 @@
   import Panel from '../../../components/ui/Panel.svelte';
   import SectionTitle from '../../../components/ui/SectionTitle.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
-  import { constraints } from '../../../stores/constraints';
+  import { constraints, initialConstraintsLoading } from '../../../stores/constraints';
   import { initialModel, model, resetModelStores } from '../../../stores/model';
   import {
     schedulingConditionResponses,
@@ -274,7 +274,7 @@
       break;
     case 'constraint':
     default:
-      loading = !$constraints;
+      loading = $initialConstraintsLoading;
       hasCreatePermission = featurePermissions.constraints.canCreate(user);
       hasEditSpecPermission = featurePermissions.constraintsModelSpec.canUpdate(user);
       metadataList = getMetadata($constraints || [], $model, 'constraint_specification');

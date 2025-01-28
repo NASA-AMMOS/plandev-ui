@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import type { ColDef, ColumnState } from 'ag-grid-community';
-  import { initialSpanLoadComplete } from '../../stores/simulation';
+  import { initialSpansLoading } from '../../stores/simulation';
   import type { RowId } from '../../types/data-grid';
   import type { Span, SpanId } from '../../types/simulation';
   import DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -38,7 +38,7 @@
   {getRowId}
   useCustomContextMenu
   rowData={spans || []}
-  loading={!$initialSpanLoadComplete}
+  loading={$initialSpansLoading}
   rowSelection="single"
   scrollToSelection={true}
   suppressDragLeaveHidesColumns={false}

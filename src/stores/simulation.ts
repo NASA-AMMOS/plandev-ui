@@ -38,7 +38,7 @@ export const resourceTypesLoading: Writable<boolean> = writable(true);
 
 export const spans: Writable<Span[] | null> = writable(null);
 
-export const initialSpanLoadComplete: Writable<boolean> = writable(false);
+export const initialSpansLoading: Writable<boolean> = writable(true);
 
 export const yAxesWithScaleDomainsCache: Writable<Record<number, Axis[]>> = writable({});
 
@@ -179,7 +179,7 @@ export function resetSimulationStores() {
   externalResources.set([]);
   externalResourceNames.set([]);
   fetchingResourcesExternal.set(false);
-  initialSpanLoadComplete.set(false);
+  initialSpansLoading.set(true);
   selectedSpanId.update(() => null);
   simulation.updateValue(() => null);
   simulationDatasetId.set(-1);

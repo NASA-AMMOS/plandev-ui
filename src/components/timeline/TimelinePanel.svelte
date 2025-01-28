@@ -1,12 +1,21 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
-  import { constraintsLoading, visibleConstraintResults } from '../../stores/constraints';
+  import {
+    activityDirectivesMap,
+    initialActivityDirectivesLoading,
+    selectActivity,
+    selectedActivityDirectiveId,
+  } from '../../stores/activities';
+  import {
+    initialConstraintPlanSpecsLoading,
+    initialConstraintRunsLoading,
+    visibleConstraintResults,
+  } from '../../stores/constraints';
   import { selectExternalEvent, selectedExternalEventId, selectedExternalEvents } from '../../stores/external-event';
   import { maxTimeRange, plan, planReadOnly, viewTimeRange } from '../../stores/plan';
   import {
-    initialSpanLoadComplete,
+    initialSpansLoading,
     resourceTypes,
     selectedSpanId,
     simulation,
@@ -217,10 +226,11 @@
       activityDirectivesMap={$activityDirectivesMap}
       externalEvents={$selectedExternalEvents}
       constraintResults={$visibleConstraintResults}
-      constraintsLoading={$constraintsLoading}
       {hasUpdateDirectivePermission}
       {hasUpdateSimulationPermission}
-      initialSpanLoadComplete={$initialSpanLoadComplete}
+      initialActivityDirectivesLoading={$initialActivityDirectivesLoading}
+      initialConstraintsLoading={$initialConstraintRunsLoading || $initialConstraintPlanSpecsLoading}
+      initialSpansLoading={$initialSpansLoading}
       maxTimeRange={$maxTimeRange}
       planEndTimeDoy={$plan?.end_time_doy ?? ''}
       plan={$plan}
