@@ -538,11 +538,18 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   DELETE_CONSTRAINT_MODEL_SPECIFICATIONS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_CONSTRAINT_MODEL_SPECIFICATIONS], user);
   },
-  DELETE_DERIVATION_GROUP: (user: User | null, derivationGroup: AssetWithOwner<DerivationGroup>): boolean => {
+  DELETE_CONSTRAINT_PLAN_SPECIFICATIONS: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission([Queries.DELETE_DERIVATION_GROUP, Queries.DELETE_PLAN_DERIVATION_GROUP], user) &&
-        isUserOwner(user, derivationGroup))
+      (getPermission([Queries.DELETE_CONSTRAINT_SPECIFICATIONS], user) &&
+        (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
+    );
+  },
+  DELETE_DERIVATION_GROUPS: (user: User | null, derivationGroups: AssetWithOwner<DerivationGroup>[]): boolean => {
+    return (
+      isUserAdmin(user) ||
+      (getPermission([Queries.DELETE_DERIVATION_GROUP], user) &&
+        derivationGroups.every(derivationGroup => isUserOwner(user, derivationGroup) === true))
     );
   },
   DELETE_EXPANSION_RULE: (user: User | null, expansionRule: AssetWithOwner<ExpansionRule>): boolean => {
@@ -1485,7 +1492,7 @@ const featurePermissions: FeaturePermissions = {
   },
   derivationGroup: {
     canCreate: user => queryPermissions.CREATE_DERIVATION_GROUP(user),
-    canDelete: (user, derivationGroup) => queryPermissions.DELETE_DERIVATION_GROUP(user, derivationGroup),
+    canDelete: (user, derivationGroups) => queryPermissions.DELETE_DERIVATION_GROUPS(user, derivationGroups),
     canRead: user => queryPermissions.SUB_DERIVATION_GROUPS(user),
     canUpdate: () => false, // this is not a feature
   },

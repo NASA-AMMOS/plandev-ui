@@ -17,6 +17,7 @@ export type ExternalEventPkey = {
 //    is clearly our best candidate. See this string of comments for more detail:
 //      https://github.com/NASA-AMMOS/aerie-ui/pull/1396#discussion_r1746175203
 export type ExternalEventId = string;
+export type ExternalEventTypeId = string;
 
 // This is the type that conforms with the database schema.
 export type ExternalEventDB = {

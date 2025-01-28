@@ -259,6 +259,8 @@ import {
   showCreatePlanSnapshotModal,
   showCreateViewModal,
   showDeleteActivitiesModal,
+  showDeleteDerivationGroupModal,
+  showDeleteExternalEventSourceTypeModal,
   showDeleteExternalSourceModal,
   showEditViewModal,
   showExpansionPanelModal,
@@ -2776,22 +2778,29 @@ const effects = {
     }
   },
 
-  async deleteDerivationGroup(derivationGroup: DerivationGroup | null, user: User | null): Promise<void> {
+  async deleteDerivationGroup(derivationGroups: DerivationGroup[] | null, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.DELETE_DERIVATION_GROUP(user, derivationGroup)) {
+      if (!queryPermissions.DELETE_DERIVATION_GROUPS(user, derivationGroups)) {
         throwPermissionError('delete a derivation group');
       }
 
-      if (derivationGroup !== null) {
-        const data = await reqHasura<{ name: string }>(
-          gql.DELETE_DERIVATION_GROUP,
-          { name: derivationGroup.name },
-          user,
-        );
-        if (data.deleteDerivationGroup === null) {
-          throw Error('Unable to delete derivation group');
-        } else {
-          showSuccessToast('Derivation Group Deleted Successfully');
+      if (derivationGroups !== null) {
+        const derivationGroupNames: string[] = derivationGroups.map(derivationGroup => derivationGroup.name);
+
+        // Show confirmation modal prior to running deletion
+        // TODO: Account for non-empty Derivation Groups which cannot be deleted
+        const { confirm } = await showDeleteDerivationGroupModal(derivationGroups);
+        if (confirm) {
+          const data = await reqHasura<{ name: string }>(
+            gql.DELETE_DERIVATION_GROUPS,
+            { derivationGroupNames: derivationGroupNames },
+            user,
+          );
+          if (data.deleteDerivationGroup === null) {
+            throw Error('Unable to delete derivation group');
+          } else {
+            showSuccessToast('Derivation Group Deleted Successfully');
+          }
         }
       }
     } catch (e) {
@@ -2986,19 +2995,35 @@ const effects = {
     }
   },
 
-  async deleteExternalEventType(eventTypeName: string | null, user: User | null): Promise<void> {
+  async deleteExternalEventType(
+    externalEventTypes: string[] | null,
+    externalEventTypesInUse: ExternalEventType[],
+    user: User | null,
+  ): Promise<void> {
     try {
       if (!queryPermissions.DELETE_EXTERNAL_EVENT_TYPE(user)) {
         throwPermissionError('delete an external event type');
       }
 
-      // to do this, all dgs associated should be deleted.
-      if (eventTypeName !== null) {
-        const data = await reqHasura<{ id: number }>(gql.DELETE_EXTERNAL_EVENT_TYPE, { name: eventTypeName }, user);
-        if (data.deleteDerivationGroup === null) {
-          throw Error('Unable to delete external event type');
+      if (externalEventTypes !== null) {
+        const associatedItems = externalEventTypesInUse.map(externalEventType => externalEventType.name);
+        const { confirm } = await showDeleteExternalEventSourceTypeModal(
+          externalEventTypes,
+          'External Event Type(s)',
+          new Set(associatedItems),
+        );
+
+        if (confirm) {
+          const data = await reqHasura<{ id: number }>(
+            gql.DELETE_EXTERNAL_EVENT_TYPE,
+            { names: externalEventTypes },
+            user,
+          );
+          if (data.deleteDerivationGroup === null) {
+            throw Error('Unable to delete external event type');
+          }
+          showSuccessToast('External Event Type Deleted Successfully');
         }
-        showSuccessToast('External Event Type Deleted Successfully');
       }
     } catch (e) {
       catchError('External Event Type Deletion Failed', e as Error);
@@ -3079,23 +3104,37 @@ const effects = {
     return false;
   },
 
-  async deleteExternalSourceType(externalSourceTypeName: string | null, user: User | null): Promise<void> {
+  async deleteExternalSourceType(
+    externalSourceTypes: string[] | null,
+    externalSources: ExternalSourceSlim[],
+    user: User | null,
+  ): Promise<void> {
     try {
       if (!queryPermissions.DELETE_EXTERNAL_SOURCE_TYPE(user)) {
         throwPermissionError('delete an external source type');
       }
+      if (externalSourceTypes !== null) {
+        const associatedItems = externalSources.filter(externalSource => {
+          return externalSourceTypes.includes(externalSource.source_type_name);
+        });
 
-      // to do this, all dgs associated should be deleted.
-      if (externalSourceTypeName !== null) {
-        const data = await reqHasura<{ name: string }>(
-          gql.DELETE_EXTERNAL_SOURCE_TYPE,
-          { name: externalSourceTypeName },
-          user,
+        const { confirm } = await showDeleteExternalEventSourceTypeModal(
+          externalSourceTypes,
+          'External Source Type(s)',
+          new Set(associatedItems.map(externalSource => externalSource.source_type_name)),
         );
-        if (data.deleteDerivationGroup === null) {
-          throw Error('Unable to delete external source type');
-        } else {
-          showSuccessToast('External Source Type Deletion Successful');
+
+        if (confirm) {
+          const data = await reqHasura<{ name: string }>(
+            gql.DELETE_EXTERNAL_SOURCE_TYPE,
+            { names: externalSourceTypes },
+            user,
+          );
+          if (data.deleteDerivationGroup === null) {
+            throw Error('Unable to delete external source type');
+          } else {
+            showSuccessToast('External Source Type Deletion Successful');
+          }
         }
       }
     } catch (e) {

@@ -8,6 +8,9 @@ export type ExternalSourcePkey = {
   key: string;
 };
 
+export type DerivationGroupId = string;
+export type ExternalSourceTypeId = string;
+
 // This is the type that conforms with the database schema. We don't really use it, as it is pretty heavyweight - instead we derive lighter types from it.
 export type ExternalSourceDB = {
   attributes: object;
@@ -59,6 +62,7 @@ export type ExternalSourceType = {
   attribute_schema: SchemaObject;
   name: string;
 };
+export type ExternalSourceWithEventTypes = { key: string; types: string[] };
 
 export type DerivationGroup = {
   derived_event_total: number;

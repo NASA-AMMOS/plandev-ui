@@ -16,12 +16,14 @@
   } from '../../stores/external-source';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
-  import type { ExternalEventType } from '../../types/external-event';
+  import type { ExternalEventType, ExternalEventTypeId } from '../../types/external-event';
   import type {
     DerivationGroup,
+    DerivationGroupId,
     ExternalSourceEventTypeSchema,
     ExternalSourceSlim,
     ExternalSourceType,
+    ExternalSourceTypeId,
   } from '../../types/external-source';
   import type { ParametersMap } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
@@ -32,7 +34,6 @@
     getExternalSourceTypeRowId,
   } from '../../utilities/externalEvents';
   import { parseJSONStream } from '../../utilities/generic';
-  import { showDeleteDerivationGroupModal, showDeleteExternalEventSourceTypeModal } from '../../utilities/modal';
   import { getFormParameters, translateJsonSchemaToValueSchema } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -47,6 +48,7 @@
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
+  import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
 
   export let user: User | null;
 
@@ -61,6 +63,11 @@
   type ModalCellRendererParamsDerivationGroup = ICellRendererParams<DerivationGroup> & CellRendererParams;
   type ModalCellRendererParamsExternalSourceType = ICellRendererParams<ExternalSourceType> & CellRendererParams;
   type ModalCellRendererParamsExternalEventType = ICellRendererParams<ExternalEventType> & CellRendererParams;
+
+  /** TODO
+   * 1) Convert External Event Type deletion to new format
+   * 2) Checkout that External Source Type deletion works
+   */
 
   const columnSize: string = '.55fr 3px 1.5fr';
 
@@ -133,9 +140,9 @@
   let externalSourceTypeColumnDefs: DataGridColumnDef<ExternalSourceType>[] = externalSourceTypeBaseColumnDefs;
   let externalEventTypeColumnDefs: DataGridColumnDef<ExternalEventType>[] = externalEventTypeBaseColumnDefs;
 
-  let derivationGroupDataGrid: DataGrid<DerivationGroup>;
-  let externalSourceTypeDataGrid: DataGrid<ExternalSourceType>;
-  let externalEventTypeDataGrid: DataGrid<ExternalEventType>;
+  let derivationGroupDataGrid: DataGrid<DerivationGroup> | undefined = undefined;
+  let externalSourceTypeDataGrid: DataGrid<ExternalSourceType> | undefined = undefined;
+  let externalEventTypeDataGrid: DataGrid<ExternalEventType> | undefined = undefined;
 
   let hasDeleteExternalSourceTypePermission: boolean = false;
   let hasDeleteExternalEventTypePermission: boolean = false;
@@ -148,14 +155,17 @@
   let externalEventTypeFilterString: string = '';
 
   let selectedDerivationGroup: DerivationGroup | undefined = undefined;
+  let selectedDerivationGroupId: DerivationGroupId | undefined = undefined;
   let selectedDerivationGroupSources: ExternalSourceSlim[] = [];
 
   let selectedExternalSourceType: ExternalSourceType | undefined = undefined;
+  let selectedExternalSourceTypeId: ExternalSourceTypeId | undefined = undefined;
   let selectedExternalSourceTypeDerivationGroups: DerivationGroup[] = [];
   let selectedExternalSourceTypeAttributeSchema: Record<string, ValueSchema>;
   let selectedExternalSourceTypeParametersMap: ParametersMap = {};
 
   let selectedExternalEventType: ExternalEventType | undefined = undefined;
+  let selectedExternalEventTypeId: ExternalEventTypeId | undefined = undefined;
   let selectedExternalEventTypeSources: string[] = [];
   let selectedExternalEventTypeAttributesSchema: Record<string, ValueSchema>;
   let selectedExternalEventTypeParametersMap: ParametersMap = {};
@@ -247,7 +257,7 @@
               content: 'Delete Derivation Group',
               placement: 'bottom',
             },
-            hasDeletePermission: hasDeleteDerivationGroupPermissionOnRow(params.data),
+            hasDeletePermission: hasDeleteDerivationGroupPermissionOnRow(user, params.data),
             rowData: params.data,
             viewCallback: params.viewDerivationGroup,
             viewTooltip: {
@@ -373,31 +383,68 @@
     },
   ];
 
+  function selectDerivationGroup(derivationGroup: DerivationGroup) {
+    selectedDerivationGroup = derivationGroup;
+    selectedExternalSourceType = undefined;
+    selectedExternalEventType = undefined;
+  }
+
+  function selectExternalSourceType(externalSourceType: ExternalSourceType) {
+    selectedDerivationGroup = undefined;
+    selectedExternalSourceType = externalSourceType;
+    selectedExternalEventType = undefined;
+  }
+
+  function selectExternalEventType(externalEventType: ExternalEventType) {
+    selectedDerivationGroup = undefined;
+    selectedExternalSourceType = undefined;
+    selectedExternalEventType = externalEventType;
+  }
+
   function deleteDerivationGroup(derivationGroup: DerivationGroup) {
     // Makes sure all associated sources are deleted before this. List of sources already contained in DerivationGroup type.
-    showDeleteDerivationGroupModal(derivationGroup, user);
+    onDeleteDerivationGroup([derivationGroup]);
+  }
+
+  function onDeleteDerivationGroup(derivationGroups: DerivationGroup[] | null | undefined) {
+    if (derivationGroups !== null && derivationGroups !== undefined) {
+      effects.deleteDerivationGroup(derivationGroups, user);
+    }
   }
 
   function deleteExternalSourceType(sourceType: ExternalSourceType) {
     // Makes sure all associated derivation groups are deleted before this
-    showDeleteExternalEventSourceTypeModal(
-      sourceType,
-      'External Source Type',
-      $externalSources.filter(source => source.source_type_name === sourceType.name).map(source => source.key),
-      user,
-    );
+    onDeleteExternalSourceType([sourceType]);
+  }
+
+  function onDeleteExternalSourceType(sourceTypes: ExternalSourceType[] | null | undefined) {
+    if (sourceTypes !== null && sourceTypes !== undefined) {
+      effects.deleteExternalSourceType(
+        sourceTypes.map(sourceType => sourceType.name),
+        $externalSources,
+        user,
+      );
+    }
   }
 
   function deleteExternalEventType(eventType: ExternalEventType) {
     // Makes sure all associated sources (and therefore events, as orphans are not possible) are deleted before this
     // NOTE: does not update in derivation_group_comp after removing a EE type; derivation_group_comp defaults to 0 event types after its last external source removed,
     //        as it has no awareness of external source type or paired events (as the latter don't even exist).
-    showDeleteExternalEventSourceTypeModal(
-      eventType,
-      'External Event Type',
-      $sourcesUsingExternalEventTypes.filter(entry => entry.types.includes(eventType.name)).map(entry => entry.key), // NOTE: MAY NEED TO REMOVE THIS - COULD BE A VERY SLOW OPERATION.
-      user,
-    );
+    onDeleteExternalEventType([eventType]);
+  }
+
+  function onDeleteExternalEventType(eventTypes: ExternalEventType[] | null | undefined) {
+    if (eventTypes !== null && eventTypes !== undefined) {
+      const associatedItems = eventTypes.filter(
+        eventType => $sourcesUsingExternalEventTypes.filter(entry => entry.types.includes(eventType.name)).length !== 0,
+      );
+      effects.deleteExternalEventType(
+        eventTypes.map(eventType => eventType.name),
+        associatedItems,
+        user,
+      );
+    }
   }
 
   function getAssociatedExternalSourcesByEventType(eventType: string | undefined) {
@@ -479,8 +526,11 @@
     resetUploadForm();
   }
 
-  function hasDeleteDerivationGroupPermissionOnRow(derivationGroup: DerivationGroup | undefined) {
-    if (derivationGroup === undefined) {
+  function hasDeleteDerivationGroupPermissionOnRow(
+    user: User | null,
+    derivationGroup: DerivationGroup | undefined | null,
+  ) {
+    if (derivationGroup === undefined || derivationGroup === null) {
       return false;
     } else {
       return featurePermissions.derivationGroup.canDelete(user, derivationGroup);
@@ -838,12 +888,19 @@
       </svelte:fragment>
       <svelte:fragment slot="body">
         <div class="derivation-group-table">
-          <DataGrid
-            bind:this={derivationGroupDataGrid}
+          <BulkActionDataGrid
+            dataGrid={derivationGroupDataGrid}
             columnDefs={derivationGroupColumnsDef}
+            hasDeletePermission={hasDeleteDerivationGroupPermissionOnRow}
+            singleItemDisplayText="Derivation Group"
+            pluralItemDisplayText="Derivation Groups"
             filterExpression={derivationGroupFilterString}
-            rowData={$derivationGroups}
+            items={$derivationGroups}
+            {user}
             getRowId={getDerivationGroupRowId}
+            on:rowClicked={({ detail }) => selectDerivationGroup(detail.data)}
+            on:bulkDeleteItems={({ detail }) => onDeleteDerivationGroup(detail)}
+            bind:selectedItemId={selectedDerivationGroupId}
           />
         </div>
       </svelte:fragment>
@@ -862,12 +919,19 @@
       </svelte:fragment>
       <svelte:fragment slot="body">
         <div class="external-source-type-table">
-          <DataGrid
-            bind:this={externalSourceTypeDataGrid}
+          <BulkActionDataGrid
+            dataGrid={externalSourceTypeDataGrid}
             columnDefs={externalSourceTypeColumnDefs}
+            hasDeletePermission={hasDeleteExternalSourceTypePermission}
+            singleItemDisplayText="External Source Type"
+            pluralItemDisplayText="External Source Types"
             filterExpression={externalSourceTypeFilterString}
-            rowData={$externalSourceTypes}
+            items={$externalSourceTypes}
+            {user}
             getRowId={getExternalSourceTypeRowId}
+            on:rowClicked={({ detail }) => selectExternalSourceType(detail.data)}
+            on:bulkDeleteItems={({ detail }) => onDeleteExternalSourceType(detail)}
+            bind:selectedItemId={selectedExternalSourceTypeId}
           />
         </div>
       </svelte:fragment>
@@ -886,12 +950,19 @@
       </svelte:fragment>
       <svelte:fragment slot="body">
         <div class="external-event-type-table">
-          <DataGrid
-            bind:this={externalEventTypeDataGrid}
+          <BulkActionDataGrid
+            dataGrid={externalEventTypeDataGrid}
             columnDefs={externalEventTypeColumnDefs}
+            hasDeletePermission={hasDeleteExternalEventTypePermission}
+            singleItemDisplayText="External Event Type"
+            pluralItemDisplayText="External Event Types"
             filterExpression={externalEventTypeFilterString}
-            rowData={$externalEventTypes}
+            items={$externalEventTypes}
+            {user}
             getRowId={getExternalEventTypeRowId}
+            on:rowClicked={({ detail }) => selectExternalEventType(detail.data)}
+            on:bulkDeleteItems={({ detail }) => onDeleteExternalEventType(detail)}
+            bind:selectedItemId={selectedExternalEventTypeId}
           />
         </div>
       </svelte:fragment>

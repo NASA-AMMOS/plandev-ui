@@ -739,15 +739,30 @@ const gql = {
       }
     }
   `,
+  DELETE_CONSTRAINT_PLAN_SPECIFICATIONS: `#graphql
+    mutation DeleteConstraintPlanSpecification($constraintIds: [Int!]!, $planId: Int!) {
+      ${Queries.DELETE_CONSTRAINT_SPECIFICATIONS}(
+        where: {
+          constraint_id: { _in: $constraintIds },
+          _and: {
+            plan_id: { _eq: $planId },
+          }
+        }
+      ) {
+        affected_rows
+      }
+    }
+  `,
 
-  DELETE_DERIVATION_GROUP: `#graphql
-    mutation DeleteDerivationGroup($name: String!) {
-      deleteDerivationGroupForPlan: ${Queries.DELETE_PLAN_DERIVATION_GROUP}(where: { derivation_group_name: { _eq: $name }}) {
+  DELETE_DERIVATION_GROUPS: `#graphql
+    mutation DeleteDerivationGroup($derivationGroupNames: [String]!) {
+      deleteDerivationGroupForPlan: ${Queries.DELETE_PLAN_DERIVATION_GROUP}(where: { derivation_group_name: { _in: $derivationGroupNames }}) {
         returning {
           derivation_group_name
+          plan_id
         }
       }
-      deleteDerivationGroup: ${Queries.DELETE_DERIVATION_GROUP}(where: { name: { _eq: $name } }) {
+      deleteDerivationGroup: ${Queries.DELETE_DERIVATION_GROUP}(where: { name: { _in: $derivationGroupNames } }) {
         returning {
           name
         }
@@ -799,9 +814,13 @@ const gql = {
   `,
 
   DELETE_EXTERNAL_EVENT_TYPE: `#graphql
-    mutation DeleteExternalEventType($name: String!) {
-      deleteExternalEventType: ${Queries.DELETE_EXTERNAL_EVENT_TYPE}(name: $name) {
-        name
+    mutation DeleteExternalEventType($names: [String]!) {
+      deleteExternalEventType: ${Queries.DELETE_EXTERNAL_EVENT_TYPE}(where: {
+        name: { _in: $names }
+      }) {
+        returning {
+          name
+        }
       }
     }
   `,
@@ -823,9 +842,12 @@ const gql = {
   `,
 
   DELETE_EXTERNAL_SOURCE_TYPE: `#graphql
-    mutation DeleteExternalSourceType($name: String!) {
-      deleteExternalSourceType: ${Queries.DELETE_EXTERNAL_SOURCE_TYPE}(name: $name) {
-        name
+    mutation DeleteExternalSourceType($names: [String]!) {
+      deleteExternalSourceType: ${Queries.DELETE_EXTERNAL_SOURCE_TYPE}(where: {
+        name: { _in: $names }}) {
+          returning {
+            name
+          }
       }
     }
   `,

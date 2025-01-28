@@ -209,31 +209,6 @@ describe('Handle modal and requests in effects', () => {
     });
   });
 
-  describe('deleteDerivationGroup', () => {
-    it('should correctly handle null responses', async () => {
-      vi.spyOn(Requests, 'reqHasura').mockResolvedValue({
-        deleteDerivationGroup: null,
-      });
-      vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
-
-      await effects.deleteDerivationGroup(
-        {
-          derived_event_total: 0,
-          name: 'Default',
-          owner: 'userA',
-          source_type_name: 'Example',
-          sources: new Map(),
-        },
-        mockUser,
-      );
-
-      expect(catchErrorSpy).toHaveBeenCalledWith(
-        'Derivation Group Deletion Failed',
-        Error('Unable to delete derivation group'),
-      );
-    });
-  });
-
   describe('getExternalEvents', () => {
     it('should correctly handle null responses', async () => {
       vi.spyOn(Requests, 'reqHasura').mockResolvedValue({

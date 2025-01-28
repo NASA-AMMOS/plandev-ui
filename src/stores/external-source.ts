@@ -4,6 +4,7 @@ import {
   type DerivationGroup,
   type ExternalSourceSlim,
   type ExternalSourceType,
+  type ExternalSourceWithEventTypes,
   type PlanDerivationGroup,
 } from '../types/external-source';
 import gql from '../utilities/gql';
@@ -38,7 +39,7 @@ export const planDerivationGroupLinks = gqlSubscribable<PlanDerivationGroup[]>(
   [],
   null,
 );
-export const sourcesUsingExternalEventTypes = gqlSubscribable<{ key: string; types: string[] }[]>(
+export const sourcesUsingExternalEventTypes = gqlSubscribable<ExternalSourceWithEventTypes[]>(
   gql.SUB_EVENT_TYPES_IN_USE,
   {},
   [],
