@@ -481,7 +481,7 @@
         </svelte:fragment>
         <div class="simulation-history">
           {#if !$simulationDatasetsPlan}
-            <div style:margin-left="32px">
+            <div class="loading-wrapper">
               <Loading />
             </div>
           {:else if !filteredSimulationDatasets || !filteredSimulationDatasets.length}
@@ -520,5 +520,9 @@
 
   :global(.simulation-collapse.collapse .content) {
     margin: 0;
+  }
+
+  .loading-wrapper {
+    margin-left: 32px;
   }
 </style>
