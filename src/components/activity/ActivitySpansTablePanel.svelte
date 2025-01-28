@@ -8,7 +8,7 @@
   import { InvalidDate } from '../../constants/time';
   import { selectActivity } from '../../stores/activities';
   import { plugins } from '../../stores/plugins';
-  import { selectedSpanId, spans } from '../../stores/simulation';
+  import { initialSpansLoading, selectedSpanId, spans } from '../../stores/simulation';
   import { view, viewTogglePanel, viewUpdateActivitySpansTable } from '../../stores/views';
   import type { Span } from '../../types/simulation';
   import type { AutoSizeColumns, ViewGridSection, ViewTable } from '../../types/view';
@@ -333,6 +333,7 @@
       columnDefs={derivedColumnDefs ?? []}
       columnStates={activitySpansTable?.columnStates}
       {filterExpression}
+      loading={$initialSpansLoading}
       spans={$spans}
       on:columnMoved={onColumnMoved}
       on:columnPinned={onColumnPinned}
