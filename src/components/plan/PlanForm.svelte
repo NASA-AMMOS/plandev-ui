@@ -9,7 +9,6 @@
   import {
     initialPlanSnapshotsLoading,
     planSnapshotId,
-    planSnapshots,
     planSnapshotsWithSimulations,
   } from '../../stores/planSnapshots';
   import { plans } from '../../stores/plans';
@@ -349,7 +348,7 @@
           {/if}
           <button
             class="st-button secondary"
-            disabled={!$planSnapshots}
+            disabled={$initialPlanSnapshotsLoading}
             use:permissionHandler={{
               hasPermission: hasCreateSnapshotPermission,
               permissionError: $planReadOnly
