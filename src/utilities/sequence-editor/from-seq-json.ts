@@ -37,6 +37,8 @@ function seqJsonTimeToSequence(time: Time | Time1): string {
       return `R${time.tag ?? ''}`;
     case 'EPOCH_RELATIVE':
       return `E${time.tag ?? ''}`;
+    case 'BLOCK_RELATIVE':
+      return `B${time.tag ?? ''}`;
     default:
       return '';
   }
