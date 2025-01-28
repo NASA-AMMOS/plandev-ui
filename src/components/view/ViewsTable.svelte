@@ -11,6 +11,7 @@
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
 
   export let views: ViewSlim[] | null = [];
+  export let viewsLoading: boolean = false;
   export let user: User | null;
 
   type CellRendererParams = {
@@ -137,7 +138,7 @@
   {columnDefs}
   isRowSelectable={rowData => rowData?.data?.owner !== 'system'}
   items={views || []}
-  loading={!views}
+  loading={viewsLoading}
   pluralItemDisplayText="Views"
   singleItemDisplayText="View"
   {user}

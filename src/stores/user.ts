@@ -1,3 +1,4 @@
+import { derived, type Readable } from 'svelte/store';
 import type { UserId } from '../types/app';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
@@ -16,3 +17,6 @@ export const users = gqlSubscribable<UserId[] | null>(gql.SUB_USERS, {}, null, n
     .filter((user: { default_role: string; username: UserId }) => AERIE_DEFAULT_USERS.indexOf(user.username) < 0)
     .map((user: { default_role: string; username: UserId }) => user.username),
 );
+
+/* Loading stores. */
+export const initialUsersLoading: Readable<boolean> = derived([users], ([$users]) => !$users);

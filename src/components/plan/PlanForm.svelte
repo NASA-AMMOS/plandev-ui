@@ -45,6 +45,7 @@
   export let tags: Tag[] = [];
   export let user: User | null;
   export let users: UserId[] | null = null;
+  export let usersLoading: boolean = false;
   export let userWriteablePlans: PlanSlimmer[] | null = null;
 
   let filteredPlanSnapshots: PlanSnapshotType[] = [];
@@ -292,12 +293,12 @@
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Collaborators', placement: 'top' }} for="collaborators">Collaborators</label>
-          {#if users === null || userWriteablePlans === null}
+          {#if usersLoading || userWriteablePlans === null}
             <input class="st-input w-100" disabled name="collaborators" value="Loading..." />
           {:else}
             <PlanCollaboratorInput
               collaborators={plan.collaborators}
-              {users}
+              users={users || []}
               plans={userWriteablePlans}
               {plan}
               {user}

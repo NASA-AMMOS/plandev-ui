@@ -1,5 +1,5 @@
 import { capitalize, isEqual } from 'lodash-es';
-import { derived, get, writable, type Writable } from 'svelte/store';
+import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActivityLayerFilterField } from '../enums/timeline';
 import type { ResourceType } from '../types/simulation';
 import type {
@@ -801,3 +801,5 @@ export function viewAddFilterItemsToRow(
 
   return returnRow;
 }
+/* Loading stores. */
+export const initialViewsLoading: Readable<boolean> = derived([views], ([$views]) => !$views);

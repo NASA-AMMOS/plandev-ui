@@ -94,8 +94,8 @@
     schedulingGoalResponses,
     schedulingGoals,
   } from '../../../stores/scheduling';
-  import { users } from '../../../stores/user';
-  import { views } from '../../../stores/views';
+  import { initialUsersLoading, users } from '../../../stores/user';
+  import { initialViewsLoading, views } from '../../../stores/views';
   import type { User, UserId } from '../../../types/app';
   import type { ConstraintModelSpec, ConstraintModelSpecInsertInput } from '../../../types/constraint';
   import type {
@@ -690,7 +690,9 @@
         createdAt={$model?.created_at}
         user={data.user}
         users={$users}
+        usersLoading={$initialUsersLoading}
         views={$views}
+        viewsLoading={$initialViewsLoading}
         on:createPlan={onCreatePlanWithModel}
         on:deleteModel={onDeleteModel}
         on:hasModelChanged={onModelMetadataChange}
