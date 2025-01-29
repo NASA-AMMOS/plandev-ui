@@ -63,6 +63,7 @@
   }
 
   .animate {
+    /* TODO clean up! */
     /* animation: ag-skeleton-loading 1.5s ease-in-out 1s infinite; */
     animation:
       aa 1.5s ease-in-out 1.5s infinite,
