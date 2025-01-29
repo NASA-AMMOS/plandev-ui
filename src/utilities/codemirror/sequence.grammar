@@ -183,15 +183,17 @@ Stem { !stemStart identifier }
 
   timeSecond { $[1-9] @digit* ("."@digit+)? }
 
+  timeSegments { timeSecond | timeDOY | timeHhmmss }
+
   TimeAbsolute { 'A'@digit@digit@digit@digit"-"@digit@digit@digit"T"timeHhmmss whiteSpace }
 
-  TimeRelative { 'R'(timeSecond | timeDOY | timeHhmmss) whiteSpace}
+  TimeRelative { 'R'timeSegments whiteSpace}
 
-  TimeBlockRelative { 'B'$[+\-]?(timeSecond | timeDOY | timeHhmmss) whiteSpace }
+  TimeBlockRelative { 'B'$[+\-]?timeSegments whiteSpace }
 
-  TimeEpoch { 'E'$[+\-]?(timeSecond | timeDOY | timeHhmmss) whiteSpace}
+  TimeEpoch { 'E'$[+\-]?timeSegments whiteSpace}
 
-  TimeGroundEpoch { 'G'$[+\-]?(timeSecond | timeDOY | timeHhmmss) whiteSpace}
+  TimeGroundEpoch { 'G'$[+\-]?timeSegments whiteSpace}
 
   TimeComplete { 'C' whiteSpace }
 
