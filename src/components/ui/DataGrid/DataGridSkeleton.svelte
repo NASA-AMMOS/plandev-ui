@@ -63,10 +63,8 @@
   }
 
   .animate {
-    /* TODO clean up! */
-    /* animation: ag-skeleton-loading 1.5s ease-in-out 1s infinite; */
     animation:
-      aa 1.5s ease-in-out 1.5s infinite,
+      loopingFade 1.5s ease-in-out 1.5s infinite,
       fadeIn 1s ease-in 1s;
     background: lightgray;
     background-color: var(--ag-row-loading-skeleton-effect-color);
@@ -77,30 +75,17 @@
 
   @keyframes delayVisibility {
     0% {
-      /* opacity: 0; */
-      /* opacity: 0; */
       visibility: hidden;
-    }
-    50% {
-      /* opacity: 0; */
-    }
-    80% {
-      /* opacity: 0; */
-    }
-    80% {
-      /* opacity: 1; */
-      /* visibility: hidden; */
     }
     99% {
       visibility: hidden;
     }
     100% {
-      /* opacity: 1; */
       visibility: visible;
     }
   }
 
-  @keyframes aa {
+  @keyframes loopingFade {
     0%,
     100% {
       opacity: 0.4;
