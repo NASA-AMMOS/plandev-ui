@@ -235,11 +235,7 @@ export class ExternalSources {
     this.externalSourcesTable = page.locator('#external-sources-table');
   }
 
-  async uploadExternalSource(
-    inputFilePath: string = this.externalSourceFilePath,
-    inputFileName: string = this.externalSourceFileName,
-    validateUpload: boolean = true,
-  ) {
+  async uploadExternalSource(inputFilePath: string = this.externalSourceFilePath, validateUpload: boolean = true) {
     await this.goto();
     await this.fillInputFile(inputFilePath);
     // Wait for all errors to disappear, assuming stores are just taking time to load
@@ -247,8 +243,7 @@ export class ExternalSources {
     await this.page.getByLabel('Please create it!').waitFor({ state: 'hidden' });
     await this.uploadButton.click();
     if (validateUpload) {
-      await expect(this.externalSourcesTable).toBeVisible();
-      await expect(this.externalSourcesTable.getByRole('gridcell', { name: inputFileName })).toBeVisible();
+      await expect(this.page.getByText('Selected External Source')).toBeVisible();
     }
   }
 

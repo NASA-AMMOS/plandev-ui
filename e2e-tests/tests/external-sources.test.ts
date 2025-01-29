@@ -90,11 +90,7 @@ test.describe.serial('External Sources', () => {
   });
 
   test('Create Empty Source and Event Type', async () => {
-    await externalSources.uploadExternalSource(
-      externalSources.externalSourceNoAttributeFilePath,
-      externalSources.externalSourceNoAttributeFileName,
-      false,
-    );
+    await externalSources.uploadExternalSource(externalSources.externalSourceNoAttributeFilePath, false);
 
     await externalSources.gotoTypeManager();
 
@@ -102,16 +98,13 @@ test.describe.serial('External Sources', () => {
     const externalEventTypeTable = await externalSources.page.locator('.external-event-type-table');
 
     const sourceType = await externalSourceTypeTable.getByRole('gridcell').filter({ hasText: 'Empty External Source' });
-    await sourceType.hover();
-    await page.getByRole('button', { name: 'View External Source Type' }).click();
+    await sourceType.click();
     await expect(page.locator('text="Attribute Schema - Properties"')).toBeVisible();
     const sourceTypeAttributes = await page.locator('text="Attribute Schema - Properties"');
     await sourceTypeAttributes.click();
     await expect(page.locator('.parameter')).toHaveCount(0);
-
     const eventType = await externalEventTypeTable.getByRole('gridcell').filter({ hasText: 'EmptyEvent' });
-    await eventType.hover();
-    await page.getByRole('button', { name: 'View External Event Type' }).click();
+    await eventType.click();
     await expect(page.locator('text="Attribute Schema - Properties"')).toBeVisible();
     const eventTypeAttributes = await page.locator('text="Attribute Schema - Properties"');
     await eventTypeAttributes.click();
@@ -145,20 +138,12 @@ test.describe.serial('External Source Error Handling', () => {
       externalSources.exampleTypeSchemaExpectedSourceTypes,
       externalSources.exampleTypeSchemaExpectedEventTypes,
     );
-    await externalSources.uploadExternalSource(
-      externalSources.externalSourceFilePath,
-      externalSources.externalSourceFileName,
-      true,
-    );
+    await externalSources.uploadExternalSource(externalSources.externalSourceFilePath, true);
     await expect(externalSources.externalSourcesTable).toBeVisible();
     await expect(
       externalSources.externalSourcesTable.getByRole('gridcell', { name: externalSources.externalSourceFileName }),
     ).toBeVisible();
-    await externalSources.uploadExternalSource(
-      externalSources.externalSourceFilePath,
-      externalSources.externalSourceFileName,
-      false,
-    );
+    await externalSources.uploadExternalSource(externalSources.externalSourceFilePath, false);
     await expect(page.getByLabel('Uniqueness violation.')).toBeVisible();
     await externalSources.waitForToast('External Source Create Failed');
     await expect(page.getByRole('gridcell', { name: externalSources.externalSourceFileName })).toHaveCount(1);
