@@ -204,7 +204,7 @@
     </Input>
     <Input layout="inline">
       <label for="view">Default View</label>
-      <select name="view" class="st-select w-100" bind:value={viewId} disabled={viewsLoading}>
+      <select name="view" class="st-select w-full" bind:value={viewId} disabled={viewsLoading}>
         {#if viewsLoading || !views}
           <option>Loading</option>
         {:else}
