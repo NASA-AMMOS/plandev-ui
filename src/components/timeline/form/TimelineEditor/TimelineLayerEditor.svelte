@@ -136,7 +136,7 @@
           aria-label="Toggle activity filter builder modal"
           slot="trigger"
           on:click|stopPropagation={toggleFilterMenu}
-          class="st-button icon w-100"
+          class="st-button icon w-full"
           style:position="relative"
           use:tooltip={{
             content: `Filter Activities${filterCount > 0 ? ` (${filterCount} applied)` : ''}`,
@@ -162,7 +162,7 @@
         selectedOptionLabel={layer.name}
         selectTooltip={layer.filter.resource || 'Select Resource'}
         showPlaceholderOption={false}
-        className="w-100"
+        className="w-full"
         placeholder="Select Resource"
         searchPlaceholder="Filter resources"
         selectedOptionValues={layer.filter.resource ? [layer.filter.resource] : []}
@@ -176,7 +176,7 @@
         allowMultiple
         selectedOptionLabel={layer.name}
         showPlaceholderOption={false}
-        className="w-100"
+        className="w-full"
         placeholder="Select Event Types"
         selectTooltip="Select Event Types"
         searchPlaceholder="Filter event types"

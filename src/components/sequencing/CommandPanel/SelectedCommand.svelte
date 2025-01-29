@@ -114,7 +114,7 @@
   {#if !!timeTagNode}
     <fieldset>
       <label class="label-row" for="timeTag">Time Tag</label>
-      <input class="st-input w-100" disabled name="timeTag" value={timeTagNode.text.trim()} />
+      <input class="st-input w-full" disabled name="timeTag" value={timeTagNode.text.trim()} />
     </fieldset>
   {/if}
   {#if !!commandNode}

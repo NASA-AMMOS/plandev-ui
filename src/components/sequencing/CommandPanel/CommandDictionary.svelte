@@ -123,13 +123,13 @@
       <Input>
         <div class="search-icon" slot="left"><SearchIcon /></div>
         <input
-          class="st-input w-100"
+          class="st-input w-full"
           name="dictionary-search"
           placeholder={`Search ${searchFieldMap[searchField]}`}
           on:input={onSearch}
         />
       </Input>
-      <select bind:value={searchField} class="st-select w-100">
+      <select bind:value={searchField} class="st-select w-full">
         <option value={'command_name'}>Command name</option>
         <option value={'enum'}>Enum</option>
         <option value={'argument_name'}>Argument name</option>
