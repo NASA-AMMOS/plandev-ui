@@ -32,9 +32,9 @@
   import Loading from '../Loading.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
-  import CancellableProgressRadial from '../ui/CancellableProgressRadial.svelte';
   import CardList from '../ui/CardList.svelte';
   import FilterToggleButton from '../ui/FilterToggleButton.svelte';
+  import ProgressRadial from '../ui/ProgressRadial.svelte';
   import PlanCollaboratorInput from '../ui/Tags/PlanCollaboratorInput.svelte';
   import TagsInput from '../ui/Tags/TagsInput.svelte';
   import PlanSnapshot from './PlanSnapshot.svelte';
@@ -53,7 +53,6 @@
   let hasCreateSnapshotPermission: boolean = false;
   let hasPlanUpdatePermission: boolean = false;
   let hasPlanCollaboratorsUpdatePermission: boolean = false;
-  let planExportAbortController: AbortController | null = null;
   let planNameField = field<string>('', [
     required,
     unique(
@@ -61,7 +60,7 @@
       'Plan name already exists',
     ),
   ]);
-  let planExportProgress: number | null = null;
+  let planExporting: boolean = false;
   let planStartTime: string = '';
   let planEndTime: string = '';
 
@@ -158,32 +157,11 @@
   }
 
   async function onExportPlan() {
-    if (plan && activityDirectivesMap) {
-      if (planExportAbortController) {
-        planExportAbortController.abort();
-      }
-
-      planExportAbortController = new AbortController();
-
-      if (planExportAbortController && !planExportAbortController.signal.aborted) {
-        await exportPlan(
-          plan,
-          user,
-          (progress: number) => {
-            planExportProgress = progress;
-          },
-          Object.values(activityDirectivesMap),
-          planExportAbortController.signal,
-        );
-      }
-      planExportProgress = null;
+    if (plan && !planExporting && activityDirectivesMap) {
+      planExporting = true;
+      await exportPlan(plan, user, Object.values(activityDirectivesMap));
+      planExporting = false;
     }
-  }
-
-  function onCancelExportPlan() {
-    planExportAbortController?.abort();
-    planExportAbortController = null;
-    planExportProgress = null;
   }
 </script>
 
@@ -192,16 +170,9 @@
     <fieldset>
       <Collapse title="Details">
         <svelte:fragment slot="right">
-          {#if planExportProgress !== null}
-            <button
-              class="st-button icon cancel-button"
-              on:click|stopPropagation={onCancelExportPlan}
-              use:tooltip={{
-                content: 'Cancel Plan Export',
-                placement: 'top',
-              }}
-            >
-              <CancellableProgressRadial progress={planExportProgress} />
+          {#if planExporting}
+            <button class="st-button icon progress" on:click|stopPropagation={() => {}}>
+              <ProgressRadial strokeWidth={1} />
             </button>
           {:else}
             <button
@@ -424,9 +395,13 @@
     width: 28px;
   }
 
-  .cancel-button {
+  .progress {
     border: 0;
     border-radius: 50%;
     width: 28px;
+    --progress-radial-background: var(--st-gray-20);
+  }
+  .progress:hover {
+    background: none;
   }
 </style>

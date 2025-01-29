@@ -11,14 +11,14 @@ import * as plan from './plan';
 vi.mock('./effects', () => ({
   default: {
     getActivitiesForPlan: vi.fn(),
-    getEffectiveActivityArguments: vi.fn(),
+    getDefaultActivityArguments: vi.fn(),
     getPlanLatestSimulation: vi.fn(),
   },
 }));
 
 const getPlanLatestSimulationSpy = vi.spyOn(effects, 'getPlanLatestSimulation');
 const getActivitiesForPlanSpy = vi.spyOn(effects, 'getActivitiesForPlan');
-const getEffectiveActivityArgumentsSpy = vi.spyOn(effects, 'getEffectiveActivityArguments');
+const getDefaultActivityArgumentsSpy = vi.spyOn(effects, 'getDefaultActivityArguments');
 
 describe('Plan utility', () => {
   describe('getPlanForTransfer', () => {
@@ -93,7 +93,6 @@ describe('Plan utility', () => {
             updated_by: 'test',
           },
           mockUser,
-          () => {},
           [
             {
               anchor_id: null,
@@ -206,13 +205,14 @@ describe('Plan utility', () => {
           type: 'TestActivity',
         },
       ] as ActivityDirective[]);
-      getEffectiveActivityArgumentsSpy.mockResolvedValueOnce({
-        arguments: {
-          numOfTests: 1,
+      getDefaultActivityArgumentsSpy.mockResolvedValueOnce([
+        {
+          arguments: {
+            numOfTests: 1,
+          },
+          typeName: 'TestActivity',
         },
-        errors: {},
-        success: true,
-      });
+      ]);
 
       expect(
         await plan.getPlanForTransfer(
@@ -278,7 +278,6 @@ describe('Plan utility', () => {
             updated_by: 'test',
           },
           mockUser,
-          () => {},
         ),
       ).toEqual({
         activities: [
@@ -390,7 +389,7 @@ describe('Plan utility', () => {
     const downloadSpy = vi.fn();
     vi.spyOn(generic, 'downloadJSON').mockImplementation(downloadSpy);
 
-    plan.exportPlan(mockPlan, mockUser, () => {}, [
+    plan.exportPlan(mockPlan, mockUser, [
       {
         anchor_id: null,
         anchored_to_start: true,
