@@ -2,14 +2,17 @@ import { type CompletionContext, type CompletionResult } from '@codemirror/autoc
 import { syntaxTree } from '@codemirror/language';
 import type { CommandDictionary, EnumMap, FswCommand, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
+import type { GlobalType } from '../../../types/global-type';
 import type { LibrarySequence } from '../../../types/sequencing';
 import { getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
+import { VmlLanguage } from './vml';
 import { vmlBlockLibraryToCommandDictionary } from './vmlBlockLibrary';
 import { RULE_FUNCTION_NAME, RULE_ISSUE, RULE_STATEMENT, TOKEN_STRING_CONST } from './vmlConstants';
 import { getArgumentPosition } from './vmlTreeUtils';
 
 export function vmlAutoComplete(
   commandDictionary: CommandDictionary | null,
+  globals: GlobalType[],
 ): (context: CompletionContext) => CompletionResult | null {
   return (context: CompletionContext) => {
     if (!commandDictionary) {
@@ -53,16 +56,29 @@ export function vmlAutoComplete(
             return null;
           }
 
-          const enumValues = commandDictionary.enumMap[argDef.enum_name].values;
-          return {
-            filter: false,
-            from: nodeCurrent.from,
-            options: enumValues.map(enumValue => ({
+          const enumOptions: CompletionResult['options'] = commandDictionary.enumMap[argDef.enum_name].values.map(
+            enumValue => ({
               apply: `"${enumValue.symbol}"`,
               label: `${enumValue.symbol} (${enumValue.numeric})`,
               section: `${argDef.name} values`,
               type: 'keyword',
-            })),
+            }),
+          );
+
+          // 'builtin', 'atom'
+          const globalOptions: CompletionResult['options'] = globals.map(g => ({
+            apply: g.name,
+            label: `${g} (GLOBAL)`,
+            section: 'values',
+            type: 'builtin',
+          }));
+
+          const options = [...enumOptions, ...globalOptions];
+
+          return {
+            filter: false,
+            from: nodeCurrent.from,
+            options,
             to: nodeCurrent.to,
           };
         }
@@ -123,6 +139,7 @@ export function parseFunctionSignatures(contents: string, workspace_id: number):
         type,
       };
     }),
+    tree: VmlLanguage.parser.parse(contents),
     workspace_id,
   }));
 }

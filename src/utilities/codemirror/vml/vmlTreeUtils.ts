@@ -5,6 +5,7 @@ import { filterNodesToArray, getChildrenNode, getNearestAncestorNodeOfType } fro
 import type { CommandInfoMapper } from '../commandInfoMapper';
 import { getDefaultArgumentValue } from './vmlAdaptation';
 import {
+  GROUP_STATEMENT_SUB,
   RULE_CALL_PARAMETER,
   RULE_CALL_PARAMETERS,
   RULE_COMMON_FUNCTION,
@@ -13,6 +14,7 @@ import {
   RULE_INPUT_OUTPUT_PARAMETER,
   RULE_INPUT_PARAMETER,
   RULE_ISSUE,
+  RULE_ISSUE_DYNAMIC,
   RULE_SIMPLE_EXPR,
   RULE_STATEMENT,
   RULE_TIME_TAGGED_STATEMENT,
@@ -20,6 +22,7 @@ import {
   RULE_VARIABLE_DECLARATION_WITH_OPTIONAL_TLM_ID,
   RULE_VARIABLE_NAME,
   RULE_VARIABLE_NAME_CONSTANT,
+  RULE_VM_MANAGEMENT,
   TOKEN_COMMA,
   TOKEN_INT_CONST,
   TOKEN_STRING_CONST,
@@ -56,7 +59,20 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
   }
 
   getArgumentsFromContainer(containerNode: SyntaxNode): SyntaxNode[] {
-    return containerNode?.getChildren(RULE_CALL_PARAMETER) ?? [];
+    const callParameterNodes = containerNode?.getChildren(RULE_CALL_PARAMETER);
+    if (callParameterNodes) {
+      const inIssueDynamic = !!getNearestAncestorNodeOfType(containerNode, [RULE_STATEMENT])?.getChild(
+        RULE_ISSUE_DYNAMIC,
+      );
+      if (inIssueDynamic) {
+        // if in issue dynamic
+        // first parameter is command name
+        // remainder are arguments
+        return callParameterNodes.slice(1);
+      }
+      return callParameterNodes;
+    }
+    return [];
   }
 
   getContainingCommand(node: SyntaxNode | null): SyntaxNode | null {
@@ -67,11 +83,29 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
     return getDefaultArgumentValue(argDef, enumMap);
   }
 
-  getNameNode(statementNode: SyntaxNode | null): SyntaxNode | null {
-    const statementSubNode = statementNode?.getChild(RULE_STATEMENT)?.getChild(RULE_ISSUE);
-    if (statementSubNode?.name === RULE_ISSUE) {
-      return statementSubNode.getChild(RULE_FUNCTION_NAME);
+  getNameNode(timeTaggedStatementNode: SyntaxNode | null): SyntaxNode | null {
+    const ruleStatementNode = timeTaggedStatementNode?.getChild(RULE_STATEMENT);
+
+    const statementSubNode = ruleStatementNode?.getChild(GROUP_STATEMENT_SUB);
+    if (statementSubNode) {
+      switch (statementSubNode.name) {
+        case RULE_ISSUE:
+          return statementSubNode.getChild(RULE_FUNCTION_NAME);
+        case RULE_ISSUE_DYNAMIC:
+          // first call parameter is method
+          return (
+            statementSubNode
+              .getChild(RULE_CALL_PARAMETERS)
+              ?.getChild(RULE_CALL_PARAMETER)
+              ?.getChild(RULE_SIMPLE_EXPR)
+              ?.getChild(RULE_CONSTANT)
+              ?.getChild(TOKEN_STRING_CONST) ?? null
+          );
+        case RULE_VM_MANAGEMENT:
+          break;
+      }
     }
+
     // once block library is implemented allow spawn here too
     return null;
   }

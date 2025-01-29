@@ -52,7 +52,7 @@
     TimeTagInfo,
   } from '../../types/sequencing';
   import { SeqLanguage, setupLanguageSupport } from '../../utilities/codemirror';
-  import { isFswCommandArgumentRepeat } from '../../utilities/codemirror/codemirror-utils';
+  import { isFswCommandArgumentRepeat, unquoteUnescape } from '../../utilities/codemirror/codemirror-utils';
   import type { CommandInfoMapper } from '../../utilities/codemirror/commandInfoMapper';
   import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../utilities/codemirror/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../utilities/codemirror/seq-n-tree-utils';
@@ -204,6 +204,7 @@
           return {
             name: sequence.name,
             parameters: parseVariables(tree.topNode, sequence.definition, 'ParameterDeclaration') ?? [],
+            tree,
             workspace_id: sequence.workspace_id,
           };
         });
@@ -214,7 +215,9 @@
         getParsedCommandDictionary(unparsedCommandDictionary, user).then(parsedCommandDictionary => {
           commandDictionary = parsedCommandDictionary;
           editorSequenceView.dispatch({
-            effects: compartmentSeqLanguage.reconfigure(setupVmlLanguageSupport(vmlAutoComplete(commandDictionary))),
+            effects: compartmentSeqLanguage.reconfigure(
+              setupVmlLanguageSupport(vmlAutoComplete(commandDictionary, $sequenceAdaptation.globals ?? [])),
+            ),
           });
           editorSequenceView.dispatch({
             effects: compartmentSeqLinter.reconfigure(vmlLinter(commandDictionary, librarySequences)),
@@ -293,7 +296,8 @@
 
   $: commandNode = commandInfoMapper.getContainingCommand(selectedNode);
   $: commandNameNode = commandInfoMapper.getNameNode(commandNode);
-  $: commandName = commandNameNode && editorSequenceView.state.sliceDoc(commandNameNode.from, commandNameNode.to);
+  $: commandName =
+    commandNameNode && unquoteUnescape(editorSequenceView.state.sliceDoc(commandNameNode.from, commandNameNode.to));
   $: commandDef = getCommandDef(commandDictionary, commandName ?? '');
   $: timeTagNode = getTimeTagInfo(editorSequenceView, commandNode);
   $: argInfoArray = getArgumentInfo(

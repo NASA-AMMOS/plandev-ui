@@ -37,6 +37,7 @@ export const RULE_HALT = 'Halt';
 export const RULE_PAUSE = 'Pause';
 export const RULE_RESUME = 'Resume';
 export const RULE_ISSUE = 'Issue';
+export const RULE_ISSUE_DYNAMIC = 'Issue_dynamic';
 export const RULE_FUNCTION_NAME = 'Function_name';
 export const RULE_SIMPLE_EXPR = 'Simple_expr';
 export const RULE_CALL_PARAMETER = 'Call_parameter';

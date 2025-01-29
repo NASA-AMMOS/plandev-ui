@@ -65,6 +65,7 @@ export const VmlLanguage = LRLanguage.define({
         INPUT: t.keyword,
         INT_CONST: t.number,
         ISSUE: t.controlKeyword,
+        ISSUE_DYNAMIC: t.controlKeyword,
         MODULE: t.namespace,
         MODULO: t.arithmeticOperator,
         MULTIPLY: t.arithmeticOperator,
@@ -124,7 +125,7 @@ export function setupVmlLanguageSupport(
 export const vmlAdaptation: ISequenceAdaptation = {
   argDelegator: undefined,
   autoComplete: (_channelDictionary: ChannelDictionary | null, commandDictionary: CommandDictionary | null) =>
-    vmlAutoComplete(commandDictionary),
+    vmlAutoComplete(commandDictionary, []),
   inputFormat: {
     linter: undefined,
     name: 'VML',

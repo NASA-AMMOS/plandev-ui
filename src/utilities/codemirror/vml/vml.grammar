@@ -169,7 +169,7 @@ Issue {
 Issue_dynamic {
   ISSUE_DYNAMIC
   // Function_name not shown in schema
-  // Function_name
+  // Function_name is first call parameter in sample
   Call_parameters
 }
 
