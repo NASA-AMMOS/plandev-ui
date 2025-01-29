@@ -127,7 +127,7 @@ export const vmlAdaptation: ISequenceAdaptation = {
     vmlAutoComplete(commandDictionary),
   inputFormat: {
     linter: undefined,
-    name: 'SeqN',
+    name: 'VML',
     toInputFormat: (vml: string) => Promise.resolve(vml),
   },
   modifyOutput: undefined,

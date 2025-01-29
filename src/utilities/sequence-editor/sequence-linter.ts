@@ -161,9 +161,9 @@ export function sequenceLinter(
   diagnostics.push(
     ...immediateCommandLinter(
       [
-        ...(treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_COMMAND) || []),
-        ...(treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_LOAD) || []),
-        ...(treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_ACTIVATE) || []),
+        ...(treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_COMMAND) ?? []),
+        ...(treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_LOAD) ?? []),
+        ...(treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_ACTIVATE) ?? []),
       ],
       docText,
       variableMap,
@@ -184,7 +184,7 @@ export function sequenceLinter(
   );
 
   diagnostics.push(
-    ...conditionalAndLoopKeywordsLinter(treeNode.getChild('Commands')?.getChildren(TOKEN_COMMAND) || [], view.state),
+    ...conditionalAndLoopKeywordsLinter(treeNode.getChild('Commands')?.getChildren(TOKEN_COMMAND) ?? [], view.state),
   );
 
   return diagnostics;

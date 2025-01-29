@@ -319,7 +319,7 @@ Assignment {
   Assignment_source {
 // | issue_no_time
     Issue_hex_no_time
-// | external_call_no_time
+    | External_call_no_time
     | Compound_expr
     | Simple_call_no_time
     | Wait
@@ -402,8 +402,11 @@ Built_in_function {
 }
 
 Zero_parm_built_in_function_name {
-  SPACECRAFT_TIME
+  // Time is present in reference grammar, not example
+  // SPACECRAFT_TIME
   // Odd to not have a name???
+  // name missing in reference grammar, present in sample
+  Function_name
   OPEN_PAREN CLOSE_PAREN
 }
 

@@ -1,7 +1,7 @@
 import type { CompletionContext, CompletionResult } from '@codemirror/autocomplete';
 import type { IndentContext } from '@codemirror/language';
 import type { Diagnostic } from '@codemirror/lint';
-import type { SyntaxNode, Tree } from '@lezer/common';
+import type { SyntaxNode } from '@lezer/common';
 import type {
   ChannelDictionary as AmpcsChannelDictionary,
   CommandDictionary as AmpcsCommandDictionary,
@@ -154,7 +154,7 @@ export type UserSequence = {
 export type LibrarySequence = {
   name: string;
   parameters: VariableDeclaration[];
-  tree: Tree;
+  // tree: Tree;
   workspace_id: number;
 };
 

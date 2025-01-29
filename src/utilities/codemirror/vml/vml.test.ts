@@ -348,6 +348,9 @@ END_MODULE`;
     BODY
     END_BODY
 
+    ; built in test
+    ; R00:00:01.00 GV_TEST_TIME := spacecraft_time ()
+
     END_MODULE`;
 
     assertNoErrorNodes(input, true);
@@ -464,7 +467,7 @@ END_MODULE
   `;
 }
 
-function assertNoErrorNodes(input: string, printPrefix?: boolean): void {
+export function assertNoErrorNodes(input: string, printPrefix?: boolean): void {
   const cursor = VmlLanguage.parser.parse(input).cursor();
   do {
     const { node } = cursor;

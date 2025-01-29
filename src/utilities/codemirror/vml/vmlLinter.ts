@@ -5,6 +5,7 @@ import type { SyntaxNode, Tree } from '@lezer/common';
 import type { CommandDictionary, FswCommand, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import type { EditorView } from 'codemirror';
 import { closest } from 'fastest-levenshtein';
+import type { LibrarySequence } from '../../../types/sequencing';
 import { filterNodes } from '../../sequence-editor/tree-utils';
 import { VmlLanguage } from './vml';
 import {
@@ -12,6 +13,7 @@ import {
   RULE_CALL_PARAMETERS,
   RULE_FUNCTION_NAME,
   RULE_ISSUE,
+  RULE_SPAWN,
   TOKEN_DOUBLE_CONST,
   TOKEN_ERROR,
   TOKEN_HEX_CONST,
@@ -32,7 +34,10 @@ import {
 // Limit how many grammar problems are annotated
 const MAX_PARSER_ERRORS = 100;
 
-export function vmlLinter(commandDictionary: CommandDictionary | null = null): Extension {
+export function vmlLinter(
+  commandDictionary: CommandDictionary | null = null,
+  librarySequences: LibrarySequence[] = [],
+): Extension {
   return linter(view => {
     const diagnostics: Diagnostic[] = [];
     const tree = syntaxTree(view.state);
@@ -43,14 +48,19 @@ export function vmlLinter(commandDictionary: CommandDictionary | null = null): E
     }
 
     const parsed = VmlLanguage.parser.parse(sequence);
-
-    diagnostics.push(...validateCommands(commandDictionary, sequence, parsed));
+    const librarySequenceMap = Object.fromEntries(librarySequences.map(seq => [seq.name, seq]));
+    diagnostics.push(...validateCommands(commandDictionary, librarySequenceMap, sequence, parsed));
 
     return diagnostics;
   });
 }
 
-function validateCommands(commandDictionary: CommandDictionary, docText: string, parsed: Tree): Diagnostic[] {
+function validateCommands(
+  commandDictionary: CommandDictionary,
+  librarySequenceMap: { [sequenceName: string]: LibrarySequence },
+  docText: string,
+  parsed: Tree,
+): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
   const cursor = parsed.cursor();
   do {
@@ -63,35 +73,63 @@ function validateCommands(commandDictionary: CommandDictionary, docText: string,
         const functionName = docText.slice(functionNameNode.from, functionNameNode.to);
         const commandDef = commandDictionary.fswCommandMap[functionName];
         if (!commandDef) {
-          const alternative = closest(functionName, Object.keys(commandDictionary.fswCommandMap));
-          const { from, to } = functionNameNode;
-          diagnostics.push({
-            actions: [
-              {
-                apply(view: EditorView, from: number, to: number) {
-                  view.dispatch({
-                    changes: {
-                      from,
-                      insert: alternative,
-                      to,
-                    },
-                  });
-                },
-                name: `Change to ${alternative}`,
-              },
-            ],
-            from,
-            message: `Unknown function name ${functionName}`,
-            severity: 'error',
-            to,
-          });
+          diagnostics.push(
+            suggestAlternative(
+              functionNameNode,
+              functionName,
+              'command',
+              closest(functionName, Object.keys(commandDictionary.fswCommandMap)),
+            ),
+          );
         } else {
           diagnostics.push(...validateArguments(commandDictionary, commandDef, node, functionNameNode, docText));
+        }
+      }
+    } else if (tokenType === RULE_SPAWN) {
+      const spawnedNameNode = node.getChild(RULE_FUNCTION_NAME);
+      if (spawnedNameNode) {
+        const spawnedSeqName = docText.slice(spawnedNameNode.from, spawnedNameNode.to);
+        const seqDef = librarySequenceMap[spawnedSeqName];
+        if (!seqDef) {
+          diagnostics.push(
+            suggestAlternative(
+              spawnedNameNode,
+              spawnedSeqName,
+              'sequence or block',
+              closest(spawnedSeqName, Object.keys(librarySequenceMap)),
+            ),
+          );
+        } else {
+          // Check arguments
         }
       }
     }
   } while (cursor.next());
   return diagnostics;
+}
+
+function suggestAlternative(node: SyntaxNode, current: string, typeLabel: string, alternative: string): Diagnostic {
+  const { from, to } = node;
+  return {
+    actions: [
+      {
+        apply(view: EditorView, from: number, to: number) {
+          view.dispatch({
+            changes: {
+              from,
+              insert: alternative,
+              to,
+            },
+          });
+        },
+        name: `Change to "${alternative}"`,
+      },
+    ],
+    from,
+    message: `Unknown ${typeLabel} name "${current}"`,
+    severity: 'error',
+    to,
+  };
 }
 
 function validateArguments(

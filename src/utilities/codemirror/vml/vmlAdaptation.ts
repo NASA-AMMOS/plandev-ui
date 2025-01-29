@@ -1,7 +1,10 @@
 import { type CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
 import { syntaxTree } from '@codemirror/language';
 import type { CommandDictionary, EnumMap, FswCommand, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
+import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
+import type { LibrarySequence } from '../../../types/sequencing';
 import { getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
+import { vmlBlockLibraryToCommandDictionary } from './vmlBlockLibrary';
 import { RULE_FUNCTION_NAME, RULE_ISSUE, RULE_STATEMENT, TOKEN_STRING_CONST } from './vmlConstants';
 import { getArgumentPosition } from './vmlTreeUtils';
 
@@ -108,4 +111,37 @@ export function statementTypeCompletions(): string[] {
     `END_IF`,
     `ISSUE`,
   ];
+}
+
+export function parseFunctionSignatures(contents: string, workspace_id: number): LibrarySequence[] {
+  return vmlBlockLibraryToCommandDictionary(contents).fswCommands.map(fswCommand => ({
+    name: fswCommand.stem,
+    parameters: fswCommand.arguments.map(a => {
+      const type: VariableDeclaration['type'] = argTypToVariableType(a.arg_type);
+      return {
+        name: a.name,
+        type,
+      };
+    }),
+    workspace_id,
+  }));
+}
+
+function argTypToVariableType(argType: FswCommandArgument['arg_type']): VariableDeclaration['type'] {
+  switch (argType) {
+    case 'enum':
+      return 'ENUM';
+    case 'unsigned':
+      return 'UINT';
+    case 'integer':
+      return 'INT';
+    case 'numeric':
+    case 'float':
+      return 'FLOAT';
+    case 'fixed_string':
+    case 'var_string':
+      return 'STRING';
+  }
+  // 'repeat', 'boolean', 'time' types are not used
+  return 'STRING';
 }

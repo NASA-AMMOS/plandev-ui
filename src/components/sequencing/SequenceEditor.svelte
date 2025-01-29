@@ -20,7 +20,7 @@
   import ExpandIcon from 'bootstrap-icons/icons/arrow-bar-up.svg?component';
   import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
   import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
-  import { EditorView, basicSetup } from 'codemirror';
+  import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { TOKEN_ERROR } from '../../constants/seq-n-grammar-constants';
@@ -63,7 +63,7 @@
     vmlBlockHighlighter,
     vmlHighlightBlock,
   } from '../../utilities/codemirror/vml/vml';
-  import { vmlAutoComplete } from '../../utilities/codemirror/vml/vmlAdaptation';
+  import { parseFunctionSignatures, vmlAutoComplete } from '../../utilities/codemirror/vml/vmlAdaptation';
   import { vmlFormat } from '../../utilities/codemirror/vml/vmlFormatter';
   import { vmlLinter } from '../../utilities/codemirror/vml/vmlLinter';
   import { vmlTooltip } from '../../utilities/codemirror/vml/vmlTooltip';
@@ -101,8 +101,8 @@
   const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
   const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
-  let clientHeightGridRightBottom: number;
-  let clientHeightGridRightTop: number;
+  let clientHeightGridRightBottom: number = 0;
+  let clientHeightGridRightTop: number = 0;
   let compartmentSeqJsonLinter: Compartment;
   let compartmentSeqLanguage: Compartment;
   let compartmentSeqLinter: Compartment;
@@ -192,17 +192,22 @@
       }
     });
 
-    librarySequences = $userSequences
-      .filter(sequence => sequence.workspace_id === workspaceId && sequence.name !== sequenceName)
-      .map(sequence => {
-        const tree = SeqLanguage.parser.parse(sequence.definition);
-        return {
-          name: sequence.name,
-          parameters: parseVariables(tree.topNode, sequence.definition, 'ParameterDeclaration') ?? [],
-          tree,
-          workspace_id: sequence.workspace_id,
-        };
-      });
+    if (isInVmlMode) {
+      librarySequences = $userSequences
+        .filter(sequence => sequence.workspace_id === workspaceId)
+        .flatMap(sequence => parseFunctionSignatures(sequence.definition, sequence.workspace_id));
+    } else {
+      librarySequences = $userSequences
+        .filter(sequence => sequence.workspace_id === workspaceId && sequence.name !== sequenceName)
+        .map(sequence => {
+          const tree = SeqLanguage.parser.parse(sequence.definition);
+          return {
+            name: sequence.name,
+            parameters: parseVariables(tree.topNode, sequence.definition, 'ParameterDeclaration') ?? [],
+            workspace_id: sequence.workspace_id,
+          };
+        });
+    }
 
     if (unparsedCommandDictionary) {
       if (sequenceName && isInVmlMode) {
@@ -212,7 +217,7 @@
             effects: compartmentSeqLanguage.reconfigure(setupVmlLanguageSupport(vmlAutoComplete(commandDictionary))),
           });
           editorSequenceView.dispatch({
-            effects: compartmentSeqLinter.reconfigure(vmlLinter(commandDictionary)),
+            effects: compartmentSeqLinter.reconfigure(vmlLinter(commandDictionary, librarySequences)),
           });
           editorSequenceView.dispatch({
             effects: compartmentSeqTooltip.reconfigure(vmlTooltip(commandDictionary)),
