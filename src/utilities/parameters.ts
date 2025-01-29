@@ -43,10 +43,13 @@ export function getArgument(
   schema: ValueSchema | ActionValueSchema,
   presetValue?: Argument,
   defaultValue?: Argument,
+  ignoreValueSource?: boolean,
 ): { value: any; valueSource: ValueSource } {
   const type = schema.type;
   if (value !== null && value !== undefined) {
-    if (presetValue === undefined) {
+    if (ignoreValueSource === true) {
+      return { value, valueSource: 'none' };
+    } else if (presetValue === undefined) {
       return { value, valueSource: 'user on model' };
     } else {
       if (isEqual(value, presetValue)) {
@@ -85,6 +88,7 @@ export function getFormParameters(
   defaultArgumentsMap: ArgumentsMap = {},
   dropdownOptions: ValueSchemaOption[] = [],
   optionLabel: string = 'option',
+  ignoreValueSource?: boolean,
 ): FormParameter[] {
   const formParameters = Object.entries(parametersMap).map(([name, { order, schema }]) => {
     const formParameterSchema: ValueSchema | UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple = schema;
@@ -92,7 +96,7 @@ export function getFormParameters(
     const arg: Argument = argumentsMap[name];
     const preset: Argument = presetArgumentsMap[name];
     const defaultArg: Argument | undefined = defaultArgumentsMap[name];
-    const { value, valueSource } = getArgument(arg, schema, preset, defaultArg);
+    const { value, valueSource } = getArgument(arg, schema, preset, defaultArg, ignoreValueSource);
     const required = requiredParameters.indexOf(name) > -1;
     let errors: string[] | null = null;
     let isMultiSelect: boolean = false;

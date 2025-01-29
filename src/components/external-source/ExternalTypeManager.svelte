@@ -798,7 +798,7 @@
             <Parameters
               disabled={true}
               expanded={false}
-              formParameters={getFormParameters(selectedExternalSourceTypeParametersMap, {}, [])}
+              formParameters={getFormParameters(selectedExternalSourceTypeParametersMap, {}, [], undefined, undefined, true)}
             />
           </div>
         </Collapse>
@@ -865,7 +865,7 @@
             <Parameters
               disabled={true}
               expanded={false}
-              formParameters={getFormParameters(selectedExternalEventTypeParametersMap, {}, [])}
+              formParameters={getFormParameters(selectedExternalEventTypeParametersMap, {}, [], undefined, undefined, true)}
             />
           </div>
         </Collapse>

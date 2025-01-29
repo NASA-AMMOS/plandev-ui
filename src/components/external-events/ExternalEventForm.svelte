@@ -114,6 +114,9 @@
                 externalEventTypeParametersMap,
                 externalEventAttributes,
                 requiredAttributes,
+                undefined,
+                undefined,
+                true
               )}
             />
           </div>
