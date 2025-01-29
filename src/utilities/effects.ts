@@ -3529,11 +3529,11 @@ const effects = {
 
   async getDefaultActivityArguments(
     modelId: number,
-    activityTypes: ActivityType[],
+    activityTypes: string[],
     user: User | null,
   ): Promise<DefaultEffectiveArguments[]> {
     try {
-      const activities = activityTypes.map(type => ({ activityArguments: {}, activityTypeName: type.name }));
+      const activities = activityTypes.map(type => ({ activityArguments: {}, activityTypeName: type }));
       const data = await reqHasura<DefaultEffectiveArguments[]>(
         gql.GET_EFFECTIVE_ACTIVITY_ARGUMENTS_BULK,
         {
