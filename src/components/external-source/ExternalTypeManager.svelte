@@ -717,7 +717,7 @@
             defaultExpanded={false}
           >
             {#if Object.keys(selectedExternalSourceTypeParametersMap).length === 0}
-            <div class="st-typography-label">No Attributes Defined</div>
+              <div class="st-typography-label">No Attributes Defined</div>
             {:else}
               {#each Object.entries(selectedExternalSourceType.attribute_schema) as attribute}
                 {#if attribute[0] !== 'properties'}
@@ -932,17 +932,12 @@
   .attribute-name {
     display: flex;
     font-weight: bold;
-    justify-content: flex-start;
     width: 100%;
   }
 
   .attribute-value {
     color: var(--st-gray-60);
-    display: flex;
     font-style: italic;
-    justify-content: flex-end;
-    text-align: right;
-    width: 100%;
   }
 
   .attribute-array {
@@ -951,7 +946,6 @@
   }
 
   .attributes {
-    display: flex;
     width: 100%;
   }
 
