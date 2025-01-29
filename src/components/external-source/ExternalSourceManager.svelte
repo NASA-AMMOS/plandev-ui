@@ -704,7 +704,14 @@
                 <Parameters
                   disabled={true}
                   expanded={false}
-                  formParameters={getFormParameters(selectedSourceTypeParametersMap, selectedSourceAttributes, [], undefined, undefined, true)}
+                  formParameters={getFormParameters(
+                    selectedSourceTypeParametersMap,
+                    selectedSourceAttributes,
+                    [],
+                    undefined,
+                    undefined,
+                    true,
+                  )}
                 />
               </div>
             </Collapse>

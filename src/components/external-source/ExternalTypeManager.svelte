@@ -262,7 +262,7 @@
         return actionsDiv;
       },
       cellRendererParams: {
-        deleteDerivationGroup
+        deleteDerivationGroup,
       } as CellRendererParams,
       headerName: '',
       resizable: true,
@@ -520,260 +520,206 @@
 </script>
 
 <CssGrid class="type-manager-grid" columns={columnSize} minHeight="100%">
-    <Panel borderRight borderTop padBody={true}>
-      <svelte:fragment slot="header">
-        {#if selectedDerivationGroup === undefined && selectedExternalSourceType === undefined && selectedExternalEventType === undefined}
-          <SectionTitle overflow="hidden">Upload Type Definition</SectionTitle>
-        {:else if selectedDerivationGroup !== undefined}
-          <SectionTitle overflow="hidden">
-            <ExternalSourceIcon slot="icon" />Sources in '{selectedDerivationGroup.name}'
-          </SectionTitle>
-          <button
-            class="st-button icon fs-6 deselect"
-            use:tooltip={{ content: 'Deselect Derivation Group', placement: 'top' }}
-            on:click|stopPropagation={() => {
-              selectedDerivationGroup = undefined;
-              selectedDerivationGroupId = null;
-            }}
-          >
-            <XIcon />
-          </button>
-        {:else if selectedExternalSourceType !== undefined}
-          <SectionTitle overflow="hidden">
-            <ExternalSourceIcon slot="icon" />'{selectedExternalSourceType.name}' Details
-          </SectionTitle>
-          <button
-            class="st-button icon fs-6 deselect"
-            use:tooltip={{ content: 'Deselect External Source Type', placement: 'top' }}
-            on:click|stopPropagation={() => {
-              selectedExternalSourceType = undefined;
-              selectedExternalSourceTypeId = null;
-            }}
-          >
-            <XIcon />
-          </button>
-        {:else if selectedExternalEventType !== undefined}
-          <SectionTitle overflow="hidden">
-            <ExternalSourceIcon slot="icon" />'{selectedExternalEventType.name}' Details
-          </SectionTitle>
-          <button
-            class="st-button icon fs-6 deselect"
-            use:tooltip={{ content: 'Deselect External Event Type', placement: 'top' }}
-            on:click|stopPropagation={() => {
-              selectedExternalEventType = undefined;
-              selectedExternalEventTypeId = null;
-            }}
-          >
-            <XIcon />
-          </button>
-        {/if}
-      </svelte:fragment>
-      <svelte:fragment slot="body">
-        {#if selectedDerivationGroup === undefined && selectedExternalSourceType === undefined && selectedExternalEventType === undefined}
-          <div>
-            <div class="type-creation-input">
-              <label for="file">Type JSON Schema File</label>
-              <input
-                bind:this={fileInput}
-                class="w-100 upload"
-                class:error={!!uploadResponseErrors.length}
-                name="file"
-                required
-                type="file"
-                accept="application/json"
-                bind:files
-                on:click={onClick}
-              />
-            </div>
-            {#if file !== undefined}
-              <button
-                class="st-button primary"
-                style:width="100%"
-                disabled={parsedExternalSourceEventTypeSchema === undefined}
-                on:click={handleUpload}
-                use:permissionHandler={{
-                  hasPermission: hasCreationPermission,
-                  permissionError: creationPermissionError,
-                }}
-                use:tooltip={{ content: 'Upload External Source & Event Type(s)' }}
-              >
-                Upload
-              </button>
-              {#if parsedExternalSourceEventTypeSchema !== undefined}
-                <div class="parse-status st-typography-body">
-                  <div class="check">
-                    <CheckIcon />
-                  </div>
-                  Source & Event Type Attribute Schema Parsed
-                </div>
-              {:else}
-                <WarningIcon />
-                <div class="status-text st-typography-body">Source & Event Type Attribute Schema Could Not Be Parsed</div>
-              {/if}
-            {/if}
-            {#if parsedExternalSourceEventTypeSchema !== undefined}
-              <div class="to-be-created st-typography-body">
-                <div class="to-be-created-header">The following External Source Type(s) will be created</div>
-                {#if parsedExternalSourceEventTypeSchema.source_types}
-                  <ul>
-                    {#each Object.keys(parsedExternalSourceEventTypeSchema.source_types) as newSourceTypeName}
-                      <li class="st-typograph-body">{newSourceTypeName}</li>
-                    {/each}
-                  </ul>
-                {/if}
-                <div class="to-be-created-header">The following External Event Type(s) will be created</div>
-                {#if parsedExternalSourceEventTypeSchema.event_types}
-                  <ul>
-                    {#each Object.keys(parsedExternalSourceEventTypeSchema.event_types) as newEventTypeName}
-                      <li class="st-typograph-body">{newEventTypeName}</li>
-                    {/each}
-                  </ul>
-                {/if}
-              </div>
-            {/if}
-            <div class="errors">
-              {#each uploadResponseErrors as currentError}
-                <AlertError class="m-2" error={currentError} />
-              {/each}
-              <AlertError class="m-2" error={$createExternalSourceEventTypeError} />
-            </div>
+  <Panel borderRight borderTop padBody={true}>
+    <svelte:fragment slot="header">
+      {#if selectedDerivationGroup === undefined && selectedExternalSourceType === undefined && selectedExternalEventType === undefined}
+        <SectionTitle overflow="hidden">Upload Type Definition</SectionTitle>
+      {:else if selectedDerivationGroup !== undefined}
+        <SectionTitle overflow="hidden">
+          <ExternalSourceIcon slot="icon" />Sources in '{selectedDerivationGroup.name}'
+        </SectionTitle>
+        <button
+          class="st-button icon fs-6 deselect"
+          use:tooltip={{ content: 'Deselect Derivation Group', placement: 'top' }}
+          on:click|stopPropagation={() => {
+            selectedDerivationGroup = undefined;
+            selectedDerivationGroupId = null;
+          }}
+        >
+          <XIcon />
+        </button>
+      {:else if selectedExternalSourceType !== undefined}
+        <SectionTitle overflow="hidden">
+          <ExternalSourceIcon slot="icon" />'{selectedExternalSourceType.name}' Details
+        </SectionTitle>
+        <button
+          class="st-button icon fs-6 deselect"
+          use:tooltip={{ content: 'Deselect External Source Type', placement: 'top' }}
+          on:click|stopPropagation={() => {
+            selectedExternalSourceType = undefined;
+            selectedExternalSourceTypeId = null;
+          }}
+        >
+          <XIcon />
+        </button>
+      {:else if selectedExternalEventType !== undefined}
+        <SectionTitle overflow="hidden">
+          <ExternalSourceIcon slot="icon" />'{selectedExternalEventType.name}' Details
+        </SectionTitle>
+        <button
+          class="st-button icon fs-6 deselect"
+          use:tooltip={{ content: 'Deselect External Event Type', placement: 'top' }}
+          on:click|stopPropagation={() => {
+            selectedExternalEventType = undefined;
+            selectedExternalEventTypeId = null;
+          }}
+        >
+          <XIcon />
+        </button>
+      {/if}
+    </svelte:fragment>
+    <svelte:fragment slot="body">
+      {#if selectedDerivationGroup === undefined && selectedExternalSourceType === undefined && selectedExternalEventType === undefined}
+        <div>
+          <div class="type-creation-input">
+            <label for="file">Type JSON Schema File</label>
+            <input
+              bind:this={fileInput}
+              class="w-100 upload"
+              class:error={!!uploadResponseErrors.length}
+              name="file"
+              required
+              type="file"
+              accept="application/json"
+              bind:files
+              on:click={onClick}
+            />
           </div>
-        {:else if selectedDerivationGroup !== undefined}
-          {#if selectedDerivationGroupSources.length > 0}
-            {#each selectedDerivationGroupSources as source}
-              <!-- Collapsible details -->
-              <Collapse title={source.key} tooltipContent={source.key} defaultExpanded={false}>
-                <svelte:fragment slot="right">
-                  <p class="st-typography-body derived-event-count">
-                    {selectedDerivationGroup.sources.get(source.key)?.event_counts} events
-                  </p>
-                </svelte:fragment>
-                <div class="st-typography-body">
-                  <div class="st-typography-bold">Key:</div>
-                  {source.key}
+          {#if file !== undefined}
+            <button
+              class="st-button primary"
+              style:width="100%"
+              disabled={parsedExternalSourceEventTypeSchema === undefined}
+              on:click={handleUpload}
+              use:permissionHandler={{
+                hasPermission: hasCreationPermission,
+                permissionError: creationPermissionError,
+              }}
+              use:tooltip={{ content: 'Upload External Source & Event Type(s)' }}
+            >
+              Upload
+            </button>
+            {#if parsedExternalSourceEventTypeSchema !== undefined}
+              <div class="parse-status st-typography-body">
+                <div class="check">
+                  <CheckIcon />
                 </div>
-
-                <div class="st-typography-body">
-                  <div class="st-typography-bold">Source Type:</div>
-                  {source.source_type_name}
-                </div>
-
-                <div class="st-typography-body">
-                  <div class="st-typography-bold">Start Time:</div>
-                  {source.start_time}
-                </div>
-
-                <div class="st-typography-body">
-                  <div class="st-typography-bold">End Time:</div>
-                  {source.end_time}
-                </div>
-
-                <div class="st-typography-body">
-                  <div class="st-typography-bold">Valid At:</div>
-                  {source.valid_at}
-                </div>
-
-                <div class="st-typography-body">
-                  <div class="st-typography-bold">Created At:</div>
-                  {source.created_at}
-                </div>
-              </Collapse>
-            {/each}
-          {:else}
-            <p class="st-typography-body">No sources in this group.</p>
-          {/if}
-        {:else if selectedExternalSourceType !== undefined}
-          {#if selectedExternalSourceTypeDerivationGroups.length > 0}
-            {#each selectedExternalSourceTypeDerivationGroups as associatedDerivationGroup}
-              <!-- Collapsible details -->
-              <Collapse
-                title={associatedDerivationGroup.name}
-                tooltipContent={associatedDerivationGroup.name}
-                defaultExpanded={false}
-              >
-                <svelte:fragment slot="right">
-                  <p class="st-typography-body derived-event-count">
-                    {associatedDerivationGroup.derived_event_total} events
-                  </p>
-                </svelte:fragment>
-                <div class="st-typography-bold">
-                  <div class="st-typography-bold">Name:</div>
-                  {associatedDerivationGroup.name}
-                </div>
-
-                <Collapse defaultExpanded={false} title="Sources" tooltipContent="View Contained External Sources">
-                  {#each associatedDerivationGroup.sources as source}
-                    <i class="st-typography-body">{source[0]}</i>
-                  {/each}
-                </Collapse>
-              </Collapse>
-            {/each}
-          {:else}
-            <p class="st-typography-body">No sources associated with this External Source Type.</p>
-          {/if}
-          <Collapse
-            title="Attribute Schema - Definition"
-            tooltipContent={`${selectedExternalSourceType.name} Attribute Schema Definition`}
-            defaultExpanded={false}
-          >
-            {#if Object.keys(selectedExternalSourceTypeParametersMap).length === 0}
-              <div class="st-typography-label">No Attributes Defined</div>
-            {:else}
-              {#each Object.entries(selectedExternalSourceType.attribute_schema) as attribute}
-                {#if attribute[0] !== 'properties'}
-                  <div class="st-typography-body attributes">
-                    <div class="attribute-name">{attribute[0]}</div>
-                    {#if Array.isArray(attribute[1])}
-                      <ul class="attribute-array">
-                        {#each attribute[1] as attributeValue}
-                          <li class="attribute-value">{attributeValue}</li>
-                        {/each}
-                      </ul>
-                    {:else}
-                      <div class="attribute-value">{attribute[1]}</div>
-                    {/if}
-                  </div>
-                {/if}
-              {/each}
-            {/if}
-          </Collapse>
-          <Collapse
-            title="Attribute Schema - Properties"
-            tooltipContent={`${selectedExternalSourceType.name} Attribute Schema Properties`}
-            defaultExpanded={false}
-          >
-            {#if Object.keys(selectedExternalSourceTypeParametersMap).length === 0}
-              <div class="st-typography-label">No Attributes Found</div>
-            {:else}
-              <div class="st-typography-body">
-                <Parameters
-                  disabled={true}
-                  expanded={false}
-                  formParameters={getFormParameters(selectedExternalSourceTypeParametersMap, {}, [], undefined, undefined, true)}
-                />
+                Source & Event Type Attribute Schema Parsed
               </div>
-            {/if}
-          </Collapse>
-        {:else if selectedExternalEventType !== undefined}
-          <Collapse
-            title="Associated External Sources"
-            tooltipContent={`External Sources using ${selectedExternalEventType.name}`}
-            defaultExpanded={false}
-          >
-            {#if selectedExternalEventTypeSources.length > 0}
-              {#each selectedExternalEventTypeSources as associatedSource}
-                <li class="st-typography-body associated-sources">{associatedSource}</li>
-              {/each}
             {:else}
-              {`No External Sources using ${selectedExternalEventType.name}`}
+              <WarningIcon />
+              <div class="status-text st-typography-body">Source & Event Type Attribute Schema Could Not Be Parsed</div>
             {/if}
-          </Collapse>
-          <Collapse
-            title="Attribute Schema - Definition"
-            tooltipContent={`${selectedExternalEventType.name} Attribute Schema Definition`}
-            defaultExpanded={false}
-          >
-            {#each Object.entries(selectedExternalEventType.attribute_schema) as attribute}
+          {/if}
+          {#if parsedExternalSourceEventTypeSchema !== undefined}
+            <div class="to-be-created st-typography-body">
+              <div class="to-be-created-header">The following External Source Type(s) will be created</div>
+              {#if parsedExternalSourceEventTypeSchema.source_types}
+                <ul>
+                  {#each Object.keys(parsedExternalSourceEventTypeSchema.source_types) as newSourceTypeName}
+                    <li class="st-typograph-body">{newSourceTypeName}</li>
+                  {/each}
+                </ul>
+              {/if}
+              <div class="to-be-created-header">The following External Event Type(s) will be created</div>
+              {#if parsedExternalSourceEventTypeSchema.event_types}
+                <ul>
+                  {#each Object.keys(parsedExternalSourceEventTypeSchema.event_types) as newEventTypeName}
+                    <li class="st-typograph-body">{newEventTypeName}</li>
+                  {/each}
+                </ul>
+              {/if}
+            </div>
+          {/if}
+          <div class="errors">
+            {#each uploadResponseErrors as currentError}
+              <AlertError class="m-2" error={currentError} />
+            {/each}
+            <AlertError class="m-2" error={$createExternalSourceEventTypeError} />
+          </div>
+        </div>
+      {:else if selectedDerivationGroup !== undefined}
+        {#if selectedDerivationGroupSources.length > 0}
+          {#each selectedDerivationGroupSources as source}
+            <!-- Collapsible details -->
+            <Collapse title={source.key} tooltipContent={source.key} defaultExpanded={false}>
+              <svelte:fragment slot="right">
+                <p class="st-typography-body derived-event-count">
+                  {selectedDerivationGroup.sources.get(source.key)?.event_counts} events
+                </p>
+              </svelte:fragment>
+              <div class="st-typography-body">
+                <div class="st-typography-bold">Key:</div>
+                {source.key}
+              </div>
+
+              <div class="st-typography-body">
+                <div class="st-typography-bold">Source Type:</div>
+                {source.source_type_name}
+              </div>
+
+              <div class="st-typography-body">
+                <div class="st-typography-bold">Start Time:</div>
+                {source.start_time}
+              </div>
+
+              <div class="st-typography-body">
+                <div class="st-typography-bold">End Time:</div>
+                {source.end_time}
+              </div>
+
+              <div class="st-typography-body">
+                <div class="st-typography-bold">Valid At:</div>
+                {source.valid_at}
+              </div>
+
+              <div class="st-typography-body">
+                <div class="st-typography-bold">Created At:</div>
+                {source.created_at}
+              </div>
+            </Collapse>
+          {/each}
+        {:else}
+          <p class="st-typography-body">No sources in this group.</p>
+        {/if}
+      {:else if selectedExternalSourceType !== undefined}
+        {#if selectedExternalSourceTypeDerivationGroups.length > 0}
+          {#each selectedExternalSourceTypeDerivationGroups as associatedDerivationGroup}
+            <!-- Collapsible details -->
+            <Collapse
+              title={associatedDerivationGroup.name}
+              tooltipContent={associatedDerivationGroup.name}
+              defaultExpanded={false}
+            >
+              <svelte:fragment slot="right">
+                <p class="st-typography-body derived-event-count">
+                  {associatedDerivationGroup.derived_event_total} events
+                </p>
+              </svelte:fragment>
+              <div class="st-typography-bold">
+                <div class="st-typography-bold">Name:</div>
+                {associatedDerivationGroup.name}
+              </div>
+
+              <Collapse defaultExpanded={false} title="Sources" tooltipContent="View Contained External Sources">
+                {#each associatedDerivationGroup.sources as source}
+                  <i class="st-typography-body">{source[0]}</i>
+                {/each}
+              </Collapse>
+            </Collapse>
+          {/each}
+        {:else}
+          <p class="st-typography-body">No sources associated with this External Source Type.</p>
+        {/if}
+        <Collapse
+          title="Attribute Schema - Definition"
+          tooltipContent={`${selectedExternalSourceType.name} Attribute Schema Definition`}
+          defaultExpanded={false}
+        >
+          {#if Object.keys(selectedExternalSourceTypeParametersMap).length === 0}
+            <div class="st-typography-label">No Attributes Defined</div>
+          {:else}
+            {#each Object.entries(selectedExternalSourceType.attribute_schema) as attribute}
               {#if attribute[0] !== 'properties'}
                 <div class="st-typography-body attributes">
                   <div class="attribute-name">{attribute[0]}</div>
@@ -789,24 +735,92 @@
                 </div>
               {/if}
             {/each}
-          </Collapse>
-          <Collapse
-            title="Attribute Schema - Properties"
-            tooltipContent={`${selectedExternalEventType.name} Attribute Schema Properties`}
-            defaultExpanded={false}
-          >
+          {/if}
+        </Collapse>
+        <Collapse
+          title="Attribute Schema - Properties"
+          tooltipContent={`${selectedExternalSourceType.name} Attribute Schema Properties`}
+          defaultExpanded={false}
+        >
+          {#if Object.keys(selectedExternalSourceTypeParametersMap).length === 0}
+            <div class="st-typography-label">No Attributes Found</div>
+          {:else}
             <div class="st-typography-body">
               <Parameters
                 disabled={true}
                 expanded={false}
-                formParameters={getFormParameters(selectedExternalEventTypeParametersMap, {}, [], undefined, undefined, true)}
+                formParameters={getFormParameters(
+                  selectedExternalSourceTypeParametersMap,
+                  {},
+                  [],
+                  undefined,
+                  undefined,
+                  true,
+                )}
               />
             </div>
-          </Collapse>
-        {/if}
-      </svelte:fragment>
-    </Panel>
-    <CssGridGutter track={1} type="column" />
+          {/if}
+        </Collapse>
+      {:else if selectedExternalEventType !== undefined}
+        <Collapse
+          title="Associated External Sources"
+          tooltipContent={`External Sources using ${selectedExternalEventType.name}`}
+          defaultExpanded={false}
+        >
+          {#if selectedExternalEventTypeSources.length > 0}
+            {#each selectedExternalEventTypeSources as associatedSource}
+              <li class="st-typography-body associated-sources">{associatedSource}</li>
+            {/each}
+          {:else}
+            {`No External Sources using ${selectedExternalEventType.name}`}
+          {/if}
+        </Collapse>
+        <Collapse
+          title="Attribute Schema - Definition"
+          tooltipContent={`${selectedExternalEventType.name} Attribute Schema Definition`}
+          defaultExpanded={false}
+        >
+          {#each Object.entries(selectedExternalEventType.attribute_schema) as attribute}
+            {#if attribute[0] !== 'properties'}
+              <div class="st-typography-body attributes">
+                <div class="attribute-name">{attribute[0]}</div>
+                {#if Array.isArray(attribute[1])}
+                  <ul class="attribute-array">
+                    {#each attribute[1] as attributeValue}
+                      <li class="attribute-value">{attributeValue}</li>
+                    {/each}
+                  </ul>
+                {:else}
+                  <div class="attribute-value">{attribute[1]}</div>
+                {/if}
+              </div>
+            {/if}
+          {/each}
+        </Collapse>
+        <Collapse
+          title="Attribute Schema - Properties"
+          tooltipContent={`${selectedExternalEventType.name} Attribute Schema Properties`}
+          defaultExpanded={false}
+        >
+          <div class="st-typography-body">
+            <Parameters
+              disabled={true}
+              expanded={false}
+              formParameters={getFormParameters(
+                selectedExternalEventTypeParametersMap,
+                {},
+                [],
+                undefined,
+                undefined,
+                true,
+              )}
+            />
+          </div>
+        </Collapse>
+      {/if}
+    </svelte:fragment>
+  </Panel>
+  <CssGridGutter track={1} type="column" />
   <div class="table-container">
     <Panel>
       <svelte:fragment slot="header">
