@@ -216,7 +216,7 @@
       <input
         name="filter-value"
         aria-label="value"
-        class="st-input w-100"
+        class="st-input w-full"
         bind:value={currentValue}
         autocomplete="off"
       />
@@ -228,7 +228,7 @@
               value={currentValue[0]}
               name="filter-value-min"
               aria-label="value-min"
-              class="st-input w-100"
+              class="st-input w-full"
               type="number"
               on:input={event => onRangeInputChange(event, 'min')}
               autocomplete="off"
@@ -243,7 +243,7 @@
               value={currentValue[1]}
               name="filter-value-max"
               aria-label="value-max"
-              class="st-input w-100"
+              class="st-input w-full"
               type="number"
               on:input={event => onRangeInputChange(event, 'max')}
               autocomplete="off"
@@ -260,7 +260,7 @@
           name="filter-value"
           aria-label="value"
           bind:value={currentValue}
-          class="st-input w-100"
+          class="st-input w-full"
           type="number"
           autocomplete="off"
         />
@@ -274,7 +274,7 @@
           name="filter-value"
           aria-label="value"
           bind:value={currentValue}
-          class="st-input w-100"
+          class="st-input w-full"
           type="number"
           autocomplete="off"
         />
@@ -283,7 +283,7 @@
         </div>
       </Input>
     {:else if currentType === 'boolean'}
-      <select name="filter-value" aria-label="value" class="st-select w-100" bind:value={currentValue}>
+      <select name="filter-value" aria-label="value" class="st-select w-full" bind:value={currentValue}>
         <option value={true}>True</option>
         <option value={false}>False</option>
       </select>
