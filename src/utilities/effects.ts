@@ -3553,32 +3553,6 @@ const effects = {
     }
   },
 
-  async getEffectiveActivityArguments(
-    modelId: number,
-    activityTypeName: string,
-    argumentsMap: ArgumentsMap,
-    user: User | null,
-    signal?: AbortSignal,
-  ): Promise<EffectiveArguments | null> {
-    try {
-      const data = await reqHasura<EffectiveArguments>(
-        gql.GET_EFFECTIVE_ACTIVITY_ARGUMENTS,
-        {
-          activityTypeName,
-          arguments: argumentsMap,
-          modelId,
-        },
-        user,
-        signal,
-      );
-      const { effectiveActivityArguments } = data;
-      return effectiveActivityArguments;
-    } catch (e) {
-      catchError(e as Error);
-      return null;
-    }
-  },
-
   async getEffectiveModelArguments(
     modelId: number,
     argumentsMap: ArgumentsMap,
