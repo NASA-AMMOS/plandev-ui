@@ -716,35 +716,43 @@
             tooltipContent={`${selectedExternalSourceType.name} Attribute Schema Definition`}
             defaultExpanded={false}
           >
-            {#each Object.entries(selectedExternalSourceType.attribute_schema) as attribute}
-              {#if attribute[0] !== 'properties'}
-                <div class="st-typography-body attributes">
-                  <div class="attribute-name">{attribute[0]}</div>
-                  {#if Array.isArray(attribute[1])}
-                    <ul class="attribute-array">
-                      {#each attribute[1] as attributeValue}
-                        <li class="attribute-value">{attributeValue}</li>
-                      {/each}
-                    </ul>
-                  {:else}
-                    <div class="attribute-value">{attribute[1]}</div>
-                  {/if}
-                </div>
-              {/if}
-            {/each}
+            {#if Object.keys(selectedExternalSourceTypeParametersMap).length === 0}
+            <div class="st-typography-label">No Attributes Defined</div>
+            {:else}
+              {#each Object.entries(selectedExternalSourceType.attribute_schema) as attribute}
+                {#if attribute[0] !== 'properties'}
+                  <div class="st-typography-body attributes">
+                    <div class="attribute-name">{attribute[0]}</div>
+                    {#if Array.isArray(attribute[1])}
+                      <ul class="attribute-array">
+                        {#each attribute[1] as attributeValue}
+                          <li class="attribute-value">{attributeValue}</li>
+                        {/each}
+                      </ul>
+                    {:else}
+                      <div class="attribute-value">{attribute[1]}</div>
+                    {/if}
+                  </div>
+                {/if}
+              {/each}
+            {/if}
           </Collapse>
           <Collapse
             title="Attribute Schema - Properties"
             tooltipContent={`${selectedExternalSourceType.name} Attribute Schema Properties`}
             defaultExpanded={false}
           >
-            <div class="st-typography-body">
-              <Parameters
-                disabled={true}
-                expanded={false}
-                formParameters={getFormParameters(selectedExternalSourceTypeParametersMap, {}, [], undefined, undefined, true)}
-              />
-            </div>
+            {#if Object.keys(selectedExternalSourceTypeParametersMap).length === 0}
+              <div class="st-typography-label">No Attributes Found</div>
+            {:else}
+              <div class="st-typography-body">
+                <Parameters
+                  disabled={true}
+                  expanded={false}
+                  formParameters={getFormParameters(selectedExternalSourceTypeParametersMap, {}, [], undefined, undefined, true)}
+                />
+              </div>
+            {/if}
           </Collapse>
         {:else if selectedExternalEventType !== undefined}
           <Collapse
