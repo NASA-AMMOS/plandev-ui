@@ -8,6 +8,7 @@
   import { keyBy } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { activityArgumentDefaultsMap } from '../../stores/activities';
   import { activityErrorRollupsMap, activityValidationErrors } from '../../stores/errors';
   import { field } from '../../stores/form';
   import { plan, planReadOnly } from '../../stores/plan';
@@ -111,25 +112,13 @@
   $: activityNameField.validateAndSet(activityDirective.name);
 
   $: if (activityType && activityDirective.arguments) {
-    effects
-      .getEffectiveActivityArguments(
-        modelId,
-        activityType.name,
-        revision ? revision.arguments : activityDirective.arguments,
-        user,
-      )
-      .then(effectiveArguments => {
-        if (effectiveArguments && activityType) {
-          const { arguments: defaultArgumentsMap } = effectiveArguments;
-          formParameters = getFormParameters(
-            activityType.parameters,
-            revision ? revision.arguments : activityDirective.arguments,
-            activityType.required_parameters,
-            revision ? undefined : activityDirective.applied_preset?.preset_applied?.arguments,
-            defaultArgumentsMap,
-          );
-        }
-      });
+    formParameters = getFormParameters(
+      activityType.parameters,
+      revision ? revision.arguments : activityDirective.arguments,
+      activityType.required_parameters,
+      revision ? undefined : activityDirective.applied_preset?.preset_applied?.arguments,
+      $activityArgumentDefaultsMap[activityType?.name || ''] ?? {},
+    );
   }
   $: validateArguments(revision ? revision.arguments : activityDirective.arguments);
   $: numOfUserChanges = formParameters.reduce((previousHasChanges: number, formParameter) => {
