@@ -3,6 +3,7 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import type { CellEditingStoppedEvent, ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
+  import { keyBy } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
@@ -100,6 +101,10 @@
 
   let columnDefs = baseColumnDefs;
 
+  let allowedSchedulingConditionSpecsMap: Record<
+    SchedulingConditionPlanSpecification['condition_id'],
+    SchedulingConditionPlanSpecification
+  > = {};
   let dataGrid: DataGrid<SchedulingConditionMetadata> | undefined = undefined;
   let filterText: string = '';
   let filteredConditions: SchedulingConditionMetadata[] = [];
@@ -107,6 +112,7 @@
   let hasEditSpecPermission: boolean = false;
   let selectedConditions: Record<string, boolean> = {};
 
+  $: allowedSchedulingConditionSpecsMap = keyBy($allowedSchedulingConditionSpecs, 'condition_id');
   $: filteredConditions = $schedulingConditions
     // TODO: remove this after db merge as it becomes redundant
     .filter(({ owner, public: isPublic }) => {
@@ -221,10 +227,10 @@
         ) => {
           const conditionId = parseInt(selectedConditionId);
           const isSelected = selectedConditions[conditionId];
-          const conditionPlanSpec = $allowedSchedulingConditionSpecs[conditionId];
+          const conditionPlanSpec = allowedSchedulingConditionSpecsMap[conditionId];
 
           if (isSelected && $schedulingPlanSpecification !== null) {
-            if (!conditionPlanSpec || conditionPlanSpec.condition_metadata?.owner === user?.id) {
+            if (!conditionPlanSpec) {
               return {
                 ...prevConditionPlanSpecUpdates,
                 conditionPlanSpecsToAdd: [
