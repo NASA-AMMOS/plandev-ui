@@ -230,7 +230,6 @@
       <ActivitySpanForm
         activityTypes={$activityTypes}
         filteredExpansionSequences={$filteredExpansionSequences}
-        modelId={$modelId}
         simulationDatasetId={$simulationDatasetId}
         span={$selectedSpan}
         spansMap={$spansMap}

@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { activityArgumentDefaultsMap } from '../../stores/activities';
   import { plugins } from '../../stores/plugins';
   import type { ActivityType } from '../../types/activity';
   import type { User } from '../../types/app';
@@ -20,7 +21,6 @@
 
   export let activityTypes: ActivityType[] = [];
   export let filteredExpansionSequences: ExpansionSequence[] = [];
-  export let modelId: number;
   export let simulationDatasetId: number = -1;
   export let span: Span;
   export let spansMap: SpansMap | null = {};
@@ -52,22 +52,16 @@
   }
 
   $: if (activityType && span.attributes.arguments) {
-    effects
-      .getEffectiveActivityArguments(modelId, activityType.name, span.attributes.arguments, user)
-      .then(activityArguments => {
-        if (activityArguments !== null && activityType !== null) {
-          formParameters = getFormParameters(
-            activityType.parameters,
-            span.attributes.arguments,
-            activityType.required_parameters,
-            {},
-            activityArguments.arguments,
-          ).map(formParameter => ({
-            ...formParameter,
-            valueSource: 'none',
-          }));
-        }
-      });
+    formParameters = getFormParameters(
+      activityType.parameters,
+      span.attributes.arguments,
+      activityType.required_parameters,
+      {},
+      $activityArgumentDefaultsMap[activityType?.name || ''] ?? {},
+    ).map(formParameter => ({
+      ...formParameter,
+      valueSource: 'none',
+    }));
   }
 
   $: if (parameterErrorMap) {
