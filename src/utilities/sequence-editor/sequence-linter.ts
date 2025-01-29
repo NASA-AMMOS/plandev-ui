@@ -38,6 +38,7 @@ import {
 } from '../codemirror/codemirror-utils';
 import { closeSuggestion, computeBlocks, openSuggestion } from '../codemirror/custom-folder';
 import { SeqNCommandInfoMapper } from '../codemirror/seq-n-tree-utils';
+import { pluralize } from '../text';
 import {
   getBalancedDuration,
   getDoyTime,
@@ -1226,79 +1227,57 @@ function validateAndLintArguments(
  * Validates the command structure.
  * @param stemNode - The SyntaxNode representing the command stem.
  * @param argsNode - The SyntaxNode representing the command arguments.
- * @param exactArgSize - The expected number of arguments.
+ * @param expectedArgSize - The expected number of arguments.
  * @param addDefault - The function to add default arguments.
  * @returns A Diagnostic object representing the validation error, or undefined if there is no error.
  */
 function validateCommandStructure(
   stemNode: SyntaxNode,
   argsNode: SyntaxNode[] | null,
-  exactArgSize: number,
+  expectedArgSize: number,
   addDefault: (view: any) => any,
 ): Diagnostic | undefined {
-  if (arguments.length > 0) {
-    if (!argsNode || argsNode.length === 0) {
-      return {
-        actions: [],
-        from: stemNode.from,
-        message: `The stem is missing arguments.`,
-        severity: 'error',
-        to: stemNode.to,
-      };
-    }
-    if (argsNode.length > exactArgSize) {
-      const extraArgs = argsNode.slice(exactArgSize);
-      const { from, to } = getFromAndTo(extraArgs);
-      return {
-        actions: [
-          {
-            apply(view, from, to) {
-              view.dispatch({ changes: { from, to } });
-            },
-            name: `Remove ${extraArgs.length} extra argument${extraArgs.length > 1 ? 's' : ''}`,
-          },
-        ],
-        from,
-        message: `Extra arguments, definition has ${exactArgSize}, but ${argsNode.length} are present`,
-        severity: 'error',
-        to,
-      };
-    }
-    if (argsNode.length < exactArgSize) {
-      const { from, to } = getFromAndTo(argsNode);
-      const pluralS = exactArgSize > argsNode.length + 1 ? 's' : '';
-      return {
-        actions: [
-          {
-            apply(view) {
-              addDefault(view);
-            },
-            name: `Add default missing argument${pluralS}`,
-          },
-        ],
-        from,
-        message: `Missing argument${pluralS}, definition has ${argsNode.length}, but ${exactArgSize} are present`,
-        severity: 'error',
-        to,
-      };
-    }
-  } else if (argsNode && argsNode.length > 0) {
-    const { from, to } = getFromAndTo(argsNode);
+  if ((!argsNode || argsNode.length === 0) && expectedArgSize === 0) {
+    return undefined;
+  }
+  if (argsNode && argsNode.length > expectedArgSize) {
+    const extraArgs = argsNode.slice(expectedArgSize);
+    const { from, to } = getFromAndTo(extraArgs);
+    const commandArgs = `argument${pluralize(extraArgs.length)}`;
     return {
       actions: [
         {
           apply(view, from, to) {
             view.dispatch({ changes: { from, to } });
           },
-          name: `Remove argument${argsNode.length > 1 ? 's' : ''}`,
+          name: `Remove ${extraArgs.length} extra ${commandArgs}`,
         },
       ],
-      from: from,
-      message: 'The command should not have arguments',
+      from,
+      message: `Extra ${commandArgs}, definition has ${expectedArgSize}, but ${argsNode.length} are present`,
       severity: 'error',
-      to: to,
+      to,
     };
   }
+  if ((argsNode && argsNode.length < expectedArgSize) || (!argsNode && expectedArgSize > 0)) {
+    const { from, to } = getFromAndTo(argsNode ?? [stemNode]);
+    const commandArgs = `argument${pluralize(expectedArgSize - (argsNode?.length ?? 0))}`;
+    return {
+      actions: [
+        {
+          apply(view) {
+            addDefault(view);
+          },
+          name: `Add default missing ${commandArgs}`,
+        },
+      ],
+      from,
+      message: `Missing ${commandArgs}, definition has ${expectedArgSize}, but ${argsNode?.length ?? 0} are present`,
+      severity: 'error',
+      to,
+    };
+  }
+
   return undefined;
 }
 
@@ -1498,7 +1477,7 @@ function validateArgument(
             diagnostics.push({
               actions: [],
               from: argNode.from,
-              message: `Repeat argument should have at least ${minCount} value${minCount !== 0 ? 's' : ''} but has ${
+              message: `Repeat argument should have at least ${minCount} value${pluralize(minCount)} but has ${
                 repeatNodes.length
               }`,
               severity: 'error',
@@ -1508,7 +1487,7 @@ function validateArgument(
             diagnostics.push({
               actions: [],
               from: argNode.from,
-              message: `Repeat argument should have at most ${maxCount} value${maxCount !== 0 ? 's' : ''} but has ${
+              message: `Repeat argument should have at most ${maxCount} value${pluralize(maxCount)} but has ${
                 repeatNodes.length
               }`,
               severity: 'error',

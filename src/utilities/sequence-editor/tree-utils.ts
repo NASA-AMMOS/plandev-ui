@@ -42,7 +42,7 @@ export function getFromAndTo(nodes: (SyntaxNode | null)[]): { from: number; to: 
         to: Math.max(acc.to, node.to),
       };
     },
-    { from: Number.MAX_VALUE, to: Number.MIN_VALUE },
+    { from: nodes[0]?.from ?? 0, to: nodes[0]?.to ?? 0 },
   );
 }
 
