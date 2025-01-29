@@ -103,17 +103,21 @@
         </Input>
       </Collapse>
       <Collapse defaultExpanded={false} title="Attributes" tooltipContent="View External Event Attributes">
-        <div class="st-typography-body">
-          <Parameters
-            disabled={true}
-            expanded={false}
-            formParameters={getFormParameters(
-              externalEventTypeParametersMap,
-              externalEventAttributes,
-              requiredAttributes,
-            )}
-          />
-        </div>
+        {#if Object.keys(externalEvent.attributes).length === 0}
+          <div class="st-typography-label">No Attributes Found</div>
+        {:else}
+          <div class="st-typography-body">
+            <Parameters
+              disabled={true}
+              expanded={false}
+              formParameters={getFormParameters(
+                externalEventTypeParametersMap,
+                externalEventAttributes,
+                requiredAttributes,
+              )}
+            />
+          </div>
+        {/if}
       </Collapse>
     </fieldset>
   </div>
