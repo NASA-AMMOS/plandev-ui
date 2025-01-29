@@ -38,7 +38,6 @@
     tabindex={!collapsible ? -1 : 0}
     class="collapse-header st-button st-typography-medium tertiary"
     class:static={!collapsible}
-    class:expanded
     style:height={`${headerHeight}px`}
     on:click|stopPropagation={() => {
       if (collapsible) {
@@ -69,7 +68,9 @@
   </button>
   <slot name="action-row" />
   <div class="content" class:pad-content={padContent} class:expanded aria-hidden={collapsible ? !expanded : false}>
-    <slot />
+    {#if expanded}
+      <slot />
+    {/if}
   </div>
 </div>
 
