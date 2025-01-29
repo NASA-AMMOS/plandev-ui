@@ -230,7 +230,7 @@
           const conditionPlanSpec = allowedSchedulingConditionSpecsMap[conditionId];
 
           if (isSelected && $schedulingPlanSpecification !== null) {
-            if (!conditionPlanSpec || conditionPlanSpec.condition_metadata?.owner === user?.id) {
+            if (!conditionPlanSpec) {
               return {
                 ...prevConditionPlanSpecUpdates,
                 conditionPlanSpecsToAdd: [
