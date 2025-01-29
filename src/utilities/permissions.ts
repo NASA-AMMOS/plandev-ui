@@ -678,7 +678,6 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   GET_ACTIVITY_DIRECTIVE_CHANGELOG: () => true,
   GET_ACTIVITY_TYPES_EXPANSION_RULES: () => true,
-  GET_EFFECTIVE_ACTIVITY_ARGUMENTS: () => true,
   GET_EFFECTIVE_ACTIVITY_ARGUMENTS_BULK: () => true,
   GET_EFFECTIVE_MODEL_ARGUMENTS: () => true,
   GET_EVENTS: () => true,
