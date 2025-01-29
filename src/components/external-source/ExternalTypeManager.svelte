@@ -56,9 +56,6 @@
     deleteDerivationGroup: (derivationGroup: DerivationGroup) => Promise<void>;
     deleteExternalEventType: (eventType: ExternalEventType) => Promise<void>;
     deleteExternalSourceType: (sourceType: ExternalSourceType) => Promise<void>;
-    viewDerivationGroup: (derivationGroup: DerivationGroup) => void;
-    viewExternalEventType: (eventType: ExternalEventType) => void;
-    viewExternalSourceType: (sourceType: ExternalSourceType) => void;
   };
   type ModalCellRendererParamsDerivationGroup = ICellRendererParams<DerivationGroup> & CellRendererParams;
   type ModalCellRendererParamsExternalSourceType = ICellRendererParams<ExternalSourceType> & CellRendererParams;
@@ -155,17 +152,17 @@
   let externalEventTypeFilterString: string = '';
 
   let selectedDerivationGroup: DerivationGroup | undefined = undefined;
-  let selectedDerivationGroupId: DerivationGroupId | undefined = undefined;
+  let selectedDerivationGroupId: DerivationGroupId | null = null;
   let selectedDerivationGroupSources: ExternalSourceSlim[] = [];
 
   let selectedExternalSourceType: ExternalSourceType | undefined = undefined;
-  let selectedExternalSourceTypeId: ExternalSourceTypeId | undefined = undefined;
+  let selectedExternalSourceTypeId: ExternalSourceTypeId | null = null;
   let selectedExternalSourceTypeDerivationGroups: DerivationGroup[] = [];
   let selectedExternalSourceTypeAttributeSchema: Record<string, ValueSchema>;
   let selectedExternalSourceTypeParametersMap: ParametersMap = {};
 
   let selectedExternalEventType: ExternalEventType | undefined = undefined;
-  let selectedExternalEventTypeId: ExternalEventTypeId | undefined = undefined;
+  let selectedExternalEventTypeId: ExternalEventTypeId | null = null;
   let selectedExternalEventTypeSources: string[] = [];
   let selectedExternalEventTypeAttributesSchema: Record<string, ValueSchema>;
   let selectedExternalEventTypeParametersMap: ParametersMap = {};
@@ -181,6 +178,10 @@
   $: hasCreateExternalSourceTypePermission = featurePermissions.externalSourceType.canCreate(user);
   $: hasCreateExternalEventTypePermission = featurePermissions.externalEventType.canCreate(user);
   $: hasCreationPermission = hasCreateExternalEventTypePermission && hasCreateExternalSourceTypePermission;
+
+  $: console.log(`DG: ${selectedDerivationGroupId}`);
+  $: console.log(`ES: ${selectedExternalSourceTypeId}`);
+  $: console.log(`EE: ${selectedExternalEventTypeId}`);
 
   $: selectedDerivationGroupSources = $externalSources.filter(
     source => selectedDerivationGroup?.name === source.derivation_group_name,
@@ -259,19 +260,13 @@
             },
             hasDeletePermission: hasDeleteDerivationGroupPermissionOnRow(user, params.data),
             rowData: params.data,
-            viewCallback: params.viewDerivationGroup,
-            viewTooltip: {
-              content: 'View Derivation Group',
-              placement: 'bottom',
-            },
           },
           target: actionsDiv,
         });
         return actionsDiv;
       },
       cellRendererParams: {
-        deleteDerivationGroup,
-        viewDerivationGroup,
+        deleteDerivationGroup
       } as CellRendererParams,
       headerName: '',
       resizable: false,
@@ -314,11 +309,6 @@
             },
             hasDeletePermission: hasDeleteExternalSourceTypePermission,
             rowData: params.data,
-            viewCallback: params.viewExternalSourceType,
-            viewTooltip: {
-              content: 'View External Source Type',
-              placement: 'bottom',
-            },
           },
           target: actionsDiv,
         });
@@ -327,7 +317,6 @@
       },
       cellRendererParams: {
         deleteExternalSourceType,
-        viewExternalSourceType,
       } as CellRendererParams,
       headerName: '',
       resizable: false,
@@ -361,11 +350,6 @@
             },
             hasDeletePermission: hasDeleteExternalEventTypePermission,
             rowData: params.data,
-            viewCallback: params.viewExternalEventType,
-            viewTooltip: {
-              content: 'View External Event Type',
-              placement: 'bottom',
-            },
           },
           target: actionsDiv,
         });
@@ -374,7 +358,6 @@
       },
       cellRendererParams: {
         deleteExternalEventType,
-        viewExternalEventType,
       } as CellRendererParams,
       headerName: '',
       resizable: false,
@@ -387,18 +370,24 @@
     selectedDerivationGroup = derivationGroup;
     selectedExternalSourceType = undefined;
     selectedExternalEventType = undefined;
+    selectedExternalSourceTypeId = null;
+    selectedExternalEventTypeId = null;
   }
 
   function selectExternalSourceType(externalSourceType: ExternalSourceType) {
     selectedDerivationGroup = undefined;
     selectedExternalSourceType = externalSourceType;
     selectedExternalEventType = undefined;
+    selectedDerivationGroupId = null;
+    selectedExternalEventTypeId = null;
   }
 
   function selectExternalEventType(externalEventType: ExternalEventType) {
     selectedDerivationGroup = undefined;
     selectedExternalSourceType = undefined;
     selectedExternalEventType = externalEventType;
+    selectedDerivationGroupId = null;
+    selectedExternalSourceTypeId = null;
   }
 
   function deleteDerivationGroup(derivationGroup: DerivationGroup) {
@@ -475,55 +464,6 @@
     );
 
     return associatedDerivationGroups;
-  }
-
-  function viewDerivationGroup(viewedDerivationGroup: DerivationGroup) {
-    const derivationGroup = $derivationGroups.find(
-      derivationGroup => derivationGroup.name === viewedDerivationGroup.name,
-    );
-    if (
-      (selectedDerivationGroup === undefined && derivationGroup !== undefined) ||
-      selectedDerivationGroup !== derivationGroup
-    ) {
-      selectedDerivationGroup = derivationGroup;
-      selectedExternalSourceType = undefined;
-      selectedExternalEventType = undefined;
-      parsedExternalSourceEventTypeSchema = undefined;
-    } else {
-      selectedDerivationGroup = undefined;
-      selectedExternalSourceType = undefined;
-      selectedExternalEventType = undefined;
-      parsedExternalSourceEventTypeSchema = undefined;
-    }
-    resetUploadForm();
-  }
-
-  function viewExternalSourceType(sourceType: ExternalSourceType) {
-    if (selectedExternalSourceType === undefined || selectedExternalSourceType !== sourceType) {
-      selectedDerivationGroup = undefined;
-      selectedExternalSourceType = sourceType;
-      selectedExternalEventType = undefined;
-      parsedExternalSourceEventTypeSchema = undefined;
-    } else {
-      selectedDerivationGroup = undefined;
-      selectedExternalSourceType = undefined;
-      selectedExternalEventType = undefined;
-      parsedExternalSourceEventTypeSchema = undefined;
-    }
-    resetUploadForm();
-  }
-
-  function viewExternalEventType(eventType: ExternalEventType) {
-    if (selectedExternalEventType === undefined || selectedExternalEventType !== eventType) {
-      selectedDerivationGroup = undefined;
-      selectedExternalSourceType = undefined;
-      selectedExternalEventType = eventType;
-    } else {
-      selectedDerivationGroup = undefined;
-      selectedExternalSourceType = undefined;
-      selectedExternalEventType = undefined;
-    }
-    resetUploadForm();
   }
 
   function hasDeleteDerivationGroupPermissionOnRow(
@@ -669,8 +609,10 @@
         </SectionTitle>
         <button
           class="st-button icon fs-6 deselect"
+          use:tooltip={{ content: 'Deselect Derivation Group', placement: 'top' }}
           on:click|stopPropagation={() => {
             selectedDerivationGroup = undefined;
+            selectedDerivationGroupId = null;
           }}
         >
           <XIcon />
@@ -731,8 +673,10 @@
         </SectionTitle>
         <button
           class="st-button icon fs-6 deselect"
+          use:tooltip={{ content: 'Deselect External Source Type', placement: 'top' }}
           on:click|stopPropagation={() => {
             selectedExternalSourceType = undefined;
+            selectedExternalSourceTypeId = null;
           }}
         >
           <XIcon />
@@ -813,8 +757,10 @@
         </SectionTitle>
         <button
           class="st-button icon fs-6 deselect"
+          use:tooltip={{ content: 'Deselect External Event Type', placement: 'top' }}
           on:click|stopPropagation={() => {
             selectedExternalEventType = undefined;
+            selectedExternalEventTypeId = null;
           }}
         >
           <XIcon />
