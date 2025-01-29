@@ -696,7 +696,7 @@
                     {associatedDerivationGroup.derived_event_total} events
                   </p>
                 </svelte:fragment>
-                <div>
+                <div class="st-typography-bold">
                   <div class="st-typography-bold">Name:</div>
                   {associatedDerivationGroup.name}
                 </div>
