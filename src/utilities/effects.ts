@@ -236,7 +236,7 @@ import type {
   TagsInsertInput,
   TagsSetInput,
 } from '../types/tags';
-import type { Layer, Row, Timeline } from '../types/timeline';
+import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
 import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
@@ -877,7 +877,12 @@ const effects = {
     }
   },
 
-  async createExpansionSequence(seqId: string, simulationDatasetId: number, user: User | null): Promise<void> {
+  async createExpansionSequence(
+    seqId: string,
+    simulationDatasetId: number,
+    filter: ActivityLayerFilter,
+    user: User | null,
+  ): Promise<string | null> {
     try {
       if (!queryPermissions.CREATE_EXPANSION_SEQUENCE(user)) {
         throwPermissionError('create an expansion sequence');
@@ -885,6 +890,7 @@ const effects = {
 
       creatingExpansionSequenceStore.set(true);
       const sequence: ExpansionSequenceInsertInput = {
+        filter,
         metadata: {},
         seq_id: seqId,
         simulation_dataset_id: simulationDatasetId,
@@ -892,14 +898,16 @@ const effects = {
       const data = await reqHasura<SeqId>(gql.CREATE_EXPANSION_SEQUENCE, { sequence }, user);
       if (data.createExpansionSequence != null) {
         showSuccessToast('Expansion Sequence Created Successfully');
-        creatingExpansionSequenceStore.set(false);
+        creatingExpansionSequence.set(false);
+        return data.createExpansionSequence.seq_id;
       } else {
         throw Error(`Unable to create expansion sequence with ID: "${seqId}"`);
       }
     } catch (e) {
       catchError('Expansion Sequence Create Failed', e as Error);
       showFailureToast('Expansion Sequence Create Failed');
-      creatingExpansionSequenceStore.set(false);
+      creatingExpansionSequence.set(false);
+      return null;
     }
   },
 

@@ -2219,6 +2219,7 @@ const gql = {
     subscription SubExpansionSequences {
       ${Queries.SEQUENCE} {
         created_at
+        filter
         metadata
         seq_id
         simulation_dataset_id
