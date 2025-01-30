@@ -7,12 +7,14 @@ import type { EditorView } from 'codemirror';
 import { closest } from 'fastest-levenshtein';
 import type { LibrarySequence } from '../../../types/sequencing';
 import { filterNodes } from '../../sequence-editor/tree-utils';
+import { quoteEscape, unquoteUnescape } from '../codemirror-utils';
 import { VmlLanguage } from './vml';
 import {
   RULE_CALL_PARAMETER,
   RULE_CALL_PARAMETERS,
   RULE_FUNCTION_NAME,
   RULE_ISSUE,
+  RULE_ISSUE_DYNAMIC,
   RULE_SPAWN,
   TOKEN_DOUBLE_CONST,
   TOKEN_ERROR,
@@ -67,22 +69,22 @@ function validateCommands(
     const { node } = cursor;
     const tokenType = node.type.name;
 
-    if (tokenType === RULE_ISSUE) {
-      const functionNameNode = node.getChild(RULE_FUNCTION_NAME);
-      if (functionNameNode) {
-        const functionName = docText.slice(functionNameNode.from, functionNameNode.to);
-        const commandDef = commandDictionary.fswCommandMap[functionName];
+    const isDynamic = tokenType === RULE_ISSUE_DYNAMIC;
+    if (tokenType === RULE_ISSUE || isDynamic) {
+      const stemNameNode = isDynamic
+        ? node.getChild(RULE_CALL_PARAMETERS)?.getChild(RULE_CALL_PARAMETER)
+        : node.getChild(RULE_FUNCTION_NAME);
+      if (stemNameNode) {
+        const stemName = docText.slice(stemNameNode.from, stemNameNode.to);
+        const commandDef = commandDictionary.fswCommandMap[unquoteUnescape(stemName)];
         if (!commandDef) {
-          diagnostics.push(
-            suggestAlternative(
-              functionNameNode,
-              functionName,
-              'command',
-              closest(functionName, Object.keys(commandDictionary.fswCommandMap)),
-            ),
-          );
+          const closestStem = closest(stemName, Object.keys(commandDictionary.fswCommandMap));
+          const alternativeStem = isDynamic ? quoteEscape(closestStem) : closestStem;
+          diagnostics.push(suggestAlternative(stemNameNode, stemName, 'command', alternativeStem));
         } else {
-          diagnostics.push(...validateArguments(commandDictionary, commandDef, node, functionNameNode, docText));
+          diagnostics.push(
+            ...validateArguments(commandDictionary, commandDef, node, stemNameNode, docText, isDynamic ? 1 : 0),
+          );
         }
       }
     } else if (tokenType === RULE_SPAWN) {
@@ -138,13 +140,14 @@ function validateArguments(
   functionNode: SyntaxNode,
   functionNameNode: SyntaxNode,
   docText: string,
+  parameterOffset: number,
 ): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
   const parametersNode = functionNode.getChild(RULE_CALL_PARAMETERS)?.getChildren(RULE_CALL_PARAMETER) ?? [];
   const functionName = docText.slice(functionNameNode.from, functionNameNode.to);
   for (let i = 0; i < commandDef.arguments.length; i++) {
     const argDef: FswCommandArgument | undefined = commandDef.arguments[i];
-    const argNode = parametersNode[i];
+    const argNode = parametersNode[i + (parameterOffset ?? 0)];
 
     if (argDef && argNode) {
       // validate expected argument
@@ -159,7 +162,7 @@ function validateArguments(
       });
     }
   }
-  const extraArgs = parametersNode.slice(commandDef.arguments.length);
+  const extraArgs = parametersNode.slice(parameterOffset).slice(commandDef.arguments.length);
   diagnostics.push(
     ...extraArgs.map((extraArg: SyntaxNode): Diagnostic => {
       const { from, to } = extraArg;

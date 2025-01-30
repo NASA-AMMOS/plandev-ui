@@ -17,11 +17,6 @@ import {
 } from './vmlConstants';
 import { getArgumentPosition } from './vmlTreeUtils';
 
-// TODO - Snippets for SEQUENCE,
-// Snippet IF, WHILE, etc
-// Suggest time if no time on line
-// Button to display diagnostic panel
-
 function structureSnippets(timePrefix: string) {
   return [
     {
@@ -95,7 +90,6 @@ export function vmlAutoComplete(
       };
     } else if (nodeCurrent.name === TOKEN_STRING_CONST) {
       // also show if before argument
-      // console.log(`nodeCurrent.name ${nodeCurrent.name}`);
 
       const containingStatement = getNearestAncestorNodeOfType(nodeCurrent, [RULE_STATEMENT]);
       if (containingStatement) {
