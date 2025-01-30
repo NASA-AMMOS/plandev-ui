@@ -22,6 +22,14 @@ import type { SequenceTypes } from '../enums/sequencing';
 import type { ArgDelegator } from '../utilities/sequence-editor/extension-points';
 import type { UserId } from './app';
 import type { GlobalType } from './global-type';
+import type { ActivityLayerFilter } from './timeline';
+
+export type SequenceFilter = ActivityLayerFilter & {
+  timeFilter?: {
+    end: string;
+    start: string;
+  };
+};
 
 export type ChannelDictionaryMetadata = {
   type: DictionaryTypes.CHANNEL;

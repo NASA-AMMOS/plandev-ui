@@ -31,10 +31,11 @@
   import Draggable from './Draggable.svelte';
   import DynamicFilter from './DynamicFilter.svelte';
 
-  export let filter: ActivityLayerFilter | undefined;
+  export let filter: ActivityLayerFilter | undefined = undefined;
   export const filterWidth = 1000;
   export const filterHeight = 500;
   export let layerName: string = '';
+  let filteredSpans: number[] = [];
 
   let parameterSubfields: ActivityLayerFilterSubfieldSchema[] = [];
   let dirtyFilter: ActivityLayerFilter = {
@@ -58,6 +59,10 @@
     filterChange: { filter: ActivityLayerFilter };
     rename: { name: string };
   }>();
+
+  export function setActiveFilter(newFilter: ActivityLayerFilter) {
+    dirtyFilter = newFilter;
+  }
 
   export function toggle() {
     if (shown) {
@@ -203,20 +208,14 @@
   );
 
   $: if (appliedFilter) {
-    const seenSpans: Record<number, boolean> = {};
-    let count = appliedFilter.directives.length;
+    filteredSpans = [];
     appliedFilter.directives.forEach(directive => {
       const matchingSpanId = $spanUtilityMaps.directiveIdToSpanIdMap[directive.id];
       if (typeof matchingSpanId === 'number') {
-        seenSpans[matchingSpanId] = true;
+        filteredSpans.push(matchingSpanId);
       }
     });
-    appliedFilter.spans.forEach(span => {
-      if (!seenSpans[span.span_id]) {
-        count++;
-      }
-    });
-    instanceCount = count;
+    instanceCount = filteredSpans.length;
   }
 
   $: matchingTypes = getMatchingTypesForActivityLayerFilter(dirtyFilter, $activityTypes);

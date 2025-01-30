@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
-  import type { ICellRendererParams } from 'ag-grid-community';
+  import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import {
     creatingExpansionSequence,
@@ -12,7 +12,7 @@
     selectedExpansionSetId,
   } from '../../stores/expansion';
   import { plan, planReadOnly } from '../../stores/plan';
-  import { simulationDatasetId } from '../../stores/simulation';
+  import { simulationDatasetId, simulationStatus } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ExpansionSequence, ExpansionSet } from '../../types/expansion';
@@ -21,9 +21,8 @@
   import { showExpansionSequenceModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { getShortISOForDate } from '../../utilities/time';
+  import { convertDoyToYmd, formatDate, getShortISOForDate } from '../../utilities/time';
   import Collapse from '../Collapse.svelte';
-  import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
@@ -31,6 +30,15 @@
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
+  import ActivityFilterBuilder from '../timeline/form/TimelineEditor/ActivityFilterBuilder.svelte';
+  import { Status } from '../../enums/status';
+  import Input from '../form/Input.svelte';
+  import type { SequenceFilter } from '../../types/sequencing';
+  import { plugins } from '../../stores/plugins';
+  import { field } from '../../stores/form';
+  import type { FieldStore } from '../../types/form';
+  import { required } from '../../utilities/validators';
+  import DatePickerField from '../form/DatePickerField.svelte';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -41,6 +49,8 @@
   };
   type ExpansionSequenceCellRendererParams = ICellRendererParams<ExpansionSequence> & CellRendererParams;
 
+  const planStartTimeDate: Date = new Date($plan?.start_time ?? '');
+  const planEndTimeDate: Date = new Date(convertDoyToYmd($plan?.end_time_doy ?? '') ?? '');
   const baseColumnDefs: DataGridColumnDef[] = [
     {
       field: 'seq_id',
@@ -58,7 +68,23 @@
       resizable: true,
       sortable: true,
     },
-    { field: 'created_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
+    {
+      field: 'created_at',
+      filter: 'text',
+      headerName: 'Created At',
+      resizable: true,
+      sortable: true,
+    },
+    {
+      field: 'filter',
+      filter: 'text',
+      headerName: 'Filter',
+      resizable: true,
+      sortable: false,
+      valueGetter: (params: ValueGetterParams<ExpansionSequence>) => {
+        return JSON.stringify(params?.data?.filter);
+      },
+    },
   ];
 
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
@@ -68,6 +94,19 @@
   let hasExpandPermission: boolean = false;
   let seqIdInput: string = '';
   let selectedExpansionSet: ExpansionSet | null;
+
+  let filterMenu: ActivityFilterBuilder;
+  let filterMenuActiveFilter: SequenceFilter = {};
+  let startTimeField: FieldStore<string>;
+  let endTimeField: FieldStore<string>;
+  let planStartTime: string = formatDate(planStartTimeDate, $plugins.time.primary.format);
+  let planEndTime: string = formatDate(planEndTimeDate, $plugins.time.primary.format);
+
+  $: startTimeField = field<string>(planStartTime, [required, $plugins.time.primary.validate]);
+  $: endTimeField = field<string>(planEndTime, [required, $plugins.time.primary.validate]);
+
+  $: console.log($startTimeField.value);
+  $: console.log($endTimeField.value);
 
   $: if (user !== null && $plan !== null) {
     hasCreatePermission = featurePermissions.expansionSequences.canCreate(user) && !$planReadOnly;
@@ -116,7 +155,7 @@
       },
     ];
   }
-  $: createButtonEnabled = seqIdInput !== '';
+  $: createButtonEnabled = seqIdInput !== '' && $simulationStatus === Status.Complete;
   $: selectedExpansionSet = $expansionSets.find(s => s.id === $selectedExpansionSetId) ?? null;
 
   function deleteExpansionSequence(sequence: ExpansionSequence) {
@@ -133,6 +172,10 @@
     if (sequenceToDelete) {
       deleteExpansionSequence(sequenceToDelete);
     }
+  }
+
+  function onToggleFilterMenu() {
+    filterMenu.toggle();
   }
 </script>
 
@@ -244,10 +287,10 @@
           {:else}
             <div class="expansion-form-container">
               <CssGrid class="expansion-form" rows="min-content auto">
-                <CssGrid columns="3fr 1fr" gap="10px">
+                <div class="sequence-buttons">
                   <input
                     bind:value={seqIdInput}
-                    class="st-input"
+                    class="st-input w-100"
                     use:permissionHandler={{
                       hasPermission: hasCreatePermission,
                       permissionError: $planReadOnly
@@ -255,21 +298,77 @@
                         : 'You do not have permission to create an expansion',
                     }}
                   />
-                  <button
-                    class="st-button secondary"
-                    disabled={!createButtonEnabled}
-                    use:permissionHandler={{
-                      hasPermission: hasCreatePermission,
-                      permissionError: $planReadOnly
-                        ? PlanStatusMessages.READ_ONLY
-                        : 'You do not have permission to create an expansion',
-                    }}
-                    on:click|stopPropagation={() =>
-                      effects.createExpansionSequence(seqIdInput, $simulationDatasetId, user)}
-                  >
-                    {$creatingExpansionSequence ? 'Creating... ' : 'Create'}
-                  </button>
-                </CssGrid>
+                  <div>
+                    <button
+                      class="st-button secondary w-100"
+                      use:permissionHandler={{
+                        hasPermission: hasCreatePermission,
+                        permissionError: $planReadOnly
+                          ? PlanStatusMessages.READ_ONLY
+                          : 'You do not have permission to create an expansion.',
+                      }}
+                      on:click|stopPropagation={onToggleFilterMenu}
+                    >
+                      Modify Filter
+                    </button>
+                    {#if $plan !== null}
+                      <DatePickerField
+                        field={startTimeField}
+                        minDate={planStartTimeDate}
+                        maxDate={planEndTimeDate}
+                        name="start-time"
+                      />
+                      <DatePickerField
+                        field={endTimeField}
+                        minDate={planStartTimeDate}
+                        maxDate={planEndTimeDate}
+                        name="end-time"
+                      />
+                    {/if}
+                    <button
+                      class="st-button primary w-100"
+                      disabled={!createButtonEnabled}
+                      use:permissionHandler={{
+                        hasPermission: hasCreatePermission,
+                        permissionError: $planReadOnly
+                          ? PlanStatusMessages.READ_ONLY
+                          : 'You do not have permission to create an expansion',
+                      }}
+                      on:click|stopPropagation={() => {
+                        // We may not have a filter form the user, so at minimum send the time filter
+                        const result = effects.createExpansionSequence(
+                          seqIdInput,
+                          $simulationDatasetId,
+                          Object.keys(filterMenuActiveFilter).length > 0
+                            ? filterMenuActiveFilter
+                            : { timeFilter: { end: $endTimeField.value, start: $startTimeField.value } },
+                          user,
+                        );
+                        if (result !== null) {
+                          filterMenu.setActiveFilter({});
+                        }
+                      }}
+                    >
+                      {$creatingExpansionSequence ? 'Creating... ' : 'Create Sequence'}
+                    </button>
+                  </div>
+                </div>
+                <ActivityFilterBuilder
+                  layerName={seqIdInput}
+                  bind:this={filterMenu}
+                  on:rename={newName => {
+                    seqIdInput = newName.detail.name;
+                  }}
+                  on:filterChange={filter => {
+                    filterMenuActiveFilter = {
+                      ...filter.detail.filter,
+                      timeFilter: {
+                        end: $endTimeField.value,
+                        start: $startTimeField.value,
+                      },
+                    };
+                  }}
+                />
                 <div class="mt-2">
                   {#if $filteredExpansionSequences.length}
                     <SingleActionDataGrid
@@ -332,6 +431,10 @@
   .expansion-set-details span:last-child {
     display: flex;
     flex: 1;
+  }
+
+  .sequence-buttons {
+    display: inline;
   }
 
   :global(.details-container) {
