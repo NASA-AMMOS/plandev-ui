@@ -1,4 +1,4 @@
-import { type CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
+import { snippet, type CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
 import { syntaxTree } from '@codemirror/language';
 import type { CommandDictionary, EnumMap, FswCommand, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
@@ -7,8 +7,42 @@ import type { LibrarySequence } from '../../../types/sequencing';
 import { getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
 import { VmlLanguage } from './vml';
 import { vmlBlockLibraryToCommandDictionary } from './vmlBlockLibrary';
-import { RULE_FUNCTION_NAME, RULE_ISSUE, RULE_STATEMENT, TOKEN_STRING_CONST } from './vmlConstants';
+import {
+  RULE_FUNCTION_NAME,
+  RULE_ISSUE,
+  RULE_STATEMENT,
+  RULE_TIME_TAGGED_STATEMENT,
+  TOKEN_STRING_CONST,
+  TOKEN_TIME_CONST,
+} from './vmlConstants';
 import { getArgumentPosition } from './vmlTreeUtils';
+
+// TODO - Snippets for SEQUENCE,
+// Snippet IF, WHILE, etc
+// Suggest time if no time on line
+// Button to display diagnostic panel
+
+function structureSnippets(timePrefix: string) {
+  return [
+    {
+      label: 'Insert WHILE loop',
+      snippetText: `${timePrefix}WHILE \${condition} DO\nR00:00:00.00 END_WHILE`,
+    },
+    {
+      label: 'Insert FOR loop',
+      snippetText: `${timePrefix}FOR i := \${start} TO \${end} STEP \${step} DO\nR00:00:00.00 END_FOR`,
+    },
+    {
+      label: 'Insert IF conditional',
+      snippetText: `${timePrefix}IF \${condition1} THEN\nR00:00:00.00 ELSE_IF \${condition2} THEN\nR00:00:00.00 ELSE\nR00:00:00.00 END_IF`,
+    },
+  ].map(({ label, snippetText }) => ({
+    apply: snippet(snippetText),
+    label,
+    section: 'Command',
+    type: 'function',
+  }));
+}
 
 export function vmlAutoComplete(
   commandDictionary: CommandDictionary | null,
@@ -22,6 +56,32 @@ export function vmlAutoComplete(
     const tree = syntaxTree(context.state);
     const nodeBefore = tree.resolveInner(context.pos, -1);
     const nodeCurrent = tree.resolveInner(context.pos, 0);
+
+    const selection = context.state.selection;
+    if (selection.ranges.length === 1) {
+      const cursorLine = context.state.doc.lineAt(selection.ranges[0].to);
+      const cursorLineTrimmed = cursorLine.text.trim();
+
+      if (!cursorLineTrimmed) {
+        // line is empty
+        return {
+          from: context.pos,
+          options: structureSnippets('R00:00:00.00 '),
+        };
+      } else if (nodeCurrent.name === RULE_TIME_TAGGED_STATEMENT) {
+        const timeConstToken = nodeCurrent.getChild(TOKEN_TIME_CONST);
+        if (timeConstToken) {
+          if (context.state.sliceDoc(timeConstToken.from, timeConstToken.to) === cursorLineTrimmed) {
+            // line is only a time constant
+            return {
+              from: context.pos,
+              options: structureSnippets(''),
+            };
+          }
+        }
+      }
+    }
+
     if (nodeBefore.name === RULE_ISSUE) {
       return {
         from: context.pos,
@@ -35,6 +95,7 @@ export function vmlAutoComplete(
       };
     } else if (nodeCurrent.name === TOKEN_STRING_CONST) {
       // also show if before argument
+      // console.log(`nodeCurrent.name ${nodeCurrent.name}`);
 
       const containingStatement = getNearestAncestorNodeOfType(nodeCurrent, [RULE_STATEMENT]);
       if (containingStatement) {
@@ -68,8 +129,8 @@ export function vmlAutoComplete(
           // 'builtin', 'atom'
           const globalOptions: CompletionResult['options'] = globals.map(g => ({
             apply: g.name,
-            label: `${g} (GLOBAL)`,
-            section: 'values',
+            label: `${g.name} (GLOBAL)`,
+            section: 'globals, constants',
             type: 'builtin',
           }));
 
@@ -113,20 +174,6 @@ export function getDefaultArgumentValue(argDef: FswCommandArgument, enumMap: Enu
   }
 
   return '""';
-}
-
-export function statementTypeCompletions(): string[] {
-  return [
-    `WHILE condition DO`,
-    `END_WHILE`,
-    `FOR i := 1 TO mode STEP 2 DO`,
-    `END_FOR`,
-    `IF delay_time > 100.0 THEN`,
-    `ELSE_IF delay_time > 80.0 THEN`,
-    `ELSE`,
-    `END_IF`,
-    `ISSUE`,
-  ];
 }
 
 export function parseFunctionSignatures(contents: string, workspace_id: number): LibrarySequence[] {
