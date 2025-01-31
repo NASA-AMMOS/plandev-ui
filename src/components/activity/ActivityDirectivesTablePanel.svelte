@@ -11,6 +11,7 @@
     ValueGetterParams,
   } from 'ag-grid-community';
   import { debounce } from 'lodash-es';
+  import { get } from 'svelte/store';
   import { InvalidDate } from '../../constants/time';
   import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
   import { activityErrorRollupsMap } from '../../stores/errors';
@@ -20,8 +21,10 @@
   import type { ActivityDirective } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { AutoSizeColumns, ViewGridSection, ViewTable } from '../../types/view';
+  import effects from '../../utilities/effects';
   import { filterEmpty } from '../../utilities/generic';
   import { formatDate, getUnixEpochTimeFromInterval } from '../../utilities/time';
+  import { getTimeRangeAroundTime } from '../../utilities/timeline';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -30,9 +33,6 @@
   import Panel from '../ui/Panel.svelte';
   import ActivityDirectivesTable from './ActivityDirectivesTable.svelte';
   import ActivityTableMenu from './ActivityTableMenu.svelte';
-  import { get } from 'svelte/store';
-  import { getTimeRangeAroundTime } from '../../utilities/timeline';
-  import effects from '../../utilities/effects';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -390,7 +390,13 @@
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Activity Directives Table" />
     <div class="table-menu">
-      <input type="search" bind:value={filterExpression} placeholder="Filter Activity Directives" class="st-input" />
+      <input
+        type="search"
+        bind:value={filterExpression}
+        placeholder="Filter Activity Directives"
+        aria-label="Filter Activity Directives"
+        class="st-input"
+      />
       <div class="size-actions">
         <button
           class="st-button secondary"
