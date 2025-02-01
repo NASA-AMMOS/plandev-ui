@@ -31,6 +31,7 @@ export const RULE_ASSIGNMENT = 'Assignment';
 export const RULE_STATEMENT = 'Statement';
 export const RULE_TIME_TAGGED_STATEMENTS = 'Time_tagged_statements';
 export const RULE_TIME_TAGGED_STATEMENT = 'Time_tagged_statement';
+export const RULE_TEST_TIME_TAGGED_STATEMENT = 'Test_Time_tagged_statement';
 export const RULE_VM_MANAGEMENT = 'Vm_management';
 export const RULE_SPAWN = 'Spawn';
 export const RULE_HALT = 'Halt';
@@ -57,6 +58,7 @@ export const RULE_OPTIONAL_DEFAULT_INPUT_VALUE = 'Optional_default_input_value';
 export const RULE_OPTIONAL_VALUE_LIST = 'Optional_value_list';
 export const RULE_INPUT_RANGE = 'Input_Range';
 export const RULE_INPUT_VALUE = 'Input_value';
+export const RULE_BYTE_ARRAY = 'Byte_array';
 
 export const GROUP_STATEMENT_SUB = 'StatementSub';
 

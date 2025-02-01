@@ -10,6 +10,7 @@ import {
   RULE_ASSIGNMENT,
   RULE_BLOCK,
   RULE_BODY,
+  RULE_BYTE_ARRAY,
   RULE_COMMON_FUNCTION,
   RULE_FUNCTION,
   RULE_FUNCTION_NAME,
@@ -17,11 +18,13 @@ import {
   RULE_SIMPLE_CALL,
   RULE_SPAWN,
   RULE_STATEMENT,
+  RULE_TEST_TIME_TAGGED_STATEMENT,
   RULE_TEXT_FILE,
   RULE_TIME_TAGGED_STATEMENT,
   RULE_TIME_TAGGED_STATEMENTS,
   RULE_VM_MANAGEMENT,
   TOKEN_ERROR,
+  TOKEN_TIME_CONST,
 } from './vmlConstants';
 
 // In versions of VML prior to 2.1, explicit time tags were required on every statement
@@ -440,6 +443,33 @@ END_MODULE
   });
 });
 
+describe('standalone statements', () => {
+  const timeTaggedConfig = { top: RULE_TEST_TIME_TAGGED_STATEMENT };
+  const timeTaggedParser = VmlLanguage.parser.configure(timeTaggedConfig);
+
+  it('spacecraft command with assignment', () => {
+    const input = `R00:00:01.00 END_TIME := spacecraft_time()\n`;
+    const tree = timeTaggedParser.parse(input);
+    const timeTaggedNode = tree.topNode.firstChild;
+    expect(timeTaggedNode?.firstChild?.name).toBe(TOKEN_TIME_CONST);
+    expect(timeTaggedNode?.firstChild?.nextSibling?.firstChild?.name).toBe(RULE_ASSIGNMENT);
+    expect(`${tree}`.includes(TOKEN_ERROR)).toBeFalsy();
+  });
+
+  it('issue with argument byte_array', () => {
+    const input = `R00:00:01.00 ISSUE FSW_VX_CMD (0x0, 0x0, 0x0)\n`;
+    const tree = timeTaggedParser.parse(input);
+    const timeTaggedNode = tree.topNode.firstChild;
+    expect(timeTaggedNode?.name).toBe(RULE_TIME_TAGGED_STATEMENT);
+    expect(timeTaggedNode?.firstChild?.nextSibling?.name).toBe(RULE_STATEMENT);
+    const statementNode = timeTaggedNode?.firstChild?.nextSibling;
+    expect(statementNode?.firstChild?.firstChild?.nextSibling?.nextSibling?.firstChild?.firstChild?.name).toBe(
+      RULE_BYTE_ARRAY,
+    );
+    expect(`${tree}`.includes(TOKEN_ERROR)).toBeFalsy();
+  });
+});
+
 function printNodes(input: string): void {
   for (const node of filterNodes(VmlLanguage.parser.parse(input).cursor())) {
     printNode(input, node);
@@ -468,7 +498,8 @@ END_MODULE
 }
 
 export function assertNoErrorNodes(input: string, printPrefix?: boolean): void {
-  const cursor = VmlLanguage.parser.parse(input).cursor();
+  const parser = VmlLanguage.parser;
+  const cursor = parser.parse(input).cursor();
   do {
     const { node } = cursor;
     if (printPrefix) {

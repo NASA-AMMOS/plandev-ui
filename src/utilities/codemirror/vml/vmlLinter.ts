@@ -140,6 +140,7 @@ function validateArguments(
   functionNode: SyntaxNode,
   functionNameNode: SyntaxNode,
   docText: string,
+  // issue_dynamic puts the stem into the first argument
   parameterOffset: number,
 ): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];

@@ -33,6 +33,8 @@
 // https://github.com/lezer-parser/generator/blob/10a697a11ebdef98cd08a2c6ac2ef6619604385c/test/cases/ExternalSpecializer.txt#L9
 // https://github.com/lezer-parser/css/blob/692710b42f83961151eee4cf73b0ae18ebccffad/src/tokens.js#L35
 // https://github.com/lezer-parser/css/blob/692710b42f83961151eee4cf73b0ae18ebccffad/src/css.grammar#L147
+// https://github.jpl.nasa.gov/MPS/vml_2_1/blob/master/vml_2_1/vml_compiler_test/command_stream/long_sequence.vml
+// https://github.jpl.nasa.gov/MPS/vml/blob/master/vml_compiler/vml_compiler.y
 
 @skip { space | Comment }
 
@@ -113,14 +115,21 @@ Common_Function {
     BODY
     End_lines
     Time_tagged_statements {
-      Time_tagged_statement {
-        TIME_CONST
-        Statement
-      }*
+      Time_tagged_statement*
     }
     END_BODY
     End_lines
   }
+}
+
+Time_tagged_statement {
+  TIME_CONST
+  Statement
+}
+
+@top
+Test_Time_tagged_statement {
+  Time_tagged_statement
 }
 
 Statement {
@@ -156,6 +165,18 @@ Noop {
 
 Clear {
   CLEAR
+}
+
+Byte_array {
+  OPEN_PAREN
+  (
+    HEX_CONST
+    (
+      COMMA
+      HEX_CONST
+    )*
+  )?
+  CLOSE_PAREN
 }
 
 Issue {
@@ -352,6 +373,8 @@ Call_parameters {
 
 Call_parameter {
   Simple_expr
+  // Byte_Array has limited examples
+  | Byte_array
 }
 
 Simple_call {
@@ -396,17 +419,15 @@ Unop {
 }
 
 Built_in_function {
-  // Grammar shows 2 sets of paranthesis
-  (Zero_parm_built_in_function_name OPEN_PAREN CLOSE_PAREN)
+  // Grammar shows 2 set paranthesis for zero arg, one here, and one next level down
+  // (Zero_parm_built_in_function_name OPEN_PAREN CLOSE_PAREN)
+  Zero_parm_built_in_function_name
   | (Unary_parm_built_in_function_name OPEN_PAREN Compound_expr CLOSE_PAREN)
 }
 
 Zero_parm_built_in_function_name {
-  // Time is present in reference grammar, not example
-  // SPACECRAFT_TIME
-  // Odd to not have a name???
-  // name missing in reference grammar, present in sample
-  Function_name
+  // only function name in grammar
+  SPACECRAFT_TIME
   OPEN_PAREN CLOSE_PAREN
 }
 
