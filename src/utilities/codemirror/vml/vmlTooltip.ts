@@ -10,9 +10,11 @@ import type {
 import type { EditorView } from 'codemirror';
 import ArgumentTooltip from '../../../components/sequencing/ArgumentTooltip.svelte';
 import CommandTooltip from '../../../components/sequencing/CommandTooltip.svelte';
+import StringTooltip from '../../../components/sequencing/StringTooltip.svelte';
 import { getTokenPositionInLine } from '../../sequence-editor/sequence-tooltip';
 import { checkContainment, getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
 import {
+  RULE_BYTE_ARRAY,
   RULE_CALL_PARAMETER,
   RULE_CALL_PARAMETERS,
   RULE_CONSTANT,
@@ -95,9 +97,19 @@ export function vmlTooltip(commandDictionary: CommandDictionary | null): Extensi
                     callParameterNode.from === thisCallParameterNode.from,
                 );
 
-                const arg = command.arguments[argIndex];
-                if (arg) {
-                  return argTooptip(arg, commandDictionary, from, to);
+                const arrayNode = thisCallParameterNode.getChild(RULE_BYTE_ARRAY);
+                if (arrayNode) {
+                  const decodedValue = decodeInt32Array(view.state.sliceDoc(arrayNode.from, arrayNode.to));
+                  if (decodedValue) {
+                    return strTooltip(decodedValue, from, to);
+                  }
+                }
+
+                if (argIndex > -1) {
+                  const arg = command.arguments[argIndex];
+                  if (arg) {
+                    return argTooptip(arg, commandDictionary, from, to);
+                  }
                 }
               }
             }
@@ -110,6 +122,45 @@ export function vmlTooltip(commandDictionary: CommandDictionary | null): Extensi
 
     return null;
   });
+}
+
+const RE_ENCODED_STRING = /\s*\(?((?:\s*(?:0[xX][0-9a-fA-F]+|\d+)\s*)(?:,(?:\s*(?:0[xX][0-9a-fA-F]+|\d+)\s*))*)\)?\s*/;
+
+/**
+ * @param s - Comma separated values like (0xFF00AA11, 0x0)
+ */
+function decodeInt32Array(s: string) {
+  const encodedMatch = s.match(RE_ENCODED_STRING);
+  if (encodedMatch) {
+    return encodedMatch[1]
+      .split(',')
+      .map(token => token.trim().toLowerCase())
+      .map(num => {
+        if (num.startsWith('0x')) {
+          const n = Number(num);
+          return String.fromCharCode((n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff);
+        }
+        return '';
+      })
+      .join('');
+  }
+  return '';
+}
+
+function strTooltip(message: string, from: number, to: number) {
+  return {
+    above: true,
+    create() {
+      const dom = document.createElement('div');
+      new StringTooltip({
+        props: { message },
+        target: dom,
+      });
+      return { dom };
+    },
+    end: to,
+    pos: from,
+  };
 }
 
 function argTooptip(
