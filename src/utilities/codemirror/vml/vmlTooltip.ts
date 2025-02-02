@@ -24,6 +24,7 @@ import {
   RULE_STATEMENT,
   RULE_TIME_TAGGED_STATEMENT,
   RULE_VM_MANAGEMENT,
+  TOKEN_HEX_CONST,
   TOKEN_INT_CONST,
 } from './vmlConstants';
 
@@ -99,7 +100,10 @@ export function vmlTooltip(commandDictionary: CommandDictionary | null): Extensi
 
                 const arrayNode = thisCallParameterNode.getChild(RULE_BYTE_ARRAY);
                 if (arrayNode) {
-                  const decodedValue = decodeInt32Array(view.state.sliceDoc(arrayNode.from, arrayNode.to));
+                  const encodedValues = arrayNode
+                    .getChildren(TOKEN_HEX_CONST)
+                    .map(node => view.state.sliceDoc(node.from, node.to));
+                  const decodedValue = decodeInt32Array(encodedValues);
                   if (decodedValue) {
                     return strTooltip(decodedValue, from, to);
                   }
@@ -124,27 +128,13 @@ export function vmlTooltip(commandDictionary: CommandDictionary | null): Extensi
   });
 }
 
-const RE_ENCODED_STRING = /\s*\(?((?:\s*(?:0[xX][0-9a-fA-F]+|\d+)\s*)(?:,(?:\s*(?:0[xX][0-9a-fA-F]+|\d+)\s*))*)\)?\s*/;
-
-/**
- * @param s - Comma separated values like (0xFF00AA11, 0x0)
- */
-function decodeInt32Array(s: string) {
-  const encodedMatch = s.match(RE_ENCODED_STRING);
-  if (encodedMatch) {
-    return encodedMatch[1]
-      .split(',')
-      .map(token => token.trim().toLowerCase())
-      .map(num => {
-        if (num.startsWith('0x')) {
-          const n = Number(num);
-          return String.fromCharCode((n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff);
-        }
-        return '';
-      })
-      .join('');
-  }
-  return '';
+function decodeInt32Array(encoded: string[]) {
+  return encoded
+    .map(charAsHex => {
+      const n = Number(charAsHex);
+      return String.fromCodePoint((n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff);
+    })
+    .join('');
 }
 
 function strTooltip(message: string, from: number, to: number) {
@@ -152,12 +142,15 @@ function strTooltip(message: string, from: number, to: number) {
     above: true,
     create() {
       const dom = document.createElement('div');
-      return (
+      try {
         new StringTooltip({
           props: { message },
           target: dom,
-        }) && { dom }
-      );
+        });
+      } catch (error) {
+        // suppress
+      }
+      return { dom };
     },
     end: to,
     pos: from,

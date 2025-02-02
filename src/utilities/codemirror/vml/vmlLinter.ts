@@ -68,46 +68,62 @@ function validateCommands(
   do {
     const { node } = cursor;
     const tokenType = node.type.name;
-
-    const isDynamic = tokenType === RULE_ISSUE_DYNAMIC;
-    if (tokenType === RULE_ISSUE || isDynamic) {
-      const stemNameNode = isDynamic
-        ? node.getChild(RULE_CALL_PARAMETERS)?.getChild(RULE_CALL_PARAMETER)
-        : node.getChild(RULE_FUNCTION_NAME);
-      if (stemNameNode) {
-        const stemName = docText.slice(stemNameNode.from, stemNameNode.to);
-        const commandDef = commandDictionary.fswCommandMap[unquoteUnescape(stemName)];
-        if (!commandDef) {
-          const closestStem = closest(stemName, Object.keys(commandDictionary.fswCommandMap));
-          const alternativeStem = isDynamic ? quoteEscape(closestStem) : closestStem;
-          diagnostics.push(suggestAlternative(stemNameNode, stemName, 'command', alternativeStem));
-        } else {
-          diagnostics.push(
-            ...validateArguments(commandDictionary, commandDef, node, stemNameNode, docText, isDynamic ? 1 : 0),
-          );
-        }
-      }
+    if (tokenType === RULE_ISSUE || tokenType === RULE_ISSUE_DYNAMIC) {
+      diagnostics.push(...validateIssue(node, docText, commandDictionary, tokenType));
     } else if (tokenType === RULE_SPAWN) {
-      const spawnedNameNode = node.getChild(RULE_FUNCTION_NAME);
-      if (spawnedNameNode) {
-        const spawnedSeqName = docText.slice(spawnedNameNode.from, spawnedNameNode.to);
-        const seqDef = librarySequenceMap[spawnedSeqName];
-        if (!seqDef) {
-          diagnostics.push(
-            suggestAlternative(
-              spawnedNameNode,
-              spawnedSeqName,
-              'sequence or block',
-              closest(spawnedSeqName, Object.keys(librarySequenceMap)),
-            ),
-          );
-        } else {
-          // Check arguments
-        }
-      }
+      diagnostics.push(...validateSpawn(node, docText, librarySequenceMap));
     }
   } while (cursor.next());
   return diagnostics;
+}
+
+function validateIssue(
+  node: SyntaxNode,
+  docText: string,
+  commandDictionary: CommandDictionary,
+  tokenType: string,
+): Diagnostic[] {
+  const isDynamic = tokenType === RULE_ISSUE_DYNAMIC;
+  const stemNameNode = isDynamic
+    ? node.getChild(RULE_CALL_PARAMETERS)?.getChild(RULE_CALL_PARAMETER)
+    : node.getChild(RULE_FUNCTION_NAME);
+  if (stemNameNode) {
+    const stemName = docText.slice(stemNameNode.from, stemNameNode.to);
+    const commandDef = commandDictionary.fswCommandMap[unquoteUnescape(stemName)];
+    if (!commandDef) {
+      const closestStem = closest(stemName, Object.keys(commandDictionary.fswCommandMap));
+      const alternativeStem = isDynamic ? quoteEscape(closestStem) : closestStem;
+      return [suggestAlternative(stemNameNode, stemName, 'command', alternativeStem)];
+    } else {
+      return validateArguments(commandDictionary, commandDef, node, stemNameNode, docText, isDynamic ? 1 : 0);
+    }
+  }
+  return [];
+}
+
+function validateSpawn(
+  node: SyntaxNode,
+  docText: string,
+  librarySequenceMap: { [sequenceName: string]: LibrarySequence },
+): Diagnostic[] {
+  const spawnedNameNode = node.getChild(RULE_FUNCTION_NAME);
+  if (spawnedNameNode) {
+    const spawnedSeqName = docText.slice(spawnedNameNode.from, spawnedNameNode.to);
+    const seqDef = librarySequenceMap[spawnedSeqName];
+    if (!seqDef) {
+      return [
+        suggestAlternative(
+          spawnedNameNode,
+          spawnedSeqName,
+          'sequence or block',
+          closest(spawnedSeqName, Object.keys(librarySequenceMap)),
+        ),
+      ];
+    } else {
+      // Check arguments
+    }
+  }
+  return [];
 }
 
 function suggestAlternative(node: SyntaxNode, current: string, typeLabel: string, alternative: string): Diagnostic {

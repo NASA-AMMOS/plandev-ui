@@ -167,6 +167,7 @@ Clear {
   CLEAR
 }
 
+// Byte_Array has limited examples
 Byte_array {
   OPEN_PAREN
   (
@@ -373,7 +374,6 @@ Call_parameters {
 
 Call_parameter {
   Simple_expr
-  // Byte_Array has limited examples
   | Byte_array
 }
 
