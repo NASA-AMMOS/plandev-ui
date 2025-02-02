@@ -18,6 +18,7 @@
   import AddMissingArgsButton from './AddMissingArgsButton.svelte';
   import ArgTitle from './ArgTitle.svelte';
   import BooleanEditor from './BooleanEditor.svelte';
+  import ByteArrayEditor from './ByteArrayEditor.svelte';
   import EnumEditor from './EnumEditor.svelte';
   import ExtraArgumentEditor from './ExtraArgumentEditor.svelte';
   import NumEditor from './NumEditor.svelte';
@@ -92,7 +93,9 @@
         }}
       />
     {/if}
-    {#if isSymbol && isFswCommandArgumentEnum(argDef)}
+    {#if commandInfoMapper.isByteArrayArg(argInfo.node ?? null)}
+      <ByteArrayEditor value={argInfo.text ?? ''} {argDef} />
+    {:else if isSymbol && isFswCommandArgumentEnum(argDef)}
       <div class="st-typography-small-caps">Reference</div>
       <EnumEditor
         {argDef}

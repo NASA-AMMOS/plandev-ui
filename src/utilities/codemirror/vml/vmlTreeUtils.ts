@@ -6,6 +6,7 @@ import type { CommandInfoMapper } from '../commandInfoMapper';
 import { getDefaultArgumentValue } from './vmlAdaptation';
 import {
   GROUP_STATEMENT_SUB,
+  RULE_BYTE_ARRAY,
   RULE_CALL_PARAMETER,
   RULE_CALL_PARAMETERS,
   RULE_COMMON_FUNCTION,
@@ -149,6 +150,10 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
       return !!variableNameNode && variableNameNode.from === argNode.from && variableNameNode.to === argNode.to;
     }
     return false;
+  }
+
+  isByteArrayArg(argNode: SyntaxNode | null): boolean {
+    return !!argNode?.getChild(RULE_BYTE_ARRAY);
   }
 
   nodeTypeEnumCompatible(node: SyntaxNode | null): boolean {

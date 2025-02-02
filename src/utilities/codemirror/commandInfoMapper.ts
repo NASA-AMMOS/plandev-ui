@@ -34,6 +34,8 @@ export interface CommandInfoMapper {
   /** is argument node a variable, false implies literal */
   isArgumentNodeOfVariableType(argNode: SyntaxNode | null): boolean;
 
+  isByteArrayArg(argNode: SyntaxNode | null): boolean;
+
   /** checks if select list should be used */
   nodeTypeEnumCompatible(node: SyntaxNode | null): boolean;
 

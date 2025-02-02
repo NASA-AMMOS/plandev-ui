@@ -111,6 +111,10 @@ export class SeqNCommandInfoMapper implements CommandInfoMapper {
     return argNode?.name === 'Enum';
   }
 
+  isByteArrayArg(): boolean {
+    return false;
+  }
+
   nodeTypeEnumCompatible(node: SyntaxNode | null): boolean {
     return node?.name === TOKEN_STRING;
   }
