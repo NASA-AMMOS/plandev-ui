@@ -152,11 +152,12 @@ function strTooltip(message: string, from: number, to: number) {
     above: true,
     create() {
       const dom = document.createElement('div');
-      new StringTooltip({
-        props: { message },
-        target: dom,
-      });
-      return { dom };
+      return (
+        new StringTooltip({
+          props: { message },
+          target: dom,
+        }) && { dom }
+      );
     },
     end: to,
     pos: from,
