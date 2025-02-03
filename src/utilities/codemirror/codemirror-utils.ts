@@ -120,10 +120,10 @@ export function getDefaultVariableArgs(parameters: VariableDeclaration[]): strin
         return parameter.allowable_values && parameter.allowable_values.length > 0
           ? `"${parameter.allowable_values[0]}"`
           : parameter.enum_name
-            ? `${parameter.enum_name}`
+            ? `"${parameter.enum_name}"`
             : 'UNKNOWN';
       default:
-        throw Error(`unknown argument type ${parameter.type}`);
+        return `ERROR:"${parameter.name}"`;
     }
   }) as string[];
 }

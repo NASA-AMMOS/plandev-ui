@@ -475,7 +475,15 @@ export function generateSatfVariables(
       return (
         `\t${variable.name}` +
         `(\n\t\tTYPE,${variable.type}${variable.enum_name ? `\n\tENUM,${variable.enum_name}` : ''}` +
-        `${variable.allowable_ranges ? `\n\t\tRANGES,${variable.allowable_ranges}` : ''}` +
+        `${
+          variable.allowable_ranges
+            ? variable.allowable_ranges
+                .map(range => {
+                  return `\n\t\tRANGES,\\${range.min}...${range.max}\\`;
+                })
+                .join(',')
+            : ''
+        }` +
         `${variable.allowable_values ? `\n\t\tVALUES,${variable.allowable_values}` : ''}` +
         `${variable.sc_name ? `\n\t\tSC_NAME,${variable.sc_name}` : ''}\n\t)`
       );
@@ -881,7 +889,7 @@ function parseModel(modelNode: SyntaxNode | null, text: string): string {
       if (!keyNode || !valueNode) {
         return null;
       }
-      return `@MODEL(${text.slice(keyNode.from, keyNode.to)},${text.slice(valueNode.from, valueNode.to)},"00:00:00")`;
+      return `@MODEL "${text.slice(keyNode.from, keyNode.to)}" ${text.slice(valueNode.from, valueNode.to)} "00:00:00"`;
     })
     .filter(model => model !== null)
     .join('\n');

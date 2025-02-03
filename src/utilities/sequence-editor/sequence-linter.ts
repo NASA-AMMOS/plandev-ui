@@ -567,16 +567,24 @@ function validateActivateLoad(
               } else {
                 value = parseInt(num);
               }
-              parameter.allowable_ranges?.forEach(range => {
-                if (value < range.min || value > range.max) {
+
+              if (parameter.allowable_ranges) {
+                const invalidRanges = parameter.allowable_ranges.filter(range => {
+                  return value < range.min || value > range.max;
+                });
+                if (invalidRanges.length === parameter.allowable_ranges.length) {
                   diagnostics.push({
                     from: arg.from,
-                    message: `Value must be between ${range.min} and ${range.max}`,
+                    message: `Value must be between ${parameter.allowable_ranges
+                      .map(range => {
+                        return `[${range.min} and ${range.max}]`;
+                      })
+                      .join(' or ')}`,
                     severity: 'error',
                     to: arg.to,
                   });
                 }
-              });
+              }
 
               if (parameter.type === 'UINT') {
                 if (value < 0) {

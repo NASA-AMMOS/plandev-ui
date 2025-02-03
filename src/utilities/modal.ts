@@ -12,6 +12,7 @@ import DeleteExternalEventSourceTypeModal from '../components/modals/DeleteExter
 import DeleteExternalSourceModal from '../components/modals/DeleteExternalSourceModal.svelte';
 import EditViewModal from '../components/modals/EditViewModal.svelte';
 import ExpansionSequenceModal from '../components/modals/ExpansionSequenceModal.svelte';
+import LibrarySequenceModal from '../components/modals/LibrarySequenceModal.svelte';
 import ManageGroupsAndTypesModal from '../components/modals/ManageGroupsAndTypesModal.svelte';
 import ManagePlanConstraintsModal from '../components/modals/ManagePlanConstraintsModal.svelte';
 import ManagePlanDerivationGroupsModal from '../components/modals/ManagePlanDerivationGroupsModal.svelte';
@@ -547,6 +548,39 @@ export async function showWorkspaceModal(
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
+          workspaceModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+export async function showLibrarySequenceModel(): Promise<ModalElementValue<{ libraryFile: File; parcel: number }>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const workspaceModal = new LibrarySequenceModal({
+          target,
+        });
+        target.resolve = resolve;
+
+        workspaceModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          workspaceModal.$destroy();
+        });
+
+        workspaceModal.$on('save', (e: CustomEvent<{ library: FileList; parcel: number }>) => {
+          const library = e.detail.library[0];
+          const parcel = e.detail.parcel;
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: { libraryFile: library, parcel } });
           workspaceModal.$destroy();
         });
       }
