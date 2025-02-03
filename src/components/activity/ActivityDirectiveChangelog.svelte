@@ -194,7 +194,7 @@
 
     // Get effective arguments for all revisions by coalescing defaults with args supplied in revision
     const defaultArguments = $activityArgumentDefaultsMap[activityType?.name || ''] ?? null;
-    defaultArguments.effectiveRevisionArguments = activityRevisions.map(revision => {
+    effectiveRevisionArguments = activityRevisions.map(revision => {
       return {
         ...defaultArguments?.arguments,
         ...revision.arguments,
