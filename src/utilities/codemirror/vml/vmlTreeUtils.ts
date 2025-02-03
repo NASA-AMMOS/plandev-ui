@@ -17,6 +17,7 @@ import {
   RULE_ISSUE,
   RULE_ISSUE_DYNAMIC,
   RULE_SIMPLE_EXPR,
+  RULE_SPAWN,
   RULE_STATEMENT,
   RULE_TIME_TAGGED_STATEMENT,
   RULE_VARIABLE_DECLARATION_TYPE,
@@ -57,7 +58,20 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
   }
 
   getArgumentNodeContainer(commandNode: SyntaxNode | null): SyntaxNode | null {
-    return commandNode?.getChild(RULE_STATEMENT)?.firstChild?.getChild(RULE_CALL_PARAMETERS) ?? null;
+    const statementNode = commandNode?.getChild(RULE_STATEMENT);
+    if (statementNode) {
+      const vmManagementNode = statementNode.getChild(RULE_VM_MANAGEMENT);
+      if (vmManagementNode) {
+        const spawnNode = vmManagementNode.getChild(RULE_SPAWN);
+        if (spawnNode) {
+          return spawnNode.getChild(RULE_CALL_PARAMETERS);
+        }
+      }
+
+      // ISSUE and ISSUE_DYNAMIC
+      return statementNode.firstChild?.getChild(RULE_CALL_PARAMETERS) ?? null;
+    }
+    return null;
   }
 
   getArgumentsFromContainer(containerNode: SyntaxNode): SyntaxNode[] {
@@ -112,11 +126,16 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
               ?.getChild(TOKEN_STRING_CONST) ?? null
           );
         case RULE_VM_MANAGEMENT:
+          {
+            const spawnNode = statementSubNode.getChild(RULE_SPAWN);
+            if (spawnNode) {
+              return spawnNode.getChild(RULE_FUNCTION_NAME);
+            }
+          }
           break;
       }
     }
 
-    // once block library is implemented allow spawn here too
     return null;
   }
 

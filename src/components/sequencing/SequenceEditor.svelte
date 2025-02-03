@@ -64,6 +64,7 @@
     vmlHighlightBlock,
   } from '../../utilities/codemirror/vml/vml';
   import { parseFunctionSignatures, vmlAutoComplete } from '../../utilities/codemirror/vml/vmlAdaptation';
+  import { librarySequenceToFswCommand } from '../../utilities/codemirror/vml/vmlBlockLibrary';
   import { vmlFormat } from '../../utilities/codemirror/vml/vmlFormatter';
   import { vmlLinter } from '../../utilities/codemirror/vml/vmlLinter';
   import { vmlTooltip } from '../../utilities/codemirror/vml/vmlTooltip';
@@ -113,6 +114,7 @@
   let commandDictionary: CommandDictionary | null;
   let disableCopyAndExport: boolean = true;
   let parameterDictionaries: ParameterDictionary[] = [];
+  let librarySequenceMap: { [sequenceName: string]: LibrarySequence } = {};
   let librarySequences: LibrarySequence[] = [];
   let commandFormBuilderGrid: string;
   let editorOutputDiv: HTMLDivElement;
@@ -205,10 +207,13 @@
             name: sequence.name,
             parameters: parseVariables(tree.topNode, sequence.definition, 'ParameterDeclaration') ?? [],
             tree,
+            type: 'librarySequence',
             workspace_id: sequence.workspace_id,
           };
         });
     }
+
+    librarySequenceMap = Object.fromEntries(librarySequences.map(seq => [seq.name, seq]));
 
     if (unparsedCommandDictionary) {
       if (sequenceName && isInVmlMode) {
@@ -220,7 +225,7 @@
             ),
           });
           editorSequenceView.dispatch({
-            effects: compartmentSeqLinter.reconfigure(vmlLinter(commandDictionary, librarySequences)),
+            effects: compartmentSeqLinter.reconfigure(vmlLinter(commandDictionary, librarySequenceMap)),
           });
           editorSequenceView.dispatch({
             effects: compartmentSeqTooltip.reconfigure(vmlTooltip(commandDictionary)),
@@ -298,7 +303,7 @@
   $: commandNameNode = commandInfoMapper.getNameNode(commandNode);
   $: commandName =
     commandNameNode && unquoteUnescape(editorSequenceView.state.sliceDoc(commandNameNode.from, commandNameNode.to));
-  $: commandDef = getCommandDef(commandDictionary, commandName ?? '');
+  $: commandDef = getCommandDef(commandDictionary, librarySequenceMap, commandName ?? '');
   $: timeTagNode = getTimeTagInfo(editorSequenceView, commandNode);
   $: argInfoArray = getArgumentInfo(
     commandInfoMapper,
@@ -505,8 +510,21 @@
     );
   }
 
-  function getCommandDef(commandDictionary: CommandDictionary | null, stemName: string): FswCommand | null {
-    return commandDictionary?.fswCommandMap[stemName] ?? null;
+  function getCommandDef(
+    commandDictionary: CommandDictionary | null,
+    librarySequenceMap: { [sequenceName: string]: LibrarySequence },
+    stemName: string,
+  ): FswCommand | null {
+    const commandDefFromCommandDictionary = commandDictionary?.fswCommandMap[stemName];
+    if (commandDefFromCommandDictionary) {
+      return commandDefFromCommandDictionary;
+    }
+
+    const librarySeqDef = librarySequenceMap[stemName];
+    if (librarySeqDef) {
+      return librarySequenceToFswCommand(librarySeqDef);
+    }
+    return null;
   }
 
   function getVariablesInScope(

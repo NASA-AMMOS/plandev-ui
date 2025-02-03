@@ -155,8 +155,13 @@ export type LibrarySequence = {
   name: string;
   parameters: VariableDeclaration[];
   tree: Tree;
+  type: 'librarySequence';
   workspace_id: number;
 };
+
+export function isLibrarySequence(obj: unknown): obj is LibrarySequence {
+  return !!obj && (obj as LibrarySequence).type === 'librarySequence';
+}
 
 export type UserSequenceInsertInput = Omit<UserSequence, 'created_at' | 'id' | 'owner' | 'updated_at'>;
 

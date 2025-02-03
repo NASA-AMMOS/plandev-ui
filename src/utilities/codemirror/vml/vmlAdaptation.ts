@@ -181,6 +181,7 @@ export function parseFunctionSignatures(contents: string, workspace_id: number):
       };
     }),
     tree: VmlLanguage.parser.parse(contents),
+    type: 'librarySequence',
     workspace_id,
   }));
 }

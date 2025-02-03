@@ -4,10 +4,17 @@ import type {
   Enum,
   FswCommand,
   FswCommandArgument,
+  FswCommandArgumentEnum,
+  FswCommandArgumentFloat,
+  FswCommandArgumentInteger,
+  FswCommandArgumentUnsigned,
+  FswCommandArgumentVarString,
   Header,
   HwCommand,
   NumericRange,
 } from '@nasa-jpl/aerie-ampcs';
+import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
+import type { LibrarySequence } from '../../../types/sequencing';
 import { filterEmpty } from '../../generic';
 import { VmlLanguage } from './vml';
 import {
@@ -249,4 +256,68 @@ function parameterNodeToDescription(parameterNode: SyntaxNode, vml: string): str
   const ioType = isInputOutputParameter ? '[INPUT_OUTPUT] ' : '[INPUT] ';
   const commentNode = parameterNode.firstChild?.getChild(RULE_COMMENT);
   return commentNode ? ioType + vml.slice(commentNode.from, commentNode.to).slice(1).trim() : '';
+}
+
+function variableToParam(
+  variable: VariableDeclaration,
+):
+  | FswCommandArgumentEnum
+  | FswCommandArgumentFloat
+  | FswCommandArgumentInteger
+  | FswCommandArgumentVarString
+  | FswCommandArgumentUnsigned {
+  const bit_length = null;
+  const default_value = null;
+  const description = '';
+  const name = variable.name;
+  const range = null;
+  const units = '';
+  switch (variable.type) {
+    case 'ENUM':
+      return {
+        arg_type: 'enum',
+        bit_length,
+        default_value,
+        description,
+        enum_name: name,
+        name,
+        range,
+      };
+    case 'STRING':
+      return {
+        arg_type: 'var_string',
+        default_value,
+        description,
+        max_bit_length: null,
+        name,
+        prefix_bit_length: null,
+        valid_regex: null,
+      };
+    case 'INT':
+    case 'UINT':
+    case 'FLOAT':
+      return {
+        arg_type: { FLOAT: 'float', INT: 'integer', UINT: 'unsigned' }[variable.type] as
+          | 'float'
+          | 'integer'
+          | 'unsigned',
+        bit_length,
+        default_value,
+        description,
+        name,
+        range,
+        units,
+      };
+  }
+}
+
+export function librarySequenceToFswCommand(librarySequence: LibrarySequence): FswCommand {
+  const cndArguments: FswCommandArgument[] = librarySequence.parameters.map(variable => variableToParam(variable));
+  return {
+    argumentMap: {},
+    arguments: cndArguments,
+    description: 'library sequence',
+    stem: librarySequence.name,
+    type: 'fsw_command',
+  };
 }

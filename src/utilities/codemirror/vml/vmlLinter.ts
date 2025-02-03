@@ -38,7 +38,7 @@ const MAX_PARSER_ERRORS = 100;
 
 export function vmlLinter(
   commandDictionary: CommandDictionary | null = null,
-  librarySequences: LibrarySequence[] = [],
+  librarySequenceMap: { [sequenceName: string]: LibrarySequence } = {},
 ): Extension {
   return linter(view => {
     const diagnostics: Diagnostic[] = [];
@@ -50,7 +50,6 @@ export function vmlLinter(
     }
 
     const parsed = VmlLanguage.parser.parse(sequence);
-    const librarySequenceMap = Object.fromEntries(librarySequences.map(seq => [seq.name, seq]));
     diagnostics.push(...validateCommands(commandDictionary, librarySequenceMap, sequence, parsed));
 
     return diagnostics;
