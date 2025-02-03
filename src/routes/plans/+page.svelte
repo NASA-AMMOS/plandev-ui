@@ -779,7 +779,7 @@
             <AlertError class="m-2" error={$createPlanError} />
 
             <fieldset class="plan-import-container" hidden={!isPlanImportMode}>
-              <button class="close-import" type="button" on:click={hideImportPlan}>
+              <button class="close-import" type="button" on:click={hideImportPlan} aria-label="close import">
                 <CloseIcon />
               </button>
               <label for="file">Plan File (JSON)</label>
@@ -788,6 +788,7 @@
                   class="w-100"
                   name="file"
                   type="file"
+                  aria-label="file"
                   accept="application/json"
                   bind:files={planUploadFiles}
                   bind:this={planUploadFileInput}
@@ -809,6 +810,7 @@
                 class="st-select w-100"
                 data-type="number"
                 name="model"
+                aria-label="select model"
                 use:permissionHandler={{
                   hasPermission: canCreate,
                   permissionError,
@@ -885,6 +887,8 @@
             <fieldset>
               <label for="plan-duration">Plan Duration</label>
               <input class="st-input w-100" disabled id="plan-duration" name="duration" value={durationString} />
+
+              <!-- <input class="st-input w-100" disabled id="plan-duration" name="duration" value={durationString} /> -->
             </fieldset>
 
             <Field field={simTemplateField}>
@@ -955,7 +959,13 @@
             <PlanIcon slot="icon" />
             Plans
           </SectionTitle>
-          <input bind:value={filterText} class="st-input" placeholder="Filter plans" style="width: 300px" />
+          <input
+            bind:value={filterText}
+            class="st-input"
+            placeholder="Filter plans"
+            aria-label="Filter plans"
+            style="width: 300px"
+          />
         </div>
       </svelte:fragment>
 

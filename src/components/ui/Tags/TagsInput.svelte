@@ -248,6 +248,7 @@
           placeholder={disabled ? '' : placeholder}
           autocomplete="off"
           class="st-input"
+          aria-label={disabled ? '' : placeholder}
           style:min-width={`${minWidth}px`}
           on:mouseup={openSuggestions}
           on:focus={openSuggestions}

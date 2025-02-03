@@ -34,9 +34,11 @@
 
   onMount(() => {
     input = container.querySelector('input');
+
     if (input) {
       inputObserver = new MutationObserver(inputObserverCallback);
       inputObserver.observe(input, { attributes: true });
+      input.setAttribute('aria-label', 'input');
     }
 
     containerObserver = new MutationObserver(containerObserverCallback);
