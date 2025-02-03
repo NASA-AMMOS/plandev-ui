@@ -149,7 +149,9 @@
       name="search"
       autocomplete="off"
       placeholder="Filter {typeName} types"
+      aria-label="Filter {typeName} types"
     />
+
     <div class="filter-buttons">
       <button
         class="st-button secondary menu-button"
