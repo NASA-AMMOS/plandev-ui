@@ -93,8 +93,8 @@
         }}
       />
     {/if}
-    {#if commandInfoMapper.isByteArrayArg(argInfo.node ?? null)}
-      <ByteArrayEditor value={argInfo.text ?? ''} {argDef} />
+    {#if argInfo.node && commandInfoMapper.isByteArrayArg(argInfo.node)}
+      <ByteArrayEditor value={argInfo.text ?? ''} argNode={argInfo.node} {commandInfoMapper} />
     {:else if isSymbol && isFswCommandArgumentEnum(argDef)}
       <div class="st-typography-small-caps">Reference</div>
       <EnumEditor

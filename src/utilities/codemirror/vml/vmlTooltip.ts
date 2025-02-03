@@ -27,6 +27,7 @@ import {
   TOKEN_HEX_CONST,
   TOKEN_INT_CONST,
 } from './vmlConstants';
+import { decodeInt32Array } from './vmlTreeUtils';
 
 const sequenceEngineArgument: FswCommandArgumentInteger = {
   arg_type: 'integer',
@@ -126,15 +127,6 @@ export function vmlTooltip(commandDictionary: CommandDictionary | null): Extensi
 
     return null;
   });
-}
-
-function decodeInt32Array(encoded: string[]) {
-  return encoded
-    .map(charAsHex => {
-      const n = Number(charAsHex);
-      return String.fromCodePoint((n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff);
-    })
-    .join('');
 }
 
 function strTooltip(message: string, from: number, to: number) {

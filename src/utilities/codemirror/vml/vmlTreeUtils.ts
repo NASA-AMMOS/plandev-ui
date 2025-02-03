@@ -25,6 +25,7 @@ import {
   RULE_VARIABLE_NAME_CONSTANT,
   RULE_VM_MANAGEMENT,
   TOKEN_COMMA,
+  TOKEN_HEX_CONST,
   TOKEN_INT_CONST,
   TOKEN_STRING_CONST,
 } from './vmlConstants';
@@ -74,6 +75,14 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
       return callParameterNodes;
     }
     return [];
+  }
+
+  getByteArrayElements(node: SyntaxNode | null, arrayText: string): string[] | null {
+    const hexConsts: SyntaxNode[] | undefined = node?.getChild(RULE_BYTE_ARRAY)?.getChildren(TOKEN_HEX_CONST);
+    if (!node || !hexConsts) {
+      return null;
+    }
+    return hexConsts.map(hexNode => arrayText.slice(hexNode.from - node.from, hexNode.to - node.to));
   }
 
   getContainingCommand(node: SyntaxNode | null): SyntaxNode | null {
@@ -176,4 +185,13 @@ export function getArgumentPosition(argNode: SyntaxNode): number {
       ?.getChildren(RULE_CALL_PARAMETER)
       ?.findIndex(par => par.from === argNode.from && par.to === argNode.to) ?? -1
   );
+}
+
+export function decodeInt32Array(encoded: string[]) {
+  return encoded
+    .map(charAsHex => {
+      const n = Number(charAsHex);
+      return String.fromCodePoint((n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff);
+    })
+    .join('');
 }

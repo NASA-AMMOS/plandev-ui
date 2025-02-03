@@ -14,6 +14,8 @@ export interface CommandInfoMapper {
   /** collects argument nodes from sub-tree of this command argument container */
   getArgumentsFromContainer(containerNode: SyntaxNode): SyntaxNode[];
 
+  getByteArrayElements?(node: SyntaxNode | null, arrayText: string): string[] | null;
+
   /** ascends parse tree to find scope to display in form editor */
   getContainingCommand(node: SyntaxNode | null): SyntaxNode | null;
 
