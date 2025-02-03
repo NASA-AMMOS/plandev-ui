@@ -21,7 +21,7 @@
     placement: Placement;
   };
 
-  export let cancellable: boolean = true;
+  export let isDownloadCancellable: boolean = true;
   export let editButtonClass: string | undefined = undefined;
   export let editTooltip: Tooltip | undefined = undefined;
   export let deleteButtonClass: string | undefined = undefined;
@@ -69,7 +69,7 @@
   }
 
   function onCancelDownload() {
-    if (cancellable) {
+    if (isDownloadCancellable) {
       downloadAbortController?.abort();
       downloadAbortController = null;
       downloadProgress = null;
@@ -120,9 +120,9 @@
       class:icon={true}
       class={downloadButtonClass}
       on:click|stopPropagation={onCancelDownload}
-      use:tooltip={{ ...downloadTooltip, content: cancellable ? `Cancel ${downloadTooltip?.content}` : '' }}
+      use:tooltip={{ ...downloadTooltip, content: isDownloadCancellable ? `Cancel ${downloadTooltip?.content}` : '' }}
     >
-      {#if cancellable}
+      {#if isDownloadCancellable}
         <CancellableProgressRadial progress={downloadProgress} />
       {:else}
         <ProgressRadial progress={downloadProgress} strokeWidth={1} />

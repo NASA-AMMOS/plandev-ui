@@ -298,7 +298,6 @@
           actionsDiv.className = 'actions-cell';
           new DataGridActions({
             props: {
-              cancellable: false,
               deleteCallback: params.deletePlan,
               deleteTooltip: {
                 content: 'Delete Plan',
@@ -309,6 +308,7 @@
                 content: 'Export Plan',
                 placement: 'bottom',
               },
+              isDownloadCancellable: true,
               useExportIcon: true,
               hasDeletePermission: params.data && user ? featurePermissions.plan.canDelete(user, params.data) : false,
               rowData: params.data,
