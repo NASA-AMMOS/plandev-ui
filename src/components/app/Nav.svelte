@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { Button, Command, Select } from '@nasa-jpl/stellar-svelte';
+  import { Button, Command, Select, ThemeSwitcherButton } from '@nasa-jpl/stellar-svelte';
+  import { Expand, Goal, Scale, SquarePlay } from 'lucide-svelte';
+  import { onMount } from 'svelte';
   import AppMenu from '../../components/menus/AppMenu.svelte';
-
   import type { User, UserRole } from '../../types/app';
-  import { getTarget } from '../../utilities/generic';
   import { changeUserRole } from '../../utilities/permissions';
 
   export let user: User | null;
@@ -12,14 +12,24 @@
 
   $: userRoles = user?.allowedRoles ?? [];
 
-  async function changeRole(event: Event) {
-    console.log('CHANGR ROLE', event);
-    const { value } = getTarget(event);
-    if (value) {
-      await changeUserRole(value as string);
-      window.location.reload();
-    }
+  async function changeRole(value: string) {
+    await changeUserRole(value as string);
+    window.location.reload();
   }
+  let open = false;
+  onMount(() => {
+    function handleKeydown(e: KeyboardEvent) {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        open = !open;
+      }
+    }
+
+    document.addEventListener('keydown', handleKeydown);
+    return () => {
+      document.removeEventListener('keydown', handleKeydown);
+    };
+  });
 </script>
 
 <div class="nav">
@@ -31,31 +41,44 @@
     </div>
     <slot name="left" />
   </div>
-  <script lang="ts">
-    import * as Command from '$lib/components/ui/command';
-  </script>
-  <Command.Root>
+
+  <Command.Dialog bind:open>
     <Command.Input placeholder="Type a command or search..." />
     <Command.List>
       <Command.Empty>No results found.</Command.Empty>
       <Command.Group heading="Suggestions">
-        <Command.Item>Calendar</Command.Item>
-        <Command.Item>Search Emoji</Command.Item>
-        <Command.Item>Calculator</Command.Item>
+        <Command.Item><Expand class="mr-2 h-1 w-1" /> <span>Expansion: Expand Activities</span></Command.Item>
+        <Command.Item><Scale class="mr-2 h-1 w-1" /> <span>Constraints: Check Constraints</span></Command.Item>
+        <Command.Item><Scale class="mr-2 h-1 w-1" /> <span>Constraints: Manage Constraints</span></Command.Item>
       </Command.Group>
       <Command.Separator />
+      <Command.Group heading="Simulation">
+        <Command.Item><SquarePlay class="mr-2 h-1 w-1" /> <span>Simulation: Run Simulation</span></Command.Item>
+      </Command.Group>
+      <Command.Group heading="Scheduling">
+        <Command.Item><Goal class="mr-2 h-1 w-1" /> <span>Scheduling: Run Scheduling</span></Command.Item>
+        <Command.Item><Goal class="mr-2 h-1 w-1" /> <span>Scheduling: Analyze Goal Satisfaction</span></Command.Item>
+      </Command.Group>
       <Command.Group heading="Settings">
-        <Command.Item>Profile</Command.Item>
-        <Command.Item>Billing</Command.Item>
-        <Command.Item>Settings</Command.Item>
+        <Command.Item>Logout</Command.Item>
+        <Command.Item>Switch Role</Command.Item>
       </Command.Group>
     </Command.List>
-  </Command.Root>
+  </Command.Dialog>
 
-  <Button variant="s"></Button>
-  <!-- <Avatar.Root>
-    <Avatar.Image srcssdf="sdfsdf" el />
-  </Avatar.Root> -->
+  <div class="text-secondary-foreground flex items-center gap-2 mr-2">
+    <p class="text-muted-foreground text-sm bg-secondary px-2 py-1 rounded">
+      Press
+      <kbd
+        class="bg-muted text-muted-foreground pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border px-1.5 font-mono text-[10px] font-medium opacity-100"
+      >
+        <span class="text-xs">⌘</span>K
+      </kbd>
+    </p>
+    <ThemeSwitcherButton />
+    <Button variant="secondary">Test</Button>
+  </div>
+
   <div class="right">
     <slot name="right" />
     {#if userRoles.length > 1}
@@ -64,9 +87,12 @@
           <option value={userRole}>{userRole}</option>
         {/each}
       </select> -->
-      <Select.Root value={user?.activeRole} onValueChange={changeRole}>
-        <Select.Trigger class="w-[180px]">
-          <Select.Value placeholder="Select a fruit" />
+      <Select.Root
+        selected={{ label: user?.activeRole ?? '', value: user?.activeRole ?? '' }}
+        onSelectedChange={v => v && changeRole(v.value)}
+      >
+        <Select.Trigger class="w-[180px]" value={user?.activeRole}>
+          <Select.Value placeholder="Select a fruit" class="text-secondary-foreground" />
         </Select.Trigger>
         <Select.Content>
           <Select.Group>
