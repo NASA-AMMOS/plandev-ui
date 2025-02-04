@@ -13,15 +13,16 @@
   let satisfyingActivities: ActivityDirective[] = [];
 
   $: analysis = analyses[0] || null;
-  $: satisfyingActivities = analysis
-    ? analysis.satisfying_activities.reduce((satisfyingActivities: ActivityDirective[], { activity_id }) => {
-        const activityDirective = $activityDirectivesMap[activity_id];
-        if (activityDirective) {
-          satisfyingActivities.push(activityDirective);
-        }
-        return satisfyingActivities;
-      }, [])
-    : [];
+  $: satisfyingActivities =
+    analysis && $activityDirectivesMap
+      ? analysis.satisfying_activities.reduce((satisfyingActivities: ActivityDirective[], { activity_id }) => {
+          const activityDirective = ($activityDirectivesMap || {})[activity_id];
+          if (activityDirective) {
+            satisfyingActivities.push(activityDirective);
+          }
+          return satisfyingActivities;
+        }, [])
+      : [];
   $: sortedSatisfyingActivities = satisfyingActivities.sort(sortActivityDirectivesOrSpans);
 </script>
 

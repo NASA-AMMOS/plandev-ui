@@ -18,6 +18,9 @@
     constraintVisibilityMap,
     constraintsMap,
     constraintsStatus,
+    initialConstraintPlanSpecsLoading,
+    initialConstraintRunsLoading,
+    initialConstraintsLoading,
     setAllConstraintsVisible,
     setConstraintVisibility,
   } from '../../stores/constraints';
@@ -42,6 +45,7 @@
   import { required } from '../../utilities/validators';
   import CollapsibleListControls from '../CollapsibleListControls.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
+  import Loading from '../Loading.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import DatePickerActionButton from '../ui/DatePicker/DatePickerActionButton.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -113,7 +117,7 @@
   $: filteredConstraintResponses = Object.values(constraintToConstraintResponseMap).filter(r =>
     filteredConstraints.find(c => c.constraint_id === r.constraintId),
   );
-  $: numOfPrivateConstraints = $constraintPlanSpecs.length - $allowedConstraintSpecs.length;
+  $: numOfPrivateConstraints = ($constraintPlanSpecs || []).length - $allowedConstraintSpecs.length;
 
   $: totalViolationCount = getViolationCount(Object.values($constraintResponseMap));
   $: filteredViolationCount = getViolationCount(Object.values(filteredConstraintResponses));
@@ -313,7 +317,11 @@
     </CollapsibleListControls>
 
     <div class="pt-2">
-      {#if !filteredConstraints.length}
+      {#if $initialConstraintsLoading || $initialConstraintPlanSpecsLoading || $initialConstraintRunsLoading}
+        <div class="p-1">
+          <Loading />
+        </div>
+      {:else if !filteredConstraints.length}
         <div class="pt-1 st-typography-label filter-label-row">
           <div class="filter-label">No constraints found</div>
           <div class="private-label">

@@ -40,6 +40,7 @@
   import { required, validateStartTime } from '../../utilities/validators';
   import Collapse from '../Collapse.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
+  import Loading from '../Loading.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import DatePickerActionButton from '../ui/DatePicker/DatePickerActionButton.svelte';
@@ -64,6 +65,7 @@
   let hasRunPermission: boolean = false;
   let hasUpdatePermission: boolean = false;
   let isFilteredBySnapshot: boolean = false;
+  let loadingArguments: boolean = true;
   let numOfUserChanges: number = 0;
   let startTime: string;
   let startTimeField: FieldStore<string>;
@@ -120,6 +122,7 @@
   $: if ($simulation && $plan) {
     // An empty object is provided in order to get only the default argument values to better distinguish overridden arguments
     effects.getEffectiveModelArguments($plan.model.id, {}, user).then(response => {
+      loadingArguments = false;
       if ($simulation !== null && response !== null) {
         const { arguments: defaultArguments } = response;
         // Displayed simulation arguments are either user input arguments,
@@ -156,11 +159,11 @@
   $: isFilteredBySnapshot = $planSnapshot !== null;
 
   $: if (isFilteredBySnapshot) {
-    filteredSimulationDatasets = $simulationDatasetsPlan.filter(
+    filteredSimulationDatasets = ($simulationDatasetsPlan || []).filter(
       simulationDataset => $planSnapshot === null || simulationDataset.plan_revision === $planSnapshot?.revision,
     );
   } else {
-    filteredSimulationDatasets = $simulationDatasetsPlan;
+    filteredSimulationDatasets = $simulationDatasetsPlan || [];
   }
 
   $: enableReSimulation =
@@ -425,36 +428,40 @@
 
     <fieldset>
       <Collapse title="Arguments">
-        <div class="simulation-template">
-          <SimulationTemplateInput
-            hasChanges={numOfUserChanges > 0}
-            selectedSimulationTemplate={$simulation?.template}
-            plan={$plan}
-            {user}
-            on:applyTemplate={onApplySimulationTemplate}
-            on:deleteTemplate={onDeleteSimulationTemplate}
-            on:saveNewTemplate={onSaveNewSimulationTemplate}
-            on:saveTemplate={onSaveSimulationTemplate}
-          />
-        </div>
-        {#if formParameters.length}
-          <Parameters
-            {formParameters}
-            parameterType="simulation"
-            use={[
-              [
-                permissionHandler,
-                {
-                  hasPermission: hasUpdatePermission,
-                  permissionError: $planReadOnly ? PlanStatusMessages.READ_ONLY : updatePermissionError,
-                },
-              ],
-            ]}
-            on:change={onChangeFormParameters}
-            on:reset={onResetFormParameters}
-          />
+        {#if loadingArguments}
+          <Loading />
         {:else}
-          <div class="p-1">No simulation arguments found</div>
+          <div class="simulation-template">
+            <SimulationTemplateInput
+              hasChanges={numOfUserChanges > 0}
+              selectedSimulationTemplate={$simulation?.template}
+              plan={$plan}
+              {user}
+              on:applyTemplate={onApplySimulationTemplate}
+              on:deleteTemplate={onDeleteSimulationTemplate}
+              on:saveNewTemplate={onSaveNewSimulationTemplate}
+              on:saveTemplate={onSaveSimulationTemplate}
+            />
+          </div>
+          {#if formParameters.length}
+            <Parameters
+              {formParameters}
+              parameterType="simulation"
+              use={[
+                [
+                  permissionHandler,
+                  {
+                    hasPermission: hasUpdatePermission,
+                    permissionError: $planReadOnly ? PlanStatusMessages.READ_ONLY : updatePermissionError,
+                  },
+                ],
+              ]}
+              on:change={onChangeFormParameters}
+              on:reset={onResetFormParameters}
+            />
+          {:else}
+            <div class="p-1">No simulation arguments found</div>
+          {/if}
         {/if}
       </Collapse>
     </fieldset>
@@ -473,14 +480,18 @@
           {/if}
         </svelte:fragment>
         <div class="simulation-history">
-          {#if !filteredSimulationDatasets || !filteredSimulationDatasets.length}
+          {#if !$simulationDatasetsPlan}
+            <div class="loading-wrapper">
+              <Loading />
+            </div>
+          {:else if !filteredSimulationDatasets || !filteredSimulationDatasets.length}
             <div>No Simulation Datasets</div>
           {:else}
             {#each filteredSimulationDatasets as simDataset (simDataset.id)}
               <SimulationHistoryDataset
                 {modelParametersMap}
                 {defaultSimulationArguments}
-                queuePosition={getSimulationQueuePosition(simDataset, $simulationDatasetsAll)}
+                queuePosition={getSimulationQueuePosition(simDataset, $simulationDatasetsAll || [])}
                 simulationDataset={simDataset}
                 planEndTimeMs={$planEndTimeMs}
                 planStartTimeMs={$planStartTimeMs}
@@ -505,10 +516,13 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    margin-top: 8px;
   }
 
   :global(.simulation-collapse.collapse .content) {
     margin: 0;
+  }
+
+  .loading-wrapper {
+    margin-left: 32px;
   }
 </style>

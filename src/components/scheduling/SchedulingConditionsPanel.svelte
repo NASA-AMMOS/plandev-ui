@@ -7,6 +7,7 @@
   import {
     allowedSchedulingConditionSpecs,
     schedulingConditionSpecifications,
+    schedulingConditionsLoading,
     schedulingConditionsMap,
   } from '../../stores/scheduling';
   import type { User } from '../../types/app';
@@ -16,6 +17,7 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions, isAdminRole } from '../../utilities/permissions';
   import CollapsibleListControls from '../CollapsibleListControls.svelte';
+  import Loading from '../Loading.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
   import SchedulingCondition from './conditions/SchedulingCondition.svelte';
@@ -30,7 +32,7 @@
   let visibleSchedulingConditionSpecs: SchedulingConditionPlanSpecification[] = [];
 
   // TODO: remove this after db merge as it becomes redundant
-  $: visibleSchedulingConditionSpecs = $allowedSchedulingConditionSpecs.filter(
+  $: visibleSchedulingConditionSpecs = ($allowedSchedulingConditionSpecs || []).filter(
     ({ condition_metadata: conditionMetadata }) => {
       if (conditionMetadata) {
         const { public: isPublic, owner } = conditionMetadata;
@@ -47,7 +49,8 @@
     const includesName = spec.condition_metadata?.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesName;
   });
-  $: numOfPrivateConditions = $schedulingConditionSpecifications.length - visibleSchedulingConditionSpecs.length;
+  $: numOfPrivateConditions =
+    ($schedulingConditionSpecifications || []).length - visibleSchedulingConditionSpecs.length;
 
   function onManageConditions() {
     effects.managePlanSchedulingConditions(user);
@@ -112,7 +115,11 @@
       </svelte:fragment>
     </CollapsibleListControls>
     <div class="pt-2">
-      {#if !filteredSchedulingConditionSpecs.length}
+      {#if $schedulingConditionsLoading}
+        <div class="pt-1">
+          <Loading />
+        </div>
+      {:else if !filteredSchedulingConditionSpecs.length}
         <div class="pt-1 st-typography-label">No scheduling conditions found</div>
         <div class="private-label">
           {#if numOfPrivateConditions > 0}

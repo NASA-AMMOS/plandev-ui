@@ -33,6 +33,7 @@
   export let minWidth: number = 82;
   export let name: string = '';
   export let placeholder: string = 'Enter a tag...';
+  export let showPlaceholderIfDisabled: boolean = false;
   export let selected: Tag[] = [];
   export let tagDisplayName: string = 'tag';
   export let suggestionsLimit: number = 8;
@@ -245,8 +246,8 @@
           {id}
           {name}
           {disabled}
-          placeholder={disabled ? '' : placeholder}
           autocomplete="off"
+          placeholder={disabled && !showPlaceholderIfDisabled ? '' : placeholder}
           class="st-input"
           style:min-width={`${minWidth}px`}
           on:mouseup={openSuggestions}

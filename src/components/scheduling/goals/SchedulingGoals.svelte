@@ -18,6 +18,7 @@
   import Panel from '../../ui/Panel.svelte';
   import SectionTitle from '../../ui/SectionTitle.svelte';
 
+  export let loading: boolean = false;
   export let schedulingGoals: SchedulingGoalMetadata[] = [];
   export let selectedGoal: SchedulingGoalMetadata | null | undefined = null;
   export let user: User | null;
@@ -85,7 +86,6 @@
       resizable: true,
       sortable: false,
       width: 220,
-      wrapText: true,
     },
   ];
 
@@ -206,9 +206,11 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    {#if filteredGoals.length}
+    {#if loading || filteredGoals.length}
       <SingleActionDataGrid
         {columnDefs}
+        {loading}
+        showLoadingSkeleton
         hasEdit={true}
         itemDisplayText="Goal"
         items={filteredGoals}

@@ -11,6 +11,7 @@
   import type { Model } from '../../types/model';
   import type { RadioButtonId } from '../../types/radio-buttons';
   import { permissionHandler } from '../../utilities/permissionHandler';
+  import Loading from '../Loading.svelte';
   import DefinitionEditor from '../ui/Association/DefinitionEditor.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -22,6 +23,7 @@
   export let hasCreatePermission: boolean = false;
   export let hasEditSpecPermission: boolean = false;
   export let hasModelChanged: boolean = false;
+  export let loading: boolean = false;
   export let metadataList: Pick<BaseMetadata, 'id' | 'name' | 'public' | 'versions'>[] = [];
   export let model: Model | null = null;
   export let selectedAssociation: Association = 'constraint';
@@ -181,6 +183,7 @@
         <ModelSpecification
           {hasCreatePermission}
           {hasEditSpecPermission}
+          {loading}
           {metadataList}
           metadataType={selectedAssociation}
           {selectedSpecification}
@@ -192,7 +195,11 @@
         />
       {:else}
         <div class="association-items-container">
-          {#if model !== null && selectedSpecificationsList.length > 0}
+          {#if loading}
+            <div class="message">
+              <Loading />
+            </div>
+          {:else if model !== null && selectedSpecificationsList.length > 0}
             <div class="private-label">
               {#if numOfPrivateMetadata > 0}
                 {numOfPrivateMetadata}
@@ -232,7 +239,7 @@
               {/if}
             {/each}
           {:else}
-            <div class="empty-associations">
+            <div class="message st-typography-body">
               No {selectedAssociationTitle.toLowerCase()}s associated with this model yet.
             </div>
           {/if}
@@ -307,7 +314,7 @@
     padding-bottom: 1rem;
   }
 
-  .empty-associations {
+  .message {
     padding: 0 1rem;
   }
 

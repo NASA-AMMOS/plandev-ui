@@ -1,5 +1,5 @@
 import { capitalize, isEqual } from 'lodash-es';
-import { derived, get, writable, type Writable } from 'svelte/store';
+import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActivityLayerFilterField } from '../enums/timeline';
 import type { ResourceType } from '../types/simulation';
 import type {
@@ -35,7 +35,7 @@ import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
 
-export const views = gqlSubscribable<ViewSlim[]>(gql.SUB_VIEWS, {}, [], null);
+export const views = gqlSubscribable<ViewSlim[] | null>(gql.SUB_VIEWS, {}, null, null);
 
 /* Writeable. */
 
@@ -47,7 +47,7 @@ export const selectedLayerId: Writable<number | null> = writable(null);
 
 export const selectedRowId: Writable<number | null> = writable(null);
 
-export const selectedTimelineId: Writable<number | null> = writable(null);
+export const selectedTimelineId: Writable<number | null> = writable(0);
 
 export const selectedYAxisId: Writable<number | null> = writable(null);
 
@@ -801,3 +801,5 @@ export function viewAddFilterItemsToRow(
 
   return returnRow;
 }
+/* Loading stores. */
+export const initialViewsLoading: Readable<boolean> = derived([views], ([$views]) => !$views);

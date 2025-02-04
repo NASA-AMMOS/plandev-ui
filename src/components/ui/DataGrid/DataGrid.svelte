@@ -58,6 +58,7 @@
   import type { DataGridRowDoubleClick, DataGridRowSelection, RowId, TRowData } from '../../../types/data-grid';
   import ContextMenu from '../../context-menu/ContextMenu.svelte';
   import ColumnResizeContextMenu from './column-menu/ColumnResizeContextMenu.svelte';
+  import DataGridSkeleton from './DataGridSkeleton.svelte';
 
   export function autoSizeColumns(keys: (string | Column)[], skipHeader?: boolean) {
     gridApi?.autoSizeColumns(keys, skipHeader);
@@ -99,15 +100,17 @@
   export let highlightOnSelection: boolean = true;
   export let doesExternalFilterPass: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
   export let idKey: keyof RowData = 'id';
+  export let loading: boolean = false;
   export let maintainColumnOrder: boolean | undefined = undefined;
   export let isExternalFilterPresent: ((params: IsExternalFilterPresentParams<RowData, any>) => boolean) | undefined =
     undefined;
   export let rowData: RowData[] = [];
-  export let rowHeight: number | undefined = undefined;
+  export let rowHeight: number | undefined = 33;
   export let rowSelection: 'single' | 'multiple' | undefined = undefined;
   export let scrollToSelection: boolean = false;
   export let selectedRowIds: RowId[] = [];
   export let shouldAutoGenerateId: boolean = false;
+  export let showLoadingSkeleton: boolean = false;
   export let suppressCellFocus: boolean = true;
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
@@ -132,6 +135,8 @@
   let gridOptions: GridOptions<RowData>;
   let gridApi: GridApi<RowData> | undefined;
   let gridDiv: HTMLDivElement;
+  let loadingMessageTimeout: NodeJS.Timeout | null = null;
+  let mounted: boolean = false;
   let onColumnStateChangeDebounced = debounce(onColumnStateChange, 500);
   let onWindowResizedDebounced = debounce(sizeColumnsToFit, 50);
   let previousSelectedRowId: RowId | null = null;
@@ -155,6 +160,9 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         );
       }
     });
+    if (rowData.length < 1 && !isLoading()) {
+      gridApi?.setGridOption('suppressNoRowsOverlay', false);
+    }
     gridApi?.setGridOption('rowData', rowData);
 
     const previousSelectedRowIds: RowId[] = [];
@@ -232,9 +240,29 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     gridApi?.setGridOption('quickFilterText', filterExpression);
   }
 
+  $: if (loading) {
+    if (loadingMessageTimeout) {
+      clearTimeout(loadingMessageTimeout);
+    }
+    loadingMessageTimeout = setTimeout(() => {
+      gridApi?.setGridOption('loading', true);
+    }, 50);
+  } else {
+    if (loadingMessageTimeout) {
+      clearTimeout(loadingMessageTimeout);
+    }
+    if (gridApi?.getGridOption('loading')) {
+      gridApi?.setGridOption('loading', false);
+    }
+  }
+
   onDestroy(() => {
     resizeObserver?.disconnect();
   });
+
+  function isLoading() {
+    return loading;
+  }
 
   function onAutoSizeContent() {
     gridApi?.autoSizeAllColumns();
@@ -277,6 +305,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       ...(shouldAutoGenerateId ? {} : { getRowId: (params: { data: RowData }) => `${getRowId(params.data)}` }),
       isExternalFilterPresent,
       isRowSelectable,
+      loading,
       maintainColumnOrder,
       onCellContextMenu,
       onCellEditingStarted(event: CellEditingStartedEvent<RowData>) {
@@ -411,6 +440,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       rowSelection,
       suppressCellFocus,
       suppressDragLeaveHidesColumns,
+      suppressNoRowsOverlay: loading,
       suppressRowClickSelection,
     };
     gridApi = createGrid(gridDiv, gridOptions);
@@ -421,10 +451,19 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       });
       resizeObserver.observe(gridDiv);
     }
+
+    mounted = true;
   });
 </script>
 
-<div bind:this={gridDiv} class="ag-theme-stellar table" class:highlightOnSelection tabindex="-1" on:focus on:blur />
+<div class="data-grid-container">
+  {#if !mounted && showLoadingSkeleton}
+    <div class="loading">
+      <DataGridSkeleton columns={columnDefs.filter(c => !c.hide).length} />
+    </div>
+  {/if}
+  <div bind:this={gridDiv} class="ag-theme-stellar table" class:highlightOnSelection tabindex="-1" on:focus on:blur />
+</div>
 
 <ContextMenu bind:this={contextMenu}>
   <slot name="context-menu" />
@@ -432,14 +471,27 @@ This has been seen to result in unintended and often glitchy behavior, which oft
 </ContextMenu>
 
 <style>
+  .data-grid-container {
+    height: 100%;
+    position: relative;
+    width: 100%;
+  }
+  .loading {
+    height: 100%;
+    position: absolute;
+    width: 100%;
+  }
   .table {
     height: 100%;
     width: 100%;
   }
   :global(.tags-cell) {
-    display: inline-block;
-    line-height: 24px;
-    padding: 3px 0px;
+    align-items: center;
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    min-height: 30px;
+    padding: 2px 0px;
   }
 
   :global(.tags-cell .tag.st-chip) {

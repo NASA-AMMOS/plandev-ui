@@ -27,8 +27,10 @@
   export let modelId: number | undefined;
   export let createdAt: string | undefined;
   export let user: User | null;
-  export let users: UserId[] = [];
-  export let views: ViewSlim[] = [];
+  export let users: UserId[] | null = null;
+  export let usersLoading: boolean = false;
+  export let views: ViewSlim[] | null = null;
+  export let viewsLoading: boolean = false;
 
   const dispatch = createEventDispatcher<{
     createPlan: number;
@@ -182,8 +184,10 @@
       <label for="owner">Owner</label>
       <UserInput
         allowMultiple={false}
-        {users}
+        users={users || []}
         {user}
+        disabled={usersLoading}
+        placeholder={usersLoading ? 'Loading' : 'Search users'}
         selectedUsers={owner ? [owner] : []}
         use={[
           [
@@ -200,11 +204,15 @@
     </Input>
     <Input layout="inline">
       <label for="view">Default View</label>
-      <select name="view" class="st-select w-100" bind:value={viewId}>
-        <option value={null}>None</option>
-        {#each views as viewOption}
-          <option value={viewOption.id}>{viewOption.name} (ID: {viewOption.id})</option>
-        {/each}
+      <select name="view" class="st-select w-100" bind:value={viewId} disabled={viewsLoading}>
+        {#if viewsLoading || !views}
+          <option>Loading</option>
+        {:else}
+          <option value={null}>None</option>
+          {#each views as viewOption}
+            <option value={viewOption.id}>{viewOption.name} (ID: {viewOption.id})</option>
+          {/each}
+        {/if}
       </select>
     </Input>
     {#if createdAt}

@@ -2,29 +2,29 @@
 
 <script lang="ts">
   import type { ColDef, ColumnState, ICellRendererParams } from 'ag-grid-community';
+  import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import type { ActivityDirective, ActivityDirectiveId } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/errors';
   import type { Plan } from '../../types/plan';
+  import {
+    canPasteActivityDirectivesFromClipboard,
+    copyActivityDirectivesToClipboard,
+    getActivityDirectivesToPaste,
+    getPasteActivityDirectivesText,
+  } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
+  import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
+  import ContextMenuSeparator from '../context-menu/ContextMenuSeparator.svelte';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
-  import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
-  import ContextMenuSeparator from '../context-menu/ContextMenuSeparator.svelte';
-  import { createEventDispatcher } from 'svelte';
-  import {
-    canPasteActivityDirectivesFromClipboard,
-    copyActivityDirectivesToClipboard,
-    getPasteActivityDirectivesText,
-    getActivityDirectivesToPaste,
-  } from '../../utilities/activities';
 
-  export let activityDirectives: ActivityDirective[] = [];
+  export let activityDirectives: ActivityDirective[] | null = null;
   export let activityDirectiveErrorRollupsMap: Record<ActivityDirectiveId, ActivityErrorRollup> | undefined = undefined;
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
@@ -62,7 +62,7 @@
   $: hasCreatePermission =
     plan !== null ? featurePermissions.activityDirective.canCreate(user, plan) && !planReadOnly : false;
 
-  $: activityDirectivesWithErrorCounts = activityDirectives.map(activityDirective => ({
+  $: activityDirectivesWithErrorCounts = (activityDirectives || []).map(activityDirective => ({
     ...activityDirective,
     errorCounts: activityDirectiveErrorRollupsMap?.[activityDirective.id]?.errorCounts,
   }));
@@ -154,7 +154,7 @@
 
   function scrollTimelineToActivityDirective() {
     const directiveId = bulkSelectedActivityDirectiveIds.length > 0 && bulkSelectedActivityDirectiveIds[0];
-    const directive = activityDirectives.find(item => item.id === directiveId) ?? null;
+    const directive = (activityDirectives || []).find(item => item.id === directiveId) ?? null;
     if (directive?.start_time_ms !== undefined && directive?.start_time_ms !== null) {
       dispatch('scrollTimelineToTime', directive.start_time_ms);
     }
@@ -188,6 +188,7 @@
   columnDefs={completeColumnDefs}
   {columnStates}
   {getRowId}
+  loading={!activityDirectives}
   {hasDeletePermission}
   hasDeletePermissionError={planReadOnly ? PlanStatusMessages.READ_ONLY : undefined}
   items={activityDirectivesWithErrorCounts}

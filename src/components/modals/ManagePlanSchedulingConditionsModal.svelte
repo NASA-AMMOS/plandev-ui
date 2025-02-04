@@ -11,6 +11,7 @@
   import {
     allowedSchedulingConditionSpecs,
     schedulingConditions,
+    schedulingConditionsLoading,
     schedulingPlanSpecification,
   } from '../../stores/scheduling';
   import type { User } from '../../types/app';
@@ -94,7 +95,6 @@
       resizable: true,
       sortable: false,
       width: 220,
-      wrapText: true,
     },
   ];
   const permissionError = 'You do not have permission to add this constraint.';
@@ -127,7 +127,7 @@
       const includesName = condition.name.toLocaleLowerCase().includes(filterTextLowerCase);
       return includesId || includesName;
     });
-  $: selectedConditions = $allowedSchedulingConditionSpecs.reduce(
+  $: selectedConditions = ($allowedSchedulingConditionSpecs || []).reduce(
     (prevBooleanMap: Record<string, boolean>, schedulingConditionPlanSpec: SchedulingConditionPlanSpecification) => {
       return {
         ...prevBooleanMap,
@@ -293,10 +293,11 @@
       </div>
       <hr />
       <div class="conditions-modal-table-container">
-        {#if filteredConditions.length}
+        {#if $schedulingConditionsLoading || filteredConditions.length}
           <DataGrid
             bind:this={dataGrid}
             {columnDefs}
+            loading={$schedulingConditionsLoading}
             rowData={filteredConditions}
             on:cellEditingStopped={onToggleCondition}
           />
@@ -348,6 +349,7 @@
 
   .conditions-modal-title {
     font-weight: bold;
+    white-space: nowrap;
   }
 
   .conditions-modal-table-container {

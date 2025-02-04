@@ -184,7 +184,6 @@
       resizable: true,
       sortable: false,
       width: 220,
-      wrapText: true,
     },
   ];
   const permissionError: string = 'You do not have permission to create a plan';
@@ -212,7 +211,7 @@
   let nameField = field<string>('', [
     required,
     unique(
-      $plans.map(plan => plan.name),
+      ($plans || []).map(plan => plan.name),
       'Plan name already exists',
     ),
   ]);
@@ -250,6 +249,7 @@
       selectedPlanModelName = $models.find(model => model.id === selectedPlan?.model_id)?.name ?? null;
     }
   }
+  $: plans.updateValue(() => data.plans);
   $: models.updateValue(() => data.models);
   // sort in descending ID order
   $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => {
@@ -340,6 +340,7 @@
     ];
   }
   $: createButtonEnabled =
+    $plans !== null &&
     $endTimeField.dirtyAndValid &&
     $modelIdField.dirtyAndValid &&
     $nameField.dirtyAndValid &&
@@ -350,7 +351,7 @@
   } else {
     createPlanButtonText = planUploadFiles ? 'Create from .json' : 'Create';
   }
-  $: filteredPlans = $plans.filter(plan => {
+  $: filteredPlans = ($plans || []).filter(plan => {
     const filterTextLowerCase = filterText.toLowerCase();
     return (
       plan.end_time_doy.includes(filterTextLowerCase) ||
@@ -419,8 +420,8 @@
           tag_id,
         }));
         newPlan.tags = planTags.map(tag => ({ tag }));
-        if (!$plans.find(({ id }) => newPlan.id === id)) {
-          plans.updateValue(storePlans => [...storePlans, newPlan]);
+        if (!($plans || []).find(({ id }) => newPlan.id === id)) {
+          plans.updateValue(storePlans => [...(storePlans || []), newPlan]);
         }
         await effects.createPlanTags(newPlanTags, newPlan, user);
         startTimeField.reset('');
@@ -434,7 +435,7 @@
     const success = await effects.deletePlan(plan, user);
 
     if (success) {
-      plans.updateValue(storePlans => storePlans.filter(p => plan.id !== p.id));
+      plans.updateValue(storePlans => (storePlans || []).filter(p => plan.id !== p.id));
     }
   }
 
@@ -960,21 +961,19 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        {#if filteredPlans && filteredPlans.length}
-          <SingleActionDataGrid
-            {columnDefs}
-            hasDeletePermission={featurePermissions.plan.canDelete}
-            itemDisplayText="Plan"
-            items={filteredPlans}
-            {user}
-            selectedItemId={selectedPlanId ?? null}
-            on:deleteItem={event => deletePlanContext(event, filteredPlans)}
-            on:rowClicked={({ detail }) => selectPlan(detail.data.id)}
-            on:rowDoubleClicked={({ detail }) => openPlan(detail.data.id)}
-          />
-        {:else}
-          No Plans Found
-        {/if}
+        <SingleActionDataGrid
+          showLoadingSkeleton
+          loading={$plans === null}
+          {columnDefs}
+          hasDeletePermission={featurePermissions.plan.canDelete}
+          itemDisplayText="Plan"
+          items={filteredPlans}
+          {user}
+          selectedItemId={selectedPlanId ?? null}
+          on:deleteItem={event => deletePlanContext(event, filteredPlans)}
+          on:rowClicked={({ detail }) => selectPlan(detail.data.id)}
+          on:rowDoubleClicked={({ detail }) => openPlan(detail.data.id)}
+        />
       </svelte:fragment>
     </Panel>
   </CssGrid>

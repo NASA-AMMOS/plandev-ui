@@ -6,7 +6,6 @@
   import DuplicateIcon from '@nasa-jpl/stellar/icons/duplicate.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import GripVerticalIcon from 'bootstrap-icons/icons/grip-vertical.svg?component';
-  import { onMount } from 'svelte';
   import { dndzone } from 'svelte-dnd-action';
   import {
     default as ExternalEventIcon,
@@ -414,16 +413,6 @@
     viewUpdateRow('layers', newLayers);
   }
 
-  // function handleUpdateLayerColorScheme(value: XRangeLayerColorScheme, layer: Layer) {
-  //   const newLayers = layers.map(l => {
-  //     if (layer.id === l.id) {
-  //       (l as XRangeLayer).colorScheme = value;
-  //     }
-  //     return l;
-  //   });
-  //   viewUpdateRow('layers', newLayers);
-  // }
-
   function handleNewHorizontalGuideClick() {
     if (!selectedRow) {
       return;
@@ -463,15 +452,6 @@
     el.style.background = 'var(--st-gray-10)';
     el.classList.add('timeline-element-dragging');
   }
-
-  onMount(() => {
-    if ($selectedTimelineId === null) {
-      const firstTimeline = $view?.definition.plan.timelines[0];
-      if (firstTimeline) {
-        viewSetSelectedTimeline(firstTimeline.id);
-      }
-    }
-  });
 </script>
 
 <Panel padBody={false}>

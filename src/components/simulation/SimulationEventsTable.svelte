@@ -10,6 +10,7 @@
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid<SimulationEvent> | undefined = undefined;
+  export let loading: boolean = false;
   export let selectedSimulationEventId: number | null = null;
   export let simulationEvents: SimulationEvent[] = [];
   export let filterExpression: string = '';
@@ -52,6 +53,7 @@
   {columnStates}
   {filterExpression}
   {getRowId}
+  {loading}
   useCustomContextMenu
   rowData={simulationEvents}
   rowSelection="single"

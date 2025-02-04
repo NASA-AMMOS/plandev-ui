@@ -6,7 +6,13 @@
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
-  import { allowedConstraintPlanSpecMap, allowedConstraintSpecs, constraints } from '../../stores/constraints';
+  import {
+    allowedConstraintPlanSpecMap,
+    allowedConstraintSpecs,
+    constraints,
+    initialConstraintPlanSpecsLoading,
+    initialConstraintsLoading,
+  } from '../../stores/constraints';
   import { plan, planId, planReadOnly } from '../../stores/plan';
   import type { User } from '../../types/app';
   import type { ConstraintMetadata, ConstraintPlanSpec, ConstraintPlanSpecInsertInput } from '../../types/constraint';
@@ -85,7 +91,6 @@
       resizable: true,
       sortable: false,
       width: 220,
-      wrapText: true,
     },
   ];
   const permissionError = 'You do not have permission to add this constraint.';
@@ -99,7 +104,7 @@
   let hasEditSpecPermission: boolean = false;
   let selectedConstraints: Record<string, boolean> = {};
 
-  $: filteredConstraints = $constraints.filter(constraint => {
+  $: filteredConstraints = ($constraints || []).filter(constraint => {
     const filterTextLowerCase = filterText.toLowerCase();
     const includesId = `${constraint.id}`.includes(filterTextLowerCase);
     const includesName = constraint.name.toLocaleLowerCase().includes(filterTextLowerCase);
@@ -171,7 +176,7 @@
   }
 
   function viewConstraint({ id }: Pick<ConstraintMetadata, 'id'>) {
-    const constraint = $constraints.find(c => c.id === id);
+    const constraint = ($constraints || []).find(c => c.id === id);
     window.open(
       `${base}/constraints/edit/${constraint?.id}?${SearchParameters.REVISION}=${constraint?.versions[0].revision}&${SearchParameters.MODEL_ID}=${$plan?.model.id}`,
     );
@@ -273,8 +278,9 @@
       </div>
       <hr />
       <div class="constraints-modal-table-container">
-        {#if filteredConstraints.length}
+        {#if $initialConstraintsLoading || $initialConstraintPlanSpecsLoading || filteredConstraints.length}
           <DataGrid
+            loading={$initialConstraintsLoading || $initialConstraintPlanSpecsLoading}
             bind:this={dataGrid}
             {columnDefs}
             rowData={filteredConstraints}

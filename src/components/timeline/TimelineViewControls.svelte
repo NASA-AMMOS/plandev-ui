@@ -22,8 +22,8 @@
     selectedSpan,
     simulationDataset,
     simulationDatasetId,
-    spanUtilityMaps,
     spansMap,
+    spanUtilityMaps,
   } from '../../stores/simulation';
   import { timelineInteractionMode, timelineLockStatus, viewIsModified } from '../../stores/views';
   import type { TimeRange } from '../../types/timeline';
@@ -183,8 +183,8 @@
         $selectedActivityDirective.id,
         $plan.start_time,
         $plan.end_time_doy,
-        $activityDirectivesMap,
-        $spansMap,
+        $activityDirectivesMap || {},
+        $spansMap || {},
         $spanUtilityMaps,
       );
     } else if ($selectedSpan && $simulationDataset?.simulation_start_time) {

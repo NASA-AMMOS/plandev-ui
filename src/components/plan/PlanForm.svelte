@@ -6,12 +6,16 @@
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
   import { planMetadata, planReadOnly, planReadOnlySnapshot } from '../../stores/plan';
-  import { planSnapshotId, planSnapshotsWithSimulations } from '../../stores/planSnapshots';
+  import {
+    initialPlanSnapshotsLoading,
+    planSnapshotId,
+    planSnapshotsWithSimulations,
+  } from '../../stores/planSnapshots';
   import { plans } from '../../stores/plans';
   import { plugins } from '../../stores/plugins';
   import { simulationDataset, simulationDatasetId } from '../../stores/simulation';
   import { viewTogglePanel } from '../../stores/views';
-  import type { ActivityDirective, ActivityDirectiveId } from '../../types/activity';
+  import type { ActivityDirectivesMap } from '../../types/activity';
   import type { User, UserId } from '../../types/app';
   import type { Plan, PlanCollaborator, PlanSlimmer } from '../../types/plan';
   import type { PlanSnapshot as PlanSnapshotType } from '../../types/plan-snapshot';
@@ -25,6 +29,7 @@
   import { tooltip } from '../../utilities/tooltip';
   import { required, unique } from '../../utilities/validators';
   import Collapse from '../Collapse.svelte';
+  import Loading from '../Loading.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
   import CancellableProgressRadial from '../ui/CancellableProgressRadial.svelte';
@@ -35,11 +40,12 @@
   import PlanSnapshot from './PlanSnapshot.svelte';
 
   export let plan: Plan | null;
-  export let activityDirectivesMap: Record<ActivityDirectiveId, ActivityDirective> = {};
+  export let activityDirectivesMap: ActivityDirectivesMap | null = {};
   export let planTags: Tag[];
   export let tags: Tag[] = [];
   export let user: User | null;
   export let users: UserId[] | null = null;
+  export let usersLoading: boolean = false;
   export let userWriteablePlans: PlanSlimmer[] | null = null;
 
   let filteredPlanSnapshots: PlanSnapshotType[] = [];
@@ -51,7 +57,7 @@
   let planNameField = field<string>('', [
     required,
     unique(
-      $plans.filter(p => p.id !== plan?.id).map(p => p.name),
+      ($plans || []).filter(p => p.id !== plan?.id).map(p => p.name),
       'Plan name already exists',
     ),
   ]);
@@ -152,7 +158,7 @@
   }
 
   async function onExportPlan() {
-    if (plan) {
+    if (plan && activityDirectivesMap) {
       if (planExportAbortController) {
         planExportAbortController.abort();
       }
@@ -287,12 +293,12 @@
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Collaborators', placement: 'top' }} for="collaborators">Collaborators</label>
-          {#if users === null || userWriteablePlans === null}
+          {#if usersLoading || userWriteablePlans === null}
             <input class="st-input w-100" disabled name="collaborators" value="Loading..." />
           {:else}
             <PlanCollaboratorInput
               collaborators={plan.collaborators}
-              {users}
+              users={users || []}
               plans={userWriteablePlans}
               {plan}
               {user}
@@ -343,6 +349,7 @@
           {/if}
           <button
             class="st-button secondary"
+            disabled={$initialPlanSnapshotsLoading}
             use:permissionHandler={{
               hasPermission: hasCreateSnapshotPermission,
               permissionError: $planReadOnly
@@ -355,6 +362,9 @@
           </button>
         </div>
         <div style="margin-top: 8px">
+          {#if $initialPlanSnapshotsLoading}
+            <Loading />
+          {/if}
           <CardList>
             {#each filteredPlanSnapshots as planSnapshot (planSnapshot.snapshot_id)}
               <PlanSnapshot
@@ -379,7 +389,7 @@
                 on:delete={() => effects.deletePlanSnapshot(planSnapshot, user)}
               />
             {/each}
-            {#if filteredPlanSnapshots.length < 1}
+            {#if !$initialPlanSnapshotsLoading && filteredPlanSnapshots.length < 1}
               <div class="st-typography-label">No Plan Snapshots Found</div>
             {/if}
           </CardList>

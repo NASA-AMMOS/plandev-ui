@@ -7,7 +7,12 @@
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { plan, planReadOnly } from '../../stores/plan';
-  import { allowedSchedulingGoalSpecs, schedulingGoals, schedulingPlanSpecification } from '../../stores/scheduling';
+  import {
+    allowedSchedulingGoalSpecs,
+    schedulingGoals,
+    schedulingGoalsLoading,
+    schedulingPlanSpecification,
+  } from '../../stores/scheduling';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type {
@@ -89,7 +94,6 @@
       resizable: true,
       sortable: false,
       width: 220,
-      wrapText: true,
     },
   ];
   const permissionError = 'You do not have permission to add this constraint.';
@@ -117,7 +121,7 @@
       const includesName = goal.name.toLocaleLowerCase().includes(filterTextLowerCase);
       return includesId || includesName;
     });
-  $: selectedGoals = $allowedSchedulingGoalSpecs.reduce(
+  $: selectedGoals = ($allowedSchedulingGoalSpecs || []).reduce(
     (prevBooleanMap: Record<string, boolean>, schedulingGoalPlanSpec: SchedulingGoalPlanSpecification) => {
       return {
         ...prevBooleanMap,
@@ -203,7 +207,7 @@
   }
 
   async function onUpdateGoals(selectedGoals: Record<number, boolean>) {
-    if ($plan && $schedulingPlanSpecification) {
+    if ($plan && $schedulingPlanSpecification && $allowedSchedulingGoalSpecs) {
       const goalPlanSpecUpdates: {
         goalPlanSpecIdsToDelete: number[];
         goalPlanSpecsToAdd: SchedulingGoalPlanSpecInsertInput[];
@@ -220,7 +224,7 @@
 
           // if we find at least one goal invocation with the selected goal_id, we don't want to insert this goal_id into the plan spec
           // i.e. this goal was already selected when we entered the modal, so we don't want to kick off an update, which would cause a duplicate invocation to appear
-          const goalsInPlanSpecification = $allowedSchedulingGoalSpecs.filter(
+          const goalsInPlanSpecification = ($allowedSchedulingGoalSpecs || []).filter(
             schedulingGoalPlanSpecification => schedulingGoalPlanSpecification.goal_id === goalId,
           );
 
@@ -289,8 +293,14 @@
       </div>
       <hr />
       <div class="goals-modal-table-container">
-        {#if filteredGoals.length}
-          <DataGrid bind:this={dataGrid} {columnDefs} rowData={filteredGoals} on:cellEditingStopped={onToggleGoal} />
+        {#if $schedulingGoalsLoading || filteredGoals.length}
+          <DataGrid
+            bind:this={dataGrid}
+            {columnDefs}
+            rowData={filteredGoals}
+            on:cellEditingStopped={onToggleGoal}
+            loading={$schedulingGoalsLoading}
+          />
         {:else}
           <div class="p1 st-typography-label">No Scheduling Goals Found</div>
         {/if}
@@ -339,6 +349,7 @@
 
   .goals-modal-title {
     font-weight: bold;
+    white-space: nowrap;
   }
 
   .goals-modal-table-container {

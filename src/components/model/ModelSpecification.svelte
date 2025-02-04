@@ -13,6 +13,7 @@
 
   export let hasCreatePermission: boolean = false;
   export let hasEditSpecPermission: boolean = false;
+  export let loading: boolean = false;
   export let metadataList: Pick<BaseMetadata, 'id' | 'name' | 'public' | 'versions'>[] = [];
   export let metadataType: Association = 'constraint';
   export let selectedSpecifications: AssociationSpecificationMap = {};
@@ -73,7 +74,7 @@
       suppressAutoSize: true,
       suppressSizeToFit: true,
       valueGetter: (params: ValueGetterParams<BaseMetadata>) => {
-        return params?.data?.versions[0].revision;
+        return params?.data?.versions[0]?.revision;
       },
       width: 80,
     },
@@ -87,7 +88,6 @@
       resizable: true,
       sortable: false,
       width: 220,
-      wrapText: true,
     },
   ];
   const permissionError = `You do not have permission to add this ${metadataType}.`;
@@ -214,10 +214,11 @@
   </div>
   <hr />
   <div class="metadata-table-container">
-    {#if filteredMetadata.length}
+    {#if loading || filteredMetadata.length}
       <DataGrid
         bind:this={dataGrid}
         {columnDefs}
+        {loading}
         rowData={filteredMetadata}
         rowSelection="single"
         selectedRowIds={selectedSpecification ? [selectedSpecification.id] : []}

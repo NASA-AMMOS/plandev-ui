@@ -23,7 +23,7 @@
   export let modelId: number;
   export let simulationDatasetId: number = -1;
   export let span: Span;
-  export let spansMap: SpansMap = {};
+  export let spansMap: SpansMap | null = {};
   export let spanUtilityMaps: SpanUtilityMaps;
   export let user: User | null;
 
@@ -40,7 +40,7 @@
   let startTime: string;
 
   $: activityType = (activityTypes ?? []).find(({ name: activityTypeName }) => span.type === activityTypeName) ?? null;
-  $: rootSpan = getSpanRootParent(spansMap, span.span_id);
+  $: rootSpan = !spansMap ? null : getSpanRootParent(spansMap, span.span_id);
   $: rootSpanHasChildren = (rootSpan && spanUtilityMaps.spanIdToChildIdsMap[rootSpan.span_id]?.length > 0) ?? false;
 
   $: startTime = formatDate(new Date(span.startMs), $plugins.time.primary.format);

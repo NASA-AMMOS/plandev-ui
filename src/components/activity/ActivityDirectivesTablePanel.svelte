@@ -213,7 +213,6 @@
       resizable: true,
       sortable: false,
       width: 220,
-      wrapText: true,
     },
     type: {
       field: 'type',
@@ -428,7 +427,7 @@
     <ActivityDirectivesTable
       bind:dataGrid
       bind:selectedActivityDirectiveId={$selectedActivityDirectiveId}
-      activityDirectives={Object.values($activityDirectivesMap)}
+      activityDirectives={$activityDirectivesMap ? Object.values($activityDirectivesMap) : null}
       activityDirectiveErrorRollupsMap={$activityErrorRollupsMap}
       {filterExpression}
       columnDefs={derivedColumnDefs ?? []}

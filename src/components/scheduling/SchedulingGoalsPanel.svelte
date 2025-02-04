@@ -11,6 +11,7 @@
     enableScheduling,
     schedulingAnalysisStatus,
     schedulingGoalSpecifications,
+    schedulingGoalsLoading,
     schedulingGoalsMap,
   } from '../../stores/scheduling';
   import type { User } from '../../types/app';
@@ -20,6 +21,7 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions, isAdminRole } from '../../utilities/permissions';
   import CollapsibleListControls from '../CollapsibleListControls.svelte';
+  import Loading from '../Loading.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
@@ -40,7 +42,7 @@
   let visibleSchedulingGoalSpecs: SchedulingGoalPlanSpecification[] = [];
 
   // TODO: remove this after db merge as it becomes redundant
-  $: visibleSchedulingGoalSpecs = $allowedSchedulingGoalSpecs.filter(({ goal_metadata: goalMetadata }) => {
+  $: visibleSchedulingGoalSpecs = ($allowedSchedulingGoalSpecs || []).filter(({ goal_metadata: goalMetadata }) => {
     if (goalMetadata) {
       const { public: isPublic, owner } = goalMetadata;
       if (!isPublic && !isAdminRole(user?.activeRole)) {
@@ -65,7 +67,7 @@
       }
       return 0;
     });
-  $: numOfPrivateGoals = $schedulingGoalSpecifications.length - visibleSchedulingGoalSpecs.length;
+  $: numOfPrivateGoals = ($schedulingGoalSpecifications || []).length - visibleSchedulingGoalSpecs.length;
   $: if ($plan) {
     hasAnalyzePermission =
       featurePermissions.schedulingGoalsPlanSpec.canAnalyze(user, $plan, $plan.model) && !$planReadOnly;
@@ -207,7 +209,11 @@
       </svelte:fragment>
     </CollapsibleListControls>
     <div class="pt-2">
-      {#if !filteredSchedulingGoalSpecs.length}
+      {#if $schedulingGoalsLoading}
+        <div class="pt-1">
+          <Loading />
+        </div>
+      {:else if !filteredSchedulingGoalSpecs.length}
         <div class="pt-1 st-typography-label">No scheduling goals found</div>
         <div class="private-label">
           {#if numOfPrivateGoals > 0}

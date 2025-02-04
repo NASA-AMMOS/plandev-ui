@@ -106,7 +106,7 @@
       resizable: true,
       sortable: true,
       valueGetter: params => {
-        if (params.data?.span_id) {
+        if ($spansMap && params.data?.span_id) {
           const span = $spansMap[params.data?.span_id] || null;
           if (span) {
             return JSON.stringify(span);
@@ -301,7 +301,8 @@
       columnDefs={derivedColumnDefs ?? []}
       columnStates={simulationEventsTable?.columnStates}
       {filterExpression}
-      simulationEvents={$simulationEvents}
+      loading={!$simulationEvents}
+      simulationEvents={$simulationEvents || []}
       on:columnMoved={onColumnMoved}
       on:columnPinned={onColumnPinned}
       on:columnResized={onColumnResized}

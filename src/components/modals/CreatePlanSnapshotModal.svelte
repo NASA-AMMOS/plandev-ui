@@ -30,7 +30,7 @@
   }>();
 
   let createButtonDisabled: boolean = true;
-  let snapshotName: string = `${plan.name} – Snapshot ${$planSnapshots.length + 1}`;
+  let snapshotName: string = `${plan.name} – Snapshot ${($planSnapshots || []).length + 1}`;
   let snapshotDescription: string = '';
   let snapshotTags: Tag[] = [];
 

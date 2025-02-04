@@ -138,6 +138,7 @@
     <SchedulingGoals
       {selectedGoal}
       schedulingGoals={allowedSchedulingGoals}
+      loading={!$schedulingGoalResponses}
       {user}
       on:deleteGoal={deleteGoalContext}
       on:rowSelected={toggleGoal}
@@ -146,6 +147,7 @@
     <SchedulingConditions
       {selectedCondition}
       schedulingConditions={allowedSchedulingConditions}
+      loading={!$schedulingConditionResponses}
       {user}
       on:deleteCondition={deleteConditionContext}
       on:rowSelected={toggleCondition}

@@ -5,7 +5,7 @@
   import { plan, planTags } from '../../stores/plan';
   import { gqlSubscribable } from '../../stores/subscribable';
   import { tags } from '../../stores/tags';
-  import { users } from '../../stores/user';
+  import { initialUsersLoading, users } from '../../stores/user';
   import type { User } from '../../types/app';
   import type { PlanSlim } from '../../types/plan';
   import type { ViewGridSection } from '../../types/view';
@@ -37,6 +37,7 @@
       tags={$tags}
       {user}
       users={$users}
+      usersLoading={$initialUsersLoading}
       userWriteablePlans={$userWritablePlans}
     />
   </svelte:fragment>

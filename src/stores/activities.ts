@@ -18,10 +18,10 @@ import { viewUpdateGrid } from './views';
 
 /* Subscriptions. */
 
-export const activityDirectivesDB = gqlSubscribable<ActivityDirectiveDB[]>(
+export const activityDirectivesDB = gqlSubscribable<ActivityDirectiveDB[] | null>(
   gql.SUB_ACTIVITY_DIRECTIVES,
   { planId },
-  [],
+  null,
   null,
 );
 
@@ -53,7 +53,6 @@ export const selectedActivityDirectiveId: Writable<ActivityDirectiveId | null> =
 // TODO do we even need the list or should we transform it immediately into the map?
 export const activityArgumentDefaults: Writable<DefaultEffectiveArguments[] | null> = writable(null);
 
-/* Derived. */
 export const activityArgumentDefaultsMap: Readable<DefaultEffectiveArgumentsMap> = derived(
   [activityArgumentDefaults],
   ([$activityArgumentDefaults]) => {
@@ -75,11 +74,14 @@ export const activityDirectivesMap = derived(
     $spansMap,
     $spanUtilityMaps,
   ]) => {
+    if (!$activityDirectivesDB || !$spansMap) {
+      return null;
+    }
     if ($initialPlan === null) {
       return {};
     }
     return computeActivityDirectivesMap(
-      $planSnapshotId !== null ? $planSnapshotActivityDirectives : $activityDirectivesDB,
+      $planSnapshotId !== null ? $planSnapshotActivityDirectives : $activityDirectivesDB || [],
       $initialPlan,
       $spansMap,
       $spanUtilityMaps,
@@ -87,10 +89,18 @@ export const activityDirectivesMap = derived(
   },
 );
 
+/* Loading stores. */
+export const initialActivityDirectivesLoading: Readable<boolean> = derived(
+  [activityDirectivesMap],
+  ([$activityDirectivesMap]) => !$activityDirectivesMap,
+);
+
+/* Derived. */
+
 export const selectedActivityDirective = derived(
   [activityDirectivesMap, selectedActivityDirectiveId],
   ([$activityDirectivesMap, $selectedActivityDirectiveId]) => {
-    if ($selectedActivityDirectiveId !== null) {
+    if ($activityDirectivesMap && $selectedActivityDirectiveId !== null) {
       return $activityDirectivesMap[$selectedActivityDirectiveId] || null;
     }
     return null;
@@ -132,7 +142,7 @@ export function selectActivity(
 export function resetActivityStores() {
   activityMetadataDefinitions.updateValue(() => []);
   selectedActivityDirectiveId.set(null);
-  activityDirectivesDB.updateValue(() => []);
+  activityDirectivesDB.updateValue(() => null);
   anchorValidationStatuses.updateValue(() => []);
   activityMetadataDefinitions.updateValue(() => []);
   activityDirectiveValidationStatuses.updateValue(() => []);

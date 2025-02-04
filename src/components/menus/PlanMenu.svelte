@@ -7,6 +7,7 @@
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { planReadOnly } from '../../stores/plan';
+  import { initialPlanSnapshotsLoading } from '../../stores/planSnapshots';
   import { viewTogglePanel } from '../../stores/views';
   import type { User } from '../../types/app';
   import type { Plan } from '../../types/plan';
@@ -157,6 +158,7 @@
       {/if}
       <MenuDivider />
       <MenuItem
+        disabled={$initialPlanSnapshotsLoading}
         on:click={createPlanSnapshot}
         use={[
           [

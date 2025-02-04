@@ -30,6 +30,7 @@
   import ModelStatusRollup from './ModelStatusRollup.svelte';
 
   export let user: User | null;
+  export let initialModels: ModelSlim[] = [];
 
   type CellRendererParams = {
     deleteModel: (model: ModelSlim) => void;
@@ -77,6 +78,7 @@
   let selectedModelId: number | null = null;
   let version = '';
 
+  $: models.updateValue(() => initialModels);
   $: createButtonDisabled = !files || name === '' || version === '' || $creatingModel === true;
   $: {
     hasCreateModelPermission = featurePermissions.model.canCreate(user);
@@ -449,24 +451,21 @@
     </svelte:fragment>
 
     <svelte:fragment slot="body">
-      {#if $models.length}
-        <SingleActionDataGrid
-          {columnDefs}
-          columnsToForceRefreshOnDataUpdate={['id']}
-          hasEdit={hasUpdateModelPermission}
-          hasEditPermission={hasUpdateModelPermission}
-          hasDeletePermission={hasDeleteModelPermission}
-          itemDisplayText="Model"
-          items={$models}
-          {user}
-          selectedItemId={selectedModel?.id ?? null}
-          on:deleteItem={deleteModelContext}
-          on:editItem={editModelContext}
-          on:rowClicked={({ detail }) => selectModel(detail.data.id)}
-        />
-      {:else}
-        No Models Found
-      {/if}
+      <SingleActionDataGrid
+        {columnDefs}
+        columnsToForceRefreshOnDataUpdate={['id']}
+        hasEdit={hasUpdateModelPermission}
+        hasEditPermission={hasUpdateModelPermission}
+        hasDeletePermission={hasDeleteModelPermission}
+        itemDisplayText="Model"
+        items={$models}
+        showLoadingSkeleton
+        {user}
+        selectedItemId={selectedModel?.id ?? null}
+        on:deleteItem={deleteModelContext}
+        on:editItem={editModelContext}
+        on:rowClicked={({ detail }) => selectModel(detail.data.id)}
+      />
     </svelte:fragment>
   </Panel>
 </CssGrid>

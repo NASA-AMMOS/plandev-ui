@@ -98,6 +98,7 @@
     externalResourceNames,
     externalResources,
     fetchingResourcesExternal,
+    initialSpansLoading,
     resetSimulationStores,
     resourceTypes,
     resourceTypesLoading,
@@ -179,7 +180,7 @@
   let modelErrorCount: number = 0;
   let simulationExtent: string | null;
   let selectedSimulationStatus: Status | null;
-  let windowWidth = 0;
+  let windowWidth = 1600;
   let simulationDataAbortController: AbortController;
   let resourcesExternalAbortController: AbortController;
   let schedulingStatusText: string = '';
@@ -252,7 +253,13 @@
     if (querySimulationDatasetId) {
       $simulationDatasetId = parseInt(querySimulationDatasetId);
     } else if (data.initialPlanSnapshotId === null) {
-      $simulationDatasetId = data.initialPlan.simulations[0]?.simulation_datasets[0]?.id ?? -1;
+      const latestSimulationDatasetId = data.initialPlan.simulations[0]?.simulation_datasets[0]?.id;
+      $simulationDatasetId = latestSimulationDatasetId ?? -1;
+      if (typeof latestSimulationDatasetId !== 'number') {
+        $initialSpansLoading = false;
+      }
+    } else {
+      $initialSpansLoading = false;
     }
 
     const queryActivityId = getSearchParameterNumber(SearchParameters.ACTIVITY_ID, $page.url.searchParams);
@@ -354,6 +361,7 @@
     const datasetId = $simulationDataset.dataset_id;
     simulationDataAbortController?.abort();
     simulationDataAbortController = new AbortController();
+    $initialSpansLoading = true;
     effects
       .getSpans(
         datasetId,
@@ -361,14 +369,17 @@
         data.user,
         simulationDataAbortController.signal,
       )
-      .then(newSpans => ($spans = newSpans));
+      .then(newSpans => {
+        $spans = newSpans;
+        $initialSpansLoading = false;
+      });
     effects
       .getEvents(datasetId, data.user, simulationDataAbortController.signal)
       .then(newEvents => ($simulationEvents = newEvents));
   } else {
     simulationDataAbortController?.abort();
-    $spans = [];
-    $simulationEvents = [];
+    $spans = null;
+    $simulationEvents = null;
   }
 
   $: compactNavMode = windowWidth < 1100;
@@ -662,7 +673,7 @@
                   {#if selectedSimulationStatus === Status.Pending && $simulationDatasetLatest}
                     <div style="color: var(--st-gray-50)">
                       {formatSimulationQueuePosition(
-                        getSimulationQueuePosition($simulationDatasetLatest, $simulationDatasetsAll),
+                        getSimulationQueuePosition($simulationDatasetLatest, $simulationDatasetsAll || []),
                       )}
                     </div>
                   {:else}

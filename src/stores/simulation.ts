@@ -36,11 +36,13 @@ export const resourceTypes: Writable<ResourceType[]> = writable([]);
 
 export const resourceTypesLoading: Writable<boolean> = writable(true);
 
-export const spans: Writable<Span[]> = writable([]);
+export const spans: Writable<Span[] | null> = writable(null);
+
+export const initialSpansLoading: Writable<boolean> = writable(true);
 
 export const yAxesWithScaleDomainsCache: Writable<Record<number, Axis[]>> = writable({});
 
-export const simulationEvents: Writable<SimulationEvent[]> = writable([]);
+export const simulationEvents: Writable<SimulationEvent[] | null> = writable(null);
 
 /* Subscriptions. */
 
@@ -72,18 +74,18 @@ export const simulationDatasetLatest = gqlSubscribable<SimulationDataset | null>
   },
 );
 
-export const simulationDatasetsPlan = gqlSubscribable<SimulationDataset[]>(
+export const simulationDatasetsPlan = gqlSubscribable<SimulationDataset[] | null>(
   gql.SUB_SIMULATION_DATASETS,
   { planId },
-  [],
+  null,
   null,
   v => v[0]?.simulation_datasets || [],
 );
 
-export const simulationDatasetsAll = gqlSubscribable<SimulationDatasetSlim[]>(
+export const simulationDatasetsAll = gqlSubscribable<SimulationDatasetSlim[] | null>(
   gql.SUB_SIMULATION_DATASETS_ALL,
   null,
-  [],
+  null,
   null,
 );
 
@@ -109,10 +111,10 @@ export const allResourceTypes: Readable<ResourceType[]> = derived(
   },
 );
 
-export const spansMap: Readable<SpansMap> = derived(spans, $spans => keyBy($spans, 'span_id'));
+export const spansMap: Readable<SpansMap | null> = derived(spans, $spans => (!spans ? null : keyBy($spans, 'span_id')));
 
 export const spanUtilityMaps: Readable<SpanUtilityMaps> = derived(spans, $spans => {
-  return createSpanUtilityMaps($spans);
+  return createSpanUtilityMaps($spans || []);
 });
 
 export const simulationStatus: Readable<Status | null> = derived(
@@ -159,7 +161,7 @@ export const enableSimulation: Readable<boolean> = derived(simulationStatus, $si
 });
 
 export const selectedSpan = derived([spansMap, selectedSpanId], ([$spansMap, $selectedSpanId]) => {
-  if ($selectedSpanId !== null) {
+  if ($selectedSpanId !== null && $spansMap !== null) {
     return $spansMap[$selectedSpanId] || null;
   }
 
@@ -168,7 +170,7 @@ export const selectedSpan = derived([spansMap, selectedSpanId], ([$spansMap, $se
 
 export const simulationDatasetLatestId = derived(
   [simulationDatasetLatest],
-  ([$simulationDatasetLatest]) => $simulationDatasetLatest?.dataset_id ?? -1,
+  ([$simulationDatasetLatest]) => $simulationDatasetLatest?.id ?? -1,
 );
 
 /* Helper Functions. */
@@ -177,15 +179,16 @@ export function resetSimulationStores() {
   externalResources.set([]);
   externalResourceNames.set([]);
   fetchingResourcesExternal.set(false);
+  initialSpansLoading.set(true);
   selectedSpanId.update(() => null);
   simulation.updateValue(() => null);
   simulationDatasetId.set(-1);
   simulationDataset.updateValue(() => null);
   simulationDatasetLatest.updateValue(() => null);
-  simulationEvents.set([]);
+  simulationEvents.set(null);
   simulationTemplates.updateValue(() => []);
-  simulationDatasetsPlan.updateValue(() => []);
-  simulationDatasetsAll.updateValue(() => []);
-  spans.set([]);
+  simulationDatasetsPlan.updateValue(() => null);
+  simulationDatasetsAll.updateValue(() => null);
+  spans.set(null);
   resourceTypes.set([]);
 }

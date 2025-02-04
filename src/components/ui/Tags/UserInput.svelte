@@ -9,6 +9,7 @@
   import UserInputRow from './UserInputRow.svelte';
 
   export let allowMultiple: boolean = true;
+  export let disabled: boolean = false;
   export let placeholder: string = 'Search users';
   export let selectedUsers: UserId[] = [];
   export let tagDisplayName = 'user';
@@ -133,6 +134,8 @@
   bind:this={inputRef}
   {addTag}
   {allowMultiple}
+  {disabled}
+  showPlaceholderIfDisabled
   ignoreCase={false}
   {placeholder}
   creatable={false}

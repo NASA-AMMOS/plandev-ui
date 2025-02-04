@@ -1687,13 +1687,41 @@ const gql = {
   GET_PLANS_AND_MODELS: `#graphql
     query GetPlansAndModels {
       models: ${Queries.MISSION_MODELS}(order_by: { id: desc }) {
+        created_at
+        description
         id
         jar_id
         name
+        owner
         plans {
           id
         }
+        refresh_activity_type_logs(order_by: { created_at: desc }, limit: 1) {
+          error
+          error_message
+          pending
+          success
+        }
+        refresh_resource_type_logs(order_by: { created_at: desc }, limit: 1) {
+          error
+          error_message
+          pending
+          success
+        }
+        refresh_model_parameter_logs(order_by: { created_at: desc }, limit: 1) {
+          error
+          error_message
+          pending
+          success
+        }
         version
+        view {
+          created_at
+          id
+          name
+          owner
+          updated_at
+        }
       }
       plans: ${Queries.PLANS}(order_by: { id: desc }) {
         collaborators {

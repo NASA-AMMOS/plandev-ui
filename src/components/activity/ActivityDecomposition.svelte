@@ -12,7 +12,7 @@
   export let expanded = true;
   export let rootSpanId: SpanId | null = null;
   export let selectedSpanId: SpanId | null = null;
-  export let spansMap: SpansMap = {};
+  export let spansMap: SpansMap | null = {};
   export let spanUtilityMaps: SpanUtilityMaps;
   export let childPageSize: number = 25;
 
@@ -31,7 +31,7 @@
   let buttonClass: string = '';
   let childIdsInView: SpanId[] = [];
 
-  $: span = rootSpanId !== null ? spansMap[rootSpanId] : null;
+  $: span = rootSpanId !== null && spansMap !== null ? spansMap[rootSpanId] : null;
   $: isRoot = span ? !span.parent_id : true;
   $: type = span?.type || '';
   $: childIds = span !== null ? spanUtilityMaps?.spanIdToChildIdsMap[span?.span_id] || [] : [];
@@ -76,7 +76,7 @@
     </span>
   </div>
 
-  {#if hasChildren && expanded}
+  {#if hasChildren && expanded && spansMap}
     <ul>
       {#each childIdsInView as childId}
         <li>

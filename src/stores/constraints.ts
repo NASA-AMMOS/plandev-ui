@@ -28,19 +28,19 @@ export const constraintsColumns: Writable<string> = writable('1fr 3px 1fr');
 
 /* Subscriptions. */
 
-export const constraints = gqlSubscribable<ConstraintMetadata[]>(gql.SUB_CONSTRAINTS, {}, [], null);
+export const constraints = gqlSubscribable<ConstraintMetadata[] | null>(gql.SUB_CONSTRAINTS, {}, null, null);
 
-export const constraintRuns = gqlSubscribable<ConstraintRun[]>(
+export const constraintRuns = gqlSubscribable<ConstraintRun[] | null>(
   gql.SUB_CONSTRAINT_RUNS,
   { simulationDatasetId: simulationDatasetLatestId },
-  [],
+  null,
   null,
 );
 
-export const constraintPlanSpecs = gqlSubscribable<ConstraintPlanSpec[]>(
+export const constraintPlanSpecs = gqlSubscribable<ConstraintPlanSpec[] | null>(
   gql.SUB_CONSTRAINT_PLAN_SPECIFICATIONS,
   { planId },
-  [],
+  null,
   null,
 );
 
@@ -52,19 +52,20 @@ export const constraintMetadata = gqlSubscribable<ConstraintMetadata | null>(
 );
 
 /* Derived. */
+
 export const constraintsMap: Readable<Record<string, ConstraintMetadata>> = derived([constraints], ([$constraints]) =>
   keyBy($constraints, 'id'),
 );
 
 export const constraintPlanSpecsMap: Readable<Record<string, ConstraintPlanSpec>> = derived(
   [constraintPlanSpecs],
-  ([$constraintPlanSpecs]) => keyBy($constraintPlanSpecs, 'constraint_id'),
+  ([$constraintPlanSpecs]) => ($constraintPlanSpecs ? keyBy($constraintPlanSpecs, 'constraint_id') : {}),
 );
 
 export const allowedConstraintSpecs: Readable<ConstraintPlanSpec[]> = derived(
   [constraintPlanSpecs],
   ([$constraintPlanSpecs]) =>
-    $constraintPlanSpecs.filter(({ constraint_metadata: constraintMetadata }) => constraintMetadata !== null),
+    ($constraintPlanSpecs || []).filter(({ constraint_metadata: constraintMetadata }) => constraintMetadata !== null),
 );
 
 export const allowedConstraintPlanSpecMap: Readable<Record<string, ConstraintPlanSpec>> = derived(
@@ -123,7 +124,7 @@ export const constraintResponseMap: Readable<Record<ConstraintDefinition['constr
     [constraintRuns, relevantRawConstraintResponses, planStartTimeMs],
     ([$constraintRuns, $checkConstraintResponse, $planStartTimeMs]) => {
       const cachedResponseMap = keyBy(
-        $constraintRuns.map(
+        ($constraintRuns || []).map(
           run =>
             ({
               constraintId: run.constraint_id,
@@ -185,7 +186,7 @@ export const uncheckedConstraintCount: Readable<number> = derived(
 export const relevantConstraintRuns: Readable<ConstraintRun[]> = derived(
   [constraintRuns, constraintPlanSpecsMap],
   ([$constraintRuns, $constraintPlanSpecsMap]) => {
-    return $constraintRuns.filter(constraintRun => {
+    return ($constraintRuns || []).filter(constraintRun => {
       const constraintPlanSpec = $constraintPlanSpecsMap[constraintRun.constraint_id];
       let revision = -1;
 
@@ -269,6 +270,20 @@ export const constraintsStatus: Readable<Status | null> = derived(
 
     return $constraintsViolationStatus ?? $cachedConstraintsStatus;
   },
+);
+
+/* Loading stores */
+
+export const initialConstraintsLoading: Readable<boolean> = derived([constraints], ([$constraints]) => !$constraints);
+
+export const initialConstraintRunsLoading: Readable<boolean> = derived(
+  [constraintRuns],
+  ([$constraintRuns]) => !$constraintRuns,
+);
+
+export const initialConstraintPlanSpecsLoading: Readable<boolean> = derived(
+  [constraintPlanSpecs],
+  ([$constraintPlanSpecs]) => !$constraintPlanSpecs,
 );
 
 /* Helper Functions. */

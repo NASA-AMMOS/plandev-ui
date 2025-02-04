@@ -66,14 +66,14 @@
     previewRevision = undefined;
   }
 
-  $: if ($selectedActivityDirective) {
+  $: if ($selectedActivityDirective && $spansMap) {
     directiveRootSpanId =
       $spansMap[$spanUtilityMaps.directiveIdToSpanIdMap[$selectedActivityDirective.id]]?.span_id ?? null;
   } else {
     directiveRootSpanId = null;
   }
 
-  $: if ($selectedSpan) {
+  $: if ($selectedSpan && $spansMap) {
     const rootSpan = getSpanRootParent($spansMap, $selectedSpan.span_id);
     if (rootSpan) {
       spanDirectiveId = $spanUtilityMaps.spanIdToDirectiveIdMap[rootSpan.span_id] ?? null;
@@ -203,7 +203,7 @@
     {#if $selectedActivityDirective && $plan !== null && viewingActivityDirectiveChangelog}
       <ActivityDirectiveChangelog
         activityDirective={$selectedActivityDirective}
-        activityDirectivesMap={$activityDirectivesMap}
+        activityDirectivesMap={$activityDirectivesMap || {}}
         activityTypes={$activityTypes}
         modelId={$modelId}
         planStartTimeYmd={$plan.start_time}
@@ -213,7 +213,7 @@
       />
     {:else if $selectedActivityDirective && $plan !== null}
       <ActivityDirectiveForm
-        activityDirectivesMap={$activityDirectivesMap}
+        activityDirectivesMap={$activityDirectivesMap || {}}
         activityDirective={$selectedActivityDirective}
         activityMetadataDefinitions={$activityMetadataDefinitions}
         activityTypes={$activityTypes}

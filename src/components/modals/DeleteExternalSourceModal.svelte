@@ -62,7 +62,7 @@
               >
                 {#each link.plan_ids as plan_id}
                   <a href="{base}/plans/{plan_id}">
-                    {$plans.find(plan => plan_id === plan.id)?.name}
+                    {($plans || []).find(plan => plan_id === plan.id)?.name}
                   </a>
                 {/each}
               </Collapse>

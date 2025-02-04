@@ -32,12 +32,14 @@
   export let hasDeletePermissionError: string = 'You do not have permission to delete.';
   export let idKey: keyof RowData = 'id';
   export let items: RowData[];
+  export let loading: boolean = false;
   export let pluralItemDisplayText: string = '';
   export let scrollToSelection: boolean = false;
   export let selectedItemId: RowId | null = null;
   export let selectedItemIds: RowId[] = [];
   export let showContextMenu: boolean = true;
   export let showCopyMenu: boolean = false;
+  export let showLoadingSkeleton: boolean = false;
   export let singleItemDisplayText: string = '';
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
@@ -163,9 +165,11 @@
   rowData={items}
   rowSelection="multiple"
   {scrollToSelection}
+  {showLoadingSkeleton}
   {suppressDragLeaveHidesColumns}
   {suppressRowClickSelection}
   {filterExpression}
+  {loading}
   on:blur={onBlur}
   on:cellEditingStarted
   on:cellEditingStopped
