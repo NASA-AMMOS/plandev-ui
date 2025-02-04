@@ -108,35 +108,7 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
   }
 
   getNameNode(timeTaggedStatementNode: SyntaxNode | null): SyntaxNode | null {
-    const ruleStatementNode = timeTaggedStatementNode?.getChild(RULE_STATEMENT);
-
-    const statementSubNode = ruleStatementNode?.getChild(GROUP_STATEMENT_SUB);
-    if (statementSubNode) {
-      switch (statementSubNode.name) {
-        case RULE_ISSUE:
-          return statementSubNode.getChild(RULE_FUNCTION_NAME);
-        case RULE_ISSUE_DYNAMIC:
-          // first call parameter is method
-          return (
-            statementSubNode
-              .getChild(RULE_CALL_PARAMETERS)
-              ?.getChild(RULE_CALL_PARAMETER)
-              ?.getChild(RULE_SIMPLE_EXPR)
-              ?.getChild(RULE_CONSTANT)
-              ?.getChild(TOKEN_STRING_CONST) ?? null
-          );
-        case RULE_VM_MANAGEMENT:
-          {
-            const spawnNode = statementSubNode.getChild(RULE_SPAWN);
-            if (spawnNode) {
-              return spawnNode.getChild(RULE_FUNCTION_NAME);
-            }
-          }
-          break;
-      }
-    }
-
-    return null;
+    return getVmlNameNode(timeTaggedStatementNode);
   }
 
   getVariables(docText: string, tree: Tree, position: number): string[] {
@@ -195,6 +167,38 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
   nodeTypeNumberCompatible(node: SyntaxNode | null): boolean {
     return !!node?.getChild(RULE_SIMPLE_EXPR)?.getChild(RULE_CONSTANT)?.getChild(TOKEN_INT_CONST);
   }
+}
+
+export function getVmlNameNode(timeTaggedStatementNode: SyntaxNode | null): SyntaxNode | null {
+  const ruleStatementNode = timeTaggedStatementNode?.getChild(RULE_STATEMENT);
+
+  const statementSubNode = ruleStatementNode?.getChild(GROUP_STATEMENT_SUB);
+  if (statementSubNode) {
+    switch (statementSubNode.name) {
+      case RULE_ISSUE:
+        return statementSubNode.getChild(RULE_FUNCTION_NAME);
+      case RULE_ISSUE_DYNAMIC:
+        // first call parameter is method
+        return (
+          statementSubNode
+            .getChild(RULE_CALL_PARAMETERS)
+            ?.getChild(RULE_CALL_PARAMETER)
+            ?.getChild(RULE_SIMPLE_EXPR)
+            ?.getChild(RULE_CONSTANT)
+            ?.getChild(TOKEN_STRING_CONST) ?? null
+        );
+      case RULE_VM_MANAGEMENT:
+        {
+          const spawnNode = statementSubNode.getChild(RULE_SPAWN);
+          if (spawnNode) {
+            return spawnNode.getChild(RULE_FUNCTION_NAME);
+          }
+        }
+        break;
+    }
+  }
+
+  return null;
 }
 
 export function getArgumentPosition(argNode: SyntaxNode): number {

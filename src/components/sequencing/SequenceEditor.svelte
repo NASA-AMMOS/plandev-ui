@@ -228,7 +228,7 @@
             effects: compartmentSeqLinter.reconfigure(vmlLinter(commandDictionary, librarySequenceMap)),
           });
           editorSequenceView.dispatch({
-            effects: compartmentSeqTooltip.reconfigure(vmlTooltip(commandDictionary)),
+            effects: compartmentSeqTooltip.reconfigure(vmlTooltip(commandDictionary, librarySequenceMap)),
           });
         });
       } else {
