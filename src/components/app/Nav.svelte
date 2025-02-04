@@ -14,6 +14,20 @@
     await changeUserRole(value as string);
     window.location.reload();
   }
+  let open = false;
+  onMount(() => {
+    function handleKeydown(e: KeyboardEvent) {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        open = !open;
+      }
+    }
+
+    document.addEventListener('keydown', handleKeydown);
+    return () => {
+      document.removeEventListener('keydown', handleKeydown);
+    };
+  });
 </script>
 
 <div class="w-100 flex h-12 items-center bg-[#110D3D] px-4 dark:bg-secondary" role="navigation">
