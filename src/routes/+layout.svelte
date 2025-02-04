@@ -4,6 +4,7 @@
   import { modalBodyClickListener, modalBodyKeyListener } from '../utilities/modal';
 
   import { env } from '$env/dynamic/public';
+  import { ModeWatcher } from '@nasa-jpl/stellar-svelte';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { mergeWith } from 'lodash-es';
   import { onMount } from 'svelte';
@@ -56,6 +57,8 @@
     </div>
   </div>
 {/if}
+
+<ModeWatcher />
 
 <div id="svelte-modal" />
 
