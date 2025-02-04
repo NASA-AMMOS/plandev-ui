@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, Command, Select, ThemeSwitcherButton } from '@nasa-jpl/stellar-svelte';
+  import { Command, Select, ThemeSwitcherButton } from '@nasa-jpl/stellar-svelte';
   import { Expand, Goal, Scale, SquarePlay } from 'lucide-svelte';
   import { onMount } from 'svelte';
   import AppMenu from '../../components/menus/AppMenu.svelte';
@@ -32,11 +32,11 @@
   });
 </script>
 
-<div class="nav">
-  <div class="left">
+<div class="px-4 bg-primary dark:bg-secondary flex h-12 w-100 items-center">
+  <div class="flex gap-2 items-center flex-1">
     <AppMenu {user} />
-    <div class="divider" />
-    <div class="title st-typography-medium">
+    <div class="bg-white w-[1px] h-4 opacity-20" />
+    <div class="text-sm text-white font-medium">
       <slot name="title" />
     </div>
     <slot name="left" />
@@ -67,7 +67,7 @@
   </Command.Dialog>
 
   <div class="text-secondary-foreground flex items-center gap-2 mr-2">
-    <p class="text-muted-foreground text-sm bg-secondary px-2 py-1 rounded">
+    <p class="text-muted-foreground text-sm bg-secondary dark:bg-primary-foreground px-2 py-1 rounded">
       Press
       <kbd
         class="bg-muted text-muted-foreground pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border px-1.5 font-mono text-[10px] font-medium opacity-100"
@@ -75,11 +75,9 @@
         <span class="text-xs">⌘</span>K
       </kbd>
     </p>
-    <ThemeSwitcherButton />
-    <Button variant="secondary">Test</Button>
   </div>
 
-  <div class="right">
+  <div class="items-center inline-flex gap-1">
     <slot name="right" />
     {#if userRoles.length > 1}
       <!-- <select value={user?.activeRole} class="st-select" on:change={changeRole}>
@@ -91,59 +89,30 @@
         selected={{ label: user?.activeRole ?? '', value: user?.activeRole ?? '' }}
         onSelectedChange={v => v && changeRole(v.value)}
       >
-        <Select.Trigger class="w-[180px]" value={user?.activeRole}>
-          <Select.Value placeholder="Select a fruit" class="text-secondary-foreground" />
+        <Select.Trigger class="w-[200px]" value={user?.activeRole}>
+          <Select.Value placeholder="Select a" class="text-secondary-foreground" />
         </Select.Trigger>
         <Select.Content>
           <Select.Group>
-            <Select.Label>Fruits</Select.Label>
+            <Select.Label>Select Role</Select.Label>
             {#each userRoles as userRole}
               <Select.Item value={userRole} label={userRole}>{userRole}</Select.Item>
             {/each}
           </Select.Group>
+          <Select.Separator />
+          <Select.Label class="font-normal text-muted-foreground">Logged in as {user?.id || 'Unknown'}</Select.Label>
         </Select.Content>
-        <Select.Input name="favoriteFruit" />
+        <Select.Input name="user-menu" />
       </Select.Root>
     {/if}
+    <div class="dark:text-white">
+      <ThemeSwitcherButton />
+    </div>
   </div>
 </div>
 
 <style>
   :root {
     --nav-header-height: 48px;
-  }
-  .nav {
-    align-items: center;
-    background: #110d3e;
-    color: var(--st-primary-background-color);
-    display: flex;
-    height: var(--nav-header-height);
-    padding: 1rem;
-    z-index: 9;
-  }
-
-  .divider {
-    background: var(--st-white);
-    height: 16px;
-    opacity: 0.2;
-    width: 1px;
-  }
-
-  .title {
-    align-items: center;
-    color: var(--st-gray-20);
-    font-size: 14px;
-  }
-
-  .left {
-    align-items: center;
-    display: flex;
-    flex-grow: 1;
-    gap: 10px;
-  }
-
-  .right {
-    align-items: center;
-    display: inline-flex;
   }
 </style>
