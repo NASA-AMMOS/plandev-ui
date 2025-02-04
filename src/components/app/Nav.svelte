@@ -58,6 +58,8 @@
               <Select.Item size="xs" value={userRole} label={userRole}>{userRole}</Select.Item>
             {/each}
           </Select.Group>
+          <Select.Separator />
+          <Select.Label class="font-normal text-muted-foreground">Logged in as {user?.id || 'Unknown'}</Select.Label>
         </Select.Content>
         <Select.Input name="user-menu" />
       </Select.Root>
