@@ -5,7 +5,6 @@
   import { base } from '$app/paths';
   import { env } from '$env/dynamic/public';
   import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
-  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import GraphQLIcon from '@nasa-jpl/stellar/icons/graphql.svg?component';
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import TagIcon from '@nasa-jpl/stellar/icons/tag.svg?component';
@@ -19,6 +18,7 @@
   import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
   import JournalTextIcon from 'bootstrap-icons/icons/journal-text.svg?component';
   import JournalsIcon from 'bootstrap-icons/icons/journals.svg?component';
+  import { ChevronDown } from 'lucide-svelte';
   import AerieWordmarkDark from '../../assets/aerie-wordmark-dark.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
   import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
@@ -34,11 +34,13 @@
   let appMenu: Menu;
 </script>
 
-<div class="app-menu" role="none" on:click|stopPropagation={() => appMenu.toggle()}>
-  <div class="app-icon"><AerieWordmarkDark /></div>
-
-  <ChevronDownIcon />
-
+<div
+  class="items-center cursor-pointer flex gap-1 justify-center relative"
+  role="none"
+  on:click|stopPropagation={() => appMenu.toggle()}
+>
+  <AerieWordmarkDark />
+  <ChevronDown strokeWidth={2} size={16} class="text-white" />
   <Menu bind:this={appMenu}>
     <MenuItem on:click={() => goto(`${base}/plans`)} on:pointerenter={() => preloadData(`${base}/plans`)}>
       <PlanIcon />
@@ -132,16 +134,16 @@
 </div>
 
 <style>
-  .app-menu {
+  /* .app-menu {
     align-items: center;
     cursor: pointer;
     display: flex;
     gap: 5px;
     justify-content: center;
     position: relative;
-  }
+  } */
 
-  .app-icon {
+  /* .app-icon {
     align-items: center;
     display: flex;
     font-size: 24px;
@@ -149,7 +151,7 @@
     justify-content: center;
     line-height: 24px;
     width: 88px;
-  }
+  } */
 
   .app-menu--user {
     background: var(--st-gray-10);
