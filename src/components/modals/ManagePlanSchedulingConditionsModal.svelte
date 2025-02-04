@@ -212,7 +212,6 @@
     }
   }
 
-  // TODO BUG scheduling condition management not working within a plan, something broke it in this PR.
   async function onUpdateCondition(selectedConditions: Record<number, boolean>) {
     if ($plan && $schedulingPlanSpecification) {
       const conditionPlanSpecUpdates: {
