@@ -419,7 +419,7 @@ Unop {
 }
 
 Built_in_function {
-  // Grammar shows 2 set paranthesis for zero arg, one here, and one next level down
+  // Grammar shows 2 set parenthesis for zero arg, one here, and one next level down
   // (Zero_parm_built_in_function_name OPEN_PAREN CLOSE_PAREN)
   Zero_parm_built_in_function_name
   | (Unary_parm_built_in_function_name OPEN_PAREN Compound_expr CLOSE_PAREN)

@@ -3,7 +3,7 @@
 <script lang="ts">
   import { json } from '@codemirror/lang-json';
   import { indentService, syntaxTree } from '@codemirror/language';
-  import { lintGutter } from '@codemirror/lint';
+  import { lintGutter, openLintPanel } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate } from '@codemirror/view';
   import type { SyntaxNode, Tree } from '@lezer/common';
@@ -490,6 +490,10 @@
     toggleSeqJsonPreview = !toggleSeqJsonPreview;
   }
 
+  function showErrorPanel() {
+    openLintPanel(editorSequenceView);
+  }
+
   function formatDocument() {
     if (isInVmlMode) {
       vmlFormat(editorSequenceView);
@@ -630,6 +634,14 @@
         <SectionTitle>{title}</SectionTitle>
 
         <div class="right">
+          <button
+            use:tooltip={{ content: 'Show Error Panel', placement: 'top' }}
+            class="st-button icon-button secondary ellipsis"
+            on:click={showErrorPanel}
+          >
+            Error Panel
+          </button>
+
           <button
             use:tooltip={{ content: 'Format sequence whitespace', placement: 'top' }}
             class="st-button icon-button secondary ellipsis"
