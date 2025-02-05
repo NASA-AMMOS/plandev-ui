@@ -2193,6 +2193,7 @@ const gql = {
         versions(order_by: {revision: desc}) {
           author
           definition
+          parameter_schema
           revision
           type
           uploaded_jar_id
@@ -2998,6 +2999,7 @@ const gql = {
         analyses(order_by: { analysis_id: desc }) {
           analysis_id
           goal_id
+          goal_invocation_id
           goal_revision
           request {
             specification_id
@@ -3029,6 +3031,7 @@ const gql = {
         versions(order_by: {revision: desc}) {
           author
           definition
+          parameter_schema
           revision
           tags {
             tag_id
@@ -3099,6 +3102,7 @@ const gql = {
             analyses(order_by: { analysis_id: desc }) {
               analysis_id
               goal_id
+              goal_invocation_id
               goal_revision
               request {
                 specification_id
@@ -3119,6 +3123,7 @@ const gql = {
               analyses(order_by: { analysis_id: desc }) {
                 analysis_id
                 goal_id
+                goal_invocation_id
                 goal_revision
                 request {
                   specification_id
