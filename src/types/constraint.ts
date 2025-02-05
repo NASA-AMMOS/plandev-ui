@@ -1,13 +1,11 @@
 import type { ConstraintDefinitionType } from '../enums/constraint';
 import type { PartialWith } from './app';
 import type { BaseDefinition, BaseMetadata } from './metadata';
-import type { ValueSchema } from './schema';
 import type { ConstraintTagsInsertInput } from './tags';
 import type { TimeRange } from './timeline';
 
 export type ConstraintDefinition = BaseDefinition & {
   constraint_id: number;
-  parameter_schema?: ValueSchema;
   type: ConstraintDefinitionType;
   uploaded_jar_id: number | null;
 };
