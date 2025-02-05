@@ -54,7 +54,14 @@
   }
 
   $: {
-    version = goalPlanSpec.goal_metadata?.versions[0]; // plan gql query already orders by version and limits 1
+    if (goalPlanSpec.goal_revision !== null) {
+      version = goal.versions.find(version => version.revision === goalPlanSpec.goal_revision);
+    } else {
+      // if the `goal_revision` is null, that means to use the latest version of the definition
+      // the query for this goal returns the versions in descending order, so the first entry in the array should correspond to the latest version
+      version = goal.versions[0];
+    }
+
     const schema = version?.parameter_schema;
 
     if (schema && schema.type === 'struct') {
@@ -169,7 +176,12 @@
     </svelte:fragment>
     <svelte:fragment slot="right">
       <div class="right-content" role="none" on:click|stopPropagation>
-        <SchedulingGoalAnalysesBadge analyses={goal.analyses} {enabled} />
+        <SchedulingGoalAnalysesBadge
+          analyses={(goal.analyses ?? []).filter(
+            analyses => analyses.goal_invocation_id === goalPlanSpec.goal_invocation_id,
+          )}
+          {enabled}
+        />
         <div class="priority-container">
           <input
             bind:this={schedulingGoalInput}
@@ -230,7 +242,6 @@
     </Collapse>
 
     <SchedulingGoalAnalysesActivities analyses={goal.analyses} />
-
     <svelte:fragment slot="contextMenuContent">
       <ContextMenuItem
         on:click={() =>
@@ -276,36 +287,34 @@
           <input bind:checked={simulateGoal} style:cursor="pointer" type="checkbox" /> Simulate After
         </div>
       </ContextMenuItem>
-      {#if version?.type === 'JAR'}
-        <ContextMenuItem
-          on:click={onDuplicateGoalInvocation}
-          use={[
-            [
-              permissionHandler,
-              {
-                hasPermission: hasEditPermission,
-                permissionError: editPermissionError,
-              },
-            ],
-          ]}
-        >
-          Duplicate Invocation
-        </ContextMenuItem>
-        <ContextMenuItem
-          on:click={onDeleteGoalInvocation}
-          use={[
-            [
-              permissionHandler,
-              {
-                hasPermission: hasEditPermission,
-                permissionError: editPermissionError,
-              },
-            ],
-          ]}
-        >
-          Delete Invocation
-        </ContextMenuItem>
-      {/if}
+      <ContextMenuItem
+        on:click={onDuplicateGoalInvocation}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasEditPermission,
+              permissionError: editPermissionError,
+            },
+          ],
+        ]}
+      >
+        Duplicate Invocation
+      </ContextMenuItem>
+      <ContextMenuItem
+        on:click={onDeleteGoalInvocation}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasEditPermission,
+              permissionError: editPermissionError,
+            },
+          ],
+        ]}
+      >
+        Delete Invocation
+      </ContextMenuItem>
     </svelte:fragment>
   </Collapse>
 </div>

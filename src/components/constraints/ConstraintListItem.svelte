@@ -55,7 +55,13 @@
   $: violationCount = constraintResponse?.results?.violations?.length;
   $: success = constraintResponse?.success;
   $: {
-    version = constraintPlanSpec.constraint_metadata?.versions[0]; // plan gql query already orders by version and limits 1
+    if (constraintPlanSpec.constraint_revision !== null) {
+      version = constraint.versions.find(version => version.revision === constraintPlanSpec.constraint_revision);
+    } else {
+      // if the `constraint_revision` is null, that means to use the latest version of the definition
+      // the query for this constraint returns the versions in descending order, so the first entry in the array should correspond to the latest version
+      version = constraint.versions[0];
+    }
     const schema = version?.parameter_schema;
     if (schema && schema.type === 'struct') {
       formParameters = Object.entries(schema.items).map(([name, subschema], i) => ({
@@ -217,36 +223,34 @@
       >
         View Constraint
       </ContextMenuItem>
-      {#if version?.type === 'JAR'}
-        <ContextMenuItem
-          on:click={onDuplicateConstraintInvocation}
-          use={[
-            [
-              permissionHandler,
-              {
-                hasPermission: hasEditPermission,
-                permissionError: editPermissionError,
-              },
-            ],
-          ]}
-        >
-          Duplicate Invocation
-        </ContextMenuItem>
-        <ContextMenuItem
-          on:click={onDeleteConstraintInvocation}
-          use={[
-            [
-              permissionHandler,
-              {
-                hasPermission: hasDeletePermission,
-                permissionError: deletePermissionError,
-              },
-            ],
-          ]}
-        >
-          Delete Invocation
-        </ContextMenuItem>
-      {/if}
+      <ContextMenuItem
+        on:click={onDuplicateConstraintInvocation}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasEditPermission,
+              permissionError: editPermissionError,
+            },
+          ],
+        ]}
+      >
+        Duplicate Invocation
+      </ContextMenuItem>
+      <ContextMenuItem
+        on:click={onDeleteConstraintInvocation}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasDeletePermission,
+              permissionError: deletePermissionError,
+            },
+          ],
+        ]}
+      >
+        Delete Invocation
+      </ContextMenuItem>
     </svelte:fragment>
 
     <Collapse title="Description" defaultExpanded={false}>
