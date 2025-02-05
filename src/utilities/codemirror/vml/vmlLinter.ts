@@ -56,7 +56,7 @@ export function vmlLinter(
     }
 
     const parsed = VmlLanguage.parser.parse(sequence);
-    diagnostics.push(...validateCommands(commandDictionary, librarySequenceMap, globals, sequence, parsed));
+    diagnostics.push(...validateCommands(commandDictionary, librarySequenceMap, sequence, parsed));
     diagnostics.push(...validateGlobals(sequence, tree, globals));
 
     return diagnostics;
@@ -101,7 +101,6 @@ function validateGlobals(input: string, tree: Tree, globals: GlobalType[]): Diag
 function validateCommands(
   commandDictionary: CommandDictionary,
   librarySequenceMap: LibrarySequenceMap,
-  globals: GlobalType[],
   docText: string,
   parsed: Tree,
 ): Diagnostic[] {
@@ -111,9 +110,9 @@ function validateCommands(
     const { node } = cursor;
     const tokenType = node.type.name;
     if (tokenType === RULE_ISSUE || tokenType === RULE_ISSUE_DYNAMIC) {
-      diagnostics.push(...validateIssue(node, docText, commandDictionary, globals, tokenType));
+      diagnostics.push(...validateIssue(node, docText, commandDictionary, tokenType));
     } else if (tokenType === RULE_SPAWN) {
-      diagnostics.push(...validateSpawn(node, docText, librarySequenceMap, globals));
+      diagnostics.push(...validateSpawn(node, docText, librarySequenceMap));
     }
   } while (cursor.next());
   return diagnostics;
@@ -123,7 +122,6 @@ function validateIssue(
   node: SyntaxNode,
   docText: string,
   commandDictionary: CommandDictionary,
-  globals: GlobalType[],
   tokenType: string,
 ): Diagnostic[] {
   const isDynamic = tokenType === RULE_ISSUE_DYNAMIC;
@@ -138,18 +136,13 @@ function validateIssue(
       const alternativeStem = isDynamic ? quoteEscape(closestStem) : closestStem;
       return [suggestAlternative(stemNameNode, stemName, 'command', alternativeStem)];
     } else {
-      return validateArguments(commandDictionary, globals, commandDef, node, stemNameNode, docText, isDynamic ? 1 : 0);
+      return validateArguments(commandDictionary, commandDef, node, stemNameNode, docText, isDynamic ? 1 : 0);
     }
   }
   return [];
 }
 
-function validateSpawn(
-  node: SyntaxNode,
-  docText: string,
-  librarySequenceMap: LibrarySequenceMap,
-  globals: GlobalType[],
-): Diagnostic[] {
+function validateSpawn(node: SyntaxNode, docText: string, librarySequenceMap: LibrarySequenceMap): Diagnostic[] {
   const spawnedNameNode = node.getChild(RULE_FUNCTION_NAME);
   if (spawnedNameNode) {
     const spawnedSeqName = docText.slice(spawnedNameNode.from, spawnedNameNode.to);
@@ -163,10 +156,6 @@ function validateSpawn(
           closest(spawnedSeqName, Object.keys(librarySequenceMap)),
         ),
       ];
-    } else {
-      if (globals) {
-        // Check arguments
-      }
     }
   }
   return [];
@@ -198,7 +187,6 @@ function suggestAlternative(node: SyntaxNode, current: string, typeLabel: string
 
 function validateArguments(
   commandDictionary: CommandDictionary,
-  globals: GlobalType[],
   commandDef: FswCommand,
   functionNode: SyntaxNode,
   functionNameNode: SyntaxNode,
@@ -215,7 +203,7 @@ function validateArguments(
 
     if (argDef && argNode) {
       // validate expected argument
-      diagnostics.push(...validateArgument(commandDictionary, globals, argDef, argNode, docText));
+      diagnostics.push(...validateArgument(commandDictionary, argDef, argNode, docText));
     } else if (!argNode && !!argDef) {
       const { from, to } = functionNameNode;
       diagnostics.push({
@@ -243,7 +231,6 @@ function validateArguments(
 
 function validateArgument(
   commandDictionary: CommandDictionary,
-  globals: GlobalType[],
   argDef: FswCommandArgument,
   argNode: SyntaxNode,
   docText: string,
