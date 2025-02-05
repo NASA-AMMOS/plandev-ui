@@ -39,7 +39,7 @@ import { getVmlVariables } from './vmlTreeUtils';
 // Functions beginning with BLOCK or RELATIVE_SEQUENCE may have only relative time tags.
 
 // Limit how many grammar problems are annotated
-const MAX_PARSER_ERRORS = 100;
+const MAX_PARSER_ERRORS = 10;
 
 export function vmlLinter(
   commandDictionary: CommandDictionary | null = null,
@@ -83,7 +83,8 @@ function validateGlobals(input: string, tree: Tree, globals: GlobalType[]): Diag
         if (timeTaggedStatementsNode) {
           const variablesInScope = declaredVariables[timeTaggedStatementsNode.from];
           if (!variablesInScope.has(variableReference)) {
-            const alternative = closest(variableReference, Array.from(globalNames.union(variablesInScope)));
+            const symbolsInScope = [...Array.from(variablesInScope), ...Array.from(globalNames)];
+            const alternative = closest(variableReference, symbolsInScope);
             diagnostics.push(suggestAlternative(node, variableReference, 'symbolic reference', alternative));
           }
         }
