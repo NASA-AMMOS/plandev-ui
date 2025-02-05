@@ -44,7 +44,7 @@ const MAX_PARSER_ERRORS = 10;
 export function vmlLinter(
   commandDictionary: CommandDictionary | null = null,
   librarySequenceMap: LibrarySequenceMap = {},
-  globals: GlobalType[],
+  globals: GlobalType[] = [],
 ): Extension {
   return linter(view => {
     const diagnostics: Diagnostic[] = [];
