@@ -10,6 +10,7 @@
   import { onMount } from 'svelte';
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
+  import CommandPalette from '../components/ui/CommandPalette.svelte';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
   import { loadPluginCode } from '../utilities/plugins';
 
@@ -59,6 +60,8 @@
 {/if}
 
 <ModeWatcher />
+
+<CommandPalette />
 
 <div id="svelte-modal" />
 
