@@ -99,14 +99,7 @@ html:focus-within {
 }
 
 body {
-  background-color: var(--st-primary-background-color);
-  color: var(--st-primary-text-color);
-  font-family: Inter, Roboto;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.5;
   min-height: 100vh;
-  text-rendering: optimizeSpeed;
 }
 
 label.error,
