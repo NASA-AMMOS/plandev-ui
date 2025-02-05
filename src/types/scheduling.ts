@@ -3,7 +3,6 @@ import type { PartialWith } from './app';
 import type { SchedulingError } from './errors';
 import type { BaseDefinition, BaseMetadata } from './metadata';
 import type { ArgumentsMap } from './parameter';
-import type { ValueSchema } from './schema';
 import type { SchedulingTagsInsertInput } from './tags';
 
 type SchedulingDefinitionResponse<D> = Omit<D, 'tags'> & {
@@ -37,7 +36,6 @@ export type SchedulingConditionMetadataVersionDefinition = Pick<
 export type SchedulingGoalDefinition = BaseDefinition & {
   analyses?: SchedulingGoalAnalysis[];
   goal_id: number;
-  parameter_schema?: ValueSchema;
   type: SchedulingDefinitionType;
   uploaded_jar_id: number | null;
 };
@@ -115,6 +113,7 @@ export type SchedulingGoalAnalysis = {
   analysis_id: number;
   goal_definition: SchedulingGoalDefinition;
   goal_id: number;
+  goal_invocation_id: number;
   goal_revision: number;
   request: { specification_id: number };
   satisfied: boolean;
