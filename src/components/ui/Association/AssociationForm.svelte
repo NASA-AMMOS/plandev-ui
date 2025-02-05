@@ -158,6 +158,10 @@
   $: isDefinitionModified =
     diffDefinition({ definition: initialDefinitionCode }, { definition: definitionCode }) ||
     (definitionType === DefinitionType.FILE && (definitionFiles?.length ?? 0) > 0);
+  $: if (!name && definitionFiles?.length) {
+    const definitionFileName = definitionFiles[0].name;
+    name = definitionFileName.replace(/\..*$/, '');
+  }
   $: isDefinitionTagsModified = diffTags(initialDefinitionTags || [], definitionTags);
   $: hasUpdateDefinitionPermission = hasWriteDefinitionTagsPermission || isDefinitionModified;
   $: pageTitle = mode === 'edit' ? 's' : 'New ';
@@ -438,24 +442,6 @@
     </svelte:fragment>
 
     <svelte:fragment slot="body">
-      <fieldset>
-        <label for="metadata-name">Name</label>
-        <input
-          bind:value={name}
-          autocomplete="off"
-          class:metadata-form-error={!!nameError}
-          class="st-input w-100"
-          name="metadata-name"
-          placeholder={`Enter ${displayName} Name (required)`}
-          required
-          use:permissionHandler={{
-            hasPermission: hasWriteMetadataPermission,
-            permissionError,
-          }}
-        />
-        <div class="metadata-form-error-message">{nameError}</div>
-      </fieldset>
-
       {#if showDefinitionTypeSelector && !!definitionTypeConfigurations}
         <fieldset>
           <RadioButtons selectedButtonId={definitionType} on:select-radio-button={onSelectDefinitionType}>
@@ -498,6 +484,24 @@
             />
           {/if}
         </div>
+      </fieldset>
+
+      <fieldset>
+        <label for="metadata-name">Name</label>
+        <input
+          bind:value={name}
+          autocomplete="off"
+          class:metadata-form-error={!!nameError}
+          class="st-input w-100"
+          name="metadata-name"
+          placeholder={`Enter ${displayName} Name (required)`}
+          required
+          use:permissionHandler={{
+            hasPermission: hasWriteMetadataPermission,
+            permissionError,
+          }}
+        />
+        <div class="metadata-form-error-message">{nameError}</div>
       </fieldset>
 
       <fieldset>
