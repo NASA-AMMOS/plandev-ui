@@ -190,7 +190,6 @@ Issue {
 // Some examples include commas between arguments
 Issue_dynamic {
   ISSUE_DYNAMIC
-  // Function_name not shown in schema
   // Function_name is first call parameter in sample
   Call_parameters
 }
