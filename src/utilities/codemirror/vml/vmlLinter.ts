@@ -75,26 +75,32 @@ function validateGlobals(input: string, tree: Tree, globals: GlobalType[]): Diag
 
   // check all variables
   for (const node of filterNodes(tree.cursor(), node => node.name === RULE_VARIABLE_NAME)) {
-    // don't check variable declarations
-    if (!getNearestAncestorNodeOfType(node, [RULE_PARAMETER])) {
-      const variableReference = input.slice(node.from, node.to);
-      if (!globalNames.has(variableReference)) {
-        const timeTaggedStatementsNode = getNearestAncestorNodeOfType(node, [RULE_TIME_TAGGED_STATEMENTS]);
-        if (timeTaggedStatementsNode) {
-          const variablesInScope = declaredVariables[timeTaggedStatementsNode.from];
-          if (!variablesInScope.has(variableReference)) {
-            const symbolsInScope = [...Array.from(variablesInScope), ...Array.from(globalNames)];
-            const alternative = closest(variableReference, symbolsInScope);
-            diagnostics.push(suggestAlternative(node, variableReference, 'symbolic reference', alternative));
-          }
-        }
-      }
-    }
-
     if (diagnostics.length >= 10) {
       // stop checking to avoid flood of errors if adaptation is misconfigured
       break;
     }
+
+    if (getNearestAncestorNodeOfType(node, [RULE_PARAMETER])) {
+      // don't check variable declarations
+      continue;
+    }
+
+    const variableReference = input.slice(node.from, node.to);
+    if (globalNames.has(variableReference)) {
+      // matches global
+      continue;
+    }
+
+    const timeTaggedStatementsNode = getNearestAncestorNodeOfType(node, [RULE_TIME_TAGGED_STATEMENTS]);
+    const variablesInScope = timeTaggedStatementsNode ? declaredVariables[timeTaggedStatementsNode.from] : new Set([]);
+    if (!variablesInScope.has(variableReference)) {
+      // matches local
+      continue;
+    }
+
+    const symbolsInScope = [...Array.from(variablesInScope), ...Array.from(globalNames)];
+    const alternative = closest(variableReference, symbolsInScope);
+    diagnostics.push(suggestAlternative(node, variableReference, 'symbolic reference', alternative));
   }
   return diagnostics;
 }
