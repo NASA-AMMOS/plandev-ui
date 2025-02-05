@@ -2,16 +2,17 @@
 
 export const RULE_TEXT_FILE = 'Text_file';
 
-export const RULE_FUNCTIONS = 'Functions';
-export const RULE_FUNCTION = 'Function';
+export const RULE_BODY = 'Body';
 
 export const RULE_ABSOLUTE_SEQUENCE = 'Absolute_Sequence';
+export const RULE_RELATIVE_SEQUENCE = 'Relative_sequence';
+export const RULE_BLOCK = 'Block';
+export const RULE_SEQUENCE = 'Sequence';
 
 export const RULE_COMMON_FUNCTION = 'Common_Function';
 
-export const RULE_BODY = 'Body';
-
-export const RULE_BLOCK = 'Block';
+export const RULE_FUNCTIONS = 'Functions';
+export const RULE_FUNCTION = 'Function';
 
 export const RULE_IF = 'If';
 export const RULE_ELSE_IF = 'Else_if';
@@ -63,6 +64,9 @@ export const RULE_BYTE_ARRAY = 'Byte_array';
 export const GROUP_STATEMENT_SUB = 'StatementSub';
 
 // Terminals in grammar
+export const TOKEN_MODULE = 'MODULE';
+export const TOKEN_END_MODULE = 'END_MODULE';
+
 export const TOKEN_INT = 'INT';
 export const TOKEN_UINT = 'UINT';
 export const TOKEN_DOUBLE = 'DOUBLE';
@@ -80,6 +84,7 @@ export const TOKEN_UINT_CONST = 'UINT_CONST';
 export const TOKEN_HEX_CONST = 'HEX_CONST';
 export const TOKEN_TIME_CONST = 'TIME_CONST';
 export const TOKEN_INT_RANGE_CONST = 'INT_RANGE_CONST';
+export const TOKEN_SYMBOL_CONST = 'SYMBOL_CONST';
 
 export const TOKEN_EXTERNAL_CALL = 'EXTERNAL_CALL';
 export const TOKEN_CALL = 'CALL';
@@ -100,3 +105,8 @@ export const TOKEN_TO = 'TO';
 export const TOKEN_STEP = 'STEP';
 export const TOKEN_DO = 'DO';
 export const TOKEN_END_FOR = 'END_FOR';
+
+export const TOKEN_ABSOLUTE_SEQUENCE = 'ABSOLUTE_SEQUENCE';
+export const TOKEN_RELATIVE_SEQUENCE = 'RELATIVE_SEQUENCE';
+export const TOKEN_BLOCK = 'BLOCK';
+export const TOKEN_SEQUENCE = 'SEQUENCE';

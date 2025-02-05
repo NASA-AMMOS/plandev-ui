@@ -1,4 +1,4 @@
-import { snippet, type CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
+import { snippet, type Completion, type CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
 import { syntaxTree } from '@codemirror/language';
 import type { CommandDictionary, EnumMap, FswCommand, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
@@ -8,14 +8,24 @@ import { getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
 import { VmlLanguage } from './vml';
 import { vmlBlockLibraryToCommandDictionary } from './vmlBlockLibrary';
 import {
+  RULE_FUNCTION,
   RULE_FUNCTION_NAME,
   RULE_ISSUE,
+  RULE_PARAMETER,
   RULE_STATEMENT,
   RULE_TIME_TAGGED_STATEMENT,
+  RULE_VARIABLE_NAME,
+  TOKEN_ABSOLUTE_SEQUENCE,
+  TOKEN_BLOCK,
+  TOKEN_END_MODULE,
+  TOKEN_MODULE,
+  TOKEN_RELATIVE_SEQUENCE,
+  TOKEN_SEQUENCE,
   TOKEN_STRING_CONST,
+  TOKEN_SYMBOL_CONST,
   TOKEN_TIME_CONST,
 } from './vmlConstants';
-import { getArgumentPosition } from './vmlTreeUtils';
+import { getArgumentPosition, getVmlVariables } from './vmlTreeUtils';
 
 function structureSnippets(timePrefix: string) {
   return [
@@ -59,9 +69,33 @@ export function vmlAutoComplete(
 
       if (!cursorLineTrimmed) {
         // line is empty
+        const options: Completion[] = [];
+        if (!tree.topNode.getChild(TOKEN_MODULE)) {
+          options.push({
+            apply: `${TOKEN_MODULE}\n\n\n${TOKEN_END_MODULE}\n\n`,
+            label: 'MODULE',
+            type: 'function',
+          });
+        } else if (!getNearestAncestorNodeOfType(nodeCurrent, [RULE_FUNCTION])) {
+          options.push(
+            ...[TOKEN_BLOCK, TOKEN_ABSOLUTE_SEQUENCE, TOKEN_RELATIVE_SEQUENCE, TOKEN_SEQUENCE].map(seqType => ({
+              apply: snippet(`${seqType} \${function_name}
+FLAGS \${AUTOEXECUTE} \${AUTOUNLOAD} \${REENTRANT}
+BODY
+
+END_BODY
+`),
+              label: seqType,
+              type: 'function',
+            })),
+          );
+        } else {
+          options.push(...structureSnippets('R00:00:00.00 '));
+        }
+
         return {
           from: context.pos,
-          options: structureSnippets('R00:00:00.00 '),
+          options,
         };
       } else if (nodeCurrent.name === RULE_TIME_TAGGED_STATEMENT) {
         const timeConstToken = nodeCurrent.getChild(TOKEN_TIME_CONST);
@@ -88,7 +122,17 @@ export function vmlAutoComplete(
           type: 'function',
         })),
       };
-    } else if (nodeCurrent.name === TOKEN_STRING_CONST) {
+    }
+
+    const globalOptions: CompletionResult['options'] = globals.map(g => ({
+      apply: g.name,
+      detail: 'category' in g && typeof g.category === 'string' ? g.category : 'global',
+      label: g.name,
+      section: 'globals, constants',
+      type: 'builtin',
+    }));
+
+    if (nodeCurrent.name === TOKEN_STRING_CONST) {
       // also show if before argument
 
       const containingStatement = getNearestAncestorNodeOfType(nodeCurrent, [RULE_STATEMENT]);
@@ -120,24 +164,33 @@ export function vmlAutoComplete(
             }),
           );
 
-          // 'builtin', 'atom'
-          const globalOptions: CompletionResult['options'] = globals.map(g => ({
-            apply: g.name,
-            label: `${g.name} (GLOBAL)`,
-            section: 'globals, constants',
-            type: 'builtin',
-          }));
-
-          const options = [...enumOptions, ...globalOptions];
-
           return {
             filter: false,
             from: nodeCurrent.from,
-            options,
+            options: enumOptions,
             to: nodeCurrent.to,
           };
         }
       }
+    } else if (
+      nodeCurrent.name === TOKEN_SYMBOL_CONST &&
+      nodeCurrent?.parent?.name === RULE_VARIABLE_NAME &&
+      !getNearestAncestorNodeOfType(nodeCurrent?.parent, [RULE_PARAMETER])
+    ) {
+      const variableOptions = getVmlVariables(context.state.sliceDoc(), tree, context.pos).map(variable => ({
+        apply: variable,
+        detail: 'local',
+        label: variable,
+        section: 'locals',
+        type: 'atom',
+      }));
+      const options = [...variableOptions, ...globalOptions];
+      return {
+        filter: false,
+        from: nodeCurrent.from,
+        options,
+        to: nodeCurrent.to,
+      };
     }
 
     return null;
