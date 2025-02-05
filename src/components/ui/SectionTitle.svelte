@@ -4,40 +4,16 @@
   export let overflow: 'visible' | 'hidden' = 'visible';
 </script>
 
-<div class="section-title st-typography-medium" style:overflow>
+<div
+  class="items-center flex rounded gap-1 h-6 justify-center leading-6 pl-0 py-4 pr-2 whitespace-nowrap text-[13px] font-medium text-foreground"
+  style:overflow
+>
   {#if $$slots.icon}
-    <div class="section-title-icon">
+    <div class="items-center flex shrink-0 justify-center">
       <slot name="icon" />
     </div>
   {/if}
-  <div class="section-title-truncated">
+  <div class="overflow-hidden text-ellipsis">
     <slot />
   </div>
 </div>
-
-<style>
-  .section-title {
-    align-items: center;
-    border-radius: 4px;
-    display: flex;
-    font-size: 13px;
-    gap: 5px;
-    height: 24px;
-    justify-content: center;
-    line-height: 24px;
-    padding: 4px 8px 4px 0px;
-    white-space: nowrap;
-  }
-
-  .section-title-icon {
-    align-items: center;
-    display: flex;
-    flex-shrink: 0;
-    justify-content: center;
-  }
-
-  .section-title-truncated {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-</style>

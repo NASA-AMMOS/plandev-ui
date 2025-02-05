@@ -4,14 +4,15 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
+  import { Button, Input as InputStellar } from '@nasa-jpl/stellar-svelte';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
   import { flatten } from 'lodash-es';
+  import { FileDown } from 'lucide-svelte';
   import { onDestroy, onMount } from 'svelte';
   import ExportIcon from '../../assets/export.svg?component';
-  import ImportIcon from '../../assets/import.svg?component';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
   import DatePickerField from '../../components/form/DatePickerField.svelte';
@@ -668,13 +669,9 @@
           </div>
         {:else}
           <SectionTitle>New Plan</SectionTitle>
-          <button
-            class="st-button secondary transfer-button"
-            type="button"
-            on:click={isPlanImportMode ? hideImportPlan : showImportPlan}
-          >
-            <ImportIcon /> Import
-          </button>
+          <Button on:click={isPlanImportMode ? hideImportPlan : showImportPlan} class="gap-1" variant="outline">
+            <FileDown size={16} class="" /> Import
+          </Button>
         {/if}
       </svelte:fragment>
 
@@ -797,17 +794,20 @@
 
             <Field field={nameField}>
               <label for="name" slot="label">Name</label>
-              <input
-                bind:this={nameInputField}
-                autocomplete="off"
-                class="st-input w-full"
-                name="name"
-                aria-label="name"
+              <div
                 use:permissionHandler={{
                   hasPermission: canCreate,
                   permissionError,
                 }}
-              />
+              >
+                <InputStellar
+                  bind:el={nameInputField}
+                  autocomplete="off"
+                  class="w-full h-6 px-1"
+                  name="name"
+                  aria-label="name"
+                />
+              </div>
             </Field>
 
             <fieldset>
@@ -916,12 +916,12 @@
 
     <Panel>
       <svelte:fragment slot="header">
-        <div style:display="flex" style:gap="0.5rem">
+        <div class="flex gap-2 items-center">
           <SectionTitle>
             <PlanIcon slot="icon" />
             Plans
           </SectionTitle>
-          <input bind:value={filterText} class="st-input" placeholder="Filter plans" style="width: 300px" />
+          <InputStellar bind:value={filterText} class="w-72 h-7" placeholder="Filter plans" />
         </div>
       </svelte:fragment>
 
