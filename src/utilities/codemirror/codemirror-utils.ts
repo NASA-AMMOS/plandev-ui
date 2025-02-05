@@ -16,15 +16,15 @@ import type {
 } from '@nasa-jpl/aerie-ampcs';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
-import type { ArgTextDef, LibrarySequence, NumberArg, StringArg } from '../../types/sequencing';
+import type { ArgTextDef, NumberArg, StringArg } from '../../types/sequencing';
 import { fswCommandArgDefault } from '../sequence-editor/command-dictionary';
 import type { CommandInfoMapper } from './commandInfoMapper';
 
-export function isFswCommand(command: FswCommand | HwCommand | LibrarySequence): command is FswCommand {
+export function isFswCommand(command: unknown): command is FswCommand {
   return (command as FswCommand).type === 'fsw_command';
 }
 
-export function isHwCommand(command: FswCommand | HwCommand | LibrarySequence): command is HwCommand {
+export function isHwCommand(command: unknown): command is HwCommand {
   return (command as HwCommand).type === 'hw_command';
 }
 
