@@ -48,6 +48,7 @@
     IOutputFormat,
     ISequenceAdaptation,
     LibrarySequence,
+    LibrarySequenceMap,
     Parcel,
     TimeTagInfo,
   } from '../../types/sequencing';
@@ -114,7 +115,7 @@
   let commandDictionary: CommandDictionary | null;
   let disableCopyAndExport: boolean = true;
   let parameterDictionaries: ParameterDictionary[] = [];
-  let librarySequenceMap: { [sequenceName: string]: LibrarySequence } = {};
+  let librarySequenceMap: LibrarySequenceMap = {};
   let librarySequences: LibrarySequence[] = [];
   let commandFormBuilderGrid: string;
   let editorOutputDiv: HTMLDivElement;
@@ -225,7 +226,9 @@
             ),
           });
           editorSequenceView.dispatch({
-            effects: compartmentSeqLinter.reconfigure(vmlLinter(commandDictionary, librarySequenceMap)),
+            effects: compartmentSeqLinter.reconfigure(
+              vmlLinter(commandDictionary, librarySequenceMap, $sequenceAdaptation.globals ?? []),
+            ),
           });
           editorSequenceView.dispatch({
             effects: compartmentSeqTooltip.reconfigure(vmlTooltip(commandDictionary, librarySequenceMap)),
@@ -512,7 +515,7 @@
 
   function getCommandDef(
     commandDictionary: CommandDictionary | null,
-    librarySequenceMap: { [sequenceName: string]: LibrarySequence },
+    librarySequenceMap: LibrarySequenceMap,
     stemName: string,
   ): FswCommand | null {
     const commandDefFromCommandDictionary = commandDictionary?.fswCommandMap[stemName];

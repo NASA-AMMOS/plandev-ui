@@ -112,36 +112,7 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
   }
 
   getVariables(docText: string, tree: Tree, position: number): string[] {
-    // VML Variable_declaration_with_optional_tlm_id are per module (only 1 module per file)
-    // VML Common_Function may contain Parameters and Variable_declarations
-
-    const moduleVariables = filterNodesToArray(
-      tree.cursor(),
-      node => node.name === RULE_VARIABLE_DECLARATION_WITH_OPTIONAL_TLM_ID,
-    )
-      .map(node =>
-        node
-          .getChild(RULE_VARIABLE_DECLARATION_TYPE)
-          ?.getChild(RULE_VARIABLE_NAME_CONSTANT)
-          ?.getChild(RULE_VARIABLE_NAME),
-      )
-      .filter(filterEmpty)
-      .map(node => docText.slice(node.from, node.to));
-
-    const positionNode = tree.resolveInner(position);
-    const commonFunctionNode = getNearestAncestorNodeOfType(positionNode, [RULE_COMMON_FUNCTION]);
-    if (commonFunctionNode) {
-      const subTreeOffset = commonFunctionNode.from;
-      const commonFunctionParametersAndVariables = filterNodesToArray(commonFunctionNode.toTree().cursor(), node =>
-        [RULE_INPUT_PARAMETER, RULE_INPUT_OUTPUT_PARAMETER, RULE_VARIABLE_NAME_CONSTANT].includes(node.name),
-      )
-        .map(node => node.getChild(RULE_VARIABLE_NAME))
-        .filter(filterEmpty)
-        .map(node => docText.slice(subTreeOffset + node.from, subTreeOffset + node.to));
-      return [...moduleVariables, ...commonFunctionParametersAndVariables];
-    }
-
-    return moduleVariables;
+    return getVmlVariables(docText, tree, position);
   }
 
   isArgumentNodeOfVariableType(argNode: SyntaxNode | null): boolean {
@@ -167,6 +138,39 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
   nodeTypeNumberCompatible(node: SyntaxNode | null): boolean {
     return !!node?.getChild(RULE_SIMPLE_EXPR)?.getChild(RULE_CONSTANT)?.getChild(TOKEN_INT_CONST);
   }
+}
+
+export function getVmlVariables(docText: string, tree: Tree, position: number): string[] {
+  // VML Variable_declaration_with_optional_tlm_id are per module (only 1 module per file)
+  // VML Common_Function may contain Parameters and Variable_declarations
+
+  const moduleVariables = filterNodesToArray(
+    tree.cursor(),
+    node => node.name === RULE_VARIABLE_DECLARATION_WITH_OPTIONAL_TLM_ID,
+  )
+    .map(node =>
+      node
+        .getChild(RULE_VARIABLE_DECLARATION_TYPE)
+        ?.getChild(RULE_VARIABLE_NAME_CONSTANT)
+        ?.getChild(RULE_VARIABLE_NAME),
+    )
+    .filter(filterEmpty)
+    .map(node => docText.slice(node.from, node.to));
+
+  const positionNode = tree.resolveInner(position);
+  const commonFunctionNode = getNearestAncestorNodeOfType(positionNode, [RULE_COMMON_FUNCTION]);
+  if (commonFunctionNode) {
+    const subTreeOffset = commonFunctionNode.from;
+    const commonFunctionParametersAndVariables = filterNodesToArray(commonFunctionNode.toTree().cursor(), node =>
+      [RULE_INPUT_PARAMETER, RULE_INPUT_OUTPUT_PARAMETER, RULE_VARIABLE_NAME_CONSTANT].includes(node.name),
+    )
+      .map(node => node.getChild(RULE_VARIABLE_NAME))
+      .filter(filterEmpty)
+      .map(node => docText.slice(subTreeOffset + node.from, subTreeOffset + node.to));
+    return [...moduleVariables, ...commonFunctionParametersAndVariables];
+  }
+
+  return moduleVariables;
 }
 
 export function getVmlNameNode(timeTaggedStatementNode: SyntaxNode | null): SyntaxNode | null {

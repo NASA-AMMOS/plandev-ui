@@ -5,8 +5,9 @@ import type { SyntaxNode, Tree } from '@lezer/common';
 import type { CommandDictionary, FswCommand, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import type { EditorView } from 'codemirror';
 import { closest } from 'fastest-levenshtein';
-import type { LibrarySequence } from '../../../types/sequencing';
-import { filterNodes } from '../../sequence-editor/tree-utils';
+import type { GlobalType } from '../../../types/global-type';
+import type { LibrarySequenceMap } from '../../../types/sequencing';
+import { filterNodes, getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
 import { quoteEscape, unquoteUnescape } from '../codemirror-utils';
 import { VmlLanguage } from './vml';
 import {
@@ -15,7 +16,10 @@ import {
   RULE_FUNCTION_NAME,
   RULE_ISSUE,
   RULE_ISSUE_DYNAMIC,
+  RULE_PARAMETER,
   RULE_SPAWN,
+  RULE_TIME_TAGGED_STATEMENTS,
+  RULE_VARIABLE_NAME,
   TOKEN_DOUBLE_CONST,
   TOKEN_ERROR,
   TOKEN_HEX_CONST,
@@ -23,6 +27,7 @@ import {
   TOKEN_STRING_CONST,
   TOKEN_UINT_CONST,
 } from './vmlConstants';
+import { getVmlVariables } from './vmlTreeUtils';
 
 /**
  * Limitations
@@ -38,7 +43,8 @@ const MAX_PARSER_ERRORS = 100;
 
 export function vmlLinter(
   commandDictionary: CommandDictionary | null = null,
-  librarySequenceMap: { [sequenceName: string]: LibrarySequence } = {},
+  librarySequenceMap: LibrarySequenceMap = {},
+  globals: GlobalType[],
 ): Extension {
   return linter(view => {
     const diagnostics: Diagnostic[] = [];
@@ -50,15 +56,52 @@ export function vmlLinter(
     }
 
     const parsed = VmlLanguage.parser.parse(sequence);
-    diagnostics.push(...validateCommands(commandDictionary, librarySequenceMap, sequence, parsed));
+    diagnostics.push(...validateCommands(commandDictionary, librarySequenceMap, globals, sequence, parsed));
+    diagnostics.push(...validateGlobals(sequence, tree, globals));
 
     return diagnostics;
   });
 }
 
+function validateGlobals(input: string, tree: Tree, globals: GlobalType[]): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+  const globalNames: Set<string> = new Set(globals.map(g => g.name));
+
+  // for each block, sequence, etc -- determine what variables are declared
+  const declaredVariables: { [to: number]: Set<string> } = {};
+  for (const node of filterNodes(tree.cursor(), node => node.name === RULE_TIME_TAGGED_STATEMENTS)) {
+    declaredVariables[node.from] = new Set(getVmlVariables(input, tree, node.to));
+  }
+
+  // check all variables
+  for (const node of filterNodes(tree.cursor(), node => node.name === RULE_VARIABLE_NAME)) {
+    // don't check variable declarations
+    if (!getNearestAncestorNodeOfType(node, [RULE_PARAMETER])) {
+      const variableReference = input.slice(node.from, node.to);
+      if (!globalNames.has(variableReference)) {
+        const timeTaggedStatementsNode = getNearestAncestorNodeOfType(node, [RULE_TIME_TAGGED_STATEMENTS]);
+        if (timeTaggedStatementsNode) {
+          const variablesInScope = declaredVariables[timeTaggedStatementsNode.from];
+          if (!variablesInScope.has(variableReference)) {
+            const alternative = closest(variableReference, Array.from(globalNames.union(variablesInScope)));
+            diagnostics.push(suggestAlternative(node, variableReference, 'symbolic reference', alternative));
+          }
+        }
+      }
+    }
+
+    if (diagnostics.length >= 10) {
+      // stop checking to avoid flood of errors if adaptation is misconfigured
+      break;
+    }
+  }
+  return diagnostics;
+}
+
 function validateCommands(
   commandDictionary: CommandDictionary,
-  librarySequenceMap: { [sequenceName: string]: LibrarySequence },
+  librarySequenceMap: LibrarySequenceMap,
+  globals: GlobalType[],
   docText: string,
   parsed: Tree,
 ): Diagnostic[] {
@@ -68,9 +111,9 @@ function validateCommands(
     const { node } = cursor;
     const tokenType = node.type.name;
     if (tokenType === RULE_ISSUE || tokenType === RULE_ISSUE_DYNAMIC) {
-      diagnostics.push(...validateIssue(node, docText, commandDictionary, tokenType));
+      diagnostics.push(...validateIssue(node, docText, commandDictionary, globals, tokenType));
     } else if (tokenType === RULE_SPAWN) {
-      diagnostics.push(...validateSpawn(node, docText, librarySequenceMap));
+      diagnostics.push(...validateSpawn(node, docText, librarySequenceMap, globals));
     }
   } while (cursor.next());
   return diagnostics;
@@ -80,6 +123,7 @@ function validateIssue(
   node: SyntaxNode,
   docText: string,
   commandDictionary: CommandDictionary,
+  globals: GlobalType[],
   tokenType: string,
 ): Diagnostic[] {
   const isDynamic = tokenType === RULE_ISSUE_DYNAMIC;
@@ -94,7 +138,7 @@ function validateIssue(
       const alternativeStem = isDynamic ? quoteEscape(closestStem) : closestStem;
       return [suggestAlternative(stemNameNode, stemName, 'command', alternativeStem)];
     } else {
-      return validateArguments(commandDictionary, commandDef, node, stemNameNode, docText, isDynamic ? 1 : 0);
+      return validateArguments(commandDictionary, globals, commandDef, node, stemNameNode, docText, isDynamic ? 1 : 0);
     }
   }
   return [];
@@ -103,7 +147,8 @@ function validateIssue(
 function validateSpawn(
   node: SyntaxNode,
   docText: string,
-  librarySequenceMap: { [sequenceName: string]: LibrarySequence },
+  librarySequenceMap: LibrarySequenceMap,
+  globals: GlobalType[],
 ): Diagnostic[] {
   const spawnedNameNode = node.getChild(RULE_FUNCTION_NAME);
   if (spawnedNameNode) {
@@ -119,7 +164,9 @@ function validateSpawn(
         ),
       ];
     } else {
-      // Check arguments
+      if (globals) {
+        // Check arguments
+      }
     }
   }
   return [];
@@ -151,6 +198,7 @@ function suggestAlternative(node: SyntaxNode, current: string, typeLabel: string
 
 function validateArguments(
   commandDictionary: CommandDictionary,
+  globals: GlobalType[],
   commandDef: FswCommand,
   functionNode: SyntaxNode,
   functionNameNode: SyntaxNode,
@@ -167,7 +215,7 @@ function validateArguments(
 
     if (argDef && argNode) {
       // validate expected argument
-      diagnostics.push(...validateArgument(commandDictionary, argDef, argNode, docText));
+      diagnostics.push(...validateArgument(commandDictionary, globals, argDef, argNode, docText));
     } else if (!argNode && !!argDef) {
       const { from, to } = functionNameNode;
       diagnostics.push({
@@ -195,6 +243,7 @@ function validateArguments(
 
 function validateArgument(
   commandDictionary: CommandDictionary,
+  globals: GlobalType[],
   argDef: FswCommandArgument,
   argNode: SyntaxNode,
   docText: string,
