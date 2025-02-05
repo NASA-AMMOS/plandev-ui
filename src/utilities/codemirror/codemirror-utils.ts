@@ -182,3 +182,20 @@ export function parseNumericArg(argText: string, dictArgType: 'float' | 'integer
 export function isHexValue(argText: string) {
   return /^0x[\da-f]+$/i.test(argText);
 }
+
+export function decodeInt32Array(encoded: string[]) {
+  return encoded
+    .map(charAsHex => {
+      const n = Number(charAsHex);
+      return String.fromCodePoint((n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff);
+    })
+    .join('');
+}
+
+export function encodeInt32Array(s: string) {
+  const encoded: string[] = [];
+  for (let i = 0; i < s.length; i += 4) {
+    encoded.push(s.codePointAt(i)?.toString(16) ?? '00');
+  }
+  return encoded;
+}

@@ -213,12 +213,3 @@ export function getArgumentPosition(argNode: SyntaxNode): number {
       ?.findIndex(par => par.from === argNode.from && par.to === argNode.to) ?? -1
   );
 }
-
-export function decodeInt32Array(encoded: string[]) {
-  return encoded
-    .map(charAsHex => {
-      const n = Number(charAsHex);
-      return String.fromCodePoint((n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff);
-    })
-    .join('');
-}

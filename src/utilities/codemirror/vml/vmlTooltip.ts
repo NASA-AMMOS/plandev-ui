@@ -15,7 +15,7 @@ import StringTooltip from '../../../components/sequencing/StringTooltip.svelte';
 import type { LibrarySequence } from '../../../types/sequencing';
 import { getTokenPositionInLine } from '../../sequence-editor/sequence-tooltip';
 import { checkContainment, getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
-import { unquoteUnescape } from '../codemirror-utils';
+import { decodeInt32Array, unquoteUnescape } from '../codemirror-utils';
 import { librarySequenceToFswCommand } from './vmlBlockLibrary';
 import {
   RULE_BYTE_ARRAY,
@@ -33,7 +33,7 @@ import {
   TOKEN_HEX_CONST,
   TOKEN_INT_CONST,
 } from './vmlConstants';
-import { decodeInt32Array, getVmlNameNode } from './vmlTreeUtils';
+import { getVmlNameNode } from './vmlTreeUtils';
 
 const sequenceEngineArgument: FswCommandArgumentInteger = {
   arg_type: 'integer',

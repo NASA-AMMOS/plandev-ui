@@ -19,6 +19,7 @@ import {
   RULE_PARAMETER,
   RULE_SPAWN,
   RULE_TIME_TAGGED_STATEMENTS,
+  RULE_VARIABLE_DECLARATION_TYPE,
   RULE_VARIABLE_NAME,
   TOKEN_DOUBLE_CONST,
   TOKEN_ERROR,
@@ -80,7 +81,7 @@ function validateGlobals(input: string, tree: Tree, globals: GlobalType[]): Diag
       break;
     }
 
-    if (getNearestAncestorNodeOfType(node, [RULE_PARAMETER])) {
+    if (getNearestAncestorNodeOfType(node, [RULE_PARAMETER, RULE_VARIABLE_DECLARATION_TYPE])) {
       // don't check variable declarations
       continue;
     }
@@ -93,7 +94,7 @@ function validateGlobals(input: string, tree: Tree, globals: GlobalType[]): Diag
 
     const timeTaggedStatementsNode = getNearestAncestorNodeOfType(node, [RULE_TIME_TAGGED_STATEMENTS]);
     const variablesInScope = timeTaggedStatementsNode ? declaredVariables[timeTaggedStatementsNode.from] : new Set([]);
-    if (!variablesInScope.has(variableReference)) {
+    if (variablesInScope.has(variableReference)) {
       // matches local
       continue;
     }
