@@ -5,7 +5,13 @@ module.exports = {
     es2017: true,
     node: true,
   },
-  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'plugin:svelte/recommended', 'prettier'],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:svelte/recommended',
+    'prettier',
+    'plugin:tailwindcss/recommended',
+  ],
   ignorePatterns: ['*.cjs', 'static/*.worker.js', 'static/*.worker.js.map', 'e2e-tests/data/*'],
   overrides: [
     {
