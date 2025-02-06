@@ -193,13 +193,25 @@ function suggestAlternative(node: SyntaxNode, current: string, typeLabel: string
   };
 }
 
+/**
+ * Validate argument types, ranges, and overall counts against what's in the dictionary.
+ *
+ * @param commandDictionary - ampcs formatted command dictionary
+ * @param commandDef - definition of command being validated
+ * @param functionNode - syntax node of the complete command - may be an invoke, invoke_dynamic, or spawn
+ * @param functionNameNode - syntax node containing the name identifying the fsw command or library sequence being invoked
+ * @param docText - sequence text
+ * @param parameterOffset - spawn and issue structures have an explicity command_name and a list of call_parameters (arguments).
+ *    issue_dynamic is different and the command_name is inserted into the first position of the argument list, subsequent items
+ *    in the list are the arguments that the command takes. Presumably this is to allow the command_name to be a variable or global.
+ * @returns - a list of errors and warnings when validating the command
+ */
 function validateArguments(
   commandDictionary: CommandDictionary,
   commandDef: FswCommand,
   functionNode: SyntaxNode,
   functionNameNode: SyntaxNode,
   docText: string,
-  // issue_dynamic puts the stem into the first argument
   parameterOffset: number,
 ): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
