@@ -294,13 +294,28 @@ function variableToParam(
         valid_regex: null,
       };
     case 'INT':
+      return {
+        arg_type: 'integer',
+        bit_length,
+        default_value,
+        description,
+        name,
+        range,
+        units,
+      };
     case 'UINT':
+      return {
+        arg_type: 'unsigned',
+        bit_length,
+        default_value,
+        description,
+        name,
+        range,
+        units,
+      };
     case 'FLOAT':
       return {
-        arg_type: { FLOAT: 'float', INT: 'integer', UINT: 'unsigned' }[variable.type] as
-          | 'float'
-          | 'integer'
-          | 'unsigned',
+        arg_type: 'float',
         bit_length,
         default_value,
         description,
