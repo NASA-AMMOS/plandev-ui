@@ -62,10 +62,14 @@ export const RULE_INPUT_VALUE = 'Input_value';
 export const RULE_BYTE_ARRAY = 'Byte_array';
 
 export const GROUP_STATEMENT_SUB = 'StatementSub';
+export const RULE_END_LINES = 'End_lines';
 
 // Terminals in grammar
 export const TOKEN_MODULE = 'MODULE';
 export const TOKEN_END_MODULE = 'END_MODULE';
+
+export const TOKEN_BODY = 'BODY';
+export const TOKEN_END_BODY = 'END_BODY';
 
 export const TOKEN_INT = 'INT';
 export const TOKEN_UINT = 'UINT';

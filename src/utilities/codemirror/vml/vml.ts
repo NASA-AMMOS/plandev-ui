@@ -68,7 +68,7 @@ export const VmlLanguage = LRLanguage.define({
         INT_CONST: t.number,
         ISSUE: t.controlKeyword,
         ISSUE_DYNAMIC: t.controlKeyword,
-        MODULE: t.macroName,
+        MODULE: t.namespace,
         MODULO: t.arithmeticOperator,
         MULTIPLY: t.arithmeticOperator,
         POWER: t.arithmeticOperator,

@@ -15,6 +15,7 @@ import {
   RULE_FUNCTION,
   RULE_FUNCTION_NAME,
   RULE_FUNCTIONS,
+  RULE_SEQUENCE,
   RULE_SIMPLE_CALL,
   RULE_SPAWN,
   RULE_STATEMENT,
@@ -24,6 +25,7 @@ import {
   RULE_TIME_TAGGED_STATEMENTS,
   RULE_VM_MANAGEMENT,
   TOKEN_ERROR,
+  TOKEN_MODULE,
   TOKEN_TIME_CONST,
 } from './vmlConstants';
 
@@ -467,6 +469,31 @@ describe('standalone statements', () => {
       RULE_BYTE_ARRAY,
     );
     expect(`${tree}`.includes(TOKEN_ERROR)).toBeFalsy();
+  });
+});
+
+describe('partial documents', () => {
+  it('module fragment', () => {
+    const input = '\n\nMOD\n\n';
+    const tree = VmlLanguage.parser.parse(input);
+    expect(tree.topNode.getChild(TOKEN_MODULE)).toBeNull();
+  });
+
+  it('issue fragment', () => {
+    const input = `
+MODULE
+SEQUENCE seq_name
+FLAGS AUTOEXECUTE AUTOUNLOAD
+BODY
+R00:00:00.00 ISS
+END_BODY
+END_MODULE
+    `;
+    const tree = VmlLanguage.parser.parse(input);
+    const seqNode = tree.topNode.getChild(RULE_FUNCTIONS)?.getChild(RULE_FUNCTION)?.getChild(RULE_SEQUENCE);
+    expect(seqNode).toBeTruthy();
+    const bodyNode = seqNode?.getChild(RULE_COMMON_FUNCTION)?.getChild(RULE_BODY);
+    expect(bodyNode).toBeTruthy();
   });
 });
 
