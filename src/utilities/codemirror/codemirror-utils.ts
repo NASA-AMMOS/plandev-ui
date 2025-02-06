@@ -20,11 +20,11 @@ import type { ArgTextDef, NumberArg, StringArg } from '../../types/sequencing';
 import { fswCommandArgDefault } from '../sequence-editor/command-dictionary';
 import type { CommandInfoMapper } from './commandInfoMapper';
 
-export function isFswCommand(command: unknown): command is FswCommand {
+export function isFswCommand(command: FswCommand | HwCommand): command is FswCommand {
   return (command as FswCommand).type === 'fsw_command';
 }
 
-export function isHwCommand(command: unknown): command is HwCommand {
+export function isHwCommand(command: FswCommand | HwCommand): command is HwCommand {
   return (command as HwCommand).type === 'hw_command';
 }
 
