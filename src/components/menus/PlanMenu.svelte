@@ -61,7 +61,7 @@
   }
 
   async function onExportPlan() {
-    if (!planExporting) {
+    if (!planExporting && $activityDirectivesMap) {
       planExporting = true;
       await exportPlan(plan, user, Object.values($activityDirectivesMap));
       planExporting = false;
