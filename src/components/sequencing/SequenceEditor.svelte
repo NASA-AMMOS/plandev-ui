@@ -253,6 +253,7 @@
           // Reconfigure sequence editor.
           editorSequenceView.dispatch({
             effects: [
+              // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
               compartmentSeqLanguage.reconfigure(
                 setupLanguageSupport(
                   $sequenceAdaptation.autoComplete(
