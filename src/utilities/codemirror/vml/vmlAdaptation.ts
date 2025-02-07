@@ -156,7 +156,7 @@ function suggestScaffoldingCompletions(
   const precedingChar = context.state.sliceDoc(Math.max(0, context.pos - 1), context.pos);
   const isContextInNode =
     precedingChar.trim() !== '' && nodeCurrent.from <= context.pos && context.pos <= nodeCurrent.to;
-  const { from, to } = isContextInNode ? nodeCurrent : { from: context.pos };
+  const { from, to } = isContextInNode ? nodeCurrent : { from: context.pos, to: undefined };
 
   const moduleNode = tree.topNode.getChild(TOKEN_MODULE);
   const endModuleNode = tree.topNode.getChild(TOKEN_END_MODULE);
