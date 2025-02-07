@@ -139,6 +139,11 @@ export type GetSeqJsonResponse = {
 
 export type SeqJson = any; // TODO: Strongly type.
 
+export enum SequenceTypes {
+  LIBRARY = 'library',
+  USER = 'user',
+}
+
 export type UserSequence = {
   created_at: string;
   definition: string;
@@ -155,13 +160,9 @@ export type LibrarySequence = {
   name: string;
   parameters: VariableDeclaration[];
   tree: Tree;
-  type: 'librarySequence';
+  type: SequenceTypes.LIBRARY;
   workspace_id: number;
 };
-
-export function isLibrarySequence(obj: unknown): obj is LibrarySequence {
-  return !!obj && (obj as LibrarySequence).type === 'librarySequence';
-}
 
 export type LibrarySequenceMap = { [sequenceName: string]: LibrarySequence };
 

@@ -4,7 +4,7 @@ import type { SyntaxNode, Tree } from '@lezer/common';
 import type { CommandDictionary, Enum, EnumMap, FswCommand, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { GlobalType } from '../../../types/global-type';
-import type { LibrarySequence } from '../../../types/sequencing';
+import { SequenceTypes, type LibrarySequence } from '../../../types/sequencing';
 import { getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
 import { VmlLanguage } from './vml';
 import { vmlBlockLibraryToCommandDictionary } from './vmlBlockLibrary';
@@ -286,7 +286,7 @@ export function parseFunctionSignatures(contents: string, workspace_id: number):
       };
     }),
     tree: VmlLanguage.parser.parse(contents),
-    type: 'librarySequence',
+    type: SequenceTypes.LIBRARY,
     workspace_id,
   }));
 }

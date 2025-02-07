@@ -43,14 +43,15 @@
     userSequences,
   } from '../../stores/sequencing';
   import type { User } from '../../types/app';
-  import type {
-    ArgTextDef,
-    IOutputFormat,
-    ISequenceAdaptation,
-    LibrarySequence,
-    LibrarySequenceMap,
-    Parcel,
-    TimeTagInfo,
+  import {
+    SequenceTypes,
+    type ArgTextDef,
+    type IOutputFormat,
+    type ISequenceAdaptation,
+    type LibrarySequence,
+    type LibrarySequenceMap,
+    type Parcel,
+    type TimeTagInfo,
   } from '../../types/sequencing';
   import { SeqLanguage, setupLanguageSupport } from '../../utilities/codemirror';
   import { isFswCommandArgumentRepeat, unquoteUnescape } from '../../utilities/codemirror/codemirror-utils';
@@ -208,7 +209,7 @@
             name: sequence.name,
             parameters: parseVariables(tree.topNode, sequence.definition, 'ParameterDeclaration') ?? [],
             tree,
-            type: 'librarySequence',
+            type: SequenceTypes.LIBRARY,
             workspace_id: sequence.workspace_id,
           };
         });
