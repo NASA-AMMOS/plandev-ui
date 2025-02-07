@@ -30,6 +30,8 @@ import {
 } from './vmlConstants';
 import { computeBlocks, isBlockCommand, vmlBlockFolder } from './vmlFolder';
 
+const VML_LANGUAGE_NAME = 'vml';
+
 const FoldBehavior: {
   [tokenName: string]: (node: SyntaxNode) => ReturnType<typeof foldInside>;
 } = {
@@ -42,7 +44,7 @@ export const VmlLanguage = LRLanguage.define({
   languageData: {
     commentTokens: { line: ';' },
   },
-  name: 'vml',
+  name: VML_LANGUAGE_NAME,
   parser: parser.configure({
     props: [
       foldNodeProp.add(FoldBehavior),
@@ -131,7 +133,7 @@ export const vmlAdaptation: ISequenceAdaptation = {
     vmlAutoComplete(commandDictionary, []),
   inputFormat: {
     linter: undefined,
-    name: 'VML',
+    name: VML_LANGUAGE_NAME,
     toInputFormat: (vml: string) => Promise.resolve(vml),
   },
   modifyOutput: undefined,
