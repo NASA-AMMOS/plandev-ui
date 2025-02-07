@@ -1,5 +1,6 @@
 import { snippet, type CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
 import { syntaxTree } from '@codemirror/language';
+import type { SyntaxNode, Tree } from '@lezer/common';
 import type { CommandDictionary, Enum, EnumMap, FswCommand, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { GlobalType } from '../../../types/global-type';
@@ -113,40 +114,12 @@ export function vmlAutoComplete(
 
     if (nodeCurrent.name === TOKEN_STRING_CONST) {
       // also show if before argument
-
       const containingStatement = getNearestAncestorNodeOfType(nodeCurrent, [RULE_STATEMENT]);
-      if (containingStatement) {
-        const functionNameNode = containingStatement.firstChild?.getChild(RULE_FUNCTION_NAME);
-        if (functionNameNode) {
-          const stem = context.state.sliceDoc(functionNameNode.from, functionNameNode.to);
-          const cmdDef = commandDictionary.fswCommandMap[stem];
-          if (!cmdDef) {
-            return null;
-          }
-
-          const argPos = getArgumentPosition(nodeCurrent);
-          if (argPos === -1) {
-            return null;
-          }
-
-          const argDef = cmdDef.arguments[argPos];
-          if (!argDef || argDef.arg_type !== 'enum') {
-            return null;
-          }
-
-          return {
-            filter: false,
-            from: nodeCurrent.from,
-            options: enumOptions(commandDictionary.enumMap[argDef.enum_name], argDef),
-            to: nodeCurrent.to,
-          };
-        }
+      const functionNameNode = containingStatement?.firstChild?.getChild(RULE_FUNCTION_NAME);
+      if (functionNameNode) {
+        return suggestEnumArgumentCompletions(context, functionNameNode, commandDictionary, nodeCurrent);
       }
-    } else if (
-      nodeCurrent.name === TOKEN_SYMBOL_CONST &&
-      nodeCurrent?.parent?.name === RULE_VARIABLE_NAME &&
-      !getNearestAncestorNodeOfType(nodeCurrent?.parent, [RULE_PARAMETER])
-    ) {
+    } else if (isVariableReferenceNode(nodeCurrent)) {
       const variableOptions = getVmlVariables(context.state.sliceDoc(), tree, context.pos).map(variable => ({
         apply: variable,
         detail: 'local',
@@ -163,56 +136,117 @@ export function vmlAutoComplete(
       };
     }
 
-    const precedingChar = context.state.sliceDoc(Math.max(0, context.pos - 1), context.pos);
-    const isContextInNode =
-      precedingChar.trim() !== '' && nodeCurrent.from <= context.pos && context.pos <= nodeCurrent.to;
-    const { from, to } = isContextInNode ? nodeCurrent : { from: context.pos };
-
-    const moduleNode = tree.topNode.getChild(TOKEN_MODULE);
-    const endModuleNode = tree.topNode.getChild(TOKEN_END_MODULE);
-    if (!moduleNode && !endModuleNode) {
-      return {
-        from,
-        options: [
-          {
-            apply: `${TOKEN_MODULE}\n\n${TOKEN_END_MODULE}\n`,
-            label: 'MODULE',
-            type: 'function',
-          },
-        ],
-        to,
-      };
-    }
-
-    const isWithinModule =
-      moduleNode && moduleNode.to <= context.pos && endModuleNode && context.pos < endModuleNode.from;
-    if (isWithinModule) {
-      const parentFunctionNode = getNearestAncestorNodeOfType(nodeCurrent, [RULE_FUNCTION]);
-      if (!parentFunctionNode) {
-        // not in a function
-        return {
-          from,
-          options: SEQUENCE_SNIPPETS,
-          to,
-        };
-      }
-
-      const endBodyNode = parentFunctionNode?.firstChild
-        ?.getChild(RULE_COMMON_FUNCTION)
-        ?.getChild(RULE_BODY)
-        ?.getChild(TOKEN_END_BODY);
-      const isAfterEndBody =
-        endBodyNode && context.state.doc.lineAt(endBodyNode.to).number < context.state.doc.lineAt(context.pos).number;
-      if (isAfterEndBody) {
-        // at the end of a function
-        return {
-          from,
-          options: SEQUENCE_SNIPPETS,
-          to,
-        };
-      }
-    }
+    return suggestScaffoldingCompletions(context, nodeCurrent, tree);
   };
+}
+
+function isVariableReferenceNode(node: SyntaxNode): boolean {
+  return (
+    node.name === TOKEN_SYMBOL_CONST &&
+    node.parent?.name === RULE_VARIABLE_NAME &&
+    !getNearestAncestorNodeOfType(node.parent, [RULE_PARAMETER])
+  );
+}
+
+function suggestScaffoldingCompletions(
+  context: CompletionContext,
+  nodeCurrent: SyntaxNode,
+  tree: Tree,
+): CompletionResult | null {
+  const precedingChar = context.state.sliceDoc(Math.max(0, context.pos - 1), context.pos);
+  const isContextInNode =
+    precedingChar.trim() !== '' && nodeCurrent.from <= context.pos && context.pos <= nodeCurrent.to;
+  const { from, to } = isContextInNode ? nodeCurrent : { from: context.pos };
+
+  const moduleNode = tree.topNode.getChild(TOKEN_MODULE);
+  const endModuleNode = tree.topNode.getChild(TOKEN_END_MODULE);
+  if (!moduleNode && !endModuleNode) {
+    return {
+      from,
+      options: [
+        {
+          apply: `${TOKEN_MODULE}\n\n${TOKEN_END_MODULE}\n`,
+          label: 'MODULE',
+          type: 'function',
+        },
+      ],
+      to,
+    };
+  }
+
+  const isWithinModule =
+    moduleNode && moduleNode.to <= context.pos && endModuleNode && context.pos < endModuleNode.from;
+  if (isWithinModule) {
+    const moduleCompletions = suggestModuleCompletions(nodeCurrent, context, from, to);
+    if (moduleCompletions) {
+      return moduleCompletions;
+    }
+  }
+  return null;
+}
+
+function suggestEnumArgumentCompletions(
+  context: CompletionContext,
+  functionNameNode: SyntaxNode,
+  commandDictionary: CommandDictionary,
+  nodeCurrent: SyntaxNode,
+): CompletionResult | null {
+  const stem = context.state.sliceDoc(functionNameNode.from, functionNameNode.to);
+  const cmdDef = commandDictionary.fswCommandMap[stem];
+  if (!cmdDef) {
+    return null;
+  }
+
+  const argPos = getArgumentPosition(nodeCurrent);
+  if (argPos === -1) {
+    return null;
+  }
+
+  const argDef = cmdDef.arguments[argPos];
+  if (!argDef || argDef.arg_type !== 'enum') {
+    return null;
+  }
+
+  return {
+    filter: false,
+    from: nodeCurrent.from,
+    options: enumOptions(commandDictionary.enumMap[argDef.enum_name], argDef),
+    to: nodeCurrent.to,
+  };
+}
+
+function suggestModuleCompletions(
+  nodeCurrent: SyntaxNode,
+  context: CompletionContext,
+  from: number,
+  to: number | undefined,
+): CompletionResult | null {
+  const parentFunctionNode = getNearestAncestorNodeOfType(nodeCurrent, [RULE_FUNCTION]);
+  if (!parentFunctionNode) {
+    // not in a function
+    return {
+      from,
+      options: SEQUENCE_SNIPPETS,
+      to,
+    };
+  }
+
+  const endBodyNode = parentFunctionNode?.firstChild
+    ?.getChild(RULE_COMMON_FUNCTION)
+    ?.getChild(RULE_BODY)
+    ?.getChild(TOKEN_END_BODY);
+  const isAfterEndBody =
+    endBodyNode && context.state.doc.lineAt(endBodyNode.to).number < context.state.doc.lineAt(context.pos).number;
+  if (isAfterEndBody) {
+    // at the end of a function
+    return {
+      from,
+      options: SEQUENCE_SNIPPETS,
+      to,
+    };
+  }
+
+  return null;
 }
 
 function getStemAndDefaultArguments(commandDictionary: CommandDictionary, cmd: FswCommand): string {
