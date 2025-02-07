@@ -44,7 +44,6 @@
   } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import {
-    SequenceTypes,
     type ArgTextDef,
     type IOutputFormat,
     type ISequenceAdaptation,
@@ -53,7 +52,7 @@
     type Parcel,
     type TimeTagInfo,
   } from '../../types/sequencing';
-  import { SeqLanguage, setupLanguageSupport } from '../../utilities/codemirror';
+  import { setupLanguageSupport } from '../../utilities/codemirror';
   import { isFswCommandArgumentRepeat, unquoteUnescape } from '../../utilities/codemirror/codemirror-utils';
   import type { CommandInfoMapper } from '../../utilities/codemirror/commandInfoMapper';
   import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../utilities/codemirror/seq-n-highlighter';
@@ -76,7 +75,6 @@
   import { getCustomArgDef, inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
   import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
   import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
-  import { parseVariables } from '../../utilities/sequence-editor/to-seq-json';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import Menu from '../menus/Menu.svelte';
@@ -203,16 +201,7 @@
     } else {
       librarySequences = $userSequences
         .filter(sequence => sequence.workspace_id === workspaceId && sequence.name !== sequenceName)
-        .map(sequence => {
-          const tree = SeqLanguage.parser.parse(sequence.definition);
-          return {
-            name: sequence.name,
-            parameters: parseVariables(tree.topNode, sequence.definition, 'ParameterDeclaration') ?? [],
-            tree,
-            type: SequenceTypes.LIBRARY,
-            workspace_id: sequence.workspace_id,
-          };
-        });
+        .map(userSequenceToLibrarySequence);
     }
 
     librarySequenceMap = Object.fromEntries(librarySequences.map(seq => [seq.name, seq]));
