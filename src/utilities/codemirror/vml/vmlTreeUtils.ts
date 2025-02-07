@@ -156,18 +156,17 @@ export function getVmlVariables(docText: string, tree: Tree, position: number): 
 
   const positionNode = tree.resolveInner(position);
   const commonFunctionNode = getNearestAncestorNodeOfType(positionNode, [RULE_COMMON_FUNCTION]);
-  if (commonFunctionNode) {
-    const subTreeOffset = commonFunctionNode.from;
-    const commonFunctionParametersAndVariables = filterNodesToArray(commonFunctionNode.toTree().cursor(), node =>
-      [RULE_INPUT_PARAMETER, RULE_INPUT_OUTPUT_PARAMETER, RULE_VARIABLE_NAME_CONSTANT].includes(node.name),
-    )
-      .map(node => node.getChild(RULE_VARIABLE_NAME))
-      .filter(filterEmpty)
-      .map(node => docText.slice(subTreeOffset + node.from, subTreeOffset + node.to));
-    return [...moduleVariables, ...commonFunctionParametersAndVariables];
+  if (!commonFunctionNode) {
+    return moduleVariables;
   }
-
-  return moduleVariables;
+  const subTreeOffset = commonFunctionNode.from;
+  const commonFunctionParametersAndVariables = filterNodesToArray(commonFunctionNode.toTree().cursor(), node =>
+    [RULE_INPUT_PARAMETER, RULE_INPUT_OUTPUT_PARAMETER, RULE_VARIABLE_NAME_CONSTANT].includes(node.name),
+  )
+    .map(node => node.getChild(RULE_VARIABLE_NAME))
+    .filter(filterEmpty)
+    .map(node => docText.slice(subTreeOffset + node.from, subTreeOffset + node.to));
+  return [...moduleVariables, ...commonFunctionParametersAndVariables];
 }
 
 export function getVmlNameNode(timeTaggedStatementNode: SyntaxNode | null): SyntaxNode | null {
