@@ -56,7 +56,7 @@
   import { isFswCommandArgumentRepeat, unquoteUnescape } from '../../utilities/codemirror/codemirror-utils';
   import type { CommandInfoMapper } from '../../utilities/codemirror/commandInfoMapper';
   import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../utilities/codemirror/seq-n-highlighter';
-  import { SeqNCommandInfoMapper } from '../../utilities/codemirror/seq-n-tree-utils';
+  import { SeqNCommandInfoMapper, userSequenceToLibrarySequence } from '../../utilities/codemirror/seq-n-tree-utils';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import {
     setupVmlLanguageSupport,
