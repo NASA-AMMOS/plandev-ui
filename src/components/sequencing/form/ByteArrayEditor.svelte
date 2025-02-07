@@ -19,5 +19,7 @@
   }
 </script>
 
-<input class="st-input w-100" spellcheck="false" bind:value title="encoded string" disabled={true} />
-<input class="st-input w-100" spellcheck="false" bind:value={decodedValue} title="decoded string" disabled={true} />
+<div>
+  <input class="st-input w-100" spellcheck="false" bind:value title="encoded string" disabled={true} />
+  <input class="st-input w-100" spellcheck="false" bind:value={decodedValue} title="decoded string" disabled={true} />
+</div>
