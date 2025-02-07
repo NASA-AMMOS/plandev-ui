@@ -1,5 +1,5 @@
 @top Sequence {
-  optSpace
+  newLine?
   (
     commentLine* ~maybeComments
     (IdDeclaration | ParameterDeclaration | LocalDeclaration | GenericDirective)
@@ -27,14 +27,20 @@ IdDeclaration {
 }
 
 ParameterDeclaration {
-  (parameterDirective Variable{((Enum) | (Enum Object ))}+ newLine) |
-  (parameterStartDirective newLine ( Variable{((Enum ) | (Enum  Type { identifier }  ( (EnumName { identifier}) | (Range { String } (Values {String})? ) |  (EnumName { identifier} (Range { String } (Values {String})?) )? )) )} newLine)* parameterEndDirective newLine )
+  (parameterDirective Variable{ Enum Object? }+ newLine) |
+  (parameterStartDirective newLine (Variable newLine)* parameterEndDirective newLine )
 }
 
 LocalDeclaration {
-  (localsDirective Variable{((Enum ) | (Enum  Object ))}+ newLine) |
-  (localsStartDirective newLine ( Variable{((Enum ) | (Enum  Type { identifier }  ( (EnumName { identifier}) | (Range { String } (Values {String})? ) |  (EnumName { identifier} (Range { String } (Values {String})?) )? )) )} newLine)* localsEndDirective newLine )
+  (localsDirective Variable{ Enum Object? }+ newLine) |
+  (localsStartDirective newLine (Variable newLine)* localsEndDirective newLine )
+}
 
+Variable {
+  Enum (Type { identifier } (
+    (EnumName { identifier } (Range { String } (Values {String})?)? )?
+    | (Range { String } (Values {String})? )
+  ))?
 }
 
 commandBlock {
@@ -49,10 +55,6 @@ step { Command | Activate | GroundBlock | GroundEvent | Load }
 
 commentLine {
   LineComment newLine
-}
-
-optSpace {
-  newLine?
 }
 
 Commands {
@@ -72,13 +74,9 @@ HardwareCommands {
 
 TimeTag { TimeAbsolute | (TimeGroundEpoch Name { String })  | TimeEpoch | TimeRelative  | TimeComplete }
 
-Args {
-  arg*
-}
+Args { arg* }
 
-RepeatArg {
-  "[" (arg)* "]"
-}
+RepeatArg { "[" (arg)* "]" }
 
 arg[@isGroup=Arguments] { Number | String | Boolean | Enum | RepeatArg }
 
@@ -143,13 +141,13 @@ metaValue {
   String | Number | Boolean | Null | Array | Object
 }
 
-Object { "{" (optSpace | list<Property>) "}" }
-Array  { "[" (optSpace | list<metaValue>) "]" }
+Object { "{" (newLine? | list<Property>) "}" }
+Array  { "[" (newLine? | list<metaValue>) "]" }
 
-Property { PropertyName optSpace ":" optSpace metaValue }
+Property { PropertyName newLine? ":" newLine? metaValue }
 PropertyName[isolate] { String }
 
-list<item> { optSpace item (optSpace "," optSpace item)* optSpace }
+list<item> { newLine? item (newLine? "," newLine? item)* newLine? }
 
 Models {
   Model {
