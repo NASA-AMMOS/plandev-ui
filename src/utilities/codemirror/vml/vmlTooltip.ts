@@ -136,14 +136,12 @@ function callParameterTooltip(
     paramNode => callParameterNode.to === paramNode.to && callParameterNode.from === paramNode.from,
   );
 
-  if (argIndex > -1) {
-    const arg = command.arguments[argIndex];
-    if (arg) {
-      return argTooltip(arg, commandDictionary, from, to);
-    }
+  const arg = argIndex > -1 && command.arguments[argIndex];
+  if (!arg) {
+    return null;
   }
 
-  return null;
+  return argTooltip(arg, commandDictionary, from, to);
 }
 
 function strTooltip(message: string, from: number, to: number) {
