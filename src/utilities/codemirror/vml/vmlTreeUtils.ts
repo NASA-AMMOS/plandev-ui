@@ -173,31 +173,26 @@ export function getVmlNameNode(timeTaggedStatementNode: SyntaxNode | null): Synt
   const ruleStatementNode = timeTaggedStatementNode?.getChild(RULE_STATEMENT);
 
   const statementSubNode = ruleStatementNode?.getChild(GROUP_STATEMENT_SUB);
-  if (statementSubNode) {
-    switch (statementSubNode.name) {
-      case RULE_ISSUE:
-        return statementSubNode.getChild(RULE_FUNCTION_NAME);
-      case RULE_ISSUE_DYNAMIC:
-        // first call parameter is method
-        return (
-          statementSubNode
-            .getChild(RULE_CALL_PARAMETERS)
-            ?.getChild(RULE_CALL_PARAMETER)
-            ?.getChild(RULE_SIMPLE_EXPR)
-            ?.getChild(RULE_CONSTANT)
-            ?.getChild(TOKEN_STRING_CONST) ?? null
-        );
-      case RULE_VM_MANAGEMENT:
-        {
-          const spawnNode = statementSubNode.getChild(RULE_SPAWN);
-          if (spawnNode) {
-            return spawnNode.getChild(RULE_FUNCTION_NAME);
-          }
-        }
-        break;
-    }
+  if (!statementSubNode) {
+    return null;
   }
 
+  switch (statementSubNode.name) {
+    case RULE_ISSUE:
+      return statementSubNode.getChild(RULE_FUNCTION_NAME);
+    case RULE_ISSUE_DYNAMIC:
+      // first call parameter is method
+      return (
+        statementSubNode
+          .getChild(RULE_CALL_PARAMETERS)
+          ?.getChild(RULE_CALL_PARAMETER)
+          ?.getChild(RULE_SIMPLE_EXPR)
+          ?.getChild(RULE_CONSTANT)
+          ?.getChild(TOKEN_STRING_CONST) ?? null
+      );
+    case RULE_VM_MANAGEMENT:
+      return statementSubNode.getChild(RULE_SPAWN)?.getChild(RULE_FUNCTION_NAME) ?? null;
+  }
   return null;
 }
 
