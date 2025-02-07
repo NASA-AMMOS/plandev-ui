@@ -75,20 +75,17 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
   }
 
   getArgumentsFromContainer(containerNode: SyntaxNode): SyntaxNode[] {
-    const callParameterNodes = containerNode?.getChildren(RULE_CALL_PARAMETER);
-    if (callParameterNodes) {
-      const inIssueDynamic = !!getNearestAncestorNodeOfType(containerNode, [RULE_STATEMENT])?.getChild(
-        RULE_ISSUE_DYNAMIC,
-      );
-      if (inIssueDynamic) {
-        // if in issue dynamic
-        // first parameter is command name
-        // remainder are arguments
-        return callParameterNodes.slice(1);
-      }
-      return callParameterNodes;
+    const callParameterNodes = containerNode.getChildren(RULE_CALL_PARAMETER);
+    const inIssueDynamic = !!getNearestAncestorNodeOfType(containerNode, [RULE_STATEMENT])?.getChild(
+      RULE_ISSUE_DYNAMIC,
+    );
+    if (inIssueDynamic) {
+      // if in issue dynamic
+      // first parameter is command name
+      // remainder are arguments
+      return callParameterNodes.slice(1);
     }
-    return [];
+    return callParameterNodes;
   }
 
   getByteArrayElements(node: SyntaxNode | null, arrayText: string): string[] | null {
