@@ -19,21 +19,21 @@
 }
 
 GenericDirective {
-  genericDirective (whiteSpace String)* newLine
+  genericDirective String* newLine
 }
 
 IdDeclaration {
-  idDirective (whiteSpace (String | Enum | Number)?)? newLine
+  idDirective (String | Enum | Number)? newLine
 }
 
 ParameterDeclaration {
-  (parameterDirective whiteSpace Variable{((Enum whiteSpace?) | (Enum whiteSpace? Object whiteSpace?))}+ newLine) |
-  (parameterStartDirective newLine (whiteSpace? Variable{((Enum whiteSpace?) | (Enum whiteSpace? Type { identifier } whiteSpace? ( (EnumName { identifier}) | (Range { String } (whiteSpace Values {String})? ) |  (EnumName { identifier} whiteSpace (Range { String } (whiteSpace Values {String})?) )? whiteSpace?)) )} newLine)* parameterEndDirective newLine ) 
+  (parameterDirective Variable{((Enum) | (Enum Object ))}+ newLine) |
+  (parameterStartDirective newLine ( Variable{((Enum ) | (Enum  Type { identifier }  ( (EnumName { identifier}) | (Range { String } (Values {String})? ) |  (EnumName { identifier} (Range { String } (Values {String})?) )? )) )} newLine)* parameterEndDirective newLine )
 }
 
 LocalDeclaration {
-  (localsDirective whiteSpace Variable{((Enum whiteSpace?) | (Enum whiteSpace? Object whiteSpace?))}+ newLine) |
-  (localsStartDirective newLine (whiteSpace? Variable{((Enum whiteSpace?) | (Enum whiteSpace? Type { identifier } whiteSpace? ( (EnumName { identifier}) | (Range { String } (whiteSpace Values {String})? ) |  (EnumName { identifier} whiteSpace (Range { String } (whiteSpace Values {String})?) )? whiteSpace?)) )} newLine)* localsEndDirective newLine ) 
+  (localsDirective Variable{((Enum ) | (Enum  Object ))}+ newLine) |
+  (localsStartDirective newLine ( Variable{((Enum ) | (Enum  Type { identifier }  ( (EnumName { identifier}) | (Range { String } (Values {String})? ) |  (EnumName { identifier} (Range { String } (Values {String})?) )? )) )} newLine)* localsEndDirective newLine )
 
 }
 
@@ -52,7 +52,7 @@ commentLine {
 }
 
 optSpace {
-  (newLine | whiteSpace)?
+  newLine?
 }
 
 Commands {
@@ -70,14 +70,14 @@ HardwareCommands {
   commandBlock
 }
 
-TimeTag { TimeAbsolute | (TimeGroundEpoch Name { String } whiteSpace)  | TimeEpoch | TimeRelative  | TimeComplete }
+TimeTag { TimeAbsolute | (TimeGroundEpoch Name { String })  | TimeEpoch | TimeRelative  | TimeComplete }
 
 Args {
-  (whiteSpace (arg))* whiteSpace?
+  arg*
 }
 
 RepeatArg {
-  "[" (whiteSpace? arg)* whiteSpace? "]"
+  "[" (arg)* "]"
 }
 
 arg[@isGroup=Arguments] { Number | String | Boolean | Enum | RepeatArg }
@@ -101,8 +101,8 @@ commonLoadActivate {
   Args
   LineComment?
   newLine
-  Engine { engineDirective whiteSpace Number newLine }?
-  Epoch { epochDirective whiteSpace String newLine }?
+  Engine { engineDirective Number newLine }?
+  Epoch { epochDirective String newLine }?
   Metadata?
   Models?
 }
@@ -123,7 +123,7 @@ commonGround {
 Request {
   TimeTag
   requestStartDirective "(" RequestName { String } ")"
-  whiteSpace? LineComment? newLine
+  LineComment? newLine
   // json schema requires step+, catch error in linter for cleaner message
   Steps { step* }
   requestEndDirective newLine
@@ -133,8 +133,8 @@ Request {
 Metadata {
   MetaEntry {
     metadataDirective
-    whiteSpace Key { String }
-    whiteSpace Value { metaValue }
+    Key { String }
+    Value { metaValue }
     newLine
   }+
 }
@@ -154,9 +154,9 @@ list<item> { optSpace item (optSpace "," optSpace item)* optSpace }
 Models {
   Model {
     modelDirective
-    whiteSpace Variable { String }
-    whiteSpace Value { String | Number | Boolean }
-    whiteSpace Offset { String }
+    Variable { String }
+    Value { String | Number | Boolean }
+    Offset { String }
     newLine
   }+
 }
@@ -174,15 +174,15 @@ Stem { !stemStart identifier }
 
   timeSecond { $[1-9] @digit* ("."@digit+)? }
 
-  TimeAbsolute { 'A'@digit@digit@digit@digit"-"@digit@digit@digit"T"timeHhmmss whiteSpace }
+  TimeAbsolute { 'A'@digit@digit@digit@digit"-"@digit@digit@digit"T"timeHhmmss }
 
-  TimeRelative { 'R'(timeSecond | timeDOY | timeHhmmss) whiteSpace}
+  TimeRelative { 'R'(timeSecond | timeDOY | timeHhmmss) }
 
-  TimeEpoch { 'E'$[+\-]?(timeSecond | timeDOY | timeHhmmss) whiteSpace}
+  TimeEpoch { 'E'$[+\-]?(timeSecond | timeDOY | timeHhmmss) }
 
-  TimeGroundEpoch { 'G'$[+\-]?(timeSecond | timeDOY | timeHhmmss) whiteSpace}
+  TimeGroundEpoch { 'G'$[+\-]?(timeSecond | timeDOY | timeHhmmss) }
 
-  TimeComplete { 'C' whiteSpace }
+  TimeComplete { 'C ' }
 
   String { '"' (!["\\] | "\\" _)* '"' }
 
@@ -202,7 +202,7 @@ Stem { !stemStart identifier }
 
   LineComment { "#"![\n\r]* }
 
-  newLine { ($[ \t]* "\n")+ $[ \t]* |  (whiteSpace? @eof) }
+  newLine { @whitespace* ("\n" | @eof) }
 
   whiteSpace { $[ \t]+ }
 
@@ -257,3 +257,5 @@ Stem { !stemStart identifier }
     identifier
   }
 }
+
+@skip { whiteSpace }

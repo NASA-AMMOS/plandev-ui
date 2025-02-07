@@ -393,17 +393,9 @@ const errorTests = [
     'Bad Input - Invalid stems',
     `C 2_STEM_NAME
 STEM$BAR`,
-    `Sequence(Commands(Command(TimeTag(TimeComplete),⚠(Number),Stem,Args),Command(Stem,⚠),Command(Stem,Args)))`,
+    `Sequence(Commands(Command(TimeTag(TimeComplete),⚠(Number),Stem,Args),Command(Stem,⚠,Args(Enum))))`,
   ],
-  [
-    'Stem with disallowed characters',
-    `FSW_CMD%BAR$BAZ`,
-    `Sequence(Commands(
-Command(Stem,⚠),
-Command(Stem,⚠),
-Command(Stem,Args)
-))`,
-  ],
+  ['Stem with disallowed characters', `FSW_CMD%BAR$BAZ`, `Sequence(Commands(Command(Stem,⚠,Args(Enum,⚠,Enum))))`],
   [
     'Stem ending in disallowed character',
     `FSW_CMD%`,
@@ -418,7 +410,7 @@ CMD2 [
 CMD3 ]`,
     `Sequence(Commands(
     Command(Stem,Args(RepeatArg(RepeatArg,⚠))),
-    Command(Stem,Args(RepeatArg(⚠))),Command(Stem,Args(⚠))))`,
+    Command(Stem,Args(RepeatArg(⚠))),Command(Stem,⚠,Args)))`,
   ],
   ['locals with wrong value types', `@LOCALS "string_not_enum"`, `Sequence(LocalDeclaration(⚠(String)))`],
 ];
