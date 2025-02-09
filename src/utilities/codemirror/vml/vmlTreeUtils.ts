@@ -197,10 +197,12 @@ export function getVmlNameNode(timeTaggedStatementNode: SyntaxNode | null): Synt
 }
 
 export function getArgumentPosition(argNode: SyntaxNode): number {
+  const isIssueDynamic = !!getNearestAncestorNodeOfType(argNode, [RULE_ISSUE_DYNAMIC]);
   return (
     getNearestAncestorNodeOfType(argNode, [RULE_STATEMENT])
       ?.firstChild?.getChild(RULE_CALL_PARAMETERS)
       ?.getChildren(RULE_CALL_PARAMETER)
+      .slice(isIssueDynamic ? 1 : 0)
       ?.findIndex(par => par.from === argNode.from && par.to === argNode.to) ?? -1
   );
 }

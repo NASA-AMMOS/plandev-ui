@@ -495,6 +495,29 @@ END_MODULE
     const bodyNode = seqNode?.getChild(RULE_COMMON_FUNCTION)?.getChild(RULE_BODY);
     expect(bodyNode).toBeTruthy();
   });
+
+  it('sequence fragment', () => {
+    const input = `MODULE
+RELATIVE_SEQUENCE function_name
+FLAGS AUTOEXECUTE AUTOUNLOAD REENTRANT
+BODY
+
+END_BODY
+A
+END_MODULE`;
+    printNodes(input);
+  });
+
+  it('relative time fragment', () => {
+    const input = `MODULE
+RELATIVE_SEQUENCE function_name
+FLAGS AUTOEXECUTE AUTOUNLOAD REENTRANT
+BODY
+R0
+END_BODY
+END_MODULE`;
+    printNodes(input);
+  });
 });
 
 function printNodes(input: string): void {

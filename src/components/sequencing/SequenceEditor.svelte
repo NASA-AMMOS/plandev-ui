@@ -212,7 +212,9 @@
           commandDictionary = parsedCommandDictionary;
           editorSequenceView.dispatch({
             effects: compartmentSeqLanguage.reconfigure(
-              setupVmlLanguageSupport(vmlAutoComplete(commandDictionary, $sequenceAdaptation.globals ?? [])),
+              setupVmlLanguageSupport(
+                vmlAutoComplete(commandDictionary, $sequenceAdaptation.globals ?? [], librarySequenceMap),
+              ),
             ),
           });
           editorSequenceView.dispatch({

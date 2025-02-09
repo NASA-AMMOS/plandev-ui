@@ -130,7 +130,7 @@ export function setupVmlLanguageSupport(
 export const vmlAdaptation: ISequenceAdaptation = {
   argDelegator: undefined,
   autoComplete: (_channelDictionary: ChannelDictionary | null, commandDictionary: CommandDictionary | null) =>
-    vmlAutoComplete(commandDictionary, []),
+    vmlAutoComplete(commandDictionary, [], {}),
   inputFormat: {
     linter: undefined,
     name: VML_LANGUAGE_NAME,

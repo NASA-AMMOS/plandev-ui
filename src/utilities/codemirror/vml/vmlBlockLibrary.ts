@@ -327,10 +327,10 @@ function variableToParam(
 }
 
 export function librarySequenceToFswCommand(librarySequence: LibrarySequence): FswCommand {
-  const cndArguments: FswCommandArgument[] = librarySequence.parameters.map(variable => variableToParam(variable));
+  const cmdArguments: FswCommandArgument[] = librarySequence.parameters.map(variable => variableToParam(variable));
   return {
-    argumentMap: {},
-    arguments: cndArguments,
+    argumentMap: Object.fromEntries(cmdArguments.map(arg => [arg.name, arg])),
+    arguments: cmdArguments,
     description: 'library sequence',
     stem: librarySequence.name,
     type: 'fsw_command',
