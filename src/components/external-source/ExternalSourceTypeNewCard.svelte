@@ -5,7 +5,6 @@
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
   import { createEventDispatcher } from 'svelte';
 
-  export let disabled: boolean = true;
   export let externalSourceType: string | null = null;
   export let externalEventTypes: string[] | null = null;
 
@@ -14,7 +13,7 @@
   }>();
 </script>
 
-{#if !disabled && (externalSourceType != null || externalEventTypes != null)}
+{#if externalSourceType != null || externalEventTypes != null}
   <div class="card st-typography-label card-border">
     <div class="card-row card-title-row card-background">
       <div class="card-title st-typography-medium">
@@ -24,7 +23,7 @@
         New Types Will Be Created
       </div>
       <slot name="right">
-        <button class="st-button icon fs-6" on:click={() => dispatch('dismiss')}>
+        <button class="st-button icon fs-6" on:click|stopPropagation={() => dispatch('dismiss')}>
           <XIcon />
         </button>
       </slot>
@@ -51,7 +50,9 @@
         </span>
       </div>
       <div class="card-dismiss">
-        <button class="st-button secondary hover-fix" on:click={() => dispatch('dismiss')}> Dismiss </button>
+        <button class="st-button secondary hover-fix" on:click|stopPropagation={() => dispatch('dismiss')}>
+          Dismiss
+        </button>
       </div>
       <slot />
     </div>

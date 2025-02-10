@@ -192,7 +192,7 @@
     ]);
   }
 
-  $: if (selectedSource !== null) {
+  $: if (selectedSource !== null && Object.keys(selectedSource.attributes).length > 0) {
     // Create an ArgumentsMap for the External Source
     selectedSourceAttributes = translateJsonSchemaArgumentsToValueSchema(selectedSource.attributes);
     // Create a ParametersMap for the External Source Type
@@ -428,16 +428,7 @@
       }
 
       // Reset the form behind the source
-      parsedExternalSource = undefined;
-      file = undefined;
-      files = undefined;
-      externalSourceFileInput.value = '';
-      keyField.reset('');
-      sourceTypeField.reset('');
-      startTimeDoyField.reset('');
-      endTimeDoyField.reset('');
-      validAtDoyField.reset('');
-      derivationGroupField.reset('');
+      onReset();
     }
   }
 
@@ -475,6 +466,7 @@
   }
 
   async function selectSource(detail: ExternalSourceSlim) {
+    deselectSource();
     selectedSource = detail;
     gridRowSizes = gridRowSizesBottomPanel;
     deselectEvent();
@@ -484,6 +476,8 @@
     deselectEvent();
     gridRowSizes = gridRowSizesNoBottomPanel;
     selectedSource = null;
+    selectedSourceAttributes = {};
+    selectedSourceTypeParametersMap = {};
   }
 
   function deselectEvent() {
@@ -564,6 +558,26 @@
       }
     }
     return nonSharedElements;
+  }
+
+  function onReset() {
+    parsedExternalSource = undefined;
+    $createExternalSourceError = null;
+    $createExternalSourceTypeError = null;
+    $createDerivationGroupError = null;
+    $parsingError = null;
+    isDerivationGroupFieldDisabled = true;
+    newExternalSourceType = null;
+    newExternalEventTypes = null;
+    files = undefined;
+    file = undefined;
+    externalSourceFileInput.value = '';
+    keyField.reset('');
+    sourceTypeField.reset('');
+    startTimeDoyField.reset('');
+    endTimeDoyField.reset('');
+    validAtDoyField.reset('');
+    derivationGroupField.reset('');
   }
 </script>
 
@@ -699,18 +713,22 @@
             </Collapse>
             <Collapse defaultExpanded={false} title="Attributes" tooltipContent="View External Source Attributes">
               <div class="st-typography-body">
-                <Parameters
-                  disabled={true}
-                  expanded={false}
-                  formParameters={getFormParameters(
-                    selectedSourceTypeParametersMap,
-                    selectedSourceAttributes,
-                    [],
-                    undefined,
-                    undefined,
-                    true,
-                  )}
-                />
+                {#if Object.keys(selectedSourceAttributes).length > 0}
+                  <Parameters
+                    disabled={true}
+                    expanded={false}
+                    formParameters={getFormParameters(
+                      selectedSourceTypeParametersMap,
+                      selectedSourceAttributes,
+                      [],
+                      undefined,
+                      undefined,
+                      true,
+                    )}
+                  />
+                {:else}
+                  No Attributes
+                {/if}
               </div>
             </Collapse>
             <div class="selected-source-delete">
@@ -732,25 +750,17 @@
           </fieldset>
         </div>
       {:else}
-        <form
-          on:submit|preventDefault={onFormSubmit}
-          on:reset={() => {
-            parsedExternalSource = undefined;
-            $createExternalSourceError = null;
-            $createExternalSourceTypeError = null;
-            $createDerivationGroupError = null;
-            $parsingError = null;
-            isDerivationGroupFieldDisabled = true;
-          }}
-        >
+        {#if newExternalSourceType !== null || newExternalEventTypes !== null}
+          <ExternalSourceTypeNewCard
+            externalSourceType={newExternalSourceType}
+            externalEventTypes={newExternalEventTypes}
+            on:dismiss={onReset}
+          />
+        {/if}
+        <form on:submit|preventDefault={onFormSubmit} on:reset={onReset}>
           <AlertError class="m-2" error={$createExternalSourceError} />
           <AlertError class="m-2" error={$parsingError} />
           <AlertError class="m-2" error={uploadDisabledMessage} />
-          <ExternalSourceTypeNewCard
-            disabled={$sourceTypeField.value !== ''}
-            externalSourceType={newExternalSourceType}
-            externalEventTypes={newExternalEventTypes}
-          />
           <div class="file-upload-field">
             <fieldset style:flex={1}>
               <label for="file">Source File</label>

@@ -612,7 +612,9 @@
                   <div class="red-icon icon">
                     <WarningIcon />
                   </div>
-                  <div class="status-text st-typography-body">Source & Event Type Attribute Schema Could Not Be Parsed</div>
+                  <div class="status-text st-typography-body">
+                    Source & Event Type Attribute Schema Could Not Be Parsed
+                  </div>
                 </div>
               {/if}
             </div>
