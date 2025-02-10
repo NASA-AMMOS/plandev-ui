@@ -939,38 +939,10 @@
 </CssGrid>
 
 <style>
-  :global(.attribute-name) {
-    display: flex;
-    font-weight: bold;
-    justify-content: flex-start;
-    width: 100%;
-  }
-
-  :global(.attribute-value) {
-    color: var(--st-gray-60);
-    display: flex;
-    font-style: italic;
-    justify-content: flex-end;
-    text-align: right;
-    width: 100%;
-  }
-
-  :global(.attributes) {
-    display: flex;
-    width: 100%;
-  }
-
-  :global(.plan-grid) {
-    overflow: auto;
-  }
   .filter {
     margin: 0.8rem 0;
   }
 
-  :global(.source-grid) {
-    height: 100%;
-    width: 100%;
-  }
   .timeline-editor-layer-filter {
     display: flex;
     position: relative;

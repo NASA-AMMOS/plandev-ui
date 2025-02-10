@@ -810,20 +810,24 @@
           tooltipContent={`${selectedExternalEventType.name} Attribute Schema Properties`}
           defaultExpanded={false}
         >
-          <div class="st-typography-body">
-            <Parameters
-              disabled={true}
-              expanded={false}
-              formParameters={getFormParameters(
-                selectedExternalEventTypeParametersMap,
-                {},
-                [],
-                undefined,
-                undefined,
-                true,
-              )}
-            />
-          </div>
+          {#if Object.keys(selectedExternalEventTypeParametersMap).length === 0}
+            <div class="st-typography-label">No Attributes Found</div>
+          {:else}
+            <div class="st-typography-body">
+              <Parameters
+                disabled={true}
+                expanded={false}
+                formParameters={getFormParameters(
+                  selectedExternalEventTypeParametersMap,
+                  {},
+                  [],
+                  undefined,
+                  undefined,
+                  true,
+                )}
+              />
+            </div>
+          {/if}
         </Collapse>
       {/if}
     </svelte:fragment>
