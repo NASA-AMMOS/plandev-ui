@@ -374,8 +374,6 @@
 
   async function onFormSubmit(_e: SubmitEvent) {
     if (parsedExternalSource && file) {
-      // Create non-existing types first:
-      // TODO: cleanup
       let newEventTypes: { [x: string]: object } = {};
       let newSourceType: { [x: string]: object } = {};
 
