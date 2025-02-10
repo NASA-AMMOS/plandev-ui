@@ -599,17 +599,23 @@
             >
               Upload
             </button>
-            {#if parsedExternalSourceEventTypeSchema !== undefined}
-              <div class="parse-status st-typography-body">
-                <div class="check">
-                  <CheckIcon />
+            <div class="parse-status-container">
+              {#if parsedExternalSourceEventTypeSchema !== undefined}
+                <div class="parse-status st-typography-body">
+                  <div class="check icon">
+                    <CheckIcon />
+                  </div>
+                  Source & Event Type Attribute Schema Parsed
                 </div>
-                Source & Event Type Attribute Schema Parsed
-              </div>
-            {:else}
-              <WarningIcon />
-              <div class="status-text st-typography-body">Source & Event Type Attribute Schema Could Not Be Parsed</div>
-            {/if}
+              {:else}
+                <div class="parse-status st-typography-body">
+                  <div class="red-icon icon">
+                    <WarningIcon />
+                  </div>
+                  <div class="status-text st-typography-body">Source & Event Type Attribute Schema Could Not Be Parsed</div>
+                </div>
+              {/if}
+            </div>
           {/if}
           {#if parsedExternalSourceEventTypeSchema !== undefined}
             <div class="to-be-created st-typography-body">
@@ -980,6 +986,10 @@
     margin-top: 12px;
   }
 
+  .parse-status-container {
+    display: flex;
+  }
+
   .parse-status {
     display: flex;
     margin-top: 12px;
@@ -989,7 +999,9 @@
     background-color: #0eaf0a;
     border-radius: 50%;
     color: var(--st-white);
-    display: flex;
+  }
+
+  .parse-status .icon {
     margin-right: 6px;
     max-height: 16px;
     max-width: 16px;
