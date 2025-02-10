@@ -247,6 +247,7 @@ import {
   showCreateGroupsOrTypes,
   showCreatePlanBranchModal,
   showCreatePlanSnapshotModal,
+  showCreateSequenceModal,
   showCreateViewModal,
   showDeleteActivitiesModal,
   showDeleteExternalSourceModal,
@@ -1912,6 +1913,15 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       return null;
+    }
+  },
+
+  async createSequenceModal(user: User | null): Promise<void> {
+    try {
+      await showCreateSequenceModal(user);
+    } catch (e) {
+      catchError('Unable To Create Sequence', e as Error);
+      showFailureToast('Unable To Create Sequence');
     }
   },
 

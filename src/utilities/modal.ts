@@ -29,6 +29,7 @@ import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceModal from '../components/modals/WorkspaceModal.svelte';
 import { type ActionDefinition } from '../types/actions';
+import CreateSequenceModal from '../components/modals/CreateSequenceModal.svelte';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
 import type { User } from '../types/app';
 import type { ExpansionSequence } from '../types/expansion';
@@ -1096,6 +1097,31 @@ export async function showUploadViewModal(): Promise<ModalElementValue<{ definit
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
           uploadViewModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a CreateSequenceModal component.
+ */
+export async function showCreateSequenceModal(user: User | null): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const createSequenceModal = new CreateSequenceModal({ props: { height: 265, user, width: 400 }, target });
+        target.resolve = resolve;
+
+        createSequenceModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          createSequenceModal.$destroy();
         });
       }
     } else {
