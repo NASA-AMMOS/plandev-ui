@@ -374,6 +374,7 @@
 
   async function onFormSubmit(_e: SubmitEvent) {
     if (parsedExternalSource && file) {
+      resetErrors();
       let newEventTypes: { [x: string]: object } = {};
       let newSourceType: { [x: string]: object } = {};
 
@@ -562,10 +563,6 @@
 
   function onReset() {
     parsedExternalSource = undefined;
-    $createExternalSourceError = null;
-    $createExternalSourceTypeError = null;
-    $createDerivationGroupError = null;
-    $parsingError = null;
     isDerivationGroupFieldDisabled = true;
     newExternalSourceType = null;
     newExternalEventTypes = null;
@@ -578,6 +575,13 @@
     endTimeDoyField.reset('');
     validAtDoyField.reset('');
     derivationGroupField.reset('');
+  }
+
+  function resetErrors() {
+    $createExternalSourceError = null;
+    $createExternalSourceTypeError = null;
+    $createDerivationGroupError = null;
+    $parsingError = null;
   }
 </script>
 
