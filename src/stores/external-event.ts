@@ -11,8 +11,7 @@ import { gqlSubscribable } from './subscribable';
 import { viewUpdateGrid } from './views';
 
 /* Writeable. */
-export const creatingExternalEventType: Writable<boolean> = writable(false); // TODO: remove
-export const createExternalEventTypeError: Writable<string | null> = writable(null); // TODO: remove
+export const createExternalEventTypeError: Writable<string | null> = writable(null);
 
 /* Subscriptions. */
 export const selectedExternalEventsRaw = gqlSubscribable<{ external_event: ExternalEventDB }[] | null | undefined>(
