@@ -31,25 +31,26 @@ import {
   RULE_FUNCTION_NAME,
   RULE_ISSUE,
   RULE_ISSUE_DYNAMIC,
+  RULE_OPTIONAL_STATIC_VARIABLE_SECTION,
   RULE_PARAMETER,
   RULE_SPAWN,
-  RULE_TIME_TAGGED_STATEMENT,
+  RULE_STATEMENT,
   RULE_VARIABLE_NAME,
   TOKEN_END_BODY,
   TOKEN_END_MODULE,
   TOKEN_MODULE,
   TOKEN_SYMBOL_CONST,
 } from './vmlConstants';
-import { emptyFileOptions, SEQUENCE_SNIPPETS } from './vmlSnippets';
+import { emptyFileOptions, SEQUENCE_SNIPPETS, structureSnippets } from './vmlSnippets';
 import { getArgumentPosition, getVmlVariables } from './vmlTreeUtils';
 
 const SECTION_LOCAL_VARIABLES: CompletionSection = {
   name: 'Local Variables',
-  rank: 1,
+  rank: 10,
 };
 const SECTION_FSW_COMMANDS: CompletionSection = {
   name: 'Flight Software Commands',
-  rank: 1,
+  rank: 10,
 };
 const SECTION_GLOBALS: CompletionSection = {
   name: 'Globals',
@@ -86,6 +87,7 @@ export function vmlAutoComplete(
         if (result) {
           return {
             ...result,
+            // apply filtering
             filter: context.pos === node.to,
           };
         }
@@ -109,7 +111,9 @@ function suggestDictionaryCompletions(
   globals: GlobalType[],
   librarySequenceMap: LibrarySequenceMap,
 ): CompletionResult | null {
-  if (isVariableReferenceNode(node)) {
+  if (isStatementNode(context, node)) {
+    return suggestTimeTaggedCompletions(context, node, tree, globals);
+  } else if (isVariableReferenceNode(node)) {
     return suggestVariableReferenceCompletions(context, node, tree, globals);
   } else if (isSpawnSequenceNameNode(node)) {
     return suggestSpawnSequenceNameCompletions(node, librarySequenceMap);
@@ -117,15 +121,42 @@ function suggestDictionaryCompletions(
     return suggestIssueCompletions(context, node, commandDictionary);
   } else if (isCallParameter(node)) {
     return suggestCallParameterCompletions(context, node, commandDictionary, librarySequenceMap);
-  } else if (getNearestAncestorNodeOfType(node, [RULE_TIME_TAGGED_STATEMENT])) {
-    return suggestTimeTaggedCompletions(context, node, tree);
   }
 
   return null;
 }
 
-function suggestIssueCompletions(_context: CompletionContext, node: SyntaxNode, commandDictionary: CommandDictionary) {
-  const restOfLine = _context.state.sliceDoc(node.to, _context.state.doc.lineAt(node.to).to);
+function suggestTimeTaggedCompletions(
+  context: CompletionContext,
+  node: SyntaxNode,
+  tree: Tree,
+  globals: GlobalType[],
+): CompletionResult | null {
+  const structs: Completion[] = structureSnippets('');
+  const variableCompletions = suggestVariableReferenceCompletions(context, node, tree, globals);
+  return {
+    from: node.from,
+    options: [...structs, ...(variableCompletions?.options ?? [])],
+    to: node.to,
+  };
+}
+
+function isStatementNode(context: CompletionContext, node: SyntaxNode): boolean {
+  // if only token after time, unclear if assignment or starting ISSUE, SPAWN, etc.
+  const statementNode = getNearestAncestorNodeOfType(node, [RULE_STATEMENT]);
+  return (
+    !!statementNode &&
+    statementNode.from === node.from &&
+    context.state.sliceDoc(node.to, statementNode.to).trim() === ''
+  );
+}
+
+function suggestIssueCompletions(
+  context: CompletionContext,
+  node: SyntaxNode,
+  commandDictionary: CommandDictionary,
+): CompletionResult {
+  const restOfLine = context.state.sliceDoc(node.to, context.state.doc.lineAt(node.to).to);
   const addArguments = restOfLine.trim() === '';
   return {
     from: node.from,
@@ -138,11 +169,13 @@ function suggestSpawnSequenceNameCompletions(
   node: SyntaxNode,
   librarySequenceMap: LibrarySequenceMap,
 ): CompletionResult | null {
-  const options: Completion[] = Object.values(librarySequenceMap).map(sequence => ({
-    detail: 'library sequence',
-    label: sequence.name,
-    type: 'function',
-  }));
+  const options: Completion[] = Object.values(librarySequenceMap).map(
+    (sequence): Completion => ({
+      detail: 'library sequence',
+      label: sequence.name,
+      type: 'function',
+    }),
+  );
   return {
     from: node.from,
     options,
@@ -276,19 +309,10 @@ function suggestVariableReferenceCompletions(
   }));
   const options: Completion[] = [...variableOptions, ...globalOptions(globals)];
   return {
-    filter: false,
     from: node.from,
     options,
     to: node.to,
   };
-}
-
-function suggestTimeTaggedCompletions(
-  _context: CompletionContext,
-  _node: SyntaxNode,
-  _tree: Tree,
-): CompletionResult | null {
-  return null;
 }
 
 function isVariableReferenceNode(node: SyntaxNode): boolean {
@@ -334,7 +358,7 @@ function suggestDefaultCompletions(context: CompletionContext, node: SyntaxNode,
     };
   }
 
-  if (!endModuleNode) {
+  if (!endModuleNode && !getNearestAncestorNodeOfType(node, [RULE_FUNCTION, RULE_OPTIONAL_STATIC_VARIABLE_SECTION])) {
     return {
       from,
       options: [
@@ -349,7 +373,6 @@ function suggestDefaultCompletions(context: CompletionContext, node: SyntaxNode,
   const isWithinModule =
     moduleNode && moduleNode.to <= context.pos && endModuleNode && context.pos < endModuleNode.from;
   if (isWithinModule) {
-    // console.log(`isWithinModule ${isWithinModule}`);
     const moduleCompletions = suggestModuleCompletions(node, context);
     if (moduleCompletions) {
       return moduleCompletions;
@@ -412,19 +435,21 @@ export function getDefaultArgumentValue(argDef: FswCommandArgument, enumMap: Enu
 }
 
 export function parseFunctionSignatures(contents: string, workspace_id: number): LibrarySequence[] {
-  return vmlBlockLibraryToCommandDictionary(contents).fswCommands.map(fswCommand => ({
-    name: fswCommand.stem,
-    parameters: fswCommand.arguments.map(a => {
-      const type: VariableDeclaration['type'] = argTypToVariableType(a.arg_type);
-      return {
-        name: a.name,
-        type,
-      };
+  return vmlBlockLibraryToCommandDictionary(contents).fswCommands.map(
+    (fswCommand): LibrarySequence => ({
+      name: fswCommand.stem,
+      parameters: fswCommand.arguments.map(a => {
+        const type: VariableDeclaration['type'] = argTypToVariableType(a.arg_type);
+        return {
+          name: a.name,
+          type,
+        };
+      }),
+      tree: VmlLanguage.parser.parse(contents),
+      type: SequenceTypes.LIBRARY,
+      workspace_id,
     }),
-    tree: VmlLanguage.parser.parse(contents),
-    type: SequenceTypes.LIBRARY,
-    workspace_id,
-  }));
+  );
 }
 
 function enumOptions(enumDef: Enum, argDef: FswCommandArgument): Completion[] {

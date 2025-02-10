@@ -24,8 +24,10 @@ import {
   RULE_TIME_TAGGED_STATEMENT,
   RULE_TIME_TAGGED_STATEMENTS,
   RULE_VM_MANAGEMENT,
+  TOKEN_END_BODY,
   TOKEN_ERROR,
   TOKEN_MODULE,
+  TOKEN_SYMBOL_CONST,
   TOKEN_TIME_CONST,
 } from './vmlConstants';
 
@@ -501,11 +503,13 @@ END_MODULE
 RELATIVE_SEQUENCE function_name
 FLAGS AUTOEXECUTE AUTOUNLOAD REENTRANT
 BODY
-
 END_BODY
 A
 END_MODULE`;
-    printNodes(input);
+    const aPosition = input.indexOf('A\n', input.lastIndexOf(TOKEN_END_BODY));
+    const aToken = VmlLanguage.parser.parse(input).resolveInner(aPosition, 1);
+    expect(aToken.name).toBe(TOKEN_SYMBOL_CONST);
+    expect(aToken.parent?.name).toBe(TOKEN_ERROR);
   });
 
   it('relative time fragment', () => {
@@ -516,7 +520,9 @@ BODY
 R0
 END_BODY
 END_MODULE`;
-    printNodes(input);
+    const r0Token = VmlLanguage.parser.parse(input).resolveInner(input.indexOf('R0'), 1);
+    expect(r0Token.name).toBe(TOKEN_SYMBOL_CONST);
+    expect(r0Token.parent?.name).toBe(TOKEN_ERROR);
   });
 });
 

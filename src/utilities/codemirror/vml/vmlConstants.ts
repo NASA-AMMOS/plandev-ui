@@ -55,6 +55,7 @@ export const RULE_DATA_KIND = 'Data_kind';
 export const RULE_COMMENT = 'Comment';
 export const RULE_INPUT_OUTPUT_PARAMETER = 'Input_output_parameter';
 export const RULE_INPUT_PARAMETER = 'Input_parameter';
+export const RULE_OPTIONAL_STATIC_VARIABLE_SECTION = 'Optional_static_variable_section';
 export const RULE_OPTIONAL_DEFAULT_INPUT_VALUE = 'Optional_default_input_value';
 export const RULE_OPTIONAL_VALUE_LIST = 'Optional_value_list';
 export const RULE_INPUT_RANGE = 'Input_Range';
