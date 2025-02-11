@@ -19,7 +19,6 @@
   import Input from '../../components/form/Input.svelte';
   import ModelStatusRollup from '../../components/model/ModelStatusRollup.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
-  import CancellableProgressRadial from '../../components/ui/CancellableProgressRadial.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
   import { tagsCellRenderer, tagsFilterValueGetter } from '../../components/ui/DataGrid/DataGridTags';
@@ -65,7 +64,7 @@
 
   type CellRendererParams = {
     deletePlan: (plan: Plan) => void;
-    exportPlan: (plan: Plan, progressCallback?: (progress: number) => void, signal?: AbortSignal) => void;
+    exportPlan: (plan: Plan) => void;
     viewPlan: (plan: Plan) => void;
   };
   type PlanCellRendererParams = ICellRendererParams<Plan> & CellRendererParams;
@@ -196,9 +195,8 @@
   let isPlanImportMode: boolean = false;
   let orderedModels: ModelSlim[] = [];
   let nameInputField: HTMLInputElement;
+  let planExporting: boolean = false;
   let planTags: Tag[] = [];
-  let planExportAbortController: AbortController | null = null;
-  let planExportProgress: number | null = null;
   let selectedModel: ModelSlim | undefined;
   let selectedPlan: PlanSlim | undefined;
   let selectedPlanId: number | null = null;
@@ -310,6 +308,7 @@
                 content: 'Export Plan',
                 placement: 'bottom',
               },
+              isDownloadCancellable: true,
               useExportIcon: true,
               hasDeletePermission: params.data && user ? featurePermissions.plan.canDelete(user, params.data) : false,
               rowData: params.data,
@@ -443,40 +442,18 @@
     selectPlan(null);
   }
 
-  async function onExportPlan(
-    plan: PlanSlim,
-    progressCallback: (progress: number) => void,
-    signal: AbortSignal,
-  ): Promise<void> {
-    await exportPlan(plan, user, progressCallback, undefined, signal);
+  async function onExportPlan(plan: PlanSlim): Promise<void> {
+    if (!planExporting) {
+      planExporting = true;
+      await exportPlan(plan, user);
+      planExporting = false;
+    }
   }
 
   async function onExportSelectedPlan() {
     if (selectedPlan) {
-      if (planExportAbortController) {
-        planExportAbortController.abort();
-      }
-
-      planExportProgress = 0;
-      planExportAbortController = new AbortController();
-
-      if (planExportAbortController && !planExportAbortController.signal.aborted) {
-        await onExportPlan(
-          selectedPlan,
-          (progress: number) => {
-            planExportProgress = progress;
-          },
-          planExportAbortController.signal,
-        );
-      }
-      planExportProgress = null;
+      await onExportPlan(selectedPlan);
     }
-  }
-
-  function onCancelExportSelectedPlan() {
-    planExportAbortController?.abort();
-    planExportAbortController = null;
-    planExportProgress = null;
   }
 
   async function onTagsInputChange(event: TagsChangeEvent) {
@@ -669,28 +646,16 @@
           <SectionTitle>Selected plan</SectionTitle>
           <div class="selected-plan-buttons">
             <div class="transfer-button-container">
-              {#if planExportProgress !== null}
-                <button
-                  class="cancel-button"
-                  on:click={onCancelExportSelectedPlan}
-                  use:tooltip={{
-                    content: 'Cancel Plan Export',
-                    placement: 'top',
-                  }}
-                >
-                  <CancellableProgressRadial progress={planExportProgress} />
-                </button>
-              {/if}
               <button
+                disabled={planExporting}
                 class="st-button secondary transfer-button"
-                disabled={planExportProgress !== null}
                 on:click={onExportSelectedPlan}
                 use:tooltip={{
                   content: 'Export Selected Plan',
                   placement: 'top',
                 }}
               >
-                <ExportIcon /> Export{#if planExportProgress !== null}ing...{/if}
+                <ExportIcon /> Export{#if planExporting}ing...{/if}
               </button>
             </div>
             <button
@@ -1005,11 +970,6 @@
   .transfer-button {
     column-gap: 4px;
     position: relative;
-  }
-
-  .cancel-button {
-    background: none;
-    border: 0;
   }
 
   .import-input-container {

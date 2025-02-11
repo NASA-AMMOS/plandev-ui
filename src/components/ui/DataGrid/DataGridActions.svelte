@@ -12,6 +12,7 @@
   import type { TRowData } from '../../../types/data-grid';
   import { tooltip } from '../../../utilities/tooltip';
   import CancellableProgressRadial from '../CancellableProgressRadial.svelte';
+  import ProgressRadial from '../ProgressRadial.svelte';
 
   type RowData = $$Generic<TRowData>;
 
@@ -20,7 +21,7 @@
     placement: Placement;
   };
 
-  export let rowData: RowData | undefined;
+  export let isDownloadCancellable: boolean = true;
   export let editButtonClass: string | undefined = undefined;
   export let editTooltip: Tooltip | undefined = undefined;
   export let deleteButtonClass: string | undefined = undefined;
@@ -31,6 +32,7 @@
   export let hasDeletePermissionError: string | undefined = undefined;
   export let hasEditPermission: boolean = true;
   export let hasEditPermissionError: string | undefined = undefined;
+  export let rowData: RowData | undefined;
   export let useExportIcon: boolean | undefined = undefined;
   export let viewButtonClass: string | undefined = undefined;
   export let viewTooltip: Tooltip | undefined = undefined;
@@ -67,9 +69,11 @@
   }
 
   function onCancelDownload() {
-    downloadAbortController?.abort();
-    downloadAbortController = null;
-    downloadProgress = null;
+    if (isDownloadCancellable) {
+      downloadAbortController?.abort();
+      downloadAbortController = null;
+      downloadProgress = null;
+    }
   }
 
   function progressCallback(progress: number) {
@@ -116,9 +120,13 @@
       class:icon={true}
       class={downloadButtonClass}
       on:click|stopPropagation={onCancelDownload}
-      use:tooltip={{ ...downloadTooltip, content: `Cancel ${downloadTooltip?.content}` }}
+      use:tooltip={{ ...downloadTooltip, content: isDownloadCancellable ? `Cancel ${downloadTooltip?.content}` : '' }}
     >
-      <CancellableProgressRadial progress={downloadProgress} />
+      {#if isDownloadCancellable}
+        <CancellableProgressRadial progress={downloadProgress} />
+      {:else}
+        <ProgressRadial progress={downloadProgress} strokeWidth={1} />
+      {/if}
     </button>
   {/if}
 {/if}

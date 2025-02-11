@@ -3,6 +3,7 @@
 <script lang="ts">
   import HistoryIcon from '@nasa-jpl/stellar/icons/history.svg?component';
   import { createEventDispatcher, onMount } from 'svelte';
+  import { activityArgumentDefaultsMap } from '../../stores/activities';
   import { plan } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import type {
@@ -28,7 +29,6 @@
   export let activityDirective: ActivityDirective;
   export let activityDirectivesMap: ActivityDirectivesMap = {};
   export let activityTypes: ActivityType[] = [];
-  export let modelId: number;
   export let planStartTimeYmd: string;
   export let user: User | null;
 
@@ -192,18 +192,11 @@
     const { id: activityId, plan_id: planId } = activityDirective;
     activityRevisions = await effects.getActivityDirectiveChangelog(planId, activityId, user);
 
-    // Get default set of effective arguments
-    const effectiveDefaultArguments = await effects.getEffectiveActivityArguments(
-      modelId,
-      activityType?.name || '',
-      {},
-      user,
-    );
-
     // Get effective arguments for all revisions by coalescing defaults with args supplied in revision
+    const defaultArguments = $activityArgumentDefaultsMap[activityType?.name || ''] ?? null;
     effectiveRevisionArguments = activityRevisions.map(revision => {
       return {
-        ...effectiveDefaultArguments?.arguments,
+        ...defaultArguments?.arguments,
         ...revision.arguments,
       };
     });

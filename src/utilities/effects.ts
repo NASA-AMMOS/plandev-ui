@@ -3529,11 +3529,11 @@ const effects = {
 
   async getDefaultActivityArguments(
     modelId: number,
-    activityTypes: ActivityType[],
+    activityTypes: string[],
     user: User | null,
   ): Promise<DefaultEffectiveArguments[]> {
     try {
-      const activities = activityTypes.map(type => ({ activityArguments: {}, activityTypeName: type.name }));
+      const activities = activityTypes.map(type => ({ activityArguments: {}, activityTypeName: type }));
       const data = await reqHasura<DefaultEffectiveArguments[]>(
         gql.GET_EFFECTIVE_ACTIVITY_ARGUMENTS_BULK,
         {
@@ -3550,32 +3550,6 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       return [];
-    }
-  },
-
-  async getEffectiveActivityArguments(
-    modelId: number,
-    activityTypeName: string,
-    argumentsMap: ArgumentsMap,
-    user: User | null,
-    signal?: AbortSignal,
-  ): Promise<EffectiveArguments | null> {
-    try {
-      const data = await reqHasura<EffectiveArguments>(
-        gql.GET_EFFECTIVE_ACTIVITY_ARGUMENTS,
-        {
-          activityTypeName,
-          arguments: argumentsMap,
-          modelId,
-        },
-        user,
-        signal,
-      );
-      const { effectiveActivityArguments } = data;
-      return effectiveActivityArguments;
-    } catch (e) {
-      catchError(e as Error);
-      return null;
     }
   },
 
@@ -4179,82 +4153,6 @@ const effects = {
       catchError(e as Error);
       return { models: [], plans: [] };
     }
-  },
-
-  async getQualifiedPlanParts(
-    planId: number,
-    user: User | null,
-    progressCallback: (progress: number) => void,
-    signal?: AbortSignal,
-  ): Promise<{
-    activities: ActivityDirectiveDB[];
-    plan: Plan;
-    simulationArguments: ArgumentsMap;
-  } | null> {
-    try {
-      const plan = await effects.getPlan(planId, user);
-
-      if (plan) {
-        const simulation: Simulation | null = await effects.getPlanLatestSimulation(plan.id, user);
-        const simulationArguments: ArgumentsMap = simulation
-          ? {
-              ...simulation.template?.arguments,
-              ...simulation.arguments,
-            }
-          : {};
-
-        const activities: ActivityDirectiveDB[] = (await effects.getActivitiesForPlan(plan.id, user)) ?? [];
-
-        let totalProgress = 0;
-        const numOfDirectives = activities.length;
-
-        const qualifiedActivityDirectives = (
-          await Promise.all(
-            activities.map(async activityDirective => {
-              if (plan) {
-                const effectiveArguments = await effects.getEffectiveActivityArguments(
-                  plan?.model_id,
-                  activityDirective.type,
-                  activityDirective.arguments,
-                  user,
-                  signal,
-                );
-
-                totalProgress++;
-                progressCallback((totalProgress / numOfDirectives) * 100);
-
-                return {
-                  ...activityDirective,
-                  arguments: effectiveArguments?.arguments ?? activityDirective.arguments,
-                };
-              }
-
-              totalProgress++;
-              progressCallback((totalProgress / numOfDirectives) * 100);
-
-              return activityDirective;
-            }),
-          )
-        ).sort((directiveA, directiveB) => {
-          if (directiveA.id < directiveB.id) {
-            return -1;
-          }
-          if (directiveA.id > directiveB.id) {
-            return 1;
-          }
-          return 0;
-        });
-
-        return {
-          activities: qualifiedActivityDirectives,
-          plan,
-          simulationArguments,
-        };
-      }
-    } catch (e) {
-      catchError(e as Error);
-    }
-    return null;
   },
 
   getResource(

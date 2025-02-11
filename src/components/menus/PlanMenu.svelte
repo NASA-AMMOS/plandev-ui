@@ -6,6 +6,7 @@
   import BranchIcon from '@nasa-jpl/stellar/icons/branch.svg?component';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { activityDirectivesMap } from '../../stores/activities';
   import { planReadOnly } from '../../stores/plan';
   import { initialPlanSnapshotsLoading } from '../../stores/planSnapshots';
   import { viewTogglePanel } from '../../stores/views';
@@ -18,7 +19,6 @@
   import { exportPlan } from '../../utilities/plan';
   import Menu from '../menus/Menu.svelte';
   import MenuItem from '../menus/MenuItem.svelte';
-  import ProgressRadial from '../ui/ProgressRadial.svelte';
   import MenuDivider from './MenuDivider.svelte';
 
   export let plan: Plan;
@@ -27,9 +27,8 @@
   let hasCreateMergeRequestPermission: boolean = false;
   let hasCreatePlanBranchPermission: boolean = false;
   let hasCreateSnapshotPermission: boolean = false;
+  let planExporting: boolean = false;
   let planMenu: Menu;
-  let planExportAbortController: AbortController | null = null;
-  let planExportProgress: number | null = null;
 
   $: hasCreateMergeRequestPermission = plan.parent_plan
     ? featurePermissions.planBranch.canCreateRequest(
@@ -62,31 +61,11 @@
   }
 
   async function onExportPlan() {
-    if (planExportAbortController) {
-      planExportAbortController.abort();
+    if (!planExporting && $activityDirectivesMap) {
+      planExporting = true;
+      await exportPlan(plan, user, Object.values($activityDirectivesMap));
+      planExporting = false;
     }
-
-    planExportProgress = 0;
-    planExportAbortController = new AbortController();
-
-    if (planExportAbortController && !planExportAbortController.signal.aborted) {
-      await exportPlan(
-        plan,
-        user,
-        (progress: number) => {
-          planExportProgress = progress;
-        },
-        undefined,
-        planExportAbortController.signal,
-      );
-    }
-    planExportProgress = null;
-  }
-
-  function onCancelExportPlan() {
-    planExportAbortController?.abort();
-    planExportAbortController = null;
-    planExportProgress = null;
   }
 
   function viewSnapshotHistory() {
@@ -178,14 +157,11 @@
         <div class="column-name">View Snapshot History</div>
       </MenuItem>
       <MenuDivider />
-      <MenuItem on:click={planExportProgress === null ? onExportPlan : onCancelExportPlan}>
-        {#if planExportProgress === null}
+      <MenuItem on:click={onExportPlan} disabled={planExporting}>
+        {#if !planExporting}
           Export plan as .json
         {:else}
-          <div class="cancel-plan-export">
-            Cancel plan export
-            <ProgressRadial progress={planExportProgress} size={16} strokeWidth={1} />
-          </div>
+          Exporting...
         {/if}
       </MenuItem>
     </Menu>
@@ -242,12 +218,5 @@
     color: var(--st-white);
     cursor: pointer;
     user-select: none;
-  }
-
-  .cancel-plan-export {
-    --progress-radial-background: var(--st-gray-20);
-    align-items: center;
-    column-gap: 0.25rem;
-    display: flex;
   }
 </style>

@@ -205,7 +205,6 @@
         activityDirective={$selectedActivityDirective}
         activityDirectivesMap={$activityDirectivesMap || {}}
         activityTypes={$activityTypes}
-        modelId={$modelId}
         planStartTimeYmd={$plan.start_time}
         on:closeChangelog={onToggleViewChangelog}
         on:previewRevision={onPreviewRevision}
@@ -231,7 +230,6 @@
       <ActivitySpanForm
         activityTypes={$activityTypes}
         filteredExpansionSequences={$filteredExpansionSequences}
-        modelId={$modelId}
         simulationDatasetId={$simulationDatasetId}
         span={$selectedSpan}
         spansMap={$spansMap}

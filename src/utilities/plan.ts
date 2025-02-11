@@ -1,18 +1,16 @@
 import type { ActivityDirective, ActivityDirectiveDB } from '../types/activity';
 import type { User } from '../types/app';
-import type { ArgumentsMap } from '../types/parameter';
+import type { ArgumentsMap, DefaultEffectiveArgumentsMap } from '../types/parameter';
 import type { DeprecatedPlanTransfer, Plan, PlanSlim, PlanTransfer } from '../types/plan';
 import type { Simulation } from '../types/simulation';
 import effects from './effects';
-import { downloadJSON } from './generic';
+import { downloadJSON, unique } from './generic';
 import { convertDoyToYmd } from './time';
 
 export async function getPlanForTransfer(
   plan: Plan | PlanSlim,
   user: User | null,
-  progressCallback?: (progress: number) => void,
   activities?: ActivityDirective[],
-  signal?: AbortSignal,
 ): Promise<PlanTransfer | void> {
   const simulation: Simulation | null = await effects.getPlanLatestSimulation(plan.id, user);
   const qualifiedSimulationArguments: ArgumentsMap = simulation
@@ -26,69 +24,32 @@ export async function getPlanForTransfer(
     activitiesToQualify = (await effects.getActivitiesForPlan(plan.id, user)) ?? [];
   }
 
-  let totalProgress = 0;
-  const numOfDirectives = activitiesToQualify.length;
-
-  const CHUNK_SIZE = 8;
-  const chunkedActivities = activitiesToQualify.reduce(
-    (prevChunks: ActivityDirectiveDB[][], activityToQualify: ActivityDirectiveDB, index) => {
-      const chunkIndex = Math.floor(index / CHUNK_SIZE);
-      if (!prevChunks[chunkIndex]) {
-        prevChunks[chunkIndex] = [];
+  const activityTypes = unique(activitiesToQualify.map(a => a.type));
+  const defaultActivityArguments = await effects.getDefaultActivityArguments(plan?.model_id, activityTypes, user);
+  const argsMap: DefaultEffectiveArgumentsMap = {};
+  const defaultActivityArgumentsMap = (defaultActivityArguments || []).reduce((map, { arguments: args, typeName }) => {
+    map[typeName] = args;
+    return map;
+  }, argsMap);
+  const qualifiedActivityDirectives = activitiesToQualify
+    .map(activityDirective => {
+      return {
+        ...activityDirective,
+        arguments: {
+          ...defaultActivityArgumentsMap[activityDirective.type || ''],
+          ...activityDirective.arguments,
+        },
+      };
+    })
+    .sort((directiveA, directiveB) => {
+      if (directiveA.id < directiveB.id) {
+        return -1;
       }
-      prevChunks[chunkIndex].push(activityToQualify);
-      return prevChunks;
-    },
-    [],
-  );
-
-  progressCallback?.(0);
-  const qualifiedActivityDirectiveChunks: ActivityDirectiveDB[][] = [];
-  for (let i = 0; i < chunkedActivities.length; i++) {
-    if (!signal?.aborted) {
-      const activitiesToQualifyChunk: ActivityDirectiveDB[] = chunkedActivities[i];
-      qualifiedActivityDirectiveChunks[i] = await Promise.all(
-        activitiesToQualifyChunk.map(async activityDirective => {
-          if (plan) {
-            const effectiveArguments = await effects.getEffectiveActivityArguments(
-              plan?.model_id,
-              activityDirective.type,
-              activityDirective.arguments,
-              user,
-              signal,
-            );
-
-            totalProgress++;
-            progressCallback?.((totalProgress / numOfDirectives) * 100);
-
-            return {
-              ...activityDirective,
-              arguments: effectiveArguments?.arguments ?? activityDirective.arguments,
-            };
-          }
-
-          totalProgress++;
-          progressCallback?.((totalProgress / numOfDirectives) * 100);
-
-          return activityDirective;
-        }),
-      );
-    }
-  }
-
-  if (!signal?.aborted) {
-    progressCallback?.(100);
-  }
-
-  const qualifiedActivityDirectives = qualifiedActivityDirectiveChunks.flat().sort((directiveA, directiveB) => {
-    if (directiveA.id < directiveB.id) {
-      return -1;
-    }
-    if (directiveA.id > directiveB.id) {
-      return 1;
-    }
-    return 0;
-  });
+      if (directiveA.id > directiveB.id) {
+        return 1;
+      }
+      return 0;
+    });
 
   return {
     activities: qualifiedActivityDirectives.map(
@@ -128,13 +89,11 @@ export async function getPlanForTransfer(
 export async function exportPlan(
   plan: Plan | PlanSlim,
   user: User | null,
-  progressCallback: (progress: number) => void,
   activities?: ActivityDirective[],
-  signal?: AbortSignal,
 ): Promise<void> {
-  const planTransfer = await getPlanForTransfer(plan, user, progressCallback, activities, signal);
+  const planTransfer = await getPlanForTransfer(plan, user, activities);
 
-  if (planTransfer && !signal?.aborted) {
+  if (planTransfer) {
     downloadJSON(planTransfer, plan.name);
   }
 }
