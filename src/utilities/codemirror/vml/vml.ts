@@ -30,6 +30,8 @@ import {
 } from './vmlConstants';
 import { computeBlocks, isBlockCommand, vmlBlockFolder } from './vmlFolder';
 
+const VML_LANGUAGE_NAME = 'vml';
+
 const FoldBehavior: {
   [tokenName: string]: (node: SyntaxNode) => ReturnType<typeof foldInside>;
 } = {
@@ -42,11 +44,12 @@ export const VmlLanguage = LRLanguage.define({
   languageData: {
     commentTokens: { line: ';' },
   },
-  name: 'vml',
+  name: VML_LANGUAGE_NAME,
   parser: parser.configure({
     props: [
       foldNodeProp.add(FoldBehavior),
       styleTags({
+        ABSOLUTE_SEQUENCE: t.macroName,
         ADD: t.arithmeticOperator,
         ASSIGNMENT: t.updateOperator,
         BLOCK: t.namespace,
@@ -60,15 +63,18 @@ export const VmlLanguage = LRLanguage.define({
         END_BODY: t.namespace,
         END_MODULE: t.namespace,
         EXTERNAL_CALL: t.controlKeyword,
+        FLAGS: t.namespace,
         FULL_TIME_CONST: t.className,
         HEX_CONST: t.number,
         INPUT: t.keyword,
         INT_CONST: t.number,
         ISSUE: t.controlKeyword,
+        ISSUE_DYNAMIC: t.controlKeyword,
         MODULE: t.namespace,
         MODULO: t.arithmeticOperator,
         MULTIPLY: t.arithmeticOperator,
         POWER: t.arithmeticOperator,
+        RELATIVE_SEQUENCE: t.macroName,
         RETURN: t.keyword,
         SEQUENCE: t.macroName,
         SHORT_TIME_CONST: t.className,
@@ -124,10 +130,10 @@ export function setupVmlLanguageSupport(
 export const vmlAdaptation: ISequenceAdaptation = {
   argDelegator: undefined,
   autoComplete: (_channelDictionary: ChannelDictionary | null, commandDictionary: CommandDictionary | null) =>
-    vmlAutoComplete(commandDictionary),
+    vmlAutoComplete(commandDictionary, [], {}),
   inputFormat: {
     linter: undefined,
-    name: 'SeqN',
+    name: VML_LANGUAGE_NAME,
     toInputFormat: (vml: string) => Promise.resolve(vml),
   },
   modifyOutput: undefined,

@@ -1,5 +1,6 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
 import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
+import { SeqLanguage } from '.';
 import {
   RULE_ARGS,
   RULE_COMMAND,
@@ -17,8 +18,11 @@ import {
   TOKEN_REQUEST,
   TOKEN_STRING,
 } from '../../constants/seq-n-grammar-constants';
+import { SequenceTypes } from '../../enums/sequencing';
+import { type LibrarySequence, type UserSequence } from '../../types/sequencing';
 import { fswCommandArgDefault } from '../sequence-editor/command-dictionary';
 import { validateVariables } from '../sequence-editor/sequence-linter';
+import { parseVariables } from '../sequence-editor/to-seq-json';
 import { getFromAndTo, getNearestAncestorNodeOfType } from '../sequence-editor/tree-utils';
 import type { CommandInfoMapper } from './commandInfoMapper';
 
@@ -50,6 +54,17 @@ export function getAncestorStepOrRequest(node: SyntaxNode | null) {
     TOKEN_LOAD,
     TOKEN_REQUEST,
   ]);
+}
+
+export function userSequenceToLibrarySequence(sequence: UserSequence): LibrarySequence {
+  const tree = SeqLanguage.parser.parse(sequence.definition);
+  return {
+    name: sequence.name,
+    parameters: parseVariables(tree.topNode, sequence.definition, 'ParameterDeclaration') ?? [],
+    tree,
+    type: SequenceTypes.LIBRARY,
+    workspace_id: sequence.workspace_id,
+  };
 }
 
 export class SeqNCommandInfoMapper implements CommandInfoMapper {
@@ -109,6 +124,10 @@ export class SeqNCommandInfoMapper implements CommandInfoMapper {
 
   isArgumentNodeOfVariableType(argNode: SyntaxNode | null): boolean {
     return argNode?.name === 'Enum';
+  }
+
+  isByteArrayArg(): boolean {
+    return false;
   }
 
   nodeTypeEnumCompatible(node: SyntaxNode | null): boolean {

@@ -33,6 +33,8 @@
 // https://github.com/lezer-parser/generator/blob/10a697a11ebdef98cd08a2c6ac2ef6619604385c/test/cases/ExternalSpecializer.txt#L9
 // https://github.com/lezer-parser/css/blob/692710b42f83961151eee4cf73b0ae18ebccffad/src/tokens.js#L35
 // https://github.com/lezer-parser/css/blob/692710b42f83961151eee4cf73b0ae18ebccffad/src/css.grammar#L147
+// https://github.jpl.nasa.gov/MPS/vml_2_1/blob/master/vml_2_1/vml_compiler_test/command_stream/long_sequence.vml
+// https://github.jpl.nasa.gov/MPS/vml/blob/master/vml_compiler/vml_compiler.y
 
 @skip { space | Comment }
 
@@ -113,14 +115,21 @@ Common_Function {
     BODY
     End_lines
     Time_tagged_statements {
-      Time_tagged_statement {
-        TIME_CONST
-        Statement
-      }*
+      Time_tagged_statement*
     }
     END_BODY
     End_lines
   }
+}
+
+Time_tagged_statement {
+  TIME_CONST
+  Statement
+}
+
+@top
+Test_Time_tagged_statement {
+  Time_tagged_statement
 }
 
 Statement {
@@ -158,6 +167,19 @@ Clear {
   CLEAR
 }
 
+// Byte_Array has limited examples
+Byte_array {
+  OPEN_PAREN
+  (
+    HEX_CONST
+    (
+      COMMA
+      HEX_CONST
+    )*
+  )?
+  CLOSE_PAREN
+}
+
 Issue {
   ISSUE
   // Function_name, Call_parameters not shown in schema
@@ -168,8 +190,7 @@ Issue {
 // Some examples include commas between arguments
 Issue_dynamic {
   ISSUE_DYNAMIC
-  // Function_name not shown in schema
-  Function_name
+  // Function_name is first call parameter in sample
   Call_parameters
 }
 
@@ -215,6 +236,8 @@ Input_value {
   Constant
   | Input_Range {
     INT_RANGE_CONST
+    | DAY_TIME_RANGE_CONST
+    | SHORT_TIME_RANGE_CONST
   }
 }
 
@@ -317,7 +340,7 @@ Assignment {
   Assignment_source {
 // | issue_no_time
     Issue_hex_no_time
-// | external_call_no_time
+    | External_call_no_time
     | Compound_expr
     | Simple_call_no_time
     | Wait
@@ -350,6 +373,7 @@ Call_parameters {
 
 Call_parameter {
   Simple_expr
+  | Byte_array
 }
 
 Simple_call {
@@ -394,14 +418,15 @@ Unop {
 }
 
 Built_in_function {
-  // Grammar shows 2 sets of paranthesis
-  (Zero_parm_built_in_function_name OPEN_PAREN CLOSE_PAREN)
+  // Grammar shows 2 set parenthesis for zero arg, one here, and one next level down
+  // (Zero_parm_built_in_function_name OPEN_PAREN CLOSE_PAREN)
+  Zero_parm_built_in_function_name
   | (Unary_parm_built_in_function_name OPEN_PAREN Compound_expr CLOSE_PAREN)
 }
 
 Zero_parm_built_in_function_name {
+  // only function name in grammar
   SPACECRAFT_TIME
-  // Odd to not have a name???
   OPEN_PAREN CLOSE_PAREN
 }
 
@@ -695,7 +720,7 @@ END_VARIABLES { @specialize<SYMBOL_CONST, "END_VARIABLES"> | @specialize<SYMBOL_
 END_WHILE { @specialize<SYMBOL_CONST, "END_WHILE"> | @specialize<SYMBOL_CONST, "end_while"> }
 EXTERNAL { @specialize<SYMBOL_CONST, "EXTERNAL"> | @specialize<SYMBOL_CONST, "external">}
 EXTERNAL_CALL { @specialize<SYMBOL_CONST, "EXTERNAL_CALL"> | @specialize<SYMBOL_CONST, "external_call"> }
-FALSE_CONST { @specialize<SYMBOL_CONST, "FALSE_CONST"> | @specialize<SYMBOL_CONST, "false_const"> }
+FALSE_CONST { @specialize<SYMBOL_CONST, "FALSE"> | @specialize<SYMBOL_CONST, "false"> }
 FLAGS { @specialize<SYMBOL_CONST, "FLAGS"> | @specialize<SYMBOL_CONST, "flags"> }
 FOR { @specialize<SYMBOL_CONST, "FOR"> | @specialize<SYMBOL_CONST, "for"> }
 HALT { @specialize<SYMBOL_CONST, "HALT"> | @specialize<SYMBOL_CONST, "halt"> }
@@ -736,7 +761,7 @@ TIME_COERCE { @specialize<SYMBOL_CONST, "TIME_COERCE"> | @specialize<SYMBOL_CONS
 TIMEOUT { @specialize<SYMBOL_CONST, "TIMEOUT"> | @specialize<SYMBOL_CONST, "timeout"> }
 TLM_ID { @specialize<SYMBOL_CONST, "TLM_ID"> | @specialize<SYMBOL_CONST, "tlm_id"> }
 TO { @specialize<SYMBOL_CONST, "TO"> | @specialize<SYMBOL_CONST, "to"> }
-TRUE_CONST { @specialize<SYMBOL_CONST, "TRUE_CONST"> | @specialize<SYMBOL_CONST, "true_const"> }
+TRUE_CONST { @specialize<SYMBOL_CONST, "TRUE"> | @specialize<SYMBOL_CONST, "true"> }
 UINT { @specialize<SYMBOL_CONST, "UINT"> | @specialize<SYMBOL_CONST, "uint"> }
 UINT_COERCE { @specialize<SYMBOL_CONST, "UINT_COERCE"> | @specialize<SYMBOL_CONST, "uint_coerce"> }
 UNKNOWN { @specialize<SYMBOL_CONST, "UNKNOWN"> | @specialize<SYMBOL_CONST, "unknown"> }
@@ -855,10 +880,20 @@ LOGICAL_NOT {
     INT_CONST ".." INT_CONST
   }
 
+  DAY_TIME_RANGE_CONST {
+    DAY_TIME_CONST ".." DAY_TIME_CONST
+  }
+
+  SHORT_TIME_RANGE_CONST {
+    SHORT_TIME_CONST ".." SHORT_TIME_CONST
+  }
+
   STRING_CONST { '"' (!["\\] | "\\" _)* '"' }
 
   @precedence { LESS_OR_EQUAL, SHIFT_LEFT, LESS }
   @precedence { GREATER_OR_EQUAL, SHIFT_RIGHT, GREATER }
+  @precedence { DAY_TIME_RANGE_CONST, DAY_TIME_CONST, SYMBOL_CONST }
+  @precedence { SHORT_TIME_RANGE_CONST, SHORT_TIME_CONST, SYMBOL_CONST }
   @precedence { INT_RANGE_CONST, DOUBLE_CONST, UINT_CONST, HEX_CONST, INT_CONST, ADD, SUBTRACT }
   @precedence { FULL_TIME_CONST, DAY_TIME_CONST, SHORT_TIME_CONST, SPACECRAFT_TIME_CONST, SYMBOL_CONST }
 

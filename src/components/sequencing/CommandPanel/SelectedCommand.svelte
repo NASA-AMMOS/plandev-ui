@@ -16,7 +16,6 @@
   import type { ArgTextDef, TimeTagInfo } from '../../../types/sequencing';
   import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
   import { tooltip } from '../../../utilities/tooltip';
-  import Collapse from '../../Collapse.svelte';
   import AddMissingArgsButton from '../form/AddMissingArgsButton.svelte';
   import ArgEditor from '../form/ArgEditor.svelte';
   import StringEditor from '../form/StringEditor.svelte';
@@ -121,10 +120,6 @@
   {#if !!commandNode}
     {#if commandInfoMapper.nodeTypeHasArguments(commandNode)}
       {#if !!commandDef}
-        <fieldset>
-          <Collapse headerHeight={24} title={commandDef.stem} padContent={false}>{commandDef.description}</Collapse>
-        </fieldset>
-
         {#each editorArgInfoArray as argInfo}
           <ArgEditor
             {argInfo}

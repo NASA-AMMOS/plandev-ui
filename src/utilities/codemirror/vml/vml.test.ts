@@ -10,18 +10,25 @@ import {
   RULE_ASSIGNMENT,
   RULE_BLOCK,
   RULE_BODY,
+  RULE_BYTE_ARRAY,
   RULE_COMMON_FUNCTION,
   RULE_FUNCTION,
   RULE_FUNCTION_NAME,
   RULE_FUNCTIONS,
+  RULE_SEQUENCE,
   RULE_SIMPLE_CALL,
   RULE_SPAWN,
   RULE_STATEMENT,
+  RULE_TEST_TIME_TAGGED_STATEMENT,
   RULE_TEXT_FILE,
   RULE_TIME_TAGGED_STATEMENT,
   RULE_TIME_TAGGED_STATEMENTS,
   RULE_VM_MANAGEMENT,
+  TOKEN_END_BODY,
   TOKEN_ERROR,
+  TOKEN_MODULE,
+  TOKEN_SYMBOL_CONST,
+  TOKEN_TIME_CONST,
 } from './vmlConstants';
 
 // In versions of VML prior to 2.1, explicit time tags were required on every statement
@@ -337,6 +344,8 @@ END_MODULE`;
     const input = `MODULE
     BLOCK block1
         INPUT arg1
+        ; durations can have ranges
+        INPUT RELATIVE_TIME  iv_preheat_dur VALUES R000T00:00:00.000..R000T02:00:00.000
     BODY
     END_BODY
 
@@ -346,7 +355,12 @@ END_MODULE`;
     BODY
     END_BODY
 
+    ; built in test
+    ; R00:00:01.00 GV_TEST_TIME := spacecraft_time ()
+
     END_MODULE`;
+
+    assertNoErrorNodes(input, true);
 
     const commandDictionary = vmlBlockLibraryToCommandDictionary(input, 'id', '/test');
     expect(commandDictionary.fswCommands.length).toBe(2);
@@ -433,6 +447,85 @@ END_MODULE
   });
 });
 
+describe('standalone statements', () => {
+  const timeTaggedConfig = { top: RULE_TEST_TIME_TAGGED_STATEMENT };
+  const timeTaggedParser = VmlLanguage.parser.configure(timeTaggedConfig);
+
+  it('spacecraft command with assignment', () => {
+    const input = `R00:00:01.00 END_TIME := spacecraft_time()\n`;
+    const tree = timeTaggedParser.parse(input);
+    const timeTaggedNode = tree.topNode.firstChild;
+    expect(timeTaggedNode?.firstChild?.name).toBe(TOKEN_TIME_CONST);
+    expect(timeTaggedNode?.firstChild?.nextSibling?.firstChild?.name).toBe(RULE_ASSIGNMENT);
+    expect(`${tree}`.includes(TOKEN_ERROR)).toBeFalsy();
+  });
+
+  it('issue with argument byte_array', () => {
+    const input = `R00:00:01.00 ISSUE FSW_VX_CMD (0x0, 0x0, 0x0)\n`;
+    const tree = timeTaggedParser.parse(input);
+    const timeTaggedNode = tree.topNode.firstChild;
+    expect(timeTaggedNode?.name).toBe(RULE_TIME_TAGGED_STATEMENT);
+    expect(timeTaggedNode?.firstChild?.nextSibling?.name).toBe(RULE_STATEMENT);
+    const statementNode = timeTaggedNode?.firstChild?.nextSibling;
+    expect(statementNode?.firstChild?.firstChild?.nextSibling?.nextSibling?.firstChild?.firstChild?.name).toBe(
+      RULE_BYTE_ARRAY,
+    );
+    expect(`${tree}`.includes(TOKEN_ERROR)).toBeFalsy();
+  });
+});
+
+describe('partial documents', () => {
+  it('module fragment', () => {
+    const input = '\n\nMOD\n\n';
+    const tree = VmlLanguage.parser.parse(input);
+    expect(tree.topNode.getChild(TOKEN_MODULE)).toBeNull();
+  });
+
+  it('issue fragment', () => {
+    const input = `
+MODULE
+SEQUENCE seq_name
+FLAGS AUTOEXECUTE AUTOUNLOAD
+BODY
+R00:00:00.00 ISS
+END_BODY
+END_MODULE
+    `;
+    const tree = VmlLanguage.parser.parse(input);
+    const seqNode = tree.topNode.getChild(RULE_FUNCTIONS)?.getChild(RULE_FUNCTION)?.getChild(RULE_SEQUENCE);
+    expect(seqNode).toBeTruthy();
+    const bodyNode = seqNode?.getChild(RULE_COMMON_FUNCTION)?.getChild(RULE_BODY);
+    expect(bodyNode).toBeTruthy();
+  });
+
+  it('sequence fragment', () => {
+    const input = `MODULE
+RELATIVE_SEQUENCE function_name
+FLAGS AUTOEXECUTE AUTOUNLOAD REENTRANT
+BODY
+END_BODY
+A
+END_MODULE`;
+    const aPosition = input.indexOf('A\n', input.lastIndexOf(TOKEN_END_BODY));
+    const aToken = VmlLanguage.parser.parse(input).resolveInner(aPosition, 1);
+    expect(aToken.name).toBe(TOKEN_SYMBOL_CONST);
+    expect(aToken.parent?.name).toBe(TOKEN_ERROR);
+  });
+
+  it('relative time fragment', () => {
+    const input = `MODULE
+RELATIVE_SEQUENCE function_name
+FLAGS AUTOEXECUTE AUTOUNLOAD REENTRANT
+BODY
+R0
+END_BODY
+END_MODULE`;
+    const r0Token = VmlLanguage.parser.parse(input).resolveInner(input.indexOf('R0'), 1);
+    expect(r0Token.name).toBe(TOKEN_SYMBOL_CONST);
+    expect(r0Token.parent?.name).toBe(TOKEN_ERROR);
+  });
+});
+
 function printNodes(input: string): void {
   for (const node of filterNodes(VmlLanguage.parser.parse(input).cursor())) {
     printNode(input, node);
@@ -460,8 +553,9 @@ END_MODULE
   `;
 }
 
-function assertNoErrorNodes(input: string, printPrefix?: boolean): void {
-  const cursor = VmlLanguage.parser.parse(input).cursor();
+export function assertNoErrorNodes(input: string, printPrefix?: boolean): void {
+  const parser = VmlLanguage.parser;
+  const cursor = parser.parse(input).cursor();
   do {
     const { node } = cursor;
     if (printPrefix) {

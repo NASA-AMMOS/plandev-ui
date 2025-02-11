@@ -14,6 +14,8 @@ export interface CommandInfoMapper {
   /** collects argument nodes from sub-tree of this command argument container */
   getArgumentsFromContainer(containerNode: SyntaxNode): SyntaxNode[];
 
+  getByteArrayElements?(node: SyntaxNode | null, arrayText: string): string[] | null;
+
   /** ascends parse tree to find scope to display in form editor */
   getContainingCommand(node: SyntaxNode | null): SyntaxNode | null;
 
@@ -33,6 +35,8 @@ export interface CommandInfoMapper {
 
   /** is argument node a variable, false implies literal */
   isArgumentNodeOfVariableType(argNode: SyntaxNode | null): boolean;
+
+  isByteArrayArg(argNode: SyntaxNode | null): boolean;
 
   /** checks if select list should be used */
   nodeTypeEnumCompatible(node: SyntaxNode | null): boolean;

@@ -146,7 +146,7 @@ describe('isHexValue', () => {
   });
 });
 
-describe('Command and argument typeguards', () => {
+describe('Command and argument type guards', () => {
   test('isFswCommand', () => {
     expect(
       isFswCommand({
