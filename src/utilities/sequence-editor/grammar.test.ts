@@ -317,6 +317,7 @@ Command(Stem,Args(String),Models(Model(Variable(String),Value(String),Offset(Str
   [
     `Seq.Json comprehension`,
     `A2024-123T12:34:56 @GROUND_BLOCK("ground_block.name") # No Args
+C @NOTE("note_value")
 R123T12:34:56 @GROUND_EVENT("ground_event.name") "foo" 1 2 3
 A2024-123T12:34:56 @ACTIVATE("activate.name") # No Args
 @ENGINE 10
@@ -348,12 +349,14 @@ A2024-123T12:34:56 @REQUEST_BEGIN("request2.name")
   R100 CMD_3 "1 2 3"
   C CMD_4 1 2 3
   R100 CMD_5 "1 2 3"
+  B00:00:00 CMD_6 "1 2 3"
 @REQUEST_END
 @METADATA "foo" "bar"
 `,
     `
 Sequence(Commands(
   GroundBlock(TimeTag(TimeAbsolute),GroundName(String),Args,LineComment),
+  Note(TimeTag(TimeComplete),NoteValue(String)Args),
   GroundEvent(TimeTag(TimeRelative),GroundName(String),Args(String,Number,Number,Number)),
   Activate(TimeTag(TimeAbsolute),SequenceName(String),Args,LineComment,Engine(Number),Epoch(String)),
   Activate(TimeTag(TimeRelative),SequenceName(String),Args(String,Number,Number,Number),LineComment,Engine(Number)),
@@ -379,7 +382,8 @@ Sequence(Commands(
       Command(TimeTag(TimeComplete),Stem,Args(Number,Number,Number)),
       Command(TimeTag(TimeRelative),Stem,Args(String)),
       Command(TimeTag(TimeComplete),Stem,Args(Number,Number,Number)),
-      Command(TimeTag(TimeRelative),Stem,Args(String))
+      Command(TimeTag(TimeRelative),Stem,Args(String)),
+      Command(TimeTag(TimeBlockRelative),Stem,Args(String))
     ),
     Metadata(MetaEntry(Key(String),Value(String)))
   )

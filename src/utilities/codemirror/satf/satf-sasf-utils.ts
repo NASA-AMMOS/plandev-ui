@@ -816,8 +816,7 @@ function parseTimeNode(timeNode: SyntaxNode | null, text: string): string {
       return `R${time} `;
     case 'FROM_REQUEST_START':
     case 'FROM_ACTIVITY_START':
-      // TODO: This needs to be changed to refer to the start of the request.
-      return `R${time} `;
+      return `B${time} `;
     case 'WAIT_PREVIOUS_END':
       return `C `;
     default:

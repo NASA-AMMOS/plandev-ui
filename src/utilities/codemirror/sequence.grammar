@@ -45,7 +45,7 @@ commandBlock {
   )+
 }
 
-step { Command | Activate | GroundBlock | GroundEvent | Load }
+step { Command | Activate | GroundBlock | GroundEvent | Load | Note }
 
 commentLine {
   LineComment newLine
@@ -70,7 +70,7 @@ HardwareCommands {
   commandBlock
 }
 
-TimeTag { TimeAbsolute | (TimeGroundEpoch Name { String } whiteSpace)  | TimeEpoch | TimeRelative  | TimeComplete }
+TimeTag { TimeAbsolute | (TimeGroundEpoch Name { String } whiteSpace)  | TimeEpoch | TimeRelative  | TimeComplete | TimeBlockRelative }
 
 Args {
   (whiteSpace (arg))* whiteSpace?
@@ -118,6 +118,15 @@ commonGround {
   newLine
   Metadata?
   Models?
+}
+
+Note {
+  TimeTag
+  noteDirective "(" NoteValue { String } ")"
+  Args
+  LineComment?
+  newLine
+  Metadata?
 }
 
 Request {
@@ -174,13 +183,17 @@ Stem { !stemStart identifier }
 
   timeSecond { $[1-9] @digit* ("."@digit+)? }
 
+  timeSegments { timeSecond | timeDOY | timeHhmmss }
+
   TimeAbsolute { 'A'@digit@digit@digit@digit"-"@digit@digit@digit"T"timeHhmmss whiteSpace }
 
-  TimeRelative { 'R'(timeSecond | timeDOY | timeHhmmss) whiteSpace}
+  TimeRelative { 'R'timeSegments whiteSpace}
 
-  TimeEpoch { 'E'$[+\-]?(timeSecond | timeDOY | timeHhmmss) whiteSpace}
+  TimeBlockRelative { 'B'$[+\-]?timeSegments whiteSpace }
 
-  TimeGroundEpoch { 'G'$[+\-]?(timeSecond | timeDOY | timeHhmmss) whiteSpace}
+  TimeEpoch { 'E'$[+\-]?timeSegments whiteSpace}
+
+  TimeGroundEpoch { 'G'$[+\-]?timeSegments whiteSpace}
 
   TimeComplete { 'C' whiteSpace }
 
@@ -226,11 +239,12 @@ Stem { !stemStart identifier }
   requestEndDirective { "@REQUEST_END" }
   metadataDirective { "@METADATA" }
   modelDirective { "@MODEL" }
+  noteDirective { "@NOTE" }
   genericDirective { "@"identifier }
 
   @precedence { newLine, whiteSpace }
 
-  @precedence{ TimeAbsolute, TimeRelative, TimeEpoch, TimeComplete, TimeGroundEpoch, Boolean, identifier }
+  @precedence{ TimeAbsolute, TimeRelative, TimeEpoch, TimeComplete, TimeGroundEpoch, TimeBlockRelative, Boolean, identifier }
 
   @precedence {
     LoadAndGoDirective,
@@ -249,6 +263,7 @@ Stem { !stemStart identifier }
     loadDirective,
     groundBlockDirective,
     groundEventDirective,
+    noteDirective,
     requestStartDirective,
     requestEndDirective,
     engineDirective,

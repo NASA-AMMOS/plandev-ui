@@ -16,6 +16,7 @@ import type {
   Load,
   Metadata,
   Model,
+  Note,
   NumberArgument,
   RepeatArgument,
   Request,
@@ -144,6 +145,26 @@ function parseRequest(requestNode: SyntaxNode, text: string, commandDictionary: 
   };
 }
 
+function parseNote(stepNode: SyntaxNode, text: string): Note {
+  const time = parseTime(stepNode, text);
+
+  const noteValueNode = stepNode.getChild('NoteValue');
+  const noteValue = noteValueNode ? unquoteUnescape(text.slice(noteValueNode.from, noteValueNode.to)) : 'UNKNOWN';
+
+  const description = parseDescription(stepNode, text);
+  const metadata = parseMetadata(stepNode, text);
+  const models = parseModel(stepNode, text);
+
+  return {
+    description,
+    metadata,
+    models,
+    string_arg: noteValue,
+    time,
+    type: 'note',
+  };
+}
+
 function parseGroundBlockEvent(stepNode: SyntaxNode, text: string): GroundBlock | GroundEvent {
   const time = parseTime(stepNode, text);
 
@@ -263,6 +284,8 @@ function parseStep(child: SyntaxNode, text: string, commandDictionary: CommandDi
     case 'GroundBlock':
     case 'GroundEvent':
       return parseGroundBlockEvent(child, text);
+    case 'Note':
+      return parseNote(child, text);
   }
   // Standalone comment nodes (not descriptions of steps), are not supported in the seq.json schema
   // Until a schema change is coordinated, comments will dropped while writing out seq.json.
@@ -405,9 +428,20 @@ function parseGroundEpoch(groundEpochNode: SyntaxNode | null, text: string): Gro
   if (!groundEpochNode) {
     return { delta: '', name: '' };
   }
+
   const nameNode = groundEpochNode.getChild('Name');
+  let tag = '';
+
+  if (groundEpochNode.parent) {
+    const time = parseTime(groundEpochNode.parent, text);
+
+    if (time.type !== 'COMMAND_COMPLETE') {
+      tag = time.tag;
+    }
+  }
+
   return {
-    delta: groundEpochNode.parent ? parseTime(groundEpochNode.parent, text).tag : '',
+    delta: tag,
     name: nameNode ? unquoteUnescape(text.slice(nameNode.from, nameNode.to)) : '',
   };
 }
@@ -428,12 +462,13 @@ function parseTime(commandNode: SyntaxNode, text: string): Time {
   const timeTagCompleteNode = timeTagNode.getChild('TimeComplete');
   const timeTagEpochNode = timeTagNode.getChild('TimeEpoch') || timeTagNode.getChild('TimeGroundEpoch');
   const timeTagRelativeNode = timeTagNode.getChild('TimeRelative');
+  const timeTagBlockRelativeNode = timeTagNode.getChild('TimeBlockRelative');
 
   if (timeTagCompleteNode) {
     return { type: 'COMMAND_COMPLETE' };
   }
 
-  if (!timeTagAbsoluteNode && !timeTagEpochNode && !timeTagRelativeNode) {
+  if (!timeTagAbsoluteNode && !timeTagEpochNode && !timeTagRelativeNode && !timeTagBlockRelativeNode) {
     return { tag, type: 'ABSOLUTE' };
   }
 
@@ -479,7 +514,19 @@ function parseTime(commandNode: SyntaxNode, text: string): Time {
       }
       return { tag, type: 'COMMAND_RELATIVE' };
     }
+  } else if (timeTagBlockRelativeNode) {
+    const timeTagBlockRelativeText = text.slice(timeTagBlockRelativeNode.from + 1, timeTagBlockRelativeNode.to).trim();
+
+    if (validateTime(timeTagBlockRelativeText, TimeTypes.RELATIVE)) {
+      const { isNegative, days, hours, minutes, seconds, milliseconds } = getDurationTimeComponents(
+        parseDurationString(timeTagBlockRelativeText, 'seconds'),
+      );
+      tag = `${isNegative}${days}${days ? 'T' : ''}${hours}:${minutes}:${seconds}${milliseconds ? '.' : ''}${milliseconds}`;
+
+      return { tag, type: 'BLOCK_RELATIVE' };
+    }
   }
+
   return { tag, type: 'ABSOLUTE' };
 }
 

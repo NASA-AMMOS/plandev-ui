@@ -188,6 +188,13 @@ export function sequenceCompletion(
               type: 'keyword',
             },
             {
+              apply: 'B00:00:00 ',
+              info: 'Execute command at an offset from the block',
+              label: 'B (block relative)',
+              section: 'Time Tags',
+              type: 'keyword',
+            },
+            {
               apply: 'G1 "epoch.name" ',
               info: 'Add a ground epoch to a request',
               label: 'G (ground epoch)',
@@ -215,6 +222,21 @@ export function sequenceCompletion(
             label: '@MODEL',
             section: 'Directives',
             type: 'keyword',
+          },
+          {
+            apply: (view, _completion, from: number, to: number) => {
+              view.dispatch({
+                changes: {
+                  from: Math.max(0, from + (!cursor.isAfterTimeTag || cursor.isAtSymbolBefore ? -1 : 0)),
+                  insert: `${!cursor.isAfterTimeTag ? 'C ' : ''}@NOTE("note_value")`,
+                  to,
+                },
+              });
+            },
+            info: 'note',
+            label: '@NOTE',
+            section: 'Directives',
+            type: 'function',
           },
         );
       }

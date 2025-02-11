@@ -90,7 +90,7 @@ describe('satfToSequence', () => {
     expect(result).toHaveProperty('sequences');
     expect(result.sequences[0].name).toStrictEqual('test');
     expect(result.sequences[0].sequence).toStrictEqual(`## test
-R00:01:00  01VV param6 10 false "abc" # This command turns, to correct position.
+B00:01:00  01VV param6 10 false "abc" # This command turns, to correct position.
 @MODEL "x" 1 "00:00:00"
 @MODEL "z" 1.1 "00:00:00"
 @MODEL "y" "abc" "00:00:00"`);
@@ -126,7 +126,7 @@ R00:01:00  01VV param6 10 false "abc" # This command turns, to correct position.
     expect(result.sequences.length).toBe(2);
     expect(result.sequences[0].name).toStrictEqual('test');
     expect(result.sequences[0].sequence).toStrictEqual(`## test
-R00:01:00  01VV param6 10 false "abc" # This command turns, to correct position.
+B00:01:00  01VV param6 10 false "abc" # This command turns, to correct position.
 @MODEL "x" 1 "00:00:00"
 @MODEL "z" 1.1 "00:00:00"
 @MODEL "y" "abc" "00:00:00"`);
@@ -288,7 +288,7 @@ string STRING
 quoted_string STRING "" "abc, 123"
 @INPUT_PARAMS_END
 
-R00:01:00  NOOP`);
+B00:01:00  NOOP`);
   });
 
   it('Quoted Parameters', async () => {
@@ -318,6 +318,6 @@ R00:01:00  NOOP`);
 attitude_spec ENUM STORE_NAME "" "BOB_HARDWARE, SALLY_FARM, TIM_FLOWERS"
 @INPUT_PARAMS_END
 
-R00:01:00  ECHO "abc"`);
+B00:01:00  ECHO "abc"`);
   });
 });
