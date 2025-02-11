@@ -428,9 +428,20 @@ function parseGroundEpoch(groundEpochNode: SyntaxNode | null, text: string): Gro
   if (!groundEpochNode) {
     return { delta: '', name: '' };
   }
+
   const nameNode = groundEpochNode.getChild('Name');
+  let tag = '';
+
+  if (groundEpochNode.parent) {
+    const time = parseTime(groundEpochNode.parent, text);
+
+    if (time.type !== 'COMMAND_COMPLETE') {
+      tag = time.tag;
+    }
+  }
+
   return {
-    delta: groundEpochNode.parent ? parseTime(groundEpochNode.parent, text).tag : '',
+    delta: tag,
     name: nameNode ? unquoteUnescape(text.slice(nameNode.from, nameNode.to)) : '',
   };
 }
