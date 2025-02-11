@@ -18,7 +18,6 @@ import type {
   StringArgument,
   SymbolArgument,
   Time,
-  Time1,
   VariableDeclaration,
 } from '@nasa-jpl/seq-json-schema/types';
 import { quoteEscape } from '../codemirror/codemirror-utils';
@@ -27,7 +26,7 @@ import { logError } from './logger';
 /**
  * Transform a sequence JSON time to it's sequence string form.
  */
-function seqJsonTimeToSequence(time: Time | Time1): string {
+function seqJsonTimeToSequence(time: Time): string {
   switch (time.type) {
     case 'ABSOLUTE':
       return `A${time.tag ?? ''}`;
