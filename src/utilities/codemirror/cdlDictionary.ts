@@ -65,12 +65,32 @@ export function parseCdlDictionary(contents: string, id?: string, path?: string)
     version,
   };
 
-  const enums: Enum[] = [];
+  const { enums, fswCommands } = parseArgumentsAndStems(lineIterator);
 
-  const globalArguments: FswCommandArgumentMap = {};
-  const fswCommands: FswCommand[] = [];
+  return {
+    enumMap: Object.fromEntries(enums.map(e => [e.name, e])),
+    enums,
+    fswCommandMap: Object.fromEntries(fswCommands.map(cmd => [cmd.stem, cmd])),
+    fswCommands,
+    header,
+    hwCommandMap: {},
+    hwCommands: [],
+    id: id ?? '',
+    path: path ?? '',
+  };
+}
+
+function parseArgumentsAndStems(lineIterator: ArrayIterator<string>): {
+  enums: Enum[];
+  fswCommands: FswCommand[];
+} {
   // parse globals and stems
   // assumes all global arguments are defined prior to stems
+
+  const enums: Enum[] = [];
+  const globalArguments: FswCommandArgumentMap = {};
+  const fswCommands: FswCommand[] = [];
+
   for (const line of lineIterator) {
     if (line.match(START_LOOKUP_ARG)) {
       const lookupLines: string[] = [line];
@@ -109,17 +129,9 @@ export function parseCdlDictionary(contents: string, id?: string, path?: string)
       }
     }
   }
-
   return {
-    enumMap: Object.fromEntries(enums.map(e => [e.name, e])),
     enums,
-    fswCommandMap: Object.fromEntries(fswCommands.map(cmd => [cmd.stem, cmd])),
     fswCommands,
-    header,
-    hwCommandMap: {},
-    hwCommands: [],
-    id: id ?? '',
-    path: path ?? '',
   };
 }
 
