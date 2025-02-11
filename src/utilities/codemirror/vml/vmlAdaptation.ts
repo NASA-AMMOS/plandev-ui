@@ -56,7 +56,7 @@ const SECTION_GLOBALS: CompletionSection = {
   name: 'Globals',
   rank: 1000,
 };
-const SECTION_HARDWARE_COMMANDS = {
+const SECTION_HARDWARE_COMMANDS: CompletionSection = {
   name: 'Hardware Commands',
   rank: 1000,
 };
@@ -76,7 +76,7 @@ export function vmlAutoComplete(
     }
     for (const node of nodes) {
       if (commandDictionary) {
-        const result = suggestDictionaryCompletions(
+        const options = suggestDictionaryCompletions(
           context,
           node,
           tree,
@@ -84,11 +84,13 @@ export function vmlAutoComplete(
           globals,
           librarySequenceMap,
         );
-        if (result) {
+        if (options) {
+          const { from, to } = node;
           return {
-            ...result,
-            // apply filtering
-            filter: context.pos === node.to,
+            filter: context.pos !== node.from, // filter if cursor not at start
+            from,
+            options,
+            to,
           };
         }
       }
@@ -110,7 +112,7 @@ function suggestDictionaryCompletions(
   commandDictionary: CommandDictionary,
   globals: GlobalType[],
   librarySequenceMap: LibrarySequenceMap,
-): CompletionResult | null {
+): Completion[] | null {
   if (isStatementNode(context, node)) {
     return suggestTimeTaggedCompletions(context, node, tree, globals);
   } else if (isVariableReferenceNode(node)) {
@@ -131,14 +133,10 @@ function suggestTimeTaggedCompletions(
   node: SyntaxNode,
   tree: Tree,
   globals: GlobalType[],
-): CompletionResult | null {
+): Completion[] {
   const structs: Completion[] = structureSnippets('');
   const variableCompletions = suggestVariableReferenceCompletions(context, node, tree, globals);
-  return {
-    from: node.from,
-    options: [...structs, ...(variableCompletions?.options ?? [])],
-    to: node.to,
-  };
+  return [...structs, ...(variableCompletions ?? [])];
 }
 
 function isStatementNode(context: CompletionContext, node: SyntaxNode): boolean {
@@ -155,32 +153,20 @@ function suggestIssueCompletions(
   context: CompletionContext,
   node: SyntaxNode,
   commandDictionary: CommandDictionary,
-): CompletionResult {
+): Completion[] {
   const restOfLine = context.state.sliceDoc(node.to, context.state.doc.lineAt(node.to).to);
   const addArguments = restOfLine.trim() === '';
-  return {
-    from: node.from,
-    options: getStemOptions(commandDictionary, false, addArguments),
-    to: node.to,
-  };
+  return getStemOptions(commandDictionary, false, addArguments);
 }
 
-function suggestSpawnSequenceNameCompletions(
-  node: SyntaxNode,
-  librarySequenceMap: LibrarySequenceMap,
-): CompletionResult | null {
-  const options: Completion[] = Object.values(librarySequenceMap).map(
+function suggestSpawnSequenceNameCompletions(node: SyntaxNode, librarySequenceMap: LibrarySequenceMap): Completion[] {
+  return Object.values(librarySequenceMap).map(
     (sequence): Completion => ({
       detail: 'library sequence',
       label: sequence.name,
       type: 'function',
     }),
   );
-  return {
-    from: node.from,
-    options,
-    to: node.to,
-  };
 }
 
 function suggestCallParameterCompletions(
@@ -188,13 +174,9 @@ function suggestCallParameterCompletions(
   node: SyntaxNode,
   commandDictionary: CommandDictionary,
   librarySequenceMap: LibrarySequenceMap,
-): CompletionResult | null {
+): Completion[] | null {
   if (isIssueDynamicCommandNameNode(node)) {
-    return {
-      from: node.from,
-      options: getStemOptions(commandDictionary, true, false),
-      to: node.to,
-    };
+    return getStemOptions(commandDictionary, true, false);
   }
 
   const cmdDef = getFswCommand(context, node, commandDictionary, librarySequenceMap);
@@ -224,11 +206,7 @@ function suggestCallParameterCompletions(
     return null;
   }
 
-  return {
-    from: node.from,
-    options,
-    to: node.to,
-  };
+  return options;
 }
 
 function getStemOptions(commandDictionary: CommandDictionary, isDynamic: boolean, withArgs: boolean): Completion[] {
@@ -300,19 +278,14 @@ function suggestVariableReferenceCompletions(
   node: SyntaxNode,
   tree: Tree,
   globals: GlobalType[],
-): CompletionResult | null {
+): Completion[] {
   const variableOptions: Completion[] = getVmlVariables(context.state.sliceDoc(), tree, context.pos).map(variable => ({
     detail: 'local',
     label: variable,
     section: SECTION_LOCAL_VARIABLES,
     type: 'atom',
   }));
-  const options: Completion[] = [...variableOptions, ...globalOptions(globals)];
-  return {
-    from: node.from,
-    options,
-    to: node.to,
-  };
+  return [...variableOptions, ...globalOptions(globals)];
 }
 
 function isVariableReferenceNode(node: SyntaxNode): boolean {
@@ -373,10 +346,7 @@ function suggestDefaultCompletions(context: CompletionContext, node: SyntaxNode,
   const isWithinModule =
     moduleNode && moduleNode.to <= context.pos && endModuleNode && context.pos < endModuleNode.from;
   if (isWithinModule) {
-    const moduleCompletions = suggestModuleCompletions(node, context);
-    if (moduleCompletions) {
-      return moduleCompletions;
-    }
+    return suggestModuleCompletions(node, context);
   }
   return null;
 }
@@ -384,20 +354,12 @@ function suggestDefaultCompletions(context: CompletionContext, node: SyntaxNode,
 function suggestModuleCompletions(nodeCurrent: SyntaxNode, context: CompletionContext): CompletionResult | null {
   const parentFunctionNode = getNearestAncestorNodeOfType(nodeCurrent, [RULE_FUNCTION]);
   const bodyNode = parentFunctionNode?.firstChild?.getChild(RULE_COMMON_FUNCTION)?.getChild(RULE_BODY);
-  const endBodyNode = bodyNode?.getChild(TOKEN_END_BODY);
-
-  if (!parentFunctionNode) {
-    // not in a function
-    return {
-      from: context.pos,
-      options: SEQUENCE_SNIPPETS,
-    };
-  }
-
+  const endNode = bodyNode?.getChild(TOKEN_END_BODY);
   const isAfterEndBody =
-    endBodyNode && context.state.doc.lineAt(endBodyNode.to).number < context.state.doc.lineAt(context.pos).number;
-  if (isAfterEndBody) {
-    // at the end of a function
+    endNode && context.state.doc.lineAt(endNode.to).number < context.state.doc.lineAt(context.pos).number;
+
+  if (!parentFunctionNode || isAfterEndBody) {
+    // not in a function or in whitespace at the end of a function
     return {
       from: context.pos,
       options: SEQUENCE_SNIPPETS,
@@ -412,7 +374,7 @@ function getStemAndDefaultArguments(commandDictionary: CommandDictionary, cmd: F
   if (isDynamic) {
     return [`"${cmd.stem}"`, ...argValues].join(',');
   }
-  return `${cmd.stem} ${cmd.arguments.map(argNode => getDefaultArgumentValue(argNode, commandDictionary.enumMap)).join(',')}`.trim();
+  return `${cmd.stem} ${argValues.join(',')}`.trim();
 }
 
 export function getDefaultArgumentValue(argDef: FswCommandArgument, enumMap: EnumMap): string {
@@ -438,11 +400,10 @@ export function parseFunctionSignatures(contents: string, workspace_id: number):
   return vmlBlockLibraryToCommandDictionary(contents).fswCommands.map(
     (fswCommand): LibrarySequence => ({
       name: fswCommand.stem,
-      parameters: fswCommand.arguments.map(a => {
-        const type: VariableDeclaration['type'] = argTypToVariableType(a.arg_type);
+      parameters: fswCommand.arguments.map((arg: FswCommandArgument) => {
         return {
-          name: a.name,
-          type,
+          name: arg.name,
+          type: argTypToVariableType(arg.arg_type),
         };
       }),
       tree: VmlLanguage.parser.parse(contents),
