@@ -18,7 +18,8 @@ import {
   TOKEN_REQUEST,
   TOKEN_STRING,
 } from '../../constants/seq-n-grammar-constants';
-import { SequenceTypes, type LibrarySequence, type UserSequence } from '../../types/sequencing';
+import { SequenceTypes } from '../../enums/sequencing';
+import { type LibrarySequence, type UserSequence } from '../../types/sequencing';
 import { fswCommandArgDefault } from '../sequence-editor/command-dictionary';
 import { validateVariables } from '../sequence-editor/sequence-linter';
 import { parseVariables } from '../sequence-editor/to-seq-json';

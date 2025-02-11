@@ -18,6 +18,7 @@ import type {
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
 import type { DictionaryTypes } from '../enums/dictionaryTypes';
+import type { SequenceTypes } from '../enums/sequencing';
 import type { ArgDelegator } from '../utilities/sequence-editor/extension-points';
 import type { UserId } from './app';
 import type { GlobalType } from './global-type';
@@ -138,11 +139,6 @@ export type GetSeqJsonResponse = {
 };
 
 export type SeqJson = any; // TODO: Strongly type.
-
-export enum SequenceTypes {
-  LIBRARY = 'library',
-  USER = 'user',
-}
 
 export type UserSequence = {
   created_at: string;

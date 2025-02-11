@@ -15,8 +15,9 @@ import type {
   HwCommand,
 } from '@nasa-jpl/aerie-ampcs';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
+import { SequenceTypes } from '../../../enums/sequencing';
 import type { GlobalType } from '../../../types/global-type';
-import { SequenceTypes, type LibrarySequence, type LibrarySequenceMap } from '../../../types/sequencing';
+import { type LibrarySequence, type LibrarySequenceMap } from '../../../types/sequencing';
 import { getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
 import { isFswCommand, unquoteUnescape } from '../codemirror-utils';
 import { VmlLanguage } from './vml';
