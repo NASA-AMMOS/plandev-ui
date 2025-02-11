@@ -149,11 +149,12 @@ function strTooltip(message: string, from: number, to: number) {
     above: true,
     create() {
       const dom = document.createElement('div');
-      const tooltip = new StringTooltip({
+      // SonarQube flags as useless, but Svelte component constructor has side-effects and instantiation is canonical
+      new StringTooltip({
         props: { message },
         target: dom,
       });
-      return { dom, tooltip };
+      return { dom };
     },
     end: to,
     pos: from,
