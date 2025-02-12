@@ -153,8 +153,8 @@ export function sequenceLinter(
       ),
     );
     diagnostics.push(
-      ...validateActivateLoad(commandsNode.getChildren(TOKEN_ACTIVATE), 'Activate', docText, librarySequences),
-      ...validateActivateLoad(commandsNode.getChildren(TOKEN_LOAD), 'Load', docText, librarySequences),
+      ...validateActivateLoad(commandsNode.getChildren(TOKEN_ACTIVATE), docText, librarySequences),
+      ...validateActivateLoad(commandsNode.getChildren(TOKEN_LOAD), docText, librarySequences),
     );
   }
 
@@ -183,9 +183,7 @@ export function sequenceLinter(
     ),
   );
 
-  diagnostics.push(
-    ...conditionalAndLoopKeywordsLinter(treeNode.getChild('Commands')?.getChildren(TOKEN_COMMAND) ?? [], view.state),
-  );
+  diagnostics.push(...conditionalAndLoopKeywordsLinter(view.state));
 
   return diagnostics;
 }
@@ -215,7 +213,7 @@ function validateParserErrors(tree: Tree) {
   return diagnostics;
 }
 
-function conditionalAndLoopKeywordsLinter(commandNodes: SyntaxNode[], state: EditorState): Diagnostic[] {
+function conditionalAndLoopKeywordsLinter(state: EditorState): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
   const blocks = computeBlocks(state);
 
@@ -503,19 +501,14 @@ function getVariableInfo(
   };
 }
 
-function validateActivateLoad(
-  node: SyntaxNode[],
-  type: 'Activate' | 'Load',
-  text: string,
-  librarySequences: LibrarySequence[],
-): Diagnostic[] {
+function validateActivateLoad(node: SyntaxNode[], text: string, librarySequences: LibrarySequence[]): Diagnostic[] {
   if (node.length === 0) {
     return [];
   }
 
   const diagnostics: Diagnostic[] = [];
 
-  node.forEach(activate => {
+  node.forEach((activate: SyntaxNode) => {
     const sequenceName = activate.getChild(RULE_SEQUENCE_NAME);
     const argNode = activate.getChild(RULE_ARGS);
 
@@ -539,7 +532,7 @@ function validateActivateLoad(
       });
       if (structureError) {
         diagnostics.push(structureError);
-        return diagnostics;
+        return;
       }
 
       library?.parameters.forEach((parameter, index) => {
