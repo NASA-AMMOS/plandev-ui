@@ -22,16 +22,16 @@ const ARG_TITLE = /^\s*TITLE\s*:\s*"(.*)"/;
 export function parseCdlDictionary(contents: string, id?: string, path?: string): CommandDictionary {
   const lines = contents.split('\n').filter(line => line.trim());
 
-  let mission_name = '';
+  let missionName = '';
   let version = '';
-  const spacecraft_ids: number[] = [];
+  const spacecraftIds: number[] = [];
 
   const lineIterator = lines.values();
 
   for (const line of lineIterator) {
     const projectMatch = line.match(/^PROJECT\s*:\s*"([^"]*)"/);
     if (projectMatch) {
-      mission_name = projectMatch[1];
+      missionName = projectMatch[1];
       break;
     }
   }
@@ -52,16 +52,16 @@ export function parseCdlDictionary(contents: string, id?: string, path?: string)
         }
         const spacecraftIdMatch = childLine.match(/^\s*(\d+)\s*=\s*'[\dA-Fa-f]+'/);
         if (spacecraftIdMatch) {
-          spacecraft_ids.push(parseInt(spacecraftIdMatch[1]));
+          spacecraftIds.push(parseInt(spacecraftIdMatch[1]));
         }
       }
     }
   }
 
   const header: Readonly<Header> = {
-    mission_name,
+    mission_name: missionName,
     schema_version: '1.0',
-    spacecraft_ids,
+    spacecraft_ids: spacecraftIds,
     version,
   };
 
@@ -211,10 +211,10 @@ export function parseNumericArgument(lines: string[]): FswCommandArgument {
 
   let conversion = '';
   let range: NumericRange | null = null;
-  let bit_length: number | null = null;
-  let default_value_string: string | null = null;
+  let bitLength: number | null = null;
+  let defaultValueString: string | null = null;
   let description: string = '';
-  let default_value: number | null = null;
+  let defaultValue: number | null = null;
 
   for (const line of lines) {
     if (line.match(END_NUMERIC_ARG)) {
@@ -225,7 +225,7 @@ export function parseNumericArgument(lines: string[]): FswCommandArgument {
         if (conversion.includes('DECIMAL')) {
           const defaultMatch = line.match(/^\s*DEFAULT\s*:\s*'(-?\d+)'/);
           if (defaultMatch) {
-            default_value = parseInt(defaultMatch[1], 10);
+            defaultValue = parseInt(defaultMatch[1], 10);
           }
           range = {
             max: parseInt(rangeMatch[2], 10),
@@ -234,7 +234,7 @@ export function parseNumericArgument(lines: string[]): FswCommandArgument {
         } else if (conversion === 'HEX') {
           const defaultMatch = line.match(/^\s*DEFAULT\s*:\s*'([\dA-Fa-f]+)'/);
           if (defaultMatch) {
-            default_value = parseInt(defaultMatch[1], 16);
+            defaultValue = parseInt(defaultMatch[1], 16);
           }
           range = {
             max: parseInt(rangeMatch[2], 16),
@@ -243,7 +243,7 @@ export function parseNumericArgument(lines: string[]): FswCommandArgument {
         } else if (conversion === 'IEEE64FLOAT') {
           const defaultMatch = line.match(/^\s*DEFAULT\s*:\s*'(.*)'/);
           if (defaultMatch) {
-            default_value = parseFloat(defaultMatch[1]);
+            defaultValue = parseFloat(defaultMatch[1]);
           }
           range = {
             max: Number.MAX_VALUE,
@@ -255,14 +255,14 @@ export function parseNumericArgument(lines: string[]): FswCommandArgument {
         // LENGTH : 1024
         const maxBitMatch = line.match(/^\s*LENGTH\s*:\s*(\d+)/);
         if (maxBitMatch) {
-          bit_length = parseInt(maxBitMatch[1], 10);
+          bitLength = parseInt(maxBitMatch[1], 10);
         }
 
         //  DEFAULT : ''
         // doesn't handle escaped quotes
         const defaultMatch = line.match(/^\s*DEFAULT\s*:\s*'(.*)'/);
         if (defaultMatch) {
-          default_value_string = defaultMatch[1];
+          defaultValueString = defaultMatch[1];
         }
       }
     } else {
@@ -281,9 +281,9 @@ export function parseNumericArgument(lines: string[]): FswCommandArgument {
   if (conversion === 'ASCII_STRING') {
     return {
       arg_type: 'var_string',
-      default_value: default_value_string,
+      default_value: defaultValueString,
       description,
-      max_bit_length: bit_length,
+      max_bit_length: bitLength,
       name,
       prefix_bit_length: null,
       valid_regex: null,
@@ -291,8 +291,8 @@ export function parseNumericArgument(lines: string[]): FswCommandArgument {
   } else if (conversion.includes('DECIMAL') || conversion === 'HEX' || conversion === 'MPFTIME') {
     return {
       arg_type: 'integer',
-      bit_length,
-      default_value,
+      bit_length: bitLength,
+      default_value: defaultValue,
       description,
       name,
       range,
@@ -302,8 +302,8 @@ export function parseNumericArgument(lines: string[]): FswCommandArgument {
 
   return {
     arg_type: 'float',
-    bit_length,
-    default_value,
+    bit_length: bitLength,
+    default_value: defaultValue,
     description,
     name,
     range,
@@ -324,7 +324,7 @@ export function parseLookupArgument(lines: string[], namespace?: string): [FswCo
 
   let description = '';
   let conversion = '';
-  let bit_length: null | number = null;
+  let bitLength: null | number = null;
   const values: EnumValue[] = [];
   for (const line of lines) {
     if (line.match(END_LOOKUP_ARG)) {
@@ -333,7 +333,7 @@ export function parseLookupArgument(lines: string[], namespace?: string): [FswCo
 
     const lengthMatch = line.match(/^\s*LENGTH\s*:\s*(\d+)/);
     if (lengthMatch) {
-      bit_length = parseInt(lengthMatch[1], 10);
+      bitLength = parseInt(lengthMatch[1], 10);
       continue;
     }
 
@@ -367,19 +367,19 @@ export function parseLookupArgument(lines: string[], namespace?: string): [FswCo
     }
   }
 
-  const enum_name = namespace ? `__${namespace}_${name}` : name;
+  const enumName = namespace ? `__${namespace}_${name}` : name;
   return [
     {
       arg_type: 'enum',
-      bit_length,
+      bit_length: bitLength,
       default_value: null,
       description,
-      enum_name,
+      enum_name: enumName,
       name,
       range: values.map(value => value.symbol),
     },
     {
-      name: enum_name,
+      name: enumName,
       values,
     },
   ];

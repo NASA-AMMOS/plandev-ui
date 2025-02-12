@@ -97,11 +97,11 @@ export async function sequenceToSeqJson(
 }
 
 function parseRequest(requestNode: SyntaxNode, text: string, commandDictionary: CommandDictionary | null): Request {
-  let ground_epoch = undefined;
+  let groundEpoch = undefined;
   let time = undefined;
   const groundEpochNode = requestNode.getChild('TimeTag')?.getChild('TimeGroundEpoch');
   if (groundEpochNode) {
-    ground_epoch = parseGroundEpoch(requestNode.getChild('TimeTag'), text);
+    groundEpoch = parseGroundEpoch(requestNode.getChild('TimeTag'), text);
   } else {
     time = parseTime(requestNode, text);
   }
@@ -136,7 +136,7 @@ function parseRequest(requestNode: SyntaxNode, text: string, commandDictionary: 
   // ground epoch
   return {
     description,
-    ground_epoch,
+    ground_epoch: groundEpoch,
     metadata,
     name,
     steps: steps as [Step, ...Step[]],
@@ -473,8 +473,8 @@ function parseTime(commandNode: SyntaxNode, text: string): Time {
   }
 
   if (timeTagAbsoluteNode) {
-    const tag = text.slice(timeTagAbsoluteNode.from + 1, timeTagAbsoluteNode.to).trim();
-    return { tag, type: 'ABSOLUTE' };
+    const absoluteTag = text.slice(timeTagAbsoluteNode.from + 1, timeTagAbsoluteNode.to).trim();
+    return { tag: absoluteTag, type: 'ABSOLUTE' };
   } else if (timeTagEpochNode) {
     const timeTagEpochText = text.slice(timeTagEpochNode.from + 1, timeTagEpochNode.to).trim();
 

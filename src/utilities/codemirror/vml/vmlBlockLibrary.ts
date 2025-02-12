@@ -59,14 +59,14 @@ export function vmlBlockLibraryToCommandDictionary(vml: string, id?: string, pat
     ),
   ].filter(filterEmpty);
 
-  const mission_name = '';
-  const spacecraft_ids = [0];
+  const missionName = '';
+  const spacecraftIds = [0];
   const version = '';
 
   const header: Readonly<Header> = {
-    mission_name,
+    mission_name: missionName,
     schema_version: '1.0',
-    spacecraft_ids,
+    spacecraft_ids: spacecraftIds,
     version,
   };
 
@@ -114,7 +114,7 @@ function inputToArgument(parameterNode: SyntaxNode, vml: string): FswCommandArgu
     return null;
   }
 
-  const default_value: number | string | null = parseDefaultValue(parameterNode.firstChild, vml);
+  const defaultValue: number | string | null = parseDefaultValue(parameterNode.firstChild, vml);
   const description = parameterNodeToDescription(parameterNode, vml);
   const units = ''; // not specified in VML
   const range = parseRange(parameterNode.firstChild, vml);
@@ -127,7 +127,7 @@ function inputToArgument(parameterNode: SyntaxNode, vml: string): FswCommandArgu
       case TOKEN_UINT:
       case TOKEN_INT:
       case TOKEN_DOUBLE: {
-        const arg_type: 'float' | 'integer' | 'unsigned' = (
+        const argType: 'float' | 'integer' | 'unsigned' = (
           {
             [TOKEN_DOUBLE]: 'float',
             [TOKEN_INT]: 'integer',
@@ -135,12 +135,12 @@ function inputToArgument(parameterNode: SyntaxNode, vml: string): FswCommandArgu
           } as const
         )[dataKindNode.name];
 
-        const bit_length: number = dataKindNode.name === TOKEN_DOUBLE ? 64 : 32;
+        const bitLength: number = dataKindNode.name === TOKEN_DOUBLE ? 64 : 32;
 
         return {
-          arg_type,
-          bit_length,
-          default_value: typeof default_value === 'number' ? default_value : null,
+          arg_type: argType,
+          bit_length: bitLength,
+          default_value: typeof defaultValue === 'number' ? defaultValue : null,
           description,
           name,
           range: isNumericRange(range) ? range : null,
@@ -150,7 +150,7 @@ function inputToArgument(parameterNode: SyntaxNode, vml: string): FswCommandArgu
       case TOKEN_STRING: {
         return {
           arg_type: 'var_string',
-          default_value: typeof default_value === 'string' ? default_value : null,
+          default_value: typeof defaultValue === 'string' ? defaultValue : null,
           description,
           max_bit_length: null,
           name,
@@ -164,7 +164,7 @@ function inputToArgument(parameterNode: SyntaxNode, vml: string): FswCommandArgu
         return {
           arg_type: 'time',
           bit_length: 32,
-          default_value,
+          default_value: defaultValue,
           description,
           name,
           units,
@@ -266,8 +266,8 @@ function variableToParam(
   | FswCommandArgumentInteger
   | FswCommandArgumentVarString
   | FswCommandArgumentUnsigned {
-  const bit_length = null;
-  const default_value = null;
+  const bitLength = null;
+  const defaultValue = null;
   const description = '';
   const name = variable.name;
   const range = null;
@@ -276,8 +276,8 @@ function variableToParam(
     case 'ENUM':
       return {
         arg_type: 'enum',
-        bit_length,
-        default_value,
+        bit_length: bitLength,
+        default_value: defaultValue,
         description,
         enum_name: name,
         name,
@@ -286,7 +286,7 @@ function variableToParam(
     case 'STRING':
       return {
         arg_type: 'var_string',
-        default_value,
+        default_value: defaultValue,
         description,
         max_bit_length: null,
         name,
@@ -296,8 +296,8 @@ function variableToParam(
     case 'INT':
       return {
         arg_type: 'integer',
-        bit_length,
-        default_value,
+        bit_length: bitLength,
+        default_value: defaultValue,
         description,
         name,
         range,
@@ -306,8 +306,8 @@ function variableToParam(
     case 'UINT':
       return {
         arg_type: 'unsigned',
-        bit_length,
-        default_value,
+        bit_length: bitLength,
+        default_value: defaultValue,
         description,
         name,
         range,
@@ -316,8 +316,8 @@ function variableToParam(
     case 'FLOAT':
       return {
         arg_type: 'float',
-        bit_length,
-        default_value,
+        bit_length: bitLength,
+        default_value: defaultValue,
         description,
         name,
         range,

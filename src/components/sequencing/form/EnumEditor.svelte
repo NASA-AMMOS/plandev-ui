@@ -6,7 +6,6 @@
   import SearchableDropdown from '../../ui/SearchableDropdown.svelte';
 
   const SEARCH_THRESHOLD = 100;
-  const MAX_SEARCH_ITEMS = 1_000;
 
   export let argDef: FswCommandArgumentEnum;
   export let commandDictionary: CommandDictionary | null = null;
@@ -39,7 +38,6 @@
   {#if enumValues.length > SEARCH_THRESHOLD}
     <SearchableDropdown
       {options}
-      maxItems={MAX_SEARCH_ITEMS}
       on:change={onSelectReferenceModel}
       {selectedOptionValues}
       placeholder={value}

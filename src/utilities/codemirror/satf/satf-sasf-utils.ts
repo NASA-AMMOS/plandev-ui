@@ -252,10 +252,10 @@ function parseTime(
       const splitParentNodeText = parentNodeText.slice(1, parentNodeText.length).split(' ');
 
       if (splitParentNodeText.length > 0) {
-        const tag = splitParentNodeText[0];
+        const epochTag = splitParentNodeText[0];
         const epochName = unquoteUnescape(splitParentNodeText[1]);
 
-        return { tag: `${epochName}${tag}`, type: 'GROUND_EPOCH' };
+        return { tag: `${epochName}${epochTag}`, type: 'GROUND_EPOCH' };
       }
     }
   } else {
@@ -747,8 +747,8 @@ function parseParameters(
             console.log(`type: ${type} is not supported`);
         }
 
-        const allowable_values: string[] = [];
-        const allowable_ranges: string[] = [];
+        const allowableValues: string[] = [];
+        const allowableRanges: string[] = [];
         rangesNode.forEach((range: any) => {
           text
             .slice(range.from, range.to)
@@ -756,14 +756,14 @@ function parseParameters(
             .forEach(r => {
               r = r.replaceAll('"', '').trim();
               if (r.includes('...')) {
-                allowable_ranges.push(r);
+                allowableRanges.push(r);
               } else {
-                allowable_values.push(r);
+                allowableValues.push(r);
               }
             });
         });
 
-        return `${name} ${type}${enumName}${allowable_ranges.length === 0 ? (allowable_values.length === 0 ? '' : ' ""') : ` "${allowable_ranges.join(', ')}"`}${allowable_values.length === 0 ? '' : ` "${allowable_values.join(', ')}"`}`;
+        return `${name} ${type}${enumName}${allowableRanges.length === 0 ? (allowableValues.length === 0 ? '' : ' ""') : ` "${allowableRanges.join(', ')}"`}${allowableValues.length === 0 ? '' : ` "${allowableValues.join(', ')}"`}`;
       })
       .join('\n');
     parameter += `\n@${variableType}_END\n\n`;

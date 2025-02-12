@@ -39,8 +39,9 @@
     remove: void;
   }>();
 
-  let dirtyFilter = structuredClone(filter);
-  let currentField = dirtyFilter.field as keyof typeof ActivityLayerFilterFieldType;
+  let dirtyFilter: ActivityLayerDynamicFilter<any> = structuredClone(filter);
+  let currentField: keyof typeof ActivityLayerFilterFieldType =
+    dirtyFilter.field as keyof typeof ActivityLayerFilterFieldType;
   let currentOperator: keyof typeof FilterOperator | null = dirtyFilter.operator;
   let subfields: ActivityLayerFilterSubfieldSchema[] | undefined = undefined;
   let currentSubfieldLabel =
@@ -52,6 +53,7 @@
   let currentUnit: string = '';
   let currentValuePossibilities: Array<any> = [];
 
+  $: dirtyFilter = structuredClone(filter);
   $: subfields = schema.Parameter?.subfields;
 
   $: if (currentField !== 'Parameter') {
@@ -123,7 +125,7 @@
     const {
       detail: { tag, type },
     } = event;
-    let newValue = Array.isArray(currentValue) ? currentValue : [];
+    const newValue = Array.isArray(currentValue) ? currentValue : [];
     if (type === 'remove') {
       currentValue = (newValue as number[]).filter(tagId => tagId !== tag.id) as number[];
     } else if (type === 'select') {
@@ -160,7 +162,7 @@
   function onRangeInputChange(event: Event, bound: 'min' | 'max' = 'min') {
     const { value } = getTarget(event);
     if (typeof value === 'number') {
-      let newValue = Array.isArray(currentValue) ? currentValue.slice() : [0, 0];
+      const newValue = Array.isArray(currentValue) ? currentValue.slice() : [0, 0];
       if (bound === 'min') {
         newValue[0] = value;
       } else {
@@ -293,7 +295,7 @@
         searchPlaceholder="Filter Variants"
         on:change={onSelectValue}
         selectedOptionValues={[currentValueAsStringOrNumber]}
-        options={currentValuePossibilities.sort().map(value => ({ display: value, value: value }))}
+        options={currentValuePossibilities.sort().map(value => ({ display: value, value }))}
       >
         <ChevronDownIcon slot="icon" />
       </SearchableDropdown>

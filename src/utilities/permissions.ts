@@ -1,4 +1,5 @@
 import { base } from '$app/paths';
+import { Queries } from '../enums/gql';
 import type { ActivityDirective, ActivityPreset } from '../types/activity';
 import type { User, UserRole } from '../types/app';
 import type { ReqAuthResponse } from '../types/auth';
@@ -27,7 +28,7 @@ import type { Parcel, UserSequence, Workspace } from '../types/sequencing';
 import type { PlanDataset, Simulation, SimulationTemplate } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { View, ViewSlim } from '../types/view';
-import gql, { Queries } from './gql';
+import gql from './gql';
 import { showFailureToast } from './toast';
 
 export const ADMIN_ROLE = 'aerie_admin';
