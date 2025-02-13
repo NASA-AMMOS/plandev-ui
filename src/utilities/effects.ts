@@ -3409,6 +3409,22 @@ const effects = {
     }
   },
 
+  async expand_templates(
+    user: User | null,
+  ): Promise<void> {
+    try {
+      const data = await reqHasura<{ success: boolean }>(gql.EXPAND_TEMPLATES, {}, user);
+      if (data.expand != null) {
+        showSuccessToast('Plan Expanded Successfully');
+      } else {
+        throw Error('Unable to expand plan');
+      }
+    } catch (e) {
+      catchError('Plan Expansion Failed', e as Error);
+      showFailureToast('Plan Expansion Failed');
+    }
+  },
+
   async getActivitiesForPlan(planId: number, user: User | null): Promise<ActivityDirectiveDB[]> {
     try {
       const query = convertToQuery(gql.SUB_ACTIVITY_DIRECTIVES);

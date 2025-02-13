@@ -158,6 +158,7 @@
         on:click={() => {
           if ($selectedExpansionSetId && $plan) {
             effects.expand($selectedExpansionSetId, $simulationDatasetId, $plan, $plan.model, user);
+            // effects.expand_templates(user);
           }
         }}
       />

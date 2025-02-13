@@ -27,10 +27,17 @@
   let selectedExpansionRun: ExpansionRun | null = null;
   let sequenceDefinition: string;
 
+  $: console.log('SELECTED SEQUENCE', selectedSequence);
+
   $: convertOutputToSequence(selectedSequence);
 
   async function convertOutputToSequence(sequence: ExpandedSequence | null): Promise<void> {
-    sequenceDefinition = (await seqJsonToSequence(sequence?.expanded_sequence)) ?? 'No Sequence Selected';
+    if (sequence?.expanded_sequence !== undefined) {
+      sequenceDefinition =
+        (await seqJsonToSequence(JSON.stringify(sequence?.expanded_sequence))) ?? 'No Sequence Selected';
+    } else {
+      sequenceDefinition = 'No Sequence Selected'; //sequence?.expanded_sequence.steps;
+    }
   }
 
   const columnDefs: DataGridColumnDef[] = [
@@ -186,8 +193,10 @@
   <SequenceEditor
     {parcel}
     {sequenceDefinition}
-    sequenceName={selectedSequence?.seq_id}
-    sequenceOutput={selectedSequence ? JSON.stringify(selectedSequence.expanded_sequence, null, 2) : undefined}
+    sequenceName={selectedSequence?.seq_id ?? ''}
+    sequenceOutput={selectedSequence
+      ? JSON.stringify(selectedSequence.expanded_sequence, null, 2)
+      : `{\n"id": "","metadata": {}\n}"}`}
     readOnly={true}
     title="Sequence - Definition Editor (Read-only)"
     workspaceId={null}

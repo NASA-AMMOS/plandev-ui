@@ -1303,6 +1303,14 @@ const gql = {
     }
   `,
 
+  EXPAND_TEMPLATES: `#graphql
+    mutation Expand {
+      expand: expandAllTemplates($input: String!, $template: String!) {
+        success
+      }
+    }
+  `,
+
   GET_ACTIVITY_DIRECTIVE_CHANGELOG: `#graphql
     query GetActivityTypesExpansionRules($activityId: Int!, $planId: Int!) {
       activityDirectiveRevisions: ${Queries.ACTIVITY_DIRECTIVE_CHANGELOG}(

@@ -101,8 +101,8 @@
   const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
   const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
-  let clientHeightGridRightBottom: number;
-  let clientHeightGridRightTop: number;
+  let clientHeightGridRightBottom: number = 10;
+  let clientHeightGridRightTop: number = 10;
   let compartmentSeqJsonLinter: Compartment;
   let compartmentSeqLanguage: Compartment;
   let compartmentSeqLinter: Compartment;
@@ -137,6 +137,8 @@
   let commandDef: FswCommand | null = null;
   let timeTagNode: TimeTagInfo = null;
   let variablesInScope: string[] = [];
+
+  $: console.log(sequenceOutput);
 
   $: {
     loadSequenceAdaptation(parcel?.sequence_adaptation_id);
@@ -265,9 +267,13 @@
           });
 
           // Reconfigure seq JSON editor.
-          editorOutputView.dispatch({
-            effects: compartmentSeqJsonLinter.reconfigure(outputLinter(parsedCommandDictionary, selectedOutputFormat)),
-          });
+          if (sequenceOutput !== `{\n\t"id": "",\n\t"metadata": {}\n}"}`) {
+            editorOutputView.dispatch({
+              effects: compartmentSeqJsonLinter.reconfigure(
+                outputLinter(parsedCommandDictionary, selectedOutputFormat),
+              ),
+            });
+          }
         });
       }
     } else {

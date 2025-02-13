@@ -145,6 +145,7 @@ function seqJsonDescriptionToSequence(description: Description): string {
 /**
  * Transforms a sequence JSON to a sequence string.
  */
+// note - this expects a string, because the database used to store sequences as strings, but that got deprecated in favor of JSON. so this never got updated.
 export async function seqJsonToSequence(input: string | null): Promise<string> {
   const sequence: string[] = [];
 
