@@ -86,7 +86,7 @@
   ActivityTypeCode { identifier }
   ReturnType { identifier }
   Flags { Flag+ }
-  Flag { identifier | ("|" identifier) } //todo
+  Flag { identifier | ("|" identifier) }
   Help { (anyASCII | newLine)+ }
   SeqgenText { anyASCII }
   VirtualChannel { identifier}

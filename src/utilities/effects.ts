@@ -11,37 +11,62 @@ import { DictionaryTypes } from '../enums/dictionaryTypes';
 import { SchedulingType } from '../enums/scheduling';
 import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
-import { activityDirectivesDB, selectedActivityDirectiveId } from '../stores/activities';
 import {
-  rawCheckConstraintsStatus,
-  rawConstraintResponses,
+  activityDirectivesDB as activityDirectivesDBStore,
+  selectedActivityDirectiveId as selectedActivityDirectiveIdStore,
+} from '../stores/activities';
+import {
+  rawCheckConstraintsStatus as rawCheckConstraintsStatusStore,
+  rawConstraintResponses as rawConstraintResponsesStore,
   resetConstraintStoresForSimulation,
 } from '../stores/constraints';
 import { catchError, catchSchedulingError } from '../stores/errors';
 import {
-  createExpansionRuleError,
-  creatingExpansionSequence,
-  planExpansionStatus,
-  savingExpansionRule,
-  savingExpansionSet,
+  createExpansionRuleError as createExpansionRuleErrorStore,
+  creatingExpansionSequence as creatingExpansionSequenceStore,
+  planExpansionStatus as planExpansionStatusStore,
+  savingExpansionRule as savingExpansionRuleStore,
+  savingExpansionSet as savingExpansionSetStore,
 } from '../stores/expansion';
-import { createExternalEventTypeError, creatingExternalEventType } from '../stores/external-event';
 import {
-  createDerivationGroupError,
-  createExternalSourceError,
-  createExternalSourceTypeError,
-  creatingExternalSource,
-  derivationGroupPlanLinkError,
-  parsingError,
+  createExternalEventTypeError as createExternalEventTypeErrorStore,
+  creatingExternalEventType as creatingExternalEventTypeStore,
+} from '../stores/external-event';
+import {
+  createDerivationGroupError as createDerivationGroupErrorStore,
+  createExternalSourceError as createExternalSourceErrorStore,
+  createExternalSourceTypeError as createExternalSourceTypeErrorStore,
+  creatingExternalSource as creatingExternalSourceStore,
+  derivationGroupPlanLinkError as derivationGroupPlanLinkErrorStore,
+  parsingError as parsingErrorStore,
 } from '../stores/external-source';
-import { createModelError, creatingModel, models } from '../stores/model';
-import { createPlanError, creatingPlan, planId } from '../stores/plan';
-import { schedulingRequests, selectedSpecId } from '../stores/scheduling';
-import { sequenceAdaptations } from '../stores/sequence-adaptation';
-import { channelDictionaries, commandDictionaries, parameterDictionaries } from '../stores/sequencing';
-import { selectedSpanId, simulationDataset, simulationDatasetId } from '../stores/simulation';
-import { createTagError } from '../stores/tags';
-import { applyViewUpdate, view, viewUpdateRow, viewUpdateTimeline } from '../stores/views';
+import {
+  createModelError as createModelErrorStore,
+  creatingModel as creatingModelStore,
+  models as modelsStore,
+} from '../stores/model';
+import {
+  createPlanError as createPlanErrorStore,
+  creatingPlan as creatingPlanStore,
+  planId as planIdStore,
+} from '../stores/plan';
+import {
+  schedulingRequests as schedulingRequestsStore,
+  selectedSpecId as selectedSpecIdStore,
+} from '../stores/scheduling';
+import { sequenceAdaptations as sequenceAdaptationsStore } from '../stores/sequence-adaptation';
+import {
+  channelDictionaries as channelDictionariesStore,
+  commandDictionaries as commandDictionariesStore,
+  parameterDictionaries as parameterDictionariesStore,
+} from '../stores/sequencing';
+import {
+  selectedSpanId as selectedSpanIdStore,
+  simulationDatasetId as simulationDatasetIdStore,
+  simulationDataset as simulationDatasetStore,
+} from '../stores/simulation';
+import { createTagError as createTagErrorStore } from '../stores/tags';
+import { applyViewUpdate, view as viewStore, viewUpdateRow, viewUpdateTimeline } from '../stores/views';
 import type {
   ActivityDirective,
   ActivityDirectiveDB,
@@ -424,18 +449,12 @@ const effects = {
 
   async checkConstraints(plan: Plan, user: User | null): Promise<void> {
     try {
-      rawCheckConstraintsStatus.set(Status.Incomplete);
+      rawCheckConstraintsStatusStore.set(Status.Incomplete);
       if (plan !== null) {
         const { id: planId } = plan;
-        const data = await reqHasura<ConstraintResponse[]>(
-          gql.CHECK_CONSTRAINTS,
-          {
-            planId,
-          },
-          user,
-        );
+        const data = await reqHasura<ConstraintResponse[]>(gql.CHECK_CONSTRAINTS, { planId }, user);
         if (data.constraintResponses) {
-          rawConstraintResponses.set(data.constraintResponses);
+          rawConstraintResponsesStore.set(data.constraintResponses);
 
           // find only the constraints compiled.
           const successfulConstraintResults: ConstraintResult[] = data.constraintResponses
@@ -447,13 +466,13 @@ const effects = {
           );
           if (successfulConstraintResults.length === 0 && data.constraintResponses.length > 0) {
             showFailureToast('All Constraints Failed');
-            rawCheckConstraintsStatus.set(Status.Failed);
+            rawCheckConstraintsStatusStore.set(Status.Failed);
           } else if (successfulConstraintResults.length !== data.constraintResponses.length) {
             showFailureToast('Constraints Partially Checked');
-            rawCheckConstraintsStatus.set(Status.Failed);
+            rawCheckConstraintsStatusStore.set(Status.Failed);
           } else {
             showSuccessToast('All Constraints Checked');
-            rawCheckConstraintsStatus.set(Status.Complete);
+            rawCheckConstraintsStatusStore.set(Status.Complete);
           }
 
           if (failedConstraintResponses.length > 0) {
@@ -539,7 +558,7 @@ const effects = {
 
   async createActivityDirective(
     argumentsMap: ArgumentsMap,
-    start_time_doy: string,
+    startTimeDoy: string,
     type: string,
     name: string,
     metadata: ActivityMetadata,
@@ -552,7 +571,7 @@ const effects = {
       }
 
       if (plan !== null) {
-        const start_offset = getIntervalFromDoyRange(plan.start_time_doy, start_time_doy);
+        const startOffset = getIntervalFromDoyRange(plan.start_time_doy, startTimeDoy);
         const activityDirectiveInsertInput: ActivityDirectiveInsertInput = {
           anchor_id: null,
           anchored_to_start: true,
@@ -560,7 +579,7 @@ const effects = {
           metadata,
           name,
           plan_id: plan.id,
-          start_offset,
+          start_offset: startOffset,
           type,
         };
         const data = await reqHasura<ActivityDirectiveDB>(
@@ -574,7 +593,7 @@ const effects = {
         if (newActivityDirective != null) {
           const { id } = newActivityDirective;
 
-          activityDirectivesDB.updateValue(directives => {
+          activityDirectivesDBStore.updateValue(directives => {
             return (directives || []).map(directive => {
               if (directive.id === id) {
                 return newActivityDirective;
@@ -582,8 +601,8 @@ const effects = {
               return directive;
             });
           });
-          selectedActivityDirectiveId.set(id);
-          selectedSpanId.set(null);
+          selectedActivityDirectiveIdStore.set(id);
+          selectedSpanIdStore.set(null);
 
           showSuccessToast('Activity Directive Created Successfully');
         } else {
@@ -608,16 +627,16 @@ const effects = {
       }
 
       const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_ACTIVITY_DIRECTIVE_TAGS, { tags }, user);
-      const { insert_activity_directive_tags } = data;
-      if (insert_activity_directive_tags != null) {
-        const { affected_rows } = insert_activity_directive_tags;
+      const { insert_activity_directive_tags: insertActivityDirectiveTags } = data;
+      if (insertActivityDirectiveTags != null) {
+        const { affected_rows: affectedRows } = insertActivityDirectiveTags;
 
-        if (affected_rows !== tags.length) {
+        if (affectedRows !== tags.length) {
           throw Error('Some activity directive tags were not successfully created');
         }
 
         showSuccessToast('Activity Directive Updated Successfully');
-        return affected_rows;
+        return affectedRows;
       } else {
         throw Error('Unable to create activity directive tags');
       }
@@ -784,7 +803,7 @@ const effects = {
     user: User | null,
   ): Promise<DerivationGroup | undefined> {
     try {
-      createDerivationGroupError.set(null);
+      createDerivationGroupErrorStore.set(null);
       const { createDerivationGroup: created } = await reqHasura(
         gql.CREATE_DERIVATION_GROUP,
         { derivationGroup },
@@ -799,26 +818,26 @@ const effects = {
     } catch (e) {
       catchError('Derivation Group Create Failed', e as Error);
       showFailureToast('Derivation Group Create Failed');
-      createDerivationGroupError.set((e as Error).message);
+      createDerivationGroupErrorStore.set((e as Error).message);
       return undefined;
     }
   },
 
   async createExpansionRule(rule: ExpansionRuleInsertInput, user: User | null): Promise<number | null> {
     try {
-      createExpansionRuleError.set(null);
+      createExpansionRuleErrorStore.set(null);
 
       if (!queryPermissions.CREATE_EXPANSION_RULE(user)) {
         throwPermissionError('create an expansion rule');
       }
 
-      savingExpansionRule.set(true);
+      savingExpansionRuleStore.set(true);
       const data = await reqHasura<ExpansionRule>(gql.CREATE_EXPANSION_RULE, { rule }, user);
       const { createExpansionRule } = data;
       if (createExpansionRule != null) {
         const { id } = createExpansionRule;
         showSuccessToast('Expansion Rule Created Successfully');
-        savingExpansionRule.set(false);
+        savingExpansionRuleStore.set(false);
         return id;
       } else {
         throw Error(`Unable to create expansion rule "${rule.name}"`);
@@ -826,8 +845,8 @@ const effects = {
     } catch (e) {
       catchError('Expansion Rule Create Failed', e as Error);
       showFailureToast('Expansion Rule Create Failed');
-      savingExpansionRule.set(false);
-      createExpansionRuleError.set((e as Error).message);
+      savingExpansionRuleStore.set(false);
+      createExpansionRuleErrorStore.set((e as Error).message);
       return null;
     }
   },
@@ -839,15 +858,15 @@ const effects = {
       }
 
       const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_EXPANSION_RULE_TAGS, { tags }, user);
-      const { insert_expansion_rule_tags } = data;
-      if (insert_expansion_rule_tags != null) {
-        const { affected_rows } = insert_expansion_rule_tags;
+      const { insert_expansion_rule_tags: insertExpansionRuleTags } = data;
+      if (insertExpansionRuleTags != null) {
+        const { affected_rows: affectedRows } = insertExpansionRuleTags;
 
-        if (affected_rows !== tags.length) {
+        if (affectedRows !== tags.length) {
           throw Error('Some expansion rule tags were not successfully created');
         }
 
-        return affected_rows;
+        return affectedRows;
       } else {
         throw Error(`Unable to create expansion rule tags`);
       }
@@ -864,7 +883,7 @@ const effects = {
         throwPermissionError('create an expansion sequence');
       }
 
-      creatingExpansionSequence.set(true);
+      creatingExpansionSequenceStore.set(true);
       const sequence: ExpansionSequenceInsertInput = {
         metadata: {},
         seq_id: seqId,
@@ -873,14 +892,14 @@ const effects = {
       const data = await reqHasura<SeqId>(gql.CREATE_EXPANSION_SEQUENCE, { sequence }, user);
       if (data.createExpansionSequence != null) {
         showSuccessToast('Expansion Sequence Created Successfully');
-        creatingExpansionSequence.set(false);
+        creatingExpansionSequenceStore.set(false);
       } else {
         throw Error(`Unable to create expansion sequence with ID: "${seqId}"`);
       }
     } catch (e) {
       catchError('Expansion Sequence Create Failed', e as Error);
       showFailureToast('Expansion Sequence Create Failed');
-      creatingExpansionSequence.set(false);
+      creatingExpansionSequenceStore.set(false);
     }
   },
 
@@ -898,7 +917,7 @@ const effects = {
         throwPermissionError('create an expansion set');
       }
 
-      savingExpansionSet.set(true);
+      savingExpansionSetStore.set(true);
       const data = await reqHasura<ExpansionSet>(
         gql.CREATE_EXPANSION_SET,
         {
@@ -914,7 +933,7 @@ const effects = {
       if (createExpansionSet != null) {
         const { id } = createExpansionSet;
         showSuccessToast('Expansion Set Created Successfully');
-        savingExpansionSet.set(false);
+        savingExpansionSetStore.set(false);
         return id;
       } else {
         throw Error('Unable to create expansion set');
@@ -922,15 +941,15 @@ const effects = {
     } catch (e) {
       catchError('Expansion Set Create Failed', e as Error);
       showFailureToast('Expansion Set Create Failed');
-      savingExpansionSet.set(false);
+      savingExpansionSetStore.set(false);
       return null;
     }
   },
 
   async createExternalEventType(eventType: ExternalEventTypeInsertInput, user: User | null) {
     try {
-      creatingExternalEventType.set(true);
-      createExternalEventTypeError.set(null);
+      creatingExternalEventTypeStore.set(true);
+      createExternalEventTypeErrorStore.set(null);
       if (eventType) {
         const { createExternalEventType: created } = await reqHasura<ExternalEventType>(
           gql.CREATE_EXTERNAL_EVENT_TYPE,
@@ -939,7 +958,7 @@ const effects = {
         );
         if (created) {
           showSuccessToast('External Event Type Created Successfully');
-          creatingExternalEventType.set(false);
+          creatingExternalEventTypeStore.set(false);
           return created.name;
         } else {
           throw Error('Unable to create external event type');
@@ -950,8 +969,8 @@ const effects = {
     } catch (e) {
       catchError('External Event Type Create Failed', e as Error);
       showFailureToast('External Event Type Create Failed');
-      createExternalEventTypeError.set((e as Error).message);
-      creatingExternalEventType.set(false);
+      createExternalEventTypeErrorStore.set((e as Error).message);
+      creatingExternalEventTypeStore.set(false);
     }
   },
 
@@ -969,8 +988,8 @@ const effects = {
       if (!queryPermissions.CREATE_EXTERNAL_SOURCE(user)) {
         throwPermissionError('upload an external source');
       }
-      creatingExternalSource.set(true);
-      createExternalSourceError.set(null);
+      creatingExternalSourceStore.set(true);
+      createExternalSourceErrorStore.set(null);
 
       // Create mutation inputs for Hasura
       const externalSourceTypeInsert: ExternalSourceTypeInsertInput = {
@@ -990,16 +1009,16 @@ const effects = {
       const validAtFormatted: string | undefined = convertDoyToYmd(validAt.replaceAll('Z', ''))?.replace('Z', '+00:00');
       if (!startTimeFormatted || !endTimeFormatted || !validAtFormatted) {
         showFailureToast('Parsing failed.');
-        parsingError.set(`Parsing failed - parsing dates in input failed. ${startTime}, ${endTime}, ${validAt}`);
-        creatingExternalSource.set(false);
+        parsingErrorStore.set(`Parsing failed - parsing dates in input failed. ${startTime}, ${endTime}, ${validAt}`);
+        creatingExternalSourceStore.set(false);
         return;
       }
 
       // Check that the start and end times are logical
       if (new Date(startTimeFormatted) > new Date(endTimeFormatted)) {
         showFailureToast('Parsing failed.');
-        parsingError.set(`Parsing failed - start time ${startTimeFormatted} after end time ${endTimeFormatted}.`);
-        creatingExternalSource.set(false);
+        parsingErrorStore.set(`Parsing failed - start time ${startTimeFormatted} after end time ${endTimeFormatted}.`);
+        creatingExternalSourceStore.set(false);
         return;
       }
 
@@ -1030,7 +1049,7 @@ const effects = {
         } catch (error) {
           showFailureToast('Parsing failed.');
           catchError(`Event duration has invalid format: ${externalEvent.key}\n`, error as Error);
-          creatingExternalSource.set(false);
+          creatingExternalSourceStore.set(false);
           return;
         }
 
@@ -1041,10 +1060,10 @@ const effects = {
           !(externalEventStart >= Date.parse(startTimeFormatted) && externalEventEnd <= Date.parse(endTimeFormatted))
         ) {
           showFailureToast('Invalid External Event Time Bounds');
-          parsingError.set(
+          parsingErrorStore.set(
             `Upload failed. Event (${externalEvent.key}) not in bounds of source start and end: occurs from [${new Date(externalEventStart)},${new Date(externalEventEnd)}], not subset of [${new Date(startTimeFormatted)},${new Date(endTimeFormatted)}].\n`,
           );
-          creatingExternalSource.set(false);
+          creatingExternalSourceStore.set(false);
           return;
         }
 
@@ -1078,7 +1097,7 @@ const effects = {
       );
       if (createExternalSourceResponse !== undefined && createExternalSourceResponse !== null) {
         showSuccessToast('External Source Created Successfully');
-        creatingExternalSource.set(false);
+        creatingExternalSourceStore.set(false);
         return createExternalSourceResponse as ExternalSourceSlim;
       } else {
         throw Error(`Unable to create external source`);
@@ -1087,11 +1106,11 @@ const effects = {
       catchError('External Source Create Failed', e as Error);
       showFailureToast('External Source Create Failed');
       if ((e as Error).message.includes('external_source_type_matches_derivation_group')) {
-        createExternalSourceError.set('Cannot duplicate derivation groups!');
+        createExternalSourceErrorStore.set('Cannot duplicate derivation groups!');
       } else {
-        createExternalSourceError.set((e as Error).message);
+        createExternalSourceErrorStore.set((e as Error).message);
       }
-      creatingExternalSource.set(false);
+      creatingExternalSourceStore.set(false);
     }
   },
 
@@ -1100,7 +1119,7 @@ const effects = {
     user: User | null,
   ): Promise<ExternalSourceType | undefined> {
     try {
-      createExternalSourceTypeError.set(null);
+      createExternalSourceTypeErrorStore.set(null);
       const { createExternalSourceType: created } = await reqHasura(
         gql.CREATE_EXTERNAL_SOURCE_TYPE,
         { sourceType },
@@ -1115,7 +1134,7 @@ const effects = {
     } catch (e) {
       catchError('External Source Type Create Failed', e as Error);
       showFailureToast('External Source Type Create Failed');
-      createExternalSourceTypeError.set((e as Error).message);
+      createExternalSourceTypeErrorStore.set((e as Error).message);
       return undefined;
     }
   },
@@ -1137,22 +1156,22 @@ const effects = {
     description?: string,
   ): Promise<number | null> {
     try {
-      createModelError.set(null);
+      createModelErrorStore.set(null);
 
       if (!queryPermissions.CREATE_MODEL(user)) {
         throwPermissionError('upload a model');
       }
 
-      creatingModel.set(true);
+      creatingModelStore.set(true);
 
       const file: File = files[0];
-      const jar_id = await effects.uploadFile(file, user);
+      const jarId = await effects.uploadFile(file, user);
       showSuccessToast('Model Uploaded Successfully. Processing model...');
 
-      if (jar_id !== null) {
+      if (jarId !== null) {
         const modelInsertInput: ModelInsertInput = {
           description,
-          jar_id,
+          jar_id: jarId,
           mission: '',
           name,
           version,
@@ -1163,8 +1182,8 @@ const effects = {
           const { id } = createModel;
 
           showSuccessToast('Model Created Successfully');
-          createModelError.set(null);
-          creatingModel.set(false);
+          createModelErrorStore.set(null);
+          creatingModelStore.set(false);
 
           return id;
         } else {
@@ -1174,8 +1193,8 @@ const effects = {
     } catch (e) {
       catchError('Model Create Failed', e as Error);
       showFailureToast('Model Create Failed');
-      createModelError.set((e as Error).message);
-      creatingModel.set(false);
+      createModelErrorStore.set((e as Error).message);
+      creatingModelStore.set(false);
     }
 
     return null;
@@ -1205,7 +1224,6 @@ const effects = {
   },
 
   async createParcelToParameterDictionaries(
-    parcelOwner: UserId,
     parcelToParameterDictionariesToAdd: Omit<ParcelToParameterDictionary, 'id'>[],
     user: User | null,
   ): Promise<ParcelToParameterDictionary[] | null> {
@@ -1213,21 +1231,20 @@ const effects = {
       if (!queryPermissions.CREATE_PARCEL_TO_PARAMETER_DICTIONARIES(user)) {
         throwPermissionError('create parcel to parameter dictionary');
       }
-
       const data = await reqHasura<{ returning: ParcelToParameterDictionary[] }>(
         gql.CREATE_PARCEL_TO_PARAMETER_DICTIONARIES,
         { parcelToParameterDictionaries: parcelToParameterDictionariesToAdd },
         user,
       );
-      const { insert_parcel_to_parameter_dictionary } = data;
+      const { insert_parcel_to_parameter_dictionary: insertParcelToParameterDictionary } = data;
 
-      if (insert_parcel_to_parameter_dictionary) {
+      if (insertParcelToParameterDictionary) {
         showSuccessToast('Parcel to parameter dictionaries created successfully');
       } else {
         throw Error('Unable to create parcel to parameter dictionaries');
       }
 
-      return insert_parcel_to_parameter_dictionary.returning;
+      return insertParcelToParameterDictionary.returning;
     } catch (e) {
       catchError('Create parcel to parameter dictionaries failed', e as Error);
       showFailureToast('Create parcel to parameter dictionaries failed');
@@ -1237,27 +1254,27 @@ const effects = {
   },
 
   async createPlan(
-    end_time_doy: string,
-    model_id: number,
+    endTimeDoy: string,
+    modelId: number,
     name: string,
-    start_time_doy: string,
-    simulation_template_id: number | null,
+    startTimeDoy: string,
+    simulationTemplateId: number | null,
     user: User | null,
   ): Promise<PlanSlim | null> {
     try {
-      createPlanError.set(null);
+      createPlanErrorStore.set(null);
 
       if (!queryPermissions.CREATE_PLAN(user)) {
         throwPermissionError('create a plan');
       }
 
-      creatingPlan.set(true);
+      creatingPlanStore.set(true);
 
       const planInsertInput: PlanInsertInput = {
-        duration: getIntervalFromDoyRange(start_time_doy, end_time_doy),
-        model_id,
+        duration: getIntervalFromDoyRange(startTimeDoy, endTimeDoy),
+        model_id: modelId,
         name,
-        start_time: start_time_doy, // Postgres accepts DOY dates for it's 'timestamptz' type.
+        start_time: startTimeDoy, // Postgres accepts DOY dates for it's 'timestamptz' type.
       };
       const data = await reqHasura<PlanSlim>(
         gql.CREATE_PLAN,
@@ -1271,7 +1288,7 @@ const effects = {
         const { collaborators, created_at, duration, id, owner, revision, start_time, updated_at, updated_by } =
           createPlan;
 
-        if (!(await effects.initialSimulationUpdate(id, simulation_template_id, start_time_doy, end_time_doy, user))) {
+        if (!(await effects.initialSimulationUpdate(id, simulationTemplateId, startTimeDoy, endTimeDoy, user))) {
           throw Error('Failed to update simulation.');
         }
 
@@ -1279,22 +1296,22 @@ const effects = {
           collaborators,
           created_at,
           duration,
-          end_time_doy,
+          end_time_doy: endTimeDoy,
           id,
-          model_id,
+          model_id: modelId,
           name,
           owner,
           revision,
           start_time,
-          start_time_doy,
+          start_time_doy: startTimeDoy,
           tags: [],
           updated_at,
           updated_by,
         };
 
         showSuccessToast('Plan Created Successfully');
-        createPlanError.set(null);
-        creatingPlan.set(false);
+        createPlanErrorStore.set(null);
+        creatingPlanStore.set(false);
 
         return plan;
       } else {
@@ -1303,8 +1320,8 @@ const effects = {
     } catch (e) {
       catchError('Plan Create Failed', e as Error);
       showFailureToast('Plan Create Failed');
-      createPlanError.set((e as Error).message);
-      creatingPlan.set(false);
+      createPlanErrorStore.set((e as Error).message);
+      creatingPlanStore.set(false);
 
       return null;
     }
@@ -1319,11 +1336,11 @@ const effects = {
       const { confirm, value = null } = await showCreatePlanBranchModal(plan);
 
       if (confirm && value) {
-        const { name, plan } = value;
-        const data = await reqHasura(gql.DUPLICATE_PLAN, { new_plan_name: name, plan_id: plan.id }, user);
-        const { duplicate_plan } = data;
-        if (duplicate_plan != null) {
-          goto(`${base}/plans/${duplicate_plan.new_plan_id}`);
+        const { name, plan: planToBranch } = value;
+        const data = await reqHasura(gql.DUPLICATE_PLAN, { new_plan_name: name, plan_id: planToBranch.id }, user);
+        const { duplicate_plan: duplicatePlan } = data;
+        if (duplicatePlan != null) {
+          goto(`${base}/plans/${duplicatePlan.new_plan_id}`);
           showSuccessToast('Branch Created Successfully');
         } else {
           throw Error('');
@@ -1340,16 +1357,16 @@ const effects = {
       const { confirm, value } = await showPlanBranchRequestModal(plan, action);
 
       if (confirm && value) {
-        const { source_plan, target_plan } = value;
+        const { source_plan: sourcePlan, target_plan: targetPlan } = value;
 
-        if (!queryPermissions.CREATE_PLAN_MERGE_REQUEST(user, source_plan, target_plan, plan.model)) {
+        if (!queryPermissions.CREATE_PLAN_MERGE_REQUEST(user, sourcePlan, targetPlan, plan.model)) {
           throwPermissionError('create a branch merge request');
         }
 
         if (action === 'merge') {
           await effects.createPlanMergeRequest(
-            { ...source_plan, model_id: plan.model_id },
-            target_plan,
+            { ...sourcePlan, model_id: plan.model_id },
+            targetPlan,
             plan.model,
             user,
           );
@@ -1367,16 +1384,16 @@ const effects = {
       }
 
       const data = await reqHasura(gql.CREATE_PLAN_COLLABORATORS, { collaborators }, user);
-      const { insert_plan_collaborators } = data;
+      const { insert_plan_collaborators: insertPlanCollaborators } = data;
 
-      if (insert_plan_collaborators != null) {
-        const { affected_rows } = insert_plan_collaborators;
+      if (insertPlanCollaborators != null) {
+        const { affected_rows: affectedRows } = insertPlanCollaborators;
 
-        if (affected_rows !== collaborators.length) {
+        if (affectedRows !== collaborators.length) {
           throw Error('Some plan collaborators were not successfully added');
         }
         showSuccessToast('Plan Collaborators Updated');
-        return affected_rows;
+        return affectedRows;
       } else {
         throw Error('Unable to create plan collaborators');
       }
@@ -1406,11 +1423,11 @@ const effects = {
         },
         user,
       );
-      const { create_merge_request } = data;
-      if (create_merge_request != null) {
-        const { merge_request_id } = create_merge_request;
+      const { create_merge_request: createMergeRequest } = data;
+      if (createMergeRequest != null) {
+        const { merge_request_id: mergeRequestId } = createMergeRequest;
         showSuccessToast('Merge Request Created Successfully');
-        return merge_request_id;
+        return mergeRequestId;
       } else {
         throw Error('Unable to create a branch merge request');
       }
@@ -1430,8 +1447,8 @@ const effects = {
       const { confirm, value = null } = await showCreatePlanSnapshotModal(plan, user);
 
       if (confirm && value) {
-        const { description, name, plan, tags } = value;
-        await effects.createPlanSnapshotHelper(plan.id, name, description, tags, user);
+        const { description, name, plan: planToSnapshot, tags } = value;
+        await effects.createPlanSnapshotHelper(planToSnapshot.id, name, description, tags, user);
         showSuccessToast('Snapshot Created Successfully');
       }
     } catch (e) {
@@ -1443,14 +1460,14 @@ const effects = {
   /**
    * This helper function is for handling the creation of a snapshot and associating tags in one go
    *
-   * @param planId
+   * @param planIdToSnapshot
    * @param name
    * @param description
    * @param tags
    * @param user
    */
   async createPlanSnapshotHelper(
-    planId: number,
+    planIdToSnapshot: number,
     name: string,
     description: string,
     tags: Tag[],
@@ -1458,7 +1475,7 @@ const effects = {
   ): Promise<void> {
     const data = await reqHasura<{ snapshot_id: number }>(
       gql.CREATE_PLAN_SNAPSHOT,
-      { description, plan_id: planId, snapshot_name: name },
+      { description, plan_id: planIdToSnapshot, snapshot_name: name },
       user,
     );
     const { createSnapshot } = data;
@@ -1466,9 +1483,9 @@ const effects = {
       const { snapshot_id } = createSnapshot;
       // Associate tags with the snapshot
       const newPlanSnapshotTags: PlanSnapshotTagsInsertInput[] =
-        tags?.map(({ id: tag_id }) => ({
+        tags?.map(({ id: tagId }) => ({
           snapshot_id,
-          tag_id,
+          tag_id: tagId,
         })) ?? [];
       await effects.createPlanSnapshotTags(newPlanSnapshotTags, user, false);
     }
@@ -1485,17 +1502,17 @@ const effects = {
       }
 
       const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_PLAN_SNAPSHOT_TAGS, { tags }, user);
-      const { insert_plan_snapshot_tags } = data;
-      if (insert_plan_snapshot_tags != null) {
-        const { affected_rows } = insert_plan_snapshot_tags;
+      const { insert_plan_snapshot_tags: insertPlanSnapshotTags } = data;
+      if (insertPlanSnapshotTags != null) {
+        const { affected_rows: affectedRows } = insertPlanSnapshotTags;
 
-        if (affected_rows !== tags.length) {
+        if (affectedRows !== tags.length) {
           throw Error('Some plan snapshot tags were not successfully created');
         }
         if (notify) {
           showSuccessToast('Plan Snapshot Updated Successfully');
         }
-        return affected_rows;
+        return affectedRows;
       } else {
         throw Error('Unable to create plan snapshot tags');
       }
@@ -1518,17 +1535,17 @@ const effects = {
       }
 
       const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_PLAN_TAGS, { tags }, user);
-      const { insert_plan_tags } = data;
-      if (insert_plan_tags != null) {
-        const { affected_rows } = insert_plan_tags;
+      const { insert_plan_tags: insertPlanTags } = data;
+      if (insertPlanTags != null) {
+        const { affected_rows: affectedRows } = insertPlanTags;
 
-        if (affected_rows !== tags.length) {
+        if (affectedRows !== tags.length) {
           throw Error('Some plan tags were not successfully created');
         }
         if (notify) {
           showSuccessToast('Plan Updated Successfully');
         }
-        return affected_rows;
+        return affectedRows;
       } else {
         throw Error('Unable to create plan tags');
       }
@@ -1765,7 +1782,7 @@ const effects = {
   },
 
   async createSchedulingGoalPlanSpecification(
-    spec_goal: SchedulingGoalPlanSpecInsertInput,
+    specGoal: SchedulingGoalPlanSpecInsertInput,
     user: User | null,
   ): Promise<number | null> {
     try {
@@ -1775,14 +1792,14 @@ const effects = {
 
       const data = await reqHasura<SchedulingGoalPlanSpecification>(
         gql.CREATE_SCHEDULING_GOAL_PLAN_SPECIFICATION,
-        { spec_goal },
+        { spec_goal: specGoal },
         user,
       );
       const { createSchedulingSpecGoal } = data;
       if (createSchedulingSpecGoal != null) {
-        const { specification_id } = createSchedulingSpecGoal;
+        const { specification_id: specificationId } = createSchedulingSpecGoal;
         showSuccessToast('New Scheduling Goal Invocation Created Successfully');
-        return specification_id;
+        return specificationId;
       } else {
         throw Error('Unable to create a scheduling spec goal invocation');
       }
@@ -1852,25 +1869,25 @@ const effects = {
 
   async createTag(tag: TagsInsertInput, user: User | null, notify: boolean = true): Promise<Tag | null> {
     try {
-      createTagError.set(null);
+      createTagErrorStore.set(null);
       if (!queryPermissions.CREATE_TAGS(user)) {
         throwPermissionError('create tags');
       }
 
       const data = await reqHasura<{ affected_row: number; tag: Tag }>(gql.CREATE_TAG, { tag }, user);
-      const { insert_tags_one } = data;
-      if (insert_tags_one != null) {
-        const { tag: insertedTag } = insert_tags_one;
+      const { insert_tags_one: insertTagsOne } = data;
+      if (insertTagsOne != null) {
+        const { tag: insertedTag } = insertTagsOne;
         if (notify) {
           showSuccessToast('Tag Created Successfully');
         }
-        createTagError.set(null);
+        createTagErrorStore.set(null);
         return insertedTag;
       } else {
         throw Error(`Unable to create tag "${tag.name}"`);
       }
     } catch (e) {
-      createTagError.set((e as Error).message);
+      createTagErrorStore.set((e as Error).message);
       catchError('Create Tags Failed', e as Error);
       showFailureToast('Create Tags Failed');
       return null;
@@ -1884,9 +1901,9 @@ const effects = {
       }
 
       const data = await reqHasura<{ affected_rows: number; returning: Tag[] }>(gql.CREATE_TAGS, { tags }, user);
-      const { insert_tags } = data;
-      if (insert_tags != null) {
-        const { returning } = insert_tags;
+      const { insert_tags: insertTags } = data;
+      if (insertTags != null) {
+        const { returning } = insertTags;
 
         const createdTags = returning.map(({ name }) => name);
 
@@ -1946,7 +1963,7 @@ const effects = {
         const { newView } = data;
 
         if (newView != null) {
-          view.update(() => newView);
+          viewStore.update(() => newView);
           setQueryParam(SearchParameters.VIEW_ID, `${newView.id}`);
           showSuccessToast('View Created Successfully');
           return true;
@@ -2100,12 +2117,12 @@ const effects = {
 
           if (response.delete_activity_by_pk_reanchor_to_anchor_bulk != null) {
             const deletedActivityIds = response.delete_activity_by_pk_reanchor_to_anchor_bulk
-              .filter(({ change_type }) => {
-                return change_type === 'deleted';
+              .filter(({ change_type: changeType }) => {
+                return changeType === 'deleted';
               })
               .map(({ affected_row: { id } }) => id);
 
-            activityDirectivesDB.updateValue(directives => {
+            activityDirectivesDBStore.updateValue(directives => {
               return (directives || []).filter(directive => {
                 return deletedActivityIds.indexOf(directive.id) < 1;
               });
@@ -2140,12 +2157,12 @@ const effects = {
 
           if (response.delete_activity_by_pk_reanchor_plan_start_bulk != null) {
             const deletedActivityIds = response.delete_activity_by_pk_reanchor_plan_start_bulk
-              .filter(({ change_type }) => {
-                return change_type === 'deleted';
+              .filter(({ change_type: changeType }) => {
+                return changeType === 'deleted';
               })
               .map(({ affected_row: { id } }) => id);
 
-            activityDirectivesDB.updateValue(directives => {
+            activityDirectivesDBStore.updateValue(directives => {
               return (directives || []).filter(directive => {
                 return deletedActivityIds.indexOf(directive.id) < 1;
               });
@@ -2178,12 +2195,12 @@ const effects = {
 
           if (response.delete_activity_by_pk_delete_subtree_bulk) {
             const deletedActivityIds = response.delete_activity_by_pk_delete_subtree_bulk
-              .filter(({ change_type }) => {
-                return change_type === 'deleted';
+              .filter(({ change_type: changeType }) => {
+                return changeType === 'deleted';
               })
               .map(({ affected_row: { id } }) => id);
 
-            activityDirectivesDB.updateValue(directives => {
+            activityDirectivesDBStore.updateValue(directives => {
               return (directives || []).filter(directive => {
                 return deletedActivityIds.indexOf(directive.id) < 1;
               });
@@ -2210,7 +2227,7 @@ const effects = {
 
           if (response.deleteActivityDirectives) {
             const deletedActivityIds = response.deleteActivityDirectives.returning.map(({ id }) => id);
-            activityDirectivesDB.updateValue(directives => {
+            activityDirectivesDBStore.updateValue(directives => {
               return (directives || []).filter(directive => {
                 return deletedActivityIds.indexOf(directive.id) < 1;
               });
@@ -2281,7 +2298,7 @@ const effects = {
         const data = await reqHasura<{ id: number }>(gql.DELETE_CHANNEL_DICTIONARY, { id }, user);
         if (data.deleteChannelDictionary != null) {
           showSuccessToast('Channel Dictionary Deleted Successfully');
-          channelDictionaries.filterValueById(id);
+          channelDictionariesStore.filterValueById(id);
         } else {
           throw Error(`Unable to delete channel dictionary with ID: "${id}"`);
         }
@@ -2308,7 +2325,7 @@ const effects = {
         const data = await reqHasura<{ id: number }>(gql.DELETE_COMMAND_DICTIONARY, { id }, user);
         if (data.deleteCommandDictionary != null) {
           showSuccessToast('Command Dictionary Deleted Successfully');
-          commandDictionaries.filterValueById(id);
+          commandDictionariesStore.filterValueById(id);
         } else {
           throw Error(`Unable to delete command dictionary with ID: "${id}"`);
         }
@@ -2398,18 +2415,14 @@ const effects = {
     }
   },
 
-  async deleteDerivationGroupForPlan(
-    derivation_group_name: string,
-    plan: Plan | null,
-    user: User | null,
-  ): Promise<void> {
+  async deleteDerivationGroupForPlan(derivationGroupName: string, plan: Plan | null, user: User | null): Promise<void> {
     try {
       if ((plan && !queryPermissions.DELETE_PLAN_DERIVATION_GROUP(user, plan)) || !plan) {
         throwPermissionError('delete a derivation group from the plan');
       }
 
       // (use the same as above store, as the behavior is employed on the same panel, therefore so would the error)
-      derivationGroupPlanLinkError.set(null);
+      derivationGroupPlanLinkErrorStore.set(null);
       if (plan !== null) {
         const data = await reqHasura<{
           returning: {
@@ -2421,7 +2434,7 @@ const effects = {
           {
             where: {
               _and: {
-                derivation_group_name: { _eq: derivation_group_name },
+                derivation_group_name: { _eq: derivationGroupName },
                 plan_id: { _eq: plan.id },
               },
             },
@@ -2439,7 +2452,7 @@ const effects = {
     } catch (e) {
       catchError('Derivation Group De-linking Failed', e as Error);
       showFailureToast('Derivation Group De-linking Failed');
-      derivationGroupPlanLinkError.set((e as Error).message);
+      derivationGroupPlanLinkErrorStore.set((e as Error).message);
     }
   },
 
@@ -2484,10 +2497,10 @@ const effects = {
         { rule_id: ruleId, tag_ids: tagIds },
         user,
       );
-      const { delete_expansion_rule_tags } = data;
-      if (delete_expansion_rule_tags != null) {
-        const { affected_rows } = delete_expansion_rule_tags;
-        return affected_rows;
+      const { delete_expansion_rule_tags: deleteExpansionRuleTags } = data;
+      if (deleteExpansionRuleTags != null) {
+        const { affected_rows: affectedRows } = deleteExpansionRuleTags;
+        return affectedRows;
       } else {
         throw Error('Unable to delete expansion rule tags');
       }
@@ -2526,8 +2539,8 @@ const effects = {
   },
 
   async deleteExpansionSequenceToActivity(
-    simulation_dataset_id: number,
-    simulated_activity_id: number,
+    simulationDatasetId: number,
+    simulatedActivityId: number,
     user: User | null,
   ): Promise<boolean> {
     try {
@@ -2538,8 +2551,8 @@ const effects = {
       const data = await reqHasura<SeqId>(
         gql.DELETE_EXPANSION_SEQUENCE_TO_ACTIVITY,
         {
-          simulated_activity_id,
-          simulation_dataset_id,
+          simulated_activity_id: simulatedActivityId,
+          simulation_dataset_id: simulationDatasetId,
         },
         user,
       );
@@ -2548,7 +2561,7 @@ const effects = {
         return true;
       } else {
         throw Error(
-          `Unable to remove the associated expansion sequence from the dataset ${simulation_dataset_id} and the activity ${simulated_activity_id}`,
+          `Unable to remove the associated expansion sequence from the dataset ${simulationDatasetId} and the activity ${simulatedActivityId}`,
         );
       }
     } catch (e) {
@@ -2588,15 +2601,15 @@ const effects = {
     }
   },
 
-  async deleteExternalEventType(event_type_name: string | null, user: User | null): Promise<void> {
+  async deleteExternalEventType(eventTypeName: string | null, user: User | null): Promise<void> {
     try {
       if (!queryPermissions.DELETE_EXTERNAL_EVENT_TYPE(user)) {
         throwPermissionError('delete an external event type');
       }
 
       // to do this, all dgs associated should be deleted.
-      if (event_type_name !== null) {
-        const data = await reqHasura<{ id: number }>(gql.DELETE_EXTERNAL_EVENT_TYPE, { name: event_type_name }, user);
+      if (eventTypeName !== null) {
+        const data = await reqHasura<{ id: number }>(gql.DELETE_EXTERNAL_EVENT_TYPE, { name: eventTypeName }, user);
         if (data.deleteDerivationGroup === null) {
           throw Error('Unable to delete external event type');
         }
@@ -2660,7 +2673,7 @@ const effects = {
             const data = await reqHasura<{ derivationGroupName: string; sourceKeys: string[] }>(
               gql.DELETE_EXTERNAL_SOURCES,
               {
-                derivationGroupName: derivationGroupName,
+                derivationGroupName,
                 sourceKeys: derivationGroups[derivationGroupName],
               },
               user,
@@ -2734,7 +2747,7 @@ const effects = {
         const data = await reqHasura<{ id: number }>(gql.DELETE_MODEL, { id }, user);
         if (data.deleteModel != null) {
           showSuccessToast('Model Deleted Successfully');
-          models.filterValueById(id);
+          modelsStore.filterValueById(id);
         } else {
           throw Error(`Unable to delete model "${model.name}"`);
         }
@@ -2761,7 +2774,7 @@ const effects = {
         const data = await reqHasura<{ id: number }>(gql.DELETE_PARAMETER_DICTIONARY, { id }, user);
         if (data.deleteParameterDictionary != null) {
           showSuccessToast('Parameter Dictionary Deleted Successfully');
-          parameterDictionaries.filterValueById(id);
+          parameterDictionariesStore.filterValueById(id);
         } else {
           throw Error(`Unable to delete parameter dictionary with ID: "${id}"`);
         }
@@ -2821,17 +2834,17 @@ const effects = {
         user,
       );
 
-      const { delete_parcel_to_parameter_dictionary } = data;
+      const { delete_parcel_to_parameter_dictionary: deleteParcelToParameterDictionary } = data;
 
-      if (delete_parcel_to_parameter_dictionary != null) {
-        const { affected_rows } = delete_parcel_to_parameter_dictionary;
+      if (deleteParcelToParameterDictionary != null) {
+        const { affected_rows: affectedRows } = deleteParcelToParameterDictionary;
 
-        if (affected_rows !== parameterDictionaryIds.length) {
+        if (affectedRows !== parameterDictionaryIds.length) {
           throw Error('Some parcel to dictionary associations were not successfully deleted');
         }
 
         showSuccessToast('Parcel to dictionary association deleted Successfully');
-        return affected_rows;
+        return affectedRows;
       } else {
         throw Error('Unable to delete parcel to dictionary associations');
       }
@@ -3056,7 +3069,7 @@ const effects = {
         }
 
         showSuccessToast('Sequence Adaptation Deleted Successfully');
-        sequenceAdaptations.filterValueById(id);
+        sequenceAdaptationsStore.filterValueById(id);
       }
     } catch (e) {
       catchError('Sequence Adaptation Delete Failed', e as Error);
@@ -3390,7 +3403,7 @@ const effects = {
     user: User | null,
   ): Promise<void> {
     try {
-      planExpansionStatus.set(Status.Incomplete);
+      planExpansionStatusStore.set(Status.Incomplete);
 
       if (!queryPermissions.EXPAND(user, plan, model)) {
         throwPermissionError('expand this plan');
@@ -3398,14 +3411,14 @@ const effects = {
 
       const data = await reqHasura<{ id: number }>(gql.EXPAND, { expansionSetId, simulationDatasetId }, user);
       if (data.expand != null) {
-        planExpansionStatus.set(Status.Complete);
+        planExpansionStatusStore.set(Status.Complete);
         showSuccessToast('Plan Expanded Successfully');
       } else {
         throw Error('Unable to expand plan');
       }
     } catch (e) {
       catchError('Plan Expansion Failed', e as Error);
-      planExpansionStatus.set(Status.Failed);
+      planExpansionStatusStore.set(Status.Failed);
       showFailureToast('Plan Expansion Failed');
     }
   },
@@ -3415,9 +3428,9 @@ const effects = {
       const query = convertToQuery(gql.SUB_ACTIVITY_DIRECTIVES);
       const data = await reqHasura<ActivityDirectiveDB[]>(query, { planId }, user);
 
-      const { activity_directives } = data;
-      if (activity_directives != null) {
-        return activity_directives;
+      const { activity_directives: activityDirectives } = data;
+      if (activityDirectives != null) {
+        return activityDirectives;
       } else {
         throw Error('Unable to retrieve activities for plan');
       }
@@ -3501,9 +3514,9 @@ const effects = {
           { modelId },
           user,
         );
-        const { activity_types } = data;
-        if (activity_types != null) {
-          return activity_types;
+        const { activity_types: activityTypes } = data;
+        if (activityTypes != null) {
+          return activityTypes;
         } else {
           throw Error('Unable to retrieve activity types');
         }
@@ -3645,24 +3658,24 @@ const effects = {
   },
 
   async getExpansionSequenceId(
-    simulated_activity_id: number,
-    simulation_dataset_id: number,
+    simulatedActivityId: number,
+    simulationDatasetId: number,
     user: User | null,
   ): Promise<string | null> {
     try {
       const data = await reqHasura<SeqId>(
         gql.GET_EXPANSION_SEQUENCE_ID,
         {
-          simulated_activity_id,
-          simulation_dataset_id,
+          simulated_activity_id: simulatedActivityId,
+          simulation_dataset_id: simulationDatasetId,
         },
         user,
       );
       const { expansionSequence } = data;
 
       if (expansionSequence) {
-        const { seq_id } = expansionSequence;
-        return seq_id;
+        const { seq_id: seqId } = expansionSequence;
+        return seqId;
       } else {
         return null;
       }
@@ -3706,7 +3719,7 @@ const effects = {
     }
   },
 
-  async getExternalEventTypes(plan_id: number, user: User | null): Promise<ExternalEventType[]> {
+  async getExternalEventTypes(planId: number, user: User | null): Promise<ExternalEventType[]> {
     try {
       const sourceData = await reqHasura<
         {
@@ -3720,7 +3733,7 @@ const effects = {
             }[];
           };
         }[]
-      >(gql.GET_PLAN_EVENT_TYPES, { plan_id }, user);
+      >(gql.GET_PLAN_EVENT_TYPES, { plan_id: planId }, user);
       const types: ExternalEventType[] = [];
       if (sourceData?.plan_derivation_group !== null) {
         for (const group of sourceData.plan_derivation_group) {
@@ -3766,13 +3779,13 @@ const effects = {
         { derivationGroupName: externalSourceDerivationGroup, sourceKey: externalSourceKey },
         user,
       );
-      const { external_source } = data;
-      if (external_source != null) {
-        const event_types: string[] = [];
-        for (const external_event of external_source[0].external_events) {
-          event_types.push(external_event.external_event_type.name);
+      const { external_source: externalSource } = data;
+      if (externalSource != null) {
+        const eventTypes: string[] = [];
+        for (const externalEvent of externalSource[0].external_events) {
+          eventTypes.push(externalEvent.external_event_type.name);
         }
-        return Array.from(new Set(event_types));
+        return Array.from(new Set(eventTypes));
       } else {
         throw Error('Unable to retrieve external event types for source');
       }
@@ -3832,9 +3845,7 @@ const effects = {
       if (!queryPermissions.GET_UPLOADED_FILENAME(user)) {
         throwPermissionError('get the requested filename');
       }
-      const data = (await reqHasura<[{ name: string }]>(gql.GET_UPLOADED_FILENAME, { id: fileId }, user))[
-        'uploaded_file'
-      ];
+      const data = (await reqHasura<[{ name: string }]>(gql.GET_UPLOADED_FILENAME, { id: fileId }, user)).uploaded_file;
 
       if (data) {
         const { name } = data[0];
@@ -3904,14 +3915,14 @@ const effects = {
         { channelDictionaryId },
         user,
       );
-      const { channel_dictionary } = data;
+      const { channel_dictionary: channelDictionary } = data;
 
-      if (!Array.isArray(channel_dictionary) || !channel_dictionary.length) {
+      if (!Array.isArray(channelDictionary) || !channelDictionary.length) {
         catchError(`Unable to find channel dictionary with id ${channelDictionaryId}`);
         return null;
       } else {
-        const [{ parsed_json }] = channel_dictionary;
-        return parsed_json;
+        const [{ parsed_json: parsedJson }] = channelDictionary;
+        return parsedJson;
       }
     } catch (e) {
       catchError(e as Error);
@@ -3933,14 +3944,14 @@ const effects = {
         { commandDictionaryId },
         user,
       );
-      const { command_dictionary } = data;
+      const { command_dictionary: commandDictionary } = data;
 
-      if (!Array.isArray(command_dictionary) || !command_dictionary.length) {
+      if (!Array.isArray(commandDictionary) || !commandDictionary.length) {
         catchError(`Unable to find command dictionary with id ${commandDictionaryId}`);
         return null;
       } else {
-        const [{ parsed_json }] = command_dictionary;
-        return parsed_json;
+        const [{ parsed_json: parsedJson }] = commandDictionary;
+        return parsedJson;
       }
     } catch (e) {
       catchError(e as Error);
@@ -3962,14 +3973,14 @@ const effects = {
         { parameterDictionaryId },
         user,
       );
-      const { parameter_dictionary } = data;
+      const { parameter_dictionary: parameterDictionary } = data;
 
-      if (!Array.isArray(parameter_dictionary) || !parameter_dictionary.length) {
+      if (!Array.isArray(parameterDictionary) || !parameterDictionary.length) {
         catchError(`Unable to find parameter dictionary with id ${parameterDictionaryId}`);
         return null;
       } else {
-        const [{ parsed_json }] = parameter_dictionary;
-        return parsed_json;
+        const [{ parsed_json: parsedJson }] = parameterDictionary;
+        return parsedJson;
       }
     } catch (e) {
       catchError(e as Error);
@@ -4013,12 +4024,12 @@ const effects = {
   },
 
   async getPlanMergeConflictingActivities(
-    merge_request_id: number,
+    mergeRequestId: number,
     user: User | null,
   ): Promise<PlanMergeConflictingActivity[]> {
     try {
       const query = convertToQuery(gql.SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES);
-      const data = await reqHasura<PlanMergeConflictingActivity[]>(query, { merge_request_id }, user);
+      const data = await reqHasura<PlanMergeConflictingActivity[]>(query, { merge_request_id: mergeRequestId }, user);
       const { conflictingActivities } = data;
       if (conflictingActivities != null) {
         return conflictingActivities;
@@ -4032,14 +4043,14 @@ const effects = {
   },
 
   async getPlanMergeNonConflictingActivities(
-    merge_request_id: number,
+    mergeRequestId: number,
     user: User | null,
   ): Promise<PlanMergeNonConflictingActivity[]> {
     try {
       const data = await reqHasura<PlanMergeNonConflictingActivity[]>(
         gql.GET_PLAN_MERGE_NON_CONFLICTING_ACTIVITIES,
         {
-          merge_request_id,
+          merge_request_id: mergeRequestId,
         },
         user,
       );
@@ -4059,10 +4070,10 @@ const effects = {
     try {
       const query = convertToQuery(gql.SUB_PLAN_MERGE_REQUEST_IN_PROGRESS);
       const data = await reqHasura<PlanMergeRequestSchema[]>(query, { planId }, user);
-      const { merge_requests } = data;
-      if (merge_requests != null) {
-        const [merge_request] = merge_requests; // Query uses 'limit: 1' so merge_requests.length === 1.
-        return merge_request;
+      const { merge_requests: mergeRequests } = data;
+      if (mergeRequests != null) {
+        const [mergeRequest] = mergeRequests; // Query uses 'limit: 1' so merge_requests.length === 1.
+        return mergeRequest;
       } else {
         throw Error('Unable to get merge requests in progress');
       }
@@ -4102,7 +4113,7 @@ const effects = {
       const { plan_snapshot_activity_directives: planSnapshotActivityDirectives } = data;
 
       if (planSnapshotActivityDirectives) {
-        return planSnapshotActivityDirectives.map(({ snapshot_id: _snapshot_id, ...planSnapshotActivityDirective }) => {
+        return planSnapshotActivityDirectives.map(({ snapshot_id: _snapshotId, ...planSnapshotActivityDirective }) => {
           return {
             plan_id: snapshot.plan_id,
             ...planSnapshotActivityDirective,
@@ -4164,12 +4175,12 @@ const effects = {
     return reqHasura<Profile[]>(gql.GET_PROFILE, { datasetId, name }, user, signal);
   },
 
-  async getResourceTypes(model_id: number, user: User | null, limit: number | null = null): Promise<ResourceType[]> {
+  async getResourceTypes(modelId: number, user: User | null, limit: number | null = null): Promise<ResourceType[]> {
     try {
-      const data = await reqHasura<ResourceType[]>(gql.GET_RESOURCE_TYPES, { limit, model_id }, user);
-      const { resource_types } = data;
-      if (resource_types != null) {
-        return resource_types;
+      const data = await reqHasura<ResourceType[]>(gql.GET_RESOURCE_TYPES, { limit, model_id: modelId }, user);
+      const { resource_types: resourceTypes } = data;
+      if (resourceTypes != null) {
+        return resourceTypes;
       } else {
         throw Error('Unable to retrieve resource types');
       }
@@ -4204,16 +4215,16 @@ const effects = {
         user,
         signal,
       );
-      const { plan_dataset: plan_datasets } = data;
-      if (plan_datasets != null) {
+      const { plan_dataset: planDatasets } = data;
+      if (planDatasets != null) {
         let resources: Resource[] = [];
 
         const profileMap: Set<string> = new Set();
-        plan_datasets.sort(({ dataset_id: datasetIdA }, { dataset_id: datasetIdB }) => {
+        planDatasets.sort(({ dataset_id: datasetIdA }, { dataset_id: datasetIdB }) => {
           return compare(datasetIdA, datasetIdB, false);
         });
 
-        for (const dataset of plan_datasets) {
+        for (const dataset of planDatasets) {
           const {
             dataset: { profiles },
             offset_from_plan_start,
@@ -4316,20 +4327,20 @@ const effects = {
   },
 
   async getSchedulingSpecConditionsForCondition(
-    condition_id: number | null,
+    conditionId: number | null,
     user: User | null,
   ): Promise<SchedulingConditionPlanSpecification[] | null> {
-    if (condition_id !== null) {
+    if (conditionId !== null) {
       try {
         const data = await reqHasura<SchedulingConditionPlanSpecification[]>(
           gql.GET_SCHEDULING_SPEC_CONDITIONS_FOR_CONDITION,
           {
-            condition_id,
+            condition_id: conditionId,
           },
           user,
         );
-        const { scheduling_specification_conditions } = data;
-        return scheduling_specification_conditions;
+        const { scheduling_specification_conditions: schedulingSpecificationConditions } = data;
+        return schedulingSpecificationConditions;
       } catch (e) {
         catchError(e as Error);
         return null;
@@ -4340,18 +4351,18 @@ const effects = {
   },
 
   async getSchedulingSpecGoalsForGoal(
-    goal_id: number | null,
+    goalId: number | null,
     user: User | null,
   ): Promise<SchedulingGoalPlanSpecification[] | null> {
-    if (goal_id !== null) {
+    if (goalId !== null) {
       try {
         const data = await reqHasura<SchedulingGoalPlanSpecification[]>(
           gql.GET_SCHEDULING_SPEC_GOALS_FOR_GOAL,
-          { goal_id },
+          { goal_id: goalId },
           user,
         );
-        const { scheduling_specification_goals } = data;
-        return scheduling_specification_goals;
+        const { scheduling_specification_goals: schedulingSpecificationGoals } = data;
+        return schedulingSpecificationGoals;
       } catch (e) {
         catchError(e as Error);
         return null;
@@ -4361,17 +4372,17 @@ const effects = {
     }
   },
 
-  async getSequenceAdaptation(sequence_adaptation_id: number, user: User | null): Promise<SequenceAdaptation | null> {
+  async getSequenceAdaptation(sequenceAdaptationId: number, user: User | null): Promise<SequenceAdaptation | null> {
     try {
       const data = await reqHasura<[sequence_adaptation: SequenceAdaptation]>(
         gql.GET_SEQUENCE_ADAPTATION,
-        { sequence_adaptation_id },
+        { sequence_adaptation_id: sequenceAdaptationId },
         user,
       );
-      const { sequence_adaptation } = data;
+      const { sequence_adaptation: sequenceAdaptation } = data;
 
-      if (sequence_adaptation && sequence_adaptation.length > 0) {
-        return sequence_adaptation[0];
+      if (sequenceAdaptation && sequenceAdaptation.length > 0) {
+        return sequenceAdaptation[0];
       }
     } catch (e) {
       catchError(e as Error);
@@ -4495,10 +4506,14 @@ const effects = {
     }
   },
 
-  async getTsFilesConstraints(model_id: number, user: User | null): Promise<TypeScriptFile[]> {
-    if (model_id !== null && model_id !== undefined) {
+  async getTsFilesConstraints(modelId: number, user: User | null): Promise<TypeScriptFile[]> {
+    if (modelId !== null && modelId !== undefined) {
       try {
-        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_CONSTRAINTS, { model_id }, user);
+        const data = await reqHasura<DslTypeScriptResponse>(
+          gql.GET_TYPESCRIPT_CONSTRAINTS,
+          { model_id: modelId },
+          user,
+        );
         const { dslTypeScriptResponse } = data;
         if (dslTypeScriptResponse != null) {
           const { reason, status, typescriptFiles } = dslTypeScriptResponse;
@@ -4521,10 +4536,10 @@ const effects = {
     }
   },
 
-  async getTsFilesScheduling(model_id: number | null | undefined, user: User | null): Promise<TypeScriptFile[]> {
-    if (model_id !== null && model_id !== undefined) {
+  async getTsFilesScheduling(modelId: number | null | undefined, user: User | null): Promise<TypeScriptFile[]> {
+    if (modelId !== null && modelId !== undefined) {
       try {
-        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_SCHEDULING, { model_id }, user);
+        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_SCHEDULING, { model_id: modelId }, user);
         const { dslTypeScriptResponse } = data;
         if (dslTypeScriptResponse != null) {
           const { reason, status, typescriptFiles } = dslTypeScriptResponse;
@@ -4728,7 +4743,7 @@ const effects = {
         throwPermissionError('import a plan');
       }
 
-      creatingPlan.set(true);
+      creatingPlanStore.set(true);
 
       const file: File = files[0];
 
@@ -4747,7 +4762,7 @@ const effects = {
 
       const createdPlan = await reqGateway<PlanSlim | null>('/importPlan', 'POST', body, user, true);
 
-      creatingPlan.set(false);
+      creatingPlanStore.set(false);
       if (createdPlan != null) {
         return createdPlan;
       }
@@ -4755,16 +4770,16 @@ const effects = {
       return null;
     } catch (e) {
       catchError(e as Error);
-      creatingPlan.set(false);
+      creatingPlanStore.set(false);
       return null;
     }
   },
 
   async initialSimulationUpdate(
-    plan_id: number,
-    simulation_template_id: number | null = null,
-    simulation_start_time: string | null = null,
-    simulation_end_time: string | null = null,
+    planId: number,
+    simulationTemplateId: number | null = null,
+    simulationStartTime: string | null = null,
+    simulationEndTime: string | null = null,
     user: User | null,
   ): Promise<boolean> {
     try {
@@ -4774,13 +4789,13 @@ const effects = {
 
       const simulationInput: SimulationInitialUpdateInput = {
         arguments: {} as ArgumentsMap,
-        simulation_end_time,
-        simulation_start_time,
-        simulation_template_id,
+        simulation_end_time: simulationEndTime,
+        simulation_start_time: simulationStartTime,
+        simulation_template_id: simulationTemplateId,
       };
       const data = await reqHasura<{ returning: { id: number }[] }>(
         gql.INITIAL_SIMULATION_UPDATE,
-        { plan_id: plan_id, simulation: simulationInput },
+        { plan_id: planId, simulation: simulationInput },
         user,
       );
       if (data.update_simulation != null) {
@@ -4800,7 +4815,7 @@ const effects = {
         throwPermissionError('add a derivation group to the plan');
       }
 
-      derivationGroupPlanLinkError.set(null);
+      derivationGroupPlanLinkErrorStore.set(null);
       if (plan !== null) {
         const data = await reqHasura<PlanDerivationGroup>(
           gql.CREATE_PLAN_DERIVATION_GROUP,
@@ -4823,14 +4838,14 @@ const effects = {
     } catch (e) {
       catchError('Derivation Group Linking Failed', e as Error);
       showFailureToast('Derivation Group Linking Failed');
-      derivationGroupPlanLinkError.set((e as Error).message);
+      derivationGroupPlanLinkErrorStore.set((e as Error).message);
     }
   },
 
   async insertExpansionSequenceToActivity(
-    simulation_dataset_id: number,
-    simulated_activity_id: number,
-    seq_id: string,
+    simulationDatasetId: number,
+    simulatedActivityId: number,
+    seqId: string,
     user: User | null,
   ): Promise<string | null> {
     try {
@@ -4838,14 +4853,18 @@ const effects = {
         throwPermissionError('add an expansion sequence to an activity');
       }
 
-      const input: ExpansionSequenceToActivityInsertInput = { seq_id, simulated_activity_id, simulation_dataset_id };
+      const input: ExpansionSequenceToActivityInsertInput = {
+        seq_id: seqId,
+        simulated_activity_id: simulatedActivityId,
+        simulation_dataset_id: simulationDatasetId,
+      };
       const data = await reqHasura<{ seq_id: string }>(gql.INSERT_EXPANSION_SEQUENCE_TO_ACTIVITY, { input }, user);
       const { sequence } = data;
 
       if (sequence != null) {
         showSuccessToast('Expansion Sequence Added To Activity Successfully');
-        const { seq_id } = sequence;
-        return seq_id;
+        const { seq_id: newSeqId } = sequence;
+        return newSeqId;
       } else {
         return null;
       }
@@ -4976,7 +4995,7 @@ const effects = {
   },
 
   async planMergeBegin(
-    merge_request_id: number,
+    mergeRequestId: number,
     sourcePlan: PlanForMerging | undefined,
     targetPlan: PlanForMerging,
     user: User | null,
@@ -4986,7 +5005,11 @@ const effects = {
         throwPermissionError('begin a merge');
       }
 
-      const data = await reqHasura<{ merge_request_id: number }>(gql.PLAN_MERGE_BEGIN, { merge_request_id }, user);
+      const data = await reqHasura<{ merge_request_id: number }>(
+        gql.PLAN_MERGE_BEGIN,
+        { merge_request_id: mergeRequestId },
+        user,
+      );
       if (data.begin_merge != null) {
         return true;
       } else {
@@ -5000,7 +5023,7 @@ const effects = {
   },
 
   async planMergeCancel(
-    merge_request_id: number,
+    mergeRequestId: number,
     sourcePlan: PlanForMerging | undefined,
     targetPlan: PlanForMerging,
     user: User | null,
@@ -5010,7 +5033,11 @@ const effects = {
         throwPermissionError('cancel this merge request');
       }
 
-      const data = await reqHasura<{ merge_request_id: number }>(gql.PLAN_MERGE_CANCEL, { merge_request_id }, user);
+      const data = await reqHasura<{ merge_request_id: number }>(
+        gql.PLAN_MERGE_CANCEL,
+        { merge_request_id: mergeRequestId },
+        user,
+      );
       if (data.cancel_merge != null) {
         showSuccessToast('Canceled Merge Request');
         return true;
@@ -5025,7 +5052,7 @@ const effects = {
   },
 
   async planMergeCommit(
-    merge_request_id: number,
+    mergeRequestId: number,
     sourcePlan: PlanForMerging | undefined,
     targetPlan: PlanForMerging,
     user: User | null,
@@ -5035,7 +5062,11 @@ const effects = {
         throwPermissionError('approve this merge request');
       }
 
-      const data = await reqHasura<{ merge_request_id: number }>(gql.PLAN_MERGE_COMMIT, { merge_request_id }, user);
+      const data = await reqHasura<{ merge_request_id: number }>(
+        gql.PLAN_MERGE_COMMIT,
+        { merge_request_id: mergeRequestId },
+        user,
+      );
       if (data.commit_merge != null) {
         showSuccessToast('Approved Merge Request Changes');
         return true;
@@ -5050,7 +5081,7 @@ const effects = {
   },
 
   async planMergeDeny(
-    merge_request_id: number,
+    mergeRequestId: number,
     sourcePlan: PlanForMerging | undefined,
     targetPlan: PlanForMerging,
     user: User | null,
@@ -5060,7 +5091,11 @@ const effects = {
         throwPermissionError('deny this merge request');
       }
 
-      const data = await reqHasura<{ merge_request_id: number }>(gql.PLAN_MERGE_DENY, { merge_request_id }, user);
+      const data = await reqHasura<{ merge_request_id: number }>(
+        gql.PLAN_MERGE_DENY,
+        { merge_request_id: mergeRequestId },
+        user,
+      );
       if (data.deny_merge != null) {
         showSuccessToast('Denied Merge Request Changes');
         return true;
@@ -5075,7 +5110,7 @@ const effects = {
   },
 
   async planMergeRequestWithdraw(
-    merge_request_id: number,
+    mergeRequestId: number,
     sourcePlan: PlanForMerging,
     targetPlan: PlanForMerging | undefined,
     user: User | null,
@@ -5087,7 +5122,7 @@ const effects = {
 
       const data = await reqHasura<{ merge_request_id: number }>(
         gql.PLAN_MERGE_REQUEST_WITHDRAW,
-        { merge_request_id },
+        { merge_request_id: mergeRequestId },
         user,
       );
       if (data.withdraw_merge_request != null) {
@@ -5104,7 +5139,7 @@ const effects = {
   },
 
   async planMergeResolveAllConflicts(
-    merge_request_id: number,
+    mergeRequestId: number,
     resolution: PlanMergeResolution,
     sourcePlan: PlanForMerging | undefined,
     targetPlan: PlanForMerging,
@@ -5115,7 +5150,11 @@ const effects = {
         throwPermissionError('resolve merge request conflicts');
       }
 
-      const data = await reqHasura(gql.PLAN_MERGE_RESOLVE_ALL_CONFLICTS, { merge_request_id, resolution }, user);
+      const data = await reqHasura(
+        gql.PLAN_MERGE_RESOLVE_ALL_CONFLICTS,
+        { merge_request_id: mergeRequestId, resolution },
+        user,
+      );
       if (data.set_resolution_bulk == null) {
         throw Error('Unable to resolve all merge request conflicts');
       }
@@ -5126,8 +5165,8 @@ const effects = {
   },
 
   async planMergeResolveConflict(
-    merge_request_id: number,
-    activity_id: ActivityDirectiveId,
+    mergeRequestId: number,
+    activityId: ActivityDirectiveId,
     resolution: PlanMergeResolution,
     sourcePlan: PlanForMerging | undefined,
     targetPlan: PlanForMerging,
@@ -5140,7 +5179,7 @@ const effects = {
 
       const data = await reqHasura(
         gql.PLAN_MERGE_RESOLVE_CONFLICT,
-        { activity_id, merge_request_id, resolution },
+        { activity_id: activityId, merge_request_id: mergeRequestId, resolution },
         user,
       );
       if (data.set_resolution == null) {
@@ -5154,8 +5193,8 @@ const effects = {
 
   async removePresetFromActivityDirective(
     plan: Plan,
-    activity_directive_id: ActivityDirectiveId,
-    preset_id: ActivityPresetId,
+    activityDirectiveId: ActivityDirectiveId,
+    presetId: ActivityPresetId,
     user: User | null,
   ): Promise<boolean> {
     try {
@@ -5165,7 +5204,7 @@ const effects = {
 
       const data = await reqHasura<{ preset_id: number }>(
         gql.DELETE_PRESET_TO_DIRECTIVE,
-        { activity_directive_id, plan_id: plan.id, preset_id },
+        { activity_directive_id: activityDirectiveId, plan_id: plan.id, preset_id: presetId },
         user,
       );
       if (data.delete_preset_to_directive_by_pk != null) {
@@ -5173,7 +5212,7 @@ const effects = {
         return true;
       } else {
         throw Error(
-          `Unable to remove activity preset with ID: "${preset_id}" from directive with ID: "${activity_directive_id}"`,
+          `Unable to remove activity preset with ID: "${presetId}" from directive with ID: "${activityDirectiveId}"`,
         );
       }
     } catch (e) {
@@ -5221,15 +5260,15 @@ const effects = {
 
       const { confirm, value } = await showRestorePlanSnapshotModal(
         snapshot,
-        (get(activityDirectivesDB) || []).length,
+        (get(activityDirectivesDBStore) || []).length,
         user,
       );
 
       if (confirm) {
         if (value && value.shouldCreateSnapshot) {
-          const { description, name, snapshot, tags } = value;
+          const { description, name, snapshot: restoredSnapshot, tags } = value;
 
-          await effects.createPlanSnapshotHelper(snapshot.plan_id, name, description, tags, user);
+          await effects.createPlanSnapshotHelper(restoredSnapshot.plan_id, name, description, tags, user);
         }
 
         const data = await reqHasura(
@@ -5272,17 +5311,17 @@ const effects = {
       const data = await reqGateway('/modelExtraction', 'POST', JSON.stringify({ missionModelId: id }), user, false);
       if (data != null) {
         const {
-          response: { activity_types, model_parameters, resource_types },
+          response: { activity_types: activityTypes, model_parameters: modelParameters, resource_types: resourceTypes },
         } = data;
 
-        if (activity_types.error) {
-          throw Error(activity_types.error);
+        if (activityTypes.error) {
+          throw Error(activityTypes.error);
         }
-        if (model_parameters.error) {
-          throw Error(model_parameters.error);
+        if (modelParameters.error) {
+          throw Error(modelParameters.error);
         }
-        if (resource_types.error) {
-          throw Error(resource_types.error);
+        if (resourceTypes.error) {
+          throw Error(resourceTypes.error);
         }
 
         showSuccessToast('Model Extraction Retriggered Successfully');
@@ -5297,21 +5336,26 @@ const effects = {
     return null;
   },
 
-  async schedule(analysis_only: boolean = false, plan: Plan | null, user: User | null): Promise<void> {
+  async schedule(analysisOnly: boolean = false, plan: Plan | null, user: User | null): Promise<void> {
     try {
       if (plan) {
         if (
           !queryPermissions.UPDATE_SCHEDULING_SPECIFICATION(user, plan) ||
           !queryPermissions.SCHEDULE(user, plan, plan.model)
         ) {
-          throwPermissionError(`run ${analysis_only ? 'scheduling analysis' : 'scheduling'}`);
+          throwPermissionError(`run ${analysisOnly ? 'scheduling analysis' : 'scheduling'}`);
         }
 
-        const specificationId = get(selectedSpecId);
+        const specificationId = get(selectedSpecIdStore);
         if (plan !== null && specificationId !== null) {
-          const plan_revision = await effects.getPlanRevision(plan.id, user);
-          if (plan_revision !== null) {
-            await effects.updateSchedulingSpec(specificationId, { analysis_only, plan_revision }, plan, user);
+          const planRevision = await effects.getPlanRevision(plan.id, user);
+          if (planRevision !== null) {
+            await effects.updateSchedulingSpec(
+              specificationId,
+              { analysis_only: analysisOnly, plan_revision: planRevision },
+              plan,
+              user,
+            );
           } else {
             throw Error(`Plan revision for plan ${plan.id} was not found.`);
           }
@@ -5322,11 +5366,11 @@ const effects = {
             const { reason, analysisId } = schedule;
             if (reason) {
               catchSchedulingError(reason);
-              showFailureToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Failed`);
+              showFailureToast(`Scheduling ${analysisOnly ? 'Analysis ' : ''}Failed`);
               return;
             }
 
-            const unsubscribe = schedulingRequests.subscribe(async (requests: SchedulingRequest[]) => {
+            const unsubscribe = schedulingRequestsStore.subscribe(async (requests: SchedulingRequest[]) => {
               const matchingRequest = requests.find(request => request.analysis_id === analysisId);
               if (matchingRequest) {
                 if (matchingRequest.canceled) {
@@ -5335,7 +5379,7 @@ const effects = {
                   // If a new simulation was run during scheduling, the response will include a datasetId
                   // which will need to be cross referenced with a simulation_dataset.id so we
                   // can load that new simulation. Load the associated sim dataset if it is not already loaded
-                  const currentSimulationDataset = get(simulationDataset);
+                  const currentSimulationDataset = get(simulationDatasetStore);
                   if (
                     typeof matchingRequest.dataset_id === 'number' &&
                     (!currentSimulationDataset || matchingRequest.dataset_id !== currentSimulationDataset.dataset_id)
@@ -5345,24 +5389,24 @@ const effects = {
                       { datasetId: matchingRequest.dataset_id },
                       user,
                     );
-                    const { simulation_dataset } = simDatasetIdData;
+                    const { simulation_dataset: simulationDataset } = simDatasetIdData;
                     // the request above will return either 0 or 1 element
-                    if (Array.isArray(simulation_dataset) && simulation_dataset.length > 0) {
-                      simulationDatasetId.set(simulation_dataset[0].id);
+                    if (Array.isArray(simulationDataset) && simulationDataset.length > 0) {
+                      simulationDatasetIdStore.set(simulationDataset[0].id);
                     }
                   }
-                  showSuccessToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Complete`);
+                  showSuccessToast(`Scheduling ${analysisOnly ? 'Analysis ' : ''}Complete`);
                   unsubscribe();
                 } else if (matchingRequest.status === 'failed') {
                   if (matchingRequest.reason) {
                     catchSchedulingError(matchingRequest.reason);
                   }
-                  showFailureToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Failed`);
+                  showFailureToast(`Scheduling ${analysisOnly ? 'Analysis ' : ''}Failed`);
                   unsubscribe();
                 }
               }
             });
-            const planIdUnsubscribe = planId.subscribe(currentPlanId => {
+            const planIdUnsubscribe = planIdStore.subscribe(currentPlanId => {
               if (currentPlanId < 0 || currentPlanId !== plan.id) {
                 unsubscribe();
                 planIdUnsubscribe();
@@ -5404,7 +5448,7 @@ const effects = {
         const { simulate } = data;
         if (simulate != null) {
           const { simulationDatasetId: newSimulationDatasetId } = simulate;
-          simulationDatasetId.set(newSimulationDatasetId);
+          simulationDatasetIdStore.set(newSimulationDatasetId);
         } else {
           throw Error('Unable to simulate this plan');
         }
@@ -5475,7 +5519,7 @@ const effects = {
 
       if (data.update_activity_directive_by_pk) {
         const { update_activity_directive_by_pk: updatedDirective } = data;
-        activityDirectivesDB.updateValue(directives => {
+        activityDirectivesDBStore.updateValue(directives => {
           return (directives || []).map(directive => {
             if (directive.id === id) {
               return updatedDirective;
@@ -5500,7 +5544,7 @@ const effects = {
       }
 
       const { id, ...restOfPresetPayload } = updatedActivityPreset;
-      const { update_activity_presets_by_pk } = await reqHasura<ActivityPreset>(
+      const { update_activity_presets_by_pk: updateActivityPresetsByPk } = await reqHasura<ActivityPreset>(
         gql.UPDATE_ACTIVITY_PRESET,
         {
           activityPresetSetInput: restOfPresetPayload,
@@ -5509,8 +5553,8 @@ const effects = {
         user,
       );
 
-      if (update_activity_presets_by_pk != null) {
-        const { name: presetName } = update_activity_presets_by_pk;
+      if (updateActivityPresetsByPk != null) {
+        const { name: presetName } = updateActivityPresetsByPk;
         showSuccessToast(`Activity Preset ${presetName} Updated Successfully`);
       } else {
         throw Error(`Unable to update activity preset with ID: "${id}"`);
@@ -5541,11 +5585,11 @@ const effects = {
       );
       const { deleteConstraintDefinitionTags, insertConstraintDefinitionTags } = data;
       if (insertConstraintDefinitionTags != null && deleteConstraintDefinitionTags != null) {
-        const { affected_rows } = insertConstraintDefinitionTags;
+        const { affected_rows: affectedRows } = insertConstraintDefinitionTags;
 
         showSuccessToast('Constraint Updated Successfully');
 
-        return affected_rows;
+        return affectedRows;
       } else {
         throw Error('Unable to create constraint definition tags');
       }
@@ -5675,7 +5719,7 @@ const effects = {
     }
   },
 
-  async updateDerivationGroupAcknowledged(plan: Plan | undefined, derivation_group_name: string, user: User | null) {
+  async updateDerivationGroupAcknowledged(plan: Plan | undefined, derivationGroupName: string, user: User | null) {
     if (plan === undefined) {
       return;
     }
@@ -5685,7 +5729,7 @@ const effects = {
       }
       const { updatePlanDerivationGroup: update } = await reqHasura(
         gql.UPDATE_DERIVATION_GROUP_ACKNOWLEDGED,
-        { acknowledged: true, derivation_group_name, plan_id: plan.id },
+        { acknowledged: true, derivation_group_name: derivationGroupName, plan_id: plan.id },
         user,
       );
       if (update) {
@@ -5700,8 +5744,8 @@ const effects = {
 
   async updateExpansionRule(id: number, rule: ExpansionRuleSetInput, user: User | null): Promise<string | null> {
     try {
-      savingExpansionRule.set(true);
-      createExpansionRuleError.set(null);
+      savingExpansionRuleStore.set(true);
+      createExpansionRuleErrorStore.set(null);
 
       if (!queryPermissions.UPDATE_EXPANSION_RULE(user, rule)) {
         throwPermissionError('update this expansion rule');
@@ -5710,18 +5754,18 @@ const effects = {
       const data = await reqHasura(gql.UPDATE_EXPANSION_RULE, { id, rule }, user);
       const { updateExpansionRule } = data;
       if (updateExpansionRule != null) {
-        const { updated_at } = updateExpansionRule;
+        const { updated_at: updatedAt } = updateExpansionRule;
         showSuccessToast('Expansion Rule Updated Successfully');
-        savingExpansionRule.set(false);
-        return updated_at;
+        savingExpansionRuleStore.set(false);
+        return updatedAt;
       } else {
         throw Error(`Unable to update expansion rule with ID: "${id}"`);
       }
     } catch (e) {
       catchError('Expansion Rule Update Failed', e as Error);
       showFailureToast('Expansion Rule Update Failed');
-      savingExpansionRule.set(false);
-      createExpansionRuleError.set((e as Error).message);
+      savingExpansionRuleStore.set(false);
+      createExpansionRuleErrorStore.set((e as Error).message);
       return null;
     }
   },
@@ -5846,11 +5890,11 @@ const effects = {
       );
       const { deleteSchedulingConditionDefinitionTags, insertSchedulingConditionDefinitionTags } = data;
       if (insertSchedulingConditionDefinitionTags != null && deleteSchedulingConditionDefinitionTags != null) {
-        const { affected_rows } = insertSchedulingConditionDefinitionTags;
+        const { affected_rows: affectedRows } = insertSchedulingConditionDefinitionTags;
 
         showSuccessToast('Scheduling Condition Updated Successfully');
 
-        return affected_rows;
+        return affectedRows;
       } else {
         throw Error('Unable to create scheduling condition definition tags');
       }
@@ -6008,11 +6052,11 @@ const effects = {
       );
       const { deleteSchedulingGoalDefinitionTags, insertSchedulingGoalDefinitionTags } = data;
       if (insertSchedulingGoalDefinitionTags != null && deleteSchedulingGoalDefinitionTags != null) {
-        const { affected_rows } = insertSchedulingGoalDefinitionTags;
+        const { affected_rows: affectedRows } = insertSchedulingGoalDefinitionTags;
 
         showSuccessToast('Scheduling Goal Updated Successfully');
 
-        return affected_rows;
+        return affectedRows;
       } else {
         throw Error('Unable to create scheduling condition definition tags');
       }
@@ -6261,7 +6305,7 @@ const effects = {
         ...(partialSimulationTemplate.model_id && { model_id: partialSimulationTemplate.model_id }),
       };
 
-      const { update_simulation_template_by_pk } = await reqHasura<SimulationTemplate>(
+      const { update_simulation_template_by_pk: updateSimulationTemplateByPk } = await reqHasura<SimulationTemplate>(
         gql.UPDATE_SIMULATION_TEMPLATE,
         {
           id,
@@ -6270,8 +6314,8 @@ const effects = {
         user,
       );
 
-      if (update_simulation_template_by_pk != null) {
-        const { description: templateDescription } = update_simulation_template_by_pk;
+      if (updateSimulationTemplateByPk != null) {
+        const { description: templateDescription } = updateSimulationTemplateByPk;
         showSuccessToast(`Simulation Template ${templateDescription} Updated Successfully`);
       } else {
         throw Error(`Unable to update simulation template with ID: "${id}"`);
@@ -6289,7 +6333,7 @@ const effects = {
     notify: boolean = true,
   ): Promise<Tag | null> {
     try {
-      createTagError.set(null);
+      createTagErrorStore.set(null);
       if (!queryPermissions.UPDATE_TAG(user, tagSetInput)) {
         throwPermissionError('update tag');
       }
@@ -6298,10 +6342,10 @@ const effects = {
       if (notify) {
         showSuccessToast('Tag Updated Successfully');
       }
-      createTagError.set(null);
+      createTagErrorStore.set(null);
       return updatedTag;
     } catch (e) {
-      createTagError.set((e as Error).message);
+      createTagErrorStore.set((e as Error).message);
       catchError('Update Tags Failed', e as Error);
       showFailureToast('Update Tags Failed');
       return null;
@@ -6326,9 +6370,9 @@ const effects = {
       );
       const { updateUserSequence } = data;
       if (updateUserSequence != null) {
-        const { updated_at } = updateUserSequence;
+        const { updated_at: updatedAt } = updateUserSequence;
         showSuccessToast('User Sequence Updated Successfully');
-        return updated_at;
+        return updatedAt;
       } else {
         throw Error(`Unable to update user sequence with ID: "${id}"`);
       }
@@ -6492,11 +6536,9 @@ const effects = {
       const generatedFilenames: Record<string, string> = {};
       for (const newFile of files) {
         const id = originalFilenameToId[newFile.name];
-        const response = (await reqHasura<[{ name: string }]>(gql.GET_UPLOADED_FILENAME, { id }, user))[
-          'uploaded_file'
-        ];
+        const response = (await reqHasura<[{ name: string }]>(gql.GET_UPLOADED_FILENAME, { id }, user)).uploaded_file;
         if (response !== null) {
-          generatedFilenames[newFile.name] = `${env.PUBLIC_AERIE_FILE_STORE_PREFIX}${response[0]['name']}`;
+          generatedFilenames[newFile.name] = `${env.PUBLIC_AERIE_FILE_STORE_PREFIX}${response[0].name}`;
         }
       }
 
@@ -6522,7 +6564,7 @@ const effects = {
         const { newView } = data;
 
         if (newView != null) {
-          view.update(() => newView);
+          viewStore.update(() => newView);
           setQueryParam(SearchParameters.VIEW_ID, `${newView.id}`);
           return true;
         } else {

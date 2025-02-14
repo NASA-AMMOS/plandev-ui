@@ -18,15 +18,15 @@ import { logError } from './logger';
  * Return a default argument for a given argument definition.
  */
 export function fswCommandArgDefault(fswCommandArg: FswCommandArgument, enumMap: EnumMap): string {
-  const { arg_type } = fswCommandArg;
+  const { arg_type: argType } = fswCommandArg;
 
-  switch (arg_type) {
+  switch (argType) {
     case 'boolean': {
       const booleanArg = fswCommandArg as FswCommandArgumentBoolean;
-      const { default_value } = booleanArg;
+      const { default_value: defaultValue } = booleanArg;
 
-      if (default_value !== null) {
-        return default_value.toLowerCase();
+      if (defaultValue !== null) {
+        return defaultValue.toLowerCase();
       } else {
         return 'false';
       }
@@ -42,10 +42,10 @@ export function fswCommandArgDefault(fswCommandArg: FswCommandArgument, enumMap:
       return '""';
     case 'float': {
       const floatArg = fswCommandArg as FswCommandArgumentFloat;
-      const { default_value, range } = floatArg;
+      const { default_value: defaultValue, range } = floatArg;
 
-      if (default_value !== null) {
-        return `${default_value}`;
+      if (defaultValue !== null) {
+        return `${defaultValue}`;
       } else if (range !== null) {
         const { min } = range;
         return `${min}`;
@@ -55,10 +55,10 @@ export function fswCommandArgDefault(fswCommandArg: FswCommandArgument, enumMap:
     }
     case 'integer': {
       const intArg = fswCommandArg as FswCommandArgumentInteger;
-      const { default_value, range } = intArg;
+      const { default_value: defaultValue, range } = intArg;
 
-      if (default_value !== null) {
-        return `${default_value}`;
+      if (defaultValue !== null) {
+        return `${defaultValue}`;
       } else if (range !== null) {
         const { min } = range;
         return `${min}`;
@@ -68,10 +68,10 @@ export function fswCommandArgDefault(fswCommandArg: FswCommandArgument, enumMap:
     }
     case 'numeric': {
       const numericArg = fswCommandArg as FswCommandArgumentNumeric;
-      const { default_value, range } = numericArg;
+      const { default_value: defaultValue, range } = numericArg;
 
-      if (default_value !== null) {
-        return `${default_value}`;
+      if (defaultValue !== null) {
+        return `${defaultValue}`;
       } else if (range !== null) {
         const { min } = range;
         return `${min}`;
@@ -120,10 +120,10 @@ export function fswCommandArgDefault(fswCommandArg: FswCommandArgument, enumMap:
       return '0';
     case 'unsigned': {
       const numericArg = fswCommandArg as FswCommandArgumentUnsigned;
-      const { default_value, range } = numericArg;
+      const { default_value: defaultValue, range } = numericArg;
 
-      if (default_value !== null) {
-        return `${default_value}`;
+      if (defaultValue !== null) {
+        return `${defaultValue}`;
       } else if (range !== null) {
         const { min } = range;
         return `${min}`;
@@ -133,10 +133,10 @@ export function fswCommandArgDefault(fswCommandArg: FswCommandArgument, enumMap:
     }
     case 'var_string': {
       const varStringArg = fswCommandArg as FswCommandArgumentVarString;
-      const { default_value } = varStringArg;
+      const { default_value: defaultValue } = varStringArg;
 
-      if (default_value) {
-        return default_value;
+      if (defaultValue) {
+        return defaultValue;
       } else {
         return '""';
       }

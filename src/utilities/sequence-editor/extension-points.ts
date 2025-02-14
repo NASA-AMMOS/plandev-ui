@@ -84,15 +84,15 @@ export function inputLinter(
   librarySequences: LibrarySequence[] = [],
 ): Extension {
   return linter(view => {
-    const inputLinter = get(sequenceAdaptation).inputFormat.linter;
+    const inputFormatLinter = get(sequenceAdaptation).inputFormat.linter;
     const tree = syntaxTree(view.state);
     const treeNode = tree.topNode;
     let diagnostics: Diagnostic[];
 
     diagnostics = sequenceLinter(view, channelDictionary, commandDictionary, parameterDictionaries, librarySequences);
 
-    if (inputLinter !== undefined && commandDictionary !== null) {
-      diagnostics = inputLinter(diagnostics, commandDictionary, view, treeNode);
+    if (inputFormatLinter !== undefined && commandDictionary !== null) {
+      diagnostics = inputFormatLinter(diagnostics, commandDictionary, view, treeNode);
     }
 
     return diagnostics;
@@ -106,13 +106,13 @@ export function outputLinter(
   return linter(view => {
     const tree = syntaxTree(view.state);
     const treeNode = tree.topNode;
-    const outputLinter = outputFormat?.linter;
+    const outputFormatLinter = outputFormat?.linter;
     let diagnostics: Diagnostic[];
 
     diagnostics = seqJsonLinter(view, commandDictionary);
 
-    if (outputLinter !== undefined && commandDictionary !== null) {
-      diagnostics = outputLinter(diagnostics, commandDictionary, view, treeNode);
+    if (outputFormatLinter !== undefined && commandDictionary !== null) {
+      diagnostics = outputFormatLinter(diagnostics, commandDictionary, view, treeNode);
     }
 
     return diagnostics;

@@ -153,8 +153,8 @@ export function sequenceLinter(
       ),
     );
     diagnostics.push(
-      ...validateActivateLoad(commandsNode.getChildren(TOKEN_ACTIVATE), 'Activate', docText, librarySequences),
-      ...validateActivateLoad(commandsNode.getChildren(TOKEN_LOAD), 'Load', docText, librarySequences),
+      ...validateActivateLoad(commandsNode.getChildren(TOKEN_ACTIVATE), docText, librarySequences),
+      ...validateActivateLoad(commandsNode.getChildren(TOKEN_LOAD), docText, librarySequences),
     );
   }
 
@@ -183,9 +183,7 @@ export function sequenceLinter(
     ),
   );
 
-  diagnostics.push(
-    ...conditionalAndLoopKeywordsLinter(treeNode.getChild('Commands')?.getChildren(TOKEN_COMMAND) ?? [], view.state),
-  );
+  diagnostics.push(...conditionalAndLoopKeywordsLinter(view.state));
 
   return diagnostics;
 }
@@ -215,7 +213,7 @@ function validateParserErrors(tree: Tree) {
   return diagnostics;
 }
 
-function conditionalAndLoopKeywordsLinter(commandNodes: SyntaxNode[], state: EditorState): Diagnostic[] {
+function conditionalAndLoopKeywordsLinter(state: EditorState): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
   const blocks = computeBlocks(state);
 
@@ -372,10 +370,10 @@ export function validateVariables(inputParams: SyntaxNode[], text: string, type:
     const rangeNode = parameter.getChild('Range');
     const objectNode = parameter.getChild('Object');
 
-    const { enumName, name, range, type } = getVariableInfo(parameter, text);
+    const { enumName, name, range, type: variableType } = getVariableInfo(parameter, text);
 
-    if (type) {
-      if (['FLOAT', 'INT', 'STRING', 'UINT', 'ENUM'].includes(type) === false) {
+    if (variableType) {
+      if (['FLOAT', 'INT', 'STRING', 'UINT', 'ENUM'].includes(variableType) === false) {
         const node = typeNode ?? objectNode ?? parameter;
         const { from, to } = node;
         diagnostics.push({
@@ -384,7 +382,7 @@ export function validateVariables(inputParams: SyntaxNode[], text: string, type:
           severity: 'error',
           to,
         });
-      } else if (type.toLocaleLowerCase() === 'enum' && !enumName) {
+      } else if (variableType.toLocaleLowerCase() === 'enum' && !enumName) {
         const node = typeNode ?? objectNode ?? parameter;
         const { from, to } = node;
         diagnostics.push({
@@ -393,7 +391,7 @@ export function validateVariables(inputParams: SyntaxNode[], text: string, type:
           severity: 'error',
           to,
         });
-      } else if (type.toLocaleLowerCase() !== 'enum' && enumName) {
+      } else if (variableType.toLocaleLowerCase() !== 'enum' && enumName) {
         const node = enumNode ?? objectNode ?? parameter;
         const { from, to } = node;
         diagnostics.push({
@@ -402,7 +400,7 @@ export function validateVariables(inputParams: SyntaxNode[], text: string, type:
           severity: 'error',
           to,
         });
-      } else if (type.toLocaleLowerCase() === 'string' && range) {
+      } else if (variableType.toLocaleLowerCase() === 'string' && range) {
         const node = rangeNode ?? objectNode ?? parameter;
         const { from, to } = node;
         diagnostics.push({
@@ -416,7 +414,7 @@ export function validateVariables(inputParams: SyntaxNode[], text: string, type:
 
     const variable = {
       name,
-      type,
+      type: variableType,
     } as VariableDeclaration;
 
     variables.push(variable);
@@ -503,19 +501,14 @@ function getVariableInfo(
   };
 }
 
-function validateActivateLoad(
-  node: SyntaxNode[],
-  type: 'Activate' | 'Load',
-  text: string,
-  librarySequences: LibrarySequence[],
-): Diagnostic[] {
+function validateActivateLoad(node: SyntaxNode[], text: string, librarySequences: LibrarySequence[]): Diagnostic[] {
   if (node.length === 0) {
     return [];
   }
 
   const diagnostics: Diagnostic[] = [];
 
-  node.forEach(activate => {
+  node.forEach((activate: SyntaxNode) => {
     const sequenceName = activate.getChild(RULE_SEQUENCE_NAME);
     const argNode = activate.getChild(RULE_ARGS);
 
@@ -523,7 +516,7 @@ function validateActivateLoad(
       return;
     }
     const library = librarySequences.find(
-      library => library.name === text.slice(sequenceName.from, sequenceName.to).replace(/^"|"$/g, ''),
+      sequence => sequence.name === text.slice(sequenceName.from, sequenceName.to).replace(/^"|"$/g, ''),
     );
     const argsNode = getChildrenNode(argNode);
     if (!library) {
@@ -539,7 +532,7 @@ function validateActivateLoad(
       });
       if (structureError) {
         diagnostics.push(structureError);
-        return diagnostics;
+        return;
       }
 
       library?.parameters.forEach((parameter, index) => {
@@ -658,8 +651,8 @@ function validateCustomDirectives(node: SyntaxNode, text: string): Diagnostic[] 
     diagnostics.push({
       actions: [
         {
-          apply(view, from, to) {
-            view.dispatch({ changes: { from, insert, to } });
+          apply(view, diagnosticsFrom, diagnosticsTo) {
+            view.dispatch({ changes: { from: diagnosticsFrom, insert, to: diagnosticsTo } });
           },
           name: `Change to ${guess}`,
         },
@@ -1271,8 +1264,8 @@ function validateCommandStructure(
     return {
       actions: [
         {
-          apply(view, from, to) {
-            view.dispatch({ changes: { from, to } });
+          apply(view, argsFrom, argsTo) {
+            view.dispatch({ changes: { from: argsFrom, to: argsTo } });
           },
           name: `Remove ${extraArgs.length} extra ${commandArgs}`,
         },
@@ -1596,8 +1589,8 @@ function validateId(commandNode: SyntaxNode, text: string): Diagnostic[] {
         actions: idValNode
           ? [
               {
-                apply(view, from, to) {
-                  view.dispatch({ changes: { from, insert: quoteEscape(idVal), to } });
+                apply(view, diagnosticsFrom, diagnosticsTo) {
+                  view.dispatch({ changes: { from: diagnosticsFrom, insert: quoteEscape(idVal), to: diagnosticsTo } });
                 },
                 name: `Quote ${idVal}`,
               },
@@ -1671,10 +1664,10 @@ function validateMetadata(commandNode: SyntaxNode): Diagnostic[] {
         // Get the name of the template node
         const templateName = metadataTemplate[i];
         // Get the metadata node of the current template node
-        const metadataNode = metadataNodeChildren[i];
+        const metadataNodeChild = metadataNodeChildren[i];
 
         // If there is no metadata node, add a diagnostic
-        if (!metadataNode) {
+        if (!metadataNodeChild) {
           diagnostics.push({
             actions: [],
             from: entry.from,
@@ -1686,9 +1679,9 @@ function validateMetadata(commandNode: SyntaxNode): Diagnostic[] {
         }
 
         // If the name of the metadata node is not the template node name
-        if (metadataNode.name !== templateName) {
+        if (metadataNodeChild.name !== templateName) {
           // Get the name of the deepest node of the metadata node
-          const deepestNodeName = getDeepestNode(metadataNode).name;
+          const deepestNodeName = getDeepestNode(metadataNodeChild).name;
           // Add a diagnostic based on the name of the deepest node
           switch (deepestNodeName) {
             case 'String':
@@ -1697,10 +1690,10 @@ function validateMetadata(commandNode: SyntaxNode): Diagnostic[] {
             case 'Enum':
             case 'Boolean':
               diagnostics.push({
-                from: metadataNode.from,
+                from: metadataNodeChild.from,
                 message: `Incorrect type - expected 'String' but got ${deepestNodeName}`,
                 severity: 'error',
-                to: metadataNode.to,
+                to: metadataNodeChild.to,
               });
               break;
             default:

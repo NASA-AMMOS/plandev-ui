@@ -12,7 +12,7 @@ import { writeFile } from 'fs/promises';
  * @returns {string[]}
  */
 export function normalizePaths(root, path) {
-  return (Array.isArray(path) ? path : [path]).map(path => resolve(root, path)).map(normalizePath);
+  return (Array.isArray(path) ? path : [path]).map(subpath => resolve(root, subpath)).map(normalizePath);
 }
 
 /**
@@ -37,7 +37,7 @@ export const WorkerBuildPlugin = (paths, config) => ({
     }
     const root = process.cwd();
     const { outdir = './static' } = config;
-    let files = normalizePaths(root, paths);
+    const files = normalizePaths(root, paths);
 
     // If npm run build, make an optimized build
     const ctx = await esbuild.context({

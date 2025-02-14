@@ -151,10 +151,10 @@ describe('cdl parse tests', async () => {
     expect(arg1Range?.min).toBe(-255);
     expect(arg1Range?.max).toBe(255);
 
-    const arg_2_string: FswCommandArgumentVarString = cdlDictionary.fswCommands[1].argumentMap
+    const arg2String: FswCommandArgumentVarString = cdlDictionary.fswCommands[1].argumentMap
       .arg_2_string as FswCommandArgumentVarString;
-    expect(arg_2_string.arg_type).toBe('var_string');
-    expect(arg_2_string.max_bit_length).toBe(312);
+    expect(arg2String.arg_type).toBe('var_string');
+    expect(arg2String.max_bit_length).toBe(312);
 
     expect(cdlDictionary.fswCommands[1].description).toEqual('Test Command with 3 arguments');
 
@@ -181,16 +181,16 @@ describe('cdl parse tests', async () => {
 
     expect(cdlDictionary.fswCommands.length).toBe(2);
 
-    const cmd_0 = cdlDictionary.fswCommands[0];
-    expect(cmd_0.arguments.length).toBe(2);
+    const cmd0 = cdlDictionary.fswCommands[0];
+    expect(cmd0.arguments.length).toBe(2);
 
-    const cmd_1 = cdlDictionary.fswCommands[1];
-    expect(cmd_1.arguments.length).toBe(2);
+    const cmd1 = cdlDictionary.fswCommands[1];
+    expect(cmd1.arguments.length).toBe(2);
 
-    const cmd_1_arg_1 = cmd_1.argumentMap.numeric_arg_2 as FswCommandArgumentInteger;
-    expect(cmd_1_arg_1.arg_type).toBe('integer');
+    const cmd1Arg1 = cmd1.argumentMap.numeric_arg_2 as FswCommandArgumentInteger;
+    expect(cmd1Arg1.arg_type).toBe('integer');
 
-    const localEnum = cmd_1.argumentMap.lookup_local_arg_1 as FswCommandArgumentEnum;
+    const localEnum = cmd1.argumentMap.lookup_local_arg_1 as FswCommandArgumentEnum;
     expect(localEnum.arg_type).toBe('enum');
     expect(localEnum.range).toEqual(['MODE_A', 'MODE_B', 'MODE_C']);
     expect(localEnum.description).toBe('Only used by stem CMD_DEBUG');

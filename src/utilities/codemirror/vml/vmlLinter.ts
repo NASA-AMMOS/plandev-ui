@@ -70,29 +70,29 @@ function validateGlobals(input: string, tree: Tree, globals: GlobalType[]): Diag
 
   // for each block, sequence, etc -- determine what variables are declared
   const declaredVariables: { [to: number]: Set<string> } = {};
-  for (const node of filterNodes(tree.cursor(), node => node.name === RULE_TIME_TAGGED_STATEMENTS)) {
-    declaredVariables[node.from] = new Set(getVmlVariables(input, tree, node.to));
+  for (const filteredNode of filterNodes(tree.cursor(), node => node.name === RULE_TIME_TAGGED_STATEMENTS)) {
+    declaredVariables[filteredNode.from] = new Set(getVmlVariables(input, tree, filteredNode.to));
   }
 
   // check all variables
-  for (const node of filterNodes(tree.cursor(), node => node.name === RULE_VARIABLE_NAME)) {
+  for (const filteredNode of filterNodes(tree.cursor(), node => node.name === RULE_VARIABLE_NAME)) {
     if (diagnostics.length >= 10) {
       // stop checking to avoid flood of errors if adaptation is misconfigured
       break;
     }
 
-    if (getNearestAncestorNodeOfType(node, [RULE_PARAMETER, RULE_VARIABLE_DECLARATION_TYPE])) {
+    if (getNearestAncestorNodeOfType(filteredNode, [RULE_PARAMETER, RULE_VARIABLE_DECLARATION_TYPE])) {
       // don't check variable declarations
       continue;
     }
 
-    const variableReference = input.slice(node.from, node.to);
+    const variableReference = input.slice(filteredNode.from, filteredNode.to);
     if (globalNames.has(variableReference)) {
       // matches global
       continue;
     }
 
-    const timeTaggedStatementsNode = getNearestAncestorNodeOfType(node, [RULE_TIME_TAGGED_STATEMENTS]);
+    const timeTaggedStatementsNode = getNearestAncestorNodeOfType(filteredNode, [RULE_TIME_TAGGED_STATEMENTS]);
     const variablesInScope = timeTaggedStatementsNode ? declaredVariables[timeTaggedStatementsNode.from] : new Set([]);
     if (variablesInScope.has(variableReference)) {
       // matches local
@@ -101,7 +101,7 @@ function validateGlobals(input: string, tree: Tree, globals: GlobalType[]): Diag
 
     const symbolsInScope = [...Array.from(variablesInScope), ...Array.from(globalNames)];
     const alternative = closest(variableReference, symbolsInScope);
-    diagnostics.push(suggestAlternative(node, variableReference, 'symbolic reference', alternative));
+    diagnostics.push(suggestAlternative(filteredNode, variableReference, 'symbolic reference', alternative));
   }
   return diagnostics;
 }
@@ -174,12 +174,12 @@ function suggestAlternative(node: SyntaxNode, current: string, typeLabel: string
   return {
     actions: [
       {
-        apply(view: EditorView, from: number, to: number) {
+        apply(view: EditorView, applyFrom: number, applyTo: number) {
           view.dispatch({
             changes: {
-              from,
+              from: applyFrom,
               insert: alternative,
-              to,
+              to: applyTo,
             },
           });
         },
@@ -349,12 +349,12 @@ function validateArgument(
                 {
                   actions: [
                     {
-                      apply(view: EditorView, from: number, to: number) {
+                      apply(view: EditorView, applyFrom: number, applyTo: number) {
                         view.dispatch({
                           changes: {
-                            from,
+                            from: applyFrom,
                             insert: alternative,
-                            to,
+                            to: applyTo,
                           },
                         });
                       },
@@ -390,12 +390,12 @@ function unquote(s: string): string {
  */
 function validateParserErrors(tree: Tree, sequence: string, text: Text): Diagnostic[] {
   const errorRegions: { from: number; to: number }[] = [];
-  for (const node of filterNodes(tree.cursor(), node => node.name === TOKEN_ERROR)) {
+  for (const filteredNode of filterNodes(tree.cursor(), node => node.name === TOKEN_ERROR)) {
     const currentRegion = errorRegions.at(-1);
-    if (currentRegion?.to === node.from) {
-      currentRegion.to = node.to;
+    if (currentRegion?.to === filteredNode.from) {
+      currentRegion.to = filteredNode.to;
     } else {
-      errorRegions.push({ from: node.from, to: node.to });
+      errorRegions.push({ from: filteredNode.from, to: filteredNode.to });
     }
 
     if (errorRegions.length > MAX_PARSER_ERRORS) {

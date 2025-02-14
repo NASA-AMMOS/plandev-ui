@@ -127,8 +127,14 @@
             {commandInfoMapper}
             {variablesInScope}
             setInEditor={debounce((token, val) => setInEditor(editorSequenceView, token, val), 250)}
-            addDefaultArgs={(commandNode, missingArgDefArray) =>
-              addDefaultArgs(commandDictionary, editorSequenceView, commandNode, missingArgDefArray, commandInfoMapper)}
+            addDefaultArgs={(commandNodeToAddArgs, missingArgDefs) =>
+              addDefaultArgs(
+                commandDictionary,
+                editorSequenceView,
+                commandNodeToAddArgs,
+                missingArgDefs,
+                commandInfoMapper,
+              )}
           />
         {/each}
 

@@ -123,7 +123,7 @@ export function computeBlocks(state: EditorState): TreeState {
         };
 
         stack.push({
-          node: node,
+          node,
           stem: category,
         });
       }

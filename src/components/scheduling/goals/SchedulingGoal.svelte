@@ -81,10 +81,10 @@
   }
 
   function onEnable(event: Event) {
-    const { value: enabled } = getTarget(event);
+    const { value: enabledUpdate } = getTarget(event);
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
-      enabled: enabled as boolean,
+      enabled: enabledUpdate as boolean,
     });
   }
 
@@ -110,10 +110,10 @@
     });
   }
 
-  function simulateAfter(simulateAfter: boolean) {
+  function simulateAfter(simulateAfterUpdate: boolean) {
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
-      simulate_after: simulateAfter,
+      simulate_after: simulateAfterUpdate,
     });
   }
 
@@ -129,10 +129,10 @@
     });
   }
 
-  function updatePriority(priority: number) {
+  function updatePriority(priorityUpdate: number) {
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
-      priority,
+      priority: priorityUpdate,
     });
   }
 

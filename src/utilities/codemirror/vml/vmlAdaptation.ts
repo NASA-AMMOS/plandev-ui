@@ -397,7 +397,7 @@ export function getDefaultArgumentValue(argDef: FswCommandArgument, enumMap: Enu
   return '""';
 }
 
-export function parseFunctionSignatures(contents: string, workspace_id: number): LibrarySequence[] {
+export function parseFunctionSignatures(contents: string, workspaceId: number): LibrarySequence[] {
   return vmlBlockLibraryToCommandDictionary(contents).fswCommands.map(
     (fswCommand): LibrarySequence => ({
       name: fswCommand.stem,
@@ -409,7 +409,7 @@ export function parseFunctionSignatures(contents: string, workspace_id: number):
       }),
       tree: VmlLanguage.parser.parse(contents),
       type: SequenceTypes.LIBRARY,
-      workspace_id,
+      workspace_id: workspaceId,
     }),
   );
 }
