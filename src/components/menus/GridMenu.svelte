@@ -14,6 +14,7 @@
   import WindowFullscreenIcon from 'bootstrap-icons/icons/window-fullscreen.svg?component';
   import ExternalEventIcon from '../../assets/external-event-box-with-arrow.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
+  import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
   import { viewUpdateGrid } from '../../stores/views';
   import type { ViewGrid, ViewGridComponent, ViewGridSection } from '../../types/view';
   import Menu from './Menu.svelte';
@@ -99,6 +100,10 @@
     <MenuItem on:click={() => onClickMenuItem('ExternalEventFormPanel')}>
       <ExternalEventIcon />
       Selected External Event
+    </MenuItem>
+    <MenuItem on:click={() => onClickMenuItem('SequencingPanel')}>
+      <JournalCodeIcon />
+      Sequencing
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('SimulationPanel')}>
       <GearWideConnectedIcon />

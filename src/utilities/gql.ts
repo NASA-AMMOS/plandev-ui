@@ -542,6 +542,14 @@ const gql = {
     }
   `,
 
+  CREATE_SEQUENCE_DEFINITION: `#graphql
+    mutation CreateSequenceDefinition($definition: sequence_definition_insert_input!) {
+      createSequenceDefinition: ${Queries.INSERT_SEQUENCE_DEFINITION}(object: $definition) {
+        id
+      }
+    }
+  `,
+
   CREATE_SIMULATION_TEMPLATE: `#graphql
     mutation CreateSimulationTemplate($simulationTemplateInsertInput: simulation_template_insert_input!) {
       ${Queries.INSERT_SIMULATION_TEMPLATE}(object: $simulationTemplateInsertInput) {
@@ -1015,6 +1023,14 @@ const gql = {
   DELETE_SEQUENCE_ADAPTATION: `#graphql
     mutation DeleteSequenceAdaptation($id: Int!) {
       deleteSequenceAdaptation: ${Queries.DELETE_SEQUENCE_ADAPTATION}(id: $id) {
+        id
+      }
+    }
+  `,
+
+  DELETE_SEQUENCE_DEFINITION: `#graphql
+    mutation DeleteSequenceDefinition($id: Int!) {
+      deleteSequenceDefinition: ${Queries.DELETE_SEQUENCE_DEFINITION}(id: $id) {
         id
       }
     }
@@ -3138,6 +3154,17 @@ const gql = {
         id
         name
         updated_by
+      }
+    }
+  `,
+
+  SUB_SEQUENCE_DEFINITIONS: `#graphql
+    subscription SubSequenceDefinitions {
+      ${Queries.SEQUENCE_DEFINITION}(order_by: { id: desc }) {
+        filter
+        id
+        model_id
+        name
       }
     }
   `,

@@ -467,6 +467,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   CREATE_SEQUENCE_ADAPTATION: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_ADAPTATION], user);
   },
+  CREATE_SEQUENCE_DEFINITION: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_DEFINITION], user);
+  },
   CREATE_SIMULATION_TEMPLATE: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_SIMULATION_TEMPLATE], user);
   },
@@ -660,7 +663,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   DELETE_SEQUENCE_ADAPTATION: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_ADAPTATION], user);
   },
-
+  DELETE_SEQUENCE_DEFINITION: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_DEFINITION], user);
+  },
   DELETE_SIMULATION_TEMPLATE: (user: User | null, template: SimulationTemplate): boolean => {
     return (
       isUserAdmin(user) || (getPermission([Queries.DELETE_SIMULATION_TEMPLATE], user) && isUserOwner(user, template))
@@ -927,6 +932,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   SUB_SCHEDULING_REQUESTS: () => true,
   SUB_SEQUENCE_ADAPTATIONS: () => true,
+  SUB_SEQUENCE_DEFINITIONS: () => true,
   SUB_SIMULATION: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.SIMULATIONS], user);
   },
@@ -1366,6 +1372,7 @@ interface FeaturePermissions {
   schedulingGoalsModelSpec: ModelSpecificationCRUDPermission;
   schedulingGoalsPlanSpec: SchedulingCRUDPermission<AssetWithOwner<SchedulingGoalMetadata>>;
   sequenceAdaptation: CRUDPermission<void>;
+  sequenceDefinition: CRUDPermission<void>;
   sequences: CRUDPermission<AssetWithOwner<UserSequence>>;
   simulation: RunnableCRUDPermission<AssetWithOwner<Simulation>>;
   simulationTemplates: PlanSimulationTemplateCRUDPermission;
@@ -1582,6 +1589,12 @@ const featurePermissions: FeaturePermissions = {
     canDelete: user => queryPermissions.DELETE_PARAMETER_DICTIONARY(user),
     canRead: () => false, // Not implemented
     canUpdate: () => false, // Not implemented
+  },
+  sequenceDefinition: {
+    canCreate: user => queryPermissions.CREATE_SEQUENCE_DEFINITION(user),
+    canDelete: user => queryPermissions.DELETE_SEQUENCE_DEFINITION(user),
+    canRead: () => true,
+    canUpdate: () => false,
   },
   sequences: {
     canCreate: user => queryPermissions.CREATE_USER_SEQUENCE(user),

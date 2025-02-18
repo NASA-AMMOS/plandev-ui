@@ -16,6 +16,7 @@
   import PlanMetadataPanel from '../plan/PlanMetadataPanel.svelte';
   import SchedulingConditionsPanel from '../scheduling/SchedulingConditionsPanel.svelte';
   import SchedulingGoalsPanel from '../scheduling/SchedulingGoalsPanel.svelte';
+  import SequencingPanel from '../sequencing/SequencingPanel.svelte';
   import SimulationEventsPanel from '../simulation/SimulationEventsPanel.svelte';
   import SimulationPanel from '../simulation/SimulationPanel.svelte';
   import TimelinePanel from '../timeline/TimelinePanel.svelte';
@@ -60,6 +61,7 @@
     PlanMetadataPanel,
     SchedulingConditionsPanel,
     SchedulingGoalsPanel,
+    SequencingPanel,
     SimulationEventsPanel,
     SimulationPanel,
     TimelineEditorPanel,

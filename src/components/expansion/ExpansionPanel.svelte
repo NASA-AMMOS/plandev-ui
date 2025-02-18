@@ -2,9 +2,10 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
-  import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
+  import type { ICellRendererParams } from 'ag-grid-community';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import {
+    creatingExpansionSequence,
     expansionSets,
     filteredExpansionSequences,
     planExpansionStatus,
@@ -20,8 +21,9 @@
   import { showExpansionSequenceModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { convertDoyToYmd, formatDate, getShortISOForDate } from '../../utilities/time';
+  import { getShortISOForDate } from '../../utilities/time';
   import Collapse from '../Collapse.svelte';
+  import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
@@ -29,12 +31,6 @@
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
-  import Input from '../form/Input.svelte';
-  import { plugins } from '../../stores/plugins';
-  import { field } from '../../stores/form';
-  import type { FieldStore } from '../../types/form';
-  import { required } from '../../utilities/validators';
-  import { tooltip } from '../../utilities/tooltip';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -45,8 +41,6 @@
   };
   type ExpansionSequenceCellRendererParams = ICellRendererParams<ExpansionSequence> & CellRendererParams;
 
-  const planStartTimeDate: Date = new Date($plan?.start_time ?? '');
-  const planEndTimeDate: Date = new Date(convertDoyToYmd($plan?.end_time_doy ?? '') ?? '');
   const baseColumnDefs: DataGridColumnDef[] = [
     {
       field: 'seq_id',
@@ -64,41 +58,19 @@
       resizable: true,
       sortable: true,
     },
-    {
-      field: 'created_at',
-      filter: 'text',
-      headerName: 'Created At',
-      resizable: true,
-      sortable: true,
-    },
-    {
-      field: 'filter',
-      filter: 'text',
-      headerName: 'Filter',
-      resizable: true,
-      sortable: false,
-      valueGetter: (params: ValueGetterParams<ExpansionSequence>) => {
-        return JSON.stringify(params?.data?.filter);
-      },
-    },
+    { field: 'created_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
   ];
 
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
+  let createButtonEnabled: boolean = false;
+  let hasCreatePermission: boolean = false;
   let hasDeletePermission: boolean = false;
   let hasExpandPermission: boolean = false;
+  let seqIdInput: string = '';
   let selectedExpansionSet: ExpansionSet | null;
-  let startTimeField: FieldStore<string>;
-  let endTimeField: FieldStore<string>;
-  let planStartTime: string = formatDate(planStartTimeDate, $plugins.time.primary.format);
-  let planEndTime: string = formatDate(planEndTimeDate, $plugins.time.primary.format);
-
-  $: startTimeField = field<string>(planStartTime, [required, $plugins.time.primary.validate]);
-  $: endTimeField = field<string>(planEndTime, [required, $plugins.time.primary.validate]);
-
-  $: console.log($startTimeField.value);
-  $: console.log($endTimeField.value);
 
   $: if (user !== null && $plan !== null) {
+    hasCreatePermission = featurePermissions.expansionSequences.canCreate(user) && !$planReadOnly;
     hasDeletePermission = featurePermissions.expansionSequences.canDelete(user, $plan) && !$planReadOnly;
     hasExpandPermission = featurePermissions.expansionSequences.canExpand(user, $plan, $plan.model) && !$planReadOnly;
   }
@@ -144,6 +116,7 @@
       },
     ];
   }
+  $: createButtonEnabled = seqIdInput !== '';
   $: selectedExpansionSet = $expansionSets.find(s => s.id === $selectedExpansionSetId) ?? null;
 
   function deleteExpansionSequence(sequence: ExpansionSequence) {
@@ -160,10 +133,6 @@
     if (sequenceToDelete) {
       deleteExpansionSequence(sequenceToDelete);
     }
-  }
-
-  async function onCreateSequenceModal() {
-    effects.createSequenceModal(user);
   }
 </script>
 
@@ -275,16 +244,32 @@
           {:else}
             <div class="expansion-form-container">
               <CssGrid class="expansion-form" rows="min-content auto">
-                <button
-                  class="st-button active"
-                  on:click|stopPropagation={onCreateSequenceModal}
-                  use:tooltip={{
-                    content: 'Options for creating a sequence',
-                    placement: 'top',
-                  }}
-                >
-                  Create Sequence
-                </button>
+                <CssGrid columns="3fr 1fr" gap="10px">
+                  <input
+                    bind:value={seqIdInput}
+                    class="st-input"
+                    use:permissionHandler={{
+                      hasPermission: hasCreatePermission,
+                      permissionError: $planReadOnly
+                        ? PlanStatusMessages.READ_ONLY
+                        : 'You do not have permission to create an expansion',
+                    }}
+                  />
+                  <button
+                    class="st-button secondary"
+                    disabled={!createButtonEnabled}
+                    use:permissionHandler={{
+                      hasPermission: hasCreatePermission,
+                      permissionError: $planReadOnly
+                        ? PlanStatusMessages.READ_ONLY
+                        : 'You do not have permission to create an expansion',
+                    }}
+                    on:click|stopPropagation={() =>
+                      effects.createExpansionSequence(seqIdInput, $simulationDatasetId, user)}
+                  >
+                    {$creatingExpansionSequence ? 'Creating... ' : 'Create'}
+                  </button>
+                </CssGrid>
                 <div class="mt-2">
                   {#if $filteredExpansionSequences.length}
                     <SingleActionDataGrid

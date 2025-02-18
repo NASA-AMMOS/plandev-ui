@@ -200,6 +200,9 @@ import {
   type ParcelToParameterDictionary,
   type SeqJson,
   type SequenceAdaptationMetadata,
+  type SequenceDefinition,
+  type SequenceDefinitionInsertInput,
+  type SequenceFilter,
   type UserSequence,
   type UserSequenceInsertInput,
   type Workspace,
@@ -237,7 +240,7 @@ import type {
   TagsInsertInput,
   TagsSetInput,
 } from '../types/tags';
-import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
+import type { Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
 import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
@@ -247,7 +250,6 @@ import {
   showCreateGroupsOrTypes,
   showCreatePlanBranchModal,
   showCreatePlanSnapshotModal,
-  showCreateSequenceModal,
   showCreateViewModal,
   showDeleteActivitiesModal,
   showDeleteExternalSourceModal,
@@ -953,12 +955,7 @@ const effects = {
     }
   },
 
-  async createExpansionSequence(
-    seqId: string,
-    simulationDatasetId: number,
-    filter: ActivityLayerFilter,
-    user: User | null,
-  ): Promise<string | null> {
+  async createExpansionSequence(seqId: string, simulationDatasetId: number, user: User | null): Promise<string | null> {
     try {
       if (!queryPermissions.CREATE_EXPANSION_SEQUENCE(user)) {
         throwPermissionError('create an expansion sequence');
@@ -966,7 +963,6 @@ const effects = {
 
       creatingExpansionSequenceStore.set(true);
       const sequence: ExpansionSequenceInsertInput = {
-        filter,
         metadata: {},
         seq_id: seqId,
         simulation_dataset_id: simulationDatasetId,
@@ -974,7 +970,7 @@ const effects = {
       const data = await reqHasura<SeqId>(gql.CREATE_EXPANSION_SEQUENCE, { sequence }, user);
       if (data.createExpansionSequence != null) {
         showSuccessToast('Expansion Sequence Created Successfully');
-        creatingExpansionSequence.set(false);
+        creatingExpansionSequenceStore.set(false);
         return data.createExpansionSequence.seq_id;
       } else {
         throw Error(`Unable to create expansion sequence with ID: "${seqId}"`);
@@ -982,7 +978,7 @@ const effects = {
     } catch (e) {
       catchError('Expansion Sequence Create Failed', e as Error);
       showFailureToast('Expansion Sequence Create Failed');
-      creatingExpansionSequence.set(false);
+      creatingExpansionSequenceStore.set(false);
       return null;
     }
   },
@@ -1916,13 +1912,40 @@ const effects = {
     }
   },
 
-  async createSequenceModal(user: User | null): Promise<void> {
+  async createSequenceDefinition(
+    filter: SequenceFilter,
+    seqName: string,
+    modelId: number,
+    user: User | null,
+  ): Promise<number | undefined> {
     try {
-      await showCreateSequenceModal(user);
+      if (!queryPermissions.CREATE_SEQUENCE_DEFINITION(user)) {
+        throwPermissionError('create a sequence definition');
+      }
+
+      const sequenceDefinitionInsertInput: SequenceDefinitionInsertInput = {
+        filter,
+        model_id: modelId,
+        name: seqName,
+      };
+
+      const result = await reqHasura<SequenceDefinition>(
+        gql.CREATE_SEQUENCE_DEFINITION,
+        { definition: sequenceDefinitionInsertInput },
+        user,
+      );
+
+      if (result != null) {
+        showSuccessToast('Sequence Definition Created Successfully');
+        return result.createSequenceDefinition?.id;
+      } else {
+        throw Error('Unable to create sequence definition');
+      }
     } catch (e) {
-      catchError('Unable To Create Sequence', e as Error);
-      showFailureToast('Unable To Create Sequence');
+      catchError('Unable To Create Sequence Definition', e as Error);
+      showFailureToast('Unable To Create Sequence Definition');
     }
+    return undefined;
   },
 
   async createSimulationTemplate(
@@ -3167,6 +3190,32 @@ const effects = {
     } catch (e) {
       catchError('Sequence Adaptation Delete Failed', e as Error);
       showFailureToast('Sequence Adaptation Delete Failed');
+    }
+  },
+
+  async deleteSequenceDefinition(id: number, user: User | null): Promise<void> {
+    try {
+      if (!queryPermissions.DELETE_SEQUENCE_DEFINITION(user)) {
+        throwPermissionError('delete this sequence definition');
+      }
+
+      const { confirm } = await showConfirmModal(
+        'Delete',
+        `This will permanently delete the sequence definition '${id}'`,
+        'Delete Permanently',
+      );
+
+      if (confirm) {
+        const data = await reqHasura<{ id: number }>(gql.DELETE_SEQUENCE_DEFINITION, { id }, user);
+        if (data.deleteSequenceDefinition != null) {
+          showSuccessToast('Sequence Definition Deleted Successfully');
+        } else {
+          throw Error(`Unable to delete sequence definition with ID: "${id}"`);
+        }
+      }
+    } catch (e) {
+      catchError('Sequence Definition Delete Failed', e as Error);
+      showFailureToast('Sequence Definition Delete Failed');
     }
   },
 

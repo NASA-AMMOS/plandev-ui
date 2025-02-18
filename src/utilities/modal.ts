@@ -26,10 +26,10 @@ import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.
 import RestorePlanSnapshotModal from '../components/modals/RestorePlanSnapshotModal.svelte';
 import RunActionModal from '../components/modals/RunActionModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
+import SequenceDefinitionModal from '../components/modals/SequenceDefinitionModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceModal from '../components/modals/WorkspaceModal.svelte';
 import { type ActionDefinition } from '../types/actions';
-import CreateSequenceModal from '../components/modals/CreateSequenceModal.svelte';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
 import type { User } from '../types/app';
 import type { ExpansionSequence } from '../types/expansion';
@@ -49,6 +49,7 @@ import type {
   PlanMergeRequestTypeFilter,
 } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
+import type { SequenceDefinition } from '../types/sequencing';
 import type { Tag } from '../types/tags';
 import type { ViewDefinition } from '../types/view';
 import effects from './effects';
@@ -1106,22 +1107,22 @@ export async function showUploadViewModal(): Promise<ModalElementValue<{ definit
 }
 
 /**
- * Shows a CreateSequenceModal component.
+ * Shows a SequenceDefinitionModal with the supplied arguments.
  */
-export async function showCreateSequenceModal(user: User | null): Promise<ModalElementValue> {
+export async function showSequenceDefinitionModal(sequenceDefinition: SequenceDefinition): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const createSequenceModal = new CreateSequenceModal({ props: { height: 265, user, width: 400 }, target });
+        const sequenceModal = new SequenceDefinitionModal({ props: { sequenceDefinition }, target });
         target.resolve = resolve;
 
-        createSequenceModal.$on('close', () => {
+        sequenceModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
-          resolve({ confirm: false });
-          createSequenceModal.$destroy();
+          resolve({ confirm: true });
+          sequenceModal.$destroy();
         });
       }
     } else {
