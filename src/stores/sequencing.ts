@@ -29,8 +29,6 @@ export const parsedCommandDictionaries: Writable<Record<string, AmpcsCommandDict
 
 export const parsedParameterDictionaries: Writable<Record<string, AmpcsParameterDictionary>> = writable({});
 
-export const selectedSequenceDefinitionId: Writable<number | null> = writable(null);
-
 export const planSequenceStatus: Writable<Status | null> = writable(null);
 
 export const sequencingError: Writable<string | null> = writable(null);

@@ -1012,10 +1012,14 @@ const gql = {
     }
   `,
 
-  DELETE_SEQUENCE_DEFINITION: `#graphql
-    mutation DeleteSequenceDefinition($id: Int!) {
-      deleteSequenceDefinition: ${Queries.DELETE_SEQUENCE_DEFINITION}(id: $id) {
-        id
+  DELETE_SEQUENCE_DEFINITIONS: `#graphql
+    mutation DeleteSequenceDefinitions($sequenceDefinitionIds: [Int]!) {
+      deleteSequenceDefinitions: ${Queries.DELETE_SEQUENCE_DEFINITIONS}(
+        where: {
+          id: { _in: $sequenceDefinitionIds }
+        }
+      ) {
+        affected_rows
       }
     }
   `,

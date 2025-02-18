@@ -68,7 +68,7 @@ export enum Queries {
   DELETE_SCHEDULING_SPECIFICATION_GOALS = 'delete_scheduling_specification_goals',
   DELETE_SEQUENCE = 'delete_sequence_by_pk',
   DELETE_SEQUENCE_ADAPTATION = 'delete_sequence_adaptation_by_pk',
-  DELETE_SEQUENCE_DEFINITION = 'delete_sequence_definition_by_pk',
+  DELETE_SEQUENCE_DEFINITIONS = 'delete_sequence_definition',
   DELETE_SEQUENCE_TO_SIMULATED_ACTIVITY = 'delete_sequence_to_simulated_activity_by_pk',
   DELETE_SIMULATION_TEMPLATE = 'delete_simulation_template_by_pk',
   DELETE_TAG = 'delete_tags_by_pk',

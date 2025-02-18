@@ -654,8 +654,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   DELETE_SEQUENCE_ADAPTATION: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_ADAPTATION], user);
   },
-  DELETE_SEQUENCE_DEFINITION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_DEFINITION], user);
+  DELETE_SEQUENCE_DEFINITIONS: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_DEFINITIONS], user);
   },
   DELETE_SIMULATION_TEMPLATE: (user: User | null, template: SimulationTemplate): boolean => {
     return (
@@ -1557,7 +1557,7 @@ const featurePermissions: FeaturePermissions = {
   },
   sequenceDefinition: {
     canCreate: user => queryPermissions.CREATE_SEQUENCE_DEFINITION(user),
-    canDelete: user => queryPermissions.DELETE_SEQUENCE_DEFINITION(user),
+    canDelete: user => queryPermissions.DELETE_SEQUENCE_DEFINITIONS(user),
     canRead: () => true,
     canUpdate: () => false,
   },
