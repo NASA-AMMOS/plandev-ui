@@ -24,12 +24,16 @@ import type { UserId } from './app';
 import type { GlobalType } from './global-type';
 import type { ActivityLayerFilter } from './timeline';
 
-export type SequenceFilter = ActivityLayerFilter & {
-  timeFilter?: {
-    end: string;
-    start: string;
-  };
+export type SequenceFilter = ActivityLayerFilter;
+
+export type SequenceDefinition = {
+  filter: SequenceFilter;
+  id: number;
+  model_id: number;
+  name: string;
 };
+
+export type SequenceDefinitionInsertInput = Pick<SequenceDefinition, 'filter' | 'model_id' | 'name'>;
 
 export type ChannelDictionaryMetadata = {
   type: DictionaryTypes.CHANNEL;

@@ -2,7 +2,6 @@ import type { PartialWith, UserId } from './app';
 import type { SeqJson } from './sequencing';
 import type { SpanId } from './simulation';
 import type { Tag } from './tags';
-import type { ActivityLayerFilter } from './timeline';
 
 export type ExpansionRule = {
   activity_type: string;
@@ -35,7 +34,6 @@ export type ExpansionSequenceToActivityInsertInput = {
 
 export type ExpansionSequence = {
   created_at: string;
-  filter: ActivityLayerFilter;
   metadata: any;
   seq_id: string;
   simulation_dataset_id: number;
