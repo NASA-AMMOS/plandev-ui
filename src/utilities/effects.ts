@@ -3193,29 +3193,33 @@ const effects = {
     }
   },
 
-  async deleteSequenceDefinition(id: number, user: User | null): Promise<void> {
+  async deleteSequenceDefinitions(sequenceDefinitionIds: number[], user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.DELETE_SEQUENCE_DEFINITION(user)) {
-        throwPermissionError('delete this sequence definition');
+      if (!queryPermissions.DELETE_SEQUENCE_DEFINITIONS(user)) {
+        throwPermissionError('delete the sequence definitions');
       }
 
       const { confirm } = await showConfirmModal(
         'Delete',
-        `This will permanently delete the sequence definition '${id}'`,
+        `This will permanently delete the sequence definitions '${sequenceDefinitionIds}'`,
         'Delete Permanently',
       );
 
       if (confirm) {
-        const data = await reqHasura<{ id: number }>(gql.DELETE_SEQUENCE_DEFINITION, { id }, user);
-        if (data.deleteSequenceDefinition != null) {
-          showSuccessToast('Sequence Definition Deleted Successfully');
+        const data = await reqHasura<{ sequenceDefinitionIds: number[] }>(
+          gql.DELETE_SEQUENCE_DEFINITIONS,
+          { sequenceDefinitionIds },
+          user,
+        );
+        if (data.deleteSequenceDefinitions != null) {
+          showSuccessToast('Sequence Definitions Deleted Successfully');
         } else {
-          throw Error(`Unable to delete sequence definition with ID: "${id}"`);
+          throw Error(`Unable to delete sequence definitions with IDs: "${sequenceDefinitionIds}"`);
         }
       }
     } catch (e) {
-      catchError('Sequence Definition Delete Failed', e as Error);
-      showFailureToast('Sequence Definition Delete Failed');
+      catchError('Sequence Definitions Delete Failed', e as Error);
+      showFailureToast('Sequence Definitions Delete Failed');
     }
   },
 

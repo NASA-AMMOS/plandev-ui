@@ -6,7 +6,7 @@
   import { activityTypes, plan } from '../../stores/plan';
   import { simulationStatus, spans } from '../../stores/simulation';
   import type { User } from '../../types/app';
-  import type { DataGridColumnDef, DataGridRowDoubleClick, DataGridRowSelection, RowId } from '../../types/data-grid';
+  import type { DataGridColumnDef, DataGridRowDoubleClick, DataGridRowSelection } from '../../types/data-grid';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { showSequenceDefinitionModal } from '../../utilities/modal';
@@ -16,7 +16,6 @@
   import Collapse from '../Collapse.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
-  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
@@ -27,12 +26,7 @@
   import { tooltip } from '../../utilities/tooltip';
   import ActivityFilterBuilder from '../timeline/form/TimelineEditor/ActivityFilterBuilder.svelte';
   import type { SequenceDefinition, SequenceFilter } from '../../types/sequencing';
-  import {
-    planSequenceStatus,
-    selectedSequenceDefinitionId,
-    sequenceDefinitions,
-    sequencingError,
-  } from '../../stores/sequencing';
+  import { planSequenceStatus, sequenceDefinitions, sequencingError } from '../../stores/sequencing';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
   import { applyActivityLayerFilter } from '../../utilities/timeline';
@@ -42,6 +36,8 @@
   import { Status } from '../../enums/status';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import AlertError from '../ui/AlertError.svelte';
+  import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
+  import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -53,6 +49,7 @@
   type SequenceDefinitionCellRendererParams = ICellRendererParams<SequenceDefinition> & CellRendererParams;
 
   const createPermissionError = 'You do not have permission to create a sequence definition';
+  const deletePermissionError = 'You do not have permission to delete sequence definitions';
   const planStartTimeDate: Date = new Date($plan?.start_time ?? '');
   const planEndTimeDate: Date = new Date(convertDoyToYmd($plan?.end_time_doy ?? '') ?? '');
   const baseColumnDefs: DataGridColumnDef[] = [
@@ -106,6 +103,9 @@
   };
   let planStartDate: Date | undefined;
   let planEndDate: Date | undefined;
+  let dataGrid: DataGrid<SequenceDefinition>;
+  let selectedSequenceDefinitionId: number | null = null;
+  let selectedSequenceDefinitionIds: number[] = [];
 
   $: if ($plan !== null) {
     planStartDate = $plugins.time.primary.parse($plan.start_time_doy) ?? undefined;
@@ -127,7 +127,7 @@
     hasCreatePermission = featurePermissions.sequenceDefinition.canCreate(user);
   }
 
-  $: selectedSequenceDefinition = $sequenceDefinitions.find(s => s.id === $selectedSequenceDefinitionId) ?? null;
+  $: selectedSequenceDefinition = $sequenceDefinitions.find(s => s.id === selectedSequenceDefinitionId) ?? null;
 
   $: columnDefs = [
     ...columnDefs,
@@ -182,7 +182,7 @@
   }
 
   function deleteSequenceDefinition(sequenceDefinition: SequenceDefinition) {
-    effects.deleteSequenceDefinition(sequenceDefinition.id, user);
+    effects.deleteSequenceDefinitions([sequenceDefinition.id], user);
   }
 
   function openSequenceDefinition(sequenceDefinition: SequenceDefinition) {
@@ -193,6 +193,8 @@
     // This always *should* be true, but check anyway to keep TS happy
     if ($plan !== null) {
       await effects.createSequenceDefinition(filterMenuActiveFilter, seqNameInput, $plan.model_id, user);
+      filterMenu.setActiveFilter({}); // Reset filter
+      seqNameInput = '';
     }
   }
 
@@ -200,11 +202,11 @@
     filterMenu.toggle();
   }
 
-  function onDeleteSequenceDefinition(event: CustomEvent<RowId[]>) {
-    const idToDelete = event.detail.pop();
-    if (idToDelete !== undefined) {
-      // Row ID is always a number for this table
-      effects.deleteSequenceDefinition(idToDelete as number, user);
+  function onBulkDeleteItems(event: CustomEvent<SequenceDefinition[]>) {
+    const { detail: sequenceDefinitionsToDelete } = event;
+    const idsToDelete = sequenceDefinitionsToDelete.map(sequenceDefinition => sequenceDefinition.id);
+    if (idsToDelete.length > 0) {
+      effects.deleteSequenceDefinitions(idsToDelete, user);
     }
   }
 
@@ -212,15 +214,6 @@
     if (selectedSequenceDefinition !== null) {
       showSequenceDefinitionModal(selectedSequenceDefinition);
     }
-  }
-
-  function onRowSelected(event: CustomEvent<DataGridRowSelection<SequenceDefinition>>) {
-    const {
-      detail: {
-        data: { id: newSelectionId },
-      },
-    } = event;
-    $selectedSequenceDefinitionId = newSelectionId;
   }
 
   function onRowDoubleClicked(event: CustomEvent<DataGridRowDoubleClick<SequenceDefinition>>) {
@@ -232,25 +225,42 @@
 
   function onRunTemplating() {
     $sequencingError = null;
-    // TODO: Multi-filter => sequencing, currently only one-to-one
-    if (selectedSequenceDefinition) {
-      if (selectedSequenceDefinitionActivities.spans.length > 0) {
-        // Apply time filter to spans
-        let timeFilteredSpans: Span[] = selectedSequenceDefinitionActivities.spans.filter(span => {
-          const spanStart = new Date(span.startMs);
-          const spanEnd = new Date(span.endMs);
-          return (
-            startTimeFieldDate <= spanStart &&
-            spanStart <= endTimeFieldDate &&
-            startTimeFieldDate <= spanEnd &&
-            spanEnd <= endTimeFieldDate
+    if (selectedSequenceDefinitionIds.length > 0) {
+      let filteredSpanMap: Map<number, Span[]> = selectedSequenceDefinitionIds.reduce(
+        (accMap: Map<number, Span[]>, sequenceDefinitionId: number) => {
+          const sequenceDefinitionFilter =
+            $sequenceDefinitions.find(sequenceDefinition => sequenceDefinition.id === sequenceDefinitionId)?.filter ??
+            {};
+          accMap.set(
+            sequenceDefinitionId,
+            getSpansForTemplating(sequenceDefinitionFilter, startTimeFieldDate, endTimeFieldDate),
           );
-        });
-        console.log(timeFilteredSpans);
-      } else {
-        $sequencingError = 'Unable to run templating - filter resolves to 0 spans.';
-      }
+          return accMap;
+        },
+        new Map<number, Span[]>(),
+      );
+      console.log(filteredSpanMap);  // TODO: Should output to something like effects.runSequenceTemplating(...)
     }
+  }
+
+  function getSpansForTemplating(filter: SequenceFilter, startRange: Date, endRange: Date): Span[] {
+    // Apply filter
+    let filteredActivities = applyActivityLayerFilter(
+      filter,
+      activityDirectives,
+      $spans || [],
+      $activityTypes,
+      $activityArgumentDefaultsMap,
+    );
+    if (filteredActivities.spans.length === 0) {
+      return [];
+    }
+    let filteredSpans = filteredActivities.spans.filter(span => {
+      const spanStart = new Date(span.startMs);
+      const spanEnd = new Date(span.endMs);
+      return startRange <= spanStart && spanStart <= endRange && startRange <= spanEnd && spanEnd <= endRange;
+    });
+    return filteredSpans;
   }
 </script>
 
@@ -261,7 +271,7 @@
       <PanelHeaderActionButton
         title="Run Templating"
         showLabel
-        disabled={$selectedSequenceDefinitionId === null}
+        disabled={selectedSequenceDefinitionIds.length === 0 || selectedSequenceDefinitionId === null}
         on:click={onRunTemplating}
       />
     </PanelHeaderActions>
@@ -281,13 +291,14 @@
     <AlertError class="m-2" error={$sequencingError} />
     <div class="sequence-panel-body">
       <fieldset>
+        <!-- TODO: This might be too much w. bulk actions on the table -->
         <label for="sequenceDefinition" class="sequence-definition-selector">
           Sequence Definition
           <!-- TODO: URL, this page doesn't exist.. should we make one for the definitions-->
           <a href={`${base}/expansion/sets`} target="_blank" rel="noopener noreferrer">View All Definitions</a>
         </label>
         <select
-          bind:value={$selectedSequenceDefinitionId}
+          bind:value={selectedSequenceDefinitionId}
           class="st-select w-100"
           disabled={!currentModelSequenceDefinitions.length}
           name="sequenceDefinition"
@@ -405,15 +416,21 @@
               </CssGrid>
               <div class="mt-2">
                 {#if $sequenceDefinitions.length}
-                  <SingleActionDataGrid
+                  <BulkActionDataGrid
+                    bind:dataGrid
+                    bind:selectedItemId={selectedSequenceDefinitionId}
+                    bind:selectedItemIds={selectedSequenceDefinitionIds}
                     getRowId={rowData => rowData.id}
                     {columnDefs}
+                    loading={!currentModelSequenceDefinitions}
                     {hasDeletePermission}
-                    itemDisplayText="Sequence Definition"
+                    hasDeletePermissionError={deletePermissionError}
                     items={currentModelSequenceDefinitions}
+                    pluralItemDisplayText="Sequence Definitions"
+                    scrollToSelection={true}
+                    singleItemDisplayText="Sequence Definition"
                     {user}
-                    on:rowSelected={e => onRowSelected(e)}
-                    on:deleteItem={e => onDeleteSequenceDefinition(e)}
+                    on:bulkDeleteItems={e => onBulkDeleteItems(e)}
                     on:rowDoubleClicked={e => onRowDoubleClicked(e)}
                   />
                 {:else}
