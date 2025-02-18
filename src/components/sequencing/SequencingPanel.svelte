@@ -3,12 +3,10 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
-  import { PlanStatusMessages } from '../../enums/planStatusMessages';
-  import { planExpansionStatus } from '../../stores/expansion';
-  import { activityTypes, plan, planReadOnly } from '../../stores/plan';
-  import { simulationDatasetId, simulationStatus, spans } from '../../stores/simulation';
+  import { activityTypes, plan } from '../../stores/plan';
+  import { simulationStatus, spans } from '../../stores/simulation';
   import type { User } from '../../types/app';
-  import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
+  import type { DataGridColumnDef, DataGridRowDoubleClick, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { showSequenceDefinitionModal } from '../../utilities/modal';
@@ -29,7 +27,12 @@
   import { tooltip } from '../../utilities/tooltip';
   import ActivityFilterBuilder from '../timeline/form/TimelineEditor/ActivityFilterBuilder.svelte';
   import type { SequenceDefinition, SequenceFilter } from '../../types/sequencing';
-  import { selectedSequenceDefinitionId, sequenceDefinitions } from '../../stores/sequencing';
+  import {
+    planSequenceStatus,
+    selectedSequenceDefinitionId,
+    sequenceDefinitions,
+    sequencingError,
+  } from '../../stores/sequencing';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
   import { applyActivityLayerFilter } from '../../utilities/timeline';
@@ -38,6 +41,7 @@
   import type { Span } from '../../types/simulation';
   import { Status } from '../../enums/status';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
+  import AlertError from '../ui/AlertError.svelte';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -88,13 +92,18 @@
   let selectedSequenceDefinition: SequenceDefinition | null;
   let startTimeField: FieldStore<string>;
   let endTimeField: FieldStore<string>;
+  let startTimeFieldDate: Date;
+  let endTimeFieldDate: Date;
   let planStartTime: string = formatDate(planStartTimeDate, $plugins.time.primary.format);
   let planEndTime: string = formatDate(planEndTimeDate, $plugins.time.primary.format);
   let seqNameInput: string;
   let filterMenu: ActivityFilterBuilder;
   let filterMenuActiveFilter: SequenceFilter = {};
-  let currentModelSequenceDefinitions: SequenceDefinition[] = []; // TODO: This could just be a derived store
-  let selectedSequenceDefinitionActivities: { directives: ActivityDirective[], spans: Span[] } = { directives: [], spans: [] };
+  let currentModelSequenceDefinitions: SequenceDefinition[] = [];
+  let selectedSequenceDefinitionActivities: { directives: ActivityDirective[]; spans: Span[] } = {
+    directives: [],
+    spans: [],
+  };
   let planStartDate: Date | undefined;
   let planEndDate: Date | undefined;
 
@@ -107,6 +116,11 @@
 
   $: startTimeField = field<string>(planStartTime, [required, $plugins.time.primary.validate]);
   $: endTimeField = field<string>(planEndTime, [required, $plugins.time.primary.validate]);
+
+  $: if ($startTimeField.value && $endTimeField.value) {
+    startTimeFieldDate = new Date(convertDoyToYmd($startTimeField.value) ?? '');
+    endTimeFieldDate = new Date(convertDoyToYmd($endTimeField.value) ?? '');
+  }
 
   $: if (user !== null && $plan !== null) {
     hasDeletePermission = featurePermissions.sequenceDefinition.canDelete(user);
@@ -164,7 +178,7 @@
       $spans || [],
       $activityTypes,
       $activityArgumentDefaultsMap,
-    )
+    );
   }
 
   function deleteSequenceDefinition(sequenceDefinition: SequenceDefinition) {
@@ -208,22 +222,47 @@
     } = event;
     $selectedSequenceDefinitionId = newSelectionId;
   }
+
+  function onRowDoubleClicked(event: CustomEvent<DataGridRowDoubleClick<SequenceDefinition>>) {
+    const {
+      detail: { data: clickedRow },
+    } = event;
+    showSequenceDefinitionModal(clickedRow);
+  }
+
+  function onRunTemplating() {
+    $sequencingError = null;
+    // TODO: Multi-filter => sequencing, currently only one-to-one
+    if (selectedSequenceDefinition) {
+      if (selectedSequenceDefinitionActivities.spans.length > 0) {
+        // Apply time filter to spans
+        let timeFilteredSpans: Span[] = selectedSequenceDefinitionActivities.spans.filter(span => {
+          const spanStart = new Date(span.startMs);
+          const spanEnd = new Date(span.endMs);
+          return (
+            startTimeFieldDate <= spanStart &&
+            spanStart <= endTimeFieldDate &&
+            startTimeFieldDate <= spanEnd &&
+            spanEnd <= endTimeFieldDate
+          );
+        });
+        console.log(timeFilteredSpans);
+      } else {
+        $sequencingError = 'Unable to run templating - filter resolves to 0 spans.';
+      }
+    }
+  }
 </script>
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Sequencing" />
-    <!-- TODO Convert from expansion -->
-    <PanelHeaderActions status={$planExpansionStatus} indeterminate>
+    <PanelHeaderActions status={$planSequenceStatus} indeterminate>
       <PanelHeaderActionButton
         title="Run Templating"
         showLabel
         disabled={$selectedSequenceDefinitionId === null}
-        on:click={() => {
-          if ($selectedSequenceDefinitionId && $plan) {
-            effects.expand($selectedSequenceDefinitionId, $simulationDatasetId, $plan, $plan.model, user);
-          }
-        }}
+        on:click={onRunTemplating}
       />
     </PanelHeaderActions>
   </svelte:fragment>
@@ -239,6 +278,7 @@
         filterMenuActiveFilter = filter.detail.filter;
       }}
     />
+    <AlertError class="m-2" error={$sequencingError} />
     <div class="sequence-panel-body">
       <fieldset>
         <label for="sequenceDefinition" class="sequence-definition-selector">
@@ -265,12 +305,7 @@
         </select>
       </fieldset>
       <fieldset>
-        <Collapse
-          className="details-container"
-          title="Sequence Definition Details"
-          defaultExpanded={false}
-          padContent={false}
-        >
+        <Collapse title="Sequence Definition Details" defaultExpanded={false} padContent={false}>
           {#if !selectedSequenceDefinition}
             <div class="st-typography-label">No Sequence Definition Selected</div>
           {:else}
@@ -292,8 +327,11 @@
                 <span>
                   {selectedSequenceDefinitionActivities.spans.length}
                   {#if $simulationStatus !== Status.Complete}
-                    <div class="simulation-warning" use:tooltip={{ content: 'Simulation out-of-date', placement: 'top' }}>
-                      <WarningIcon class="yellow-icon"/>
+                    <div
+                      class="simulation-warning"
+                      use:tooltip={{ content: 'Simulation out-of-date', placement: 'top' }}
+                    >
+                      <WarningIcon class="yellow-icon" />
                     </div>
                   {/if}
                 </span>
@@ -306,7 +344,7 @@
         </Collapse>
       </fieldset>
       <fieldset>
-        <Collapse className="time-container" title="Sequencing Time Range" defaultExpanded={false} padContent={false}>
+        <Collapse title="Sequencing Time Range" defaultExpanded={false} padContent={false}>
           <DatePickerField
             name="start-time"
             label={`Start Time - ${$plugins.time.primary.formatString}`}
@@ -327,7 +365,7 @@
         <Collapse className="details-container" title="Sequence Definitions" padContent={false}>
           <div class="sequence-definition-form-container">
             <CssGrid class="sequence-definition-form" rows="min-content auto">
-              <CssGrid columns="3fr" gap="10px">
+              <CssGrid columns="3fr" gap="12px">
                 <div class="seq-name">
                   <label for="seqName">Sequence Definition Name</label>
                   <input
@@ -335,22 +373,18 @@
                     class="st-input w-100"
                     name="seqName"
                     use:permissionHandler={{
-                      hasPermission: true,
-                      permissionError: $planReadOnly
-                        ? PlanStatusMessages.READ_ONLY
-                        : 'You do not have permission to create an expansion',
+                      hasPermission: hasCreatePermission,
+                      permissionError: createPermissionError,
                     }}
                   />
                 </div>
                 <button
                   class="st-button secondary w-100"
-                  use:permissionHandler={{
-                    hasPermission: true,
-                    permissionError: $planReadOnly
-                      ? PlanStatusMessages.READ_ONLY
-                      : 'You do not have permission to create an expansion.',
-                  }}
                   on:click|stopPropagation={onToggleFilterMenu}
+                  use:permissionHandler={{
+                    hasPermission: hasCreatePermission,
+                    permissionError: createPermissionError,
+                  }}
                 >
                   Show Sequence Definition Filter
                 </button>
@@ -380,6 +414,7 @@
                     {user}
                     on:rowSelected={e => onRowSelected(e)}
                     on:deleteItem={e => onDeleteSequenceDefinition(e)}
+                    on:rowDoubleClicked={e => onRowDoubleClicked(e)}
                   />
                 {:else}
                   <div class="st-typography-label">
