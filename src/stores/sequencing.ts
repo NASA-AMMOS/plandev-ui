@@ -19,6 +19,7 @@ import {
 import effects from '../utilities/effects';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
+import type { Status } from '../enums/status';
 
 /* Writable */
 
@@ -29,6 +30,10 @@ export const parsedCommandDictionaries: Writable<Record<string, AmpcsCommandDict
 export const parsedParameterDictionaries: Writable<Record<string, AmpcsParameterDictionary>> = writable({});
 
 export const selectedSequenceDefinitionId: Writable<number | null> = writable(null);
+
+export const planSequenceStatus: Writable<Status | null> = writable(null);
+
+export const sequencingError: Writable<string | null> = writable(null);
 
 /* Subscriptions. */
 
