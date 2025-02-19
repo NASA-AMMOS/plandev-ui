@@ -59,6 +59,7 @@ import {
   channelDictionaries as channelDictionariesStore,
   commandDictionaries as commandDictionariesStore,
   parameterDictionaries as parameterDictionariesStore,
+  sequenceExpansionStatusStore,
 } from '../stores/sequencing';
 import {
   selectedSpanId as selectedSpanIdStore,
@@ -199,9 +200,9 @@ import {
   type ParcelToParameterDictionary,
   type SeqJson,
   type SequenceAdaptationMetadata,
-  type SequenceDefinition,
-  type SequenceDefinitionInsertInput,
   type SequenceFilter,
+  type SequenceFilterInsertInput,
+  type SequenceActivityFilter,
   type UserSequence,
   type UserSequenceInsertInput,
   type Workspace,
@@ -1837,38 +1838,38 @@ const effects = {
     }
   },
 
-  async createSequenceDefinition(
-    filter: SequenceFilter,
+  async createSequenceFilter(
+    filter: SequenceActivityFilter,
     seqName: string,
     modelId: number,
     user: User | null,
   ): Promise<number | undefined> {
     try {
-      if (!queryPermissions.CREATE_SEQUENCE_DEFINITION(user)) {
-        throwPermissionError('create a sequence definition');
+      if (!queryPermissions.CREATE_SEQUENCE_FILTER(user)) {
+        throwPermissionError('create a sequence filter');
       }
 
-      const sequenceDefinitionInsertInput: SequenceDefinitionInsertInput = {
+      const sequenceFilterInsertInput: SequenceFilterInsertInput = {
         filter,
         model_id: modelId,
         name: seqName,
       };
 
-      const result = await reqHasura<SequenceDefinition>(
-        gql.CREATE_SEQUENCE_DEFINITION,
-        { definition: sequenceDefinitionInsertInput },
+      const result = await reqHasura<SequenceFilter>(
+        gql.CREATE_SEQUENCE_FILTER,
+        { definition: sequenceFilterInsertInput },
         user,
       );
 
       if (result != null) {
-        showSuccessToast('Sequence Definition Created Successfully');
-        return result.createSequenceDefinition?.id;
+        showSuccessToast('Sequence Filter Created Successfully');
+        return result.createSequenceFilter?.id;
       } else {
-        throw Error('Unable to create sequence definition');
+        throw Error('Unable to create sequence filter');
       }
     } catch (e) {
-      catchError('Unable To Create Sequence Definition', e as Error);
-      showFailureToast('Unable To Create Sequence Definition');
+      catchError('Unable To Create Sequence Filter', e as Error);
+      showFailureToast('Unable To Create Sequence Filter');
     }
     return undefined;
   },
@@ -3118,33 +3119,33 @@ const effects = {
     }
   },
 
-  async deleteSequenceDefinitions(sequenceDefinitionIds: number[], user: User | null): Promise<void> {
+  async deleteSequenceFilters(sequenceFilterIds: number[], user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.DELETE_SEQUENCE_DEFINITIONS(user)) {
-        throwPermissionError('delete the sequence definitions');
+      if (!queryPermissions.DELETE_SEQUENCE_FILTERS(user)) {
+        throwPermissionError('delete the sequence filters');
       }
 
       const { confirm } = await showConfirmModal(
         'Delete',
-        `This will permanently delete the sequence definitions '${sequenceDefinitionIds}'`,
+        `This will permanently delete the sequence filters '${sequenceFilterIds}'`,
         'Delete Permanently',
       );
 
       if (confirm) {
-        const data = await reqHasura<{ sequenceDefinitionIds: number[] }>(
-          gql.DELETE_SEQUENCE_DEFINITIONS,
-          { sequenceDefinitionIds },
+        const data = await reqHasura<{ sequenceFilterIds: number[] }>(
+          gql.DELETE_SEQUENCE_FILTERS,
+          { sequenceFilterIds },
           user,
         );
-        if (data.deleteSequenceDefinitions != null) {
-          showSuccessToast('Sequence Definitions Deleted Successfully');
+        if (data.deleteSequenceFilters != null) {
+          showSuccessToast('Sequence Filters Deleted Successfully');
         } else {
-          throw Error(`Unable to delete sequence definitions with IDs: "${sequenceDefinitionIds}"`);
+          throw Error(`Unable to delete sequence filters with IDs: "${sequenceFilterIds}"`);
         }
       }
     } catch (e) {
-      catchError('Sequence Definitions Delete Failed', e as Error);
-      showFailureToast('Sequence Definitions Delete Failed');
+      catchError('Sequence Filter Delete Failed', e as Error);
+      showFailureToast('Sequence Filter Delete Failed');
     }
   },
 
@@ -3491,6 +3492,40 @@ const effects = {
       catchError('Plan Expansion Failed', e as Error);
       planExpansionStatusStore.set(Status.Failed);
       showFailureToast('Plan Expansion Failed');
+    }
+  },
+
+  async expandTemplates(
+    definitionIds: number[],
+    simulationDatasetId: number,
+    timeRangeStart: string,
+    timeRangeEnd: string,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      // TODO Store doesn't exist
+      sequenceExpansionStatusStore.set(Status.Incomplete);
+      if (!queryPermissions.EXPAND_TEMPLATES(user)) {
+        throwPermissionError('expand a sequence template');
+      }
+
+      const data = await reqHasura<{ id: number }>(gql.EXPAND_TEMPLATES, {
+        definitionIds,
+        simulationDatasetId,
+        timeRangeEnd,
+        timeRangeStart,
+      }, user);
+      if (data.expandTemplates !== null) {
+        sequenceExpansionStatusStore.set(Status.Complete);
+        showSuccessToast('Sequence Expanded Successfully');
+      } else {
+        throw Error('Unable to expand sequence');
+      }
+    } catch (e) {
+      catchError('Sequence Expansion Failed', e as Error);
+      // TODO Store doesn't exist
+      sequenceExpansionStatusStore.set(Status.Failed);
+      showFailureToast('Sequence Expansion Failed');
     }
   },
 

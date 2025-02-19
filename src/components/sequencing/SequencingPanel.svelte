@@ -3,13 +3,13 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
-  import { activityTypes, plan } from '../../stores/plan';
-  import { simulationStatus, spans } from '../../stores/simulation';
+  import { plan } from '../../stores/plan';
+  import { simulationDatasetLatest, simulationStatus } from '../../stores/simulation';
   import type { User } from '../../types/app';
-  import type { DataGridColumnDef, DataGridRowDoubleClick, DataGridRowSelection } from '../../types/data-grid';
+  import type { DataGridColumnDef, DataGridRowDoubleClick } from '../../types/data-grid';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
-  import { showSequenceDefinitionModal } from '../../utilities/modal';
+  import { showSequenceFilterModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { convertDoyToYmd, formatDate } from '../../utilities/time';
@@ -25,16 +25,11 @@
   import { required } from '../../utilities/validators';
   import { tooltip } from '../../utilities/tooltip';
   import ActivityFilterBuilder from '../timeline/form/TimelineEditor/ActivityFilterBuilder.svelte';
-  import type { SequenceDefinition, SequenceFilter } from '../../types/sequencing';
-  import { planSequenceStatus, sequenceDefinitions, sequencingError } from '../../stores/sequencing';
+  import type { SequenceActivityFilter, SequenceFilter } from '../../types/sequencing';
+  import { planSequenceStatus, sequenceFilters, sequencingError } from '../../stores/sequencing';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
-  import { applyActivityLayerFilter } from '../../utilities/timeline';
-  import { activityArgumentDefaultsMap, activityDirectivesMap } from '../../stores/activities';
-  import type { ActivityDirective } from '../../types/activity';
-  import type { Span } from '../../types/simulation';
   import { Status } from '../../enums/status';
-  import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import AlertError from '../ui/AlertError.svelte';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -42,14 +37,20 @@
   export let gridSection: ViewGridSection;
   export let user: User | null;
 
-  type CellRendererParams = {
-    deleteSequenceDefinition: (sequence: SequenceDefinition) => void;
-    openSequenceDefinition: (sequence: SequenceDefinition, user: User) => void;
+  type CellRendererParamsFilterActions = {
+    deleteSequenceFilter: (sequence: SequenceFilter) => void;
+    openSequenceFilter: (sequence: SequenceFilter, user: User) => void;
   };
-  type SequenceDefinitionCellRendererParams = ICellRendererParams<SequenceDefinition> & CellRendererParams;
+  // TODO
+  // type CellRendererParamsFragmentActions = {
+  //   openSequenceFragment: (sequenceFragment: SequenceFragment) => void;
+  // };
+  type SequenceFilterCellRendererParams = ICellRendererParams<SequenceFilter> & CellRendererParamsFilterActions;
+  // TODO
+  // type SequenceFragmentCellRendererParams = ICellRendererParams<SequenceFragment> & CellRendererParamsFragmentActions;
 
-  const createPermissionError = 'You do not have permission to create a sequence definition';
-  const deletePermissionError = 'You do not have permission to delete sequence definitions';
+  const createPermissionError = 'You do not have permission to create a sequence filter';
+  const deletePermissionError = 'You do not have permission to delete sequence filter';
   const planStartTimeDate: Date = new Date($plan?.start_time ?? '');
   const planEndTimeDate: Date = new Date(convertDoyToYmd($plan?.end_time_doy ?? '') ?? '');
   const baseColumnDefs: DataGridColumnDef[] = [
@@ -77,16 +78,53 @@
       hide: true,
       resizable: true,
       sortable: false,
-      valueGetter: (params: ValueGetterParams<SequenceDefinition>) => {
+      valueGetter: (params: ValueGetterParams<SequenceFilter>) => {
         return JSON.stringify(params?.data?.filter);
       },
     },
   ];
+  // TODO
+  // const baseColumnDefsSequenceFragments: DataGridColumnDef[] = [
+  //   {
+  //     field: 'id',
+  //     filter: 'number',
+  //     headerName: 'ID',
+  //     resizable: true,
+  //     sortable: true,
+  //     width: 55
+  //   },
+  //   {
+  //     field: 'activityId',
+  //     filter: 'number',
+  //     headerName: 'Activity ID',
+  //     resizable: true,
+  //     sortable: true,
+  //     width: 85,
+  //   },
+  //   {
+  //     field: 'activityName',
+  //     filter: 'string',
+  //     headerName: 'Activity Name',
+  //     resizable: true,
+  //     sortable: true,
+  //     width: 150,
+  //   },
+  //   {
+  //     field: 'created_at',
+  //     filter: 'text',
+  //     headerName: 'Created At',
+  //     resizable: true,
+  //     sortable: true,
+  //     width: 150
+  //   }
+  // ];
 
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
+  // TODO
+  // let columnDefsSequenceFragments: DataGridColumnDef[] = baseColumnDefsSequenceFragments;
   let hasDeletePermission: boolean = false;
   let hasCreatePermission: boolean = false;
-  let selectedSequenceDefinition: SequenceDefinition | null;
+  let selectedSequenceFilter: SequenceFilter | null;
   let startTimeField: FieldStore<string>;
   let endTimeField: FieldStore<string>;
   let startTimeFieldDate: Date;
@@ -95,24 +133,20 @@
   let planEndTime: string = formatDate(planEndTimeDate, $plugins.time.primary.format);
   let seqNameInput: string;
   let filterMenu: ActivityFilterBuilder;
-  let filterMenuActiveFilter: SequenceFilter = {};
-  let currentModelSequenceDefinitions: SequenceDefinition[] = [];
-  let selectedSequenceDefinitionActivities: { directives: ActivityDirective[]; spans: Span[] } = {
-    directives: [],
-    spans: [],
-  };
+  let filterMenuActiveFilter: SequenceActivityFilter = {};
+  let currentModelSequenceFilters: SequenceFilter[] = [];
   let planStartDate: Date | undefined;
   let planEndDate: Date | undefined;
-  let dataGrid: DataGrid<SequenceDefinition>;
-  let selectedSequenceDefinitionId: number | null = null;
-  let selectedSequenceDefinitionIds: number[] = [];
+  let dataGrid: DataGrid<SequenceFilter>;
+  let selectedSequenceFilterId: number | null = null;
+  let selectedSequenceFilterIds: number[] = [];
 
   $: if ($plan !== null) {
     planStartDate = $plugins.time.primary.parse($plan.start_time_doy) ?? undefined;
     planEndDate = $plugins.time.primary.parse($plan.end_time_doy) ?? undefined;
   }
 
-  $: currentModelSequenceDefinitions = $sequenceDefinitions.filter(seqDef => seqDef.model_id === $plan?.model_id);
+  $: currentModelSequenceFilters = $sequenceFilters.filter(seqFilter => seqFilter.model_id === $plan?.model_id);
 
   $: startTimeField = field<string>(planStartTime, [required, $plugins.time.primary.validate]);
   $: endTimeField = field<string>(planEndTime, [required, $plugins.time.primary.validate]);
@@ -123,43 +157,44 @@
   }
 
   $: if (user !== null && $plan !== null) {
-    hasDeletePermission = featurePermissions.sequenceDefinition.canDelete(user);
-    hasCreatePermission = featurePermissions.sequenceDefinition.canCreate(user);
+    hasDeletePermission = featurePermissions.sequenceFilter.canDelete(user);
+    hasCreatePermission = featurePermissions.sequenceFilter.canCreate(user);
   }
 
-  $: selectedSequenceDefinition = $sequenceDefinitions.find(s => s.id === selectedSequenceDefinitionId) ?? null;
+  $: selectedSequenceFilter = $sequenceFilters.find(s => s.id === selectedSequenceFilterId) ?? null;
+
+  $: isTemplatingDisabled = selectedSequenceFilterIds.length === 0 || selectedSequenceFilterId === null || $simulationStatus !== Status.Complete;
 
   $: columnDefs = [
     ...columnDefs,
     {
       cellClass: 'action-cell-container',
-      cellRenderer: (params: SequenceDefinitionCellRendererParams) => {
+      cellRenderer: (params: SequenceFilterCellRendererParams) => {
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'actions-cell';
         new DataGridActions({
           props: {
-            deleteCallback: params.deleteSequenceDefinition,
+            deleteCallback: params.deleteSequenceFilter,
             deleteTooltip: {
-              content: 'Delete Sequence Definition',
+              content: 'Delete Sequence Filter',
               placement: 'bottom',
             },
             hasDeletePermission,
             rowData: params.data,
-            viewCallback: data => user && params.openSequenceDefinition(data, user),
+            viewCallback: data => user && params.openSequenceFilter(data, user),
             viewTooltip: {
-              content: 'Open Sequence Definition',
+              content: 'Open Sequence Filter',
               placement: 'bottom',
             },
           },
           target: actionsDiv,
         });
-
         return actionsDiv;
       },
       cellRendererParams: {
-        deleteSequenceDefinition,
-        openSequenceDefinition,
-      } as CellRendererParams,
+        deleteSequenceFilter,
+        openSequenceFilter,
+      } as CellRendererParamsFilterActions,
       field: 'actions',
       headerName: '',
       resizable: false,
@@ -170,29 +205,57 @@
     },
   ];
 
-  $: activityDirectives = Object.values($activityDirectivesMap || {});
-  $: if (selectedSequenceDefinition && $spans) {
-    selectedSequenceDefinitionActivities = applyActivityLayerFilter(
-      selectedSequenceDefinition.filter,
-      activityDirectives,
-      $spans || [],
-      $activityTypes,
-      $activityArgumentDefaultsMap,
-    );
+  // TODO
+  // $: columnDefsSequenceFragments = [
+  //   ...columnDefsSequenceFragments,
+  //   {
+  //     cellClass: 'action-cell-container',
+  //     cellRenderer: (params: SequenceFragmentCellRendererParams) => {
+  //       const actionsDiv = document.createElement('div');
+  //       actionsDiv.className = 'actions-cell';
+  //       new DataGridActions({
+  //         props: {
+  //           rowData: params.data,
+  //           viewCallback: data => user && params.openSequenceFragment(data),
+  //           viewTooltip: {
+  //             content: 'Open Sequence Fragment',
+  //             placement: 'bottom',
+  //           },
+  //         },
+  //         target: actionsDiv
+  //       });
+  //       return actionsDiv;
+  //     },
+  //     cellRendererParams: {
+  //       openSequenceFragment,
+  //     } as CellRendererParamsFragmentActions,
+  //     field: 'actions',
+  //     headerName: '',
+  //     resizable: false,
+  //     sortable: false,
+  //     suppressAutoSize: true,
+  //     suppressSizeToFit: true,
+  //     width: 55,
+  //   }
+  // ]
+
+  function deleteSequenceFilter(sequenceFilter: SequenceFilter) {
+    effects.deleteSequenceFilters([sequenceFilter.id], user);
   }
 
-  function deleteSequenceDefinition(sequenceDefinition: SequenceDefinition) {
-    effects.deleteSequenceDefinitions([sequenceDefinition.id], user);
+  function openSequenceFilter(sequenceFilter: SequenceFilter) {
+    showSequenceFilterModal(sequenceFilter);
   }
 
-  function openSequenceDefinition(sequenceDefinition: SequenceDefinition) {
-    showSequenceDefinitionModal(sequenceDefinition);
-  }
+  // TODO
+  // function openSequenceFragment(sequenceFragment: SequenceFragment) {
+  //   console.log("TODO");
+  // }
 
-  async function onCreateSequenceDefinition() {
+  async function onCreateSequenceFilter() {
     // This always *should* be true, but check anyway to keep TS happy
     if ($plan !== null) {
-      await effects.createSequenceDefinition(filterMenuActiveFilter, seqNameInput, $plan.model_id, user);
+      await effects.createSequenceFilter(filterMenuActiveFilter, seqNameInput, $plan.model_id, user);
       filterMenu.setActiveFilter({}); // Reset filter
       seqNameInput = '';
     }
@@ -202,65 +265,47 @@
     filterMenu.toggle();
   }
 
-  function onBulkDeleteItems(event: CustomEvent<SequenceDefinition[]>) {
-    const { detail: sequenceDefinitionsToDelete } = event;
-    const idsToDelete = sequenceDefinitionsToDelete.map(sequenceDefinition => sequenceDefinition.id);
+  function onBulkDeleteItems(event: CustomEvent<SequenceFilter[]>) {
+    const { detail: sequenceFiltersToDelete } = event;
+    const idsToDelete = sequenceFiltersToDelete.map(sequenceFilter => sequenceFilter.id);
     if (idsToDelete.length > 0) {
-      effects.deleteSequenceDefinitions(idsToDelete, user);
+      effects.deleteSequenceFilters(idsToDelete, user);
     }
   }
 
-  function onViewSequenceDefinitionFilter() {
-    if (selectedSequenceDefinition !== null) {
-      showSequenceDefinitionModal(selectedSequenceDefinition);
+  function onViewSequenceFilter() {
+    if (selectedSequenceFilter !== null) {
+      showSequenceFilterModal(selectedSequenceFilter);
     }
   }
 
-  function onRowDoubleClicked(event: CustomEvent<DataGridRowDoubleClick<SequenceDefinition>>) {
+  function onRowDoubleClicked(event: CustomEvent<DataGridRowDoubleClick<SequenceFilter>>) {
     const {
       detail: { data: clickedRow },
     } = event;
-    showSequenceDefinitionModal(clickedRow);
+    showSequenceFilterModal(clickedRow);
   }
 
   function onRunTemplating() {
     $sequencingError = null;
-    if (selectedSequenceDefinitionIds.length > 0) {
-      let filteredSpanMap: Map<number, Span[]> = selectedSequenceDefinitionIds.reduce(
-        (accMap: Map<number, Span[]>, sequenceDefinitionId: number) => {
-          const sequenceDefinitionFilter =
-            $sequenceDefinitions.find(sequenceDefinition => sequenceDefinition.id === sequenceDefinitionId)?.filter ??
-            {};
-          accMap.set(
-            sequenceDefinitionId,
-            getSpansForTemplating(sequenceDefinitionFilter, startTimeFieldDate, endTimeFieldDate),
-          );
-          return accMap;
-        },
-        new Map<number, Span[]>(),
-      );
-      console.log(filteredSpanMap);  // TODO: Should output to something like effects.runSequenceTemplating(...)
-    }
-  }
 
-  function getSpansForTemplating(filter: SequenceFilter, startRange: Date, endRange: Date): Span[] {
-    // Apply filter
-    let filteredActivities = applyActivityLayerFilter(
-      filter,
-      activityDirectives,
-      $spans || [],
-      $activityTypes,
-      $activityArgumentDefaultsMap,
-    );
-    if (filteredActivities.spans.length === 0) {
-      return [];
+    if ($simulationDatasetLatest === null) {
+      sequencingError.set("No latest simulation found - please run simulation first before templating!");
+      return;
     }
-    let filteredSpans = filteredActivities.spans.filter(span => {
-      const spanStart = new Date(span.startMs);
-      const spanEnd = new Date(span.endMs);
-      return startRange <= spanStart && spanStart <= endRange && startRange <= spanEnd && spanEnd <= endRange;
-    });
-    return filteredSpans;
+
+    if (!selectedSequenceFilterIds) {
+      sequencingError.set("No selected sequence filter(s) found - please select one from the dropdown before templating!");
+      return;
+    }
+
+    effects.expandTemplates(
+      selectedSequenceFilterIds,
+      $simulationDatasetLatest.id,
+      $startTimeField.value,
+      $endTimeField.value,
+      user
+    )
   }
 </script>
 
@@ -271,7 +316,7 @@
       <PanelHeaderActionButton
         title="Run Templating"
         showLabel
-        disabled={selectedSequenceDefinitionIds.length === 0 || selectedSequenceDefinitionId === null}
+        disabled={isTemplatingDisabled}
         on:click={onRunTemplating}
       />
     </PanelHeaderActions>
@@ -292,22 +337,22 @@
     <div class="sequence-panel-body">
       <fieldset>
         <!-- TODO: This might be too much w. bulk actions on the table -->
-        <label for="sequenceDefinition" class="sequence-definition-selector">
-          Sequence Definition
-          <!-- TODO: URL, this page doesn't exist.. should we make one for the definitions-->
-          <a href={`${base}/expansion/sets`} target="_blank" rel="noopener noreferrer">View All Definitions</a>
+        <label for="sequenceFilter" class="sequence-filter-selector">
+          Sequence Filter
+          <!-- TODO: URL, this page doesn't exist.. should we make one for the filters-->
+          <a href={`${base}/expansion/sets`} target="_blank" rel="noopener noreferrer">View All Filters</a>
         </label>
         <select
-          bind:value={selectedSequenceDefinitionId}
+          bind:value={selectedSequenceFilterId}
           class="st-select w-100"
-          disabled={!currentModelSequenceDefinitions.length}
-          name="sequenceDefinition"
+          disabled={!currentModelSequenceFilters.length}
+          name="sequenceFilter"
         >
-          {#if !currentModelSequenceDefinitions.length}
-            <option value={null}>No Sequence Definitions Found</option>
+          {#if !currentModelSequenceFilters.length}
+            <option value={null}>No Sequence Filters Found</option>
           {:else}
             <option value={null} />
-            {#each currentModelSequenceDefinitions as set}
+            {#each currentModelSequenceFilters as set}
               <option value={set.id}>
                 {set.name} ({set.id})
               </option>
@@ -316,41 +361,44 @@
         </select>
       </fieldset>
       <fieldset>
-        <Collapse title="Sequence Definition Details" defaultExpanded={false} padContent={false}>
-          {#if !selectedSequenceDefinition}
-            <div class="st-typography-label">No Sequence Definition Selected</div>
+        <Collapse title="Sequence Filter Details" defaultExpanded={false} padContent={false}>
+          {#if !selectedSequenceFilter}
+            <div class="st-typography-label">No Sequence Filter Selected</div>
           {:else}
-            <div class="sequence-definition-details">
-              <div class="sequence-definition-detail">
-                <span class="st-typography-label">Definition ID: </span>
-                <span>{selectedSequenceDefinition.id}</span>
+            <div class="sequence-filter-details">
+              <div class="sequence-filter-detail">
+                <span class="st-typography-label">Filter ID: </span>
+                <span>{selectedSequenceFilter.id}</span>
               </div>
-              <div class="sequence-definition-detail">
+              <div class="sequence-filter-detail">
                 <span class="st-typography-label">Model ID: </span>
-                <span>{selectedSequenceDefinition.model_id}</span>
+                <span>{selectedSequenceFilter.model_id}</span>
               </div>
-              <div class="sequence-definition-detail">
+              <div class="sequence-filter-detail">
                 <span class="st-typography-label">Name: </span>
-                <span>{selectedSequenceDefinition.name}</span>
-              </div>
-              <div class="sequence-definition-detail">
-                <span class="st-typography-label">Activities in Filter: </span>
-                <span>
-                  {selectedSequenceDefinitionActivities.spans.length}
-                  {#if $simulationStatus !== Status.Complete}
-                    <div
-                      class="simulation-warning"
-                      use:tooltip={{ content: 'Simulation out-of-date', placement: 'top' }}
-                    >
-                      <WarningIcon class="yellow-icon" />
-                    </div>
-                  {/if}
-                </span>
+                <span>{selectedSequenceFilter.name}</span>
               </div>
             </div>
-            <button class="st-button w-100 secondary" on:click|stopPropagation={onViewSequenceDefinitionFilter}>
-              View Filters
+            <button class="st-button w-100 secondary" on:click|stopPropagation={onViewSequenceFilter}>
+              View Filter Definitions
             </button>
+            <!-- TODO -->
+            <!-- <div style:padding-left="8px">
+              <Collapse title="Generated Sequence Fragments" defaultExpanded={false} padContent={false}>
+                {#if selectedSequenceDefinitionFragments.length > 0}
+                  <SingleActionDataGrid
+                    columnDefs={columnDefsSequenceFragments}
+                    itemDisplayText="Sequence Fragments"
+                    items={selectedSequenceFragments}
+                    {user}
+                  />
+                {:else}
+                  <div class="st-typography" style:padding-left="16px">
+                    No fragments have been generated - run templating to create some!
+                  </div>
+                {/if}
+              </Collapse>
+            </div> -->
           {/if}
         </Collapse>
       </fieldset>
@@ -373,12 +421,12 @@
         </Collapse>
       </fieldset>
       <fieldset>
-        <Collapse className="details-container" title="Sequence Definitions" padContent={false}>
-          <div class="sequence-definition-form-container">
-            <CssGrid class="sequence-definition-form" rows="min-content auto">
+        <Collapse className="details-container" title="Sequence Filters" padContent={false}>
+          <div class="sequence-filter-form-container">
+            <CssGrid class="sequence-filter-form" rows="min-content auto">
               <CssGrid columns="3fr" gap="12px">
                 <div class="seq-name">
-                  <label for="seqName">Sequence Definition Name</label>
+                  <label for="seqName">Sequence Filter Name</label>
                   <input
                     bind:value={seqNameInput}
                     class="st-input w-100"
@@ -397,11 +445,11 @@
                     permissionError: createPermissionError,
                   }}
                 >
-                  Show Sequence Definition Filter
+                  Show Sequence Filter Definition
                 </button>
                 <button
                   class="st-button active w-100"
-                  on:click|stopPropagation={onCreateSequenceDefinition}
+                  on:click|stopPropagation={onCreateSequenceFilter}
                   use:tooltip={{
                     content: 'Options for creating a sequence',
                     placement: 'top',
@@ -411,31 +459,31 @@
                     permissionError: createPermissionError,
                   }}
                 >
-                  Create Sequence Definition
+                  Create Sequence Filter
                 </button>
               </CssGrid>
               <div class="mt-2">
-                {#if $sequenceDefinitions.length}
+                {#if $sequenceFilters.length}
                   <BulkActionDataGrid
                     bind:dataGrid
-                    bind:selectedItemId={selectedSequenceDefinitionId}
-                    bind:selectedItemIds={selectedSequenceDefinitionIds}
+                    bind:selectedItemId={selectedSequenceFilterId}
+                    bind:selectedItemIds={selectedSequenceFilterIds}
                     getRowId={rowData => rowData.id}
                     {columnDefs}
-                    loading={!currentModelSequenceDefinitions}
+                    loading={!currentModelSequenceFilters}
                     {hasDeletePermission}
                     hasDeletePermissionError={deletePermissionError}
-                    items={currentModelSequenceDefinitions}
-                    pluralItemDisplayText="Sequence Definitions"
+                    items={currentModelSequenceFilters}
+                    pluralItemDisplayText="Sequence Filters"
                     scrollToSelection={true}
-                    singleItemDisplayText="Sequence Definition"
+                    singleItemDisplayText="Sequence Filter"
                     {user}
                     on:bulkDeleteItems={e => onBulkDeleteItems(e)}
                     on:rowDoubleClicked={e => onRowDoubleClicked(e)}
                   />
                 {:else}
                   <div class="st-typography-label">
-                    No Sequence Definitions for Model '{$plan?.model.name}'
+                    No Sequence Filters for Model '{$plan?.model.name}'
                   </div>
                 {/if}
               </div>
@@ -455,42 +503,34 @@
     height: 100%;
   }
 
-  .sequence-definition-selector {
+  .sequence-filter-selector {
     align-items: center;
     display: flex;
     justify-content: space-between;
   }
 
-  .sequence-definition-selector a:visited {
+  .sequence-filter-selector a:visited {
     color: blue;
   }
 
-  .sequence-definition-details {
+  .sequence-filter-details {
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
 
-  .sequence-definition-detail {
+  .sequence-filter-detail {
     display: flex;
   }
-  .sequence-definition-details span:first-child {
+  .sequence-filter-details span:first-child {
     display: flex;
     flex: 1;
     max-width: 200px;
   }
 
-  .sequence-definition-details span:last-child {
+  .sequence-filter-details span:last-child {
     display: flex;
     flex: 1;
-  }
-
-  .simulation-warning {
-    align-items: center;
-    display: flex;
-    flex-shrink: 0;
-    justify-content: center;
-    padding-left: 4px;
   }
 
   :global(.details-container) {
@@ -500,11 +540,11 @@
     height: calc(100%);
   }
 
-  :global(.details-container.collapse .sequence-definition-form-container) {
+  :global(.details-container.collapse .sequence-filter-form-container) {
     height: calc(100% - 48px);
   }
 
-  :global(.sequence-definition-form) {
+  :global(.sequence-filter-form) {
     height: 100%;
   }
 </style>

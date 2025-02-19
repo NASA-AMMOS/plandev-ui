@@ -458,8 +458,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   CREATE_SEQUENCE_ADAPTATION: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_ADAPTATION], user);
   },
-  CREATE_SEQUENCE_DEFINITION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_DEFINITION], user);
+  CREATE_SEQUENCE_FILTER: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_FILTER], user);
   },
   CREATE_SIMULATION_TEMPLATE: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_SIMULATION_TEMPLATE], user);
@@ -654,8 +654,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   DELETE_SEQUENCE_ADAPTATION: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_ADAPTATION], user);
   },
-  DELETE_SEQUENCE_DEFINITIONS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_DEFINITIONS], user);
+  DELETE_SEQUENCE_FILTERS: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_FILTERS], user);
   },
   DELETE_SIMULATION_TEMPLATE: (user: User | null, template: SimulationTemplate): boolean => {
     return (
@@ -681,6 +681,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   EXPAND: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
     const queries = [Queries.EXPAND_ALL_ACTIVITIES];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
+  },
+  EXPAND_TEMPLATES: (user: User | null): boolean => {
+    return isUserAdmin(user) || (getPermission([Queries.EXPAND_ALL_TEMPLATES], user));
   },
   GET_ACTIVITY_DIRECTIVE_CHANGELOG: () => true,
   GET_ACTIVITY_TYPES_EXPANSION_RULES: () => true,
@@ -914,7 +917,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   SUB_SCHEDULING_REQUESTS: () => true,
   SUB_SEQUENCE_ADAPTATIONS: () => true,
-  SUB_SEQUENCE_DEFINITIONS: () => true,
+  SUB_SEQUENCE_FILTERS: () => true,
   SUB_SIMULATION: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.SIMULATIONS], user);
   },
@@ -1349,7 +1352,7 @@ interface FeaturePermissions {
   schedulingGoalsModelSpec: ModelSpecificationCRUDPermission;
   schedulingGoalsPlanSpec: SchedulingCRUDPermission<AssetWithOwner<SchedulingGoalMetadata>>;
   sequenceAdaptation: CRUDPermission<void>;
-  sequenceDefinition: CRUDPermission<void>;
+  sequenceFilter: CRUDPermission<void>;
   sequences: CRUDPermission<AssetWithOwner<UserSequence>>;
   simulation: RunnableCRUDPermission<AssetWithOwner<Simulation>>;
   simulationTemplates: PlanSimulationTemplateCRUDPermission;
@@ -1555,9 +1558,9 @@ const featurePermissions: FeaturePermissions = {
     canRead: () => false, // Not implemented
     canUpdate: () => false, // Not implemented
   },
-  sequenceDefinition: {
-    canCreate: user => queryPermissions.CREATE_SEQUENCE_DEFINITION(user),
-    canDelete: user => queryPermissions.DELETE_SEQUENCE_DEFINITIONS(user),
+  sequenceFilter: {
+    canCreate: user => queryPermissions.CREATE_SEQUENCE_FILTER(user),
+    canDelete: user => queryPermissions.DELETE_SEQUENCE_FILTERS(user),
     canRead: () => true,
     canUpdate: () => false,
   },

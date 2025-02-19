@@ -7,17 +7,17 @@
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
-  import type { SequenceDefinition } from '../../types/sequencing';
+  import type { SequenceFilter } from '../../types/sequencing';
 
   const dispatch = createEventDispatcher<{
     close: void;
   }>();
 
-  export let sequenceDefinition: SequenceDefinition;
+  export let sequenceFilter: SequenceFilter;
 </script>
 
 <Modal height={400} width={600}>
-  <ModalHeader on:close>Sequence Definition ID: {sequenceDefinition.id}</ModalHeader>
+  <ModalHeader on:close>Sequence Filter ID: {sequenceFilter.id}</ModalHeader>
   <ModalContent>
     <div style:height="300px">
       <MonacoEditor
@@ -28,7 +28,7 @@
         readOnly={true}
         scrollBeyondLastLine={false}
         tabSize={2}
-        value={JSON.stringify(sequenceDefinition.filter, undefined, 2)}
+        value={JSON.stringify(sequenceFilter.filter, undefined, 2)}
       />
     </div>
   </ModalContent>
