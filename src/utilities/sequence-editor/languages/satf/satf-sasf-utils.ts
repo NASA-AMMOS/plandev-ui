@@ -1,9 +1,9 @@
 import type { SyntaxNode } from '@lezer/common';
 import { Tree } from '@lezer/common';
 import type { CommandDictionary, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
-import { TimeTypes } from '../../../enums/time';
-import { unquoteUnescape } from '../../codemirror/codemirror-utils';
-import { getBalancedDuration, getDurationTimeComponents, parseDurationString, validateTime } from '../../time';
+import { TimeTypes } from '../../../../enums/time';
+import { getBalancedDuration, getDurationTimeComponents, parseDurationString, validateTime } from '../../../time';
+import { unquoteUnescape } from '../../sequence-utils';
 import { SatfLanguage } from './satf';
 import {
   ACTIVITY_TYPE_DEFINITIONS,
@@ -68,7 +68,7 @@ import {
   VAR_UINT,
   VARIABLES,
   VIRTUAL_CHANNEL,
-} from './satfConstants';
+} from './satf-constants';
 
 /**
  * Parses the metadata from seqN.

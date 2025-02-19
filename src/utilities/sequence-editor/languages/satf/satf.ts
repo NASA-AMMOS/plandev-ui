@@ -9,7 +9,7 @@ export const SatfLanguage = LRLanguage.define({
   parser: parser.configure({
     props: [
       foldNodeProp.add({
-        // Add a custom folder
+        // TODO: Add a custom folder
       }),
       styleTags({
         Activity: t.strong,

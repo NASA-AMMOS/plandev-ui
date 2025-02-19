@@ -4,11 +4,11 @@ import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '
 import { RULE_SEQUENCE_NAME, TOKEN_ACTIVATE, TOKEN_LOAD } from '../../constants/seq-n-grammar-constants';
 import { getGlobals } from '../../stores/sequence-adaptation';
 import type { LibrarySequence } from '../../types/sequencing';
-import { SeqLanguage } from '../codemirror';
-import { getDefaultVariableArgs } from '../codemirror/codemirror-utils';
 import { getDoyTime } from '../time';
 import { fswCommandArgDefault } from './command-dictionary';
 import { getCustomArgDef } from './extension-points';
+import { SeqLanguage } from './languages/seq-n/seq-n';
+import { getDefaultVariableArgs } from './sequence-utils';
 import { getFromAndTo, getNearestAncestorNodeOfType } from './tree-utils';
 
 type CursorInfo = {

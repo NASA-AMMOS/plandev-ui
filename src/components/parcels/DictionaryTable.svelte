@@ -5,13 +5,13 @@
   import { createEventDispatcher } from 'svelte';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
-  import type { DictionaryType } from '../../types/sequencing';
+  import type { DictionaryMetadata } from '../../types/sequencing';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
 
-  export let dictionaries: DictionaryType[];
+  export let dictionaries: DictionaryMetadata[];
   export let selectedDictionaryIds: Record<number, boolean> = {};
   export let isEditingDictionaries: boolean = false;
   export let isEditingParcel: boolean = false;
@@ -22,7 +22,7 @@
   export let user: User | null;
 
   let columnDefs: DataGridColumnDef[];
-  let dictionaryDataGrid: SingleActionDataGrid<DictionaryType> | undefined = undefined;
+  let dictionaryDataGrid: SingleActionDataGrid<DictionaryMetadata> | undefined = undefined;
   let dictionaryColumnDefs: DataGridColumnDef[];
   let displayText: string = '';
   let displayTextPlural: string = '';
@@ -37,9 +37,9 @@
   }>();
 
   type CellRendererParams = {
-    deleteDictionary?: (dictionary: DictionaryType) => void;
+    deleteDictionary?: (dictionary: DictionaryMetadata) => void;
   };
-  type DictionaryCellRendererParams = ICellRendererParams<DictionaryType> & CellRendererParams;
+  type DictionaryCellRendererParams = ICellRendererParams<DictionaryMetadata> & CellRendererParams;
 
   $: isSequenceAdaptation = type === 'Sequence';
   $: displayText = isSequenceAdaptation ? `${type} Adaptation` : `${type} Dictionary`;
@@ -90,7 +90,7 @@
       headerName: '',
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      valueGetter: (params: ValueGetterParams<DictionaryType>) => {
+      valueGetter: (params: ValueGetterParams<DictionaryMetadata>) => {
         const { data } = params;
 
         if (data) {
@@ -150,7 +150,7 @@
     ...(isEditingDictionaries ? editingDictionariesColumnDefs : []),
   ];
 
-  function deleteDictionary({ id }: Pick<DictionaryType, 'id'>) {
+  function deleteDictionary({ id }: Pick<DictionaryMetadata, 'id'>) {
     dispatch('delete', { id });
   }
 
@@ -162,7 +162,7 @@
    * Called when a row is clicked on.
    * @param event
    */
-  function onRowClicked(event: CustomEvent<DataGridRowSelection<DictionaryType>>) {
+  function onRowClicked(event: CustomEvent<DataGridRowSelection<DictionaryMetadata>>) {
     const currentValue = selectedDictionaryIds[event.detail.data.id];
 
     selectRow(event.detail.data.id, currentValue === undefined ? true : !currentValue);
@@ -172,7 +172,7 @@
    * Called when a checkbox is selected.
    * @param event
    */
-  function onToggle(event: CustomEvent<CellEditingStoppedEvent<DictionaryType, boolean>>) {
+  function onToggle(event: CustomEvent<CellEditingStoppedEvent<DictionaryMetadata, boolean>>) {
     const {
       detail: { data, newValue },
     } = event;

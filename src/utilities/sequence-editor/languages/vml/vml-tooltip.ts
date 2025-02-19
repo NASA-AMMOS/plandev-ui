@@ -9,14 +9,14 @@ import type {
   FswCommandArgumentInteger,
 } from '@nasa-jpl/aerie-ampcs';
 import type { EditorView } from 'codemirror';
-import ArgumentTooltip from '../../../components/sequencing/ArgumentTooltip.svelte';
-import CommandTooltip from '../../../components/sequencing/CommandTooltip.svelte';
-import StringTooltip from '../../../components/sequencing/StringTooltip.svelte';
-import type { LibrarySequence } from '../../../types/sequencing';
-import { getTokenPositionInLine } from '../../sequence-editor/sequence-tooltip';
-import { checkContainment, getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
-import { decodeInt32Array, unquoteUnescape } from '../codemirror-utils';
-import { librarySequenceToFswCommand } from './vmlBlockLibrary';
+import ArgumentTooltip from '../../../../components/sequencing/ArgumentTooltip.svelte';
+import CommandTooltip from '../../../../components/sequencing/CommandTooltip.svelte';
+import StringTooltip from '../../../../components/sequencing/StringTooltip.svelte';
+import type { LibrarySequence } from '../../../../types/sequencing';
+import { getTokenPositionInLine } from '../../sequence-tooltip';
+import { decodeInt32Array, unquoteUnescape } from '../../sequence-utils';
+import { checkContainment, getNearestAncestorNodeOfType } from '../../tree-utils';
+import { librarySequenceToFswCommand } from './vml-block-library';
 import {
   RULE_BYTE_ARRAY,
   RULE_CALL_PARAMETER,
@@ -32,8 +32,8 @@ import {
   RULE_VM_MANAGEMENT,
   TOKEN_HEX_CONST,
   TOKEN_INT_CONST,
-} from './vmlConstants';
-import { getVmlNameNode } from './vmlTreeUtils';
+} from './vml-constants';
+import { getVmlNameNode } from './vml-tree-utils';
 
 const sequenceEngineArgument: FswCommandArgumentInteger = {
   arg_type: 'integer',

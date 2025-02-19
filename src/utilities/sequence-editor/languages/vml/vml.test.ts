@@ -1,9 +1,9 @@
 import type { SyntaxNode } from '@lezer/common';
 import type { FswCommandArgumentInteger } from '@nasa-jpl/aerie-ampcs';
 import { assert, describe, expect, it } from 'vitest';
-import { filterNodes, nodeContents } from '../../sequence-editor/tree-utils';
+import { filterNodes, nodeContents } from '../../tree-utils';
 import { VmlLanguage } from './vml';
-import { vmlBlockLibraryToCommandDictionary } from './vmlBlockLibrary';
+import { vmlBlockLibraryToCommandDictionary } from './vml-block-library';
 import {
   GROUP_STATEMENT_SUB as GROUP_STATEMENT_SUBTYPES,
   RULE_ABSOLUTE_SEQUENCE,
@@ -29,7 +29,7 @@ import {
   TOKEN_MODULE,
   TOKEN_SYMBOL_CONST,
   TOKEN_TIME_CONST,
-} from './vmlConstants';
+} from './vml-constants';
 
 // In versions of VML prior to 2.1, explicit time tags were required on every statement
 // confirm what version we're using

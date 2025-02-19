@@ -20,7 +20,6 @@ import {
   RULE_SEQUENCE_NAME,
   TOKEN_ACTIVATE,
   TOKEN_COMMAND,
-  TOKEN_ERROR,
   TOKEN_LOAD,
   TOKEN_REPEAT_ARG,
   TOKEN_REQUEST,
@@ -29,15 +28,6 @@ import { TimeTypes } from '../../enums/time';
 import { getGlobals } from '../../stores/sequence-adaptation';
 import type { LibrarySequence } from '../../types/sequencing';
 import { CustomErrorCodes } from '../../workers/customCodes';
-import {
-  addDefaultArgs,
-  addDefaultVariableArgs,
-  isHexValue,
-  parseNumericArg,
-  quoteEscape,
-} from '../codemirror/codemirror-utils';
-import { closeSuggestion, computeBlocks, openSuggestion } from '../codemirror/custom-folder';
-import { SeqNCommandInfoMapper } from '../codemirror/seq-n-tree-utils';
 import { pluralize } from '../text';
 import {
   getBalancedDuration,
@@ -49,6 +39,10 @@ import {
   validateTime,
 } from '../time';
 import { getCustomArgDef } from './extension-points';
+import { closeSuggestion, computeBlocks, openSuggestion } from './languages/seq-n/custom-folder';
+import { SeqNCommandInfoMapper } from './languages/seq-n/seq-n-tree-utils';
+import { TOKEN_ERROR } from './sequence-constants';
+import { addDefaultArgs, addDefaultVariableArgs, isHexValue, parseNumericArg, quoteEscape } from './sequence-utils';
 import { getChildrenNode, getDeepestNode, getFromAndTo } from './tree-utils';
 
 const KNOWN_DIRECTIVES = [

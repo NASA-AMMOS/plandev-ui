@@ -23,25 +23,25 @@ import type { ArgDelegator } from '../utilities/sequence-editor/extension-points
 import type { UserId } from './app';
 import type { GlobalType } from './global-type';
 
-export type ChannelDictionary = {
+export type ChannelDictionaryMetadata = {
   type: DictionaryTypes.CHANNEL;
-} & DictionaryType;
+} & DictionaryMetadata;
 
-export type CommandDictionary = {
+export type CommandDictionaryMetadata = {
   type: DictionaryTypes.COMMAND;
-} & DictionaryType;
+} & DictionaryMetadata;
 
-export type ParameterDictionary = {
+export type ParameterDictionaryMetadata = {
   type: DictionaryTypes.PARAMETER;
-} & DictionaryType;
+} & DictionaryMetadata;
 
-export type SequenceAdaptation = {
+export type SequenceAdaptationMetadata = {
   adaptation: ISequenceAdaptation;
   name: string;
   type: DictionaryTypes.ADAPTATION;
-} & DictionaryType;
+} & DictionaryMetadata;
 
-export type DictionaryType = {
+export type DictionaryMetadata = {
   created_at: string;
   id: number;
   mission: string;

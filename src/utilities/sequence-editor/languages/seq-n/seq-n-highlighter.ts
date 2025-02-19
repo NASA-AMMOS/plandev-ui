@@ -1,10 +1,10 @@
 import { syntaxTree } from '@codemirror/language';
 import { Decoration, ViewPlugin, type DecorationSet, type ViewUpdate } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
-import { TOKEN_COMMAND } from '../../constants/seq-n-grammar-constants';
-import { getNearestAncestorNodeOfType } from '../sequence-editor/tree-utils';
+import { TOKEN_COMMAND } from '../../../../constants/seq-n-grammar-constants';
+import { blockMark } from '../../../codemirror/themes/block';
+import { getNearestAncestorNodeOfType } from '../../tree-utils';
 import { computeBlocks, isBlockCommand } from './custom-folder';
-import { blockMark } from './themes/block';
 
 export const seqqNBlockHighlighter = ViewPlugin.fromClass(
   class {

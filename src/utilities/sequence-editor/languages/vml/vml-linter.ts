@@ -5,10 +5,10 @@ import type { SyntaxNode, Tree } from '@lezer/common';
 import type { CommandDictionary, FswCommand, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import type { EditorView } from 'codemirror';
 import { closest } from 'fastest-levenshtein';
-import type { GlobalType } from '../../../types/global-type';
-import type { LibrarySequenceMap } from '../../../types/sequencing';
-import { filterNodes, getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
-import { quoteEscape, unquoteUnescape } from '../codemirror-utils';
+import type { GlobalType } from '../../../../types/global-type';
+import type { LibrarySequenceMap } from '../../../../types/sequencing';
+import { quoteEscape, unquoteUnescape } from '../../sequence-utils';
+import { filterNodes, getNearestAncestorNodeOfType } from '../../tree-utils';
 import { VmlLanguage } from './vml';
 import {
   RULE_CALL_PARAMETER,
@@ -27,8 +27,8 @@ import {
   TOKEN_INT_CONST,
   TOKEN_STRING_CONST,
   TOKEN_UINT_CONST,
-} from './vmlConstants';
-import { getVmlVariables } from './vmlTreeUtils';
+} from './vml-constants';
+import { getVmlVariables } from './vml-tree-utils';
 
 /**
  * Limitations

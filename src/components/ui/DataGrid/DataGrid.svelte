@@ -128,17 +128,18 @@
   const CURRENT_SELECTED_ROW_CLASS = 'ag-current-row-selected';
   const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
-  let contextMenu: ContextMenu;
   // This is used so that the current instance of ag-grid always has a pointer to the latest current selected row id
   // without having to call anything on the ag-grid instance that results in a full rerender
-  let currentSelectedRowIdRef: RowIdRef = { value: null };
+  const currentSelectedRowIdRef: RowIdRef = { value: null };
+  const onColumnStateChangeDebounced = debounce(onColumnStateChange, 500);
+  const onWindowResizedDebounced = debounce(sizeColumnsToFit, 50);
+
+  let contextMenu: ContextMenu;
   let gridOptions: GridOptions<RowData>;
   let gridApi: GridApi<RowData> | undefined;
   let gridDiv: HTMLDivElement;
   let loadingMessageTimeout: NodeJS.Timeout | null = null;
   let mounted: boolean = false;
-  let onColumnStateChangeDebounced = debounce(onColumnStateChange, 500);
-  let onWindowResizedDebounced = debounce(sizeColumnsToFit, 50);
   let previousSelectedRowId: RowId | null = null;
   let resizeObserver: ResizeObserver | null = null;
 

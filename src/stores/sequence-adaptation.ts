@@ -1,6 +1,6 @@
 import { derived, get, writable, type Writable } from 'svelte/store';
 import type { GlobalType } from '../types/global-type';
-import type { ISequenceAdaptation, SequenceAdaptation } from '../types/sequencing';
+import type { ISequenceAdaptation, SequenceAdaptationMetadata } from '../types/sequencing';
 import gql from '../utilities/gql';
 import { seqJsonToSequence } from '../utilities/sequence-editor/from-seq-json';
 import { sequenceAutoIndent } from '../utilities/sequence-editor/sequence-autoindent';
@@ -35,7 +35,12 @@ export const sequenceAdaptation: Writable<ISequenceAdaptation> = writable(defaul
 
 /* Subscriptions. */
 
-export const sequenceAdaptations = gqlSubscribable<SequenceAdaptation[]>(gql.SUB_SEQUENCE_ADAPTATIONS, {}, [], null);
+export const sequenceAdaptations = gqlSubscribable<SequenceAdaptationMetadata[]>(
+  gql.SUB_SEQUENCE_ADAPTATIONS,
+  {},
+  [],
+  null,
+);
 
 /* Derived */
 

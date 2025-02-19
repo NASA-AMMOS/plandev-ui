@@ -12,8 +12,8 @@ import type {
 import ArgumentTooltip from '../../components/sequencing/ArgumentTooltip.svelte';
 import CommandTooltip from '../../components/sequencing/CommandTooltip.svelte';
 import { TOKEN_REPEAT_ARG } from '../../constants/seq-n-grammar-constants';
-import { isFswCommandArgumentRepeat } from './../../utilities/codemirror/codemirror-utils';
 import { getCustomArgDef } from './extension-points';
+import { isFswCommandArgumentRepeat } from './sequence-utils';
 
 /**
  * Searches up through a node's ancestors to find a node by the given name.

@@ -7,8 +7,8 @@
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
   import CopyIcon from 'bootstrap-icons/icons/copy.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import { isFswCommand, isFswCommandArgumentEnum } from '../../../utilities/codemirror/codemirror-utils';
   import { getTarget } from '../../../utilities/generic';
+  import { isFswCommand, isFswCommandArgumentEnum } from '../../../utilities/sequence-editor/sequence-utils';
   import { showFailureToast, showSuccessToast } from '../../../utilities/toast';
   import { tooltip } from '../../../utilities/tooltip';
   import Input from '../../form/Input.svelte';

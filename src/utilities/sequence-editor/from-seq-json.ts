@@ -20,8 +20,8 @@ import type {
   Time,
   VariableDeclaration,
 } from '@nasa-jpl/seq-json-schema/types';
-import { quoteEscape } from '../codemirror/codemirror-utils';
 import { logError } from './logger';
+import { quoteEscape } from './sequence-utils';
 
 /**
  * Transform a sequence JSON time to it's sequence string form.

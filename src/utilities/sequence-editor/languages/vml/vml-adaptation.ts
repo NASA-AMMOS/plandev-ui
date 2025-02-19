@@ -15,13 +15,13 @@ import type {
   HwCommand,
 } from '@nasa-jpl/aerie-ampcs';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
-import { SequenceTypes } from '../../../enums/sequencing';
-import type { GlobalType } from '../../../types/global-type';
-import { type LibrarySequence, type LibrarySequenceMap } from '../../../types/sequencing';
-import { getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
-import { isFswCommand, unquoteUnescape } from '../codemirror-utils';
+import { SequenceTypes } from '../../../../enums/sequencing';
+import type { GlobalType } from '../../../../types/global-type';
+import { type LibrarySequence, type LibrarySequenceMap } from '../../../../types/sequencing';
+import { isFswCommand, unquoteUnescape } from '../../sequence-utils';
+import { getNearestAncestorNodeOfType } from '../../tree-utils';
 import { VmlLanguage } from './vml';
-import { librarySequenceToFswCommand, vmlBlockLibraryToCommandDictionary } from './vmlBlockLibrary';
+import { librarySequenceToFswCommand, vmlBlockLibraryToCommandDictionary } from './vml-block-library';
 import {
   RULE_BODY,
   RULE_CALL_PARAMETER,
@@ -41,9 +41,9 @@ import {
   TOKEN_END_MODULE,
   TOKEN_MODULE,
   TOKEN_SYMBOL_CONST,
-} from './vmlConstants';
-import { emptyFileOptions, SEQUENCE_SNIPPETS, structureSnippets } from './vmlSnippets';
-import { getArgumentPosition, getVmlVariables } from './vmlTreeUtils';
+} from './vml-constants';
+import { emptyFileOptions, SEQUENCE_SNIPPETS, structureSnippets } from './vml-snippets';
+import { getArgumentPosition, getVmlVariables } from './vml-tree-utils';
 
 const SECTION_LOCAL_VARIABLES: CompletionSection = {
   name: 'Local Variables',
@@ -115,11 +115,11 @@ function suggestDictionaryCompletions(
   librarySequenceMap: LibrarySequenceMap,
 ): Completion[] | null {
   if (isStatementNode(context, node)) {
-    return suggestTimeTaggedCompletions(context, node, tree, globals);
+    return suggestTimeTaggedCompletions(context, tree, globals);
   } else if (isVariableReferenceNode(node)) {
-    return suggestVariableReferenceCompletions(context, node, tree, globals);
+    return suggestVariableReferenceCompletions(context, tree, globals);
   } else if (isSpawnSequenceNameNode(node)) {
-    return suggestSpawnSequenceNameCompletions(node, librarySequenceMap);
+    return suggestSpawnSequenceNameCompletions(librarySequenceMap);
   } else if (isIssueFunctionNameNode(node)) {
     return suggestIssueCompletions(context, node, commandDictionary);
   } else if (isCallParameter(node)) {
@@ -129,14 +129,9 @@ function suggestDictionaryCompletions(
   return null;
 }
 
-function suggestTimeTaggedCompletions(
-  context: CompletionContext,
-  node: SyntaxNode,
-  tree: Tree,
-  globals: GlobalType[],
-): Completion[] {
+function suggestTimeTaggedCompletions(context: CompletionContext, tree: Tree, globals: GlobalType[]): Completion[] {
   const structs: Completion[] = structureSnippets('');
-  const variableCompletions = suggestVariableReferenceCompletions(context, node, tree, globals);
+  const variableCompletions = suggestVariableReferenceCompletions(context, tree, globals);
   return [...structs, ...(variableCompletions ?? [])];
 }
 
@@ -160,7 +155,7 @@ function suggestIssueCompletions(
   return getStemOptions(commandDictionary, false, addArguments);
 }
 
-function suggestSpawnSequenceNameCompletions(node: SyntaxNode, librarySequenceMap: LibrarySequenceMap): Completion[] {
+function suggestSpawnSequenceNameCompletions(librarySequenceMap: LibrarySequenceMap): Completion[] {
   return Object.values(librarySequenceMap).map(
     (sequence): Completion => ({
       detail: 'library sequence',
@@ -276,7 +271,6 @@ function getFswCommand(
 
 function suggestVariableReferenceCompletions(
   context: CompletionContext,
-  node: SyntaxNode,
   tree: Tree,
   globals: GlobalType[],
 ): Completion[] {

@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import type { FswCommandArgumentFixedString, FswCommandArgumentVarString } from '@nasa-jpl/aerie-ampcs';
-  import { isFswCommandArgumentVarString } from '../../../utilities/codemirror/codemirror-utils';
+  import { isFswCommandArgumentVarString } from '../../../utilities/sequence-editor/sequence-utils';
   import Collapse from '../../Collapse.svelte';
   import CommandArgUnit from './CommandArgUnit.svelte';
 
