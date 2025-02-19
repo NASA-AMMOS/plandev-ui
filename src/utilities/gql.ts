@@ -542,9 +542,9 @@ const gql = {
     }
   `,
 
-  CREATE_SEQUENCE_DEFINITION: `#graphql
-    mutation CreateSequenceDefinition($definition: sequence_definition_insert_input!) {
-      createSequenceDefinition: ${Queries.INSERT_SEQUENCE_DEFINITION}(object: $definition) {
+  CREATE_SEQUENCE_FILTER: `#graphql
+    mutation CreateSequenceFilter($definition: sequence_filter_insert_input!) {
+      createSequenceFilter: ${Queries.INSERT_SEQUENCE_FILTER}(object: $definition) {
         id
       }
     }
@@ -1028,11 +1028,11 @@ const gql = {
     }
   `,
 
-  DELETE_SEQUENCE_DEFINITIONS: `#graphql
-    mutation DeleteSequenceDefinitions($sequenceDefinitionIds: [Int]!) {
-      deleteSequenceDefinitions: ${Queries.DELETE_SEQUENCE_DEFINITIONS}(
+  DELETE_SEQUENCE_FILTERS: `#graphql
+    mutation DeleteSequenceFilters($sequenceFilterIds: [Int]!) {
+      deleteSequenceFilters: ${Queries.DELETE_SEQUENCE_FILTERS}(
         where: {
-          id: { _in: $sequenceDefinitionIds }
+          id: { _in: $sequenceFilterIds }
         }
       ) {
         affected_rows
@@ -1093,6 +1093,14 @@ const gql = {
   EXPAND: `#graphql
     mutation Expand($expansionSetId: Int!, $simulationDatasetId: Int!) {
       expand: ${Queries.EXPAND_ALL_ACTIVITIES}(expansionSetId: $expansionSetId, simulationDatasetId: $simulationDatasetId) {
+        id
+      }
+    }
+  `,
+
+  EXPAND_TEMPLATES: `#graphql
+    mutation ExpandTemplates(definitionIds: [Int!]!, simulationDatasetId: Int!, timeRangeStart: String!, timeRangeEnd: String!) {
+      expandTemplates: ${Queries.EXPAND_ALL_TEMPLATES}(definitionIds: $definitionIds, simulationDatasetId: $simulationDatasetId, timeRangeStart: $timeRangeStart, timeRangeEnd: $timeRangeEnd) {
         id
       }
     }
@@ -3162,13 +3170,28 @@ const gql = {
     }
   `,
 
-  SUB_SEQUENCE_DEFINITIONS: `#graphql
-    subscription SubSequenceDefinitions {
-      ${Queries.SEQUENCE_DEFINITION}(order_by: { id: desc }) {
+  SUB_SEQUENCE_FILTERS: `#graphql
+    subscription SubSequenceFilters {
+      ${Queries.SEQUENCE_FILTER}(order_by: { id: desc }) {
         filter
         id
         model_id
         name
+      }
+    }
+  `,
+
+  SUB_SEQUENCE_TEMPLATES: `#graphql
+    subscription SubSequenceTemplate {
+      ${Queries.SEQUENCE_TEMPLATE}(order_by: { id: desc }) {
+        activity_type
+        id
+        language
+        model_id
+        name
+        owner
+        parcel_id
+        template_definition
       }
     }
   `,

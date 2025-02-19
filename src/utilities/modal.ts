@@ -26,7 +26,8 @@ import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.
 import RestorePlanSnapshotModal from '../components/modals/RestorePlanSnapshotModal.svelte';
 import RunActionModal from '../components/modals/RunActionModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
-import SequenceDefinitionModal from '../components/modals/SequenceDefinitionModal.svelte';
+import SequenceFilterModal from '../components/modals/SequenceFilterModal.svelte';
+import SequenceDefinitionModal from '../components/modals/SequenceFilterModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceModal from '../components/modals/WorkspaceModal.svelte';
 import { type ActionDefinition } from '../types/actions';
@@ -49,7 +50,7 @@ import type {
   PlanMergeRequestTypeFilter,
 } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
-import type { SequenceDefinition } from '../types/sequencing';
+import type { SequenceDefinition, SequenceFilter } from '../types/sequencing';
 import type { Tag } from '../types/tags';
 import type { ViewDefinition } from '../types/view';
 import effects from './effects';
@@ -1107,15 +1108,15 @@ export async function showUploadViewModal(): Promise<ModalElementValue<{ definit
 }
 
 /**
- * Shows a SequenceDefinitionModal with the supplied arguments.
+ * Shows a SequenceFilterModal with the supplied arguments.
  */
-export async function showSequenceDefinitionModal(sequenceDefinition: SequenceDefinition): Promise<ModalElementValue> {
+export async function showSequenceFilterModal(sequenceFilter: SequenceFilter): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const sequenceModal = new SequenceDefinitionModal({ props: { sequenceDefinition }, target });
+        const sequenceModal = new SequenceFilterModal({ props: { sequenceFilter }, target });
         target.resolve = resolve;
 
         sequenceModal.$on('close', () => {

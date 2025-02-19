@@ -12,7 +12,8 @@ import {
   type Parcel,
   type ParcelBundle,
   type ParcelToParameterDictionary,
-  type SequenceDefinition,
+  type SequenceFilter,
+  type SequenceTemplate,
   type UserSequence,
   type Workspace,
 } from '../types/sequencing';
@@ -30,6 +31,8 @@ export const parsedCommandDictionaries: Writable<Record<string, AmpcsCommandDict
 export const parsedParameterDictionaries: Writable<Record<string, AmpcsParameterDictionary>> = writable({});
 
 export const planSequenceStatus: Writable<Status | null> = writable(null);
+
+export const sequenceExpansionStatusStore: Writable<Status | null> = writable(null);
 
 export const sequencingError: Writable<string | null> = writable(null);
 
@@ -94,7 +97,9 @@ export const parcelBundles: Readable<ParcelBundle[]> = derived(
   },
 );
 
-export const sequenceDefinitions = gqlSubscribable<SequenceDefinition[]>(gql.SUB_SEQUENCE_DEFINITIONS, {}, [], null);
+export const sequenceFilters = gqlSubscribable<SequenceFilter[]>(gql.SUB_SEQUENCE_FILTERS, {}, [], null);
+
+export const sequenceTemplates = gqlSubscribable<SequenceTemplate[]>(gql.SUB_SEQUENCE_TEMPLATES, {}, [], null);
 
 export const userParcelColumns: Writable<string> = writable('2fr 3px 1fr');
 
