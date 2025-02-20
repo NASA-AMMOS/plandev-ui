@@ -1,14 +1,12 @@
 import { CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
 import { LRLanguage, LanguageSupport, delimitedIndent, foldNodeProp, indentNodeProp } from '@codemirror/language';
+import { parseMixed } from '@lezer/common';
 import { styleTags, tags as t } from '@lezer/highlight';
+import { handlebarsLanguage } from "@xiechao/codemirror-lang-handlebars";
 import { customFoldInside } from './custom-folder';
 import { parser } from './sequence.grammar';
 
-export const SeqLanguage = LRLanguage.define({
-  languageData: {
-    commentTokens: { line: '#' },
-  },
-  parser: parser.configure({
+const seqParser = parser.configure({
     props: [
       indentNodeProp.add({
         Application: delimitedIndent({ align: false, closing: ')' }),
@@ -57,6 +55,19 @@ export const SeqLanguage = LRLanguage.define({
         TimeRelative: t.className,
       }),
     ],
+  });
+
+export const SeqLanguage = LRLanguage.define({
+  languageData: {
+    commentTokens: { line: '#' },
+  },
+  parser: handlebarsLanguage.parser.configure({
+    wrap: parseMixed(node => {
+      return node.type.isTop ? {
+        parser: seqParser,
+        overlay: node => node.type.name == "Text"
+      } : null
+    })
   }),
 });
 
