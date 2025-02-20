@@ -11,6 +11,7 @@ import { DictionaryTypes } from '../enums/dictionaryTypes';
 import { SchedulingType } from '../enums/scheduling';
 import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
+import { actionRuns } from '../stores/actions';
 import {
   activityDirectivesDB as activityDirectivesDBStore,
   selectedActivityDirectiveId as selectedActivityDirectiveIdStore,
@@ -67,6 +68,7 @@ import {
 } from '../stores/simulation';
 import { createTagError as createTagErrorStore } from '../stores/tags';
 import { applyViewUpdate, view as viewStore, viewUpdateRow, viewUpdateTimeline } from '../stores/views';
+import type { Action, ActionRun } from '../types/actions';
 import type {
   ActivityDirective,
   ActivityDirectiveDB,
@@ -258,6 +260,7 @@ import {
   showManagePlanSchedulingGoalsModal,
   showPlanBranchRequestModal,
   showRestorePlanSnapshotModal,
+  showRunActionModal,
   showUploadViewModal,
   showWorkspaceModal,
 } from './modal';
@@ -277,7 +280,7 @@ import {
   getIntervalInMs,
   getUnixEpochTimeFromInterval,
 } from './time';
-import { createRow, duplicateRow } from './timeline';
+import { createRow, duplicateRow, getNextThingID } from './timeline';
 import { showFailureToast, showSuccessToast } from './toast';
 import {
   applyViewDefinitionMigrations,
@@ -5337,6 +5340,27 @@ const effects = {
       showFailureToast('Model Extraction Failed');
     }
     return null;
+  },
+
+  async runAction(action: Action, user: User | null): Promise<ActionRun | undefined> {
+    try {
+      const { confirm, value } = await showRunActionModal(action);
+      if (confirm && value) {
+        // Navigate to the action page
+        // Add the action to the store manually for now
+        const newActionRun: ActionRun = {
+          actionId: action.id,
+          id: getNextThingID(get(actionRuns)),
+          response: value.actionResponse,
+          user: user?.id ?? 'Unknown',
+        };
+        actionRuns.update(prevActions => [...prevActions, newActionRun]);
+        return newActionRun;
+      }
+    } catch (e) {
+      console.log('e :>> ', e);
+      showFailureToast('Run Action Failed');
+    }
   },
 
   async schedule(analysisOnly: boolean = false, plan: Plan | null, user: User | null): Promise<void> {

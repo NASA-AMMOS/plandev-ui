@@ -9,40 +9,40 @@ import { gqlSubscribable } from './subscribable';
 
 /* Writeable. */
 
-export const activityEditingLocked: Writable<boolean> = writable(false);
+export const activityEditingLocked: Writable = writable(false);
 
-export const planReadOnlySnapshot: Writable<boolean> = writable(false);
+export const planReadOnlySnapshot: Writable = writable(false);
 
 // Used to lock the plan if there's an active merge request.
-export const planReadOnlyMergeRequest: Writable<boolean> = writable(false);
+export const planReadOnlyMergeRequest: Writable = writable(false);
 
-export const planReadOnly: Readable<boolean> = derived(
+export const planReadOnly: Readable = derived(
   [planReadOnlySnapshot, planReadOnlyMergeRequest],
   ([$planReadOnlySnapshot, $planReadOnlyMergeRequest]) => $planReadOnlyMergeRequest || $planReadOnlySnapshot,
 );
 
-export const createPlanError: Writable<string | null> = writable(null);
+export const createPlanError: Writable = writable(null);
 
-export const creatingPlan: Writable<boolean> = writable(false);
+export const creatingPlan: Writable = writable(false);
 
-export const planEndTimeMs: Writable<number> = writable(0);
+export const planEndTimeMs: Writable = writable(0);
 
-export const planStartTimeMs: Writable<number> = writable(0);
+export const planStartTimeMs: Writable = writable(0);
 
-export const maxTimeRange: Writable<TimeRange> = writable({ end: 0, start: 0 });
+export const maxTimeRange: Writable = writable({ end: 0, start: 0 });
 
-export const viewTimeRange: Writable<TimeRange> = writable({ end: 0, start: 0 });
+export const viewTimeRange: Writable = writable({ end: 0, start: 0 });
 
 /* "plan" store dependencies */
-export const initialPlan: Writable<Plan | null> = writable(null);
+export const initialPlan: Writable = writable(null);
 
-export const planId: Readable<number> = derived(initialPlan, $plan => ($plan ? $plan.id : -1));
+export const planId: Readable = derived(initialPlan, $plan => ($plan ? $plan.id : -1));
 
 export const planMetadata = gqlSubscribable<PlanMetadata | null>(gql.SUB_PLAN_METADATA, { planId }, null, null);
 
 /* Derived. */
 
-export const plan: Readable<Plan | null> = derived([initialPlan, planMetadata], ([$initialPlan, $planMetadata]) => {
+export const plan: Readable = derived([initialPlan, planMetadata], ([$initialPlan, $planMetadata]) => {
   if (!$initialPlan) {
     return null;
   }
@@ -52,14 +52,14 @@ export const plan: Readable<Plan | null> = derived([initialPlan, planMetadata], 
   };
 });
 
-export const modelId: Readable<number> = derived(plan, $plan => ($plan ? $plan.model.id : -1));
+export const modelId: Readable = derived(plan, $plan => ($plan ? $plan.model.id : -1));
 
 /* Other Subscriptions. */
 
 export const activityTypes = gqlSubscribable<ActivityType[]>(gql.SUB_ACTIVITY_TYPES, { modelId }, [], null);
 
-export const subsystemTags: Readable<Tag[]> = derived(activityTypes, $activityTypes => {
-  const seenSubsystems: Record<number, boolean> = {};
+export const subsystemTags: Readable = derived(activityTypes, $activityTypes => {
+  const seenSubsystems: Record = {};
   return $activityTypes.reduce((subsystems: Tag[], activityType) => {
     if (activityType.subsystem_tag && !seenSubsystems[activityType.subsystem_tag.id]) {
       seenSubsystems[activityType.subsystem_tag.id] = true;
@@ -106,7 +106,7 @@ export const planRevision = gqlSubscribable<number>(
   { planId },
   -1,
   null,
-  ({ revision }: Pick<Plan, 'revision'>) => revision,
+  ({ revision }: Pick) => revision,
 );
 
 /* Helper Functions. */

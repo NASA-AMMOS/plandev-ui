@@ -6,6 +6,7 @@
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { SearchParameters } from '../../enums/searchParameters';
+  import { actions } from '../../stores/actions';
   import { parcels, userSequences, userSequencesColumns, workspaces } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import type { Parcel, UserSequence, Workspace } from '../../types/sequencing';
@@ -62,6 +63,11 @@
     goto(`${base}/sequencing/new${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`);
   }
 
+  function navigateToActions(): void {
+    const workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
+    goto(`${base}/sequencing/actions${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`);
+  }
+
   async function importLibrary(): Promise<void> {
     const library = await effects.importLibrarySequences(workspaceId);
     if (!library) {
@@ -99,6 +105,17 @@
       </Input>
 
       <div class="right">
+        <button
+          class="st-button secondary ellipsis actions-button"
+          disabled={workspace === undefined}
+          on:click={navigateToActions}
+        >
+          {#if $actions.length}
+            <div class="actions-chip">{$actions.length}</div>
+          {/if}
+          Actions
+        </button>
+
         <button
           class="st-button secondary ellipsis"
           use:permissionHandler={{
@@ -150,5 +167,18 @@
     column-gap: 5px;
     display: flex;
     flex-wrap: nowrap;
+  }
+
+  .actions-button {
+    display: flex;
+    gap: 4px;
+  }
+
+  .actions-chip {
+    background-color: var(--st-gray-15);
+    border-radius: 40px;
+    color: black;
+    min-width: 16px;
+    padding: 0px 4px;
   }
 </style>
