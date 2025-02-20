@@ -2433,8 +2433,10 @@ const gql = {
   SUB_MODEL: `#graphql
     subscription SubModel($id: Int!) {
       model: ${Queries.MISSION_MODEL}(id: $id) {
-        constraint_specification {
+        constraint_specification(order_by: { order: asc }) {
+          arguments
           constraint_id
+          invocation_id
           constraint_revision
           constraint_definition {
             definition
@@ -2446,6 +2448,7 @@ const gql = {
             id
             name
           }
+          order
         }
         created_at
         default_view_id
@@ -2490,8 +2493,10 @@ const gql = {
             name
           }
         }
-        scheduling_specification_goals {
+        scheduling_specification_goals(order_by: { priority: asc }) {
+          arguments
           goal_id
+          goal_invocation_id
           goal_revision
           goal_definition {
             definition
@@ -3460,11 +3465,12 @@ const gql = {
         objects: $constraintSpecsToUpdate,
         on_conflict: {
           constraint: constraint_model_spec_pkey,
-          update_columns: [constraint_revision]
+          update_columns: [constraint_revision, order]
         },
       ) {
         returning {
           constraint_revision
+          order
         }
       }
       deleteConstraintModelSpecifications: ${Queries.DELETE_CONSTRAINT_MODEL_SPECIFICATIONS}(
@@ -3745,16 +3751,17 @@ const gql = {
   `,
 
   UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS: `#graphql
-    mutation UpdateSchedulingGoalModelSpecifications($goalSpecsToUpdate: [scheduling_model_specification_goals_insert_input!]!, $goalIdsToDelete: [Int!]! = [], $modelId: Int!) {
-      updateSchedulingGoalModelSpecifications: ${Queries.INSERT_SCHEDULING_MODEL_SPECIFICATION_GOALS}(
-        objects: $goalSpecsToUpdate,
+    mutation UpdateSchedulingGoalModelSpecifications($goalSpecsToAdd: [scheduling_model_specification_goals_insert_input!]!, $goalIdsToDelete: [Int!]! = [], $modelId: Int!) {
+      addSchedulingGoalModelSpecifications: ${Queries.INSERT_SCHEDULING_MODEL_SPECIFICATION_GOALS}(
+        objects: $goalSpecsToAdd,
         on_conflict: {
           constraint: scheduling_model_specification_goals_pkey,
-          update_columns: [goal_revision]
+          update_columns: [goal_revision, priority]
         },
       ) {
         returning {
           goal_revision
+          priority
         }
       }
       deleteSchedulingGoalModelSpecifications: ${Queries.DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS}(

@@ -9,6 +9,7 @@
     BaseMetadata,
   } from '../../types/metadata';
   import type { Model } from '../../types/model';
+  import type { Argument } from '../../types/parameter';
   import type { RadioButtonId } from '../../types/radio-buttons';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import Loading from '../Loading.svelte';
@@ -26,24 +27,25 @@
   export let loading: boolean = false;
   export let metadataList: Pick<BaseMetadata, 'id' | 'name' | 'public' | 'versions'>[] = [];
   export let model: Model | null = null;
+  export let numOfPrivateAssociations: number = 0;
   export let selectedAssociation: Association = 'constraint';
   export let selectedSpecifications: AssociationSpecificationMap = {};
+  export let selectedSpecificationsList: AssociationSpecification[] = [];
 
   const dispatch = createEventDispatcher<{
     close: void;
     save: void;
     selectAssociation: Association;
-    updateSpecifications: AssociationSpecification;
+    toggleSpecification: { metadataId: number; selected: boolean };
+    updateSpecifications: { arguments?: Argument; id: string; priority?: number; revision?: number | null };
   }>();
 
   let metadataMap: Record<number, BaseMetadata> = {};
-  let numOfPrivateMetadata: number = 0;
   let selectedAssociationId: Association = 'constraint';
   let selectedAssociationTitle = 'Constraint';
-  let selectedDefinition: string | null;
+  let selectedDefinitionCode: string | null;
   let selectedViewId: RadioButtonId = 'model';
-  let selectedSpecification: { id: number; revision: number | null } | null = null;
-  let selectedSpecificationsList: AssociationSpecification[] = [];
+  let selectedDefinition: { metadata_id: number; revision: number | null } | null = null;
 
   $: {
     metadataMap = metadataList.reduce(
@@ -53,69 +55,60 @@
       }),
       {},
     );
-    if (selectedSpecification && !metadataMap[selectedSpecification.id]) {
-      selectedSpecification = null;
+    if (selectedDefinition && !metadataMap[selectedDefinition.metadata_id]) {
+      selectedDefinition = null;
     }
   }
   $: if (selectedAssociation) {
-    selectedSpecification = null;
-  }
-  $: if (selectedSpecification) {
-    const selectedVersion =
-      selectedSpecification.revision !== null
-        ? metadataMap[selectedSpecification.id].versions.find(
-            ({ revision }) => selectedSpecification?.revision === revision,
-          )
-        : metadataMap[selectedSpecification.id].versions[0];
-
-    if (selectedVersion) {
-      selectedDefinition = selectedVersion.definition;
-    }
-  } else {
     selectedDefinition = null;
   }
-  $: selectedAssociationTitle = `${selectedAssociation.charAt(0).toUpperCase()}${selectedAssociation.slice(1)}`;
-  $: selectedSpecificationsList = Object.keys(selectedSpecifications)
-    .map(id => {
-      const specId = parseInt(id);
-      return {
-        ...selectedSpecifications[specId],
-        id: specId,
-      };
-    })
-    .filter(({ selected }) => selected)
-    .sort((specA, specB) => {
-      if (specA.priority !== undefined && specB.priority !== undefined && specA.priority !== specB.priority) {
-        return specA.priority - specB.priority;
-      }
+  $: if (selectedDefinition) {
+    const selectedVersion =
+      selectedDefinition.revision !== null
+        ? metadataMap[selectedDefinition.metadata_id].versions.find(
+            ({ revision }) => selectedDefinition?.revision === revision,
+          )
+        : metadataMap[selectedDefinition.metadata_id].versions[0];
 
-      return specA.id - specB.id;
-    });
-  $: numOfPrivateMetadata = selectedSpecificationsList.filter(({ id }) => !metadataMap[id]).length;
+    if (selectedVersion) {
+      selectedDefinitionCode = selectedVersion.definition;
+    }
+  } else {
+    selectedDefinitionCode = null;
+  }
+  $: selectedAssociationTitle = `${selectedAssociation.charAt(0).toUpperCase()}${selectedAssociation.slice(1)}`;
 
   function onClose() {
     dispatch('close');
   }
 
-  function onUpdatePriority(event: CustomEvent<{ id: number; priority: number }>) {
+  function onUpdatePriority(event: CustomEvent<{ id: string; priority: number }>) {
     const {
       detail: { id, priority },
     } = event;
     dispatch('updateSpecifications', {
-      ...selectedSpecifications[id],
       id,
       priority,
     });
   }
 
-  function onUpdateRevision(event: CustomEvent<{ id: number; revision: number | null }>) {
+  function onUpdateRevision(event: CustomEvent<{ id: string; revision: number | null }>) {
     const {
       detail: { id, revision },
     } = event;
     dispatch('updateSpecifications', {
-      ...selectedSpecifications[id],
       id,
       revision,
+    });
+  }
+
+  function onUpdateArguments(event: CustomEvent<{ arguments: Argument; id: string }>) {
+    const {
+      detail: { arguments: argsToUpdate, id },
+    } = event;
+    dispatch('updateSpecifications', {
+      arguments: argsToUpdate,
+      id,
     });
   }
 
@@ -131,13 +124,13 @@
     dispatch('selectAssociation', id as Association);
   }
 
-  function onSelectSpecification(
+  function onSelectDefinition(
     event: CustomEvent<{
-      id: number;
+      metadata_id: number;
       revision: number | null;
     } | null>,
   ) {
-    selectedSpecification = event.detail;
+    selectedDefinition = event.detail;
   }
 
   function onSelectView(event: CustomEvent<{ id: RadioButtonId }>) {
@@ -186,9 +179,9 @@
           {loading}
           {metadataList}
           metadataType={selectedAssociation}
-          {selectedSpecification}
+          selectedMetadata={selectedDefinition}
           {selectedSpecifications}
-          on:selectSpecification={onSelectSpecification}
+          on:selectDefinition={onSelectDefinition}
           on:toggleSpecification
           on:newMetadata
           on:viewMetadata
@@ -201,39 +194,65 @@
             </div>
           {:else if model !== null && selectedSpecificationsList.length > 0}
             <div class="private-label">
-              {#if numOfPrivateMetadata > 0}
-                {numOfPrivateMetadata}
-                {selectedAssociation}{numOfPrivateMetadata !== 1 ? 's' : ''}
-                {numOfPrivateMetadata > 1 ? 'are' : 'is'} private and not shown
+              {#if numOfPrivateAssociations > 0}
+                {numOfPrivateAssociations}
+                {selectedAssociation}{numOfPrivateAssociations !== 1 ? 's' : ''}
+                {numOfPrivateAssociations > 1 ? 'are' : 'is'} private and not shown
               {/if}
             </div>
             {#each selectedSpecificationsList as spec}
-              {#if spec.selected && metadataMap[spec.id]}
+              {#if selectedSpecifications[spec.metadata_id] && metadataMap[spec.metadata_id]}
                 {#if selectedAssociationId === 'goal'}
                   <ModelAssociationsListItem
                     hasEditPermission={hasEditSpecPermission}
-                    isSelected={selectedSpecification?.id === spec.id}
-                    metadataId={spec.id}
-                    metadataName={metadataMap[spec.id].name}
+                    isSelected={selectedDefinition?.metadata_id === spec.metadata_id}
+                    id={spec.id}
+                    invocationArguments={spec.arguments}
+                    metadataId={spec.metadata_id}
+                    metadataName={metadataMap[spec.metadata_id].name}
                     metadataType={selectedAssociationId}
-                    priority={selectedSpecifications[spec.id]?.priority}
-                    revisions={metadataMap[spec.id].versions.map(({ revision }) => revision)}
-                    selectedRevision={selectedSpecifications[spec.id].revision}
+                    priority={spec.priority}
+                    versions={metadataMap[spec.metadata_id].versions}
+                    selectedRevision={spec.revision}
                     on:updatePriority={onUpdatePriority}
                     on:updateRevision={onUpdateRevision}
-                    on:selectSpecification={onSelectSpecification}
+                    on:selectDefinition={onSelectDefinition}
+                    on:updateArguments={onUpdateArguments}
+                    on:duplicateInvocation
+                    on:deleteInvocation
+                  />
+                {:else if selectedAssociationId === 'constraint'}
+                  <ModelAssociationsListItem
+                    hasEditPermission={hasEditSpecPermission}
+                    isSelected={selectedDefinition?.metadata_id === spec.metadata_id}
+                    id={spec.id}
+                    invocationArguments={spec.arguments}
+                    metadataId={spec.metadata_id}
+                    metadataName={metadataMap[spec.metadata_id].name}
+                    metadataType={selectedAssociationId}
+                    priority={spec?.priority ?? 0}
+                    priorityLabel="Order"
+                    versions={metadataMap[spec.metadata_id].versions}
+                    selectedRevision={spec.revision}
+                    on:updatePriority={onUpdatePriority}
+                    on:updateRevision={onUpdateRevision}
+                    on:selectDefinition={onSelectDefinition}
+                    on:updateArguments={onUpdateArguments}
+                    on:duplicateInvocation
+                    on:deleteInvocation
                   />
                 {:else}
                   <ModelAssociationsListItem
                     hasEditPermission={hasEditSpecPermission}
-                    isSelected={selectedSpecification?.id === spec.id}
-                    metadataId={spec.id}
-                    metadataName={metadataMap[spec.id].name}
+                    isSelected={selectedDefinition?.metadata_id === spec.metadata_id}
+                    id={spec.id}
+                    metadataId={spec.metadata_id}
+                    metadataName={metadataMap[spec.metadata_id].name}
                     metadataType={selectedAssociationId}
-                    revisions={metadataMap[spec.id].versions.map(({ revision }) => revision)}
-                    selectedRevision={selectedSpecifications[spec.id].revision}
+                    versions={metadataMap[spec.metadata_id].versions}
+                    selectedRevision={spec.revision}
                     on:updateRevision={onUpdateRevision}
-                    on:selectSpecification={onSelectSpecification}
+                    on:selectDefinition={onSelectDefinition}
                   />
                 {/if}
               {/if}
@@ -250,7 +269,7 @@
 
     <DefinitionEditor
       referenceModelId={model?.id}
-      definition={selectedDefinition ?? `No ${selectedAssociationTitle} Definition Selected`}
+      definition={selectedDefinitionCode ?? `No ${selectedAssociationTitle} Definition Selected`}
       readOnly={true}
       title={`${selectedAssociationTitle} - Definition Editor (Read-only)`}
     />

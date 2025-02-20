@@ -81,18 +81,15 @@ export const schedulingPlanSpecification = gqlSubscribable<SchedulingPlanSpecifi
 export const schedulingConditions = derivedDeeply(
   [schedulingConditionResponses, tags],
   ([$schedulingConditionResponses, $tags]) => {
-    return ($schedulingConditionResponses || []).map(schedulingConditionResponse =>
-      convertResponseToMetadata<SchedulingConditionMetadata, SchedulingConditionDefinition>(
-        schedulingConditionResponse,
-        $tags,
-      ),
+    return ($schedulingConditionResponses || []).map(conditionResponse =>
+      convertResponseToMetadata<SchedulingConditionMetadata, SchedulingConditionDefinition>(conditionResponse, $tags),
     );
   },
 );
 
 export const schedulingGoals = derivedDeeply([schedulingGoalResponses, tags], ([$schedulingGoalResponses, $tags]) => {
-  return ($schedulingGoalResponses || []).map(schedulingGoalResponse =>
-    convertResponseToMetadata<SchedulingGoalMetadata, SchedulingGoalDefinition>(schedulingGoalResponse, $tags),
+  return ($schedulingGoalResponses || []).map(goalResponse =>
+    convertResponseToMetadata<SchedulingGoalMetadata, SchedulingGoalDefinition>(goalResponse, $tags),
   );
 });
 

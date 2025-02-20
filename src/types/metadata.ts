@@ -45,11 +45,11 @@ export type AssociationSpecificationEntry = {
   arguments?: ArgumentsMap;
   priority?: number;
   revision: number | null;
-  selected: boolean;
 };
 
 export type AssociationSpecification = AssociationSpecificationEntry & {
-  id: number;
+  id: string;
+  metadata_id: number;
 };
 
-export type AssociationSpecificationMap = Record<number, AssociationSpecificationEntry>;
+export type AssociationSpecificationMap = Record<number, boolean>;

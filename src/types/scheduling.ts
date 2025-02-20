@@ -109,6 +109,21 @@ export type SchedulingGoalPlanSpecInsertInput = Omit<SchedulingGoalPlanSpecSetIn
 export type SchedulingConditionMetadataSetInput = PartialWith<SchedulingConditionMetadata, 'owner'>;
 export type SchedulingGoalMetadataSetInput = PartialWith<SchedulingGoalMetadata, 'owner'>;
 
+export type SchedulingConditionModelSpecificationInsertInput = Omit<
+  SchedulingConditionModelSpecification,
+  'condition_metadata'
+>;
+export type SchedulingGoalModelSpecificationInsertInput = Omit<
+  SchedulingGoalModelSpecification,
+  'goal_metadata' | 'goal_invocation_id'
+>;
+export type SchedulingPlanSpecificationInsertInput = Omit<SchedulingPlanSpecification, 'id' | 'revision'>;
+
+export type SchedulingGoalModelSpecificationSetInput = Pick<
+  SchedulingGoalModelSpecification,
+  'arguments' | 'goal_invocation_id' | 'goal_revision' | 'priority'
+>;
+
 export type SchedulingGoalAnalysis = {
   analysis_id: number;
   goal_definition: SchedulingGoalDefinition;
@@ -126,7 +141,9 @@ export type SchedulingResponse = {
 };
 
 export type SchedulingGoalModelSpecification = {
+  arguments: any;
   goal_id: number;
+  goal_invocation_id: number;
   goal_metadata: Pick<SchedulingGoalMetadata, 'id' | 'name'> | null;
   goal_revision: number | null;
   model_id: number;
@@ -154,18 +171,6 @@ export type SchedulingPlanSpecification = {
   revision: number;
   simulation_arguments: ArgumentsMap;
 };
-
-export type SchedulingConditionModelSpecificationInsertInput = Omit<
-  SchedulingConditionModelSpecification,
-  'condition_metadata'
->;
-export type SchedulingGoalModelSpecificationInsertInput = Omit<SchedulingGoalModelSpecification, 'goal_metadata'>;
-export type SchedulingPlanSpecificationInsertInput = Omit<SchedulingPlanSpecification, 'id' | 'revision'>;
-
-export type SchedulingGoalModelSpecificationSetInput = Pick<
-  SchedulingGoalModelSpecification,
-  'goal_id' | 'goal_revision' | 'priority'
->;
 export type SchedulingConditionPlanSpecification = {
   // condition_definition: SchedulingConditionDefinition;
   condition_id: number;

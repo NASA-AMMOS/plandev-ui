@@ -17,7 +17,7 @@
   export let metadataList: Pick<BaseMetadata, 'id' | 'name' | 'public' | 'versions'>[] = [];
   export let metadataType: Association = 'constraint';
   export let selectedSpecifications: AssociationSpecificationMap = {};
-  export let selectedSpecification: { id: number; revision: number | null } | null = null;
+  export let selectedMetadata: { metadata_id: number; revision: number | null } | null = null;
 
   type CellRendererParams = {
     viewMetadata: (metadata: BaseMetadata) => void;
@@ -26,12 +26,12 @@
 
   const dispatch = createEventDispatcher<{
     newMetadata: void;
-    selectSpecification: {
+    selectMetadata: {
       id: number;
       revision: number;
     } | null;
     toggleSpecification: {
-      id: number;
+      metadataId: number;
       selected: boolean;
     };
     viewMetadata: number;
@@ -147,7 +147,7 @@
         valueGetter: (params: ValueGetterParams<BaseMetadata>) => {
           const { data } = params;
           if (data) {
-            return !!selectedSpecifications[data.id]?.selected;
+            return !!selectedSpecifications[data.id];
           }
           return false;
         },
@@ -164,14 +164,14 @@
   }
 
   function onSelectDefinition(event: CustomEvent<Pick<BaseMetadata, 'id' | 'name' | 'public' | 'versions'>[]>) {
-    const { detail: selectedMetadata } = event;
-    if (selectedMetadata.length > 0) {
-      dispatch('selectSpecification', {
-        id: selectedMetadata[0].id,
-        revision: selectedMetadata[0].versions[0].revision,
+    const { detail: newSelectedMetadata } = event;
+    if (newSelectedMetadata.length > 0) {
+      dispatch('selectMetadata', {
+        id: newSelectedMetadata[0].id,
+        revision: newSelectedMetadata[0].versions[0].revision,
       });
     } else {
-      dispatch('selectSpecification', null);
+      dispatch('selectMetadata', null);
     }
   }
 
@@ -188,7 +188,7 @@
 
     if (data) {
       dispatch('toggleSpecification', {
-        id: data.id,
+        metadataId: data.id,
         selected: !!newValue,
       });
     }
@@ -221,7 +221,7 @@
         {loading}
         rowData={filteredMetadata}
         rowSelection="single"
-        selectedRowIds={selectedSpecification ? [selectedSpecification.id] : []}
+        selectedRowIds={selectedMetadata ? [selectedMetadata.metadata_id] : []}
         on:cellEditingStopped={onToggleSpecification}
         on:selectionChanged={onSelectDefinition}
       />

@@ -20,10 +20,13 @@ export type ConstraintMetadata = BaseMetadata<ConstraintDefinition>;
 export type ConstraintMetadataSlim = Omit<ConstraintMetadata, 'models_using' | 'plans_using' | 'versions'>;
 
 export type ConstraintModelSpecification = {
+  arguments: any;
   constraint_id: number;
   constraint_metadata: Pick<ConstraintMetadata, 'id' | 'name'> | null;
   constraint_revision: number | null;
+  invocation_id: number;
   model_id: number;
+  order: number;
   // constraint_definition: ConstraintDefinition;
   // model: Model;
 };
@@ -39,14 +42,22 @@ export type ConstraintPlanSpecification = {
   constraint_revision: number | null;
   enabled: boolean;
   invocation_id: number;
+  order: number;
   plan_id: number;
   // constraint_definition: ConstraintDefinition;
   // plan: Plan;
 };
 
-export type ConstraintModelSpecInsertInput = Omit<ConstraintModelSpecification, 'constraint_metadata'>;
+export type ConstraintModelSpecInsertInput = Omit<
+  ConstraintModelSpecification,
+  'constraint_metadata' | 'invocation_id'
+>;
+export type ConstraintModelSpecSetInput = Pick<
+  ConstraintModelSpecification,
+  'invocation_id' | 'arguments' | 'constraint_revision' | 'order'
+>;
 export type ConstraintPlanSpecSetInput = Omit<ConstraintPlanSpecification, 'constraint_metadata'>;
-export type ConstraintPlanSpecInsertInput = Omit<ConstraintPlanSpecSetInput, 'invocation_id'>;
+export type ConstraintPlanSpecInsertInput = Omit<ConstraintPlanSpecSetInput, 'constraint_metadata' | 'invocation_id'>;
 
 export type ConstraintDefinitionInsertInput = Pick<
   ConstraintDefinition,
