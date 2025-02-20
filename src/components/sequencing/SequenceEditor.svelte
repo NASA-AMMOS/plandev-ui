@@ -92,6 +92,8 @@
   import SectionTitle from '../ui/SectionTitle.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
 
+  import { printTree } from '@lezer-unofficial/printer';
+
   export let parcel: Parcel | null;
   export let showCommandFormBuilder: boolean = false;
   export let readOnly: boolean = false;
@@ -494,6 +496,19 @@
     toggleSeqJsonPreview = !toggleSeqJsonPreview;
   }
 
+  function debugAST() {
+    const tree = syntaxTree(editorSequenceView.state);
+    const sourceCode = editorSequenceView.state.doc.toString();
+    const overlayTree = tree.topNode.enter(0, 1);
+    if (overlayTree !== null) {
+      console.log('Tree 1 (Handlebars AST):\n' + printTree(tree, sourceCode));
+      console.log('Tree 2 (Overlaid SeqN AST):\n' + printTree(overlayTree, sourceCode));
+    } else {
+      console.log('AST:\n' + printTree(tree, sourceCode));
+      console.log('No overlay AST found.');
+    }
+  }
+
   function showErrorPanel() {
     openLintPanel(editorSequenceView);
   }
@@ -514,6 +529,14 @@
         <SectionTitle>{title}</SectionTitle>
 
         <div class="right">
+          <button
+            use:tooltip={{ content: 'Print the Abstract Syntax Trees in the console', placement: 'top' }}
+            class="st-button icon-button secondary ellipsis"
+            on:click={debugAST}
+          >
+            Debug - AST
+          </button>
+
           <button
             use:tooltip={{ content: 'Show Error Panel', placement: 'top' }}
             class="st-button icon-button secondary ellipsis"
