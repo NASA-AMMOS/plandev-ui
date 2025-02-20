@@ -14,7 +14,6 @@ async function writeFile(path, contents) {
 // import { ActionMain } from 'aerie-action/src/models/main.ts';
 async function main(actionParameters, actionSettings) {
   const url = `${actionSettings.externalUrl}/${actionParameters.sequenceId}`;
-  console.log('url :>> ', url);
   const startTime = performance.now();
   // Make a request to an external URL using fetch
   const result = await fetch(url, {
