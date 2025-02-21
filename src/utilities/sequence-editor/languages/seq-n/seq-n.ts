@@ -6,7 +6,11 @@ import { handlebarsLanguage } from "@xiechao/codemirror-lang-handlebars";
 import { customFoldInside } from './custom-folder';
 import { parser } from './seq-n.grammar';
 
-const seqParser = parser.configure({
+export const SeqLanguage = LRLanguage.define({
+  languageData: {
+    commentTokens: { line: '#' },
+  },
+  parser: parser.configure({
     props: [
       indentNodeProp.add({
         Application: delimitedIndent({ align: false, closing: ')' }),
@@ -55,16 +59,17 @@ const seqParser = parser.configure({
         TimeRelative: t.className,
       }),
     ],
-  });
+  })
+});
 
-export const SeqLanguage = LRLanguage.define({
+export const HandlebarsOverSeqLanguage = LRLanguage.define({
   languageData: {
     commentTokens: { line: '#' },
   },
   parser: handlebarsLanguage.parser.configure({
     wrap: parseMixed(node => {
       return node.type.isTop ? {
-        parser: seqParser,
+        parser: SeqLanguage.parser,
         overlay: node => node.type.name == "Text"
       } : null
     })
@@ -73,9 +78,8 @@ export const SeqLanguage = LRLanguage.define({
 
 export function setupLanguageSupport(autocomplete?: (context: CompletionContext) => CompletionResult | null) {
   if (autocomplete) {
-    const autocompleteExtension = SeqLanguage.data.of({ autocomplete });
-    return new LanguageSupport(SeqLanguage, [autocompleteExtension]);
+    return new LanguageSupport(HandlebarsOverSeqLanguage, [SeqLanguage.data.of({ autocomplete }), handlebarsLanguage.extension]);
   } else {
-    return new LanguageSupport(SeqLanguage);
+    return new LanguageSupport(HandlebarsOverSeqLanguage);
   }
 }
