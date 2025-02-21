@@ -3572,6 +3572,7 @@ const effects = {
 
   async expandTemplates(
     filterIds: number[],
+    parcelId: number,
     modelId: number,
     simulationDatasetId: number,
     timeRangeStart: string,
@@ -3588,6 +3589,7 @@ const effects = {
       const data = await reqHasura<{ id: number }>(gql.EXPAND_TEMPLATES, {
         filterIds,
         modelId,
+        parcelId,
         simulationDatasetId,
         timeRangeEnd,
         timeRangeStart,

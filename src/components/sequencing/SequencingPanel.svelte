@@ -26,7 +26,7 @@
   import { tooltip } from '../../utilities/tooltip';
   import ActivityFilterBuilder from '../timeline/form/TimelineEditor/ActivityFilterBuilder.svelte';
   import type { ExpandedTemplate, SequenceActivityFilter, SequenceFilter } from '../../types/sequencing';
-  import { expandedTemplates, planSequenceStatus, sequenceFilters, sequencingError } from '../../stores/sequencing';
+  import { expandedTemplates, parcels, planSequenceStatus, sequenceFilters, sequencingError } from '../../stores/sequencing';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
   import { Status } from '../../enums/status';
@@ -60,7 +60,6 @@
       headerName: 'ID',
       resizable: true,
       sortable: true,
-      suppressSizeToFit: true,
       width: 55,
     },
     {
@@ -70,23 +69,37 @@
       resizable: true,
       sortable: true,
       width: 100,
-    },
-    {
-      field: 'filter',
-      filter: 'text',
-      headerName: 'Filter',
-      hide: true,
-      resizable: true,
-      sortable: false,
-      valueGetter: (params: ValueGetterParams<SequenceFilter>) => {
-        return JSON.stringify(params?.data?.filter);
-      },
-    },
+    }
   ];
   const baseExpandedTemplateColumnDefs: DataGridColumnDef[] = [
     {
-
-    }
+      field: 'id',
+      filter: 'number',
+      headerName: 'ID',
+      resizable: true,
+      sortable: true,
+    },
+    {
+      field: 'filter_id',
+      filter: 'number',
+      headerName: 'Filter ID',
+      resizable: true,
+      sortable: true,
+    },
+    {
+      field: 'simulation_dataset_id',
+      filter: 'number',
+      headerName: 'Simulation Dataset ID',
+      resizable: true,
+      sortable: true,
+    },
+    {
+      field: 'created_at',
+      filter: 'string',
+      headerName: 'Created At',
+      resizable: true,
+      sortable: true,
+    },
   ];
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
   let expandedTemplateColumnDefs: DataGridColumnDef[] = baseExpandedTemplateColumnDefs;
@@ -110,8 +123,7 @@
   let selectedSequenceFilterId: number | null = null;
   let selectedSequenceFilterIds: number[] = [];
   let selectedExpandedTemplateId: number | null = null;
-
-  $: console.log($expandedTemplates);
+  let selectedParcel: number | null = null;
 
   $: if ($plan !== null) {
     planStartDate = $plugins.time.primary.parse($plan.start_time_doy) ?? undefined;
@@ -135,7 +147,7 @@
 
   $: selectedSequenceFilter = $sequenceFilters.find(s => s.id === selectedSequenceFilterId) ?? null;
 
-  $: isTemplatingDisabled = selectedSequenceFilterIds.length === 0 || selectedSequenceFilterId === null || $simulationStatus !== Status.Complete;
+  $: isTemplatingDisabled = selectedSequenceFilterIds.length === 0 || selectedSequenceFilterId === null || $simulationStatus !== Status.Complete || !selectedParcel;
 
   $: columnDefs = [
     ...columnDefs,
@@ -205,8 +217,8 @@
       resizable: false,
       sortable: false,
       suppressAutoSize: true,
-      suppressSizetoFit: true,
-      width: 55
+      suppressSizeToFit: true,
+      width: 20
     }
   ]
 
@@ -219,7 +231,7 @@
   }
 
   function openExpandedTemplate(expandedTemplate: ExpandedTemplate) {
-    showEditorModal(expandedTemplate, "json", `Expanded Template ID : ${expandedTemplate.id}`, true);
+    showEditorModal(expandedTemplate.expanded_template, "json", `Expanded Template ID : ${expandedTemplate.id}`, true);
   }
 
   async function onCreateSequenceFilter() {
@@ -269,6 +281,11 @@
       return;
     }
 
+    if (!selectedParcel) {
+      sequencingError.set("No selected Parcel - please select one from the dropdown before templating!");
+      return;
+    }
+
     // This should never happen.. but check to make TS happy
     if (!$plan) {
       sequencingError.set("No plan could be found in this context!");
@@ -277,6 +294,7 @@
 
     effects.expandTemplates(
       selectedSequenceFilterIds,
+      selectedParcel,
       $plan?.model_id,
       $simulationDatasetLatest.id,
       $startTimeField.value,
@@ -338,6 +356,23 @@
         </select>
       </fieldset>
       <fieldset>
+        <label for="parcel" class="parcel-selector">
+          Parcel
+        </label>
+        <select
+          bind:value={selectedParcel}
+          class="st-select w-100"
+          disabled={!$parcels}
+          name="parcels"
+        >
+          <option value={null} />
+          {#each $parcels as parcel}
+            <option value={parcel.id}>
+              {parcel.name} ({parcel.id})
+            </option>
+          {/each}
+        </select>
+      <fieldset>
         <Collapse title="Sequence Filter Details" defaultExpanded={false} padContent={false}>
           {#if !selectedSequenceFilter}
             <div class="st-typography-label">No Sequence Filter Selected</div>
@@ -381,7 +416,7 @@
         </Collapse>
       </fieldset>
       <fieldset>
-        <Collapse className="details-container" title="Sequence Filters" padContent={false}>
+        <Collapse className="details-container" title="Sequence Filters" defaultExpanded={false} padContent={false}>
           <div class="sequence-filter-form-container">
             <CssGrid class="sequence-filter-form" rows="min-content auto">
               <CssGrid columns="3fr" gap="12px">
@@ -422,69 +457,54 @@
                   Create Sequence Filter
                 </button>
               </CssGrid>
-              <div class="mt-2">
-                {#if $sequenceFilters.length}
-                  <BulkActionDataGrid
-                    bind:dataGrid
-                    bind:selectedItemId={selectedSequenceFilterId}
-                    bind:selectedItemIds={selectedSequenceFilterIds}
-                    getRowId={rowData => rowData.id}
-                    {columnDefs}
-                    loading={!currentModelSequenceFilters}
-                    {hasDeletePermission}
-                    hasDeletePermissionError={deletePermissionError}
-                    items={currentModelSequenceFilters}
-                    pluralItemDisplayText="Sequence Filters"
-                    scrollToSelection={true}
-                    singleItemDisplayText="Sequence Filter"
-                    {user}
-                    on:bulkDeleteItems={e => onBulkDeleteItems(e)}
-                    on:rowDoubleClicked={e => onRowDoubleClicked(e)}
-                  />
-                {:else}
-                  <div class="st-typography-label">
-                    No Sequence Filters for Model '{$plan?.model.name}'
-                  </div>
-                {/if}
-              </div>
-
-            </CssGrid>
-          </div>
-        </Collapse>
-        <Collapse className="details-container" title="Expanded Templates" padContent={false} defaultExpanded={false}>
-          <div class="sequence-filter-form-container">
-            <CssGrid class="sequence-filter-form" rows="min-content auto">
-              <div class="mt-2">
-                {#if $expandedTemplates.length && $simulationDatasetLatest !== null}
-                  <SingleActionDataGrid
-                    bind:dataGrid={expandedTemplateDataGrid}
-                    bind:selectedItemId={selectedExpandedTemplateId}
-                    getRowId={rowData => rowData.id}
-                    columnDefs={expandedTemplateColumnDefs}
-                    loading={!$expandedTemplates}
-                    itemDisplayText="Expanded Template"
-                    items={$expandedTemplates}
-                    scrollToSelection={true}
-                    {user}
-                  />
-                {:else}
-                  <div class="st-typography-label">
-                    No Expanded Templates for Simulation Dataset '{$simulationDatasetLatest?.id}'
-                  </div>
-                {/if}
-              </div>
             </CssGrid>
           </div>
         </Collapse>
       </fieldset>
     </div>
+    <div class="tables">
+      <span class="st-typography-label">Sequence Filters</span>
+      <BulkActionDataGrid
+        bind:dataGrid
+        bind:selectedItemId={selectedSequenceFilterId}
+        bind:selectedItemIds={selectedSequenceFilterIds}
+        getRowId={rowData => rowData.id}
+        {columnDefs}
+        {hasDeletePermission}
+        hasDeletePermissionError={deletePermissionError}
+        items={currentModelSequenceFilters}
+        pluralItemDisplayText="Sequence Filters"
+        scrollToSelection={true}
+        singleItemDisplayText="Sequence Filter"
+        {user}
+        on:bulkDeleteItems={e => onBulkDeleteItems(e)}
+        on:rowDoubleClicked={e => onRowDoubleClicked(e)}
+      />
+      <span class="st-typography-label">Expanded Sequences</span>
+      <SingleActionDataGrid
+        bind:dataGrid={expandedTemplateDataGrid}
+        bind:selectedItemId={selectedExpandedTemplateId}
+        getRowId={rowData => rowData.id}
+        columnDefs={expandedTemplateColumnDefs}
+        itemDisplayText="Expanded Template"
+        items={$expandedTemplates}
+        scrollToSelection={true}
+        {user}
+      />
+    </div>
   </svelte:fragment>
 </Panel>
 
 <style>
+  .tables {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    height: 100%;
+  }
   .sequence-panel-body {
     display: grid;
-    grid-template-rows: min-content min-content min-content auto;
+    grid-template-rows: min-content min-content min-content min-content min-content;
     gap: 16px;
     height: 100%;
   }

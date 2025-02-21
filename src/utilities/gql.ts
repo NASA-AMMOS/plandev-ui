@@ -1099,8 +1099,8 @@ const gql = {
   `,
 
   EXPAND_TEMPLATES: `#graphql
-    mutation ExpandTemplates($filterIds: [Int!]!, $modelId: Int!, $simulationDatasetId: Int!, $timeRangeStart: String!, $timeRangeEnd: String!) {
-      expandTemplates: ${Queries.EXPAND_ALL_TEMPLATES}(filterIds: $filterIds, modelId: $modelId, simulationDatasetId: $simulationDatasetId, timeRangeStart: $timeRangeStart, timeRangeEnd: $timeRangeEnd) {
+    mutation ExpandTemplates($filterIds: [Int!]!, $parcelId: Int!, $modelId: Int!, $simulationDatasetId: Int!, $timeRangeStart: String!, $timeRangeEnd: String!) {
+      expandTemplates: ${Queries.EXPAND_ALL_TEMPLATES}(filterIds: $filterIds, modelId: $modelId, parcelId: $parcelId, simulationDatasetId: $simulationDatasetId, timeRangeStart: $timeRangeStart, timeRangeEnd: $timeRangeEnd) {
         success
       }
     }

@@ -26,7 +26,7 @@ import type { ActivityLayerFilter } from './timeline';
 
 export type ExpandedTemplate = {
   created_at: string,
-  expanded_templates: object,
+  expanded_template: object,
   filter_id: number,
   id: number,
   simulation_dataset_id: number,
