@@ -1083,9 +1083,9 @@ const gql = {
   `,
 
   EXPAND_TEMPLATES: `#graphql
-    mutation ExpandTemplates(definitionIds: [Int!]!, simulationDatasetId: Int!, timeRangeStart: String!, timeRangeEnd: String!) {
-      expandTemplates: ${Queries.EXPAND_ALL_TEMPLATES}(definitionIds: $definitionIds, simulationDatasetId: $simulationDatasetId, timeRangeStart: $timeRangeStart, timeRangeEnd: $timeRangeEnd) {
-        id
+    mutation ExpandTemplates($filterIds: [Int!]!, $modelId: Int!, $simulationDatasetId: Int!, $timeRangeStart: String!, $timeRangeEnd: String!) {
+      expandTemplates: ${Queries.EXPAND_ALL_TEMPLATES}(filterIds: $filterIds, modelId: $modelId, simulationDatasetId: $simulationDatasetId, timeRangeStart: $timeRangeStart, timeRangeEnd: $timeRangeEnd) {
+        success
       }
     }
   `,
@@ -2209,6 +2209,18 @@ const gql = {
             }
           }
         }
+      }
+    }
+  `,
+
+  SUB_EXPANDED_TEMPLATES: `#graphql
+    subscription SubExpandedTemplates {
+      expandedTemplates: ${Queries.EXPANDED_TEMPLATES}(order_by: { id: desc }) {
+        id
+        filter_id
+        simulation_dataset_id
+        expanded_template
+        created_at
       }
     }
   `,

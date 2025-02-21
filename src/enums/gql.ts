@@ -80,6 +80,7 @@ export enum Queries {
   EVENT = 'event',
   EXPAND_ALL_ACTIVITIES = 'expandAllActivities',
   EXPAND_ALL_TEMPLATES = 'expandAllTemplates',
+  EXPANDED_TEMPLATES = 'expanded_templates',
   EXPANSION_RULE = 'expansion_rule_by_pk',
   EXPANSION_RULES = 'expansion_rule',
   EXPANSION_RULE_TAGS = 'expansion_rule_tags',

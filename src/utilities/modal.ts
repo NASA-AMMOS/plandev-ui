@@ -10,6 +10,7 @@ import DeleteActivitiesModal from '../components/modals/DeleteActivitiesModal.sv
 import DeleteDerivationGroupModal from '../components/modals/DeleteDerivationGroupModal.svelte';
 import DeleteExternalEventSourceTypeModal from '../components/modals/DeleteExternalEventSourceTypeModal.svelte';
 import DeleteExternalSourceModal from '../components/modals/DeleteExternalSourceModal.svelte';
+import EditorModal from '../components/modals/EditorModal.svelte';
 import EditViewModal from '../components/modals/EditViewModal.svelte';
 import ExpansionSequenceModal from '../components/modals/ExpansionSequenceModal.svelte';
 import LibrarySequenceModal from '../components/modals/LibrarySequenceModal.svelte';
@@ -24,8 +25,6 @@ import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
 import RestorePlanSnapshotModal from '../components/modals/RestorePlanSnapshotModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
-import SequenceFilterModal from '../components/modals/SequenceFilterModal.svelte';
-import SequenceDefinitionModal from '../components/modals/SequenceFilterModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceModal from '../components/modals/WorkspaceModal.svelte';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
@@ -47,7 +46,6 @@ import type {
   PlanMergeRequestTypeFilter,
 } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
-import type { SequenceDefinition, SequenceFilter } from '../types/sequencing';
 import type { Tag } from '../types/tags';
 import type { ViewDefinition } from '../types/view';
 import effects from './effects';
@@ -1043,22 +1041,22 @@ export async function showUploadViewModal(): Promise<ModalElementValue<{ definit
 }
 
 /**
- * Shows a SequenceFilterModal with the supplied arguments.
+ * Shows an EditorModal with the supplied arguments.
  */
-export async function showSequenceFilterModal(sequenceFilter: SequenceFilter): Promise<ModalElementValue> {
+export async function showEditorModal(content: object, language: string, modalTitle: string, readOnly: boolean, ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const sequenceModal = new SequenceFilterModal({ props: { sequenceFilter }, target });
+        const editorModal = new EditorModal({ props: { content, language, modalTitle, readOnly }, target });
         target.resolve = resolve;
 
-        sequenceModal.$on('close', () => {
+        editorModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true });
-          sequenceModal.$destroy();
+          editorModal.$destroy();
         });
       }
     } else {

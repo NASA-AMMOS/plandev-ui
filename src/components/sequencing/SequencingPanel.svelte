@@ -9,7 +9,7 @@
   import type { DataGridColumnDef, DataGridRowDoubleClick } from '../../types/data-grid';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
-  import { showSequenceFilterModal } from '../../utilities/modal';
+  import { showEditorModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { convertDoyToYmd, formatDate } from '../../utilities/time';
@@ -25,14 +25,15 @@
   import { required } from '../../utilities/validators';
   import { tooltip } from '../../utilities/tooltip';
   import ActivityFilterBuilder from '../timeline/form/TimelineEditor/ActivityFilterBuilder.svelte';
-  import type { SequenceActivityFilter, SequenceFilter } from '../../types/sequencing';
-  import { planSequenceStatus, sequenceFilters, sequencingError } from '../../stores/sequencing';
+  import type { ExpandedTemplate, SequenceActivityFilter, SequenceFilter } from '../../types/sequencing';
+  import { expandedTemplates, planSequenceStatus, sequenceFilters, sequencingError } from '../../stores/sequencing';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
   import { Status } from '../../enums/status';
   import AlertError from '../ui/AlertError.svelte';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
+  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -41,13 +42,12 @@
     deleteSequenceFilter: (sequence: SequenceFilter) => void;
     openSequenceFilter: (sequence: SequenceFilter, user: User) => void;
   };
-  // TODO
-  // type CellRendererParamsFragmentActions = {
-  //   openSequenceFragment: (sequenceFragment: SequenceFragment) => void;
-  // };
+  type CellRendererParamsExpandedTemplateActions = {
+    openExpandedTemplate: (expandedTemplate: ExpandedTemplate) => void;
+  };
+
   type SequenceFilterCellRendererParams = ICellRendererParams<SequenceFilter> & CellRendererParamsFilterActions;
-  // TODO
-  // type SequenceFragmentCellRendererParams = ICellRendererParams<SequenceFragment> & CellRendererParamsFragmentActions;
+  type ExpandedTemplateCellRendererParams = ICellRendererParams<ExpandedTemplate> & CellRendererParamsExpandedTemplateActions;
 
   const createPermissionError = 'You do not have permission to create a sequence filter';
   const deletePermissionError = 'You do not have permission to delete sequence filter';
@@ -83,45 +83,13 @@
       },
     },
   ];
-  // TODO
-  // const baseColumnDefsSequenceFragments: DataGridColumnDef[] = [
-  //   {
-  //     field: 'id',
-  //     filter: 'number',
-  //     headerName: 'ID',
-  //     resizable: true,
-  //     sortable: true,
-  //     width: 55
-  //   },
-  //   {
-  //     field: 'activityId',
-  //     filter: 'number',
-  //     headerName: 'Activity ID',
-  //     resizable: true,
-  //     sortable: true,
-  //     width: 85,
-  //   },
-  //   {
-  //     field: 'activityName',
-  //     filter: 'string',
-  //     headerName: 'Activity Name',
-  //     resizable: true,
-  //     sortable: true,
-  //     width: 150,
-  //   },
-  //   {
-  //     field: 'created_at',
-  //     filter: 'text',
-  //     headerName: 'Created At',
-  //     resizable: true,
-  //     sortable: true,
-  //     width: 150
-  //   }
-  // ];
+  const baseExpandedTemplateColumnDefs: DataGridColumnDef[] = [
+    {
 
+    }
+  ];
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
-  // TODO
-  // let columnDefsSequenceFragments: DataGridColumnDef[] = baseColumnDefsSequenceFragments;
+  let expandedTemplateColumnDefs: DataGridColumnDef[] = baseExpandedTemplateColumnDefs;
   let hasDeletePermission: boolean = false;
   let hasCreatePermission: boolean = false;
   let selectedSequenceFilter: SequenceFilter | null;
@@ -138,8 +106,12 @@
   let planStartDate: Date | undefined;
   let planEndDate: Date | undefined;
   let dataGrid: DataGrid<SequenceFilter>;
+  let expandedTemplateDataGrid: DataGrid<ExpandedTemplate>;
   let selectedSequenceFilterId: number | null = null;
   let selectedSequenceFilterIds: number[] = [];
+  let selectedExpandedTemplateId: number | null = null;
+
+  $: console.log($expandedTemplates);
 
   $: if ($plan !== null) {
     planStartDate = $plugins.time.primary.parse($plan.start_time_doy) ?? undefined;
@@ -205,52 +177,50 @@
     },
   ];
 
-  // TODO
-  // $: columnDefsSequenceFragments = [
-  //   ...columnDefsSequenceFragments,
-  //   {
-  //     cellClass: 'action-cell-container',
-  //     cellRenderer: (params: SequenceFragmentCellRendererParams) => {
-  //       const actionsDiv = document.createElement('div');
-  //       actionsDiv.className = 'actions-cell';
-  //       new DataGridActions({
-  //         props: {
-  //           rowData: params.data,
-  //           viewCallback: data => user && params.openSequenceFragment(data),
-  //           viewTooltip: {
-  //             content: 'Open Sequence Fragment',
-  //             placement: 'bottom',
-  //           },
-  //         },
-  //         target: actionsDiv
-  //       });
-  //       return actionsDiv;
-  //     },
-  //     cellRendererParams: {
-  //       openSequenceFragment,
-  //     } as CellRendererParamsFragmentActions,
-  //     field: 'actions',
-  //     headerName: '',
-  //     resizable: false,
-  //     sortable: false,
-  //     suppressAutoSize: true,
-  //     suppressSizeToFit: true,
-  //     width: 55,
-  //   }
-  // ]
+  $: expandedTemplateColumnDefs = [
+    ...expandedTemplateColumnDefs,
+    {
+      cellClass: 'action-cell-container',
+      cellRenderer: (params: ExpandedTemplateCellRendererParams) => {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'actions-cell';
+        new DataGridActions({
+          props: {
+            rowData: params.data,
+            viewCallback: data => user && params.openExpandedTemplate(data),
+            viewTooltip: {
+              content: 'Open Expanded Template',
+              placement: 'bottom'
+            }
+          },
+          target: actionsDiv
+        });
+        return actionsDiv;
+      },
+      cellRendererParams: {
+        openExpandedTemplate
+      } as CellRendererParamsExpandedTemplateActions,
+      field: 'actions',
+      headerName: '',
+      resizable: false,
+      sortable: false,
+      suppressAutoSize: true,
+      suppressSizetoFit: true,
+      width: 55
+    }
+  ]
 
   function deleteSequenceFilter(sequenceFilter: SequenceFilter) {
     effects.deleteSequenceFilters([sequenceFilter.id], user);
   }
 
   function openSequenceFilter(sequenceFilter: SequenceFilter) {
-    showSequenceFilterModal(sequenceFilter);
+    showEditorModal(sequenceFilter, "json", `Sequence Filter ID: ${sequenceFilter.id}`, true);
   }
 
-  // TODO
-  // function openSequenceFragment(sequenceFragment: SequenceFragment) {
-  //   console.log("TODO");
-  // }
+  function openExpandedTemplate(expandedTemplate: ExpandedTemplate) {
+    showEditorModal(expandedTemplate, "json", `Expanded Template ID : ${expandedTemplate.id}`, true);
+  }
 
   async function onCreateSequenceFilter() {
     // This always *should* be true, but check anyway to keep TS happy
@@ -275,7 +245,7 @@
 
   function onViewSequenceFilter() {
     if (selectedSequenceFilter !== null) {
-      showSequenceFilterModal(selectedSequenceFilter);
+      showEditorModal(selectedSequenceFilter, "json", `Sequence Filter ID: ${selectedSequenceFilter.id}`, true);
     }
   }
 
@@ -283,7 +253,7 @@
     const {
       detail: { data: clickedRow },
     } = event;
-    showSequenceFilterModal(clickedRow);
+    showEditorModal(clickedRow, "json", `Sequence Filter ID: ${clickedRow.id}`, true);
   }
 
   function onRunTemplating() {
@@ -299,8 +269,15 @@
       return;
     }
 
+    // This should never happen.. but check to make TS happy
+    if (!$plan) {
+      sequencingError.set("No plan could be found in this context!");
+      return;
+    }
+
     effects.expandTemplates(
       selectedSequenceFilterIds,
+      $plan?.model_id,
       $simulationDatasetLatest.id,
       $startTimeField.value,
       $endTimeField.value,
@@ -382,23 +359,6 @@
             <button class="st-button w-100 secondary" on:click|stopPropagation={onViewSequenceFilter}>
               View Filter Definitions
             </button>
-            <!-- TODO -->
-            <!-- <div style:padding-left="8px">
-              <Collapse title="Generated Sequence Fragments" defaultExpanded={false} padContent={false}>
-                {#if selectedSequenceDefinitionFragments.length > 0}
-                  <SingleActionDataGrid
-                    columnDefs={columnDefsSequenceFragments}
-                    itemDisplayText="Sequence Fragments"
-                    items={selectedSequenceFragments}
-                    {user}
-                  />
-                {:else}
-                  <div class="st-typography" style:padding-left="16px">
-                    No fragments have been generated - run templating to create some!
-                  </div>
-                {/if}
-              </Collapse>
-            </div> -->
           {/if}
         </Collapse>
       </fieldset>
@@ -484,6 +444,32 @@
                 {:else}
                   <div class="st-typography-label">
                     No Sequence Filters for Model '{$plan?.model.name}'
+                  </div>
+                {/if}
+              </div>
+
+            </CssGrid>
+          </div>
+        </Collapse>
+        <Collapse className="details-container" title="Expanded Templates" padContent={false} defaultExpanded={false}>
+          <div class="sequence-filter-form-container">
+            <CssGrid class="sequence-filter-form" rows="min-content auto">
+              <div class="mt-2">
+                {#if $expandedTemplates.length && $simulationDatasetLatest !== null}
+                  <SingleActionDataGrid
+                    bind:dataGrid={expandedTemplateDataGrid}
+                    bind:selectedItemId={selectedExpandedTemplateId}
+                    getRowId={rowData => rowData.id}
+                    columnDefs={expandedTemplateColumnDefs}
+                    loading={!$expandedTemplates}
+                    itemDisplayText="Expanded Template"
+                    items={$expandedTemplates}
+                    scrollToSelection={true}
+                    {user}
+                  />
+                {:else}
+                  <div class="st-typography-label">
+                    No Expanded Templates for Simulation Dataset '{$simulationDatasetLatest?.id}'
                   </div>
                 {/if}
               </div>
