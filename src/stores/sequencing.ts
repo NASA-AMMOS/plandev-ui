@@ -8,6 +8,7 @@ import type { User } from '../types/app';
 import {
   type ChannelDictionaryMetadata,
   type CommandDictionaryMetadata,
+  type ExpandedTemplate,
   type ParameterDictionaryMetadata,
   type Parcel,
   type ParcelBundle,
@@ -51,6 +52,8 @@ export const commandDictionaries = gqlSubscribable<CommandDictionaryMetadata[]>(
   [],
   null,
 );
+
+export const expandedTemplates = gqlSubscribable<ExpandedTemplate[]>(gql.SUB_EXPANDED_TEMPLATES, {}, [], null);
 
 export const parameterDictionaries = gqlSubscribable<ParameterDictionaryMetadata[]>(
   gql.SUB_PARAMETER_DICTIONARIES,

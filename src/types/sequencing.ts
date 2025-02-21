@@ -24,6 +24,14 @@ import type { UserId } from './app';
 import type { GlobalType } from './global-type';
 import type { ActivityLayerFilter } from './timeline';
 
+export type ExpandedTemplate = {
+  created_at: string,
+  expanded_templates: object,
+  filter_id: number,
+  id: number,
+  simulation_dataset_id: number,
+}
+
 export type SequenceTemplate = {
   activity_type: string,
   id: number,
