@@ -24,7 +24,7 @@ import { catchError, catchSchedulingError } from '../stores/errors';
 import {
   createExpansionRuleError as createExpansionRuleErrorStore,
   creatingExpansionSequence as creatingExpansionSequenceStore,
-  planExpansionStatus as planExpansionStatusStore,
+  planExpansionStatusWritable as planExpansionStatusStore,
   savingExpansionRule as savingExpansionRuleStore,
   savingExpansionSet as savingExpansionSetStore,
 } from '../stores/expansion';
@@ -200,10 +200,10 @@ import {
   type ParcelInsertInput,
   type ParcelToParameterDictionary,
   type SeqJson,
+  type SequenceActivityFilter,
   type SequenceAdaptationMetadata,
   type SequenceFilter,
   type SequenceFilterInsertInput,
-  type SequenceActivityFilter,
   type UserSequence,
   type UserSequenceInsertInput,
   type Workspace,
@@ -3886,13 +3886,14 @@ const effects = {
     }
   },
 
+  // TODO: change this so that it doesn't generate a new one, but rather pulls the stored one
   async getExpansionSequenceSeqJson(
     seqId: string,
     simulationDatasetId: number,
     user: User | null,
   ): Promise<string | null> {
     try {
-      const data = await reqHasura<GetSeqJsonResponse>(
+      const data = await reqHasura<any>(
         gql.GET_EXPANSION_SEQUENCE_SEQ_JSON,
         {
           seqId,
@@ -3900,17 +3901,12 @@ const effects = {
         },
         user,
       );
-      const { getSequenceSeqJson } = data;
-      if (getSequenceSeqJson != null) {
-        const { errors, seqJson, status } = getSequenceSeqJson;
 
-        if (status === 'FAILURE') {
-          const [firstError] = errors;
-          const { message } = firstError;
-          return message;
-        } else {
-          return JSON.stringify(seqJson, null, 2);
-        }
+      console.log(data)
+      const { expanded_sequences } = data;
+      if (expanded_sequences != null && expanded_sequences.length === 1) {
+        const { expanded_sequence } = expanded_sequences[0];
+        return JSON.stringify(expanded_sequence, null, 2);
       } else {
         throw Error(`Unable to get expansion sequence seq json for seq ID "${seqId}"`);
       }
@@ -5688,6 +5684,9 @@ const effects = {
         if (simulate != null) {
           const { simulationDatasetId: newSimulationDatasetId } = simulate;
           simulationDatasetIdStore.set(newSimulationDatasetId);
+
+          // reflect that expansion should be re-run. TODO: discuss if this is appropriate; see comments in expansion.ts
+          planExpansionStatusStore.set(Status.Modified);
         } else {
           throw Error('Unable to simulate this plan');
         }

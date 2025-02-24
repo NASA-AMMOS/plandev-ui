@@ -1260,17 +1260,8 @@ const gql = {
 
   GET_EXPANSION_SEQUENCE_SEQ_JSON: `#graphql
     query GetExpansionSequenceSeqJson($seqId: String!, $simulationDatasetId: Int!) {
-      ${Queries.GET_SEQUENCE_SEQ_JSON}(seqId: $seqId, simulationDatasetId: $simulationDatasetId) {
-        errors {
-          location {
-            column
-            line
-          }
-          message
-          stack
-        }
-        seqJson
-        status
+      ${Queries.EXPANDED_SEQUENCES} (where: { _and: [{ seq_id: { _eq: $seqId } }, { simulation_dataset_id: { _eq: $simulationDatasetId } }] }) {
+        expanded_sequence
       }
     }
   `,
