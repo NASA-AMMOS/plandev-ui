@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { DefinitionType } from '../../enums/association';
   import type {
     Association,
     AssociationSpecification,
@@ -45,7 +46,12 @@
   let selectedAssociationTitle = 'Constraint';
   let selectedDefinitionCode: string | null;
   let selectedViewId: RadioButtonId = 'model';
-  let selectedDefinition: { metadata_id: number; revision: number | null } | null = null;
+  let selectedDefinition: {
+    definitionType: DefinitionType;
+    id?: string;
+    metadataId: number;
+    revision: number | null;
+  } | null = null;
 
   $: {
     metadataMap = metadataList.reduce(
@@ -55,7 +61,7 @@
       }),
       {},
     );
-    if (selectedDefinition && !metadataMap[selectedDefinition.metadata_id]) {
+    if (selectedDefinition && !metadataMap[selectedDefinition.metadataId]) {
       selectedDefinition = null;
     }
   }
@@ -65,10 +71,10 @@
   $: if (selectedDefinition) {
     const selectedVersion =
       selectedDefinition.revision !== null
-        ? metadataMap[selectedDefinition.metadata_id].versions.find(
+        ? metadataMap[selectedDefinition.metadataId].versions.find(
             ({ revision }) => selectedDefinition?.revision === revision,
           )
-        : metadataMap[selectedDefinition.metadata_id].versions[0];
+        : metadataMap[selectedDefinition.metadataId].versions[0];
 
     if (selectedVersion) {
       selectedDefinitionCode = selectedVersion.definition;
@@ -126,7 +132,9 @@
 
   function onSelectDefinition(
     event: CustomEvent<{
-      metadata_id: number;
+      definitionType: DefinitionType;
+      id?: string;
+      metadataId: number;
       revision: number | null;
     } | null>,
   ) {
@@ -205,7 +213,7 @@
                 {#if selectedAssociationId === 'goal'}
                   <ModelAssociationsListItem
                     hasEditPermission={hasEditSpecPermission}
-                    isSelected={selectedDefinition?.metadata_id === spec.metadata_id}
+                    isSelected={selectedDefinition?.id === spec.id}
                     id={spec.id}
                     invocationArguments={spec.arguments}
                     metadataId={spec.metadata_id}
@@ -224,7 +232,7 @@
                 {:else if selectedAssociationId === 'constraint'}
                   <ModelAssociationsListItem
                     hasEditPermission={hasEditSpecPermission}
-                    isSelected={selectedDefinition?.metadata_id === spec.metadata_id}
+                    isSelected={selectedDefinition?.id === spec.id}
                     id={spec.id}
                     invocationArguments={spec.arguments}
                     metadataId={spec.metadata_id}
@@ -244,7 +252,7 @@
                 {:else}
                   <ModelAssociationsListItem
                     hasEditPermission={hasEditSpecPermission}
-                    isSelected={selectedDefinition?.metadata_id === spec.metadata_id}
+                    isSelected={selectedDefinition?.id === spec.id}
                     id={spec.id}
                     metadataId={spec.metadata_id}
                     metadataName={metadataMap[spec.metadata_id].name}
@@ -269,7 +277,8 @@
 
     <DefinitionEditor
       referenceModelId={model?.id}
-      definition={selectedDefinitionCode ?? `No ${selectedAssociationTitle} Definition Selected`}
+      definition={selectedDefinitionCode}
+      definitionType={selectedDefinition?.definitionType}
       readOnly={true}
       title={`${selectedAssociationTitle} - Definition Editor (Read-only)`}
     />

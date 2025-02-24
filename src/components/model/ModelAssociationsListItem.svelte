@@ -4,6 +4,7 @@
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import { DefinitionType } from '../../enums/association';
   import type { Association, BaseDefinition } from '../../types/metadata';
   import type { Argument, FormParameter } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
@@ -35,7 +36,9 @@
       id: string;
     };
     selectDefinition: {
-      metadata_id: number;
+      definitionType: DefinitionType;
+      id: string;
+      metadataId: number;
       revision: number | null;
     } | null;
     updateArguments: {
@@ -58,11 +61,15 @@
   let permissionError: string = '';
   let priorityInput: HTMLInputElement;
   let upButtonHidden: boolean = false;
+  let selectedDefinitionType: DefinitionType = DefinitionType.CODE;
 
   $: if (selectedRevision !== null) {
-    parameterSchema = versions.find(version => version.revision === selectedRevision)?.parameter_schema;
+    const selectedVersion = versions.find(version => version.revision === selectedRevision);
+    parameterSchema = selectedVersion?.parameter_schema;
+    selectedDefinitionType = selectedVersion?.definition === null ? DefinitionType.FILE : DefinitionType.CODE;
   } else {
     parameterSchema = versions[0].parameter_schema;
+    selectedDefinitionType = versions[0].definition === null ? DefinitionType.FILE : DefinitionType.CODE;
   }
   $: permissionError = `You do not have permission to edit model ${metadataType}s`;
   $: upButtonHidden = priority !== undefined && priority <= 0;
@@ -173,7 +180,9 @@
 
   function select(revision: number | null) {
     dispatch('selectDefinition', {
-      metadata_id: metadataId,
+      definitionType: selectedDefinitionType,
+      id,
+      metadataId,
       revision,
     });
   }

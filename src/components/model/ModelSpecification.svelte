@@ -3,6 +3,7 @@
 <script lang="ts">
   import type { CellEditingStoppedEvent, ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
+  import { DefinitionType } from '../../enums/association';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { Association, AssociationSpecificationMap, BaseMetadata } from '../../types/metadata';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -17,7 +18,7 @@
   export let metadataList: Pick<BaseMetadata, 'id' | 'name' | 'public' | 'versions'>[] = [];
   export let metadataType: Association = 'constraint';
   export let selectedSpecifications: AssociationSpecificationMap = {};
-  export let selectedMetadata: { metadata_id: number; revision: number | null } | null = null;
+  export let selectedMetadata: { metadataId: number; revision: number | null } | null = null;
 
   type CellRendererParams = {
     viewMetadata: (metadata: BaseMetadata) => void;
@@ -26,8 +27,9 @@
 
   const dispatch = createEventDispatcher<{
     newMetadata: void;
-    selectMetadata: {
-      id: number;
+    selectDefinition: {
+      definitionType: DefinitionType;
+      metadataId: number;
       revision: number;
     } | null;
     toggleSpecification: {
@@ -166,12 +168,15 @@
   function onSelectDefinition(event: CustomEvent<Pick<BaseMetadata, 'id' | 'name' | 'public' | 'versions'>[]>) {
     const { detail: newSelectedMetadata } = event;
     if (newSelectedMetadata.length > 0) {
-      dispatch('selectMetadata', {
-        id: newSelectedMetadata[0].id,
-        revision: newSelectedMetadata[0].versions[0].revision,
+      const firstSelectedMetadata = newSelectedMetadata[0];
+      dispatch('selectDefinition', {
+        definitionType:
+          firstSelectedMetadata.versions[0].definition === null ? DefinitionType.FILE : DefinitionType.CODE,
+        metadataId: firstSelectedMetadata.id,
+        revision: firstSelectedMetadata.versions[0].revision,
       });
     } else {
-      dispatch('selectMetadata', null);
+      dispatch('selectDefinition', null);
     }
   }
 
@@ -221,7 +226,7 @@
         {loading}
         rowData={filteredMetadata}
         rowSelection="single"
-        selectedRowIds={selectedMetadata ? [selectedMetadata.metadata_id] : []}
+        selectedRowIds={selectedMetadata ? [selectedMetadata.metadataId] : []}
         on:cellEditingStopped={onToggleSpecification}
         on:selectionChanged={onSelectDefinition}
       />
