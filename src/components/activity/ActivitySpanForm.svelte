@@ -215,6 +215,8 @@
     </Collapse>
   </fieldset>
 
+  <!--TODO: make the expansion status dirty on update here, so that it is clear to the user that re-expansion is clearly required before anything updates-->
+  <!--TODO: add something similar for templating-->
   <fieldset>
     <Collapse title="Sequencing">
       <Input layout="inline">
