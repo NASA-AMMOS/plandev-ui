@@ -35,7 +35,7 @@
   <a
     href={`/sequencing/actions${workspace ? `?${SearchParameters.WORKSPACE_ID}=${workspace.id}` : ''}`}
     class="st-typography-medium"
-    style="display: flex; align-items: center; gap: 8px; padding: 8px; border-bottom: 1px solid var(--st-gray-20);"
+    style=" align-items: center; border-bottom: 1px solid var(--st-gray-20);display: flex; gap: 8px; padding: 8px;"
   >
     <ArrowLeftIcon />
     Back to workspace actions
@@ -142,17 +142,17 @@
 
 <style>
   .action-run {
-    padding: 24px;
     overflow-x: hidden;
+    padding: 24px;
   }
 
   .logs {
-    padding: 16px;
     background: var(--st-gray-10);
     border-radius: 4px;
+    font-family: 'JetBrains mono';
     max-height: 400px;
     overflow: auto;
-    font-family: 'JetBrains mono';
+    padding: 16px;
   }
 
   .logs pre {
@@ -160,9 +160,9 @@
   }
 
   .code {
-    height: 400px;
     border: 1px solid var(--st-gray-30);
     border-radius: 4px;
+    height: 400px;
     overflow: hidden;
   }
 </style>
