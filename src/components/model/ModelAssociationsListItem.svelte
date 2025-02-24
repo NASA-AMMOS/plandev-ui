@@ -11,6 +11,7 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
+  import ContextMenu from '../context-menu/ContextMenu.svelte';
   import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
   import Parameters from '../parameters/Parameters.svelte';
 
@@ -51,6 +52,7 @@
     };
   }>();
 
+  let contextMenu: ContextMenu;
   let formParameters: FormParameter[] = [];
   let parameterSchema: ValueSchema | undefined;
   let permissionError: string = '';
@@ -177,27 +179,34 @@
   }
 </script>
 
-<div class="specification-list-item" class:selected={isSelected} on:mousedown={onSelect} role="button" tabindex={1}>
+<div
+  class="specification-list-item"
+  class:selected={isSelected}
+  on:mousedown={onSelect}
+  on:contextmenu|preventDefault={contextMenu?.show}
+  role="button"
+  tabindex={1}
+>
   {#if formParameters.length}
     <Collapse title={metadataName} tooltipContent={metadataName} defaultExpanded={false}>
       <svelte:fragment slot="right">
         <div class="inputs-container" role="none" on:click|stopPropagation>
-          <div class="priority-container">
-            <input
-              bind:this={priorityInput}
-              bind:value={priority}
-              class="st-input"
-              min="0"
-              style:width="68px"
-              type="number"
-              on:change={onUpdatePriority}
-              on:keydown={onKeyDown}
-              use:permissionHandler={{
-                hasPermission: hasEditPermission,
-                permissionError,
-              }}
-            />
-            {#if hasEditPermission}
+          {#if hasEditPermission && metadataType !== 'condition'}
+            <div class="priority-container">
+              <input
+                bind:this={priorityInput}
+                bind:value={priority}
+                class="st-input"
+                min="0"
+                style:width="68px"
+                type="number"
+                on:change={onUpdatePriority}
+                on:keydown={onKeyDown}
+                use:permissionHandler={{
+                  hasPermission: hasEditPermission,
+                  permissionError,
+                }}
+              />
               <div class="priority-buttons">
                 <button
                   use:tooltip={{ content: `Increase ${priorityLabel}`, placement: 'top' }}
@@ -216,8 +225,8 @@
                   <CaretDownFillIcon />
                 </button>
               </div>
-            {/if}
-          </div>
+            </div>
+          {/if}
           <select
             class="st-select"
             value={selectedRevision}
@@ -239,41 +248,48 @@
       <Collapse title="Parameters" defaultExpanded={true}>
         <Parameters disabled={false} expanded={true} {formParameters} on:change={onChangeFormParameters} />
       </Collapse>
-
-      <svelte:fragment slot="contextMenuContent">
-        <ContextMenuItem
-          on:click={onDuplicateInvocation}
-          use={[
-            [
-              permissionHandler,
-              {
-                hasPermission: hasEditPermission,
-                permissionError,
-              },
-            ],
-          ]}
-        >
-          Duplicate Invocation
-        </ContextMenuItem>
-        <ContextMenuItem
-          on:click={onDeleteInvocation}
-          use={[
-            [
-              permissionHandler,
-              {
-                hasPermission: hasEditPermission,
-                permissionError,
-              },
-            ],
-          ]}
-        >
-          Delete Invocation
-        </ContextMenuItem>
-      </svelte:fragment>
     </Collapse>
   {:else}
     <div class="metadata-name">{metadataName}</div>
     <div class="inputs-container" role="none" on:click|stopPropagation>
+      {#if metadataType !== 'condition'}
+        <div class="priority-container">
+          <input
+            bind:this={priorityInput}
+            bind:value={priority}
+            class="st-input"
+            min="0"
+            style:width="68px"
+            type="number"
+            on:change={onUpdatePriority}
+            on:keydown={onKeyDown}
+            use:permissionHandler={{
+              hasPermission: hasEditPermission,
+              permissionError,
+            }}
+          />
+          {#if hasEditPermission}
+            <div class="priority-buttons">
+              <button
+                use:tooltip={{ content: `Increase ${priorityLabel}`, placement: 'top' }}
+                class="st-button tertiary up-button"
+                class:hidden={upButtonHidden}
+                tabindex={upButtonHidden ? -1 : 0}
+                on:click={onIncreasePriority}
+              >
+                <CaretUpFillIcon />
+              </button>
+              <button
+                use:tooltip={{ content: `Decrease ${priorityLabel}`, placement: 'top' }}
+                class="st-button tertiary down-button"
+                on:click={onDecreasePriority}
+              >
+                <CaretDownFillIcon />
+              </button>
+            </div>
+          {/if}
+        </div>
+      {/if}
       <select
         class="st-select"
         value={selectedRevision}
@@ -291,6 +307,38 @@
       </select>
     </div>
   {/if}
+  {#if metadataType !== 'condition'}
+    <ContextMenu bind:this={contextMenu}>
+      <ContextMenuItem
+        on:click={onDuplicateInvocation}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasEditPermission,
+              permissionError,
+            },
+          ],
+        ]}
+      >
+        Duplicate Invocation
+      </ContextMenuItem>
+      <ContextMenuItem
+        on:click={onDeleteInvocation}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasEditPermission,
+              permissionError,
+            },
+          ],
+        ]}
+      >
+        Delete Invocation
+      </ContextMenuItem>
+    </ContextMenu>
+  {/if}
 </div>
 
 <style>
@@ -303,6 +351,10 @@
 
   .specification-list-item:hover {
     background-color: var(--st-gray-10);
+  }
+
+  .specification-list-item.selected {
+    background-color: var(--st-gray-20);
   }
 
   .metadata-name {

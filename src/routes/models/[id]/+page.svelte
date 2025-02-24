@@ -624,7 +624,7 @@
             ...toggledMetadata,
             id: `new${newConditionCounter}`,
             metadata_id: metadataId,
-            revision: toggledMetadata.versions[toggledMetadata.versions.length - 1]?.revision ?? null,
+            revision: null,
           },
         ];
 
@@ -646,7 +646,7 @@
             priority:
               (selectedVisibleGoalSpecificationsList[selectedVisibleGoalSpecificationsList.length - 1]?.priority ??
                 -1) + 1,
-            revision: toggledMetadata.versions[toggledMetadata.versions.length - 1]?.revision ?? null,
+            revision: null,
           },
         ];
 
@@ -669,7 +669,7 @@
             priority:
               (selectedVisibleConstraintSpecificationsList[selectedVisibleConstraintSpecificationsList.length - 1]
                 ?.priority ?? -1) + 1,
-            revision: toggledMetadata.versions[toggledMetadata.versions.length - 1]?.revision ?? null,
+            revision: null,
           },
         ];
 
@@ -689,7 +689,6 @@
     const {
       detail: { arguments: argsToUpdate, id, priority, revision },
     } = event;
-
     switch (selectedAssociation) {
       case 'condition':
         selectedVisibleConditionSpecificationsList = selectedVisibleConditionSpecificationsList.map(
@@ -716,7 +715,7 @@
               ...goalSpecification,
               arguments: { ...goalSpecification.arguments, ...argsToUpdate },
               priority: priority ?? goalSpecification.priority,
-              revision: revision ?? goalSpecification.revision,
+              revision: revision !== undefined ? revision : goalSpecification.revision,
             };
           }
           if (
@@ -752,7 +751,7 @@
                 ...constraintSpecification,
                 arguments: { ...constraintSpecification.arguments, ...argsToUpdate },
                 priority: priority ?? constraintSpecification.priority,
-                revision: revision ?? constraintSpecification.revision,
+                revision: revision !== undefined ? revision : constraintSpecification.revision,
               };
             }
             if (
