@@ -277,7 +277,7 @@
 
     <DefinitionEditor
       referenceModelId={model?.id}
-      definition={selectedDefinitionCode}
+      definition={selectedDefinitionCode ?? `No ${selectedAssociationTitle} Definition Selected`}
       definitionType={selectedDefinition?.definitionType}
       readOnly={true}
       title={`${selectedAssociationTitle} - Definition Editor (Read-only)`}

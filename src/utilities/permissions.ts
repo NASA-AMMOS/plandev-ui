@@ -992,6 +992,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
         (constraintMetadata?.public || isUserOwner(user, constraintMetadata)))
     );
   },
+  UPDATE_CONSTRAINT_MODEL_SPECIFICATION: (user: User | null) => {
+    return isUserAdmin(user) && getPermission([Queries.UPDATE_CONSTRAINT_MODEL_SPECIFICATION], user);
+  },
   UPDATE_CONSTRAINT_MODEL_SPECIFICATIONS: (user: User | null) => {
     return (
       isUserAdmin(user) &&

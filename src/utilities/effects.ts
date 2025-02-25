@@ -94,6 +94,7 @@ import type {
   ConstraintMetadata,
   ConstraintMetadataSetInput,
   ConstraintModelSpecInsertInput,
+  ConstraintModelSpecSetInput,
   ConstraintPlanSpecInsertInput,
   ConstraintPlanSpecSetInput,
   ConstraintPlanSpecification,
@@ -172,6 +173,7 @@ import type {
   SchedulingConditionMetadataResponse,
   SchedulingConditionMetadataSetInput,
   SchedulingConditionModelSpecificationInsertInput,
+  SchedulingConditionModelSpecificationSetInput,
   SchedulingConditionPlanSpecInsertInput,
   SchedulingConditionPlanSpecification,
   SchedulingGoalDefinition,
@@ -5835,10 +5837,38 @@ const effects = {
     }
   },
 
+  async updateConstraintModelSpecification(
+    model: Model,
+    constraintSpecToUpdate: ConstraintModelSpecSetInput,
+    user: User | null,
+  ) {
+    try {
+      if (!queryPermissions.UPDATE_CONSTRAINT_MODEL_SPECIFICATION(user)) {
+        throwPermissionError('update this constraint model specification');
+      }
+      const { invocation_id: constraintInvocationId, constraint_revision: revision, order } = constraintSpecToUpdate;
+
+      const { updateConstraintModelSpecification } = await reqHasura(
+        gql.UPDATE_CONSTRAINT_MODEL_SPECIFICATION,
+        { constraintInvocationId, modelId: model.id, order, revision },
+        user,
+      );
+
+      if (updateConstraintModelSpecification !== null) {
+        showSuccessToast(`Constraint Model Specification Updated Successfully`);
+      } else {
+        throw Error('Unable to update the constraint specification for the model');
+      }
+    } catch (e) {
+      catchError('Constraint Model Specification Update Failed', e as Error);
+      showFailureToast('Constraint Model Specification Update Failed');
+    }
+  },
+
   async updateConstraintModelSpecifications(
     model: Model,
-    constraintSpecsToUpdate: ConstraintModelSpecInsertInput[],
-    constraintIdsToDelete: number[],
+    constraintSpecsToAdd: ConstraintModelSpecInsertInput[],
+    constraintInvocationIdsToDelete: number[],
     user: User | null,
   ) {
     try {
@@ -5846,13 +5876,13 @@ const effects = {
         throwPermissionError('update this constraint model specification');
       }
 
-      const { deleteConstraintModelSpecifications, updateConstraintModelSpecifications } = await reqHasura(
+      const { deleteConstraintModelSpecifications, addConstraintModelSpecifications } = await reqHasura(
         gql.UPDATE_CONSTRAINT_MODEL_SPECIFICATIONS,
-        { constraintIdsToDelete, constraintSpecsToUpdate, modelId: model.id },
+        { constraintInvocationIdsToDelete, constraintSpecsToAdd, modelId: model.id },
         user,
       );
 
-      if (updateConstraintModelSpecifications !== null || deleteConstraintModelSpecifications !== null) {
+      if (addConstraintModelSpecifications !== null || deleteConstraintModelSpecifications !== null) {
         showSuccessToast(`Constraint Model Specifications Updated Successfully`);
       } else {
         throw Error('Unable to update the constraint specifications for the model');
@@ -5872,13 +5902,13 @@ const effects = {
       if (!queryPermissions.UPDATE_CONSTRAINT_PLAN_SPECIFICATION(user, plan)) {
         throwPermissionError('update this constraint plan specification');
       }
-      const { enabled, invocation_id, constraint_revision: revision } = constraintPlanSpecification;
+      const { enabled, invocation_id: invocationId, constraint_revision: revision } = constraintPlanSpecification;
 
       const { updateConstraintPlanSpecification } = await reqHasura(
         gql.UPDATE_CONSTRAINT_PLAN_SPECIFICATION,
         {
           arguments: constraintPlanSpecification.arguments,
-          constraintInvocationId: invocation_id,
+          constraintInvocationId: invocationId,
           enabled,
           revision,
         },
@@ -6147,7 +6177,10 @@ const effects = {
 
   async updateSchedulingConditionModelSpecifications(
     model: Model,
-    conditionSpecsToUpdate: SchedulingConditionModelSpecificationInsertInput[],
+    conditionSpecsToUpdate: (
+      | SchedulingConditionModelSpecificationInsertInput
+      | SchedulingConditionModelSpecificationSetInput
+    )[],
     conditionIdsToDelete: number[],
     user: User | null,
   ) {
@@ -6314,11 +6347,15 @@ const effects = {
       if (!queryPermissions.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION(user)) {
         throwPermissionError('update this scheduling goal plan specification');
       }
-      const { goal_id: goalId, goal_revision: revision, priority } = schedulingGoalModelSpecification;
+      const {
+        goal_invocation_id: goalInvocationId,
+        goal_revision: revision,
+        priority,
+      } = schedulingGoalModelSpecification;
 
       const { updateSchedulingGoalModelSpecification } = await reqHasura(
         gql.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION,
-        { id: goalId, modelId: model.id, priority, revision },
+        { goalInvocationId, modelId: model.id, priority, revision },
         user,
       );
 

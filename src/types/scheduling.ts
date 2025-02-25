@@ -113,6 +113,10 @@ export type SchedulingConditionModelSpecificationInsertInput = Omit<
   SchedulingConditionModelSpecification,
   'condition_metadata'
 >;
+export type SchedulingConditionModelSpecificationSetInput = Omit<
+  SchedulingConditionModelSpecification,
+  'condition_metadata'
+>;
 export type SchedulingGoalModelSpecificationInsertInput = Omit<
   SchedulingGoalModelSpecification,
   'goal_metadata' | 'goal_invocation_id'

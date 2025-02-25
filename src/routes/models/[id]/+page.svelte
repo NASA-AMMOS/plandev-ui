@@ -92,31 +92,43 @@
   import Panel from '../../../components/ui/Panel.svelte';
   import SectionTitle from '../../../components/ui/SectionTitle.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
-  import { constraints, initialConstraintsLoading } from '../../../stores/constraints';
+  import { constraints, constraintsMap, initialConstraintsLoading } from '../../../stores/constraints';
   import { initialModel, model, resetModelStores } from '../../../stores/model';
   import {
     schedulingConditionResponses,
     schedulingConditions,
+    schedulingConditionsMap,
     schedulingGoalResponses,
     schedulingGoals,
+    schedulingGoalsMap,
   } from '../../../stores/scheduling';
   import { initialUsersLoading, users } from '../../../stores/user';
   import { initialViewsLoading, views } from '../../../stores/views';
   import type { User, UserId } from '../../../types/app';
-  import type { ConstraintMetadata, ConstraintModelSpecification } from '../../../types/constraint';
+  import type {
+    ConstraintMetadata,
+    ConstraintModelSpecification,
+    ConstraintModelSpecInsertInput,
+    ConstraintModelSpecSetInput,
+  } from '../../../types/constraint';
   import type {
     Association,
     AssociationSpecification,
     AssociationSpecificationMap,
     BaseMetadata,
+    UpdatedAssociationSpecificationMap,
   } from '../../../types/metadata';
   import type { Model } from '../../../types/model';
   import type { Argument } from '../../../types/parameter';
   import type {
     SchedulingConditionMetadata,
     SchedulingConditionModelSpecification,
+    SchedulingConditionModelSpecificationInsertInput,
+    SchedulingConditionModelSpecificationSetInput,
     SchedulingGoalMetadata,
     SchedulingGoalModelSpecification,
+    SchedulingGoalModelSpecificationInsertInput,
+    SchedulingGoalModelSpecificationSetInput,
   } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
   import { filterEmpty } from '../../../utilities/generic';
@@ -144,9 +156,9 @@
     owner: UserId;
     version: string;
   } | null = null;
-  let initialSelectedConstraintSpecificationMap: AssociationSpecificationMap;
-  let initialSelectedConditionSpecificationMap: AssociationSpecificationMap;
-  let initialSelectedGoalSpecificationMap: AssociationSpecificationMap;
+  let selectedConstraintSpecificationMap: UpdatedAssociationSpecificationMap;
+  let selectedConditionSpecificationMap: UpdatedAssociationSpecificationMap;
+  let selectedGoalSpecificationMap: UpdatedAssociationSpecificationMap;
   let initialSelectedVisibleConstraintSpecificationsList: AssociationSpecification[] = [];
   let initialSelectedVisibleConditionSpecificationsList: AssociationSpecification[] = [];
   let initialSelectedVisibleGoalSpecificationsList: AssociationSpecification[] = [];
@@ -193,15 +205,6 @@
         ).id,
         revision: schedulingConditionModelSpecification.condition_revision,
       }));
-    initialSelectedConditionSpecificationMap = initialSelectedVisibleConditionSpecificationsList.reduce(
-      (currentSelectedSpecificationMap, schedulingConditionModelSpecification) => {
-        return {
-          ...currentSelectedSpecificationMap,
-          [schedulingConditionModelSpecification.id]: true,
-        };
-      },
-      {},
-    );
     numPrivateConditions =
       $model.scheduling_specification_conditions.length - initialSelectedVisibleConditionSpecificationsList.length;
 
@@ -226,15 +229,6 @@
         priority: constraintModelSpecification.order,
         revision: constraintModelSpecification.constraint_revision,
       }));
-    initialSelectedConstraintSpecificationMap = initialSelectedVisibleConstraintSpecificationsList.reduce(
-      (currentSelectedSpecificationMap, constraintModelSpecification) => {
-        return {
-          ...currentSelectedSpecificationMap,
-          [constraintModelSpecification.id]: true,
-        };
-      },
-      {},
-    );
     numPrivateConstraints =
       $model.constraint_specification.length - initialSelectedVisibleConstraintSpecificationsList.length;
 
@@ -259,15 +253,6 @@
         priority: schedulingGoalModelSpecification.priority,
         revision: schedulingGoalModelSpecification.goal_revision,
       }));
-    initialSelectedGoalSpecificationMap = initialSelectedVisibleGoalSpecificationsList.reduce(
-      (currentSelectedSpecificationMap, schedulingGoalModelSpecification) => {
-        return {
-          ...currentSelectedSpecificationMap,
-          [schedulingGoalModelSpecification.id]: true,
-        };
-      },
-      {},
-    );
     numPrivateGoals =
       $model.scheduling_specification_goals.length - initialSelectedVisibleGoalSpecificationsList.length;
 
@@ -344,6 +329,15 @@
         lastPriority = goalSpecification.priority ?? 0;
         return goalSpecification;
       });
+    selectedGoalSpecificationMap = selectedVisibleGoalSpecificationsList.reduce(
+      (currentSelectedSpecificationMap, schedulingGoalModelSpecification) => {
+        return {
+          ...currentSelectedSpecificationMap,
+          [schedulingGoalModelSpecification.id]: true,
+        };
+      },
+      {},
+    );
   }
   $: {
     let lastPriority = -1;
@@ -362,6 +356,27 @@
         lastPriority = constraintSpecification.priority ?? 0;
         return constraintSpecification;
       });
+    selectedConstraintSpecificationMap = selectedVisibleConstraintSpecificationsList.reduce(
+      (currentSelectedSpecificationMap, constraintModelSpecification) => {
+        return {
+          ...currentSelectedSpecificationMap,
+          [constraintModelSpecification.id]: true,
+        };
+      },
+      {},
+    );
+  }
+  $: {
+    selectedConditionSpecificationMap = selectedVisibleConditionSpecificationsList.reduce(
+      (currentSelectedSpecificationMap, schedulingConditionModelSpecification) => {
+        return {
+          ...currentSelectedSpecificationMap,
+          [schedulingConditionModelSpecification.id]: true,
+        };
+      },
+      {},
+    );
+    console.log('selectedVisibleConditionSpecificationsList :>> ', selectedVisibleConditionSpecificationsList);
   }
 
   $: hasModelChanged =
@@ -424,180 +439,195 @@
   }
 
   async function onSave() {
-    console.log('initialSelectedConditionSpecificationMap :>> ', initialSelectedConditionSpecificationMap);
-    console.log('initialSelectedConstraintSpecificationMap :>> ', initialSelectedConstraintSpecificationMap);
-    console.log('initialSelectedGoalSpecificationMap :>> ', initialSelectedGoalSpecificationMap);
-    // if ($model && modelMetadata) {
-    //   await effects.updateModel($model.id, modelMetadata, user);
-    //   const constraintModelSpecUpdates: {
-    //     constraintIdsToDelete: number[];
-    //     constraintModelSpecsToAdd: ConstraintModelSpecInsertInput[];
-    //     constraintModelSpecsToUpdate: ConstraintModelSpecSetInput[];
-    //   } = selectedVisibleConstraintSpecificationsList.reduce(
-    //     (
-    //       prevConstraintPlanSpecUpdates: {
-    //         constraintIdsToDelete: number[];
-    //         constraintModelSpecsToAdd: ConstraintModelSpecInsertInput[];
-    //         constraintModelSpecsToUpdate: ConstraintModelSpecSetInput[];
-    //       },
-    //       constraintSpecification: AssociationSpecification,
-    //     ) => {
-    //       const constraintSpecificationId = constraintSpecification.id;
-    //       if (/new/.test(constraintSpecificationId)) {
-    //         const constraintMetadata = $constraintsMap[constraintSpecification.metadata_id];
-    //         return {
-    //           ...prevConstraintPlanSpecUpdates,
-    //           constraintModelSpecsToAdd: [
-    //             ...prevConstraintPlanSpecUpdates.constraintModelSpecsToAdd,
-    //             {
-    //               constraint_id: constraintMetadata.id,
-    //               constraint_revision: constraintSpecification.revision,
-    //               model_id: $model?.id,
-    //             } as ConstraintModelSpecInsertInput,
-    //           ],
-    //         };
-    //       } else if (!initialSelectedConstraintSpecificationMap[parseInt(constraintSpecificationId)]) {
-    //         return {
-    //           ...prevConstraintPlanSpecUpdates,
-    //           constraintIdsToDelete: [...prevConstraintPlanSpecUpdates.constraintIdsToDelete, constraintId],
-    //         };
-    //       } else {
-    //         return {
-    //           ...prevConstraintPlanSpecUpdates,
-    //           constraintModelSpecsToUpdate: [
-    //             ...prevConstraintPlanSpecUpdates.constraintModelSpecsToAdd,
-    //             {
-    //               arguments: constraintSpecification.arguments,
-    //               constraint_revision: constraintSpecification.revision,
-    //               invocation_id: parseInt(constraintSpecification.id),
-    //               order: constraintSpecification.priority,
-    //             } as ConstraintModelSpecSetInput,
-    //           ],
-    //         };
-    //       }
-    //     },
-    //     {
-    //       constraintIdsToDelete: [],
-    //       constraintModelSpecsToAdd: [],
-    //       constraintModelSpecsToUpdate: [],
-    //     },
-    //   );
-    //   await effects.updateConstraintModelSpecifications(
-    //     $model,
-    //     constraintModelSpecUpdates.constraintModelSpecsToAdd,
-    //     constraintModelSpecUpdates.constraintIdsToDelete,
-    //     user,
-    //   );
-    //   const conditionModelSpecUpdates: {
-    //     conditionIdsToDelete: number[];
-    //     conditionModelSpecsToAdd: SchedulingConditionModelSpecificationInsertInput[];
-    //   } = Object.keys(selectedConditionMetadataMap).reduce(
-    //     (
-    //       prevConstraintPlanSpecUpdates: {
-    //         conditionIdsToDelete: number[];
-    //         conditionModelSpecsToAdd: SchedulingConditionModelSpecificationInsertInput[];
-    //       },
-    //       selectedConstraintId: string,
-    //     ) => {
-    //       const conditionId = parseInt(selectedConstraintId);
-    //       const conditionSpecification = selectedConditionMetadataMap[conditionId];
-    //       const isSelected = conditionSpecification.selected;
-    //       if (isSelected) {
-    //         return {
-    //           ...prevConstraintPlanSpecUpdates,
-    //           conditionModelSpecsToAdd: [
-    //             ...prevConstraintPlanSpecUpdates.conditionModelSpecsToAdd,
-    //             {
-    //               condition_id: conditionId,
-    //               condition_revision: conditionSpecification.revision,
-    //               model_id: $model?.id,
-    //             } as SchedulingConditionModelSpecificationInsertInput,
-    //           ],
-    //         };
-    //       } else {
-    //         return {
-    //           ...prevConstraintPlanSpecUpdates,
-    //           conditionIdsToDelete: [...prevConstraintPlanSpecUpdates.conditionIdsToDelete, conditionId],
-    //         };
-    //       }
-    //     },
-    //     {
-    //       conditionIdsToDelete: [],
-    //       conditionModelSpecsToAdd: [],
-    //     },
-    //   );
-    //   await effects.updateSchedulingConditionModelSpecifications(
-    //     $model,
-    //     conditionModelSpecUpdates.conditionModelSpecsToAdd,
-    //     conditionModelSpecUpdates.conditionIdsToDelete,
-    //     user,
-    //   );
-    //   const goalModelSpecUpdates: {
-    //     goalIdsToDelete: number[];
-    //     goalModelSpecsToAdd: SchedulingGoalModelSpecificationInsertInput[];
-    //     goalModelSpecsToUpdate: SchedulingGoalModelSpecificationSetInput[];
-    //   } = Object.keys(selectedGoalMetadataMap).reduce(
-    //     (
-    //       prevConstraintPlanSpecUpdates: {
-    //         goalIdsToDelete: number[];
-    //         goalModelSpecsToAdd: SchedulingGoalModelSpecificationInsertInput[];
-    //         goalModelSpecsToUpdate: SchedulingGoalModelSpecificationSetInput[];
-    //       },
-    //       selectedConstraintId: string,
-    //     ) => {
-    //       const goalId = parseInt(selectedConstraintId);
-    //       const goalSpecification = selectedGoalMetadataMap[goalId];
-    //       const isSelected = goalSpecification.selected;
-    //       if (isSelected && initialSelectedGoalSpecificationMap[goalId] === undefined) {
-    //         return {
-    //           ...prevConstraintPlanSpecUpdates,
-    //           goalModelSpecsToAdd: [
-    //             ...prevConstraintPlanSpecUpdates.goalModelSpecsToAdd,
-    //             {
-    //               goal_id: goalId,
-    //               goal_revision: goalSpecification.revision,
-    //               model_id: $model?.id,
-    //               priority: goalSpecification.priority,
-    //             } as SchedulingGoalModelSpecificationInsertInput,
-    //           ],
-    //         };
-    //       } else if (isSelected) {
-    //         return {
-    //           ...prevConstraintPlanSpecUpdates,
-    //           goalModelSpecsToUpdate: [
-    //             ...prevConstraintPlanSpecUpdates.goalModelSpecsToUpdate,
-    //             {
-    //               goal_id: goalId,
-    //               goal_revision: goalSpecification.revision,
-    //               model_id: $model?.id,
-    //               priority: goalSpecification.priority,
-    //             } as SchedulingGoalModelSpecificationSetInput,
-    //           ],
-    //         };
-    //       } else {
-    //         return {
-    //           ...prevConstraintPlanSpecUpdates,
-    //           goalIdsToDelete: [...prevConstraintPlanSpecUpdates.goalIdsToDelete, goalId],
-    //         };
-    //       }
-    //     },
-    //     {
-    //       goalIdsToDelete: [],
-    //       goalModelSpecsToAdd: [],
-    //       goalModelSpecsToUpdate: [],
-    //     },
-    //   );
-    //   await effects.updateSchedulingGoalModelSpecifications(
-    //     $model,
-    //     goalModelSpecUpdates.goalModelSpecsToAdd.sort((goalA, goalB) => goalA.priority - goalB.priority),
-    //     goalModelSpecUpdates.goalIdsToDelete,
-    //     user,
-    //   );
-    //   for (let i = 0; i < goalModelSpecUpdates.goalModelSpecsToUpdate.length; i++) {
-    //     const goalSpecUpdate = goalModelSpecUpdates.goalModelSpecsToUpdate[i];
-    //     await effects.updateSchedulingGoalModelSpecification($model, goalSpecUpdate, user);
-    //   }
-    // }
+    if ($model && modelMetadata) {
+      await effects.updateModel($model.id, modelMetadata, user);
+      const constraintModelSpecUpdates: {
+        constraintModelSpecsToAdd: ConstraintModelSpecInsertInput[];
+        constraintModelSpecsToUpdate: ConstraintModelSpecSetInput[];
+      } = selectedVisibleConstraintSpecificationsList.reduce(
+        (
+          prevConstraintPlanSpecUpdates: {
+            constraintModelSpecsToAdd: ConstraintModelSpecInsertInput[];
+            constraintModelSpecsToUpdate: ConstraintModelSpecSetInput[];
+          },
+          constraintSpecification: AssociationSpecification,
+        ) => {
+          const constraintSpecificationId = constraintSpecification.id;
+          if (/new/.test(constraintSpecificationId)) {
+            const constraintMetadata = $constraintsMap[constraintSpecification.metadata_id];
+            return {
+              ...prevConstraintPlanSpecUpdates,
+              constraintModelSpecsToAdd: [
+                ...prevConstraintPlanSpecUpdates.constraintModelSpecsToAdd,
+                {
+                  arguments: constraintSpecification.arguments,
+                  constraint_id: constraintMetadata.id,
+                  constraint_revision: constraintSpecification.revision,
+                  model_id: $model?.id,
+                  order: constraintSpecification.priority,
+                } as ConstraintModelSpecInsertInput,
+              ],
+            };
+          } else {
+            return {
+              ...prevConstraintPlanSpecUpdates,
+              constraintModelSpecsToUpdate: [
+                ...prevConstraintPlanSpecUpdates.constraintModelSpecsToUpdate,
+                {
+                  arguments: constraintSpecification.arguments,
+                  constraint_revision: constraintSpecification.revision,
+                  invocation_id: parseInt(constraintSpecification.id),
+                  order: constraintSpecification.priority,
+                } as ConstraintModelSpecSetInput,
+              ],
+            };
+          }
+        },
+        {
+          constraintModelSpecsToAdd: [],
+          constraintModelSpecsToUpdate: [],
+        },
+      );
+      const constraintInvocationIdsToDelete = initialSelectedVisibleConstraintSpecificationsList.reduce(
+        (prevConstraintIdsToDelete: number[], constraintSpecification: AssociationSpecification) => {
+          if (!selectedConstraintSpecificationMap[constraintSpecification.id]) {
+            return [...prevConstraintIdsToDelete, parseInt(constraintSpecification.id)];
+          }
+          return prevConstraintIdsToDelete;
+        },
+        [],
+      );
+      await effects.updateConstraintModelSpecifications(
+        $model,
+        constraintModelSpecUpdates.constraintModelSpecsToAdd,
+        constraintInvocationIdsToDelete,
+        user,
+      );
+
+      for (let i = 0; i < constraintModelSpecUpdates.constraintModelSpecsToUpdate.length; i++) {
+        const constraintSpecToUpdate = constraintModelSpecUpdates.constraintModelSpecsToUpdate[i];
+
+        await effects.updateConstraintModelSpecification($model, constraintSpecToUpdate, user);
+      }
+
+      const conditionModelSpecUpdates: (
+        | SchedulingConditionModelSpecificationInsertInput
+        | SchedulingConditionModelSpecificationSetInput
+      )[] = selectedVisibleConditionSpecificationsList.reduce(
+        (
+          prevConditionPlanSpecUpdates: (
+            | SchedulingConditionModelSpecificationInsertInput
+            | SchedulingConditionModelSpecificationSetInput
+          )[],
+          conditionSpecification: AssociationSpecification,
+        ) => {
+          const conditionSpecificationId = conditionSpecification.id;
+          const conditionMetadata = $schedulingConditionsMap[conditionSpecification.metadata_id];
+          if (/new/.test(conditionSpecificationId)) {
+            return [
+              ...prevConditionPlanSpecUpdates,
+              {
+                condition_id: conditionMetadata.id,
+                condition_revision: conditionSpecification.revision,
+                model_id: $model?.id,
+              } as SchedulingConditionModelSpecificationInsertInput,
+            ];
+          } else {
+            return [
+              ...prevConditionPlanSpecUpdates,
+              {
+                condition_id: conditionMetadata.id,
+                condition_revision: conditionSpecification.revision,
+                model_id: $model?.id,
+              } as SchedulingConditionModelSpecificationSetInput,
+            ];
+          }
+        },
+        [],
+      );
+      const conditionIdsToDelete = initialSelectedVisibleConditionSpecificationsList.reduce(
+        (prevConditionIdsToDelete: number[], conditionSpecification: AssociationSpecification) => {
+          if (!selectedConditionSpecificationMap[conditionSpecification.id]) {
+            return [...prevConditionIdsToDelete, parseInt(conditionSpecification.id)];
+          }
+          return prevConditionIdsToDelete;
+        },
+        [],
+      );
+      await effects.updateSchedulingConditionModelSpecifications(
+        $model,
+        conditionModelSpecUpdates,
+        conditionIdsToDelete,
+        user,
+      );
+      const goalModelSpecUpdates: {
+        goalModelSpecsToAdd: SchedulingGoalModelSpecificationInsertInput[];
+        goalModelSpecsToUpdate: SchedulingGoalModelSpecificationSetInput[];
+      } = selectedVisibleGoalSpecificationsList.reduce(
+        (
+          prevGoalPlanSpecUpdates: {
+            goalModelSpecsToAdd: SchedulingGoalModelSpecificationInsertInput[];
+            goalModelSpecsToUpdate: SchedulingGoalModelSpecificationSetInput[];
+          },
+          goalSpecification: AssociationSpecification,
+        ) => {
+          const goalSpecificationId = goalSpecification.id;
+          if (/new/.test(goalSpecificationId)) {
+            const goalMetadata = $schedulingGoalsMap[goalSpecification.metadata_id];
+            return {
+              ...prevGoalPlanSpecUpdates,
+              goalModelSpecsToAdd: [
+                ...prevGoalPlanSpecUpdates.goalModelSpecsToAdd,
+                {
+                  arguments: goalSpecification.arguments,
+                  goal_id: goalMetadata.id,
+                  goal_revision: goalSpecification.revision,
+                  model_id: $model?.id,
+                  priority: goalSpecification.priority,
+                } as SchedulingGoalModelSpecificationInsertInput,
+              ],
+            };
+          } else {
+            return {
+              ...prevGoalPlanSpecUpdates,
+              goalModelSpecsToUpdate: [
+                ...prevGoalPlanSpecUpdates.goalModelSpecsToUpdate,
+                {
+                  arguments: goalSpecification.arguments,
+                  goal_invocation_id: parseInt(goalSpecification.id),
+                  goal_revision: goalSpecification.revision,
+                  priority: goalSpecification.priority,
+                } as SchedulingGoalModelSpecificationSetInput,
+              ],
+            };
+          }
+        },
+        {
+          goalModelSpecsToAdd: [],
+          goalModelSpecsToUpdate: [],
+        },
+      );
+      const goalInvocationIdsToDelete = initialSelectedVisibleGoalSpecificationsList.reduce(
+        (prevGoalIdsToDelete: number[], goalSpecification: AssociationSpecification) => {
+          if (!selectedGoalSpecificationMap[goalSpecification.id]) {
+            return [...prevGoalIdsToDelete, parseInt(goalSpecification.id)];
+          }
+          return prevGoalIdsToDelete;
+        },
+        [],
+      );
+      await effects.updateSchedulingGoalModelSpecifications(
+        $model,
+        goalModelSpecUpdates.goalModelSpecsToAdd,
+        goalInvocationIdsToDelete,
+        user,
+      );
+
+      for (let i = 0; i < goalModelSpecUpdates.goalModelSpecsToUpdate.length; i++) {
+        const goalSpecUpdate = goalModelSpecUpdates.goalModelSpecsToUpdate[i];
+        await effects.updateSchedulingGoalModelSpecification($model, goalSpecUpdate, user);
+      }
+    }
   }
 
   function onSelectAssociation(event: CustomEvent<Association>) {
@@ -618,17 +648,23 @@
 
     switch (selectedAssociation) {
       case 'condition': {
-        selectedVisibleConditionSpecificationsList = [
-          ...selectedVisibleConditionSpecificationsList,
-          {
-            ...toggledMetadata,
-            id: `new${newConditionCounter}`,
-            metadata_id: metadataId,
-            revision: null,
-          },
-        ];
+        if (selected) {
+          selectedVisibleConditionSpecificationsList = [
+            ...selectedVisibleConditionSpecificationsList,
+            {
+              ...toggledMetadata,
+              id: `new${newConditionCounter}`,
+              metadata_id: metadataId,
+              revision: null,
+            },
+          ];
 
-        newConditionCounter++;
+          newConditionCounter++;
+        } else {
+          selectedVisibleConditionSpecificationsList = selectedVisibleConditionSpecificationsList.filter(
+            conditionSpecification => conditionSpecification.metadata_id !== metadataId,
+          );
+        }
 
         selectedConditionMetadataMap = {
           ...selectedConditionMetadataMap,
@@ -637,20 +673,25 @@
         break;
       }
       case 'goal': {
-        selectedVisibleGoalSpecificationsList = [
-          ...selectedVisibleGoalSpecificationsList,
-          {
-            ...toggledMetadata,
-            id: `new${newGoalCounter}`,
-            metadata_id: metadataId,
-            priority:
-              (selectedVisibleGoalSpecificationsList[selectedVisibleGoalSpecificationsList.length - 1]?.priority ??
-                -1) + 1,
-            revision: null,
-          },
-        ];
-
-        newGoalCounter++;
+        if (selected) {
+          selectedVisibleGoalSpecificationsList = [
+            ...selectedVisibleGoalSpecificationsList,
+            {
+              ...toggledMetadata,
+              id: `new${newGoalCounter}`,
+              metadata_id: metadataId,
+              priority:
+                (selectedVisibleGoalSpecificationsList[selectedVisibleGoalSpecificationsList.length - 1]?.priority ??
+                  -1) + 1,
+              revision: null,
+            },
+          ];
+          newGoalCounter++;
+        } else {
+          selectedVisibleGoalSpecificationsList = selectedVisibleGoalSpecificationsList.filter(
+            goalSpecification => goalSpecification.metadata_id !== metadataId,
+          );
+        }
 
         selectedGoalMetadataMap = {
           ...selectedGoalMetadataMap,
@@ -660,20 +701,26 @@
       }
       case 'constraint':
       default: {
-        selectedVisibleConstraintSpecificationsList = [
-          ...selectedVisibleConstraintSpecificationsList,
-          {
-            ...toggledMetadata,
-            id: `new${newConstraintCounter}`,
-            metadata_id: metadataId,
-            priority:
-              (selectedVisibleConstraintSpecificationsList[selectedVisibleConstraintSpecificationsList.length - 1]
-                ?.priority ?? -1) + 1,
-            revision: null,
-          },
-        ];
+        if (selected) {
+          selectedVisibleConstraintSpecificationsList = [
+            ...selectedVisibleConstraintSpecificationsList,
+            {
+              ...toggledMetadata,
+              id: `new${newConstraintCounter}`,
+              metadata_id: metadataId,
+              priority:
+                (selectedVisibleConstraintSpecificationsList[selectedVisibleConstraintSpecificationsList.length - 1]
+                  ?.priority ?? -1) + 1,
+              revision: null,
+            },
+          ];
 
-        newConstraintCounter++;
+          newConstraintCounter++;
+        } else {
+          selectedVisibleConstraintSpecificationsList = selectedVisibleConstraintSpecificationsList.filter(
+            constraintSpecification => constraintSpecification.metadata_id !== metadataId,
+          );
+        }
 
         selectedConstraintMetadataMap = {
           ...selectedConstraintMetadataMap,
@@ -696,7 +743,7 @@
             if (id === conditionSpecification.id) {
               return {
                 ...conditionSpecification,
-                revision: revision ?? conditionSpecification.revision,
+                revision: revision !== undefined ? revision : conditionSpecification.revision,
               };
             }
             return conditionSpecification;

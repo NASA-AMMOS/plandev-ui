@@ -3459,14 +3459,25 @@ const gql = {
     }
   `,
 
+  UPDATE_CONSTRAINT_MODEL_SPECIFICATION: `#graphql
+    mutation UpdateConstraintModelSpecification($constraintInvocationId: Int!, $revision: Int!, $order: Int!, $modelId: Int!) {
+      updateConstraintModelSpecification: ${Queries.UPDATE_CONSTRAINT_MODEL_SPECIFICATION}(
+        pk_columns: { invocation_id: $constraintInvocationId, model_id: $modelId  },
+        _set: {
+          constraint_revision: $revision,
+          order: $order
+        }
+      ) {
+        constraint_revision
+        order
+      }
+    }
+  `,
+
   UPDATE_CONSTRAINT_MODEL_SPECIFICATIONS: `#graphql
-    mutation UpdateConstraintModelSpecifications($constraintSpecsToUpdate: [constraint_model_specification_insert_input!]!, $constraintIdsToDelete: [Int!]! = [], $modelId: Int!) {
-      updateConstraintModelSpecifications: ${Queries.INSERT_CONSTRAINT_MODEL_SPECIFICATIONS}(
-        objects: $constraintSpecsToUpdate,
-        on_conflict: {
-          constraint: constraint_model_spec_pkey,
-          update_columns: [constraint_revision, order]
-        },
+    mutation UpdateConstraintModelSpecifications($constraintSpecsToAdd: [constraint_model_specification_insert_input!]!, $constraintInvocationIdsToDelete: [Int!]! = [], $modelId: Int!) {
+      addConstraintModelSpecifications: ${Queries.INSERT_CONSTRAINT_MODEL_SPECIFICATIONS}(
+        objects: $constraintSpecsToAdd
       ) {
         returning {
           constraint_revision
@@ -3475,7 +3486,7 @@ const gql = {
       }
       deleteConstraintModelSpecifications: ${Queries.DELETE_CONSTRAINT_MODEL_SPECIFICATIONS}(
         where: {
-          constraint_id: { _in: $constraintIdsToDelete },
+          invocation_id: { _in: $constraintInvocationIdsToDelete },
           _and: {
             model_id: { _eq: $modelId },
           }
@@ -3737,15 +3748,16 @@ const gql = {
   `,
 
   UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION: `#graphql
-    mutation UpdateSchedulingGoalModelSpecification($id: Int!, $revision: Int!, $priority: Int!, $modelId: Int!) {
+    mutation UpdateSchedulingGoalModelSpecification($goalInvocationId: Int!, $revision: Int!, $priority: Int!, $modelId: Int!) {
       updateSchedulingGoalModelSpecification: ${Queries.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION}(
-        pk_columns: { goal_id: $id, model_id: $modelId },
+        pk_columns: { goal_invocation_id: $goalInvocationId, model_id: $modelId },
         _set: {
           goal_revision: $revision,
           priority: $priority,
         }
       ) {
         goal_revision
+        priority
       }
     }
   `,

@@ -53,3 +53,4 @@ export type AssociationSpecification = AssociationSpecificationEntry & {
 };
 
 export type AssociationSpecificationMap = Record<number, boolean>;
+export type UpdatedAssociationSpecificationMap = Record<string, boolean>;
