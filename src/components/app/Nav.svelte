@@ -33,18 +33,20 @@
         selected={{ label: user?.activeRole ?? '', value: user?.activeRole ?? '' }}
         onSelectedChange={v => v && changeRole(v.value)}
       >
-        <Select.Trigger class="w-[200px]" value={user?.activeRole}>
+        <Select.Trigger class="w-[200px]" value={user?.activeRole} size="xs">
           <Select.Value placeholder="Select a" class="text-secondary-foreground" />
         </Select.Trigger>
         <Select.Content>
           <Select.Group>
-            <Select.Label>Select Role</Select.Label>
+            <Select.Label size="xs">Select Role</Select.Label>
             {#each userRoles as userRole}
-              <Select.Item value={userRole} label={userRole}>{userRole}</Select.Item>
+              <Select.Item size="xs" value={userRole} label={userRole}>{userRole}</Select.Item>
             {/each}
           </Select.Group>
           <Select.Separator />
-          <Select.Label class="font-normal text-muted-foreground">Logged in as {user?.id || 'Unknown'}</Select.Label>
+          <Select.Label size="xs" class="font-normal text-muted-foreground">
+            Logged in as {user?.id || 'Unknown'}
+          </Select.Label>
         </Select.Content>
         <Select.Input name="user-menu" />
       </Select.Root>
