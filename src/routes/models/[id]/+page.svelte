@@ -376,7 +376,6 @@
       },
       {},
     );
-    console.log('selectedVisibleConditionSpecificationsList :>> ', selectedVisibleConditionSpecificationsList);
   }
 
   $: hasModelChanged =
