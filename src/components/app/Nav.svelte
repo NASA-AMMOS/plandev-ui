@@ -45,7 +45,9 @@
             {/each}
           </Select.Group>
           <Select.Separator />
-          <Select.Label class="font-normal text-muted-foreground">Logged in as {user?.id || 'Unknown'}</Select.Label>
+          <Select.Label size="xs" class="font-normal text-muted-foreground">
+            Logged in as {user?.id || 'Unknown'}
+          </Select.Label>
         </Select.Content>
         <Select.Input name="user-menu" />
       </Select.Root>
