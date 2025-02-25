@@ -91,7 +91,6 @@
   export let sequenceOutput: string = '';
   export let title: string = 'Sequence Template - Editor';
   export let user: User | null;
-  export let workspaceId: number | null;
 
   const dispatch = createEventDispatcher<{
     sequence: { input: string; output: string };
@@ -192,13 +191,11 @@
     });
 
     if (isInVmlMode) {
-      librarySequences = $userSequences
-        .filter(sequence => sequence.workspace_id === workspaceId)
-        .flatMap(sequence => parseFunctionSignatures(sequence.definition, sequence.workspace_id));
+      librarySequences = $userSequences.flatMap(sequence =>
+        parseFunctionSignatures(sequence.definition, sequence.workspace_id),
+      );
     } else {
-      librarySequences = $userSequences
-        .filter(sequence => sequence.workspace_id === workspaceId && sequence.name !== sequenceName)
-        .map(userSequenceToLibrarySequence);
+      librarySequences = $userSequences.map(userSequenceToLibrarySequence);
     }
 
     librarySequenceMap = Object.fromEntries(librarySequences.map(seq => [seq.name, seq]));
