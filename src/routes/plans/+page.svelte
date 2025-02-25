@@ -670,7 +670,7 @@
         {:else}
           <SectionTitle>New Plan</SectionTitle>
           <Button on:click={isPlanImportMode ? hideImportPlan : showImportPlan} class="gap-1" variant="outline">
-            <FileDown size={16} class="" /> Import
+            <FileDown size={14} /> Import
           </Button>
         {/if}
       </svelte:fragment>
