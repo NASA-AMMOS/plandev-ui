@@ -164,6 +164,18 @@ export type LibrarySequenceMap = { [sequenceName: string]: LibrarySequence };
 
 export type UserSequenceInsertInput = Omit<UserSequence, 'created_at' | 'id' | 'owner' | 'updated_at'>;
 
+export type UserSequenceTemplate = {
+  created_at: string;
+  definition: string;
+  id: number;
+  name: string;
+  owner: UserId;
+  parcel_id: number;
+  updated_at: string;
+};
+
+export type UserSequenceTemplateInsertInput = Omit<UserSequenceTemplate, 'created_at' | 'id' | 'owner' | 'updated_at'>;
+
 export type Workspace = {
   created_at: string;
   id: number;

@@ -3,10 +3,10 @@
 <script lang="ts">
   import type { ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
-  import { parcels, userSequences } from '../../stores/sequencing';
+  import { parcels, userTemplates } from '../../stores/sequencing';
   import type { User, UserId } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
-  import type { UserSequence } from '../../types/sequencing';
+  import type { UserSequenceTemplate } from '../../types/sequencing';
   import effects from '../../utilities/effects';
   import { getTarget } from '../../utilities/generic';
   import { featurePermissions } from '../../utilities/permissions';
@@ -14,21 +14,21 @@
   import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
 
   type CellRendererParams = {
-    deleteSequence: (sequence: UserSequence) => void;
-    editSequence: (sequence: UserSequence) => void;
+    deleteTemplate: (sequence: UserSequenceTemplate) => void;
+    editTemplate: (sequence: UserSequenceTemplate) => void;
   };
-  type SequencesCellRendererParams = ICellRendererParams<UserSequence> & CellRendererParams;
+  type TemplatesCellRendererParams = ICellRendererParams<UserSequenceTemplate> & CellRendererParams;
 
   export let filterText: string;
   export let user: User | null;
 
   let baseColumnDefs: DataGridColumnDef[] = [];
   let columnDefs = baseColumnDefs;
-  let filteredSequences: UserSequence[] = [];
-  let selectedSequence: UserSequence | null = null;
+  let filteredTemplates: UserSequenceTemplate[] = [];
+  let selectedTemplate: UserSequenceTemplate | null = null;
 
   const dispatch = createEventDispatcher<{
-    sequenceSelected: UserSequence;
+    templateSelected: UserSequenceTemplate;
   }>();
 
   $: baseColumnDefs = [
@@ -69,19 +69,19 @@
     ...baseColumnDefs,
     {
       cellClass: 'action-cell-container',
-      cellRenderer: (params: SequencesCellRendererParams) => {
+      cellRenderer: (params: TemplatesCellRendererParams) => {
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'actions-cell';
         new DataGridActions({
           props: {
-            deleteCallback: params.deleteSequence,
+            deleteCallback: params.deleteTemplate,
             deleteTooltip: {
-              content: 'Delete Sequence',
+              content: 'Delete Template',
               placement: 'bottom',
             },
-            editCallback: params.editSequence,
+            editCallback: params.editTemplate,
             editTooltip: {
-              content: 'Edit Sequence',
+              content: 'Edit Template',
               placement: 'bottom',
             },
             hasDeletePermission: params.data ? hasDeletePermission(user, params.data) : false,
@@ -94,8 +94,8 @@
         return actionsDiv;
       },
       cellRendererParams: {
-        deleteSequence,
-        editSequence,
+        deleteTemplate,
+        editTemplate,
       } as CellRendererParams,
       field: 'actions',
       headerName: '',
@@ -107,74 +107,75 @@
     },
   ];
 
-  $: filteredSequences = $userSequences.filter(sequence => {
+  $: filteredTemplates = $userTemplates.filter(template => {
     const filterTextLowerCase = filterText.toLowerCase();
-    const includesId = `${sequence.id}`.includes(filterTextLowerCase);
-    const includesName = sequence.name.toLocaleLowerCase().includes(filterTextLowerCase);
+    const includesId = `${template.id}`.includes(filterTextLowerCase);
+    const includesName = template.name.toLocaleLowerCase().includes(filterTextLowerCase);
 
     return includesId || includesName;
   });
 
-  async function deleteSequence(sequence: UserSequence) {
-    const success = await effects.deleteUserSequence(sequence, user);
+  async function deleteTemplate(template: UserSequenceTemplate) {
+    const success = await effects.deleteUserSequenceTemplate(template, user);
 
-    if (success) {
-      userSequences.filterValueById(sequence.id);
+    // TODO: re-enable this once we're saving templates to GraphQL again
+    // if (success) {
+    //   userTemplates.filterValueById(template.id);
 
-      if (sequence.id === selectedSequence?.id) {
-        selectedSequence = null;
-      }
-    }
+    //   if (template.id === selectedTemplate?.id) {
+    //     selectedTemplate = null;
+    //   }
+    // }
   }
 
-  function deleteSequenceContext(event: CustomEvent<RowId[]>) {
+  function deleteTemplateContext(event: CustomEvent<RowId[]>) {
     const id = event.detail[0] as number;
-    const sequence = $userSequences.find(s => s.id === id);
-    if (sequence) {
-      deleteSequence(sequence);
+    const template = $userTemplates.find(s => s.id === id);
+    if (template) {
+      deleteTemplate(template);
     }
   }
 
-  function editSequence({ id }: Pick<UserSequence, 'id'>) {
-    // TODO: populate this...
+  function editTemplate({ id }: Pick<UserSequenceTemplate, 'id'>) {
+    selectedTemplate = $userTemplates.find(s => s.id === id) ?? null;
   }
 
-  function editSequenceContext(event: CustomEvent<RowId[]>) {
-    editSequence({ id: event.detail[0] as number });
+  function editTemplateContext(event: CustomEvent<RowId[]>) {
+    editTemplate({ id: event.detail[0] as number });
   }
 
-  function hasDeletePermission(user: User | null, sequence: UserSequence) {
-    return featurePermissions.sequences.canDelete(user, sequence);
+  function hasDeletePermission(user: User | null, template: UserSequenceTemplate) {
+    return featurePermissions.sequences.canDelete(user, template);
   }
 
-  function hasEditPermission(user: User | null, sequence: UserSequence) {
-    return featurePermissions.sequences.canUpdate(user, sequence);
+  function hasEditPermission(user: User | null, template: UserSequenceTemplate) {
+    return featurePermissions.sequences.canUpdate(user, template);
   }
 
-  function onFilterToUsersSequences(event: Event) {
+  function onFilterToUsersTemplates(event: Event) {
     const { value: enabled } = getTarget(event);
 
     if (enabled as boolean) {
-      filteredSequences = $userSequences.filter(sequence => {
-        return sequence.owner === user?.id;
+      filteredTemplates = $userTemplates.filter(template => {
+        return template.owner === user?.id;
       });
     } else {
-      filteredSequences = $userSequences;
+      filteredTemplates = $userTemplates;
     }
   }
 
-  async function toggleSequence(event: CustomEvent<DataGridRowSelection<UserSequence>>) {
+  async function toggleTemplate(event: CustomEvent<DataGridRowSelection<UserSequenceTemplate>>) {
     const { detail } = event;
-    const { data: clickedSequence, isSelected } = detail;
+    const { data: clickedTemplate, isSelected } = detail;
 
     if (isSelected) {
-      selectedSequence = clickedSequence;
-      dispatch('sequenceSelected', selectedSequence);
+      selectedTemplate = clickedTemplate;
+      dispatch('templateSelected', selectedTemplate);
     }
   }
 
   /**
-   * Sort the sequence table with the current users sequences at the top.
+   * Sort the template table with the current users templates at the top.
    * @param valueA
    * @param valueB
    */
@@ -195,26 +196,26 @@
 
 <div class="filter-container">
   <div>
-    <input type="checkbox" on:change={onFilterToUsersSequences} />
-    <span class=" st-typography-body">Filter to my sequences</span>
+    <input type="checkbox" on:change={onFilterToUsersTemplates} />
+    <span class=" st-typography-body">Filter to my templates</span>
   </div>
 </div>
 
-{#if filteredSequences.length}
+{#if filteredTemplates.length}
   <SingleActionDataGrid
     {columnDefs}
     hasEdit={true}
     {hasEditPermission}
     {hasDeletePermission}
-    itemDisplayText="Sequence"
-    items={filteredSequences}
+    itemDisplayText="Template"
+    items={filteredTemplates}
     {user}
-    on:deleteItem={deleteSequenceContext}
-    on:editItem={editSequenceContext}
-    on:rowSelected={toggleSequence}
+    on:deleteItem={deleteTemplateContext}
+    on:editItem={editTemplateContext}
+    on:rowSelected={toggleTemplate}
   />
 {:else}
-  <div class="p1 st-typography-label">No Sequences Found</div>
+  <div class="p1 st-typography-label">No Templates Found</div>
 {/if}
 
 <style>

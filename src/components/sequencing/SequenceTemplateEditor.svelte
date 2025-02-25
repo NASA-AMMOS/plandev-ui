@@ -391,6 +391,7 @@
 
   async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
     const sequence = viewUpdate.state.doc.toString();
+    sequenceDefinition = sequence;
     disableCopyAndExport = sequence === '';
     const tree = syntaxTree(viewUpdate.state);
     let output = await selectedOutputFormat?.toOutputFormat?.(tree, sequence, commandDictionary, sequenceName);
