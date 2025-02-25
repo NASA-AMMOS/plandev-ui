@@ -16,7 +16,8 @@ import {
   type SequenceFilter,
   type SequenceTemplate,
   type UserSequence,
-  type Workspace,
+  type UserSequenceTemplate,
+  type Workspace
 } from '../types/sequencing';
 import effects from '../utilities/effects';
 import gql from '../utilities/gql';
@@ -107,6 +108,8 @@ export const sequenceTemplates = gqlSubscribable<SequenceTemplate[]>(gql.SUB_SEQ
 export const userParcelColumns: Writable<string> = writable('2fr 3px 1fr');
 
 export const userSequences = gqlSubscribable<UserSequence[]>(gql.SUB_USER_SEQUENCES, {}, [], null);
+// TODO: Connect back-end templates
+export const userTemplates: Writable<UserSequenceTemplate[]> = writable([]);
 
 export const workspaces = gqlSubscribable<Workspace[]>(gql.SUB_WORKSPACES, {}, [], null);
 

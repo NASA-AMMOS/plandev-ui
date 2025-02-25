@@ -206,6 +206,8 @@ import {
   type SequenceFilterInsertInput,
   type UserSequence,
   type UserSequenceInsertInput,
+  type UserSequenceTemplate,
+  type UserSequenceTemplateInsertInput,
   type Workspace,
 } from '../types/sequencing';
 import type {
@@ -292,6 +294,9 @@ import {
   generateDefaultView,
   validateViewJSONAgainstSchema,
 } from './view';
+
+// TEMP - remove this once we add/delete user sequences from the back end.
+import { userTemplates } from '../stores/sequencing';
 
 function throwPermissionError(attemptedAction: string): never {
   throw Error(`You do not have permission to: ${attemptedAction}.`);
@@ -2116,6 +2121,27 @@ const effects = {
     }
   },
 
+
+  async createUserSequenceTemplate(sequence: UserSequenceTemplateInsertInput, user: User | null): Promise<number | null> {
+    // TODO: Connect to GQL akin to createUserSequence
+    let nextId = null;
+    userTemplates.update(templates => {
+      nextId = Math.max(0, ...templates.map($ => $.id)) + 1;
+      const now = new Date().toISOString();
+      const newTemplate: UserSequenceTemplate = {
+        created_at: now,
+        definition: sequence.definition,
+        id: nextId,
+        name: sequence.name,
+        owner: user?.id ?? null,
+        parcel_id: sequence.parcel_id,
+        updated_at: now
+      };
+      return [...templates, newTemplate];
+    });
+    return nextId;
+  },
+
   async createView(definition: ViewDefinition, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.CREATE_VIEW(user)) {
@@ -3444,6 +3470,15 @@ const effects = {
       showFailureToast('User Sequence Delete Failed');
       return false;
     }
+  },
+
+  async deleteUserSequenceTemplate(sequence: UserSequenceTemplate, user: User | null): Promise<boolean> {
+    // TODO: connect GQL so this delete goes to the back end, akin to deleteUserSequence
+    userTemplates.update(templates => {
+      const index = templates.indexOf(sequence);
+      return index >= 0 ? templates.toSpliced(index, 1) : templates;
+    });
+    return true;
   },
 
   async deleteView(view: ViewSlim, user: User | null): Promise<boolean> {
