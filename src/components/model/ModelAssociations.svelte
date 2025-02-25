@@ -208,7 +208,7 @@
                 {numOfPrivateAssociations > 1 ? 'are' : 'is'} private and not shown
               {/if}
             </div>
-            {#each selectedSpecificationsList as spec}
+            {#each selectedSpecificationsList as spec (spec.id)}
               {#if selectedSpecifications[spec.metadata_id] && metadataMap[spec.metadata_id]}
                 {#if selectedAssociationId === 'goal'}
                   <ModelAssociationsListItem
