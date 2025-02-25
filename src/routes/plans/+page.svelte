@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
-  import { Button, Input as InputStellar } from '@nasa-jpl/stellar-svelte';
+  import { Input as InputStellar } from '@nasa-jpl/stellar-svelte';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
@@ -15,6 +15,7 @@
   import ExportIcon from '../../assets/export.svg?component';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
+  import Button from '../../components/button/button.svelte';
   import DatePickerField from '../../components/form/DatePickerField.svelte';
   import Field from '../../components/form/Field.svelte';
   import Input from '../../components/form/Input.svelte';
@@ -803,7 +804,7 @@
                 <InputStellar
                   bind:el={nameInputField}
                   autocomplete="off"
-                  class="w-full h-6 px-1"
+                  class="h-6 w-full px-1"
                   name="name"
                   aria-label="name"
                 />
@@ -916,12 +917,12 @@
 
     <Panel>
       <svelte:fragment slot="header">
-        <div class="flex gap-2 items-center">
+        <div class="flex items-center gap-2">
           <SectionTitle>
             <PlanIcon slot="icon" />
             Plans
           </SectionTitle>
-          <InputStellar bind:value={filterText} class="w-72 h-7" placeholder="Filter plans" />
+          <InputStellar bind:value={filterText} class="h-7 w-72" placeholder="Filter plans" />
         </div>
       </svelte:fragment>
 
