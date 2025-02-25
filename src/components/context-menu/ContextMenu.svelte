@@ -1,7 +1,19 @@
 <svelte:options accessors={true} immutable={true} />
 
+<script lang="ts" context="module">
+  type HideFns = Set<() => void>;
+  const hideFns: HideFns = new Set<() => void>();
+
+  export function hideAllMenus() {
+    // TODO: https://github.com/sveltejs/language-tools/issues/1229
+    hideFns.forEach(hideFn => {
+      hideFn();
+    });
+  }
+</script>
+
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { fade } from 'svelte/transition';
 
   const dispatch = createEventDispatcher<{
@@ -33,6 +45,7 @@
   }
 
   export function show(e: MouseEvent): void {
+    hideAllMenus();
     e.preventDefault();
     shown = true;
     x = e.clientX;
@@ -43,6 +56,14 @@
   let shown: boolean = false;
   let x: number;
   let y: number;
+
+  onMount(() => {
+    hideFns.add(hide);
+  });
+
+  onDestroy(() => {
+    hideFns.delete(hide);
+  });
 
   $: if (div) {
     const rect = div.getBoundingClientRect();
