@@ -5837,20 +5837,21 @@ const effects = {
     }
   },
 
-  async updateConstraintModelSpecification(
-    model: Model,
-    constraintSpecToUpdate: ConstraintModelSpecSetInput,
-    user: User | null,
-  ) {
+  async updateConstraintModelSpecification(constraintSpecToUpdate: ConstraintModelSpecSetInput, user: User | null) {
     try {
       if (!queryPermissions.UPDATE_CONSTRAINT_MODEL_SPECIFICATION(user)) {
         throwPermissionError('update this constraint model specification');
       }
-      const { invocation_id: constraintInvocationId, constraint_revision: revision, order } = constraintSpecToUpdate;
+      const {
+        arguments: constraintArguments,
+        invocation_id: constraintInvocationId,
+        constraint_revision: revision,
+        order,
+      } = constraintSpecToUpdate;
 
       const { updateConstraintModelSpecification } = await reqHasura(
         gql.UPDATE_CONSTRAINT_MODEL_SPECIFICATION,
-        { constraintInvocationId, modelId: model.id, order, revision },
+        { arguments: constraintArguments, constraintInvocationId, order, revision },
         user,
       );
 
@@ -5866,7 +5867,6 @@ const effects = {
   },
 
   async updateConstraintModelSpecifications(
-    model: Model,
     constraintSpecsToAdd: ConstraintModelSpecInsertInput[],
     constraintInvocationIdsToDelete: number[],
     user: User | null,
@@ -5878,7 +5878,7 @@ const effects = {
 
       const { deleteConstraintModelSpecifications, addConstraintModelSpecifications } = await reqHasura(
         gql.UPDATE_CONSTRAINT_MODEL_SPECIFICATIONS,
-        { constraintInvocationIdsToDelete, constraintSpecsToAdd, modelId: model.id },
+        { constraintInvocationIdsToDelete, constraintSpecsToAdd },
         user,
       );
 
@@ -5902,12 +5902,17 @@ const effects = {
       if (!queryPermissions.UPDATE_CONSTRAINT_PLAN_SPECIFICATION(user, plan)) {
         throwPermissionError('update this constraint plan specification');
       }
-      const { enabled, invocation_id: invocationId, constraint_revision: revision } = constraintPlanSpecification;
+      const {
+        arguments: constraintArguments,
+        enabled,
+        invocation_id: invocationId,
+        constraint_revision: revision,
+      } = constraintPlanSpecification;
 
       const { updateConstraintPlanSpecification } = await reqHasura(
         gql.UPDATE_CONSTRAINT_PLAN_SPECIFICATION,
         {
-          arguments: constraintPlanSpecification.arguments,
+          arguments: constraintArguments,
           constraintInvocationId: invocationId,
           enabled,
           revision,
@@ -6339,15 +6344,15 @@ const effects = {
   },
 
   async updateSchedulingGoalModelSpecification(
-    model: Model,
     schedulingGoalModelSpecification: SchedulingGoalModelSpecificationSetInput,
     user: User | null,
   ) {
     try {
       if (!queryPermissions.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION(user)) {
-        throwPermissionError('update this scheduling goal plan specification');
+        throwPermissionError('update this scheduling goal model specification');
       }
       const {
+        arguments: goalArguments,
         goal_invocation_id: goalInvocationId,
         goal_revision: revision,
         priority,
@@ -6355,7 +6360,7 @@ const effects = {
 
       const { updateSchedulingGoalModelSpecification } = await reqHasura(
         gql.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION,
-        { goalInvocationId, modelId: model.id, priority, revision },
+        { arguments: goalArguments, goalInvocationId, priority, revision },
         user,
       );
 
@@ -6371,7 +6376,6 @@ const effects = {
   },
 
   async updateSchedulingGoalModelSpecifications(
-    model: Model,
     goalSpecsToAdd: SchedulingGoalModelSpecificationInsertInput[],
     goalIdsToDelete: number[],
     user: User | null,
@@ -6385,7 +6389,6 @@ const effects = {
         {
           goalIdsToDelete,
           goalSpecsToAdd,
-          modelId: model.id,
         },
         user,
       );
@@ -6411,6 +6414,7 @@ const effects = {
         throwPermissionError('update this scheduling goal plan specification');
       }
       const {
+        arguments: goalArguments,
         enabled,
         goal_invocation_id,
         goal_revision: revision,
@@ -6421,7 +6425,7 @@ const effects = {
       const { updateSchedulingGoalPlanSpecification } = await reqHasura(
         gql.UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATION,
         {
-          arguments: schedulingGoalPlanSpecification.arguments,
+          arguments: goalArguments,
           enabled,
           goal_invocation_id,
           priority,

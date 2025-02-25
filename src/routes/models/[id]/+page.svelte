@@ -497,7 +497,6 @@
         [],
       );
       await effects.updateConstraintModelSpecifications(
-        $model,
         constraintModelSpecUpdates.constraintModelSpecsToAdd,
         constraintInvocationIdsToDelete,
         user,
@@ -506,7 +505,7 @@
       for (let i = 0; i < constraintModelSpecUpdates.constraintModelSpecsToUpdate.length; i++) {
         const constraintSpecToUpdate = constraintModelSpecUpdates.constraintModelSpecsToUpdate[i];
 
-        await effects.updateConstraintModelSpecification($model, constraintSpecToUpdate, user);
+        await effects.updateConstraintModelSpecification(constraintSpecToUpdate, user);
       }
 
       const conditionModelSpecUpdates: (
@@ -616,7 +615,6 @@
         [],
       );
       await effects.updateSchedulingGoalModelSpecifications(
-        $model,
         goalModelSpecUpdates.goalModelSpecsToAdd,
         goalInvocationIdsToDelete,
         user,
@@ -624,7 +622,7 @@
 
       for (let i = 0; i < goalModelSpecUpdates.goalModelSpecsToUpdate.length; i++) {
         const goalSpecUpdate = goalModelSpecUpdates.goalModelSpecsToUpdate[i];
-        await effects.updateSchedulingGoalModelSpecification($model, goalSpecUpdate, user);
+        await effects.updateSchedulingGoalModelSpecification(goalSpecUpdate, user);
       }
     }
   }

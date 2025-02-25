@@ -77,7 +77,7 @@ export const constraintPlanSpecsMap: Readable<ConstraintPlanSpecMap> = derived(
 export const allowedConstraintPlanSpecs: Readable<ConstraintPlanSpecification[]> = derived(
   [constraintPlanSpecs],
   ([$constraintPlanSpecs]) =>
-    ($constraintPlanSpecs || []).filter(({ constraint_metadata: constraintMetadata }) => constraintMetadata !== null),
+    ($constraintPlanSpecs || []).filter(({ constraint_metadata: metadata }) => metadata !== null),
 );
 
 export const allowedConstraintPlanSpecMap: Readable<ConstraintPlanSpecMap> = derived(

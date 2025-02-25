@@ -2243,7 +2243,7 @@ const gql = {
   SUB_CONSTRAINT_PLAN_SPECIFICATIONS: `#graphql
     subscription SubConstraintPlanSpecifications($planId: Int!) {
       constraintPlanSpecs: ${Queries.CONSTRAINT_SPECIFICATIONS}(
-        where: {plan_id: {_eq: $planId}},
+        where: { plan_id: {_eq: $planId } },
         order_by: { constraint_id: desc }
       ) {
         arguments
@@ -2261,6 +2261,7 @@ const gql = {
             type
           }
         }
+        order
         plan_id
       }
     }
@@ -3460,10 +3461,11 @@ const gql = {
   `,
 
   UPDATE_CONSTRAINT_MODEL_SPECIFICATION: `#graphql
-    mutation UpdateConstraintModelSpecification($constraintInvocationId: Int!, $revision: Int!, $order: Int!, $modelId: Int!) {
+    mutation UpdateConstraintModelSpecification($arguments: jsonb, $constraintInvocationId: Int!, $revision: Int!, $order: Int!) {
       updateConstraintModelSpecification: ${Queries.UPDATE_CONSTRAINT_MODEL_SPECIFICATION}(
-        pk_columns: { invocation_id: $constraintInvocationId, model_id: $modelId  },
+        pk_columns: { invocation_id: $constraintInvocationId  },
         _set: {
+          arguments: $arguments,
           constraint_revision: $revision,
           order: $order
         }
@@ -3475,7 +3477,7 @@ const gql = {
   `,
 
   UPDATE_CONSTRAINT_MODEL_SPECIFICATIONS: `#graphql
-    mutation UpdateConstraintModelSpecifications($constraintSpecsToAdd: [constraint_model_specification_insert_input!]!, $constraintInvocationIdsToDelete: [Int!]! = [], $modelId: Int!) {
+    mutation UpdateConstraintModelSpecifications($constraintSpecsToAdd: [constraint_model_specification_insert_input!]!, $constraintInvocationIdsToDelete: [Int!]! = []) {
       addConstraintModelSpecifications: ${Queries.INSERT_CONSTRAINT_MODEL_SPECIFICATIONS}(
         objects: $constraintSpecsToAdd
       ) {
@@ -3486,10 +3488,7 @@ const gql = {
       }
       deleteConstraintModelSpecifications: ${Queries.DELETE_CONSTRAINT_MODEL_SPECIFICATIONS}(
         where: {
-          invocation_id: { _in: $constraintInvocationIdsToDelete },
-          _and: {
-            model_id: { _eq: $modelId },
-          }
+          invocation_id: { _in: $constraintInvocationIdsToDelete }
         }
       ) {
         affected_rows
@@ -3748,10 +3747,11 @@ const gql = {
   `,
 
   UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION: `#graphql
-    mutation UpdateSchedulingGoalModelSpecification($goalInvocationId: Int!, $revision: Int!, $priority: Int!, $modelId: Int!) {
+    mutation UpdateSchedulingGoalModelSpecification($arguments: jsonb, $goalInvocationId: Int!, $revision: Int!, $priority: Int!) {
       updateSchedulingGoalModelSpecification: ${Queries.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION}(
-        pk_columns: { goal_invocation_id: $goalInvocationId, model_id: $modelId },
+        pk_columns: { goal_invocation_id: $goalInvocationId },
         _set: {
+          arguments: $arguments,
           goal_revision: $revision,
           priority: $priority,
         }
@@ -3763,7 +3763,7 @@ const gql = {
   `,
 
   UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS: `#graphql
-    mutation UpdateSchedulingGoalModelSpecifications($goalSpecsToAdd: [scheduling_model_specification_goals_insert_input!]!, $goalIdsToDelete: [Int!]! = [], $modelId: Int!) {
+    mutation UpdateSchedulingGoalModelSpecifications($goalSpecsToAdd: [scheduling_model_specification_goals_insert_input!]!, $goalIdsToDelete: [Int!]! = []) {
       addSchedulingGoalModelSpecifications: ${Queries.INSERT_SCHEDULING_MODEL_SPECIFICATION_GOALS}(
         objects: $goalSpecsToAdd,
         on_conflict: {
@@ -3778,10 +3778,7 @@ const gql = {
       }
       deleteSchedulingGoalModelSpecifications: ${Queries.DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS}(
         where: {
-          goal_invocation_id: { _in: $goalIdsToDelete },
-          _and: {
-            model_id: { _eq: $modelId }
-          }
+          goal_invocation_id: { _in: $goalIdsToDelete }
         }
       ) {
         affected_rows
