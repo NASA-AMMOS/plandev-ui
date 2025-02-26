@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Button, Input, Label } from '@nasa-jpl/stellar-svelte';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import RefreshIcon from '@nasa-jpl/stellar/icons/refresh.svg?component';
@@ -291,9 +292,9 @@
         <SectionTitle>
           <svelte:fragment slot="icon">
             {#if selectedTag}
-              <PenIcon slot="icon" />
+              <PenIcon slot="icon" class="opacity-30" />
             {:else}
-              <PlusIcon slot="icon" />
+              <PlusIcon slot="icon" class="opacity-30" />
             {/if}
           </svelte:fragment>
           {#if selectedTag}
@@ -305,126 +306,148 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        <form on:submit|preventDefault={onFormSubmit}>
+        <form on:submit|preventDefault={onFormSubmit} class="flex flex-col gap-1.5">
           <AlertError class="m-2" error={$createTagError} />
 
           <Field field={nameField}>
-            <label for="name" slot="label">Name</label>
-            <input
-              on:keyup={onNameFieldKeyup}
-              bind:this={nameInputField}
-              autocomplete="off"
-              class="st-input w-full"
-              name="name"
+            <Label for="name" slot="label" class="pb-1 text-xs font-normal">Name</Label>
+            <div
               use:permissionHandler={{
                 hasPermission: canCreate,
                 permissionError,
               }}
-            />
+            >
+              <Input
+                on:keyup={onNameFieldKeyup}
+                bind:this={nameInputField}
+                autocomplete="off"
+                class="h-6 w-full px-2"
+                size="md"
+                name="name"
+                placeholder="Enter tag name"
+              />
+            </div>
           </Field>
 
           <Field field={colorField}>
-            <label for="color" slot="label">Color</label>
-            <div class="tags-color-picker">
-              <input
-                on:keyup={onColorFieldKeyup}
-                bind:this={colorInputField}
-                autocomplete="off"
-                class="st-input w-full"
-                name="color"
+            <Label for="color" slot="label" class="pb-1 text-xs font-normal">Color</Label>
+            <div class="flex w-full gap-2">
+              <div
                 use:permissionHandler={{
                   hasPermission: canCreate,
                   permissionError,
                 }}
-              />
-              <!-- TODO add permission handler here -->
-              <ColorPresetsPicker
-                tooltipText="Select Color"
-                presetColors={[
-                  '#FAB9C7',
-                  '#FBCAC9',
-                  '#F7CAB5',
-                  '#F0EEB9',
-                  '#BAF3C8',
-                  '#E0EEE4',
-                  '#C1CDEE',
-                  '#E2DEF5',
-                  '#D4BFF7',
-                  '#F0CDF5',
-                  '#FAC4F1',
-                  '#F1E6E4',
-                  '#E7D7BE',
-                  '#E3E0CD',
-                  '#E8E8E8',
-                ]}
-                placement="bottom-start"
-                value={$colorField.value}
-                on:input={event => colorField.validateAndSet(event.detail.value)}
-              />
-              <button
-                type="button"
-                class="st-button icon"
-                use:permissionHandler={{
-                  hasPermission: canCreate,
-                  permissionError,
-                }}
-                on:click={() => colorField.validateAndSet(generateRandomPastelColor())}
+                class="w-full"
               >
-                <RefreshIcon />
-              </button>
+                <Input
+                  on:keyup={onColorFieldKeyup}
+                  bind:this={colorInputField}
+                  autocomplete="off"
+                  size="md"
+                  name="color"
+                  class="h-6 w-full px-2"
+                />
+              </div>
+              <!-- TODO add permission handler here -->
+              <div class="size-6">
+                <ColorPresetsPicker
+                  tooltipText="Select Color"
+                  presetColors={[
+                    '#FAB9C7',
+                    '#FBCAC9',
+                    '#F7CAB5',
+                    '#F0EEB9',
+                    '#BAF3C8',
+                    '#E0EEE4',
+                    '#C1CDEE',
+                    '#E2DEF5',
+                    '#D4BFF7',
+                    '#F0CDF5',
+                    '#FAC4F1',
+                    '#F1E6E4',
+                    '#E7D7BE',
+                    '#E3E0CD',
+                    '#E8E8E8',
+                  ]}
+                  placement="bottom-start"
+                  value={$colorField.value}
+                  on:input={event => colorField.validateAndSet(event.detail.value)}
+                />
+              </div>
+              <div
+                use:permissionHandler={{
+                  hasPermission: canCreate,
+                  permissionError,
+                }}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  on:click={() => colorField.validateAndSet(generateRandomPastelColor())}
+                >
+                  <RefreshIcon />
+                </Button>
+              </div>
             </div>
           </Field>
 
           <fieldset>
-            <label for="preview">Tag Preview</label>
-            <div class="tags-preview">
+            <Label for="preview" class="pb-1 text-xs font-normal">Tag Preview</Label>
+
+            <!-- tag preview container -->
+            <div class="flex w-full justify-between rounded-md border border-primary/10 bg-secondary p-1">
               <TagChip
                 tag={{ color: $colorField.value, id: -1, name: $nameField.value || 'Tag Name' }}
                 removable={false}
               />
+              <span class="flex items-center border border-secondary pl-2 align-middle">@{user?.id}</span>
             </div>
           </fieldset>
 
-          <fieldset>
-            <div class="tags-creator st-typography-body">
+          <!-- TODO: remove this fieldset -->
+          <!-- <fieldset>
+            <div class="flex w-full justify-between">
               Created by <span>@{user?.id}</span>
             </div>
-          </fieldset>
+          </fieldset> -->
 
-          <fieldset>
+          <fieldset class="my-4">
             {#if !selectedTag}
-              <button
-                class="st-button w-full"
-                disabled={!submitButtonEnabled || creatingTag}
-                type="submit"
+              <div
                 use:permissionHandler={{
                   hasPermission: canCreate,
                   permissionError,
                 }}
               >
-                {creatingTag ? 'Creating...' : 'Create'}
-              </button>
+                <Button class="w-full dark:text-white" disabled={!submitButtonEnabled || creatingTag} type="submit">
+                  {creatingTag ? 'Creating...' : 'Create'}
+                </Button>
+              </div>
             {:else}
-              <div class="tags-save-buttons">
-                <button
+              <div
+                class="flex gap-2"
+                use:permissionHandler={{
+                  hasPermission: canCreate,
+                  permissionError,
+                }}
+              >
+                <Button
                   on:click={() => exitEditing()}
                   disabled={updatingTag}
-                  class="st-button secondary w-full"
+                  variant="secondary"
                   type="button"
+                  class="w-full"
                 >
                   Cancel
-                </button>
-                <button
-                  class="st-button w-full"
+                </Button>
+                <Button
                   disabled={!submitButtonEnabled || !selectedTagModified || updatingTag}
                   type="submit"
-                  use:permissionHandler={{
-                    hasPermission: canCreate,
-                    permissionError,
-                  }}
+                  class="w-full"
                 >
                   {updatingTag ? 'Saving...' : 'Save Changes'}
-                </button>
+                </Button>
               </div>
             {/if}
           </fieldset>
@@ -434,12 +457,12 @@
 
     <Panel>
       <svelte:fragment slot="header">
-        <div style:display="flex" style:gap="0.5rem">
+        <div class="flex w-full max-w-sm items-center gap-1">
           <SectionTitle>
-            <TagsIcon slot="icon" />
+            <TagsIcon slot="icon" class="opacity-30" />
             Tags
           </SectionTitle>
-          <input bind:value={filterText} class="st-input" placeholder="Filter tags" style="width: 300px" />
+          <Input bind:value={filterText} size="sm" placeholder="Filter tags" class="h-6 w-full px-2" />
         </div>
       </svelte:fragment>
 
@@ -458,14 +481,18 @@
             }}
           />
         {:else}
-          No Tags Found
+          <div class="flex h-full w-full items-center justify-center">
+            <span class="text-sm">No Tags Found</span>
+          </div>
         {/if}
       </svelte:fragment>
     </Panel>
   </CssGrid>
 </CssGrid>
 
-<style>
+<!-- TODO: remove this -->
+
+<!-- <style>
   .tags-color-picker {
     display: flex;
     gap: 4px;
@@ -492,4 +519,4 @@
     display: flex;
     gap: 4px;
   }
-</style>
+</style> -->

@@ -33,7 +33,7 @@
 
 <button
   type="button"
-  class="st-button color-preset-picker color"
+  class="st-button color-preset-picker color dark:border-white/20"
   use:tooltip={{ content: tooltipText, placement: 'top' }}
   style={`position: relative; background: ${value}`}
   on:click|stopPropagation={() => pickerMenu.toggle()}
