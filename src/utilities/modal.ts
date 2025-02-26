@@ -28,6 +28,7 @@ import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
 import TimeRangeModal from '../components/modals/TimeRangeModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceModal from '../components/modals/WorkspaceModal.svelte';
+import NewSequenceTemplateModal from '../components/sequencing/NewSequenceTemplateModal.svelte';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
 import type { User } from '../types/app';
 import type { ExpansionSequence } from '../types/expansion';
@@ -552,6 +553,44 @@ export async function showWorkspaceModal(
           resolve({ confirm: true, value: e.detail });
           workspaceModal.$destroy();
         });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+export async function showTemplateModal(): Promise<ModalElementValue<{ name: string, parcel_id: number }>> {
+  console.log('showTemplateModal');
+  return new Promise(resolve => {
+    if (browser) {
+      console.log('showTemplateModal - browser');
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        console.log('showTemplateModal - target');
+        const workspaceModal = new NewSequenceTemplateModal({
+          props: {},
+          target,
+        });
+        target.resolve = resolve;
+
+        workspaceModal.$on('close', () => {
+          console.log('showTemplateModal - close');
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          workspaceModal.$destroy();
+        });
+
+        workspaceModal.$on('save', (e: CustomEvent<{ name: string, parcel_id: number }>) => {
+          console.log('showTemplateModal - save');
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          workspaceModal.$destroy();
+        });
+        console.log('showTemplateModal - target end');
       }
     } else {
       resolve({ confirm: false });
