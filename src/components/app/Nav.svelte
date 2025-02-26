@@ -1,8 +1,9 @@
 <script lang="ts">
   import { Select, ThemeSwitcherButton } from '@nasa-jpl/stellar-svelte';
-  import AppMenu from '../../components/menus/AppMenu.svelte';
+  import AppMenuPopover from '../../components/menus/AppMenuPopover.svelte';
   import type { User, UserRole } from '../../types/app';
   import { changeUserRole } from '../../utilities/permissions';
+  import AppMenu from '../menus/AppMenu.svelte';
 
   export let user: User | null;
 
@@ -16,17 +17,21 @@
   }
 </script>
 
-<div class="px-4 bg-primary dark:bg-secondary flex h-12 w-100 items-center">
-  <div class="flex gap-2 items-center flex-1">
+<div class="w-100 flex h-12 items-center bg-[#110D3D] px-4 dark:bg-secondary">
+  <div class="flex flex-1 items-center gap-2">
     <AppMenu {user} />
-    <div class="bg-white w-[1px] h-4 opacity-20" />
-    <div class="text-sm text-white font-medium">
+    <div class="hidden">
+      <AppMenuPopover {user} />
+    </div>
+
+    <div class="h-4 w-[1px] bg-white opacity-20" />
+    <div class="text-sm font-medium text-white">
       <slot name="title" />
     </div>
     <slot name="left" />
   </div>
 
-  <div class="items-center inline-flex gap-1">
+  <div class="inline-flex items-center gap-1">
     <slot name="right" />
     {#if userRoles.length > 1}
       <Select.Root
@@ -51,8 +56,8 @@
         <Select.Input name="user-menu" />
       </Select.Root>
     {/if}
-    <div class="dark:text-white">
-      <ThemeSwitcherButton />
+    <div class="">
+      <ThemeSwitcherButton size="icon" />
     </div>
   </div>
 </div>
