@@ -288,9 +288,9 @@
         <SectionTitle>
           <svelte:fragment slot="icon">
             {#if selectedTag}
-              <PenIcon slot="icon" />
+              <PenIcon slot="icon" class="opacity-30" />
             {:else}
-              <PlusIcon slot="icon" />
+              <PlusIcon slot="icon" class="opacity-30" />
             {/if}
           </svelte:fragment>
           {#if selectedTag}
@@ -389,6 +389,7 @@
                 tag={{ color: $colorField.value, id: -1, name: $nameField.value || 'Tag Name' }}
                 removable={false}
               />
+              <span class="flex items-center border border-secondary pl-2 align-middle">@{user?.id}</span>
             </div>
           </fieldset>
 
@@ -439,7 +440,7 @@
       <svelte:fragment slot="header">
         <div class="flex w-full max-w-sm items-center gap-1">
           <SectionTitle>
-            <TagsIcon slot="icon" />
+            <TagsIcon slot="icon" class="opacity-30" />
             Tags
           </SectionTitle>
           <Input bind:value={filterText} placeholder="Filter tags" sizeVariant="xs" />
