@@ -262,7 +262,7 @@ import {
   showPlanBranchRequestModal,
   showRestorePlanSnapshotModal,
   showUploadViewModal,
-  showWorkspaceModal,
+  showWorkspaceModal
 } from './modal';
 import { gatewayPermissions, queryPermissions } from './permissions';
 import { reqExtension, reqGateway, reqHasura } from './requests';
@@ -1957,6 +1957,7 @@ const effects = {
   async createUserSequenceTemplate(sequence: UserSequenceTemplateInsertInput, user: User | null): Promise<number | null> {
     // TODO: Connect to GQL akin to createUserSequence
     let nextId = null;
+
     userTemplates.update(templates => {
       nextId = Math.max(0, ...templates.map($ => $.id)) + 1;
       const now = new Date().toISOString();

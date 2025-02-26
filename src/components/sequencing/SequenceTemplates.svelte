@@ -6,6 +6,7 @@
   import type { User } from '../../types/app';
   import type { Parcel, UserSequenceTemplate } from '../../types/sequencing';
   import effects from '../../utilities/effects';
+  import { showTemplateModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import Input from '../form/Input.svelte';
@@ -42,13 +43,17 @@
   }
 
   let id = 1;
-  function createSequenceTemplate(): void {
-    // TODO: add a selection here for template name and parcel?
+  async function createSequenceTemplate(): Promise<void> {
+    console.log('createSequenceTemplate');
+    const { confirm, value } = await showTemplateModal();
+    console.log('createSequenceTemplate - modal done. confirm = ' + confirm + '; value = ' + value);
+    if (!confirm || value === undefined) return;
+
     effects.createUserSequenceTemplate(
       {
         definition: '',
-        name: 'New Template ' + id++,
-        parcel_id: 0,
+        name: value.name,
+        parcel_id: value.parcel_id,
       },
       user,
     );
@@ -71,7 +76,7 @@
             hasPermission: featurePermissions.sequences.canCreate(user),
             permissionError: 'You do not have permission to create a new sequence',
           }}
-          on:click={createSequenceTemplate}
+          on:click|stopPropagation={createSequenceTemplate}
         >
           New Template
         </button>
