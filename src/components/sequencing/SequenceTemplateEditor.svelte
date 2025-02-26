@@ -93,7 +93,7 @@
   export let user: User | null;
 
   const dispatch = createEventDispatcher<{
-    sequence: { input: string; output: string };
+    templateChanged: { input: string; output: string };
   }>();
 
   const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
@@ -412,7 +412,7 @@
     editorOutputView.dispatch({ changes: { from: 0, insert: output, to: editorOutputView.state.doc.length } });
 
     if (output !== undefined) {
-      dispatch('sequence', { input: sequence, output });
+      dispatch('templateChanged', { input: sequence, output });
     }
   }
 

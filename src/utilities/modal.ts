@@ -561,14 +561,11 @@ export async function showWorkspaceModal(
 }
 
 export async function showTemplateModal(): Promise<ModalElementValue<{ name: string, parcel_id: number }>> {
-  console.log('showTemplateModal');
   return new Promise(resolve => {
     if (browser) {
-      console.log('showTemplateModal - browser');
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        console.log('showTemplateModal - target');
         const workspaceModal = new NewSequenceTemplateModal({
           props: {},
           target,
@@ -576,7 +573,6 @@ export async function showTemplateModal(): Promise<ModalElementValue<{ name: str
         target.resolve = resolve;
 
         workspaceModal.$on('close', () => {
-          console.log('showTemplateModal - close');
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: false });
@@ -584,13 +580,11 @@ export async function showTemplateModal(): Promise<ModalElementValue<{ name: str
         });
 
         workspaceModal.$on('save', (e: CustomEvent<{ name: string, parcel_id: number }>) => {
-          console.log('showTemplateModal - save');
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
           workspaceModal.$destroy();
         });
-        console.log('showTemplateModal - target end');
       }
     } else {
       resolve({ confirm: false });
