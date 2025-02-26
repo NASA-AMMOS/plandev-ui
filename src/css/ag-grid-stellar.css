@@ -73,20 +73,42 @@
 
 .ag-theme-stellar-dark {
   --ag-background-color: #181d1f;
-  --ag-foreground-color: #fff;
-  --ag-border-color: #68686e;
-  --ag-secondary-border-color: rgba(88, 86, 82, 0.5);
-  --ag-header-background-color: #222628;
-  --ag-odd-row-background-color: #222628;
-  --ag-control-panel-background-color: #222628;
-  --ag-subheader-background-color: #000;
-  --ag-input-disabled-background-color: #282c2f;
-  --ag-input-focus-box-shadow: 0 0 2px 0.5px rgba(255, 255, 255, 0.5), 0 0 4px 3px var(--ag-input-focus-border-color);
+  --ag-border-color: #434348;
   --ag-card-shadow: 0 1px 20px 1px black;
-  --ag-disabled-foreground-color: rgba(255, 255, 255, 0.5);
+  --ag-checkbox-background-color: #282c2f;
+  --ag-checkbox-checked-color: #64b5f6;
+  --ag-checkbox-unchecked-color: #bdbdbd;
   --ag-chip-background-color: rgba(255, 255, 255, 0.07);
-  --ag-input-disabled-border-color: rgba(104, 104, 110, 0.3);
+  --ag-column-hover-color: rgba(33, 150, 243, 0.2);
+  --ag-control-panel-background-color: #222628;
+  --ag-disabled-foreground-color: rgba(255, 255, 255, 0.5);
+  --ag-foreground-color: #fff;
+  --ag-header-background-color: #222628;
+  --ag-input-border-color: #434348;
+  --ag-input-border-color-invalid: #ef5350;
   --ag-input-disabled-background-color: rgba(104, 104, 110, 0.07);
+  --ag-input-disabled-border-color: rgba(104, 104, 110, 0.3);
+  --ag-input-focus-border-color: rgba(100, 181, 246, 0.6);
+  --ag-input-focus-box-shadow: 0 0 2px 0.5px rgba(255, 255, 255, 0.5), 0 0 4px 3px var(--ag-input-focus-border-color);
+  --ag-invalid-color: #ef5350;
+  --ag-odd-row-background-color: #222628;
+  --ag-popup-shadow: 0 1px 20px 1px rgba(0, 0, 0, 0.9);
+  --ag-range-selection-background-color: rgba(33, 150, 243, 0.3);
+  --ag-range-selection-background-color-2: rgba(33, 150, 243, 0.46);
+  --ag-range-selection-background-color-3: rgba(33, 150, 243, 0.59);
+  --ag-range-selection-background-color-4: rgba(33, 150, 243, 0.69);
+  --ag-range-selection-border-color: #64b5f6;
+  --ag-row-hover-color: var(--st-gray-80);
+  --ag-secondary-border-color: rgba(88, 86, 82, 0.5);
+  --ag-secondary-foreground-color: #e0e0e0;
+  --ag-selected-row-background-color: #1e3954;
+  --ag-selected-row-first-background-color: #1a334d;
+  --ag-selected-row-first-hover-background-color: #1c3751;
+  --ag-selected-row-hover-background-color: #203d5a;
+  --ag-selected-tab-underline-color: #64b5f6;
+  --ag-side-button-selected-background-color: #282c2f;
+  --ag-stellar-active-color: #64b5f6;
+  --ag-subheader-background-color: #000;
 }
 
 .ag-theme-stellar .ag-filter-toolpanel-header,
