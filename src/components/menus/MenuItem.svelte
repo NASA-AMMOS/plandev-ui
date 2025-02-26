@@ -19,6 +19,7 @@
       event.stopPropagation();
     } else {
       event.preventDefault();
+      event.stopPropagation();
       dispatch('click', event);
     }
   }
@@ -33,50 +34,15 @@
 </script>
 
 <div
-  class="menu-item"
+  class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
   class:disabled
   class:selected
   class:selectable
   role="menuitem"
   use:useActions={use}
-  on:mouseup={onClick}
+  on:click={onClick}
   on:keydown={onKeydown}
   tabindex={0}
 >
   <slot />
 </div>
-
-<style>
-  .menu-item {
-    align-items: center;
-    display: grid;
-    font-size: var(--aerie-menu-item-font-size, 13px);
-    gap: var(--aerie-menu-item-gap, 0.5rem);
-    grid-template-columns: var(--aerie-menu-item-template-columns, 1rem auto);
-    justify-content: flex-start;
-    line-height: var(--aerie-menu-item-line-height, 24px);
-    overflow: hidden;
-    padding: var(--aerie-menu-item-padding, 8px);
-    text-overflow: ellipsis;
-    user-select: none;
-    white-space: nowrap;
-    width: 100%;
-  }
-
-  .menu-item:not(.selectable) {
-    cursor: auto;
-  }
-
-  .menu-item.selectable:hover {
-    background: var(--st-gray-20);
-  }
-
-  .menu-item.disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-
-  .menu-item.selected {
-    background: var(--st-gray-20);
-  }
-</style>
