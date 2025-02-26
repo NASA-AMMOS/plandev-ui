@@ -14,7 +14,7 @@
   import { debounce } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import type { ArgTextDef, TimeTagInfo } from '../../../types/sequencing';
-  import type { CommandInfoMapper } from '../../../utilities/sequence-editor/commandInfoMapper';
+  import type { CommandInfoMapper } from '../../../utilities/sequence-editor/command-info-mapper';
   import { addDefaultArgs, getMissingArgDefs } from '../../../utilities/sequence-editor/sequence-utils';
   import { tooltip } from '../../../utilities/tooltip';
   import AddMissingArgsButton from '../form/AddMissingArgsButton.svelte';

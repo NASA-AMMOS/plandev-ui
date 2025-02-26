@@ -4,7 +4,7 @@
   import type { SyntaxNode } from '@lezer/common';
   import type { CommandDictionary, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
   import type { ArgTextDef } from '../../../types/sequencing';
-  import type { CommandInfoMapper } from '../../../utilities/sequence-editor/commandInfoMapper';
+  import type { CommandInfoMapper } from '../../../utilities/sequence-editor/command-info-mapper';
   import {
     getMissingArgDefs,
     isFswCommandArgumentBoolean,
