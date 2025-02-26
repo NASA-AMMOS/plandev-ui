@@ -7,6 +7,7 @@ export enum Queries {
   ACTIVITY_TYPES = 'activity_type',
   ADD_EXTERNAL_DATASET = 'addExternalDataset',
   ANCHOR_VALIDATION_STATUS = 'anchor_validation_status',
+  APPLY_ACTIVITIES_BY_FILTER = 'assignActivitiesByFilter',
   APPLY_PRESET_TO_ACTIVITY = 'apply_preset_to_activity',
   BEGIN_MERGE = 'begin_merge',
   CANCEL_MERGE = 'cancel_merge',

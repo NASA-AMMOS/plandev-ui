@@ -25,6 +25,7 @@ import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
 import RestorePlanSnapshotModal from '../components/modals/RestorePlanSnapshotModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
+import TimeRangeModal from '../components/modals/TimeRangeModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceModal from '../components/modals/WorkspaceModal.svelte';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
@@ -1057,6 +1058,38 @@ export async function showEditorModal(content: object, language: string, modalTi
           target.resolve = null;
           resolve({ confirm: true });
           editorModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a TimeRangeModal with the supplied arguments.
+ */
+export async function showTimeRangeModal(defaultStartTime: string, defaultEndTime: string): Promise<ModalElementValue<{ timeRangeEnd: string | null, timeRangeStart: string | null }>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const timeRangeModal = new TimeRangeModal({ props: { defaultEndTime, defaultStartTime }, target });
+        target.resolve = resolve;
+
+        timeRangeModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          timeRangeModal.$destroy();
+        })
+
+        timeRangeModal.$on('confirm', (e: CustomEvent<{ timeRangeEnd: string, timeRangeStart: string }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          timeRangeModal.$destroy();
         });
       }
     } else {

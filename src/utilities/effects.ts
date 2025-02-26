@@ -262,6 +262,7 @@ import {
   showManagePlanSchedulingGoalsModal,
   showPlanBranchRequestModal,
   showRestorePlanSnapshotModal,
+  showTimeRangeModal,
   showUploadViewModal,
   showWorkspaceModal,
 } from './modal';
@@ -298,6 +299,54 @@ function throwPermissionError(attemptedAction: string): never {
  * Functions that have side-effects (e.g. HTTP requests, toasts, popovers, store updates, etc.).
  */
 const effects = {
+  async applyActivitiesByFilter(
+    filter: SequenceFilter,
+    simulationDatasetId: number,
+    defaultStartTime: string,
+    defaultEndtime: string,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      const { confirm: timeConfirmed, value } = await showTimeRangeModal(defaultStartTime, defaultEndtime);
+
+      if (timeConfirmed && value !== undefined) {
+        const { timeRangeEnd, timeRangeStart } = value;
+        console.log(timeRangeStart);
+        console.log(timeRangeEnd);
+        if (timeRangeStart !== null && timeRangeEnd !== null) {
+          const sequenceId = await effects.createExpansionSequence(
+            `${filter.name} Sequence`,
+            simulationDatasetId,
+            user
+          );
+
+          if (!sequenceId) { throw Error("Failed to create sequence"); }
+
+          const data = await reqHasura<{ success: boolean }>(
+            gql.APPLY_ACTIVITIES_BY_FILTER,
+            {
+              filterId: filter.id,
+              seqId: sequenceId,
+              simulationDatasetId,
+              timeRangeEnd,
+              timeRangeStart
+            },
+            user,
+          );
+
+          if (data !== null) {
+            showSuccessToast("Filter Applied Successfully");
+          } else {
+            throw Error("Filter could not be applied successfully");
+          }
+        }
+      }
+    } catch (e) {
+      catchError('Filter Application Failed');
+      showFailureToast('Filter Application Failed');
+    }
+  },
+
   async applyPresetToActivity(
     preset: ActivityPreset,
     activityId: ActivityDirectiveId,
@@ -3496,28 +3545,19 @@ const effects = {
   },
 
   async expandTemplates(
-    filterIds: number[],
+    seqId: string,
     parcelId: number,
-    modelId: number,
-    simulationDatasetId: number,
-    timeRangeStart: string,
-    timeRangeEnd: string,
     user: User | null,
   ): Promise<void> {
     try {
-      // TODO Store doesn't exist
       sequenceExpansionStatusStore.set(Status.Incomplete);
       if (!queryPermissions.EXPAND_TEMPLATES(user)) {
         throwPermissionError('expand a sequence template');
       }
 
-      const data = await reqHasura<{ id: number }>(gql.EXPAND_TEMPLATES, {
-        filterIds,
-        modelId,
+      const data = await reqHasura<{ success: boolean }>(gql.EXPAND_TEMPLATES, {
         parcelId,
-        simulationDatasetId,
-        timeRangeEnd,
-        timeRangeStart,
+        seqId
       }, user);
       if (data.expandTemplates !== null) {
         sequenceExpansionStatusStore.set(Status.Complete);
@@ -3527,7 +3567,6 @@ const effects = {
       }
     } catch (e) {
       catchError('Sequence Expansion Failed', e as Error);
-      // TODO Store doesn't exist
       sequenceExpansionStatusStore.set(Status.Failed);
       showFailureToast('Sequence Expansion Failed');
     }
