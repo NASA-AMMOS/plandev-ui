@@ -22,8 +22,6 @@
   let filterText: string = '';
   let parcel: Parcel | null;
   let selectedTemplate: UserSequenceTemplate | null = null;
-  let selectedDefinition: string = '';
-  $: console.log(selectedTemplate);
 
   $: parcel = $parcels.find(p => p.id === selectedTemplate?.parcel_id) ?? null;
   $: if (selectedTemplate !== null) {
@@ -33,20 +31,19 @@
       selectedTemplate = null;
     }
   }
-  $: if (selectedTemplate !== null) {
-    selectedTemplate.definition = selectedDefinition;
-  }
 
   function onTemplateSelected(event: CustomEvent<UserSequenceTemplate>) {
     selectedTemplate = event.detail;
-    selectedDefinition = selectedTemplate.definition;
+  }
+  function onTemplateChanged(event: CustomEvent<{ input: string; output: string }>) {
+    if (selectedTemplate) {
+      selectedTemplate.definition = event.detail.input;
+    }
   }
 
   let id = 1;
   async function createSequenceTemplate(): Promise<void> {
-    console.log('createSequenceTemplate');
     const { confirm, value } = await showTemplateModal();
-    console.log('createSequenceTemplate - modal done. confirm = ' + confirm + '; value = ' + value);
     if (!confirm || value === undefined) return;
 
     effects.createUserSequenceTemplate(
@@ -90,12 +87,12 @@
 
   <CssGridGutter track={1} type="column" />
 
-  <!-- TODO: I don't love this way of binding the template definition into the editor... I'm not sure how else to handle this, though. -->
   <SequenceTemplateEditor
     {parcel}
-    showCommandFormBuilder={false}
-    bind:sequenceDefinition={selectedDefinition}
+    showCommandFormBuilder={true}
+    sequenceDefinition={selectedTemplate?.definition ?? ''}
     sequenceName={selectedTemplate?.name}
+    on:templateChanged={onTemplateChanged}
     {user}
   />
 </CssGrid>
