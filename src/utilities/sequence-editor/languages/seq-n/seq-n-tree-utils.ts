@@ -20,7 +20,7 @@ import {
 import { SequenceTypes } from '../../../../enums/sequencing';
 import { type LibrarySequence, type UserSequence } from '../../../../types/sequencing';
 import { fswCommandArgDefault } from '../../command-dictionary';
-import type { CommandInfoMapper } from '../../commandInfoMapper';
+import type { CommandInfoMapper } from '../../command-info-mapper';
 import { validateVariables } from '../../sequence-linter';
 import { parseVariables } from '../../to-seq-json';
 import { getFromAndTo, getNearestAncestorNodeOfType } from '../../tree-utils';

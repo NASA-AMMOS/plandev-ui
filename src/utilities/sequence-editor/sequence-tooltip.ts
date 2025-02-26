@@ -12,6 +12,7 @@ import type {
 import ArgumentTooltip from '../../components/sequencing/ArgumentTooltip.svelte';
 import CommandTooltip from '../../components/sequencing/CommandTooltip.svelte';
 import { TOKEN_REPEAT_ARG } from '../../constants/seq-n-grammar-constants';
+import type { ISequenceAdaptation } from '../../types/sequencing';
 import { getCustomArgDef } from './extension-points';
 import { isFswCommandArgumentRepeat } from './sequence-utils';
 
@@ -56,6 +57,7 @@ export function getTokenPositionInLine(view: EditorView, pos: number) {
  * Can be optionally called with a command dictionary so it's available during tooltip generation.
  */
 export function sequenceTooltip(
+  sequenceAdaptation: ISequenceAdaptation,
   channelDictionary: ChannelDictionary | null = null,
   commandDictionary: CommandDictionary | null = null,
   parameterDictionaries: ParameterDictionary[] = [],
@@ -151,6 +153,7 @@ export function sequenceTooltip(
                 argValues,
                 parameterDictionaries,
                 channelDictionary,
+                sequenceAdaptation,
               );
 
               if (arg) {

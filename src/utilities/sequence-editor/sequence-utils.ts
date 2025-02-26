@@ -27,7 +27,7 @@ import type {
   TimeTagInfo,
 } from '../../types/sequencing';
 import { fswCommandArgDefault } from './command-dictionary';
-import type { CommandInfoMapper } from './commandInfoMapper';
+import type { CommandInfoMapper } from './command-info-mapper';
 import { getCustomArgDef } from './extension-points';
 import { librarySequenceToFswCommand } from './languages/vml/vml-block-library';
 import { TOKEN_ERROR } from './sequence-constants';
@@ -268,6 +268,7 @@ export function getArgumentInfo(
   argumentDefs: FswCommandArgument[] | undefined,
   parentArgDef: FswCommandArgumentRepeat | undefined,
   parameterDictionaries: ParameterDictionary[],
+  sequenceAdaptation: ISequenceAdaptation,
 ) {
   const argArray: ArgTextDef[] = [];
   const precedingArgValues: string[] = [];
@@ -296,6 +297,7 @@ export function getArgumentInfo(
           precedingArgValues,
           parameterDictionaries,
           channelDictionary,
+          sequenceAdaptation,
         );
       }
 
@@ -310,6 +312,7 @@ export function getArgumentInfo(
           argDef.repeat?.arguments,
           argDef,
           parameterDictionaries,
+          sequenceAdaptation,
         );
       }
       const argValue = seqEditorView.state.sliceDoc(node.from, node.to);

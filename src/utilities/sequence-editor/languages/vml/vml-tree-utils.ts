@@ -1,7 +1,7 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
 import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import { filterEmpty } from '../../../generic';
-import type { CommandInfoMapper } from '../../commandInfoMapper';
+import type { CommandInfoMapper } from '../../command-info-mapper';
 import { filterNodesToArray, getChildrenNode, getNearestAncestorNodeOfType } from '../../tree-utils';
 import { getDefaultArgumentValue } from './vml-adaptation';
 import {

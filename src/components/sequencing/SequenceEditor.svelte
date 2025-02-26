@@ -17,6 +17,7 @@
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import {
+    getGlobals,
     inputFormat,
     outputFormat as outputFormatStore,
     sequenceAdaptation,
@@ -46,7 +47,7 @@
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import effects from '../../utilities/effects';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
-  import type { CommandInfoMapper } from '../../utilities/sequence-editor/commandInfoMapper';
+  import type { CommandInfoMapper } from '../../utilities/sequence-editor/command-info-mapper';
   import { inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
   import { setupLanguageSupport } from '../../utilities/sequence-editor/languages/seq-n/seq-n';
   import {
@@ -258,6 +259,8 @@
               ),
               compartmentSeqLinter.reconfigure(
                 inputLinter(
+                  $sequenceAdaptation,
+                  getGlobals(),
                   parsedChannelDictionary,
                   parsedCommandDictionary,
                   nonNullParsedParameterDictionaries,
@@ -265,7 +268,12 @@
                 ),
               ),
               compartmentSeqTooltip.reconfigure(
-                sequenceTooltip(parsedChannelDictionary, parsedCommandDictionary, nonNullParsedParameterDictionaries),
+                sequenceTooltip(
+                  $sequenceAdaptation,
+                  parsedChannelDictionary,
+                  parsedCommandDictionary,
+                  nonNullParsedParameterDictionaries,
+                ),
               ),
               ...($sequenceAdaptation.autoIndent
                 ? [compartmentSeqAutocomplete.reconfigure(indentService.of($sequenceAdaptation.autoIndent()))]
@@ -310,6 +318,7 @@
     commandDef?.arguments,
     undefined,
     parameterDictionaries,
+    $sequenceAdaptation,
   );
   $: variablesInScope = getVariablesInScope(
     commandInfoMapper,
@@ -335,8 +344,8 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
         compartmentSeqLanguage.of(setupLanguageSupport($sequenceAdaptation.autoComplete(null, null, [], []))),
-        compartmentSeqLinter.of(inputLinter()),
-        compartmentSeqTooltip.of(sequenceTooltip()),
+        compartmentSeqLinter.of(inputLinter($sequenceAdaptation, getGlobals())),
+        compartmentSeqTooltip.of(sequenceTooltip($sequenceAdaptation)),
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,

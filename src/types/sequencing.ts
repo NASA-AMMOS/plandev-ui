@@ -68,6 +68,17 @@ export interface IOutputFormat {
   ): Promise<string>;
 }
 
+export interface IInputFormat {
+  linter?: (
+    diagnostics: Diagnostic[],
+    commandDictionary: AmpcsCommandDictionary,
+    view: EditorView,
+    node: SyntaxNode,
+  ) => Diagnostic[];
+  name: string;
+  toInputFormat?(input: string): Promise<string>;
+}
+
 export interface ISequenceAdaptation {
   argDelegator?: ArgDelegator;
   autoComplete: (
@@ -78,16 +89,7 @@ export interface ISequenceAdaptation {
   ) => (context: CompletionContext) => CompletionResult | null;
   autoIndent?: () => (context: IndentContext, pos: number) => number | null | undefined;
   globals?: GlobalType[];
-  inputFormat: {
-    linter?: (
-      diagnostics: Diagnostic[],
-      commandDictionary: AmpcsCommandDictionary,
-      view: EditorView,
-      node: SyntaxNode,
-    ) => Diagnostic[];
-    name: string;
-    toInputFormat?(input: string): Promise<string>;
-  };
+  inputFormat: IInputFormat;
   modifyOutput?: (
     output: string,
     parameterDictionaries: AmpcsParameterDictionary[],
