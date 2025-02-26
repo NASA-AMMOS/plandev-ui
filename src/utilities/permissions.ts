@@ -294,6 +294,9 @@ async function changeUserRole(role: UserRole): Promise<void> {
 
 type GQLKeys = keyof typeof gql;
 const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => boolean> = {
+  APPLY_ACTIVITIES_BY_FILTER: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.APPLY_ACTIVITIES_BY_FILTER], user );
+  },
   APPLY_PRESET_TO_ACTIVITY: (
     user: User | null,
     plan: PlanWithOwners,

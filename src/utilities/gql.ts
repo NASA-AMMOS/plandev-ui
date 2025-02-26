@@ -4,6 +4,26 @@ import { Queries } from '../enums/gql';
  * GraphQL Query, Mutation, and Subscription strings.
  */
 const gql = {
+  APPLY_ACTIVITIES_BY_FILTER: `#graphql
+    mutation ApplyActivitiesByFilter(
+      $filterId: Int!,
+      $simulationDatasetId: Int!,
+      $seqId: String!,
+      $timeRangeEnd: String!,
+      $timeRangeStart: String!
+    ) {
+      applyActivitiesByFilter: ${Queries.APPLY_ACTIVITIES_BY_FILTER}(
+        filterId: $filterId,
+        simulationDatasetId: $simulationDatasetId,
+        seqId: $seqId,
+        timeRangeEnd: $timeRangeEnd,
+        timeRangeStart: $timeRangeStart
+      ) {
+        success
+      }
+    }
+  `,
+
   APPLY_PRESET_TO_ACTIVITY: `#graphql
     mutation ApplyPresetToActivity($presetId: Int!, $activityId: Int!, $planId: Int!) {
       ${Queries.APPLY_PRESET_TO_ACTIVITY}(args: {
@@ -1099,8 +1119,14 @@ const gql = {
   `,
 
   EXPAND_TEMPLATES: `#graphql
-    mutation ExpandTemplates($filterIds: [Int!]!, $parcelId: Int!, $modelId: Int!, $simulationDatasetId: Int!, $timeRangeStart: String!, $timeRangeEnd: String!) {
-      expandTemplates: ${Queries.EXPAND_ALL_TEMPLATES}(filterIds: $filterIds, modelId: $modelId, parcelId: $parcelId, simulationDatasetId: $simulationDatasetId, timeRangeStart: $timeRangeStart, timeRangeEnd: $timeRangeEnd) {
+    mutation ExpandTemplates(
+      $seqId: String!,
+      $parcelId: Int!
+    ) {
+      expandTemplates: ${Queries.EXPAND_ALL_TEMPLATES}(
+        seqId: $seqId,
+        parcelId: $parcelId
+      ) {
         success
       }
     }
@@ -2296,7 +2322,7 @@ const gql = {
     subscription SubExpandedTemplates {
       expandedTemplates: ${Queries.EXPANDED_TEMPLATES}(order_by: { id: desc }) {
         id
-        filter_id
+        seq_id
         simulation_dataset_id
         expanded_template
         created_at
@@ -2338,7 +2364,6 @@ const gql = {
     subscription SubExpansionSequences {
       ${Queries.SEQUENCE} {
         created_at
-        filter
         metadata
         seq_id
         simulation_dataset_id
