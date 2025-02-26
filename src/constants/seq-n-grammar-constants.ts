@@ -13,6 +13,5 @@ export const TOKEN_LOAD = 'Load';
 export const TOKEN_COMMAND = 'Command';
 export const TOKEN_REQUEST = 'Request';
 export const TOKEN_REPEAT_ARG = 'RepeatArg';
-export const TOKEN_ERROR = '⚠';
 export const TOKEN_STRING = 'String';
 export const TOKEN_NUMBER = 'Number';

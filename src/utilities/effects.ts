@@ -190,15 +190,15 @@ import type {
 } from '../types/scheduling';
 import type { ValueSchema } from '../types/schema';
 import {
-  type ChannelDictionary,
-  type CommandDictionary,
+  type ChannelDictionaryMetadata,
+  type CommandDictionaryMetadata,
   type GetSeqJsonResponse,
-  type ParameterDictionary,
+  type ParameterDictionaryMetadata,
   type Parcel,
   type ParcelInsertInput,
   type ParcelToParameterDictionary,
   type SeqJson,
-  type SequenceAdaptation,
+  type SequenceAdaptationMetadata,
   type UserSequence,
   type UserSequenceInsertInput,
   type Workspace,
@@ -239,7 +239,6 @@ import type {
 import type { Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
-import { parseCdlDictionary, toAmpcsXml } from './codemirror/cdlDictionary';
 import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
@@ -266,6 +265,7 @@ import { gatewayPermissions, queryPermissions } from './permissions';
 import { reqExtension, reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
+import { parseCdlDictionary, toAmpcsXml } from './sequence-editor/languages/vml/cdl-dictionary';
 import { compareEvents } from './simulation';
 import { pluralize } from './text';
 import {
@@ -775,14 +775,14 @@ const effects = {
   async createCustomAdaptation(
     adaptation: { adaptation: string; name: string },
     user: User | null,
-  ): Promise<SequenceAdaptation | null> {
+  ): Promise<SequenceAdaptationMetadata | null> {
     try {
       if (!queryPermissions.CREATE_SEQUENCE_ADAPTATION(user)) {
         throwPermissionError('upload a custom adaptation');
       }
 
       if (adaptation?.adaptation) {
-        const data = await reqHasura<SequenceAdaptation>(gql.CREATE_SEQUENCE_ADAPTATION, { adaptation }, user);
+        const data = await reqHasura<SequenceAdaptationMetadata>(gql.CREATE_SEQUENCE_ADAPTATION, { adaptation }, user);
         const { createSequenceAdaptation: newSequenceAdaptation } = data;
 
         if (newSequenceAdaptation != null) {
@@ -4372,9 +4372,12 @@ const effects = {
     }
   },
 
-  async getSequenceAdaptation(sequenceAdaptationId: number, user: User | null): Promise<SequenceAdaptation | null> {
+  async getSequenceAdaptation(
+    sequenceAdaptationId: number,
+    user: User | null,
+  ): Promise<SequenceAdaptationMetadata | null> {
     try {
-      const data = await reqHasura<[sequence_adaptation: SequenceAdaptation]>(
+      const data = await reqHasura<[sequence_adaptation: SequenceAdaptationMetadata]>(
         gql.GET_SEQUENCE_ADAPTATION,
         { sequence_adaptation_id: sequenceAdaptationId },
         user,
@@ -6406,7 +6409,11 @@ const effects = {
   async uploadDictionary(
     dictionary: string,
     user: User | null,
-  ): Promise<{ channel?: ChannelDictionary; command?: CommandDictionary; parameter?: ParameterDictionary } | null> {
+  ): Promise<{
+    channel?: ChannelDictionaryMetadata;
+    command?: CommandDictionaryMetadata;
+    parameter?: ParameterDictionaryMetadata;
+  } | null> {
     try {
       if (!queryPermissions.CREATE_DICTIONARY(user)) {
         throwPermissionError(`upload a dictionary`);
@@ -6419,9 +6426,9 @@ const effects = {
       }
 
       const data = await reqHasura<{
-        channel?: ChannelDictionary;
-        command?: CommandDictionary;
-        parameter?: ParameterDictionary;
+        channel?: ChannelDictionaryMetadata;
+        command?: CommandDictionaryMetadata;
+        parameter?: ParameterDictionaryMetadata;
       }>(gql.CREATE_DICTIONARY, { dictionary }, user);
 
       const { createDictionary: newDictionaries } = data;

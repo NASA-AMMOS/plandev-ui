@@ -10,9 +10,9 @@ import {
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
-import { SeqLanguage } from '../codemirror';
-import { parser } from '../codemirror/sequence.grammar';
 import { seqJsonToSequence } from './from-seq-json';
+import { SeqLanguage } from './languages/seq-n/seq-n';
+import { parser } from './languages/seq-n/seq-n.grammar';
 import { parseVariables, sequenceToSeqJson } from './to-seq-json';
 
 function argArrToMap(cmdArgs: FswCommandArgument[]): FswCommandArgumentMap {

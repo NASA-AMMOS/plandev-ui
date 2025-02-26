@@ -6,7 +6,7 @@ import {
   TOKEN_MODULE,
   TOKEN_RELATIVE_SEQUENCE,
   TOKEN_SEQUENCE,
-} from './vmlConstants';
+} from './vml-constants';
 
 function skeletonSeq(seqType: string): string {
   return `${seqType} \${name}

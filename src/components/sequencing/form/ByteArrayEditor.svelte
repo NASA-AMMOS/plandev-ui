@@ -2,8 +2,8 @@
 
 <script lang="ts">
   import type { SyntaxNode } from '@lezer/common';
-  import { decodeInt32Array } from '../../../utilities/codemirror/codemirror-utils';
-  import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
+  import type { CommandInfoMapper } from '../../../utilities/sequence-editor/command-info-mapper';
+  import { decodeInt32Array } from '../../../utilities/sequence-editor/sequence-utils';
 
   export let argNode: SyntaxNode;
   export let commandInfoMapper: CommandInfoMapper;

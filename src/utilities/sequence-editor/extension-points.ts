@@ -7,9 +7,8 @@ import {
   type FswCommandArgument,
   type ParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
-import { get } from 'svelte/store';
-import { inputFormat, sequenceAdaptation } from '../../stores/sequence-adaptation';
-import type { IOutputFormat, LibrarySequence } from '../../types/sequencing';
+import type { GlobalType } from '../../types/global-type';
+import type { IInputFormat, IOutputFormat, ISequenceAdaptation, LibrarySequence } from '../../types/sequencing';
 import { seqJsonLinter } from './seq-json-linter';
 import { sequenceLinter } from './sequence-linter';
 
@@ -38,11 +37,12 @@ export function getCustomArgDef(
   precedingArgs: string[],
   parameterDictionaries: ParameterDictionary[],
   channelDictionary: ChannelDictionary | null,
+  sequenceAdaptation?: ISequenceAdaptation,
 ) {
   let delegate = undefined;
 
-  if (get(sequenceAdaptation).argDelegator !== undefined) {
-    delegate = get(sequenceAdaptation).argDelegator?.[stem]?.[dictArg.name];
+  if (sequenceAdaptation?.argDelegator !== undefined) {
+    delegate = sequenceAdaptation.argDelegator?.[stem]?.[dictArg.name];
   }
 
   return delegate?.(dictArg, parameterDictionaries, channelDictionary, precedingArgs) ?? dictArg;
@@ -52,8 +52,10 @@ export async function toInputFormat(
   output: string,
   parameterDictionaries: ParameterDictionary[],
   channelDictionary: ChannelDictionary | null,
+  sequenceAdaptation: ISequenceAdaptation,
+  inputFormat?: IInputFormat,
 ) {
-  const modifyOutputParse = get(sequenceAdaptation).modifyOutputParse;
+  const modifyOutputParse = sequenceAdaptation.modifyOutputParse;
   if (modifyOutputParse !== undefined) {
     let modifiedOutput = await modifyOutputParse(output, parameterDictionaries, channelDictionary);
     if (modifiedOutput === null) {
@@ -66,10 +68,10 @@ export async function toInputFormat(
       modifiedOutput = `${modifiedOutput}`;
     }
 
-    return (await get(inputFormat)?.toInputFormat?.(modifiedOutput)) ?? output;
+    return (await inputFormat?.toInputFormat?.(modifiedOutput)) ?? output;
   } else {
     try {
-      return (await get(inputFormat)?.toInputFormat?.(output)) ?? output;
+      return (await inputFormat?.toInputFormat?.(output)) ?? output;
     } catch (e) {
       console.error(e);
       return output;
@@ -78,18 +80,28 @@ export async function toInputFormat(
 }
 
 export function inputLinter(
+  sequenceAdaptation: ISequenceAdaptation,
+  globalVariables: GlobalType[],
   channelDictionary: ChannelDictionary | null = null,
   commandDictionary: CommandDictionary | null = null,
   parameterDictionaries: ParameterDictionary[] = [],
   librarySequences: LibrarySequence[] = [],
 ): Extension {
   return linter(view => {
-    const inputFormatLinter = get(sequenceAdaptation).inputFormat.linter;
+    const inputFormatLinter = sequenceAdaptation.inputFormat.linter;
     const tree = syntaxTree(view.state);
     const treeNode = tree.topNode;
     let diagnostics: Diagnostic[];
 
-    diagnostics = sequenceLinter(view, channelDictionary, commandDictionary, parameterDictionaries, librarySequences);
+    diagnostics = sequenceLinter(
+      view,
+      sequenceAdaptation,
+      channelDictionary,
+      commandDictionary,
+      parameterDictionaries,
+      librarySequences,
+      globalVariables,
+    );
 
     if (inputFormatLinter !== undefined && commandDictionary !== null) {
       diagnostics = inputFormatLinter(diagnostics, commandDictionary, view, treeNode);

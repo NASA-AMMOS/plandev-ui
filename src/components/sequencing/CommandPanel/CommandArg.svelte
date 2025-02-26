@@ -8,7 +8,7 @@
     isFswCommandArgumentRepeat,
     isNumberArg,
     isStringArg,
-  } from '../../../utilities/codemirror/codemirror-utils';
+  } from '../../../utilities/sequence-editor/sequence-utils';
   import CommandBooleanArgDef from './CommandBooleanArgDef.svelte';
   import CommandEnumArgDef from './CommandEnumArgDef.svelte';
   import CommandNumberArgDef from './CommandNumberArgDef.svelte';

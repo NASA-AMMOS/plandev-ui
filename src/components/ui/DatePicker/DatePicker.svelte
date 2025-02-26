@@ -165,8 +165,8 @@
   /**
    * Converts a date string (YYYY-MM-DDTHH:mm:ss) or DOY string (YYYY-DDDDTHH:mm:ss) into a Date object
    */
-  function getDateFromString(dateString: string): Date | null {
-    const parsedDate = parseDoyOrYmdTime(dateString) as ParsedYmdString | ParsedDoyString;
+  function getDateFromString(dateStringToGetDate: string): Date | null {
+    const parsedDate = parseDoyOrYmdTime(dateStringToGetDate) as ParsedYmdString | ParsedDoyString;
     if (parsedDate !== null) {
       const { hour, min, ms, sec, year } = parsedDate;
 
@@ -190,8 +190,8 @@
   /**
    * Determines if a given string is in the correct date string format (YYYY-MM-DDTHH:mm:ss) or DOY string format (YYYY-DDDDTHH:mm:ss)
    */
-  function isValidDateTime(dateString: string): boolean {
-    return parseDoyOrYmdTime(dateString) !== null;
+  function isValidDateTime(dateStringToCheck: string): boolean {
+    return parseDoyOrYmdTime(dateStringToCheck) !== null;
   }
 
   function onChangeViewMonth(event: Event) {

@@ -23,25 +23,25 @@ import type { ArgDelegator } from '../utilities/sequence-editor/extension-points
 import type { UserId } from './app';
 import type { GlobalType } from './global-type';
 
-export type ChannelDictionary = {
+export type ChannelDictionaryMetadata = {
   type: DictionaryTypes.CHANNEL;
-} & DictionaryType;
+} & DictionaryMetadata;
 
-export type CommandDictionary = {
+export type CommandDictionaryMetadata = {
   type: DictionaryTypes.COMMAND;
-} & DictionaryType;
+} & DictionaryMetadata;
 
-export type ParameterDictionary = {
+export type ParameterDictionaryMetadata = {
   type: DictionaryTypes.PARAMETER;
-} & DictionaryType;
+} & DictionaryMetadata;
 
-export type SequenceAdaptation = {
+export type SequenceAdaptationMetadata = {
   adaptation: ISequenceAdaptation;
   name: string;
   type: DictionaryTypes.ADAPTATION;
-} & DictionaryType;
+} & DictionaryMetadata;
 
-export type DictionaryType = {
+export type DictionaryMetadata = {
   created_at: string;
   id: number;
   mission: string;
@@ -68,6 +68,17 @@ export interface IOutputFormat {
   ): Promise<string>;
 }
 
+export interface IInputFormat {
+  linter?: (
+    diagnostics: Diagnostic[],
+    commandDictionary: AmpcsCommandDictionary,
+    view: EditorView,
+    node: SyntaxNode,
+  ) => Diagnostic[];
+  name: string;
+  toInputFormat?(input: string): Promise<string>;
+}
+
 export interface ISequenceAdaptation {
   argDelegator?: ArgDelegator;
   autoComplete: (
@@ -78,16 +89,7 @@ export interface ISequenceAdaptation {
   ) => (context: CompletionContext) => CompletionResult | null;
   autoIndent?: () => (context: IndentContext, pos: number) => number | null | undefined;
   globals?: GlobalType[];
-  inputFormat: {
-    linter?: (
-      diagnostics: Diagnostic[],
-      commandDictionary: AmpcsCommandDictionary,
-      view: EditorView,
-      node: SyntaxNode,
-    ) => Diagnostic[];
-    name: string;
-    toInputFormat?(input: string): Promise<string>;
-  };
+  inputFormat: IInputFormat;
   modifyOutput?: (
     output: string,
     parameterDictionaries: AmpcsParameterDictionary[],

@@ -14,12 +14,12 @@
   import { debounce } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import type { ArgTextDef, TimeTagInfo } from '../../../types/sequencing';
-  import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
+  import type { CommandInfoMapper } from '../../../utilities/sequence-editor/command-info-mapper';
+  import { addDefaultArgs, getMissingArgDefs } from '../../../utilities/sequence-editor/sequence-utils';
   import { tooltip } from '../../../utilities/tooltip';
   import AddMissingArgsButton from '../form/AddMissingArgsButton.svelte';
   import ArgEditor from '../form/ArgEditor.svelte';
   import StringEditor from '../form/StringEditor.svelte';
-  import { addDefaultArgs, getMissingArgDefs } from './../../../utilities/codemirror/codemirror-utils';
 
   export let argInfoArray: ArgTextDef[] = [];
   export let commandDef: (FswCommand | HwCommand) | null = null;

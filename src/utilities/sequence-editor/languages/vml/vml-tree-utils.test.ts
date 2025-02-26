@@ -1,9 +1,9 @@
 import type { SyntaxNode } from '@lezer/common';
 import { describe, expect, test } from 'vitest';
-import { filterNodes, nodeContents } from '../../sequence-editor/tree-utils';
+import { filterNodes, nodeContents } from '../../tree-utils';
 import { VmlLanguage } from './vml';
-import { RULE_CALL_PARAMETERS, RULE_FUNCTION_NAME, RULE_TIME_TAGGED_STATEMENT } from './vmlConstants';
-import { getArgumentPosition, VmlCommandInfoMapper } from './vmlTreeUtils';
+import { RULE_CALL_PARAMETERS, RULE_FUNCTION_NAME, RULE_TIME_TAGGED_STATEMENT } from './vml-constants';
+import { getArgumentPosition, VmlCommandInfoMapper } from './vml-tree-utils';
 
 describe('vml command info mapper', () => {
   const input = `MODULE
@@ -80,7 +80,10 @@ END_MODULE
     const cmdNode = vmlCommandInfoMapper.getContainingCommand(argNode);
     expect(vmlCommandInfoMapper.getArgumentAppendPosition(cmdNode)).toBe(inputPosition);
   });
+});
 
+// TODO: reword this description
+describe('vml command info mapper', () => {
   test('getVariables returns module variables and sequence/block parameters and variables', () => {
     const input = `MODULE
 

@@ -34,7 +34,7 @@ import {
   quoteEscape,
   removeEscapedQuotes,
   unquoteUnescape,
-} from './codemirror-utils';
+} from './sequence-utils';
 
 describe(`'Escaped quotes' from input`, () => {
   it('Should remove escaped quotes surrounding a string', () => {

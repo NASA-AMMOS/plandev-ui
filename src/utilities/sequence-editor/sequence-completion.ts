@@ -3,12 +3,12 @@ import { syntaxTree } from '@codemirror/language';
 import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
 import { RULE_SEQUENCE_NAME, TOKEN_ACTIVATE, TOKEN_LOAD } from '../../constants/seq-n-grammar-constants';
 import { getGlobals } from '../../stores/sequence-adaptation';
-import type { LibrarySequence } from '../../types/sequencing';
-import { SeqLanguage } from '../codemirror';
-import { getDefaultVariableArgs } from '../codemirror/codemirror-utils';
+import type { ISequenceAdaptation, LibrarySequence } from '../../types/sequencing';
 import { getDoyTime } from '../time';
 import { fswCommandArgDefault } from './command-dictionary';
 import { getCustomArgDef } from './extension-points';
+import { SeqLanguage } from './languages/seq-n/seq-n';
+import { getDefaultVariableArgs } from './sequence-utils';
 import { getFromAndTo, getNearestAncestorNodeOfType } from './tree-utils';
 
 type CursorInfo = {
@@ -31,6 +31,7 @@ export function sequenceCompletion(
   commandDictionary: CommandDictionary | null = null,
   parameterDictionaries: ParameterDictionary[],
   librarySequences: LibrarySequence[],
+  sequenceAdaptation?: ISequenceAdaptation,
 ) {
   return (context: CompletionContext): CompletionResult | null => {
     const nodeBefore = syntaxTree(context.state).resolveInner(context.pos, -1);
@@ -245,7 +246,13 @@ export function sequenceCompletion(
       // If TimeTag has been entered show the completion list when 1 character has been entered
       if (word.text.length > (cursor.isAfterTimeTag || cursor.isBeforeImmedOrHDWCommands === false ? 0 : 1)) {
         fswCommandsCompletions.push(
-          ...generateCommandCompletions(channelDictionary, commandDictionary, cursor, parameterDictionaries),
+          ...generateCommandCompletions(
+            channelDictionary,
+            commandDictionary,
+            cursor,
+            parameterDictionaries,
+            sequenceAdaptation,
+          ),
         );
 
         //add load, activate, ground_block, and ground_event commands
@@ -337,6 +344,7 @@ function generateCommandCompletions(
   commandDictionary: CommandDictionary | null,
   cursor: CursorInfo,
   parameterDictionaries: ParameterDictionary[],
+  sequenceAdaptation?: ISequenceAdaptation,
 ): Completion[] {
   if (commandDictionary === null) {
     return [];
@@ -357,7 +365,14 @@ function generateCommandCompletions(
       args.forEach(arg => {
         argDefaults.push(
           fswCommandArgDefault(
-            getCustomArgDef(stem, arg, argDefaults.slice(), parameterDictionaries, channelDictionary),
+            getCustomArgDef(
+              stem,
+              arg,
+              argDefaults.slice(),
+              parameterDictionaries,
+              channelDictionary,
+              sequenceAdaptation,
+            ),
             commandDictionary.enumMap,
           ),
         );

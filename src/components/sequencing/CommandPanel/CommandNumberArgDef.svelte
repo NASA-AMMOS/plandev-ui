@@ -12,7 +12,7 @@
     isFswCommandArgumentInteger,
     isFswCommandArgumentNumeric,
     isFswCommandArgumentUnsigned,
-  } from '../../../utilities/codemirror/codemirror-utils';
+  } from '../../../utilities/sequence-editor/sequence-utils';
   import Collapse from '../../Collapse.svelte';
   import CommandArgUnit from './CommandArgUnit.svelte';
 

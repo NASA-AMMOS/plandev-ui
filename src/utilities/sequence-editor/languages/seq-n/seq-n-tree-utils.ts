@@ -1,6 +1,5 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
 import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
-import { SeqLanguage } from '.';
 import {
   RULE_ARGS,
   RULE_COMMAND,
@@ -17,14 +16,15 @@ import {
   TOKEN_REPEAT_ARG,
   TOKEN_REQUEST,
   TOKEN_STRING,
-} from '../../constants/seq-n-grammar-constants';
-import { SequenceTypes } from '../../enums/sequencing';
-import { type LibrarySequence, type UserSequence } from '../../types/sequencing';
-import { fswCommandArgDefault } from '../sequence-editor/command-dictionary';
-import { validateVariables } from '../sequence-editor/sequence-linter';
-import { parseVariables } from '../sequence-editor/to-seq-json';
-import { getFromAndTo, getNearestAncestorNodeOfType } from '../sequence-editor/tree-utils';
-import type { CommandInfoMapper } from './commandInfoMapper';
+} from '../../../../constants/seq-n-grammar-constants';
+import { SequenceTypes } from '../../../../enums/sequencing';
+import { type LibrarySequence, type UserSequence } from '../../../../types/sequencing';
+import { fswCommandArgDefault } from '../../command-dictionary';
+import type { CommandInfoMapper } from '../../command-info-mapper';
+import { validateVariables } from '../../sequence-linter';
+import { parseVariables } from '../../to-seq-json';
+import { getFromAndTo, getNearestAncestorNodeOfType } from '../../tree-utils';
+import { SeqLanguage } from './seq-n';
 
 export function getNameNode(stepNode: SyntaxNode | null) {
   if (stepNode) {

@@ -1,8 +1,8 @@
 import { syntaxTree } from '@codemirror/language';
 import { EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
-import { TOKEN_COMMAND } from '../../constants/seq-n-grammar-constants';
-import { getFromAndTo } from '../sequence-editor/tree-utils';
+import { TOKEN_COMMAND } from '../../../../constants/seq-n-grammar-constants';
+import { getFromAndTo } from '../../tree-utils';
 
 export function customFoldInside(node: SyntaxNode, state: EditorState): { from: number; to: number } | null {
   switch (node.name) {

@@ -6,9 +6,9 @@ import type {
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 import type { User } from '../types/app';
 import {
-  type ChannelDictionary,
-  type CommandDictionary,
-  type ParameterDictionary,
+  type ChannelDictionaryMetadata,
+  type CommandDictionaryMetadata,
+  type ParameterDictionaryMetadata,
   type Parcel,
   type ParcelBundle,
   type ParcelToParameterDictionary,
@@ -29,11 +29,21 @@ export const parsedParameterDictionaries: Writable<Record<string, AmpcsParameter
 
 /* Subscriptions. */
 
-export const channelDictionaries = gqlSubscribable<ChannelDictionary[]>(gql.SUB_CHANNEL_DICTIONARIES, {}, [], null);
+export const channelDictionaries = gqlSubscribable<ChannelDictionaryMetadata[]>(
+  gql.SUB_CHANNEL_DICTIONARIES,
+  {},
+  [],
+  null,
+);
 
-export const commandDictionaries = gqlSubscribable<CommandDictionary[]>(gql.SUB_COMMAND_DICTIONARIES, {}, [], null);
+export const commandDictionaries = gqlSubscribable<CommandDictionaryMetadata[]>(
+  gql.SUB_COMMAND_DICTIONARIES,
+  {},
+  [],
+  null,
+);
 
-export const parameterDictionaries = gqlSubscribable<ParameterDictionary[]>(
+export const parameterDictionaries = gqlSubscribable<ParameterDictionaryMetadata[]>(
   gql.SUB_PARAMETER_DICTIONARIES,
   {},
   [],
@@ -97,7 +107,7 @@ export const userSequenceEditorColumnsWithFormBuilder: Writable<string> = writab
 /* Helper Functions */
 
 export async function getParsedChannelDictionary(
-  unparsedChannelDictionary: ChannelDictionary,
+  unparsedChannelDictionary: ChannelDictionaryMetadata,
   user: User | null,
 ): Promise<AmpcsChannelDictionary | null> {
   const id = generateId(unparsedChannelDictionary.id, unparsedChannelDictionary.updated_at);
@@ -118,7 +128,7 @@ export async function getParsedChannelDictionary(
 }
 
 export async function getParsedCommandDictionary(
-  unparsedCommandDictionary: CommandDictionary,
+  unparsedCommandDictionary: CommandDictionaryMetadata,
   user: User | null,
 ): Promise<AmpcsCommandDictionary | null> {
   const id = generateId(unparsedCommandDictionary.id, unparsedCommandDictionary.updated_at);
@@ -139,7 +149,7 @@ export async function getParsedCommandDictionary(
 }
 
 export async function getParsedParameterDictionary(
-  unparsedParameterDictionary: ParameterDictionary,
+  unparsedParameterDictionary: ParameterDictionaryMetadata,
   user: User | null,
 ): Promise<AmpcsParameterDictionary | null> {
   const id = generateId(unparsedParameterDictionary.id, unparsedParameterDictionary.updated_at);

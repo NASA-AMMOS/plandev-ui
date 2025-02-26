@@ -3,16 +3,16 @@
 <script lang="ts">
   import type { FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
   import { isArray } from 'lodash-es';
-  import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
   import { getTarget } from '../../../utilities/generic';
-  import Collapse from '../../Collapse.svelte';
+  import type { CommandInfoMapper } from '../../../utilities/sequence-editor/command-info-mapper';
   import {
     isFswCommandArgumentFloat,
     isFswCommandArgumentInteger,
     isFswCommandArgumentRepeat,
     isFswCommandArgumentUnsigned,
     isFswCommandArgumentVarString,
-  } from './../../../utilities/codemirror/codemirror-utils';
+  } from '../../../utilities/sequence-editor/sequence-utils';
+  import Collapse from '../../Collapse.svelte';
 
   export let argDef: FswCommandArgument;
   export let commandInfoMapper: CommandInfoMapper;
@@ -29,41 +29,41 @@
   $: formattedRange = formatRange(argDef);
   $: isSymbolAllowed = !isFswCommandArgumentRepeat(argDef);
 
-  function compactType(argDef: FswCommandArgument): string {
-    if (isFswCommandArgumentUnsigned(argDef)) {
-      return `U${argDef.bit_length}`;
-    } else if (isFswCommandArgumentInteger(argDef)) {
-      return `I${argDef.bit_length}`;
-    } else if (isFswCommandArgumentFloat(argDef)) {
-      return `F${argDef.bit_length}`;
-    } else if (isFswCommandArgumentVarString(argDef)) {
+  function compactType(argumentDefinition: FswCommandArgument): string {
+    if (isFswCommandArgumentUnsigned(argumentDefinition)) {
+      return `U${argumentDefinition.bit_length}`;
+    } else if (isFswCommandArgumentInteger(argumentDefinition)) {
+      return `I${argumentDefinition.bit_length}`;
+    } else if (isFswCommandArgumentFloat(argumentDefinition)) {
+      return `F${argumentDefinition.bit_length}`;
+    } else if (isFswCommandArgumentVarString(argumentDefinition)) {
       return `String`;
     }
 
     return '';
   }
 
-  function formatRange(argDef: FswCommandArgument): string {
-    if ('range' in argDef && argDef.range !== null && !isArray(argDef.range)) {
-      return `[${argDef.range.min} – ${argDef.range.max}]`;
+  function formatRange(argumentDefinition: FswCommandArgument): string {
+    if ('range' in argumentDefinition && argumentDefinition.range !== null && !isArray(argumentDefinition.range)) {
+      return `[${argumentDefinition.range.min} – ${argumentDefinition.range.max}]`;
     }
     return '';
   }
 
-  function getArgTitle(argDef: FswCommandArgument, typeInfo: string): string {
+  function getArgTitle(argumentDefinition: FswCommandArgument, typeString: string): string {
     if (
-      isFswCommandArgumentRepeat(argDef) &&
-      typeof argDef.repeat?.max === 'number' &&
-      typeof argDef.repeat?.min === 'number'
+      isFswCommandArgumentRepeat(argumentDefinition) &&
+      typeof argumentDefinition.repeat?.max === 'number' &&
+      typeof argumentDefinition.repeat?.min === 'number'
     ) {
-      return `${argDef.name} - [${argDef.repeat?.min}, ${argDef.repeat?.max}] sets`;
+      return `${argumentDefinition.name} - [${argumentDefinition.repeat?.min}, ${argumentDefinition.repeat?.max}] sets`;
     }
 
-    const bracketedTypeInfo = typeInfo && ` [${typeInfo}]`;
-    const base = `${argDef.name}${bracketedTypeInfo} ${formatRange(argDef)}`;
+    const bracketedTypeInfo = typeString ? ` [${typeString}]` : '';
+    const base = `${argumentDefinition.name}${bracketedTypeInfo} ${formatRange(argumentDefinition)}`;
 
-    if ('units' in argDef) {
-      return `${base} – (${argDef.units})`;
+    if ('units' in argumentDefinition) {
+      return `${base} – (${argumentDefinition.units})`;
     }
 
     return base;

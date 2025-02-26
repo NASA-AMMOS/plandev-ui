@@ -5,7 +5,7 @@
   import type { CommandDictionary, FswCommand, HwCommand } from '@nasa-jpl/aerie-ampcs';
   import type { EditorView } from 'codemirror';
   import type { ArgTextDef, TimeTagInfo } from '../../../types/sequencing';
-  import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
+  import type { CommandInfoMapper } from '../../../utilities/sequence-editor/command-info-mapper';
   import Tab from '../../ui/Tabs/Tab.svelte';
   import TabPanel from '../../ui/Tabs/TabPanel.svelte';
   import Tabs from '../../ui/Tabs/Tabs.svelte';

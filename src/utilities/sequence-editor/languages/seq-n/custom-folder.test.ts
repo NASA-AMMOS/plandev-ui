@@ -1,7 +1,7 @@
 import { EditorState } from '@codemirror/state';
 import { describe, expect, test } from 'vitest';
 import { foldRequest, foldSteps, foldVariables } from './custom-folder';
-import { parser } from './sequence.grammar';
+import { parser } from './seq-n.grammar';
 
 const COMMANDS = [
   'Command',
@@ -33,7 +33,7 @@ VARIABLE INT "MIN...MAX | ...MAX | MIN..." "VALUE_1, VALUE_2, ..."
 
 const LOCALS = [
   `@LOCALS_BEGIN
-VARIABLE INT 
+VARIABLE INT
 TEST FLOAT
 @LOCALS_END`,
 ];

@@ -4,11 +4,10 @@ import { Decoration, ViewPlugin, type DecorationSet, type ViewUpdate } from '@co
 import type { SyntaxNode } from '@lezer/common';
 import { styleTags, tags as t } from '@lezer/highlight';
 import type { ChannelDictionary, CommandDictionary } from '@nasa-jpl/aerie-ampcs';
-import type { ISequenceAdaptation } from '../../../types/sequencing';
-import { getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
-import { blockMark } from '../themes/block';
-import { parser } from '../vml/vml.grammar';
-import { vmlAutoComplete } from './vmlAdaptation';
+import type { ISequenceAdaptation } from '../../../../types/sequencing';
+import { blockMark } from '../../../codemirror/themes/block';
+import { getNearestAncestorNodeOfType } from '../../tree-utils';
+import { vmlAutoComplete } from './vml-adaptation';
 import {
   RULE_TIME_TAGGED_STATEMENT,
   TOKEN_CALL,
@@ -27,8 +26,9 @@ import {
   TOKEN_THEN,
   TOKEN_TO,
   TOKEN_WHILE,
-} from './vmlConstants';
-import { computeBlocks, isBlockCommand, vmlBlockFolder } from './vmlFolder';
+} from './vml-constants';
+import { computeBlocks, isBlockCommand, vmlBlockFolder } from './vml-folder';
+import { parser } from './vml.grammar';
 
 const VML_LANGUAGE_NAME = 'vml';
 

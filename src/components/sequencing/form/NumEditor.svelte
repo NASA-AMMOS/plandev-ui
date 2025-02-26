@@ -8,7 +8,7 @@
   // @digit ("_" | @digit)* "n" |
 
   import type { NumberArg } from '../../../types/sequencing';
-  import { isFswCommandArgumentUnsigned } from './../../../utilities/codemirror/codemirror-utils';
+  import { isFswCommandArgumentUnsigned } from '../../../utilities/sequence-editor/sequence-utils';
 
   export let argDef: NumberArg;
   export let initVal: number;

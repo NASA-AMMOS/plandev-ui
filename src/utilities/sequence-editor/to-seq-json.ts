@@ -29,9 +29,9 @@ import type {
 } from '@nasa-jpl/seq-json-schema/types';
 import { TOKEN_ACTIVATE, TOKEN_COMMAND, TOKEN_LOAD, TOKEN_REPEAT_ARG } from '../../constants/seq-n-grammar-constants';
 import { TimeTypes } from '../../enums/time';
-import { removeEscapedQuotes, unquoteUnescape } from '../codemirror/codemirror-utils';
 import { getBalancedDuration, getDurationTimeComponents, parseDurationString, validateTime } from '../time';
 import { logInfo } from './logger';
+import { removeEscapedQuotes, unquoteUnescape } from './sequence-utils';
 
 /**
  * Returns a minimal valid Seq JSON object.

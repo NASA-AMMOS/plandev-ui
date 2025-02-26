@@ -6,6 +6,7 @@
   import { base } from '$app/paths';
   import type { ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import { SearchParameters } from '../../enums/searchParameters';
+  import { sequenceAdaptation } from '../../stores/sequence-adaptation';
   import {
     parameterDictionaries as parameterDictionariesStore,
     parcelToParameterDictionaries,
@@ -118,6 +119,7 @@
         fileNameAndContents.contents,
         parsedParameterDictionaries.filter((pd): pd is ParameterDictionary => pd !== null),
         parsedChannelDictionary,
+        $sequenceAdaptation,
       );
 
       if (sequence !== undefined) {

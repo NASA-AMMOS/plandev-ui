@@ -4,7 +4,7 @@
   import type { SyntaxNode } from '@lezer/common';
   import type { CommandDictionary, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
   import type { ArgTextDef } from '../../../types/sequencing';
-  import type { CommandInfoMapper } from '../../../utilities/codemirror/commandInfoMapper';
+  import type { CommandInfoMapper } from '../../../utilities/sequence-editor/command-info-mapper';
   import {
     getMissingArgDefs,
     isFswCommandArgumentBoolean,
@@ -14,7 +14,7 @@
     isNumberArg,
     quoteEscape,
     unquoteUnescape,
-  } from './../../../utilities/codemirror/codemirror-utils';
+  } from '../../../utilities/sequence-editor/sequence-utils';
   import AddMissingArgsButton from './AddMissingArgsButton.svelte';
   import ArgTitle from './ArgTitle.svelte';
   import BooleanEditor from './BooleanEditor.svelte';

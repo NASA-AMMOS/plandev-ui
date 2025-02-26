@@ -1,9 +1,9 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
 import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
-import { filterEmpty } from '../../generic';
-import { filterNodesToArray, getChildrenNode, getNearestAncestorNodeOfType } from '../../sequence-editor/tree-utils';
-import type { CommandInfoMapper } from '../commandInfoMapper';
-import { getDefaultArgumentValue } from './vmlAdaptation';
+import { filterEmpty } from '../../../generic';
+import type { CommandInfoMapper } from '../../command-info-mapper';
+import { filterNodesToArray, getChildrenNode, getNearestAncestorNodeOfType } from '../../tree-utils';
+import { getDefaultArgumentValue } from './vml-adaptation';
 import {
   GROUP_STATEMENT_SUB,
   RULE_BYTE_ARRAY,
@@ -29,7 +29,7 @@ import {
   TOKEN_HEX_CONST,
   TOKEN_INT_CONST,
   TOKEN_STRING_CONST,
-} from './vmlConstants';
+} from './vml-constants';
 
 export class VmlCommandInfoMapper implements CommandInfoMapper {
   formatArgumentArray(values: string[], commandNode: SyntaxNode | null): string {
