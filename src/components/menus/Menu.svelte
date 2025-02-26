@@ -12,7 +12,6 @@
   };
 
   export function hideAllMenus(type?: MenuType) {
-    // TODO: https://github.com/sveltejs/language-tools/issues/1229
     if (type) {
       hideFns[type].forEach(hide => {
         hide();
