@@ -10,15 +10,7 @@
   export let tag: Partial<Tag>;
 </script>
 
-<Chip
-  {ariaRole}
-  {disabled}
-  color={tag.color}
-  className="tag st-typography-medium"
-  label={tag.name}
-  {removable}
-  on:click
->
+<Chip {ariaRole} {disabled} color={tag.color} className="tag font-medium" label={tag.name} {removable} on:click>
   <slot />
 </Chip>
 
