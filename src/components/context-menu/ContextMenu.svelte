@@ -5,7 +5,6 @@
   const hideFns: HideFns = new Set<() => void>();
 
   export function hideAllMenus() {
-    // TODO: https://github.com/sveltejs/language-tools/issues/1229
     hideFns.forEach(hideFn => {
       hideFn();
     });
