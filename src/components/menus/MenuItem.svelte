@@ -20,6 +20,7 @@
       event.stopPropagation();
     } else {
       event.preventDefault();
+      event.stopPropagation();
       dispatch('click', event);
     }
   }
