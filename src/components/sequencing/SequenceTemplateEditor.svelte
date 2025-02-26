@@ -143,7 +143,8 @@
   $: isInVmlMode = inVmlMode(sequenceName);
 
   $: {
-    if (editorSequenceView) {
+    // Since this insertion will move the cursor back to position 0, test if the content actually changed first
+    if (editorSequenceView && sequenceDefinition !== editorSequenceView.state.doc.toString()) {
       // insert sequence
       editorSequenceView.dispatch({
         changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
