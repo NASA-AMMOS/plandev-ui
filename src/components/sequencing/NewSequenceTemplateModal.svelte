@@ -50,7 +50,7 @@
 
       <!-- TODO: make this a picker of some kind, rather than a raw ID input -->
       <label for="parcel_id">Parcel ID</label>
-      <input bind:value={parcel_id} autocomplete="off" class="st-input w-100" id="parcel_id" required type="text" />
+      <input bind:value={parcel_id} autocomplete="off" class="st-input w-100" id="parcel_id" required type="number" />
     </fieldset>
   </ModalContent>
 
