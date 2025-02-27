@@ -3,9 +3,9 @@
 <script lang="ts">
   import type { ICellRendererParams } from 'ag-grid-community';
   import { filteredExpansionSequences } from '../../stores/expansion';
-  import { modelId } from '../../stores/plan';
+  import { plan } from '../../stores/plan';
   import { expandedTemplates, parcels } from '../../stores/sequencing';
-  import { simulationDatasetId } from '../../stores/simulation';
+  import { simulationDatasetLatestId } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExpandedTemplate } from '../../types/sequencing';
