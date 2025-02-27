@@ -25,22 +25,22 @@ import type { GlobalType } from './global-type';
 import type { ActivityLayerFilter } from './timeline';
 
 export type ExpandedTemplate = {
-  created_at: string,
-  expanded_template: object,
-  filter_id: number,
-  id: number,
-  simulation_dataset_id: number,
-}
+  created_at: string;
+  expanded_template: object;
+  filter_id: number;
+  id: number;
+  simulation_dataset_id: number;
+};
 
 export type SequenceTemplate = {
-  activity_type: string,
-  id: number,
-  language: string,
-  model_id: number,
-  name: string,
-  owner: string,
-  parcel_id: number,
-  template_definition: string,
+  activity_type: string;
+  id: number;
+  language: string;
+  model_id: number;
+  name: string;
+  owner: string;
+  parcel_id: number;
+  template_definition: string;
 };
 
 export type SequenceActivityFilter = ActivityLayerFilter;
@@ -55,19 +55,19 @@ export type SequenceFilter = {
 export type SequenceFilterInsertInput = Pick<SequenceFilter, 'filter' | 'model_id' | 'name'>;
 
 export type SequenceRun = {
-  fragments: SequenceFragment[],
-  id: number,
-  sequenceFilterId: number,
+  fragments: SequenceFragment[];
+  id: number;
+  sequenceFilterId: number;
 };
 
 export type SequenceFragment = {
-  activityId: number,
-  createdAt: string,
-  endTime: string,
-  id: number,
-  output: string,
-  planId: number,
-  startTime: string,
+  activityId: number;
+  createdAt: string;
+  endTime: string;
+  id: number;
+  output: string;
+  planId: number;
+  startTime: string;
 };
 
 export type ChannelDictionaryMetadata = {

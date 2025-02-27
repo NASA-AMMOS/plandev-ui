@@ -1,47 +1,41 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { ICellRendererParams } from "ag-grid-community";
-  import type { User } from "../../types/app";
-  import type { DataGridColumnDef, DataGridRowDoubleClick } from "../../types/data-grid";
-  import type { SequenceActivityFilter, SequenceFilter } from "../../types/sequencing";
+  import type { ICellRendererParams } from 'ag-grid-community';
+  import type { User } from '../../types/app';
+  import type { DataGridColumnDef, DataGridRowDoubleClick, RowId } from '../../types/data-grid';
+  import type { SequenceActivityFilter, SequenceFilter } from '../../types/sequencing';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
-  import RowVirtualizerFixed from "../RowVirtualizerFixed.svelte";
-  import BulkActionDataGrid from "../ui/DataGrid/BulkActionDataGrid.svelte";
-  import { showEditorModal } from "../../utilities/modal";
-  import effects from "../../utilities/effects";
-  import { featurePermissions } from "../../utilities/permissions";
-  import { plan } from "../../stores/plan";
-  import { sequenceFilters, sequencingError } from "../../stores/sequencing";
-  import { simulationDatasetLatest, spans } from "../../stores/simulation";
-  import { permissionHandler } from "../../utilities/permissionHandler";
+  import RowVirtualizerFixed from '../RowVirtualizerFixed.svelte';
+  import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
+  import { showEditorModal } from '../../utilities/modal';
+  import effects from '../../utilities/effects';
+  import { featurePermissions } from '../../utilities/permissions';
+  import { plan } from '../../stores/plan';
+  import { sequenceFilters, sequencingError } from '../../stores/sequencing';
+  import { simulationDatasetLatest } from '../../stores/simulation';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import ActivityFilterBuilder from '../timeline/form/TimelineEditor/ActivityFilterBuilder.svelte';
-  import { tooltip } from "../../utilities/tooltip";
-  import type { ExpansionSequence } from "../../types/expansion";
-  import { filteredExpansionSequences } from "../../stores/expansion";
+  import { tooltip } from '../../utilities/tooltip';
+  import type { ExpansionSequence } from '../../types/expansion';
+  import { filteredExpansionSequences } from '../../stores/expansion';
+  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
 
   export let user: User | null;
 
   type CellRendererParamsActionsFilters = {
-    deleteSequenceFilter: (sequence: SequenceFilter) => void;
-    openSequenceFilter: (sequence: SequenceFilter, user: User) => void;
+    deleteSequenceFilter: (sequence: SequenceFilter, user: User) => void;
+    openSequenceFilter: (sequence: SequenceFilter) => void;
   };
   type CellRendererParamsActionsSequences = {
-
+    deleteSequence: (sequence: ExpansionSequence, user: User) => void;
+    openSequence: (sequence: ExpansionSequence) => void;
   };
   type CellRendererParamsFilters = ICellRendererParams<SequenceFilter> & CellRendererParamsActionsFilters;
   type CellRendererParamsSequences = ICellRendererParams<ExpansionSequence> & CellRendererParamsActionsSequences;
 
   const baseColumnDefsFilters: DataGridColumnDef[] = [
-    {
-      field: 'id',
-      filter: 'number',
-      headerName: 'ID',
-      resizable: true,
-      sortable: true,
-      width: 55,
-    },
     {
       field: 'name',
       filter: 'text',
@@ -49,7 +43,7 @@
       resizable: true,
       sortable: true,
       width: 100,
-    }
+    },
   ];
   const baseColumnDefsSequences: DataGridColumnDef[] = [
     {
@@ -58,11 +52,10 @@
       headerName: 'Sequence ID',
       resizable: true,
       sortable: true,
-      width: 55
-    }
-  ]
+      width: 55,
+    },
+  ];
   const createPermissionErrorFilters = 'You do not have permission to create a sequence filter';
-  const createPermissionErrorSequences = 'You do not have permission to create an expansion sequence';
   const deletePermissionErrorFilters = 'You do not have permission to delete sequence filter';
   const deletePermissionErrorSequences = 'You do not have permission to delete an expansion sequence';
 
@@ -73,7 +66,6 @@
   let hasDeletePermissionFilters: boolean = false;
   let hasDeletePermissionSequences: boolean = false;
   let hasCreatePermissionFilters: boolean = false;
-  let hasCreatePermissionSequences: boolean = false;
   let selectedSequenceFilterId: number | null = null;
   let selectedSequenceId: string | null = null;
   let selectedSequenceFilterIds: number[] = [];
@@ -92,14 +84,14 @@
         actionsDiv.className = 'actions-cell';
         new DataGridActions({
           props: {
-            deleteCallback: params.deleteSequenceFilter,
+            deleteCallback: data => user && params.deleteSequenceFilter(data, user),
             deleteTooltip: {
               content: 'Delete Sequence Filter',
               placement: 'bottom',
             },
             hasDeletePermission: hasDeletePermissionFilters,
             rowData: params.data,
-            viewCallback: data => user && params.openSequenceFilter(data, user),
+            viewCallback: params.openSequenceFilter,
             viewTooltip: {
               content: 'Open Sequence Filter',
               placement: 'bottom',
@@ -125,6 +117,42 @@
 
   $: columnDefsSequences = [
     ...columnDefsSequences,
+    {
+      cellClass: 'action-cell-container',
+      cellRenderer: (params: CellRendererParamsSequences) => {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'actions-cell';
+        new DataGridActions({
+          props: {
+            deleteCallback: data => user && params.deleteSequence(data, user),
+            deleteTooltip: {
+              content: 'Delete Sequence',
+              placement: 'bottom',
+            },
+            hasDeletePermission: hasDeletePermissionSequences,
+            rowData: params.data,
+            viewCallback: data => user && params.openSequence(data),
+            viewTooltip: {
+              content: 'Open Sequence',
+              placement: 'bottom',
+            },
+          },
+          target: actionsDiv,
+        });
+        return actionsDiv;
+      },
+      cellRendererParams: {
+        deleteSequence,
+        openSequence,
+      } as CellRendererParamsActionsSequences,
+      field: 'actions',
+      headerName: '',
+      resizable: false,
+      sortable: false,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 55,
+    }
   ];
 
   $: if (user !== null && $plan !== null) {
@@ -134,12 +162,20 @@
 
   $: currentModelSequenceFilters = $sequenceFilters.filter(seqFilter => seqFilter.model_id === $plan?.model_id);
 
+  function deleteSequence(sequence: ExpansionSequence) {
+    effects.deleteExpansionSequence(sequence, user);
+  }
+
   function deleteSequenceFilter(sequenceFilter: SequenceFilter) {
     effects.deleteSequenceFilters([sequenceFilter.id], user);
   }
 
+  function openSequence(sequence: ExpansionSequence) {
+    console.log("TODO");
+  }
+
   function openSequenceFilter(sequenceFilter: SequenceFilter) {
-    showEditorModal(sequenceFilter, "json", `Sequence Filter ID: ${sequenceFilter.id}`, true);
+    showEditorModal(sequenceFilter, 'json', `Sequence Filter ID: ${sequenceFilter.id}`, true);
   }
 
   function onBulkDeleteItemsFilters(event: CustomEvent<SequenceFilter[]>) {
@@ -150,8 +186,12 @@
     }
   }
 
-  function onBulkDeleteItemsSequences(event: CustomEvent<ExpansionSequence[]>) {
-    console.log("TODO");
+  function onDeleteSequence(event: CustomEvent<RowId[]>) {
+    const id = event.detail[0] as string;
+    const selectedSequence: ExpansionSequence | undefined = $filteredExpansionSequences.find(sequence => sequence.seq_id === id);
+    if (selectedSequence !== undefined) {
+      effects.deleteExpansionSequence(selectedSequence, user);
+    }
   }
 
   function onRowDoubleClickedFilters(event: CustomEvent<DataGridRowDoubleClick<SequenceFilter>>) {
@@ -159,7 +199,7 @@
       detail: { data: clickedRow },
     } = event;
     if (!$simulationDatasetLatest) {
-      sequencingError.set("No latest simulation found - please run simulation before templating!");
+      sequencingError.set('No latest simulation found - please run simulation before templating!');
       return;
     }
     if ($plan !== null) {
@@ -168,13 +208,13 @@
         $simulationDatasetLatest.id,
         $plan.start_time_doy,
         $plan.end_time_doy,
-        user
+        user,
       );
     }
   }
 
   function onRowDoubleClickedSequences(event: CustomEvent<DataGridRowDoubleClick<ExpansionSequence>>) {
-    console.log("TODO");
+    console.log('TODO');
   }
 
   function onToggleFilterMenu() {
@@ -269,21 +309,18 @@
   </div>
   <div class="sequencing-filter-table">
     <span class="st-typography-label">Expansion Sequences</span>
-    <BulkActionDataGrid
+    <SingleActionDataGrid
       bind:dataGrid={dataGridSequences}
       bind:selectedItemId={selectedSequenceId}
-      bind:selectedItemIds={selectedSequenceIds}
       getRowId={rowData => rowData.seq_id}
       columnDefs={columnDefsSequences}
       hasDeletePermission={hasDeletePermissionSequences}
-      hasDeletePermissionError={deletePermissionErrorSequences}
       items={$filteredExpansionSequences}
-      pluralItemDisplayText="Sequences"
       scrollToSelection={true}
-      singleItemDisplayText="Sequence"
+      itemDisplayText="Expansion Sequence"
       {user}
-      on:bulkDeleteItems={e => onBulkDeleteItemsSequences(e)}
-      on:rowDoubleClicked={e => onRowDoubleClickedSequences(e)}
+      on:deleteItem={onDeleteSequence}
+      on:rowDoubleClicked={onRowDoubleClickedSequences}
     />
   </div>
 </div>
@@ -301,11 +338,11 @@
   }
 
   hr {
-  display: block;
-  height: 1px;
-  border: 0;
-  border-top: 1px solid #ccc;
-  margin: 1em 0;
-  padding: 0;
-}
+    display: block;
+    height: 1px;
+    border: 0;
+    border-top: 1px solid #ccc;
+    margin: 1em 0;
+    padding: 0;
+  }
 </style>

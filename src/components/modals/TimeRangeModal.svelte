@@ -24,7 +24,7 @@
 
   const dispatch = createEventDispatcher<{
     close: void;
-    confirm: { timeRangeEnd: string, timeRangeStart: string }
+    confirm: { timeRangeEnd: string; timeRangeStart: string };
   }>();
 
   $: startTimeField = field<string>(defaultStartTime, [required, $plugins.time.primary.validate]);
@@ -55,12 +55,14 @@
   </ModalContent>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" on:click={() => dispatch('confirm', { timeRangeStart: $startTimeField.value, timeRangeEnd: $endTimeField.value })}>
+    <button
+      class="st-button"
+      on:click={() => dispatch('confirm', { timeRangeStart: `${$startTimeField.value}Z`, timeRangeEnd: `${$endTimeField.value}Z` })}
+    >
       Confirm
     </button>
   </ModalFooter>
 </Modal>
 
 <style>
-
 </style>

@@ -1109,7 +1109,12 @@ export async function showUploadViewModal(): Promise<ModalElementValue<{ definit
 /**
  * Shows an EditorModal with the supplied arguments.
  */
-export async function showEditorModal(content: object, language: string, modalTitle: string, readOnly: boolean, ): Promise<ModalElementValue> {
+export async function showEditorModal(
+  content: object,
+  language: string,
+  modalTitle: string,
+  readOnly: boolean,
+): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
@@ -1134,7 +1139,10 @@ export async function showEditorModal(content: object, language: string, modalTi
 /**
  * Shows a TimeRangeModal with the supplied arguments.
  */
-export async function showTimeRangeModal(defaultStartTime: string, defaultEndTime: string): Promise<ModalElementValue<{ timeRangeEnd: string | null, timeRangeStart: string | null }>> {
+export async function showTimeRangeModal(
+  defaultStartTime: string,
+  defaultEndTime: string,
+): Promise<ModalElementValue<{ timeRangeEnd: string | null; timeRangeStart: string | null }>> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
@@ -1148,9 +1156,9 @@ export async function showTimeRangeModal(defaultStartTime: string, defaultEndTim
           target.resolve = null;
           resolve({ confirm: false });
           timeRangeModal.$destroy();
-        })
+        });
 
-        timeRangeModal.$on('confirm', (e: CustomEvent<{ timeRangeEnd: string, timeRangeStart: string }>) => {
+        timeRangeModal.$on('confirm', (e: CustomEvent<{ timeRangeEnd: string; timeRangeStart: string }>) => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });

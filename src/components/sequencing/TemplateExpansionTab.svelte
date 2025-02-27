@@ -1,24 +1,20 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { expandedTemplates, parcels } from "../../stores/sequencing";
-  import type { User } from "../../types/app";
-  import type { ExpandedTemplate } from "../../types/sequencing";
-  import RowVirtualizerFixed from "../RowVirtualizerFixed.svelte";
-  import SingleActionDataGrid from "../ui/DataGrid/SingleActionDataGrid.svelte";
+  import { expandedTemplates, parcels } from '../../stores/sequencing';
+  import type { User } from '../../types/app';
+  import type { ExpandedTemplate } from '../../types/sequencing';
+  import RowVirtualizerFixed from '../RowVirtualizerFixed.svelte';
+  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
-  import type { DataGridColumnDef } from "../../types/data-grid";
-  import type { ICellRendererParams } from "ag-grid-community";
+  import type { DataGridColumnDef } from '../../types/data-grid';
+  import type { ICellRendererParams } from 'ag-grid-community';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
-  import { showEditorModal } from "../../utilities/modal";
-  import type { FieldStore } from "../../types/form";
-  import { plugins } from "../../stores/plugins";
-  import { field } from "../../stores/form";
-  import { required } from "../../utilities/validators";
-  import { convertDoyToYmd, formatDate } from "../../utilities/time";
-  import { plan } from "../../stores/plan";
-  import { filteredExpansionSequences } from "../../stores/expansion";
-  import effects from "../../utilities/effects";
+  import { showEditorModal } from '../../utilities/modal';
+  import { plan } from '../../stores/plan';
+  import { filteredExpansionSequences } from '../../stores/expansion';
+  import effects from '../../utilities/effects';
+  import { simulationDatasetLatestId } from '../../stores/simulation';
 
   export let user: User | null;
 
@@ -77,15 +73,15 @@
             viewCallback: data => user && params.openExpandedTemplate(data),
             viewTooltip: {
               content: 'Open Expanded Template',
-              placement: 'bottom'
-            }
+              placement: 'bottom',
+            },
           },
-          target: actionsDiv
+          target: actionsDiv,
         });
         return actionsDiv;
       },
       cellRendererParams: {
-        openExpandedTemplate
+        openExpandedTemplate,
       } as CellRendererParamsActions,
       field: 'actions',
       headerName: '',
@@ -93,32 +89,26 @@
       sortable: false,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 20
-    }
-  ]
+      width: 20,
+    },
+  ];
 
   function openExpandedTemplate(expandedTemplate: ExpandedTemplate) {
-    showEditorModal(expandedTemplate.expanded_template, "json", `Expanded Template ID : ${expandedTemplate.id}`, true);
+    showEditorModal(expandedTemplate.expanded_template, 'json', `Expanded Template ID : ${expandedTemplate.id}`, true);
   }
 
   function handleTemplating() {
-    if (selectedSequence !== null && selectedParcel !== null) {
-      effects.expandTemplates(
-        selectedSequence,
-        selectedParcel,
-        user
-      );
+    if (selectedSequence !== null && selectedParcel !== null && $plan !== null) {
+      // TODO: Support sending multiple sequences
+      effects.expandTemplates([selectedSequence], $simulationDatasetLatestId, $plan.model_id, selectedParcel, user);
     }
   }
-
 </script>
 
 <RowVirtualizerFixed />
 <div class="sequencing-body">
   <fieldset>
-    <label for="sequence" class="sequence-selector">
-      Sequence
-    </label>
+    <label for="sequence" class="sequence-selector"> Sequence </label>
     <select
       bind:value={selectedSequence}
       class="st-select w-100"
@@ -128,21 +118,14 @@
       <option value={null} />
       {#each $filteredExpansionSequences as sequence}
         <option value={sequence.seq_id}>
-         {sequence.seq_id}
+          {sequence.seq_id}
         </option>
       {/each}
     </select>
   </fieldset>
   <fieldset>
-    <label for="parcel" class="parcel-selector">
-      Parcel
-    </label>
-    <select
-      bind:value={selectedParcel}
-      class="st-select w-100"
-      disabled={!$parcels}
-      name="parcels"
-    >
+    <label for="parcel" class="parcel-selector"> Parcel </label>
+    <select bind:value={selectedParcel} class="st-select w-100" disabled={!$parcels} name="parcels">
       <option value={null} />
       {#each $parcels as parcel}
         <option value={parcel.id}>
@@ -152,12 +135,7 @@
     </select>
   </fieldset>
   <fieldset>
-    <button
-      class="st-button primary w-100"
-      on:click={handleTemplating}
-    >
-      Run Templating
-    </button>
+    <button class="st-button primary w-100" on:click={handleTemplating}> Run Templating </button>
   </fieldset>
   <hr />
   <div class="expanded-templates-table">
@@ -166,7 +144,7 @@
       bind:dataGrid={expandedTemplateDataGrid}
       bind:selectedItemId={selectedExpandedTemplateId}
       getRowId={rowData => rowData.id}
-      columnDefs={columnDefs}
+      {columnDefs}
       itemDisplayText="Expanded Template"
       items={$expandedTemplates}
       scrollToSelection={true}
