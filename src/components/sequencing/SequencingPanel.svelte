@@ -5,15 +5,17 @@
   import type { ViewGridSection } from '../../types/view';
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
+  import Tab from '../ui/Tabs/Tab.svelte';
   import TabPanel from '../ui/Tabs/TabPanel.svelte';
   import Tabs from '../ui/Tabs/Tabs.svelte';
-  import Tab from '../ui/Tabs/Tab.svelte';
   import SequenceFiltersTab from './SequenceFiltersTab.svelte';
   import TemplateExpansionTab from './TemplateExpansionTab.svelte';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
 </script>
+
+<!--TODO: dirty bit handling-->
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">

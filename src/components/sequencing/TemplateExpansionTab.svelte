@@ -1,20 +1,20 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { expandedTemplates, parcels } from '../../stores/sequencing';
-  import type { User } from '../../types/app';
-  import type { ExpandedTemplate } from '../../types/sequencing';
-  import RowVirtualizerFixed from '../RowVirtualizerFixed.svelte';
-  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
-  import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
-  import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ICellRendererParams } from 'ag-grid-community';
-  import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
-  import { showEditorModal } from '../../utilities/modal';
-  import { plan } from '../../stores/plan';
   import { filteredExpansionSequences } from '../../stores/expansion';
+  import { modelId } from '../../stores/plan';
+  import { expandedTemplates, parcels } from '../../stores/sequencing';
+  import { simulationDatasetId } from '../../stores/simulation';
+  import type { User } from '../../types/app';
+  import type { DataGridColumnDef } from '../../types/data-grid';
+  import type { ExpandedTemplate } from '../../types/sequencing';
   import effects from '../../utilities/effects';
-  import { simulationDatasetLatestId } from '../../stores/simulation';
+  import { showEditorModal } from '../../utilities/modal';
+  import RowVirtualizerFixed from '../RowVirtualizerFixed.svelte';
+  import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
+  import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
+  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
 
   export let user: User | null;
 
@@ -94,7 +94,13 @@
   ];
 
   function openExpandedTemplate(expandedTemplate: ExpandedTemplate) {
-    showEditorModal(expandedTemplate.expanded_template, 'json', `Expanded Template ID : ${expandedTemplate.id}`, true);
+    // TODO: fix editor to parse correctly
+    showEditorModal(
+      expandedTemplate.expanded_template,
+      'typescript',
+      `Expanded Template ID : ${expandedTemplate.id}`,
+      true,
+    );
   }
 
   function handleTemplating() {
