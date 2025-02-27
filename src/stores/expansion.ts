@@ -35,9 +35,9 @@ export const savingExpansionRule: Writable<boolean> = writable(false);
 export const savingExpansionSet: Writable<boolean> = writable(false);
 
 // this store is split into two parts. One is the writable one, written to in effects. It reflects when expansion is Incomplete, Complete, or Failed
-// the aggregate one, used for actual display, factors in the writable one as well as whether the plan has been modified (like simulationStatus), to 
+// the aggregate one, used for actual display, factors in the writable one as well as whether the plan has been modified (like simulationStatus), to
 //    let the user know if simulation should be re-run.
-// We also added behavior that, on resimulation, expansion is still marked as modified and needing resimulation. This can and should be negotiated 
+// We also added behavior that, on resimulation, expansion is still marked as modified and needing resimulation. This can and should be negotiated
 //    because it's not _entirely_ correct. As a matter of fact, a comprehensive status that reflects all sequences having been re-expanded, especially
 //    given that the old implementation has sequencing run on-the-fly, is a little more intense and should be discussed.
 export const planExpansionStatusWritable: Writable<Status | null> = writable(null);
@@ -47,21 +47,21 @@ export const planExpansionStatus: Readable<Status | null> = derived(
     if (!$planExpansionStatusWritable || $planExpansionStatusWritable === Status.Complete) {
       // reflect if it has or hasn't been modified
       if (
-        $simulationDataset && $simulation &&
+        $simulationDataset &&
+        $simulation &&
         ($planRevision !== $simulationDataset.plan_revision ||
-        $simulation.revision !== $simulationDataset.simulation_revision)
+          $simulation.revision !== $simulationDataset.simulation_revision)
       ) {
         return Status.Modified;
-      }
-      else {
-        return $planExpansionStatusWritable
+      } else {
+        return $planExpansionStatusWritable;
       }
     }
     // otherwise, we are in the process of simulating (or simulation has been re-run, but this has yet to be updated); just show that
-    return $planExpansionStatusWritable
+    return $planExpansionStatusWritable;
   },
-  null
-)
+  null,
+);
 
 export const selectedExpansionSetId: Writable<number | null> = writable(null);
 

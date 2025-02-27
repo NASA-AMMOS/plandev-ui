@@ -294,7 +294,7 @@ async function changeUserRole(role: UserRole): Promise<void> {
 type GQLKeys = keyof typeof gql;
 const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => boolean> = {
   APPLY_ACTIVITIES_BY_FILTER: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.APPLY_ACTIVITIES_BY_FILTER], user );
+    return isUserAdmin(user) || getPermission([Queries.APPLY_ACTIVITIES_BY_FILTER], user);
   },
   APPLY_PRESET_TO_ACTIVITY: (
     user: User | null,
@@ -686,7 +686,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
   EXPAND_TEMPLATES: (user: User | null): boolean => {
-    return isUserAdmin(user) || (getPermission([Queries.EXPAND_ALL_TEMPLATES], user));
+    return isUserAdmin(user) || getPermission([Queries.EXPAND_ALL_TEMPLATES], user);
   },
   GET_ACTIVITY_DIRECTIVE_CHANGELOG: () => true,
   GET_ACTIVITY_TYPES_EXPANSION_RULES: () => true,

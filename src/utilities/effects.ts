@@ -317,10 +317,12 @@ const effects = {
           const sequenceId = await effects.createExpansionSequence(
             `${filter.name} Sequence`,
             simulationDatasetId,
-            user
+            user,
           );
 
-          if (!sequenceId) { throw Error("Failed to create sequence"); }
+          if (!sequenceId) {
+            throw Error('Failed to create sequence');
+          }
 
           const data = await reqHasura<{ success: boolean }>(
             gql.APPLY_ACTIVITIES_BY_FILTER,
@@ -329,15 +331,15 @@ const effects = {
               seqId: sequenceId,
               simulationDatasetId,
               timeRangeEnd,
-              timeRangeStart
+              timeRangeStart,
             },
             user,
           );
 
           if (data !== null) {
-            showSuccessToast("Filter Applied Successfully");
+            showSuccessToast('Filter Applied Successfully');
           } else {
-            throw Error("Filter could not be applied successfully");
+            throw Error('Filter could not be applied successfully');
           }
         }
       }
@@ -3545,7 +3547,9 @@ const effects = {
   },
 
   async expandTemplates(
-    seqId: string,
+    seqIds: string[],
+    simulationDatasetId: number,
+    modelId: number,
     parcelId: number,
     user: User | null,
   ): Promise<void> {
@@ -3555,10 +3559,16 @@ const effects = {
         throwPermissionError('expand a sequence template');
       }
 
-      const data = await reqHasura<{ success: boolean }>(gql.EXPAND_TEMPLATES, {
-        parcelId,
-        seqId
-      }, user);
+      const data = await reqHasura<{ success: boolean }>(
+        gql.EXPAND_TEMPLATES,
+        {
+          modelId,
+          parcelId,
+          seqIds,
+          simulationDatasetId,
+        },
+        user,
+      );
       if (data.expandTemplates !== null) {
         sequenceExpansionStatusStore.set(Status.Complete);
         showSuccessToast('Sequence Expanded Successfully');
@@ -3850,7 +3860,7 @@ const effects = {
         user,
       );
 
-      console.log(data)
+      console.log(data);
       const { expanded_sequences } = data;
       if (expanded_sequences != null && expanded_sequences.length === 1) {
         const { expanded_sequence } = expanded_sequences[0];
