@@ -3951,7 +3951,6 @@ const effects = {
         user,
       );
 
-      console.log(data);
       const { expanded_sequences } = data;
       if (expanded_sequences != null && expanded_sequences.length === 1) {
         const { expanded_sequence } = expanded_sequences[0];
