@@ -1,4 +1,4 @@
-import { CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
+import { CompletionContext, completeFromList, type CompletionResult } from '@codemirror/autocomplete';
 import { LRLanguage, LanguageSupport, delimitedIndent, foldNodeProp, indentNodeProp } from '@codemirror/language';
 import { parseMixed } from '@lezer/common';
 import { styleTags, tags as t } from '@lezer/highlight';
@@ -76,9 +76,15 @@ export const HandlebarsOverSeqLanguage = LRLanguage.define({
   }),
 });
 
+const handlebarsFunctions = [
+  "handlefoos",
+  "handlebars",
+  "handlebazs"
+]
+
 export function setupLanguageSupport(autocomplete?: (context: CompletionContext) => CompletionResult | null) {
   if (autocomplete) {
-    return new LanguageSupport(HandlebarsOverSeqLanguage, [SeqLanguage.data.of({ autocomplete }), handlebarsLanguage.extension]);
+    return new LanguageSupport(HandlebarsOverSeqLanguage, [SeqLanguage.data.of({ autocomplete }), handlebarsLanguage.extension, HandlebarsOverSeqLanguage.data.of({ 'autocomplete': completeFromList(handlebarsFunctions) })]);
   } else {
     return new LanguageSupport(HandlebarsOverSeqLanguage);
   }
