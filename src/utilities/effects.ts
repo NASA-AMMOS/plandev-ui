@@ -2136,6 +2136,8 @@ const effects = {
         name: sequence.name,
         owner: user?.id ?? null,
         parcel_id: sequence.parcel_id,
+        model_id: sequence.model_id,
+        activity_name: sequence.activity_name,
         updated_at: now
       };
       return [...templates, newTemplate];

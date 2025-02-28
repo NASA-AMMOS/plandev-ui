@@ -220,6 +220,8 @@ export type UserSequenceTemplate = {
   name: string;
   owner: UserId;
   parcel_id: number;
+  model_id: number;
+  activity_name: string;
   updated_at: string;
 };
 

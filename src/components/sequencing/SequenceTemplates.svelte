@@ -49,8 +49,7 @@
     effects.createUserSequenceTemplate(
       {
         definition: '',
-        name: value.name,
-        parcel_id: value.parcel_id,
+        ...value,
       },
       user,
     );
@@ -90,8 +89,7 @@
   <SequenceTemplateEditor
     {parcel}
     showCommandFormBuilder={true}
-    sequenceDefinition={selectedTemplate?.definition ?? ''}
-    sequenceName={selectedTemplate?.name}
+    template={selectedTemplate}
     on:templateChanged={onTemplateChanged}
     {user}
   />
