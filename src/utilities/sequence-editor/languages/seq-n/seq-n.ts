@@ -76,15 +76,40 @@ export const HandlebarsOverSeqLanguage = LRLanguage.define({
   }),
 });
 
-const handlebarsFunctions = [
-  "handlefoos",
-  "handlebars",
-  "handlebazs"
+const handlebarsCompletions = [
+  // Helpers
+  "add-time",
+  "subtract-time",
+  "flatten",
+  "formatAsDate",
+  // Args
+  "startTime",
 ]
+/*
+export type MustacheActivity = {
+  id: number;
+  simulationDatasetId: number;
+  simulationDataset: {
+      simulation: {
+          planId: number;
+      };
+  };
+  attributes: {
+      arguments: Record<string, string>;
+      directiveId: number | undefined;
+      computed: Record<string, string> | undefined;
+  };
+  duration: string | null;
+  startOffset: string;
+  startTime: string;
+  endTime: string | null;
+  activityTypeName: string;
+};
+*/
 
 export function setupLanguageSupport(autocomplete?: (context: CompletionContext) => CompletionResult | null) {
   if (autocomplete) {
-    return new LanguageSupport(HandlebarsOverSeqLanguage, [SeqLanguage.data.of({ autocomplete }), handlebarsLanguage.extension, HandlebarsOverSeqLanguage.data.of({ 'autocomplete': completeFromList(handlebarsFunctions) })]);
+    return new LanguageSupport(HandlebarsOverSeqLanguage, [SeqLanguage.data.of({ autocomplete }), handlebarsLanguage.extension, HandlebarsOverSeqLanguage.data.of({ 'autocomplete': completeFromList(handlebarsCompletions) })]);
   } else {
     return new LanguageSupport(HandlebarsOverSeqLanguage);
   }
