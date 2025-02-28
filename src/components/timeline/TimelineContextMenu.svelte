@@ -22,7 +22,7 @@
     VerticalGuide,
   } from '../../types/timeline';
   import {
-    canPasteActivityDirectivesFromClipboard,
+    getActivityDirectivesClipboardCount,
     copyActivityDirectivesToClipboard,
     getAllSpansForActivityDirective,
     getSpanRootParent,
@@ -78,10 +78,12 @@
   let activityDirectiveSpans: Span[] | null = [];
   let activityDirectiveStartDate: Date | null = null;
   let contextMenuComponent: ContextMenu;
-  let span: Span | null;
-  let timelines: Timeline[] = [];
   let hasActivityLayer: boolean = false;
+  let span: Span | null;
+  let hasCreatePermission: boolean = false;
+  let timelines: Timeline[] = [];
   let mouseOverOrigin: MouseOverOrigin | undefined = undefined;
+  let permissionErrorText: string | null = null;
   let row: Row | undefined = undefined;
   let offsetX: number | undefined;
 
@@ -124,6 +126,18 @@
     : null;
   // Explicitly keep track of offsetX because Firefox ends up zeroing it out on the original `contextmenu` MouseEvent
   $: offsetX = contextMenu?.e.offsetX;
+
+  $: hasCreatePermission = plan !== null && featurePermissions.activityDirective.canCreate(user, plan);
+
+  $: {
+    if ($planReadOnly) {
+      permissionErrorText = PlanStatusMessages.READ_ONLY;
+    } else if (!hasCreatePermission) {
+      permissionErrorText = 'You do not have permission create activity directives';
+    } else {
+      permissionErrorText = null;
+    }
+  }
 
   function jumpToActivityDirective() {
     if (span !== null) {
@@ -256,19 +270,12 @@
     plan !== null && copyActivityDirectivesToClipboard(plan, [activity]);
   }
 
-  function canPasteActivityDirectives(): boolean {
-    return (
-      plan !== null &&
-      featurePermissions.activityDirective.canCreate(user, plan) &&
-      canPasteActivityDirectivesFromClipboard(plan)
-    );
-  }
-
-  function pasteActivityDirectivesAtTime(time: Date | false | null) {
-    if (plan !== null && featurePermissions.activityDirective.canCreate(user, plan) && time instanceof Date) {
-      const directives = getActivityDirectivesToPaste(plan, time.getTime());
-      if (directives !== undefined) {
-        effects.cloneActivityDirectives(directives, plan, user);
+  async function pasteActivityDirectivesAtTime(time: Date | false | null) {
+    if (plan !== null && hasCreatePermission && time instanceof Date) {
+      const directivesInClipboard = await getActivityDirectivesClipboardCount();
+      if (directivesInClipboard > 0) {
+        const directives = await getActivityDirectivesToPaste(plan, time.getTime());
+        await effects.cloneActivityDirectives(directives, plan, user);
       }
     }
   }
@@ -432,18 +439,35 @@
       >
         Set Simulation End
       </ContextMenuItem>
-      {#if canPasteActivityDirectives()}
+      {#await getActivityDirectivesClipboardCount() then directivesInClipboard}
         <ContextMenuSeparator />
         <ContextMenuItem
+          use={[
+            [
+              permissionHandler,
+              {
+                hasPermission: hasCreatePermission && directivesInClipboard > 0,
+                permissionError: () => {
+                  if (permissionErrorText !== null) {
+                    return permissionErrorText;
+                  } else if (directivesInClipboard <= 0) {
+                    return 'No activity directives in clipboard';
+                  } else {
+                    return null;
+                  }
+                },
+              },
+            ],
+          ]}
           on:click={() => {
             if (xScaleView && offsetX !== undefined) {
               pasteActivityDirectivesAtTime(xScaleView.invert(offsetX));
             }
           }}
         >
-          {getPasteActivityDirectivesText()} at Time
+          {getPasteActivityDirectivesText(directivesInClipboard)} at Time
         </ContextMenuItem>
-      {/if}
+      {/await}
     {/if}
     <ContextMenuSeparator />
     {#if span}

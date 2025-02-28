@@ -10,7 +10,7 @@
   import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/errors';
   import type { Plan } from '../../types/plan';
   import {
-    canPasteActivityDirectivesFromClipboard,
+    getActivityDirectivesClipboardCount,
     copyActivityDirectivesToClipboard,
     getActivityDirectivesToPaste,
     getPasteActivityDirectivesText,
@@ -23,6 +23,7 @@
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
+  import { permissionHandler } from '../../utilities/permissionHandler';
 
   export let activityDirectives: ActivityDirective[] | null = null;
   export let activityDirectiveErrorRollupsMap: Record<ActivityDirectiveId, ActivityErrorRollup> | undefined = undefined;
@@ -54,7 +55,7 @@
   let hasCreatePermission: boolean = false;
   let hasDeletePermission: boolean = false;
   let isDeletingDirective: boolean = false;
-  let showCopyMenu: boolean = true;
+  let permissionErrorText: string | null = null;
 
   $: hasDeletePermission =
     plan !== null ? featurePermissions.activityDirective.canDelete(user, plan) && !planReadOnly : false;
@@ -66,6 +67,16 @@
     ...activityDirective,
     errorCounts: activityDirectiveErrorRollupsMap?.[activityDirective.id]?.errorCounts,
   }));
+
+  $: {
+    if (planReadOnly) {
+      permissionErrorText = PlanStatusMessages.READ_ONLY;
+    } else if (!hasCreatePermission) {
+      permissionErrorText = 'You do not have permission create activity directives';
+    } else {
+      permissionErrorText = null;
+    }
+  }
 
   $: {
     activityActionColumnDef = {
@@ -166,14 +177,11 @@
     }
   }
 
-  function canPasteActivityDirectives(): boolean {
-    return plan !== null && hasCreatePermission && canPasteActivityDirectivesFromClipboard(plan);
-  }
-
-  function pasteActivityDirectives() {
-    if (plan !== null && canPasteActivityDirectives()) {
-      const directives = getActivityDirectivesToPaste(plan);
-      if (directives !== undefined) {
+  async function pasteActivityDirectives() {
+    if (plan != null && hasCreatePermission) {
+      const directivesInClipboard = await getActivityDirectivesClipboardCount();
+      if (directivesInClipboard > 0) {
+        const directives = await getActivityDirectivesToPaste(plan);
         dispatch(`createActivityDirectives`, directives);
       }
     }
@@ -195,7 +203,7 @@
   pluralItemDisplayText="Activity Directives"
   scrollToSelection={true}
   singleItemDisplayText="Activity Directive"
-  {showCopyMenu}
+  showCopyMenu={true}
   suppressDragLeaveHidesColumns={false}
   {user}
   {filterExpression}
@@ -214,9 +222,30 @@
       <ContextMenuItem on:click={scrollTimelineToActivityDirective}>Scroll to Activity</ContextMenuItem>
       <ContextMenuSeparator></ContextMenuSeparator>
     {/if}
-    {#if canPasteActivityDirectives()}
-      <ContextMenuItem on:click={pasteActivityDirectives}>{getPasteActivityDirectivesText()}</ContextMenuItem>
+    {#await getActivityDirectivesClipboardCount() then directivesInClipboard}
+      <ContextMenuItem
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasCreatePermission && directivesInClipboard > 0,
+              permissionError: () => {
+                if (permissionErrorText !== null) {
+                  return permissionErrorText;
+                } else if (directivesInClipboard <= 0) {
+                  return 'No activity directives in clipboard';
+                } else {
+                  return null;
+                }
+              },
+            },
+          ],
+        ]}
+        on:click={pasteActivityDirectives}
+      >
+        {getPasteActivityDirectivesText(directivesInClipboard)}
+      </ContextMenuItem>
       <ContextMenuSeparator></ContextMenuSeparator>
-    {/if}
+    {/await}
   </svelte:fragment>
 </BulkActionDataGrid>
