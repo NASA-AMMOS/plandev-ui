@@ -560,7 +560,7 @@ export async function showWorkspaceModal(
   });
 }
 
-export async function showTemplateModal(): Promise<ModalElementValue<{ name: string, parcel_id: number }>> {
+export async function showTemplateModal(): Promise<ModalElementValue<{ name: string, parcel_id: number, model_id: number, activity_name: string }>> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
@@ -579,7 +579,7 @@ export async function showTemplateModal(): Promise<ModalElementValue<{ name: str
           workspaceModal.$destroy();
         });
 
-        workspaceModal.$on('save', (e: CustomEvent<{ name: string, parcel_id: number }>) => {
+        workspaceModal.$on('save', (e: CustomEvent<{ name: string, parcel_id: number, model_id: number, activity_name: string }>) => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });

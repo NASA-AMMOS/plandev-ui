@@ -15,18 +15,11 @@
     FswCommandArgumentRepeat,
     ParameterDictionary,
   } from '@nasa-jpl/aerie-ampcs';
-  import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
-  import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { TOKEN_ERROR } from '../../constants/seq-n-grammar-constants';
-  import {
-    inputFormat,
-    outputFormat,
-    sequenceAdaptation,
-    setSequenceAdaptation,
-  } from '../../stores/sequence-adaptation';
+  import { outputFormat, sequenceAdaptation, setSequenceAdaptation } from '../../stores/sequence-adaptation';
   import {
     channelDictionaries,
     commandDictionaries,
@@ -48,6 +41,7 @@
     type LibrarySequenceMap,
     type Parcel,
     type TimeTagInfo,
+    type UserSequenceTemplate,
   } from '../../types/sequencing';
   import { setupLanguageSupport } from '../../utilities/codemirror';
   import { isFswCommandArgumentRepeat, unquoteUnescape } from '../../utilities/codemirror/codemirror-utils';
@@ -68,11 +62,10 @@
   import { vmlTooltip } from '../../utilities/codemirror/vml/vmlTooltip';
   import { VmlCommandInfoMapper } from '../../utilities/codemirror/vml/vmlTreeUtils';
   import effects from '../../utilities/effects';
-  import { downloadBlob, downloadJSON } from '../../utilities/generic';
   import { getCustomArgDef, inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
   import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
   import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
-  import { showFailureToast, showSuccessToast } from '../../utilities/toast';
+  import { showFailureToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import Menu from '../menus/Menu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -86,11 +79,16 @@
   export let parcel: Parcel | null;
   export let showCommandFormBuilder: boolean = false;
   export let readOnly: boolean = false;
-  export let sequenceName: string = '';
-  export let sequenceDefinition: string = '';
+  export let template: UserSequenceTemplate | null = null;
   export let sequenceOutput: string = '';
   export let title: string = 'Sequence Template - Editor';
   export let user: User | null;
+
+  let sequenceName: string = '';
+  let sequenceDefinition: string = '';
+
+  $: sequenceName = template?.name ?? '';
+  $: sequenceDefinition = template?.definition ?? '';
 
   const dispatch = createEventDispatcher<{
     templateChanged: { input: string; output: string };
@@ -436,42 +434,6 @@
     }
   }
 
-  function downloadOutputFormat(outputFormat: IOutputFormat): void {
-    const fileExtension = `${sequenceName}.${selectedOutputFormat?.fileExtension}`;
-
-    if (outputFormat?.fileExtension === 'json') {
-      downloadJSON(JSON.parse(editorOutputView.state.doc.toString()), fileExtension);
-    } else {
-      downloadBlob(new Blob([editorOutputView.state.doc.toString()], { type: 'text/plain' }), fileExtension);
-    }
-  }
-
-  function downloadInputFormat(): void {
-    downloadBlob(new Blob([editorSequenceView.state.doc.toString()], { type: 'text/plain' }), `${sequenceName}.txt`);
-  }
-
-  async function copyOutputFormatToClipboard(): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(editorOutputView.state.doc.toString());
-      showSuccessToast(`${selectedOutputFormat?.name} copied to clipboard`);
-    } catch {
-      showFailureToast(`Error copying ${selectedOutputFormat?.name} to clipboard`);
-    }
-  }
-
-  async function copyInputFormatToClipboard(): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(editorSequenceView.state.doc.toString());
-      showSuccessToast(`${$inputFormat?.name} copied to clipboard`);
-    } catch {
-      showFailureToast(`Error copying ${$inputFormat?.name} to clipboard`);
-    }
-  }
-
-  function toggleSeqJsonEditor(): void {
-    toggleSeqJsonPreview = !toggleSeqJsonPreview;
-  }
-
   function debugAST() {
     const tree = syntaxTree(editorSequenceView.state);
     const sourceCode = editorSequenceView.state.doc.toString();
@@ -495,6 +457,16 @@
     } else {
       seqNFormat(editorSequenceView);
     }
+  }
+
+  function publishSequenceTemplate() {
+    if (template === null) return;
+    // TODO: Connect this to graphQL mutation to publish the template
+    console.log('template.name =', template.name);
+    console.log('template.parcel_id =', template.parcel_id);
+    console.log('template.model_id =', template.model_id);
+    console.log('template.activity_name =', template.activity_name);
+    console.log('template.definition =', template.definition);
   }
 
   function inVmlMode(sequenceName: string | undefined): boolean {
@@ -654,20 +626,13 @@
           </button>
 
           <button
-            use:tooltip={{ content: `Copy sequence contents`, placement: 'top' }}
+            use:tooltip={{ content: 'Publish sequence template for expansion', placement: 'top' }}
             class="st-button icon-button secondary ellipsis"
-            on:click={copyInputFormatToClipboard}
-            disabled={disableCopyAndExport}><ClipboardIcon />Copy</button
+            on:click|stopPropagation={publishSequenceTemplate}
+            disabled={template === null}
           >
-          <button
-            use:tooltip={{
-              content: `Download sequence contents`,
-              placement: 'top',
-            }}
-            class="st-button icon-button secondary ellipsis"
-            on:click|stopPropagation={downloadInputFormat}
-            disabled={disableCopyAndExport}><DownloadIcon />Download</button
-          >
+            Publish
+          </button>
         </div>
       </svelte:fragment>
 
