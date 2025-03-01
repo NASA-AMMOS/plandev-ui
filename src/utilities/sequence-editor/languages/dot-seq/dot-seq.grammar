@@ -1,0 +1,85 @@
+
+@skip {
+  space
+}
+
+@top CommandModel {
+  CommandStatement*
+}
+
+CommandStatement {
+  CommandTime?
+  Command?
+  Comment?
+  END_OF_LINE
+}
+
+CommandTime {
+  TimeAbsolute
+  | TimeRelative
+}
+
+Command {
+  CommandName {
+    SYMBOL_CONST
+  }
+  Parameters
+}
+
+list<item> {
+  item ( "," item )*
+}
+
+Parameters {
+  list<Parameter>?
+}
+
+Parameter {
+  String | Number | Boolean
+}
+
+Boolean { TRUE_CONST | FALSE_CONST }
+
+Number {
+  INT_CONST | DOUBLE_CONST | HEX_CONST
+}
+
+FALSE_CONST { @specialize<SYMBOL_CONST, "FALSE"> | @specialize<SYMBOL_CONST, "false"> }
+TRUE_CONST { @specialize<SYMBOL_CONST, "TRUE"> | @specialize<SYMBOL_CONST, "true"> }
+
+@tokens {
+
+  space { $[ \t]+ }
+
+  Comment { ";" ![\n]* }
+
+  END_OF_LINE { "\n" }
+
+  SYMBOL_CONST { @asciiLetter (@asciiLetter| @digit | "_" | "-")* }
+
+  timeHhmmss { @digit@digit":"@digit@digit":"@digit@digit("."@digit) }
+  TimeAbsolute { 'A'@digit@digit@digit@digit"-"@digit@digit@digit"T"timeHhmmss }
+  TimeRelative { 'R'timeHhmmss}
+
+  String { '"' (!["\\] | "\\" _)* '"' }
+
+  INT_CONST {
+    ("+" | "-")? @digit+
+  }
+
+  DOUBLE_CONST {
+    ("+" | "-")?
+    (
+      (@digit+ "." @digit*)
+      | ("." @digit+)
+    )
+  }
+
+  HEX_CONST {
+    "0" ("x" | "X") (@digit | $[a-f] | $[A-F])+
+  }
+
+  @precedence { INT_CONST. HEX_CONST, DOUBLE_CONST }
+  @precedence { TimeAbsolute, TimeRelative, SYMBOL_CONST }
+
+}
