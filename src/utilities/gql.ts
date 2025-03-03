@@ -570,6 +570,14 @@ const gql = {
     }
   `,
 
+  CREATE_SEQUENCE_TEMPLATE: `#graphql
+    mutation CreateSequenceTemplate($definition: sequence_template_insert_input!) {
+      createSequenceTemplate: ${Queries.INSERT_SEQUENCE_TEMPLATE}(object: $definition) {
+        id
+      }
+    }
+  `,
+
   CREATE_SIMULATION_TEMPLATE: `#graphql
     mutation CreateSimulationTemplate($simulationTemplateInsertInput: simulation_template_insert_input!) {
       ${Queries.INSERT_SIMULATION_TEMPLATE}(object: $simulationTemplateInsertInput) {
@@ -1056,6 +1064,14 @@ const gql = {
         }
       ) {
         affected_rows
+      }
+    }
+  `,
+
+  DELETE_SEQUENCE_TEMPLATE: `#graphql
+    mutation DeleteSequenceTemplates($sequenceTemplateId: Int!) {
+      deleteSequenceTemplates: ${Queries.DELETE_SEQUENCE_TEMPLATE}(id: $sequenceTemplateId) {
+        id
       }
     }
   `,
@@ -3868,6 +3884,16 @@ const gql = {
     mutation UpdateSchedulingSpec($id: Int!, $spec: scheduling_specification_set_input!) {
       updateSchedulingSpec: ${Queries.UPDATE_SCHEDULING_SPECIFICATION}(
         pk_columns: { id: $id }, _set: $spec
+      ) {
+        id
+      }
+    }
+  `,
+
+  UPDATE_SEQUENCE_TEMPLATE: `#graphql
+    mutation UpdateSequenceTemplate($id: Int!, $definition: String!) {
+      updateSequenceTemplate: ${Queries.UPDATE_SEQUENCE_TEMPLATE}(
+        pk_columns: { id: $id }, _set: { template_definition: $definition }
       ) {
         id
       }

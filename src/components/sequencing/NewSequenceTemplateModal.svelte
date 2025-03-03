@@ -16,17 +16,20 @@
   const dispatch = createEventDispatcher<{
     close: void;
     save: {
+      activityType: string;
+      language: string,
+      modelId: number;
       name: string;
       parcelId: number;
-      modelId: number;
-      activityName: string;
     };
   }>();
 
   let templateName: string = initialTemplateName;
-  let saveButtonDisabled: boolean = true;
+  let language: string = '';
   let selectedParcelId: number | null = null;
   let selectedActivityType: string = '';
+
+  let saveButtonDisabled: boolean = true;
 
   // TODO: Add logic to disallow saving a name already in use
   $: saveButtonDisabled = templateName === '';
@@ -39,7 +42,8 @@
       selectedActivityType !== null
     ) {
       dispatch('save', {
-        activityName: selectedActivityType,
+        activityType: selectedActivityType,
+        language,
         modelId: $modelId,
         name: templateName,
         parcelId: selectedParcelId,
@@ -63,8 +67,11 @@
 
   <ModalContent>
     <fieldset>
-      <label for="name">Template name</label>
+      <label for="name">Template Name</label>
       <input bind:value={templateName} autocomplete="off" class="st-input w-100" id="name" required type="text" />
+
+      <label for="language">Template Language</label>
+      <input bind:value={language} autocomplete="off" class="st-input w-100" id="language" required type="text" />
 
       <!-- TODO: make these pickers of some kind, rather than a raw ID input -->
       <label for="parcelId">Parcel ID</label>
@@ -103,9 +110,9 @@
         {/if}
       </select>
 
-      <label for="activityName">Activity Name</label>
+      <label for="activityType">Activity Type</label>
       <select
-        id="activityName"
+        id="activityType"
         bind:value={selectedActivityType}
         class="st-select w-100"
         disabled={$modelId === -1}

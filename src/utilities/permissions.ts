@@ -25,7 +25,7 @@ import type {
   SchedulingGoalDefinition,
   SchedulingGoalMetadata,
 } from '../types/scheduling';
-import type { Parcel, UserSequence, Workspace } from '../types/sequencing';
+import type { Parcel, SequenceTemplate, UserSequence, Workspace } from '../types/sequencing';
 import type { PlanDataset, Simulation, SimulationTemplate } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { View, ViewSlim } from '../types/view';
@@ -473,6 +473,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   CREATE_SEQUENCE_FILTER: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_FILTER], user);
   },
+  CREATE_SEQUENCE_TEMPLATE: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_TEMPLATE], user);
+  },
   CREATE_SIMULATION_TEMPLATE: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_SIMULATION_TEMPLATE], user);
   },
@@ -668,6 +671,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   DELETE_SEQUENCE_FILTERS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_FILTERS], user);
+  },
+  DELETE_SEQUENCE_TEMPLATE: (user: User |null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_TEMPLATE], user);
   },
   DELETE_SIMULATION_TEMPLATE: (user: User | null, template: SimulationTemplate): boolean => {
     return (
@@ -1177,6 +1183,12 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
+  UPDATE_SEQUENCE_TEMPLATE: (user: User | null, sequenceTemplate: SequenceTemplate): boolean => {
+    return (
+      isUserAdmin(user) ||
+      (getPermission([Queries.UPDATE_SEQUENCE_TEMPLATE], user) && (isUserOwner(user, sequenceTemplate)))
+    );
+  },
   UPDATE_SIMULATION: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
@@ -1381,6 +1393,7 @@ interface FeaturePermissions {
   schedulingGoalsPlanSpec: SchedulingCRUDPermission<AssetWithOwner<SchedulingGoalMetadata>>;
   sequenceAdaptation: CRUDPermission<void>;
   sequenceFilter: CRUDPermission<void>;
+  sequenceTemplate: CRUDPermission<SequenceTemplate>;
   sequences: CRUDPermission<AssetWithOwner<UserSequence>>;
   simulation: RunnableCRUDPermission<AssetWithOwner<Simulation>>;
   simulationTemplates: PlanSimulationTemplateCRUDPermission;
@@ -1603,6 +1616,12 @@ const featurePermissions: FeaturePermissions = {
     canDelete: user => queryPermissions.DELETE_SEQUENCE_FILTERS(user),
     canRead: () => true,
     canUpdate: () => false,
+  },
+  sequenceTemplate: {
+    canCreate: user => queryPermissions.CREATE_SEQUENCE_TEMPLATE(user),
+    canDelete: (user, sequenceTemplate) => queryPermissions.DELETE_SEQUENCE_TEMPLATE(user, sequenceTemplate),
+    canRead: () => true,
+    canUpdate: (user, sequenceTemplate) => queryPermissions.UPDATE_SEQUENCE_TEMPLATE(user, sequenceTemplate),
   },
   sequences: {
     canCreate: user => queryPermissions.CREATE_USER_SEQUENCE(user),

@@ -41,7 +41,7 @@
     type LibrarySequenceMap,
     type Parcel,
     type TimeTagInfo,
-    type UserSequenceTemplate,
+    type SequenceTemplate,
   } from '../../types/sequencing';
   import { setupLanguageSupport } from '../../utilities/codemirror';
   import { isFswCommandArgumentRepeat, unquoteUnescape } from '../../utilities/codemirror/codemirror-utils';
@@ -75,11 +75,12 @@
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
 
   import { printTree } from '@lezer-unofficial/printer';
+  import { isSaveEvent } from '../../utilities/keyboardEvents';
 
   export let parcel: Parcel | null;
   export let showCommandFormBuilder: boolean = false;
   export let readOnly: boolean = false;
-  export let template: UserSequenceTemplate | null = null;
+  export let template: SequenceTemplate;
   export let sequenceOutput: string = '';
   export let title: string = 'Sequence Template - Editor';
   export let user: User | null;
@@ -88,7 +89,7 @@
   let sequenceDefinition: string = '';
 
   $: sequenceName = template?.name ?? '';
-  $: sequenceDefinition = template?.definition ?? '';
+  $: sequenceDefinition = template?.template_definition ?? '';
 
   const dispatch = createEventDispatcher<{
     templateChanged: { input: string; output: string };
@@ -459,14 +460,12 @@
     }
   }
 
-  function publishSequenceTemplate() {
-    if (template === null) return;
-    // TODO: Connect this to graphQL mutation to publish the template
-    console.log('template.name =', template.name);
-    console.log('template.parcel_id =', template.parcel_id);
-    console.log('template.model_id =', template.model_id);
-    console.log('template.activity_name =', template.activity_name);
-    console.log('template.definition =', template.definition);
+  function saveSequenceTemplate() {
+    effects.updateSequenceTemplate(
+      sequenceDefinition,
+      template,
+      user
+    )
   }
 
   function inVmlMode(sequenceName: string | undefined): boolean {
@@ -592,7 +591,16 @@
 
     return argArray;
   }
+
+  function onKeydown(event: KeyboardEvent): void {
+    if (isSaveEvent(event)) {
+      event.preventDefault();
+      saveSequenceTemplate();
+    }
+  }
 </script>
+
+<svelte:window on:keydown={onKeydown} />
 
 <CssGrid bind:columns={commandFormBuilderGrid} minHeight={'0'}>
   <CssGrid rows={editorHeights} minHeight={'0'}>
@@ -626,12 +634,12 @@
           </button>
 
           <button
-            use:tooltip={{ content: 'Publish sequence template for expansion', placement: 'top' }}
+            use:tooltip={{ content: 'Save sequence template', placement: 'top' }}
             class="st-button icon-button secondary ellipsis"
-            on:click|stopPropagation={publishSequenceTemplate}
+            on:click|stopPropagation={saveSequenceTemplate}
             disabled={template === null}
           >
-            Publish
+            Save
           </button>
         </div>
       </svelte:fragment>

@@ -1,10 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { userTemplates } from '../../stores/sequencing';
   import { parcels, userSequencesColumns } from '../../stores/sequencingTemplates';
   import type { User } from '../../types/app';
-  import type { Parcel, UserSequenceTemplate } from '../../types/sequencing';
+  import type { Parcel, SequenceTemplate } from '../../types/sequencing';
   import effects from '../../utilities/effects';
   import { showTemplateModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -21,37 +20,32 @@
 
   let filterText: string = '';
   let parcel: Parcel | null;
-  let selectedTemplate: UserSequenceTemplate | null = null;
+  let selectedTemplate: SequenceTemplate | null = null;
 
   $: parcel = $parcels.find(p => p.id === selectedTemplate?.parcel_id) ?? null;
-  $: if (selectedTemplate !== null) {
-    const found: number = $userTemplates.findIndex(template => template.id === selectedTemplate?.id);
 
-    if (found === -1) {
-      selectedTemplate = null;
-    }
-  }
-
-  function onTemplateSelected(event: CustomEvent<UserSequenceTemplate>) {
+  function onTemplateSelected(event: CustomEvent<SequenceTemplate>) {
     selectedTemplate = event.detail;
   }
+
   function onTemplateChanged(event: CustomEvent<{ input: string; output: string }>) {
     if (selectedTemplate) {
-      selectedTemplate.definition = event.detail.input;
+      selectedTemplate.template_definition = event.detail.input;
     }
   }
 
-  let id = 1;
   async function createSequenceTemplate(): Promise<void> {
     const { confirm, value } = await showTemplateModal();
     if (!confirm || value === undefined) return;
 
-    effects.createUserSequenceTemplate(
-      {
-        definition: '',
-        ...value,
-      },
-      user,
+    effects.createSequenceTemplate(
+      value.activityType,
+      value.language,
+      value.modelId,
+      value.name,
+      value.parcelId,
+      '',
+      user
     );
   }
 </script>
@@ -86,13 +80,17 @@
 
   <CssGridGutter track={1} type="column" />
 
-  <SequenceTemplateEditor
-    {parcel}
-    showCommandFormBuilder={true}
-    template={selectedTemplate}
-    on:templateChanged={onTemplateChanged}
-    {user}
-  />
+  {#if selectedTemplate}
+    <SequenceTemplateEditor
+      {parcel}
+      showCommandFormBuilder={true}
+      template={selectedTemplate}
+      on:templateChanged={onTemplateChanged}
+      {user}
+    />
+  {:else}
+    <div class="no-templates">No template selected</div>
+  {/if}
 </CssGrid>
 
 <style>
@@ -100,5 +98,9 @@
     column-gap: 5px;
     display: flex;
     flex-wrap: nowrap;
+  }
+
+  .no-templates {
+    margin: 8px;
   }
 </style>
