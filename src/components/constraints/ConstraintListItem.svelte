@@ -3,6 +3,8 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import CheckmarkIcon from '@nasa-jpl/stellar/icons/check.svg?component';
+  import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
+  import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
   import VisibleHideIcon from '@nasa-jpl/stellar/icons/visible_hide.svg?component';
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
@@ -48,15 +50,22 @@
   }>();
 
   let formParameters: FormParameter[] = [];
+  let order: number;
+  let orderInput: HTMLInputElement;
   let revisions: number[] = [];
+  let upButtonHidden: boolean = false;
   let version: Pick<ConstraintDefinition, 'type' | 'revision' | 'parameter_schema'> | undefined = undefined;
 
   $: revisions = constraint.versions.map(({ revision }) => revision);
   $: violationCount = constraintResponse?.results?.violations?.length;
   $: success = constraintResponse?.success;
   $: {
+    order = constraintPlanSpec.order;
+    upButtonHidden = order <= 0;
+  }
+  $: {
     if (constraintPlanSpec.constraint_revision !== null) {
-      version = constraint.versions.find(version => version.revision === constraintPlanSpec.constraint_revision);
+      version = constraint.versions.find(v => v.revision === constraintPlanSpec.constraint_revision);
     } else {
       // if the `constraint_revision` is null, that means to use the latest version of the definition
       // the query for this constraint returns the versions in descending order, so the first entry in the array should correspond to the latest version
@@ -75,6 +84,55 @@
       }));
     } else {
       formParameters = [];
+    }
+  }
+
+  function focusInput() {
+    if (document.activeElement !== orderInput) {
+      orderInput?.focus();
+    }
+
+    return true;
+  }
+
+  function updateOrder(orderUpdate: number) {
+    dispatch('updateConstraintPlanSpec', {
+      ...constraintPlanSpec,
+      order: orderUpdate,
+    });
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === 'ArrowUp') {
+        if (order > 0) {
+          updateOrder(order - 1);
+        }
+      } else {
+        updateOrder(order + 1);
+      }
+    }
+  }
+
+  function onDecreaseOrder() {
+    if (order !== undefined) {
+      focusInput();
+      updateOrder(order + 1);
+    }
+  }
+
+  function onIncreaseOrder() {
+    if (order !== undefined) {
+      focusInput();
+      updateOrder(order - 1);
+    }
+  }
+
+  function onUpdateOrder() {
+    if (order !== undefined) {
+      updateOrder(order);
     }
   }
 
@@ -115,7 +173,11 @@
 </script>
 
 <div class="constraint-list-item">
-  <Collapse title={constraint.name} tooltipContent={constraint.name} defaultExpanded={false}>
+  <Collapse
+    title={`${constraint.name}${constraintPlanSpec.order}`}
+    tooltipContent={constraint.name}
+    defaultExpanded={false}
+  >
     <svelte:fragment slot="left">
       <div class="left-content">
         <input
@@ -136,7 +198,7 @@
       </div>
     </svelte:fragment>
     <svelte:fragment slot="right">
-      <div class="right-content">
+      <div class="right-content" role="none" on:click|stopPropagation>
         {#if violationCount}
           <div
             class="st-badge violation-badge"
@@ -161,38 +223,73 @@
             <StatusBadge status={Status.Unchecked} />
           </span>
         {/if}
-        {constraintPlanSpec.invocation_id}
-        <button
-          use:tooltip={{ content: visible ? 'Hide' : 'Show', placement: 'top' }}
-          class="st-button icon"
-          on:click|stopPropagation={() =>
-            dispatch('toggleVisibility', {
-              constraintId: constraintPlanSpec.constraint_id,
-              invocationId: constraintPlanSpec.invocation_id,
-              visible: !visible,
-            })}
-        >
-          {#if visible}
-            <VisibleShowIcon />
-          {:else}
-            <VisibleHideIcon />
+        <div class="order-container">
+          <input
+            bind:this={orderInput}
+            bind:value={order}
+            class="st-input"
+            min="0"
+            style:width="68px"
+            type="number"
+            on:change={onUpdateOrder}
+            on:keydown={onKeyDown}
+            use:permissionHandler={{
+              hasPermission: hasEditPermission,
+              permissionError: editPermissionError,
+            }}
+          />
+          {#if hasEditPermission}
+            <div class="order-buttons">
+              <button
+                use:tooltip={{ content: 'Increase order', placement: 'top' }}
+                class="st-button tertiary up-button"
+                class:hidden={upButtonHidden}
+                tabindex={upButtonHidden ? -1 : 0}
+                on:click={onIncreaseOrder}
+              >
+                <CaretUpFillIcon />
+              </button>
+              <button
+                use:tooltip={{ content: 'Decrease order', placement: 'top' }}
+                class="st-button tertiary down-button"
+                on:click={onDecreaseOrder}
+              >
+                <CaretDownFillIcon />
+              </button>
+            </div>
           {/if}
-        </button>
-        <select
-          class="st-select"
-          value={constraintPlanSpec.constraint_revision}
-          on:change={onUpdateRevision}
-          on:click|stopPropagation
-          use:permissionHandler={{
-            hasPermission: hasEditPermission,
-            permissionError: editPermissionError,
-          }}
-        >
-          <option value={null}>Always use latest</option>
-          {#each revisions as revision, index}
-            <option value={revision}>{revision}{index === 0 ? ' (Latest)' : ''}</option>
-          {/each}
-        </select>
+          <button
+            use:tooltip={{ content: visible ? 'Hide' : 'Show', placement: 'top' }}
+            class="st-button icon"
+            on:click|stopPropagation={() =>
+              dispatch('toggleVisibility', {
+                constraintId: constraintPlanSpec.constraint_id,
+                invocationId: constraintPlanSpec.invocation_id,
+                visible: !visible,
+              })}
+          >
+            {#if visible}
+              <VisibleShowIcon />
+            {:else}
+              <VisibleHideIcon />
+            {/if}
+          </button>
+          <select
+            class="st-select"
+            value={constraintPlanSpec.constraint_revision}
+            on:change={onUpdateRevision}
+            on:click|stopPropagation
+            use:permissionHandler={{
+              hasPermission: hasEditPermission,
+              permissionError: editPermissionError,
+            }}
+          >
+            <option value={null}>Always use latest</option>
+            {#each revisions as revision, index}
+              <option value={revision}>{revision}{index === 0 ? ' (Latest)' : ''}</option>
+            {/each}
+          </select>
+        </div>
       </div>
     </svelte:fragment>
 
@@ -339,5 +436,53 @@
     flex-shrink: 0;
     justify-content: center;
     width: 20px;
+  }
+
+  .order-container {
+    display: flex;
+  }
+
+  /* Hide number input "spinners" (up and down arrows) in WebKit browsers ... */
+  .order-container input::-webkit-outer-spin-button,
+  .order-container input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  /* ... and Firefox */
+  .order-container input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+    padding-right: 32px;
+  }
+
+  .order-buttons {
+    align-items: center;
+    display: flex;
+    margin-left: -36px;
+  }
+
+  .order-buttons :global(button) {
+    align-items: center;
+    color: var(--st-gray-40);
+    cursor: pointer;
+    display: flex;
+    min-width: 0;
+    padding: 0;
+    pointer-events: painted;
+  }
+
+  .order-buttons :global(button):hover {
+    background-color: transparent !important;
+    color: var(--st-gray-60);
+  }
+
+  .down-button {
+    margin-left: -3px;
+    margin-right: 2px;
+  }
+
+  .hidden {
+    opacity: 0;
+    pointer-events: none;
   }
 </style>

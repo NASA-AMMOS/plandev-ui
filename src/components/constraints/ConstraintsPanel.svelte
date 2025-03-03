@@ -21,7 +21,6 @@
     constraintsMap,
     constraintsStatus,
     initialConstraintPlanSpecsLoading,
-    initialConstraintRunsLoading,
     initialConstraintsLoading,
     setAllConstraintsVisible,
     setConstraintVisibility,
@@ -137,19 +136,19 @@
 
   $: totalViolationCount = getViolationCount($constraintResponses);
   $: filteredViolationCount = getViolationCount(
-    filteredConstraintPlanSpecifications.map(({ constraint_id, invocation_id }) => {
-      return constraintToConstraintResponseMap[constraint_id]?.[invocation_id];
+    filteredConstraintPlanSpecifications.map(({ constraint_id: constraintId, invocation_id: invocationId }) => {
+      return constraintToConstraintResponseMap[constraintId]?.[invocationId];
     }),
   );
 
   function filterConstraints(
     planSpecs: ConstraintPlanSpecification[],
-    constraintToConstraintResponseMap: ConstraintInvocationMap<ConstraintResponse>,
-    filterText: string,
-    showConstraintsWithNoViolations: boolean,
+    constraintInvocationToConstraintResponseMap: ConstraintInvocationMap<ConstraintResponse>,
+    filter: string,
+    shouldShowConstraintsWithNoViolations: boolean,
   ) {
     return planSpecs.filter(constraintPlanSpec => {
-      const filterTextLowerCase = filterText.toLowerCase();
+      const filterTextLowerCase = filter.toLowerCase();
       const includesName = constraintPlanSpec.constraint_metadata?.name
         .toLocaleLowerCase()
         .includes(filterTextLowerCase);
@@ -158,10 +157,12 @@
       }
 
       const constraintResponse =
-        constraintToConstraintResponseMap[constraintPlanSpec.constraint_id]?.[constraintPlanSpec.invocation_id];
+        constraintInvocationToConstraintResponseMap[constraintPlanSpec.constraint_id]?.[
+          constraintPlanSpec.invocation_id
+        ];
       // Always show constraints with no violations
       if (!constraintResponse?.results.violations?.length) {
-        return showConstraintsWithNoViolations;
+        return shouldShowConstraintsWithNoViolations;
       }
 
       return true;
@@ -169,9 +170,9 @@
   }
 
   function getViolationCount(constraintResponse: ConstraintResponse[]) {
-    return constraintResponse.reduce((count, constraintResponse) => {
-      return constraintResponse?.results.violations
-        ? constraintResponse.results.violations.filter(violation => violation.windows.length > 0).length + count
+    return constraintResponse.reduce((count, response) => {
+      return response?.results.violations
+        ? response.results.violations.filter(violation => violation.windows.length > 0).length + count
         : count;
     }, 0);
   }
@@ -378,7 +379,7 @@
     </CollapsibleListControls>
 
     <div class="pt-2">
-      {#if $initialConstraintsLoading || $initialConstraintPlanSpecsLoading || $initialConstraintRunsLoading}
+      {#if $initialConstraintsLoading || $initialConstraintPlanSpecsLoading}
         <div class="p-1">
           <Loading />
         </div>

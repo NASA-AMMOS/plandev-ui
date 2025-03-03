@@ -159,8 +159,8 @@
     diffDefinition({ definition: initialDefinitionCode }, { definition: definitionCode }) ||
     (definitionType === DefinitionType.FILE && (definitionFiles?.length ?? 0) > 0);
   $: if (!name && definitionFiles?.length) {
-    const definitionFileName = definitionFiles[0].name;
-    name = definitionFileName.replace(/\..*$/, '');
+    const fileName = definitionFiles[0].name;
+    name = fileName.replace(/\..*$/, '');
   }
   $: isDefinitionTagsModified = diffTags(initialDefinitionTags || [], definitionTags);
   $: hasUpdateDefinitionPermission = hasWriteDefinitionTagsPermission || isDefinitionModified;
@@ -189,7 +189,7 @@
   }
   $: if (isPublic && name) {
     const existingMetadata = allMetadata.find(
-      ({ name: metadataName, public: isPublic }) => name === metadataName && isPublic,
+      ({ name: metadataName, public: isMetadataPublic }) => name === metadataName && isMetadataPublic,
     );
     if (existingMetadata != null && existingMetadata.id !== metadataId) {
       nameError = 'Name must be unique when public';
@@ -371,9 +371,9 @@
 
       dispatch('updateMetadata', {
         metadata: {
-          description: description,
-          name: name,
-          owner: owner,
+          description,
+          name,
+          owner,
           public: isPublic,
         },
         tagIdsToDelete,

@@ -1,5 +1,5 @@
 import type { ConstraintDefinitionType } from '../enums/constraint';
-import type { PartialWith } from './app';
+import type { PartialWith, UserId } from './app';
 import type { BaseDefinition, BaseMetadata } from './metadata';
 import type { ConstraintTagsInsertInput } from './tags';
 import type { TimeRange } from './timeline';
@@ -96,6 +96,16 @@ export type ConstraintResult = {
 };
 
 export type ConstraintResultWithName = ConstraintResult & { constraintName: string };
+
+export type ConstraintRequest = {
+  constraints_run: ConstraintRun[];
+  force_rerun: boolean;
+  id: number;
+  plan_id: number;
+  requested_at: string;
+  requested_by: UserId;
+  simulation_dataset_id: number;
+};
 
 export type ConstraintResponse = {
   constraintId: ConstraintMetadata['id'];

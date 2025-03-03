@@ -5,6 +5,7 @@ import type {
   ConstraintInvocationMap,
   ConstraintMetadata,
   ConstraintPlanSpecification,
+  ConstraintRequest,
   ConstraintResponse,
   ConstraintResultWithName,
   ConstraintRun,
@@ -32,13 +33,12 @@ export const constraintsColumns: Writable<string> = writable('1fr 3px 1fr');
 export const constraints = gqlSubscribable<ConstraintMetadata[] | null>(gql.SUB_CONSTRAINTS, {}, null, null);
 
 export const constraintRuns = gqlSubscribable<ConstraintRun[] | null>(
-  gql.SUB_CONSTRAINT_RUNS,
+  gql.SUB_CONSTRAINT_REQUESTS,
   { simulationDatasetId: simulationDatasetLatestId },
   null,
   null,
-  value => {
-    checkConstraintsQueryStatus.set(null);
-    return value;
+  (value: ConstraintRequest) => {
+    return value.constraints_run;
   },
 );
 

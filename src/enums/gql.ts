@@ -20,6 +20,7 @@ export enum Queries {
   CONSTRAINT_DEFINITION = 'constraint_definition_by_pk',
   CONSTRAINT_METADATA = 'constraint_metadata_by_pk',
   CONSTRAINT_METADATAS = 'constraint_metadata',
+  CONSTRAINT_REQUEST = 'constraint_request',
   CONSTRAINT_RUN = 'constraint_run',
   CONSTRAINT_SPECIFICATIONS = 'constraint_specification',
   CONSTRAINT_VIOLATIONS = 'constraintViolations',

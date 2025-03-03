@@ -182,12 +182,10 @@
           tagsToUpdate,
         },
       } = event;
-      const constraintMetadataTagsToUpdate: ConstraintMetadataTagsInsertInput[] = tagsToUpdate.map(
-        ({ id: tag_id }) => ({
-          constraint_id: initialConstraintId as number,
-          tag_id,
-        }),
-      );
+      const constraintMetadataTagsToUpdate: ConstraintMetadataTagsInsertInput[] = tagsToUpdate.map(({ id }) => ({
+        constraint_id: initialConstraintId as number,
+        tag_id: id,
+      }));
 
       await effects.updateConstraintMetadata(
         initialConstraintId,
@@ -220,13 +218,11 @@
         detail: { tagIdsToDelete, tagsToUpdate },
       } = event;
       // Associate new tags with constraint definition version
-      const constraintDefinitionTagsToUpdate: ConstraintDefinitionTagsInsertInput[] = tagsToUpdate.map(
-        ({ id: tag_id }) => ({
-          constraint_id: initialConstraintId as number,
-          constraint_revision: initialConstraintRevision as number,
-          tag_id,
-        }),
-      );
+      const constraintDefinitionTagsToUpdate: ConstraintDefinitionTagsInsertInput[] = tagsToUpdate.map(({ id }) => ({
+        constraint_id: initialConstraintId as number,
+        constraint_revision: initialConstraintRevision as number,
+        tag_id: id,
+      }));
       await effects.updateConstraintDefinitionTags(
         initialConstraintId,
         initialConstraintRevision,

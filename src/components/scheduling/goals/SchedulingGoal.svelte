@@ -55,7 +55,7 @@
 
   $: {
     if (goalPlanSpec.goal_revision !== null) {
-      version = goal.versions.find(version => version.revision === goalPlanSpec.goal_revision);
+      version = goal.versions.find(v => v.revision === goalPlanSpec.goal_revision);
     } else {
       // if the `goal_revision` is null, that means to use the latest version of the definition
       // the query for this goal returns the versions in descending order, so the first entry in the array should correspond to the latest version

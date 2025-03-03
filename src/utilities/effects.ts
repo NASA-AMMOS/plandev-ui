@@ -897,9 +897,9 @@ const effects = {
       );
       const { createConstraintSpec } = data;
       if (createConstraintSpec != null) {
-        const { invocation_id } = createConstraintSpec;
+        const { invocation_id: invocationId } = createConstraintSpec;
         showSuccessToast('New Constraint Invocation Created Successfully');
-        return invocation_id ?? null;
+        return invocationId ?? null;
       } else {
         throw Error('Unable to create a constraint spec invocation');
       }
@@ -5907,6 +5907,7 @@ const effects = {
         enabled,
         invocation_id: invocationId,
         constraint_revision: revision,
+        order,
       } = constraintPlanSpecification;
 
       const { updateConstraintPlanSpecification } = await reqHasura(
@@ -5915,6 +5916,7 @@ const effects = {
           arguments: constraintArguments,
           constraintInvocationId: invocationId,
           enabled,
+          order,
           revision,
         },
         user,

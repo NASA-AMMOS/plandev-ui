@@ -2244,7 +2244,7 @@ const gql = {
     subscription SubConstraintPlanSpecifications($planId: Int!) {
       constraintPlanSpecs: ${Queries.CONSTRAINT_SPECIFICATIONS}(
         where: { plan_id: {_eq: $planId } },
-        order_by: { constraint_id: desc }
+        order_by: { order: asc }
       ) {
         arguments
         constraint_id
@@ -2267,20 +2267,49 @@ const gql = {
     }
   `,
 
-  SUB_CONSTRAINT_RUNS: `#graphql
+  SUB_CONSTRAINT_REQUESTS: `#graphql
     subscription SubConstraintRuns($simulationDatasetId: Int!) {
-      constraintRuns: ${Queries.CONSTRAINT_RUN}(where: { simulation_dataset_id: { _eq: $simulationDatasetId }}) {
-        arguments
-        constraint_id
-        constraint_invocation_id
-        constraint_revision
-        results
-        constraint_metadata {
-          name
+      constraintRuns: ${Queries.CONSTRAINT_REQUEST}(where: { simulation_dataset_id: { _eq: $simulationDatasetId }}, order_by: { id: desc }, limit: 1) {
+        constraints_run {
+          results {
+            arguments
+            constraint_id
+            constraint_revision
+            errors
+            id
+            priority
+            results
+          }
+          constraint_invocation_id
         }
+        requested_by
+        requested_at
+        simulation_dataset_id
       }
     }
   `,
+
+  // SUB_CONSTRAINT_RUNS: `#graphql
+  //   subscription SubConstraintRuns($simulationDatasetId: Int!) {
+  //     constraintRuns: ${Queries.CONSTRAINT_RUN}(where: { simulation_dataset_id: { _eq: $simulationDatasetId }}) {
+  //       constraints_run {
+  //         results {
+  //           arguments
+  //           constraint_id
+  //           constraint_revision
+  //           errors
+  //           id
+  //           priority
+  //           results
+  //         }
+  //         constraint_invocation_id
+  //       }
+  //       requested_by
+  //       requested_at
+  //       simulation_dataset_id
+  //     }
+  //   }
+  // `,
 
   SUB_DERIVATION_GROUPS: `#graphql
     subscription SubDerivationGroups {
@@ -3497,13 +3526,14 @@ const gql = {
   `,
 
   UPDATE_CONSTRAINT_PLAN_SPECIFICATION: `#graphql
-    mutation UpdateConstraintPlanSpecification($arguments: jsonb, $constraintInvocationId: Int!, $revision: Int!, $enabled: Boolean!) {
+    mutation UpdateConstraintPlanSpecification($arguments: jsonb, $constraintInvocationId: Int!, $revision: Int!, $enabled: Boolean!, $order: Int!) {
       updateConstraintPlanSpecification: ${Queries.UPDATE_CONSTRAINT_SPECIFICATION}(
         pk_columns: { invocation_id: $constraintInvocationId },
         _set: {
           arguments: $arguments,
           constraint_revision: $revision,
-          enabled: $enabled
+          enabled: $enabled,
+          order: $order
         }
       ) {
         constraint_revision
