@@ -3,32 +3,30 @@
 <script lang="ts">
   import type { ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
-  import { parcels, userTemplates } from '../../stores/sequencing';
+  import { parcels, sequenceTemplates } from '../../stores/sequencing';
   import type { User, UserId } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
-  import type { UserSequenceTemplate } from '../../types/sequencing';
+  import type { SequenceTemplate } from '../../types/sequencing';
   import effects from '../../utilities/effects';
-  import { getTarget } from '../../utilities/generic';
   import { featurePermissions } from '../../utilities/permissions';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
 
   type CellRendererParams = {
-    deleteTemplate: (sequence: UserSequenceTemplate) => void;
-    editTemplate: (sequence: UserSequenceTemplate) => void;
+    deleteTemplate: (sequence: SequenceTemplate) => void;
+    editTemplate: (sequence: SequenceTemplate) => void;
   };
-  type TemplatesCellRendererParams = ICellRendererParams<UserSequenceTemplate> & CellRendererParams;
+  type TemplatesCellRendererParams = ICellRendererParams<SequenceTemplate> & CellRendererParams;
 
   export let filterText: string;
   export let user: User | null;
 
   let baseColumnDefs: DataGridColumnDef[] = [];
   let columnDefs = baseColumnDefs;
-  let filteredTemplates: UserSequenceTemplate[] = [];
-  let selectedTemplate: UserSequenceTemplate | null = null;
+  let selectedTemplate: SequenceTemplate | null = null;
 
   const dispatch = createEventDispatcher<{
-    templateSelected: UserSequenceTemplate;
+    templateSelected: SequenceTemplate;
   }>();
 
   $: baseColumnDefs = [
@@ -40,17 +38,24 @@
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 60,
+      width: 55,
     },
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     {
-      field: 'parcel',
+      field: 'activity_type',
+      filter: 'text',
+      headerName: 'Activity',
+      resizable: true,
+      sortable: true,
+    },
+    {
+      field: 'parcel_id',
       filter: 'text',
       headerName: 'Parcel',
       resizable: true,
       sortable: true,
       valueGetter: ({ data }) => {
-        return $parcels.find(p => data.parcel_id === p.id)?.name;
+        return `${$parcels.find(p => data.parcel_id === p.id)?.name} (${data.parcel_id})`;
       },
     },
     {
@@ -107,64 +112,35 @@
     },
   ];
 
-  $: filteredTemplates = $userTemplates.filter(template => {
-    const filterTextLowerCase = filterText.toLowerCase();
-    const includesId = `${template.id}`.includes(filterTextLowerCase);
-    const includesName = template.name.toLocaleLowerCase().includes(filterTextLowerCase);
-
-    return includesId || includesName;
-  });
-
-  async function deleteTemplate(template: UserSequenceTemplate) {
-    const success = await effects.deleteUserSequenceTemplate(template, user);
-
-    // TODO: re-enable this once we're saving templates to GraphQL again
-    // if (success) {
-    //   userTemplates.filterValueById(template.id);
-
-    //   if (template.id === selectedTemplate?.id) {
-    //     selectedTemplate = null;
-    //   }
-    // }
+  function deleteTemplate(template: SequenceTemplate) {
+    effects.deleteSequenceTemplate(template, user);
   }
 
   function deleteTemplateContext(event: CustomEvent<RowId[]>) {
     const id = event.detail[0] as number;
-    const template = $userTemplates.find(s => s.id === id);
+    const template = $sequenceTemplates.find(sequenceTemplate => sequenceTemplate.id === id);
     if (template) {
       deleteTemplate(template);
     }
   }
 
-  function editTemplate({ id }: Pick<UserSequenceTemplate, 'id'>) {
-    selectedTemplate = $userTemplates.find(s => s.id === id) ?? null;
+  function editTemplate({ id }: Pick<SequenceTemplate, 'id'>) {
+    selectedTemplate = $sequenceTemplates.find(s => s.id === id) ?? null;
   }
 
   function editTemplateContext(event: CustomEvent<RowId[]>) {
     editTemplate({ id: event.detail[0] as number });
   }
 
-  function hasDeletePermission(user: User | null, template: UserSequenceTemplate) {
-    return featurePermissions.sequences.canDelete(user, template);
+  function hasDeletePermission(user: User | null, template: SequenceTemplate) {
+    return featurePermissions.sequenceTemplate.canDelete(user, template);
   }
 
-  function hasEditPermission(user: User | null, template: UserSequenceTemplate) {
-    return featurePermissions.sequences.canUpdate(user, template);
+  function hasEditPermission(user: User | null, template: SequenceTemplate) {
+    return featurePermissions.sequenceTemplate.canUpdate(user, template);
   }
 
-  function onFilterToUsersTemplates(event: Event) {
-    const { value: enabled } = getTarget(event);
-
-    if (enabled as boolean) {
-      filteredTemplates = $userTemplates.filter(template => {
-        return template.owner === user?.id;
-      });
-    } else {
-      filteredTemplates = $userTemplates;
-    }
-  }
-
-  async function toggleTemplate(event: CustomEvent<DataGridRowSelection<UserSequenceTemplate>>) {
+  async function toggleTemplate(event: CustomEvent<DataGridRowSelection<SequenceTemplate>>) {
     const { detail } = event;
     const { data: clickedTemplate, isSelected } = detail;
 
@@ -194,35 +170,20 @@
   }
 </script>
 
-<div class="filter-container">
-  <div>
-    <input type="checkbox" on:change={onFilterToUsersTemplates} />
-    <span class=" st-typography-body">Filter to my templates</span>
-  </div>
-</div>
-
-{#if filteredTemplates.length}
+{#if $sequenceTemplates.length}
   <SingleActionDataGrid
     {columnDefs}
+    filterExpression={filterText}
     hasEdit={true}
     {hasEditPermission}
     {hasDeletePermission}
     itemDisplayText="Template"
-    items={filteredTemplates}
+    items={$sequenceTemplates}
     {user}
     on:deleteItem={deleteTemplateContext}
     on:editItem={editTemplateContext}
     on:rowSelected={toggleTemplate}
   />
 {:else}
-  <div class="p1 st-typography-label">No Templates Found</div>
+  <div class="st-typography-label">No Templates Found</div>
 {/if}
-
-<style>
-  .filter-container {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
-</style>

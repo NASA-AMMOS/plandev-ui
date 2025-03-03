@@ -203,10 +203,10 @@ import {
   type SequenceAdaptationMetadata,
   type SequenceFilter,
   type SequenceFilterInsertInput,
+  type SequenceTemplate,
+  type SequenceTemplateInsertInput,
   type UserSequence,
   type UserSequenceInsertInput,
-  type UserSequenceTemplate,
-  type UserSequenceTemplateInsertInput,
   type Workspace,
 } from '../types/sequencing';
 import type {
@@ -1930,6 +1930,47 @@ const effects = {
     return undefined;
   },
 
+  async createSequenceTemplate(
+    activityType: string,
+    language: string,
+    modelId: number,
+    name: string,
+    parcelId: number,
+    templateDefinition: string,
+    user: User | null
+  ): Promise<void> {
+    try {
+      if (!queryPermissions.CREATE_SEQUENCE_TEMPLATE(user)) {
+        throwPermissionError('create a sequence template');
+      }
+
+      const sequenceTemplateInsertInput: SequenceTemplateInsertInput = {
+        activity_type: activityType,
+        language,
+        model_id: modelId,
+        name,
+        parcel_id: parcelId,
+        template_definition: templateDefinition
+      };
+
+      const result = await reqHasura<SequenceTemplate>(
+        gql.CREATE_SEQUENCE_TEMPLATE,
+        { definition: sequenceTemplateInsertInput },
+        user,
+      );
+
+      if (result !== null) {
+        showSuccessToast('Sequence Template Created Successfully');
+      } else {
+        throw Error('Unable to create sequence template');
+      }
+
+    } catch (e) {
+      catchError('Unable To Create Sequence Template', e as Error);
+      showFailureToast('Unable To Create Sequence Template');
+    }
+  },
+
   async createSimulationTemplate(
     argumentsMap: ArgumentsMap,
     name: string,
@@ -2044,30 +2085,6 @@ const effects = {
       showFailureToast('User Sequence Create Failed');
       return null;
     }
-  },
-
-
-  async createUserSequenceTemplate(sequence: UserSequenceTemplateInsertInput, user: User | null): Promise<number | null> {
-    // TODO: Connect to GQL akin to createUserSequence
-    let nextId = null;
-
-    userTemplates.update(templates => {
-      nextId = Math.max(0, ...templates.map($ => $.id)) + 1;
-      const now = new Date().toISOString();
-      const newTemplate: UserSequenceTemplate = {
-        created_at: now,
-        definition: sequence.definition,
-        id: nextId,
-        name: sequence.name,
-        owner: user?.id ?? null,
-        parcel_id: sequence.parcel_id,
-        model_id: sequence.model_id,
-        activity_name: sequence.activity_name,
-        updated_at: now
-      };
-      return [...templates, newTemplate];
-    });
-    return nextId;
   },
 
   async createView(definition: ViewDefinition, user: User | null): Promise<boolean> {
@@ -3229,6 +3246,36 @@ const effects = {
     }
   },
 
+  async deleteSequenceTemplate(sequenceTemplate: SequenceTemplate, user: User | null): Promise<void> {
+    try {
+      if (!queryPermissions.DELETE_SEQUENCE_TEMPLATE(user)) {
+        throwPermissionError('delete this sequence template');
+      }
+
+      const { confirm } = await showConfirmModal(
+        'Delete',
+        `This will permanently delete the template ("${sequenceTemplate.name}") for the activity type: ${sequenceTemplate.activity_type}`,
+        'Delete Permanently',
+      );
+
+      if (confirm) {
+        const data = await reqHasura<{ sequenceTemplateId: number }>(
+          gql.DELETE_SEQUENCE_TEMPLATE,
+          { sequenceTemplateId: sequenceTemplate.id },
+          user,
+        );
+        if (data.deleteSequenceTemplate !== null) {
+          showSuccessToast('Sequence Template Deleted Successfully');
+        } else {
+          throw Error(`Unable to delete sequence template with ID: "${sequenceTemplate.id}"`);
+        }
+      }
+    } catch (e) {
+      catchError("Sequence Template Deletion Failed", e as Error);
+      showFailureToast("Sequence Template Deletion Failed");
+    }
+  },
+
   async deleteSimulationTemplate(
     simulationTemplate: SimulationTemplate,
     modelName: string,
@@ -3398,15 +3445,6 @@ const effects = {
       showFailureToast('User Sequence Delete Failed');
       return false;
     }
-  },
-
-  async deleteUserSequenceTemplate(sequence: UserSequenceTemplate, user: User | null): Promise<boolean> {
-    // TODO: connect GQL so this delete goes to the back end, akin to deleteUserSequence
-    userTemplates.update(templates => {
-      const index = templates.indexOf(sequence);
-      return index >= 0 ? templates.toSpliced(index, 1) : templates;
-    });
-    return true;
   },
 
   async deleteView(view: ViewSlim, user: User | null): Promise<boolean> {
@@ -6445,6 +6483,28 @@ const effects = {
       }
     } catch (e) {
       catchError(e as Error);
+    }
+  },
+
+  async updateSequenceTemplate(
+    definition: string,
+    sequenceTemplate: SequenceTemplate,
+    user: User | null
+  ): Promise<void> {
+    try {
+      if (!queryPermissions.UPDATE_SEQUENCE_TEMPLATE(user, sequenceTemplate)) {
+        throwPermissionError('update this sequence template');
+      }
+
+      const data = await reqHasura(gql.UPDATE_SEQUENCE_TEMPLATE, { definition, id: sequenceTemplate.id }, user);
+      if (data.updateSequenceTemplate !== null) {
+        showSuccessToast("Updated Sequence Template");
+      } else {
+        throw Error(`Unable to update sequence template with ID: "${sequenceTemplate.id}"`);
+      }
+    } catch (e) {
+      catchError("Failed To Update Sequence Template", e as Error);
+      showFailureToast("Failed To Update Sequence Template");
     }
   },
 
