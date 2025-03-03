@@ -6,6 +6,8 @@
   import ModalContent from '../modals/ModalContent.svelte';
   import ModalFooter from '../modals/ModalFooter.svelte';
   import ModalHeader from '../modals/ModalHeader.svelte';
+  import { activityTypes, modelId, parcels } from '../../stores/sequencing';
+  import { models } from '../../stores/model';
 
   export let height: number = 300;
   export let width: number = 380;
@@ -13,21 +15,35 @@
 
   const dispatch = createEventDispatcher<{
     close: void;
-    save: { name: string; parcel_id: number; model_id: number; activity_name: string };
+    save: {
+      name: string;
+      parcelId: number;
+      modelId: number;
+      activityName: string;
+    };
   }>();
 
   let templateName: string = initialTemplateName;
-  let parcel_id: number = -1;
-  let model_id: number = -1;
-  let activity_name: string = '';
   let saveButtonDisabled: boolean = true;
+  let selectedParcelId: number | null = null;
+  let selectedActivityType: string = '';
 
   // TODO: Add logic to disallow saving a name already in use
   $: saveButtonDisabled = templateName === '';
 
   function save() {
-    if (!saveButtonDisabled) {
-      dispatch('save', { name: templateName, parcel_id, model_id, activity_name });
+    if (
+      !saveButtonDisabled &&
+      $modelId !== -1 &&
+      selectedParcelId !== null &&
+      selectedActivityType !== null
+    ) {
+      dispatch('save', {
+        activityName: selectedActivityType,
+        modelId: $modelId,
+        name: templateName,
+        parcelId: selectedParcelId,
+      });
     }
   }
 
@@ -51,21 +67,60 @@
       <input bind:value={templateName} autocomplete="off" class="st-input w-100" id="name" required type="text" />
 
       <!-- TODO: make these pickers of some kind, rather than a raw ID input -->
-      <label for="parcel_id">Parcel ID</label>
-      <input bind:value={parcel_id} autocomplete="off" class="st-input w-100" id="parcel_id" required type="number" />
+      <label for="parcelId">Parcel ID</label>
+      <select
+        id="parcelId"
+        bind:value={selectedParcelId}
+        class="st-select w-100"
+      >
+        {#if !$parcels.length}
+          <option value={null}>No values</option>
+        {:else}
+          <option value={null} />
+          {#each $parcels as parcel}
+            <option value={parcel.id}>
+              {parcel.name} ({parcel.id})
+            </option>
+          {/each}
+        {/if}
+      </select>
 
-      <label for="model_id">Model ID</label>
-      <input bind:value={model_id} autocomplete="off" class="st-input w-100" id="model_id" required type="number" />
+      <label for="modelId">Model ID</label>
+      <select
+        id="modelId"
+        bind:value={$modelId}
+        class="st-select w-100"
+      >
+        {#if !$models.length}
+          <option value={-1}>No values</option>
+        {:else}
+          <option value={-1} />
+          {#each $models as model}
+            <option value={model.id}>
+              {model.name} ({model.id})
+            </option>
+          {/each}
+        {/if}
+      </select>
 
-      <label for="activity_name">Activity Name</label>
-      <input
-        bind:value={activity_name}
-        autocomplete="off"
-        class="st-input w-100"
-        id="activity_name"
-        required
-        type="text"
-      />
+      <label for="activityName">Activity Name</label>
+      <select
+        id="activityName"
+        bind:value={selectedActivityType}
+        class="st-select w-100"
+        disabled={$modelId === -1}
+      >
+        {#if !$activityTypes.length}
+          <option value={null}>No values</option>
+        {:else}
+          <option value={null} />
+          {#each $activityTypes as activityType}
+            <option value={activityType.name}>
+              {activityType.name}
+            </option>
+          {/each}
+        {/if}
+      </select>
     </fieldset>
   </ModalContent>
 

@@ -23,6 +23,7 @@ import effects from '../utilities/effects';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
 import type { Status } from '../enums/status';
+import type { ActivityType } from '../types/activity';
 
 /* Writable */
 
@@ -38,7 +39,11 @@ export const sequenceExpansionStatusStore: Writable<Status | null> = writable(nu
 
 export const sequencingError: Writable<string | null> = writable(null);
 
+export const modelId: Writable<number> = writable(-1);
+
 /* Subscriptions. */
+
+export const activityTypes = gqlSubscribable<ActivityType[]>(gql.SUB_ACTIVITY_TYPES, { modelId }, [], null);
 
 export const channelDictionaries = gqlSubscribable<ChannelDictionaryMetadata[]>(
   gql.SUB_CHANNEL_DICTIONARIES,
