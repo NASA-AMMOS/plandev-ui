@@ -1332,6 +1332,10 @@ interface SchedulingCRUDPermission<T = null> extends RunnableSpecificationCRUDPe
   canAnalyze: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner) => boolean;
 }
 
+interface SequenceTemplateCRUDPermission<T = null> extends CRUDPermission<T> {
+  canTemplate: RolePlanPermissionCheck;
+}
+
 interface AssociationCRUDPermission<M, D> extends CRUDPermission<AssetWithOwner<M>> {
   canUpdateDefinition: (user: User | null, definition: AssetWithAuthor<D>) => boolean;
 }
@@ -1370,7 +1374,7 @@ interface FeaturePermissions {
   schedulingGoalsPlanSpec: SchedulingCRUDPermission<AssetWithOwner<SchedulingGoalMetadata>>;
   sequenceAdaptation: CRUDPermission<void>;
   sequenceFilter: CRUDPermission<void>;
-  sequenceTemplate: CRUDPermission<SequenceTemplate>;
+  sequenceTemplate: SequenceTemplateCRUDPermission<SequenceTemplate>;
   sequences: CRUDPermission<AssetWithOwner<UserSequence>>;
   simulation: RunnableCRUDPermission<AssetWithOwner<Simulation>>;
   simulationTemplates: PlanSimulationTemplateCRUDPermission;
@@ -1586,6 +1590,7 @@ const featurePermissions: FeaturePermissions = {
     canCreate: user => queryPermissions.CREATE_SEQUENCE_TEMPLATE(user),
     canDelete: (user, sequenceTemplate) => queryPermissions.DELETE_SEQUENCE_TEMPLATE(user, sequenceTemplate),
     canRead: () => true,
+    canTemplate: (user, plan, model) => queryPermissions.EXPAND_TEMPLATES(user, plan, model),
     canUpdate: (user, sequenceTemplate) => queryPermissions.UPDATE_SEQUENCE_TEMPLATE(user, sequenceTemplate),
   },
   sequences: {

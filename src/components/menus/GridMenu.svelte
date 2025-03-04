@@ -101,9 +101,13 @@
       <ExternalEventIcon />
       Selected External Event
     </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('SequencingPanel')}>
+    <MenuItem on:click={() => onClickMenuItem('SequencesPanel')}>
       <JournalCodeIcon />
-      Sequencing
+      Sequences
+    </MenuItem>
+    <MenuItem on:click={() => onClickMenuItem('SequenceTemplatePanel')}>
+      <CodeSquareIcon />
+      Sequence Templates
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('SimulationPanel')}>
       <GearWideConnectedIcon />

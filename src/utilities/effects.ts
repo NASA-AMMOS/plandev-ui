@@ -60,6 +60,7 @@ import {
   commandDictionaries as commandDictionariesStore,
   parameterDictionaries as parameterDictionariesStore,
   sequenceExpansionStatusStore,
+  sequencingError,
 } from '../stores/sequencing';
 import {
   selectedSpanId as selectedSpanIdStore,
@@ -3654,6 +3655,7 @@ const effects = {
     } catch (e) {
       catchError('Sequence Expansion Failed', e as Error);
       sequenceExpansionStatusStore.set(Status.Failed);
+      sequencingError.set(e as string);
       showFailureToast('Sequence Expansion Failed');
     }
   },
