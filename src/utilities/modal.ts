@@ -31,7 +31,7 @@ import TimeRangeModal from '../components/modals/TimeRangeModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceModal from '../components/modals/WorkspaceModal.svelte';
 import { type ActionDefinition } from '../types/actions';
-import NewSequenceTemplateModal from '../components/sequencing/NewSequenceTemplateModal.svelte';
+import NewSequenceTemplateModal from '../components/sequence-templates/NewSequenceTemplateModal.svelte';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
 import type { User } from '../types/app';
 import type { ExpansionSequence } from '../types/expansion';

@@ -65,6 +65,13 @@
       <CodeSquareIcon />
       Expansion
     </MenuItem>
+    <MenuItem
+      on:click={() => goto(`${base}/sequence-templates`)}
+      on:pointerenter={() => preloadData(`${base}/sequence-templates`)}
+    >
+      <CodeSquareIcon />
+      Sequence Templates
+    </MenuItem>
     <MenuItem on:click={() => goto(`${base}/scheduling`)} on:pointerenter={() => preloadData(`${base}/scheduling`)}>
       <CalendarIcon />
       Scheduling
