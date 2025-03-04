@@ -872,8 +872,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     return isUserAdmin(user) || getPermission([Queries.CONSTRAINT_SPECIFICATIONS], user);
   },
   SUB_CONSTRAINT_PLAN_SPECIFICATIONS: () => true,
-  SUB_CONSTRAINT_RUNS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.CONSTRAINT_RUN], user);
+  SUB_CONSTRAINT_REQUESTS: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.CONSTRAINT_REQUEST], user);
   },
   SUB_DERIVATION_GROUPS: () => true,
   SUB_EXPANSION_RULES: (user: User | null): boolean => {
@@ -1421,7 +1421,7 @@ const featurePermissions: FeaturePermissions = {
   constraintRuns: {
     canCreate: (user, plan, model) => queryPermissions.CHECK_CONSTRAINTS(user, plan, model),
     canDelete: () => false, // Not implemented
-    canRead: user => queryPermissions.SUB_CONSTRAINT_RUNS(user),
+    canRead: user => queryPermissions.SUB_CONSTRAINT_REQUESTS(user),
     canUpdate: () => false, // Not implemented
   },
   constraints: {

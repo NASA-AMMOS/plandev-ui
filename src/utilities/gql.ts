@@ -2286,28 +2286,6 @@ const gql = {
     }
   `,
 
-  // SUB_CONSTRAINT_RUNS: `#graphql
-  //   subscription SubConstraintRuns($simulationDatasetId: Int!) {
-  //     constraintRuns: ${Queries.CONSTRAINT_RUN}(where: { simulation_dataset_id: { _eq: $simulationDatasetId }}) {
-  //       constraints_run {
-  //         results {
-  //           arguments
-  //           constraint_id
-  //           constraint_revision
-  //           errors
-  //           id
-  //           priority
-  //           results
-  //         }
-  //         constraint_invocation_id
-  //       }
-  //       requested_by
-  //       requested_at
-  //       simulation_dataset_id
-  //     }
-  //   }
-  // `,
-
   SUB_DERIVATION_GROUPS: `#graphql
     subscription SubDerivationGroups {
       derivationGroups: ${Queries.DERIVATION_GROUP} {
