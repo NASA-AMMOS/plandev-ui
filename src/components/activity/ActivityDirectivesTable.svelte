@@ -9,12 +9,7 @@
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/errors';
   import type { Plan } from '../../types/plan';
-  import {
-    getActivityDirectivesClipboardCount,
-    copyActivityDirectivesToClipboard,
-    getActivityDirectivesToPaste,
-    getPasteActivityDirectivesText,
-  } from '../../utilities/activities';
+  import { copyActivityDirectivesToClipboard } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
   import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
@@ -23,7 +18,7 @@
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
-  import { permissionHandler } from '../../utilities/permissionHandler';
+  import PasteActivitiesContextMenu from './PasteActivitiesContextMenu.svelte';
 
   export let activityDirectives: ActivityDirective[] | null = null;
   export let activityDirectiveErrorRollupsMap: Record<ActivityDirectiveId, ActivityErrorRollup> | undefined = undefined;
@@ -177,14 +172,9 @@
     }
   }
 
-  async function pasteActivityDirectives() {
-    if (plan != null && hasCreatePermission) {
-      const directivesInClipboard = await getActivityDirectivesClipboardCount();
-      if (directivesInClipboard > 0) {
-        const directives = await getActivityDirectivesToPaste(plan);
-        dispatch(`createActivityDirectives`, directives);
-      }
-    }
+  async function pasteActivityDirectives(event: CustomEvent<ActivityDirective[]>) {
+    const { detail: directives } = event;
+    dispatch(`createActivityDirectives`, directives);
   }
 </script>
 
@@ -222,30 +212,12 @@
       <ContextMenuItem on:click={scrollTimelineToActivityDirective}>Scroll to Activity</ContextMenuItem>
       <ContextMenuSeparator></ContextMenuSeparator>
     {/if}
-    {#await getActivityDirectivesClipboardCount() then directivesInClipboard}
-      <ContextMenuItem
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasCreatePermission && directivesInClipboard > 0,
-              permissionError: () => {
-                if (permissionErrorText !== null) {
-                  return permissionErrorText;
-                } else if (directivesInClipboard <= 0) {
-                  return 'No activity directives in clipboard';
-                } else {
-                  return null;
-                }
-              },
-            },
-          ],
-        ]}
-        on:click={pasteActivityDirectives}
-      >
-        {getPasteActivityDirectivesText(directivesInClipboard)}
-      </ContextMenuItem>
-      <ContextMenuSeparator></ContextMenuSeparator>
-    {/await}
+    <PasteActivitiesContextMenu
+      {hasCreatePermission}
+      {plan}
+      planPermissionErrorText={permissionErrorText}
+      on:pasteActivityDirectives={pasteActivityDirectives}
+    />
+    <ContextMenuSeparator></ContextMenuSeparator>
   </svelte:fragment>
 </BulkActionDataGrid>
