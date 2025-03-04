@@ -3,12 +3,12 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import CheckmarkIcon from '@nasa-jpl/stellar/icons/check.svg?component';
-  import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
-  import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
   import VisibleHideIcon from '@nasa-jpl/stellar/icons/visible_hide.svg?component';
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
+  import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
+  import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { SearchParameters } from '../../enums/searchParameters';
   import { Status } from '../../enums/status';
