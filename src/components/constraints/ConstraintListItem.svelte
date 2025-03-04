@@ -173,11 +173,7 @@
 </script>
 
 <div class="constraint-list-item">
-  <Collapse
-    title={`${constraint.name}${constraintPlanSpec.order}`}
-    tooltipContent={constraint.name}
-    defaultExpanded={false}
-  >
+  <Collapse title={constraint.name} tooltipContent={constraint.name} defaultExpanded={false}>
     <svelte:fragment slot="left">
       <div class="left-content">
         <input
