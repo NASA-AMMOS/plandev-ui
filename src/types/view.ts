@@ -44,7 +44,8 @@ export type ViewGridComponent =
   | 'PlanMetadataPanel'
   | 'SchedulingConditionsPanel'
   | 'SchedulingGoalsPanel'
-  | 'SequencingPanel'
+  | 'SequencesPanel'
+  | 'SequenceTemplatePanel'
   | 'SimulationPanel'
   | 'SimulationEventsPanel'
   | 'TimelineEditorPanel';

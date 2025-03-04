@@ -29,10 +29,21 @@
 
   $: startTimeField = field<string>(defaultStartTime, [required, $plugins.time.primary.validate]);
   $: endTimeField = field<string>(defaultEndTime, [required, $plugins.time.primary.validate]);
+
+  function onInputKeydown(event: KeyboardEvent) {
+    const { key } = event;
+    if (key === 'Enter') {
+      onConfirm();
+    }
+  }
+
+  function onConfirm() {
+    dispatch('confirm', { timeRangeStart: `${$startTimeField.value}Z`, timeRangeEnd: `${$endTimeField.value}Z` })
+  }
 </script>
 
 <Modal {height} {width}>
-  <ModalHeader on:close>Time Range For Sequence</ModalHeader>
+  <ModalHeader on:close>Apply Filter To Range</ModalHeader>
   <ModalContent>
     <fieldset>
       <DatePickerField
@@ -57,7 +68,8 @@
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
     <button
       class="st-button"
-      on:click={() => dispatch('confirm', { timeRangeStart: `${$startTimeField.value}Z`, timeRangeEnd: `${$endTimeField.value}Z` })}
+      on:keydown={onInputKeydown}
+      on:click={onConfirm}
     >
       Confirm
     </button>
