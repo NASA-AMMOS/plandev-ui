@@ -128,8 +128,8 @@ describe('Handle modal and requests in effects', () => {
           id: 1,
           owner: 'test',
         } as Plan,
-        false,
         mockUser,
+        false,
       );
 
       expect(catchErrorSpy).toHaveBeenCalledWith(

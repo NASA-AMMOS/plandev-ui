@@ -289,7 +289,7 @@
             },
           ],
         ]}
-        on:click={() => $plan && effects.checkConstraints($plan, true, user)}
+        on:click={() => $plan && effects.checkConstraints($plan, user, true)}
       >
         <RefreshIcon />
       </PanelHeaderActionButton>
@@ -297,7 +297,7 @@
         disabled={$simulationStatus !== Status.Complete || $constraintsStatus === Status.Complete}
         tooltipContent={$simulationStatus !== Status.Complete ? 'Completed simulation required' : ''}
         title="Check Constraints"
-        on:click={() => $plan && effects.checkConstraints($plan, false, user)}
+        on:click={() => $plan && effects.checkConstraints($plan, user, false)}
         use={[
           [
             permissionHandler,

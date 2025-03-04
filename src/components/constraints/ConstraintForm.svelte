@@ -115,15 +115,19 @@
       },
     } = event;
     const newConstraintId = await effects.createConstraint(
-      name,
-      isPublic,
-      metadataTags.map(({ id }) => ({ tag_id: id })),
+      {
+        description,
+        name,
+        public: isPublic,
+        tags: {
+          data: metadataTags.map(({ id }) => ({ tag_id: id })),
+        },
+      },
       definitionType === DefinitionType.CODE ? ConstraintDefinitionType.EDSL : ConstraintDefinitionType.JAR,
       definitionCode ?? '',
       definitionFile ?? null,
       definitionTags.map(({ id }) => ({ tag_id: id })),
       user,
-      description,
     );
 
     if (newConstraintId !== null) {

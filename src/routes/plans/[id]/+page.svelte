@@ -187,15 +187,15 @@
 
   $: ({ invalidActivityCount, ...activityErrorCounts } = $activityErrorRollups.reduce(
     (prevCounts, activityErrorRollup) => {
-      let extra = prevCounts.extra + activityErrorRollup.errorCounts.extra;
-      let invalidAnchor = prevCounts.invalidAnchor + activityErrorRollup.errorCounts.invalidAnchor;
-      let invalidParameter = prevCounts.invalidParameter + activityErrorRollup.errorCounts.invalidParameter;
-      let missing = prevCounts.missing + activityErrorRollup.errorCounts.missing;
-      let outOfBounds = prevCounts.outOfBounds + activityErrorRollup.errorCounts.outOfBounds;
-      let pending = prevCounts.pending + activityErrorRollup.errorCounts.pending;
-      let wrongType = prevCounts.wrongType + activityErrorRollup.errorCounts.wrongType;
+      const extra = prevCounts.extra + activityErrorRollup.errorCounts.extra;
+      const invalidAnchor = prevCounts.invalidAnchor + activityErrorRollup.errorCounts.invalidAnchor;
+      const invalidParameter = prevCounts.invalidParameter + activityErrorRollup.errorCounts.invalidParameter;
+      const missing = prevCounts.missing + activityErrorRollup.errorCounts.missing;
+      const outOfBounds = prevCounts.outOfBounds + activityErrorRollup.errorCounts.outOfBounds;
+      const pending = prevCounts.pending + activityErrorRollup.errorCounts.pending;
+      const wrongType = prevCounts.wrongType + activityErrorRollup.errorCounts.wrongType;
 
-      let all = extra + invalidAnchor + invalidParameter + missing + outOfBounds + wrongType;
+      const all = extra + invalidAnchor + invalidParameter + missing + outOfBounds + wrongType;
       return {
         all,
         extra,
@@ -322,7 +322,7 @@
   }
 
   $: if ($initialPlan && $planDatasets) {
-    let datasetNames = [];
+    const datasetNames = [];
 
     for (const dataset of $planDatasets) {
       for (const profile of dataset.dataset.profiles) {
@@ -498,9 +498,9 @@
   }
 
   async function onEditView(event: CustomEvent<View>) {
-    const { detail: view } = event;
-    if (view && hasUpdateViewPermission) {
-      const success = await effects.editView(view, data.user);
+    const { detail: updatedView } = event;
+    if (updatedView && hasUpdateViewPermission) {
+      const success = await effects.editView(updatedView, data.user);
       if (success) {
         resetOriginalView();
       }
@@ -508,9 +508,9 @@
   }
 
   async function onRestoreSnapshot(event: CustomEvent<PlanSnapshot>) {
-    const { detail: planSnapshot } = event;
+    const { detail: snapshotToRestore } = event;
     if ($plan) {
-      const success = await effects.restorePlanSnapshot(planSnapshot, $plan, data.user);
+      const success = await effects.restorePlanSnapshot(snapshotToRestore, $plan, data.user);
 
       if (success) {
         clearSnapshot();
@@ -719,7 +719,7 @@
             : 'You do not have permission to run a constraint check'}
           status={$constraintsStatus}
           showStatusInMenu={false}
-          on:click={() => $plan && effects.checkConstraints($plan, false, data.user)}
+          on:click={() => $plan && effects.checkConstraints($plan, data.user, false)}
           indeterminate
         >
           <VerticalCollapseIcon />

@@ -452,7 +452,7 @@ const effects = {
     }
   },
 
-  async checkConstraints(plan: Plan, force: boolean = false, user: User | null): Promise<void> {
+  async checkConstraints(plan: Plan, user: User | null, force: boolean = false): Promise<void> {
     try {
       checkConstraintsQueryStatusStore.set(Status.Incomplete);
       if (plan !== null) {
@@ -767,15 +767,12 @@ const effects = {
   },
 
   async createConstraint(
-    name: string,
-    isPublic: boolean,
-    metadataTags: ConstraintTagsInsertInput[],
+    constraintToCreate: Omit<ConstraintInsertInput, 'versions'>,
     definitionType: ConstraintDefinitionType,
     definition: string,
     file: File | null,
     definitionTags: ConstraintTagsInsertInput[],
     user: User | null,
-    description?: string,
   ): Promise<number | null> {
     try {
       if (!queryPermissions.CREATE_CONSTRAINT(user)) {
@@ -792,12 +789,7 @@ const effects = {
       }
 
       const constraintInsertInput: ConstraintInsertInput = {
-        ...(description ? { description } : {}),
-        name,
-        public: isPublic,
-        tags: {
-          data: metadataTags,
-        },
+        ...constraintToCreate,
         versions: {
           data: [
             {
@@ -811,6 +803,7 @@ const effects = {
           ],
         },
       };
+
       const data = await reqHasura<ConstraintMetadata>(
         gql.CREATE_CONSTRAINT,
         { constraint: constraintInsertInput },
@@ -823,7 +816,7 @@ const effects = {
         showSuccessToast('Constraint Created Successfully');
         return id;
       } else {
-        throw Error(`Unable to create constraint "${name}"`);
+        throw Error(`Unable to create constraint "${constraintToCreate.name}"`);
       }
     } catch (e) {
       catchError('Constraint Creation Failed', e as Error);
