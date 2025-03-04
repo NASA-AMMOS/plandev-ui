@@ -699,13 +699,10 @@ const gql = {
   `,
 
   DELETE_CONSTRAINT_INVOCATIONS: `#graphql
-    mutation DeleteConstraintInvocations($constraintInvocationIdsToDelete: [Int!]! = [], $specificationId: Int!) {
+    mutation DeleteConstraintInvocations($constraintInvocationIdsToDelete: [Int!]! = []) {
       deleteConstraintPlanSpecifications: ${Queries.DELETE_CONSTRAINT_SPECIFICATIONS}(
         where: {
-          invocation_id: { _in: $constraintInvocationIdsToDelete },
-          _and: {
-            specification_id: { _eq: $specificationId },
-          }
+          invocation_id: { _in: $constraintInvocationIdsToDelete }
         }
       ) {
         affected_rows
