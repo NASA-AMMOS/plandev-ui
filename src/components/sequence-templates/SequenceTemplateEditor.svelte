@@ -72,7 +72,7 @@
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
-  import CommandPanel from './CommandPanel/CommandPanel.svelte';
+  import CommandPanel from '../sequencing/CommandPanel/CommandPanel.svelte';
 
   import { printTree } from '@lezer-unofficial/printer';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
@@ -123,9 +123,10 @@
   let currentTree: Tree;
   let commandInfoMapper: CommandInfoMapper = new SeqNCommandInfoMapper();
   let selectedOutputFormat: IOutputFormat | undefined;
-  let toggleSeqJsonPreview: boolean = false;
   let isInVmlMode: boolean = false;
-  let editorHeights: string = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
+  let editorHeights: string = '1fr 3px 1fr';
+  let columnsWithFormBuilder: string = "3fr 3px 1.5fr";
+  let columnsWithNoFormBuilder: string = "3fr 3px";
 
   let argInfoArray: ArgTextDef[] = [];
   let commandNode: SyntaxNode | null = null;
@@ -173,8 +174,8 @@
 
   $: {
     commandFormBuilderGrid = showCommandFormBuilder
-      ? $userSequenceEditorColumnsWithFormBuilder
-      : $userSequenceEditorColumns;
+      ? columnsWithFormBuilder
+      : columnsWithNoFormBuilder
   }
 
   $: {
@@ -279,8 +280,6 @@
       parameterDictionaries = [];
     }
   }
-
-  $: editorHeights = '1fr 3px';
 
   $: commandNode = commandInfoMapper.getContainingCommand(selectedNode);
   $: commandNameNode = commandInfoMapper.getNameNode(commandNode);

@@ -103,34 +103,36 @@
           </slot>
         </svelte:fragment>
         <svelte:fragment slot="body">
-          <Input layout="inline">
-            Id
-            <input class="st-input w-100" disabled={true} name="id" value={selectedTemplate.id} />
-          </Input>
-          <Input layout="inline">
-            Name
-            <input class="st-input w-100" disabled={true} name="name" value={selectedTemplate.name} />
-          </Input>
-          <Input layout="inline">
-            Owner
-            <input class="st-input w-100" disabled={true} name="owner" value={selectedTemplate.owner} />
-          </Input>
-          <Input layout="inline">
-            Model Id
-            <input class="st-input w-100" disabled={true} name="modelId" value={selectedTemplate.model_id} />
-          </Input>
-          <Input layout="inline">
-            Parcel Id
-            <input class="st-input w-100" disabled={true} name="parcelId" value={selectedTemplate.parcel_id} />
-          </Input>
-          <Input layout="inline">
-            Language
-            <input class="st-input w-100" disabled={true} name="language" value={selectedTemplate.language} />
-          </Input>
-          <Input layout="inline">
-            Activity Type
-            <input class="st-input w-100" disabled={true} name="activityType" value={selectedTemplate.activity_type} />
-          </Input>
+          <div class="selected-template-details">
+            <Input layout="inline">
+              Id
+              <input class="st-input w-100" disabled={true} name="id" value={selectedTemplate.id} />
+            </Input>
+            <Input layout="inline">
+              Name
+              <input class="st-input w-100" disabled={true} name="name" value={selectedTemplate.name} />
+            </Input>
+            <Input layout="inline">
+              Owner
+              <input class="st-input w-100" disabled={true} name="owner" value={selectedTemplate.owner} />
+            </Input>
+            <Input layout="inline">
+              Model Id
+              <input class="st-input w-100" disabled={true} name="modelId" value={selectedTemplate.model_id} />
+            </Input>
+            <Input layout="inline">
+              Parcel Id
+              <input class="st-input w-100" disabled={true} name="parcelId" value={selectedTemplate.parcel_id} />
+            </Input>
+            <Input layout="inline">
+              Language
+              <input class="st-input w-100" disabled={true} name="language" value={selectedTemplate.language} />
+            </Input>
+            <Input layout="inline">
+              Activity Type
+              <input class="st-input w-100" disabled={true} name="activityType" value={selectedTemplate.activity_type} />
+            </Input>
+          </div>
         </svelte:fragment>
       </Panel>
     {/if}
@@ -160,5 +162,10 @@
 
   .no-templates {
     margin: 8px;
+  }
+
+  .selected-template-details {
+    margin-left: 8px;
+    margin-right: 8px;
   }
 </style>
