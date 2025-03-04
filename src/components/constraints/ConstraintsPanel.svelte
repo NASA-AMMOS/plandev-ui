@@ -11,7 +11,6 @@
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { Status } from '../../enums/status';
   import {
-    allowedConstraintPlanSpecMap,
     allowedConstraintPlanSpecs,
     cachedConstraintsStatus,
     constraintPlanSpecs,
@@ -179,10 +178,16 @@
 
   async function onDuplicateConstraintInvocation(event: CustomEvent<ConstraintPlanSpecification>) {
     const {
-      detail: { constraint_metadata, invocation_id, ...constraintPlanSpec },
+      detail: { constraint_metadata, invocation_id, order, ...constraintPlanSpec },
     } = event;
     if ($plan) {
-      await effects.createConstraintPlanSpecification(constraintPlanSpec, user);
+      await effects.createConstraintPlanSpecification(
+        {
+          ...constraintPlanSpec,
+          order: order + 1,
+        },
+        user,
+      );
     }
   }
 
@@ -424,13 +429,13 @@
           </button>
         </div>
 
-        {#each filteredConstraintPlanSpecifications as constraint (constraint.invocation_id)}
-          {#if $constraintsMap[constraint.constraint_id]}
+        {#each filteredConstraintPlanSpecifications as constraintPlanSpec (constraintPlanSpec.invocation_id)}
+          {#if $constraintsMap[constraintPlanSpec.constraint_id]}
             <ConstraintListItem
-              constraint={$constraintsMap[constraint.constraint_id]}
-              constraintPlanSpec={$allowedConstraintPlanSpecMap[constraint.constraint_id]?.[constraint.invocation_id]}
-              constraintResponse={constraintToConstraintResponseMap[constraint.constraint_id]?.[
-                constraint.invocation_id
+              constraint={$constraintsMap[constraintPlanSpec.constraint_id]}
+              {constraintPlanSpec}
+              constraintResponse={constraintToConstraintResponseMap[constraintPlanSpec.constraint_id]?.[
+                constraintPlanSpec.invocation_id
               ]}
               {deletePermissionError}
               {editPermissionError}
@@ -438,9 +443,10 @@
               hasDeletePermission={hasSpecEditPermission && filteredConstraintPlanSpecifications.length > 1}
               hasReadPermission={featurePermissions.constraints.canRead(user)}
               modelId={$plan?.model.id}
-              totalViolationCount={$constraintResponseMap[constraint.constraint_id]?.[constraint.invocation_id]?.results
-                .violations?.length || 0}
-              visible={$constraintVisibilityMap[constraint.constraint_id]?.[constraint.invocation_id]}
+              totalViolationCount={$constraintResponseMap[constraintPlanSpec.constraint_id]?.[
+                constraintPlanSpec.invocation_id
+              ]?.results.violations?.length || 0}
+              visible={$constraintVisibilityMap[constraintPlanSpec.constraint_id]?.[constraintPlanSpec.invocation_id]}
               on:updateConstraintPlanSpec={onUpdateConstraint}
               on:duplicateConstraintInvocation={onDuplicateConstraintInvocation}
               on:deleteConstraintInvocation={onDeleteConstraintInvocation}
