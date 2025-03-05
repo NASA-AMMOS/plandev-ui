@@ -2,29 +2,28 @@
 
 <script lang="ts">
   import type { ICellRendererParams } from 'ag-grid-community';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { filteredExpansionSequences } from '../../stores/expansion';
   import { plan, planReadOnly } from '../../stores/plan';
+  import { expandedTemplates, sequenceTemplateExpansionError } from '../../stores/sequence-template';
   import { parcels } from '../../stores/sequencing';
   import { simulationDatasetLatest } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExpandedTemplate } from '../../types/sequence-template';
-  import { expandedTemplates } from '../../stores/sequence-template';
+  import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { showEditorModal } from '../../utilities/modal';
+  import { permissionHandler } from '../../utilities/permissionHandler';
+  import { featurePermissions } from '../../utilities/permissions';
+  import GridMenu from '../menus/GridMenu.svelte';
+  import AlertError from '../ui/AlertError.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
-  import type { ViewGridSection } from '../../types/view';
   import Panel from '../ui/Panel.svelte';
-  import GridMenu from '../menus/GridMenu.svelte';
-  import { featurePermissions } from '../../utilities/permissions';
-  import { permissionHandler } from '../../utilities/permissionHandler';
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
-  import { PlanStatusMessages } from '../../enums/planStatusMessages';
-  import AlertError from '../ui/AlertError.svelte';
-  import { sequenceTemplateExpansionError } from '../../stores/sequence-template';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -43,9 +42,9 @@
       sortable: true,
     },
     {
-      field: 'filter_id',
-      filter: 'number',
-      headerName: 'Filter ID',
+      field: 'seq_id',
+      filter: 'string',
+      headerName: 'Sequence ID',
       resizable: true,
       sortable: true,
     },

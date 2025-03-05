@@ -27,10 +27,10 @@
     getParsedCommandDictionary,
     getParsedParameterDictionary,
     parameterDictionaries as parameterDictionariesStore,
-    parcelToParameterDictionaries,
-    userSequences,
+    parcelToParameterDictionaries
   } from '../../stores/sequencing';
   import type { User } from '../../types/app';
+  import { type SequenceTemplate } from '../../types/sequence-template';
   import {
     type ArgTextDef,
     type IOutputFormat,
@@ -40,12 +40,11 @@
     type Parcel,
     type TimeTagInfo,
   } from '../../types/sequencing';
-  import { type SequenceTemplate } from '../../types/sequence-template';
   import { setupLanguageSupport } from '../../utilities/codemirror';
   import { isFswCommandArgumentRepeat, unquoteUnescape } from '../../utilities/codemirror/codemirror-utils';
   import type { CommandInfoMapper } from '../../utilities/codemirror/commandInfoMapper';
   import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../utilities/codemirror/seq-n-highlighter';
-  import { SeqNCommandInfoMapper, userSequenceToLibrarySequence } from '../../utilities/codemirror/seq-n-tree-utils';
+  import { SeqNCommandInfoMapper } from '../../utilities/codemirror/seq-n-tree-utils';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import {
     setupVmlLanguageSupport,
@@ -53,24 +52,24 @@
     vmlBlockHighlighter,
     vmlHighlightBlock,
   } from '../../utilities/codemirror/vml/vml';
-  import { parseFunctionSignatures, vmlAutoComplete } from '../../utilities/codemirror/vml/vmlAdaptation';
+  import { vmlAutoComplete } from '../../utilities/codemirror/vml/vmlAdaptation';
   import { librarySequenceToFswCommand } from '../../utilities/codemirror/vml/vmlBlockLibrary';
   import { vmlFormat } from '../../utilities/codemirror/vml/vmlFormatter';
   import { vmlLinter } from '../../utilities/codemirror/vml/vmlLinter';
   import { vmlTooltip } from '../../utilities/codemirror/vml/vmlTooltip';
   import { VmlCommandInfoMapper } from '../../utilities/codemirror/vml/vmlTreeUtils';
   import effects from '../../utilities/effects';
+  import { isSaveEvent } from '../../utilities/keyboardEvents';
   import { getCustomArgDef, inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
   import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
   import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
   import { showFailureToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
+  import CommandPanel from '../sequencing/CommandPanel/CommandPanel.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
-  import CommandPanel from '../sequencing/CommandPanel/CommandPanel.svelte';
-  import { isSaveEvent } from '../../utilities/keyboardEvents';
 
   export let parcel: Parcel | null;
   export let showCommandFormBuilder: boolean = false;
@@ -93,6 +92,10 @@
   const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
   const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
+  // TODO: Eventually, utilize these w. Sequence Adaptations - currently only utilizing the *default* adaptation
+  const librarySequenceMap: LibrarySequenceMap = {};
+  const librarySequences: LibrarySequence[] = [];
+
   let clientHeightGridRightBottom: number = 0;
   let clientHeightGridRightTop: number = 0;
   let compartmentSeqJsonLinter: Compartment;
@@ -104,8 +107,6 @@
   let channelDictionary: ChannelDictionary | null;
   let commandDictionary: CommandDictionary | null;
   let parameterDictionaries: ParameterDictionary[] = [];
-  let librarySequenceMap: LibrarySequenceMap = {};
-  let librarySequences: LibrarySequence[] = [];
   let commandFormBuilderGrid: string;
   let editorOutputDiv: HTMLDivElement;
   let editorOutputView: EditorView;
@@ -181,16 +182,6 @@
         return pd;
       }
     });
-
-    if (isInVmlMode) {
-      librarySequences = $userSequences.flatMap(sequence =>
-        parseFunctionSignatures(sequence.definition, sequence.workspace_id),
-      );
-    } else {
-      librarySequences = $userSequences.map(userSequenceToLibrarySequence);
-    }
-
-    librarySequenceMap = Object.fromEntries(librarySequences.map(seq => [seq.name, seq]));
 
     if (unparsedCommandDictionary) {
       if (sequenceName && isInVmlMode) {
@@ -371,13 +362,6 @@
 
   function resetSequenceAdaptation(): void {
     setSequenceAdaptation(undefined);
-  }
-
-  // TODO: What is this supposed to do?
-  function compile(): void {
-    if (selectedOutputFormat?.compile) {
-      selectedOutputFormat.compile(sequenceOutput);
-    }
   }
 
   async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
