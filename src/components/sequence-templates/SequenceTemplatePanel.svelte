@@ -5,13 +5,12 @@
   import { filteredExpansionSequences } from '../../stores/expansion';
   import { plan, planReadOnly } from '../../stores/plan';
   import { expandedTemplates, parcels, sequencingError } from '../../stores/sequencing';
-  import { simulationDatasetLatest, simulationDatasetLatestId } from '../../stores/simulation';
+  import { simulationDatasetLatest } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExpandedTemplate } from '../../types/sequencing';
   import effects from '../../utilities/effects';
   import { showEditorModal } from '../../utilities/modal';
-  import RowVirtualizerFixed from '../RowVirtualizerFixed.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
@@ -23,7 +22,6 @@
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
-  import { base } from '$app/paths';
   import AlertError from '../ui/AlertError.svelte';
 
   export let gridSection: ViewGridSection;
@@ -123,10 +121,15 @@
   }
 
   function handleTemplating() {
-    if (selectedSequence !== null && selectedParcel !== null && $plan !== null && $simulationDatasetLatest !== null
-    ) {
+    if (selectedSequence !== null && selectedParcel !== null && $plan !== null && $simulationDatasetLatest !== null) {
       // TODO: Support sending multiple sequences
-      effects.expandTemplates([selectedSequence], $simulationDatasetLatest.dataset_id, $plan.model_id, selectedParcel, user);
+      effects.expandTemplates(
+        [selectedSequence],
+        $simulationDatasetLatest.dataset_id,
+        $plan.model_id,
+        selectedParcel,
+        user,
+      );
     }
   }
 </script>
@@ -144,22 +147,18 @@
             permissionHandler,
             {
               hasPermission: hasTemplatePermission,
-              permissionError: $planReadOnly
-                ? PlanStatusMessages.READ_ONLY
-                : templatePermissionError
+              permissionError: $planReadOnly ? PlanStatusMessages.READ_ONLY : templatePermissionError,
             },
           ],
         ]}
         on:click={() => {
-          if (selectedSequence !== null && selectedParcel !== null && $plan !== null && $simulationDatasetLatest !== null) {
-            console.log($simulationDatasetLatest.dataset_id)
-            effects.expandTemplates(
-              [selectedSequence],
-              $simulationDatasetLatest.dataset_id,
-              $plan.model_id,
-              selectedParcel,
-              user
-            );
+          if (
+            selectedSequence !== null &&
+            selectedParcel !== null &&
+            $plan !== null &&
+            $simulationDatasetLatest !== null
+          ) {
+            handleTemplating();
           }
         }}
       />

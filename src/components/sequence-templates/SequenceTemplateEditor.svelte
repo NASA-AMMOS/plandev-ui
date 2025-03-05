@@ -28,8 +28,6 @@
     getParsedParameterDictionary,
     parameterDictionaries as parameterDictionariesStore,
     parcelToParameterDictionaries,
-    userSequenceEditorColumns,
-    userSequenceEditorColumnsWithFormBuilder,
     userSequences,
   } from '../../stores/sequencing';
   import type { User } from '../../types/app';
@@ -67,7 +65,6 @@
   import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
   import { showFailureToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
-  import Menu from '../menus/Menu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -108,7 +105,6 @@
   let compartmentSeqHighlighter: Compartment;
   let channelDictionary: ChannelDictionary | null;
   let commandDictionary: CommandDictionary | null;
-  let disableCopyAndExport: boolean = true;
   let parameterDictionaries: ParameterDictionary[] = [];
   let librarySequenceMap: LibrarySequenceMap = {};
   let librarySequences: LibrarySequence[] = [];
@@ -117,7 +113,6 @@
   let editorOutputView: EditorView;
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
-  let menu: Menu;
   let outputFormats: IOutputFormat[] = [];
   let selectedNode: SyntaxNode | null;
   let currentTree: Tree;
@@ -125,8 +120,8 @@
   let selectedOutputFormat: IOutputFormat | undefined;
   let isInVmlMode: boolean = false;
   let editorHeights: string = '1fr 3px 1fr';
-  let columnsWithFormBuilder: string = "3fr 3px 1.5fr";
-  let columnsWithNoFormBuilder: string = "3fr 3px";
+  let columnsWithFormBuilder: string = '3fr 3px 1.5fr';
+  let columnsWithNoFormBuilder: string = '3fr 3px';
 
   let argInfoArray: ArgTextDef[] = [];
   let commandNode: SyntaxNode | null = null;
@@ -173,9 +168,7 @@
   }
 
   $: {
-    commandFormBuilderGrid = showCommandFormBuilder
-      ? columnsWithFormBuilder
-      : columnsWithNoFormBuilder
+    commandFormBuilderGrid = showCommandFormBuilder ? columnsWithFormBuilder : columnsWithNoFormBuilder;
   }
 
   $: {
@@ -382,6 +375,7 @@
     setSequenceAdaptation(undefined);
   }
 
+  // TODO: What is this supposed to do?
   function compile(): void {
     if (selectedOutputFormat?.compile) {
       selectedOutputFormat.compile(sequenceOutput);
@@ -391,7 +385,6 @@
   async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
     const sequence = viewUpdate.state.doc.toString();
     sequenceDefinition = sequence;
-    disableCopyAndExport = sequence === '';
     const tree = syntaxTree(viewUpdate.state);
     let output = await selectedOutputFormat?.toOutputFormat?.(tree, sequence, commandDictionary, sequenceName);
 
@@ -460,11 +453,7 @@
   }
 
   function saveSequenceTemplate() {
-    effects.updateSequenceTemplate(
-      sequenceDefinition,
-      template,
-      user
-    )
+    effects.updateSequenceTemplate(sequenceDefinition, template, user);
   }
 
   function inVmlMode(sequenceName: string | undefined): boolean {
@@ -679,15 +668,6 @@
 </CssGrid>
 
 <style>
-  .app-menu {
-    align-items: center;
-    cursor: pointer;
-    display: flex;
-    gap: 5px;
-    justify-content: center;
-    position: relative;
-  }
-
   .no-selected-parcel {
     padding: 8px;
   }
@@ -703,15 +683,6 @@
     column-gap: 5px;
     display: flex;
     margin: 2px;
-  }
-
-  .output-format {
-    align-items: center;
-    display: flex;
-  }
-
-  .output-format label {
-    width: 10rem;
   }
 
   .command-title {

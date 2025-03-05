@@ -25,7 +25,7 @@
   let selectedTemplate: SequenceTemplate | null = null;
   let sequenceTemplateRows: string;
 
-  $: sequenceTemplateRows = selectedTemplate !== null ? "1fr 3px 1fr" : "none";
+  $: sequenceTemplateRows = selectedTemplate !== null ? '1fr 3px 1fr' : 'none';
 
   $: parcel = $parcels.find(p => p.id === selectedTemplate?.parcel_id) ?? null;
 
@@ -41,7 +41,9 @@
 
   async function createSequenceTemplate(): Promise<void> {
     const { confirm, value } = await showTemplateModal();
-    if (!confirm || value === undefined) return;
+    if (!confirm || value === undefined) {
+      return;
+    }
 
     effects.createSequenceTemplate(
       value.activityType,
@@ -50,7 +52,7 @@
       value.name,
       value.parcelId,
       '',
-      user
+      user,
     );
   }
 </script>
@@ -84,7 +86,6 @@
       </svelte:fragment>
     </Panel>
 
-
     {#if selectedTemplate}
       <CssGridGutter track={1} type="row" />
       <Panel>
@@ -95,11 +96,11 @@
           <slot name="right">
             <button
               class="st-button icon fs-6"
-              on:click={() => selectedTemplate = null}
+              on:click={() => (selectedTemplate = null)}
               use:tooltip={{ content: 'Deselect sequence template', placement: 'top' }}
             >
               <XIcon />
-          </button>
+            </button>
           </slot>
         </svelte:fragment>
         <svelte:fragment slot="body">
@@ -130,7 +131,12 @@
             </Input>
             <Input layout="inline">
               Activity Type
-              <input class="st-input w-100" disabled={true} name="activityType" value={selectedTemplate.activity_type} />
+              <input
+                class="st-input w-100"
+                disabled={true}
+                name="activityType"
+                value={selectedTemplate.activity_type}
+              />
             </Input>
           </div>
         </svelte:fragment>

@@ -2,7 +2,7 @@ import { CompletionContext, completeFromList, type CompletionResult } from '@cod
 import { LRLanguage, LanguageSupport, delimitedIndent, foldNodeProp, indentNodeProp } from '@codemirror/language';
 import { parseMixed } from '@lezer/common';
 import { styleTags, tags as t } from '@lezer/highlight';
-import { handlebarsLanguage } from "@xiechao/codemirror-lang-handlebars";
+import { handlebarsLanguage } from '@xiechao/codemirror-lang-handlebars';
 import { customFoldInside } from './custom-folder';
 import { parser } from './seq-n.grammar';
 
@@ -59,7 +59,7 @@ export const SeqLanguage = LRLanguage.define({
         TimeRelative: t.className,
       }),
     ],
-  })
+  }),
 });
 
 export const HandlebarsOverSeqLanguage = LRLanguage.define({
@@ -68,23 +68,25 @@ export const HandlebarsOverSeqLanguage = LRLanguage.define({
   },
   parser: handlebarsLanguage.parser.configure({
     wrap: parseMixed(node => {
-      return node.type.isTop ? {
-        parser: SeqLanguage.parser,
-        overlay: node => node.type.name == "Text"
-      } : null
-    })
+      return node.type.isTop
+        ? {
+            overlay: node => node.type.name === 'Text',
+            parser: SeqLanguage.parser,
+          }
+        : null;
+    }),
   }),
 });
 
 const handlebarsCompletions = [
   // Helpers
-  "add-time",
-  "subtract-time",
-  "flatten",
-  "formatAsDate",
+  'add-time',
+  'subtract-time',
+  'flatten',
+  'formatAsDate',
   // Args
-  "startTime",
-]
+  'startTime',
+];
 /*
 export type MustacheActivity = {
   id: number;
@@ -109,7 +111,11 @@ export type MustacheActivity = {
 
 export function setupLanguageSupport(autocomplete?: (context: CompletionContext) => CompletionResult | null) {
   if (autocomplete) {
-    return new LanguageSupport(HandlebarsOverSeqLanguage, [SeqLanguage.data.of({ autocomplete }), handlebarsLanguage.extension, HandlebarsOverSeqLanguage.data.of({ 'autocomplete': completeFromList(handlebarsCompletions) })]);
+    return new LanguageSupport(HandlebarsOverSeqLanguage, [
+      SeqLanguage.data.of({ autocomplete }),
+      handlebarsLanguage.extension,
+      HandlebarsOverSeqLanguage.data.of({ autocomplete: completeFromList(handlebarsCompletions) }),
+    ]);
   } else {
     return new LanguageSupport(HandlebarsOverSeqLanguage);
   }

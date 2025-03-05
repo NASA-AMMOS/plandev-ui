@@ -560,7 +560,9 @@ export async function showWorkspaceModal(
   });
 }
 
-export async function showTemplateModal(): Promise<ModalElementValue<{ activityType: string, language: string, modelId: number, name: string, parcelId: number }>> {
+export async function showTemplateModal(): Promise<
+  ModalElementValue<{ activityType: string; language: string; modelId: number; name: string; parcelId: number }>
+> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
@@ -579,12 +581,17 @@ export async function showTemplateModal(): Promise<ModalElementValue<{ activityT
           workspaceModal.$destroy();
         });
 
-        workspaceModal.$on('save', (e: CustomEvent<{ activityType: string, language: string, modelId: number, name: string, parcelId: number }>) => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: true, value: e.detail });
-          workspaceModal.$destroy();
-        });
+        workspaceModal.$on(
+          'save',
+          (
+            e: CustomEvent<{ activityType: string; language: string; modelId: number; name: string; parcelId: number }>,
+          ) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: true, value: e.detail });
+            workspaceModal.$destroy();
+          },
+        );
       }
     } else {
       resolve({ confirm: false });

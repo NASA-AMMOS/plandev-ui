@@ -663,7 +663,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   DELETE_SEQUENCE_FILTERS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_FILTERS], user);
   },
-  DELETE_SEQUENCE_TEMPLATE: (user: User |null): boolean => {
+  DELETE_SEQUENCE_TEMPLATE: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_TEMPLATE], user);
   },
   DELETE_SIMULATION_TEMPLATE: (user: User | null, template: SimulationTemplate): boolean => {
@@ -1165,7 +1165,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   UPDATE_SEQUENCE_TEMPLATE: (user: User | null, sequenceTemplate: SequenceTemplate): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission([Queries.UPDATE_SEQUENCE_TEMPLATE], user) && (isUserOwner(user, sequenceTemplate)))
+      (getPermission([Queries.UPDATE_SEQUENCE_TEMPLATE], user) && isUserOwner(user, sequenceTemplate))
     );
   },
   UPDATE_SIMULATION: (user: User | null, plan: PlanWithOwners): boolean => {

@@ -17,7 +17,7 @@
     close: void;
     save: {
       activityType: string;
-      language: string,
+      language: string;
       modelId: number;
       name: string;
       parcelId: number;
@@ -35,12 +35,7 @@
   $: saveButtonDisabled = templateName === '';
 
   function save() {
-    if (
-      !saveButtonDisabled &&
-      $modelId !== -1 &&
-      selectedParcelId !== null &&
-      selectedActivityType !== null
-    ) {
+    if (!saveButtonDisabled && $modelId !== -1 && selectedParcelId !== null && selectedActivityType !== null) {
       dispatch('save', {
         activityType: selectedActivityType,
         language,
@@ -75,11 +70,7 @@
 
       <!-- TODO: make these pickers of some kind, rather than a raw ID input -->
       <label for="parcelId">Parcel ID</label>
-      <select
-        id="parcelId"
-        bind:value={selectedParcelId}
-        class="st-select w-100"
-      >
+      <select id="parcelId" bind:value={selectedParcelId} class="st-select w-100">
         {#if !$parcels.length}
           <option value={null}>No values</option>
         {:else}
@@ -93,11 +84,7 @@
       </select>
 
       <label for="modelId">Model ID</label>
-      <select
-        id="modelId"
-        bind:value={$modelId}
-        class="st-select w-100"
-      >
+      <select id="modelId" bind:value={$modelId} class="st-select w-100">
         {#if !$models.length}
           <option value={-1}>No values</option>
         {:else}
@@ -111,12 +98,7 @@
       </select>
 
       <label for="activityType">Activity Type</label>
-      <select
-        id="activityType"
-        bind:value={selectedActivityType}
-        class="st-select w-100"
-        disabled={$modelId === -1}
-      >
+      <select id="activityType" bind:value={selectedActivityType} class="st-select w-100" disabled={$modelId === -1}>
         {#if !$activityTypes.length}
           <option value={null}>No values</option>
         {:else}
