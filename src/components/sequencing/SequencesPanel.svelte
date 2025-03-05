@@ -36,7 +36,7 @@
   };
   type CellRendererParamsActionsSequences = {
     deleteSequence: (sequence: ExpansionSequence, user: User) => void;
-    openSequence: (sequence: ExpansionSequence) => void;
+    //openSequence: (sequence: ExpansionSequence) => void;
   };
   type CellRendererParamsFilters = ICellRendererParams<SequenceFilter> & CellRendererParamsActionsFilters;
   type CellRendererParamsSequences = ICellRendererParams<ExpansionSequence> & CellRendererParamsActionsSequences;
@@ -138,11 +138,6 @@
             },
             hasDeletePermission: hasDeletePermissionSequences,
             rowData: params.data,
-            viewCallback: data => user && params.openSequence(data),
-            viewTooltip: {
-              content: 'Open Sequence',
-              placement: 'bottom',
-            },
           },
           target: actionsDiv,
         });
@@ -150,7 +145,6 @@
       },
       cellRendererParams: {
         deleteSequence,
-        openSequence,
       } as CellRendererParamsActionsSequences,
       field: 'actions',
       headerName: '',
@@ -352,7 +346,6 @@
         itemDisplayText="Expansion Sequence"
         {user}
         on:deleteItem={onDeleteSequence}
-        on:rowDoubleClicked={onRowDoubleClickedSequences}
       />
     </div>
   </svelte:fragment>

@@ -29,10 +29,13 @@
   let selectedParcelId: number | null = null;
   let selectedActivityType: string = '';
 
-  let saveButtonDisabled: boolean = true;
-
-  // TODO: Add logic to disallow saving a name already in use
-  $: saveButtonDisabled = templateName === '';
+  $: saveButtonDisabled =
+    templateName === '' ||
+    language === '' ||
+    selectedParcelId === null ||
+    $modelId === -1 ||
+    selectedActivityType === '' ||
+    selectedActivityType === null;
 
   function save() {
     if (!saveButtonDisabled && $modelId !== -1 && selectedParcelId !== null && selectedActivityType !== null) {
@@ -68,7 +71,6 @@
       <label for="language">Template Language</label>
       <input bind:value={language} autocomplete="off" class="st-input w-100" id="language" required type="text" />
 
-      <!-- TODO: make these pickers of some kind, rather than a raw ID input -->
       <label for="parcelId">Parcel ID</label>
       <select id="parcelId" bind:value={selectedParcelId} class="st-select w-100">
         {#if !$parcels.length}

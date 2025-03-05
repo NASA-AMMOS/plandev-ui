@@ -1150,7 +1150,7 @@ export async function showUploadViewModal(): Promise<ModalElementValue<{ definit
  * Shows an EditorModal with the supplied arguments.
  */
 export async function showEditorModal(
-  content: object,
+  content: string | object,
   language: string,
   modalTitle: string,
   readOnly: boolean,

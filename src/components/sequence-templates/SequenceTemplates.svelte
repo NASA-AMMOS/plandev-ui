@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { parcels, userSequencesColumns } from '../../stores/sequencingTemplates';
+  import { parcels, userSequencesColumns } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import type { Parcel, SequenceTemplate } from '../../types/sequencing';
   import effects from '../../utilities/effects';

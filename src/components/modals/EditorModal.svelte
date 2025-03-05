@@ -12,7 +12,7 @@
     close: void;
   }>();
 
-  export let content: object;
+  export let content: string | object;
   export let readOnly: boolean;
   export let language: string;
   export let modalTitle: string;
