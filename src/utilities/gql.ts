@@ -555,9 +555,17 @@ const gql = {
   `,
 
   CREATE_SEQUENCE_TEMPLATE: `#graphql
-    mutation CreateSequenceTemplate($definition: sequence_template_insert_input!) {
-      createSequenceTemplate: ${Queries.INSERT_SEQUENCE_TEMPLATE}(object: $definition) {
+    mutation AddSequenceTemplate($activityTypeName:String!, $language:String!, $modelId:Int!, $name:String!, $parcelId:Int!, $templateDefinition:String!) {
+      ${Queries.INSERT_SEQUENCE_TEMPLATE}(activityTypeName: $activityTypeName, language:$language, modelId:$modelId, name:$name, parcelId: $parcelId, templateDefinition: $templateDefinition) {
         id
+        errors {
+          location {
+            column
+            line
+          }
+          message
+          stack
+        }
       }
     }
   `,
