@@ -190,6 +190,7 @@ import type {
   SchedulingResponse,
 } from '../types/scheduling';
 import type { ValueSchema } from '../types/schema';
+import type { SequenceTemplate, SequenceTemplateInsertInput } from '../types/sequence-template';
 import {
   type ChannelDictionaryMetadata,
   type CommandDictionaryMetadata,
@@ -1912,15 +1913,17 @@ const effects = {
         user,
       );
 
-      if (result != null) {
+      const { insert_sequence_filter_one: createSequenceFilter } = result;
+
+      if (createSequenceFilter != null) {
         showSuccessToast('Sequence Filter Created Successfully');
         return result.createSequenceFilter?.id;
       } else {
-        throw Error('Unable to create sequence filter');
+        throw Error('Create Sequence Filter Failed');
       }
     } catch (e) {
-      catchError('Unable To Create Sequence Filter', e as Error);
-      showFailureToast('Unable To Create Sequence Filter');
+      catchError('Create Sequence Filter Failed', e as Error);
+      showFailureToast('Create Sequence Filter Failed');
     }
     return undefined;
   },
@@ -1951,15 +1954,16 @@ const effects = {
          },
         user,
       );
+      const { insert_sequence_template_one: insertSequenceTemplateOne } = result;
 
-      if (result !== null) {
+      if (insertSequenceTemplateOne !== null) {
         showSuccessToast('Sequence Template Created Successfully');
       } else {
-        throw Error('Unable to create sequence template');
+        throw Error('Create Sequence Template Failed');
       }
     } catch (e) {
-      catchError('Unable To Create Sequence Template', e as Error);
-      showFailureToast('Unable To Create Sequence Template');
+      catchError('Create Sequence Template Failed', e as Error);
+      showFailureToast('Create Sequence Template Failed');
     }
   },
 
@@ -3256,7 +3260,10 @@ const effects = {
           { sequenceTemplateId: sequenceTemplate.id },
           user,
         );
-        if (data.deleteSequenceTemplate !== null) {
+
+        const { delete_sequence_template_by_pk: deleteSequenceTemplate } = data;
+
+        if (deleteSequenceTemplate !== null) {
           showSuccessToast('Sequence Template Deleted Successfully');
         } else {
           throw Error(`Unable to delete sequence template with ID: "${sequenceTemplate.id}"`);
@@ -3637,17 +3644,20 @@ const effects = {
         },
         user,
       );
-      if (data.expandTemplates !== null) {
+
+      const { expandAllTemplates: expandTemplates } = data;
+
+      if (expandTemplates !== null) {
         sequenceTemplateExpansionStatus.set(Status.Complete);
-        showSuccessToast('Sequence Expanded Successfully');
+        showSuccessToast('Sequence Templating Successfully');
       } else {
-        throw Error('Unable to expand sequence');
+        throw Error('Sequence Templating Failed');
       }
     } catch (e) {
-      catchError('Sequence Expansion Failed', e as Error);
+      catchError('Sequence Templating Failed', e as Error);
       sequenceTemplateExpansionStatus.set(Status.Failed);
       sequenceTemplateExpansionError.set(e as string);
-      showFailureToast('Sequence Expansion Failed');
+      showFailureToast('Sequence Templating Failed');
     }
   },
 
