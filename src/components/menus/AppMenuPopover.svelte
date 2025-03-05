@@ -56,7 +56,7 @@
         <ChevronDown strokeWidth={2} size={16} class="text-white" />
       </Button>
     </Popover.Trigger>
-    <Popover.Content class="w-[600px] p-0">
+    <Popover.Content class="w-[580px] p-0">
       <div class="grid grid-cols-3 gap-0.5 px-0.5 pt-1">
         <!-- Planning Column -->
         <div class="flex flex-col gap-0.5">
@@ -70,11 +70,11 @@
             Models
           </MenuItem>
           <MenuItem
-            on:click={() => goto(`${base}/dictionaries`)}
-            on:pointerenter={() => preloadData(`${base}/dictionaries`)}
+            on:click={() => goto(`${base}/constraints`)}
+            on:pointerenter={() => preloadData(`${base}/constraints`)}
           >
-            <JournalTextIcon />
-            Dictionaries
+            <BracesAsteriskIcon />
+            Constraints
           </MenuItem>
           <MenuItem
             on:click={() => goto(`${base}/scheduling`)}
@@ -83,6 +83,7 @@
             <CalendarIcon />
             Scheduling
           </MenuItem>
+
           <MenuItem on:click={() => goto(`${base}/tags`)} on:pointerenter={() => preloadData(`${base}/tags`)}>
             <TagIcon />
             Tags
@@ -99,11 +100,13 @@
             <JournalCodeIcon />
             Sequence Editor
           </MenuItem>
-          <MenuItem on:click={() => goto(`${base}/parcels`)} on:pointerenter={() => preloadData(`${base}/parcels`)}>
-            <ArchiveIcon />
-            Parcels
+          <MenuItem
+            on:click={() => goto(`${base}/dictionaries`)}
+            on:pointerenter={() => preloadData(`${base}/dictionaries`)}
+          >
+            <JournalTextIcon />
+            Dictionaries
           </MenuItem>
-
           <MenuItem
             on:click={() => goto(`${base}/expansion/rules`)}
             on:pointerenter={() => preloadData(`${base}/expansion/rules`)}
@@ -111,12 +114,9 @@
             <CodeSquareIcon />
             Expansion
           </MenuItem>
-          <MenuItem
-            on:click={() => goto(`${base}/constraints`)}
-            on:pointerenter={() => preloadData(`${base}/constraints`)}
-          >
-            <BracesAsteriskIcon />
-            Constraints
+          <MenuItem on:click={() => goto(`${base}/parcels`)} on:pointerenter={() => preloadData(`${base}/parcels`)}>
+            <ArchiveIcon />
+            Parcels
           </MenuItem>
         </div>
 

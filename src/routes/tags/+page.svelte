@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Button, Input, Label } from '@nasa-jpl/stellar-svelte';
+  import { Button, Input, Input as InputType, Label } from '@nasa-jpl/stellar-svelte';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import RefreshIcon from '@nasa-jpl/stellar/icons/refresh.svg?component';
@@ -103,8 +103,8 @@
   let dataGrid: SingleActionDataGrid<Tag> | undefined = undefined;
   let filterText: string = '';
   let tags: Tag[];
-  let nameInputField: HTMLInputElement;
-  let colorInputField: HTMLInputElement;
+  let nameInputField: InputType;
+  let colorInputField: InputType;
   let user: User | null = null;
   let selectedTag: Tag | null = null;
   let selectedTagModified: boolean = false;
@@ -339,14 +339,7 @@
                 }}
                 class="w-full"
               >
-                <Input
-                  on:keyup={onColorFieldKeyup}
-                  bind:this={colorInputField}
-                  autocomplete="off"
-                  size="md"
-                  name="color"
-                  class="h-6 w-full px-2"
-                />
+                <Input on:keyup={onColorFieldKeyup} autocomplete="off" size="md" name="color" class="h-6 w-full px-2" />
               </div>
               <!-- TODO add permission handler here -->
               <div class="size-6">

@@ -19,8 +19,10 @@
 
 <div class="w-100 flex h-12 items-center bg-[#110D3D] px-4 dark:bg-secondary">
   <div class="flex flex-1 items-center gap-2">
-    <AppMenu {user} />
     <div class="hidden">
+      <AppMenu {user} />
+    </div>
+    <div class="">
       <AppMenuPopover {user} />
     </div>
 
