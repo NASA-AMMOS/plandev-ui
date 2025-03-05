@@ -12,7 +12,7 @@
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
   import { plan, planReadOnly } from '../../stores/plan';
-  import { sequenceFilters, sequencingError } from '../../stores/sequencing';
+  import { sequenceFilters } from '../../stores/sequencing';
   import { simulationDatasetId, simulationDatasetLatest } from '../../stores/simulation';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import ActivityFilterBuilder from '../timeline/form/TimelineEditor/ActivityFilterBuilder.svelte';
@@ -23,7 +23,6 @@
   import Panel from '../ui/Panel.svelte';
   import type { ViewGridSection } from '../../types/view';
   import GridMenu from '../menus/GridMenu.svelte';
-  import AlertError from '../ui/AlertError.svelte';
   import Collapse from '../Collapse.svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
 
@@ -199,11 +198,12 @@
     const {
       detail: { data: clickedRow },
     } = event;
-    if (!$simulationDatasetLatest) {
-      sequencingError.set('No latest simulation found - please run simulation before templating!');
-      return;
-    }
-    if ($plan !== null) {
+    // TODO: Don't need to use this store here - what instead?
+    // if (!$simulationDatasetLatest) {
+    //   sequencingError.set('No latest simulation found - please run simulation before templating!');
+    //   return;
+    // }
+    if ($plan !== null && $simulationDatasetLatest !== null) {
       effects.applyActivitiesByFilter(
         clickedRow,
         $simulationDatasetLatest.id,
@@ -234,7 +234,6 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <AlertError class="m-2" error={$sequencingError} />
     <ActivityFilterBuilder
       layerName={newSequenceFilterName}
       bind:this={filterMenu}

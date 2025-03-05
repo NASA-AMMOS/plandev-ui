@@ -3,7 +3,8 @@
 <script lang="ts">
   import { parcels, userSequencesColumns } from '../../stores/sequencing';
   import type { User } from '../../types/app';
-  import type { Parcel, SequenceTemplate } from '../../types/sequencing';
+  import type { Parcel } from '../../types/sequencing';
+  import type { SequenceTemplate } from '../../types/sequence-template';
   import effects from '../../utilities/effects';
   import { showTemplateModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';

@@ -6,7 +6,8 @@
   import ModalContent from '../modals/ModalContent.svelte';
   import ModalFooter from '../modals/ModalFooter.svelte';
   import ModalHeader from '../modals/ModalHeader.svelte';
-  import { activityTypes, modelId, parcels } from '../../stores/sequencing';
+  import { parcels } from '../../stores/sequencing';
+  import { activityTypes, modelId } from '../../stores/sequence-template';
   import { models } from '../../stores/model';
 
   export let height: number = 300;

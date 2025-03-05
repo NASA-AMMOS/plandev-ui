@@ -3,10 +3,11 @@
 <script lang="ts">
   import type { ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
-  import { parcels, sequenceTemplates } from '../../stores/sequencing';
+  import { parcels } from '../../stores/sequencing';
+  import { sequenceTemplates } from '../../stores/sequence-template';
   import type { User, UserId } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
-  import type { SequenceTemplate } from '../../types/sequencing';
+  import type { SequenceTemplate } from '../../types/sequence-template';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';

@@ -12,6 +12,7 @@ import {
   type Parcel,
   type ParcelBundle,
   type ParcelToParameterDictionary,
+  type SequenceFilter,
   type UserSequence,
   type Workspace,
 } from '../types/sequencing';
@@ -86,6 +87,8 @@ export const parcelBundles: Readable<ParcelBundle[]> = derived(
     });
   },
 );
+
+export const sequenceFilters = gqlSubscribable<SequenceFilter[]>(gql.SUB_SEQUENCE_FILTERS, {}, [], null);
 
 export const userParcelColumns: Writable<string> = writable('2fr 3px 1fr');
 

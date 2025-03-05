@@ -25,7 +25,8 @@ import type {
   SchedulingGoalDefinition,
   SchedulingGoalMetadata,
 } from '../types/scheduling';
-import type { Parcel, SequenceTemplate, UserSequence, Workspace } from '../types/sequencing';
+import type { Parcel, UserSequence, Workspace } from '../types/sequencing';
+import type { SequenceTemplate } from '../types/sequence-template';
 import type { PlanDataset, Simulation, SimulationTemplate } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { View, ViewSlim } from '../types/view';

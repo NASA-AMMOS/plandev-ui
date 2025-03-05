@@ -39,8 +39,8 @@
     type LibrarySequenceMap,
     type Parcel,
     type TimeTagInfo,
-    type SequenceTemplate,
   } from '../../types/sequencing';
+  import { type SequenceTemplate } from '../../types/sequence-template';
   import { setupLanguageSupport } from '../../utilities/codemirror';
   import { isFswCommandArgumentRepeat, unquoteUnescape } from '../../utilities/codemirror/codemirror-utils';
   import type { CommandInfoMapper } from '../../utilities/codemirror/commandInfoMapper';
