@@ -191,7 +191,7 @@ import type {
   SchedulingResponse,
 } from '../types/scheduling';
 import type { ValueSchema } from '../types/schema';
-import type { SequenceTemplate, SequenceTemplateInsertInput } from '../types/sequence-template';
+import type { SequenceTemplate } from '../types/sequence-template';
 import {
   type ChannelDictionaryMetadata,
   type CommandDictionaryMetadata,
@@ -314,8 +314,6 @@ const effects = {
 
       if (timeConfirmed && value !== undefined) {
         const { timeRangeEnd, timeRangeStart } = value;
-        console.log(timeRangeStart);
-        console.log(timeRangeEnd);
         if (timeRangeStart !== null && timeRangeEnd !== null) {
           const sequenceId = await effects.createExpansionSequence(
             `${filter.name} Sequence`,
@@ -1988,7 +1986,7 @@ const effects = {
         user,
       );
 
-      const { insert_sequence_filter_one: createSequenceFilter } = result;
+      const { createSequenceFilter: createSequenceFilter } = result;
 
       if (createSequenceFilter != null) {
         showSuccessToast('Sequence Filter Created Successfully');
@@ -2025,8 +2023,8 @@ const effects = {
           modelId,
           name,
           parcelId,
-          templateDefinition
-         },
+          templateDefinition,
+        },
         user,
       );
       const { insert_sequence_template_one: insertSequenceTemplateOne } = result;

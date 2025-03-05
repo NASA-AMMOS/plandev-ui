@@ -476,7 +476,7 @@ describe('Handle modal and requests in effects', () => {
   describe('createSequenceFilter', () => {
     it('should correctly handle null responses', async () => {
       vi.spyOn(Requests, 'reqHasura').mockResolvedValue({
-        insert_sequence_filter_one: null,
+        createSequenceFilter: null,
       });
 
       vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
