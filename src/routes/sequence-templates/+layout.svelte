@@ -10,9 +10,7 @@
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
   <Nav user={data.user}>
-    <div class="sequence-templates-title" slot="title">
-      Sequence Templates
-    </div>
+    <div class="sequence-templates-title" slot="title">Sequence Templates</div>
   </Nav>
   <slot />
 </CssGrid>

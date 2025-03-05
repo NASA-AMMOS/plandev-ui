@@ -1,10 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import BranchIcon from '@nasa-jpl/stellar/icons/branch.svg?component';
-  import MergeIcon from '@nasa-jpl/stellar/icons/merge.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import type { Plan, PlanBranchRequestAction, PlanForMerging } from '../../types/plan';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -38,7 +35,7 @@
   }
 
   function onConfirm() {
-    dispatch('confirm', { timeRangeStart: `${$startTimeField.value}Z`, timeRangeEnd: `${$endTimeField.value}Z` })
+    dispatch('confirm', { timeRangeEnd: `${$endTimeField.value}Z`, timeRangeStart: `${$startTimeField.value}Z` });
   }
 </script>
 
@@ -66,13 +63,7 @@
   </ModalContent>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button
-      class="st-button"
-      on:keydown={onInputKeydown}
-      on:click={onConfirm}
-    >
-      Confirm
-    </button>
+    <button class="st-button" on:keydown={onInputKeydown} on:click={onConfirm}> Confirm </button>
   </ModalFooter>
 </Modal>
 

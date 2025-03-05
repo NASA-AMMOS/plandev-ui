@@ -269,7 +269,7 @@ import {
   showRunActionModal,
   showTimeRangeModal,
   showUploadViewModal,
-  showWorkspaceModal
+  showWorkspaceModal,
 } from './modal';
 import { gatewayPermissions, queryPermissions } from './permissions';
 import { reqExtension, reqGateway, reqHasura } from './requests';
@@ -295,9 +295,6 @@ import {
   generateDefaultView,
   validateViewJSONAgainstSchema,
 } from './view';
-
-// TEMP - remove this once we add/delete user sequences from the back end.
-import { userTemplates } from '../stores/sequencing';
 
 function throwPermissionError(attemptedAction: string): never {
   throw Error(`You do not have permission to: ${attemptedAction}.`);
@@ -2013,7 +2010,7 @@ const effects = {
     name: string,
     parcelId: number,
     templateDefinition: string,
-    user: User | null
+    user: User | null,
   ): Promise<void> {
     try {
       if (!queryPermissions.CREATE_SEQUENCE_TEMPLATE(user)) {
@@ -2026,7 +2023,7 @@ const effects = {
         model_id: modelId,
         name,
         parcel_id: parcelId,
-        template_definition: templateDefinition
+        template_definition: templateDefinition,
       };
 
       const result = await reqHasura<SequenceTemplate>(
@@ -2040,7 +2037,6 @@ const effects = {
       } else {
         throw Error('Unable to create sequence template');
       }
-
     } catch (e) {
       catchError('Unable To Create Sequence Template', e as Error);
       showFailureToast('Unable To Create Sequence Template');
@@ -3347,8 +3343,8 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError("Sequence Template Deletion Failed", e as Error);
-      showFailureToast("Sequence Template Deletion Failed");
+      catchError('Sequence Template Deletion Failed', e as Error);
+      showFailureToast('Sequence Template Deletion Failed');
     }
   },
 
@@ -6647,7 +6643,7 @@ const effects = {
   async updateSequenceTemplate(
     definition: string,
     sequenceTemplate: SequenceTemplate,
-    user: User | null
+    user: User | null,
   ): Promise<void> {
     try {
       if (!queryPermissions.UPDATE_SEQUENCE_TEMPLATE(user, sequenceTemplate)) {
@@ -6656,13 +6652,13 @@ const effects = {
 
       const data = await reqHasura(gql.UPDATE_SEQUENCE_TEMPLATE, { definition, id: sequenceTemplate.id }, user);
       if (data.updateSequenceTemplate !== null) {
-        showSuccessToast("Updated Sequence Template");
+        showSuccessToast('Updated Sequence Template');
       } else {
         throw Error(`Unable to update sequence template with ID: "${sequenceTemplate.id}"`);
       }
     } catch (e) {
-      catchError("Failed To Update Sequence Template", e as Error);
-      showFailureToast("Failed To Update Sequence Template");
+      catchError('Failed To Update Sequence Template', e as Error);
+      showFailureToast('Failed To Update Sequence Template');
     }
   },
 

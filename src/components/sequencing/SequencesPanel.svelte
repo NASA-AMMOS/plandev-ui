@@ -26,8 +26,6 @@
   import AlertError from '../ui/AlertError.svelte';
   import Collapse from '../Collapse.svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
-  import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
-  import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -66,7 +64,6 @@
   const createPermissionErrorFilters = 'You do not have permission to create a sequence filter';
   const createPermissionErrorSequences = 'You do not have permission to create a sequence';
   const deletePermissionErrorFilters = 'You do not have permission to delete sequence filter';
-  const deletePermissionErrorSequences = 'You do not have permission to delete an expansion sequence';
 
   let columnDefsFilters: DataGridColumnDef[] = baseColumnDefsFilters;
   let columnDefsSequences: DataGridColumnDef[] = baseColumnDefsSequences;
@@ -78,7 +75,6 @@
   let hasCreatePermissionSequences: boolean = false;
   let selectedSequenceFilterId: number | null = null;
   let selectedSequenceId: string | null = null;
-  let selectedSequenceIds: string[] = [];
   let selectedSequenceFilterIds: number[] = [];
   let currentModelSequenceFilters: SequenceFilter[] = [];
   let filterMenu: ActivityFilterBuilder;
@@ -163,14 +159,14 @@
       suppressAutoSize: true,
       suppressSizeToFit: true,
       width: 55,
-    }
+    },
   ];
 
   $: if (user !== null && $plan !== null) {
-    hasDeletePermissionFilters = featurePermissions.sequenceFilter.canDelete(user) && !$planReadOnly;;
-    hasDeletePermissionSequences = featurePermissions.sequences.canDelete(user, $plan) && !$planReadOnly;;
-    hasCreatePermissionFilters = featurePermissions.sequenceFilter.canCreate(user) && !$planReadOnly;;
-    hasCreatePermissionSequences = featurePermissions.expansionSequences.canCreate(user) && !$planReadOnly;;
+    hasDeletePermissionFilters = featurePermissions.sequenceFilter.canDelete(user) && !$planReadOnly;
+    hasDeletePermissionSequences = featurePermissions.sequences.canDelete(user, $plan) && !$planReadOnly;
+    hasCreatePermissionFilters = featurePermissions.sequenceFilter.canCreate(user) && !$planReadOnly;
+    hasCreatePermissionSequences = featurePermissions.expansionSequences.canCreate(user) && !$planReadOnly;
   }
 
   $: currentModelSequenceFilters = $sequenceFilters.filter(seqFilter => seqFilter.model_id === $plan?.model_id);
@@ -181,10 +177,6 @@
 
   function deleteSequenceFilter(sequenceFilter: SequenceFilter) {
     effects.deleteSequenceFilters([sequenceFilter.id], user);
-  }
-
-  function openSequence(sequence: ExpansionSequence) {
-    console.log("TODO");
   }
 
   function openSequenceFilter(sequenceFilter: SequenceFilter) {
@@ -201,7 +193,9 @@
 
   function onDeleteSequence(event: CustomEvent<RowId[]>) {
     const id = event.detail[0] as string;
-    const selectedSequence: ExpansionSequence | undefined = $filteredExpansionSequences.find(sequence => sequence.seq_id === id);
+    const selectedSequence: ExpansionSequence | undefined = $filteredExpansionSequences.find(
+      sequence => sequence.seq_id === id,
+    );
     if (selectedSequence !== undefined) {
       effects.deleteExpansionSequence(selectedSequence, user);
     }
@@ -226,10 +220,6 @@
     }
   }
 
-  function onRowDoubleClickedSequences(event: CustomEvent<DataGridRowDoubleClick<ExpansionSequence>>) {
-    console.log('TODO');
-  }
-
   function onToggleFilterMenu() {
     filterMenu.toggle();
   }
@@ -250,7 +240,7 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <AlertError class="m-2" error={$sequencingError}/>
+    <AlertError class="m-2" error={$sequencingError} />
     <ActivityFilterBuilder
       layerName={newSequenceFilterName}
       bind:this={filterMenu}
@@ -262,43 +252,29 @@
       }}
     />
     <div class="sequence-container">
-      <Collapse
-        className="anchor-collapse"
-        defaultExpanded={false}
-        title="Create a Sequence"
-      >
+      <Collapse defaultExpanded={false} padContent={false} title="Create a Sequence">
         <fieldset>
           <div class="seq-name">
             <label for="seqName">Sequence Name</label>
-            <input
-              bind:value={newSequenceName}
-              class="st-input w-100"
-              name="seqName"
-            />
+            <input bind:value={newSequenceName} class="st-input w-100" name="seqName" />
           </div>
         </fieldset>
         <fieldset>
           <button
-          class="st-button secondary"
-          disabled={!newSequenceName}
-          use:permissionHandler={{
-            hasPermission: hasCreatePermissionSequences,
-            permissionError: $planReadOnly
-              ? PlanStatusMessages.READ_ONLY
-              : 'You do not have permission to create an expansion',
-          }}
-          on:click|stopPropagation={() =>
-            effects.createExpansionSequence(newSequenceName, $simulationDatasetId, user)}
-        >
-          {$creatingExpansionSequence ? 'Creating... ' : 'Create'}
-        </button>
+            class="st-button secondary"
+            disabled={!newSequenceName}
+            use:permissionHandler={{
+              hasPermission: hasCreatePermissionSequences,
+              permissionError: $planReadOnly ? PlanStatusMessages.READ_ONLY : createPermissionErrorSequences,
+            }}
+            on:click|stopPropagation={() =>
+              effects.createExpansionSequence(newSequenceName, $simulationDatasetId, user)}
+          >
+            {$creatingExpansionSequence ? 'Creating... ' : 'Create'}
+          </button>
         </fieldset>
       </Collapse>
-      <Collapse
-        className="anchor-collapse"
-        defaultExpanded={false}
-        title="Create a Sequence Filter"
-      >
+      <Collapse defaultExpanded={false} padContent={false} title="Create a Sequence Filter">
         <fieldset>
           <div class="seq-name">
             <label for="seqName">Sequence Filter Name</label>
