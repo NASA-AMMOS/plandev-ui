@@ -33,19 +33,22 @@
   }
 </script>
 
-<button class="action-run st-typography-medium st-button tertiary w1-" class:non-interactable={!interactable} on:click>
-  <div style=" align-items: center;display: flex; gap: 8px">
+<button
+  class="action-run st-typography-medium st-button tertiary w-100"
+  class:non-interactable={!interactable}
+  on:click
+  style=" gap: 24px;text-align: left"
+>
+  <div style="align-items: center;display: flex; gap: 8px">
     <StatusBadge status={getStatusForActionRun(actionRun.status)} />
     {actionDefinition?.name}
   </div>
-  <div>{actionDefinition?.description || 'No description'}</div>
-  <div>ID: {actionRun.id}</div>
   <div>@{actionRun.created_by}</div>
   <div style=" align-items: center;display: flex; gap: 8px">
-    <PlayBtnIcon />{actionRun.created_at}
+    <PlayBtnIcon />{new Date(actionRun.created_at).toLocaleString()}
   </div>
-  <div style=" align-items: center;display: flex; gap: 8px">
-    <StopwatchIcon />24:26
+  <div style=" align-items: center;display: flex; gap: 8px;">
+    <StopwatchIcon />–
   </div>
   <!-- <div>Action Run Response: {JSON.stringify(actionRun.response)}</div> -->
 </button>
@@ -57,7 +60,7 @@
     border-radius: 4px;
     column-gap: 8px;
     display: grid;
-    grid-template-columns: 2.5fr 2fr 1fr 1fr 2fr 1fr;
+    grid-template-columns: 1fr 80px max-content max-content;
     height: unset;
     padding: 8px;
     white-space: nowrap;

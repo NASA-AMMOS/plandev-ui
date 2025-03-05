@@ -41,7 +41,7 @@
 </script>
 
 <Modal {height} {width}>
-  <ModalHeader on:close>New Action</ModalHeader>
+  <ModalHeader on:close>Run Action</ModalHeader>
 
   <ModalContent>
     <fieldset>
