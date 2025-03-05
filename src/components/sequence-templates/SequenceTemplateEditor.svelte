@@ -27,7 +27,7 @@
     getParsedCommandDictionary,
     getParsedParameterDictionary,
     parameterDictionaries as parameterDictionariesStore,
-    parcelToParameterDictionaries
+    parcelToParameterDictionaries,
   } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import { type SequenceTemplate } from '../../types/sequence-template';
