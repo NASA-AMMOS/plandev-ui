@@ -1,10 +1,11 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { parcels, userSequencesColumns } from '../../stores/sequencing';
+  import XIcon from 'bootstrap-icons/icons/x.svg?component';
+  import { parcels } from '../../stores/sequencing';
   import type { User } from '../../types/app';
-  import type { Parcel } from '../../types/sequencing';
   import type { SequenceTemplate } from '../../types/sequence-template';
+  import type { Parcel } from '../../types/sequencing';
   import effects from '../../utilities/effects';
   import { showTemplateModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -17,15 +18,16 @@
   import SectionTitle from '../ui/SectionTitle.svelte';
   import SequenceTemplateEditor from './SequenceTemplateEditor.svelte';
   import SequenceTemplateTable from './SequenceTemplateTable.svelte';
-  import XIcon from 'bootstrap-icons/icons/x.svg?component';
 
   export let user: User | null;
 
   let filterText: string = '';
   let parcel: Parcel | null;
   let selectedTemplate: SequenceTemplate | null = null;
+  let sequenceTemplateColumns: string;
   let sequenceTemplateRows: string;
 
+  $: sequenceTemplateColumns = selectedTemplate !== null ? '0.75fr 3px 1.5fr' : '1fr 3px 1fr';
   $: sequenceTemplateRows = selectedTemplate !== null ? '1fr 3px 1fr' : 'none';
 
   $: parcel = $parcels.find(p => p.id === selectedTemplate?.parcel_id) ?? null;
@@ -58,7 +60,7 @@
   }
 </script>
 
-<CssGrid bind:columns={$userSequencesColumns}>
+<CssGrid bind:columns={sequenceTemplateColumns}>
   <CssGrid rows={sequenceTemplateRows}>
     <Panel>
       <svelte:fragment slot="header">
