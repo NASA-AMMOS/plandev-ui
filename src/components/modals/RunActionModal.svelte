@@ -2,16 +2,19 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { Action, ActionResponse } from '../../types/actions';
+  import type { ActionDefinition } from '../../types/actions';
+  import type { User } from '../../types/app';
+  import effects from '../../utilities/effects';
   import { showFailureToast } from '../../utilities/toast';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
-  export let action: Action;
+  export let actionDefinition: ActionDefinition;
   export let height: number = 380;
   export let width: number = 380;
+  export let user: User | null;
 
   let runButtonDisabled: boolean = true;
   let settings: string = '{"externalUrl": "https://api.github.com"}';
@@ -22,25 +25,15 @@
 
   const dispatch = createEventDispatcher<{
     close: void;
-    complete: { actionResponse: ActionResponse };
+    complete: { actionRunId: number | null };
   }>();
 
   async function run() {
     try {
       running = true;
-      const response = await fetch('http://localhost:27186/run-action', {
-        body: JSON.stringify({
-          actionJS: action.actionJS,
-          parameters: JSON.parse(parameters),
-          settings: JSON.parse(settings),
-        }),
-        headers: { 'Content-Type': 'application/json' },
-        method: 'POST',
-      });
-      const actionResponse = await response.json();
-      console.log('actionResponse :>> ', actionResponse);
+      const actionRunId = await effects.createActionRun(actionDefinition.id, parameters, settings, user);
       running = false;
-      dispatch('complete', { actionResponse });
+      dispatch('complete', { actionRunId });
     } catch (error) {
       showFailureToast('Error running action');
     }

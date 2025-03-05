@@ -6,22 +6,18 @@
   import ArrowLeftIcon from '@nasa-jpl/stellar/icons/arrow_left.svg?component';
   import { onMount } from 'svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
-  import { actionRuns, actions, actionsColumns } from '../../../stores/actions';
+  import { actionDefinitions, actionDefinitionsByWorkspace, actionRuns, actionsColumns } from '../../../stores/actions';
   import { userSequences, workspaces } from '../../../stores/sequencing';
-  import type { Action } from '../../../types/actions';
+  import type { ActionDefinition, ActionRun } from '../../../types/actions';
   import type { User } from '../../../types/app';
   import type { UserSequence, Workspace } from '../../../types/sequencing';
   import effects from '../../../utilities/effects';
   import { getSearchParameterNumber } from '../../../utilities/generic';
   import { showActionCreationModal } from '../../../utilities/modal';
   import { permissionHandler } from '../../../utilities/permissionHandler';
-  import { getNextThingID } from '../../../utilities/timeline';
-  import { showSuccessToast } from '../../../utilities/toast';
-  import Collapse from '../../Collapse.svelte';
   import Input from '../../form/Input.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import CssGridGutter from '../../ui/CssGridGutter.svelte';
-  import MonacoEditor from '../../ui/MonacoEditor.svelte';
   import Panel from '../../ui/Panel.svelte';
   import SectionTitle from '../../ui/SectionTitle.svelte';
   import ActionRunCard from './ActionRunCard.svelte';
@@ -48,13 +44,17 @@
   });
 
   async function onNewActionClick() {
-    const { confirm, value } = await showActionCreationModal();
+    if (typeof workspaceId !== 'number') {
+      return;
+    }
+
+    const { confirm, value } = await showActionCreationModal(user, workspaceId);
 
     if (confirm && value) {
-      const { actionJS, name, description } = value;
-      const id = getNextThingID($actions);
-      actions.update(() => [...$actions, { actionJS, description, id, name }]);
-      showSuccessToast('Action Created Successfully');
+      const { file, name, description } = value;
+      // const id = getNextThingID(actionDefinitions);
+      // actions.update(() => [...$actions, { actionJS, description, id, name }]);
+      // showSuccessToast('Action Created Successfully');
     }
   }
 
@@ -65,13 +65,28 @@
     );
   }
 
-  async function runAction(action: Action) {
-    const actionRun = await effects.runAction(action, user);
-    if (actionRun) {
+  async function runAction(action: ActionDefinition) {
+    const actionRunId = await effects.runAction(action, user);
+    console.log('actionRunId :>> ', actionRunId);
+    if (typeof actionRunId === 'number') {
       goto(
-        `${base}/sequencing/actions/runs/${actionRun.id}${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`,
+        `${base}/sequencing/actions/runs/${actionRunId}${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`,
       );
     }
+  }
+
+  function getActionDefinitionForRun(
+    actionRun: ActionRun,
+    actionDefinitionsByWorkspace: Record<number, Record<number, ActionDefinition>>,
+    workspaceId: number,
+  ): ActionDefinition | null {
+    if (typeof workspaceId === 'number') {
+      const workspaceDefinitions = actionDefinitionsByWorkspace[workspaceId];
+      if (workspaceDefinitions) {
+        return workspaceDefinitions[actionRun.action_definition_id] ?? null;
+      }
+    }
+    return null;
   }
 </script>
 
@@ -120,28 +135,15 @@
 
       <svelte:fragment slot="body">
         <div class="actions">
-          {#each $actions as action}
+          {#each $actionDefinitions || [] as actionDefinition}
             <div class="action">
               <div class="action-name-row">
-                <div class="st-typography-bold" style:flex={1}>{action.name}</div>
-                <button class="st-button secondary" on:click|stopPropagation={() => runAction(action)}> Run </button>
+                <div class="st-typography-bold" style:flex={1}>{actionDefinition.name}</div>
+                <button class="st-button secondary" on:click|stopPropagation={() => runAction(actionDefinition)}>
+                  Run
+                </button>
               </div>
-              <div class="st-typography-label">{action.description}</div>
-              <Collapse title="ActionJS" defaultExpanded={false} padContent={false}>
-                <div class="code">
-                  <MonacoEditor
-                    automaticLayout={true}
-                    fixedOverflowWidgets={true}
-                    language="typescript"
-                    lineNumbers="on"
-                    minimap={{ enabled: false }}
-                    readOnly
-                    scrollBeyondLastLine={false}
-                    tabSize={2}
-                    value={action.actionJS}
-                  />
-                </div>
-              </Collapse>
+              <div class="st-typography-label">{actionDefinition.description}</div>
             </div>
           {/each}
         </div>
@@ -167,12 +169,17 @@
       <b>Action Runs</b>
 
       <svelte:fragment slot="body">
-        {#if $actionRuns.length < 1}
+        {#if ($actionRuns || []).length < 1}
           <div>No action runs</div>
         {/if}
         <div class="action-runs">
-          {#each $actionRuns as actionRun}
-            <ActionRunCard {actionRun} {user} on:click={() => onActionRunClick(actionRun.id)} />
+          {#each $actionRuns || [] as actionRun}
+            <ActionRunCard
+              {actionRun}
+              actionDefinition={getActionDefinitionForRun(actionRun, $actionDefinitionsByWorkspace, workspaceId)}
+              {user}
+              on:click={() => onActionRunClick(actionRun.id)}
+            />
           {/each}
         </div>
       </svelte:fragment>

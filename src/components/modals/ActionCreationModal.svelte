@@ -2,13 +2,21 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import type { ActionDefinition } from '../../types/actions';
+  import type { User } from '../../types/app';
+  import effects from '../../utilities/effects';
+  import gql from '../../utilities/gql';
+  import { reqHasura } from '../../utilities/requests';
+  import { showSuccessToast } from '../../utilities/toast';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
+  export let user: User | null;
   export let height: number = 380;
   export let width: number = 380;
+  export let workspaceId: number;
 
   let createButtonDisabled: boolean = true;
   let description: string = '';
@@ -18,7 +26,7 @@
 
   const dispatch = createEventDispatcher<{
     close: void;
-    create: { actionJS: string; description: string; name: string };
+    create: { file: string; description: string; name: string };
   }>();
 
   // File parse logic
@@ -30,8 +38,48 @@
 
   async function create() {
     if (!createButtonDisabled && file) {
-      const actionJS = await file.text();
-      dispatch('create', { actionJS, description, name });
+      // dispatch('create', { file, description, name });
+      const actionFileId = await effects.uploadFile(file, user);
+      showSuccessToast('Model Uploaded Successfully. Processing model...');
+
+      if (actionFileId !== null) {
+        const actionDefinitionInsertInput = {
+          action_file_id: actionFileId,
+          description,
+          name,
+          workspace_id: workspaceId,
+        };
+        const data = await reqHasura<ActionDefinition>(
+          gql.CREATE_ACTION_DEFINITION,
+          { actionDefinitionInsertInput },
+          user,
+        );
+        const { createActionDefinition } = data;
+        console.log('createActionDefinition :>> ', createActionDefinition);
+      }
+
+      //   if (jarId !== null) {
+      //     const modelInsertInput: ModelInsertInput = {
+      //       description,
+      //       jar_id: jarId,
+      //       mission: '',
+      //       name,
+      //       version,
+      //     };
+      //     const data = await reqHasura<Model>(gql.CREATE_MODEL, { model: modelInsertInput }, user);
+      //     const { createModel } = data;
+      //     if (createModel != null) {
+      //       const { id } = createModel;
+
+      //       showSuccessToast('Model Created Successfully');
+      //       createModelErrorStore.set(null);
+      //       creatingModelStore.set(false);
+
+      //       return id;
+      //       dispatch('close');
+      //     } else {
+      //       throw Error(`Unable to create model "${name}"`);
+      //     }
     }
   }
 

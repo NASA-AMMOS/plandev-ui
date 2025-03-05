@@ -69,6 +69,22 @@ const gql = {
     }
   `,
 
+  CREATE_ACTION_DEFINITION: `#graphql
+    mutation CreateActionDefinition($actionDefinitionInsertInput: action_definition_insert_input!) {
+      ${Queries.INSERT_ACTION_DEFINITION}(object: $actionDefinitionInsertInput) {
+        id
+      }
+    }
+  `,
+
+  CREATE_ACTION_RUN: `#graphql
+    mutation CreateActionRun($actionRunInsertInput: action_run_insert_input!) {
+      ${Queries.INSERT_ACTION_RUN}(object: $actionRunInsertInput) {
+        id
+      }
+    }
+  `,
+
   CREATE_ACTIVITY_DIRECTIVE: `#graphql
     mutation CreateActivityDirective($activityDirectiveInsertInput: activity_directive_insert_input!) {
       ${Queries.INSERT_ACTIVITY_DIRECTIVE}(object: $activityDirectiveInsertInput) {
@@ -1901,6 +1917,42 @@ const gql = {
       ${Queries.SIMULATE}(planId: $planId, force: $force) {
         reason
         simulationDatasetId
+        status
+      }
+    }
+  `,
+
+  SUB_ACTION_DEFINITIONS: `#graphql
+    subscription SubActionDefinitions {
+      ${Queries.ACTION_DEFINITIONS}(order_by: { id: desc }) {
+        action_file_id
+        created_at
+        description
+        id
+        name
+        owner
+        parameter_schema
+        settings_schema
+        updated_at
+        updated_by
+        workspace_id
+      }
+    }
+  `,
+
+  SUB_ACTION_RUNS: `#graphql
+    subscription SubActionRuns {
+      # TODO thin out respose fields
+      ${Queries.ACTION_RUNS}(order_by: { id: desc }) {
+        action_definition_id
+        created_at
+        created_by
+        error
+        id
+        logs
+        parameters
+        results
+        settings
         status
       }
     }

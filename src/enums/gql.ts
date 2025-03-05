@@ -1,4 +1,6 @@
 export enum Queries {
+  ACTION_DEFINITIONS = 'action_definition',
+  ACTION_RUNS = 'action_run',
   ACTIVITY_DIRECTIVES = 'activity_directive',
   ACTIVITY_DIRECTIVE_CHANGELOG = 'activity_directive_changelog',
   ACTIVITY_DIRECTIVE_METADATA_SCHEMAS = 'activity_directive_metadata_schema',
@@ -103,6 +105,8 @@ export enum Queries {
   GET_NON_CONFLICTING_ACTIVITIES = 'get_non_conflicting_activities',
   GET_SEQUENCE_SEQ_JSON = 'getSequenceSeqJson',
   GET_USER_SEQUENCE_SEQ_JSON = 'getUserSequenceSeqJson',
+  INSERT_ACTION_DEFINITION = 'insert_action_definition_one',
+  INSERT_ACTION_RUN = 'insert_action_run_one',
   INSERT_ACTIVITY_DIRECTIVE = 'insert_activity_directive_one',
   INSERT_ACTIVITY_DIRECTIVES = 'insert_activity_directive',
   INSERT_ACTIVITY_DIRECTIVE_TAGS = 'insert_activity_directive_tags',

@@ -6,7 +6,7 @@
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { SearchParameters } from '../../enums/searchParameters';
-  import { actions } from '../../stores/actions';
+  import { actionDefinitionsByWorkspace } from '../../stores/actions';
   import { parcels, userSequences, userSequencesColumns, workspaces } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import type { Parcel, UserSequence, Workspace } from '../../types/sequencing';
@@ -15,6 +15,7 @@
   import { getSearchParameterNumber, setQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import { pluralize } from '../../utilities/text';
   import Input from '../form/Input.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -41,6 +42,8 @@
       selectedSequence = null;
     }
   }
+  $: workspaceActions = $actionDefinitionsByWorkspace[workspaceId ?? -1];
+  $: workspaceActionsCount = Object.keys(workspaceActions ?? {}).length;
 
   onMount(() => {
     workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
@@ -110,10 +113,10 @@
           disabled={workspace === undefined}
           on:click={navigateToActions}
         >
-          {#if $actions.length}
-            <div class="actions-chip">{$actions.length}</div>
+          {#if workspaceActionsCount > 0}
+            <div class="actions-chip">{workspaceActionsCount}</div>
           {/if}
-          Actions
+          Action{pluralize(workspaceActionsCount)}
         </button>
 
         <button

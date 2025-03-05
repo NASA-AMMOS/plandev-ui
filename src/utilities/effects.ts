@@ -11,7 +11,6 @@ import { DictionaryTypes } from '../enums/dictionaryTypes';
 import { SchedulingType } from '../enums/scheduling';
 import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
-import { actionRuns } from '../stores/actions';
 import {
   activityDirectivesDB as activityDirectivesDBStore,
   selectedActivityDirectiveId as selectedActivityDirectiveIdStore,
@@ -68,7 +67,7 @@ import {
 } from '../stores/simulation';
 import { createTagError as createTagErrorStore } from '../stores/tags';
 import { applyViewUpdate, view as viewStore, viewUpdateRow, viewUpdateTimeline } from '../stores/views';
-import type { Action, ActionRun } from '../types/actions';
+import type { ActionDefinition } from '../types/actions';
 import type {
   ActivityDirective,
   ActivityDirectiveDB,
@@ -280,7 +279,7 @@ import {
   getIntervalInMs,
   getUnixEpochTimeFromInterval,
 } from './time';
-import { createRow, duplicateRow, getNextThingID } from './timeline';
+import { createRow, duplicateRow } from './timeline';
 import { showFailureToast, showSuccessToast } from './toast';
 import {
   applyViewDefinitionMigrations,
@@ -556,6 +555,26 @@ const effects = {
     } catch (e) {
       catchError('Activity Directive Paste Failed', e as Error);
       showFailureToast('Activity Directive Paste Failed');
+    }
+  },
+
+  async createActionRun(actionDefinitionId: number, parameters: any, settings: any, user: User | null) {
+    // TODO enforce permissions
+    try {
+      const actionRunInsertInput = {
+        action_definition_id: actionDefinitionId,
+        parameters,
+        settings,
+        status: 'pending',
+      };
+      const response = await reqHasura<number>(gql.CREATE_ACTION_RUN, { actionRunInsertInput }, user);
+      const { insert_action_run_one: actionRunId } = response;
+      console.log('response :>> ', actionRunId, response);
+      return actionRunId ?? null;
+    } catch (e) {
+      catchError('Action Run Creation Failed', e as Error);
+      showFailureToast('Action Run Creation Failed');
+      return null;
     }
   },
 
@@ -5342,24 +5361,18 @@ const effects = {
     return null;
   },
 
-  async runAction(action: Action, user: User | null): Promise<ActionRun | undefined> {
+  async runAction(actionDefinition: ActionDefinition, user: User | null): Promise<number | null> {
     try {
-      const { confirm, value } = await showRunActionModal(action);
+      const { confirm, value } = await showRunActionModal(actionDefinition, user);
       if (confirm && value) {
-        // Navigate to the action page
-        // Add the action to the store manually for now
-        const newActionRun: ActionRun = {
-          actionId: action.id,
-          id: getNextThingID(get(actionRuns)),
-          response: value.actionResponse,
-          user: user?.id ?? 'Unknown',
-        };
-        actionRuns.update(prevActions => [...prevActions, newActionRun]);
-        return newActionRun;
+        const { id } = value;
+        return id;
       }
+      return null;
     } catch (e) {
       console.log('e :>> ', e);
       showFailureToast('Run Action Failed');
+      return null;
     }
   },
 

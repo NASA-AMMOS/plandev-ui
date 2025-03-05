@@ -28,7 +28,7 @@ import RunActionModal from '../components/modals/RunActionModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceModal from '../components/modals/WorkspaceModal.svelte';
-import { type Action, type ActionResponse } from '../types/actions';
+import { type ActionDefinition } from '../types/actions';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
 import type { User } from '../types/app';
 import type { ExpansionSequence } from '../types/expansion';
@@ -122,14 +122,15 @@ export async function showAboutModal(): Promise<ModalElementValue> {
 /**
  * Shows an ActionCreationModal component.
  */
-export async function showActionCreationModal(): Promise<
-  ModalElementValue<{ actionJS: string; description: string; name: string }>
-> {
+export async function showActionCreationModal(
+  user: User | null,
+  workspaceId: number,
+): Promise<ModalElementValue<{ actionJS: string; description: string; name: string }>> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
       if (target) {
-        const actionCreationModal = new ActionCreationModal({ target });
+        const actionCreationModal = new ActionCreationModal({ props: { user, workspaceId }, target });
         target.resolve = resolve;
 
         actionCreationModal.$on('close', () => {
@@ -1020,14 +1021,15 @@ export async function showRestorePlanSnapshotModal(
  * Shows a showRunActionModal with the supplied arguments.
  */
 export async function showRunActionModal(
-  action: Action,
-): Promise<ModalElementValue<{ actionResponse: ActionResponse }>> {
+  actionDefinition: ActionDefinition,
+  user: User | null,
+): Promise<ModalElementValue<{ id: number | null }>> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const runActionModal = new RunActionModal({ props: { action }, target });
+        const runActionModal = new RunActionModal({ props: { actionDefinition, user }, target });
         target.resolve = resolve;
 
         runActionModal.$on('close', () => {
@@ -1037,10 +1039,10 @@ export async function showRunActionModal(
           runActionModal.$destroy();
         });
 
-        runActionModal.$on('complete', (e: CustomEvent<{ actionResponse: ActionResponse }>) => {
+        runActionModal.$on('complete', (e: CustomEvent<{ actionRunId: number | null }>) => {
           target.replaceChildren();
           target.resolve = null;
-          resolve({ confirm: true, value: e.detail });
+          resolve({ confirm: true, value: e.detail.actionRunId });
           runActionModal.$destroy();
         });
       }
