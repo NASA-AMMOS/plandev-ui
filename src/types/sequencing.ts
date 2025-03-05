@@ -22,6 +22,18 @@ import type { SequenceTypes } from '../enums/sequencing';
 import type { ArgDelegator } from '../utilities/sequence-editor/extension-points';
 import type { UserId } from './app';
 import type { GlobalType } from './global-type';
+import type { ActivityLayerFilter } from './timeline';
+
+export type SequenceActivityFilter = ActivityLayerFilter;
+
+export type SequenceFilter = {
+  filter: SequenceActivityFilter;
+  id: number;
+  model_id: number;
+  name: string;
+};
+
+export type SequenceFilterInsertInput = Pick<SequenceFilter, 'filter' | 'model_id' | 'name'>;
 
 export type ChannelDictionaryMetadata = {
   type: DictionaryTypes.CHANNEL;

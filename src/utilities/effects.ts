@@ -59,9 +59,8 @@ import {
   channelDictionaries as channelDictionariesStore,
   commandDictionaries as commandDictionariesStore,
   parameterDictionaries as parameterDictionariesStore,
-  sequenceExpansionStatusStore,
-  sequencingError,
 } from '../stores/sequencing';
+import { sequenceTemplateExpansionError, sequenceTemplateExpansionStatus } from '../stores/sequence-template';
 import {
   selectedSpanId as selectedSpanIdStore,
   simulationDatasetId as simulationDatasetIdStore,
@@ -204,8 +203,6 @@ import {
   type SequenceAdaptationMetadata,
   type SequenceFilter,
   type SequenceFilterInsertInput,
-  type SequenceTemplate,
-  type SequenceTemplateInsertInput,
   type UserSequence,
   type UserSequenceInsertInput,
   type Workspace,
@@ -293,6 +290,7 @@ import {
   generateDefaultView,
   validateViewJSONAgainstSchema,
 } from './view';
+import type { SequenceTemplate, SequenceTemplateInsertInput } from '../types/sequence-template';
 
 function throwPermissionError(attemptedAction: string): never {
   throw Error(`You do not have permission to: ${attemptedAction}.`);
@@ -3627,7 +3625,7 @@ const effects = {
     user: User | null,
   ): Promise<void> {
     try {
-      sequenceExpansionStatusStore.set(Status.Incomplete);
+      sequenceTemplateExpansionStatus.set(Status.Incomplete);
       if (!queryPermissions.EXPAND_TEMPLATES(user)) {
         throwPermissionError('expand a sequence template');
       }
@@ -3643,15 +3641,15 @@ const effects = {
         user,
       );
       if (data.expandTemplates !== null) {
-        sequenceExpansionStatusStore.set(Status.Complete);
+        sequenceTemplateExpansionStatus.set(Status.Complete);
         showSuccessToast('Sequence Expanded Successfully');
       } else {
         throw Error('Unable to expand sequence');
       }
     } catch (e) {
       catchError('Sequence Expansion Failed', e as Error);
-      sequenceExpansionStatusStore.set(Status.Failed);
-      sequencingError.set(e as string);
+      sequenceTemplateExpansionStatus.set(Status.Failed);
+      sequenceTemplateExpansionError.set(e as string);
       showFailureToast('Sequence Expansion Failed');
     }
   },

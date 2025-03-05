@@ -4,11 +4,12 @@
   import type { ICellRendererParams } from 'ag-grid-community';
   import { filteredExpansionSequences } from '../../stores/expansion';
   import { plan, planReadOnly } from '../../stores/plan';
-  import { expandedTemplates, parcels, sequencingError } from '../../stores/sequencing';
+  import { parcels } from '../../stores/sequencing';
   import { simulationDatasetLatest } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
-  import type { ExpandedTemplate } from '../../types/sequencing';
+  import type { ExpandedTemplate } from '../../types/sequence-template';
+  import { expandedTemplates } from '../../stores/sequence-template';
   import effects from '../../utilities/effects';
   import { showEditorModal } from '../../utilities/modal';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -23,6 +24,7 @@
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import AlertError from '../ui/AlertError.svelte';
+  import { sequenceTemplateExpansionError } from '../../stores/sequence-template';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -166,7 +168,7 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <AlertError class="m-2" error={$sequencingError} />
+    <AlertError class="m-2" error={$sequenceTemplateExpansionError} />
     <fieldset>
       <label for="sequence" class="sequence-selector">Sequence</label>
       <select
