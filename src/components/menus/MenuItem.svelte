@@ -34,7 +34,7 @@
 </script>
 
 <div
-  class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+  class="flex cursor-pointer items-center gap-2 rounded-sm px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
   class:disabled
   class:selected
   class:selectable
