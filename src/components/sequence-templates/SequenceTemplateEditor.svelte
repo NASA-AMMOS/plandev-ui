@@ -70,8 +70,6 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import CommandPanel from '../sequencing/CommandPanel/CommandPanel.svelte';
-
-  import { printTree } from '@lezer-unofficial/printer';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
 
   export let parcel: Parcel | null;
@@ -427,19 +425,6 @@
     }
   }
 
-  function debugAST() {
-    const tree = syntaxTree(editorSequenceView.state);
-    const sourceCode = editorSequenceView.state.doc.toString();
-    const overlayTree = tree.topNode.enter(0, 1);
-    if (overlayTree !== null) {
-      console.log('Tree 1 (Handlebars AST):\n' + printTree(tree, sourceCode));
-      console.log('Tree 2 (Overlaid SeqN AST):\n' + printTree(overlayTree, sourceCode));
-    } else {
-      console.log('AST:\n' + printTree(tree, sourceCode));
-      console.log('No overlay AST found.');
-    }
-  }
-
   function showErrorPanel() {
     openLintPanel(editorSequenceView);
   }
@@ -595,16 +580,7 @@
     <Panel>
       <svelte:fragment slot="header">
         <SectionTitle>{title}</SectionTitle>
-
         <div class="right">
-          <button
-            use:tooltip={{ content: 'Print the Abstract Syntax Trees in the console', placement: 'top' }}
-            class="st-button icon-button secondary ellipsis"
-            on:click={debugAST}
-          >
-            Debug - AST
-          </button>
-
           <button
             use:tooltip={{ content: 'Show Error Panel', placement: 'top' }}
             class="st-button icon-button secondary ellipsis"

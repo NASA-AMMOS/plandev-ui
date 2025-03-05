@@ -111,10 +111,10 @@
   }
 
   function openExpandedTemplate(expandedTemplate: ExpandedTemplate) {
-    // TODO: fix editor to parse correctly
+    // TODO: Proper language setting here (ExpandedTemplate does not know the language!) and EOL setting
     showEditorModal(
       expandedTemplate.expanded_template,
-      'typescript',
+      'plaintext',
       `Expanded Template ID : ${expandedTemplate.id}`,
       true,
     );

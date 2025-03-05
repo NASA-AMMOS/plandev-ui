@@ -87,27 +87,6 @@ const handlebarsCompletions = [
   // Args
   'startTime',
 ];
-/*
-export type MustacheActivity = {
-  id: number;
-  simulationDatasetId: number;
-  simulationDataset: {
-      simulation: {
-          planId: number;
-      };
-  };
-  attributes: {
-      arguments: Record<string, string>;
-      directiveId: number | undefined;
-      computed: Record<string, string> | undefined;
-  };
-  duration: string | null;
-  startOffset: string;
-  startTime: string;
-  endTime: string | null;
-  activityTypeName: string;
-};
-*/
 
 export function setupLanguageSupport(autocomplete?: (context: CompletionContext) => CompletionResult | null) {
   if (autocomplete) {
