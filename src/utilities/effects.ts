@@ -24,7 +24,7 @@ import { catchError, catchSchedulingError } from '../stores/errors';
 import {
   createExpansionRuleError as createExpansionRuleErrorStore,
   creatingExpansionSequence as creatingExpansionSequenceStore,
-  planExpansionStatusWritable as planExpansionStatusStore,
+  planExpansionStatus as planExpansionStatusStore,
   savingExpansionRule as savingExpansionRuleStore,
   savingExpansionSet as savingExpansionSetStore,
 } from '../stores/expansion';
@@ -4012,7 +4012,6 @@ const effects = {
     }
   },
 
-  // TODO: change this so that it doesn't generate a new one, but rather pulls the stored one
   async getExpansionSequenceSeqJson(
     seqId: string,
     simulationDatasetId: number,
@@ -5809,9 +5808,6 @@ const effects = {
         if (simulate != null) {
           const { simulationDatasetId: newSimulationDatasetId } = simulate;
           simulationDatasetIdStore.set(newSimulationDatasetId);
-
-          // reflect that expansion should be re-run. TODO: discuss if this is appropriate; see comments in expansion.ts
-          planExpansionStatusStore.set(Status.Modified);
         } else {
           throw Error('Unable to simulate this plan');
         }
