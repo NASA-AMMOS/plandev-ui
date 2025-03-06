@@ -1,8 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { modalBodyClickListener, modalBodyKeyListener } from '../utilities/modal';
-
   import { env } from '$env/dynamic/public';
   import { ModeWatcher } from '@nasa-jpl/stellar-svelte';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
@@ -11,6 +9,7 @@
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
+  import { modalBodyClickListener, modalBodyKeyListener } from '../utilities/modal';
   import { loadPluginCode } from '../utilities/plugins';
 
   let pluginsEnabled = env.PUBLIC_TIME_PLUGIN_ENABLED === 'true';
