@@ -35,6 +35,7 @@
   import StatusBadge from '../../../components/ui/StatusBadge.svelte';
   import { PlanStatusMessages } from '../../../enums/planStatusMessages';
   import { SearchParameters } from '../../../enums/searchParameters';
+  import { SequencingMode } from '../../../enums/sequencing';
   import { Status } from '../../../enums/status';
   import {
     activityArgumentDefaults,
@@ -93,6 +94,7 @@
     schedulingAnalysisStatus,
     schedulingGoalCount,
   } from '../../../stores/scheduling';
+  import { selectedParcel, selectedSequence, sequenceExpansionMode } from '../../../stores/sequencing';
   import {
     enableSimulation,
     externalResourceNames,
@@ -511,6 +513,30 @@
     }
   }
 
+  async function onHandleExpansion() {
+    if ($sequenceExpansionMode === SequencingMode.LEGACY) {
+      if ($selectedExpansionSetId != null && $plan) {
+        effects.expand($selectedExpansionSetId, $simulationDatasetLatest?.id || -1, $plan, $plan.model, data.user);
+      }
+    } else if ($sequenceExpansionMode === SequencingMode.TEMPLATING) {
+      if (
+        $selectedSequence !== null &&
+        $selectedParcel !== null &&
+        $plan !== null &&
+        $simulationDatasetLatest !== null
+      ) {
+        // TODO: Support sending multiple sequences
+        effects.expandTemplates(
+          [$selectedSequence],
+          $simulationDatasetLatest.dataset_id,
+          $plan.model_id,
+          $selectedParcel,
+          data.user,
+        );
+      }
+    }
+  }
+
   async function onRestoreSnapshot(event: CustomEvent<PlanSnapshot>) {
     const { detail: planSnapshot } = event;
     if ($plan) {
@@ -624,20 +650,12 @@
           permissionError={$planReadOnly
             ? PlanStatusMessages.READ_ONLY
             : 'You do not have permission to expand activities'}
-          menuTitle="Expansion Status"
+          menuTitle={$sequenceExpansionMode === SequencingMode.LEGACY
+            ? 'Legacy Expansion Status'
+            : 'Template Expansion Status'}
           disabled={$selectedExpansionSetId === null}
           status={$planExpansionStatus}
-          on:click={() => {
-            if ($selectedExpansionSetId != null && $plan) {
-              effects.expand(
-                $selectedExpansionSetId,
-                $simulationDatasetLatest?.id || -1,
-                $plan,
-                $plan.model,
-                data.user,
-              );
-            }
-          }}
+          on:click={() => onHandleExpansion()}
         >
           <PlanIcon />
           <svelte:fragment slot="metadata">

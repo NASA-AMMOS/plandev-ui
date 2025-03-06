@@ -6,7 +6,7 @@
   import { filteredExpansionSequences } from '../../stores/expansion';
   import { plan, planReadOnly } from '../../stores/plan';
   import { expandedTemplates, sequenceTemplateExpansionError } from '../../stores/sequence-template';
-  import { parcels } from '../../stores/sequencing';
+  import { parcels, selectedParcel, selectedSequence } from '../../stores/sequencing';
   import { simulationDatasetLatest } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
@@ -71,8 +71,6 @@
   let expandedTemplateDataGrid: DataGrid<ExpandedTemplate>;
   let selectedExpandedTemplateId: number | null = null;
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
-  let selectedParcel: number | null = null;
-  let selectedSequence: string | null = null;
 
   $: columnDefs = [
     ...columnDefs,
@@ -122,13 +120,13 @@
   }
 
   function handleTemplating() {
-    if (selectedSequence !== null && selectedParcel !== null && $plan !== null && $simulationDatasetLatest !== null) {
+    if ($selectedSequence !== null && $selectedParcel !== null && $plan !== null && $simulationDatasetLatest !== null) {
       // TODO: Support sending multiple sequences
       effects.expandTemplates(
-        [selectedSequence],
+        [$selectedSequence],
         $simulationDatasetLatest.dataset_id,
         $plan.model_id,
-        selectedParcel,
+        $selectedParcel,
         user,
       );
     }
@@ -171,7 +169,7 @@
     <fieldset>
       <label for="sequence" class="sequence-selector">Sequence</label>
       <select
-        bind:value={selectedSequence}
+        bind:value={$selectedSequence}
         class="st-select w-100"
         disabled={!$filteredExpansionSequences}
         name="sequence"
@@ -186,7 +184,7 @@
     </fieldset>
     <fieldset>
       <label for="parcel" class="parcel-selector"> Parcel </label>
-      <select bind:value={selectedParcel} class="st-select w-100" disabled={!$parcels} name="parcels">
+      <select bind:value={$selectedParcel} class="st-select w-100" disabled={!$parcels} name="parcels">
         <option value={null} />
         {#each $parcels as parcel}
           <option value={parcel.id}>
