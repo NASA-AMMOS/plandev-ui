@@ -51,7 +51,7 @@
 >
   <div class="display-value st-typography-header">
     <span class="value">{displayValue}</span>
-    <select class="hidden" data-type="number" {value} tabindex="-1" on:change>
+    <select data-type="number" {value} tabindex="-1" on:change>
       {#each options as option}
         <option value={getOptionValue(option)}>{getOptionLabel(option)}</option>
       {/each}
