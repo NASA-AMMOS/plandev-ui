@@ -50,7 +50,7 @@
     "@nasa-jpl/seq-json-schema": "^1.3.1",
     "@neodrag/svelte": "^2.0.6",
     "@nasa-jpl/stellar": "^2.0.0-alpha.30",
-    "@nasa-jpl/stellar-svelte": "^2.0.0-alpha.38",
+    "@nasa-jpl/stellar-svelte": "^2.0.0-alpha.42",
     "@streamparser/json": "^0.0.17",
     "@sveltejs/adapter-node": "5.0.1",
     "@sveltejs/kit": "^2.5.4",
