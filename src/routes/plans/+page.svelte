@@ -11,9 +11,9 @@
   import { Clipboard, Import, X } from 'lucide-svelte';
   import { onDestroy, onMount } from 'svelte';
   import ExportIcon from '../../assets/export.svg?component';
+  import ImportIcon from '../../assets/import.svg?component';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
-  import Button from '../../components/button/button.svelte';
   import DatePickerField from '../../components/form/DatePickerField.svelte';
   import Field from '../../components/form/Field.svelte';
   import ModelStatusRollup from '../../components/model/ModelStatusRollup.svelte';
