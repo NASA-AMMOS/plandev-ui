@@ -62,7 +62,12 @@
     schedulingErrors,
     simulationDatasetErrors,
   } from '../../../stores/errors';
-  import { planExpansionStatus, resetExpansionStores, selectedExpansionSetId } from '../../../stores/expansion';
+  import {
+    lastExpandedSimulationDatasetId,
+    planExpansionStatus,
+    resetExpansionStores,
+    selectedExpansionSetId,
+  } from '../../../stores/expansion';
   import { extensions } from '../../../stores/extensions';
   import {
     activityTypes,
@@ -653,13 +658,22 @@
           menuTitle={$sequenceExpansionMode === SequencingMode.LEGACY
             ? 'Legacy Expansion Status'
             : 'Template Expansion Status'}
-          disabled={$selectedExpansionSetId === null}
+          disabled={$sequenceExpansionMode === SequencingMode.LEGACY
+            ? $selectedExpansionSetId === null
+            : $selectedSequence === null || ($selectedParcel === null && $simulationDatasetId === null)}
           status={$planExpansionStatus}
           on:click={() => onHandleExpansion()}
         >
           <PlanIcon />
           <svelte:fragment slot="metadata">
-            <div>Expansion Set ID: {$selectedExpansionSetId || 'None'}</div>
+            {#if $sequenceExpansionMode === SequencingMode.LEGACY}
+              <div>Expansion Set ID: {$selectedExpansionSetId || 'None'}</div>
+            {/if}
+            {#if !$lastExpandedSimulationDatasetId}
+              <div>No expansions exist yet.</div>
+            {:else}
+              <div>Last expanded for simulation ID: {$lastExpandedSimulationDatasetId}</div>
+            {/if}
           </svelte:fragment>
         </PlanNavButton>
         <PlanNavButton

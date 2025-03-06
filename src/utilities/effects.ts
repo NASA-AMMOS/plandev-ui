@@ -26,7 +26,7 @@ import {
   creatingExpansionSequence as creatingExpansionSequenceStore,
   planExpansionStatus as planExpansionStatusStore,
   savingExpansionRule as savingExpansionRuleStore,
-  savingExpansionSet as savingExpansionSetStore,
+  savingExpansionSet as savingExpansionSetStore
 } from '../stores/expansion';
 import {
   createExternalEventTypeError as createExternalEventTypeErrorStore,
