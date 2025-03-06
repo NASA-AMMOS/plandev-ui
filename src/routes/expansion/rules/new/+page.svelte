@@ -2,9 +2,16 @@
 
 <script lang="ts">
   import ExpansionRuleForm from '../../../../components/expansion/ExpansionRuleForm.svelte';
+  import { SequencingMode } from '../../../../enums/sequencing';
+  import { sequenceExpansionMode } from '../../../../stores/sequencing';
   import type { PageData } from './$types';
 
   export let data: PageData;
 </script>
 
-<ExpansionRuleForm mode="create" user={data.user} />
+{#if $sequenceExpansionMode === SequencingMode.TEMPLATING}
+  Legacy Sequencing functionality not available in "templating" sequencing mode. Please change the SEQUENCING_MODE
+  enviornment variable in docker-compose.yml.
+{:else}
+  <ExpansionRuleForm mode="create" user={data.user} />
+{/if}

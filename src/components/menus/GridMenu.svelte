@@ -1,6 +1,7 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
+  import { env } from '$env/dynamic/public';
   import ActivityIcon from '@nasa-jpl/stellar/icons/activity.svg?component';
   import BookIcon from '@nasa-jpl/stellar/icons/book.svg?component';
   import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
@@ -11,10 +12,12 @@
   import VerticalCollapseIcon from '@nasa-jpl/stellar/icons/vertical_collapse_with_center_line.svg?component';
   import CodeSquareIcon from 'bootstrap-icons/icons/code-square.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
+  import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
   import WindowFullscreenIcon from 'bootstrap-icons/icons/window-fullscreen.svg?component';
   import ExternalEventIcon from '../../assets/external-event-box-with-arrow.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
-  import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
+  import { SequencingMode } from '../../enums/sequencing';
+  import { sequenceExpansionMode } from '../../stores/sequencing';
   import { viewUpdateGrid } from '../../stores/views';
   import type { ViewGrid, ViewGridComponent, ViewGridSection } from '../../types/view';
   import Menu from './Menu.svelte';
@@ -42,6 +45,8 @@
 
     viewUpdateGrid(update);
   }
+
+  $: console.log('MODE', env.PUBLIC_SEQUENCING_MODE);
 </script>
 
 <div class="grid-menu st-typography-medium" role="none" on:click|stopPropagation={() => gridMenu.toggle()}>
@@ -65,10 +70,12 @@
       <VerticalCollapseIcon />
       Constraints
     </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('ExpansionPanel')}>
-      <CodeSquareIcon />
-      Expansion
-    </MenuItem>
+    {#if $sequenceExpansionMode === SequencingMode.LEGACY}
+      <MenuItem on:click={() => onClickMenuItem('ExpansionPanel')}>
+        <CodeSquareIcon />
+        Expansion
+      </MenuItem>
+    {/if}
     <MenuItem on:click={() => onClickMenuItem('ExternalSourcesPanel')}>
       <ExternalSourceIcon />
       External Sources
@@ -105,10 +112,12 @@
       <JournalCodeIcon />
       Sequences
     </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('SequenceTemplatePanel')}>
-      <CodeSquareIcon />
-      Sequence Templates
-    </MenuItem>
+    {#if $sequenceExpansionMode === SequencingMode.TEMPLATING}
+      <MenuItem on:click={() => onClickMenuItem('SequenceTemplatePanel')}>
+        <CodeSquareIcon />
+        Sequence Templates
+      </MenuItem>
+    {/if}
     <MenuItem on:click={() => onClickMenuItem('SimulationPanel')}>
       <GearWideConnectedIcon />
       Simulation

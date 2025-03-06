@@ -1,9 +1,11 @@
+import { env } from '$env/dynamic/public';
 import type {
   ChannelDictionary as AmpcsChannelDictionary,
   CommandDictionary as AmpcsCommandDictionary,
   ParameterDictionary as AmpcsParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
+import { SequencingMode } from '../enums/sequencing';
 import type { User } from '../types/app';
 import {
   type ChannelDictionaryMetadata,
@@ -20,6 +22,9 @@ import effects from '../utilities/effects';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
 
+/* Environment Configuration */
+export const sequenceExpansionMode: Writable<SequencingMode> = writable(env.PUBLIC_SEQUENCING_MODE === "templating" ? SequencingMode.TEMPLATING : SequencingMode.LEGACY)
+
 /* Writable */
 
 export const parsedChannelDictionaries: Writable<Record<string, AmpcsChannelDictionary>> = writable({});
@@ -27,6 +32,10 @@ export const parsedChannelDictionaries: Writable<Record<string, AmpcsChannelDict
 export const parsedCommandDictionaries: Writable<Record<string, AmpcsCommandDictionary>> = writable({});
 
 export const parsedParameterDictionaries: Writable<Record<string, AmpcsParameterDictionary>> = writable({});
+
+export const selectedParcel: Writable<number | null> = writable(null);
+
+export const selectedSequence: Writable<string | null> = writable(null);
 
 /* Subscriptions. */
 export const channelDictionaries = gqlSubscribable<ChannelDictionaryMetadata[]>(

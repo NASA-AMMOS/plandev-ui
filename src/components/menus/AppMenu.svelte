@@ -21,6 +21,8 @@
   import JournalsIcon from 'bootstrap-icons/icons/journals.svg?component';
   import AerieWordmarkDark from '../../assets/aerie-wordmark-dark.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
+  import { SequencingMode } from '../../enums/sequencing';
+  import { sequenceExpansionMode } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import { logout } from '../../utilities/login';
   import { showAboutModal } from '../../utilities/modal';
@@ -58,20 +60,24 @@
       <ArchiveIcon />
       Parcels
     </MenuItem>
-    <MenuItem
-      on:click={() => goto(`${base}/expansion/rules`)}
-      on:pointerenter={() => preloadData(`${base}/expansion/rules`)}
-    >
-      <CodeSquareIcon />
-      Expansion
-    </MenuItem>
-    <MenuItem
-      on:click={() => goto(`${base}/sequence-templates`)}
-      on:pointerenter={() => preloadData(`${base}/sequence-templates`)}
-    >
-      <CodeSquareIcon />
-      Sequence Templates
-    </MenuItem>
+    {#if $sequenceExpansionMode === SequencingMode.LEGACY}
+      <MenuItem
+        on:click={() => goto(`${base}/expansion/rules`)}
+        on:pointerenter={() => preloadData(`${base}/expansion/rules`)}
+      >
+        <CodeSquareIcon />
+        Expansion
+      </MenuItem>
+    {/if}
+    {#if $sequenceExpansionMode === SequencingMode.TEMPLATING}
+      <MenuItem
+        on:click={() => goto(`${base}/sequence-templates`)}
+        on:pointerenter={() => preloadData(`${base}/sequence-templates`)}
+      >
+        <CodeSquareIcon />
+        Sequence Templates
+      </MenuItem>
+    {/if}
     <MenuItem on:click={() => goto(`${base}/scheduling`)} on:pointerenter={() => preloadData(`${base}/scheduling`)}>
       <CalendarIcon />
       Scheduling

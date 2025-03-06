@@ -3,6 +3,8 @@
 <script lang="ts">
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import ExpansionRules from '../../../components/expansion/ExpansionRules.svelte';
+  import { SequencingMode } from '../../../enums/sequencing';
+  import { sequenceExpansionMode } from '../../../stores/sequencing';
   import type { PageData } from './$types';
 
   export let data: PageData;
@@ -10,4 +12,9 @@
 
 <PageTitle title="Expansion Rules" />
 
-<ExpansionRules user={data.user} />
+{#if $sequenceExpansionMode === SequencingMode.TEMPLATING}
+  Legacy Sequencing functionality not available in "templating" sequencing mode. Please change the SEQUENCING_MODE
+  enviornment variable in docker-compose.yml.
+{:else}
+  <ExpansionRules user={data.user} />
+{/if}
