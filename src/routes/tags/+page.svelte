@@ -103,7 +103,6 @@
   let filterText: string = '';
   let tags: Tag[];
   let nameInputField: InputType;
-  let colorInputField: InputType;
   let user: User | null = null;
   let selectedTag: Tag | null = null;
   let selectedTagModified: boolean = false;
@@ -169,9 +168,6 @@
 
   onMount(() => {
     colorField.validateAndSet(defaultColor);
-    if (nameInputField) {
-      nameInputField.focus();
-    }
   });
 
   function diffTags(tagA: Partial<Tag>, tagB: Partial<Tag>) {
@@ -397,13 +393,6 @@
               <span class="flex items-center border border-secondary pl-2 align-middle">@{user?.id}</span>
             </div>
           </fieldset>
-
-          <!-- TODO: remove this fieldset -->
-          <!-- <fieldset>
-            <div class="flex w-full justify-between">
-              Created by <span>@{user?.id}</span>
-            </div>
-          </fieldset> -->
 
           <fieldset class="my-4">
             {#if !selectedTag}
