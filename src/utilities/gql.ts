@@ -2606,6 +2606,38 @@ const gql = {
     }
   `,
 
+  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SEQS: `#graphql
+    subscription SubMostRecentExpansion {
+      expanded_sequences {
+        seq_id
+        expanded_sequence
+        simulation_dataset_id 
+      }
+    }
+  `,
+
+  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SIMS: `#graphql
+    subscription SubMostRecentExpansion($planId: Int!) {
+      plan_by_pk(id: $planId) {
+        simulations {
+          simulation_datasets {
+            id
+          }
+        }
+      }
+    }
+  `,
+
+  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_TEMPS: `#graphql
+    subscription SubMostRecentExpansion {
+      expanded_templates {
+        seq_id
+        expanded_template
+        simulation_dataset_id
+      }
+    }
+  `,
+
   SUB_PARAMETER_DICTIONARIES: `#graphql
     subscription SubParameterDictionaries {
       ${Queries.PARAMETER_DICTIONARIES}(order_by: { id: desc }) {
