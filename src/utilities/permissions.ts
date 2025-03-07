@@ -24,8 +24,8 @@ import type {
   SchedulingGoalDefinition,
   SchedulingGoalMetadata,
 } from '../types/scheduling';
-import type { Parcel, UserSequence, Workspace } from '../types/sequencing';
 import type { SequenceTemplate } from '../types/sequence-template';
+import type { Parcel, UserSequence, Workspace } from '../types/sequencing';
 import type { PlanDataset, Simulation, SimulationTemplate } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { View, ViewSlim } from '../types/view';
@@ -1163,6 +1163,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
+  UPDATE_SEQUENCE_FILTER: (user: User | null, model: Model): boolean => {
+    return isUserAdmin(user) || (getPermission([Queries.UPDATE_SEQUENCE_FILTER], user) && isUserOwner(user, model));
+  },
   UPDATE_SEQUENCE_TEMPLATE: (user: User | null, sequenceTemplate: SequenceTemplate): boolean => {
     return (
       isUserAdmin(user) ||
@@ -1374,7 +1377,7 @@ interface FeaturePermissions {
   schedulingGoalsModelSpec: ModelSpecificationCRUDPermission;
   schedulingGoalsPlanSpec: SchedulingCRUDPermission<AssetWithOwner<SchedulingGoalMetadata>>;
   sequenceAdaptation: CRUDPermission<void>;
-  sequenceFilter: CRUDPermission<void>;
+  sequenceFilter: CRUDPermission<Model>;
   sequenceTemplate: SequenceTemplateCRUDPermission<SequenceTemplate>;
   sequences: CRUDPermission<AssetWithOwner<UserSequence>>;
   simulation: RunnableCRUDPermission<AssetWithOwner<Simulation>>;
@@ -1585,7 +1588,7 @@ const featurePermissions: FeaturePermissions = {
     canCreate: user => queryPermissions.CREATE_SEQUENCE_FILTER(user),
     canDelete: user => queryPermissions.DELETE_SEQUENCE_FILTERS(user),
     canRead: () => true,
-    canUpdate: () => false,
+    canUpdate: (user, model) => queryPermissions.UPDATE_SEQUENCE_FILTER(user, model),
   },
   sequenceTemplate: {
     canCreate: user => queryPermissions.CREATE_SEQUENCE_TEMPLATE(user),

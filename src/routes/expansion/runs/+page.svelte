@@ -10,8 +10,8 @@
 </script>
 
 {#if $sequenceExpansionMode === SequencingMode.TEMPLATING}
-  Legacy Sequencing functionality not available in "templating" sequencing mode. Please change the SEQUENCING_MODE
-  enviornment variable in docker-compose.yml.
+  Command Expansion functionality not available in "templating" sequencing mode. Please change the SEQUENCING_MODE
+  environment variable in docker-compose.yml.
 {:else}
   <ExpansionRuns expansionRuns={data.expansionRuns} user={data.user} />
 {/if}

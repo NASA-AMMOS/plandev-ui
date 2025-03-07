@@ -26,7 +26,7 @@ import {
   creatingExpansionSequence as creatingExpansionSequenceStore,
   planExpansionStatus as planExpansionStatusStore,
   savingExpansionRule as savingExpansionRuleStore,
-  savingExpansionSet as savingExpansionSetStore
+  savingExpansionSet as savingExpansionSetStore,
 } from '../stores/expansion';
 import {
   createExternalEventTypeError as createExternalEventTypeErrorStore,
@@ -267,7 +267,7 @@ import {
   showUploadViewModal,
   showWorkspaceModal,
 } from './modal';
-import { gatewayPermissions, queryPermissions } from './permissions';
+import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
 import { reqExtension, reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
@@ -6480,6 +6480,30 @@ const effects = {
       }
     } catch (e) {
       catchError(e as Error);
+    }
+  },
+
+  async updateSequenceFilter(
+    filter: SequenceActivityFilter,
+    filterName: string,
+    filterId: number,
+    model: Model,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      if (!featurePermissions.sequenceFilter.canUpdate(user, model)) {
+        throwPermissionError('update this sequence filter');
+      }
+
+      const data = await reqHasura(gql.UPDATE_SEQUENCE_FILTER, { filter, filterId, filterName }, user);
+      if (data.updateSequenceFilter !== null) {
+        showSuccessToast('Updated Sequence Filter');
+      } else {
+        throw Error(`Unable to update sequence filter with ID: "${filterId}"`);
+      }
+    } catch (e) {
+      catchError('Failed to Update Sequence Filter', e as Error);
+      showFailureToast('Failed To Update Sequence Template');
     }
   },
 
