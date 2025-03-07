@@ -2,31 +2,28 @@
 
 <script lang="ts">
   import type { ICellRendererParams } from 'ag-grid-community';
-  import type { User } from '../../types/app';
-  import type { DataGridColumnDef, DataGridRowDoubleClick, RowId } from '../../types/data-grid';
-  import type { SequenceActivityFilter, SequenceFilter } from '../../types/sequencing';
-  import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
-  import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
-  import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
-  import { showEditorModal } from '../../utilities/modal';
-  import effects from '../../utilities/effects';
-  import { featurePermissions } from '../../utilities/permissions';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { creatingExpansionSequence, filteredExpansionSequences } from '../../stores/expansion';
   import { plan, planReadOnly } from '../../stores/plan';
   import { sequenceFilters } from '../../stores/sequencing';
   import { simulationDatasetId, simulationDatasetLatest } from '../../stores/simulation';
-  import { permissionHandler } from '../../utilities/permissionHandler';
-  import ActivityFilterBuilder from '../timeline/form/TimelineEditor/ActivityFilterBuilder.svelte';
-  import { tooltip } from '../../utilities/tooltip';
+  import type { User } from '../../types/app';
+  import type { DataGridColumnDef, DataGridRowDoubleClick, RowId } from '../../types/data-grid';
   import type { ExpansionSequence } from '../../types/expansion';
-  import { creatingExpansionSequence, filteredExpansionSequences } from '../../stores/expansion';
-  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
-  import Panel from '../ui/Panel.svelte';
-  import type { ViewGridSection } from '../../types/view';
-  import GridMenu from '../menus/GridMenu.svelte';
+  import type { SequenceActivityFilter, SequenceFilter } from '../../types/sequencing';
+  import effects from '../../utilities/effects';
+  import { showEditorModal } from '../../utilities/modal';
+  import { permissionHandler } from '../../utilities/permissionHandler';
+  import { featurePermissions } from '../../utilities/permissions';
+  import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
-  import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import ActivityFilterBuilder from '../timeline/form/TimelineEditor/ActivityFilterBuilder.svelte';
+  import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
+  import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
+  import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
+  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
 
-  export let gridSection: ViewGridSection;
+  //   export let gridSection: ViewGridSection;
   export let user: User | null;
 
   type CellRendererParamsActionsFilters = {
@@ -228,129 +225,128 @@
   }
 </script>
 
-<Panel padBody={false}>
-  <svelte:fragment slot="header">
-    <GridMenu {gridSection} title="Sequences" />
-  </svelte:fragment>
-
-  <svelte:fragment slot="body">
-    <ActivityFilterBuilder
-      layerName={newSequenceFilterName}
-      bind:this={filterMenu}
-      on:rename={newName => {
-        newSequenceFilterName = newName.detail.name;
-      }}
-      on:filterChange={filter => {
-        filterMenuActiveFilter = filter.detail.filter;
-      }}
+<div class="sequencing-body">
+  <ActivityFilterBuilder
+    layerName={newSequenceFilterName}
+    bind:this={filterMenu}
+    on:rename={newName => {
+      newSequenceFilterName = newName.detail.name;
+    }}
+    on:filterChange={filter => {
+      filterMenuActiveFilter = filter.detail.filter;
+    }}
+  />
+  <div class="sequence-container">
+    <Collapse defaultExpanded={false} padContent={false} title="Create a Sequence">
+      <fieldset>
+        <div class="seq-name">
+          <label for="seqName">Sequence Name</label>
+          <input bind:value={newSequenceName} class="st-input w-100" name="seqName" />
+        </div>
+      </fieldset>
+      <fieldset>
+        <button
+          class="st-button secondary"
+          disabled={!newSequenceName}
+          use:permissionHandler={{
+            hasPermission: hasCreatePermissionSequences,
+            permissionError: $planReadOnly ? PlanStatusMessages.READ_ONLY : createPermissionErrorSequences,
+          }}
+          on:click|stopPropagation={() => effects.createExpansionSequence(newSequenceName, $simulationDatasetId, user)}
+        >
+          {$creatingExpansionSequence ? 'Creating... ' : 'Create'}
+        </button>
+      </fieldset>
+    </Collapse>
+    <Collapse defaultExpanded={false} padContent={false} title="Create a Sequence Filter">
+      <fieldset>
+        <div class="seq-name">
+          <label for="seqName">Sequence Filter Name</label>
+          <input
+            bind:value={newSequenceFilterName}
+            class="st-input w-100"
+            name="seqName"
+            use:permissionHandler={{
+              hasPermission: hasCreatePermissionFilters,
+              permissionError: createPermissionErrorFilters,
+            }}
+          />
+        </div>
+      </fieldset>
+      <fieldset>
+        <button
+          class="st-button secondary w-100"
+          on:click|stopPropagation={onToggleFilterMenu}
+          use:permissionHandler={{
+            hasPermission: hasCreatePermissionFilters,
+            permissionError: createPermissionErrorFilters,
+          }}
+        >
+          Show Sequence Filter Definition
+        </button>
+      </fieldset>
+      <fieldset>
+        <button
+          class="st-button active w-100"
+          disabled={!newSequenceFilterName}
+          on:click|stopPropagation={onCreateSequenceFilter}
+          use:tooltip={{
+            content: 'Options for creating a sequence',
+            placement: 'top',
+          }}
+          use:permissionHandler={{
+            hasPermission: hasCreatePermissionFilters,
+            permissionError: createPermissionErrorFilters,
+          }}
+        >
+          Create Sequence Filter
+        </button>
+      </fieldset>
+    </Collapse>
+  </div>
+  <div class="sequencing-filter-table">
+    <span class="st-typography-label">Sequence Filters</span>
+    <BulkActionDataGrid
+      bind:dataGrid={dataGridFilters}
+      bind:selectedItemId={selectedSequenceFilterId}
+      bind:selectedItemIds={selectedSequenceFilterIds}
+      getRowId={rowData => rowData.id}
+      columnDefs={columnDefsFilters}
+      hasDeletePermission={hasDeletePermissionFilters}
+      hasDeletePermissionError={deletePermissionErrorFilters}
+      items={currentModelSequenceFilters}
+      pluralItemDisplayText="Sequence Filters"
+      scrollToSelection={true}
+      singleItemDisplayText="Sequence Filter"
+      {user}
+      on:bulkDeleteItems={e => onBulkDeleteItemsFilters(e)}
+      on:rowDoubleClicked={e => onRowDoubleClickedFilters(e)}
     />
-    <div class="sequence-container">
-      <Collapse defaultExpanded={false} padContent={false} title="Create a Sequence">
-        <fieldset>
-          <div class="seq-name">
-            <label for="seqName">Sequence Name</label>
-            <input bind:value={newSequenceName} class="st-input w-100" name="seqName" />
-          </div>
-        </fieldset>
-        <fieldset>
-          <button
-            class="st-button secondary"
-            disabled={!newSequenceName}
-            use:permissionHandler={{
-              hasPermission: hasCreatePermissionSequences,
-              permissionError: $planReadOnly ? PlanStatusMessages.READ_ONLY : createPermissionErrorSequences,
-            }}
-            on:click|stopPropagation={() =>
-              effects.createExpansionSequence(newSequenceName, $simulationDatasetId, user)}
-          >
-            {$creatingExpansionSequence ? 'Creating... ' : 'Create'}
-          </button>
-        </fieldset>
-      </Collapse>
-      <Collapse defaultExpanded={false} padContent={false} title="Create a Sequence Filter">
-        <fieldset>
-          <div class="seq-name">
-            <label for="seqName">Sequence Filter Name</label>
-            <input
-              bind:value={newSequenceFilterName}
-              class="st-input w-100"
-              name="seqName"
-              use:permissionHandler={{
-                hasPermission: hasCreatePermissionFilters,
-                permissionError: createPermissionErrorFilters,
-              }}
-            />
-          </div>
-        </fieldset>
-        <fieldset>
-          <button
-            class="st-button secondary w-100"
-            on:click|stopPropagation={onToggleFilterMenu}
-            use:permissionHandler={{
-              hasPermission: hasCreatePermissionFilters,
-              permissionError: createPermissionErrorFilters,
-            }}
-          >
-            Show Sequence Filter Definition
-          </button>
-        </fieldset>
-        <fieldset>
-          <button
-            class="st-button active w-100"
-            disabled={!newSequenceFilterName}
-            on:click|stopPropagation={onCreateSequenceFilter}
-            use:tooltip={{
-              content: 'Options for creating a sequence',
-              placement: 'top',
-            }}
-            use:permissionHandler={{
-              hasPermission: hasCreatePermissionFilters,
-              permissionError: createPermissionErrorFilters,
-            }}
-          >
-            Create Sequence Filter
-          </button>
-        </fieldset>
-      </Collapse>
-    </div>
-    <div class="sequencing-filter-table">
-      <span class="st-typography-label">Sequence Filters</span>
-      <BulkActionDataGrid
-        bind:dataGrid={dataGridFilters}
-        bind:selectedItemId={selectedSequenceFilterId}
-        bind:selectedItemIds={selectedSequenceFilterIds}
-        getRowId={rowData => rowData.id}
-        columnDefs={columnDefsFilters}
-        hasDeletePermission={hasDeletePermissionFilters}
-        hasDeletePermissionError={deletePermissionErrorFilters}
-        items={currentModelSequenceFilters}
-        pluralItemDisplayText="Sequence Filters"
-        scrollToSelection={true}
-        singleItemDisplayText="Sequence Filter"
-        {user}
-        on:bulkDeleteItems={e => onBulkDeleteItemsFilters(e)}
-        on:rowDoubleClicked={e => onRowDoubleClickedFilters(e)}
-      />
-    </div>
-    <div class="expansion-sequence-table">
-      <span class="st-typography-label">Expansion Sequences</span>
-      <SingleActionDataGrid
-        bind:dataGrid={dataGridSequences}
-        bind:selectedItemId={selectedSequenceId}
-        getRowId={rowData => rowData.seq_id}
-        columnDefs={columnDefsSequences}
-        hasDeletePermission={hasDeletePermissionSequences}
-        items={$filteredExpansionSequences}
-        scrollToSelection={true}
-        itemDisplayText="Expansion Sequence"
-        {user}
-        on:deleteItem={onDeleteSequence}
-      />
-    </div>
-  </svelte:fragment>
-</Panel>
+  </div>
+  <div class="expansion-sequence-table">
+    <span class="st-typography-label">Expansion Sequences</span>
+    <SingleActionDataGrid
+      bind:dataGrid={dataGridSequences}
+      bind:selectedItemId={selectedSequenceId}
+      getRowId={rowData => rowData.seq_id}
+      columnDefs={columnDefsSequences}
+      hasDeletePermission={hasDeletePermissionSequences}
+      items={$filteredExpansionSequences}
+      scrollToSelection={true}
+      itemDisplayText="Expansion Sequence"
+      {user}
+      on:deleteItem={onDeleteSequence}
+    />
+  </div>
+</div>
 
 <style>
+  .sequencing-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
   .sequencing-filter-table {
     height: 33%;
     margin: 8px;
