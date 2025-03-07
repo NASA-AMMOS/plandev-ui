@@ -1,8 +1,8 @@
 export type ExpandedTemplate = {
   created_at: string;
   expanded_template: string;
-  filter_id: number;
   id: number;
+  seq_id: string;
   simulation_dataset_id: number;
 };
 

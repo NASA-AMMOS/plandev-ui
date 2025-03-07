@@ -2611,7 +2611,7 @@ const gql = {
       expanded_sequences {
         seq_id
         expanded_sequence
-        simulation_dataset_id 
+        simulation_dataset_id
       }
     }
   `,
@@ -3924,6 +3924,16 @@ const gql = {
     mutation UpdateSchedulingSpec($id: Int!, $spec: scheduling_specification_set_input!) {
       updateSchedulingSpec: ${Queries.UPDATE_SCHEDULING_SPECIFICATION}(
         pk_columns: { id: $id }, _set: $spec
+      ) {
+        id
+      }
+    }
+  `,
+
+  UPDATE_SEQUENCE_FILTER: `#graphql
+    mutation UpdateSequenceFilter($filterId: Int!, $filterName: String!, $filter: jsonb!) {
+      updateSequenceFilter: ${Queries.UPDATE_SEQUENCE_FILTER}(
+        pk_columns: { id: $filterId }, _set: { filter: $filter, name: $filterName }
       ) {
         id
       }

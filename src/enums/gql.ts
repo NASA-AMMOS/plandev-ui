@@ -235,6 +235,7 @@ export enum Queries {
   UPDATE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS = 'update_scheduling_model_specification_conditions',
   UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION = 'update_scheduling_model_specification_goals_by_pk',
   UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS = 'update_scheduling_model_specification_goals',
+  UPDATE_SEQUENCE_FILTER = 'update_sequence_filter_by_pk',
   UPDATE_SEQUENCE_TEMPLATE = 'update_sequence_template_by_pk',
   UPDATE_SIMULATION = 'update_simulation_by_pk',
   UPDATE_SIMULATIONS = 'update_simulation',

@@ -23,7 +23,9 @@ import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
 
 /* Environment Configuration */
-export const sequenceExpansionMode: Writable<SequencingMode> = writable(env.PUBLIC_SEQUENCING_MODE === "templating" ? SequencingMode.TEMPLATING : SequencingMode.LEGACY)
+export const sequenceExpansionMode: Writable<SequencingMode> = writable(
+  env.PUBLIC_SEQUENCING_MODE === 'templating' ? SequencingMode.EXPANSION : SequencingMode.EXPANSION,
+);
 
 /* Writable */
 

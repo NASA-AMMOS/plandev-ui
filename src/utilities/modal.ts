@@ -11,7 +11,6 @@ import DeleteActivitiesModal from '../components/modals/DeleteActivitiesModal.sv
 import DeleteDerivationGroupModal from '../components/modals/DeleteDerivationGroupModal.svelte';
 import DeleteExternalEventSourceTypeModal from '../components/modals/DeleteExternalEventSourceTypeModal.svelte';
 import DeleteExternalSourceModal from '../components/modals/DeleteExternalSourceModal.svelte';
-import EditorModal from '../components/modals/EditorModal.svelte';
 import EditViewModal from '../components/modals/EditViewModal.svelte';
 import ExpansionSequenceModal from '../components/modals/ExpansionSequenceModal.svelte';
 import LibrarySequenceModal from '../components/modals/LibrarySequenceModal.svelte';
@@ -21,6 +20,7 @@ import ManagePlanDerivationGroupsModal from '../components/modals/ManagePlanDeri
 import ManagePlanSchedulingConditionsModal from '../components/modals/ManagePlanSchedulingConditionsModal.svelte';
 import ManagePlanSchedulingGoalsModal from '../components/modals/ManagePlanSchedulingGoalsModal.svelte';
 import MergeReviewEndedModal from '../components/modals/MergeReviewEndedModal.svelte';
+import NewSequenceModal from '../components/modals/NewSequenceModal.svelte';
 import PlanBranchesModal from '../components/modals/PlanBranchesModal.svelte';
 import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.svelte';
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
@@ -1147,36 +1147,6 @@ export async function showUploadViewModal(): Promise<ModalElementValue<{ definit
 }
 
 /**
- * Shows an EditorModal with the supplied arguments.
- */
-export async function showEditorModal(
-  content: string | object,
-  language: string,
-  modalTitle: string,
-  readOnly: boolean,
-): Promise<ModalElementValue> {
-  return new Promise(resolve => {
-    if (browser) {
-      const target: ModalElement | null = document.querySelector('#svelte-modal');
-
-      if (target) {
-        const editorModal = new EditorModal({ props: { content, language, modalTitle, readOnly }, target });
-        target.resolve = resolve;
-
-        editorModal.$on('close', () => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: true });
-          editorModal.$destroy();
-        });
-      }
-    } else {
-      resolve({ confirm: false });
-    }
-  });
-}
-
-/**
  * Shows a TimeRangeModal with the supplied arguments.
  */
 export async function showTimeRangeModal(
@@ -1203,6 +1173,38 @@ export async function showTimeRangeModal(
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
           timeRangeModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a NewSequenceModal.
+ */
+export async function showNewSequenceModal(): Promise<ModalElementValue<{ newSequenceName: string }>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const newSequenceModal = new NewSequenceModal({ props: {}, target });
+        target.resolve = resolve;
+
+        newSequenceModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          newSequenceModal.$destroy();
+        });
+
+        newSequenceModal.$on('confirm', (e: CustomEvent<{ newSequenceName: string }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          newSequenceModal.$destroy();
         });
       }
     } else {

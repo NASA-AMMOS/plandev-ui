@@ -60,7 +60,7 @@
       <ArchiveIcon />
       Parcels
     </MenuItem>
-    {#if $sequenceExpansionMode === SequencingMode.LEGACY}
+    {#if $sequenceExpansionMode === SequencingMode.EXPANSION}
       <MenuItem
         on:click={() => goto(`${base}/expansion/rules`)}
         on:pointerenter={() => preloadData(`${base}/expansion/rules`)}

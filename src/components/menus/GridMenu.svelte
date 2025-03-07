@@ -10,13 +10,13 @@
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import TableWithHeaderIcon from '@nasa-jpl/stellar/icons/table_with_header.svg?component';
   import VerticalCollapseIcon from '@nasa-jpl/stellar/icons/vertical_collapse_with_center_line.svg?component';
-  import CodeSquareIcon from 'bootstrap-icons/icons/code-square.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
   import WindowFullscreenIcon from 'bootstrap-icons/icons/window-fullscreen.svg?component';
   import ExternalEventIcon from '../../assets/external-event-box-with-arrow.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
   // import { SequencingMode } from '../../enums/sequencing';
   // import { sequenceExpansionMode } from '../../stores/sequencing';
+  import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
   import { viewUpdateGrid } from '../../stores/views';
   import type { ViewGrid, ViewGridComponent, ViewGridSection } from '../../types/view';
   import Menu from './Menu.svelte';
@@ -69,16 +69,6 @@
       <VerticalCollapseIcon />
       Constraints
     </MenuItem>
-    <!-- {#if $sequenceExpansionMode === SequencingMode.LEGACY}
-      <MenuItem on:click={() => onClickMenuItem('ExpansionPanel')}>
-        <CodeSquareIcon />
-        Expansion
-      </MenuItem>
-    {/if} -->
-    <MenuItem on:click={() => onClickMenuItem('ExpansionPanel')}>
-      <CodeSquareIcon />
-      Expansion
-    </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('ExternalSourcesPanel')}>
       <ExternalSourceIcon />
       External Sources
@@ -110,6 +100,10 @@
     <MenuItem on:click={() => onClickMenuItem('ExternalEventFormPanel')}>
       <ExternalEventIcon />
       Selected External Event
+    </MenuItem>
+    <MenuItem on:click={() => onClickMenuItem('SequencesAndExpansionPanel')}>
+      <JournalCodeIcon />
+      Sequences & Expansion
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('SimulationPanel')}>
       <GearWideConnectedIcon />

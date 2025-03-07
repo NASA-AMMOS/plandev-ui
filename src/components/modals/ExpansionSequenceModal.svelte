@@ -2,6 +2,9 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { SequencingMode } from '../../enums/sequencing';
+  import { expandedTemplates } from '../../stores/sequence-template';
+  import { sequenceExpansionMode } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import type { ExpansionSequence } from '../../types/expansion';
   import effects from '../../utilities/effects';
@@ -18,11 +21,21 @@
   export let expansionSequence: ExpansionSequence;
   export let user: User | null;
 
-  let seqJsonStr: string | null = null;
+  let outputStr: string | null = null;
+  let language: string = 'plaintext';
 
-  $: effects
-    .getExpansionSequenceSeqJson(expansionSequence.seq_id, expansionSequence.simulation_dataset_id, user)
-    .then((result: string | null) => (seqJsonStr = result));
+  $: if ($sequenceExpansionMode === SequencingMode.TEMPLATING) {
+    const expandedTemplate = $expandedTemplates.find(
+      expandedTemplate => expandedTemplate.seq_id === expansionSequence.seq_id,
+    );
+    outputStr = expandedTemplate?.expanded_template ?? `No output found for sequence "${expansionSequence.seq_id}"'`;
+    // TODO: Language - see question in Notes
+  } else {
+    effects
+      .getExpansionSequenceSeqJson(expansionSequence.seq_id, expansionSequence.simulation_dataset_id, user)
+      .then((result: string | null) => (outputStr = result));
+    language = 'json';
+  }
 </script>
 
 <Modal height={400} width={600}>
@@ -31,13 +44,13 @@
     <div style:height="300px">
       <MonacoEditor
         automaticLayout={true}
-        language="json"
+        {language}
         lineNumbers="on"
         minimap={{ enabled: false }}
         readOnly={true}
         scrollBeyondLastLine={false}
         tabSize={2}
-        value={seqJsonStr}
+        value={outputStr}
       />
     </div>
   </ModalContent>

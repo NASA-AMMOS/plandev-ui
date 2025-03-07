@@ -36,7 +36,6 @@ export type ViewGridComponent =
   | 'ActivitySpansTablePanel'
   | 'TimelineItemsPanel'
   | 'ConstraintsPanel'
-  | 'ExpansionPanel'
   | 'ExternalSourcesPanel'
   | 'ExternalEventFormPanel'
   | 'ExternalEventsTablePanel'
@@ -44,6 +43,7 @@ export type ViewGridComponent =
   | 'PlanMetadataPanel'
   | 'SchedulingConditionsPanel'
   | 'SchedulingGoalsPanel'
+  | 'SequencesAndExpansionPanel'
   | 'SimulationPanel'
   | 'SimulationEventsPanel'
   | 'TimelineEditorPanel';

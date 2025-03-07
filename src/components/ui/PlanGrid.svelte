@@ -9,7 +9,7 @@
   import ActivitySpansTablePanel from '../activity/ActivitySpansTablePanel.svelte';
   import TimelineItemsPanel from '../activity/TimelineItemsPanel.svelte';
   import ConstraintsPanel from '../constraints/ConstraintsPanel.svelte';
-  import ExpansionPanel from '../expansion/ExpansionPanel.svelte';
+  import SequencesAndExpansionPanel from '../expansion/SequencesAndExpansionPanel.svelte';
   import ExternalEventFormPanel from '../external-events/ExternalEventFormPanel.svelte';
   import ExternalEventsTablePanel from '../external-events/ExternalEventsTablePanel.svelte';
   import ExternalSourcesPanel from '../external-source/ExternalSourcesPanel.svelte';
@@ -52,7 +52,6 @@
     ActivityFormPanel,
     ActivitySpansTablePanel,
     ConstraintsPanel,
-    ExpansionPanel,
     ExternalEventFormPanel,
     ExternalEventsTablePanel,
     ExternalSourcesPanel,
@@ -60,6 +59,7 @@
     PlanMetadataPanel,
     SchedulingConditionsPanel,
     SchedulingGoalsPanel,
+    SequencesAndExpansionPanel,
     SimulationEventsPanel,
     SimulationPanel,
     TimelineEditorPanel,

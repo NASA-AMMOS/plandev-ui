@@ -12,9 +12,9 @@
 
 <PageTitle title="Sequencing" />
 
-{#if $sequenceExpansionMode === SequencingMode.LEGACY}
-  Sequence Templating functionality not available in "legacy" sequencing mode. Please change the SEQUENCING_MODE
-  enviornment variable in docker-compose.yml.
+{#if $sequenceExpansionMode === SequencingMode.EXPANSION}
+  Sequence Templating functionality not available in Command Expansion mode. Please change the SEQUENCING_MODE
+  environment variable in docker-compose.yml.
 {:else}
   <SequenceTemplates user={data.user} />
 {/if}

@@ -58,6 +58,7 @@
   const dispatch = createEventDispatcher<{
     filterChange: { filter: ActivityLayerFilter };
     rename: { name: string };
+    visibilityChange: { isShown: boolean };
   }>();
 
   export function setActiveFilter(newFilter: ActivityLayerFilter) {
@@ -70,14 +71,17 @@
     } else {
       show();
     }
+    dispatch('visibilityChange', { isShown: shown });
   }
 
   export function show() {
     shown = true;
+    dispatch('visibilityChange', { isShown: shown });
   }
 
   export function hide() {
     shown = false;
+    dispatch('visibilityChange', { isShown: shown });
   }
 
   function onManualTypeToggled(name: string) {
@@ -611,6 +615,7 @@
           </div>
         </CssGrid>
       </div>
+      <slot name="footer" />
     </Draggable>
   {/if}
 </div>
