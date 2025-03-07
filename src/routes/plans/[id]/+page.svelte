@@ -660,7 +660,7 @@
             : 'Template Expansion Status'}
           disabled={$sequenceExpansionMode === SequencingMode.LEGACY
             ? $selectedExpansionSetId === null
-            : $selectedSequence === null || ($selectedParcel === null && $simulationDatasetId === null)}
+            : $selectedSequence === null || $selectedParcel === null || $simulationDatasetId === null}
           status={$planExpansionStatus}
           on:click={() => onHandleExpansion()}
         >
