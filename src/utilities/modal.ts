@@ -125,7 +125,7 @@ export async function showAboutModal(): Promise<ModalElementValue> {
 export async function showActionCreationModal(
   user: User | null,
   workspaceId: number,
-): Promise<ModalElementValue<{ actionJS: string; description: string; name: string }>> {
+): Promise<ModalElementValue<{ actionDefinitionId: number }>> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
@@ -140,7 +140,7 @@ export async function showActionCreationModal(
           actionCreationModal.$destroy();
         });
 
-        actionCreationModal.$on('create', (e: CustomEvent<{ actionJS: string; description: string; name: string }>) => {
+        actionCreationModal.$on('create', (e: CustomEvent<{ actionDefinitionId: number }>) => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });

@@ -50,7 +50,6 @@
   <div style=" align-items: center;display: flex; gap: 8px;">
     <StopwatchIcon />–
   </div>
-  <!-- <div>Action Run Response: {JSON.stringify(actionRun.response)}</div> -->
 </button>
 
 <style>
@@ -60,7 +59,7 @@
     border-radius: 4px;
     column-gap: 8px;
     display: grid;
-    grid-template-columns: 1fr 80px max-content max-content;
+    grid-template-columns: 1fr 0.2fr 160px min-content;
     height: unset;
     padding: 8px;
     white-space: nowrap;

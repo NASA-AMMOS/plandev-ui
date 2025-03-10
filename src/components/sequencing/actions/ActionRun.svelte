@@ -1,27 +1,23 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import ArrowLeftIcon from '@nasa-jpl/stellar/icons/arrow_left.svg?component';
   import { onMount } from 'svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
-  import { workspaces } from '../../../stores/sequencing';
   import type { ActionDefinition, ActionRun } from '../../../types/actions';
   import type { User } from '../../../types/app';
-  import type { Workspace } from '../../../types/sequencing';
   import { getSearchParameterNumber } from '../../../utilities/generic';
-  import MonacoEditor from '../../ui/MonacoEditor.svelte';
   import ActionRunCard from './ActionRunCard.svelte';
 
   export let user: User | null;
   export let actionRun: ActionRun | undefined = undefined;
   export let actionDefinition: ActionDefinition | undefined = undefined;
 
-  let action: Action | undefined = undefined;
-  let workspace: Workspace | undefined;
+  let action: ActionDefinition | undefined = undefined;
+  // let workspace: Workspace | undefined;
   let workspaceId: number | null = null;
 
-  $: workspace = $workspaces.find(workspace => workspace.id === workspaceId);
+  // $: workspace = $workspaces.find(workspace => workspace.id === workspaceId);
 
   onMount(() => {
     workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
@@ -44,15 +40,6 @@
 </script>
 
 <div style:overflow-x="hidden">
-  <a
-    href={`/sequencing/actions${workspace ? `?${SearchParameters.WORKSPACE_ID}=${workspace.id}` : ''}`}
-    class="st-typography-medium"
-    style=" align-items: center; border-bottom: 1px solid var(--st-gray-20);display: flex; gap: 8px; padding: 8px;"
-  >
-    <ArrowLeftIcon />
-    Back to workspace actions
-  </a>
-
   <div class="action-run">
     {#if !actionRun}
       <div>No action run found</div>
@@ -135,7 +122,7 @@
           <div class="logs"><div style="opacity: 0.5">No logs</div></div>
         {/if}
         <div class="st-typography-medium" style="padding: 16px 0px 8px 0px">Action JS</div>
-        {#if action?.actionJS}
+        <!-- {#if action?.actionJS}
           <div class="code">
             <MonacoEditor
               automaticLayout={true}
@@ -151,7 +138,7 @@
           </div>
         {:else}
           No actionJS
-        {/if}
+        {/if} -->
       </div>
     {/if}
   </div>

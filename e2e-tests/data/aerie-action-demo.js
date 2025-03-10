@@ -24,7 +24,10 @@ const settingDefs = {
     retries: { type: "int" }
 };
 async function main(actionParameters, actionSettings) {
+    console.log('actionParameters :>> ', actionParameters);
+    console.log('actionSettings :>> ', actionSettings);
     const url = `${actionSettings.externalUrl}/${actionParameters.sequenceId}`;
+    console.log('url :>> ', url, Object.keys(actionSettings));
     const startTime = performance.now();
     // Make a request to an external URL using fetch
     const result = await fetch(url, {

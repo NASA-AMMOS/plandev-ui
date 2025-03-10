@@ -26,7 +26,7 @@
 
   const dispatch = createEventDispatcher<{
     close: void;
-    create: { file: string; description: string; name: string };
+    create: { actionDefinitionId: number };
   }>();
 
   // File parse logic
@@ -54,8 +54,13 @@
           { actionDefinitionInsertInput },
           user,
         );
-        const { createActionDefinition } = data;
-        console.log('createActionDefinition :>> ', createActionDefinition);
+        const { insert_action_definition_one } = data;
+        console.log('createActionDefinition :>> ', data);
+        if (insert_action_definition_one) {
+          dispatch('create', { actionDefinitionId: insert_action_definition_one?.id });
+        } else {
+          // TODO
+        }
       }
 
       //   if (jarId !== null) {
