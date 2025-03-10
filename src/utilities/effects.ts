@@ -3711,7 +3711,6 @@ const effects = {
         gql.EXPAND_TEMPLATES,
         {
           modelId,
-          parcelId,
           seqIds,
           simulationDatasetId,
         },
