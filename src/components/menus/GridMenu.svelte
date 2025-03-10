@@ -1,7 +1,6 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
-  import { env } from '$env/dynamic/public';
   import ActivityIcon from '@nasa-jpl/stellar/icons/activity.svg?component';
   import BookIcon from '@nasa-jpl/stellar/icons/book.svg?component';
   import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
@@ -11,12 +10,10 @@
   import TableWithHeaderIcon from '@nasa-jpl/stellar/icons/table_with_header.svg?component';
   import VerticalCollapseIcon from '@nasa-jpl/stellar/icons/vertical_collapse_with_center_line.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
+  import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
   import WindowFullscreenIcon from 'bootstrap-icons/icons/window-fullscreen.svg?component';
   import ExternalEventIcon from '../../assets/external-event-box-with-arrow.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
-  // import { SequencingMode } from '../../enums/sequencing';
-  // import { sequenceExpansionMode } from '../../stores/sequencing';
-  import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
   import { viewUpdateGrid } from '../../stores/views';
   import type { ViewGrid, ViewGridComponent, ViewGridSection } from '../../types/view';
   import Menu from './Menu.svelte';
@@ -44,8 +41,6 @@
 
     viewUpdateGrid(update);
   }
-
-  $: console.log('MODE', env.PUBLIC_SEQUENCING_MODE);
 </script>
 
 <div class="grid-menu st-typography-medium" role="none" on:click|stopPropagation={() => gridMenu.toggle()}>

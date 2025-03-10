@@ -13,8 +13,7 @@
 <PageTitle title="Expansion Rules" />
 
 {#if $sequenceExpansionMode === SequencingMode.TEMPLATING}
-  Command Expansion functionality not available in "templating" sequencing mode. Please change the SEQUENCING_MODE
-  environment variable in docker-compose.yml.
+  <span class="st-typography-body"> $command </span>
 {:else}
   <ExpansionRules user={data.user} />
 {/if}
