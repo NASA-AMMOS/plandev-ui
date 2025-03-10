@@ -1129,13 +1129,11 @@ const gql = {
   EXPAND_TEMPLATES: `#graphql
     mutation ExpandTemplates(
       $seqIds: [String!]!,
-      $parcelId: Int!,
       $modelId: Int!,
       $simulationDatasetId: Int!
     ) {
       expandTemplates: ${Queries.EXPAND_ALL_TEMPLATES}(
         seqIds: $seqIds,
-        parcelId: $parcelId,
         simulationDatasetId: $simulationDatasetId,
         modelId: $modelId,
       ) {
