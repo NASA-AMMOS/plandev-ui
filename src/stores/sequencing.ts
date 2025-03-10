@@ -27,6 +27,14 @@ export const sequenceExpansionMode: Writable<SequencingMode> = writable(
   env.PUBLIC_SEQUENCING_MODE === 'templating' ? SequencingMode.EXPANSION : SequencingMode.EXPANSION,
 );
 
+export const commandExpansionNotAvailable: Writable<string> = writable(
+  'Command Expansion functionality not available in "templating" sequencing mode. Please change the SEQUENCING_MODE environment variable in docker-compose.yml.',
+);
+
+export const templatingNotAvailable: Writable<string> = writable(
+  'Sequence Templating functionality not available in Command Expansion mode. Please change the SEQUENCING_MODE environment variable in docker-compose.yml.',
+);
+
 /* Writable */
 
 export const parsedChannelDictionaries: Writable<Record<string, AmpcsChannelDictionary>> = writable({});

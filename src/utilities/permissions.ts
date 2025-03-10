@@ -890,6 +890,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_EXTERNAL_SOURCE_TYPES: () => true,
   SUB_MODEL: () => true,
   SUB_MODELS: () => true,
+  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SEQS: () => true,
+  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SIMS: () => true,
+  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_TEMPS: () => true,
   SUB_PARAMETER_DICTIONARIES: () => true,
   SUB_PARCELS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.PARCELS], user);
