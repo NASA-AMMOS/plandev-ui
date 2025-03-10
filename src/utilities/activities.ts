@@ -11,8 +11,9 @@ import {
   getIntervalInMs,
   getUnixEpochTime,
 } from './time';
-import { getSessionStorageClipboard, setSessionStorageClipboard } from './sessionStorageClipboard';
-import { showSuccessToast } from './toast';
+import { getClipboardContent, setClipboardContent } from './clipboard';
+import { showFailureToast, showSuccessToast } from './toast';
+import { pluralize } from './text';
 
 /**
  * Updates activity metadata with a new key/value and removes any empty values.
@@ -191,90 +192,87 @@ export function copyActivityDirectivesToClipboard(sourcePlan: Plan, activities: 
 
   const clipboard = {
     activities: clippedActivities,
-    sourcePlanId: sourcePlan.id,
+    sourcePlan: sourcePlan.id,
+    type: `aerie_activity_directives`,
   };
 
-  setSessionStorageClipboard(JSON.stringify(clipboard));
-  showSuccessToast(`Copied ${activities.length} Activity Directive${activities.length === 1 ? '' : 's'}`);
+  const noun = `Activity Directive${activities.length === 1 ? '' : 's'}`;
+  setClipboardContent(
+    clipboard,
+    () => showSuccessToast(`Copied ${activities.length} ${noun}`),
+    () => showFailureToast(`Failed to copy ${activities.length} ${noun}`),
+  );
 }
 
-export function getPasteActivityDirectivesText(): string | undefined {
+export function getPasteActivityDirectivesText(count: number): string {
+  if (count <= 0) {
+    return `Paste Activity Directives`; //generic text, disabled context menu
+  } else {
+    return `Paste ${count} Activity Directive${pluralize(count)}`;
+  }
+}
+
+export async function getActivityDirectivesClipboardCount(): Promise<number> {
   try {
-    const serializedClipboard = getSessionStorageClipboard();
-    if (serializedClipboard !== null) {
-      const clipboard = JSON.parse(serializedClipboard);
-      if (Array.isArray(clipboard.activities)) {
-        const n = clipboard.activities.length;
-        return `Paste ${n} Activity Directive${n === 1 ? '' : 's'}`;
+    const clipboardContent = await getClipboardContent();
+    if (clipboardContent !== undefined) {
+      const clipboard = JSON.parse(clipboardContent);
+      if (clipboard.type === 'aerie_activity_directives' && clipboard.activities !== undefined) {
+        return clipboard.activities.length;
       }
     }
   } catch (e) {
-    console.error('e');
+    //throws error when we have some other generic item in our clipboard (not json). but just need to catch it.
   }
+  return -1;
 }
 
-export function canPasteActivityDirectivesFromClipboard(destinationPlan: Plan | null): boolean {
-  if (destinationPlan === null) {
-    return false;
-  }
-
-  try {
-    const serializedClipboard = getSessionStorageClipboard();
-    if (serializedClipboard === null) {
-      return false;
-    }
-
-    const clipboard = JSON.parse(serializedClipboard);
-    //current scope, allows copy/paste in the same plan
-    if (clipboard.sourcePlanId !== destinationPlan.id) {
-      return false;
-    }
-  } catch (e) {
-    console.error(e);
-    return false;
-  }
-
-  return true;
-}
-
-export function getActivityDirectivesToPaste(
+export async function getActivityDirectivesToPaste(
   destinationPlan: Plan,
   pasteStartingAtTime?: number,
-): ActivityDirective[] | undefined {
+): Promise<ActivityDirective[]> {
+  let activities: ActivityDirective[] = [];
   try {
-    const serializedClipboard = getSessionStorageClipboard();
-    if (serializedClipboard !== null) {
+    const serializedClipboard = await getClipboardContent();
+    if (serializedClipboard !== undefined) {
       const clipboard = JSON.parse(serializedClipboard);
-      const activities: ActivityDirective[] = clipboard.activities;
+      activities = clipboard.activities;
 
-      //transpose in time if we're given a time, otherwise it paste at the current time
-      if (typeof pasteStartingAtTime === 'number') {
-        const starts: number[] = [];
-        activities.forEach(a => {
-          //unachored activities are the ones we're trying to place relative to each other in time, anchored will be calculated from offset
-          if (a.anchor_id === null && a.start_time_ms !== null) {
-            starts.push(a.start_time_ms);
-          }
-        });
+      const starts: number[] = [];
+      activities.forEach(a => {
+        //unachored activities are the ones we're trying to place relative to each other in time, anchored will be calculated from offset
+        if (a.anchor_id === null && a.start_time_ms !== null) {
+          starts.push(a.start_time_ms);
+        }
+      });
 
-        const planStart = getUnixEpochTime(destinationPlan.start_time_doy);
-        const earliestStart = Math.max(planStart, Math.min(...starts)); //bounded by plan start
-        const diff = pasteStartingAtTime - earliestStart;
-
-        activities.forEach(activity => {
-          if (activity.start_time_ms !== null) {
-            //anchored activities don't need offset to be updated
-            if (activity.anchor_id === null) {
-              activity.start_time_ms += diff;
-              const startTimeDoy = getDoyTime(new Date(activity.start_time_ms));
-              activity.start_offset = getIntervalFromDoyRange(destinationPlan.start_time_doy, startTimeDoy);
-            }
-          }
-        });
+      //bounded by plan start and plan end
+      const planStart = getUnixEpochTime(destinationPlan.start_time_doy);
+      const planEnd = getUnixEpochTime(destinationPlan.end_time_doy);
+      const earliestStart = Math.min(...starts);
+      if (earliestStart < planStart || earliestStart > planEnd) {
+        pasteStartingAtTime = planStart; //if out of bounds, paste starting at the start of the plan.
       }
-      return activities;
+
+      //transpose in time if we're given a time or if it was out of bounds
+      let diff = 0;
+      if (typeof pasteStartingAtTime === 'number') {
+        diff = pasteStartingAtTime - earliestStart;
+      }
+
+      activities.forEach(activity => {
+        if (activity.start_time_ms !== null) {
+          //anchored activities don't need offset to be updated
+          if (activity.anchor_id === null) {
+            activity.start_time_ms += diff;
+            const startTimeDoy = getDoyTime(new Date(activity.start_time_ms));
+            activity.start_offset = getIntervalFromDoyRange(destinationPlan.start_time_doy, startTimeDoy);
+          }
+        }
+      });
     }
   } catch (e) {
     console.error(e);
   }
+  return activities;
 }

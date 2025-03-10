@@ -22,12 +22,9 @@
     VerticalGuide,
   } from '../../types/timeline';
   import {
-    canPasteActivityDirectivesFromClipboard,
     copyActivityDirectivesToClipboard,
     getAllSpansForActivityDirective,
     getSpanRootParent,
-    getPasteActivityDirectivesText,
-    getActivityDirectivesToPaste,
   } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { getTarget } from '../../utilities/generic';
@@ -39,6 +36,7 @@
   import ContextMenuSeparator from '../context-menu/ContextMenuSeparator.svelte';
   import ContextSubMenuItem from '../context-menu/ContextSubMenuItem.svelte';
   import { featurePermissions } from '../../utilities/permissions';
+  import PasteActivitiesContextMenu from '../activity/PasteActivitiesContextMenu.svelte';
 
   export let activityDirectivesMap: ActivityDirectivesMap;
   export let contextMenu: MouseOver | null;
@@ -78,10 +76,12 @@
   let activityDirectiveSpans: Span[] | null = [];
   let activityDirectiveStartDate: Date | null = null;
   let contextMenuComponent: ContextMenu;
-  let span: Span | null;
-  let timelines: Timeline[] = [];
   let hasActivityLayer: boolean = false;
+  let span: Span | null;
+  let hasCreatePermission: boolean = false;
+  let timelines: Timeline[] = [];
   let mouseOverOrigin: MouseOverOrigin | undefined = undefined;
+  let permissionErrorText: string | null = null;
   let row: Row | undefined = undefined;
   let offsetX: number | undefined;
 
@@ -124,6 +124,18 @@
     : null;
   // Explicitly keep track of offsetX because Firefox ends up zeroing it out on the original `contextmenu` MouseEvent
   $: offsetX = contextMenu?.e.offsetX;
+
+  $: hasCreatePermission = plan !== null && featurePermissions.activityDirective.canCreate(user, plan);
+
+  $: {
+    if ($planReadOnly) {
+      permissionErrorText = PlanStatusMessages.READ_ONLY;
+    } else if (!hasCreatePermission) {
+      permissionErrorText = 'You do not have permission create activity directives';
+    } else {
+      permissionErrorText = null;
+    }
+  }
 
   function jumpToActivityDirective() {
     if (span !== null) {
@@ -256,20 +268,15 @@
     plan !== null && copyActivityDirectivesToClipboard(plan, [activity]);
   }
 
-  function canPasteActivityDirectives(): boolean {
-    return (
-      plan !== null &&
-      featurePermissions.activityDirective.canCreate(user, plan) &&
-      canPasteActivityDirectivesFromClipboard(plan)
-    );
+  function getDateUnderMouse(): Date | undefined {
+    if (xScaleView && offsetX !== undefined) {
+      return xScaleView.invert(offsetX);
+    }
   }
 
-  function pasteActivityDirectivesAtTime(time: Date | false | null) {
-    if (plan !== null && featurePermissions.activityDirective.canCreate(user, plan) && time instanceof Date) {
-      const directives = getActivityDirectivesToPaste(plan, time.getTime());
-      if (directives !== undefined) {
-        effects.cloneActivityDirectives(directives, plan, user);
-      }
+  async function createActivityDirectives({ detail }: CustomEvent<ActivityDirective[]>) {
+    if (plan !== null && hasCreatePermission) {
+      await effects.cloneActivityDirectives(detail, plan, user);
     }
   }
 </script>
@@ -432,18 +439,14 @@
       >
         Set Simulation End
       </ContextMenuItem>
-      {#if canPasteActivityDirectives()}
-        <ContextMenuSeparator />
-        <ContextMenuItem
-          on:click={() => {
-            if (xScaleView && offsetX !== undefined) {
-              pasteActivityDirectivesAtTime(xScaleView.invert(offsetX));
-            }
-          }}
-        >
-          {getPasteActivityDirectivesText()} at Time
-        </ContextMenuItem>
-      {/if}
+      <ContextMenuSeparator />
+      <PasteActivitiesContextMenu
+        atTime={getDateUnderMouse()}
+        {hasCreatePermission}
+        {plan}
+        planPermissionErrorText={permissionErrorText}
+        on:createActivityDirectives={createActivityDirectives}
+      />
     {/if}
     <ContextMenuSeparator />
     {#if span}
