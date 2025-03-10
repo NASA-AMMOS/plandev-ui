@@ -212,17 +212,22 @@ export const cachedConstraintsStatus: Readable<Status | null> = derived(
       (status: Status | null, constraintRun: ConstraintRun) => {
         const constraintPlanSpec =
           $constraintPlanSpecsMap[constraintRun.constraint_id][constraintRun.constraint_invocation_id];
+        let constraintPlanSpecRevision: number | null = constraintPlanSpec.constraint_revision ?? null;
+        if (constraintPlanSpec.constraint_revision === null) {
+          const constraintVersions = constraintPlanSpec.constraint_metadata?.versions ?? [];
+          constraintPlanSpecRevision = constraintVersions[constraintVersions.length - 1].revision;
+        }
 
         if (
           constraintPlanSpec &&
-          (constraintRun.constraint_revision !== constraintPlanSpec.constraint_revision ||
+          (constraintRun.constraint_revision !== constraintPlanSpecRevision ||
             JSON.stringify(constraintRun.arguments) !== JSON.stringify(constraintPlanSpec.arguments))
         ) {
           return Status.Modified;
         }
 
         if (constraintRun.results.violations?.length) {
-          return Status.Failed;
+          return Status.Complete;
         } else if (status !== Status.Failed) {
           return Status.Complete;
         }

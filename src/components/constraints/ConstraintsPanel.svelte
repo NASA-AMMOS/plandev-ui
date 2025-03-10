@@ -21,6 +21,7 @@
     constraintsStatus,
     initialConstraintPlanSpecsLoading,
     initialConstraintsLoading,
+    resetConstraintStores,
     setAllConstraintsVisible,
     setConstraintVisibility,
   } from '../../stores/constraints';
@@ -248,6 +249,17 @@
       } = event;
 
       await effects.updateConstraintPlanSpecification($plan, constraintPlanSpec, user);
+      resetConstraintStores();
+    }
+  }
+
+  async function onUpdateConstraintOrder(event: CustomEvent<ConstraintPlanSpecification>) {
+    if ($plan) {
+      const {
+        detail: { constraint_metadata, ...constraintPlanSpec },
+      } = event;
+
+      await effects.updateConstraintPlanSpecification($plan, constraintPlanSpec, user);
     }
   }
 
@@ -447,6 +459,7 @@
                 constraintPlanSpec.invocation_id
               ]?.results.violations?.length || 0}
               visible={$constraintVisibilityMap[constraintPlanSpec.constraint_id]?.[constraintPlanSpec.invocation_id]}
+              on:updateConstraintPlanSpecOrder={onUpdateConstraintOrder}
               on:updateConstraintPlanSpec={onUpdateConstraint}
               on:duplicateConstraintInvocation={onDuplicateConstraintInvocation}
               on:deleteConstraintInvocation={onDeleteConstraintInvocation}

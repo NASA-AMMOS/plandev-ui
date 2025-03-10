@@ -47,6 +47,7 @@
     duplicateConstraintInvocation: ConstraintPlanSpecification;
     toggleVisibility: { constraintId: number; invocationId: number; visible: boolean };
     updateConstraintPlanSpec: ConstraintPlanSpecification;
+    updateConstraintPlanSpecOrder: ConstraintPlanSpecification;
   }>();
 
   let formParameters: FormParameter[] = [];
@@ -96,7 +97,7 @@
   }
 
   function updateOrder(orderUpdate: number) {
-    dispatch('updateConstraintPlanSpec', {
+    dispatch('updateConstraintPlanSpecOrder', {
       ...constraintPlanSpec,
       order: orderUpdate,
     });
