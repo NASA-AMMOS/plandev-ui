@@ -4,8 +4,11 @@
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import type { User } from '../../types/app';
+  import type { ArgumentsMap, FormParameter, ParametersMap } from '../../types/parameter';
   import effects from '../../utilities/effects';
+  import { getArguments, getFormParameters } from '../../utilities/parameters';
   import { showFailureToast } from '../../utilities/toast';
+  import Parameters from '../parameters/Parameters.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -16,12 +19,22 @@
   export let width: number = 380;
   export let user: User | null;
 
-  let runButtonDisabled: boolean = true;
-  let settings: string = '{"externalUrl": "https://api.github.com"}';
-  let parameters: string = '{"sequenceId": "repos/NASA-AMMOS/aerie"}';
+  let settings: any = { externalUrl: 'https://api.github.com' };
   let running: boolean = false;
+  let formParameters: FormParameter[] = [];
+  let argumentsMap: ArgumentsMap = {};
 
-  $: runButtonDisabled = !parameters || !settings;
+  $: {
+    const parametersMap: ParametersMap = Object.entries(actionDefinition.parameter_schema).reduce(
+      (acc, [key, valueSchema], i) => {
+        acc[key] = { order: i, schema: valueSchema };
+        return acc;
+      },
+      {},
+    );
+
+    formParameters = getFormParameters(parametersMap, argumentsMap, []);
+  }
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -31,12 +44,17 @@
   async function run() {
     try {
       running = true;
-      const actionRunId = await effects.createActionRun(actionDefinition.id, parameters, settings, user);
+      const actionRunId = await effects.createActionRun(actionDefinition.id, argumentsMap, settings, user);
       running = false;
       dispatch('complete', { actionRunId });
     } catch (error) {
       showFailureToast('Error running action');
     }
+  }
+
+  function onChangeFormParameters(event: CustomEvent<FormParameter>) {
+    const { detail: formParameter } = event;
+    argumentsMap = getArguments(argumentsMap, formParameter);
   }
 </script>
 
@@ -44,35 +62,20 @@
   <ModalHeader on:close>Run Action</ModalHeader>
 
   <ModalContent>
-    <fieldset>
-      <label for="parameters">Parameters JSON</label>
-      <input
-        bind:value={parameters}
-        autocomplete="off"
-        class="st-input w-100"
-        id="parameters"
-        required
-        type="text"
-        placeholder="Enter a parameters JSON object"
+    <div class="parameters">
+      <Parameters
+        {formParameters}
+        parameterType="action"
+        hideRightAdornments
+        hideInfo
+        on:change={onChangeFormParameters}
       />
-    </fieldset>
-    <fieldset>
-      <label for="settings">Settings</label>
-      <input
-        bind:value={settings}
-        autocomplete="off"
-        class="st-input w-100"
-        id="settings"
-        required
-        type="text"
-        placeholder="Enter a settings JSON object"
-      />
-    </fieldset>
+    </div>
   </ModalContent>
 
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" disabled={runButtonDisabled || running} on:click={run}>
+    <button class="st-button" disabled={running} on:click={run}>
       {running ? 'Running...' : 'Run'}
     </button>
   </ModalFooter>

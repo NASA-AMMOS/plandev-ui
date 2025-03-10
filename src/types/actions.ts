@@ -1,3 +1,5 @@
+import type { ValueSchema } from './schema';
+
 export type ActionDefinition = {
   action_file_id: number;
   created_at: string;
@@ -5,8 +7,8 @@ export type ActionDefinition = {
   id: number;
   name: string;
   owner: string | null;
-  parameter_schema: any;
-  settings_schema: any;
+  parameter_schema: Record<string, ValueSchema>;
+  settings_schema: Record<string, ValueSchema>;
   updated_at: string;
   updated_by: string | null;
   workspace_id: number;
@@ -27,9 +29,9 @@ export type ActionRun = {
 
 // From https://github.com/NASA-AMMOS/aerie/blob/feature/action-server-dan-changes/action-server/src/type/types.ts
 export type ActionRunRequest = {
-  actionJS: string;
-  parameters: Record;
-  settings: Record;
+  // actionJS: string;
+  parameters: any;
+  settings: any;
 };
 
 /* TODO: ActionResults should be defined by the actions API and imported */

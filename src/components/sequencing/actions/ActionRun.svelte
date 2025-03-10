@@ -69,59 +69,64 @@
         {:else}
           <div class="logs"><div style="opacity: 0.5">No errors</div></div>
         {/if}
-        <div class="st-typography-medium" style="padding: 16px 0px 8px 0px">Console Logs</div>
-        {#if actionRun.results?.data}
+        <div class="st-typography-medium" style="padding: 16px 0px 8px 0px">String Logs</div>
+        {#if actionRun.logs}
+          <pre class="logs" style="margin: 0;">{actionRun.logs}</pre>
+        {/if}
+        <!-- <div class="st-typography-medium" style="padding: 16px 0px 8px 0px">Console Logs</div> -->
+        <!-- {#if actionRun.results?.data}
           <div class="logs">
             <div style="margin-bottom: 16px;">
               <div style="margin-bottom: 8px;" class="st-typography-bold">Log</div>
-              <!-- {#each actionRun.logs as entry}
+              {#each actionRun.logs as entry}
                 <pre style="margin: 0;">{JSON.stringify(entry, undefined, 2)}</pre>
               {/each}
               {#if actionRun.logslength < 1}
                 <div style="opacity: 0.5">No output</div>
-              {/if} -->
+              {/if}
             </div>
             <div style="margin-bottom: 16px;">
               <div style="margin-bottom: 8px;" class="st-typography-bold">Info</div>
-              <!-- {#each actionRun.response.console.info as entry}
+              {#each actionRun.response.console.info as entry}
                 <pre style="margin: 0;">{JSON.stringify(entry, undefined, 2)}</pre>
               {/each}
               {#if actionRun.response.console.info.length < 1}
                 <div style="opacity: 0.5">No output</div>
-              {/if} -->
+              {/if}
             </div>
             <div style="margin-bottom: 16px;">
               <div style="margin-bottom: 8px;" class="st-typography-bold">Warn</div>
-              <!-- {#each actionRun.response.console.warn as entry}
+              {#each actionRun.response.console.warn as entry}
                 <pre style="margin: 0;">{JSON.stringify(entry, undefined, 2)}</pre>
               {/each}
               {#if actionRun.response.console.warn.length < 1}
                 <div style="opacity: 0.5">No output</div>
-              {/if} -->
+              {/if}
             </div>
             <div style="margin-bottom: 16px;">
               <div style="margin-bottom: 8px;" class="st-typography-bold">Error</div>
-              <!-- {#each actionRun.response.console.error as entry}
+              {#each actionRun.response.console.error as entry}
                 <pre style="margin: 0;">{JSON.stringify(entry, undefined, 2)}</pre>
               {/each}
               {#if actionRun.response.console.error.length < 1}
                 <div style="opacity: 0.5">No output</div>
-              {/if} -->
+              {/if}
             </div>
             <div style="margin-bottom: 16px;">
               <div style="margin-bottom: 8px;" class="st-typography-bold">Debug</div>
-              <!-- {#each actionRun.response.console.debug as entry}
+              {#each actionRun.response.console.debug as entry}
                 <pre style="margin: 0;">{JSON.stringify(entry, undefined, 2)}</pre>
               {/each}
               {#if actionRun.response.console.debug.length < 1}
                 <div style="opacity: 0.5">No output</div>
-              {/if} -->
+              {/if}
             </div>
-          </div>
-        {:else}
+          </div> -->
+        <!-- {:else}
           <div class="logs"><div style="opacity: 0.5">No logs</div></div>
-        {/if}
-        <div class="st-typography-medium" style="padding: 16px 0px 8px 0px">Action JS</div>
+        {/if} -->
+        <div class="st-typography-medium" style="padding: 16px 0px 8px 0px">Action Code</div>
+        TODO
         <!-- {#if action?.actionJS}
           <div class="code">
             <MonacoEditor
