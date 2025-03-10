@@ -97,8 +97,13 @@ export type ConstraintResult = {
 
 export type ConstraintResultWithName = ConstraintResult & { constraintName: string };
 
+export type ConstraintResultRun = {
+  constraint_invocation_id: number;
+  results: ConstraintRun[];
+};
+
 export type ConstraintRequest = {
-  constraints_run: ConstraintRun[];
+  constraints_run: ConstraintResultRun[];
   force_rerun: boolean;
   id: number;
   plan_id: number;
@@ -121,9 +126,6 @@ export type ConstraintRun = {
   arguments: any;
   constraint_id: number;
   constraint_invocation_id: number;
-  constraint_metadata: {
-    name: string;
-  };
   constraint_revision: number;
   results: ConstraintResultWithName;
   simulation_data_id: number;

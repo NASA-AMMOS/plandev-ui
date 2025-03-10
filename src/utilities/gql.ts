@@ -530,7 +530,6 @@ const gql = {
       createSchedulingSpecGoal: ${Queries.INSERT_SCHEDULING_SPECIFICATION_GOAL}(object: $spec_goal) {
         enabled
         goal_id
-        priority
         specification_id
       }
     }
@@ -1636,7 +1635,6 @@ const gql = {
       ${Queries.SCHEDULING_SPECIFICATION_GOALS}(where: { goal_id: { _eq: $goal_id } }) {
         enabled
         goal_id
-        priority
         arguments
         specification_id
       }
@@ -2274,7 +2272,6 @@ const gql = {
             constraint_revision
             errors
             id
-            priority
             results
           }
           constraint_invocation_id
@@ -2498,7 +2495,6 @@ const gql = {
             name
           }
         }
-        scheduling_specification_goals(order_by: { priority: asc }) {
           arguments
           goal_id
           goal_invocation_id
@@ -2513,7 +2509,6 @@ const gql = {
             id
             name
           }
-          priority
         }
         version
       }
@@ -3062,7 +3057,6 @@ const gql = {
         goal_revision
         arguments
         enabled
-        priority
         simulate_after
         goal_metadata {
           name
@@ -3149,7 +3143,6 @@ const gql = {
             }
           }
           goal_revision
-          priority
           simulate_after
           arguments
           specification_id
@@ -3752,17 +3745,14 @@ const gql = {
   `,
 
   UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION: `#graphql
-    mutation UpdateSchedulingGoalModelSpecification($arguments: jsonb, $goalInvocationId: Int!, $revision: Int!, $priority: Int!) {
       updateSchedulingGoalModelSpecification: ${Queries.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION}(
         pk_columns: { goal_invocation_id: $goalInvocationId },
         _set: {
           arguments: $arguments,
           goal_revision: $revision,
-          priority: $priority,
         }
       ) {
         goal_revision
-        priority
       }
     }
   `,
@@ -3773,12 +3763,10 @@ const gql = {
         objects: $goalSpecsToAdd,
         on_conflict: {
           constraint: scheduling_model_specification_goals_pkey,
-          update_columns: [goal_revision, priority]
         },
       ) {
         returning {
           goal_revision
-          priority
         }
       }
       deleteSchedulingGoalModelSpecifications: ${Queries.DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS}(
@@ -3792,13 +3780,11 @@ const gql = {
   `,
 
   UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATION: `#graphql
-    mutation UpdateSchedulingGoalPlanSpecification($arguments: jsonb, $goal_invocation_id: Int!, $revision: Int!, $enabled: Boolean!, $priority: Int!, $simulateAfter: Boolean!) {
       updateSchedulingGoalPlanSpecification: ${Queries.UPDATE_SCHEDULING_SPECIFICATION_GOAL}(
         pk_columns: { goal_invocation_id: $goal_invocation_id },
         _set: {
           goal_revision: $revision,
           enabled: $enabled,
-          priority: $priority,
           simulate_after: $simulateAfter
           arguments: $arguments
         }

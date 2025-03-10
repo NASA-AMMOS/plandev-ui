@@ -37,8 +37,14 @@ export const constraintRuns = gqlSubscribable<ConstraintRun[] | null>(
   { simulationDatasetId: simulationDatasetLatestId },
   null,
   null,
-  (value: ConstraintRequest) => {
-    return value.constraints_run;
+  (value: ConstraintRequest[]) => {
+    return value.flatMap(
+      constraintRequest =>
+        constraintRequest.constraints_run.flatMap(({ constraint_invocation_id, results }) => ({
+          ...results,
+          constraint_invocation_id,
+        })) ?? [],
+    );
   },
 );
 
@@ -116,14 +122,14 @@ export const constraintVisibilityMap: Readable<ConstraintPlanSpecVisibilityMap> 
 );
 
 export const constraintResponses: Readable<ConstraintResponse[]> = derived(
-  [constraintRuns, planStartTimeMs],
-  ([$constraintRuns, $planStartTimeMs]) => {
+  [constraintRuns, constraintsMap, planStartTimeMs],
+  ([$constraintRuns, $constraintsMap, $planStartTimeMs]) => {
     return ($constraintRuns || []).map(
       run =>
         ({
           constraintId: run.constraint_id,
           constraintInvocationId: run.constraint_invocation_id,
-          constraintName: run.constraint_metadata.name,
+          constraintName: $constraintsMap[run.constraint_id]?.name ?? '',
           errors: [],
           results: {
             ...run.results,
