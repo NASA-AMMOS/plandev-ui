@@ -24,7 +24,7 @@ import { gqlSubscribable } from './subscribable';
 
 /* Environment Configuration */
 export const sequenceExpansionMode: Writable<SequencingMode> = writable(
-  env.PUBLIC_SEQUENCING_MODE === 'templating' ? SequencingMode.EXPANSION : SequencingMode.EXPANSION,
+  env.PUBLIC_SEQUENCING_MODE === 'templating' ? SequencingMode.TEMPLATING : SequencingMode.EXPANSION,
 );
 
 export const commandExpansionNotAvailable: Writable<string> = writable(

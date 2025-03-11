@@ -8,7 +8,7 @@
   import { SequencingMode } from '../../enums/sequencing';
   import { expansionSequences, expansionSets } from '../../stores/expansion';
   import { plan } from '../../stores/plan';
-  import { parcels, sequenceExpansionMode, sequenceFilters } from '../../stores/sequencing';
+  import { sequenceExpansionMode, sequenceFilters } from '../../stores/sequencing';
   import { simulationDatasetLatest } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { ExpansionSequence } from '../../types/expansion';
@@ -39,7 +39,7 @@
   let newButton: HTMLElement;
   let sequencesAndFilters: (ExpansionSequence | SequenceFilter)[] = [];
 
-  let selectedParcelOrExpansionSetId: number | null = null;
+  let selectedExpansionSetId: number | null = null;
 
   let filterMenu: ActivityFilterBuilder;
   let activeSequenceFilterName: string;
@@ -113,17 +113,16 @@
   }
 
   function onExpandSequence(e: MouseEvent, sequence: ExpansionSequence) {
-    if ($simulationDatasetLatest !== null && $plan !== null && selectedParcelOrExpansionSetId !== null) {
+    if ($simulationDatasetLatest !== null && $plan !== null) {
       if ($sequenceExpansionMode === SequencingMode.TEMPLATING) {
         effects.expandTemplates(
           [sequence.seq_id],
           $simulationDatasetLatest.id,
-          selectedParcelOrExpansionSetId,
           $plan.model_id,
           user,
         );
-      } else {
-        effects.expand(selectedParcelOrExpansionSetId, $simulationDatasetLatest.id, $plan, $plan.model, user);
+      } else if (selectedExpansionSetId !== null) {
+        effects.expand(selectedExpansionSetId, $simulationDatasetLatest.id, $plan, $plan.model, user);
       }
     }
   }
@@ -203,31 +202,22 @@
           aria-label="Filter..."
         />
       </div>
-      <div class="sne-parcel-select">
-        <select bind:value={selectedParcelOrExpansionSetId} class="st-select w-100">
-          {#if $sequenceExpansionMode === SequencingMode.TEMPLATING}
-            {#if !$parcels.length}
-              <option value={null}>No Parcels</option>
+      {#if $sequenceExpansionMode === SequencingMode.EXPANSION}
+        <div class="sne-expansion-set-select">
+          <select bind:value={selectedExpansionSetId} class="st-select w-100">
+            {#if !$expansionSets.length}
+              <option value={null}>No Expansion Sets</option>
             {:else}
-              <option value={null} disabled hidden>Parcel Id</option>
-              {#each $parcels as parcel}
-                <option value={parcel.id}>
-                  {parcel.name} ({parcel.id})
+              <option value={null} disabled hidden>Expansion Set</option>
+              {#each $expansionSets as expansionSet}
+                <option value={expansionSet.id}>
+                  {expansionSet.name} ({expansionSet.id})
                 </option>
               {/each}
             {/if}
-          {:else if !$expansionSets.length}
-            <option value={null}>No Expansion Sets</option>
-          {:else}
-            <option value={null} disabled hidden>Expansion Set</option>
-            {#each $expansionSets as expansionSet}
-              <option value={expansionSet.id}>
-                {expansionSet.name} ({expansionSet.id})
-              </option>
-            {/each}
-          {/if}
-        </select>
-      </div>
+          </select>
+        </div>
+      {/if}
       <div class="sne-buttons">
         <button
           class="st-button secondary new-button"
@@ -287,7 +277,6 @@
                 <button
                   aria-label="Expand 'Example Sequence'"
                   class="st-button icon"
-                  disabled={!selectedParcelOrExpansionSetId}
                   on:click|stopPropagation={e => {
                     if (isExpansionSequence(sequenceOrFilter)) {
                       onExpandSequence(e, sequenceOrFilter);

@@ -3623,7 +3623,6 @@ const effects = {
     seqIds: string[],
     simulationDatasetId: number,
     modelId: number,
-    parcelId: number,
     user: User | null,
   ): Promise<void> {
     try {
