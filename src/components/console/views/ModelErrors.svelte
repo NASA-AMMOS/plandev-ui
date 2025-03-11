@@ -45,7 +45,7 @@
         <ModelStatusRollup {model} selectable {selectedLog} flow="horizontal" on:select={onSelectCategory} />
       </div>
     </div>
-    <div class="errors">
+    <div class="errors text-xs">
       <div class="error">
         {#if selectedModelLog && !selectedModelLog.success}
           {#if selectedModelLog?.error_message}

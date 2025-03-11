@@ -152,7 +152,7 @@
 
 <div class="associations-container">
   <div class="associations-header">
-    <div class="associations-title">Associations</div>
+    <div class="associations-title text-xs">Associations</div>
     <RadioButtons selectedButtonId={selectedAssociationId} on:select-radio-button={onSelectAssociation}>
       <RadioButton id="constraint"><div class="association-button">Constraints</div></RadioButton>
       <RadioButton id="goal"><div class="association-button">Goals</div></RadioButton>

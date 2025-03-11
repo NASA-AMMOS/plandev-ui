@@ -260,7 +260,7 @@
           >
             {formatParameterValue(activityRevisionChangeMap[i].name, activityRevisionChangeMap[i].currentValue)}
           </div>
-          <div class="actions">
+          <div class="changelog-actions">
             {#if i === 0}
               <span>Current Revision</span>
             {:else}
@@ -367,22 +367,22 @@
     white-space: nowrap;
   }
 
-  .actions > * {
+  .changelog-actions > * {
     display: none;
     height: 16px;
     line-height: 16px;
     margin: 0;
   }
 
-  .actions button {
+  .changelog-actions button {
     padding: 0 4px;
   }
 
-  .actions .secondary {
+  .changelog-actions .secondary {
     border: 1px solid #bec0c2;
   }
 
-  .activity-revision:hover .actions > * {
+  .activity-revision:hover .changelog-actions > * {
     display: inline-flex;
   }
 

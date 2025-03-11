@@ -52,6 +52,7 @@
           type="checkbox"
           checked={conditionPlanSpec.enabled}
           style:cursor="pointer"
+          class="m-1"
           on:change={onEnable}
           on:click|stopPropagation
           use:permissionHandler={{

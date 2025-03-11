@@ -205,6 +205,7 @@
         <input
           type="checkbox"
           checked={constraintPlanSpec.enabled}
+          class="m-1"
           on:change={onEnable}
           on:click|stopPropagation
           use:permissionHandler={{

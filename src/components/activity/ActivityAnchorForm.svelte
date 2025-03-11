@@ -262,7 +262,7 @@
     cursor: not-allowed;
   }
 
-  :global(.anchor-collapse.collapse .content) {
+  :global(.anchor-collapse.collapse-root .content) {
     margin-left: 1rem;
   }
 </style>
