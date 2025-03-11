@@ -2495,6 +2495,7 @@ const gql = {
             name
           }
         }
+        scheduling_specification_goals(order_by: { priority: asc }) {
           arguments
           goal_id
           goal_invocation_id
@@ -2509,6 +2510,7 @@ const gql = {
             id
             name
           }
+          priority
         }
         version
       }
