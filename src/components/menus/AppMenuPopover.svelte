@@ -61,15 +61,24 @@
         <!-- Planning Column -->
         <div class="flex flex-col gap-0.5">
           <h3 class="px-3 pb-2 pt-2 text-sm font-medium text-muted-foreground">Planning</h3>
-          <MenuItem on:click={() => goto(`${base}/plans`)} on:pointerenter={() => preloadData(`${base}/plans`)}>
+          <MenuItem
+            className="text-sm py-1.5"
+            on:click={() => goto(`${base}/plans`)}
+            on:pointerenter={() => preloadData(`${base}/plans`)}
+          >
             <PlanIcon />
             Plans
           </MenuItem>
-          <MenuItem on:click={() => goto(`${base}/models`)} on:pointerenter={() => preloadData(`${base}/models`)}>
+          <MenuItem
+            className="text-sm py-1.5"
+            on:click={() => goto(`${base}/models`)}
+            on:pointerenter={() => preloadData(`${base}/models`)}
+          >
             <BarChartIcon />
             Models
           </MenuItem>
           <MenuItem
+            className="text-sm py-1.5"
             on:click={() => goto(`${base}/constraints`)}
             on:pointerenter={() => preloadData(`${base}/constraints`)}
           >
@@ -77,6 +86,7 @@
             Constraints
           </MenuItem>
           <MenuItem
+            className="text-sm py-1.5"
             on:click={() => goto(`${base}/scheduling`)}
             on:pointerenter={() => preloadData(`${base}/scheduling`)}
           >
@@ -84,7 +94,11 @@
             Scheduling
           </MenuItem>
 
-          <MenuItem on:click={() => goto(`${base}/tags`)} on:pointerenter={() => preloadData(`${base}/tags`)}>
+          <MenuItem
+            className="text-sm py-1.5"
+            on:click={() => goto(`${base}/tags`)}
+            on:pointerenter={() => preloadData(`${base}/tags`)}
+          >
             <TagIcon />
             Tags
           </MenuItem>
@@ -94,6 +108,7 @@
         <div class="flex flex-col gap-0.5">
           <h3 class="px-3 pb-2 pt-2 text-sm font-medium text-muted-foreground">Sequencing</h3>
           <MenuItem
+            className="text-sm py-1.5"
             on:click={() => goto(`${base}/sequencing`)}
             on:pointerenter={() => preloadData(`${base}/sequencing`)}
           >
@@ -101,6 +116,7 @@
             Sequence Editor
           </MenuItem>
           <MenuItem
+            className="text-sm py-1.5"
             on:click={() => goto(`${base}/dictionaries`)}
             on:pointerenter={() => preloadData(`${base}/dictionaries`)}
           >
@@ -108,13 +124,18 @@
             Dictionaries
           </MenuItem>
           <MenuItem
+            className="text-sm py-1.5"
             on:click={() => goto(`${base}/expansion/rules`)}
             on:pointerenter={() => preloadData(`${base}/expansion/rules`)}
           >
             <CodeSquareIcon />
             Expansion
           </MenuItem>
-          <MenuItem on:click={() => goto(`${base}/parcels`)} on:pointerenter={() => preloadData(`${base}/parcels`)}>
+          <MenuItem
+            className="text-sm py-1.5"
+            on:click={() => goto(`${base}/parcels`)}
+            on:pointerenter={() => preloadData(`${base}/parcels`)}
+          >
             <ArchiveIcon />
             Parcels
           </MenuItem>
@@ -123,19 +144,26 @@
         <!-- Resources Column -->
         <div class="flex flex-col gap-0.5">
           <h3 class="px-3 pb-2 pt-2 text-sm font-medium text-muted-foreground">Resources</h3>
-          <MenuItem on:click={() => window.open('https://nasa-ammos.github.io/aerie-docs/', '_newtab')}>
+          <MenuItem
+            className="text-sm py-1.5"
+            on:click={() => window.open('https://nasa-ammos.github.io/aerie-docs/', '_newtab')}
+          >
             <JournalsIcon />
             Documentation
           </MenuItem>
-          <MenuItem on:click={() => window.open(env.PUBLIC_GATEWAY_CLIENT_URL, '_newtab')}>
+          <MenuItem className="text-sm py-1.5" on:click={() => window.open(env.PUBLIC_GATEWAY_CLIENT_URL, '_newtab')}>
             <DiagramIcon />
             Gateway
           </MenuItem>
-          <MenuItem on:click={() => window.open(`${env.PUBLIC_GATEWAY_CLIENT_URL}/api-playground`, '_newtab')}>
+          <MenuItem
+            className="text-sm py-1.5"
+            on:click={() => window.open(`${env.PUBLIC_GATEWAY_CLIENT_URL}/api-playground`, '_newtab')}
+          >
             <GraphQLIcon />
             GraphQL Playground
           </MenuItem>
           <MenuItem
+            className="text-sm py-1.5"
             on:click={e => {
               e.stopPropagation();
               isOpen = false;
@@ -165,16 +193,6 @@
         </div>
         <div class="flex items-center gap-2">
           <span class="text-xs text-muted-foreground">{version.name}</span>
-          <!-- <button
-            class="flex items-center gap-2 rounded-sm px-1 py-0.5 text-xs hover:bg-background"
-            on:click|stopPropagation={() => {
-              isOpen = false;
-              showAboutModal();
-            }}
-          >
-            <InfoCircleIcon class="size-3" />
-            About
-          </button> -->
         </div>
       </div>
     </Popover.Content>

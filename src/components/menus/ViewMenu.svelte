@@ -92,33 +92,33 @@
     <ViewGridIcon />
     <div class="view-menu st-typography-medium" slot="menu">
       <div class="toggles">
-        <MenuItem on:click={() => toggleView('left', !leftPanelIsOn)}>
+        <MenuItem className="p-0" on:click={() => toggleView('left', !leftPanelIsOn)}>
           <ToggleableIcon isOn={leftPanelIsOn}>
             <ViewGridLeftPanelFilled />
             <ViewGridLeftPanelEmpty slot="offIcon" />
           </ToggleableIcon>
         </MenuItem>
-        <MenuItem on:click={() => toggleView('left-split', !leftSplitPanelIsOn)}>
+        <MenuItem className="p-0" on:click={() => toggleView('left-split', !leftSplitPanelIsOn)}>
           <ToggleableIcon isOn={leftSplitPanelIsOn}>
             <ViewGridLeftPanelSplitFilled />
             <ViewGridLeftPanelSplitEmpty slot="offIcon" />
           </ToggleableIcon>
         </MenuItem>
         <div class="toggle-divider">|</div>
-        <MenuItem on:click={() => toggleView('bottom', !bottomPanelIsOn)}>
+        <MenuItem className="p-0" on:click={() => toggleView('bottom', !bottomPanelIsOn)}>
           <ToggleableIcon isOn={bottomPanelIsOn}>
             <ViewGridBottomPanelFilled />
             <ViewGridBottomPanelEmpty slot="offIcon" />
           </ToggleableIcon>
         </MenuItem>
         <div class="toggle-divider">|</div>
-        <MenuItem on:click={() => toggleView('right-split', !rightSplitPanelIsOn)}>
+        <MenuItem className="p-0" on:click={() => toggleView('right-split', !rightSplitPanelIsOn)}>
           <ToggleableIcon isOn={rightSplitPanelIsOn}>
             <ViewGridRightPanelSplitFilled />
             <ViewGridRightPanelSplitEmpty slot="offIcon" />
           </ToggleableIcon>
         </MenuItem>
-        <MenuItem on:click={() => toggleView('right', !rightPanelIsOn)}>
+        <MenuItem className="p-0" on:click={() => toggleView('right', !rightPanelIsOn)}>
           <ToggleableIcon isOn={rightPanelIsOn}>
             <ViewGridRightPanelFilled />
             <ViewGridRightPanelEmpty slot="offIcon" />
@@ -219,7 +219,7 @@
     display: grid;
     grid-template-columns: repeat(7, min-content);
     justify-content: space-between;
-    margin: 8px 8px 0;
+    padding: 8px;
   }
 
   .toggle-divider {

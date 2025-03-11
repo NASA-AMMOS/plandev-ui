@@ -14,7 +14,11 @@
 </script>
 
 <Tab tabContextKey={ConsoleContextKey} {tabId} bind:this={tab}>
-  <div class="error-tab" class:has-error={numberOfErrors > 0} use:tooltip={{ content: title, placement: 'top' }}>
+  <div
+    class="error-tab text-xs"
+    class:has-error={numberOfErrors > 0}
+    use:tooltip={{ content: title, placement: 'top' }}
+  >
     <slot /><span class="error-number-display">{numberOfErrors}</span>
   </div>
 </Tab>

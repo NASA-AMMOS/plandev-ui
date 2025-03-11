@@ -145,7 +145,9 @@
           </div>
         {/each}
       {:else}
-        No {searchFieldMap[searchField]} matched your search query.
+        <div class="text-sm">
+          No {searchFieldMap[searchField]} matched your search query.
+        </div>
       {/if}
     </div>
   </div>

@@ -597,7 +597,7 @@ export class Plan {
     this.schedulingConditionEnabledCheckboxSelector = (conditionName: string) =>
       page.locator(`.scheduling-condition:has-text("${conditionName}")`).getByRole('checkbox');
     this.schedulingGoalExpand = (goalName: string) =>
-      this.schedulingGoal(goalName).locator('.collapse > button').first();
+      this.schedulingGoal(goalName).locator('.collapse-root > button').first();
     this.schedulingGoalNewButton = page.locator(`button[name="new-scheduling-goal"]`);
     this.schedulingConditionNewButton = page.locator(`button[name="new-scheduling-condition"]`);
     this.schedulingSatisfiedActivity = page.locator('.scheduling-goal-analysis-activities-list > .satisfied-activity');

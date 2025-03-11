@@ -85,7 +85,7 @@
       </Input>
     </div>
     {#each displayedColumnMenuItems as columnMenuItem (columnMenuItem)}
-      <MenuItem on:click={() => onColumnToggleChange(columnMenuItem)}>
+      <MenuItem className="py-1.5 text-xs" on:click={() => onColumnToggleChange(columnMenuItem)}>
         <input type="checkbox" checked={!columnMenuItem.isHidden} />
         <div class="column-name">{columnMenuItem.name}</div>
       </MenuItem>
@@ -133,7 +133,7 @@
     font-weight: bold;
     letter-spacing: -1px;
     line-height: 0px;
-    margin-top: -4px;
+    margin-top: -6.5px;
   }
 
   .search-field {
