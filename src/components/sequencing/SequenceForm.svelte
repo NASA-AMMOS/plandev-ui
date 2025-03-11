@@ -310,7 +310,7 @@
         </select>
       </fieldset>
 
-      <fieldset class="readonly">
+      <fieldset>
         <label for="sequenceName">Name (required)</label>
         <input
           bind:value={sequenceName}
