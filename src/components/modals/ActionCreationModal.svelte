@@ -47,6 +47,7 @@
           action_file_id: actionFileId,
           description,
           name,
+          settings: {},
           workspace_id: workspaceId,
         };
         const data = await reqHasura<ActionDefinition>(
@@ -55,36 +56,12 @@
           user,
         );
         const { insert_action_definition_one } = data;
-        console.log('createActionDefinition :>> ', data);
         if (insert_action_definition_one) {
           dispatch('create', { actionDefinitionId: insert_action_definition_one?.id });
         } else {
           // TODO
         }
       }
-
-      //   if (jarId !== null) {
-      //     const modelInsertInput: ModelInsertInput = {
-      //       description,
-      //       jar_id: jarId,
-      //       mission: '',
-      //       name,
-      //       version,
-      //     };
-      //     const data = await reqHasura<Model>(gql.CREATE_MODEL, { model: modelInsertInput }, user);
-      //     const { createModel } = data;
-      //     if (createModel != null) {
-      //       const { id } = createModel;
-
-      //       showSuccessToast('Model Created Successfully');
-      //       createModelErrorStore.set(null);
-      //       creatingModelStore.set(false);
-
-      //       return id;
-      //       dispatch('close');
-      //     } else {
-      //       throw Error(`Unable to create model "${name}"`);
-      //     }
     }
   }
 

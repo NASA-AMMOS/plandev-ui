@@ -1,3 +1,4 @@
+import type { ArgumentsMap } from './parameter';
 import type { ValueSchema } from './schema';
 
 export type ActionDefinition = {
@@ -8,6 +9,7 @@ export type ActionDefinition = {
   name: string;
   owner: string | null;
   parameter_schema: Record<string, ValueSchema>;
+  settings: ArgumentsMap;
   settings_schema: Record<string, ValueSchema>;
   updated_at: string;
   updated_by: string | null;
@@ -21,9 +23,9 @@ export type ActionRun = {
   error: any | null;
   id: number;
   logs: string | null;
-  parameters: any;
+  parameters: ArgumentsMap;
   results: any | null;
-  settings: any;
+  settings: ArgumentsMap;
   status: 'pending' | 'in-progress' | 'failed' | 'complete';
 };
 

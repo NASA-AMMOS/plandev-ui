@@ -19,8 +19,6 @@
   export let width: number = 380;
   export let user: User | null;
 
-  // TODO use action definition settings when available in DB
-  let settings: any = { externalUrl: 'https://api.github.com' };
   let running: boolean = false;
   let formParameters: FormParameter[] = [];
   let argumentsMap: ArgumentsMap = {};
@@ -45,7 +43,12 @@
   async function run() {
     try {
       running = true;
-      const actionRunId = await effects.createActionRun(actionDefinition.id, argumentsMap, settings, user);
+      const actionRunId = await effects.createActionRun(
+        actionDefinition.id,
+        argumentsMap,
+        actionDefinition.settings,
+        user,
+      );
       running = false;
       dispatch('complete', { actionRunId });
     } catch (error) {

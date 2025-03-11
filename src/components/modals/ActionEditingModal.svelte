@@ -22,7 +22,7 @@
   let description: string = actionDefinition.description;
   let name: string = actionDefinition.name;
   let formParameters: FormParameter[] = [];
-  let argumentsMap: ArgumentsMap = {};
+  let argumentsMap: ArgumentsMap = actionDefinition.settings ?? {};
   let saving: boolean = false;
 
   const dispatch = createEventDispatcher<{
@@ -53,7 +53,7 @@
       const actionDefinitionUpdate = {
         description,
         name,
-        // settings,
+        settings: argumentsMap,
       };
       await effects.updateActionDefinition(actionDefinition.id, actionDefinitionUpdate, user);
       saving = false;

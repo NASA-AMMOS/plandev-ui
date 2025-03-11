@@ -1933,6 +1933,7 @@ const gql = {
         owner
         parameter_schema
         settings_schema
+        settings
         updated_at
         updated_by
         workspace_id
