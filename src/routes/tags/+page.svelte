@@ -471,34 +471,3 @@
     </Panel>
   </CssGrid>
 </CssGrid>
-
-<!-- TODO: remove this -->
-
-<!-- <style>
-  .tags-color-picker {
-    display: flex;
-    gap: 4px;
-  }
-
-  .tags-color-picker :global(.color-preset-picker) {
-    flex-shrink: 0;
-  }
-
-  .tags-preview {
-    margin-top: 2px;
-  }
-
-  .tags-preview :global(.st-chip) {
-    max-width: 100%;
-  }
-
-  .tags-creator {
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .tags-save-buttons {
-    display: flex;
-    gap: 4px;
-  }
-</style> -->
