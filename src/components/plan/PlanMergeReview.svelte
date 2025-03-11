@@ -797,11 +797,11 @@
     border-right: 1px solid var(--st-gray-20);
   }
 
-  .merge-review-changes-content :global(.collapse > button.collapse-header) {
+  .merge-review-changes-content :global(.collapse-root > button.collapse-header) {
     padding: 8px 16px;
   }
 
-  .merge-review-changes-content :global(.collapse .content) {
+  .merge-review-changes-content :global(.collapse-root .content) {
     gap: 0;
     margin: 0;
   }

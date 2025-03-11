@@ -337,11 +337,11 @@
   :global(.details-container) {
     height: 100%;
   }
-  :global(.details-container.collapse .content) {
+  :global(.details-container.collapse-root .content) {
     height: calc(100%);
   }
 
-  :global(.details-container.collapse .expansion-form-container) {
+  :global(.details-container.collapse-root .expansion-form-container) {
     height: calc(100% - 48px);
   }
 

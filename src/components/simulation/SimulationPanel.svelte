@@ -518,7 +518,7 @@
     gap: 8px;
   }
 
-  :global(.simulation-collapse.collapse .content) {
+  :global(.simulation-collapse.collapse-root .content) {
     margin: 0;
   }
 

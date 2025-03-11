@@ -604,7 +604,7 @@
           <div class="right">
             {#if outputFormats}
               <div class="output-format">
-                <label for="outputFormat">Output Format</label>
+                <label class="text-xs text-muted-foreground" for="outputFormat">Output Format</label>
                 <select bind:value={selectedOutputFormat} class="st-select w-full" name="outputFormat">
                   {#each outputFormats as outputFormatItem}
                     <option value={outputFormatItem}>

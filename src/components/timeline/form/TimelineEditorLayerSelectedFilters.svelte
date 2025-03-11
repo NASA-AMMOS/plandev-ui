@@ -80,7 +80,7 @@
     text-transform: capitalize;
   }
 
-  .timeline-editor-layer-selected-filters :global(.collapse.filter-items .content) {
+  .timeline-editor-layer-selected-filters :global(.collapse-root.filter-items .content) {
     gap: 8px;
     margin: 8px 0 8px 16px;
   }

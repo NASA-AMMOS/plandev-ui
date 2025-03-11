@@ -2,13 +2,14 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { twMerge } from 'tailwind-merge';
   import { useActions, type ActionArray } from '../../utilities/useActions';
 
-  export let use: ActionArray = [];
-
+  export let className: string = '';
   export let disabled: boolean = false;
   export let selectable: boolean = true;
   export let selected: boolean = false;
+  export let use: ActionArray = [];
 
   const dispatch = createEventDispatcher<{
     click: MouseEvent | KeyboardEvent;
@@ -34,7 +35,10 @@
 </script>
 
 <div
-  class="flex cursor-pointer items-center gap-2 rounded-sm px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+  class={twMerge(
+    'flex cursor-pointer items-center gap-2 rounded-sm px-3 py-3 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 text-[13px]',
+    className,
+  )}
   class:disabled
   class:selected
   class:selectable

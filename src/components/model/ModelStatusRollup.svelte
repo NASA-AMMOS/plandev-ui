@@ -99,7 +99,7 @@
       {/if}
     </div>
   {:else}
-    <div class="model-status-logs-container" class:horizontal={flow === 'horizontal'}>
+    <div class="model-status-logs-container text-xs" class:horizontal={flow === 'horizontal'}>
       <button
         class="model-status-button"
         class:selected={selectedLog === 'activity'}

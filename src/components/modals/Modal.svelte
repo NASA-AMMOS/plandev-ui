@@ -42,7 +42,7 @@
     position: fixed;
     right: 0;
     top: 0;
-    z-index: 999;
+    z-index: 9999;
   }
 
   .modal {

@@ -116,7 +116,7 @@
 </script>
 
 <div class="specification-list-item" class:selected={isSelected} on:mousedown={onSelect} role="button" tabindex={1}>
-  <div class="metadata-name">{metadataName}</div>
+  <div class="metadata-name text-xs">{metadataName}</div>
   <div class="inputs-container">
     {#if priority !== undefined}
       <div class="priority-container">

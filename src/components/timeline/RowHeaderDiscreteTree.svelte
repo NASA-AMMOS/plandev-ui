@@ -270,7 +270,7 @@
     position: relative;
   }
 
-  :global(.row-header-discrete-group.collapse > .collapse-header),
+  :global(.row-header-discrete-group.collapse-root > .collapse-header),
   .row-header-discrete-group.leaf {
     border-bottom: 1px solid var(--st-gray-30);
     border-radius: 0px;
@@ -280,16 +280,16 @@
     padding-left: 4px !important;
   }
 
-  :global(.row-header-discrete-group.collapse:not(.selected) > .collapse-header:hover),
+  :global(.row-header-discrete-group.collapse-root:not(.selected) > .collapse-header:hover),
   .row-header-discrete-group.leaf:hover:not(.selected) {
     background: var(--st-gray-20) !important;
   }
 
-  :global(.row-header-discrete-group.collapse > .content.pad-content) {
+  :global(.row-header-discrete-group.collapse-root > .content.pad-content) {
     margin-left: 16px !important;
   }
 
-  :global(.row-header-discrete-group.collapse > .content) {
+  :global(.row-header-discrete-group.collapse-root > .content) {
     gap: 0px;
   }
 
@@ -313,16 +313,16 @@
     gap: 4px;
   }
 
-  :global(.row-header-discrete-group.collapse .collapse-icon svg) {
+  :global(.row-header-discrete-group.collapse-root .collapse-icon svg) {
     color: var(--st-gray-40);
   }
 
   .selected,
-  :global(.collapse.selected > .collapse-header) {
+  :global(.collapse-root.selected > .collapse-header) {
     background-color: #e3effd !important;
   }
 
-  :global(.collapse.selected > .collapse-header *),
+  :global(.collapse-root.selected > .collapse-header *),
   .row-header-discrete-group.selected,
   .row-header-discrete-group.selected :global(svg) {
     color: var(--st-utility-blue) !important;
@@ -343,10 +343,10 @@
     background: var(--st-gray-20) !important;
   }
 
-  :global(.row-header-discrete-group.collapse:has(> .collapse-header:focus-visible) > button.select),
-  :global(.row-header-discrete-group.collapse:has(> button.select:focus-visible) > button.select),
-  :global(.row-header-discrete-group.collapse:has(> .collapse-header:hover) > button.select),
-  :global(.row-header-discrete-group.collapse:has(> button.select:hover) > button.select) {
+  :global(.row-header-discrete-group.collapse-root:has(> .collapse-header:focus-visible) > button.select),
+  :global(.row-header-discrete-group.collapse-root:has(> button.select:focus-visible) > button.select),
+  :global(.row-header-discrete-group.collapse-root:has(> .collapse-header:hover) > button.select),
+  :global(.row-header-discrete-group.collapse-root:has(> button.select:hover) > button.select) {
     opacity: 1;
   }
 
@@ -369,7 +369,7 @@
   }
 
   .selected,
-  :global(.collapse.selected > .collapse-header) {
+  :global(.collapse-root.selected > .collapse-header) {
     background-color: #e3effd !important;
   }
 </style>

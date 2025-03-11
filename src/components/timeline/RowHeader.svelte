@@ -387,15 +387,15 @@
     padding-left: 16px;
   }
 
-  :global(.collapse.selected > .collapse-header) {
+  :global(.collapse-root.selected > .collapse-header) {
     background-color: #e3effd !important;
   }
 
-  :global(.collapse.selected > .collapse-header *) {
+  :global(.collapse-root.selected > .collapse-header *) {
     color: var(--st-utility-blue) !important;
   }
 
-  :global(.collapse.selected > .collapse-header) {
+  :global(.collapse-root.selected > .collapse-header) {
     background-color: #e3effd !important;
   }
 </style>

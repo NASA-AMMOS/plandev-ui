@@ -136,7 +136,7 @@
   }
 </script>
 
-<div class="model-form-container">
+<div class="model-form-container text-xs">
   <div class="inputs">
     <Input layout="inline">
       <label for="name">Model Name</label>

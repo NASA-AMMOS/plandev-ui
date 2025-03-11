@@ -24,7 +24,7 @@
 
   let contextMenu: ContextMenu;
 
-  $: collapseClasses = classNames('collapse', {
+  $: collapseClasses = classNames('collapse-root', {
     [className]: !!className,
     'has-context-menu': !!$$slots.contextMenuContent,
   });
@@ -80,13 +80,13 @@
 {/if}
 
 <style>
-  .collapse {
+  .collapse-root {
     display: flex;
     flex-direction: column;
     width: 100%;
   }
 
-  .collapse > .collapse-header {
+  .collapse-root > .collapse-header {
     display: flex;
     flex-direction: row;
     gap: 3px;
@@ -94,20 +94,20 @@
     padding: 8px 0px 8px 0px;
   }
 
-  .collapse > .collapse-header:hover {
+  .collapse-root > .collapse-header:hover {
     background: none;
   }
 
-  .collapse > .collapse-header.static {
+  .collapse-root > .collapse-header.static {
     cursor: default;
   }
 
-  .collapse.error .title,
-  .collapse.error .icon :global(svg) {
+  .collapse-root.error .title,
+  .collapse-root.error .icon :global(svg) {
     color: var(--st-red);
   }
 
-  .collapse.has-context-menu > button {
+  .collapse-root.has-context-menu > button {
     cursor: context-menu !important;
   }
 
