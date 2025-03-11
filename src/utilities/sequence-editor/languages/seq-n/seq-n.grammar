@@ -28,12 +28,12 @@ IdDeclaration {
 
 ParameterDeclaration {
   (parameterDirective whiteSpace Variable{((Enum whiteSpace?) | (Enum whiteSpace? Object whiteSpace?))}+ newLine) |
-  (parameterStartDirective newLine (whiteSpace? Variable{((Enum whiteSpace?) | (Enum whiteSpace? Type { identifier } whiteSpace? ( (EnumName { identifier}) | (Range { String } (whiteSpace Values {String})? ) |  (EnumName { identifier} whiteSpace (Range { String } (whiteSpace Values {String})?) )? whiteSpace?)) )} newLine)* parameterEndDirective newLine ) 
+  (parameterStartDirective newLine (whiteSpace? Variable{((Enum whiteSpace?) | (Enum whiteSpace? Type { identifier } whiteSpace? ( (EnumName { identifier}) | (Range { String } (whiteSpace Values {String})? ) |  (EnumName { identifier} whiteSpace (Range { String } (whiteSpace Values {String})?) )? whiteSpace?)) )} newLine)* parameterEndDirective newLine )
 }
 
 LocalDeclaration {
   (localsDirective whiteSpace Variable{((Enum whiteSpace?) | (Enum whiteSpace? Object whiteSpace?))}+ newLine) |
-  (localsStartDirective newLine (whiteSpace? Variable{((Enum whiteSpace?) | (Enum whiteSpace? Type { identifier } whiteSpace? ( (EnumName { identifier}) | (Range { String } (whiteSpace Values {String})? ) |  (EnumName { identifier} whiteSpace (Range { String } (whiteSpace Values {String})?) )? whiteSpace?)) )} newLine)* localsEndDirective newLine ) 
+  (localsStartDirective newLine (whiteSpace? Variable{((Enum whiteSpace?) | (Enum whiteSpace? Type { identifier } whiteSpace? ( (EnumName { identifier}) | (Range { String } (whiteSpace Values {String})? ) |  (EnumName { identifier} whiteSpace (Range { String } (whiteSpace Values {String})?) )? whiteSpace?)) )} newLine)* localsEndDirective newLine )
 
 }
 
@@ -123,10 +123,10 @@ commonGround {
 Note {
   TimeTag
   noteDirective "(" NoteValue { String } ")"
-  Args
   LineComment?
   newLine
   Metadata?
+  Models?
 }
 
 Request {
