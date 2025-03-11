@@ -15,6 +15,7 @@
   initialSequenceParcelId={data.initialSequence.parcel_id}
   initialSequenceId={data.initialSequence.id}
   initialSequenceUpdatedAt={data.initialSequence.updated_at}
+  initialIsSequenceReadonly={data.initialSequence.is_locked}
   mode="edit"
   user={data.user}
 />

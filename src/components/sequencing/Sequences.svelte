@@ -86,6 +86,7 @@
       await effects.createUserSequence(
         {
           definition: seqN.sequence,
+          is_locked: false,
           name: seqN.name,
           parcel_id: parcel,
           seq_json: '',
