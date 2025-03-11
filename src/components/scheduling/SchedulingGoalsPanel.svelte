@@ -82,11 +82,11 @@
 
   async function onUpdateGoal(event: CustomEvent<SchedulingGoalPlanSpecification>) {
     const {
-      detail: { goal_metadata, ...goalPlanSpec },
+      detail: { goal_metadata, files = [], ...goalPlanSpec },
     } = event;
 
     if ($plan) {
-      await effects.updateSchedulingGoalPlanSpecification($plan, goalPlanSpec, user);
+      await effects.updateSchedulingGoalPlanSpecification($plan, goalPlanSpec, files, user);
     }
   }
 

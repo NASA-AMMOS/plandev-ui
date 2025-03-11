@@ -10,7 +10,7 @@
   import type {
     SchedulingGoalDefinition,
     SchedulingGoalMetadata,
-    SchedulingGoalPlanSpecification,
+    SchedulingGoalPlanSpecification, SchedulingGoalPlanSpecificationUpdate,
   } from '../../../types/scheduling';
   import { getTarget } from '../../../utilities/generic';
   import { getCleansedStructArguments } from '../../../utilities/parameters';
@@ -35,7 +35,7 @@
   const dispatch = createEventDispatcher<{
     deleteGoalInvocation: SchedulingGoalPlanSpecification;
     duplicateGoalInvocation: SchedulingGoalPlanSpecification;
-    updateGoalPlanSpec: SchedulingGoalPlanSpecification;
+    updateGoalPlanSpec: SchedulingGoalPlanSpecificationUpdate;
   }>();
 
   let enabled: boolean;
@@ -107,6 +107,7 @@
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
       enabled: enabledUpdate as boolean,
+      files: []
     });
   }
 
@@ -133,6 +134,7 @@
     let cleansedArguments: Argument = getCleansedStructArguments(goalPlanSpec.arguments, schema);
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
+      files: [],
       arguments: cleansedArguments,
       goal_revision: revision === '' ? null : parseInt(`${revision}`),
     });
@@ -142,6 +144,7 @@
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
       simulate_after: simulateAfterUpdate,
+      files: [],
     });
   }
 
@@ -158,13 +161,14 @@
   function updatePriority(priorityUpdate: number) {
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
-      priority: priorityUpdate,
+      files: [],
+      priority,
     });
   }
 
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const {
-      detail: { name, value },
+      detail: { name, value, file },
     } = event;
 
     if (formParameters.length) {
@@ -173,6 +177,7 @@
       dispatch('updateGoalPlanSpec', {
         ...goalPlanSpec,
         arguments: { ...cleansedArguments, [name]: value },
+        files: file ? [file] : [],
       });
     }
   }

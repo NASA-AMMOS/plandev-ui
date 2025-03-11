@@ -6634,12 +6634,23 @@ const effects = {
   async updateSchedulingGoalPlanSpecification(
     plan: Plan,
     schedulingGoalPlanSpecification: SchedulingGoalPlanSpecSetInput,
+    newFiles: File[] = [],
     user: User | null,
   ) {
     try {
       if (!queryPermissions.UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATION(user, plan)) {
         throwPermissionError('update this scheduling goal plan specification');
       }
+
+      const generatedFilenames = await effects.uploadFiles(newFiles, user);
+
+      if (schedulingGoalPlanSpecification.arguments) {
+        schedulingGoalPlanSpecification.arguments = replacePathsForSchedulingGoal(
+          schedulingGoalPlanSpecification.arguments,
+          generatedFilenames
+        );
+      }
+
       const {
         arguments: goalArguments,
         enabled,
@@ -7152,6 +7163,48 @@ const effects = {
     }
   },
 };
+
+
+/**
+ * Traverses the given scheduling goal arguments and does a "find and replace", replacing any paths that match the keys of `pathsToReplace` with the corresponding values.
+ *
+ * @param modelParameters The type definitions of the mission model parameters. Used to determine which parameters have type 'path'.
+ * @param goalParameters The goal parameters, which are assumed to conform to the above type definition.
+ * @param pathsToReplace A map from old paths to new paths. Any occurrences of old paths in simArgs will be replaced with new paths.
+ * @returns
+ */
+export function replacePathsForSchedulingGoal(
+  goalParameters: ArgumentsMap,
+  pathsToReplace: Record<string, string>,
+): ArgumentsMap {
+  console.log(goalParameters);
+  return traverseAndReplace(goalParameters, pathsToReplace);
+}
+
+function traverseAndReplace(value: any, pathsToReplace: Record<string, string>): any {
+  // If the value itself is a direct match, replace it
+  if (typeof value === "string" && value in pathsToReplace) {
+    return pathsToReplace[value];
+  }
+
+  // If it's an array, recursively process elements
+  if (Array.isArray(value)) {
+    return value.map((item) => traverseAndReplace(item, pathsToReplace));
+  }
+
+  // If it's an object, recursively process key-value pairs
+  if (typeof value === "object" && value !== null) {
+    const updatedObject: any = {};
+    for (const key in value) {
+      updatedObject[key] = traverseAndReplace(value[key], pathsToReplace);
+    }
+    return updatedObject;
+  }
+
+  // Otherwise, return unchanged
+  return value;
+}
+
 
 /**
  * Traverses the given simulation arguments and does a "find and replace", replacing any paths that match the keys of `pathsToReplace` with the corresponding values.
