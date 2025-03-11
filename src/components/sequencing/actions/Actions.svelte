@@ -9,12 +9,15 @@
   import { workspaces } from '../../../stores/sequencing';
   import type { ActionDefinition, ActionRun } from '../../../types/actions';
   import type { User } from '../../../types/app';
+  import type { FormParameter, ParametersMap } from '../../../types/parameter';
   import type { Workspace } from '../../../types/sequencing';
   import effects from '../../../utilities/effects';
   import { getSearchParameterNumber } from '../../../utilities/generic';
   import { showActionCreationModal, showActionEditingModal } from '../../../utilities/modal';
+  import { getFormParameters } from '../../../utilities/parameters';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import Input from '../../form/Input.svelte';
+  import Parameters from '../../parameters/Parameters.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import CssGridGutter from '../../ui/CssGridGutter.svelte';
   import Panel from '../../ui/Panel.svelte';
@@ -28,6 +31,7 @@
 
   let actionsFilterText: string = '';
   let actionRunsFilterText: string = '';
+  let formParameters: FormParameter[] = [];
   let selectedActionDefinitionId: number | null = null;
   let selectedActionDefinition: ActionDefinition | null = null;
   let workspace: Workspace | undefined;
@@ -37,6 +41,7 @@
   $: selectedActionRuns = ($actionRuns || []).filter(actionRun => {
     return actionRun.action_definition_id === selectedActionDefinition?.id;
   });
+
   $: filteredActionRuns = (selectedActionDefinition ? selectedActionRuns : $actionRuns || []).filter(actionRun => {
     const definition = getActionDefinitionForRun(actionRun, $actionDefinitionsByWorkspace, workspaceId);
     if (definition && definition.name.indexOf(actionRunsFilterText) > -1) {
@@ -47,11 +52,24 @@
     }
     return false;
   });
+
   $: if (typeof selectedActionDefinitionId === 'number') {
     selectedActionDefinition =
       ($actionDefinitions || []).find(actionDefinition => actionDefinition.id === selectedActionDefinitionId) || null;
   } else {
     selectedActionDefinition = null;
+  }
+
+  $: if (selectedActionDefinition) {
+    const settingsMap: ParametersMap = Object.entries(selectedActionDefinition.settings_schema).reduce(
+      (acc, [key, valueSchema], i) => {
+        acc[key] = { order: i, schema: valueSchema };
+        return acc;
+      },
+      {},
+    );
+
+    formParameters = getFormParameters(settingsMap, selectedActionDefinition.settings, []);
   }
 
   onMount(() => {
@@ -192,7 +210,7 @@
             <Tabs class="action-definition-runs-tabs">
               <svelte:fragment slot="tab-list">
                 <Tab class="action-definition-runs-tab">Runs ({(filteredActionRuns || []).length})</Tab>
-                <Tab class="action-definition-runs-tab">Code</Tab>
+                <Tab class="action-definition-runs-tab">Settings</Tab>
               </svelte:fragment>
               <TabPanel>
                 <div class="action-runs" style="padding-top: 8px">
@@ -210,7 +228,11 @@
                   {/each}
                 </div>
               </TabPanel>
-              <TabPanel>Coming Soon</TabPanel>
+              <TabPanel>
+                <div style="padding: 8px">
+                  <Parameters {formParameters} parameterType="action" hideRightAdornments hideInfo disabled />
+                </div>
+              </TabPanel>
             </Tabs>
           </div>
         </div>
