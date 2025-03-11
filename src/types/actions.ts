@@ -63,3 +63,5 @@ export type ActionResponse =
       }; // TODO: should this be an error array
       results: null;
     };
+
+export type ActionDefinitionSetInput = Pick<ActionDefinition, 'name' | 'description'>;

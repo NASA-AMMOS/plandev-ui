@@ -201,6 +201,7 @@ export enum Queries {
   SPANS = 'span',
   TAGS = 'tags',
   TOPIC = 'topic',
+  UPDATE_ACTION_DEFINITION = 'update_action_definition_by_pk',
   UPDATE_ACTIVITY_DIRECTIVE = 'update_activity_directive_by_pk',
   UPDATE_ACTIVITY_DIRECTIVES = 'update_activity_directive_many',
   UPDATE_ACTIVITY_PRESET = 'update_activity_presets_by_pk',

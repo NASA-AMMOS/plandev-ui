@@ -67,7 +67,7 @@ import {
 } from '../stores/simulation';
 import { createTagError as createTagErrorStore } from '../stores/tags';
 import { applyViewUpdate, view as viewStore, viewUpdateRow, viewUpdateTimeline } from '../stores/views';
-import type { ActionDefinition } from '../types/actions';
+import type { ActionDefinition, ActionDefinitionSetInput } from '../types/actions';
 import type {
   ActivityDirective,
   ActivityDirectiveDB,
@@ -5497,6 +5497,36 @@ const effects = {
       }
     } catch (e) {
       catchError(e as Error);
+    }
+  },
+
+  async updateActionDefinition(
+    id: number,
+    actionDefinitionSetInput: ActionDefinitionSetInput,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      if (!queryPermissions.UPDATE_ACTION_DEFINITION(user)) {
+        throwPermissionError('update this action definition');
+      }
+
+      const { update_action_definition_by_pk: updateActionDefinitionByPk } = await reqHasura<ActionDefinition>(
+        gql.UPDATE_ACTION_DEFINITION,
+        {
+          actionDefinitionSetInput,
+          id,
+        },
+        user,
+      );
+
+      if (updateActionDefinitionByPk != null) {
+        showSuccessToast(`Action Updated Successfully`);
+      } else {
+        throw Error(`Unable to update action with ID: "${id}"`);
+      }
+    } catch (e) {
+      catchError('Action Update Failed', e as Error);
+      showFailureToast('Action Update Failed');
     }
   },
 

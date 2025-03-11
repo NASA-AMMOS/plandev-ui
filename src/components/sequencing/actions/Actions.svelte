@@ -12,7 +12,7 @@
   import type { Workspace } from '../../../types/sequencing';
   import effects from '../../../utilities/effects';
   import { getSearchParameterNumber } from '../../../utilities/generic';
-  import { showActionCreationModal } from '../../../utilities/modal';
+  import { showActionCreationModal, showActionEditingModal } from '../../../utilities/modal';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import Input from '../../form/Input.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
@@ -28,6 +28,7 @@
 
   let actionsFilterText: string = '';
   let actionRunsFilterText: string = '';
+  let selectedActionDefinitionId: number | null = null;
   let selectedActionDefinition: ActionDefinition | null = null;
   let workspace: Workspace | undefined;
   let workspaceId: number | null = null;
@@ -46,6 +47,12 @@
     }
     return false;
   });
+  $: if (typeof selectedActionDefinitionId === 'number') {
+    selectedActionDefinition =
+      ($actionDefinitions || []).find(actionDefinition => actionDefinition.id === selectedActionDefinitionId) || null;
+  } else {
+    selectedActionDefinition = null;
+  }
 
   onMount(() => {
     workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
@@ -68,12 +75,15 @@
 
   async function runAction(action: ActionDefinition) {
     const actionRunId = await effects.runAction(action, user);
-    console.log('actionRunId :>> ', actionRunId);
     if (typeof actionRunId === 'number') {
       goto(
         `${base}/sequencing/actions/runs/${actionRunId}${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`,
       );
     }
+  }
+
+  function editAction(actionDefinition: ActionDefinition) {
+    showActionEditingModal(user, actionDefinition);
   }
 
   function getActionDefinitionForRun(
@@ -88,12 +98,6 @@
       }
     }
     return null;
-  }
-
-  function onEditActionClick(actionDefinition: ActionDefinition) {
-    goto(
-      `${base}/sequencing/actions/${actionDefinition.id}${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`,
-    );
   }
 </script>
 
@@ -127,13 +131,13 @@
           <button
             class="action st-button tertiary"
             on:click={() => {
-              if (selectedActionDefinition?.id === actionDefinition.id) {
-                selectedActionDefinition = null;
+              if (selectedActionDefinitionId === actionDefinition.id) {
+                selectedActionDefinitionId = null;
               } else {
-                selectedActionDefinition = actionDefinition;
+                selectedActionDefinitionId = actionDefinition.id;
               }
             }}
-            class:selected={selectedActionDefinition?.id === actionDefinition.id}
+            class:selected={selectedActionDefinitionId === actionDefinition.id}
           >
             <div class="st-typography-medium" style:flex={1}>{actionDefinition.name}</div>
             <button class="st-button secondary" on:click|stopPropagation={() => runAction(actionDefinition)}>
@@ -175,7 +179,7 @@
               <div class="st-typography-body">{selectedActionDefinition.description}</div>
             </div>
             <div>
-              <button class="st-button secondary" on:click|stopPropagation={() => runAction(selectedActionDefinition)}>
+              <button class="st-button secondary" on:click|stopPropagation={() => editAction(selectedActionDefinition)}>
                 Edit
               </button>
               <button class="st-button secondary" on:click|stopPropagation={() => runAction(selectedActionDefinition)}>

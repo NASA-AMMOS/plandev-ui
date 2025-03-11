@@ -3272,6 +3272,16 @@ const gql = {
     }
   `,
 
+  UPDATE_ACTION_DEFINITION: `#graphql
+    mutation UpdateActionDefinition($id: Int!, $actionDefinitionSetInput: action_definition_set_input!) {
+      ${Queries.UPDATE_ACTION_DEFINITION}(
+        pk_columns: { id: $id }, _set: $actionDefinitionSetInput
+      ) {
+        id
+      }
+    }
+  `,
+
   UPDATE_ACTIVITY_DIRECTIVE: `#graphql
     mutation UpdateActivityDirective($id: Int!, $plan_id: Int!, $activityDirectiveSetInput: activity_directive_set_input!) {
       ${Queries.UPDATE_ACTIVITY_DIRECTIVE}(

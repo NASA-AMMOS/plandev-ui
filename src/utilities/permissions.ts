@@ -314,6 +314,14 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     const queries = [Queries.CONSTRAINT_VIOLATIONS];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
+  CREATE_ACTION_DEFINITION: (user: User | null): boolean => {
+    const queries = [Queries.INSERT_ACTION_DEFINITION];
+    return isUserAdmin(user) || getPermission(queries, user);
+  },
+  CREATE_ACTION_RUN: (user: User | null): boolean => {
+    const queries = [Queries.INSERT_ACTION_RUN];
+    return isUserAdmin(user) || getPermission(queries, user);
+  },
   CREATE_ACTIVITY_DIRECTIVE: (user: User | null, plan: PlanWithOwners): boolean => {
     const queries = [Queries.INSERT_ACTIVITY_DIRECTIVE];
     return (
@@ -836,6 +844,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     const queries = [Queries.SIMULATE];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
+  SUB_ACTION_DEFINITIONS: () => true,
+  SUB_ACTION_RUNS: () => true,
   SUB_ACTIVITY_DIRECTIVES: () => true,
   SUB_ACTIVITY_DIRECTIVE_METADATA_SCHEMAS: () => true,
   SUB_ACTIVITY_DIRECTIVE_VALIDATIONS: () => true,
@@ -931,6 +941,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   SUB_WORKSPACES: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.WORKSPACES], user);
+  },
+  UPDATE_ACTION_DEFINITION: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.UPDATE_ACTION_DEFINITION], user);
   },
   UPDATE_ACTIVITY_DIRECTIVE: (user: User | null, plan: PlanWithOwners): boolean => {
     return (

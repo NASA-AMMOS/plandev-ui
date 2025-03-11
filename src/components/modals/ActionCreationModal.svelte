@@ -116,13 +116,12 @@
     </fieldset>
     <fieldset>
       <label for="description">Description</label>
-      <input
+      <textarea
         bind:value={description}
         autocomplete="off"
         class="st-input w-100"
         id="description"
         required
-        type="text"
         placeholder="Enter a description"
       />
     </fieldset>

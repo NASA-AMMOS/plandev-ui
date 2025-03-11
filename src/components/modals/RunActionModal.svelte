@@ -19,6 +19,7 @@
   export let width: number = 380;
   export let user: User | null;
 
+  // TODO use action definition settings when available in DB
   let settings: any = { externalUrl: 'https://api.github.com' };
   let running: boolean = false;
   let formParameters: FormParameter[] = [];
@@ -62,15 +63,13 @@
   <ModalHeader on:close>Run Action</ModalHeader>
 
   <ModalContent>
-    <div class="parameters">
-      <Parameters
-        {formParameters}
-        parameterType="action"
-        hideRightAdornments
-        hideInfo
-        on:change={onChangeFormParameters}
-      />
-    </div>
+    <Parameters
+      {formParameters}
+      parameterType="action"
+      hideRightAdornments
+      hideInfo
+      on:change={onChangeFormParameters}
+    />
   </ModalContent>
 
   <ModalFooter>
