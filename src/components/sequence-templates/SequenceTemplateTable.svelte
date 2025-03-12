@@ -3,8 +3,8 @@
 <script lang="ts">
   import type { ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
-  import { parcels } from '../../stores/sequencing';
   import { sequenceTemplates } from '../../stores/sequence-template';
+  import { parcels } from '../../stores/sequencing';
   import type { User, UserId } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { SequenceTemplate } from '../../types/sequence-template';
@@ -172,19 +172,27 @@
 </script>
 
 {#if $sequenceTemplates.length}
-  <SingleActionDataGrid
-    {columnDefs}
-    filterExpression={filterText}
-    hasEdit={true}
-    {hasEditPermission}
-    {hasDeletePermission}
-    itemDisplayText="Template"
-    items={$sequenceTemplates}
-    {user}
-    on:deleteItem={deleteTemplateContext}
-    on:editItem={editTemplateContext}
-    on:rowSelected={toggleTemplate}
-  />
+  <div id="sequence-templates-table">
+    <SingleActionDataGrid
+      {columnDefs}
+      filterExpression={filterText}
+      hasEdit={true}
+      {hasEditPermission}
+      {hasDeletePermission}
+      itemDisplayText="Template"
+      items={$sequenceTemplates}
+      {user}
+      on:deleteItem={deleteTemplateContext}
+      on:editItem={editTemplateContext}
+      on:rowSelected={toggleTemplate}
+    />
+  </div>
 {:else}
   <div class="st-typography-label">No Templates Found</div>
 {/if}
+
+<style>
+  #sequence-templates-table {
+    height: 100%;
+  }
+</style>

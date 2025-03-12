@@ -14,7 +14,14 @@ import * as Requests from './requests';
 
 const mockPlanStore = await vi.hoisted(() => import('../stores/__mocks__/plan.mock'));
 
-vi.mock('$env/dynamic/public', () => import.meta.env); // https://github.com/sveltejs/kit/issues/8180
+vi.mock('$env/dynamic/public', () => {
+  return {
+    env: {
+      PUBLIC_SEQUENCING_MODE: 'templating',
+    },
+  };
+}); // https://github.com/sveltejs/kit/issues/8180
+
 vi.mock('./toast', () => ({
   showFailureToast: vi.fn(),
   showSuccessToast: vi.fn(),
@@ -516,7 +523,7 @@ describe('Handle modal and requests in effects', () => {
 
       vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
 
-      await effects.expandTemplates([], 0, 0, 0, mockUser);
+      await effects.expandTemplates([], 0, 0, mockUser);
 
       expect(catchErrorSpy).toHaveBeenCalledWith('Sequence Templating Failed', Error('Sequence Templating Failed'));
     });

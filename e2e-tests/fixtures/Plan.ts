@@ -70,6 +70,10 @@ export class Plan {
   schedulingGoalsModalFilter: Locator;
   schedulingSatisfiedActivity: Locator;
   schedulingStatusSelector: (status: string) => string;
+  sequenceExpansionNewButton: Locator;
+  sequenceExpansionNewSequenceButton: Locator;
+  sequenceExpansionNewSequenceConfirmButton: Locator;
+  sequenceExpansionNewSequenceName: Locator;
   simulateButton: Locator;
   simulationHistoryList: Locator;
   simulationStatusSelector: (status: string) => string;
@@ -565,6 +569,10 @@ export class Plan {
     this.schedulingGoalNewButton = page.locator(`button[name="new-scheduling-goal"]`);
     this.schedulingConditionNewButton = page.locator(`button[name="new-scheduling-condition"]`);
     this.schedulingSatisfiedActivity = page.locator('.scheduling-goal-analysis-activities-list > .satisfied-activity');
+    this.sequenceExpansionNewButton = page.getByRole('button', { exact: true, name: 'New' });
+    this.sequenceExpansionNewSequenceButton = page.getByText('Sequence', { exact: true });
+    this.sequenceExpansionNewSequenceName = page.locator('input[name="sequence-name"]');
+    this.sequenceExpansionNewSequenceConfirmButton = page.getByRole('button', { exact: true, name: 'Confirm' });
   }
 
   async uploadExternalDatasets(importFilePath: string) {
@@ -613,4 +621,5 @@ export enum PanelNames {
   SIMULATION = 'Simulation',
   TIMELINE_EDITOR = 'Timeline Editor',
   EXTERNAL_SOURCES = 'External Sources',
+  SEQUENCES_AND_EXPANSION = 'Sequences & Expansion',
 }
