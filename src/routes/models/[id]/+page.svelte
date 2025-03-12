@@ -36,7 +36,7 @@
   ): Pick<BaseMetadata, 'id' | 'name' | 'owner' | 'public' | 'versions'>[] {
     return metadataSubscription.length
       ? metadataSubscription
-      : model?.[modelKey]
+      : (model?.[modelKey]
           .map(metadata => {
             if (isGoalSpecification(metadata)) {
               return createInitialMetadata(metadata.goal_metadata);
@@ -45,7 +45,7 @@
             }
             return createInitialMetadata(metadata.constraint_metadata);
           })
-          .filter(filterEmpty) ?? [];
+          .filter(filterEmpty) ?? []);
   }
 
   /**

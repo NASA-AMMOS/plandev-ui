@@ -51,7 +51,7 @@
   $: hasCreateDefinitionCodePermission = featurePermissions.schedulingConditions.canCreate(user);
   $: if (user) {
     hasWriteDefinitionTagsPermission = featurePermissions.schedulingConditions.canUpdateDefinition(user, {
-      author: mode === 'create' ? user.id : initialConditionDefinitionAuthor ?? user.id,
+      author: mode === 'create' ? user.id : (initialConditionDefinitionAuthor ?? user.id),
     });
   }
   $: hasWriteMetadataPermission =

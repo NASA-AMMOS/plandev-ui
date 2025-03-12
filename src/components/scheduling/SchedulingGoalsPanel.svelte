@@ -208,7 +208,7 @@
           <Loading />
         </div>
       {:else if !filteredSchedulingGoalSpecs.length}
-        <div class="pt-1 st-typography-label">No scheduling goals found</div>
+        <div class="st-typography-label pt-1">No scheduling goals found</div>
         <div class="private-label">
           {#if numOfPrivateGoals > 0}
             {numOfPrivateGoals} scheduling goal{numOfPrivateGoals !== 1 ? 's' : ''}

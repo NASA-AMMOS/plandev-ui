@@ -72,7 +72,7 @@
       <label for="file">View JSON File</label>
       <input
         bind:this={fileInput}
-        class="w-full upload"
+        class="upload w-full"
         class:error={!!errors.length}
         name="file"
         required

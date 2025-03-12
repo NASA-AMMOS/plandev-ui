@@ -142,7 +142,7 @@
 
   function editSequence({ id }: Pick<UserSequence, 'id'>) {
     goto(
-      `${base}/sequencing/edit/${id}${'?' + SearchParameters.WORKSPACE_ID + '=' + getSearchParameterNumber(SearchParameters.WORKSPACE_ID) ?? ''}`,
+      `${base}/sequencing/edit/${id}${'?' + SearchParameters.WORKSPACE_ID + '=' + (getSearchParameterNumber(SearchParameters.WORKSPACE_ID) ?? '')}`,
     );
   }
 
