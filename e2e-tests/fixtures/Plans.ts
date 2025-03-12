@@ -183,7 +183,7 @@ export class Plans {
     this.inputStartTime = page.locator('input[name="start-time"]');
     this.modelStatus = page.locator('.model-status-container');
     this.page = page;
-    this.table = page.locator('.panel:has-text("Plans")').getByRole('treegrid');
+    this.table = page.locator('div[role="tabpanel"]:has-text("Plans")').getByRole('treegrid');
     this.tableRow = (planName: string) => this.table.getByRole('row', { name: planName });
     this.tableRowDeleteButton = (planName: string) =>
       this.tableRow(planName).getByRole('gridcell').getByRole('button', { name: 'Delete Plan' });

@@ -112,7 +112,7 @@ export class Parcels {
     this.createButton = page.locator(`button:has-text("Save")`);
     this.nameField = page.locator(`input[name="parcelName"]`);
     this.newButton = page.locator(`button:has-text("New")`);
-    this.table = page.locator('.panel:has-text("Parcels")').getByRole('treegrid');
+    this.table = page.locator('div[role="tabpanel"]:has-text("Parcels")').getByRole('treegrid');
     this.tableRow = this.table.getByRole('row', { name: this.parcelName });
     this.tableRowDeleteButton = this.tableRow.getByRole('gridcell').getByRole('button', { name: 'Delete Parcel' });
   }
