@@ -18,8 +18,7 @@
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
-  import { TOKEN_ERROR } from '../../constants/seq-n-grammar-constants';
-  import { outputFormat, sequenceAdaptation, setSequenceAdaptation } from '../../stores/sequence-adaptation';
+  import { getGlobals, outputFormat, sequenceAdaptation, setSequenceAdaptation } from '../../stores/sequence-adaptation';
   import {
     channelDictionaries,
     commandDictionaries,
@@ -40,29 +39,25 @@
     type Parcel,
     type TimeTagInfo,
   } from '../../types/sequencing';
-  import { setupLanguageSupport } from '../../utilities/codemirror';
-  import { isFswCommandArgumentRepeat, unquoteUnescape } from '../../utilities/codemirror/codemirror-utils';
-  import type { CommandInfoMapper } from '../../utilities/codemirror/commandInfoMapper';
-  import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../utilities/codemirror/seq-n-highlighter';
-  import { SeqNCommandInfoMapper } from '../../utilities/codemirror/seq-n-tree-utils';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
-  import {
-    setupVmlLanguageSupport,
-    vmlAdaptation,
-    vmlBlockHighlighter,
-    vmlHighlightBlock,
-  } from '../../utilities/codemirror/vml/vml';
-  import { vmlAutoComplete } from '../../utilities/codemirror/vml/vmlAdaptation';
-  import { librarySequenceToFswCommand } from '../../utilities/codemirror/vml/vmlBlockLibrary';
-  import { vmlFormat } from '../../utilities/codemirror/vml/vmlFormatter';
-  import { vmlLinter } from '../../utilities/codemirror/vml/vmlLinter';
-  import { vmlTooltip } from '../../utilities/codemirror/vml/vmlTooltip';
-  import { VmlCommandInfoMapper } from '../../utilities/codemirror/vml/vmlTreeUtils';
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
+  import type { CommandInfoMapper } from '../../utilities/sequence-editor/command-info-mapper';
   import { getCustomArgDef, inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
+  import { setupLanguageSupport } from '../../utilities/sequence-editor/languages/seq-n/seq-n';
+  import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../utilities/sequence-editor/languages/seq-n/seq-n-highlighter';
+  import { SeqNCommandInfoMapper } from '../../utilities/sequence-editor/languages/seq-n/seq-n-tree-utils';
+  import { setupVmlLanguageSupport, vmlAdaptation, vmlBlockHighlighter, vmlHighlightBlock } from '../../utilities/sequence-editor/languages/vml/vml';
+  import { vmlAutoComplete } from '../../utilities/sequence-editor/languages/vml/vml-adaptation';
+  import { librarySequenceToFswCommand } from '../../utilities/sequence-editor/languages/vml/vml-block-library';
+  import { vmlFormat } from '../../utilities/sequence-editor/languages/vml/vml-formatter';
+  import { vmlLinter } from '../../utilities/sequence-editor/languages/vml/vml-linter';
+  import { vmlTooltip } from '../../utilities/sequence-editor/languages/vml/vml-tooltip';
+  import { VmlCommandInfoMapper } from '../../utilities/sequence-editor/languages/vml/vml-tree-utils';
   import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
+  import { TOKEN_ERROR } from '../../utilities/sequence-editor/sequence-constants';
   import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
+  import { isFswCommandArgumentRepeat, unquoteUnescape } from '../../utilities/sequence-editor/sequence-utils';
   import { showFailureToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import CommandPanel from '../sequencing/CommandPanel/CommandPanel.svelte';
@@ -235,6 +230,8 @@
               ),
               compartmentSeqLinter.reconfigure(
                 inputLinter(
+                  $sequenceAdaptation,
+                  getGlobals(),
                   parsedChannelDictionary,
                   parsedCommandDictionary,
                   nonNullParsedParameterDictionaries,
@@ -242,7 +239,12 @@
                 ),
               ),
               compartmentSeqTooltip.reconfigure(
-                sequenceTooltip(parsedChannelDictionary, parsedCommandDictionary, nonNullParsedParameterDictionaries),
+                sequenceTooltip(
+                  $sequenceAdaptation,
+                  parsedChannelDictionary,
+                  parsedCommandDictionary,
+                  nonNullParsedParameterDictionaries
+                ),
               ),
               ...($sequenceAdaptation.autoIndent
                 ? [compartmentSeqAutocomplete.reconfigure(indentService.of($sequenceAdaptation.autoIndent()))]
@@ -301,8 +303,8 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': `${clientHeightGridRightTop}px` } }),
         lintGutter(),
         compartmentSeqLanguage.of(setupLanguageSupport($sequenceAdaptation.autoComplete(null, null, [], []))),
-        compartmentSeqLinter.of(inputLinter()),
-        compartmentSeqTooltip.of(sequenceTooltip()),
+        compartmentSeqLinter.of(inputLinter($sequenceAdaptation, getGlobals())),
+        compartmentSeqTooltip.of(sequenceTooltip($sequenceAdaptation)),
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
