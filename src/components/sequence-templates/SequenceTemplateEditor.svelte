@@ -18,7 +18,12 @@
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
-  import { getGlobals, outputFormat, sequenceAdaptation, setSequenceAdaptation } from '../../stores/sequence-adaptation';
+  import {
+    getGlobals,
+    outputFormat,
+    sequenceAdaptation,
+    setSequenceAdaptation,
+  } from '../../stores/sequence-adaptation';
   import {
     channelDictionaries,
     commandDictionaries,
@@ -45,9 +50,17 @@
   import type { CommandInfoMapper } from '../../utilities/sequence-editor/command-info-mapper';
   import { getCustomArgDef, inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
   import { setupLanguageSupport } from '../../utilities/sequence-editor/languages/seq-n/seq-n';
-  import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../utilities/sequence-editor/languages/seq-n/seq-n-highlighter';
+  import {
+    seqNHighlightBlock,
+    seqqNBlockHighlighter,
+  } from '../../utilities/sequence-editor/languages/seq-n/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../utilities/sequence-editor/languages/seq-n/seq-n-tree-utils';
-  import { setupVmlLanguageSupport, vmlAdaptation, vmlBlockHighlighter, vmlHighlightBlock } from '../../utilities/sequence-editor/languages/vml/vml';
+  import {
+    setupVmlLanguageSupport,
+    vmlAdaptation,
+    vmlBlockHighlighter,
+    vmlHighlightBlock,
+  } from '../../utilities/sequence-editor/languages/vml/vml';
   import { vmlAutoComplete } from '../../utilities/sequence-editor/languages/vml/vml-adaptation';
   import { librarySequenceToFswCommand } from '../../utilities/sequence-editor/languages/vml/vml-block-library';
   import { vmlFormat } from '../../utilities/sequence-editor/languages/vml/vml-formatter';
@@ -243,7 +256,7 @@
                   $sequenceAdaptation,
                   parsedChannelDictionary,
                   parsedCommandDictionary,
-                  nonNullParsedParameterDictionaries
+                  nonNullParsedParameterDictionaries,
                 ),
               ),
               ...($sequenceAdaptation.autoIndent
