@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Select, ThemeSwitcherButton } from '@nasa-jpl/stellar-svelte';
+  import { Select } from '@nasa-jpl/stellar-svelte';
   import AppMenuPopover from '../../components/menus/AppMenuPopover.svelte';
   import type { User, UserRole } from '../../types/app';
   import { changeUserRole } from '../../utilities/permissions';
@@ -58,9 +58,6 @@
         <Select.Input name="user-menu" />
       </Select.Root>
     {/if}
-    <div class="">
-      <ThemeSwitcherButton size="icon" />
-    </div>
   </div>
 </div>
 
