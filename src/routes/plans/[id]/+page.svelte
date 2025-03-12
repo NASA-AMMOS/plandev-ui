@@ -99,6 +99,7 @@
     schedulingAnalysisStatus,
     schedulingGoalCount,
   } from '../../../stores/scheduling';
+  import { lastTemplatedSimulationDatasetId } from '../../../stores/sequence-template';
   import { selectedParcel, selectedSequence, sequenceExpansionMode } from '../../../stores/sequencing';
   import {
     enableSimulation,
@@ -191,6 +192,7 @@
   let simulationDataAbortController: AbortController;
   let resourcesExternalAbortController: AbortController;
   let schedulingStatusText: string = '';
+  let lastSimulationDatasetId: number | null = null;
 
   $: ({ invalidActivityCount, ...activityErrorCounts } = $activityErrorRollups.reduce(
     (prevCounts, activityErrorRollup) => {
@@ -448,6 +450,10 @@
       modelErrorCount += 1;
     }
   }
+  $: lastSimulationDatasetId =
+    $sequenceExpansionMode === SequencingMode.TEMPLATING
+      ? $lastTemplatedSimulationDatasetId
+      : $lastExpandedSimulationDatasetId;
 
   onDestroy(() => {
     resetActivityStores();
@@ -531,13 +537,7 @@
         $simulationDatasetLatest !== null
       ) {
         // TODO: Support sending multiple sequences
-        effects.expandTemplates(
-          [$selectedSequence],
-          $simulationDatasetLatest.dataset_id,
-          $plan.model_id,
-          $selectedParcel,
-          data.user,
-        );
+        effects.expandTemplates([$selectedSequence], $simulationDatasetLatest.dataset_id, $plan.model_id, data.user);
       }
     }
   }
@@ -669,10 +669,10 @@
             {#if $sequenceExpansionMode === SequencingMode.EXPANSION}
               <div>Expansion Set ID: {$selectedExpansionSetId || 'None'}</div>
             {/if}
-            {#if !$lastExpandedSimulationDatasetId}
+            {#if !lastSimulationDatasetId}
               <div>No expansions exist yet.</div>
             {:else}
-              <div>Last expanded for simulation ID: {$lastExpandedSimulationDatasetId}</div>
+              <div>Last expanded for simulation ID: {lastSimulationDatasetId}</div>
             {/if}
           </svelte:fragment>
         </PlanNavButton>

@@ -2,13 +2,13 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { models } from '../../stores/model';
+  import { activityTypes, modelId } from '../../stores/sequence-template';
+  import { parcels } from '../../stores/sequencing';
   import Modal from '../modals/Modal.svelte';
   import ModalContent from '../modals/ModalContent.svelte';
   import ModalFooter from '../modals/ModalFooter.svelte';
   import ModalHeader from '../modals/ModalHeader.svelte';
-  import { parcels } from '../../stores/sequencing';
-  import { activityTypes, modelId } from '../../stores/sequence-template';
-  import { models } from '../../stores/model';
 
   export let height: number = 300;
   export let width: number = 380;
@@ -73,7 +73,7 @@
       <input bind:value={language} autocomplete="off" class="st-input w-100" id="language" required type="text" />
 
       <label for="parcelId">Parcel ID</label>
-      <select id="parcelId" bind:value={selectedParcelId} class="st-select w-100">
+      <select name="parcelId" bind:value={selectedParcelId} class="st-select w-100">
         {#if !$parcels.length}
           <option value={null}>No values</option>
         {:else}
@@ -87,7 +87,7 @@
       </select>
 
       <label for="modelId">Model ID</label>
-      <select id="modelId" bind:value={$modelId} class="st-select w-100">
+      <select data-type="number" name="modelId" bind:value={$modelId} class="st-select w-100">
         {#if !$models.length}
           <option value={-1}>No values</option>
         {:else}
@@ -101,7 +101,7 @@
       </select>
 
       <label for="activityType">Activity Type</label>
-      <select id="activityType" bind:value={selectedActivityType} class="st-select w-100" disabled={$modelId === -1}>
+      <select name="activityType" bind:value={selectedActivityType} class="st-select w-100" disabled={$modelId === -1}>
         {#if !$activityTypes.length}
           <option value={null}>No values</option>
         {:else}

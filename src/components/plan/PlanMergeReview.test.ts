@@ -13,7 +13,13 @@ import type {
 import { ADMIN_ROLE } from '../../utilities/permissions';
 import PlanMergeReview from './PlanMergeReview.svelte';
 
-vi.mock('$env/dynamic/public', () => import.meta.env); // https://github.com/sveltejs/kit/issues/8180
+vi.mock('$env/dynamic/public', () => {
+  return {
+    env: {
+      PUBLIC_SEQUENCING_MODE: 'templating',
+    },
+  };
+}); // https://github.com/sveltejs/kit/issues/8180
 
 const mockMergeRequest: PlanMergeRequestSchema = {
   id: 1,

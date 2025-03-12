@@ -115,12 +115,7 @@
   function onExpandSequence(e: MouseEvent, sequence: ExpansionSequence) {
     if ($simulationDatasetLatest !== null && $plan !== null) {
       if ($sequenceExpansionMode === SequencingMode.TEMPLATING) {
-        effects.expandTemplates(
-          [sequence.seq_id],
-          $simulationDatasetLatest.id,
-          $plan.model_id,
-          user,
-        );
+        effects.expandTemplates([sequence.seq_id], $simulationDatasetLatest.id, $plan.model_id, user);
       } else if (selectedExpansionSetId !== null) {
         effects.expand(selectedExpansionSetId, $simulationDatasetLatest.id, $plan, $plan.model, user);
       }
