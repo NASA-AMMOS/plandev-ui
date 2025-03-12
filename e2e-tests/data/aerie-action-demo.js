@@ -24,7 +24,7 @@ const paramDefs = {
     series: { type: "series", items:{ type: "string" } },
     string: { type: "string" },
     variant: { type: "variant", variants: [{key: "foo", label: "Foo"}, {key: "bar", label: "Bar"}] },
-    sequenceId: { type: "string" },
+    repository: { type: "string" },
 };
 const settingDefs = {
     externalUrl: { type: "string" },
@@ -37,7 +37,7 @@ async function main(actionParameters, actionSettings) {
       }, actionParameters.delay ?? 0);
     })
 
-    const url = `${actionSettings.externalUrl}/${actionParameters.sequenceId}`;
+    const url = `${actionSettings.externalUrl}/${actionParameters.repository}`;
     const startTime = performance.now();
     // Make a request to an external URL using fetch
     const result = await fetch(url, {
