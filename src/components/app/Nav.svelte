@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Select, ThemeSwitcherDropdown } from '@nasa-jpl/stellar-svelte';
+  import { Select } from '@nasa-jpl/stellar-svelte';
   import type { User, UserRole } from '../../types/app';
   import { changeUserRole } from '../../utilities/permissions';
   import AppMenu from '../menus/AppMenu.svelte';
@@ -52,10 +52,6 @@
         <Select.Input name="user-menu" />
       </Select.Root>
     {/if}
-    <ThemeSwitcherDropdown
-      class="flex-shrink-0 border-none bg-transparent text-white hover:bg-transparent hover:text-white"
-      size="icon"
-    />
   </div>
 </div>
 
