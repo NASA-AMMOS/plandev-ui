@@ -1961,6 +1961,7 @@ const gql = {
         }
         created_at
         created_by
+        duration
         error
         id
         logs
@@ -1978,6 +1979,7 @@ const gql = {
         action_definition_id
         created_at
         created_by
+        duration
         error
         id
         logs

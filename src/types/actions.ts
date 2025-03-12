@@ -21,6 +21,7 @@ export type ActionRun = {
   action_definition_id: number;
   created_at: string;
   created_by: string | null;
+  duration: number | null;
   error: any | null;
   id: number;
   logs: string | null;

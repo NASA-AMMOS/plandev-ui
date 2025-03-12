@@ -5,6 +5,7 @@
   import StopwatchIcon from 'bootstrap-icons/icons/stopwatch.svg?component';
   import { Status } from '../../../enums/status';
   import type { ActionDefinition, ActionRun, ActionRunSlim } from '../../../types/actions';
+  import { convertUsToDurationString } from '../../../utilities/time';
   import StatusBadge from '../../ui/StatusBadge.svelte';
 
   export let actionRun: ActionRunSlim;
@@ -29,6 +30,13 @@
         return Status.Unchecked;
     }
   }
+
+  function formatDuration(duration: number | null): string {
+    if (typeof duration === 'number') {
+      return `${convertUsToDurationString(duration * 1000).split(' ')[0]}`;
+    }
+    return '–';
+  }
 </script>
 
 <button
@@ -46,7 +54,7 @@
     <PlayBtnIcon />{new Date(actionRun.created_at).toLocaleString()}
   </div>
   <div style=" align-items: center;display: flex; gap: 8px;">
-    <StopwatchIcon />–
+    <StopwatchIcon />{formatDuration(actionRun.duration)}
   </div>
 </button>
 
@@ -57,7 +65,7 @@
     border-radius: 4px;
     column-gap: 8px;
     display: grid;
-    grid-template-columns: 1fr 0.2fr 160px min-content;
+    grid-template-columns: 1fr 0.2fr 160px 80px;
     height: unset;
     padding: 8px;
     white-space: nowrap;

@@ -16,7 +16,7 @@ async function writeFile(path, contents) {
 // import { ActionMain } from 'aerie-action/src/models/main.ts';
 // Define schemas for your action's settings and parameters
 const paramDefs = {
-    "delay (ms)": { type:"int" },
+    delay: { type:"int" },
     boolean: { type: "boolean" },
     duration: { type: "duration" },
     real: { type: "real" },

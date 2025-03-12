@@ -224,7 +224,7 @@
           bind:value={actionRunsFilterText}
           class="st-input"
           placeholder="Filter action runs"
-          style="width: 100%;"
+          style="width: 200px;"
         />
       </Input>
     </svelte:fragment>
