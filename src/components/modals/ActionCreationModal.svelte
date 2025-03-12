@@ -38,9 +38,8 @@
 
   async function create() {
     if (!createButtonDisabled && file) {
-      // dispatch('create', { file, description, name });
       const actionFileId = await effects.uploadFile(file, user);
-      showSuccessToast('Model Uploaded Successfully. Processing model...');
+      showSuccessToast('Action Created Successfully');
 
       if (actionFileId !== null) {
         const actionDefinitionInsertInput = {
