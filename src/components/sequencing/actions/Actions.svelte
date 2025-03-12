@@ -23,6 +23,7 @@
   import Parameters from '../../parameters/Parameters.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import CssGridGutter from '../../ui/CssGridGutter.svelte';
+  import MonacoEditor from '../../ui/MonacoEditor.svelte';
   import Panel from '../../ui/Panel.svelte';
   import SectionTitle from '../../ui/SectionTitle.svelte';
   import Tab from '../../ui/Tabs/Tab.svelte';
@@ -38,10 +39,11 @@
   let selectedActionDefinition: ActionDefinition | null = null;
   let workspace: Workspace | undefined;
   let workspaceId: number | null = null;
-
   let saveButtonDisabled: boolean = true;
   let description: string = '';
   let name: string = '';
+  let code: string = '';
+  let codeAbortController: AbortController;
   let argumentsMap: ArgumentsMap = {};
   let saving: boolean = false;
 
@@ -76,6 +78,7 @@
     name = selectedActionDefinition.name;
     description = selectedActionDefinition.description;
     argumentsMap = selectedActionDefinition.settings;
+    getCode(selectedActionDefinition.action_file_id, user);
   } else {
     name = '';
     description = '';
@@ -87,6 +90,22 @@
   onMount(() => {
     workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
   });
+
+  async function getCode(fileId: number, user: User | null) {
+    if (selectedActionDefinition) {
+      if (codeAbortController) {
+        codeAbortController.abort();
+      }
+      codeAbortController = new AbortController();
+      code = '';
+      const { aborted, file } = await effects.getFile(fileId, user, codeAbortController.signal);
+      if (!aborted && typeof file === 'string') {
+        code = file;
+      }
+    } else {
+      code = '';
+    }
+  }
 
   async function onNewActionClick() {
     if (typeof workspaceId !== 'number') {
@@ -262,11 +281,12 @@
               <button class="st-button secondary" on:click={() => (selectedActionDefinition = null)}> Close </button>
             </div>
           </div>
-          <div style="overflow: auto">
+          <div style=" flex: 1;overflow: auto">
             <Tabs class="action-definition-runs-tabs">
               <svelte:fragment slot="tab-list">
                 <Tab class="action-definition-runs-tab">Runs ({(filteredActionRuns || []).length})</Tab>
                 <Tab class="action-definition-runs-tab">Settings</Tab>
+                <Tab class="action-definition-runs-tab">Code</Tab>
               </svelte:fragment>
               <TabPanel>
                 <div class="action-runs" style="padding-top: 8px">
@@ -363,6 +383,20 @@
                   </button>
                 </div>
               </TabPanel>
+              <TabPanel>
+                <div class="code">
+                  <MonacoEditor
+                    automaticLayout={true}
+                    language="javascript"
+                    lineNumbers="on"
+                    minimap={{ enabled: false }}
+                    readOnly={true}
+                    scrollBeyondLastLine={false}
+                    tabSize={2}
+                    value={code || 'Loading...'}
+                  />
+                </div></TabPanel
+              >
             </Tabs>
           </div>
         </div>
@@ -427,6 +461,7 @@
 
   .action-definition-runs-container {
     display: flex;
+    flex: 1;
     flex-direction: column;
     overflow: hidden;
   }
@@ -477,10 +512,7 @@
     flex-direction: column;
   }
 
-  /* .code {
-    border: 1px solid var(--st-gray-30);
-    border-radius: 4px;
-    height: 400px;
-    overflow: hidden;
-  } */
+  .code {
+    height: 100%;
+  }
 </style>

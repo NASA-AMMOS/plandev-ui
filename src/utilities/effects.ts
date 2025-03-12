@@ -3878,6 +3878,24 @@ const effects = {
     }
   },
 
+  async getFile(
+    fileId: number,
+    user: User | null,
+    signal: AbortSignal | undefined = undefined,
+  ): Promise<{ aborted: boolean; file: string | null }> {
+    try {
+      const file = await reqGateway(`/file/${fileId}`, 'GET', null, user, true, signal, false);
+      return { aborted: false, file };
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') {
+        return { aborted: true, file: null };
+      } else {
+        catchError(e as Error);
+        return { aborted: false, file: null };
+      }
+    }
+  },
+
   async getFileName(fileId: number, user: User | null): Promise<string | null> {
     try {
       if (!queryPermissions.GET_UPLOADED_FILENAME(user)) {
