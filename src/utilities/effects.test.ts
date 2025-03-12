@@ -7,7 +7,7 @@ import type { Model } from '../types/model';
 import type { ArgumentsMap, ParametersMap } from '../types/parameter';
 import type { Plan } from '../types/plan';
 import type { SequenceTemplate } from '../types/sequence-template';
-import type { SequenceActivityFilter } from '../types/sequencing';
+import type { ActivityLayerFilter } from '../types/timeline';
 import effects, { replacePaths } from './effects';
 import * as Modals from './modal';
 import * as Requests from './requests';
@@ -488,7 +488,7 @@ describe('Handle modal and requests in effects', () => {
 
       vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
 
-      await effects.createSequenceFilter({} as SequenceActivityFilter, '', 0, mockUser);
+      await effects.createSequenceFilter({} as ActivityLayerFilter, '', 0, mockUser);
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
         'Create Sequence Filter Failed',

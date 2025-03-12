@@ -24,10 +24,8 @@ import type { UserId } from './app';
 import type { GlobalType } from './global-type';
 import type { ActivityLayerFilter } from './timeline';
 
-export type SequenceActivityFilter = ActivityLayerFilter;
-
 export type SequenceFilter = {
-  filter: SequenceActivityFilter;
+  filter: ActivityLayerFilter;
   id: number;
   model_id: number;
   name: string;

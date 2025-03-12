@@ -35,7 +35,6 @@
   export const filterWidth = 1000;
   export const filterHeight = 500;
   export let layerName: string = '';
-  let filteredSpans: number[] = [];
 
   let parameterSubfields: ActivityLayerFilterSubfieldSchema[] = [];
   let dirtyFilter: ActivityLayerFilter = {
@@ -212,14 +211,20 @@
   );
 
   $: if (appliedFilter) {
-    filteredSpans = [];
+    const seenSpans: Record<number, boolean> = {};
+    let count = appliedFilter.directives.length;
     appliedFilter.directives.forEach(directive => {
       const matchingSpanId = $spanUtilityMaps.directiveIdToSpanIdMap[directive.id];
       if (typeof matchingSpanId === 'number') {
-        filteredSpans.push(matchingSpanId);
+        seenSpans[matchingSpanId] = true;
       }
     });
-    instanceCount = filteredSpans.length;
+    appliedFilter.spans.forEach(span => {
+      if (!seenSpans[span.span_id]) {
+        count++;
+      }
+    });
+    instanceCount = count;
   }
 
   $: matchingTypes = getMatchingTypesForActivityLayerFilter(dirtyFilter, $activityTypes);
