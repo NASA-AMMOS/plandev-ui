@@ -21,7 +21,8 @@
 
   function onSelectionChanged(e: CustomEvent<TRowData[]>) {
     if (e.detail && e.detail.length) {
-      selectExternalEvent(getExternalEventWholeRowId(<ExternalEvent>e.detail[0]));
+      const externalEvent = e.detail[0] as ExternalEvent;
+      selectExternalEvent(getExternalEventWholeRowId(externalEvent));
     }
   }
 </script>
