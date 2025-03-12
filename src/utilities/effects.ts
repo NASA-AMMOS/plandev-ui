@@ -201,7 +201,6 @@ import {
   type ParcelInsertInput,
   type ParcelToParameterDictionary,
   type SeqJson,
-  type SequenceActivityFilter,
   type SequenceAdaptationMetadata,
   type SequenceFilter,
   type SequenceFilterInsertInput,
@@ -242,7 +241,7 @@ import type {
   TagsInsertInput,
   TagsSetInput,
 } from '../types/tags';
-import type { Layer, Row, Timeline } from '../types/timeline';
+import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
 import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
@@ -1964,7 +1963,7 @@ const effects = {
   },
 
   async createSequenceFilter(
-    filter: SequenceActivityFilter,
+    filter: ActivityLayerFilter,
     seqName: string,
     modelId: number,
     user: User | null,
@@ -6638,7 +6637,7 @@ const effects = {
   },
 
   async updateSequenceFilter(
-    filter: SequenceActivityFilter,
+    filter: ActivityLayerFilter,
     filterName: string,
     filterId: number,
     model: Model,

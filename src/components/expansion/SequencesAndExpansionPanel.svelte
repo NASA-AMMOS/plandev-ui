@@ -12,7 +12,8 @@
   import { simulationDatasetLatest } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { ExpansionSequence } from '../../types/expansion';
-  import type { SequenceActivityFilter, SequenceFilter } from '../../types/sequencing';
+  import type { SequenceFilter } from '../../types/sequencing';
+  import type { ActivityLayerFilter } from '../../types/timeline';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { showExpansionSequenceModal, showNewSequenceModal } from '../../utilities/modal';
@@ -44,7 +45,7 @@
   let filterMenu: ActivityFilterBuilder;
   let activeSequenceFilterName: string;
   let activeSequenceFilterId: number | null = null;
-  let filterMenuActiveFilter: SequenceActivityFilter;
+  let filterMenuActiveFilter: ActivityLayerFilter;
   let creatingNewSequenceFilter: boolean = false;
 
   let hasDeletePermissionSequence: boolean = false;
@@ -81,7 +82,7 @@
     if ($plan !== null) {
       creatingNewSequenceFilter = false;
       effects.createSequenceFilter(
-        filterMenuActiveFilter as SequenceActivityFilter,
+        filterMenuActiveFilter as ActivityLayerFilter,
         activeSequenceFilterName,
         $plan.model_id,
         user,
@@ -94,7 +95,7 @@
     if ($plan !== null && activeSequenceFilterId !== null) {
       creatingNewSequenceFilter = false;
       effects.updateSequenceFilter(
-        filterMenuActiveFilter as SequenceActivityFilter,
+        filterMenuActiveFilter as ActivityLayerFilter,
         activeSequenceFilterName,
         activeSequenceFilterId,
         $plan.model,
@@ -216,7 +217,6 @@
       <div class="sne-buttons">
         <button
           class="st-button secondary new-button"
-          style="position: relative; z-index: 1"
           bind:this={newButton}
           on:click|stopPropagation={toggleContextMenu}
         >
