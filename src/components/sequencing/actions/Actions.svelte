@@ -285,7 +285,7 @@
             <Tabs class="action-definition-runs-tabs">
               <svelte:fragment slot="tab-list">
                 <Tab class="action-definition-runs-tab">Runs ({(filteredActionRuns || []).length})</Tab>
-                <Tab class="action-definition-runs-tab">Settings</Tab>
+                <Tab class="action-definition-runs-tab">Configure</Tab>
                 <Tab class="action-definition-runs-tab">Code</Tab>
               </svelte:fragment>
               <TabPanel>
@@ -308,8 +308,8 @@
                 </div>
               </TabPanel>
               <TabPanel>
-                <div class="settings">
-                  <div class="st-typography-bold">Metadata</div>
+                <div class="configure">
+                  <div class="st-typography-bold">Action Metadata</div>
                   <div class="settings-metadata">
                     <Input layout="inline">
                       <label for="name">Name</label>
@@ -345,7 +345,8 @@
                     </Input>
                   </div>
 
-                  <div class="st-typography-bold">Settings</div>
+                  <div class="st-typography-bold">Action Settings</div>
+                  <div class="st-typography-label">Persistent settings provided to every run of this action</div>
                   <Parameters
                     formParameters={getFormParameters(
                       valueSchemaRecordToParametersMap(selectedActionDefinition.settings_schema),
@@ -498,7 +499,7 @@
     border-bottom: 1px solid black;
   }
 
-  .settings {
+  .configure {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -507,7 +508,7 @@
     padding-top: 24px;
   }
 
-  .settings-metadata {
+  .configure-metadata {
     display: flex;
     flex-direction: column;
   }

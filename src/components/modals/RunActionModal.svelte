@@ -52,6 +52,7 @@
   <ModalHeader on:close>Run Action</ModalHeader>
 
   <ModalContent style="max-height: 50vh;overflow: auto">
+    <div class="st-typography-label pb-2">Input parameters for this action run</div>
     <Parameters
       formParameters={getFormParameters(
         valueSchemaRecordToParametersMap(actionDefinition.parameter_schema),
