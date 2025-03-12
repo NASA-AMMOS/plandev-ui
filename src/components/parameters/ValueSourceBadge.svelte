@@ -29,7 +29,7 @@
     'value-source-badge-dot--preset': source === 'preset',
     'value-source-badge-dot--user': source === 'user on model' || source === 'user on preset',
   });
-  $: {
+  $: if (typeof window !== 'undefined') {
     const presetText = parameterType === 'activity' ? 'Activity Preset' : 'Simulation Template';
     showButton = false;
     switch (source) {
