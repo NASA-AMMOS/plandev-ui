@@ -210,7 +210,7 @@
 </script>
 
 <div class="filter-container">
-  <div>
+  <div class="text-xs">
     {#if workspace !== undefined}
       {workspace.name}
     {/if}

@@ -10,7 +10,7 @@
 </script>
 
 <Collapse title={argDef.name}>
-  <div>{argDef.description}</div>
+  <div class="text-xs">{argDef.description}</div>
   <div slot="right">
     <CommandArgUnit
       type="string"

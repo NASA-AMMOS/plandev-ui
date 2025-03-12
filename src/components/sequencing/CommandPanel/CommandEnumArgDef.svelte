@@ -13,9 +13,9 @@
 </script>
 
 <Collapse title={argDef.name}>
-  <div>{argDef.description}</div>
+  <div class="text-xs">{argDef.description}</div>
   <div>
-    <textarea class="enum-values" disabled>{enumValues}</textarea>
+    <textarea class="enum-values rounded border" disabled>{enumValues}</textarea>
   </div>
   <div slot="right">
     <CommandArgUnit type="enum" unitShortName="enum" />
