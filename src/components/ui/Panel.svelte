@@ -15,9 +15,13 @@
   });
 </script>
 
-<div class={panelClasses} style:grid-template-rows="var(--nav-header-height) calc(100% - var(--nav-header-height))">
+<div
+  class={panelClasses}
+  style:grid-template-rows="var(--nav-header-height) calc(100% - var(--nav-header-height))"
+  role="tabpanel"
+>
   <div
-    class="items-center border-b flex gap-2 h-[--nav-header-height] justify-between overflow-hidden"
+    class="flex h-[--nav-header-height] items-center justify-between gap-2 overflow-hidden border-b"
     class:pad-header={padHeader}
   >
     <slot name="header" />
