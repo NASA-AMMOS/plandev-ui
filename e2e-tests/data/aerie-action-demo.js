@@ -16,18 +16,28 @@ async function writeFile(path, contents) {
 // import { ActionMain } from 'aerie-action/src/models/main.ts';
 // Define schemas for your action's settings and parameters
 const paramDefs = {
+    "delay (ms)": { type:"int" },
+    boolean: { type: "boolean" },
+    duration: { type: "duration" },
+    real: { type: "real" },
+    path: { type: "path" },
+    series: { type: "series", items:{ type: "string" } },
+    string: { type: "string" },
+    variant: { type: "variant", variants: [{key: "foo", label: "Foo"}, {key: "bar", label: "Bar"}] },
     sequenceId: { type: "string" },
-    myBool: { type: "boolean" }
 };
 const settingDefs = {
     externalUrl: { type: "string" },
     retries: { type: "int" }
 };
 async function main(actionParameters, actionSettings) {
-    console.log('actionParameters :>> ', actionParameters);
-    console.log('actionSettings :>> ', actionSettings);
+    await new Promise((res, rej) => {
+      setTimeout(() => {
+          res();
+      }, actionParameters.delay ?? 0);
+    })
+
     const url = `${actionSettings.externalUrl}/${actionParameters.sequenceId}`;
-    console.log('url :>> ', url, Object.keys(actionSettings));
     const startTime = performance.now();
     // Make a request to an external URL using fetch
     const result = await fetch(url, {
