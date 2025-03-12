@@ -135,13 +135,13 @@
   }
 
   function onSelectParameter(event: CustomEvent<SelectedDropdownOptionValue[]>) {
-    currentSubfieldLabel = event.detail.length ? event.detail[0]?.toString() ?? '' : '';
+    currentSubfieldLabel = event.detail.length ? (event.detail[0]?.toString() ?? '') : '';
     currentValue = getDefaultCurrentValue();
     currentOperator = null;
   }
 
   function onSelectValue(event: CustomEvent<SelectedDropdownOptionValue[]>) {
-    currentValue = event.detail.length ? event.detail[0]?.toString() ?? '' : '';
+    currentValue = event.detail.length ? (event.detail[0]?.toString() ?? '') : '';
   }
 
   function onOperatorChange(event: Event) {

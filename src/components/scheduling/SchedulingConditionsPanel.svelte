@@ -124,7 +124,7 @@
           <Loading />
         </div>
       {:else if !filteredSchedulingConditionSpecs.length}
-        <div class="pt-1 st-typography-label">No scheduling conditions found</div>
+        <div class="st-typography-label pt-1">No scheduling conditions found</div>
         <div class="private-label">
           {#if numOfPrivateConditions > 0}
             {numOfPrivateConditions} scheduling condition{numOfPrivateConditions !== 1 ? 's' : ''}

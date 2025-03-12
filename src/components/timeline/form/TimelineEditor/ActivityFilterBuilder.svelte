@@ -402,7 +402,7 @@
                       autocomplete="off"
                       bind:this={manualInputRef}
                       name="manual-types-filter-input"
-                      class="st-input w-full manual-types-filter-input"
+                      class="st-input manual-types-filter-input w-full"
                       placeholder="Select types"
                       bind:value={manualInputValue}
                       on:click={() => {

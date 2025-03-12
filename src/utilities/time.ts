@@ -577,7 +577,7 @@ export function getActivityDirectiveStartTimeMs(
                 { ...traversalMap, [anchor_id]: true },
               ),
             ).toISOString(),
-            anchored_to_start ? '0' : anchoredSpan?.duration ?? '0',
+            anchored_to_start ? '0' : (anchoredSpan?.duration ?? '0'),
           ),
         ).toISOString(),
         activityDirective.start_offset,

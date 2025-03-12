@@ -101,7 +101,7 @@
             <label for="file">AMPCS XML File or Sequence Adaptation</label>
             <input
               accept=".xml,.js,.json"
-              class="w-full st-typography-body"
+              class="st-typography-body w-full"
               name="file"
               required
               type="file"

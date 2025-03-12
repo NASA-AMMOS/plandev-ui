@@ -414,7 +414,7 @@
           </div>
         </div>
       {:else}
-        <div class="pt-1 st-typography-label filter-label-row">
+        <div class="st-typography-label filter-label-row pt-1">
           <div class="filter-label">
             {#if $cachedConstraintsStatus}
               <FilterIcon />

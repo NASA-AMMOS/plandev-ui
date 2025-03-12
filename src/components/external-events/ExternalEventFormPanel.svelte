@@ -20,7 +20,7 @@
     {#if $selectedExternalEvent && $plan !== null}
       <ExternalEventForm externalEvent={$selectedExternalEvent} />
     {:else}
-      <div class="p-2 st-typography-label">No External Event Selected</div>
+      <div class="st-typography-label p-2">No External Event Selected</div>
     {/if}
   </svelte:fragment>
 </Panel>
