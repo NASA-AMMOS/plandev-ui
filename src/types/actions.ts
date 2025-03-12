@@ -17,6 +17,7 @@ export type ActionDefinition = {
 };
 
 export type ActionRun = {
+  action_definition: ActionDefinition;
   action_definition_id: number;
   created_at: string;
   created_by: string | null;
@@ -28,6 +29,8 @@ export type ActionRun = {
   settings: ArgumentsMap;
   status: 'pending' | 'in-progress' | 'failed' | 'complete';
 };
+
+export type ActionRunSlim = Omit<ActionRun, 'action_definition'>;
 
 // From https://github.com/NASA-AMMOS/aerie/blob/feature/action-server-dan-changes/action-server/src/type/types.ts
 export type ActionRunRequest = {

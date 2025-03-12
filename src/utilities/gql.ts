@@ -1941,9 +1941,39 @@ const gql = {
     }
   `,
 
+  SUB_ACTION_RUN: `#graphql
+    subscription SubActionRun($actionRunId: Int!) {
+      actionRun: ${Queries.ACTION_RUN}(id: $actionRunId) {
+        action_definition_id
+        action_definition {
+          action_file_id
+          created_at
+          description
+          id
+          name
+          owner
+          parameter_schema
+          settings_schema
+          settings
+          updated_at
+          updated_by
+          workspace_id
+        }
+        created_at
+        created_by
+        error
+        id
+        logs
+        parameters
+        results
+        settings
+        status
+      }
+    }
+  `,
+
   SUB_ACTION_RUNS: `#graphql
     subscription SubActionRuns {
-      # TODO thin out respose fields
       ${Queries.ACTION_RUNS}(order_by: { id: desc }) {
         action_definition_id
         created_at

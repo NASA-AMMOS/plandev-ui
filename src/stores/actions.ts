@@ -1,5 +1,5 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import type { ActionDefinition, ActionRun } from '../types/actions';
+import type { ActionDefinition, ActionRunSlim } from '../types/actions';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
 
@@ -13,7 +13,7 @@ export const actionDefinitions = gqlSubscribable<ActionDefinition[] | null>(
   null,
 );
 
-export const actionRuns = gqlSubscribable<ActionRun[] | null>(gql.SUB_ACTION_RUNS, {}, null, null);
+export const actionRuns = gqlSubscribable<ActionRunSlim[] | null>(gql.SUB_ACTION_RUNS, {}, null, null);
 
 /* Derived */
 export const actionDefinitionsByWorkspace: Readable<Record<number, Record<number, ActionDefinition>>> = derived(

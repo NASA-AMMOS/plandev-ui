@@ -1,5 +1,6 @@
 export enum Queries {
   ACTION_DEFINITIONS = 'action_definition',
+  ACTION_RUN = 'action_run_by_pk',
   ACTION_RUNS = 'action_run',
   ACTIVITY_DIRECTIVES = 'activity_directive',
   ACTIVITY_DIRECTIVE_CHANGELOG = 'activity_directive_changelog',

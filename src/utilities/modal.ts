@@ -1,7 +1,6 @@
 import { browser } from '$app/environment';
 import AboutModal from '../components/modals/AboutModal.svelte';
 import ActionCreationModal from '../components/modals/ActionCreationModal.svelte';
-import ActionEditingModal from '../components/modals/ActionEditingModal.svelte';
 import ConfirmActivityCreationModal from '../components/modals/ConfirmActivityCreationModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
 import CreateGroupsOrTypesModal from '../components/modals/CreateGroupsOrTypesModal.svelte';
@@ -146,33 +145,6 @@ export async function showActionCreationModal(
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
           actionCreationModal.$destroy();
-        });
-      }
-    } else {
-      resolve({ confirm: false });
-    }
-  });
-}
-
-/**
- * Shows an ActionCreationModal component.
- */
-export async function showActionEditingModal(
-  user: User | null,
-  actionDefinition: ActionDefinition,
-): Promise<ModalElementValue> {
-  return new Promise(resolve => {
-    if (browser) {
-      const target: ModalElement | null = document.querySelector('#svelte-modal');
-      if (target) {
-        const actionEditingModal = new ActionEditingModal({ props: { actionDefinition, user }, target });
-        target.resolve = resolve;
-
-        actionEditingModal.$on('close', () => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: true });
-          actionEditingModal.$destroy();
         });
       }
     } else {

@@ -67,7 +67,7 @@ import {
 } from '../stores/simulation';
 import { createTagError as createTagErrorStore } from '../stores/tags';
 import { applyViewUpdate, view as viewStore, viewUpdateRow, viewUpdateTimeline } from '../stores/views';
-import type { ActionDefinition, ActionDefinitionSetInput } from '../types/actions';
+import type { ActionDefinition, ActionDefinitionSetInput, ActionRun } from '../types/actions';
 import type {
   ActivityDirective,
   ActivityDirectiveDB,
@@ -3442,6 +3442,22 @@ const effects = {
       catchError('Plan Expansion Failed', e as Error);
       planExpansionStatusStore.set(Status.Failed);
       showFailureToast('Plan Expansion Failed');
+    }
+  },
+
+  async getActionRun(actionRunId: number, user: User | null): Promise<ActionRun | null> {
+    try {
+      const query = convertToQuery(gql.SUB_ACTION_RUN);
+      const data = await reqHasura<ActionRun>(query, { actionRunId }, user);
+      const { actionRun } = data;
+      if (actionRun != null) {
+        return actionRun;
+      } else {
+        throw Error('Unable to retrieve activity run');
+      }
+    } catch (e) {
+      catchError(e as Error);
+      return null;
     }
   },
 

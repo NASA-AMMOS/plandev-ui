@@ -7,16 +7,19 @@
   import { SearchParameters } from '../../../enums/searchParameters';
   import { actionDefinitions, actionDefinitionsByWorkspace, actionRuns, actionsColumns } from '../../../stores/actions';
   import { workspaces } from '../../../stores/sequencing';
-  import type { ActionDefinition, ActionRun } from '../../../types/actions';
+  import type { ActionDefinition, ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
-  import type { FormParameter, ParametersMap } from '../../../types/parameter';
+  import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
   import type { Workspace } from '../../../types/sequencing';
+  import { valueSchemaRecordToParametersMap } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
   import { getSearchParameterNumber } from '../../../utilities/generic';
-  import { showActionCreationModal, showActionEditingModal } from '../../../utilities/modal';
-  import { getFormParameters } from '../../../utilities/parameters';
+  import { showActionCreationModal } from '../../../utilities/modal';
+  import { getArguments, getFormParameters } from '../../../utilities/parameters';
   import { permissionHandler } from '../../../utilities/permissionHandler';
+  import { featurePermissions } from '../../../utilities/permissions';
   import Input from '../../form/Input.svelte';
+  import Loading from '../../Loading.svelte';
   import Parameters from '../../parameters/Parameters.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import CssGridGutter from '../../ui/CssGridGutter.svelte';
@@ -29,13 +32,18 @@
 
   export let user: User | null;
 
-  let actionsFilterText: string = '';
+  let actionDefinitionsFilterText: string = '';
   let actionRunsFilterText: string = '';
-  let formParameters: FormParameter[] = [];
   let selectedActionDefinitionId: number | null = null;
   let selectedActionDefinition: ActionDefinition | null = null;
   let workspace: Workspace | undefined;
   let workspaceId: number | null = null;
+
+  let saveButtonDisabled: boolean = true;
+  let description: string = '';
+  let name: string = '';
+  let argumentsMap: ArgumentsMap = {};
+  let saving: boolean = false;
 
   $: workspace = $workspaces.find(workspace => workspace.id === workspaceId);
   $: selectedActionRuns = ($actionRuns || []).filter(actionRun => {
@@ -53,6 +61,10 @@
     return false;
   });
 
+  $: filteredActionDefinitions = ($actionDefinitions || []).filter(actionDefinition => {
+    return actionDefinition.name.indexOf(actionDefinitionsFilterText) > -1;
+  });
+
   $: if (typeof selectedActionDefinitionId === 'number') {
     selectedActionDefinition =
       ($actionDefinitions || []).find(actionDefinition => actionDefinition.id === selectedActionDefinitionId) || null;
@@ -61,16 +73,16 @@
   }
 
   $: if (selectedActionDefinition) {
-    const settingsMap: ParametersMap = Object.entries(selectedActionDefinition.settings_schema).reduce(
-      (acc, [key, valueSchema], i) => {
-        acc[key] = { order: i, schema: valueSchema };
-        return acc;
-      },
-      {},
-    );
-
-    formParameters = getFormParameters(settingsMap, selectedActionDefinition.settings, []);
+    name = selectedActionDefinition.name;
+    description = selectedActionDefinition.description;
+    argumentsMap = selectedActionDefinition.settings;
+  } else {
+    name = '';
+    description = '';
+    argumentsMap = {};
   }
+
+  $: saveButtonDisabled = !name;
 
   onMount(() => {
     workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
@@ -100,12 +112,8 @@
     }
   }
 
-  function editAction(actionDefinition: ActionDefinition) {
-    showActionEditingModal(user, actionDefinition);
-  }
-
   function getActionDefinitionForRun(
-    actionRun: ActionRun,
+    actionRun: ActionRunSlim,
     actionDefinitionsByWorkspace: Record<number, Record<number, ActionDefinition>>,
     workspaceId: number | null,
   ): ActionDefinition | null {
@@ -117,6 +125,24 @@
     }
     return null;
   }
+
+  function onChangeFormParameters(event: CustomEvent<FormParameter>) {
+    const { detail: formParameter } = event;
+    argumentsMap = getArguments(argumentsMap, formParameter);
+  }
+
+  async function save(actionDefinition: ActionDefinition) {
+    if (!saveButtonDisabled) {
+      saving = true;
+      const actionDefinitionUpdate = {
+        description,
+        name,
+        settings: argumentsMap,
+      };
+      await effects.updateActionDefinition(actionDefinition.id, actionDefinitionUpdate, user);
+      saving = false;
+    }
+  }
 </script>
 
 <CssGrid bind:columns={$actionsColumns} class="grid">
@@ -125,14 +151,19 @@
       <SectionTitle>Actions</SectionTitle>
 
       <Input>
-        <input bind:value={actionsFilterText} class="st-input" placeholder="Filter actions" style="width: 100%;" />
+        <input
+          bind:value={actionDefinitionsFilterText}
+          class="st-input"
+          placeholder="Filter actions"
+          style="width: 100%;"
+        />
       </Input>
 
       <div>
         <button
           class="st-button secondary ellipsis"
           use:permissionHandler={{
-            hasPermission: true /* featurePermissions.sequences.canCreate(user) */,
+            hasPermission: featurePermissions.actionDefinition.canCreate(user),
             permissionError: 'You do not have permission to create a new action',
           }}
           disabled={workspace === undefined}
@@ -145,31 +176,46 @@
 
     <svelte:fragment slot="body">
       <div class="actions">
-        {#each $actionDefinitions || [] as actionDefinition}
-          <button
-            class="action st-button tertiary"
-            on:click={() => {
-              if (selectedActionDefinitionId === actionDefinition.id) {
-                selectedActionDefinitionId = null;
-              } else {
-                selectedActionDefinitionId = actionDefinition.id;
-              }
-            }}
-            class:selected={selectedActionDefinitionId === actionDefinition.id}
-          >
-            <div class="st-typography-medium" style:flex={1}>{actionDefinition.name}</div>
-            <button class="st-button secondary" on:click|stopPropagation={() => runAction(actionDefinition)}>
-              Run
+        {#if !$actionDefinitions}
+          <div style="padding: 8px">
+            <Loading />
+          </div>
+        {:else if filteredActionDefinitions.length < 1}
+          <div class="st-typography-label" style="padding: 8px">No actions</div>
+        {:else}
+          {#each filteredActionDefinitions as actionDefinition}
+            <button
+              class="action st-button tertiary"
+              on:click={() => {
+                if (selectedActionDefinitionId === actionDefinition.id) {
+                  selectedActionDefinitionId = null;
+                } else {
+                  selectedActionDefinitionId = actionDefinition.id;
+                }
+              }}
+              class:selected={selectedActionDefinitionId === actionDefinition.id}
+            >
+              <div class="st-typography-medium" style:flex={1}>{actionDefinition.name}</div>
+              <button
+                class="st-button secondary"
+                on:click|stopPropagation={() => runAction(actionDefinition)}
+                use:permissionHandler={{
+                  hasPermission: featurePermissions.actionRun.canCreate(user),
+                  permissionError: 'You do not have permission to run an action',
+                }}
+              >
+                Run
+              </button>
             </button>
-          </button>
-        {/each}
+          {/each}
+        {/if}
       </div>
     </svelte:fragment>
   </Panel>
 
   <CssGridGutter track={1} type="column" />
 
-  <Panel>
+  <Panel padBody={false}>
     <svelte:fragment slot="header">
       <SectionTitle>Action Runs</SectionTitle>
 
@@ -186,27 +232,37 @@
     <b>Action Runs</b>
 
     <svelte:fragment slot="body">
-      {#if ($actionRuns || []).length < 1}
-        <div>No action runs</div>
+      {#if !$actionRuns}
+        <div style="padding: 16px">
+          <Loading />
+        </div>
       {/if}
       {#if selectedActionDefinition}
-        <div>
+        <div class="action-definition-runs-container">
           <div class="action-definition-runs">
             <div class="action-definition-runs-info">
               <div class="st-typography-bold">{selectedActionDefinition.name}</div>
               <div class="st-typography-body">{selectedActionDefinition.description}</div>
             </div>
             <div>
-              <button class="st-button secondary" on:click|stopPropagation={() => editAction(selectedActionDefinition)}>
-                Edit
-              </button>
-              <button class="st-button secondary" on:click|stopPropagation={() => runAction(selectedActionDefinition)}>
+              <button
+                class="st-button primary"
+                use:permissionHandler={{
+                  hasPermission: featurePermissions.actionRun.canCreate(user),
+                  permissionError: 'You do not have permission to run an action',
+                }}
+                on:click|stopPropagation={() => {
+                  if (selectedActionDefinition) {
+                    runAction(selectedActionDefinition);
+                  }
+                }}
+              >
                 Run
               </button>
               <button class="st-button secondary" on:click={() => (selectedActionDefinition = null)}> Close </button>
             </div>
           </div>
-          <div>
+          <div style="overflow: auto">
             <Tabs class="action-definition-runs-tabs">
               <svelte:fragment slot="tab-list">
                 <Tab class="action-definition-runs-tab">Runs ({(filteredActionRuns || []).length})</Tab>
@@ -214,23 +270,97 @@
               </svelte:fragment>
               <TabPanel>
                 <div class="action-runs" style="padding-top: 8px">
-                  {#each filteredActionRuns || [] as actionRun}
-                    <ActionRunCard
-                      {actionRun}
-                      actionDefinition={getActionDefinitionForRun(
-                        actionRun,
-                        $actionDefinitionsByWorkspace,
-                        workspaceId,
-                      )}
-                      {user}
-                      on:click={() => onActionRunClick(actionRun.id)}
-                    />
-                  {/each}
+                  {#if filteredActionRuns.length < 1}
+                    <div class="st-typography-label" style="padding: 8px">No action runs</div>
+                  {:else}
+                    {#each filteredActionRuns || [] as actionRun}
+                      <ActionRunCard
+                        {actionRun}
+                        actionDefinition={getActionDefinitionForRun(
+                          actionRun,
+                          $actionDefinitionsByWorkspace,
+                          workspaceId,
+                        )}
+                        on:click={() => onActionRunClick(actionRun.id)}
+                      />
+                    {/each}
+                  {/if}
                 </div>
               </TabPanel>
               <TabPanel>
-                <div style="padding: 8px">
-                  <Parameters {formParameters} parameterType="action" hideRightAdornments hideInfo disabled />
+                <div class="settings">
+                  <div class="st-typography-bold">Metadata</div>
+                  <div class="settings-metadata">
+                    <Input layout="inline">
+                      <label for="name">Name</label>
+                      <input
+                        bind:value={name}
+                        autocomplete="off"
+                        class="st-input w-100"
+                        id="name"
+                        required
+                        type="text"
+                        placeholder="Enter a name"
+                        use:permissionHandler={{
+                          hasPermission: featurePermissions.actionDefinition.canUpdate(user, selectedActionDefinition),
+                          permissionError: 'You do not have permission to update an action',
+                        }}
+                      />
+                    </Input>
+
+                    <Input layout="inline">
+                      <label for="description">Description</label>
+                      <textarea
+                        bind:value={description}
+                        autocomplete="off"
+                        class="st-input w-100"
+                        id="description"
+                        required
+                        placeholder="Enter a description"
+                        use:permissionHandler={{
+                          hasPermission: featurePermissions.actionDefinition.canUpdate(user, selectedActionDefinition),
+                          permissionError: 'You do not have permission to update an action',
+                        }}
+                      />
+                    </Input>
+                  </div>
+
+                  <div class="st-typography-bold">Settings</div>
+                  <Parameters
+                    formParameters={getFormParameters(
+                      valueSchemaRecordToParametersMap(selectedActionDefinition.settings_schema),
+                      argumentsMap,
+                      [],
+                    )}
+                    parameterType="action"
+                    hideRightAdornments
+                    hideInfo
+                    on:change={onChangeFormParameters}
+                    use={[
+                      [
+                        permissionHandler,
+                        {
+                          hasPermission: featurePermissions.actionDefinition.canUpdate(user, selectedActionDefinition),
+                          permissionError: 'You do not have permission to update an action',
+                        },
+                      ],
+                    ]}
+                  />
+                  <button
+                    class="st-button secondary w-100 mt-4"
+                    disabled={saveButtonDisabled || saving}
+                    use:permissionHandler={{
+                      hasPermission: featurePermissions.actionDefinition.canUpdate(user, selectedActionDefinition),
+                      permissionError: 'You do not have permission to update an action',
+                    }}
+                    on:click={() => {
+                      if (selectedActionDefinition) {
+                        save(selectedActionDefinition);
+                      }
+                    }}
+                  >
+                    Save
+                  </button>
                 </div>
               </TabPanel>
             </Tabs>
@@ -238,14 +368,17 @@
         </div>
       {:else}
         <div class="action-runs">
-          {#each filteredActionRuns || [] as actionRun}
-            <ActionRunCard
-              {actionRun}
-              actionDefinition={getActionDefinitionForRun(actionRun, $actionDefinitionsByWorkspace, workspaceId)}
-              {user}
-              on:click={() => onActionRunClick(actionRun.id)}
-            />
-          {/each}
+          {#if $actionRuns?.length && filteredActionRuns.length < 1}
+            <div class="st-typography-label" style="padding: 8px">No action runs</div>
+          {:else}
+            {#each filteredActionRuns || [] as actionRun}
+              <ActionRunCard
+                {actionRun}
+                actionDefinition={getActionDefinitionForRun(actionRun, $actionDefinitionsByWorkspace, workspaceId)}
+                on:click={() => onActionRunClick(actionRun.id)}
+              />
+            {/each}
+          {/if}
         </div>
       {/if}
     </svelte:fragment>
@@ -258,6 +391,10 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+
+  .action-runs {
+    padding: 8px;
   }
 
   .action {
@@ -282,11 +419,23 @@
     opacity: 1;
   }
 
+  .action.selected :global(.st-button.permission-disabled),
+  .action:hover :global(.st-button.permission-disabled),
+  .action:focus-within :global(.st-button.permission-disabled) {
+    opacity: 0.5;
+  }
+
+  .action-definition-runs-container {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
   .action-definition-runs {
     display: flex;
     gap: 4px;
     justify-content: space-between;
-    padding: 8px 8px 16px;
+    padding: 16px;
   }
 
   .action-definition-runs-info {
@@ -297,6 +446,7 @@
 
   :global(.action-definition-runs-tabs .tab-list) {
     background-color: white;
+    border-bottom: 1px solid var(--st-gray-20);
   }
 
   :global(button.action-definition-runs-tab) {
@@ -313,10 +463,24 @@
     border-bottom: 1px solid black;
   }
 
-  .code {
+  .settings {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 500px;
+    padding-left: 16px;
+    padding-top: 24px;
+  }
+
+  .settings-metadata {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* .code {
     border: 1px solid var(--st-gray-30);
     border-radius: 4px;
     height: 400px;
     overflow: hidden;
-  }
+  } */
 </style>

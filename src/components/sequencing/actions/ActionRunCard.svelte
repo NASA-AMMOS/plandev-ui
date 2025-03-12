@@ -4,14 +4,12 @@
   import PlayBtnIcon from 'bootstrap-icons/icons/play-btn.svg?component';
   import StopwatchIcon from 'bootstrap-icons/icons/stopwatch.svg?component';
   import { Status } from '../../../enums/status';
-  import type { ActionDefinition, ActionRun } from '../../../types/actions';
-  import type { User } from '../../../types/app';
+  import type { ActionDefinition, ActionRun, ActionRunSlim } from '../../../types/actions';
   import StatusBadge from '../../ui/StatusBadge.svelte';
 
-  export let actionRun: ActionRun;
+  export let actionRun: ActionRunSlim;
   export let actionDefinition: ActionDefinition | null;
   export let interactable: boolean = true;
-  export let user: User | null;
 
   function getStatusForActionRun(actionStatus: ActionRun['status']): Status {
     if (actionRun.error || actionRun.results?.status === 'FAILED') {
@@ -41,7 +39,7 @@
 >
   <div style="align-items: center;display: flex; gap: 8px">
     <StatusBadge status={getStatusForActionRun(actionRun.status)} />
-    {actionDefinition?.name}
+    {actionDefinition?.name ?? 'Loading...'}
   </div>
   <div>@{actionRun.created_by}</div>
   <div style=" align-items: center;display: flex; gap: 8px">

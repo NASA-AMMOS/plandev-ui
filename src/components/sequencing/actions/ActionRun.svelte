@@ -4,20 +4,27 @@
   import { onMount } from 'svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
-  import type { ActionDefinition, ActionRun } from '../../../types/actions';
+  import { gqlSubscribable } from '../../../stores/subscribable';
+  import type { ActionDefinition, ActionRun, ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
+  import { valueSchemaRecordToParametersMap } from '../../../utilities/actions';
   import { getSearchParameterNumber } from '../../../utilities/generic';
+  import gql from '../../../utilities/gql';
+  import { getFormParameters } from '../../../utilities/parameters';
+  import Parameters from '../../parameters/Parameters.svelte';
   import ActionRunCard from './ActionRunCard.svelte';
 
+  export let initialActionRun: ActionRun | null = null;
   export let user: User | null;
-  export let actionRun: ActionRun | undefined = undefined;
-  export let actionDefinition: ActionDefinition | undefined = undefined;
 
-  let action: ActionDefinition | undefined = undefined;
-  // let workspace: Workspace | undefined;
   let workspaceId: number | null = null;
 
-  // $: workspace = $workspaces.find(workspace => workspace.id === workspaceId);
+  const actionRun = gqlSubscribable<ActionRun | null>(
+    gql.SUB_ACTION_RUN,
+    { actionRunId: initialActionRun?.id },
+    initialActionRun,
+    user,
+  );
 
   onMount(() => {
     workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
@@ -25,7 +32,7 @@
 
   // TODO duplicated in ActionRunCard
   function getActionDefinitionForRun(
-    actionRun: ActionRun,
+    actionRun: ActionRunSlim,
     actionDefinitionsByWorkspace: Record<number, Record<number, ActionDefinition>>,
     workspaceId: number | null,
   ): ActionDefinition | null {
@@ -41,109 +48,65 @@
 
 <div style:overflow-x="hidden">
   <div class="action-run">
-    {#if !actionRun}
-      <div>No action run found</div>
+    {#if !$actionRun}
+      <div class="st-typography-medium">No action run found</div>
     {/if}
-    {#if actionRun}
+    {#if $actionRun}
       <ActionRunCard
-        {actionRun}
-        actionDefinition={getActionDefinitionForRun(actionRun, $actionDefinitionsByWorkspace, workspaceId)}
-        {user}
+        actionRun={$actionRun}
+        actionDefinition={getActionDefinitionForRun($actionRun, $actionDefinitionsByWorkspace, workspaceId)}
         interactable={false}
       />
       <div>
         <div class="st-typography-medium" style="padding: 16px 0px 8px 0px">Results</div>
-        {#if actionRun.results?.data}
+        {#if $actionRun.results?.data}
           <div class="logs">
-            <pre>{JSON.stringify(actionRun.results?.data, undefined, 2)}</pre>
+            <pre>{JSON.stringify($actionRun.results?.data, undefined, 2)}</pre>
           </div>
         {:else}
           <div class="logs"><div style="opacity: 0.5">No data</div></div>
         {/if}
         <div class="st-typography-medium" style="padding: 16px 0px 8px 0px">Errors</div>
-        {#if actionRun.error}
+        {#if $actionRun.error}
           <div class="logs">
-            <pre>Message: {JSON.stringify(actionRun.error.message, undefined, 2)}</pre>
-            <pre>Stack: {JSON.stringify(actionRun.error.stack, undefined, 2)}</pre>
+            <pre>Message: {JSON.stringify($actionRun.error.message, undefined, 2)}</pre>
+            <pre>Stack: {JSON.stringify($actionRun.error.stack, undefined, 2)}</pre>
           </div>
         {:else}
           <div class="logs"><div style="opacity: 0.5">No errors</div></div>
         {/if}
         <div class="st-typography-medium" style="padding: 16px 0px 8px 0px">String Logs</div>
-        {#if actionRun.logs}
-          <pre class="logs" style="margin: 0;">{actionRun.logs}</pre>
-        {/if}
-        <!-- <div class="st-typography-medium" style="padding: 16px 0px 8px 0px">Console Logs</div> -->
-        <!-- {#if actionRun.results?.data}
-          <div class="logs">
-            <div style="margin-bottom: 16px;">
-              <div style="margin-bottom: 8px;" class="st-typography-bold">Log</div>
-              {#each actionRun.logs as entry}
-                <pre style="margin: 0;">{JSON.stringify(entry, undefined, 2)}</pre>
-              {/each}
-              {#if actionRun.logslength < 1}
-                <div style="opacity: 0.5">No output</div>
-              {/if}
-            </div>
-            <div style="margin-bottom: 16px;">
-              <div style="margin-bottom: 8px;" class="st-typography-bold">Info</div>
-              {#each actionRun.response.console.info as entry}
-                <pre style="margin: 0;">{JSON.stringify(entry, undefined, 2)}</pre>
-              {/each}
-              {#if actionRun.response.console.info.length < 1}
-                <div style="opacity: 0.5">No output</div>
-              {/if}
-            </div>
-            <div style="margin-bottom: 16px;">
-              <div style="margin-bottom: 8px;" class="st-typography-bold">Warn</div>
-              {#each actionRun.response.console.warn as entry}
-                <pre style="margin: 0;">{JSON.stringify(entry, undefined, 2)}</pre>
-              {/each}
-              {#if actionRun.response.console.warn.length < 1}
-                <div style="opacity: 0.5">No output</div>
-              {/if}
-            </div>
-            <div style="margin-bottom: 16px;">
-              <div style="margin-bottom: 8px;" class="st-typography-bold">Error</div>
-              {#each actionRun.response.console.error as entry}
-                <pre style="margin: 0;">{JSON.stringify(entry, undefined, 2)}</pre>
-              {/each}
-              {#if actionRun.response.console.error.length < 1}
-                <div style="opacity: 0.5">No output</div>
-              {/if}
-            </div>
-            <div style="margin-bottom: 16px;">
-              <div style="margin-bottom: 8px;" class="st-typography-bold">Debug</div>
-              {#each actionRun.response.console.debug as entry}
-                <pre style="margin: 0;">{JSON.stringify(entry, undefined, 2)}</pre>
-              {/each}
-              {#if actionRun.response.console.debug.length < 1}
-                <div style="opacity: 0.5">No output</div>
-              {/if}
-            </div>
-          </div> -->
-        <!-- {:else}
-          <div class="logs"><div style="opacity: 0.5">No logs</div></div>
-        {/if} -->
-        <div class="st-typography-medium" style="padding: 16px 0px 8px 0px">Action Code</div>
-        TODO
-        <!-- {#if action?.actionJS}
-          <div class="code">
-            <MonacoEditor
-              automaticLayout={true}
-              fixedOverflowWidgets={true}
-              language="typescript"
-              lineNumbers="on"
-              minimap={{ enabled: false }}
-              readOnly
-              scrollBeyondLastLine={false}
-              tabSize={2}
-              value={action?.actionJS}
-            />
-          </div>
+        {#if $actionRun.logs}
+          <pre class="logs" style="margin: 0;">{$actionRun.logs}</pre>
         {:else}
-          No actionJS
-        {/if} -->
+          <div class="logs"><div style="opacity: 0.5">No logs</div></div>
+        {/if}
+        <div class="st-typography-medium" style="padding: 16px 0px 8px 0px">Action Settings</div>
+        <div style="max-width: 500px">
+          <Parameters
+            formParameters={getFormParameters(
+              valueSchemaRecordToParametersMap($actionRun.action_definition.settings_schema),
+              $actionRun.settings,
+              [],
+            )}
+            parameterType="action"
+            hideRightAdornments
+            hideInfo
+            disabled
+          />
+          <div class="st-typography-medium" style="padding: 16px 0px 8px 0px">Action Parameters</div>
+          <Parameters
+            formParameters={getFormParameters(
+              valueSchemaRecordToParametersMap($actionRun.action_definition.parameter_schema),
+              $actionRun.parameters,
+              [],
+            )}
+            parameterType="action"
+            hideRightAdornments
+            hideInfo
+            disabled
+          />
+        </div>
       </div>
     {/if}
   </div>
@@ -166,12 +129,5 @@
 
   .logs pre {
     font-family: 'JetBrains mono';
-  }
-
-  .code {
-    border: 1px solid var(--st-gray-30);
-    border-radius: 4px;
-    height: 400px;
-    overflow: hidden;
   }
 </style>

@@ -4,7 +4,8 @@
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import type { User } from '../../types/app';
-  import type { ArgumentsMap, FormParameter, ParametersMap } from '../../types/parameter';
+  import type { ArgumentsMap, FormParameter } from '../../types/parameter';
+  import { valueSchemaRecordToParametersMap } from '../../utilities/actions';
   import effects from '../../utilities/effects';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import { showFailureToast } from '../../utilities/toast';
@@ -15,25 +16,10 @@
   import ModalHeader from './ModalHeader.svelte';
 
   export let actionDefinition: ActionDefinition;
-  export let height: number = 380;
-  export let width: number = 380;
   export let user: User | null;
 
   let running: boolean = false;
-  let formParameters: FormParameter[] = [];
   let argumentsMap: ArgumentsMap = {};
-
-  $: {
-    const parametersMap: ParametersMap = Object.entries(actionDefinition.parameter_schema).reduce(
-      (acc, [key, valueSchema], i) => {
-        acc[key] = { order: i, schema: valueSchema };
-        return acc;
-      },
-      {},
-    );
-
-    formParameters = getFormParameters(parametersMap, argumentsMap, []);
-  }
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -62,12 +48,16 @@
   }
 </script>
 
-<Modal {height} {width}>
+<Modal height="max-content" width={500}>
   <ModalHeader on:close>Run Action</ModalHeader>
 
-  <ModalContent>
+  <ModalContent style="max-height: 50vh;overflow: auto">
     <Parameters
-      {formParameters}
+      formParameters={getFormParameters(
+        valueSchemaRecordToParametersMap(actionDefinition.parameter_schema),
+        argumentsMap,
+        [],
+      )}
       parameterType="action"
       hideRightAdornments
       hideInfo

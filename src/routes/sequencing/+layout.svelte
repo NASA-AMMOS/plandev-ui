@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { page } from '$app/stores';
+  import ChevronRightIcon from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
   import { onMount } from 'svelte';
   import PhoenixIcon from '../../assets/aerie-phoenix-logo.svg?component';
   import Nav from '../../components/app/Nav.svelte';
@@ -27,18 +28,25 @@
     <div class="sequencing-title" slot="title">
       <a
         href={`/sequencing${workspace ? `?${SearchParameters.WORKSPACE_ID}=${workspace.id}` : ''}`}
-        class="app-icon link"><PhoenixIcon height={16} />Phoenix Sequencing</a
+        class="app-icon link"
       >
+        <PhoenixIcon height={16} />Phoenix Sequencing
+      </a>
       {#if $page.url.pathname.indexOf('/sequencing/actions') > -1}
         <a
           class="link"
           href={`/sequencing/actions${workspace ? `?${SearchParameters.WORKSPACE_ID}=${workspace.id}` : ''}`}
         >
-          / {workspace?.name ?? ''} Actions
+          <div class="icon-wrapper">
+            <ChevronRightIcon />
+            {workspace?.name ?? ''} Actions
+          </div>
         </a>
       {/if}
       {#if $page.url.pathname.indexOf('/sequencing/actions/runs') > -1}
-        / Action Run
+        <div class="icon-wrapper">
+          <ChevronRightIcon /> Action Run
+        </div>
       {/if}
     </div>
   </Nav>
@@ -60,11 +68,19 @@
   .link {
     color: var(--st-white);
     font-size: 14px;
-    /* opacity: 0.7; */
     text-decoration: none;
   }
 
   .link:hover {
-    /* opacity: 1; */
+    opacity: 0.8;
+  }
+
+  .icon-wrapper {
+    display: flex;
+    gap: 2px;
+  }
+
+  .icon-wrapper :global(svg) {
+    opacity: 0.5;
   }
 </style>
