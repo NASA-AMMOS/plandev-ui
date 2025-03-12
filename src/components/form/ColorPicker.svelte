@@ -78,7 +78,8 @@
     z-index: 1;
   }
   .color-wheel-hue {
-    background: radial-gradient(50% 50% at 50% 50%, #ffffff 0%, transparent 100%),
+    background:
+      radial-gradient(50% 50% at 50% 50%, #ffffff 0%, transparent 100%),
       conic-gradient(
         from 0deg at 50% 50%,
         #ff0000 0deg,

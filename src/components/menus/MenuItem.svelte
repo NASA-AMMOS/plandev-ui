@@ -36,7 +36,7 @@
 
 <div
   class={twMerge(
-    'flex cursor-pointer items-center gap-2 rounded-sm px-3 py-3 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 text-[13px]',
+    'flex cursor-pointer items-center gap-2 rounded-sm px-3 py-3 text-[13px] text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50',
     className,
   )}
   class:disabled

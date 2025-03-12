@@ -17,7 +17,7 @@
 </script>
 
 <div
-  class="list-item st-typography-body {className}"
+  class="st-typography-body list-item {className}"
   class:dragging
   {draggable}
   role="none"

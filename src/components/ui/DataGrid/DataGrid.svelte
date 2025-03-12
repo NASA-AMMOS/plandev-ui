@@ -260,7 +260,6 @@ This has been seen to result in unintended and often glitchy behavior, which oft
 
   onDestroy(() => {
     resizeObserver?.disconnect();
-    themeObserver?.disconnect();
   });
 
   function isLoading() {

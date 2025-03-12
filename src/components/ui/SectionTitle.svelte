@@ -5,11 +5,11 @@
 </script>
 
 <div
-  class="items-center flex rounded gap-1 h-6 justify-center leading-6 pl-0 py-4 pr-2 whitespace-nowrap text-[13px] font-medium text-foreground"
+  class="flex h-6 items-center justify-center gap-1 whitespace-nowrap rounded py-4 pl-0 pr-2 text-[13px] font-medium leading-6 text-foreground"
   style:overflow
 >
   {#if $$slots.icon}
-    <div class="items-center flex shrink-0 justify-center">
+    <div class="flex shrink-0 items-center justify-center">
       <slot name="icon" />
     </div>
   {/if}

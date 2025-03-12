@@ -54,7 +54,7 @@
   $: hasCreateDefinitionCodePermission = featurePermissions.schedulingGoals.canCreate(user);
   $: if (user) {
     hasWriteDefinitionTagsPermission = featurePermissions.schedulingGoals.canUpdateDefinition(user, {
-      author: mode === 'create' ? user.id : initialGoalDefinitionAuthor ?? user.id,
+      author: mode === 'create' ? user.id : (initialGoalDefinitionAuthor ?? user.id),
     });
   }
   $: hasWriteMetadataPermission =

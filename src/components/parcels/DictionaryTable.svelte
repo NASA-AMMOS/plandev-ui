@@ -211,7 +211,7 @@
         on:deleteItem={deleteDictionaryContext}
       />
     {:else}
-      <div class="text-xs text-muted-foreground flex justify-center flex-1 items-center">
+      <div class="flex flex-1 items-center justify-center text-xs text-muted-foreground">
         No {displayTextPlural} Found
       </div>
     {/if}

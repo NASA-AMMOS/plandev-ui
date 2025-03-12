@@ -165,7 +165,7 @@
 <div class={rootClasses}>
   <!-- svelte-ignore a11y-click-events-have-key-events a11y-interactive-supports-focus -->
   <div
-    class="selected-display st-input w-full st-select"
+    class="selected-display st-input st-select w-full"
     class:error
     class:disabled
     {name}
