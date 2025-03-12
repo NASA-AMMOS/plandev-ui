@@ -16,15 +16,15 @@ async function writeFile(path, contents) {
 // import { ActionMain } from 'aerie-action/src/models/main.ts';
 // Define schemas for your action's settings and parameters
 const paramDefs = {
-    delay: { type:"int" },
     boolean: { type: "boolean" },
+    delay: { type:"int" },
     duration: { type: "duration" },
-    real: { type: "real" },
     path: { type: "path" },
-    series: { type: "series", items:{ type: "string" } },
+    real: { type: "real" },
+    repository: { type: "string" },
+    series: { items:{ type: "string" }, type: "series",  },
     string: { type: "string" },
     variant: { type: "variant", variants: [{key: "foo", label: "Foo"}, {key: "bar", label: "Bar"}] },
-    repository: { type: "string" },
 };
 const settingDefs = {
     externalUrl: { type: "string" },

@@ -310,7 +310,7 @@
               <TabPanel>
                 <div class="configure">
                   <div class="st-typography-bold">Action Metadata</div>
-                  <div class="settings-metadata">
+                  <div class="configure-metadata">
                     <Input layout="inline">
                       <label for="name">Name</label>
                       <input
