@@ -298,17 +298,6 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   }
 
   onMount(() => {
-    // Watch for theme changes
-    themeObserver = new MutationObserver(() => {
-      const isDark = document.documentElement.classList.contains('dark');
-      gridDiv.classList.toggle('ag-theme-stellar-dark', isDark);
-    });
-
-    themeObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
-
     gridOptions = {
       // each entry here represents one column
       ...(columnShiftResize ? {} : { colResizeDefault: 'shift' }),
@@ -476,15 +465,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       <DataGridSkeleton columns={columnDefs.filter(c => !c.hide).length} />
     </div>
   {/if}
-  <div
-    bind:this={gridDiv}
-    class="ag-theme-stellar table"
-    class:ag-theme-stellar-dark={document.documentElement.classList.contains('dark')}
-    class:highlightOnSelection
-    tabindex="-1"
-    on:focus
-    on:blur
-  />
+  <div bind:this={gridDiv} class="ag-theme-stellar table" class:highlightOnSelection tabindex="-1" on:focus on:blur />
 </div>
 
 <ContextMenu bind:this={contextMenu}>
