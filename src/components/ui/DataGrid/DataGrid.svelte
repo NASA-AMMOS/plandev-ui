@@ -471,15 +471,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       <DataGridSkeleton columns={columnDefs.filter(c => !c.hide).length} />
     </div>
   {/if}
-  <div
-    bind:this={gridDiv}
-    class="ag-theme-stellar table"
-    class:ag-theme-stellar-dark={document.documentElement.classList.contains('dark')}
-    class:highlightOnSelection
-    tabindex="-1"
-    on:focus
-    on:blur
-  />
+  <div bind:this={gridDiv} class="ag-theme-stellar table" class:highlightOnSelection tabindex="-1" on:focus on:blur />
 </div>
 
 <ContextMenuInternal bind:this={contextMenu}>
