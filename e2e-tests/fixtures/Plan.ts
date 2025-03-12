@@ -545,7 +545,7 @@ export class Plan {
     this.constraintNewButton = page.locator(`button[name="new-constraint"]`);
     this.consoleContainer = page.locator(`.console-container`);
     this.externalSourceManageButton = page.getByLabel('Select derivation groups to');
-    this.gridMenuButton = page.locator('.header > .grid-menu');
+    this.gridMenuButton = page.locator('.grid-menu');
     this.gridMenu = this.gridMenuButton.getByRole('menu');
     this.gridMenuItem = (name: string) => this.gridMenu.getByRole('menuitem', { exact: true, name });
     this.navButtonActivityChecking = page.locator(`.nav-button:has-text("Activities")`);
@@ -579,7 +579,7 @@ export class Plan {
     this.planCollaboratorInput = this.planCollaboratorInputContainer.getByPlaceholder('Search collaborators or plans');
     this.planNameInput = page.locator('input[name="plan-name"]');
     this.planCollaboratorLoadingInput = this.planCollaboratorInputContainer.getByPlaceholder('Loading...');
-    this.roleSelector = page.locator(`.nav select`);
+    this.roleSelector = page.getByRole('navigation').getByLabel('Select Role');
     this.reSimulateButton = page.locator('.header-actions button:has-text("Re-Run")');
     this.scheduleButton = page.locator('.header-actions button[aria-label="Schedule"]');
     this.simulateButton = page.locator('.header-actions button:has-text("Simulate")');

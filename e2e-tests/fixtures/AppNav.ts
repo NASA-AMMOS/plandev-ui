@@ -32,15 +32,15 @@ export class AppNav {
   updatePage(page: Page): void {
     this.aboutModal = page.locator(`.modal:has-text("About")`);
     this.aboutModalCloseButton = page.locator(`.modal:has-text("About") >> button:has-text("Close")`);
-    this.appMenu = page.locator('.app-menu').getByRole('menu');
-    this.appMenuButton = page.locator('.app-menu');
+    this.appMenu = page.getByLabel('Main Menu', { exact: true });
+    this.appMenuButton = page.getByLabel('Open Main Menu');
     this.appMenuItemAbout = this.appMenu.getByRole('menuitem', { name: 'About' });
     this.appMenuItemDictionaries = this.appMenu.getByRole('menuitem', { name: 'Dictionaries' });
     this.appMenuItemDocumentation = this.appMenu.getByRole('menuitem', { name: 'Documentation' });
     this.appMenuItemExpansion = this.appMenu.getByRole('menuitem', { name: 'Expansion' });
     this.appMenuItemGateway = this.appMenu.getByRole('menuitem', { name: 'Gateway' });
     this.appMenuItemGraphQLPlayground = this.appMenu.getByRole('menuitem', { name: 'GraphQL Playground' });
-    this.appMenuItemLogout = this.appMenu.getByRole('menuitem', { name: 'Logout' });
+    this.appMenuItemLogout = this.appMenu.getByRole('button', { name: 'Logout' });
     this.appMenuItemModels = this.appMenu.getByRole('menuitem', { name: 'Models' });
     this.appMenuItemPlans = this.appMenu.getByRole('menuitem', { name: 'Plans' });
     this.appMenuItemScheduling = this.appMenu.getByRole('menuitem', { name: 'Scheduling' });

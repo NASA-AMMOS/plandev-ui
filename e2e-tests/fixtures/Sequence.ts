@@ -195,14 +195,14 @@ export class Sequence {
     this.page = page;
     this.parcel = page.locator('select[name="parcel"]');
     this.sequenceNameTextbox = page.getByPlaceholder('Enter Sequence Name');
-    this.sequenceTable = page.locator('.panel:has-text("Sequences")').getByRole('treegrid');
+    this.sequenceTable = page.locator('div[role="tabpanel"]:has-text("Sequences")').getByRole('treegrid');
     this.sequenceTableRow = this.sequenceTable.getByRole('row', { name: this.sequenceName });
     this.sequenceTableRowDeleteButton = this.sequenceTable
       .getByRole('gridcell')
       .getByRole('button', { name: 'Delete Sequence' });
     this.workspaceModal = this.page.locator('.modal .modal-header:has-text("Create Workspace")');
     this.workspaceNameTextbox = this.page.getByLabel('Workspace name');
-    this.workspaceTable = page.locator('.panel:has-text("Sequence Workspaces")').getByRole('treegrid');
+    this.workspaceTable = page.locator('div[role="tabpanel"]:has-text("Sequence Workspaces")').getByRole('treegrid');
     this.workspaceTableRow = this.workspaceTable.getByRole('row', { name: this.workspaceName });
   }
 }

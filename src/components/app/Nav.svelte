@@ -1,6 +1,5 @@
 <script lang="ts">
   import { Select } from '@nasa-jpl/stellar-svelte';
-  import AppMenuPopover from '../../components/menus/AppMenuPopover.svelte';
   import type { User, UserRole } from '../../types/app';
   import { changeUserRole } from '../../utilities/permissions';
   import AppMenu from '../menus/AppMenu.svelte';
@@ -17,15 +16,9 @@
   }
 </script>
 
-<div class="w-100 flex h-12 items-center bg-[#110D3D] px-4 dark:bg-secondary">
+<div class="w-100 flex h-12 items-center bg-[#110D3D] px-4 dark:bg-secondary" role="navigation">
   <div class="flex flex-1 items-center gap-2">
-    <div class="hidden">
-      <AppMenu {user} />
-    </div>
-    <div class="">
-      <AppMenuPopover {user} />
-    </div>
-
+    <AppMenu {user} />
     <div class="h-4 w-[1px] bg-white opacity-20" />
     <div class="text-sm font-medium text-white">
       <slot name="title" />
@@ -41,7 +34,7 @@
         onSelectedChange={v => v && changeRole(v.value)}
       >
         <Select.Trigger class="w-[200px]" value={user?.activeRole} size="xs">
-          <Select.Value placeholder="Select a" class="text-secondary-foreground" />
+          <Select.Value placeholder="Select a" class="text-secondary-foreground" aria-label="Select Role" />
         </Select.Trigger>
         <Select.Content>
           <Select.Group>
