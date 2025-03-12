@@ -116,8 +116,6 @@
   let dragPreviousX: number | null = null;
   let dragActivityDirectiveActive: ActivityDirective | null = null;
   let dragStartX: number | null = null;
-  let maxActivityWidth: number;
-  let maxExternalEventWidth: number;
   let minRectSize: number = 4;
   let planStartTimeMs: number;
   let quadtreeActivityDirectives: Quadtree<QuadtreeRect>;
@@ -294,7 +292,7 @@
       offsetX,
       offsetY,
       discreteOptions.height,
-      maxExternalEventWidth,
+      Number.MAX_SAFE_INTEGER,
       visibleExternalEventsById,
     );
     const activityDirectives = searchQuadtreeRect<ActivityDirective>(
@@ -302,7 +300,7 @@
       offsetX,
       offsetY,
       discreteOptions.height,
-      maxActivityWidth,
+      Number.MAX_SAFE_INTEGER,
       visibleActivityDirectivesById,
     );
     const spans = searchQuadtreeRect<Span>(
@@ -310,7 +308,7 @@
       offsetX,
       offsetY,
       discreteOptions.height,
-      maxActivityWidth,
+      Number.MAX_SAFE_INTEGER,
       visibleSpansById,
     );
     return { activityDirectives, externalEvents, spans };
