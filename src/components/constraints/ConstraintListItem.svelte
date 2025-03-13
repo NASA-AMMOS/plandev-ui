@@ -290,9 +290,11 @@
       </div>
     </svelte:fragment>
 
-    <Collapse title="Parameters" className="constraint-parameters" defaultExpanded={true}>
-      <Parameters disabled={false} expanded={true} {formParameters} on:change={onChangeFormParameters} />
-    </Collapse>
+    {#if formParameters.length > 0}
+      <Collapse title="Parameters" className="constraint-parameters" defaultExpanded={true}>
+        <Parameters disabled={false} expanded={true} {formParameters} on:change={onChangeFormParameters} />
+      </Collapse>
+    {/if}
 
     <svelte:fragment slot="contextMenuContent">
       <ContextMenuItem

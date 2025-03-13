@@ -237,9 +237,11 @@
       </div>
     </svelte:fragment>
 
-    <Collapse title="Parameters" className="scheduling-goal-analysis-activities" defaultExpanded={true}>
-      <Parameters disabled={false} expanded={true} {formParameters} on:change={onChangeFormParameters} />
-    </Collapse>
+    {#if formParameters.length > 0}
+      <Collapse title="Parameters" className="scheduling-goal-analysis-activities" defaultExpanded={true}>
+        <Parameters disabled={false} expanded={true} {formParameters} on:change={onChangeFormParameters} />
+      </Collapse>
+    {/if}
 
     <SchedulingGoalAnalysesActivities analyses={goal.analyses} />
     <svelte:fragment slot="contextMenuContent">
