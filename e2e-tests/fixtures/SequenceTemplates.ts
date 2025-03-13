@@ -7,6 +7,7 @@ export class SequenceTemplates {
   confirmDeleteSequenceTemplateButton: Locator;
   createNewSequenceTemplateButton: Locator;
   deleteSequenceTemplateButton: Locator;
+  editor: Locator;
   newSequenceTemplateActivityTypeInput: Locator;
   newSequenceTemplateActivityTypeSelector: string = 'select[name="activityType"]';
   newSequenceTemplateButton: Locator;
@@ -99,11 +100,14 @@ export class SequenceTemplates {
     this.saveSequenceTemplateButton = page.getByLabel('Save sequence template');
     this.deleteSequenceTemplateButton = page.getByLabel('Delete Template');
     this.confirmDeleteSequenceTemplateButton = page.getByRole('button', { exact: true, name: 'Delete' });
+    this.editor = page.locator('.cm-activeLine').first();
   }
 
   async updateSequenceTemplate(sequenceTemplateName: string, sequenceTemplateLineContent: string) {
     await this.sequenceTemplateTable.getByRole('gridcell', { name: sequenceTemplateName }).click();
-    await this.sequenceTemplateEditorActiveLine.fill(sequenceTemplateLineContent);
+    await this.editor.click();
+    await this.editor.fill(sequenceTemplateLineContent);
+    await this.page.waitForTimeout(500); // TODO: The CodeMirror update 'listener' seems to require a timeout here to register the content has changed
     await this.saveSequenceTemplateButton.click();
     await this.waitForToast('Updated Sequence Template');
   }
