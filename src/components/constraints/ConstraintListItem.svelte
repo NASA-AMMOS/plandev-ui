@@ -65,13 +65,8 @@
     upButtonHidden = order <= 0;
   }
   $: {
-    if (constraintPlanSpec.constraint_revision !== null) {
-      version = constraint.versions.find(v => v.revision === constraintPlanSpec.constraint_revision);
-    } else {
-      // if the `constraint_revision` is null, that means to use the latest version of the definition
-      // the query for this constraint returns the versions in descending order, so the first entry in the array should correspond to the latest version
-      version = constraint.versions[0];
-    }
+    const version = getSpecVersion(constraint, constraintPlanSpec.constraint_revision);
+
     const schema = version?.parameter_schema;
     if (schema && schema.type === 'struct') {
       formParameters = Object.entries(schema.items).map(([name, subschema], i) => ({
@@ -86,6 +81,21 @@
     } else {
       formParameters = [];
     }
+  }
+
+  function getSpecVersion(
+    constraintMetadata: ConstraintMetadata,
+    revision: number | string | null,
+  ): Pick<ConstraintDefinition, 'type' | 'revision' | 'parameter_schema'> | undefined {
+    if (revision !== null) {
+      const revisionNumber = parseInt(`${revision}`);
+      version = constraintMetadata.versions.find(v => v.revision === revisionNumber);
+    } else {
+      // if the `goal_revision` is null, that means to use the latest version of the definition
+      // the query for this goal returns the versions in descending order, so the first entry in the array should correspond to the latest version
+      version = constraintMetadata.versions[0];
+    }
+    return version;
   }
 
   function focusInput() {
@@ -156,8 +166,32 @@
 
   function onUpdateRevision(event: Event) {
     const { value: revision } = getTarget(event);
+
+    const version = getSpecVersion(constraint, `${revision}`);
+
+    const schema = version?.parameter_schema;
+    let cleansedArguments: any = {};
+    if (schema && schema.type === 'struct') {
+      cleansedArguments = Object.keys(constraintPlanSpec.arguments).reduce(
+        (prevCleansedArguments: any, argumentKey: string) => {
+          const argumentValue = constraintPlanSpec.arguments[argumentKey];
+
+          const doesArgumentExistInSchema =
+            Object.keys(schema.items).find(parameterName => parameterName === argumentKey) != null;
+          if (doesArgumentExistInSchema) {
+            return {
+              ...prevCleansedArguments,
+              [argumentKey]: argumentValue,
+            };
+          }
+          return prevCleansedArguments;
+        },
+        {},
+      );
+    }
     dispatch('updateConstraintPlanSpec', {
       ...constraintPlanSpec,
+      arguments: cleansedArguments,
       constraint_revision: revision === '' ? null : parseInt(`${revision}`),
     });
   }
@@ -166,10 +200,30 @@
     const {
       detail: { name, value },
     } = event;
-    dispatch('updateConstraintPlanSpec', {
-      ...constraintPlanSpec,
-      arguments: { ...constraintPlanSpec.arguments, [name]: value },
-    });
+
+    if (formParameters.length) {
+      const cleansedArguments = Object.keys(constraintPlanSpec.arguments).reduce(
+        (prevCleansedArguments: any, argumentKey: string) => {
+          const argumentValue = constraintPlanSpec.arguments[argumentKey];
+
+          const doesArgumentExistInSchema =
+            formParameters.find(({ name: parameterName }) => parameterName === argumentKey) != null;
+          if (doesArgumentExistInSchema) {
+            return {
+              ...prevCleansedArguments,
+              argumentKey: argumentValue,
+            };
+          }
+          return prevCleansedArguments;
+        },
+        {},
+      );
+
+      dispatch('updateConstraintPlanSpec', {
+        ...constraintPlanSpec,
+        arguments: { ...cleansedArguments, [name]: value },
+      });
+    }
   }
 </script>
 

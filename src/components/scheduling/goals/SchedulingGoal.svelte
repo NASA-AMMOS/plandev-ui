@@ -54,13 +54,7 @@
   }
 
   $: {
-    if (goalPlanSpec.goal_revision !== null) {
-      version = goal.versions.find(v => v.revision === goalPlanSpec.goal_revision);
-    } else {
-      // if the `goal_revision` is null, that means to use the latest version of the definition
-      // the query for this goal returns the versions in descending order, so the first entry in the array should correspond to the latest version
-      version = goal.versions[0];
-    }
+    const version = getSpecVersion(goal, goalPlanSpec.goal_revision);
 
     const schema = version?.parameter_schema;
 
@@ -77,6 +71,21 @@
     } else {
       formParameters = [];
     }
+  }
+
+  function getSpecVersion(
+    goalMetadata: SchedulingGoalMetadata,
+    revision: number | string | null,
+  ): Pick<SchedulingGoalDefinition, 'type' | 'revision' | 'analyses' | 'parameter_schema'> | undefined {
+    if (revision !== null) {
+      const revisionNumber = parseInt(`${revision}`);
+      version = goalMetadata.versions.find(v => v.revision === revisionNumber);
+    } else {
+      // if the `goal_revision` is null, that means to use the latest version of the definition
+      // the query for this goal returns the versions in descending order, so the first entry in the array should correspond to the latest version
+      version = goalMetadata.versions[0];
+    }
+    return version;
   }
 
   function focusInput() {
@@ -111,8 +120,32 @@
 
   function onUpdateRevision(event: Event) {
     const { value: revision } = getTarget(event);
+
+    const version = getSpecVersion(goal, `${revision}`);
+
+    const schema = version?.parameter_schema;
+    let cleansedArguments: any = {};
+    if (schema && schema.type === 'struct') {
+      cleansedArguments = Object.keys(goalPlanSpec.arguments).reduce(
+        (prevCleansedArguments: any, argumentKey: string) => {
+          const argumentValue = goalPlanSpec.arguments[argumentKey];
+
+          const doesArgumentExistInSchema =
+            Object.keys(schema.items).find(parameterName => parameterName === argumentKey) != null;
+          if (doesArgumentExistInSchema) {
+            return {
+              ...prevCleansedArguments,
+              [argumentKey]: argumentValue,
+            };
+          }
+          return prevCleansedArguments;
+        },
+        {},
+      );
+    }
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
+      arguments: cleansedArguments,
       goal_revision: revision === '' ? null : parseInt(`${revision}`),
     });
   }
@@ -145,10 +178,30 @@
     const {
       detail: { name, value },
     } = event;
-    dispatch('updateGoalPlanSpec', {
-      ...goalPlanSpec,
-      arguments: { ...goalPlanSpec.arguments, [name]: value },
-    });
+
+    if (formParameters.length) {
+      const cleansedArguments = Object.keys(goalPlanSpec.arguments).reduce(
+        (prevCleansedArguments: any, argumentKey: string) => {
+          const argumentValue = goalPlanSpec.arguments[argumentKey];
+
+          const doesArgumentExistInSchema =
+            formParameters.find(({ name: parameterName }) => parameterName === argumentKey) != null;
+          if (doesArgumentExistInSchema) {
+            return {
+              ...prevCleansedArguments,
+              argumentKey: argumentValue,
+            };
+          }
+          return prevCleansedArguments;
+        },
+        {},
+      );
+
+      dispatch('updateGoalPlanSpec', {
+        ...goalPlanSpec,
+        arguments: { ...cleansedArguments, [name]: value },
+      });
+    }
   }
 </script>
 
