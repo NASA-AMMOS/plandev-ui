@@ -73,7 +73,10 @@ export class Plan {
   sequenceExpansionNewButton: Locator;
   sequenceExpansionNewSequenceButton: Locator;
   sequenceExpansionNewSequenceConfirmButton: Locator;
+  sequenceExpansionNewSequenceFilterButton: Locator;
   sequenceExpansionNewSequenceName: Locator;
+  sequenceExpansionOutputModal: Locator;
+  sequenceExpansionTimeRangeModal: Locator;
   simulateButton: Locator;
   simulationHistoryList: Locator;
   simulationStatusSelector: (status: string) => string;
@@ -571,8 +574,11 @@ export class Plan {
     this.schedulingSatisfiedActivity = page.locator('.scheduling-goal-analysis-activities-list > .satisfied-activity');
     this.sequenceExpansionNewButton = page.getByRole('button', { exact: true, name: 'New' });
     this.sequenceExpansionNewSequenceButton = page.getByText('Sequence', { exact: true });
+    this.sequenceExpansionNewSequenceFilterButton = page.getByText('Sequence Filter', { exact: true });
     this.sequenceExpansionNewSequenceName = page.locator('input[name="sequence-name"]');
     this.sequenceExpansionNewSequenceConfirmButton = page.getByRole('button', { exact: true, name: 'Confirm' });
+    this.sequenceExpansionTimeRangeModal = page.locator(`.modal:has-text("Apply Filter To Range")`);
+    this.sequenceExpansionOutputModal = page.locator(`.modal:has-text("Sequence ID")`);
   }
 
   async uploadExternalDatasets(importFilePath: string) {
