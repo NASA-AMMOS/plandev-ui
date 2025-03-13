@@ -757,7 +757,7 @@
           if (id === goalSpecification.id) {
             return {
               ...goalSpecification,
-              arguments: { ...goalSpecification.arguments, ...argsToUpdate },
+              arguments: argsToUpdate ?? goalSpecification.arguments,
               priority: priority ?? goalSpecification.priority,
               revision: revision !== undefined ? revision : goalSpecification.revision,
             };
@@ -793,7 +793,7 @@
             if (id === constraintSpecification.id) {
               return {
                 ...constraintSpecification,
-                arguments: { ...constraintSpecification.arguments, ...argsToUpdate },
+                arguments: argsToUpdate ?? constraintSpecification.arguments,
                 priority: priority ?? constraintSpecification.priority,
                 revision: revision !== undefined ? revision : constraintSpecification.revision,
               };
@@ -961,6 +961,5 @@
     on:viewMetadata={onViewMetadata}
     on:duplicateInvocation={onDuplicateInvocation}
     on:deleteInvocation={onDeleteInvocation}
-    on:updateArguments
   />
 </CssGrid>

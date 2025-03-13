@@ -50,6 +50,7 @@
       priority: number;
     };
     updateRevision: {
+      arguments: Argument;
       id: string;
       revision: number | null;
     };
@@ -63,13 +64,10 @@
   let upButtonHidden: boolean = false;
   let selectedDefinitionType: DefinitionType = DefinitionType.CODE;
 
-  $: if (selectedRevision !== null) {
-    const selectedVersion = versions.find(version => version.revision === selectedRevision);
+  $: {
+    const selectedVersion = getSpecVersion(versions, selectedRevision);
     parameterSchema = selectedVersion?.parameter_schema;
     selectedDefinitionType = selectedVersion?.definition === null ? DefinitionType.FILE : DefinitionType.CODE;
-  } else {
-    parameterSchema = versions[0].parameter_schema;
-    selectedDefinitionType = versions[0].definition === null ? DefinitionType.FILE : DefinitionType.CODE;
   }
   $: permissionError = `You do not have permission to edit model ${metadataType}s`;
   $: upButtonHidden = priority !== undefined && priority <= 0;
@@ -88,6 +86,18 @@
     }));
   } else {
     formParameters = [];
+  }
+
+  function getSpecVersion(
+    definitionVersions: BaseDefinition[],
+    revision: number | string | null,
+  ): BaseDefinition | undefined {
+    if (revision != null && revision !== '') {
+      const revisionNumber = parseInt(`${revision}`);
+      return definitionVersions.find(v => v.revision === revisionNumber);
+    } else {
+      return definitionVersions[0];
+    }
   }
 
   function focusPriorityInput() {
@@ -136,10 +146,36 @@
     }
   }
 
+  function getCleansedArguments(specArguments: Argument, schema?: ValueSchema) {
+    let cleansedArguments: Argument = {};
+    if (schema && schema.type === 'struct') {
+      cleansedArguments = Object.keys(specArguments).reduce((prevCleansedArguments: Argument, argumentKey: string) => {
+        const argumentValue = specArguments[argumentKey];
+
+        const doesArgumentExistInSchema =
+          Object.keys(schema.items).find(parameterName => parameterName === argumentKey) != null;
+        if (doesArgumentExistInSchema) {
+          return {
+            ...prevCleansedArguments,
+            [argumentKey]: argumentValue,
+          };
+        }
+        return prevCleansedArguments;
+      }, {});
+    }
+    return cleansedArguments;
+  }
+
   function onUpdateRevision(event: Event) {
     const { value } = getTarget(event);
     const revision = value == null || value === '' ? null : parseInt(`${value}`);
+
+    const version = getSpecVersion(versions, revision as string | number | null);
+    const schema = version?.parameter_schema;
+    const cleansedArguments: Argument = getCleansedArguments(invocationArguments, schema);
+
     dispatch('updateRevision', {
+      arguments: cleansedArguments,
       id,
       revision,
     });

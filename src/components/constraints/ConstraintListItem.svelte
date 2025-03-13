@@ -18,7 +18,8 @@
     ConstraintPlanSpecification,
     ConstraintResponse,
   } from '../../types/constraint';
-  import type { FormParameter } from '../../types/parameter';
+  import type { Argument, FormParameter } from '../../types/parameter';
+  import type { ValueSchema } from '../../types/schema';
   import { getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { pluralize } from '../../utilities/text';
@@ -87,7 +88,7 @@
     constraintMetadata: ConstraintMetadata,
     revision: number | string | null,
   ): Pick<ConstraintDefinition, 'type' | 'revision' | 'parameter_schema'> | undefined {
-    if (revision !== null) {
+    if (revision != null && revision !== '') {
       const revisionNumber = parseInt(`${revision}`);
       version = constraintMetadata.versions.find(v => v.revision === revisionNumber);
     } else {
@@ -164,31 +165,33 @@
     });
   }
 
+  function getCleansedArguments(specArguments: Argument, schema?: ValueSchema) {
+    let cleansedArguments: Argument = {};
+    if (schema && schema.type === 'struct') {
+      cleansedArguments = Object.keys(specArguments).reduce((prevCleansedArguments: Argument, argumentKey: string) => {
+        const argumentValue = specArguments[argumentKey];
+
+        const doesArgumentExistInSchema =
+          Object.keys(schema.items).find(parameterName => parameterName === argumentKey) != null;
+        if (doesArgumentExistInSchema) {
+          return {
+            ...prevCleansedArguments,
+            [argumentKey]: argumentValue,
+          };
+        }
+        return prevCleansedArguments;
+      }, {});
+    }
+    return cleansedArguments;
+  }
+
   function onUpdateRevision(event: Event) {
     const { value: revision } = getTarget(event);
 
-    const version = getSpecVersion(constraint, `${revision}`);
-
+    const version = getSpecVersion(constraint, revision as string | number | null);
     const schema = version?.parameter_schema;
-    let cleansedArguments: any = {};
-    if (schema && schema.type === 'struct') {
-      cleansedArguments = Object.keys(constraintPlanSpec.arguments).reduce(
-        (prevCleansedArguments: any, argumentKey: string) => {
-          const argumentValue = constraintPlanSpec.arguments[argumentKey];
 
-          const doesArgumentExistInSchema =
-            Object.keys(schema.items).find(parameterName => parameterName === argumentKey) != null;
-          if (doesArgumentExistInSchema) {
-            return {
-              ...prevCleansedArguments,
-              [argumentKey]: argumentValue,
-            };
-          }
-          return prevCleansedArguments;
-        },
-        {},
-      );
-    }
+    let cleansedArguments: Argument = getCleansedArguments(constraintPlanSpec.arguments, schema);
     dispatch('updateConstraintPlanSpec', {
       ...constraintPlanSpec,
       arguments: cleansedArguments,
@@ -201,23 +204,9 @@
       detail: { name, value },
     } = event;
 
+    const schema = version?.parameter_schema;
     if (formParameters.length) {
-      const cleansedArguments = Object.keys(constraintPlanSpec.arguments).reduce(
-        (prevCleansedArguments: any, argumentKey: string) => {
-          const argumentValue = constraintPlanSpec.arguments[argumentKey];
-
-          const doesArgumentExistInSchema =
-            formParameters.find(({ name: parameterName }) => parameterName === argumentKey) != null;
-          if (doesArgumentExistInSchema) {
-            return {
-              ...prevCleansedArguments,
-              argumentKey: argumentValue,
-            };
-          }
-          return prevCleansedArguments;
-        },
-        {},
-      );
+      let cleansedArguments: Argument = getCleansedArguments(constraintPlanSpec.arguments, schema);
 
       dispatch('updateConstraintPlanSpec', {
         ...constraintPlanSpec,

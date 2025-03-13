@@ -98,11 +98,12 @@
     });
   }
 
-  function onUpdateRevision(event: CustomEvent<{ id: string; revision: number | null }>) {
+  function onUpdateRevision(event: CustomEvent<{ arguments: Argument; id: string; revision: number | null }>) {
     const {
-      detail: { id, revision },
+      detail: { arguments: argsToUpdate, id, revision },
     } = event;
     dispatch('updateSpecifications', {
+      arguments: argsToUpdate,
       id,
       revision,
     });

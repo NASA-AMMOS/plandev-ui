@@ -6,12 +6,13 @@
   import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
-  import type { FormParameter } from '../../../types/parameter';
+  import type { Argument, FormParameter } from '../../../types/parameter';
   import type {
     SchedulingGoalDefinition,
     SchedulingGoalMetadata,
     SchedulingGoalPlanSpecification,
   } from '../../../types/scheduling';
+  import type { ValueSchema } from '../../../types/schema';
   import { getTarget } from '../../../utilities/generic';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { tooltip } from '../../../utilities/tooltip';
@@ -77,7 +78,7 @@
     goalMetadata: SchedulingGoalMetadata,
     revision: number | string | null,
   ): Pick<SchedulingGoalDefinition, 'type' | 'revision' | 'analyses' | 'parameter_schema'> | undefined {
-    if (revision !== null) {
+    if (revision != null && revision !== '') {
       const revisionNumber = parseInt(`${revision}`);
       version = goalMetadata.versions.find(v => v.revision === revisionNumber);
     } else {
@@ -118,31 +119,33 @@
     }
   }
 
+  function getCleansedArguments(specArguments: Argument, schema?: ValueSchema) {
+    let cleansedArguments: Argument = {};
+    if (schema && schema.type === 'struct') {
+      cleansedArguments = Object.keys(specArguments).reduce((prevCleansedArguments: Argument, argumentKey: string) => {
+        const argumentValue = specArguments[argumentKey];
+
+        const doesArgumentExistInSchema =
+          Object.keys(schema.items).find(parameterName => parameterName === argumentKey) != null;
+        if (doesArgumentExistInSchema) {
+          return {
+            ...prevCleansedArguments,
+            [argumentKey]: argumentValue,
+          };
+        }
+        return prevCleansedArguments;
+      }, {});
+    }
+    return cleansedArguments;
+  }
+
   function onUpdateRevision(event: Event) {
     const { value: revision } = getTarget(event);
 
-    const version = getSpecVersion(goal, `${revision}`);
-
+    const version = getSpecVersion(goal, revision as string | number | null);
     const schema = version?.parameter_schema;
-    let cleansedArguments: any = {};
-    if (schema && schema.type === 'struct') {
-      cleansedArguments = Object.keys(goalPlanSpec.arguments).reduce(
-        (prevCleansedArguments: any, argumentKey: string) => {
-          const argumentValue = goalPlanSpec.arguments[argumentKey];
 
-          const doesArgumentExistInSchema =
-            Object.keys(schema.items).find(parameterName => parameterName === argumentKey) != null;
-          if (doesArgumentExistInSchema) {
-            return {
-              ...prevCleansedArguments,
-              [argumentKey]: argumentValue,
-            };
-          }
-          return prevCleansedArguments;
-        },
-        {},
-      );
-    }
+    let cleansedArguments: Argument = getCleansedArguments(goalPlanSpec.arguments, schema);
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
       arguments: cleansedArguments,
@@ -180,22 +183,8 @@
     } = event;
 
     if (formParameters.length) {
-      const cleansedArguments = Object.keys(goalPlanSpec.arguments).reduce(
-        (prevCleansedArguments: any, argumentKey: string) => {
-          const argumentValue = goalPlanSpec.arguments[argumentKey];
-
-          const doesArgumentExistInSchema =
-            formParameters.find(({ name: parameterName }) => parameterName === argumentKey) != null;
-          if (doesArgumentExistInSchema) {
-            return {
-              ...prevCleansedArguments,
-              argumentKey: argumentValue,
-            };
-          }
-          return prevCleansedArguments;
-        },
-        {},
-      );
+      const schema = version?.parameter_schema;
+      let cleansedArguments: Argument = getCleansedArguments(goalPlanSpec.arguments, schema);
 
       dispatch('updateGoalPlanSpec', {
         ...goalPlanSpec,
