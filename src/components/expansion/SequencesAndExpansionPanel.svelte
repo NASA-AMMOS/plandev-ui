@@ -240,7 +240,7 @@
             <span slot="suffix">
               <div use:tooltip={{ content: 'Delete Sequence', placement: 'top' }}>
                 <button
-                  aria-label="Delete 'Example Sequence'"
+                  aria-label={`Delete '${sequenceOrFilter.seq_id}'`}
                   class="st-button icon"
                   on:click|stopPropagation={e => {
                     if (isExpansionSequence(sequenceOrFilter)) {
@@ -257,7 +257,7 @@
               </div>
               <div use:tooltip={{ content: 'Show Expanded Sequence', placement: 'top' }}>
                 <button
-                  aria-label="Show Expanded Sequence "
+                  aria-label={`Show Expanded '${sequenceOrFilter.seq_id}'`}
                   class="st-button icon"
                   on:click|stopPropagation={e => {
                     if (isExpansionSequence(sequenceOrFilter)) {
@@ -270,7 +270,7 @@
               </div>
               <div use:tooltip={{ content: 'Expand Sequence', placement: 'top' }}>
                 <button
-                  aria-label="Expand 'Example Sequence'"
+                  aria-label={`Expand '${sequenceOrFilter.seq_id}'`}
                   class="st-button icon"
                   on:click|stopPropagation={e => {
                     if (isExpansionSequence(sequenceOrFilter)) {
@@ -292,7 +292,7 @@
             <span slot="suffix">
               <div use:tooltip={{ content: 'Delete Filter', placement: 'top' }}>
                 <button
-                  aria-label="Delete 'Example Filter'"
+                  aria-label={`Delete '${sequenceOrFilter.name}'`}
                   class="st-button icon"
                   on:click|stopPropagation={e => {
                     if (!isExpansionSequence(sequenceOrFilter)) {
@@ -309,7 +309,7 @@
               </div>
               <div use:tooltip={{ content: 'Show Filter', placement: 'top' }}>
                 <button
-                  aria-label="Show 'Example Filter'"
+                  aria-label={`Show '${sequenceOrFilter.name}'`}
                   class="st-button icon"
                   on:click|stopPropagation={e => {
                     if (!isExpansionSequence(sequenceOrFilter)) {
@@ -320,9 +320,9 @@
                   <FilterIcon />
                 </button>
               </div>
-              <div use:tooltip={{ content: 'Create Sequence', placement: 'top' }}>
+              <div use:tooltip={{ content: 'Apply Filter', placement: 'top' }}>
                 <button
-                  aria-label="Create 'Example Filter' Sequence"
+                  aria-label={`Apply '${sequenceOrFilter.name}'`}
                   class="st-button icon"
                   on:click|stopPropagation={e => {
                     if (!isExpansionSequence(sequenceOrFilter)) {
