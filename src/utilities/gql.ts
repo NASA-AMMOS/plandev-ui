@@ -3050,33 +3050,6 @@ const gql = {
     }
   `,
 
-  SUB_SCHEDULING_GOAL_INVOCATIONS: `#graphql
-    subscription SubSchedulingGoalInvocations($planId: Int!) {
-      ${Queries.SCHEDULING_SPECIFICATION_GOALS} (where: {specification: {plan_id: {_eq: $planId}}}) {
-        specification_id
-        goal_id
-        goal_invocation_id
-        goal_revision
-        arguments
-        enabled
-        simulate_after
-        goal_metadata {
-          name
-          versions(order_by: {revision: desc}) {
-            author
-            definition
-            parameter_schema
-            revision
-            tags {
-              tag_id
-            }
-            type
-          }
-        }
-      }
-    }
-  `,
-
   SUB_SCHEDULING_PLAN_SPECIFICATION: `#graphql
     subscription SubSchedulingPlanSpecification($specificationId: Int!) {
       schedulingPlanSpec: ${Queries.SCHEDULING_SPECIFICATION}(id: $specificationId) {
@@ -3145,6 +3118,7 @@ const gql = {
             }
           }
           goal_revision
+          priority
           simulate_after
           arguments
           specification_id
@@ -3782,11 +3756,13 @@ const gql = {
   `,
 
   UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATION: `#graphql
+    mutation UpdateSchedulingGoalPlanSpecification($arguments: jsonb, $goal_invocation_id: Int!, $revision: Int!, $enabled: Boolean!, $priority: Int!, $simulateAfter: Boolean!) {
       updateSchedulingGoalPlanSpecification: ${Queries.UPDATE_SCHEDULING_SPECIFICATION_GOAL}(
         pk_columns: { goal_invocation_id: $goal_invocation_id },
         _set: {
           goal_revision: $revision,
           enabled: $enabled,
+          priority: $priority,
           simulate_after: $simulateAfter
           arguments: $arguments
         }

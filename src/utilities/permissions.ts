@@ -921,9 +921,6 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_SCHEDULING_GOALS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.SCHEDULING_GOAL_METADATAS], user);
   },
-  SUB_SCHEDULING_GOAL_INVOCATIONS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.SCHEDULING_SPECIFICATION_GOALS], user);
-  },
   SUB_SCHEDULING_PLAN_SPECIFICATION: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.SCHEDULING_SPECIFICATION], user);
   },
