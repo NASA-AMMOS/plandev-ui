@@ -182,7 +182,7 @@ export const relevantConstraintRuns: Readable<ConstraintRun[]> = derived(
   ([$constraintRuns, $constraintPlanSpecsMap]) => {
     return ($constraintRuns || []).filter(constraintRun => {
       const constraintPlanSpec =
-        $constraintPlanSpecsMap[constraintRun.constraint_id][constraintRun.constraint_invocation_id];
+        $constraintPlanSpecsMap[constraintRun.constraint_id]?.[constraintRun.constraint_invocation_id];
 
       return constraintPlanSpec !== undefined;
     });
@@ -211,7 +211,7 @@ export const cachedConstraintsStatus: Readable<Status | null> = derived(
     return $relevantConstraintRuns.reduce(
       (status: Status | null, constraintRun: ConstraintRun) => {
         const constraintPlanSpec =
-          $constraintPlanSpecsMap[constraintRun.constraint_id][constraintRun.constraint_invocation_id];
+          $constraintPlanSpecsMap[constraintRun.constraint_id]?.[constraintRun.constraint_invocation_id];
         let constraintPlanSpecRevision: number | null = constraintPlanSpec.constraint_revision ?? null;
         if (constraintPlanSpec.constraint_revision === null) {
           const constraintVersions = constraintPlanSpec.constraint_metadata?.versions ?? [];
