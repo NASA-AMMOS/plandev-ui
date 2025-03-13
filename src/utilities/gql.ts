@@ -3721,11 +3721,13 @@ const gql = {
   `,
 
   UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION: `#graphql
+    mutation UpdateSchedulingGoalModelSpecification($arguments: jsonb, $goalInvocationId: Int!, $revision: Int!, $priority: Int!) {
       updateSchedulingGoalModelSpecification: ${Queries.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION}(
         pk_columns: { goal_invocation_id: $goalInvocationId },
         _set: {
           arguments: $arguments,
           goal_revision: $revision,
+          priority: $priority,
         }
       ) {
         goal_revision
