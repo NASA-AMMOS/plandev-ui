@@ -208,6 +208,7 @@ const gql = {
         arguments
         constraint_id
         enabled
+        order
         invocation_id
       }
     }
@@ -528,8 +529,10 @@ const gql = {
   CREATE_SCHEDULING_GOAL_PLAN_SPECIFICATION: `#graphql
     mutation CreateSchedulingSpecGoal($spec_goal: scheduling_specification_goals_insert_input!) {
       createSchedulingSpecGoal: ${Queries.INSERT_SCHEDULING_SPECIFICATION_GOAL}(object: $spec_goal) {
+        arguments
         enabled
         goal_id
+        priority
         specification_id
       }
     }
@@ -1635,6 +1638,7 @@ const gql = {
       ${Queries.SCHEDULING_SPECIFICATION_GOALS}(where: { goal_id: { _eq: $goal_id } }) {
         enabled
         goal_id
+        priority
         arguments
         specification_id
       }
