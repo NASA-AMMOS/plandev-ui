@@ -1,39 +1,25 @@
 'use strict';
 
-// API for reading/writing sequences (& other files?) in workspace
-async function listFiles() {
-    console.warn(`List files - Not yet implemented`);
-    return ["not implemented"];
-}
-async function readFile(path) {
-    console.warn(`Read file ${path} - Not yet implemented`);
-    return "not implemented";
-}
-async function writeFile(path, contents) {
-    console.warn(`Write "${contents.slice(0, 50)}..." to ${path} - Not yet implemented`);
-}
-
-// import { ActionMain } from 'aerie-action/src/models/main.ts';
 // Define schemas for your action's settings and parameters
 const paramDefs = {
-    boolean: { type: "boolean" },
-    delay: { type:"int" },
-    duration: { type: "duration" },
-    path: { type: "path" },
-    real: { type: "real" },
-    repository: { type: "string" },
-    series: { items:{ type: "string" }, type: "series",  },
-    string: { type: "string" },
-    variant: { type: "variant", variants: [{key: "foo", label: "Foo"}, {key: "bar", label: "Bar"}] },
+  boolean: { type: "boolean" },
+  delay: { type:"int" },
+  duration: { type: "duration" },
+  path: { type: "path" },
+  real: { type: "real" },
+  repository: { type: "string" },
+  series: { items:{ type: "string" }, type: "series",  },
+  string: { type: "string" },
+  variant: { type: "variant", variants: [{key: "foo", label: "Foo"}, {key: "bar", label: "Bar"}] },
 };
 const settingDefs = {
-    externalUrl: { type: "string" },
-    retries: { type: "int" }
+  externalUrl: { type: "string" },
+  retries: { type: "int" }
 };
-async function main(actionParameters, actionSettings) {
-    await new Promise((res, rej) => {
+async function main(actionParameters, actionSettings, ActionAPI) {
+    await new Promise((resolve) => {
       setTimeout(() => {
-          res();
+          resolve();
       }, actionParameters.delay ?? 0);
     })
 
@@ -55,10 +41,17 @@ async function main(actionParameters, actionSettings) {
     catch {
         resultData = await result.clone().text();
     }
-    // read/write files using the actions helpers
-    listFiles();
-    readFile("my_file");
-    writeFile("new_file", "new contents");
+    try  {
+      // read/write files using the actions helpers
+      const files = await ActionAPI.listSequences();
+      const myFile = await ActionAPI.readSequence("my_file");
+      const writeResult = await ActionAPI.writeSequence("new_file", "new contents");
+      console.log(`writeResult: ${JSON.stringify(writeResult)}`);
+      console.log('sequence files:', JSON.stringify(files));
+      console.log(`myFile: ${JSON.stringify(myFile)}`);
+    } catch (error) {
+      console.log(error)
+    }
     return {
         status: "SUCCESS",
         data: resultData,
@@ -68,3 +61,4 @@ async function main(actionParameters, actionSettings) {
 exports.main = main;
 exports.paramDefs = paramDefs;
 exports.settingDefs = settingDefs;
+
