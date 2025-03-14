@@ -1042,7 +1042,7 @@ export async function showRunActionModal(
         runActionModal.$on('complete', (e: CustomEvent<{ actionRunId: number | null }>) => {
           target.replaceChildren();
           target.resolve = null;
-          resolve({ confirm: true, value: e.detail.actionRunId });
+          resolve({ confirm: true, value: { id: e.detail.actionRunId } });
           runActionModal.$destroy();
         });
       }
