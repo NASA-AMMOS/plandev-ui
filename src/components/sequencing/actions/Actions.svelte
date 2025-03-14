@@ -170,12 +170,7 @@
       <SectionTitle>Actions</SectionTitle>
 
       <Input>
-        <input
-          bind:value={actionDefinitionsFilterText}
-          class="st-input"
-          placeholder="Filter actions"
-          style="width: 100%;"
-        />
+        <input bind:value={actionDefinitionsFilterText} class="st-input w-100" placeholder="Filter actions" />
       </Input>
 
       <div>
@@ -196,11 +191,11 @@
     <svelte:fragment slot="body">
       <div class="actions">
         {#if !$actionDefinitions}
-          <div style="padding: 8px">
+          <div class="p-2">
             <Loading />
           </div>
         {:else if filteredActionDefinitions.length < 1}
-          <div class="st-typography-label" style="padding: 8px">No actions</div>
+          <div class="st-typography-label p-2">No actions</div>
         {:else}
           {#each filteredActionDefinitions as actionDefinition}
             <button
@@ -239,12 +234,7 @@
       <SectionTitle>Action Runs</SectionTitle>
 
       <Input>
-        <input
-          bind:value={actionRunsFilterText}
-          class="st-input"
-          placeholder="Filter action runs"
-          style="width: 200px;"
-        />
+        <input bind:value={actionRunsFilterText} class="st-input action-runs-input" placeholder="Filter action runs" />
       </Input>
     </svelte:fragment>
 
@@ -252,7 +242,7 @@
 
     <svelte:fragment slot="body">
       {#if !$actionRuns}
-        <div style="padding: 16px">
+        <div class="p-2">
           <Loading />
         </div>
       {/if}
@@ -281,7 +271,7 @@
               <button class="st-button secondary" on:click={() => (selectedActionDefinition = null)}> Close </button>
             </div>
           </div>
-          <div style=" flex: 1;overflow: auto">
+          <div class="action-definition-runs-tabs-wrapper">
             <Tabs class="action-definition-runs-tabs">
               <svelte:fragment slot="tab-list">
                 <Tab class="action-definition-runs-tab">Runs ({(filteredActionRuns || []).length})</Tab>
@@ -289,9 +279,9 @@
                 <Tab class="action-definition-runs-tab">Code</Tab>
               </svelte:fragment>
               <TabPanel>
-                <div class="action-runs" style="padding-top: 8px">
+                <div class="action-runs pt-2">
                   {#if filteredActionRuns.length < 1}
-                    <div class="st-typography-label" style="padding: 8px">No action runs</div>
+                    <div class="st-typography-label p-2">No action runs</div>
                   {:else}
                     {#each filteredActionRuns || [] as actionRun}
                       <ActionRunCard
@@ -396,15 +386,15 @@
                     tabSize={2}
                     value={code || 'Loading...'}
                   />
-                </div></TabPanel
-              >
+                </div>
+              </TabPanel>
             </Tabs>
           </div>
         </div>
       {:else}
         <div class="action-runs">
           {#if $actionRuns?.length && filteredActionRuns.length < 1}
-            <div class="st-typography-label" style="padding: 8px">No action runs</div>
+            <div class="st-typography-label p-2">No action runs</div>
           {:else}
             {#each filteredActionRuns || [] as actionRun}
               <ActionRunCard
@@ -430,6 +420,10 @@
 
   .action-runs {
     padding: 8px;
+  }
+
+  .action-runs-input {
+    width: 200px;
   }
 
   .action {
@@ -478,6 +472,11 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+  }
+
+  .action-definition-runs-tabs-wrapper {
+    flex: 1;
+    overflow: auto;
   }
 
   :global(.action-definition-runs-tabs .tab-list) {
