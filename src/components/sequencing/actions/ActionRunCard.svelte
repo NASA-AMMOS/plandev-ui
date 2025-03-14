@@ -43,17 +43,16 @@
   class="action-run st-typography-medium st-button tertiary w-100"
   class:non-interactable={!interactable}
   on:click
-  style=" gap: 24px;text-align: left"
 >
-  <div style="align-items: center;display: flex; gap: 8px">
+  <div class="action-run-cell">
     <StatusBadge status={getStatusForActionRun(actionRun.status)} />
     {actionDefinition?.name ?? 'Loading...'}
   </div>
   <div>@{actionRun.created_by}</div>
-  <div style=" align-items: center;display: flex; gap: 8px">
+  <div class="action-run-cell">
     <PlayBtnIcon />{new Date(actionRun.created_at).toLocaleString()}
   </div>
-  <div style=" align-items: center;display: flex; gap: 8px;">
+  <div class="action-run-cell">
     <StopwatchIcon />{formatDuration(actionRun.duration)}
   </div>
 </button>
@@ -65,9 +64,11 @@
     border-radius: 4px;
     column-gap: 8px;
     display: grid;
+    gap: 24px;
     grid-template-columns: 1fr 0.2fr 160px 80px;
     height: unset;
     padding: 8px;
+    text-align: left;
     white-space: nowrap;
     width: 100%;
   }
@@ -78,5 +79,11 @@
 
   button.action-run.non-interactable:hover {
     background: unset;
+  }
+
+  .action-run-cell {
+    align-items: center;
+    display: flex;
+    gap: 8px;
   }
 </style>
