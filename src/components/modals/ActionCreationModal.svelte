@@ -7,7 +7,7 @@
   import effects from '../../utilities/effects';
   import gql from '../../utilities/gql';
   import { reqHasura } from '../../utilities/requests';
-  import { showSuccessToast } from '../../utilities/toast';
+  import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -38,28 +38,34 @@
 
   async function create() {
     if (!createButtonDisabled && file) {
-      const actionFileId = await effects.uploadFile(file, user);
-      showSuccessToast('Action Created Successfully');
+      try {
+        const actionFileId = await effects.uploadFile(file, user);
 
-      if (actionFileId !== null) {
-        const actionDefinitionInsertInput = {
-          action_file_id: actionFileId,
-          description,
-          name,
-          settings: {},
-          workspace_id: workspaceId,
-        };
-        const data = await reqHasura<ActionDefinition>(
-          gql.CREATE_ACTION_DEFINITION,
-          { actionDefinitionInsertInput },
-          user,
-        );
-        const { insert_action_definition_one } = data;
-        if (insert_action_definition_one) {
-          dispatch('create', { actionDefinitionId: insert_action_definition_one?.id });
+        if (actionFileId !== null) {
+          const actionDefinitionInsertInput = {
+            action_file_id: actionFileId,
+            description,
+            name,
+            settings: {},
+            workspace_id: workspaceId,
+          };
+          const data = await reqHasura<ActionDefinition>(
+            gql.CREATE_ACTION_DEFINITION,
+            { actionDefinitionInsertInput },
+            user,
+          );
+          const { insert_action_definition_one } = data;
+          if (insert_action_definition_one) {
+            dispatch('create', { actionDefinitionId: insert_action_definition_one?.id });
+            showSuccessToast('Action Created Successfully');
+          } else {
+            throw new Error('Action Creation Failed');
+          }
         } else {
-          // TODO
+          throw new Error('Action Creation Failed');
         }
+      } catch (error) {
+        showFailureToast((error as Error).message);
       }
     }
   }
