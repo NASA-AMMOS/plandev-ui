@@ -558,9 +558,17 @@ const effects = {
     }
   },
 
-  async createActionRun(actionDefinitionId: number, parameters: any, settings: any, user: User | null) {
-    // TODO enforce permissions
+  async createActionRun(
+    actionDefinitionId: number,
+    parameters: any,
+    settings: any,
+    user: User | null,
+  ): Promise<number | null> {
     try {
+      if (!queryPermissions.CREATE_ACTION_RUN(user)) {
+        throwPermissionError('create action run');
+      }
+
       const actionRunInsertInput = {
         action_definition_id: actionDefinitionId,
         parameters,
@@ -569,7 +577,6 @@ const effects = {
       };
       const response = await reqHasura<number>(gql.CREATE_ACTION_RUN, { actionRunInsertInput }, user);
       const { insert_action_run_one: actionRunId } = response;
-      console.log('response :>> ', actionRunId, response);
       return actionRunId ?? null;
     } catch (e) {
       catchError('Action Run Creation Failed', e as Error);
@@ -5404,7 +5411,7 @@ const effects = {
       }
       return null;
     } catch (e) {
-      console.log('e :>> ', e);
+      catchError('Run Action Failed', e as Error);
       showFailureToast('Run Action Failed');
       return null;
     }
