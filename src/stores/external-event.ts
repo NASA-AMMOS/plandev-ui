@@ -12,6 +12,7 @@ import { viewUpdateGrid } from './views';
 
 /* Writeable. */
 export const createExternalEventTypeError: Writable<string | null> = writable(null);
+export const creatingExternalEventType: Writable<boolean | null> = writable(null);
 
 /* Subscriptions. */
 export const selectedExternalEventsRaw = gqlSubscribable<{ external_event: ExternalEventDB }[] | null | undefined>(

@@ -1,17 +1,14 @@
 import { goto } from '$app/navigation';
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
-import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
 import {
   type ChannelDictionary as AmpcsChannelDictionary,
   type CommandDictionary as AmpcsCommandDictionary,
   type ParameterDictionary as AmpcsParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
-import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import { get } from 'svelte/store';
-import { ConstraintDefinitionType } from '../enums/constraint';
 import { DictionaryTypes } from '../enums/dictionaryTypes';
-import { SchedulingDefinitionType } from '../enums/scheduling';
+import { SchedulingType } from '../enums/scheduling';
 import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
 import {
@@ -19,7 +16,8 @@ import {
   selectedActivityDirectiveId as selectedActivityDirectiveIdStore,
 } from '../stores/activities';
 import {
-  checkConstraintsQueryStatus as checkConstraintsQueryStatusStore,
+  rawCheckConstraintsStatus as rawCheckConstraintsStatusStore,
+  rawConstraintResponses as rawConstraintResponsesStore,
   resetConstraintStoresForSimulation,
 } from '../stores/constraints';
 import { catchError, catchSchedulingError } from '../stores/errors';
@@ -51,15 +49,13 @@ import {
 import {
   createPlanError as createPlanErrorStore,
   creatingPlan as creatingPlanStore,
-  plan,
   planId as planIdStore,
 } from '../stores/plan';
 import {
   schedulingRequests as schedulingRequestsStore,
-  selectedSchedulingSpecId as selectedSpecIdStore,
+  selectedSpecId as selectedSpecIdStore,
 } from '../stores/scheduling';
 import { sequenceAdaptations as sequenceAdaptationsStore } from '../stores/sequence-adaptation';
-import { sequenceTemplateExpansionError, sequenceTemplateExpansionStatus } from '../stores/sequence-template';
 import {
   channelDictionaries as channelDictionariesStore,
   commandDictionaries as commandDictionariesStore,
@@ -69,12 +65,9 @@ import {
   selectedSpanId as selectedSpanIdStore,
   simulationDatasetId as simulationDatasetIdStore,
   simulationDataset as simulationDatasetStore,
-  spansMap,
-  spanUtilityMaps,
 } from '../stores/simulation';
 import { createTagError as createTagErrorStore } from '../stores/tags';
 import { applyViewUpdate, view as viewStore, viewUpdateRow, viewUpdateTimeline } from '../stores/views';
-import type { ActionDefinition, ActionDefinitionSetInput, ActionParametersMap, ActionRun } from '../types/actions';
 import type {
   ActivityDirective,
   ActivityDirectiveDB,
@@ -92,24 +85,21 @@ import type {
   PlanSnapshotActivity,
 } from '../types/activity';
 import type { ActivityMetadata } from '../types/activity-metadata';
-import type { BaseUser, User, UserId, Version } from '../types/app';
+import type { BaseUser, User, UserId } from '../types/app';
 import type { ReqAuthResponse, ReqSessionResponse } from '../types/auth';
 import type {
-  CheckConstraintResponse,
   ConstraintDefinition,
   ConstraintDefinitionInsertInput,
   ConstraintInsertInput,
   ConstraintMetadata,
   ConstraintMetadataSetInput,
   ConstraintModelSpecInsertInput,
-  ConstraintModelSpecSetInput,
-  ConstraintPlanSpecification,
+  ConstraintPlanSpec,
   ConstraintPlanSpecInsertInput,
-  ConstraintPlanSpecSetInput,
+  ConstraintResponse,
   ConstraintResult,
 } from '../types/constraint';
 import type {
-  ExpandedSequence,
   ExpansionRule,
   ExpansionRuleInsertInput,
   ExpansionRuleSetInput,
@@ -119,8 +109,6 @@ import type {
   ExpansionSequenceToActivityInsertInput,
   ExpansionSet,
   SeqId,
-  SequenceFilter,
-  SequenceFilterInsertInput,
 } from '../types/expansion';
 import type { Extension, ExtensionPayload } from '../types/extension';
 import type {
@@ -144,10 +132,10 @@ import type {
   ArgumentsMap,
   DefaultEffectiveArguments,
   EffectiveArguments,
-  ParametersMap,
   Parameter,
   ParameterValidationError,
   ParameterValidationResponse,
+  ParametersMap,
 } from '../types/parameter';
 import type {
   PermissibleQueriesMap,
@@ -157,7 +145,6 @@ import type {
   RolePermissionsMap,
 } from '../types/permissions';
 import type {
-  ModelCompatabilityForPlan,
   Plan,
   PlanBranchRequestAction,
   PlanCollaborator,
@@ -180,9 +167,8 @@ import type {
   SchedulingConditionMetadataResponse,
   SchedulingConditionMetadataSetInput,
   SchedulingConditionModelSpecificationInsertInput,
-  SchedulingConditionModelSpecificationSetInput,
-  SchedulingConditionPlanSpecification,
   SchedulingConditionPlanSpecInsertInput,
+  SchedulingConditionPlanSpecification,
   SchedulingGoalDefinition,
   SchedulingGoalDefinitionInsertInput,
   SchedulingGoalInsertInput,
@@ -191,16 +177,15 @@ import type {
   SchedulingGoalMetadataSetInput,
   SchedulingGoalModelSpecificationInsertInput,
   SchedulingGoalModelSpecificationSetInput,
-  SchedulingGoalPlanSpecification,
   SchedulingGoalPlanSpecInsertInput,
   SchedulingGoalPlanSpecSetInput,
+  SchedulingGoalPlanSpecification,
   SchedulingPlanSpecification,
   SchedulingPlanSpecificationInsertInput,
   SchedulingRequest,
   SchedulingResponse,
 } from '../types/scheduling';
-import type { ValueSchema, ValueSchemaStruct } from '../types/schema';
-import type { SequenceTemplate } from '../types/sequence-template';
+import type { ValueSchema } from '../types/schema';
 import {
   type ChannelDictionaryMetadata,
   type CommandDictionaryMetadata,
@@ -209,6 +194,7 @@ import {
   type Parcel,
   type ParcelInsertInput,
   type ParcelToParameterDictionary,
+  type SeqJson,
   type SequenceAdaptationMetadata,
   type UserSequence,
   type UserSequenceInsertInput,
@@ -247,13 +233,12 @@ import type {
   TagsInsertInput,
   TagsSetInput,
 } from '../types/tags';
-import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
+import type { Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
-import { ActivityDeletionAction, addAbsoluteTimeToRevision } from './activities';
+import { ActivityDeletionAction } from './activities';
 import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
-  showCancelActionRunModal,
   showConfirmModal,
   showCreatePlanBranchModal,
   showCreatePlanSnapshotModal,
@@ -263,7 +248,6 @@ import {
   showDeleteExternalEventSourceTypeModal,
   showDeleteExternalSourceModal,
   showEditViewModal,
-  showExpansionPanelModal,
   showLibrarySequenceModel,
   showManagePlanConstraintsModal,
   showManagePlanDerivationGroups,
@@ -271,14 +255,10 @@ import {
   showManagePlanSchedulingGoalsModal,
   showPlanBranchRequestModal,
   showRestorePlanSnapshotModal,
-  showRunActionModal,
-  showRunActionResultsModal,
-  showTimeRangeModal,
-  showUpdatePlanMissionModelModal,
   showUploadViewModal,
   showWorkspaceModal,
 } from './modal';
-import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
+import { gatewayPermissions, queryPermissions } from './permissions';
 import { reqExtension, reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
@@ -311,56 +291,6 @@ function throwPermissionError(attemptedAction: string): never {
  * Functions that have side-effects (e.g. HTTP requests, toasts, popovers, store updates, etc.).
  */
 const effects = {
-  async applyActivitiesByFilter(
-    filter: SequenceFilter,
-    simulationDatasetId: number,
-    planId: number,
-    defaultStartTime: string,
-    defaultEndtime: string,
-    user: User | null,
-  ): Promise<void> {
-    try {
-      const { confirm: timeConfirmed, value } = await showTimeRangeModal(defaultStartTime, defaultEndtime);
-
-      if (timeConfirmed && value !== undefined) {
-        const { timeRangeEnd, timeRangeStart } = value;
-        if (timeRangeStart !== null && timeRangeEnd !== null) {
-          console.log(`${filter.name} Sequence (Plan ${planId})`);
-          const sequenceId = await effects.createExpansionSequence(
-            `${filter.name} Sequence (Plan ${planId})`,
-            simulationDatasetId,
-            user,
-          );
-
-          if (!sequenceId) {
-            throw Error('Failed to create sequence');
-          }
-
-          const data = await reqHasura<{ success: boolean }>(
-            gql.APPLY_ACTIVITIES_BY_FILTER,
-            {
-              filterId: filter.id,
-              seqId: sequenceId,
-              simulationDatasetId,
-              timeRangeEnd,
-              timeRangeStart,
-            },
-            user,
-          );
-
-          if (data !== null) {
-            showSuccessToast('Filter Applied Successfully');
-          } else {
-            throw Error('Filter could not be applied successfully');
-          }
-        }
-      }
-    } catch (e) {
-      catchError('Filter Application Failed');
-      showFailureToast('Filter Application Failed');
-    }
-  },
-
   async applyPresetToActivity(
     preset: ActivityPreset,
     activityId: ActivityDirectiveId,
@@ -468,35 +398,6 @@ const effects = {
     }
   },
 
-  async cancelActionRun(id: number | undefined, user: User | null): Promise<void> {
-    try {
-      if (!queryPermissions.UPDATE_ACTION_DEFINITION(user)) {
-        throwPermissionError('update this action definition');
-      }
-
-      const { confirm } = await showCancelActionRunModal();
-
-      if (confirm && id !== undefined) {
-        const result = await reqHasura<ActionRun>(
-          gql.CANCEL_ACTION_RUN,
-          {
-            id,
-          },
-          user,
-        );
-
-        if (result != null) {
-          showSuccessToast(`Action Cancelled`);
-        } else {
-          throw Error(`Unable to cancel action with ID: "${id}"`);
-        }
-      }
-    } catch (e) {
-      catchError('Action Cancellation Failed', e as Error);
-      showFailureToast('Action Cancellation Failed');
-    }
-  },
-
   async cancelSchedulingRequest(analysisId: number, user: User | null): Promise<void> {
     try {
       if (!queryPermissions.CANCEL_SCHEDULING_REQUEST(user)) {
@@ -543,39 +444,32 @@ const effects = {
     }
   },
 
-  async checkConstraints(plan: Plan, user: User | null, force: boolean = false): Promise<void> {
+  async checkConstraints(plan: Plan, user: User | null): Promise<void> {
     try {
-      checkConstraintsQueryStatusStore.set(Status.Incomplete);
+      rawCheckConstraintsStatusStore.set(Status.Incomplete);
       if (plan !== null) {
         const { id: planId } = plan;
-        const data = await reqHasura<CheckConstraintResponse>(
-          gql.CHECK_CONSTRAINTS,
-          {
-            force,
-            planId,
-          },
-          user,
-        );
-        if (data.constraintRunResponses) {
-          const {
-            constraintRunResponses: { constraintsRun },
-          } = data;
+        const data = await reqHasura<ConstraintResponse[]>(gql.CHECK_CONSTRAINTS, { planId }, user);
+        if (data.constraintResponses) {
+          rawConstraintResponsesStore.set(data.constraintResponses);
 
           // find only the constraints compiled.
-          const successfulConstraintResults: ConstraintResult[] = constraintsRun
+          const successfulConstraintResults: ConstraintResult[] = data.constraintResponses
             .filter(constraintResponse => constraintResponse.success)
             .map(constraintResponse => constraintResponse.results);
 
-          const failedConstraintResponses = constraintsRun.filter(constraintResponse => !constraintResponse.success);
-          if (successfulConstraintResults.length === 0 && constraintsRun.length > 0) {
+          const failedConstraintResponses = data.constraintResponses.filter(
+            constraintResponse => !constraintResponse.success,
+          );
+          if (successfulConstraintResults.length === 0 && data.constraintResponses.length > 0) {
             showFailureToast('All Constraints Failed');
-            checkConstraintsQueryStatusStore.set(Status.Failed);
-          } else if (successfulConstraintResults.length !== constraintsRun.length) {
+            rawCheckConstraintsStatusStore.set(Status.Failed);
+          } else if (successfulConstraintResults.length !== data.constraintResponses.length) {
             showFailureToast('Constraints Partially Checked');
-            checkConstraintsQueryStatusStore.set(Status.Failed);
+            rawCheckConstraintsStatusStore.set(Status.Failed);
           } else {
             showSuccessToast('All Constraints Checked');
-            checkConstraintsQueryStatusStore.set(Status.Complete);
+            rawCheckConstraintsStatusStore.set(Status.Complete);
           }
 
           if (failedConstraintResponses.length > 0) {
@@ -592,27 +486,8 @@ const effects = {
         throw Error('Plan is not defined.');
       }
     } catch (e) {
-      checkConstraintsQueryStatusStore.set(Status.Failed);
       catchError('Check Constraints Failed', e as Error);
       showFailureToast('Check Constraints Failed');
-    }
-  },
-
-  async checkMigrationCompatability(
-    planId: number,
-    newModelId: number,
-    user: User | null,
-  ): Promise<ModelCompatabilityForPlan | undefined> {
-    try {
-      const data = await reqHasura(
-        gql.CHECK_MODEL_COMPATIBILITY_FOR_PLAN,
-        { new_model_id: newModelId, plan_id: planId },
-        user,
-      );
-      const modelCompatabilityForPlan: ModelCompatabilityForPlan = data.check_model_compatibility_for_plan?.result;
-      return modelCompatabilityForPlan;
-    } catch (e) {
-      catchError('Check Plan Model Migration Compatibility Failed', e as Error);
     }
   },
 
@@ -675,88 +550,6 @@ const effects = {
     } catch (e) {
       catchError('Activity Directive Paste Failed', e as Error);
       showFailureToast('Activity Directive Paste Failed');
-    }
-  },
-
-  async confirmOpenActionRunResults(actionRunId: number): Promise<boolean | null> {
-    try {
-      const { confirm } = await showRunActionResultsModal(actionRunId);
-      return confirm;
-    } catch (e) {
-      return null;
-    }
-  },
-
-  async createActionDefinition(
-    file: File,
-    name: string,
-    description: string,
-    workspaceId: number,
-    user: User | null,
-  ): Promise<boolean> {
-    try {
-      if (!queryPermissions.CREATE_ACTION_DEFINITION(user)) {
-        throwPermissionError('create action definition');
-      }
-
-      const actionFileId = await effects.uploadFile(file, user);
-
-      if (actionFileId !== null) {
-        const actionDefinitionInsertInput = {
-          action_file_id: actionFileId,
-          description,
-          name,
-          workspace_id: workspaceId,
-        };
-        const data = await reqHasura<ActionDefinition>(
-          gql.CREATE_ACTION_DEFINITION,
-          { actionDefinitionInsertInput },
-          user,
-        );
-        const { insert_action_definition_one } = data;
-        if (insert_action_definition_one) {
-          showSuccessToast('Action Created Successfully');
-          return true;
-        } else {
-          throw new Error('Action Creation Failed');
-        }
-      } else {
-        throw new Error('Action Creation Failed');
-      }
-    } catch (e) {
-      catchError('Action Creation Failed', e as Error);
-      showFailureToast('Action Creation Failed');
-      return false;
-    }
-  },
-
-  async createActionRun(
-    actionDefinitionId: number,
-    parameters: any,
-    settings: any,
-    user: User | null,
-  ): Promise<number | null> {
-    try {
-      if (!queryPermissions.CREATE_ACTION_RUN(user)) {
-        throwPermissionError('create action run');
-      }
-
-      const actionRunInsertInput = {
-        action_definition_id: actionDefinitionId,
-        parameters,
-        settings,
-      };
-      const response = await reqHasura<{ id: number }>(gql.CREATE_ACTION_RUN, { actionRunInsertInput }, user);
-      const { insert_action_run_one: actionRunId } = response;
-      if (actionRunId !== null) {
-        return actionRunId.id;
-      } else {
-        throw Error(`Unable to run action`);
-      }
-    } catch (e) {
-      catchError('Action Run Creation Failed', e as Error);
-      showFailureToast('Action Run Creation Failed');
-      return null;
     }
   },
 
@@ -887,43 +680,37 @@ const effects = {
   },
 
   async createConstraint(
-    constraintToCreate: Omit<ConstraintInsertInput, 'versions'>,
-    definitionType: ConstraintDefinitionType,
+    name: string,
+    isPublic: boolean,
+    metadataTags: ConstraintTagsInsertInput[],
     definition: string,
-    file: File | null,
     definitionTags: ConstraintTagsInsertInput[],
     user: User | null,
+    description?: string,
   ): Promise<number | null> {
     try {
       if (!queryPermissions.CREATE_CONSTRAINT(user)) {
         throwPermissionError('create a constraint');
       }
 
-      let jarId: number | null = null;
-      let codeDefinition: string | null = null;
-
-      if (definitionType === ConstraintDefinitionType.EDSL) {
-        codeDefinition = definition;
-      } else if (definitionType === ConstraintDefinitionType.JAR && file) {
-        jarId = await effects.uploadFile(file, user);
-      }
-
       const constraintInsertInput: ConstraintInsertInput = {
-        ...constraintToCreate,
+        ...(description ? { description } : {}),
+        name,
+        public: isPublic,
+        tags: {
+          data: metadataTags,
+        },
         versions: {
           data: [
             {
-              definition: codeDefinition,
+              definition,
               tags: {
                 data: definitionTags,
               },
-              type: definitionType,
-              uploaded_jar_id: jarId,
             },
           ],
         },
       };
-
       const data = await reqHasura<ConstraintMetadata>(
         gql.CREATE_CONSTRAINT,
         { constraint: constraintInsertInput },
@@ -936,7 +723,7 @@ const effects = {
         showSuccessToast('Constraint Created Successfully');
         return id;
       } else {
-        throw Error(`Unable to create constraint "${constraintToCreate.name}"`);
+        throw Error(`Unable to create constraint "${name}"`);
       }
     } catch (e) {
       catchError('Constraint Creation Failed', e as Error);
@@ -947,9 +734,7 @@ const effects = {
 
   async createConstraintDefinition(
     constraintId: number,
-    definitionType: ConstraintDefinitionType,
     definition: string,
-    file: File | null,
     definitionTags: ConstraintTagsInsertInput[],
     user: User | null,
   ): Promise<Pick<ConstraintDefinition, 'constraint_id' | 'definition' | 'revision'> | null> {
@@ -958,23 +743,12 @@ const effects = {
         throwPermissionError('create a constraint');
       }
 
-      let jarId: number | null = null;
-      let codeDefinition: string | null = null;
-
-      if (definitionType === ConstraintDefinitionType.EDSL) {
-        codeDefinition = definition;
-      } else if (definitionType === ConstraintDefinitionType.JAR && file !== null) {
-        jarId = await effects.uploadFile(file, user);
-      }
-
       const constraintDefinitionInsertInput: ConstraintDefinitionInsertInput = {
         constraint_id: constraintId,
-        definition: codeDefinition,
+        definition,
         tags: {
           data: definitionTags,
         },
-        type: definitionType,
-        uploaded_jar_id: jarId,
       };
       const data = await reqHasura<ConstraintDefinition>(
         gql.CREATE_CONSTRAINT_DEFINITION,
@@ -991,34 +765,6 @@ const effects = {
     } catch (e) {
       catchError('Constraint Creation Failed', e as Error);
       showFailureToast('Constraint Creation Failed');
-      return null;
-    }
-  },
-
-  async createConstraintPlanSpecification(
-    constraintPlanSpecification: ConstraintPlanSpecInsertInput,
-    user: User | null,
-  ): Promise<number | null> {
-    try {
-      if (!queryPermissions.CREATE_CONSTRAINT_PLAN_SPECIFICATION(user)) {
-        throwPermissionError('create a scheduling spec goal');
-      }
-      const data = await reqHasura<ConstraintPlanSpecification>(
-        gql.CREATE_CONSTRAINT_PLAN_SPECIFICATION,
-        { constraintPlanSpecification },
-        user,
-      );
-      const { createConstraintSpec } = data;
-      if (createConstraintSpec != null) {
-        const { invocation_id: invocationId } = createConstraintSpec;
-        showSuccessToast('New Constraint Invocation Created Successfully');
-        return invocationId ?? null;
-      } else {
-        throw Error('Unable to create a constraint spec invocation');
-      }
-    } catch (e) {
-      catchError(e as Error);
-      showFailureToast('Constraint Invocation Creation Failed');
       return null;
     }
   },
@@ -1128,7 +874,7 @@ const effects = {
     }
   },
 
-  async createExpansionSequence(seqId: string, simulationDatasetId: number, user: User | null): Promise<string | null> {
+  async createExpansionSequence(seqId: string, simulationDatasetId: number, user: User | null): Promise<void> {
     try {
       if (!queryPermissions.CREATE_EXPANSION_SEQUENCE(user)) {
         throwPermissionError('create an expansion sequence');
@@ -1144,7 +890,6 @@ const effects = {
       if (data.createExpansionSequence != null) {
         showSuccessToast('Expansion Sequence Created Successfully');
         creatingExpansionSequenceStore.set(false);
-        return data.createExpansionSequence.seq_id;
       } else {
         throw Error(`Unable to create expansion sequence with ID: "${seqId}"`);
       }
@@ -1152,7 +897,6 @@ const effects = {
       catchError('Expansion Sequence Create Failed', e as Error);
       showFailureToast('Expansion Sequence Create Failed');
       creatingExpansionSequenceStore.set(false);
-      return null;
     }
   },
 
@@ -1931,11 +1675,33 @@ const effects = {
     }
   },
 
+  // async createSchedulingConditionPlanSpecification(
+  //   spec_condition: SchedulingSpecConditionInsertInput,
+  //   user: User | null,
+  // ): Promise<void> {
+  //   try {
+  //     if (!queryPermissions.CREATE_SCHEDULING_CONDITION_PLAN_SPECIFICATION(user)) {
+  //       throwPermissionError('create a scheduling spec condition');
+  //     }
+
+  //     const data = await reqHasura<SchedulingConditionPlanSpecification>(
+  //       gql.CREATE_SCHEDULING_CONDITION_PLAN_SPECIFICATION,
+  //       { spec_condition },
+  //       user,
+  //     );
+  //     if (data.createSchedulingSpecCondition == null) {
+  //       throw Error('Unable to create a scheduling spec condition');
+  //     }
+  //   } catch (e) {
+  //     catchError(e as Error);
+  //   }
+  // },
+
   async createSchedulingGoal(
     name: string,
     isPublic: boolean,
     metadataTags: SchedulingTagsInsertInput[],
-    definitionType: SchedulingDefinitionType,
+    definitionType: SchedulingType,
     definition: string | null,
     file: File | null,
     definitionTags: SchedulingTagsInsertInput[],
@@ -1950,9 +1716,9 @@ const effects = {
       let jarId: number | null = null;
       let codeDefinition: string | null = null;
 
-      if (definitionType === SchedulingDefinitionType.EDSL) {
+      if (definitionType === SchedulingType.EDSL) {
         codeDefinition = definition;
-      } else if (definitionType === SchedulingDefinitionType.JAR && file) {
+      } else if (definitionType === SchedulingType.JAR && file) {
         jarId = await effects.uploadFile(file, user);
       }
 
@@ -1996,7 +1762,7 @@ const effects = {
 
   async createSchedulingGoalDefinition(
     goalId: number,
-    definitionType: SchedulingDefinitionType,
+    definitionType: SchedulingType,
     definition: string | null,
     file: File | null,
     definitionTags: SchedulingTagsInsertInput[],
@@ -2010,9 +1776,9 @@ const effects = {
       let jarId: number | null = null;
       let codeDefinition: string | null = null;
 
-      if (definitionType === SchedulingDefinitionType.EDSL) {
+      if (definitionType === SchedulingType.EDSL) {
         codeDefinition = definition;
-      } else if (definitionType === SchedulingDefinitionType.JAR && file !== null) {
+      } else if (definitionType === SchedulingType.JAR && file !== null) {
         jarId = await effects.uploadFile(file, user);
       }
 
@@ -2092,83 +1858,6 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       return null;
-    }
-  },
-
-  async createSequenceFilter(
-    filter: ActivityLayerFilter,
-    seqName: string,
-    modelId: number,
-    user: User | null,
-  ): Promise<number | undefined> {
-    try {
-      if (!queryPermissions.CREATE_SEQUENCE_FILTER(user)) {
-        throwPermissionError('create a sequence filter');
-      }
-
-      const sequenceFilterInsertInput: SequenceFilterInsertInput = {
-        filter,
-        model_id: modelId,
-        name: seqName,
-      };
-
-      const result = await reqHasura<SequenceFilter>(
-        gql.CREATE_SEQUENCE_FILTER,
-        { definition: sequenceFilterInsertInput },
-        user,
-      );
-
-      const { createSequenceFilter: createSequenceFilter } = result;
-
-      if (createSequenceFilter != null) {
-        showSuccessToast('Sequence Filter Created Successfully');
-        return result.createSequenceFilter?.id;
-      } else {
-        throw Error('Create Sequence Filter Failed');
-      }
-    } catch (e) {
-      catchError('Create Sequence Filter Failed', e as Error);
-      showFailureToast('Create Sequence Filter Failed');
-    }
-    return undefined;
-  },
-
-  async createSequenceTemplate(
-    activityType: string,
-    language: string,
-    modelId: number,
-    name: string,
-    parcelId: number,
-    templateDefinition: string,
-    user: User | null,
-  ): Promise<void> {
-    try {
-      if (!queryPermissions.CREATE_SEQUENCE_TEMPLATE(user)) {
-        throwPermissionError('create a sequence template');
-      }
-
-      const result = await reqHasura<SequenceTemplate>(
-        gql.CREATE_SEQUENCE_TEMPLATE,
-        {
-          activityTypeName: activityType,
-          language,
-          modelId,
-          name,
-          parcelId,
-          templateDefinition,
-        },
-        user,
-      );
-      const { insert_sequence_template_one: insertSequenceTemplateOne } = result;
-
-      if (insertSequenceTemplateOne !== null) {
-        showSuccessToast('Sequence Template Created Successfully');
-      } else {
-        throw Error('Create Sequence Template Failed');
-      }
-    } catch (e) {
-      catchError('Create Sequence Template Failed', e as Error);
-      showFailureToast('Create Sequence Template Failed');
     }
   },
 
@@ -2705,31 +2394,29 @@ const effects = {
     return false;
   },
 
-  async deleteConstraintInvocations(
-    plan: Plan,
-    constraintInvocationIdsToDelete: (number | undefined)[],
-    user: User | null,
-  ) {
+  async deleteConstraintPlanSpecifications(plan: Plan, constraintIds: number[], user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_CONSTRAINT_INVOCATIONS(user, plan)) {
-        throwPermissionError("delete this constraint's invocations");
+      if (!queryPermissions.DELETE_CONSTRAINT_PLAN_SPECIFICATIONS(user, plan)) {
+        throwPermissionError('delete constraint plan specifications');
       }
-      const { deleteConstraintPlanSpecifications } = await reqHasura(
-        gql.DELETE_CONSTRAINT_INVOCATIONS,
-        {
-          constraintInvocationIdsToDelete,
-        },
+
+      const data = await reqHasura<{ affected_rows: number }>(
+        gql.DELETE_CONSTRAINT_PLAN_SPECIFICATIONS,
+        { constraintIds, planId: plan.id },
         user,
       );
-
-      if (deleteConstraintPlanSpecifications !== null) {
-        showSuccessToast(`Constraints Updated Successfully`);
+      if (data.delete_constraint_specification != null) {
+        if (data.delete_constraint_specification.affected_rows !== constraintIds.length) {
+          throw Error('Some constraint plan specifications were not successfully deleted');
+        }
+        return true;
       } else {
-        throw Error('Unable to update the constraint specifications for the plan');
+        throw Error('Unable to delete constraint plan specifications');
       }
     } catch (e) {
-      catchError('Constraint Plan Specifications Update Failed', e as Error);
-      showFailureToast('Constraint Plan Specifications Update Failed');
+      catchError('Delete Constraint Plan Specifications Failed', e as Error);
+      showFailureToast('Delete Constraint Plan Specifications Failed');
+      return false;
     }
   },
 
@@ -3403,15 +3090,15 @@ const effects = {
     }
   },
 
-  async deleteSchedulingGoalInvocations(
+  async deleteSchedulingGoalInvocation(
     plan: Plan,
     schedulingSpecificationId: number,
     goalInvocationIdsToDelete: (number | undefined)[],
     user: User | null,
   ) {
     try {
-      if (!queryPermissions.DELETE_SCHEDULING_GOAL_INVOCATIONS(user, plan)) {
-        throwPermissionError("delete this scheduling goal's invocations");
+      if (!queryPermissions.UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS(user, plan)) {
+        throwPermissionError('update this scheduling goal plan specification');
       }
       const { deleteConstraintPlanSpecifications } = await reqHasura(
         gql.DELETE_SCHEDULING_GOAL_INVOCATIONS,
@@ -3457,69 +3144,6 @@ const effects = {
     } catch (e) {
       catchError('Sequence Adaptation Delete Failed', e as Error);
       showFailureToast('Sequence Adaptation Delete Failed');
-    }
-  },
-
-  async deleteSequenceFilters(sequenceFilterIds: number[], user: User | null): Promise<void> {
-    try {
-      if (!queryPermissions.DELETE_SEQUENCE_FILTERS(user)) {
-        throwPermissionError('delete the sequence filters');
-      }
-
-      const { confirm } = await showConfirmModal(
-        'Delete',
-        `This will permanently delete the sequence filters '${sequenceFilterIds}'`,
-        'Delete Permanently',
-      );
-
-      if (confirm) {
-        const data = await reqHasura<{ sequenceFilterIds: number[] }>(
-          gql.DELETE_SEQUENCE_FILTERS,
-          { sequenceFilterIds },
-          user,
-        );
-        if (data.deleteSequenceFilters != null) {
-          showSuccessToast('Sequence Filters Deleted Successfully');
-        } else {
-          throw Error(`Unable to delete sequence filters with IDs: "${sequenceFilterIds}"`);
-        }
-      }
-    } catch (e) {
-      catchError('Sequence Filter Delete Failed', e as Error);
-      showFailureToast('Sequence Filter Delete Failed');
-    }
-  },
-
-  async deleteSequenceTemplate(sequenceTemplate: SequenceTemplate, user: User | null): Promise<void> {
-    try {
-      if (!queryPermissions.DELETE_SEQUENCE_TEMPLATE(user)) {
-        throwPermissionError('delete this sequence template');
-      }
-
-      const { confirm } = await showConfirmModal(
-        'Delete',
-        `This will permanently delete the template ("${sequenceTemplate.name}") for the activity type: ${sequenceTemplate.activity_type}`,
-        'Delete Permanently',
-      );
-
-      if (confirm) {
-        const data = await reqHasura<{ sequenceTemplateId: number }>(
-          gql.DELETE_SEQUENCE_TEMPLATE,
-          { sequenceTemplateId: sequenceTemplate.id },
-          user,
-        );
-
-        const { delete_sequence_template_by_pk: deleteSequenceTemplate } = data;
-
-        if (deleteSequenceTemplate !== null) {
-          showSuccessToast('Sequence Template Deleted Successfully');
-        } else {
-          throw Error(`Unable to delete sequence template with ID: "${sequenceTemplate.id}"`);
-        }
-      }
-    } catch (e) {
-      catchError('Sequence Template Deletion Failed', e as Error);
-      showFailureToast('Sequence Template Deletion Failed');
     }
   },
 
@@ -3841,11 +3465,17 @@ const effects = {
     return null;
   },
 
-  async expand(expansionSetId: number, simulationDatasetId: number, plan: Plan, user: User | null): Promise<void> {
+  async expand(
+    expansionSetId: number,
+    simulationDatasetId: number,
+    plan: Plan,
+    model: Model,
+    user: User | null,
+  ): Promise<void> {
     try {
       planExpansionStatusStore.set(Status.Incomplete);
 
-      if (!queryPermissions.EXPAND(user, plan, plan.model)) {
+      if (!queryPermissions.EXPAND(user, plan, model)) {
         throwPermissionError('expand this plan');
       }
 
@@ -3860,55 +3490,6 @@ const effects = {
       catchError('Plan Expansion Failed', e as Error);
       planExpansionStatusStore.set(Status.Failed);
       showFailureToast('Plan Expansion Failed');
-    }
-  },
-
-  async expandTemplates(seqIds: string[], simulationDatasetId: number, plan: Plan, user: User | null): Promise<void> {
-    try {
-      sequenceTemplateExpansionStatus.set(Status.Incomplete);
-      if (!queryPermissions.EXPAND_TEMPLATES(user, plan, plan.model)) {
-        throwPermissionError('expand a sequence template');
-      }
-
-      const data = await reqHasura<{ success: boolean }>(
-        gql.EXPAND_TEMPLATES,
-        {
-          modelId: plan.model.id,
-          seqIds,
-          simulationDatasetId,
-        },
-        user,
-      );
-
-      const { expandAllTemplates: expandTemplates } = data;
-
-      if (expandTemplates !== null) {
-        sequenceTemplateExpansionStatus.set(Status.Complete);
-        showSuccessToast('Sequence Templating Successfully');
-      } else {
-        throw Error('Sequence Templating Failed');
-      }
-    } catch (e) {
-      catchError('Sequence Templating Failed', e as Error);
-      sequenceTemplateExpansionStatus.set(Status.Failed);
-      sequenceTemplateExpansionError.set(e as string);
-      showFailureToast('Sequence Templating Failed');
-    }
-  },
-
-  async getActionRun(actionRunId: number, user: User | null): Promise<ActionRun | null> {
-    try {
-      const query = convertToQuery(gql.SUB_ACTION_RUN);
-      const data = await reqHasura<ActionRun>(query, { actionRunId }, user);
-      const { actionRun } = data;
-      if (actionRun != null) {
-        return actionRun;
-      } else {
-        throw Error('Unable to retrieve activity run');
-      }
-    } catch (e) {
-      catchError(e as Error);
-      return null;
     }
   },
 
@@ -3941,28 +3522,8 @@ const effects = {
         user,
       );
       const { activityDirectiveRevisions } = data;
-
       if (activityDirectiveRevisions != null) {
-        // Fill in start_time_ms for each revision if not already calculated
-        const updatedRevisions = activityDirectiveRevisions.map(revision => {
-          const sourcePlan = get(plan);
-          if (sourcePlan) {
-            return addAbsoluteTimeToRevision(
-              revision,
-              activityId,
-              sourcePlan,
-              get(activityDirectivesDBStore) ?? [],
-              get(spansMap) ?? {},
-              get(spanUtilityMaps) ?? {
-                directiveIdToSpanIdMap: {},
-                spanIdToChildIdsMap: {},
-                spanIdToDirectiveIdMap: {},
-              },
-            );
-          }
-          return revision; // fallback if sourcePlan is undefined
-        });
-        return updatedRevisions;
+        return activityDirectiveRevisions;
       } else {
         throw Error('Unable to retrieve activity directive changelog');
       }
@@ -4200,7 +3761,7 @@ const effects = {
     user: User | null,
   ): Promise<string | null> {
     try {
-      const data = await reqHasura<ExpandedSequence[]>(
+      const data = await reqHasura<GetSeqJsonResponse>(
         gql.GET_EXPANSION_SEQUENCE_SEQ_JSON,
         {
           seqId,
@@ -4208,11 +3769,17 @@ const effects = {
         },
         user,
       );
+      const { getSequenceSeqJson } = data;
+      if (getSequenceSeqJson != null) {
+        const { errors, seqJson, status } = getSequenceSeqJson;
 
-      const { expanded_sequences } = data;
-      if (expanded_sequences != null && expanded_sequences.length === 1) {
-        const { expanded_sequence } = expanded_sequences[0];
-        return JSON.stringify(expanded_sequence, null, 2);
+        if (status === 'FAILURE') {
+          const [firstError] = errors;
+          const { message } = firstError;
+          return message;
+        } else {
+          return JSON.stringify(seqJson, null, 2);
+        }
       } else {
         throw Error(`Unable to get expansion sequence seq json for seq ID "${seqId}"`);
       }
@@ -4348,25 +3915,6 @@ const effects = {
     }
   },
 
-  async getFile(
-    fileId: number,
-    user: User | null,
-    signal: AbortSignal | undefined = undefined,
-  ): Promise<{ aborted: boolean; file: string | null }> {
-    try {
-      const file = await reqGateway(`/file/${fileId}`, 'GET', null, user, true, signal, false);
-      return { aborted: false, file };
-    } catch (e) {
-      if ((e as Error).name === 'AbortError') {
-        return { aborted: true, file: null };
-      } else {
-        catchError(e as Error);
-        showFailureToast(`Failed to get file with id: ${fileId}`);
-        return { aborted: false, file: null };
-      }
-    }
-  },
-
   async getFileName(fileId: number, user: User | null): Promise<string | null> {
     try {
       if (!queryPermissions.GET_UPLOADED_FILENAME(user)) {
@@ -4381,7 +3929,6 @@ const effects = {
       return null;
     } catch (e) {
       catchError(e as Error);
-      showFailureToast(`Failed to get filename for file id: ${fileId}`);
       return null;
     }
   },
@@ -5178,21 +4725,6 @@ const effects = {
     }
   },
 
-  async getVersion(): Promise<Version> {
-    try {
-      const versionResponse = await fetch(`${base}/version.json`);
-      return await versionResponse.json();
-    } catch (e) {
-      return {
-        branch: 'unknown',
-        commit: 'unknown',
-        commitUrl: '',
-        date: new Date().toLocaleString(),
-        name: 'aerie-ui',
-      };
-    }
-  },
-
   /**
    * Try and get the view from the query parameters, otherwise check if there's a default view set at the
    * mission model level, otherwise just return a generated default view. Performs view migration if requested.
@@ -5317,48 +4849,6 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       creatingPlanStore.set(false);
-      return null;
-    }
-  },
-
-  async importSequenceTemplate(
-    activityType: string,
-    language: string,
-    modelId: number,
-    name: string,
-    parcelId: number,
-    sequenceTemplateContent: string,
-    user: User | null,
-  ): Promise<SequenceTemplate | null> {
-    try {
-      if (!gatewayPermissions.IMPORT_SEQUENCE_TEMPLATE(user)) {
-        throwPermissionError('import a sequence template');
-      }
-      const body = {
-        activity_type: activityType,
-        language,
-        model_id: modelId,
-        name,
-        parcel_id: parcelId,
-        sequence_template_file: sequenceTemplateContent,
-      };
-      const createdSequenceTemplate = await reqGateway<SequenceTemplate | null>(
-        '/importSequenceTemplate',
-        'POST',
-        JSON.stringify(body),
-        user,
-        false,
-      );
-
-      if (createdSequenceTemplate != null) {
-        showSuccessToast('Sequence Template Imported Successfully');
-        return createdSequenceTemplate;
-      }
-
-      return null;
-    } catch (e) {
-      catchError(e as Error);
-      showFailureToast('Failed To Import Sequence Template');
       return null;
     }
   },
@@ -5915,25 +5405,6 @@ const effects = {
     return null;
   },
 
-  async runAction(
-    actionDefinition: ActionDefinition,
-    user: User | null,
-    parameters?: ArgumentsMap,
-  ): Promise<number | null> {
-    try {
-      const { confirm, value } = await showRunActionModal(actionDefinition, user, parameters);
-      if (confirm && value) {
-        const { id } = value;
-        return id;
-      }
-      return null;
-    } catch (e) {
-      catchError('Run Action Failed', e as Error);
-      showFailureToast('Run Action Failed');
-      return null;
-    }
-  },
-
   async schedule(analysisOnly: boolean = false, plan: Plan | null, user: User | null): Promise<void> {
     try {
       if (plan) {
@@ -6023,45 +5494,6 @@ const effects = {
     }
   },
 
-  async sendSequenceToWorkspace(
-    sequence: ExpansionSequence | null,
-    expandedSequence: string | null,
-    user: User | null,
-  ): Promise<void> {
-    if (sequence === null) {
-      showFailureToast("Sequence Doesn't Exist");
-      return;
-    }
-
-    if (expandedSequence === null) {
-      showFailureToast("Expanded Sequence Doesn't Exist");
-      return;
-    }
-
-    const { confirm, value } = await showExpansionPanelModal();
-
-    if (!confirm || !value) {
-      return;
-    }
-
-    try {
-      const createUserSequenceInsertInput: UserSequenceInsertInput = {
-        definition: expandedSequence,
-        is_locked: false,
-        name: sequence.seq_id,
-        parcel_id: value.parcelId,
-        seq_json: '',
-        workspace_id: value.workspaceId,
-      };
-      const userSequenceCreated = await this.createUserSequence(createUserSequenceInsertInput, user);
-      if (!userSequenceCreated) {
-        throw Error('Sequence Import Failed');
-      }
-    } catch (e) {
-      catchError(e as Error);
-    }
-  },
-
   async session(user: BaseUser | null): Promise<ReqSessionResponse> {
     try {
       const data = await reqGateway<ReqSessionResponse>('/auth/session', 'GET', null, user, false);
@@ -6094,36 +5526,6 @@ const effects = {
       }
     } catch (e) {
       catchError(e as Error);
-    }
-  },
-
-  async updateActionDefinition(
-    id: number,
-    actionDefinitionSetInput: ActionDefinitionSetInput,
-    user: User | null,
-  ): Promise<void> {
-    try {
-      if (!queryPermissions.UPDATE_ACTION_DEFINITION(user)) {
-        throwPermissionError('update this action definition');
-      }
-
-      const { update_action_definition_by_pk: updateActionDefinitionByPk } = await reqHasura<ActionDefinition>(
-        gql.UPDATE_ACTION_DEFINITION,
-        {
-          actionDefinitionSetInput,
-          id,
-        },
-        user,
-      );
-
-      if (updateActionDefinitionByPk != null) {
-        showSuccessToast(`Action Updated Successfully`);
-      } else {
-        throw Error(`Unable to update action with ID: "${id}"`);
-      }
-    } catch (e) {
-      catchError('Action Update Failed', e as Error);
-      showFailureToast('Action Update Failed');
     }
   },
 
@@ -6302,38 +5704,10 @@ const effects = {
     }
   },
 
-  async updateConstraintModelSpecification(constraintSpecToUpdate: ConstraintModelSpecSetInput, user: User | null) {
-    try {
-      if (!queryPermissions.UPDATE_CONSTRAINT_MODEL_SPECIFICATION(user)) {
-        throwPermissionError('update this constraint model specification');
-      }
-      const {
-        arguments: constraintArguments,
-        invocation_id: constraintInvocationId,
-        constraint_revision: revision,
-        order,
-      } = constraintSpecToUpdate;
-
-      const { updateConstraintModelSpecification } = await reqHasura(
-        gql.UPDATE_CONSTRAINT_MODEL_SPECIFICATION,
-        { arguments: constraintArguments, constraintInvocationId, order, revision },
-        user,
-      );
-
-      if (updateConstraintModelSpecification !== null) {
-        showSuccessToast(`Constraint Model Specification Updated Successfully`);
-      } else {
-        throw Error('Unable to update the constraint specification for the model');
-      }
-    } catch (e) {
-      catchError('Constraint Model Specification Update Failed', e as Error);
-      showFailureToast('Constraint Model Specification Update Failed');
-    }
-  },
-
   async updateConstraintModelSpecifications(
-    constraintSpecsToAdd: ConstraintModelSpecInsertInput[],
-    constraintInvocationIdsToDelete: number[],
+    model: Model,
+    constraintSpecsToUpdate: ConstraintModelSpecInsertInput[],
+    constraintIdsToDelete: number[],
     user: User | null,
   ) {
     try {
@@ -6341,13 +5715,13 @@ const effects = {
         throwPermissionError('update this constraint model specification');
       }
 
-      const { deleteConstraintModelSpecifications, addConstraintModelSpecifications } = await reqHasura(
+      const { deleteConstraintModelSpecifications, updateConstraintModelSpecifications } = await reqHasura(
         gql.UPDATE_CONSTRAINT_MODEL_SPECIFICATIONS,
-        { constraintInvocationIdsToDelete, constraintSpecsToAdd },
+        { constraintIdsToDelete, constraintSpecsToUpdate, modelId: model.id },
         user,
       );
 
-      if (addConstraintModelSpecifications !== null || deleteConstraintModelSpecifications !== null) {
+      if (updateConstraintModelSpecifications !== null || deleteConstraintModelSpecifications !== null) {
         showSuccessToast(`Constraint Model Specifications Updated Successfully`);
       } else {
         throw Error('Unable to update the constraint specifications for the model');
@@ -6360,30 +5734,18 @@ const effects = {
 
   async updateConstraintPlanSpecification(
     plan: Plan,
-    constraintPlanSpecification: ConstraintPlanSpecSetInput,
+    constraintPlanSpecification: Omit<ConstraintPlanSpec, 'constraint_metadata'>,
     user: User | null,
   ) {
     try {
       if (!queryPermissions.UPDATE_CONSTRAINT_PLAN_SPECIFICATION(user, plan)) {
         throwPermissionError('update this constraint plan specification');
       }
-      const {
-        arguments: constraintArguments,
-        enabled,
-        invocation_id: invocationId,
-        constraint_revision: revision,
-        order,
-      } = constraintPlanSpecification;
+      const { enabled, constraint_id: constraintId, constraint_revision: revision } = constraintPlanSpecification;
 
       const { updateConstraintPlanSpecification } = await reqHasura(
         gql.UPDATE_CONSTRAINT_PLAN_SPECIFICATION,
-        {
-          arguments: constraintArguments,
-          constraintInvocationId: invocationId,
-          enabled,
-          order,
-          revision,
-        },
+        { enabled, id: constraintId, planId: plan.id, revision },
         user,
       );
 
@@ -6400,7 +5762,7 @@ const effects = {
 
   async updateConstraintPlanSpecifications(
     plan: Plan,
-    constraintSpecsToInsert: ConstraintPlanSpecInsertInput[],
+    constraintSpecsToUpdate: ConstraintPlanSpecInsertInput[],
     constraintSpecIdsToDelete: number[],
     user: User | null,
   ) {
@@ -6409,13 +5771,13 @@ const effects = {
         throwPermissionError('update this constraint plan specification');
       }
 
-      const { deleteConstraintPlanSpecifications, insertConstraintPlanSpecifications } = await reqHasura(
+      const { deleteConstraintPlanSpecifications, updateConstraintPlanSpecifications } = await reqHasura(
         gql.UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS,
-        { constraintSpecIdsToDelete, constraintSpecsToInsert },
+        { constraintSpecIdsToDelete, constraintSpecsToUpdate, planId: plan.id },
         user,
       );
 
-      if (insertConstraintPlanSpecifications !== null || deleteConstraintPlanSpecifications !== null) {
+      if (updateConstraintPlanSpecifications !== null || deleteConstraintPlanSpecifications !== null) {
         showSuccessToast(`Constraint Plan Specifications Updated Successfully`);
       } else {
         throw Error('Unable to update the constraint specifications for the plan');
@@ -6555,32 +5917,6 @@ const effects = {
     }
   },
 
-  async updatePlanMissionModel(plan: PlanSlim, user: User | null): Promise<boolean> {
-    try {
-      if (!queryPermissions.UPDATE_PLAN(user, plan)) {
-        throwPermissionError('update plan');
-      }
-      if (!queryPermissions.CREATE_PLAN_SNAPSHOT(user)) {
-        throwPermissionError('create a snapshot');
-      }
-
-      const { confirm, value } = await showUpdatePlanMissionModelModal(plan, user);
-      if (confirm) {
-        const data = await reqHasura(gql.MIGRATE_PLAN_TO_MODEL, { new_model_id: value.id, plan_id: plan.id }, user);
-        if (data.migrate_plan_to_model?.result === 'success') {
-          showSuccessToast('Model Migration Success');
-          return true;
-        } else {
-          throw Error(data.migrate_plan_to_model?.result);
-        }
-      }
-    } catch (e) {
-      catchError('Model Migration Failed', e as Error);
-      showFailureToast('Model Migration Failed');
-    }
-    return false;
-  },
-
   async updatePlanSnapshot(id: number, snapshot: Partial<PlanSnapshot>, user: User | null): Promise<void> {
     try {
       if (!queryPermissions.UPDATE_PLAN_SNAPSHOT(user)) {
@@ -6675,10 +6011,7 @@ const effects = {
 
   async updateSchedulingConditionModelSpecifications(
     model: Model,
-    conditionSpecsToUpdate: (
-      | SchedulingConditionModelSpecificationInsertInput
-      | SchedulingConditionModelSpecificationSetInput
-    )[],
+    conditionSpecsToUpdate: SchedulingConditionModelSpecificationInsertInput[],
     conditionIdsToDelete: number[],
     user: User | null,
   ) {
@@ -6837,23 +6170,19 @@ const effects = {
   },
 
   async updateSchedulingGoalModelSpecification(
+    model: Model,
     schedulingGoalModelSpecification: SchedulingGoalModelSpecificationSetInput,
     user: User | null,
   ) {
     try {
       if (!queryPermissions.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION(user)) {
-        throwPermissionError('update this scheduling goal model specification');
+        throwPermissionError('update this scheduling goal plan specification');
       }
-      const {
-        arguments: goalArguments,
-        goal_invocation_id: goalInvocationId,
-        goal_revision: revision,
-        priority,
-      } = schedulingGoalModelSpecification;
+      const { goal_id: goalId, goal_revision: revision, priority } = schedulingGoalModelSpecification;
 
       const { updateSchedulingGoalModelSpecification } = await reqHasura(
         gql.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION,
-        { arguments: goalArguments, goalInvocationId, priority, revision },
+        { id: goalId, modelId: model.id, priority, revision },
         user,
       );
 
@@ -6869,7 +6198,8 @@ const effects = {
   },
 
   async updateSchedulingGoalModelSpecifications(
-    goalSpecsToAdd: SchedulingGoalModelSpecificationInsertInput[],
+    model: Model,
+    goalSpecsToUpdate: SchedulingGoalModelSpecificationInsertInput[],
     goalIdsToDelete: number[],
     user: User | null,
   ) {
@@ -6877,16 +6207,17 @@ const effects = {
       if (!queryPermissions.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS(user)) {
         throwPermissionError('update this scheduling goal model specification');
       }
-      const { addSchedulingGoalModelSpecifications, deleteConstraintModelSpecifications } = await reqHasura(
+      const { deleteConstraintModelSpecifications, updateSchedulingGoalModelSpecifications } = await reqHasura(
         gql.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS,
         {
           goalIdsToDelete,
-          goalSpecsToAdd,
+          goalSpecsToUpdate,
+          modelId: model.id,
         },
         user,
       );
 
-      if (addSchedulingGoalModelSpecifications !== null || deleteConstraintModelSpecifications !== null) {
+      if (updateSchedulingGoalModelSpecifications !== null || deleteConstraintModelSpecifications !== null) {
         showSuccessToast(`Scheduling Goals Updated Successfully`);
       } else {
         throw Error('Unable to update the scheduling goal specifications for the model');
@@ -6900,27 +6231,13 @@ const effects = {
   async updateSchedulingGoalPlanSpecification(
     plan: Plan,
     schedulingGoalPlanSpecification: SchedulingGoalPlanSpecSetInput,
-    parameterSchema: ValueSchemaStruct,
-    newFiles: File[] = [],
     user: User | null,
   ) {
     try {
       if (!queryPermissions.UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATION(user, plan)) {
         throwPermissionError('update this scheduling goal plan specification');
       }
-
-      const generatedFilenames = await effects.uploadFiles(newFiles, user);
-
-      if (schedulingGoalPlanSpecification.arguments) {
-        schedulingGoalPlanSpecification.arguments = replacePathsForStructArguments(
-          schedulingGoalPlanSpecification.arguments,
-          parameterSchema,
-          generatedFilenames,
-        );
-      }
-
       const {
-        arguments: goalArguments,
         enabled,
         goal_invocation_id,
         goal_revision: revision,
@@ -6931,7 +6248,7 @@ const effects = {
       const { updateSchedulingGoalPlanSpecification } = await reqHasura(
         gql.UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATION,
         {
-          arguments: goalArguments,
+          arguments: schedulingGoalPlanSpecification.arguments,
           enabled,
           goal_invocation_id,
           priority,
@@ -6999,52 +6316,6 @@ const effects = {
       }
     } catch (e) {
       catchError(e as Error);
-    }
-  },
-
-  async updateSequenceFilter(
-    filter: ActivityLayerFilter,
-    filterName: string,
-    filterId: number,
-    model: Model,
-    user: User | null,
-  ): Promise<void> {
-    try {
-      if (!featurePermissions.sequenceFilter.canUpdate(user, model)) {
-        throwPermissionError('update this sequence filter');
-      }
-
-      const data = await reqHasura(gql.UPDATE_SEQUENCE_FILTER, { filter, filterId, filterName }, user);
-      if (data.updateSequenceFilter !== null) {
-        showSuccessToast('Updated Sequence Filter');
-      } else {
-        throw Error(`Unable to update sequence filter with ID: "${filterId}"`);
-      }
-    } catch (e) {
-      catchError('Failed to Update Sequence Filter', e as Error);
-      showFailureToast('Failed To Update Sequence Template');
-    }
-  },
-
-  async updateSequenceTemplate(
-    definition: string,
-    sequenceTemplate: SequenceTemplate,
-    user: User | null,
-  ): Promise<void> {
-    try {
-      if (!queryPermissions.UPDATE_SEQUENCE_TEMPLATE(user, sequenceTemplate)) {
-        throwPermissionError('update this sequence template');
-      }
-
-      const data = await reqHasura(gql.UPDATE_SEQUENCE_TEMPLATE, { definition, id: sequenceTemplate.id }, user);
-      if (data.updateSequenceTemplate !== null) {
-        showSuccessToast('Updated Sequence Template');
-      } else {
-        throw Error(`Unable to update sequence template with ID: "${sequenceTemplate.id}"`);
-      }
-    } catch (e) {
-      catchError('Failed To Update Sequence Template', e as Error);
-      showFailureToast('Failed To Update Sequence Template');
     }
   },
 
@@ -7204,7 +6475,6 @@ const effects = {
   async uploadDictionary(
     dictionary: string,
     user: User | null,
-    persistDictionaryToFilesystem: boolean = true,
   ): Promise<{
     channel?: ChannelDictionaryMetadata;
     command?: CommandDictionaryMetadata;
@@ -7225,7 +6495,7 @@ const effects = {
         channel?: ChannelDictionaryMetadata;
         command?: CommandDictionaryMetadata;
         parameter?: ParameterDictionaryMetadata;
-      }>(gql.CREATE_DICTIONARY, { dictionary, persistDictionaryToFilesystem }, user);
+      }>(gql.CREATE_DICTIONARY, { dictionary }, user);
 
       const { createDictionary: newDictionaries } = data;
 
@@ -7244,7 +6514,6 @@ const effects = {
     file: File,
     user: User | null,
     sequenceAdaptationName?: string | undefined,
-    persistDictionaryToFilesystem: boolean = true,
   ): Promise<void> {
     const text = await file.text();
     if (sequenceAdaptationName) {
@@ -7255,7 +6524,7 @@ const effects = {
       }
       showSuccessToast('Sequence Adaptation Created Successfully');
     } else {
-      const uploadedDictionaries = await this.uploadDictionary(text, user, persistDictionaryToFilesystem);
+      const uploadedDictionaries = await this.uploadDictionary(text, user);
       if (uploadedDictionaries === null) {
         showFailureToast('Failed to upload dictionary file');
         throw Error('Failed to upload dictionary file');
@@ -7443,16 +6712,16 @@ const effects = {
  * @returns
  */
 export function replacePaths(
-  parameters: ParametersMap | ActionParametersMap | null,
+  modelParameters: ParametersMap | null,
   simArgs: ArgumentsMap,
   pathsToReplace: Record<string, string>,
 ): ArgumentsMap {
-  if (parameters === null) {
+  if (modelParameters === null) {
     return simArgs;
   }
   const result: ArgumentsMap = {};
-  for (const parameterName in parameters) {
-    const parameter = parameters[parameterName];
+  for (const parameterName in modelParameters) {
+    const parameter: Parameter = modelParameters[parameterName];
     const arg: Argument = simArgs[parameterName];
     if (arg !== undefined) {
       result[parameterName] = replacePathsHelper(parameter.schema, arg, pathsToReplace);
@@ -7461,30 +6730,7 @@ export function replacePaths(
   return result;
 }
 
-/**
- * A specialized version of replacePaths to be used with scheduling goal types.
- *
- * @param goalParameters The goal parameters, which are assumed to conform to the type definitions in parameterSchema.
- * @param parameterSchema The type definitions of the mission model parameters. Used to determine which parameters have type 'path'.
- * @param pathsToReplace A map from old paths to new paths. Any occurrences of old paths in simArgs will be replaced with new paths.
- * @returns
- */
-export function replacePathsForStructArguments(
-  goalParameters: ArgumentsMap,
-  parameterSchema: ValueSchemaStruct,
-  pathsToReplace: Record<string, string>,
-): ArgumentsMap {
-  const result: ArgumentsMap = {};
-  for (const parameterName in goalParameters) {
-    const arg: Argument = goalParameters[parameterName];
-    if (arg !== undefined) {
-      result[parameterName] = replacePathsHelper(parameterSchema.items[parameterName], arg, pathsToReplace);
-    }
-  }
-  return result;
-}
-
-function replacePathsHelper(schema: ValueSchema | ActionValueSchema, arg: Argument, pathsToReplace: Record<string, string>) {
+function replacePathsHelper(schema: ValueSchema, arg: Argument, pathsToReplace: Record<string, string>) {
   switch (schema.type) {
     case 'path':
       if (arg in pathsToReplace) {
