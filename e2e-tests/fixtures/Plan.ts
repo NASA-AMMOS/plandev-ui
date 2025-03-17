@@ -43,6 +43,7 @@ export class Plan {
   panelPlanMetadata: Locator;
   panelSchedulingConditions: Locator;
   panelSchedulingGoals: Locator;
+  panelSequencesAndExpansion: Locator;
   panelSimulatedActivitiesTable: Locator;
   panelSimulation: Locator;
   panelTimeline: Locator;
@@ -541,6 +542,7 @@ export class Plan {
     this.panelPlanMetadata = page.locator('[data-component-name="PlanMetadataPanel"]');
     this.panelSchedulingConditions = page.locator('[data-component-name="SchedulingConditionsPanel"]');
     this.panelSchedulingGoals = page.locator('[data-component-name="SchedulingGoalsPanel"]');
+    this.panelSequencesAndExpansion = page.locator('[data-component-name="SequencesAndExpansionPanel"]');
     this.panelSimulatedActivitiesTable = page.locator('[data-component-name="ActivitySpansTablePanel"]');
     this.panelSimulation = page.locator('[data-component-name="SimulationPanel"]');
     this.panelTimeline = page.locator('[data-component-name="TimelinePanel"]');

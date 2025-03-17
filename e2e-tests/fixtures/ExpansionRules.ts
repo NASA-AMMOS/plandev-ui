@@ -2,10 +2,12 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { fillEditorText } from '../utilities/editor.js';
 import { getOptionValueFromText } from '../utilities/selectors.js';
+import { AppNav } from './AppNav.js';
 import { Models } from './Models.js';
 import { Parcels } from './Parcels.js';
 
 export class ExpansionRules {
+  appNav: AppNav;
   cancelButton: Locator;
   closeButton: Locator;
   confirmModal: Locator;
@@ -36,6 +38,7 @@ export class ExpansionRules {
   ) {
     this.expansionRuleName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
     this.updatePage(page);
+    this.appNav = new AppNav(page);
   }
 
   async createExpansionRule(baseURL: string | undefined, expansionRuleName = this.expansionRuleName) {
@@ -111,6 +114,11 @@ export class ExpansionRules {
     await this.page.goto('/expansion/rules', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
     await expect(this.rulesNavButton).toHaveClass(/selected/);
+    const expansionIsToggledOff = await this.page.getByText('Command Expansion').isVisible();
+    if (expansionIsToggledOff) {
+      await this.appNav.appMenuButton.click();
+      await this.appNav.toggleBetweenExpansionTemplating();
+    }
   }
 
   async selectActivityType() {

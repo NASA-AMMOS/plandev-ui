@@ -1,8 +1,11 @@
 import test, { type BrowserContext, type Page } from '@playwright/test';
+import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
 import { Models } from '../fixtures/Models.js';
 import { Parcels } from '../fixtures/Parcels.js';
 import { SequenceTemplates } from '../fixtures/SequenceTemplates.js';
+
+const newTemplateName: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
 let context: BrowserContext;
 let sequenceTemplates: SequenceTemplates;
@@ -47,12 +50,12 @@ test.beforeEach(async () => {
 
 test.describe.serial('Sequence Templates', () => {
   test('Create new sequence template', async () => {
-    await sequenceTemplates.createSequenceTemplate('Test Template', 'TEXT');
+    await sequenceTemplates.createSequenceTemplate(newTemplateName, 'TEXT');
   });
   test('Open and modify a sequence via form editor', async () => {
-    await sequenceTemplates.updateSequenceTemplate('Test Template', 'Test Line');
+    await sequenceTemplates.updateSequenceTemplate(newTemplateName, 'Test Line');
   });
   test('Delete a sequence template', async () => {
-    await sequenceTemplates.deleteSequenceTemplate('Test Template');
+    await sequenceTemplates.deleteSequenceTemplate(newTemplateName);
   });
 });
