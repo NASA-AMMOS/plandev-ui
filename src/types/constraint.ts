@@ -112,6 +112,11 @@ export type ConstraintRequest = {
   simulation_dataset_id: number;
 };
 
+export type CheckConstraintResponse = {
+  constraintsRun: ConstraintResponse[];
+  requestId: number;
+};
+
 export type ConstraintResponse = {
   constraintId: ConstraintMetadata['id'];
   constraintInvocationId: ConstraintRun['constraint_invocation_id'];

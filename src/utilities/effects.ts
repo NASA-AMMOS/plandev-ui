@@ -88,6 +88,7 @@ import type { ActivityMetadata } from '../types/activity-metadata';
 import type { BaseUser, User, UserId } from '../types/app';
 import type { ReqAuthResponse, ReqSessionResponse } from '../types/auth';
 import type {
+  CheckConstraintResponse,
   ConstraintDefinition,
   ConstraintDefinitionInsertInput,
   ConstraintInsertInput,
@@ -98,7 +99,6 @@ import type {
   ConstraintPlanSpecInsertInput,
   ConstraintPlanSpecSetInput,
   ConstraintPlanSpecification,
-  ConstraintResponse,
   ConstraintResult,
 } from '../types/constraint';
 import type {
@@ -457,7 +457,7 @@ const effects = {
       checkConstraintsQueryStatusStore.set(Status.Incomplete);
       if (plan !== null) {
         const { id: planId } = plan;
-        const data = await reqHasura<ConstraintResponse[]>(
+        const data = await reqHasura<CheckConstraintResponse>(
           gql.CHECK_CONSTRAINTS,
           {
             force,
@@ -465,19 +465,21 @@ const effects = {
           },
           user,
         );
-        if (data.constraintResponses) {
+        if (data.constraintRunResponses) {
+          const {
+            constraintRunResponses: { constraintsRun },
+          } = data;
+
           // find only the constraints compiled.
-          const successfulConstraintResults: ConstraintResult[] = data.constraintResponses
+          const successfulConstraintResults: ConstraintResult[] = constraintsRun
             .filter(constraintResponse => constraintResponse.success)
             .map(constraintResponse => constraintResponse.results);
 
-          const failedConstraintResponses = data.constraintResponses.filter(
-            constraintResponse => !constraintResponse.success,
-          );
-          if (successfulConstraintResults.length === 0 && data.constraintResponses.length > 0) {
+          const failedConstraintResponses = constraintsRun.filter(constraintResponse => !constraintResponse.success);
+          if (successfulConstraintResults.length === 0 && constraintsRun.length > 0) {
             showFailureToast('All Constraints Failed');
             checkConstraintsQueryStatusStore.set(Status.Failed);
-          } else if (successfulConstraintResults.length !== data.constraintResponses.length) {
+          } else if (successfulConstraintResults.length !== constraintsRun.length) {
             showFailureToast('Constraints Partially Checked');
             checkConstraintsQueryStatusStore.set(Status.Failed);
           } else {
