@@ -143,8 +143,8 @@
   function simulateAfter(simulateAfterUpdate: boolean) {
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
-      simulate_after: simulateAfterUpdate,
       files: [],
+      simulate_after: simulateAfterUpdate,
     });
   }
 

@@ -205,23 +205,7 @@ export type SchedulingGoalPlanSpecification = {
   specification_id: number;
 };
 
-export type SchedulingGoalPlanSpecificationUpdate = {
-  arguments: any;
-  enabled: boolean;
-  files: File[] | null;
-  goal_definition?: Pick<SchedulingGoalDefinition, 'analyses' > | null;
-  goal_id: number;
-  goal_invocation_id: number;
-  goal_metadata:
-    | (Pick<SchedulingGoalMetadata, 'name' | 'owner' | 'public'> & {
-    versions: Pick<SchedulingGoalDefinition, 'revision' | 'analyses' | 'type' | 'parameter_schema'>[];
-  })
-    | null;
-  goal_revision: number | null;
-  priority: number;
-  simulate_after: boolean;
-  specification_id: number;
-};
+export type SchedulingGoalPlanSpecificationUpdate = SchedulingGoalPlanSpecification & { files: File[] | null};
 
 export type SchedulingRequest = {
   analysis_id: number;

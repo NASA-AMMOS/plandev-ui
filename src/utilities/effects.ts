@@ -197,7 +197,7 @@ import type {
   SchedulingRequest,
   SchedulingResponse,
 } from '../types/scheduling';
-import type { ValueSchema } from '../types/schema';
+import type { ValueSchema, ValueSchemaStruct } from '../types/schema';
 import type { SequenceTemplate } from '../types/sequence-template';
 import {
   type ChannelDictionaryMetadata,
@@ -6634,6 +6634,7 @@ const effects = {
   async updateSchedulingGoalPlanSpecification(
     plan: Plan,
     schedulingGoalPlanSpecification: SchedulingGoalPlanSpecSetInput,
+    parameterSchema: ValueSchemaStruct,
     newFiles: File[] = [],
     user: User | null,
   ) {
@@ -6647,6 +6648,7 @@ const effects = {
       if (schedulingGoalPlanSpecification.arguments) {
         schedulingGoalPlanSpecification.arguments = replacePathsForSchedulingGoal(
           schedulingGoalPlanSpecification.arguments,
+          parameterSchema,
           generatedFilenames
         );
       }
@@ -6657,7 +6659,7 @@ const effects = {
         goal_invocation_id,
         goal_revision: revision,
         priority,
-        simulate_after: simulateAfter,
+        simulate_after: simulateAfter
       } = schedulingGoalPlanSpecification;
 
       const { updateSchedulingGoalPlanSpecification } = await reqHasura(
@@ -7166,47 +7168,6 @@ const effects = {
 
 
 /**
- * Traverses the given scheduling goal arguments and does a "find and replace", replacing any paths that match the keys of `pathsToReplace` with the corresponding values.
- *
- * @param modelParameters The type definitions of the mission model parameters. Used to determine which parameters have type 'path'.
- * @param goalParameters The goal parameters, which are assumed to conform to the above type definition.
- * @param pathsToReplace A map from old paths to new paths. Any occurrences of old paths in simArgs will be replaced with new paths.
- * @returns
- */
-export function replacePathsForSchedulingGoal(
-  goalParameters: ArgumentsMap,
-  pathsToReplace: Record<string, string>,
-): ArgumentsMap {
-  console.log(goalParameters);
-  return traverseAndReplace(goalParameters, pathsToReplace);
-}
-
-function traverseAndReplace(value: any, pathsToReplace: Record<string, string>): any {
-  // If the value itself is a direct match, replace it
-  if (typeof value === "string" && value in pathsToReplace) {
-    return pathsToReplace[value];
-  }
-
-  // If it's an array, recursively process elements
-  if (Array.isArray(value)) {
-    return value.map((item) => traverseAndReplace(item, pathsToReplace));
-  }
-
-  // If it's an object, recursively process key-value pairs
-  if (typeof value === "object" && value !== null) {
-    const updatedObject: any = {};
-    for (const key in value) {
-      updatedObject[key] = traverseAndReplace(value[key], pathsToReplace);
-    }
-    return updatedObject;
-  }
-
-  // Otherwise, return unchanged
-  return value;
-}
-
-
-/**
  * Traverses the given simulation arguments and does a "find and replace", replacing any paths that match the keys of `pathsToReplace` with the corresponding values.
  *
  * @param modelParameters The type definitions of the mission model parameters. Used to determine which parameters have type 'path'.
@@ -7228,6 +7189,31 @@ export function replacePaths(
     const arg: Argument = simArgs[parameterName];
     if (arg !== undefined) {
       result[parameterName] = replacePathsHelper(parameter.schema, arg, pathsToReplace);
+    }
+  }
+  return result;
+}
+
+
+/**
+ * A specialized version of replacePaths to be used with scheduling goal types.
+ *
+ * @param goalParameters The goal parameters, which are assumed to conform to the type definitions in parameterSchema.
+ * @param parameterSchema The type definitions of the mission model parameters. Used to determine which parameters have type 'path'.
+ * @param pathsToReplace A map from old paths to new paths. Any occurrences of old paths in simArgs will be replaced with new paths.
+ * @returns
+ */
+export function replacePathsForSchedulingGoal(
+  goalParameters: ArgumentsMap,
+  parameterSchema: ValueSchemaStruct,
+  pathsToReplace: Record<string, string>,
+): ArgumentsMap {
+
+  const result: ArgumentsMap = {};
+  for (const parameterName in goalParameters) {
+    const arg: Argument = goalParameters[parameterName];
+    if (arg !== undefined) {
+      result[parameterName] = replacePathsHelper(parameterSchema.items[parameterName], arg, pathsToReplace);
     }
   }
   return result;
