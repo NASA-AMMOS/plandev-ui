@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
+  import { selectedSequenceTemplateId, sequenceTemplates } from '../../stores/sequence-template';
   import { parcels } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import type { SequenceTemplate } from '../../types/sequence-template';
@@ -23,17 +24,22 @@
 
   let filterText: string = '';
   let parcel: Parcel | null;
-  let selectedTemplate: SequenceTemplate | null = null;
+  let selectedTemplate: SequenceTemplate | undefined = undefined;
   let sequenceTemplateColumns: string;
   let sequenceTemplateRows: string;
 
-  $: sequenceTemplateColumns = selectedTemplate !== null ? '0.75fr 3px 1.5fr' : '1fr 3px 1fr';
-  $: sequenceTemplateRows = selectedTemplate !== null ? '1fr 3px 1fr' : 'none';
+  $: sequenceTemplateColumns = selectedTemplate !== undefined ? '0.75fr 3px 1.5fr' : '1fr 3px 1fr';
+  $: sequenceTemplateRows = selectedTemplate !== undefined ? '1fr 3px 1fr' : 'none';
+  $: selectedTemplate = $selectedSequenceTemplateId
+    ? $sequenceTemplates.find(sequenceTemplate => sequenceTemplate.id === $selectedSequenceTemplateId)
+    : undefined;
+
+  $: console.log(selectedTemplate);
 
   $: parcel = $parcels.find(p => p.id === selectedTemplate?.parcel_id) ?? null;
 
   function onTemplateSelected(event: CustomEvent<SequenceTemplate>) {
-    selectedTemplate = event.detail;
+    $selectedSequenceTemplateId = event.detail.id;
   }
 
   function onTemplateChanged(event: CustomEvent<{ input: string; output: string }>) {
@@ -89,7 +95,7 @@
       </svelte:fragment>
     </Panel>
 
-    {#if selectedTemplate}
+    {#if selectedTemplate !== undefined}
       <CssGridGutter track={1} type="row" />
       <Panel>
         <svelte:fragment slot="header">
@@ -99,7 +105,7 @@
           <slot name="right">
             <button
               class="st-button icon fs-6"
-              on:click={() => (selectedTemplate = null)}
+              on:click={() => ($selectedSequenceTemplateId = null)}
               use:tooltip={{ content: 'Deselect sequence template', placement: 'top' }}
             >
               <XIcon />

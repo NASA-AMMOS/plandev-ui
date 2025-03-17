@@ -536,7 +536,6 @@
         $plan !== null &&
         $simulationDatasetLatest !== null
       ) {
-        // TODO: Support sending multiple sequences
         effects.expandTemplates([$selectedSequence], $simulationDatasetLatest.dataset_id, $plan.model_id, data.user);
       }
     }

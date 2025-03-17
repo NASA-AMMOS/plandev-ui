@@ -58,15 +58,13 @@
 
   $: sequencesAndFilters = [...$expansionSequences, ...$sequenceFilters];
 
-  // TODO: Better cleanup of activeSequenceFilterName and activeSequenceFilterId
-
   function toggleContextMenu(e: MouseEvent) {
     const { x, y } = newButton.getBoundingClientRect();
     const newEvent = new MouseEvent(e.type, { ...e, clientX: x, clientY: y });
     contextMenu.show(newEvent);
   }
 
-  function onApplyFilter(e: MouseEvent, sequenceFilter: SequenceFilter) {
+  function onApplyFilter(sequenceFilter: SequenceFilter) {
     if ($simulationDatasetLatest !== null && $plan !== null) {
       effects.applyActivitiesByFilter(
         sequenceFilter,
@@ -105,16 +103,15 @@
     }
   }
 
-  function onDeleteSequence(e: MouseEvent, sequence: ExpansionSequence) {
+  function onDeleteSequence(sequence: ExpansionSequence) {
     effects.deleteExpansionSequence(sequence, user);
   }
 
-  function onDeleteSequenceFilter(e: MouseEvent, sequenceFilter: SequenceFilter) {
+  function onDeleteSequenceFilter(sequenceFilter: SequenceFilter) {
     effects.deleteSequenceFilters([sequenceFilter.id], user);
   }
 
-  function onExpandSequence(e: MouseEvent, sequence: ExpansionSequence) {
-    console.log(`selectedExpansionSetId=${selectedExpansionSetId}`);
+  function onExpandSequence(sequence: ExpansionSequence) {
     if ($simulationDatasetLatest !== null && $plan !== null) {
       if ($sequenceExpansionMode === SequencingMode.TEMPLATING) {
         effects.expandTemplates([sequence.seq_id], $simulationDatasetLatest.id, $plan.model_id, user);
@@ -124,11 +121,11 @@
     }
   }
 
-  function onShowExpandedSequence(e: MouseEvent, sequence: ExpansionSequence) {
+  function onShowExpandedSequence(sequence: ExpansionSequence) {
     showExpansionSequenceModal(sequence, user);
   }
 
-  function onShowFilter(e: MouseEvent, sequenceFilter: SequenceFilter) {
+  function onShowFilter(sequenceFilter: SequenceFilter) {
     creatingNewSequenceFilter = false;
     activeSequenceFilterName = sequenceFilter.name;
     activeSequenceFilterId = sequenceFilter.id;
@@ -243,9 +240,9 @@
                 <button
                   aria-label={`Delete '${sequenceOrFilter.seq_id}'`}
                   class="st-button icon"
-                  on:click|stopPropagation={e => {
+                  on:click|stopPropagation={() => {
                     if (isExpansionSequence(sequenceOrFilter)) {
-                      onDeleteSequence(e, sequenceOrFilter);
+                      onDeleteSequence(sequenceOrFilter);
                     }
                   }}
                   use:permissionHandler={{
@@ -260,9 +257,9 @@
                 <button
                   aria-label={`Show Expanded '${sequenceOrFilter.seq_id}'`}
                   class="st-button icon"
-                  on:click|stopPropagation={e => {
+                  on:click|stopPropagation={() => {
                     if (isExpansionSequence(sequenceOrFilter)) {
-                      onShowExpandedSequence(e, sequenceOrFilter);
+                      onShowExpandedSequence(sequenceOrFilter);
                     }
                   }}
                 >
@@ -273,9 +270,9 @@
                 <button
                   aria-label={`Expand '${sequenceOrFilter.seq_id}'`}
                   class="st-button icon"
-                  on:click|stopPropagation={e => {
+                  on:click|stopPropagation={() => {
                     if (isExpansionSequence(sequenceOrFilter)) {
-                      onExpandSequence(e, sequenceOrFilter);
+                      onExpandSequence(sequenceOrFilter);
                     }
                   }}
                 >
@@ -295,9 +292,9 @@
                 <button
                   aria-label={`Delete '${sequenceOrFilter.name}'`}
                   class="st-button icon"
-                  on:click|stopPropagation={e => {
+                  on:click|stopPropagation={() => {
                     if (!isExpansionSequence(sequenceOrFilter)) {
-                      onDeleteSequenceFilter(e, sequenceOrFilter);
+                      onDeleteSequenceFilter(sequenceOrFilter);
                     }
                   }}
                   use:permissionHandler={{
@@ -312,9 +309,9 @@
                 <button
                   aria-label={`Show '${sequenceOrFilter.name}'`}
                   class="st-button icon"
-                  on:click|stopPropagation={e => {
+                  on:click|stopPropagation={() => {
                     if (!isExpansionSequence(sequenceOrFilter)) {
-                      onShowFilter(e, sequenceOrFilter);
+                      onShowFilter(sequenceOrFilter);
                     }
                   }}
                 >
@@ -325,9 +322,9 @@
                 <button
                   aria-label={`Apply '${sequenceOrFilter.name}'`}
                   class="st-button icon"
-                  on:click|stopPropagation={e => {
+                  on:click|stopPropagation={() => {
                     if (!isExpansionSequence(sequenceOrFilter)) {
-                      onApplyFilter(e, sequenceOrFilter);
+                      onApplyFilter(sequenceOrFilter);
                     }
                   }}
                 >

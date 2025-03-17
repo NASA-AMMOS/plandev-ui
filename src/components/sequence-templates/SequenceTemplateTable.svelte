@@ -3,7 +3,7 @@
 <script lang="ts">
   import type { ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
-  import { sequenceTemplates } from '../../stores/sequence-template';
+  import { selectedSequenceTemplateId, sequenceTemplates } from '../../stores/sequence-template';
   import { parcels } from '../../stores/sequencing';
   import type { User, UserId } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
@@ -122,6 +122,7 @@
     const template = $sequenceTemplates.find(sequenceTemplate => sequenceTemplate.id === id);
     if (template) {
       deleteTemplate(template);
+      $selectedSequenceTemplateId = null;
     }
   }
 
