@@ -6649,7 +6649,7 @@ const effects = {
         schedulingGoalPlanSpecification.arguments = replacePathsForSchedulingGoal(
           schedulingGoalPlanSpecification.arguments,
           parameterSchema,
-          generatedFilenames
+          generatedFilenames,
         );
       }
 
@@ -6659,7 +6659,7 @@ const effects = {
         goal_invocation_id,
         goal_revision: revision,
         priority,
-        simulate_after: simulateAfter
+        simulate_after: simulateAfter,
       } = schedulingGoalPlanSpecification;
 
       const { updateSchedulingGoalPlanSpecification } = await reqHasura(
@@ -7166,7 +7166,6 @@ const effects = {
   },
 };
 
-
 /**
  * Traverses the given simulation arguments and does a "find and replace", replacing any paths that match the keys of `pathsToReplace` with the corresponding values.
  *
@@ -7194,7 +7193,6 @@ export function replacePaths(
   return result;
 }
 
-
 /**
  * A specialized version of replacePaths to be used with scheduling goal types.
  *
@@ -7208,7 +7206,6 @@ export function replacePathsForSchedulingGoal(
   parameterSchema: ValueSchemaStruct,
   pathsToReplace: Record<string, string>,
 ): ArgumentsMap {
-
   const result: ArgumentsMap = {};
   for (const parameterName in goalParameters) {
     const arg: Argument = goalParameters[parameterName];
