@@ -575,9 +575,13 @@ const effects = {
         settings,
         status: 'pending',
       };
-      const response = await reqHasura<number>(gql.CREATE_ACTION_RUN, { actionRunInsertInput }, user);
+      const response = await reqHasura<{ id: number }>(gql.CREATE_ACTION_RUN, { actionRunInsertInput }, user);
       const { insert_action_run_one: actionRunId } = response;
-      return actionRunId ?? null;
+      if (actionRunId !== null) {
+        return actionRunId.id;
+      } else {
+        throw Error(`Unable to run action`);
+      }
     } catch (e) {
       catchError('Action Run Creation Failed', e as Error);
       showFailureToast('Action Run Creation Failed');
