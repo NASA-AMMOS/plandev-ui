@@ -1,6 +1,8 @@
-import { CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
+import { CompletionContext, completeFromList, type CompletionResult } from '@codemirror/autocomplete';
 import { LRLanguage, LanguageSupport, delimitedIndent, foldNodeProp, indentNodeProp } from '@codemirror/language';
+import { parseMixed } from '@lezer/common';
 import { styleTags, tags as t } from '@lezer/highlight';
+import { handlebarsLanguage } from '@xiechao/codemirror-lang-handlebars';
 import { customFoldInside } from './custom-folder';
 import { parser } from './seq-n.grammar';
 
@@ -60,11 +62,40 @@ export const SeqLanguage = LRLanguage.define({
   }),
 });
 
+export const HandlebarsOverSeqLanguage = LRLanguage.define({
+  languageData: {
+    commentTokens: { line: '#' },
+  },
+  parser: handlebarsLanguage.parser.configure({
+    wrap: parseMixed(node => {
+      return node.type.isTop
+        ? {
+            overlay: node => node.type.name === 'Text',
+            parser: SeqLanguage.parser,
+          }
+        : null;
+    }),
+  }),
+});
+
+const handlebarsCompletions = [
+  // Helpers
+  'add-time',
+  'subtract-time',
+  'flatten',
+  'formatAsDate',
+  // Args
+  'startTime',
+];
+
 export function setupLanguageSupport(autocomplete?: (context: CompletionContext) => CompletionResult | null) {
   if (autocomplete) {
-    const autocompleteExtension = SeqLanguage.data.of({ autocomplete });
-    return new LanguageSupport(SeqLanguage, [autocompleteExtension]);
+    return new LanguageSupport(HandlebarsOverSeqLanguage, [
+      SeqLanguage.data.of({ autocomplete }),
+      handlebarsLanguage.extension,
+      HandlebarsOverSeqLanguage.data.of({ autocomplete: completeFromList(handlebarsCompletions) }),
+    ]);
   } else {
-    return new LanguageSupport(SeqLanguage);
+    return new LanguageSupport(HandlebarsOverSeqLanguage);
   }
 }
