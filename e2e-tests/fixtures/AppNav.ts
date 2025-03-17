@@ -15,6 +15,7 @@ export class AppNav {
   appMenuItemModels: Locator;
   appMenuItemPlans: Locator;
   appMenuItemScheduling: Locator;
+  appMenuItemSequenceTemplates: Locator;
   pageLoadedLocatorNoData: Locator;
   pageLoadedLocatorWithData: Locator;
 
@@ -26,6 +27,12 @@ export class AppNav {
     await this.page.goto('/plans', { waitUntil: 'networkidle' });
     await this.page.waitForURL('/plans', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
+  }
+
+  async toggleBetweenExpansionTemplating() {
+    await this.page.getByRole('menuitem', { name: 'About' }).click({
+      modifiers: ['Shift'],
+    });
   }
 
   updatePage(page: Page): void {
@@ -43,6 +50,7 @@ export class AppNav {
     this.appMenuItemModels = this.appMenu.getByRole('menuitem', { name: 'Models' });
     this.appMenuItemPlans = this.appMenu.getByRole('menuitem', { name: 'Plans' });
     this.appMenuItemScheduling = this.appMenu.getByRole('menuitem', { name: 'Scheduling' });
+    this.appMenuItemSequenceTemplates = this.appMenu.getByRole('menuitem', { name: 'Sequence Templates' });
     this.page = page;
     this.pageLoadedLocatorWithData = page.locator(`.ag-root`);
     this.pageLoadedLocatorNoData = page.locator(`.body:has-text("No Plans Found")`);

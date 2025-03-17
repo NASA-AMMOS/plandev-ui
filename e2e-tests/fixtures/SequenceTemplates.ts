@@ -98,7 +98,7 @@ export class SequenceTemplates {
     this.sequenceTemplateTable = page.locator('#sequence-templates-table');
     this.sequenceTemplateEditorActiveLine = page.locator('.cm-activeLine');
     this.saveSequenceTemplateButton = page.getByLabel('Save sequence template');
-    this.deleteSequenceTemplateButton = page.getByLabel('Delete Template');
+    this.deleteSequenceTemplateButton = page.getByRole('button', { name: 'Delete Template' });
     this.confirmDeleteSequenceTemplateButton = page.getByRole('button', { exact: true, name: 'Delete' });
     this.editor = page.locator('.cm-activeLine').first();
   }

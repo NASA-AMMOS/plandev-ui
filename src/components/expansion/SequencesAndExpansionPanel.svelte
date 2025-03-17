@@ -114,6 +114,7 @@
   }
 
   function onExpandSequence(e: MouseEvent, sequence: ExpansionSequence) {
+    console.log(`selectedExpansionSetId=${selectedExpansionSetId}`);
     if ($simulationDatasetLatest !== null && $plan !== null) {
       if ($sequenceExpansionMode === SequencingMode.TEMPLATING) {
         effects.expandTemplates([sequence.seq_id], $simulationDatasetLatest.id, $plan.model_id, user);
@@ -200,7 +201,7 @@
       </div>
       {#if $sequenceExpansionMode === SequencingMode.EXPANSION}
         <div class="sne-expansion-set-select">
-          <select bind:value={selectedExpansionSetId} class="st-select w-100">
+          <select name="expansionSetId" bind:value={selectedExpansionSetId} class="st-select w-100">
             {#if !$expansionSets.length}
               <option value={null}>No Expansion Sets</option>
             {:else}

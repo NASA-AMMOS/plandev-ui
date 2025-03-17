@@ -74,8 +74,28 @@ test.describe.serial('App Nav', () => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
+    const expansionIsShown = await appNav.appMenuItemExpansion.isVisible();
+    if (!expansionIsShown) {
+      await appNav.toggleBetweenExpansionTemplating();
+      await appNav.appMenuButton.click();
+    }
     await appNav.appMenuItemExpansion.click();
     await expect(page).toHaveURL(`${baseURL}/expansion/rules`);
+  });
+
+  test(`Clicking on the app menu 'Sequence Templates' option should route to the sequence templates page`, async ({
+    baseURL,
+  }) => {
+    await appNav.appMenuButton.click();
+    await appNav.appMenu.waitFor({ state: 'attached' });
+    await appNav.appMenu.waitFor({ state: 'visible' });
+    const sequenceTemplatesIsShown = await appNav.appMenuItemSequenceTemplates.isVisible();
+    if (!sequenceTemplatesIsShown) {
+      await appNav.toggleBetweenExpansionTemplating();
+      await appNav.appMenuButton.click();
+    }
+    await appNav.appMenuItemSequenceTemplates.click();
+    await expect(page).toHaveURL(`${baseURL}/sequence-templates`);
   });
 
   test(`Clicking on the app menu 'Scheduling' option should route to the scheduling page`, async ({ baseURL }) => {
