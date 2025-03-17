@@ -8,6 +8,8 @@ import { gqlSubscribable } from './subscribable';
 
 /* Writable */
 
+export const selectedSequenceTemplateId: Writable<number | null> = writable(null);
+
 export const sequenceTemplateExpansionStatus: Writable<Status | null> = writable(null);
 
 export const sequenceTemplateExpansionError: Writable<string | null> = writable(null);
@@ -41,3 +43,11 @@ export const lastTemplatedSimulationDatasetId = derived(
     return lastExpansion?.simulation_dataset_id ?? -1;
   },
 );
+
+/* Helper Functions. */
+export function resetSequenceTemplateStores(): void {
+  selectedSequenceTemplateId.set(null);
+  sequenceTemplateExpansionStatus.set(null);
+  sequenceTemplateExpansionError.set(null);
+  modelId.set(-1);
+}

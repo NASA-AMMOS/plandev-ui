@@ -24,17 +24,12 @@
   let outputStr: string | null = null;
   let language: string = 'plaintext';
 
-  $: console.log(`DEBUG: sequenceExpansionMode=${$sequenceExpansionMode}`);
-
-  $: console.log(`DEBUG: outputStr=${outputStr}`);
-
   $: if ($sequenceExpansionMode === SequencingMode.TEMPLATING) {
     const expandedTemplate = $expandedTemplates.find(
       expandedTemplate => expandedTemplate.seq_id === expansionSequence.seq_id,
     );
     console.log(expandedTemplate);
     outputStr = expandedTemplate?.expanded_template ?? `No output found for sequence "${expansionSequence.seq_id}"'`;
-    // TODO: Language - see question in Notes
   } else {
     effects
       .getExpansionSequenceSeqJson(expansionSequence.seq_id, expansionSequence.simulation_dataset_id, user)
