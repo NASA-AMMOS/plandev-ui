@@ -39,31 +39,34 @@ const gql = {
   CHECK_CONSTRAINTS: `#graphql
     query CheckConstraints($planId: Int!, $force: Boolean!) {
       constraintRunResponses: ${Queries.CONSTRAINT_VIOLATIONS}(planId: $planId, force: $force) {
-        success
-        constraintId
-        constraintInvocationId
-        constraintName
-        constraintRevision
-        results {
-          resourceIds
-          gaps {
-            end
-            start
-          }
-          violations {
-            activityInstanceIds
-            windows {
+        requestId
+        constraintsRun {
+          success
+          constraintId
+          constraintInvocationId
+          constraintName
+          constraintRevision
+          results {
+            resourceIds
+            gaps {
               end
               start
             }
+            violations {
+              activityInstanceIds
+              windows {
+                end
+                start
+              }
+            }
           }
-        }
-        errors {
-          message
-          stack
-          location {
-            column
-            line
+          errors {
+            message
+            stack
+            location {
+              column
+              line
+            }
           }
         }
       }
