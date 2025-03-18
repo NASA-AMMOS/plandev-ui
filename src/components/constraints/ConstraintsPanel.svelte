@@ -452,7 +452,7 @@
               {deletePermissionError}
               {editPermissionError}
               hasEditPermission={hasSpecEditPermission}
-              hasDeletePermission={hasSpecEditPermission && filteredConstraintPlanSpecifications.length > 1}
+              hasDeletePermission={hasSpecEditPermission}
               hasReadPermission={featurePermissions.constraints.canRead(user)}
               modelId={$plan?.model.id}
               totalViolationCount={$constraintResponseMap[constraintPlanSpec.constraint_id]?.[
