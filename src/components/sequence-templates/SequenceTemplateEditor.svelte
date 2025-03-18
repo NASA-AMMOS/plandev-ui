@@ -49,7 +49,7 @@
   import { isSaveEvent } from '../../utilities/keyboardEvents';
   import type { CommandInfoMapper } from '../../utilities/sequence-editor/command-info-mapper';
   import { getCustomArgDef, inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
-  import { setupLanguageSupport } from '../../utilities/sequence-editor/languages/seq-n/seq-n-handlebars';
+  import { setupLanguageSupport } from '../../utilities/sequence-editor/languages/seq-n-handlebars/seq-n-handlebars';
   import {
     seqNHighlightBlock,
     seqqNBlockHighlighter,

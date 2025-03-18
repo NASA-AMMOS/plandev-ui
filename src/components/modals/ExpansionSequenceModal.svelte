@@ -28,7 +28,6 @@
     const expandedTemplate = $expandedTemplates.find(
       expandedTemplate => expandedTemplate.seq_id === expansionSequence.seq_id,
     );
-    console.log(expandedTemplate);
     outputStr = expandedTemplate?.expanded_template ?? `No output found for sequence "${expansionSequence.seq_id}"'`;
   } else {
     effects
