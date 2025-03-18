@@ -441,7 +441,7 @@
           </button>
         </div>
 
-        {#each filteredConstraintPlanSpecifications as constraintPlanSpec (constraintPlanSpec.invocation_id)}
+        {#each filteredConstraintPlanSpecifications as constraintPlanSpec, specIndex (constraintPlanSpec.invocation_id)}
           {#if $constraintsMap[constraintPlanSpec.constraint_id]}
             <ConstraintListItem
               constraint={$constraintsMap[constraintPlanSpec.constraint_id]}
@@ -455,6 +455,8 @@
               hasDeletePermission={hasSpecEditPermission}
               hasReadPermission={featurePermissions.constraints.canRead(user)}
               modelId={$plan?.model.id}
+              shouldShowUpButton={(constraintPlanSpec?.order ?? 0) > 0}
+              shouldShowDownButton={specIndex < filteredConstraintPlanSpecifications.length - 1}
               totalViolationCount={$constraintResponseMap[constraintPlanSpec.constraint_id]?.[
                 constraintPlanSpec.invocation_id
               ]?.results.violations?.length || 0}

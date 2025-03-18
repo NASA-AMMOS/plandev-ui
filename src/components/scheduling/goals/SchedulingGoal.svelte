@@ -29,6 +29,8 @@
   export let hasReadPermission: boolean = false;
   export let modelId: number | undefined;
   export let readPermissionError: string = 'You do not have permission to view this scheduling goal.';
+  export let shouldShowUpButton: boolean | undefined = false;
+  export let shouldShowDownButton: boolean | undefined = false;
 
   const dispatch = createEventDispatcher<{
     deleteGoalInvocation: SchedulingGoalPlanSpecification;
@@ -41,7 +43,6 @@
   let revisions: number[] = [];
   let schedulingGoalInput: HTMLInputElement;
   let simulateGoal: boolean = false;
-  let upButtonHidden: boolean = false;
   let formParameters: FormParameter[] = [];
   let version: Pick<SchedulingGoalDefinition, 'type' | 'revision' | 'analyses' | 'parameter_schema'> | undefined =
     undefined;
@@ -50,7 +51,6 @@
   $: {
     enabled = goalPlanSpec.enabled;
     priority = goalPlanSpec.priority;
-    upButtonHidden = priority <= 0;
     simulateGoal = goalPlanSpec.simulate_after; // Copied to local var to reflect changed values immediately in the UI
   }
 
@@ -225,8 +225,8 @@
               <button
                 use:tooltip={{ content: 'Increase Priority', placement: 'top' }}
                 class="st-button tertiary up-button"
-                class:hidden={upButtonHidden}
-                tabindex={upButtonHidden ? -1 : 0}
+                class:hidden={shouldShowUpButton}
+                tabindex={shouldShowUpButton ? -1 : 0}
                 on:click={() => focusInput() && updatePriority(priority - 1)}
               >
                 <CaretUpFillIcon />
@@ -234,6 +234,8 @@
               <button
                 use:tooltip={{ content: 'Decrease Priority', placement: 'top' }}
                 class="st-button tertiary down-button"
+                class:hidden={shouldShowDownButton}
+                tabindex={shouldShowDownButton ? -1 : 0}
                 on:click={() => focusInput() && updatePriority(priority + 1)}
               >
                 <CaretDownFillIcon />

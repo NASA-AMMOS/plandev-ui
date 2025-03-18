@@ -209,7 +209,7 @@
                 {numOfPrivateAssociations > 1 ? 'are' : 'is'} private and not shown
               {/if}
             </div>
-            {#each selectedSpecificationsList as spec (spec.id)}
+            {#each selectedSpecificationsList as spec, itemIndex (spec.id)}
               {#if selectedSpecifications[spec.metadata_id] && metadataMap[spec.metadata_id]}
                 {#if selectedAssociationId === 'goal'}
                   <ModelAssociationsListItem
@@ -223,6 +223,8 @@
                     priority={spec.priority}
                     versions={metadataMap[spec.metadata_id].versions}
                     selectedRevision={spec.revision}
+                    shouldShowUpButton={(spec?.priority ?? 0) > 0}
+                    shouldShowDownButton={itemIndex < selectedSpecificationsList.length - 1}
                     on:updatePriority={onUpdatePriority}
                     on:updateRevision={onUpdateRevision}
                     on:selectDefinition={onSelectDefinition}
@@ -243,6 +245,8 @@
                     priorityLabel="Order"
                     versions={metadataMap[spec.metadata_id].versions}
                     selectedRevision={spec.revision}
+                    shouldShowUpButton={(spec?.priority ?? 0) > 0}
+                    shouldShowDownButton={itemIndex < selectedSpecificationsList.length - 1}
                     on:updatePriority={onUpdatePriority}
                     on:updateRevision={onUpdateRevision}
                     on:selectDefinition={onSelectDefinition}

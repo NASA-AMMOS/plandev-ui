@@ -40,6 +40,8 @@
   export let hasEditPermission: boolean = false;
   export let hasReadPermission: boolean = false;
   export let readPermissionError: string = 'You do not have permission to view this constraint.';
+  export let shouldShowUpButton: boolean | undefined = false;
+  export let shouldShowDownButton: boolean | undefined = false;
   export let totalViolationCount: number = 0;
   export let visible: boolean = true;
 
@@ -55,16 +57,13 @@
   let order: number;
   let orderInput: HTMLInputElement;
   let revisions: number[] = [];
-  let upButtonHidden: boolean = false;
   let version: Pick<ConstraintDefinition, 'type' | 'revision' | 'parameter_schema'> | undefined = undefined;
 
   $: revisions = constraint.versions.map(({ revision }) => revision);
   $: violationCount = constraintResponse?.results?.violations?.length;
   $: success = constraintResponse?.success;
-  $: {
-    order = constraintPlanSpec.order;
-    upButtonHidden = order <= 0;
-  }
+  $: order = constraintPlanSpec.order;
+
   $: {
     const version = getSpecVersion(constraint, constraintPlanSpec.constraint_revision);
 
@@ -263,8 +262,8 @@
               <button
                 use:tooltip={{ content: 'Increase order', placement: 'top' }}
                 class="st-button tertiary up-button"
-                class:hidden={upButtonHidden}
-                tabindex={upButtonHidden ? -1 : 0}
+                class:hidden={!shouldShowUpButton}
+                tabindex={shouldShowUpButton ? -1 : 0}
                 on:click={onIncreaseOrder}
               >
                 <CaretUpFillIcon />
@@ -272,6 +271,8 @@
               <button
                 use:tooltip={{ content: 'Decrease order', placement: 'top' }}
                 class="st-button tertiary down-button"
+                class:hidden={!shouldShowDownButton}
+                tabindex={shouldShowDownButton ? -1 : 0}
                 on:click={onDecreaseOrder}
               >
                 <CaretDownFillIcon />

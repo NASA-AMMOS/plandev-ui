@@ -222,7 +222,7 @@
             {numOfPrivateGoals > 1 ? 'are' : 'is'} private and not shown
           {/if}
         </div>
-        {#each filteredSchedulingGoalSpecs as specGoal (specGoal.goal_invocation_id)}
+        {#each filteredSchedulingGoalSpecs as specGoal, specIndex (specGoal.goal_invocation_id)}
           {#if $schedulingGoalsMap[specGoal.goal_id]}
             <SchedulingGoal
               editPermissionError={$planReadOnly
@@ -233,6 +233,8 @@
               goal={$schedulingGoalsMap[specGoal.goal_id]}
               goalPlanSpec={specGoal}
               modelId={$plan?.model.id}
+              shouldShowUpButton={(specGoal?.priority ?? 0) > 0}
+              shouldShowDownButton={specIndex < filteredSchedulingGoalSpecs.length - 1}
               on:updateGoalPlanSpec={onUpdateGoal}
               on:duplicateGoalInvocation={onDuplicateGoalInvocation}
               on:deleteGoalInvocation={onDeleteGoalInvocation}

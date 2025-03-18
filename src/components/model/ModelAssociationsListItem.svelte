@@ -27,6 +27,8 @@
   export let priority: number | undefined = undefined;
   export let priorityLabel: string = 'priority';
   export let selectedRevision: number | null = null;
+  export let shouldShowUpButton: boolean | undefined = false;
+  export let shouldShowDownButton: boolean | undefined = false;
   export let versions: BaseDefinition[] = [];
 
   const dispatch = createEventDispatcher<{
@@ -62,7 +64,6 @@
   let parameterSchema: ValueSchema | undefined;
   let permissionError: string = '';
   let priorityInput: HTMLInputElement;
-  let upButtonHidden: boolean = false;
   let selectedDefinitionType: DefinitionType = DefinitionType.CODE;
 
   $: {
@@ -71,7 +72,6 @@
     selectedDefinitionType = selectedVersion?.definition === null ? DefinitionType.FILE : DefinitionType.CODE;
   }
   $: permissionError = `You do not have permission to edit model ${metadataType}s`;
-  $: upButtonHidden = priority !== undefined && priority <= 0;
   $: if (id && isSelected) {
     focusPriorityInput();
   }
@@ -237,8 +237,8 @@
                 <button
                   use:tooltip={{ content: `Increase ${priorityLabel}`, placement: 'top' }}
                   class="st-button tertiary up-button"
-                  class:hidden={upButtonHidden}
-                  tabindex={upButtonHidden ? -1 : 0}
+                  class:hidden={shouldShowUpButton}
+                  tabindex={shouldShowUpButton ? -1 : 0}
                   on:click={onIncreasePriority}
                 >
                   <CaretUpFillIcon />
@@ -246,6 +246,8 @@
                 <button
                   use:tooltip={{ content: `Decrease ${priorityLabel}`, placement: 'top' }}
                   class="st-button tertiary down-button"
+                  class:hidden={shouldShowDownButton}
+                  tabindex={shouldShowDownButton ? -1 : 0}
                   on:click={onDecreasePriority}
                 >
                   <CaretDownFillIcon />
@@ -299,8 +301,8 @@
               <button
                 use:tooltip={{ content: `Increase ${priorityLabel}`, placement: 'top' }}
                 class="st-button tertiary up-button"
-                class:hidden={upButtonHidden}
-                tabindex={upButtonHidden ? -1 : 0}
+                class:hidden={shouldShowUpButton}
+                tabindex={shouldShowUpButton ? -1 : 0}
                 on:click={onIncreasePriority}
               >
                 <CaretUpFillIcon />
@@ -308,6 +310,8 @@
               <button
                 use:tooltip={{ content: `Decrease ${priorityLabel}`, placement: 'top' }}
                 class="st-button tertiary down-button"
+                class:hidden={shouldShowDownButton}
+                tabindex={shouldShowDownButton ? -1 : 0}
                 on:click={onDecreasePriority}
               >
                 <CaretDownFillIcon />
