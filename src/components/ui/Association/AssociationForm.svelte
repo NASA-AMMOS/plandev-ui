@@ -160,6 +160,7 @@
     (definitionType === DefinitionType.FILE && (definitionFiles?.length ?? 0) > 0);
   $: if (!name && definitionFiles?.length) {
     const fileName = definitionFiles[0].name;
+    // strip out the filename without the extension
     name = fileName.replace(/\..*$/, '');
   }
   $: isDefinitionTagsModified = diffTags(initialDefinitionTags || [], definitionTags);
