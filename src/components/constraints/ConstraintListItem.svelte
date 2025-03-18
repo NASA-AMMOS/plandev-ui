@@ -19,8 +19,8 @@
     ConstraintResponse,
   } from '../../types/constraint';
   import type { Argument, FormParameter } from '../../types/parameter';
-  import type { ValueSchema } from '../../types/schema';
   import { getTarget } from '../../utilities/generic';
+  import { getCleansedStructArguments } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { pluralize } from '../../utilities/text';
   import { tooltip } from '../../utilities/tooltip';
@@ -165,33 +165,13 @@
     });
   }
 
-  function getCleansedArguments(specArguments: Argument, schema?: ValueSchema) {
-    let cleansedArguments: Argument = {};
-    if (schema && schema.type === 'struct') {
-      cleansedArguments = Object.keys(specArguments).reduce((prevCleansedArguments: Argument, argumentKey: string) => {
-        const argumentValue = specArguments[argumentKey];
-
-        const doesArgumentExistInSchema =
-          Object.keys(schema.items).find(parameterName => parameterName === argumentKey) != null;
-        if (doesArgumentExistInSchema) {
-          return {
-            ...prevCleansedArguments,
-            [argumentKey]: argumentValue,
-          };
-        }
-        return prevCleansedArguments;
-      }, {});
-    }
-    return cleansedArguments;
-  }
-
   function onUpdateRevision(event: Event) {
     const { value: revision } = getTarget(event);
 
     const version = getSpecVersion(constraint, revision as string | number | null);
     const schema = version?.parameter_schema;
 
-    let cleansedArguments: Argument = getCleansedArguments(constraintPlanSpec.arguments, schema);
+    let cleansedArguments: Argument = getCleansedStructArguments(constraintPlanSpec.arguments, schema);
     dispatch('updateConstraintPlanSpec', {
       ...constraintPlanSpec,
       arguments: cleansedArguments,
@@ -206,7 +186,7 @@
 
     const schema = version?.parameter_schema;
     if (formParameters.length) {
-      let cleansedArguments: Argument = getCleansedArguments(constraintPlanSpec.arguments, schema);
+      let cleansedArguments: Argument = getCleansedStructArguments(constraintPlanSpec.arguments, schema);
 
       dispatch('updateConstraintPlanSpec', {
         ...constraintPlanSpec,

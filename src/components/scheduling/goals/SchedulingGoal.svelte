@@ -12,8 +12,8 @@
     SchedulingGoalMetadata,
     SchedulingGoalPlanSpecification,
   } from '../../../types/scheduling';
-  import type { ValueSchema } from '../../../types/schema';
   import { getTarget } from '../../../utilities/generic';
+  import { getCleansedStructArguments } from '../../../utilities/parameters';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { tooltip } from '../../../utilities/tooltip';
   import Collapse from '../../Collapse.svelte';
@@ -119,33 +119,13 @@
     }
   }
 
-  function getCleansedArguments(specArguments: Argument, schema?: ValueSchema) {
-    let cleansedArguments: Argument = {};
-    if (schema && schema.type === 'struct') {
-      cleansedArguments = Object.keys(specArguments).reduce((prevCleansedArguments: Argument, argumentKey: string) => {
-        const argumentValue = specArguments[argumentKey];
-
-        const doesArgumentExistInSchema =
-          Object.keys(schema.items).find(parameterName => parameterName === argumentKey) != null;
-        if (doesArgumentExistInSchema) {
-          return {
-            ...prevCleansedArguments,
-            [argumentKey]: argumentValue,
-          };
-        }
-        return prevCleansedArguments;
-      }, {});
-    }
-    return cleansedArguments;
-  }
-
   function onUpdateRevision(event: Event) {
     const { value: revision } = getTarget(event);
 
     const version = getSpecVersion(goal, revision as string | number | null);
     const schema = version?.parameter_schema;
 
-    let cleansedArguments: Argument = getCleansedArguments(goalPlanSpec.arguments, schema);
+    let cleansedArguments: Argument = getCleansedStructArguments(goalPlanSpec.arguments, schema);
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
       arguments: cleansedArguments,
@@ -184,7 +164,7 @@
 
     if (formParameters.length) {
       const schema = version?.parameter_schema;
-      let cleansedArguments: Argument = getCleansedArguments(goalPlanSpec.arguments, schema);
+      let cleansedArguments: Argument = getCleansedStructArguments(goalPlanSpec.arguments, schema);
 
       dispatch('updateGoalPlanSpec', {
         ...goalPlanSpec,

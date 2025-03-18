@@ -9,6 +9,7 @@
   import type { Argument, FormParameter } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
   import { getTarget } from '../../utilities/generic';
+  import { getCleansedStructArguments } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
@@ -146,33 +147,13 @@
     }
   }
 
-  function getCleansedArguments(specArguments: Argument, schema?: ValueSchema) {
-    let cleansedArguments: Argument = {};
-    if (schema && schema.type === 'struct') {
-      cleansedArguments = Object.keys(specArguments).reduce((prevCleansedArguments: Argument, argumentKey: string) => {
-        const argumentValue = specArguments[argumentKey];
-
-        const doesArgumentExistInSchema =
-          Object.keys(schema.items).find(parameterName => parameterName === argumentKey) != null;
-        if (doesArgumentExistInSchema) {
-          return {
-            ...prevCleansedArguments,
-            [argumentKey]: argumentValue,
-          };
-        }
-        return prevCleansedArguments;
-      }, {});
-    }
-    return cleansedArguments;
-  }
-
   function onUpdateRevision(event: Event) {
     const { value } = getTarget(event);
     const revision = value == null || value === '' ? null : parseInt(`${value}`);
 
     const version = getSpecVersion(versions, revision as string | number | null);
     const schema = version?.parameter_schema;
-    const cleansedArguments: Argument = getCleansedArguments(invocationArguments, schema);
+    const cleansedArguments: Argument = getCleansedStructArguments(invocationArguments, schema);
 
     dispatch('updateRevision', {
       arguments: cleansedArguments,
