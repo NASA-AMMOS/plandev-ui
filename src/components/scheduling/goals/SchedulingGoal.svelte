@@ -10,7 +10,8 @@
   import type {
     SchedulingGoalDefinition,
     SchedulingGoalMetadata,
-    SchedulingGoalPlanSpecification, SchedulingGoalPlanSpecificationUpdate,
+    SchedulingGoalPlanSpecification,
+    SchedulingGoalPlanSpecificationUpdate,
   } from '../../../types/scheduling';
   import { getTarget } from '../../../utilities/generic';
   import { getCleansedStructArguments } from '../../../utilities/parameters';
@@ -107,7 +108,6 @@
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
       enabled: enabledUpdate as boolean,
-      files: []
     });
   }
 
@@ -143,7 +143,6 @@
   function simulateAfter(simulateAfterUpdate: boolean) {
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
-      files: [],
       simulate_after: simulateAfterUpdate,
     });
   }
@@ -161,7 +160,6 @@
   function updatePriority(priorityUpdate: number) {
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
-      files: [],
       priority,
     });
   }

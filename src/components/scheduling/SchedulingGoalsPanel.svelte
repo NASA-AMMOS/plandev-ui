@@ -87,16 +87,16 @@
     } = event;
 
     if ($plan) {
-
       // Get the associated parameter schema, or the latest one if goal_revision does not exist.
       const matchingVersion = goal_metadata?.versions.find(
-        (v) => goalPlanSpec.goal_revision != null && v.revision === goalPlanSpec.goal_revision
+        v => goalPlanSpec.goal_revision != null && v.revision === goalPlanSpec.goal_revision,
       );
-      const fallbackVersion =
-        goal_metadata?.versions.reduce((latest, current) =>
-          current.revision > (latest?.revision ?? -Infinity) ? current : latest,
-        );
-      const parameterSchema = <ValueSchemaStruct>(matchingVersion?.parameter_schema ?? fallbackVersion?.parameter_schema ?? null);
+      const fallbackVersion = goal_metadata?.versions.reduce((latest, current) =>
+        current.revision > (latest?.revision ?? -Infinity) ? current : latest,
+      );
+      const parameterSchema = <ValueSchemaStruct>(
+        (matchingVersion?.parameter_schema ?? fallbackVersion?.parameter_schema ?? null)
+      );
 
       await effects.updateSchedulingGoalPlanSpecification(
         $plan,
