@@ -8,7 +8,11 @@
   import { SearchParameters } from '../../../../enums/searchParameters';
   import { constraintMetadata, constraintMetadataId } from '../../../../stores/constraints';
   import { tags } from '../../../../stores/tags';
-  import type { ConstraintDefinition, ConstraintMetadataVersionDefinition } from '../../../../types/constraint';
+  import type {
+    ConstraintDefinition,
+    ConstraintMetadata,
+    ConstraintMetadataVersionDefinition,
+  } from '../../../../types/constraint';
   import effects from '../../../../utilities/effects';
   import { getSearchParameterNumber, setQueryParam } from '../../../../utilities/generic';
   import type { PageData } from './$types';
@@ -40,9 +44,11 @@
   let referenceModelId: number | null = null;
 
   $: $constraintMetadataId = data.initialConstraint.id;
-  $: (async () => {
-    if ($constraintMetadata != null && $constraintMetadata.id === $constraintMetadataId) {
-      constraintDefinition = $constraintMetadata.versions.find(
+  $: onConstraintMetadataUpdated($constraintMetadata, $constraintMetadataId);
+
+  async function onConstraintMetadataUpdated(constraintMetadata: ConstraintMetadata | null, constraintId: number) {
+    if (constraintMetadata != null && constraintMetadata.id === constraintId) {
+      constraintDefinition = constraintMetadata.versions.find(
         ({ revision }) => revision === constraintRevision,
       ) as ConstraintMetadataVersionDefinition;
       if (constraintDefinition != null) {
@@ -57,15 +63,15 @@
         }
       }
 
-      constraintDescription = $constraintMetadata.description;
-      constraintId = $constraintMetadata.id;
-      constraintName = $constraintMetadata.name;
-      constraintPublic = $constraintMetadata.public;
-      constraintMetadataTags = $constraintMetadata.tags.map(({ tag }) => tag);
-      constraintOwner = $constraintMetadata.owner;
-      constraintRevisions = $constraintMetadata.versions.map(({ revision }) => revision);
+      constraintDescription = constraintMetadata.description;
+      constraintId = constraintMetadata.id;
+      constraintName = constraintMetadata.name;
+      constraintPublic = constraintMetadata.public;
+      constraintMetadataTags = constraintMetadata.tags.map(({ tag }) => tag);
+      constraintOwner = constraintMetadata.owner;
+      constraintRevisions = constraintMetadata.versions.map(({ revision }) => revision);
     }
-  })();
+  }
 
   function onRevisionSelect(event: CustomEvent<number>) {
     const { detail: revision } = event;
