@@ -280,7 +280,7 @@
           {/if}
           <button
             use:tooltip={{ content: visible ? 'Hide' : 'Show', placement: 'top' }}
-            class="st-button icon"
+            class="st-button icon hide-button"
             on:click|stopPropagation={() =>
               dispatch('toggleVisibility', {
                 constraintId: constraintPlanSpec.constraint_id,
@@ -461,6 +461,7 @@
   }
 
   .order-container {
+    column-gap: 5px;
     display: flex;
   }
 
@@ -496,6 +497,10 @@
   .order-buttons :global(button):hover {
     background-color: transparent !important;
     color: var(--st-gray-60);
+  }
+
+  .hide-button {
+    width: auto;
   }
 
   .down-button {
