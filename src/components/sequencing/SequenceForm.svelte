@@ -20,7 +20,7 @@
   import { getSearchParameterNumber } from '../../utilities/generic';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import { featurePermissions } from '../../utilities/permissions';
+  import { featurePermissions, isUserAdmin, isUserOwner } from '../../utilities/permissions';
   import { toInputFormat } from '../../utilities/sequence-editor/extension-points';
   import { logError } from '../../utilities/sequence-editor/logger';
   import PageTitle from '../app/PageTitle.svelte';
@@ -336,8 +336,8 @@
           placeholder="Is Sequence Readonly?"
           type="checkbox"
           use:permissionHandler={{
-            hasPermission,
-            permissionError,
+            hasPermission: isUserAdmin(user) || isUserOwner(user, { owner: sequenceOwner }),
+            permissionError: 'Only the owner and admins can toggle readonly',
           }}
         />
       </fieldset>

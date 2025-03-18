@@ -3439,6 +3439,7 @@ const gql = {
         created_at
         definition
         id
+        is_locked
         name
         owner
         parcel_id

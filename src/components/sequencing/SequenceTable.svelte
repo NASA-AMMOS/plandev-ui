@@ -90,6 +90,7 @@
             },
             hasDeletePermission: params.data ? hasDeletePermission(user, params.data) : false,
             hasEditPermission: params.data ? hasEditPermission(user, params.data) : false,
+            hasEditPermissionError: params.data ? hasEditPermissionError(user, params.data) : '',
             rowData: params.data,
           },
           target: actionsDiv,
@@ -142,7 +143,7 @@
 
   function editSequence({ id }: Pick<UserSequence, 'id'>) {
     goto(
-      `${base}/sequencing/edit/${id}${'?' + SearchParameters.WORKSPACE_ID + '=' + getSearchParameterNumber(SearchParameters.WORKSPACE_ID) ?? ''}`,
+      `${base}/sequencing/edit/${id}${`?${SearchParameters.WORKSPACE_ID}=${getSearchParameterNumber(SearchParameters.WORKSPACE_ID) ?? ''}`}`,
     );
   }
 
@@ -156,6 +157,14 @@
 
   function hasEditPermission(user: User | null, sequence: UserSequence) {
     return featurePermissions.sequences.canUpdate(user, sequence);
+  }
+
+  function hasEditPermissionError(_user: User | null, sequence: UserSequence) {
+    if (sequence.is_locked) {
+      return 'This sequence has been marked as readonly.';
+    } else {
+      return 'You do not have permission to edit.';
+    }
   }
 
   function onFilterToUsersSequences(event: Event) {
@@ -218,6 +227,7 @@
     {columnDefs}
     hasEdit={true}
     {hasEditPermission}
+    {hasEditPermissionError}
     {hasDeletePermission}
     itemDisplayText="Sequence"
     items={filteredSequences}

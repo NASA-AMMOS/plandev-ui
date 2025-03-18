@@ -96,6 +96,7 @@
   export let parcel: Parcel | null;
   export let showCommandFormBuilder: boolean = false;
   export let readOnly: boolean = false;
+  export let previewOnly: boolean = false;
   export let sequenceName: string = '';
   export let sequenceDefinition: string = '';
   export let sequenceOutput: string = '';
@@ -296,7 +297,7 @@
     }
   }
   $: editorSequenceView?.dispatch({
-    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly)]),
+    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly)]),
   });
 
   $: showOutputs = !isInVmlMode && outputFormats.length > 0;
@@ -362,7 +363,7 @@
         ...($sequenceAdaptation.autoIndent
           ? [compartmentSeqAutocomplete.of(indentService.of($sequenceAdaptation.autoIndent()))]
           : []),
-        compartmentReadonly.of([EditorState.readOnly.of(readOnly)]),
+        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
       ],
       parent: editorSequenceDiv,
     });

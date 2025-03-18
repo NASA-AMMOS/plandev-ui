@@ -20,6 +20,9 @@
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
 
+  const defaultDeletePermissionError: string = 'You do not have permission to delete.';
+  const defaultEditPermissionError: string = 'You do not have permission to edit.';
+
   export let autoSizeColumnsToFit: boolean = true;
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
@@ -27,8 +30,12 @@
   export let dataGrid: DataGrid<RowData> | undefined = undefined;
   export let filterExpression: string = '';
   export let hasDeletePermission: PermissionCheck<RowData> | boolean = true;
+  export let hasDeletePermissionError: string | ((user: User, data: RowData) => string) | undefined =
+    defaultDeletePermissionError;
   export let hasEdit: boolean = false;
   export let hasEditPermission: PermissionCheck<RowData> | boolean = true;
+  export let hasEditPermissionError: string | ((user: User, data: RowData) => string) | undefined =
+    defaultEditPermissionError;
   export let idKey: keyof RowData = 'id';
   export let items: RowData[];
   export let itemDisplayText: string;
@@ -45,7 +52,9 @@
   const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
   let deletePermission: boolean = true;
+  let deletePermissionError: string = defaultDeletePermissionError;
   let editPermission: boolean = true;
+  let editPermissionError: string = defaultEditPermissionError;
   let selectedItemIds: RowId[] = [];
 
   $: if ((typeof hasDeletePermission === 'function' || typeof hasEditPermission === 'function') && user) {
@@ -54,16 +63,28 @@
       if (typeof hasDeletePermission === 'function') {
         deletePermission = hasDeletePermission(user, selectedItem);
       }
+      if (typeof hasDeletePermissionError === 'function') {
+        deletePermissionError = hasDeletePermissionError(user, selectedItem);
+      }
       if (typeof hasEditPermission === 'function') {
         editPermission = hasEditPermission(user, selectedItem);
+      }
+      if (typeof hasEditPermissionError === 'function') {
+        editPermissionError = hasEditPermissionError(user, selectedItem);
       }
     }
   }
   $: if (typeof hasDeletePermission === 'boolean') {
     deletePermission = hasDeletePermission;
   }
+  $: if (typeof hasDeletePermissionError === 'string') {
+    deletePermissionError = hasDeletePermissionError;
+  }
   $: if (typeof hasEditPermission === 'boolean') {
     editPermission = hasEditPermission;
+  }
+  $: if (typeof hasEditPermissionError === 'string') {
+    editPermissionError = hasEditPermissionError;
   }
   $: if (selectedItemId != null && !selectedItemIds.includes(selectedItemId)) {
     selectedItemIds = [selectedItemId];
@@ -148,7 +169,7 @@
             permissionHandler,
             {
               hasPermission: editPermission,
-              permissionError: 'You do not have permission to edit.',
+              permissionError: editPermissionError,
             },
           ],
         ]}
@@ -164,7 +185,7 @@
             permissionHandler,
             {
               hasPermission: deletePermission,
-              permissionError: 'You do not have permission to delete.',
+              permissionError: deletePermissionError,
             },
           ],
         ]}

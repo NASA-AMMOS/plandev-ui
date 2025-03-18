@@ -163,7 +163,7 @@
     sequenceName={selectedSequence?.name}
     sequenceOutput={selectedSequence?.seq_json}
     title="Sequence - Definition Editor (Read-only)"
-    readOnly={true}
+    previewOnly={true}
     {workspaceId}
     {user}
   />
