@@ -3,7 +3,6 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import ChevronRightIcon from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
-  import { onMount } from 'svelte';
   import PhoenixIcon from '../../assets/aerie-phoenix-logo.svg?component';
   import Nav from '../../components/app/Nav.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
@@ -16,18 +15,16 @@
 
   let workspaceId: number | null = null;
 
-  $: workspace = $workspaces.find(workspace => workspace.id === workspaceId);
+  $: workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID, $page.url.searchParams);
 
-  onMount(() => {
-    workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
-  });
+  $: workspace = $workspaces.find(workspace => workspace.id === workspaceId);
 </script>
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
   <Nav user={data.user}>
     <div class="sequencing-title" slot="title">
       <a
-        href={`/sequencing${workspace ? `?${SearchParameters.WORKSPACE_ID}=${workspace.id}` : ''}`}
+        href={`/sequencing${workspace ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`}
         class="app-icon link"
       >
         <PhoenixIcon height={16} />Phoenix Sequencing
@@ -35,7 +32,7 @@
       {#if $page.url.pathname.indexOf('/sequencing/actions') > -1}
         <a
           class="link"
-          href={`/sequencing/actions${workspace ? `?${SearchParameters.WORKSPACE_ID}=${workspace.id}` : ''}`}
+          href={`/sequencing/actions${workspace ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`}
         >
           <div class="icon-wrapper">
             <ChevronRightIcon />

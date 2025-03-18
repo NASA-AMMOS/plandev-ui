@@ -5,7 +5,13 @@
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
-  import { actionDefinitions, actionDefinitionsByWorkspace, actionRuns, actionsColumns } from '../../../stores/actions';
+  import {
+    actionDefinitions,
+    actionDefinitionsByWorkspace,
+    actionRuns,
+    actionRunsByWorkspace,
+    actionsColumns,
+  } from '../../../stores/actions';
   import { workspaces } from '../../../stores/sequencing';
   import type { ActionDefinition, ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
@@ -39,6 +45,8 @@
   let selectedActionDefinition: ActionDefinition | null = null;
   let workspace: Workspace | undefined;
   let workspaceId: number | null = null;
+  let workspaceActionDefinitions: ActionDefinition[] = [];
+  let workspaceActionRuns: ActionRunSlim[] = [];
   let saveButtonDisabled: boolean = true;
   let description: string = '';
   let name: string = '';
@@ -48,11 +56,16 @@
   let saving: boolean = false;
 
   $: workspace = $workspaces.find(workspace => workspace.id === workspaceId);
-  $: selectedActionRuns = ($actionRuns || []).filter(actionRun => {
+  $: if (typeof workspaceId === 'number') {
+    workspaceActionDefinitions = Object.values($actionDefinitionsByWorkspace[workspaceId] || {});
+    workspaceActionRuns = Object.values($actionRunsByWorkspace[workspaceId] || {});
+  }
+
+  $: selectedActionRuns = (workspaceActionRuns || []).filter(actionRun => {
     return actionRun.action_definition_id === selectedActionDefinition?.id;
   });
 
-  $: filteredActionRuns = (selectedActionDefinition ? selectedActionRuns : $actionRuns || []).filter(actionRun => {
+  $: filteredActionRuns = (selectedActionDefinition ? selectedActionRuns : workspaceActionRuns).filter(actionRun => {
     const definition = getActionDefinitionForRun(actionRun, $actionDefinitionsByWorkspace, workspaceId);
     if (definition && definition.name.indexOf(actionRunsFilterText) > -1) {
       return true;
@@ -63,13 +76,13 @@
     return false;
   });
 
-  $: filteredActionDefinitions = ($actionDefinitions || []).filter(actionDefinition => {
+  $: filteredActionDefinitions = workspaceActionDefinitions.filter(actionDefinition => {
     return actionDefinition.name.indexOf(actionDefinitionsFilterText) > -1;
   });
 
   $: if (typeof selectedActionDefinitionId === 'number') {
     selectedActionDefinition =
-      ($actionDefinitions || []).find(actionDefinition => actionDefinition.id === selectedActionDefinitionId) || null;
+      workspaceActionDefinitions.find(actionDefinition => actionDefinition.id === selectedActionDefinitionId) || null;
   } else {
     selectedActionDefinition = null;
   }

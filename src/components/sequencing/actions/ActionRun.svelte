@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { page } from '$app/stores';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
   import { gqlSubscribable } from '../../../stores/subscribable';
@@ -19,16 +19,14 @@
 
   let workspaceId: number | null = null;
 
+  $: workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID, $page.url.searchParams);
+
   const actionRun = gqlSubscribable<ActionRun | null>(
     gql.SUB_ACTION_RUN,
     { actionRunId: initialActionRun?.id },
     initialActionRun,
     user,
   );
-
-  onMount(() => {
-    workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
-  });
 
   function getActionDefinitionForRun(
     actionRun: ActionRunSlim,

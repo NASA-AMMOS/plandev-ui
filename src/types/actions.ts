@@ -31,6 +31,10 @@ export type ActionRun = {
   status: 'pending' | 'in-progress' | 'failed' | 'complete';
 };
 
-export type ActionRunSlim = Omit<ActionRun, 'action_definition'>;
+export type ActionRunSlim = Omit<ActionRun, 'action_definition'> & {
+  action_definition: {
+    workspace_id: number;
+  };
+};
 
 export type ActionDefinitionSetInput = Pick<ActionDefinition, 'name' | 'description'>;

@@ -22,11 +22,27 @@ export const actionDefinitionsByWorkspace: Readable<Record<number, Record<number
     if (!$actionDefinitions) {
       return {};
     }
-    return $actionDefinitions.reduce((acc: Record<number, Record<number, ActionDefinition>>, next) => {
-      if (!acc[next.workspace_id]) {
-        acc[next.workspace_id] = {};
+    return $actionDefinitions.reduce((acc: Record<number, Record<number, ActionDefinition>>, actionDefinition) => {
+      if (!acc[actionDefinition.workspace_id]) {
+        acc[actionDefinition.workspace_id] = {};
       }
-      acc[next.workspace_id][next.id] = next;
+      acc[actionDefinition.workspace_id][actionDefinition.id] = actionDefinition;
+      return acc;
+    }, {});
+  },
+);
+
+export const actionRunsByWorkspace: Readable<Record<number, Record<number, ActionRunSlim>>> = derived(
+  actionRuns,
+  $actionRuns => {
+    if (!$actionRuns) {
+      return {};
+    }
+    return $actionRuns.reduce((acc: Record<number, Record<number, ActionRunSlim>>, actionRun) => {
+      if (!acc[actionRun.action_definition.workspace_id]) {
+        acc[actionRun.action_definition.workspace_id] = {};
+      }
+      acc[actionRun.action_definition.workspace_id][actionRun.id] = actionRun;
       return acc;
     }, {});
   },

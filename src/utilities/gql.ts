@@ -1977,6 +1977,9 @@ const gql = {
     subscription SubActionRuns {
       ${Queries.ACTION_RUNS}(order_by: { id: desc }) {
         action_definition_id
+        action_definition {
+          workspace_id
+        }
         created_at
         created_by
         duration
