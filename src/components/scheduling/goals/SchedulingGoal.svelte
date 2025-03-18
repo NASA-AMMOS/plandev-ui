@@ -160,7 +160,7 @@
   function updatePriority(priorityUpdate: number) {
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
-      priority,
+      priority: priorityUpdate,
     });
   }
 
