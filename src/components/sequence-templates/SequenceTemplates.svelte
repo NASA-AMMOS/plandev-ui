@@ -34,8 +34,6 @@
     ? $sequenceTemplates.find(sequenceTemplate => sequenceTemplate.id === $selectedSequenceTemplateId)
     : undefined;
 
-  $: console.log(selectedTemplate);
-
   $: parcel = $parcels.find(p => p.id === selectedTemplate?.parcel_id) ?? null;
 
   function onTemplateSelected(event: CustomEvent<SequenceTemplate>) {
