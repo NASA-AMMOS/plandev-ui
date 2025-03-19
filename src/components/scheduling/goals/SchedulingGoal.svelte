@@ -225,7 +225,7 @@
               <button
                 use:tooltip={{ content: 'Increase Priority', placement: 'top' }}
                 class="st-button tertiary up-button"
-                class:hidden={shouldShowUpButton}
+                class:hidden={!shouldShowUpButton}
                 tabindex={shouldShowUpButton ? -1 : 0}
                 on:click={() => focusInput() && updatePriority(priority - 1)}
               >
@@ -234,7 +234,7 @@
               <button
                 use:tooltip={{ content: 'Decrease Priority', placement: 'top' }}
                 class="st-button tertiary down-button"
-                class:hidden={shouldShowDownButton}
+                class:hidden={!shouldShowDownButton}
                 tabindex={shouldShowDownButton ? -1 : 0}
                 on:click={() => focusInput() && updatePriority(priority + 1)}
               >
