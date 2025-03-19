@@ -46,11 +46,11 @@ test.describe.serial('Action', () => {
     await action.inspectAction();
   });
 
-  test.skip('Configure an action', async () => {
+  test('Configure an action', async () => {
     await action.configureAction();
   });
 
-  test.skip('Run an action', async () => {
+  test('Run an action', async () => {
     await action.runAction();
   });
 });
