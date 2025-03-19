@@ -161,7 +161,7 @@ export enum Queries {
   INSERT_SEQUENCE = 'insert_sequence_one',
   INSERT_SEQUENCE_ADAPTATION = 'insert_sequence_adaptation_one',
   INSERT_SEQUENCE_FILTER = 'insert_sequence_filter_one',
-  INSERT_SEQUENCE_TEMPLATE = 'addTemplateExpansion',
+  INSERT_SEQUENCE_TEMPLATE = 'addTemplate',
   INSERT_SEQUENCE_TO_SIMULATED_ACTIVITY = 'insert_sequence_to_simulated_activity_one',
   INSERT_SIMULATION_TEMPLATE = 'insert_simulation_template_one',
   INSERT_TAG = 'insert_tags_one',
