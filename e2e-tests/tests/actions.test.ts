@@ -10,7 +10,6 @@ let workspaceName: string = '';
 
 test.beforeAll(async ({ browser }) => {
   context = await browser.newContext();
-  await context.tracing.stop();
   page = await context.newPage();
 
   action = new Action(page);
@@ -25,14 +24,12 @@ test.afterAll(async () => {
 
 test.describe.serial('Action', () => {
   test('Create new workspace', async () => {
-    await context.tracing.start({ screenshots: true, snapshots: true });
     workspaceName = await sequence.createWorkspace();
   });
   test('Select workspace', async () => {
     await page.getByRole('gridcell', { name: workspaceName }).first().click();
   });
   test('Navigate to workspace actions', async () => {
-    await page.pause();
     await page.getByRole('button', { name: 'Action' }).first().click();
     await page.waitForURL('/sequencing/actions?workspaceId=**');
     await page.waitForTimeout(250);
@@ -49,6 +46,5 @@ test.describe.serial('Action', () => {
   });
   test('Run an action', async () => {
     await action.runAction();
-    await context.tracing.stop({ path: 'trace.zip' });
   });
 });
