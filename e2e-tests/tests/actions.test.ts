@@ -10,6 +10,7 @@ let workspaceName: string = '';
 
 test.beforeAll(async ({ browser }) => {
   context = await browser.newContext();
+  await context.tracing.stop();
   await context.tracing.start({ screenshots: true, snapshots: true });
   page = await context.newPage();
 
