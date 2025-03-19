@@ -10,6 +10,7 @@ let workspaceName: string = '';
 
 test.beforeAll(async ({ browser }) => {
   context = await browser.newContext();
+  await context.tracing.start({ screenshots: true, snapshots: true });
   page = await context.newPage();
 
   action = new Action(page);
@@ -18,6 +19,7 @@ test.beforeAll(async ({ browser }) => {
 });
 
 test.afterAll(async () => {
+  await context.tracing.stop({ path: 'trace.zip' });
   await page.close();
   await context.close();
 });
