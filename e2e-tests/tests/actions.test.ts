@@ -32,6 +32,7 @@ test.describe.serial('Action', () => {
   test('Navigate to workspace actions', async () => {
     await page.getByRole('button', { name: 'Action' }).first().click();
     await page.waitForURL('/sequencing/actions?workspaceId=**');
+    await page.waitForTimeout(250);
     await action.updatePage(page);
   });
   test('Create an action', async () => {
