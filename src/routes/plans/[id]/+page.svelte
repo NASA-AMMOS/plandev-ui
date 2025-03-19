@@ -717,7 +717,7 @@
           permissionError={$planReadOnly
             ? PlanStatusMessages.READ_ONLY
             : 'You do not have permission to run a constraint check'}
-          status={$constraintsStatus}
+          status={$cachedConstraintsStatus}
           showStatusInMenu={false}
           on:click={() => $plan && effects.checkConstraints($plan, data.user, false)}
           indeterminate
@@ -727,7 +727,7 @@
             <div class="st-typography-body constraints-status">
               {#if $constraintsStatus}
                 <div class="constraints-status-item">
-                  <StatusBadge status={$checkConstraintsStatus} indeterminate showTooltip={false} />
+                  <StatusBadge status={$cachedConstraintsStatus} indeterminate showTooltip={false} />
                   Check constraints: {getConstraintStatus($checkConstraintsStatus)}
                 </div>
                 {#if $constraintsStatus === Status.Complete || $constraintsStatus === Status.Failed || $constraintsStatus === Status.PartialSuccess}

@@ -227,7 +227,7 @@ export const cachedConstraintsStatus: Readable<Status | null> = derived(
         }
 
         if (constraintRun.results.violations?.length) {
-          return Status.Complete;
+          return Status.Failed;
         } else if (status !== Status.Failed) {
           return Status.Complete;
         }
