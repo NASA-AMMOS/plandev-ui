@@ -17,7 +17,7 @@ const mockPlanStore = await vi.hoisted(() => import('../stores/__mocks__/plan.mo
 vi.mock('$env/dynamic/public', () => {
   return {
     env: {
-      PUBLIC_SEQUENCING_MODE: 'legacy',
+      PUBLIC_COMMAND_EXPANSION_MODE: 'typescript',
     },
   };
 }); // https://github.com/sveltejs/kit/issues/8180

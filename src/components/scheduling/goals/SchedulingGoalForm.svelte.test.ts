@@ -6,7 +6,7 @@ import SchedulingGoalForm from './SchedulingGoalForm.svelte';
 vi.mock('$env/dynamic/public', () => {
   return {
     env: {
-      PUBLIC_SEQUENCING_MODE: 'legacy',
+      PUBLIC_COMMAND_EXPANSION_MODE: 'typescript',
     },
   };
 }); // https://github.com/sveltejs/kit/issues/8180

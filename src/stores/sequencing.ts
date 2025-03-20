@@ -24,15 +24,15 @@ import { gqlSubscribable } from './subscribable';
 
 /* Environment Configuration */
 export const sequenceExpansionMode: Writable<SequencingMode> = writable(
-  env.PUBLIC_SEQUENCING_MODE === 'legacy' ? SequencingMode.LEGACY : SequencingMode.TEMPLATING,
+  env.PUBLIC_COMMAND_EXPANSION_MODE === 'templating' ?  SequencingMode.TEMPLATING : SequencingMode.LEGACY,
 );
 
 export const commandExpansionNotAvailable: Writable<string> = writable(
-  'Command Expansion functionality not available in "templating" sequencing mode. Please change the SEQUENCING_MODE environment variable to "legacy" in docker-compose.yml.',
+  'Command Expansion functionality not available in "templating" sequencing mode. Please change the COMMAND_EXPANSION_MODE environment variable to "typescript" in docker-compose.yml.',
 );
 
 export const templatingNotAvailable: Writable<string> = writable(
-  'Sequence Templating functionality not available in "legacy" Command Expansion mode. Please change the SEQUENCING_MODE environment variable to "templating" in docker-compose.yml.',
+  'Sequence Templating functionality not available in "typescript" Command Expansion mode. Please change the COMMAND_EXPANSION_MODE environment variable to "templating" in docker-compose.yml.',
 );
 
 /* Writable */
