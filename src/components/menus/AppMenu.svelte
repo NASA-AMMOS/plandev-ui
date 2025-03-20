@@ -60,7 +60,7 @@
       <ArchiveIcon />
       Parcels
     </MenuItem>
-    {#if $sequenceExpansionMode === SequencingMode.EXPANSION}
+    {#if $sequenceExpansionMode === SequencingMode.TYPESCRIPT}
       <MenuItem
         on:click={() => goto(`${base}/expansion/rules`)}
         on:pointerenter={() => preloadData(`${base}/expansion/rules`)}
@@ -118,7 +118,7 @@
         if (e.detail.shiftKey) {
           e.stopPropagation();
           if ($sequenceExpansionMode === SequencingMode.TEMPLATING) {
-            $sequenceExpansionMode = SequencingMode.EXPANSION;
+            $sequenceExpansionMode = SequencingMode.TYPESCRIPT;
           } else {
             $sequenceExpansionMode = SequencingMode.TEMPLATING;
           }

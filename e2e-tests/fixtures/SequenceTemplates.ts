@@ -81,6 +81,8 @@ export class SequenceTemplates {
 
   async selectParcel() {
     const { parcelName } = this.parcels;
+    await this.page.locator(this.newSequenceTemplateParcelIdSelector).inputValue();
+    await this.page.waitForSelector(`option:has-text("${parcelName}")`, { state: 'attached' });
     const value = await getOptionValueFromText(this.page, this.newSequenceTemplateParcelIdSelector, parcelName);
     await this.newSequenceTemplateParcelIdInput.focus();
     await this.newSequenceTemplateParcelIdInput.selectOption(value);

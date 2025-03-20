@@ -18,7 +18,7 @@
 
 <PageTitle title="Sequencing" />
 
-{#if $sequenceExpansionMode === SequencingMode.EXPANSION}
+{#if $sequenceExpansionMode === SequencingMode.TYPESCRIPT}
   <span class="st-typography-body">
     {$templatingNotAvailable}
   </span>
