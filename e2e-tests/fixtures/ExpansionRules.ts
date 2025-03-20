@@ -114,8 +114,8 @@ export class ExpansionRules {
     await this.page.goto('/expansion/rules', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
     await expect(this.rulesNavButton).toHaveClass(/selected/);
-    const expansionIsToggledOff = await this.page.getByText('Command Expansion').isVisible();
-    if (expansionIsToggledOff) {
+    const typescriptIsToggledOff = await this.page.getByText('COMMAND_EXPANSION_MODE').isVisible();
+    if (typescriptIsToggledOff) {
       await this.appNav.appMenuButton.click();
       await this.appNav.toggleBetweenExpansionTemplating();
     }

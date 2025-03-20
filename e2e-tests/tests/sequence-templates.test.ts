@@ -1,5 +1,6 @@
 import test, { type BrowserContext, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { AppNav } from '../fixtures/AppNav.js';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
 import { Models } from '../fixtures/Models.js';
 import { Parcels } from '../fixtures/Parcels.js';
@@ -7,6 +8,7 @@ import { SequenceTemplates } from '../fixtures/SequenceTemplates.js';
 
 const newTemplateName: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
+let appNav: AppNav;
 let context: BrowserContext;
 let sequenceTemplates: SequenceTemplates;
 let dictionaries: Dictionaries;
@@ -18,6 +20,7 @@ let page: Page;
 test.beforeAll(async ({ baseURL, browser }) => {
   context = await browser.newContext();
   page = await context.newPage();
+  appNav = new AppNav(page);
 
   models = new Models(page);
   await models.goto();
@@ -34,6 +37,11 @@ test.beforeAll(async ({ baseURL, browser }) => {
 
   sequenceTemplates = new SequenceTemplates(page, parcels, models);
   await sequenceTemplates.goto();
+  const templatingIsToggledOff = await page.getByText('COMMAND_EXPANSION_MODE').isVisible();
+  if (templatingIsToggledOff) {
+    await appNav.appMenuButton.click();
+    await appNav.toggleBetweenExpansionTemplating();
+  }
 });
 
 test.afterAll(async () => {
@@ -46,6 +54,11 @@ test.afterAll(async () => {
 
 test.beforeEach(async () => {
   await sequenceTemplates.goto();
+  const templatingIsToggledOff = await page.getByText('COMMAND_EXPANSION_MODE').isVisible();
+  if (templatingIsToggledOff) {
+    await appNav.appMenuButton.click();
+    await appNav.toggleBetweenExpansionTemplating();
+  }
 });
 
 test.describe.serial('Sequence Templates', () => {

@@ -123,10 +123,29 @@ test.describe.serial('Plan Sequences & Expansion', () => {
   test('Sequence Templating can be run', async () => {
     sequenceTemplates = new SequenceTemplates(page, parcels, models);
     await sequenceTemplates.goto();
+    let templatingIsToggledOff = await page.getByText('COMMAND_EXPANSION_MODE').isVisible();
+    if (templatingIsToggledOff) {
+      await appNav.appMenuButton.click();
+      await appNav.toggleBetweenExpansionTemplating();
+    }
     await sequenceTemplates.createSequenceTemplate(sequenceTemplateName, sequenceTemplateLanguage);
     await sequenceTemplates.goto();
+    templatingIsToggledOff = await page.getByText('COMMAND_EXPANSION_MODE').isVisible();
+    if (templatingIsToggledOff) {
+      await appNav.appMenuButton.click();
+      await appNav.toggleBetweenExpansionTemplating();
+    }
     await sequenceTemplates.updateSequenceTemplate(sequenceTemplateName, sequenceTemplateContent);
     await plan.goto();
+    await appNav.appMenuButton.click();
+    await appNav.appMenu.waitFor({ state: 'attached' });
+    await appNav.appMenu.waitFor({ state: 'visible' });
+    const expansionIsToggledOn = await appNav.appMenuItemExpansion.isVisible();
+    if (expansionIsToggledOn) {
+      await appNav.toggleBetweenExpansionTemplating();
+    } else {
+      await page.keyboard.press('Escape');
+    }
     await plan.showPanel(PanelNames.SEQUENCES_AND_EXPANSION);
     const expansionSequenceItem = page
       .locator('.sne-items')
@@ -150,8 +169,8 @@ test.describe.serial('Plan Sequences & Expansion', () => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
-    const expansionIsToggledOff = await appNav.appMenuItemSequenceTemplates.isVisible();
-    if (expansionIsToggledOff) {
+    const typescriptIsToggledOff = await appNav.appMenuItemSequenceTemplates.isVisible();
+    if (typescriptIsToggledOff) {
       await appNav.toggleBetweenExpansionTemplating();
     }
     const expansionSequenceItem = page

@@ -4,6 +4,6 @@ export enum SequenceTypes {
 }
 
 export enum SequencingMode {
-  LEGACY,
+  TYPESCRIPT,
   TEMPLATING,
 }

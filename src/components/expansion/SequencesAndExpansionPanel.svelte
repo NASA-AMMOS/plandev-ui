@@ -196,7 +196,7 @@
           aria-label="Filter..."
         />
       </div>
-      {#if $sequenceExpansionMode === SequencingMode.EXPANSION}
+      {#if $sequenceExpansionMode === SequencingMode.TYPESCRIPT}
         <div class="sne-expansion-set-select">
           <select name="expansionSetId" bind:value={selectedExpansionSetId} class="st-select w-100">
             {#if !$expansionSets.length}

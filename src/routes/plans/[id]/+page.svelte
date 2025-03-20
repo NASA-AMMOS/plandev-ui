@@ -525,7 +525,7 @@
   }
 
   async function onHandleExpansion() {
-    if ($sequenceExpansionMode === SequencingMode.EXPANSION) {
+    if ($sequenceExpansionMode === SequencingMode.TYPESCRIPT) {
       if ($selectedExpansionSetId != null && $plan) {
         effects.expand($selectedExpansionSetId, $simulationDatasetLatest?.id || -1, $plan, $plan.model, data.user);
       }
@@ -654,10 +654,10 @@
           permissionError={$planReadOnly
             ? PlanStatusMessages.READ_ONLY
             : 'You do not have permission to expand activities'}
-          menuTitle={$sequenceExpansionMode === SequencingMode.EXPANSION
+          menuTitle={$sequenceExpansionMode === SequencingMode.TYPESCRIPT
             ? 'Command Expansion Status'
             : 'Template Expansion Status'}
-          disabled={$sequenceExpansionMode === SequencingMode.EXPANSION
+          disabled={$sequenceExpansionMode === SequencingMode.TYPESCRIPT
             ? $selectedExpansionSetId === null
             : $selectedSequence === null || $selectedParcel === null || $simulationDatasetId === null}
           status={$planExpansionStatus}
@@ -665,7 +665,7 @@
         >
           <PlanIcon />
           <svelte:fragment slot="metadata">
-            {#if $sequenceExpansionMode === SequencingMode.EXPANSION}
+            {#if $sequenceExpansionMode === SequencingMode.TYPESCRIPT}
               <div>Expansion Set ID: {$selectedExpansionSetId || 'None'}</div>
             {/if}
             {#if !lastSimulationDatasetId}
