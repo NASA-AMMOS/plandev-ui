@@ -170,7 +170,6 @@
     if (formParameters.length) {
       const schema = version?.parameter_schema;
       let cleansedArguments: Argument = getCleansedStructArguments(goalPlanSpec.arguments, schema);
-      console.log('[name] :>> ', name, value);
       dispatch('updateGoalPlanSpec', {
         ...goalPlanSpec,
         arguments: { ...cleansedArguments, [name]: value },

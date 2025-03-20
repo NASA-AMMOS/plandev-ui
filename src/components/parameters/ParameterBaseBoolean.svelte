@@ -25,7 +25,6 @@
 
   let checkboxRef: HTMLInputElement;
 
-  $: console.log('formParameter :>> ', formParameter.value);
   $: if (formParameter.value == null || formParameter.value === '') {
     if (checkboxRef) {
       checkboxRef.indeterminate = true;
