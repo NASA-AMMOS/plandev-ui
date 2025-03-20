@@ -573,7 +573,6 @@ const effects = {
         action_definition_id: actionDefinitionId,
         parameters,
         settings,
-        status: 'pending',
       };
       const response = await reqHasura<{ id: number }>(gql.CREATE_ACTION_RUN, { actionRunInsertInput }, user);
       const { insert_action_run_one: actionRunId } = response;
