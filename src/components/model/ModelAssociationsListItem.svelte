@@ -82,7 +82,7 @@
       order: i,
       required: true,
       schema: subschema,
-      value: (invocationArguments && invocationArguments[name]) || '',
+      value: invocationArguments && invocationArguments[name] != null ? invocationArguments[name] : '',
       valueSource: 'none',
     }));
   } else {

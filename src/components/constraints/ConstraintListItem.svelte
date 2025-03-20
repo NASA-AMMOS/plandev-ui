@@ -75,7 +75,10 @@
         order: i,
         required: true,
         schema: subschema,
-        value: (constraintPlanSpec && constraintPlanSpec.arguments && constraintPlanSpec.arguments[name]) || '',
+        value:
+          constraintPlanSpec && constraintPlanSpec.arguments && constraintPlanSpec.arguments[name] != null
+            ? constraintPlanSpec.arguments[name]
+            : '',
         valueSource: 'none',
       }));
     } else {

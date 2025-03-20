@@ -60,15 +60,20 @@
     const schema = version?.parameter_schema;
 
     if (schema && schema.type === 'struct') {
-      formParameters = Object.entries(schema.items).map(([name, subschema], i) => ({
-        errors: null,
-        name,
-        order: i,
-        required: true,
-        schema: subschema,
-        value: (goalPlanSpec && goalPlanSpec.arguments && goalPlanSpec.arguments[name]) || '',
-        valueSource: 'none',
-      }));
+      formParameters = Object.entries(schema.items).map(([name, subschema], i) => {
+        return {
+          errors: null,
+          name,
+          order: i,
+          required: true,
+          schema: subschema,
+          value:
+            goalPlanSpec && goalPlanSpec.arguments && goalPlanSpec.arguments[name] != null
+              ? goalPlanSpec.arguments[name]
+              : '',
+          valueSource: 'none',
+        };
+      });
     } else {
       formParameters = [];
     }
@@ -165,7 +170,7 @@
     if (formParameters.length) {
       const schema = version?.parameter_schema;
       let cleansedArguments: Argument = getCleansedStructArguments(goalPlanSpec.arguments, schema);
-
+      console.log('[name] :>> ', name, value);
       dispatch('updateGoalPlanSpec', {
         ...goalPlanSpec,
         arguments: { ...cleansedArguments, [name]: value },
