@@ -6,7 +6,7 @@
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
   import { SequencingMode } from '../../enums/sequencing';
-  import { expansionSequences, expansionSets } from '../../stores/expansion';
+  import { expansionSequences, expansionSets, filteredExpansionSequences } from '../../stores/expansion';
   import { plan } from '../../stores/plan';
   import { sequenceExpansionMode, sequenceFilters } from '../../stores/sequencing';
   import { simulationDatasetLatest } from '../../stores/simulation';
@@ -86,6 +86,19 @@
         user,
       );
       filterMenu.toggle();
+    }
+  }
+
+  function onExpandAll() {
+    if ($plan !== null) {
+      const useTemplating = $sequenceExpansionMode === SequencingMode.TEMPLATING;
+      $filteredExpansionSequences.forEach(sequence => {
+        if (useTemplating) {
+          effects.expandTemplates([sequence.seq_id], sequence.simulation_dataset_id, $plan.model_id, user);
+        } else if (selectedExpansionSetId !== null) {
+          effects.expand(selectedExpansionSetId, sequence.simulation_dataset_id, $plan, $plan.model, user);
+        }
+      })
     }
   }
 
@@ -219,6 +232,12 @@
           on:click|stopPropagation={toggleContextMenu}
         >
           New
+        </button>
+        <button
+          class="st-button secondary expand-all-button"
+          on:click|stopPropagation={onExpandAll}
+        >
+          Expand All
         </button>
         <ContextMenu bind:this={contextMenu}>
           <ContextMenuHeader>Create new...</ContextMenuHeader>
@@ -359,6 +378,12 @@
   }
 
   .new-button {
+    gap: 4px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .expand-all-button {
     gap: 4px;
     position: relative;
     z-index: 1;
