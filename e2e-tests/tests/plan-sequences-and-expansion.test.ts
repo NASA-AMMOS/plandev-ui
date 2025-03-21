@@ -172,6 +172,8 @@ test.describe.serial('Plan Sequences & Expansion', () => {
     const typescriptIsToggledOff = await appNav.appMenuItemSequenceTemplates.isVisible();
     if (typescriptIsToggledOff) {
       await appNav.toggleBetweenExpansionTemplating();
+    } else {
+      await page.keyboard.press('Escape');
     }
     const expansionSequenceItem = page
       .locator('.sne-items')
