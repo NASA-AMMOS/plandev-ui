@@ -101,6 +101,7 @@ import type {
   ConstraintResult,
 } from '../types/constraint';
 import type {
+  ExpandedSequence,
   ExpansionRule,
   ExpansionRuleInsertInput,
   ExpansionRuleSetInput,
@@ -4015,7 +4016,7 @@ const effects = {
     user: User | null,
   ): Promise<string | null> {
     try {
-      const data = await reqHasura<any>(
+      const data = await reqHasura<ExpandedSequence[]>(
         gql.GET_EXPANSION_SEQUENCE_SEQ_JSON,
         {
           seqId,
