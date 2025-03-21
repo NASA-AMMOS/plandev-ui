@@ -56,6 +56,8 @@
     hasDeletePermissionSequenceFilter = featurePermissions.sequenceFilter.canDelete(user, $plan.model);
   }
 
+  $: isExpansionDisabled = $sequenceExpansionMode === SequencingMode.TEMPLATING ? false : selectedExpansionSetId === null;
+
   $: sequencesAndFilters = [...$expansionSequences, ...$sequenceFilters];
 
   function toggleContextMenu(e: MouseEvent) {
@@ -235,6 +237,7 @@
         </button>
         <button
           class="st-button secondary expand-all-button"
+          disabled={isExpansionDisabled}
           on:click|stopPropagation={onExpandAll}
         >
           Expand All
@@ -289,6 +292,7 @@
                 <button
                   aria-label={`Expand '${sequenceOrFilter.seq_id}'`}
                   class="st-button icon"
+                  disabled={isExpansionDisabled}
                   on:click|stopPropagation={() => {
                     if (isExpansionSequence(sequenceOrFilter)) {
                       onExpandSequence(sequenceOrFilter);
