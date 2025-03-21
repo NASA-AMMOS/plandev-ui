@@ -56,7 +56,8 @@
     hasDeletePermissionSequenceFilter = featurePermissions.sequenceFilter.canDelete(user, $plan.model);
   }
 
-  $: isExpansionDisabled = $sequenceExpansionMode === SequencingMode.TEMPLATING ? false : selectedExpansionSetId === null;
+  $: isExpansionDisabled =
+    $sequenceExpansionMode === SequencingMode.TEMPLATING ? false : selectedExpansionSetId === null;
 
   $: sequencesAndFilters = [...$expansionSequences, ...$sequenceFilters];
 
@@ -92,16 +93,14 @@
   }
 
   function onExpandAll() {
-    if ($plan !== null) {
-      const useTemplating = $sequenceExpansionMode === SequencingMode.TEMPLATING;
-      $filteredExpansionSequences.forEach(sequence => {
-        if (useTemplating) {
-          effects.expandTemplates([sequence.seq_id], sequence.simulation_dataset_id, $plan.model_id, user);
-        } else if (selectedExpansionSetId !== null) {
-          effects.expand(selectedExpansionSetId, sequence.simulation_dataset_id, $plan, $plan.model, user);
-        }
-      })
-    }
+    const useTemplating = $sequenceExpansionMode === SequencingMode.TEMPLATING;
+    $filteredExpansionSequences.forEach(sequence => {
+      if (useTemplating && $plan !== null) {
+        effects.expandTemplates([sequence.seq_id], sequence.simulation_dataset_id, $plan.model_id, user);
+      } else if (selectedExpansionSetId !== null && $plan !== null) {
+        effects.expand(selectedExpansionSetId, sequence.simulation_dataset_id, $plan, $plan.model, user);
+      }
+    });
   }
 
   function onUpdateSequenceFilter() {
