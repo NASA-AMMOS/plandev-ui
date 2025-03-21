@@ -42,12 +42,8 @@
 <Modal {height} {width}>
   <ModalHeader on:close>Create Sequence from Filter</ModalHeader>
   <ModalContent>
-    <div class="st-typography-body">
-      Select the time range to apply the sequence filter to.
-    </div>
-    <i class="st-typography-label">
-      All spans in the time range will be added to the new sequence!
-    </i>
+    <div class="st-typography-body">Select the time range to apply the sequence filter to.</div>
+    <i class="st-typography-label"> All spans in the time range will be added to the new sequence! </i>
     <fieldset>
       <DatePickerField
         name="start-time"
