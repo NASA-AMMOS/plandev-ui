@@ -579,7 +579,7 @@ export class Plan {
     this.sequenceExpansionNewSequenceFilterButton = page.getByText('Sequence Filter', { exact: true });
     this.sequenceExpansionNewSequenceName = page.locator('input[name="sequence-name"]');
     this.sequenceExpansionNewSequenceConfirmButton = page.getByRole('button', { exact: true, name: 'Confirm' });
-    this.sequenceExpansionTimeRangeModal = page.locator(`.modal:has-text("Apply Filter To Range")`);
+    this.sequenceExpansionTimeRangeModal = page.locator(`.modal:has-text("Create Sequence from Filter")`);
     this.sequenceExpansionOutputModal = page.locator(`.modal:has-text("Sequence ID")`);
   }
 
