@@ -2,17 +2,17 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { field } from '../../stores/form';
+  import { plugins } from '../../stores/plugins';
+  import { required } from '../../utilities/validators';
+  import DatePickerField from '../form/DatePickerField.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
-  import DatePickerField from '../form/DatePickerField.svelte';
-  import { plugins } from '../../stores/plugins';
-  import { field } from '../../stores/form';
-  import { required } from '../../utilities/validators';
 
   export let height: number = 225;
-  export let width: number = 300;
+  export let width: number = 400;
   export let defaultStartTime: string;
   export let defaultEndTime: string;
 
@@ -40,8 +40,14 @@
 </script>
 
 <Modal {height} {width}>
-  <ModalHeader on:close>Apply Filter To Range</ModalHeader>
+  <ModalHeader on:close>Create Sequence from Filter</ModalHeader>
   <ModalContent>
+    <div class="st-typography-body">
+      Select the time range to apply the sequence filter to.
+    </div>
+    <i class="st-typography-label">
+      All spans in the time range will be added to the new sequence!
+    </i>
     <fieldset>
       <DatePickerField
         name="start-time"
