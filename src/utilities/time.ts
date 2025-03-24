@@ -577,7 +577,7 @@ export function getActivityDirectiveStartTimeMs(
                 { ...traversalMap, [anchor_id]: true },
               ),
             ).toISOString(),
-            anchored_to_start ? '0' : anchoredSpan?.duration ?? '0',
+            anchored_to_start ? '0' : (anchoredSpan?.duration ?? '0'),
           ),
         ).toISOString(),
         activityDirective.start_offset,
@@ -919,4 +919,15 @@ export function removeDateStringMilliseconds(dateString: string): string {
  */
 export function formatDate(date: Date, formatter: PluginTime['format']): string {
   return formatter(date) ?? InvalidDate;
+}
+
+/**
+ * Format milliseconds to human readable string by taking the largest
+ * component of the duration string.
+ */
+export function formatMS(ms: number | null): string {
+  if (typeof ms === 'number') {
+    return `${convertUsToDurationString(ms * 1000).split(' ')[0]}`;
+  }
+  return '–';
 }

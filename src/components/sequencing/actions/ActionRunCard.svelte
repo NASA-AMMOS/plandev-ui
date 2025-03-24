@@ -5,12 +5,14 @@
   import StopwatchIcon from 'bootstrap-icons/icons/stopwatch.svg?component';
   import { Status } from '../../../enums/status';
   import type { ActionDefinition, ActionRun, ActionRunSlim } from '../../../types/actions';
-  import { convertUsToDurationString } from '../../../utilities/time';
+  import { formatMS } from '../../../utilities/time';
   import StatusBadge from '../../ui/StatusBadge.svelte';
 
   export let actionRun: ActionRunSlim;
   export let actionDefinition: ActionDefinition | null;
   export let interactable: boolean = true;
+
+  $: console.log('actionRun :>> ', actionRun);
 
   function getStatusForActionRun(actionStatus: ActionRun['status']): Status {
     if (actionRun.error || actionRun.results?.status === 'FAILED') {
@@ -30,13 +32,6 @@
         return Status.Unchecked;
     }
   }
-
-  function formatDuration(duration: number | null): string {
-    if (typeof duration === 'number') {
-      return `${convertUsToDurationString(duration * 1000).split(' ')[0]}`;
-    }
-    return '–';
-  }
 </script>
 
 <button
@@ -53,7 +48,7 @@
     <PlayBtnIcon />{new Date(actionRun.created_at).toLocaleString()}
   </div>
   <div class="action-run-cell">
-    <StopwatchIcon />{formatDuration(actionRun.duration)}
+    <StopwatchIcon />{formatMS(actionRun.duration)}
   </div>
 </button>
 
