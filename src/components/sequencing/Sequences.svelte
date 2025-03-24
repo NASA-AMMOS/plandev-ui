@@ -8,13 +8,14 @@
   import { SearchParameters } from '../../enums/searchParameters';
   import { actionDefinitionsByWorkspace } from '../../stores/actions';
   import { parcels, userSequences, userSequencesColumns, workspaces } from '../../stores/sequencing';
+  import type { ActionDefinition } from '../../types/actions';
   import type { User } from '../../types/app';
   import type { Parcel, UserSequence, Workspace } from '../../types/sequencing';
-  import { satfToSequence } from '../../utilities/sequence-editor/languages/satf/satf-sasf-utils';
   import effects from '../../utilities/effects';
   import { getSearchParameterNumber, setQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import { satfToSequence } from '../../utilities/sequence-editor/languages/satf/satf-sasf-utils';
   import { pluralize } from '../../utilities/text';
   import Input from '../form/Input.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -32,6 +33,8 @@
   let selectedSequence: UserSequence | null = null;
   let workspace: Workspace | undefined;
   let workspaceId: number | null = null;
+  let workspaceActions: Record<number, ActionDefinition> | null;
+  let workspaceActionsCount: number = 0;
 
   $: parcel = $parcels.find(p => p.id === selectedSequence?.parcel_id) ?? null;
   $: workspace = $workspaces.find(workspace => workspace.id === workspaceId);
@@ -42,7 +45,7 @@
       selectedSequence = null;
     }
   }
-  $: workspaceActions = $actionDefinitionsByWorkspace[workspaceId ?? -1];
+  $: workspaceActions = typeof workspaceId === 'number' ? $actionDefinitionsByWorkspace[workspaceId] : null;
   $: workspaceActionsCount = Object.keys(workspaceActions ?? {}).length;
 
   onMount(() => {
