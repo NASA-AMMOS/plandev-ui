@@ -1,7 +1,7 @@
 'use strict';
 
 // Define schemas for your action's settings and parameters
-const paramDefs = {
+const parameterDefinitions = {
   boolean: { type: "boolean" },
   delay: { type:"int" },
   duration: { type: "duration" },
@@ -12,11 +12,11 @@ const paramDefs = {
   string: { type: "string" },
   variant: { type: "variant", variants: [{key: "foo", label: "Foo"}, {key: "bar", label: "Bar"}] },
 };
-const settingDefs = {
+const settingDefinitions = {
   externalUrl: { type: "string" },
   retries: { type: "int" }
 };
-async function main(actionParameters, actionSettings, ActionAPI) {
+async function main(actionParameters, actionSettings, actionsAPI) {
     await new Promise((resolve) => {
       setTimeout(() => {
           resolve();
@@ -43,9 +43,9 @@ async function main(actionParameters, actionSettings, ActionAPI) {
     }
     try  {
       // read/write files using the actions helpers
-      const files = await ActionAPI.listSequences();
-      const myFile = await ActionAPI.readSequence("my_file");
-      const writeResult = await ActionAPI.writeSequence("new_file", "new contents");
+      const files = await actionsAPI.listSequences();
+      const myFile = await actionsAPI.readSequence("my_file");
+      const writeResult = await actionsAPI.writeSequence("new_file", "new contents");
       console.log(`writeResult: ${JSON.stringify(writeResult)}`);
       console.log('sequence files:', JSON.stringify(files));
       console.log(`myFile: ${JSON.stringify(myFile)}`);
@@ -59,6 +59,7 @@ async function main(actionParameters, actionSettings, ActionAPI) {
 }
 
 exports.main = main;
-exports.paramDefs = paramDefs;
-exports.settingDefs = settingDefs;
+exports.parameterDefinitions = parameterDefinitions;
+exports.settingDefinitions = settingDefinitions;
+
 
