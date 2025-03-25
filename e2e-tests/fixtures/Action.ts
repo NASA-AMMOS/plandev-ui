@@ -18,7 +18,9 @@ export class Action {
 
   async configureAction(): Promise<void> {
     await this.page.getByRole('tab', { name: 'Configure' }).click();
-    await this.page.locator(".configure .parameter-base-string:has-text('externalUrl') input").fill('https://api.github.com/');
+    await this.page
+      .locator(".configure .parameter-base-string:has-text('externalUrl') input")
+      .fill('https://api.github.com/');
     await this.page.getByRole('button', { name: 'Save' }).click();
     await this.waitForToast('Action Updated Successfully');
   }
