@@ -22,11 +22,18 @@ export type ActionRun = {
   created_at: string;
   created_by: string | null;
   duration: number | null;
-  error: any | null;
+  error: {
+    message: string;
+    stack: string | undefined;
+  } | null;
   id: number;
   logs: string | null;
   parameters: ArgumentsMap;
-  results: any | null;
+  results: {
+    data: any;
+    status: 'FAILED' | 'SUCCESS';
+    [key: string]: any;
+  } | null;
   settings: ArgumentsMap;
   status: 'pending' | 'in-progress' | 'failed' | 'complete';
 };
