@@ -143,7 +143,6 @@
   let mounted: boolean = false;
   let previousSelectedRowId: RowId | null = null;
   let resizeObserver: ResizeObserver | null = null;
-  let themeObserver: MutationObserver | null = null;
 
   $: {
     const seenSet = new Set<RowId>();
