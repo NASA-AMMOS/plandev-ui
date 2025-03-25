@@ -350,6 +350,9 @@
 
                   <div class="st-typography-bold">Action Settings</div>
                   <div class="st-typography-label">Persistent settings provided to every run of this action</div>
+                  {#if Object.keys(selectedActionDefinition.settings_schema).length < 1}
+                    <div class="st-typography-body pt-2"><i>No settings found</i></div>
+                  {/if}
                   <Parameters
                     formParameters={getFormParameters(
                       valueSchemaRecordToParametersMap(selectedActionDefinition.settings_schema),
