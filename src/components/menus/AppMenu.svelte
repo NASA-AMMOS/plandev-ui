@@ -1,7 +1,6 @@
 <svelte:options accessors={true} />
 
 <script lang="ts">
-  import { goto, preloadData } from '$app/navigation';
   import { base } from '$app/paths';
   import { env } from '$env/dynamic/public';
   import { Button, Popover } from '@nasa-jpl/stellar-svelte';
@@ -30,6 +29,7 @@
   import { logout } from '../../utilities/login';
   import { showAboutModal } from '../../utilities/modal';
   import MenuItem from './MenuItem.svelte';
+  import MenuLink from './MenuLink.svelte';
 
   export let user: User | null = null;
   let isOpen = false;
@@ -66,107 +66,64 @@
         <!-- Planning Column -->
         <div class="flex flex-col gap-0.5">
           <h3 class="px-3 pb-2 pt-2 text-sm font-medium text-muted-foreground">Planning</h3>
-          <MenuItem
-            className="text-sm py-1.5"
-            on:click={() => goto(`${base}/plans`)}
-            on:pointerenter={() => preloadData(`${base}/plans`)}
-          >
+          <MenuLink className="text-sm py-1.5" href="${base}/plans">
             <PlanIcon />
             Plans
-          </MenuItem>
-          <MenuItem
-            className="text-sm py-1.5"
-            on:click={() => goto(`${base}/models`)}
-            on:pointerenter={() => preloadData(`${base}/models`)}
-          >
+          </MenuLink>
+          <MenuLink className="text-sm py-1.5" href="{base}/models">
             <BarChartIcon />
             Models
-          </MenuItem>
-          <MenuItem
-            className="text-sm py-1.5"
-            on:click={() => goto(`${base}/constraints`)}
-            on:pointerenter={() => preloadData(`${base}/constraints`)}
-          >
+          </MenuLink>
+          <MenuLink className="text-sm py-1.5" href="{base}/constraints">
             <BracesAsteriskIcon />
             Constraints
-          </MenuItem>
-          <MenuItem
-            className="text-sm py-1.5"
-            on:click={() => goto(`${base}/scheduling`)}
-            on:pointerenter={() => preloadData(`${base}/scheduling`)}
-          >
+          </MenuLink>
+          <MenuLink className="text-sm py-1.5" href="{base}/scheduling">
             <CalendarIcon />
             Scheduling
-          </MenuItem>
-
-          <MenuItem
-            className="text-sm py-1.5"
-            on:click={() => goto(`${base}/tags`)}
-            on:pointerenter={() => preloadData(`${base}/tags`)}
-          >
+          </MenuLink>
+          <MenuLink className="text-sm py-1.5" href="${base}/tags">
             <TagIcon />
             Tags
-          </MenuItem>
+          </MenuLink>
         </div>
 
         <!-- Sequencing Column -->
         <div class="flex flex-col gap-0.5">
           <h3 class="px-3 pb-2 pt-2 text-sm font-medium text-muted-foreground">Sequencing</h3>
-          <MenuItem
-            className="text-sm py-1.5"
-            on:click={() => goto(`${base}/sequencing`)}
-            on:pointerenter={() => preloadData(`${base}/sequencing`)}
-          >
+          <MenuLink className="text-sm py-1.5" href="{base}/sequencing">
             <JournalCodeIcon />
             Sequence Editor
-          </MenuItem>
-          <MenuItem
-            className="text-sm py-1.5"
-            on:click={() => goto(`${base}/dictionaries`)}
-            on:pointerenter={() => preloadData(`${base}/dictionaries`)}
-          >
+          </MenuLink>
+          <MenuLink className="text-sm py-1.5" href="{base}/dictionaries">
             <JournalTextIcon />
             Dictionaries
-          </MenuItem>
-          <MenuItem
-            className="text-sm py-1.5"
-            on:click={() => goto(`${base}/expansion/rules`)}
-            on:pointerenter={() => preloadData(`${base}/expansion/rules`)}
-          >
+          </MenuLink>
+          <MenuLink className="text-sm py-1.5" href="{base}/expansion/rules">
             <CodeSquareIcon />
             Expansion
-          </MenuItem>
-          <MenuItem
-            className="text-sm py-1.5"
-            on:click={() => goto(`${base}/parcels`)}
-            on:pointerenter={() => preloadData(`${base}/parcels`)}
-          >
+          </MenuLink>
+          <MenuLink className="text-sm py-1.5" href="{base}/parcels">
             <ArchiveIcon />
             Parcels
-          </MenuItem>
+          </MenuLink>
         </div>
 
         <!-- Resources Column -->
         <div class="flex flex-col gap-0.5">
           <h3 class="px-3 pb-2 pt-2 text-sm font-medium text-muted-foreground">Resources</h3>
-          <MenuItem
-            className="text-sm py-1.5"
-            on:click={() => window.open('https://nasa-ammos.github.io/aerie-docs/', '_newtab')}
-          >
+          <MenuLink target="_blank" className="text-sm py-1.5" href="https://nasa-ammos.github.io/aerie-docs/">
             <JournalsIcon />
             Documentation
-          </MenuItem>
-          <MenuItem className="text-sm py-1.5" on:click={() => window.open(env.PUBLIC_GATEWAY_CLIENT_URL, '_newtab')}>
+          </MenuLink>
+          <MenuLink target="_blank" className="text-sm py-1.5" href={env.PUBLIC_GATEWAY_CLIENT_URL}>
             <DiagramIcon />
             Gateway
-          </MenuItem>
-          <MenuItem
-            className="text-sm py-1.5"
-            on:click={() => window.open(`${env.PUBLIC_GATEWAY_CLIENT_URL}/api-playground`, '_newtab')}
-          >
+          </MenuLink>
+          <MenuLink target="_blank" className="text-sm py-1.5" href="{env.PUBLIC_GATEWAY_CLIENT_URL}/api-playground">
             <GraphQLIcon />
             GraphQL Playground
-          </MenuItem>
+          </MenuLink>
           <MenuItem
             className="text-sm py-1.5"
             on:click={e => {
