@@ -1,9 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { base } from '$app/paths';
   import { createEventDispatcher, onMount } from 'svelte';
   import type { Version } from '../../types/app';
+  import effects from '../../utilities/effects';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -22,8 +22,7 @@
   };
 
   onMount(async () => {
-    const versionResponse = await fetch(`${base}/version.json`);
-    version = await versionResponse.json();
+    version = await effects.getVersion();
   });
 </script>
 
