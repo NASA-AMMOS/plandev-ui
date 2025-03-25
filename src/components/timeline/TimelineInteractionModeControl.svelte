@@ -87,8 +87,8 @@
 </button>
 
 <style>
-  .navigate,
-  .navigate:hover {
+  .st-button.navigate,
+  .st-button.navigate:hover {
     background-color: var(--st-utility-blue) !important;
     border-color: transparent;
     color: #ffffff;
