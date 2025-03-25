@@ -13,7 +13,7 @@
   export let interactable: boolean = true;
 
   function getStatusForActionRun(actionStatus: ActionRun['status']): Status {
-    if (actionRun.error || actionRun.results?.status === 'FAILED') {
+    if (actionRun.error?.message || actionRun.results?.status === 'FAILED') {
       return Status.Failed;
     }
 
