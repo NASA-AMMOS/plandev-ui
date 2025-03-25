@@ -577,7 +577,6 @@ const effects = {
           action_file_id: actionFileId,
           description,
           name,
-          settings: {},
           workspace_id: workspaceId,
         };
         const data = await reqHasura<ActionDefinition>(
