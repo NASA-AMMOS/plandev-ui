@@ -8,7 +8,6 @@
   import { valueSchemaRecordToParametersMap } from '../../utilities/actions';
   import effects from '../../utilities/effects';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
-  import { showFailureToast } from '../../utilities/toast';
   import Parameters from '../parameters/Parameters.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
@@ -27,19 +26,15 @@
   }>();
 
   async function run() {
-    try {
-      running = true;
-      const actionRunId = await effects.createActionRun(
-        actionDefinition.id,
-        argumentsMap,
-        actionDefinition.settings,
-        user,
-      );
-      running = false;
-      dispatch('complete', { actionRunId });
-    } catch (error) {
-      showFailureToast('Error running action');
-    }
+    running = true;
+    const actionRunId = await effects.createActionRun(
+      actionDefinition.id,
+      argumentsMap,
+      actionDefinition.settings,
+      user,
+    );
+    running = false;
+    dispatch('complete', { actionRunId });
   }
 
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
