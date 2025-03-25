@@ -12,8 +12,6 @@
   export let actionDefinition: ActionDefinition | null;
   export let interactable: boolean = true;
 
-  $: console.log('actionRun :>> ', actionRun);
-
   function getStatusForActionRun(actionStatus: ActionRun['status']): Status {
     if (actionRun.error || actionRun.results?.status === 'FAILED') {
       return Status.Failed;
