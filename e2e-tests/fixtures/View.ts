@@ -126,10 +126,12 @@ export class View {
     this.navButtonView = page.locator('.view-menu-button');
     this.navButtonViewMenu = page.locator(`.view-menu`);
     this.navButtonViewMenuTitle = page.locator(`.view-menu-button .nav-button-title`);
-    this.navButtonViewSaveAsMenuButton = page.locator(`.view-menu .menu-item:has-text("Save as")`);
-    this.navButtonViewUploadViewMenuButton = page.locator(`.view-menu .menu-item:has-text("Upload view file")`);
-    this.navButtonViewSavedViewsMenuButton = page.locator(`.view-menu .menu-item:has-text("Browse saved views")`);
-    this.navButtonViewRenameViewMenuButton = page.locator(`.view-menu .menu-item:has-text("Rename view")`);
+    this.navButtonViewSaveAsMenuButton = this.navButtonViewMenu.getByRole('menuitem', { name: 'Save as' });
+    this.navButtonViewUploadViewMenuButton = this.navButtonViewMenu.getByRole('menuitem', { name: 'Upload view file' });
+    this.navButtonViewSavedViewsMenuButton = this.navButtonViewMenu.getByRole('menuitem', {
+      name: 'Browse saved views',
+    });
+    this.navButtonViewRenameViewMenuButton = this.navButtonViewMenu.getByRole('menuitem', { name: 'Rename view' });
     this.renameViewMenuSaveViewButton = page.locator('.modal .st-button:has-text("Save View")');
     this.saveAsMenuSaveAsButton = page.locator('.modal .st-button:has-text("Save View")');
     this.table = page.locator('.modal:has-text("Saved Views")').getByRole('treegrid');
