@@ -303,6 +303,7 @@ const effects = {
   async applyActivitiesByFilter(
     filter: SequenceFilter,
     simulationDatasetId: number,
+    planId: number,
     defaultStartTime: string,
     defaultEndtime: string,
     user: User | null,
@@ -313,8 +314,9 @@ const effects = {
       if (timeConfirmed && value !== undefined) {
         const { timeRangeEnd, timeRangeStart } = value;
         if (timeRangeStart !== null && timeRangeEnd !== null) {
+          console.log(`${filter.name} Sequence (Plan ${planId})`)
           const sequenceId = await effects.createExpansionSequence(
-            `${filter.name} Sequence`,
+            `${filter.name} Sequence (Plan ${planId})`,
             simulationDatasetId,
             user,
           );
