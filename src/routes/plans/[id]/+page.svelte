@@ -382,7 +382,7 @@
     $simulationEvents = null;
   }
 
-  $: compactNavMode = windowWidth < 1100;
+  $: compactNavMode = windowWidth < 1200;
 
   $: if ($schedulingAnalysisStatus) {
     let newSchedulingStatusText = '';

@@ -11,9 +11,9 @@
   import ModalHeader from './ModalHeader.svelte';
 
   export let action: PlanBranchRequestAction = 'merge';
-  export let height: number = 200;
+  export let height: number | string = 'min-content';
   export let plan: Plan;
-  export let width: number = 560;
+  export let width: number | string = 560;
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -121,6 +121,6 @@
     display: flex;
     flex-flow: row;
     gap: 9px;
-    margin-top: 20px;
+    margin-top: 8px;
   }
 </style>

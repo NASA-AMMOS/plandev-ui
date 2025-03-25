@@ -33,7 +33,7 @@
         selected={{ label: user?.activeRole ?? '', value: user?.activeRole ?? '' }}
         onSelectedChange={v => v && changeRole(v.value)}
       >
-        <Select.Trigger class="w-[200px]" value={user?.activeRole} size="xs">
+        <Select.Trigger class="min-w-[180px]" value={user?.activeRole} size="xs">
           <Select.Value placeholder="Select a" class="text-secondary-foreground" aria-label="Select Role" />
         </Select.Trigger>
         <Select.Content>
