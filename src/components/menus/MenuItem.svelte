@@ -35,7 +35,7 @@
 
 <div
   class={twMerge(
-    'flex cursor-pointer items-center gap-2 rounded-sm px-3 py-3 text-[13px] font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50',
+    'flex cursor-pointer select-none items-center gap-2 rounded-sm px-3 py-3 text-[13px] font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50',
     className,
   )}
   class:disabled
@@ -43,7 +43,8 @@
   class:selectable
   role="menuitem"
   use:useActions={use}
-  on:click={onClick}
+  on:click
+  on:mouseup={onClick}
   on:keydown={onKeydown}
   tabindex={0}
 >
