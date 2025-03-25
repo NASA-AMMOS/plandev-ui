@@ -17,7 +17,7 @@
   import type { User } from '../../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
   import type { Workspace } from '../../../types/sequencing';
-  import { valueSchemaRecordToParametersMap } from '../../../utilities/actions';
+  import { getActionDefinitionForRun, valueSchemaRecordToParametersMap } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
   import { getSearchParameterNumber } from '../../../utilities/generic';
   import { showActionCreationModal } from '../../../utilities/modal';
@@ -142,20 +142,6 @@
         `${base}/sequencing/actions/runs/${actionRunId}${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`,
       );
     }
-  }
-
-  function getActionDefinitionForRun(
-    actionRun: ActionRunSlim,
-    actionDefinitionsByWorkspace: Record<number, Record<number, ActionDefinition>>,
-    workspaceId: number | null,
-  ): ActionDefinition | null {
-    if (typeof workspaceId === 'number') {
-      const workspaceDefinitions = actionDefinitionsByWorkspace[workspaceId];
-      if (workspaceDefinitions) {
-        return workspaceDefinitions[actionRun.action_definition_id] ?? null;
-      }
-    }
-    return null;
   }
 
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
