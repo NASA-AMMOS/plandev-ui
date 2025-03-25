@@ -9,7 +9,7 @@
   import { expansionSequences, expansionSets, filteredExpansionSequences } from '../../stores/expansion';
   import { plan } from '../../stores/plan';
   import { sequenceExpansionMode, sequenceFilters } from '../../stores/sequencing';
-  import { simulationDatasetLatest } from '../../stores/simulation';
+  import { simulationDatasetLatest, simulationDatasetsPlan } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { ExpansionSequence } from '../../types/expansion';
   import type { SequenceFilter } from '../../types/sequencing';
@@ -56,10 +56,18 @@
     hasDeletePermissionSequenceFilter = featurePermissions.sequenceFilter.canDelete(user, $plan.model);
   }
 
-  $: isExpansionDisabled =
-    $sequenceExpansionMode === SequencingMode.TEMPLATING ? false : selectedExpansionSetId === null;
+  $: relevantSimulationDatasetIds = $simulationDatasetsPlan?.map(dataset => dataset.dataset_id);
+  $: relevantExpansionSequences = $expansionSequences.filter(sequence =>
+    relevantSimulationDatasetIds?.includes(sequence.simulation_dataset_id),
+  );
+  $: sequencesAndFilters = [...relevantExpansionSequences, ...$sequenceFilters];
 
-  $: sequencesAndFilters = [...$expansionSequences, ...$sequenceFilters];
+  $: isExpansionDisabled =
+    $simulationDatasetLatest && relevantExpansionSequences.length > 0
+      ? $sequenceExpansionMode === SequencingMode.TEMPLATING
+        ? false
+        : selectedExpansionSetId === null
+      : true;
 
   function toggleContextMenu(e: MouseEvent) {
     const { x, y } = newButton.getBoundingClientRect();
@@ -72,6 +80,7 @@
       effects.applyActivitiesByFilter(
         sequenceFilter,
         $simulationDatasetLatest.id,
+        $plan.id,
         $plan.start_time_doy,
         $plan.end_time_doy,
         user,
@@ -342,6 +351,7 @@
               </div>
               <div use:tooltip={{ content: 'Apply Filter', placement: 'top' }}>
                 <button
+                  disabled={!$simulationDatasetLatest}
                   aria-label={`Apply '${sequenceOrFilter.name}'`}
                   class="st-button icon"
                   on:click|stopPropagation={() => {
