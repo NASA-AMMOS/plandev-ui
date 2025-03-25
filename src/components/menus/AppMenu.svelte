@@ -62,7 +62,7 @@
         <!-- Planning Column -->
         <div class="flex flex-col gap-0.5">
           <h3 class="px-3 pb-2 pt-2 text-sm font-medium text-muted-foreground">Planning</h3>
-          <MenuLink className="text-sm py-1.5" href="${base}/plans">
+          <MenuLink className="text-sm py-1.5" href="{base}/plans">
             <PlanIcon />
             Plans
           </MenuLink>
@@ -78,7 +78,7 @@
             <CalendarIcon />
             Scheduling
           </MenuLink>
-          <MenuLink className="text-sm py-1.5" href="${base}/tags">
+          <MenuLink className="text-sm py-1.5" href="{base}/tags">
             <TagIcon />
             Tags
           </MenuLink>
