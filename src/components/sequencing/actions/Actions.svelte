@@ -70,7 +70,7 @@
     if (definition && definition.name.indexOf(actionRunsFilterText) > -1) {
       return true;
     }
-    if (actionRun.created_by && actionRun.created_by.indexOf(actionRunsFilterText) > -1) {
+    if (actionRun.requested_by && actionRun.requested_by.indexOf(actionRunsFilterText) > -1) {
       return true;
     }
     return false;

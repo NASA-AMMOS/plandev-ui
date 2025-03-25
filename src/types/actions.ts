@@ -19,8 +19,7 @@ export type ActionDefinition = {
 export type ActionRun = {
   action_definition: ActionDefinition;
   action_definition_id: number;
-  created_at: string;
-  created_by: string | null;
+
   duration: number | null;
   error: {
     message: string;
@@ -29,6 +28,8 @@ export type ActionRun = {
   id: number;
   logs: string | null;
   parameters: ArgumentsMap;
+  requested_at: string;
+  requested_by: string | null;
   results: {
     data: any;
     status: 'FAILED' | 'SUCCESS';

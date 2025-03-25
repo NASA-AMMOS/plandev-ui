@@ -41,9 +41,9 @@
     <StatusBadge status={getStatusForActionRun(actionRun.status)} />
     {actionDefinition?.name ?? 'Loading...'}
   </div>
-  <div>@{actionRun.created_by}</div>
+  <div>@{actionRun.requested_by}</div>
   <div class="action-run-cell">
-    <PlayBtnIcon />{new Date(actionRun.created_at).toLocaleString()}
+    <PlayBtnIcon />{new Date(actionRun.requested_at).toLocaleString()}
   </div>
   <div class="action-run-cell">
     <StopwatchIcon />{formatMS(actionRun.duration)}

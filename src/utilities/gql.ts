@@ -1959,13 +1959,13 @@ const gql = {
           updated_by
           workspace_id
         }
-        created_at
-        created_by
         duration
         error
         id
         logs
         parameters
+        requested_at
+        requested_by
         results
         settings
         status
