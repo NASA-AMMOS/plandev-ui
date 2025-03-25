@@ -26,6 +26,7 @@
   import { SequencingMode } from '../../enums/sequencing';
   import type { User } from '../../types/app';
   import type { User, Version } from '../../types/app';
+  import effects from '../../utilities/effects';
   import { logout } from '../../utilities/login';
   import { showAboutModal } from '../../utilities/modal';
   import MenuItem from './MenuItem.svelte';
@@ -42,8 +43,7 @@
   };
 
   onMount(async () => {
-    const versionResponse = await fetch(`${base}/version.json`);
-    version = await versionResponse.json();
+    version = await effects.getVersion();
   });
 </script>
 
