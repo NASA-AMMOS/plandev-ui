@@ -40,6 +40,7 @@
     }
 
     viewUpdateGrid(update);
+    gridMenu.hide();
   }
 </script>
 

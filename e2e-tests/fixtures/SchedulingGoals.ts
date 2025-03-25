@@ -97,7 +97,7 @@ export class SchedulingGoals {
   }
 
   async goto() {
-    await this.page.goto('/scheduling/goals', { waitUntil: 'networkidle' });
+    await this.page.goto('/scheduling', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
     await this.page.waitForSelector(`input[placeholder="Filter goals"]`, { state: 'attached' });
   }
