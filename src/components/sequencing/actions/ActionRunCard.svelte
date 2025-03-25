@@ -18,11 +18,11 @@
     }
 
     switch (actionStatus) {
-      case 'complete':
+      case 'success':
         return Status.Complete;
       case 'pending':
         return Status.Pending;
-      case 'in-progress':
+      case 'incomplete':
         return Status.Incomplete;
       case 'failed':
         return Status.Failed;

@@ -19,7 +19,6 @@ export type ActionDefinition = {
 export type ActionRun = {
   action_definition: ActionDefinition;
   action_definition_id: number;
-
   duration: number | null;
   error: {
     message: string;
@@ -36,7 +35,7 @@ export type ActionRun = {
     [key: string]: any;
   } | null;
   settings: ArgumentsMap;
-  status: 'pending' | 'in-progress' | 'failed' | 'complete';
+  status: 'pending' | 'incomplete' | 'failed' | 'success';
 };
 
 export type ActionRunSlim = Omit<ActionRun, 'action_definition'> & {
