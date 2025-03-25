@@ -31,6 +31,7 @@
     'value-source-badge-dot--user': source === 'user on model' || source === 'user on preset',
   });
 
+  // Ensure browser is available so that isMacOs can be called
   $: if (browser) {
     const presetText = parameterType === 'activity' ? 'Activity Preset' : 'Simulation Template';
     showButton = false;
