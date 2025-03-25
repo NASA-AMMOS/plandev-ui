@@ -43,7 +43,9 @@
   class:selectable
   role="menuitem"
   use:useActions={use}
-  on:click
+  on:click|stopPropagation={() => {
+    /* Prevent modal close click listener from firing */
+  }}
   on:mouseup={onClick}
   on:keydown={onKeydown}
   tabindex={0}
