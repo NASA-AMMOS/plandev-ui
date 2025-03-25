@@ -558,6 +558,50 @@ const effects = {
     }
   },
 
+  async createActionDefinition(
+    file: File,
+    name: string,
+    description: string,
+    workspaceId: number,
+    user: User | null,
+  ): Promise<boolean> {
+    try {
+      if (!queryPermissions.CREATE_ACTION_DEFINITION(user)) {
+        throwPermissionError('create action definition');
+      }
+
+      const actionFileId = await effects.uploadFile(file, user);
+
+      if (actionFileId !== null) {
+        const actionDefinitionInsertInput = {
+          action_file_id: actionFileId,
+          description,
+          name,
+          settings: {},
+          workspace_id: workspaceId,
+        };
+        const data = await reqHasura<ActionDefinition>(
+          gql.CREATE_ACTION_DEFINITION,
+          { actionDefinitionInsertInput },
+          user,
+        );
+        const { insert_action_definition_one } = data;
+        if (insert_action_definition_one) {
+          showSuccessToast('Action Created Successfully');
+          return true;
+        } else {
+          throw new Error('Action Creation Failed');
+        }
+      } else {
+        throw new Error('Action Creation Failed');
+      }
+    } catch (e) {
+      catchError('Action Creation Failed', e as Error);
+      showFailureToast('Action Creation Failed');
+      return false;
+    }
+  },
+
   async createActionRun(
     actionDefinitionId: number,
     parameters: any,

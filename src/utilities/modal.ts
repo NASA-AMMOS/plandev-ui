@@ -139,13 +139,6 @@ export async function showActionCreationModal(
           resolve({ confirm: true });
           actionCreationModal.$destroy();
         });
-
-        actionCreationModal.$on('create', (e: CustomEvent<{ actionDefinitionId: number }>) => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: true, value: e.detail });
-          actionCreationModal.$destroy();
-        });
       }
     } else {
       resolve({ confirm: false });

@@ -2,12 +2,8 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { ActionDefinition } from '../../types/actions';
   import type { User } from '../../types/app';
   import effects from '../../utilities/effects';
-  import gql from '../../utilities/gql';
-  import { reqHasura } from '../../utilities/requests';
-  import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -18,6 +14,7 @@
   export let width: number = 380;
   export let workspaceId: number;
 
+  let creating: boolean = false;
   let createButtonDisabled: boolean = true;
   let description: string = '';
   let files: FileList | undefined;
@@ -26,7 +23,6 @@
 
   const dispatch = createEventDispatcher<{
     close: void;
-    create: { actionDefinitionId: number };
   }>();
 
   // File parse logic
@@ -34,38 +30,15 @@
     file = files[0];
   }
 
-  $: createButtonDisabled = !name || !file;
+  $: createButtonDisabled = !name || !file || creating;
 
   async function create() {
     if (!createButtonDisabled && file) {
-      try {
-        const actionFileId = await effects.uploadFile(file, user);
-
-        if (actionFileId !== null) {
-          const actionDefinitionInsertInput = {
-            action_file_id: actionFileId,
-            description,
-            name,
-            settings: {},
-            workspace_id: workspaceId,
-          };
-          const data = await reqHasura<ActionDefinition>(
-            gql.CREATE_ACTION_DEFINITION,
-            { actionDefinitionInsertInput },
-            user,
-          );
-          const { insert_action_definition_one } = data;
-          if (insert_action_definition_one) {
-            dispatch('create', { actionDefinitionId: insert_action_definition_one?.id });
-            showSuccessToast('Action Created Successfully');
-          } else {
-            throw new Error('Action Creation Failed');
-          }
-        } else {
-          throw new Error('Action Creation Failed');
-        }
-      } catch (error) {
-        showFailureToast((error as Error).message);
+      creating = true;
+      const success = await effects.createActionDefinition(file, name, description, workspaceId, user);
+      creating = false;
+      if (success) {
+        dispatch('close');
       }
     }
   }
