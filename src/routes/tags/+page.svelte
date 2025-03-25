@@ -317,8 +317,7 @@
                 on:keyup={onNameFieldKeyup}
                 bind:this={nameInputField}
                 autocomplete="off"
-                class="h-6 w-full px-2"
-                size="md"
+                class="mb-1 h-6 w-full px-2"
                 name="name"
                 placeholder="Enter tag name"
               />
@@ -335,7 +334,7 @@
                 }}
                 class="w-full"
               >
-                <Input on:keyup={onColorFieldKeyup} autocomplete="off" size="md" name="color" class="h-6 w-full px-2" />
+                <Input on:keyup={onColorFieldKeyup} autocomplete="off" name="color" class="h-6 w-full px-2" />
               </div>
               <!-- TODO add permission handler here -->
               <div class="size-6">
@@ -417,7 +416,7 @@
                 <Button
                   on:click={() => exitEditing()}
                   disabled={updatingTag}
-                  variant="secondary"
+                  variant="outline"
                   type="button"
                   class="w-full"
                 >
@@ -444,7 +443,7 @@
             <TagsIcon slot="icon" class="opacity-30" />
             Tags
           </SectionTitle>
-          <Input bind:value={filterText} size="sm" placeholder="Filter tags" class="h-6 w-full px-2" />
+          <Input bind:value={filterText} placeholder="Filter tags" class="h-6 w-full px-2" />
         </div>
       </svelte:fragment>
 
