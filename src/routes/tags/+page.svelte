@@ -389,7 +389,6 @@
                 tag={{ color: $colorField.value, id: -1, name: $nameField.value || 'Tag Name' }}
                 removable={false}
               />
-              <span class="flex items-center border border-secondary pl-2 align-middle">@{user?.id}</span>
             </div>
           </fieldset>
 
