@@ -104,7 +104,6 @@ test.describe.serial('Plan Metadata', () => {
     await plans.goto();
     const planAId = await plans.getPlanId(planA.planName);
     await planA.goto(planAId);
-
     await userB.switchRole('user');
     await planA.showPanel(PanelNames.PLAN_METADATA, true);
     await expect(planA.planCollaboratorInputContainer.locator('.tags-input')).toHaveAttribute('readonly', 'readonly');
