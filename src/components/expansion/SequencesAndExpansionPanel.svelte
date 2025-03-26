@@ -56,10 +56,12 @@
     hasDeletePermissionSequenceFilter = featurePermissions.sequenceFilter.canDelete(user, $plan.model);
   }
 
-  $: relevantSimulationDatasetIds = $simulationDatasetsPlan?.map(dataset => dataset.dataset_id);
+  $: relevantSimulationDatasetIds = $simulationDatasetsPlan?.map(dataset => dataset.id);
+
   $: relevantExpansionSequences = $expansionSequences.filter(sequence =>
     relevantSimulationDatasetIds?.includes(sequence.simulation_dataset_id),
   );
+
   $: sequencesAndFilters = [...relevantExpansionSequences, ...$sequenceFilters];
 
   $: isExpansionDisabled =
