@@ -39,8 +39,8 @@ export class User {
   }
 
   async switchRole(role: string = 'aerie_admin') {
-    await this.page.locator('.nav').getByRole('combobox').selectOption(role);
+    await this.page.getByRole('navigation').getByRole('combobox').selectOption(role);
     await this.page.waitForLoadState('networkidle');
-    await expect(this.page.locator('.nav').getByRole('combobox')).toHaveValue(role);
+    await expect(this.page.getByRole('navigation').getByRole('combobox')).toHaveValue(role);
   }
 }
