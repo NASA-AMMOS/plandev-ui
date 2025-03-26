@@ -237,7 +237,7 @@
                 <button
                   use:tooltip={{ content: `Increase ${priorityLabel}`, placement: 'top' }}
                   class="st-button tertiary up-button"
-                  class:hidden={shouldShowUpButton}
+                  class:hidden={!shouldShowUpButton}
                   tabindex={shouldShowUpButton ? -1 : 0}
                   on:click={onIncreasePriority}
                 >
@@ -246,7 +246,7 @@
                 <button
                   use:tooltip={{ content: `Decrease ${priorityLabel}`, placement: 'top' }}
                   class="st-button tertiary down-button"
-                  class:hidden={shouldShowDownButton}
+                  class:hidden={!shouldShowDownButton}
                   tabindex={shouldShowDownButton ? -1 : 0}
                   on:click={onDecreasePriority}
                 >
@@ -301,7 +301,7 @@
               <button
                 use:tooltip={{ content: `Increase ${priorityLabel}`, placement: 'top' }}
                 class="st-button tertiary up-button"
-                class:hidden={shouldShowUpButton}
+                class:hidden={!shouldShowUpButton}
                 tabindex={shouldShowUpButton ? -1 : 0}
                 on:click={onIncreasePriority}
               >
@@ -310,7 +310,7 @@
               <button
                 use:tooltip={{ content: `Decrease ${priorityLabel}`, placement: 'top' }}
                 class="st-button tertiary down-button"
-                class:hidden={shouldShowDownButton}
+                class:hidden={!shouldShowDownButton}
                 tabindex={shouldShowDownButton ? -1 : 0}
                 on:click={onDecreasePriority}
               >
