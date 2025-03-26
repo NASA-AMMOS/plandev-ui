@@ -113,20 +113,7 @@
       <BoxArrowRightIcon />
       Logout
     </MenuItem>
-    <MenuItem
-      on:click={e => {
-        if (e.detail.shiftKey) {
-          e.stopPropagation();
-          if ($sequenceExpansionMode === SequencingMode.TEMPLATING) {
-            $sequenceExpansionMode = SequencingMode.TYPESCRIPT;
-          } else {
-            $sequenceExpansionMode = SequencingMode.TEMPLATING;
-          }
-        } else {
-          showAboutModal();
-        }
-      }}
-    >
+    <MenuItem on:click={() => showAboutModal()}>
       <InfoCircleIcon />
       About
     </MenuItem>

@@ -1,32 +1,21 @@
 import test, { expect, type BrowserContext, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
-import { AppNav } from '../fixtures/AppNav.js';
 import { Constraints } from '../fixtures/Constraints.js';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
-import { ExpansionRules } from '../fixtures/ExpansionRules.js';
-import { ExpansionSets } from '../fixtures/ExpansionSets.js';
 import { Models } from '../fixtures/Models.js';
 import { Parcels } from '../fixtures/Parcels.js';
 import { PanelNames, Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
-import { SequenceTemplates } from '../fixtures/SequenceTemplates.js';
-import { getOptionValueFromText } from '../utilities/selectors.js';
 
 const sequenceFilterName: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
-const sequenceTemplateName: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 const expansionSequenceName: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
-const sequenceTemplateContent: string = '/C Example_Command "ARG1"';
-const sequenceTemplateLanguage: string = 'Text';
 
-let appNav: AppNav;
 let constraints: Constraints;
 let context: BrowserContext;
 let dictionaryName: string;
 let dictionaries: Dictionaries;
-let expansionRules: ExpansionRules;
-let expansionSets: ExpansionSets;
 let models: Models;
 let page: Page;
 let parcels: Parcels;
@@ -34,13 +23,10 @@ let plan: Plan;
 let plans: Plans;
 let schedulingConditions: SchedulingConditions;
 let schedulingGoals: SchedulingGoals;
-let sequenceTemplates: SequenceTemplates;
 
 test.beforeAll(async ({ baseURL, browser }) => {
   context = await browser.newContext();
   page = await context.newPage();
-  appNav = new AppNav(page);
-
   models = new Models(page);
   plans = new Plans(page, models);
   constraints = new Constraints(page);
@@ -62,11 +48,11 @@ test.beforeAll(async ({ baseURL, browser }) => {
 });
 
 test.afterAll(async () => {
-  // await plans.goto();
-  // await plans.deletePlan();
-  // await models.goto();
-  // await models.deleteModel();
-  // await parcels.goto();
+  await plans.goto();
+  await plans.deletePlan();
+  await models.goto();
+  await models.deleteModel();
+  await parcels.goto();
   await page.close();
   await context.close();
 });
@@ -92,14 +78,7 @@ test.describe.serial('Plan Sequences & Expansion', () => {
     await plan.showPanel(PanelNames.SIMULATION, true);
     await page.waitForTimeout(1000); // wait for sim results
     await plan.showPanel(PanelNames.SEQUENCES_AND_EXPANSION);
-    await plan.sequenceExpansionNewButton.click();
-    await plan.sequenceExpansionNewSequenceFilterButton.click();
-    await page.getByPlaceholder('Enter a name for this filter').fill(sequenceFilterName);
-    await page.getByPlaceholder('Select types').click();
-    await page.getByPlaceholder('Select types').fill('PeelBanana');
-    await page.getByRole('menuitem', { name: 'PeelBanana' }).click();
-    await page.getByRole('button', { name: 'Create Sequence Filter' }).click();
-    await expect(page.locator('.sne-items').getByText(sequenceFilterName, { exact: true })).toBeVisible();
+    await plan.createSequenceFilter(sequenceFilterName);
   });
   test('Sequence Filter can be applied to a plan', async () => {
     await plan.addActivity('PeelBanana');
@@ -107,93 +86,6 @@ test.describe.serial('Plan Sequences & Expansion', () => {
     await plan.runSimulation();
     await page.waitForTimeout(1000); // wait for sim results
     await plan.showPanel(PanelNames.SEQUENCES_AND_EXPANSION);
-    const sequenceFilterItem = page.locator('.sne-items').getByText(sequenceFilterName, { exact: true });
-    await sequenceFilterItem.hover();
-    await page.getByLabel(`Apply '${sequenceFilterName}'`).click();
-    await plan.sequenceExpansionTimeRangeModal.waitFor({ state: 'attached' });
-    await plan.sequenceExpansionTimeRangeModal.waitFor({ state: 'visible' });
-    await page.getByRole('button', { exact: true, name: 'Confirm' }).click();
-    await plan.waitForToast('Expansion Sequence Created Successfully');
-    await expect(page.locator('.sne-items').getByText(`${sequenceFilterName} Sequence`, { exact: true })).toBeVisible();
-    await plan.panelActivityDirectivesTable.getByRole('row', { name: 'PeelBanana' }).first().click();
-    await plan.showPanel(PanelNames.SELECTED_ACTIVITY);
-    await page.getByLabel('Jump to Simulated Activity').click();
-    await expect(page.locator('select[name="sequences"]')).toHaveValue(`${sequenceFilterName} Sequence`);
-  });
-  test('Sequence Templating can be run', async () => {
-    sequenceTemplates = new SequenceTemplates(page, parcels, models);
-    await sequenceTemplates.goto();
-    let templatingIsToggledOff = await page.getByText('COMMAND_EXPANSION_MODE').isVisible();
-    if (templatingIsToggledOff) {
-      await appNav.appMenuButton.click();
-      await appNav.toggleBetweenExpansionTemplating();
-    }
-    await sequenceTemplates.createSequenceTemplate(sequenceTemplateName, sequenceTemplateLanguage);
-    await sequenceTemplates.goto();
-    templatingIsToggledOff = await page.getByText('COMMAND_EXPANSION_MODE').isVisible();
-    if (templatingIsToggledOff) {
-      await appNav.appMenuButton.click();
-      await appNav.toggleBetweenExpansionTemplating();
-    }
-    await sequenceTemplates.updateSequenceTemplate(sequenceTemplateName, sequenceTemplateContent);
-    await plan.goto();
-    await appNav.appMenuButton.click();
-    await appNav.appMenu.waitFor({ state: 'attached' });
-    await appNav.appMenu.waitFor({ state: 'visible' });
-    const expansionIsToggledOn = await appNav.appMenuItemExpansion.isVisible();
-    if (expansionIsToggledOn) {
-      await appNav.toggleBetweenExpansionTemplating();
-    } else {
-      await page.keyboard.press('Escape');
-    }
-    await plan.showPanel(PanelNames.SEQUENCES_AND_EXPANSION);
-    const expansionSequenceItem = page
-      .locator('.sne-items')
-      .getByText(`${sequenceFilterName} Sequence`, { exact: true });
-    await expansionSequenceItem.hover();
-    await page.getByLabel(`Expand '${sequenceFilterName} Sequence'`).click();
-    await plan.waitForToast('Sequence Templating Successfully');
-    await page.getByLabel(`Show Expanded '${sequenceFilterName} Sequence'`).click();
-    await plan.sequenceExpansionOutputModal.waitFor({ state: 'attached' });
-    await plan.sequenceExpansionOutputModal.waitFor({ state: 'visible' });
-    await page.getByText('Loading Editor...').waitFor({ state: 'detached' });
-    await expect(plan.sequenceExpansionOutputModal.getByText(sequenceTemplateContent)).toBeVisible();
-  });
-  test('Command Expansion can be run', async ({ baseURL }) => {
-    expansionRules = new ExpansionRules(page, parcels, models);
-    await expansionRules.createExpansionRule(baseURL);
-    expansionSets = new ExpansionSets(page, parcels, models, expansionRules);
-    await expansionSets.createExpansionSet(baseURL);
-    await plan.goto();
-    await plan.showPanel(PanelNames.SEQUENCES_AND_EXPANSION);
-    await appNav.appMenuButton.click();
-    await appNav.appMenu.waitFor({ state: 'attached' });
-    await appNav.appMenu.waitFor({ state: 'visible' });
-    const typescriptIsToggledOff = await appNav.appMenuItemSequenceTemplates.isVisible();
-    if (typescriptIsToggledOff) {
-      await appNav.toggleBetweenExpansionTemplating();
-    } else {
-      await page.keyboard.press('Escape');
-    }
-    const expansionSequenceItem = page
-      .locator('.sne-items')
-      .getByText(`${sequenceFilterName} Sequence`, { exact: true });
-    await page.waitForSelector(`option:has-text("${expansionSets.expansionSetName}")`, {
-      state: 'attached',
-    });
-    const value = await getOptionValueFromText(page, 'select[name="expansionSetId"]', expansionSets.expansionSetName);
-    await page.locator('select[name="expansionSetId"]').focus();
-    await page.locator('select[name="expansionSetId"]').selectOption(value);
-    await page.locator('select[name="expansionSetId"]').evaluate(e => e.blur());
-    await expansionSequenceItem.hover();
-    await page.getByLabel(`Expand '${sequenceFilterName} Sequence'`).waitFor({ state: 'visible' });
-    await page.waitForTimeout(5000);
-    await page.getByLabel(`Expand '${sequenceFilterName} Sequence'`).click();
-    await plan.waitForToast('Plan Expanded Successfully');
-    await page.getByLabel(`Show Expanded '${sequenceFilterName} Sequence'`).click();
-    await plan.sequenceExpansionOutputModal.waitFor({ state: 'attached' });
-    await plan.sequenceExpansionOutputModal.waitFor({ state: 'visible' });
-    await page.getByText('Loading Editor...').waitFor({ state: 'detached' });
-    // await expect(plan.sequenceExpansionOutputModal.getByText(sequenceTemplateContent)).toBeVisible();
+    await plan.applySequenceFilter(sequenceFilterName, plans.planId);
   });
 });
