@@ -3944,6 +3944,7 @@ const effects = {
         return { aborted: true, file: null };
       } else {
         catchError(e as Error);
+        showFailureToast(`Failed to get file with id: ${fileId}`);
         return { aborted: false, file: null };
       }
     }
@@ -3963,6 +3964,7 @@ const effects = {
       return null;
     } catch (e) {
       catchError(e as Error);
+      showFailureToast(`Failed to get filename for file id: ${fileId}`);
       return null;
     }
   },
