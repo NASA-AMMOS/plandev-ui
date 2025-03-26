@@ -18,6 +18,8 @@ export class Action {
 
   async configureAction(): Promise<void> {
     await this.page.getByRole('tab', { name: 'Configure' }).click();
+    // Provide the github api url to the action found in `actionPath` so that it can
+    // successfully query the api
     await this.page
       .locator(".configure .parameter-base-string:has-text('externalUrl') input")
       .fill('https://api.github.com/');
@@ -50,6 +52,8 @@ export class Action {
   async runAction(): Promise<void> {
     await this.actionDefinitionButton.getByRole('button', { name: 'Run' }).click();
     await expect(this.runModal).toBeVisible();
+    // Provide the aerie repository path to the action found in `actionPath` so that it can
+    // successfully query the api
     await this.runModal.locator(".parameter-base-string:has-text('repository') input").fill('repos/NASA-AMMOS/aerie');
     await this.runModal.getByRole('button', { name: 'Run' }).click();
     await this.page.waitForURL('/sequencing/actions/runs/**');
