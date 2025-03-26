@@ -13,7 +13,6 @@ import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
 import { getOptionValueFromText } from '../utilities/selectors.js';
 
 const sequenceFilterName: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
-const expansionSequenceName: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
 let context: BrowserContext;
 let constraints: Constraints;
@@ -87,7 +86,7 @@ test.describe.serial('Expansion', () => {
   test('Create expansion set', async ({ baseURL }) => {
     await expansionSets.createExpansionSet(baseURL);
   });
-  test('Typescript Expansion can be run', async ({ baseURL }) => {
+  test('Typescript Expansion can be run', async () => {
     await plan.goto();
     await plan.showPanel(PanelNames.SEQUENCES_AND_EXPANSION);
     await page.waitForSelector(`option:has-text("${expansionSets.expansionSetName}")`, {
