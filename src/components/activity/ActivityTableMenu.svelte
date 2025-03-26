@@ -74,7 +74,7 @@
   }
 </script>
 
-<div class="grid-menu st-typography-medium" role="none" on:click|stopPropagation={() => tableMenu.toggle()}>
+<div class="activity-table-menu st-typography-medium" role="none" on:click|stopPropagation={() => tableMenu.toggle()}>
   <div class="button"><div class="button-title">...</div></div>
   <Menu bind:this={tableMenu} hideAfterClick={false}>
     <MenuHeader title="Columns" showBorder={false} />
@@ -98,7 +98,7 @@
 </div>
 
 <style>
-  .grid-menu {
+  .activity-table-menu {
     --aerie-menu-item-template-columns: min-content auto;
     --aerie-menu-item-line-height: 1rem;
     --aerie-menu-item-font-size: 12px;
@@ -117,7 +117,7 @@
     user-select: none;
   }
 
-  .grid-menu:hover {
+  .activity-table-menu:hover {
     background-color: var(--st-button-secondary-hover-background-color);
   }
 
