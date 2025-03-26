@@ -282,7 +282,10 @@
 <Panel>
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Constraints" />
-    <PanelHeaderActions status={$constraintsStatus} indeterminate>
+    <PanelHeaderActions
+      status={$constraintsStatus !== Status.Failed ? $cachedConstraintsStatus : $constraintsStatus}
+      indeterminate
+    >
       <PanelHeaderActionButton
         title="Re-Check"
         disabled={$simulationStatus !== Status.Complete || $constraintsStatus !== Status.Complete}

@@ -717,7 +717,7 @@
           permissionError={$planReadOnly
             ? PlanStatusMessages.READ_ONLY
             : 'You do not have permission to run a constraint check'}
-          status={$cachedConstraintsStatus}
+          status={$constraintsStatus !== Status.Failed ? $cachedConstraintsStatus : $constraintsStatus}
           showStatusInMenu={false}
           on:click={() => $plan && effects.checkConstraints($plan, data.user, false)}
           indeterminate
