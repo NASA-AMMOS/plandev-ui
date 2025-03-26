@@ -33,6 +33,9 @@
     "test:e2e:codegen": "playwright codegen http://localhost:3000",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:with-ui": "playwright test --ui",
+    "test:e2e:sequence-templates": "playwright test -c playwright.config.sequence-templates.ts",
+    "test:e2e:sequence-templates:debug": "playwright test -c playwright.config.sequence-templates.ts --debug",
+    "test:e2e:sequence-templates:with-ui": "playwright test -c playwright.config.sequence-templates.ts --ui",
     "test:unit": "vitest run",
     "test:unit:coverage": "vitest run --coverage",
     "version": "node ./scripts/version.js"
