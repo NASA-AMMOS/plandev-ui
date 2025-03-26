@@ -100,7 +100,7 @@
     schedulingGoalCount,
   } from '../../../stores/scheduling';
   import { lastTemplatedSimulationDatasetId } from '../../../stores/sequence-template';
-  import { selectedParcel, selectedSequence, sequenceExpansionMode } from '../../../stores/sequencing';
+  import { selectedSequence, sequenceExpansionMode } from '../../../stores/sequencing';
   import {
     enableSimulation,
     externalResourceNames,
@@ -532,7 +532,6 @@
     } else if ($sequenceExpansionMode === SequencingMode.TEMPLATING) {
       if (
         $selectedSequence !== null &&
-        $selectedParcel !== null &&
         $plan !== null &&
         $simulationDatasetLatest !== null
       ) {
@@ -659,7 +658,7 @@
             : 'Template Expansion Status'}
           disabled={$sequenceExpansionMode === SequencingMode.TYPESCRIPT
             ? $selectedExpansionSetId === null
-            : $selectedSequence === null || $selectedParcel === null || $simulationDatasetId === null}
+            : $selectedSequence === null || $simulationDatasetId === null}
           status={$planExpansionStatus}
           on:click={() => onHandleExpansion()}
         >
