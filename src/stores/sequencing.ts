@@ -43,8 +43,6 @@ export const parsedCommandDictionaries: Writable<Record<string, AmpcsCommandDict
 
 export const parsedParameterDictionaries: Writable<Record<string, AmpcsParameterDictionary>> = writable({});
 
-export const selectedParcel: Writable<number | null> = writable(null);
-
 export const selectedSequence: Writable<string | null> = writable(null);
 
 /* Subscriptions. */
