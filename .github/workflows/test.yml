@@ -100,6 +100,8 @@ jobs:
         run: npx playwright install chromium --with-deps
       - name: Test (e2e)
         run: npm run test:e2e
+      - name: Test (e2e Sequence Templates)
+        run: npm run test:e2e:sequence-templates
       - name: Upload Results
         if: always()
         uses: actions/upload-artifact@v4
