@@ -126,7 +126,7 @@
   let commandInfoMapper: CommandInfoMapper = new SeqNCommandInfoMapper();
   let selectedOutputFormat: IOutputFormat | undefined;
   let isInVmlMode: boolean = false;
-  let editorHeights: string = '1fr 3px 1fr';
+  let editorHeights: string = '1fr 3px';
   let columnsWithFormBuilder: string = '3fr 3px 1.5fr';
   let columnsWithNoFormBuilder: string = '3fr 3px';
 
