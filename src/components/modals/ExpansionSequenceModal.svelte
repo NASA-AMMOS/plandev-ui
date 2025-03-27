@@ -2,9 +2,9 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
   import { SequencingMode } from '../../enums/sequencing';
   import { expandedTemplates } from '../../stores/sequence-template';
-  import { sequenceExpansionMode } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import type { ExpansionSequence } from '../../types/expansion';
   import effects from '../../utilities/effects';
@@ -24,7 +24,7 @@
   let outputStr: string | null = null;
   let language: string = 'plaintext';
 
-  $: if ($sequenceExpansionMode === SequencingMode.TEMPLATING) {
+  $: if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
     const expandedTemplate = $expandedTemplates.find(
       expandedTemplate => expandedTemplate.seq_id === expansionSequence.seq_id,
     );

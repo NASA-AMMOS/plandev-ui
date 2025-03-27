@@ -4,9 +4,9 @@
   import { onDestroy } from 'svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
   import SequenceTemplates from '../../components/sequence-templates/SequenceTemplates.svelte';
+  import { SEQUENCE_EXPANSION_MODE, TEMPLATE_EXPANSION_NOT_AVAILABLE } from '../../constants/command-expansion';
   import { SequencingMode } from '../../enums/sequencing';
   import { resetSequenceTemplateStores } from '../../stores/sequence-template';
-  import { sequenceExpansionMode, templatingNotAvailable } from '../../stores/sequencing';
   import type { PageData } from './$types';
 
   export let data: PageData;
@@ -18,9 +18,9 @@
 
 <PageTitle title="Sequencing" />
 
-{#if $sequenceExpansionMode === SequencingMode.TYPESCRIPT}
+{#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
   <span class="st-typography-body">
-    {$templatingNotAvailable}
+    {TEMPLATE_EXPANSION_NOT_AVAILABLE}
   </span>
 {:else}
   <SequenceTemplates user={data.user} />

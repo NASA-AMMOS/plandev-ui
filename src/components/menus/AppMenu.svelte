@@ -21,8 +21,8 @@
   import JournalsIcon from 'bootstrap-icons/icons/journals.svg?component';
   import AerieWordmarkDark from '../../assets/aerie-wordmark-dark.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
+  import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
   import { SequencingMode } from '../../enums/sequencing';
-  import { sequenceExpansionMode } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import { logout } from '../../utilities/login';
   import { showAboutModal } from '../../utilities/modal';
@@ -60,7 +60,7 @@
       <ArchiveIcon />
       Parcels
     </MenuItem>
-    {#if $sequenceExpansionMode === SequencingMode.TYPESCRIPT}
+    {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
       <MenuItem
         on:click={() => goto(`${base}/expansion/rules`)}
         on:pointerenter={() => preloadData(`${base}/expansion/rules`)}
@@ -69,7 +69,7 @@
         Expansion
       </MenuItem>
     {/if}
-    {#if $sequenceExpansionMode === SequencingMode.TEMPLATING}
+    {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING}
       <MenuItem
         on:click={() => goto(`${base}/sequence-templates`)}
         on:pointerenter={() => preloadData(`${base}/sequence-templates`)}

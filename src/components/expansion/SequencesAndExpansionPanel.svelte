@@ -5,10 +5,11 @@
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
+  import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
   import { SequencingMode } from '../../enums/sequencing';
   import { expansionSequences, expansionSets, filteredExpansionSequences } from '../../stores/expansion';
   import { plan } from '../../stores/plan';
-  import { sequenceExpansionMode, sequenceFilters } from '../../stores/sequencing';
+  import { sequenceFilters } from '../../stores/sequencing';
   import { simulationDatasetLatest, simulationDatasetsPlan } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { ExpansionSequence } from '../../types/expansion';
@@ -66,7 +67,7 @@
 
   $: isExpansionDisabled =
     $simulationDatasetLatest && relevantExpansionSequences.length > 0
-      ? $sequenceExpansionMode === SequencingMode.TEMPLATING
+      ? SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING
         ? false
         : selectedExpansionSetId === null
       : true;
@@ -104,7 +105,7 @@
   }
 
   function onExpandAll() {
-    const useTemplating = $sequenceExpansionMode === SequencingMode.TEMPLATING;
+    const useTemplating = SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING;
     $filteredExpansionSequences.forEach(sequence => {
       if (useTemplating && $plan !== null) {
         effects.expandTemplates([sequence.seq_id], sequence.simulation_dataset_id, $plan.model_id, user);
@@ -138,7 +139,7 @@
 
   function onExpandSequence(sequence: ExpansionSequence) {
     if ($simulationDatasetLatest !== null && $plan !== null) {
-      if ($sequenceExpansionMode === SequencingMode.TEMPLATING) {
+      if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
         effects.expandTemplates([sequence.seq_id], $simulationDatasetLatest.id, $plan.model_id, user);
       } else if (selectedExpansionSetId !== null) {
         effects.expand(selectedExpansionSetId, $simulationDatasetLatest.id, $plan, $plan.model, user);
@@ -221,7 +222,7 @@
           aria-label="Filter..."
         />
       </div>
-      {#if $sequenceExpansionMode === SequencingMode.TYPESCRIPT}
+      {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
         <div class="sne-expansion-set-select">
           <select name="expansionSetId" bind:value={selectedExpansionSetId} class="st-select w-100">
             {#if !$expansionSets.length}

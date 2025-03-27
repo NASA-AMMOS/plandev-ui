@@ -33,6 +33,7 @@
   import PlanGrid from '../../../components/ui/PlanGrid.svelte';
   import ProgressLinear from '../../../components/ui/ProgressLinear.svelte';
   import StatusBadge from '../../../components/ui/StatusBadge.svelte';
+  import { SEQUENCE_EXPANSION_MODE } from '../../../constants/command-expansion';
   import { PlanStatusMessages } from '../../../enums/planStatusMessages';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { SequencingMode } from '../../../enums/sequencing';
@@ -100,7 +101,7 @@
     schedulingGoalCount,
   } from '../../../stores/scheduling';
   import { lastTemplatedSimulationDatasetId } from '../../../stores/sequence-template';
-  import { selectedSequence, sequenceExpansionMode } from '../../../stores/sequencing';
+  import { selectedSequence } from '../../../stores/sequencing';
   import {
     enableSimulation,
     externalResourceNames,
@@ -451,7 +452,7 @@
     }
   }
   $: lastSimulationDatasetId =
-    $sequenceExpansionMode === SequencingMode.TEMPLATING
+    SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING
       ? $lastTemplatedSimulationDatasetId
       : $lastExpandedSimulationDatasetId;
 
@@ -525,16 +526,12 @@
   }
 
   async function onHandleExpansion() {
-    if ($sequenceExpansionMode === SequencingMode.TYPESCRIPT) {
+    if (SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT) {
       if ($selectedExpansionSetId != null && $plan) {
         effects.expand($selectedExpansionSetId, $simulationDatasetLatest?.id || -1, $plan, $plan.model, data.user);
       }
-    } else if ($sequenceExpansionMode === SequencingMode.TEMPLATING) {
-      if (
-        $selectedSequence !== null &&
-        $plan !== null &&
-        $simulationDatasetLatest !== null
-      ) {
+    } else if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
+      if ($selectedSequence !== null && $plan !== null && $simulationDatasetLatest !== null) {
         effects.expandTemplates([$selectedSequence], $simulationDatasetLatest.dataset_id, $plan.model_id, data.user);
       }
     }
@@ -653,10 +650,10 @@
           permissionError={$planReadOnly
             ? PlanStatusMessages.READ_ONLY
             : 'You do not have permission to expand activities'}
-          menuTitle={$sequenceExpansionMode === SequencingMode.TYPESCRIPT
+          menuTitle={SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT
             ? 'Command Expansion Status'
             : 'Template Expansion Status'}
-          disabled={$sequenceExpansionMode === SequencingMode.TYPESCRIPT
+          disabled={SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT
             ? $selectedExpansionSetId === null
             : $selectedSequence === null || $simulationDatasetId === null}
           status={$planExpansionStatus}
@@ -664,7 +661,7 @@
         >
           <PlanIcon />
           <svelte:fragment slot="metadata">
-            {#if $sequenceExpansionMode === SequencingMode.TYPESCRIPT}
+            {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
               <div>Expansion Set ID: {$selectedExpansionSetId || 'None'}</div>
             {/if}
             {#if !lastSimulationDatasetId}

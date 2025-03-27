@@ -1,11 +1,9 @@
-import { env } from '$env/dynamic/public';
 import type {
   ChannelDictionary as AmpcsChannelDictionary,
   CommandDictionary as AmpcsCommandDictionary,
   ParameterDictionary as AmpcsParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
-import { SequencingMode } from '../enums/sequencing';
 import type { User } from '../types/app';
 import {
   type ChannelDictionaryMetadata,
@@ -21,19 +19,6 @@ import {
 import effects from '../utilities/effects';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
-
-/* Environment Configuration */
-export const sequenceExpansionMode: Writable<SequencingMode> = writable(
-  env.PUBLIC_COMMAND_EXPANSION_MODE === 'templating' ? SequencingMode.TEMPLATING : SequencingMode.TYPESCRIPT,
-);
-
-export const commandExpansionNotAvailable: Writable<string> = writable(
-  'Command Expansion functionality not available in "templating" sequencing mode. Please change the COMMAND_EXPANSION_MODE environment variable to "typescript" in docker-compose.yml.',
-);
-
-export const templatingNotAvailable: Writable<string> = writable(
-  'Sequence Templating functionality not available in "typescript" Command Expansion mode. Please change the COMMAND_EXPANSION_MODE environment variable to "templating" in docker-compose.yml.',
-);
 
 /* Writable */
 
