@@ -71,13 +71,13 @@
   } from '../../../stores/expansion';
   import { extensions } from '../../../stores/extensions';
   import {
-    activityTypes,
     initialPlan,
     maxTimeRange,
     plan,
     planDatasets,
     planEndTimeMs,
     planId,
+    planModelActivityTypes,
     planReadOnly,
     planReadOnlyMergeRequest,
     planReadOnlySnapshot,
@@ -299,7 +299,7 @@
       start: !isNaN(start) ? start : $maxTimeRange.start,
     });
 
-    activityTypes.updateValue(() => data.initialActivityTypes);
+    planModelActivityTypes.updateValue(() => data.initialActivityTypes);
     activityArgumentDefaults.set(data.initialActivityArguments);
     planTags.updateValue(() => data.initialPlanTags);
   }

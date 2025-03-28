@@ -3,7 +3,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { models } from '../../stores/model';
-  import { activityTypes, modelId } from '../../stores/sequence-template';
+  import { newTemplateActivityTypes, newTemplateModelId } from '../../stores/sequence-template';
   import { parcels } from '../../stores/sequencing';
   import Modal from '../modals/Modal.svelte';
   import ModalContent from '../modals/ModalContent.svelte';
@@ -34,16 +34,21 @@
     templateName === '' ||
     language === '' ||
     selectedParcelId === null ||
-    $modelId === -1 ||
+    $newTemplateModelId === -1 ||
     selectedActivityType === '' ||
     selectedActivityType === null;
 
   function save() {
-    if (!saveButtonDisabled && $modelId !== -1 && selectedParcelId !== null && selectedActivityType !== null) {
+    if (
+      !saveButtonDisabled &&
+      $newTemplateModelId !== -1 &&
+      selectedParcelId !== null &&
+      selectedActivityType !== null
+    ) {
       dispatch('save', {
         activityType: selectedActivityType,
         language,
-        modelId: $modelId,
+        modelId: $newTemplateModelId,
         name: templateName,
         parcelId: selectedParcelId,
       });
@@ -87,7 +92,7 @@
       </select>
 
       <label for="modelId">Model ID</label>
-      <select data-type="number" name="modelId" bind:value={$modelId} class="st-select w-100">
+      <select data-type="number" name="modelId" bind:value={$newTemplateModelId} class="st-select w-100">
         {#if !$models.length}
           <option value={-1}>No values</option>
         {:else}
@@ -101,12 +106,17 @@
       </select>
 
       <label for="activityType">Activity Type</label>
-      <select name="activityType" bind:value={selectedActivityType} class="st-select w-100" disabled={$modelId === -1}>
-        {#if !$activityTypes.length}
+      <select
+        name="activityType"
+        bind:value={selectedActivityType}
+        class="st-select w-100"
+        disabled={$newTemplateModelId === -1}
+      >
+        {#if !$newTemplateActivityTypes.length}
           <option value={null}>No values</option>
         {:else}
           <option value={null} />
-          {#each $activityTypes as activityType}
+          {#each $newTemplateActivityTypes as activityType}
             <option value={activityType.name}>
               {activityType.name}
             </option>

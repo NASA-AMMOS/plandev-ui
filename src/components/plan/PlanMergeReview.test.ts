@@ -1,7 +1,7 @@
 import { cleanup, render } from '@testing-library/svelte';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { activityMetadataDefinitions } from '../../stores/activities';
-import { activityTypes } from '../../stores/plan';
+import { planModelActivityTypes } from '../../stores/plan';
 import type { User } from '../../types/app';
 import type { Model } from '../../types/model';
 import type {
@@ -108,7 +108,7 @@ const user: User = {
 describe('PlanMergeReview component', () => {
   beforeAll(() => {
     activityMetadataDefinitions.updateValue(() => []);
-    activityTypes.updateValue(() => []);
+    planModelActivityTypes.updateValue(() => []);
   });
 
   afterEach(() => {
@@ -117,7 +117,7 @@ describe('PlanMergeReview component', () => {
 
   afterAll(() => {
     activityMetadataDefinitions.updateValue(() => []);
-    activityTypes.updateValue(() => []);
+    planModelActivityTypes.updateValue(() => []);
   });
 
   it('Should render the PlanMergeReview component', () => {

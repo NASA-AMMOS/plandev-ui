@@ -6,7 +6,7 @@
   import { onMount } from 'svelte';
   import { createExpansionRuleError, expansionRulesFormColumns, savingExpansionRule } from '../../stores/expansion';
   import { models } from '../../stores/model';
-  import { activityTypes } from '../../stores/plan';
+  import { planModelActivityTypes } from '../../stores/plan';
   import { parcelBundles } from '../../stores/sequencing';
   import { tags } from '../../stores/tags';
   import type { User, UserId } from '../../types/app';
@@ -72,7 +72,7 @@
     tags: ruleTags.map(tag => ({ tag })),
   };
 
-  $: activityTypes.setVariables({ modelId: ruleModelId ?? -1 });
+  $: planModelActivityTypes.setVariables({ modelId: ruleModelId ?? -1 });
   $: hasPermission = hasExpansionPermission(ruleOwner, mode, user);
   $: ruleModified = diffRule(savedRule, {
     ...(ruleActivityType !== null ? { activity_type: ruleActivityType } : {}),
@@ -308,7 +308,7 @@
           }}
         >
           <option value={null} />
-          {#each $activityTypes as { name: activityTypeName }}
+          {#each $planModelActivityTypes as { name: activityTypeName }}
             <option value={activityTypeName}>
               {activityTypeName}
             </option>

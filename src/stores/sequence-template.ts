@@ -14,11 +14,16 @@ export const sequenceTemplateExpansionStatus: Writable<Status | null> = writable
 
 export const sequenceTemplateExpansionError: Writable<string | null> = writable(null);
 
-export const modelId: Writable<number> = writable(-1);
+export const newTemplateModelId: Writable<number> = writable(-1);
 
 /* Subscriptions. */
 
-export const activityTypes = gqlSubscribable<ActivityType[]>(gql.SUB_ACTIVITY_TYPES, { modelId }, [], null);
+export const newTemplateActivityTypes = gqlSubscribable<ActivityType[]>(
+  gql.SUB_ACTIVITY_TYPES,
+  { newTemplateModelId },
+  [],
+  null,
+);
 
 export const expandedTemplates = gqlSubscribable<ExpandedTemplate[]>(gql.SUB_EXPANDED_TEMPLATES, {}, [], null);
 
@@ -49,5 +54,5 @@ export function resetSequenceTemplateStores(): void {
   selectedSequenceTemplateId.set(null);
   sequenceTemplateExpansionStatus.set(null);
   sequenceTemplateExpansionError.set(null);
-  modelId.set(-1);
+  newTemplateModelId.set(-1);
 }

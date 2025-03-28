@@ -8,7 +8,7 @@
   import PlanWithUpArrow from '@nasa-jpl/stellar/icons/plan_with_up_arrow.svg?component';
   import { keyBy } from 'lodash-es';
   import { activityMetadataDefinitions } from '../../stores/activities';
-  import { activityTypes, planReadOnlyMergeRequest } from '../../stores/plan';
+  import { planModelActivityTypes, planReadOnlyMergeRequest } from '../../stores/plan';
   import { gqlSubscribable } from '../../stores/subscribable';
   import type { ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
@@ -640,7 +640,7 @@
               <ActivityDirectiveSourceForm
                 {computedSourceActivity}
                 activityMetadataDefinitions={$activityMetadataDefinitions}
-                activityTypes={$activityTypes}
+                activityTypes={$planModelActivityTypes}
                 highlightKeys={keysWithChanges}
                 modelId={initialPlan.model_id}
                 planId={initialPlan.id}
@@ -707,7 +707,7 @@
                 activityDirective={computedTargetActivity}
                 activityDirectivesMap={receivingPlanActivitiesMap}
                 activityMetadataDefinitions={$activityMetadataDefinitions}
-                activityTypes={$activityTypes}
+                activityTypes={$planModelActivityTypes}
                 editable={false}
                 highlightKeys={selectedConflictingActivity !== null ? keysWithChanges : []}
                 modelId={initialPlan.model_id}

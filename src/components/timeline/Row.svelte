@@ -16,7 +16,7 @@
     externalSources,
     planDerivationGroupLinks,
   } from '../../stores/external-source';
-  import { activityTypes } from '../../stores/plan';
+  import { planModelActivityTypes } from '../../stores/plan';
   import {
     externalResources,
     fetchingResourcesExternal,
@@ -449,7 +449,7 @@
               layer.filter.activity,
               activityDirectives || [],
               spansList,
-              $activityTypes,
+              $planModelActivityTypes,
               $activityArgumentDefaultsMap,
             );
             const uniqueDirectives: ActivityDirective[] = [];
@@ -745,7 +745,10 @@
           // Determine if the row will visualize all requested activities
           let typesInRow = new Set();
           activityLayers.forEach(layer => {
-            const matchingTypes = getMatchingTypesForActivityLayerFilter(layer.filter.activity, $activityTypes);
+            const matchingTypes = getMatchingTypesForActivityLayerFilter(
+              layer.filter.activity,
+              $planModelActivityTypes,
+            );
             typesInRow = new Set([...typesInRow, ...matchingTypes.map(t => t.name)]);
           });
           const missingActivity = (items as ActivityType[]).find(item => !typesInRow.has(item.name));
