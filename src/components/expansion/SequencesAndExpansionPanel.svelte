@@ -40,8 +40,11 @@
   let filterText: string;
   let newButton: HTMLElement;
   let sequencesAndFilters: (ExpansionSequence | SequenceFilter)[] = [];
+  let isExpansionDisabled: boolean = true;
 
   let selectedExpansionSetId: number | null = null;
+  let relevantSimulationDatasetIds: number[] | undefined = [];
+  let relevantExpansionSequences: ExpansionSequence[] = [];
 
   let filterMenu: ActivityFilterBuilder;
   let activeSequenceFilterName: string;
