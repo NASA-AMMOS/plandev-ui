@@ -1,7 +1,7 @@
+import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import type { ActivityFilterField } from '../enums/filter';
 import type { PartialWith, UserId } from './app';
 import type { DynamicFilter } from './filter';
-import type { SeqJson } from './sequencing';
 import type { SpanId } from './simulation';
 import type { Tag } from './tags';
 

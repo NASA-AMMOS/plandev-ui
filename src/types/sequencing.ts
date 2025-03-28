@@ -15,7 +15,7 @@ import type {
   FswCommandArgumentUnsigned,
   FswCommandArgumentVarString,
 } from '@nasa-jpl/aerie-ampcs';
-import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
+import type { SeqJson, VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
 import type { DictionaryTypes } from '../enums/dictionaryTypes';
 import type { SequenceTypes } from '../enums/sequencing';
@@ -140,8 +140,6 @@ export type GetSeqJsonResponse = {
   status: 'FAILURE' | 'SUCCESS';
 };
 
-export type SeqJson = any; // TODO: Strongly type.
-
 export type UserSequence = {
   created_at: string;
   definition: string;
@@ -149,7 +147,7 @@ export type UserSequence = {
   name: string;
   owner: UserId;
   parcel_id: number;
-  seq_json: SeqJson;
+  seq_json: string;
   updated_at: string;
   workspace_id: number;
 };

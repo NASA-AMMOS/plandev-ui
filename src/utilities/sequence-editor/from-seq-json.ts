@@ -15,6 +15,7 @@ import type {
   Model,
   NumberArgument,
   Request,
+  SeqJson,
   StringArgument,
   SymbolArgument,
   Time,
@@ -147,112 +148,108 @@ function seqJsonDescriptionToSequence(description: Description): string {
 /**
  * Transforms a sequence JSON to a sequence string.
  */
-export async function seqJsonToSequence(input: string | null): Promise<string> {
+export function seqJsonToSequence(seqJson: SeqJson): string {
   const sequence: string[] = [];
 
-  if (input !== null) {
-    const seqJson = JSON.parse(input);
+  // ID
+  sequence.push(`@ID "${seqJson.id}"\n`);
 
-    // ID
-    sequence.push(`@ID "${seqJson.id}"\n`);
+  //input params
+  if (seqJson.parameters) {
+    sequence.push(seqJsonVariableToSequence(seqJson.parameters, 'INPUT_PARAMS'));
+  }
 
-    //input params
-    if (seqJson.parameters) {
-      sequence.push(seqJsonVariableToSequence(seqJson.parameters, 'INPUT_PARAMS'));
-    }
+  //locals
+  if (seqJson.locals) {
+    sequence.push(seqJsonVariableToSequence(seqJson.locals, 'LOCALS'));
+  }
 
-    //locals
-    if (seqJson.locals) {
-      sequence.push(seqJsonVariableToSequence(seqJson.locals, 'LOCALS'));
-    }
+  if (seqJson.metadata) {
+    // remove lgo from metadata if it exists
+    sequence.push(
+      seqJsonMetadataToSequence(
+        Object.entries(seqJson.metadata)
+          .filter(([key]) => key !== 'lgo')
+          .reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {}) as Metadata,
+      ),
+    );
+  }
 
-    if (seqJson.metadata) {
-      // remove lgo from metadata if it exists
-      sequence.push(
-        seqJsonMetadataToSequence(
-          Object.entries(seqJson.metadata)
-            .filter(([key]) => key !== 'lgo')
-            .reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {}) as Metadata,
-        ),
-      );
-    }
+  // Load and Go
+  if (seqJson.metadata.lgo) {
+    sequence.push(`\n@LOAD_AND_GO`);
+  }
 
-    // Load and Go
-    if (seqJson.metadata.lgo) {
-      sequence.push(`\n@LOAD_AND_GO`);
-    }
-
-    // command, activate, load, ground block, ground event
-    if (seqJson.steps) {
-      sequence.push(`\n`);
-      for (const step of seqJson.steps) {
-        switch (step.type) {
-          case 'command': {
-            // FSW Commands
-            sequence.push(commandToString(step));
-            break;
-          }
-          case 'activate':
-          case 'load': {
-            sequence.push(loadOrActivateToString(step));
-            break;
-          }
-          case 'ground_block':
-          case 'ground_event': {
-            sequence.push(groundToString(step));
-            break;
-          }
+  // command, activate, load, ground block, ground event
+  if (seqJson.steps) {
+    sequence.push(`\n`);
+    for (const step of seqJson.steps) {
+      switch (step.type) {
+        case 'command': {
+          // FSW Commands
+          sequence.push(commandToString(step));
+          break;
+        }
+        case 'activate':
+        case 'load': {
+          sequence.push(loadOrActivateToString(step));
+          break;
+        }
+        case 'ground_block':
+        case 'ground_event': {
+          sequence.push(groundToString(step));
+          break;
         }
       }
     }
+  }
 
-    // Immediate Commands
-    if (seqJson.immediate_commands) {
-      sequence.push(`\n`);
-      sequence.push(`@IMMEDIATE\n`);
-      for (const realTimeCommand of seqJson.immediate_commands) {
-        switch (realTimeCommand.type) {
-          case 'immediate_command': {
-            // FSW Commands
-            sequence.push(commandToString(realTimeCommand));
-            break;
-          }
-          case 'immediate_activate':
-          case 'immediate_load': {
-            sequence.push(loadOrActivateToString(realTimeCommand));
-            break;
-          }
-          default: {
-            throw new Error(`Invalid immediate command type ${realTimeCommand.type}`);
-          }
+  // Immediate Commands
+  if (seqJson.immediate_commands) {
+    sequence.push(`\n`);
+    sequence.push(`@IMMEDIATE\n`);
+    for (const realTimeCommand of seqJson.immediate_commands) {
+      switch (realTimeCommand.type) {
+        case 'immediate_command': {
+          // FSW Commands
+          sequence.push(commandToString(realTimeCommand));
+          break;
+        }
+        case 'immediate_activate':
+        case 'immediate_load': {
+          sequence.push(loadOrActivateToString(realTimeCommand));
+          break;
+        }
+        default: {
+          throw new Error(`Invalid immediate command type ${realTimeCommand.type}`);
         }
       }
     }
+  }
 
-    // hardware commands
-    if (seqJson.hardware_commands) {
-      sequence.push(`\n`);
-      sequence.push(`@HARDWARE\n`);
-      for (const hdw of seqJson.hardware_commands) {
-        const description = hdw.description ? seqJsonDescriptionToSequence(hdw.description) : '';
-        const metadata = hdw.metadata ? seqJsonMetadataToSequence(hdw.metadata) : '';
-        let hardwareString = `${hdw.stem}${description}`;
-        // add a new line if on doesn't exit at the end of the immediateString
-        if (!hardwareString.endsWith('\n')) {
-          hardwareString += '\n';
-        }
-        // Add metadata data if it exists
-        hardwareString += metadata;
-        sequence.push(hardwareString);
+  // hardware commands
+  if (seqJson.hardware_commands) {
+    sequence.push(`\n`);
+    sequence.push(`@HARDWARE\n`);
+    for (const hdw of seqJson.hardware_commands) {
+      const description = hdw.description ? seqJsonDescriptionToSequence(hdw.description) : '';
+      const metadata = hdw.metadata ? seqJsonMetadataToSequence(hdw.metadata) : '';
+      let hardwareString = `${hdw.stem}${description}`;
+      // add a new line if on doesn't exit at the end of the immediateString
+      if (!hardwareString.endsWith('\n')) {
+        hardwareString += '\n';
       }
+      // Add metadata data if it exists
+      hardwareString += metadata;
+      sequence.push(hardwareString);
     }
+  }
 
-    // requests
-    if (seqJson.requests) {
-      for (const request of seqJson.requests) {
-        sequence.push(`\n`);
-        sequence.push(requestToString(request));
-      }
+  // requests
+  if (seqJson.requests) {
+    for (const request of seqJson.requests) {
+      sequence.push(`\n`);
+      sequence.push(requestToString(request));
     }
   }
 
