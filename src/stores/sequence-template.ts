@@ -20,7 +20,7 @@ export const newTemplateModelId: Writable<number> = writable(-1);
 
 export const newTemplateActivityTypes = gqlSubscribable<ActivityType[]>(
   gql.SUB_ACTIVITY_TYPES,
-  { newTemplateModelId },
+  { modelId: newTemplateModelId },
   [],
   null,
 );
