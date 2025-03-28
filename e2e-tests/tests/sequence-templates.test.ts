@@ -81,11 +81,6 @@ test.describe.serial('Sequence Templates', () => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
-    const sequenceTemplatesIsShown = await appNav.appMenuItemSequenceTemplates.isVisible();
-    if (!sequenceTemplatesIsShown) {
-      await appNav.toggleBetweenExpansionTemplating();
-      await appNav.appMenuButton.click();
-    }
     await appNav.appMenuItemSequenceTemplates.click();
     await expect(page).toHaveURL(`${baseURL}/sequence-templates`);
   });

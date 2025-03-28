@@ -58,11 +58,6 @@ export class ExpansionSets {
     await this.page.goto('/expansion/sets', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
     await expect(this.setsNavButton).toHaveClass(/selected/);
-    const typescriptIsToggledOff = await this.page.getByText('COMMAND_EXPANSION_MODE').isVisible();
-    if (typescriptIsToggledOff) {
-      await this.appNav.appMenuButton.click();
-      await this.appNav.toggleBetweenExpansionTemplating();
-    }
   }
 
   async selectModel() {

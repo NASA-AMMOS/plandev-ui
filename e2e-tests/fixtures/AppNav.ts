@@ -29,12 +29,6 @@ export class AppNav {
     await this.page.waitForTimeout(250);
   }
 
-  async toggleBetweenExpansionTemplating() {
-    await this.page.getByRole('menuitem', { name: 'About' }).click({
-      modifiers: ['Shift'],
-    });
-  }
-
   updatePage(page: Page): void {
     this.aboutModal = page.locator(`.modal:has-text("About")`);
     this.aboutModalCloseButton = page.locator(`.modal:has-text("About") >> button:has-text("Close")`);
