@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { browser } from '$app/environment';
   import { createEventDispatcher } from 'svelte';
   import type { ParameterType, ValueSource } from '../../types/parameter';
   import { classNames, isMacOs } from '../../utilities/generic';
@@ -29,7 +30,9 @@
     'value-source-badge-dot--preset': source === 'preset',
     'value-source-badge-dot--user': source === 'user on model' || source === 'user on preset',
   });
-  $: {
+
+  // Ensure browser is available so that isMacOs can be called
+  $: if (browser) {
     const presetText = parameterType === 'activity' ? 'Activity Preset' : 'Simulation Template';
     showButton = false;
     switch (source) {

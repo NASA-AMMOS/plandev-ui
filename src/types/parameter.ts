@@ -54,5 +54,5 @@ export type ParameterValidationResponse = {
   success: boolean;
 };
 
-export type ParameterType = 'activity' | 'simulation';
+export type ParameterType = 'action' | 'activity' | 'simulation';
 export type ValueSource = 'user on model' | 'user on preset' | 'preset' | 'mission' | 'none';

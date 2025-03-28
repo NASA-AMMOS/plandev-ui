@@ -69,6 +69,22 @@ const gql = {
     }
   `,
 
+  CREATE_ACTION_DEFINITION: `#graphql
+    mutation CreateActionDefinition($actionDefinitionInsertInput: action_definition_insert_input!) {
+      ${Queries.INSERT_ACTION_DEFINITION}(object: $actionDefinitionInsertInput) {
+        id
+      }
+    }
+  `,
+
+  CREATE_ACTION_RUN: `#graphql
+    mutation CreateActionRun($actionRunInsertInput: action_run_insert_input!) {
+      ${Queries.INSERT_ACTION_RUN}(object: $actionRunInsertInput) {
+        id
+      }
+    }
+  `,
+
   CREATE_ACTIVITY_DIRECTIVE: `#graphql
     mutation CreateActivityDirective($activityDirectiveInsertInput: activity_directive_insert_input!) {
       ${Queries.INSERT_ACTIVITY_DIRECTIVE}(object: $activityDirectiveInsertInput) {
@@ -1906,6 +1922,78 @@ const gql = {
     }
   `,
 
+  SUB_ACTION_DEFINITIONS: `#graphql
+    subscription SubActionDefinitions {
+      ${Queries.ACTION_DEFINITIONS}(order_by: { id: desc }) {
+        action_file_id
+        created_at
+        description
+        id
+        name
+        owner
+        parameter_schema
+        settings_schema
+        settings
+        updated_at
+        updated_by
+        workspace_id
+      }
+    }
+  `,
+
+  SUB_ACTION_RUN: `#graphql
+    subscription SubActionRun($actionRunId: Int!) {
+      actionRun: ${Queries.ACTION_RUN}(id: $actionRunId) {
+        action_definition_id
+        action_definition {
+          action_file_id
+          created_at
+          description
+          id
+          name
+          owner
+          parameter_schema
+          settings_schema
+          settings
+          updated_at
+          updated_by
+          workspace_id
+        }
+        duration
+        error
+        id
+        logs
+        parameters
+        requested_at
+        requested_by
+        results
+        settings
+        status
+      }
+    }
+  `,
+
+  SUB_ACTION_RUNS: `#graphql
+    subscription SubActionRuns {
+      ${Queries.ACTION_RUNS}(order_by: { id: desc }) {
+        action_definition_id
+        action_definition {
+          workspace_id
+        }
+        duration
+        error
+        id
+        logs
+        parameters
+        requested_at
+        requested_by
+        results
+        settings
+        status
+      }
+    }
+  `,
+
   SUB_ACTIVITY_DIRECTIVES: `#graphql
     subscription SubActivityDirectives($planId: Int!) {
       activity_directives: ${Queries.ACTIVITY_DIRECTIVES}(where: { plan_id: { _eq: $planId } }, order_by: { start_offset: asc }) {
@@ -3216,6 +3304,16 @@ const gql = {
         name
         owner
         updated_at
+      }
+    }
+  `,
+
+  UPDATE_ACTION_DEFINITION: `#graphql
+    mutation UpdateActionDefinition($id: Int!, $actionDefinitionSetInput: action_definition_set_input!) {
+      ${Queries.UPDATE_ACTION_DEFINITION}(
+        pk_columns: { id: $id }, _set: $actionDefinitionSetInput
+      ) {
+        id
       }
     }
   `,

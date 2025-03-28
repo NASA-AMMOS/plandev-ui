@@ -101,7 +101,7 @@ test.describe.serial('Plan External Sources', () => {
 
     await plan.goto();
     await plan.showPanel(PanelNames.TIMELINE_ITEMS);
-    await page.getByRole('button', { exact: true, name: 'Events' }).click();
+    await page.getByRole('tab', { exact: true, name: 'Events' }).click();
     await expect(page.locator('.list-item').getByText(externalSources.exampleEventType)).toBeVisible();
     await page.locator('.list-item').getByText(externalSources.exampleEventType).first().hover();
     await page.getByLabel(`AddExternalevent-${externalSources.exampleEventType}`).click();

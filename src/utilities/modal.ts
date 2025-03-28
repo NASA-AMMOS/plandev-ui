@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import AboutModal from '../components/modals/AboutModal.svelte';
+import ActionCreationModal from '../components/modals/ActionCreationModal.svelte';
 import ConfirmActivityCreationModal from '../components/modals/ConfirmActivityCreationModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
 import CreateGroupsOrTypesModal from '../components/modals/CreateGroupsOrTypesModal.svelte';
@@ -23,9 +24,11 @@ import PlanBranchesModal from '../components/modals/PlanBranchesModal.svelte';
 import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.svelte';
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
 import RestorePlanSnapshotModal from '../components/modals/RestorePlanSnapshotModal.svelte';
+import RunActionModal from '../components/modals/RunActionModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceModal from '../components/modals/WorkspaceModal.svelte';
+import { type ActionDefinition } from '../types/actions';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
 import type { User } from '../types/app';
 import type { ExpansionSequence } from '../types/expansion';
@@ -108,6 +111,33 @@ export async function showAboutModal(): Promise<ModalElementValue> {
           target.resolve = null;
           resolve({ confirm: true });
           aboutModal.$destroy(); // destroy the component since it was manually invoked
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows an ActionCreationModal component.
+ */
+export async function showActionCreationModal(
+  user: User | null,
+  workspaceId: number,
+): Promise<ModalElementValue<{ actionDefinitionId: number }>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+      if (target) {
+        const actionCreationModal = new ActionCreationModal({ props: { user, workspaceId }, target });
+        target.resolve = resolve;
+
+        actionCreationModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true });
+          actionCreationModal.$destroy();
         });
       }
     } else {
@@ -973,6 +1003,41 @@ export async function showRestorePlanSnapshotModal(
             restorePlanSnapshotModal.$destroy();
           },
         );
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a showRunActionModal with the supplied arguments.
+ */
+export async function showRunActionModal(
+  actionDefinition: ActionDefinition,
+  user: User | null,
+): Promise<ModalElementValue<{ id: number | null }>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const runActionModal = new RunActionModal({ props: { actionDefinition, user }, target });
+        target.resolve = resolve;
+
+        runActionModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          runActionModal.$destroy();
+        });
+
+        runActionModal.$on('complete', (e: CustomEvent<{ actionRunId: number | null }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: { id: e.detail.actionRunId } });
+          runActionModal.$destroy();
+        });
       }
     } else {
       resolve({ confirm: false });

@@ -568,7 +568,7 @@ export class Plan {
   }
 
   async uploadExternalDatasets(importFilePath: string) {
-    await this.panelActivityTypes.getByRole('button', { exact: true, name: 'Resources' }).click();
+    await this.panelActivityTypes.getByRole('tab', { exact: true, name: 'Resources' }).click();
     await this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload Resources' }).click();
     await this.fillExternalDatasetFileInput(importFilePath);
     await expect(this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload' })).toBeEnabled();

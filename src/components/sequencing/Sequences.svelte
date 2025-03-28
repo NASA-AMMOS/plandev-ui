@@ -6,14 +6,17 @@
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { SearchParameters } from '../../enums/searchParameters';
+  import { actionDefinitionsByWorkspace } from '../../stores/actions';
   import { parcels, userSequences, userSequencesColumns, workspaces } from '../../stores/sequencing';
+  import type { ActionDefinition } from '../../types/actions';
   import type { User } from '../../types/app';
   import type { Parcel, UserSequence, Workspace } from '../../types/sequencing';
-  import { satfToSequence } from '../../utilities/sequence-editor/languages/satf/satf-sasf-utils';
   import effects from '../../utilities/effects';
   import { getSearchParameterNumber, setQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import { satfToSequence } from '../../utilities/sequence-editor/languages/satf/satf-sasf-utils';
+  import { pluralize } from '../../utilities/text';
   import Input from '../form/Input.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -30,6 +33,8 @@
   let selectedSequence: UserSequence | null = null;
   let workspace: Workspace | undefined;
   let workspaceId: number | null = null;
+  let workspaceActions: Record<number, ActionDefinition> | null;
+  let workspaceActionsCount: number = 0;
 
   $: parcel = $parcels.find(p => p.id === selectedSequence?.parcel_id) ?? null;
   $: workspace = $workspaces.find(workspace => workspace.id === workspaceId);
@@ -40,6 +45,8 @@
       selectedSequence = null;
     }
   }
+  $: workspaceActions = typeof workspaceId === 'number' ? $actionDefinitionsByWorkspace[workspaceId] : null;
+  $: workspaceActionsCount = Object.keys(workspaceActions ?? {}).length;
 
   onMount(() => {
     workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
@@ -60,6 +67,11 @@
   function navigateToNewSequence(): void {
     const workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
     goto(`${base}/sequencing/new${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`);
+  }
+
+  function navigateToActions(): void {
+    const workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
+    goto(`${base}/sequencing/actions${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`);
   }
 
   async function importLibrary(): Promise<void> {
@@ -99,6 +111,17 @@
       </Input>
 
       <div class="right">
+        <button
+          class="st-button secondary ellipsis actions-button"
+          disabled={workspace === undefined}
+          on:click={navigateToActions}
+        >
+          {#if workspaceActionsCount > 0}
+            <div class="actions-chip">{workspaceActionsCount}</div>
+          {/if}
+          Action{pluralize(workspaceActionsCount)}
+        </button>
+
         <button
           class="st-button secondary ellipsis"
           use:permissionHandler={{
@@ -150,5 +173,18 @@
     column-gap: 5px;
     display: flex;
     flex-wrap: nowrap;
+  }
+
+  .actions-button {
+    display: flex;
+    gap: 4px;
+  }
+
+  .actions-chip {
+    background-color: var(--st-gray-15);
+    border-radius: 40px;
+    color: black;
+    min-width: 16px;
+    padding: 0px 4px;
   }
 </style>

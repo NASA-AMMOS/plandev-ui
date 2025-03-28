@@ -67,6 +67,7 @@ import {
 } from '../stores/simulation';
 import { createTagError as createTagErrorStore } from '../stores/tags';
 import { applyViewUpdate, view as viewStore, viewUpdateRow, viewUpdateTimeline } from '../stores/views';
+import type { ActionDefinition, ActionDefinitionSetInput, ActionRun } from '../types/actions';
 import type {
   ActivityDirective,
   ActivityDirectiveDB,
@@ -258,6 +259,7 @@ import {
   showManagePlanSchedulingGoalsModal,
   showPlanBranchRequestModal,
   showRestorePlanSnapshotModal,
+  showRunActionModal,
   showUploadViewModal,
   showWorkspaceModal,
 } from './modal';
@@ -553,6 +555,79 @@ const effects = {
     } catch (e) {
       catchError('Activity Directive Paste Failed', e as Error);
       showFailureToast('Activity Directive Paste Failed');
+    }
+  },
+
+  async createActionDefinition(
+    file: File,
+    name: string,
+    description: string,
+    workspaceId: number,
+    user: User | null,
+  ): Promise<boolean> {
+    try {
+      if (!queryPermissions.CREATE_ACTION_DEFINITION(user)) {
+        throwPermissionError('create action definition');
+      }
+
+      const actionFileId = await effects.uploadFile(file, user);
+
+      if (actionFileId !== null) {
+        const actionDefinitionInsertInput = {
+          action_file_id: actionFileId,
+          description,
+          name,
+          workspace_id: workspaceId,
+        };
+        const data = await reqHasura<ActionDefinition>(
+          gql.CREATE_ACTION_DEFINITION,
+          { actionDefinitionInsertInput },
+          user,
+        );
+        const { insert_action_definition_one } = data;
+        if (insert_action_definition_one) {
+          showSuccessToast('Action Created Successfully');
+          return true;
+        } else {
+          throw new Error('Action Creation Failed');
+        }
+      } else {
+        throw new Error('Action Creation Failed');
+      }
+    } catch (e) {
+      catchError('Action Creation Failed', e as Error);
+      showFailureToast('Action Creation Failed');
+      return false;
+    }
+  },
+
+  async createActionRun(
+    actionDefinitionId: number,
+    parameters: any,
+    settings: any,
+    user: User | null,
+  ): Promise<number | null> {
+    try {
+      if (!queryPermissions.CREATE_ACTION_RUN(user)) {
+        throwPermissionError('create action run');
+      }
+
+      const actionRunInsertInput = {
+        action_definition_id: actionDefinitionId,
+        parameters,
+        settings,
+      };
+      const response = await reqHasura<{ id: number }>(gql.CREATE_ACTION_RUN, { actionRunInsertInput }, user);
+      const { insert_action_run_one: actionRunId } = response;
+      if (actionRunId !== null) {
+        return actionRunId.id;
+      } else {
+        throw Error(`Unable to run action`);
+      }
+    } catch (e) {
+      catchError('Action Run Creation Failed', e as Error);
+      showFailureToast('Action Run Creation Failed');
+      return null;
     }
   },
 
@@ -3423,6 +3498,22 @@ const effects = {
     }
   },
 
+  async getActionRun(actionRunId: number, user: User | null): Promise<ActionRun | null> {
+    try {
+      const query = convertToQuery(gql.SUB_ACTION_RUN);
+      const data = await reqHasura<ActionRun>(query, { actionRunId }, user);
+      const { actionRun } = data;
+      if (actionRun != null) {
+        return actionRun;
+      } else {
+        throw Error('Unable to retrieve activity run');
+      }
+    } catch (e) {
+      catchError(e as Error);
+      return null;
+    }
+  },
+
   async getActivitiesForPlan(planId: number, user: User | null): Promise<ActivityDirectiveDB[]> {
     try {
       const query = convertToQuery(gql.SUB_ACTIVITY_DIRECTIVES);
@@ -3840,6 +3931,25 @@ const effects = {
     }
   },
 
+  async getFile(
+    fileId: number,
+    user: User | null,
+    signal: AbortSignal | undefined = undefined,
+  ): Promise<{ aborted: boolean; file: string | null }> {
+    try {
+      const file = await reqGateway(`/file/${fileId}`, 'GET', null, user, true, signal, false);
+      return { aborted: false, file };
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') {
+        return { aborted: true, file: null };
+      } else {
+        catchError(e as Error);
+        showFailureToast(`Failed to get file with id: ${fileId}`);
+        return { aborted: false, file: null };
+      }
+    }
+  },
+
   async getFileName(fileId: number, user: User | null): Promise<string | null> {
     try {
       if (!queryPermissions.GET_UPLOADED_FILENAME(user)) {
@@ -3854,6 +3964,7 @@ const effects = {
       return null;
     } catch (e) {
       catchError(e as Error);
+      showFailureToast(`Failed to get filename for file id: ${fileId}`);
       return null;
     }
   },
@@ -5339,6 +5450,21 @@ const effects = {
     return null;
   },
 
+  async runAction(actionDefinition: ActionDefinition, user: User | null): Promise<number | null> {
+    try {
+      const { confirm, value } = await showRunActionModal(actionDefinition, user);
+      if (confirm && value) {
+        const { id } = value;
+        return id;
+      }
+      return null;
+    } catch (e) {
+      catchError('Run Action Failed', e as Error);
+      showFailureToast('Run Action Failed');
+      return null;
+    }
+  },
+
   async schedule(analysisOnly: boolean = false, plan: Plan | null, user: User | null): Promise<void> {
     try {
       if (plan) {
@@ -5460,6 +5586,36 @@ const effects = {
       }
     } catch (e) {
       catchError(e as Error);
+    }
+  },
+
+  async updateActionDefinition(
+    id: number,
+    actionDefinitionSetInput: ActionDefinitionSetInput,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      if (!queryPermissions.UPDATE_ACTION_DEFINITION(user)) {
+        throwPermissionError('update this action definition');
+      }
+
+      const { update_action_definition_by_pk: updateActionDefinitionByPk } = await reqHasura<ActionDefinition>(
+        gql.UPDATE_ACTION_DEFINITION,
+        {
+          actionDefinitionSetInput,
+          id,
+        },
+        user,
+      );
+
+      if (updateActionDefinitionByPk != null) {
+        showSuccessToast(`Action Updated Successfully`);
+      } else {
+        throw Error(`Unable to update action with ID: "${id}"`);
+      }
+    } catch (e) {
+      catchError('Action Update Failed', e as Error);
+      showFailureToast('Action Update Failed');
     }
   },
 

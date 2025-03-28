@@ -25,7 +25,7 @@
   }
 </script>
 
-<button class={className} class:selected={$selectedTab === tabId} on:click={onSelectTab} {disabled}>
+<button class={className} class:selected={$selectedTab === tabId} on:click={onSelectTab} {disabled} role="tab">
   <slot />
 </button>
 
