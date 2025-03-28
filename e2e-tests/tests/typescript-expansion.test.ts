@@ -3,6 +3,7 @@ import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-
 import { Constraints } from '../fixtures/Constraints.js';
 import { COMMAND_DICTIONARY_PATH, Dictionaries, DictionaryType } from '../fixtures/Dictionaries.js';
 import { ExpansionRules } from '../fixtures/ExpansionRules.js';
+import { ExpansionRuns } from '../fixtures/ExpansionRuns.js';
 import { ExpansionSets } from '../fixtures/ExpansionSets.js';
 import { Models } from '../fixtures/Models.js';
 import { Parcels } from '../fixtures/Parcels.js';
@@ -26,6 +27,7 @@ let plan: Plan;
 let plans: Plans;
 let schedulingConditions: SchedulingConditions;
 let schedulingGoals: SchedulingGoals;
+let expansionRuns: ExpansionRuns;
 
 test.beforeAll(async ({ baseURL, browser }) => {
   context = await browser.newContext();
@@ -41,6 +43,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
   parcels = new Parcels(page);
   expansionRules = new ExpansionRules(page, parcels, models);
   expansionSets = new ExpansionSets(page, parcels, models, expansionRules);
+  expansionRuns = new ExpansionRuns(page, plan, sequenceFilterName);
 
   const dictionaryName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
   const dictionaryBuffer = dictionaries.readDictionary(dictionaryName, COMMAND_DICTIONARY_PATH);
@@ -109,6 +112,9 @@ test.describe.serial('Expansion', () => {
     await plan.sequenceExpansionOutputModal.waitFor({ state: 'visible' });
     await page.getByText('Loading Editor...').waitFor({ state: 'detached' });
     await expect(plan.sequenceExpansionOutputModal.getByText('steps')).toBeVisible();
+    await expansionRuns.goto();
+    await expansionRuns.selectSequence();
+    await expansionRuns.waitForContents(`@ID "${sequenceFilterName}`);
   });
   test('Delete expansion rule', async () => {
     await expansionRules.deleteExpansionRule();
