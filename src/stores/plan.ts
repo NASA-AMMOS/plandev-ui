@@ -63,9 +63,9 @@ export const planModelActivityTypes = gqlSubscribable<ActivityType[]>(
   null,
 );
 
-export const subsystemTags: Readable<Tag[]> = derived(planModelActivityTypes, $activityTypes => {
+export const subsystemTags: Readable<Tag[]> = derived(planModelActivityTypes, $planModelActivityTypes => {
   const seenSubsystems: Record<number, boolean> = {};
-  return $activityTypes.reduce((subsystems: Tag[], activityType) => {
+  return $planModelActivityTypes.reduce((subsystems: Tag[], activityType) => {
     if (activityType.subsystem_tag && !seenSubsystems[activityType.subsystem_tag.id]) {
       seenSubsystems[activityType.subsystem_tag.id] = true;
       subsystems.push(activityType.subsystem_tag);
