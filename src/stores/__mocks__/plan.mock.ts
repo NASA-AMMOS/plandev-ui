@@ -44,7 +44,7 @@ export const plan: Readable<Plan | null> = derived([initialPlan, planMetadata], 
   };
 });
 
-export const modelId: Readable<number> = derived(initialPlan, $plan => ($plan ? $plan.model.id : -1));
+export const planModelId: Readable<number> = derived(initialPlan, $plan => ($plan ? $plan.model.id : -1));
 
 /* Subscriptions. */
 
