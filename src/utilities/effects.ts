@@ -243,6 +243,7 @@ import { ActivityDeletionAction } from './activities';
 import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
+  showUpdatePlanMissionModelModal,
   showConfirmModal,
   showCreateGroupsOrTypes,
   showCreatePlanBranchModal,
@@ -6003,6 +6004,28 @@ const effects = {
     } catch (e) {
       catchError('Plan Update Failed', e as Error);
       showFailureToast('Plan Update Failed');
+      return;
+    }
+  },
+
+  async updatePlanMissionModel(planId: number, user: User | null): Promise<void> {
+    try {
+      if (!queryPermissions.UPDATE_PLAN(user, planId)) {
+        throwPermissionError('update plan');
+      }
+      if (!queryPermissions.CREATE_PLAN_SNAPSHOT(user)) {
+        throwPermissionError('create a snapshot');
+      }
+
+      const { confirm, value } = await showUpdatePlanMissionModelModal(planId);
+      if (confirm) {
+        //TODO do the migration!
+
+        showSuccessToast('Model Migration Success');
+      }
+    } catch (e) {
+      catchError('Model Migration Failed', e as Error);
+      showFailureToast('Model Migration Failed');
       return;
     }
   },

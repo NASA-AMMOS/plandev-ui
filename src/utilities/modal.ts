@@ -7,6 +7,7 @@ import CreateGroupsOrTypesModal from '../components/modals/CreateGroupsOrTypesMo
 import CreatePlanBranchModal from '../components/modals/CreatePlanBranchModal.svelte';
 import CreatePlanSnapshotModal from '../components/modals/CreatePlanSnapshotModal.svelte';
 import CreateViewModal from '../components/modals/CreateViewModal.svelte';
+import ChangePlanMissionModelModal from '../components/modals/UpdatePlanMissionModelModal.svelte';
 import DeleteActivitiesModal from '../components/modals/DeleteActivitiesModal.svelte';
 import DeleteDerivationGroupModal from '../components/modals/DeleteDerivationGroupModal.svelte';
 import DeleteExternalEventSourceTypeModal from '../components/modals/DeleteExternalEventSourceTypeModal.svelte';
@@ -1096,6 +1097,37 @@ export async function showUploadViewModal(): Promise<ModalElementValue<{ definit
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
           uploadViewModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+export async function showUpdatePlanMissionModelModal(planId: number): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+      if (target) {
+        const modal = new ChangePlanMissionModelModal({
+          props: { planId },
+          target,
+        });
+        target.resolve = resolve;
+
+        modal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          modal.$destroy();
+        });
+
+        modal.$on('confirm', (e: CustomEvent) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          modal.$destroy();
         });
       }
     } else {

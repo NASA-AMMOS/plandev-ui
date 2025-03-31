@@ -4,7 +4,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { classNames, filterEmpty } from '../../utilities/generic';
 
-  export let layout: 'inline' | 'stacked' | null = 'stacked';
+  export let layout: 'inline' | 'inline-with-button' | 'stacked' | null = 'stacked';
   export { className as class };
 
   const padLeft = 5;
@@ -29,6 +29,7 @@
   $: inputClasses = classNames('input', {
     [className]: !!className,
     'input-inline': layout === 'inline',
+    'input-inline-with-button': layout === 'inline-with-button',
     'input-stacked': layout === 'stacked',
   });
 
@@ -180,6 +181,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .input-inline-with-button {
+    display: grid;
+    gap: 4px;
+    padding: 4px 0px;
+    grid-template-columns: 40% auto 1fr;
   }
 
   .input-stacked {

@@ -12,6 +12,7 @@
   import { onDestroy, onMount } from 'svelte';
   import ExportIcon from '../../assets/export.svg?component';
   import ImportIcon from '../../assets/import.svg?component';
+  import SwapIcon from 'bootstrap-icons/icons/arrow-left-right.svg?component';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
   import DatePickerField from '../../components/form/DatePickerField.svelte';
@@ -630,6 +631,12 @@
   function selectPlan(planId: number | null) {
     selectedPlanId = planId;
   }
+
+  async function openChangePlanMissionModelModal() {
+    if (selectedPlanId !== null) {
+      await effects.updatePlanMissionModel(selectedPlanId, user);
+    }
+  }
 </script>
 
 <PageTitle title="Plans" />
@@ -682,7 +689,7 @@
         {#if selectedPlan}
           <div class="plan-metadata">
             <fieldset>
-              <Input layout="inline">
+              <Input layout="inline-with-button">
                 <label class="plan-metadata-item-label" for="name">Model</label>
                 <input
                   disabled
@@ -691,6 +698,13 @@
                   use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}
                   value={selectedPlanModelName}
                 />
+                <button
+                  class="st-button secondary"
+                  use:tooltip={{ content: 'Change Plan Model', placement: 'top' }}
+                  on:click|stopPropagation={openChangePlanMissionModelModal}
+                >
+                  <SwapIcon />
+                </button>
               </Input>
               <Input layout="inline">
                 <label class="plan-metadata-item-label" for="id">Name</label>
