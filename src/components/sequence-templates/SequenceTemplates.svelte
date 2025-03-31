@@ -52,15 +52,28 @@
       return;
     }
 
-    effects.createSequenceTemplate(
-      value.activityType,
-      value.language,
-      value.modelId,
-      value.name,
-      value.parcelId,
-      '',
-      user,
-    );
+    // Check if importing a file, otherwise create a new template
+    if ('sequenceTemplateFile' in value) {
+      effects.importSequenceTemplate(
+        value.activityType,
+        value.language,
+        value.modelId,
+        value.name,
+        value.parcelId,
+        value.sequenceTemplateFile as File,
+        user,
+      );
+    } else {
+      effects.createSequenceTemplate(
+        value.activityType,
+        value.language,
+        value.modelId,
+        value.name,
+        value.parcelId,
+        '',
+        user,
+      );
+    }
   }
 </script>
 

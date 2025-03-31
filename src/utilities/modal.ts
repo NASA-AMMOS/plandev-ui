@@ -30,8 +30,8 @@ import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
 import TimeRangeModal from '../components/modals/TimeRangeModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceModal from '../components/modals/WorkspaceModal.svelte';
-import { type ActionDefinition } from '../types/actions';
 import NewSequenceTemplateModal from '../components/sequence-templates/NewSequenceTemplateModal.svelte';
+import { type ActionDefinition } from '../types/actions';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
 import type { User } from '../types/app';
 import type { ExpansionSequence } from '../types/expansion';
@@ -601,20 +601,20 @@ export async function showTemplateModal(): Promise<
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const workspaceModal = new NewSequenceTemplateModal({
+        const sequenceTemplateModal = new NewSequenceTemplateModal({
           props: {},
           target,
         });
         target.resolve = resolve;
 
-        workspaceModal.$on('close', () => {
+        sequenceTemplateModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: false });
-          workspaceModal.$destroy();
+          sequenceTemplateModal.$destroy();
         });
 
-        workspaceModal.$on(
+        sequenceTemplateModal.$on(
           'save',
           (
             e: CustomEvent<{ activityType: string; language: string; modelId: number; name: string; parcelId: number }>,
@@ -622,7 +622,26 @@ export async function showTemplateModal(): Promise<
             target.replaceChildren();
             target.resolve = null;
             resolve({ confirm: true, value: e.detail });
-            workspaceModal.$destroy();
+            sequenceTemplateModal.$destroy();
+          },
+        );
+
+        sequenceTemplateModal.$on(
+          'import',
+          (
+            e: CustomEvent<{
+              activityType: string;
+              language: string;
+              modelId: number;
+              name: string;
+              parcelId: number;
+              sequenceTemplateFile: File;
+            }>,
+          ) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: true, value: e.detail });
+            sequenceTemplateModal.$destroy();
           },
         );
       }

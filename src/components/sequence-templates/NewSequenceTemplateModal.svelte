@@ -10,12 +10,20 @@
   import ModalFooter from '../modals/ModalFooter.svelte';
   import ModalHeader from '../modals/ModalHeader.svelte';
 
-  export let height: number = 300;
+  export let height: number = 380;
   export let width: number = 380;
   export let initialTemplateName: string = '';
 
   const dispatch = createEventDispatcher<{
     close: void;
+    import: {
+      activityType: string;
+      language: string;
+      modelId: number;
+      name: string;
+      parcelId: number;
+      sequenceTemplateFile: File;
+    };
     save: {
       activityType: string;
       language: string;
@@ -29,6 +37,9 @@
   let language: string = '';
   let selectedParcelId: number | null = null;
   let selectedActivityType: string = '';
+  let showImport: boolean = false;
+  let sequenceTemplateUploadFiles: FileList | undefined;
+  let sequenceTemplateUploadFileInput: HTMLInputElement;
 
   $: saveButtonDisabled =
     templateName === '' ||
@@ -36,7 +47,8 @@
     selectedParcelId === null ||
     $newTemplateModelId === -1 ||
     selectedActivityType === '' ||
-    selectedActivityType === null;
+    selectedActivityType === null ||
+    (showImport && sequenceTemplateUploadFiles === undefined);
 
   function save() {
     if (
@@ -45,13 +57,27 @@
       selectedParcelId !== null &&
       selectedActivityType !== null
     ) {
-      dispatch('save', {
-        activityType: selectedActivityType,
-        language,
-        modelId: $newTemplateModelId,
-        name: templateName,
-        parcelId: selectedParcelId,
-      });
+      if (!showImport) {
+        dispatch('save', {
+          activityType: selectedActivityType,
+          language,
+          modelId: $newTemplateModelId,
+          name: templateName,
+          parcelId: selectedParcelId,
+        });
+      } else if (sequenceTemplateUploadFiles !== undefined) {
+        const sequenceTemplateUploadFile = sequenceTemplateUploadFiles[0];
+        if (sequenceTemplateUploadFile !== undefined) {
+          dispatch('import', {
+            activityType: selectedActivityType,
+            language,
+            modelId: $newTemplateModelId,
+            name: templateName,
+            parcelId: selectedParcelId,
+            sequenceTemplateFile: sequenceTemplateUploadFile,
+          });
+        }
+      }
     }
   }
 
@@ -123,11 +149,33 @@
           {/each}
         {/if}
       </select>
+
+      {#if showImport}
+        <label for="file">Imported File</label>
+        <div class="import-input-container">
+          <input
+            class="w-10"
+            name="file"
+            type="file"
+            bind:files={sequenceTemplateUploadFiles}
+            bind:this={sequenceTemplateUploadFileInput}
+          />
+        </div>
+      {/if}
     </fieldset>
   </ModalContent>
 
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
+    <button class="st-button secondary" on:click={() => (showImport = !showImport)}> Import Template </button>
     <button class="st-button" disabled={saveButtonDisabled} on:click={save}> Create Template </button>
   </ModalFooter>
 </Modal>
+
+<style>
+  .import-input-container {
+    column-gap: 0.5rem;
+    display: grid;
+    grid-template-columns: auto min-content;
+  }
+</style>

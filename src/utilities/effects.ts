@@ -5202,6 +5202,46 @@ const effects = {
     }
   },
 
+  async importSequenceTemplate(
+    activityType: string,
+    language: string,
+    modelId: number,
+    name: string,
+    parcelId: number,
+    sequenceTemplateFile: File,
+    user: User | null,
+  ): Promise<SequenceTemplate | null> {
+    try {
+      if (!gatewayPermissions.IMPORT_SEQUENCE_TEMPLATE(user)) {
+        throwPermissionError('import a sequence template');
+      }
+      const body = new FormData();
+      body.append('activity_type', `${activityType}`);
+      body.append('language', `${language}`);
+      body.append('model_id', `${modelId}`);
+      body.append('name', `${name}`);
+      body.append('parcel_id', `${parcelId}`);
+      body.append('sequence_template_file', sequenceTemplateFile, sequenceTemplateFile.name);
+
+      const createdSequenceTemplate = await reqGateway<SequenceTemplate | null>(
+        '/importSequenceTemplate',
+        'POST',
+        body,
+        user,
+        true,
+      );
+
+      if (createdSequenceTemplate != null) {
+        return createdSequenceTemplate;
+      }
+
+      return null;
+    } catch (e) {
+      catchError(e as Error);
+      return null;
+    }
+  },
+
   async initialSimulationUpdate(
     planId: number,
     simulationTemplateId: number | null = null,

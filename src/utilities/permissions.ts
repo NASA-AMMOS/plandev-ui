@@ -1250,6 +1250,9 @@ const gatewayPermissions = {
       )
     );
   },
+  IMPORT_SEQUENCE_TEMPLATE: (user: User | null) => {
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_TEMPLATE], user);
+  },
 };
 
 type PlanAssetCreatePermissionCheck = (user: User | null, plan: PlanWithOwners) => boolean;
