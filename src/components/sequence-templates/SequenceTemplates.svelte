@@ -8,6 +8,7 @@
   import type { SequenceTemplate } from '../../types/sequence-template';
   import type { Parcel } from '../../types/sequencing';
   import effects from '../../utilities/effects';
+  import { downloadBlob } from '../../utilities/generic';
   import { showTemplateModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -35,6 +36,13 @@
     : undefined;
 
   $: parcel = $parcels.find(p => p.id === selectedTemplate?.parcel_id) ?? null;
+
+  function onDownloadTemplate(sequenceTemplate: SequenceTemplate) {
+    downloadBlob(
+      new Blob([sequenceTemplate.template_definition], { type: 'text/plain' }),
+      `${sequenceTemplate.name}_${sequenceTemplate.activity_type}.${sequenceTemplate.language}`,
+    );
+  }
 
   function onTemplateSelected(event: CustomEvent<SequenceTemplate>) {
     $selectedSequenceTemplateId = event.detail.id;
@@ -102,7 +110,12 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        <SequenceTemplateTable {filterText} {user} on:templateSelected={onTemplateSelected} />
+        <SequenceTemplateTable
+          {filterText}
+          {user}
+          on:download={e => onDownloadTemplate(e.detail.template)}
+          on:templateSelected={onTemplateSelected}
+        />
       </svelte:fragment>
     </Panel>
 
@@ -172,6 +185,9 @@
       showCommandFormBuilder={true}
       template={selectedTemplate}
       on:templateChanged={onTemplateChanged}
+      on:download={e => {
+        onDownloadTemplate(e.detail.template);
+      }}
       {user}
     />
   {:else}

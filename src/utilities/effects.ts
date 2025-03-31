@@ -5232,12 +5232,14 @@ const effects = {
       );
 
       if (createdSequenceTemplate != null) {
+        showSuccessToast('Sequence Template Imported Successfully');
         return createdSequenceTemplate;
       }
 
       return null;
     } catch (e) {
       catchError(e as Error);
+      showFailureToast('Failed To Import Sequence Template');
       return null;
     }
   },
