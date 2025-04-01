@@ -18,17 +18,13 @@
   import type { ActivityErrorCounts } from '../../types/errors';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
   import { createEventDispatcher } from 'svelte';
+  import type { PlanSlim } from '../../types/plan';
 
-  export let planId: number | null = null;
+  export let plan: PlanSlim;
 
-  let modelMigrationPreviewErrorCounts: ActivityErrorCounts;
-  let isRowSelectable: ((node: IRowNode) => boolean) | undefined = undefined;
-  let filterExpression: string = '';
-  let height: number = 500;
-  let selectedItemId: RowId | null = null;
-  let selectedMissionModel: ModelSlim | null = null;
-  let width: number = 800;
-  let columnDefs: ColDef[] = [
+  const height: number = 500;
+  const width: number = 800;
+  const columnDefs: ColDef[] = [
     {
       field: 'name',
       headerName: 'Name',
@@ -46,6 +42,15 @@
     confirm: ModelSlim;
   }>();
 
+  let isRowSelectable: ((node: IRowNode) => boolean) | undefined = undefined;
+  let modelMigrationPreviewErrorCounts: ActivityErrorCounts;
+  let filterExpression: string = '';
+  let selectedItemId: RowId | null = null;
+  let selectedMissionModel: ModelSlim | null = null;
+
+  $: previewMissionModelMigration(selectedMissionModel);
+  $: otherModels = $models.filter(m => m.id !== plan.model_id);
+
   function onFiltering(event: Event) {
     const { value } = getTarget(event);
     filterExpression = value as string;
@@ -57,22 +62,21 @@
     } = event;
     if (isSelected) {
       selectedMissionModel = model;
-      previewMissionModelMigration();
     }
   }
 
-  function previewMissionModelMigration() {
-    if (selectedMissionModel !== null) {
+  function previewMissionModelMigration(missionModel: ModelSlim | null) {
+    if (missionModel !== null) {
       //TODO do the preview of migration, result saved in this object...
       modelMigrationPreviewErrorCounts = {
-        all: selectedMissionModel.id * 7,
-        extra: selectedMissionModel.id,
-        invalidAnchor: selectedMissionModel.id,
-        invalidParameter: selectedMissionModel.id,
-        missing: selectedMissionModel.id,
-        outOfBounds: selectedMissionModel.id,
-        pending: selectedMissionModel.id,
-        wrongType: selectedMissionModel.id,
+        all: missionModel.id * 7,
+        extra: missionModel.id,
+        invalidAnchor: missionModel.id,
+        invalidParameter: missionModel.id,
+        missing: missionModel.id,
+        outOfBounds: missionModel.id,
+        pending: missionModel.id,
+        wrongType: missionModel.id,
       };
     }
   }
@@ -109,7 +113,7 @@
           <DataGrid
             bind:currentSelectedRowId={selectedItemId}
             {columnDefs}
-            rowData={$models}
+            rowData={otherModels}
             rowSelection="single"
             on:rowSelected={onClickMissionModel}
             {isRowSelectable}

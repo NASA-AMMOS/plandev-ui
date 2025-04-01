@@ -47,6 +47,7 @@ import type {
   PlanForMerging,
   PlanMergeRequestStatus,
   PlanMergeRequestTypeFilter,
+  PlanSlim,
 } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
 import type { Tag } from '../types/tags';
@@ -1105,13 +1106,13 @@ export async function showUploadViewModal(): Promise<ModalElementValue<{ definit
   });
 }
 
-export async function showUpdatePlanMissionModelModal(planId: number): Promise<ModalElementValue> {
+export async function showUpdatePlanMissionModelModal(plan: PlanSlim): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
       if (target) {
         const modal = new ChangePlanMissionModelModal({
-          props: { planId },
+          props: { plan },
           target,
         });
         target.resolve = resolve;

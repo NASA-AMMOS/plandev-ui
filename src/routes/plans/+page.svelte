@@ -633,8 +633,8 @@
   }
 
   async function openChangePlanMissionModelModal() {
-    if (selectedPlanId !== null) {
-      await effects.updatePlanMissionModel(selectedPlanId, user);
+    if (selectedPlan !== undefined) {
+      await effects.updatePlanMissionModel(selectedPlan, user);
     }
   }
 </script>
@@ -689,7 +689,7 @@
         {#if selectedPlan}
           <div class="plan-metadata">
             <fieldset>
-              <Input layout="inline-with-button">
+              <Input layout="inline" class="with-button">
                 <label class="plan-metadata-item-label" for="name">Model</label>
                 <input
                   disabled
@@ -1018,5 +1018,9 @@
 
   .plan-metadata-item-label {
     white-space: nowrap;
+  }
+
+  .plan-metadata :global(.with-button) {
+    grid-template-columns: 40% auto 1fr;
   }
 </style>

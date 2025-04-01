@@ -6008,16 +6008,16 @@ const effects = {
     }
   },
 
-  async updatePlanMissionModel(planId: number, user: User | null): Promise<void> {
+  async updatePlanMissionModel(plan: PlanSlim, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.UPDATE_PLAN(user, planId)) {
+      if (!queryPermissions.UPDATE_PLAN(user, plan)) {
         throwPermissionError('update plan');
       }
       if (!queryPermissions.CREATE_PLAN_SNAPSHOT(user)) {
         throwPermissionError('create a snapshot');
       }
 
-      const { confirm, value } = await showUpdatePlanMissionModelModal(planId);
+      const { confirm, value } = await showUpdatePlanMissionModelModal(plan);
       if (confirm) {
         //TODO do the migration!
 
