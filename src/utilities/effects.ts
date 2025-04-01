@@ -6044,9 +6044,12 @@ const effects = {
 
       const { confirm, value } = await showUpdatePlanMissionModelModal(planId, user);
       if (confirm) {
-        const data = await reqHasura(gql.MIGRATE_PLAN_TO_MODEL, { plan_id: planId, new_model_id: value.id }, user);
-        // TODO: handle and display data
-        showSuccessToast('Model Migration Success');
+        const data = await reqHasura(gql.MIGRATE_PLAN_TO_MODEL, {new_model_id: value.id, plan_id: planId}, user);
+        if (data.migrate_plan_to_model?.result === "success") {
+          showSuccessToast('Model Migration Success');
+        } else {
+          throw Error(data.migrate_plan_to_model?.result);
+        }
       }
     } catch (e) {
       catchError('Model Migration Failed', e as Error);
