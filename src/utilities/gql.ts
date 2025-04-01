@@ -1815,6 +1815,14 @@ const gql = {
     }
   `,
 
+  MIGRATE_PLAN_TO_MODEL: `#graphql
+    mutation MigratePlanToModel($plan_id: Int!, $new_model_id: Int!) {
+      ${Queries.MIGRATE_PLAN_TO_MODEL}(args: { _plan_id: $plan_id, _new_model_id: $new_model_id } ) {
+        result
+      }
+    }
+  `,
+
   PLAN_MERGE_BEGIN: `#graphql
     mutation PlanMergeBegin($merge_request_id: Int!) {
       ${Queries.BEGIN_MERGE}(args: { _merge_request_id: $merge_request_id } ) {

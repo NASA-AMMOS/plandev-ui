@@ -6017,10 +6017,12 @@ const effects = {
         throwPermissionError('create a snapshot');
       }
 
+
       const { confirm, value } = await showUpdatePlanMissionModelModal(planId);
       if (confirm) {
-        //TODO do the migration!
-
+        const newModelId = 2; // TODO: Don't use hardcoded modelId, lol
+        const data = await reqHasura(gql.MIGRATE_PLAN_TO_MODEL, { plan_id: planId, new_model_id: newModelId }, user);
+        // TODO: handle and display data
         showSuccessToast('Model Migration Success');
       }
     } catch (e) {

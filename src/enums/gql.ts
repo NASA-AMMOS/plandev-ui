@@ -163,6 +163,7 @@ export enum Queries {
   INSERT_WORKSPACE = 'insert_workspace_one',
   MERGE_REQUEST = 'merge_request_by_pk',
   MERGE_REQUESTS = 'merge_request',
+  MIGRATE_PLAN_TO_MODEL = 'migrate_plan_to_model',
   MISSION_MODEL = 'mission_model_by_pk',
   MISSION_MODELS = 'mission_model',
   PARAMETER_DICTIONARIES = 'parameter_dictionary',
