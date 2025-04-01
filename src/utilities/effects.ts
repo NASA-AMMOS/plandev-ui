@@ -288,6 +288,7 @@ import {
   generateDefaultView,
   validateViewJSONAgainstSchema,
 } from './view';
+import type { ActivityErrorCounts } from '../types/errors';
 
 function throwPermissionError(attemptedAction: string): never {
   throw Error(`You do not have permission to: ${attemptedAction}.`);
@@ -494,6 +495,29 @@ const effects = {
     } catch (e) {
       catchError('Check Constraints Failed', e as Error);
       showFailureToast('Check Constraints Failed');
+    }
+  },
+
+  async checkMigrationCompatability(planId: number, newModelId: number, user: User | null): Promise<ActivityErrorCounts | undefined> {
+    try {
+      const data = await reqHasura(gql.CHECK_MODEL_COMPATABILITY, { new_model_id: newModelId, plan_id: planId }, user);
+
+      const missingCount = data?.check_model_compatability?.result?.missing_count;
+      const paramMismatchCount = data?.check_model_compatability?.result?.param_mismatch_count;
+      const error: ActivityErrorCounts = {
+        all: missingCount+paramMismatchCount,
+        extra: 0,
+        invalidAnchor: 0,
+        invalidParameter: paramMismatchCount,
+        missing: missingCount,
+        outOfBounds: 0,
+        pending: 0,
+        wrongType: 0
+      };
+      return error;
+
+    } catch (e) {
+      catchError('Preview Failed', e as Error);
     }
   },
 
@@ -6018,7 +6042,7 @@ const effects = {
       }
 
 
-      const { confirm, value } = await showUpdatePlanMissionModelModal(planId);
+      const { confirm, value } = await showUpdatePlanMissionModelModal(planId, user);
       if (confirm) {
         const data = await reqHasura(gql.MIGRATE_PLAN_TO_MODEL, { plan_id: planId, new_model_id: value.id }, user);
         // TODO: handle and display data

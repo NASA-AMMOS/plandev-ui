@@ -14,6 +14,7 @@ export enum Queries {
   BEGIN_MERGE = 'begin_merge',
   CANCEL_MERGE = 'cancel_merge',
   CHANNEL_DICTIONARIES = 'channel_dictionary',
+  CHECK_MODEL_COMPATABILITY = 'check_model_compatability',
   COMMAND_DICTIONARIES = 'command_dictionary',
   COMMIT_MERGE = 'commit_merge',
   CONSTRAINTS_DSL_TYPESCRIPT = 'constraintsDslTypescript',

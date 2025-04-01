@@ -69,6 +69,14 @@ const gql = {
     }
   `,
 
+  CHECK_MODEL_COMPATABILITY: `#graphql
+    mutation CheckModelCompatability($plan_id: Int!, $new_model_id: Int!) {
+      ${Queries.CHECK_MODEL_COMPATABILITY}(args: { _plan_id: $plan_id, _new_model_id: $new_model_id } ) {
+        result
+      }
+    }
+  `,
+
   CREATE_ACTION_DEFINITION: `#graphql
     mutation CreateActionDefinition($actionDefinitionInsertInput: action_definition_insert_input!) {
       ${Queries.INSERT_ACTION_DEFINITION}(object: $actionDefinitionInsertInput) {

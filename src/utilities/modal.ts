@@ -1105,13 +1105,13 @@ export async function showUploadViewModal(): Promise<ModalElementValue<{ definit
   });
 }
 
-export async function showUpdatePlanMissionModelModal(planId: number): Promise<ModalElementValue> {
+export async function showUpdatePlanMissionModelModal(planId: number, user: User | null): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
       if (target) {
         const modal = new ChangePlanMissionModelModal({
-          props: { planId },
+          props: { planId, user },
           target,
         });
         target.resolve = resolve;
@@ -1129,6 +1129,7 @@ export async function showUpdatePlanMissionModelModal(planId: number): Promise<M
           resolve({ confirm: true, value: e.detail });
           modal.$destroy();
         });
+
       }
     } else {
       resolve({ confirm: false });

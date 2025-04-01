@@ -18,10 +18,13 @@
   import type { ActivityErrorCounts } from '../../types/errors';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
   import { createEventDispatcher } from 'svelte';
+  import effects from '../../utilities/effects';
+  import type { User } from '../../types/app';
 
   export let planId: number | null = null;
+  export let user: User | null = null;
 
-  let modelMigrationPreviewErrorCounts: ActivityErrorCounts;
+  let modelMigrationPreviewErrorCounts: ActivityErrorCounts | undefined;
   let isRowSelectable: ((node: IRowNode) => boolean) | undefined = undefined;
   let filterExpression: string = '';
   let height: number = 500;
@@ -61,19 +64,9 @@
     }
   }
 
-  function previewMissionModelMigration() {
-    if (selectedMissionModel !== null) {
-      //TODO do the preview of migration, result saved in this object...
-      modelMigrationPreviewErrorCounts = {
-        all: selectedMissionModel.id * 7,
-        extra: selectedMissionModel.id,
-        invalidAnchor: selectedMissionModel.id,
-        invalidParameter: selectedMissionModel.id,
-        missing: selectedMissionModel.id,
-        outOfBounds: selectedMissionModel.id,
-        pending: selectedMissionModel.id,
-        wrongType: selectedMissionModel.id,
-      };
+  async function previewMissionModelMigration() {
+    if (selectedMissionModel !== null && planId !== null) {
+      modelMigrationPreviewErrorCounts = await effects.checkMigrationCompatability(planId, selectedMissionModel.id, user);
     }
   }
 
