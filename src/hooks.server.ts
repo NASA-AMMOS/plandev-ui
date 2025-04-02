@@ -143,7 +143,6 @@ async function computeRolesFromJWT(baseUser: BaseUser, activeRole: string | null
     rolePermissions: null,
   };
   const permissibleQueries = await effects.getUserQueries(user);
-
   const rolePermissions = await effects.getRolePermissions(user);
   return {
     ...user,

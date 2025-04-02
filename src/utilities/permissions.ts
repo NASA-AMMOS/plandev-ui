@@ -353,6 +353,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   CREATE_CONSTRAINT_MODEL_SPECIFICATION: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_CONSTRAINT_MODEL_SPECIFICATION], user);
   },
+  CREATE_CONSTRAINT_PLAN_SPECIFICATION: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.INSERT_CONSTRAINT_SPECIFICATION], user);
+  },
   CREATE_DERIVATION_GROUP: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_DERIVATION_GROUP], user);
   },
@@ -524,6 +527,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   DELETE_COMMAND_DICTIONARY: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_COMMAND_DICTIONARY], user);
   },
+  DELETE_CONSTRAINT_INVOCATIONS: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.DELETE_CONSTRAINT_SPECIFICATIONS], user);
+  },
   DELETE_CONSTRAINT_METADATA: (user: User | null, constraintMetadata: AssetWithOwner<ConstraintMetadata>): boolean => {
     return (
       isUserAdmin(user) ||
@@ -532,13 +538,6 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   DELETE_CONSTRAINT_MODEL_SPECIFICATIONS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_CONSTRAINT_MODEL_SPECIFICATIONS], user);
-  },
-  DELETE_CONSTRAINT_PLAN_SPECIFICATIONS: (user: User | null, plan: PlanWithOwners): boolean => {
-    return (
-      isUserAdmin(user) ||
-      (getPermission([Queries.DELETE_CONSTRAINT_SPECIFICATIONS], user) &&
-        (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
-    );
   },
   DELETE_DERIVATION_GROUP: (user: User | null, derivationGroup: AssetWithOwner<DerivationGroup>): boolean => {
     return (
@@ -654,9 +653,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     );
   },
   DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS: () => true,
-  DELETE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS], user);
-  },
+  // DELETE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS: (user: User | null): boolean => {
+  //   return isUserAdmin(user) || getPermission([Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS], user);
+  // },
   DELETE_SEQUENCE_ADAPTATION: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_ADAPTATION], user);
   },
@@ -869,9 +868,12 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     return isUserAdmin(user) || getPermission([Queries.CONSTRAINT_METADATAS], user);
   },
   SUB_CONSTRAINT_DEFINITION: () => true,
+  SUB_CONSTRAINT_INVOCATIONS: (user: User | null) => {
+    return isUserAdmin(user) || getPermission([Queries.CONSTRAINT_SPECIFICATIONS], user);
+  },
   SUB_CONSTRAINT_PLAN_SPECIFICATIONS: () => true,
-  SUB_CONSTRAINT_RUNS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.CONSTRAINT_RUN], user);
+  SUB_CONSTRAINT_REQUESTS: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.CONSTRAINT_REQUEST], user);
   },
   SUB_DERIVATION_GROUPS: () => true,
   SUB_EXPANSION_RULES: (user: User | null): boolean => {
@@ -917,9 +919,6 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   SUB_SCHEDULING_GOAL: () => true,
   SUB_SCHEDULING_GOALS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.SCHEDULING_GOAL_METADATAS], user);
-  },
-  SUB_SCHEDULING_GOAL_INVOCATIONS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.SCHEDULING_GOAL_METADATAS], user);
   },
   SUB_SCHEDULING_PLAN_SPECIFICATION: (user: User | null): boolean => {
@@ -989,6 +988,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
       ) &&
         (constraintMetadata?.public || isUserOwner(user, constraintMetadata)))
     );
+  },
+  UPDATE_CONSTRAINT_MODEL_SPECIFICATION: (user: User | null) => {
+    return isUserAdmin(user) && getPermission([Queries.UPDATE_CONSTRAINT_MODEL_SPECIFICATION], user);
   },
   UPDATE_CONSTRAINT_MODEL_SPECIFICATIONS: (user: User | null) => {
     return (
@@ -1416,7 +1418,7 @@ const featurePermissions: FeaturePermissions = {
   constraintRuns: {
     canCreate: (user, plan, model) => queryPermissions.CHECK_CONSTRAINTS(user, plan, model),
     canDelete: () => false, // Not implemented
-    canRead: user => queryPermissions.SUB_CONSTRAINT_RUNS(user),
+    canRead: user => queryPermissions.SUB_CONSTRAINT_REQUESTS(user),
     canUpdate: () => false, // Not implemented
   },
   constraints: {

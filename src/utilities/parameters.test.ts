@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { getArgument, getValueSchemaDefaultValue, isRecParameter } from './parameters';
+import { getArgument, getCleansedStructArguments, getValueSchemaDefaultValue, isRecParameter } from './parameters';
 
 describe('getArgument', () => {
   test('Should return the preset value', () => {
@@ -217,5 +217,40 @@ describe('isRecParameter', () => {
         valueSource: 'mission',
       }),
     ).toEqual(false);
+  });
+});
+
+describe('getCleansedStructArguments', () => {
+  test('Should remove any arguments in the arguments object that does not exist in the schema', () => {
+    expect(
+      getCleansedStructArguments(
+        { bar: 'baz', foo: 1 },
+        {
+          items: {
+            foo: {
+              type: 'int',
+            },
+          },
+          type: 'struct',
+        },
+      ),
+    ).toEqual({ foo: 1 });
+
+    expect(
+      getCleansedStructArguments(
+        { bar: 'baz', buzz: false, foo: 1 },
+        {
+          items: {
+            buzz: {
+              type: 'boolean',
+            },
+            foo: {
+              type: 'int',
+            },
+          },
+          type: 'struct',
+        },
+      ),
+    ).toEqual({ buzz: false, foo: 1 });
   });
 });

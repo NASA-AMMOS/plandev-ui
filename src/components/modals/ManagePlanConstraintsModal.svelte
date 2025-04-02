@@ -7,15 +7,18 @@
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import {
-    allowedConstraintPlanSpecMap,
-    allowedConstraintSpecs,
+    allowedConstraintPlanSpecs,
     constraints,
     initialConstraintPlanSpecsLoading,
     initialConstraintsLoading,
   } from '../../stores/constraints';
   import { plan, planId, planReadOnly } from '../../stores/plan';
   import type { User } from '../../types/app';
-  import type { ConstraintMetadata, ConstraintPlanSpec, ConstraintPlanSpecInsertInput } from '../../types/constraint';
+  import type {
+    ConstraintMetadata,
+    ConstraintPlanSpecification,
+    ConstraintPlanSpecInsertInput,
+  } from '../../types/constraint';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -110,8 +113,8 @@
     const includesName = constraint.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesId || includesName;
   });
-  $: selectedConstraints = $allowedConstraintSpecs.reduce(
-    (prevBooleanMap: Record<string, boolean>, constraintPlanSpec: ConstraintPlanSpec) => {
+  $: selectedConstraints = $allowedConstraintPlanSpecs.reduce(
+    (prevBooleanMap: Record<string, boolean>, constraintPlanSpec: ConstraintPlanSpecification) => {
       return {
         ...prevBooleanMap,
         [constraintPlanSpec.constraint_id]: true,
@@ -210,10 +213,14 @@
         ) => {
           const constraintId = parseInt(selectedConstraintId);
           const isSelected = selectedConstraints[constraintId];
-          const constraintPlanSpec = $allowedConstraintPlanSpecMap[constraintId];
+          // if we find at least one constraint invocation with the selected constraint_id, we don't want to insert this constraint_id into the plan spec
+          // i.e. this constraint was already selected when we entered the modal, so we don't want to kick off an update, which would cause a duplicate invocation to appear
+          const constraintsInPlanSpecification = $allowedConstraintPlanSpecs.filter(
+            constraintPlanSpecification => constraintPlanSpecification.constraint_id === constraintId,
+          );
 
           if (isSelected) {
-            if (!constraintPlanSpec || constraintPlanSpec.constraint_metadata?.owner === user?.id) {
+            if (!constraintsInPlanSpecification.length) {
               return {
                 ...prevConstraintPlanSpecUpdates,
                 constraintPlanSpecsToAdd: [
@@ -233,7 +240,7 @@
               ...prevConstraintPlanSpecUpdates,
               constraintPlanSpecIdsToDelete: [
                 ...prevConstraintPlanSpecUpdates.constraintPlanSpecIdsToDelete,
-                constraintId,
+                ...constraintsInPlanSpecification.map(({ invocation_id }) => invocation_id),
               ],
             };
           }

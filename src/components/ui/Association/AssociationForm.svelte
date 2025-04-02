@@ -88,7 +88,7 @@
   export let definitionTypeConfigurations: DefinitionConfigurations | undefined = undefined;
   export let initialDefinitionAuthor: UserId | undefined = undefined;
   export let initialDefinitionType: DefinitionType = DefinitionType.CODE;
-  export let initialDefinitionCode: string | null = '';
+  export let initialDefinitionCode: string | null = null;
   export let initialDefinitionFileName: string | null = null;
   export let initialDescription: string = '';
   export let initialId: number | null = null;
@@ -157,7 +157,12 @@
   );
   $: isDefinitionModified =
     diffDefinition({ definition: initialDefinitionCode }, { definition: definitionCode }) ||
-    definitionFiles !== undefined;
+    (definitionType === DefinitionType.FILE && (definitionFiles?.length ?? 0) > 0);
+  $: if (!name && definitionFiles?.length) {
+    const fileName = definitionFiles[0].name;
+    // strip out the filename without the extension
+    name = fileName.replace(/\..*$/, '');
+  }
   $: isDefinitionTagsModified = diffTags(initialDefinitionTags || [], definitionTags);
   $: hasUpdateDefinitionPermission = hasWriteDefinitionTagsPermission || isDefinitionModified;
   $: pageTitle = mode === 'edit' ? 's' : 'New ';
@@ -168,6 +173,9 @@
     owner !== '' &&
     definitionCode !== '' &&
     name !== '' &&
+    (mode === 'create' && definitionType === DefinitionType.FILE
+      ? !initialDefinitionFileName && (definitionFiles?.length ?? 0) > 0
+      : true) &&
     (isMetadataModified || (isDefinitionTagsModified && hasUpdateDefinitionPermission) || isDefinitionModified);
   $: saveButtonClass = saveButtonEnabled ? 'primary' : 'secondary';
   $: if (mode === 'edit' && (isMetadataModified || isDefinitionModified)) {
@@ -182,7 +190,7 @@
   }
   $: if (isPublic && name) {
     const existingMetadata = allMetadata.find(
-      ({ name: metadataName, public: isPublic }) => name === metadataName && isPublic,
+      ({ name: metadataName, public: isMetadataPublic }) => name === metadataName && isMetadataPublic,
     );
     if (existingMetadata != null && existingMetadata.id !== metadataId) {
       nameError = 'Name must be unique when public';
@@ -364,9 +372,9 @@
 
       dispatch('updateMetadata', {
         metadata: {
-          description: description,
-          name: name,
-          owner: owner,
+          description,
+          name,
+          owner,
           public: isPublic,
         },
         tagIdsToDelete,
@@ -435,24 +443,6 @@
     </svelte:fragment>
 
     <svelte:fragment slot="body">
-      <fieldset>
-        <label for="metadata-name">Name</label>
-        <input
-          bind:value={name}
-          autocomplete="off"
-          class:metadata-form-error={!!nameError}
-          class="st-input w-100"
-          name="metadata-name"
-          placeholder={`Enter ${displayName} Name (required)`}
-          required
-          use:permissionHandler={{
-            hasPermission: hasWriteMetadataPermission,
-            permissionError,
-          }}
-        />
-        <div class="metadata-form-error-message">{nameError}</div>
-      </fieldset>
-
       {#if showDefinitionTypeSelector && !!definitionTypeConfigurations}
         <fieldset>
           <RadioButtons selectedButtonId={definitionType} on:select-radio-button={onSelectDefinitionType}>
@@ -495,6 +485,24 @@
             />
           {/if}
         </div>
+      </fieldset>
+
+      <fieldset>
+        <label for="metadata-name">Name</label>
+        <input
+          bind:value={name}
+          autocomplete="off"
+          class:metadata-form-error={!!nameError}
+          class="st-input w-100"
+          name="metadata-name"
+          placeholder={`Enter ${displayName} Name (required)`}
+          required
+          use:permissionHandler={{
+            hasPermission: hasWriteMetadataPermission,
+            permissionError,
+          }}
+        />
+        <div class="metadata-form-error-message">{nameError}</div>
       </fieldset>
 
       <fieldset>
