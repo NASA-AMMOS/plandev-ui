@@ -491,12 +491,12 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     display: flex;
     flex: 1;
     flex-wrap: wrap;
+    gap: 2px;
     min-height: 30px;
     padding: 2px 0px;
   }
 
   :global(.tags-cell .tag.st-chip) {
     display: inline !important;
-    margin-right: 2px;
   }
 </style>

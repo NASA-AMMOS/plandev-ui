@@ -9,7 +9,7 @@
   style:overflow
 >
   {#if $$slots.icon}
-    <div class="flex shrink-0 items-center justify-center">
+    <div class="flex shrink-0 items-center justify-center opacity-30">
       <slot name="icon" />
     </div>
   {/if}

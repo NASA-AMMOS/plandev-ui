@@ -23,17 +23,17 @@
     }
 
     if ($field.invalid) {
-      input.classList.add('error');
+      input.classList.add('border-red-500', 'bg-red-500', 'bg-opacity-10', 'text-red-500');
     } else {
-      input.classList.remove('error');
+      input.classList.remove('border-red-500', 'bg-red-500', 'bg-opacity-10', 'text-red-500');
     }
   }
 
   $: if (container && field && label) {
     if ($field.invalid) {
-      label.classList.add('error');
+      label.classList.add('text-red-500');
     } else {
-      label.classList.remove('error');
+      label.classList.remove('text-red-500');
     }
   }
 
@@ -43,9 +43,9 @@
     }
 
     if ($field.invalid) {
-      select.classList.add('error');
+      select.classList.add('border-red-500', 'bg-red-500', 'bg-opacity-10', 'text-red-500');
     } else {
-      select.classList.remove('error');
+      select.classList.remove('border-red-500', 'bg-red-500', 'bg-opacity-10', 'text-red-500');
     }
   }
 

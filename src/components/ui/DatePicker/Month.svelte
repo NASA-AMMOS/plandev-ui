@@ -20,40 +20,17 @@
   }
 </script>
 
-<div class="date-picker-month">
-  <div class="week-header">
-    <div>Sun</div>
-    <div>Mon</div>
-    <div>Tue</div>
-    <div>Wed</div>
-    <div>Thu</div>
-    <div>Fri</div>
-    <div>Sat</div>
+<div class="mb-[7px] grid gap-y-[7px] leading-[18px]">
+  <div class="grid grid-cols-[repeat(7_,38px)] gap-x-[3px] border-b px-3 pb-[7px]">
+    <div class="text-center font-medium">Sun</div>
+    <div class="text-center font-medium">Mon</div>
+    <div class="text-center font-medium">Tue</div>
+    <div class="text-center font-medium">Wed</div>
+    <div class="text-center font-medium">Thu</div>
+    <div class="text-center font-medium">Fri</div>
+    <div class="text-center font-medium">Sat</div>
   </div>
-  <!-- eslint-disable-next-line -->
   {#each Array(numOfWeeks) as _, i}
     <Week {maxDate} {minDate} {year} {month} week={i} {selectedDate} on:select />
   {/each}
 </div>
-
-<style>
-  .date-picker-month {
-    display: grid;
-    line-height: 18px;
-    margin-bottom: 7px;
-    row-gap: 7px;
-  }
-
-  .date-picker-month .week-header {
-    border-bottom: 1px solid var(--st-gray-20);
-    column-gap: 3px;
-    display: grid;
-    grid-template-columns: repeat(7, 38px);
-    padding: 0 12px 7px;
-  }
-
-  .date-picker-month .week-header > div {
-    font-weight: 500;
-    text-align: center;
-  }
-</style>
