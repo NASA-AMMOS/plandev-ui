@@ -7,7 +7,13 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,
-    "strict": true
+    "strict": true,
+    "paths": {
+      "bits-ui/*": ["./node_modules/bits-ui/*"],
+      "@melt-ui/svelte/index.js": ["./node_modules/@melt-ui/svelte/dist/index.js"],
+      "@melt-ui/*": ["./node_modules/@melt-ui/*"],
+      "svelte/elements.js": ["./node_modules/svelte/elements"]
+    }
   },
   "extends": "./.svelte-kit/tsconfig.json"
 }
