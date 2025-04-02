@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Select } from '@nasa-jpl/stellar-svelte';
+  import { Select, ThemeSwitcherDropdown } from '@nasa-jpl/stellar-svelte';
   import type { User, UserRole } from '../../types/app';
   import { changeUserRole } from '../../utilities/permissions';
   import AppMenu from '../menus/AppMenu.svelte';
@@ -32,8 +32,9 @@
       <Select.Root
         selected={{ label: user?.activeRole ?? '', value: user?.activeRole ?? '' }}
         onSelectedChange={v => v && changeRole(v.value)}
+        loop={false}
       >
-        <Select.Trigger class="min-w-[180px]" value={user?.activeRole} size="xs">
+        <Select.Trigger class="min-w-[124px]" value={user?.activeRole} size="xs">
           <Select.Value placeholder="Select a" class="text-secondary-foreground" aria-label="Select Role" />
         </Select.Trigger>
         <Select.Content>
@@ -43,14 +44,14 @@
               <Select.Item size="xs" value={userRole} label={userRole}>{userRole}</Select.Item>
             {/each}
           </Select.Group>
-          <Select.Separator />
-          <Select.Label size="xs" class="font-normal text-muted-foreground">
-            Logged in as {user?.id || 'Unknown'}
-          </Select.Label>
         </Select.Content>
         <Select.Input name="user-menu" />
       </Select.Root>
     {/if}
+    <ThemeSwitcherDropdown
+      class="flex-shrink-0 border-none bg-transparent text-white hover:bg-transparent hover:text-white"
+      size="icon"
+    />
   </div>
 </div>
 
