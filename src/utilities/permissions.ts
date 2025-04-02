@@ -319,6 +319,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     const queries = [Queries.CONSTRAINT_VIOLATIONS];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
+  CHECK_MODEL_COMPATABILITY: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.CHECK_MODEL_COMPATABILITY], user);
+  },
   CREATE_ACTION_DEFINITION: (user: User | null): boolean => {
     const queries = [Queries.INSERT_ACTION_DEFINITION];
     return isUserAdmin(user) || getPermission(queries, user);
@@ -759,6 +762,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   INSERT_EXPANSION_SEQUENCE_TO_ACTIVITY: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_TO_SIMULATED_ACTIVITY], user);
+  },
+  MIGRATE_PLAN_TO_MODEL: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.MIGRATE_PLAN_TO_MODEL], user);
   },
   PLAN_MERGE_BEGIN: (
     user: User | null,
@@ -1290,6 +1296,7 @@ interface CRUDPermission<T = null> extends BaseCRUDPermission<T> {
 
 interface PlanCRUDPermission extends CRUDPermission<PlanWithOwners> {
   canImport: CreatePermissionCheck;
+  canUpdateModel: UpdatePermissionCheck;
 }
 
 interface PlanBranchCRUDPermission {
@@ -1558,6 +1565,8 @@ const featurePermissions: FeaturePermissions = {
     canImport: user => gatewayPermissions.IMPORT_PLAN(user),
     canRead: user => queryPermissions.GET_PLAN(user),
     canUpdate: (user, plan) => queryPermissions.UPDATE_PLAN(user, plan),
+    canUpdateModel: (user, plan) =>
+      queryPermissions.CREATE_PLAN_SNAPSHOT(user) && queryPermissions.UPDATE_PLAN(user, plan),
   },
   planBranch: {
     canCreateBranch: (user, plan, model) => queryPermissions.DUPLICATE_PLAN(user, plan, model),

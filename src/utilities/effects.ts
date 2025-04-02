@@ -98,11 +98,12 @@ import type {
   ConstraintMetadataSetInput,
   ConstraintModelSpecInsertInput,
   ConstraintModelSpecSetInput,
+  ConstraintPlanSpecification,
   ConstraintPlanSpecInsertInput,
   ConstraintPlanSpecSetInput,
-  ConstraintPlanSpecification,
   ConstraintResult,
 } from '../types/constraint';
+import type { ActivityErrorCounts } from '../types/errors';
 import type {
   ExpandedSequence,
   ExpansionRule,
@@ -144,9 +145,9 @@ import type {
   DefaultEffectiveArguments,
   EffectiveArguments,
   Parameter,
+  ParametersMap,
   ParameterValidationError,
   ParameterValidationResponse,
-  ParametersMap,
 } from '../types/parameter';
 import type {
   PermissibleQueriesMap,
@@ -179,8 +180,8 @@ import type {
   SchedulingConditionMetadataSetInput,
   SchedulingConditionModelSpecificationInsertInput,
   SchedulingConditionModelSpecificationSetInput,
-  SchedulingConditionPlanSpecInsertInput,
   SchedulingConditionPlanSpecification,
+  SchedulingConditionPlanSpecInsertInput,
   SchedulingGoalDefinition,
   SchedulingGoalDefinitionInsertInput,
   SchedulingGoalInsertInput,
@@ -189,9 +190,9 @@ import type {
   SchedulingGoalMetadataSetInput,
   SchedulingGoalModelSpecificationInsertInput,
   SchedulingGoalModelSpecificationSetInput,
+  SchedulingGoalPlanSpecification,
   SchedulingGoalPlanSpecInsertInput,
   SchedulingGoalPlanSpecSetInput,
-  SchedulingGoalPlanSpecification,
   SchedulingPlanSpecification,
   SchedulingPlanSpecificationInsertInput,
   SchedulingRequest,
@@ -269,6 +270,7 @@ import {
   showRestorePlanSnapshotModal,
   showRunActionModal,
   showTimeRangeModal,
+  showUpdatePlanMissionModelModal,
   showUploadViewModal,
   showWorkspaceModal,
 } from './modal';
@@ -560,6 +562,30 @@ const effects = {
       checkConstraintsQueryStatusStore.set(Status.Failed);
       catchError('Check Constraints Failed', e as Error);
       showFailureToast('Check Constraints Failed');
+    }
+  },
+
+  async checkMigrationCompatability(
+    planId: number,
+    newModelId: number,
+    user: User | null,
+  ): Promise<ActivityErrorCounts | undefined> {
+    try {
+      const data = await reqHasura(gql.CHECK_MODEL_COMPATABILITY, { new_model_id: newModelId, plan_id: planId }, user);
+      const missingCount = data?.check_model_compatability?.result?.missing_count;
+      const paramMismatchCount = data?.check_model_compatability?.result?.param_mismatch_count;
+      return {
+        all: missingCount + paramMismatchCount,
+        extra: 0,
+        invalidAnchor: 0,
+        invalidParameter: paramMismatchCount,
+        missing: missingCount,
+        outOfBounds: 0,
+        pending: 0,
+        wrongType: 0,
+      };
+    } catch (e) {
+      catchError('Preview Failed', e as Error);
     }
   },
 
@@ -6326,6 +6352,31 @@ const effects = {
     } catch (e) {
       catchError('Plan Update Failed', e as Error);
       showFailureToast('Plan Update Failed');
+      return;
+    }
+  },
+
+  async updatePlanMissionModel(plan: PlanSlim, user: User | null): Promise<void> {
+    try {
+      if (!queryPermissions.UPDATE_PLAN(user, plan)) {
+        throwPermissionError('update plan');
+      }
+      if (!queryPermissions.CREATE_PLAN_SNAPSHOT(user)) {
+        throwPermissionError('create a snapshot');
+      }
+
+      const { confirm, value } = await showUpdatePlanMissionModelModal(plan, user);
+      if (confirm) {
+        const data = await reqHasura(gql.MIGRATE_PLAN_TO_MODEL, { new_model_id: value.id, plan_id: plan.id }, user);
+        if (data.migrate_plan_to_model?.result === 'success') {
+          showSuccessToast('Model Migration Success');
+        } else {
+          throw Error(data.migrate_plan_to_model?.result);
+        }
+      }
+    } catch (e) {
+      catchError('Model Migration Failed', e as Error);
+      showFailureToast('Model Migration Failed');
       return;
     }
   },

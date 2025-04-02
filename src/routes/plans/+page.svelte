@@ -6,6 +6,7 @@
   import { page } from '$app/stores';
   import { Button, Input as InputStellar, Label, Select } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
+  import SwapIcon from 'bootstrap-icons/icons/arrow-left-right.svg?component';
   import { flatten } from 'lodash-es';
   import { Clipboard, Import, X, XIcon } from 'lucide-svelte';
   import { onDestroy, onMount } from 'svelte';
@@ -186,6 +187,7 @@
   const permissionError: string = 'You do not have permission to create a plan';
 
   let canCreate: boolean = false;
+  let canChangePlanModel: boolean = false;
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
   let createPlanButtonText: string = 'Create';
   let durationString: string = 'None';
@@ -218,6 +220,7 @@
 
   $: startTimeField = field<string>('', [required, $plugins.time.primary.validate]);
   $: endTimeField = field<string>('', [required, $plugins.time.primary.validate]);
+  $: canChangePlanModel = selectedPlan !== undefined && featurePermissions.plan.canUpdateModel(user, selectedPlan);
 
   $: if ($plans) {
     nameField.updateValidators([
@@ -643,6 +646,12 @@
     }
     return `${model.name} (Version: ${model.version})`;
   }
+
+  async function openChangePlanMissionModelModal() {
+    if (selectedPlan !== undefined) {
+      await effects.updatePlanMissionModel(selectedPlan, user);
+    }
+  }
 </script>
 
 <PageTitle title="Plans" />
@@ -705,6 +714,17 @@
                   <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="name">Model</Label>
                   <InputStellar sizeVariant="xs" disabled class="w-full" name="name" value={selectedPlanModelName} />
                 </Input>
+                <button
+                  class="st-button secondary"
+                  use:tooltip={{ content: 'Change Mission Model', placement: 'top' }}
+                  use:permissionHandler={{
+                    hasPermission: canChangePlanModel,
+                    permissionError: `You don't have permission to change mission model`,
+                  }}
+                  on:click|stopPropagation={openChangePlanMissionModelModal}
+                >
+                  <SwapIcon />
+                </button>
               </div>
               <Input layout="inline">
                 <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="id">Name</Label>
