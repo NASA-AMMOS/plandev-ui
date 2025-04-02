@@ -1,5 +1,6 @@
 <script lang="ts">
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
+  import { mode } from 'mode-watcher';
   import { createEventDispatcher } from 'svelte';
   import { isValidHex, pickTextColorBasedOnBgColor, shadeColor } from '../../utilities/color';
   import { classNames } from '../../utilities/generic';
@@ -26,12 +27,12 @@
 
   $: {
     let finalColor = typeof color === 'string' && isValidHex(color) ? color : '#f8f8f8';
-    const mode = pickTextColorBasedOnBgColor(finalColor);
+    const lightOrDark = pickTextColorBasedOnBgColor(finalColor);
     let textColor = '';
     let removeColor = '';
     let removeBgColor = '';
 
-    if (mode === 'dark') {
+    if (lightOrDark === 'dark') {
       textColor = shadeColor(finalColor, 5);
       removeColor = shadeColor(finalColor || '', 5.5);
       removeBgColor = shadeColor(finalColor, 1.1);
@@ -40,14 +41,19 @@
       removeColor = 'rgba(255,255,255, 0.9)';
       removeBgColor = shadeColor(finalColor, 0.7);
     }
+    if ($mode === 'dark') {
+      chipStyle = `
+        background: ${finalColor}22;
+        border: 1px solid ${lightOrDark === 'light' ? 'rgba(255,255,255,0.2)' : `${finalColor}40`};
+        color: ${lightOrDark === 'light' ? 'rgba(255,255,255,0.9)' : `${finalColor}f0`};
+      `;
+    } else {
+      chipStyle = `
+        background: ${finalColor};
+        color: ${textColor};
+      `;
+    }
 
-    chipStyle = `
-      background: ${finalColor};
-      color: ${textColor};
-      @media (prefers-color-scheme: dark) {
-        background: ${finalColor}33;
-      }
-    `;
     removeStyle = `background:${removeBgColor};color:${removeColor}`;
   }
 </script>
@@ -129,10 +135,5 @@
     right: 0;
     top: 0;
     width: 24px;
-  }
-
-  /* Add dark mode styles using CSS variables */
-  :global(.dark) .st-chip {
-    background-color: color-mix(in srgb, var(--background) 80%, transparent);
   }
 </style>

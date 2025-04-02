@@ -4,19 +4,17 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
+  import { Button, Input, Label, Select } from '@nasa-jpl/stellar-svelte';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
-  import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
-  import XIcon from 'bootstrap-icons/icons/x.svg?component';
   import { flatten } from 'lodash-es';
+  import { Clipboard, Import, X } from 'lucide-svelte';
   import { onDestroy, onMount } from 'svelte';
   import ExportIcon from '../../assets/export.svg?component';
-  import ImportIcon from '../../assets/import.svg?component';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
   import DatePickerField from '../../components/form/DatePickerField.svelte';
   import Field from '../../components/form/Field.svelte';
-  import Input from '../../components/form/Input.svelte';
   import ModelStatusRollup from '../../components/model/ModelStatusRollup.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
@@ -194,7 +192,7 @@
   let filterText: string = '';
   let isPlanImportMode: boolean = false;
   let orderedModels: ModelSlim[] = [];
-  let nameInputField: HTMLInputElement;
+  let nameInputField: Input;
   let planExporting: boolean = false;
   let planTags: Tag[] = [];
   let selectedModel: ModelSlim | undefined;
@@ -362,6 +360,9 @@
   });
   $: simulationTemplates.setVariables({ modelId: $modelIdField.value });
   $: selectedModel = $models.find(({ id }) => $modelIdField.value === id);
+  $: if (typeof $modelIdField.value === 'number') {
+    simTemplateField.reset(null);
+  }
 
   onMount(() => {
     const queryModelId = $page.url.searchParams.get(SearchParameters.MODEL_ID);
@@ -370,7 +371,12 @@
       modelIdField.validateAndSet(parseFloat(queryModelId));
       removeQueryParam(SearchParameters.MODEL_ID);
       if (nameInputField) {
-        nameInputField.focus();
+        // Access this element by ID since there is no focus mechanism for this input component
+        // https://github.com/huntabyte/shadcn-svelte/discussions/224
+        const el = document.getElementById('plan-name');
+        if (el) {
+          el.focus();
+        }
       }
     }
   });
@@ -630,6 +636,13 @@
   function selectPlan(planId: number | null) {
     selectedPlanId = planId;
   }
+
+  function getDisplayNameForModel(model?: ModelSlim) {
+    if (!model) {
+      return '';
+    }
+    return `${model.name} (Version: ${model.version})`;
+  }
 </script>
 
 <PageTitle title="Plans" />
@@ -644,37 +657,42 @@
       <svelte:fragment slot="header">
         {#if selectedPlan}
           <SectionTitle>Selected plan</SectionTitle>
-          <div class="selected-plan-buttons">
-            <div class="transfer-button-container">
-              <button
-                disabled={planExporting}
-                class="st-button secondary transfer-button"
-                on:click={onExportSelectedPlan}
-                use:tooltip={{
-                  content: 'Export Selected Plan',
-                  placement: 'top',
-                }}
-              >
-                <ExportIcon /> Export{#if planExporting}ing...{/if}
-              </button>
-            </div>
-            <button
-              class="st-button icon fs-6"
-              on:click={deselectPlan}
-              use:tooltip={{ content: 'Deselect plan', placement: 'top' }}
+          <div class="flex gap-1">
+            <div
+              use:tooltip={{
+                content: 'Export Selected Plan',
+                placement: 'top',
+              }}
             >
-              <XIcon />
-            </button>
+              <Button variant="outline" disabled={planExporting} class="flex gap-1" on:click={onExportSelectedPlan}>
+                <ExportIcon /> Export{#if planExporting}ing...{/if}
+              </Button>
+            </div>
+
+            <div use:tooltip={{ content: 'Deselect plan', placement: 'top' }}>
+              <Button size="icon" variant="ghost" disabled={planExporting} on:click={deselectPlan}>
+                <X size={12} />
+              </Button>
+            </div>
           </div>
         {:else}
           <SectionTitle>New Plan</SectionTitle>
-          <button
-            class="st-button secondary transfer-button"
-            type="button"
-            on:click={isPlanImportMode ? hideImportPlan : showImportPlan}
+          <div
+            use:permissionHandler={{
+              hasPermission: canCreate,
+              permissionError,
+            }}
           >
-            <ImportIcon /> Import
-          </button>
+            <Button
+              disabled={!canCreate}
+              type="button"
+              on:click={isPlanImportMode ? hideImportPlan : showImportPlan}
+              class="gap-1"
+              variant="outline"
+            >
+              <Import size={16} /> Import
+            </Button>
+          </div>
         {/if}
       </svelte:fragment>
 
@@ -682,59 +700,51 @@
         {#if selectedPlan}
           <div class="plan-metadata">
             <fieldset>
-              <Input layout="inline">
-                <label class="plan-metadata-item-label" for="name">Model</label>
-                <input
-                  disabled
-                  class="st-input w-full"
-                  name="name"
-                  use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}
-                  value={selectedPlanModelName}
-                />
-              </Input>
-              <Input layout="inline">
-                <label class="plan-metadata-item-label" for="id">Name</label>
-                <input disabled class="st-input w-full" name="id" value={selectedPlan.name} />
-              </Input>
-              <Input layout="inline">
-                <label class="plan-metadata-item-label" for="start-time">
+              <!-- TODO consider creating a Layout component to handle stacked vs horizontal label + inputs? -->
+              <div
+                use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}
+                class="grid grid-cols-[40%_auto] items-center gap-2 py-1"
+              >
+                <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="name">Model</Label>
+                <Input sizeVariant="xs" disabled class="w-full" name="name" value={selectedPlanModelName} />
+              </div>
+              <div class="grid grid-cols-[40%_auto] items-center gap-2 py-1">
+                <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="id">Name</Label>
+                <Input sizeVariant="xs" disabled class="w-full" name="id" value={selectedPlan.name} />
+              </div>
+              <div class="grid grid-cols-[40%_auto] items-center gap-2 py-1">
+                <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="start-time">
                   Start Time - {$plugins.time.primary.label}
-                </label>
-                <input disabled class="st-input w-full" name="start-time" value={selectedPlanStartTime} />
-              </Input>
-              <Input layout="inline">
-                <label class="plan-metadata-item-label" for="end-time">
+                </Label>
+                <Input sizeVariant="xs" disabled class="w-full" name="start-time" value={selectedPlanStartTime} />
+              </div>
+              <div class="grid grid-cols-[40%_auto] items-center gap-2 py-1">
+                <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="end-time">
                   End Time - {$plugins.time.primary.label}
-                </label>
-                <input disabled class="st-input w-full" name="end-time" value={selectedPlanEndTime} />
-              </Input>
-              <Input layout="inline">
-                <label class="plan-metadata-item-label" for="duration"> Plan Duration </label>
-                <input
+                </Label>
+                <Input sizeVariant="xs" disabled class="w-full" name="end-time" value={selectedPlanEndTime} />
+              </div>
+              <div class="grid grid-cols-[40%_auto] items-center gap-2 py-1">
+                <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="duration">
+                  Plan Duration
+                </Label>
+                <Input
+                  sizeVariant="xs"
                   disabled
-                  class="st-input w-full"
+                  class="w-full"
                   name="duration"
                   value={convertUsToDurationString(getIntervalInMs(selectedPlan.duration) * 1000)}
                 />
-              </Input>
-              <Input layout="inline">
-                <label class="plan-metadata-item-label" for="tags">Tags</label>
+              </div>
+              <div class="grid grid-cols-[40%_auto] items-center gap-2 py-1">
+                <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="tags">Tags</Label>
                 <TagsInput
-                  use={[
-                    [
-                      permissionHandler,
-                      {
-                        hasPermission: canCreate,
-                        permissionError,
-                      },
-                    ],
-                  ]}
                   disabled
                   options={$tags}
                   selected={selectedPlan.tags.map(({ tag }) => tag)}
                   on:change={onTagsInputChange}
                 />
-              </Input>
+              </div>
             </fieldset>
           </div>
           <fieldset>
@@ -744,74 +754,103 @@
           <form on:submit|preventDefault={createPlan}>
             <AlertError class="m-2" error={$createPlanError} />
 
-            <fieldset class="plan-import-container" hidden={!isPlanImportMode}>
-              <button class="close-import" type="button" on:click={hideImportPlan}>
+            <fieldset class="relative m-1 rounded bg-accent px-3 py-2" hidden={!isPlanImportMode}>
+              <Button
+                size="icon-xs"
+                variant="ghost"
+                class="absolute right-1 top-1"
+                type="button"
+                on:click={hideImportPlan}
+              >
                 <CloseIcon />
-              </button>
-              <label for="file">Plan File (JSON)</label>
-              <div class="import-input-container">
-                <input
-                  class="w-full"
-                  name="file"
-                  type="file"
-                  accept="application/json"
-                  bind:files={planUploadFiles}
-                  bind:this={planUploadFileInput}
-                  use:permissionHandler={{
-                    hasPermission: canCreate,
-                    permissionError,
-                  }}
-                  on:change={onPlanFileChange}
-                />
-              </div>
+              </Button>
+              <Label class="pb-1" size="sm" for="file">Plan File (JSON)</Label>
+              <!-- TODO consider porting the input files fix to stellar https://github.com/huntabyte/shadcn-svelte/pull/1700/files -->
+              <input
+                class="leading-1 flex h-6 w-full cursor-pointer rounded-md border border-input bg-background px-2 pl-0 text-xs leading-5
+                          ring-offset-background file:cursor-pointer file:border-0 file:bg-transparent file:font-medium
+                          placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                name="file"
+                type="file"
+                accept="application/json"
+                bind:files={planUploadFiles}
+                bind:this={planUploadFileInput}
+                use:permissionHandler={{
+                  hasPermission: canCreate,
+                  permissionError,
+                }}
+                on:change={onPlanFileChange}
+              />
               {#if planUploadFilesError}
-                <div class="error">{planUploadFilesError}</div>
+                <div class="overflow-hidden text-ellipsis whitespace-nowrap text-red-500">{planUploadFilesError}</div>
               {/if}
             </fieldset>
 
             <Field field={modelIdField}>
-              <label for="model" slot="label">Models</label>
-              <select
-                class="st-select w-full"
-                data-type="number"
-                name="model"
+              <Label size="sm" for="model" class="pb-1">Model</Label>
+              <div
                 use:permissionHandler={{
                   hasPermission: canCreate,
                   permissionError,
                 }}
               >
-                <option value="-1" />
-                {#each orderedModels as model (model.id)}
-                  <option value={model.id}>
-                    {model.name}
-                    (Version: {model.version})
-                  </option>
-                {/each}
-              </select>
+                <Select.Root
+                  name="model"
+                  selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}
+                  disabled={!canCreate}
+                >
+                  <Select.Trigger value={selectedModel?.id} size="xs">
+                    <Select.Value placeholder="Select a model" aria-label="Select Model" />
+                  </Select.Trigger>
+                  <Select.Content class="min-w-[240px] p-0" sameWidth={false} align="start" datatype="number">
+                    <Select.Group>
+                      {#each orderedModels as model (model.id)}
+                        <Select.Item
+                          size="xs"
+                          value={model.id}
+                          label={getDisplayNameForModel(model)}
+                          class="flex gap-1"
+                        >
+                          {model.name}
+                          <div class="text-muted-foreground">(Version: {model.version})</div>
+                        </Select.Item>
+                      {/each}
+                    </Select.Group>
+                  </Select.Content>
+                  <Select.Input type="number" name="model" />
+                </Select.Root>
+              </div>
             </Field>
+
             {#if selectedModel}
-              <div class="model-status">
+              <div class="px-4 pt-1">
                 <ModelStatusRollup mode="rollup" model={selectedModel} showCompleteStatus />
               </div>
             {/if}
 
             <Field field={nameField}>
-              <label for="name" slot="label">Name</label>
-              <input
-                bind:this={nameInputField}
-                autocomplete="off"
-                class="st-input w-100"
-                name="name"
-                aria-label="name"
+              <Label size="sm" class="pb-1 text-xs font-normal" for="name" slot="label">Name</Label>
+              <div
                 use:permissionHandler={{
                   hasPermission: canCreate,
                   permissionError,
                 }}
-              />
+              >
+                <Input
+                  disabled={!canCreate}
+                  id="plan-name"
+                  bind:this={nameInputField}
+                  autocomplete="off"
+                  sizeVariant="xs"
+                  name="name"
+                  aria-label="name"
+                />
+              </div>
             </Field>
 
             <fieldset>
               <DatePickerField
+                disabled={!canCreate}
                 layout="stacked"
                 useFallback={!$plugins.time.enableDatePicker}
                 field={startTimeField}
@@ -831,6 +870,7 @@
             </fieldset>
             <fieldset>
               <DatePickerField
+                disabled={!canCreate}
                 useFallback={!$plugins.time.enableDatePicker}
                 field={endTimeField}
                 label={`End Time - ${$plugins.time.primary.formatString}`}
@@ -849,37 +889,52 @@
             </fieldset>
 
             <fieldset>
-              <label for="plan-duration">Plan Duration</label>
-              <input class="st-input w-full" disabled id="plan-duration" name="duration" value={durationString} />
+              <Label class="pb-1" size="sm" for="plan-duration">Plan Duration</Label>
+              <Input sizeVariant="xs" disabled id="plan-duration" name="duration" value={durationString} />
             </fieldset>
 
             <Field field={simTemplateField}>
-              <label for="simulation-templates" slot="label"> Simulation Templates </label>
-              <select
-                class="st-select w-full"
-                data-type="number"
-                disabled={!$simulationTemplates.length}
-                name="simulation-templates"
+              <Label class="pb-1" size="sm" for="simulation-templates" slot="label">Simulation Templates</Label>
+              <div
                 use:permissionHandler={{
                   hasPermission: canCreate,
                   permissionError,
                 }}
               >
-                {#if !$simulationTemplates.length}
-                  <option value="null">Empty</option>
-                {:else}
-                  <option value="null" />
-                  {#each $simulationTemplates as template}
-                    <option value={template.id}>
-                      {template.description}
-                    </option>
-                  {/each}
-                {/if}
-              </select>
+                <Select.Root
+                  disabled={!canCreate}
+                  name="model"
+                  selected={{
+                    value: $simTemplateField.value,
+                    label: !$simulationTemplates.length
+                      ? 'Empty'
+                      : $simulationTemplates.find(t => t.id === $simTemplateField.value)?.description,
+                  }}
+                >
+                  <Select.Trigger size="xs">
+                    <Select.Value aria-label="Select Simulation Template" />
+                  </Select.Trigger>
+                  <Select.Content class="min-w-[240px] p-0" sameWidth={false} align="start" datatype="number">
+                    <Select.Group>
+                      {#if !$simulationTemplates.length}
+                        <Select.Item size="xs" value={null} label="Empty">Empty</Select.Item>
+                      {:else}
+                        <Select.Item size="xs" value={null} label="&nbsp;" />
+                        {#each $simulationTemplates as template (template.id)}
+                          <Select.Item size="xs" value={template.id} label={template.description}>
+                            {template.description}
+                          </Select.Item>
+                        {/each}
+                      {/if}
+                    </Select.Group>
+                  </Select.Content>
+                  <Select.Input type="number" name="simulation-templates" />
+                </Select.Root>
+              </div>
             </Field>
 
             <fieldset>
-              <label for="plan-duration">Tags</label>
+              <Label size="sm" for="plan-duration" class="pb-1">Tags</Label>
               <TagsInput
                 use={[
                   [
@@ -890,24 +945,24 @@
                     },
                   ],
                 ]}
+                disabled={!canCreate}
                 options={$tags}
                 selected={planTags}
                 on:change={onTagsInputChange}
               />
             </fieldset>
 
-            <fieldset>
-              <button
-                class="st-button w-full"
-                disabled={!createButtonEnabled}
-                type="submit"
+            <fieldset class="my-4">
+              <div
                 use:permissionHandler={{
                   hasPermission: canCreate,
                   permissionError,
                 }}
               >
-                {createPlanButtonText}
-              </button>
+                <Button disabled={!createButtonEnabled} type="submit" class="w-full" variant="default">
+                  {createPlanButtonText}
+                </Button>
+              </div>
             </fieldset>
           </form>
         {/if}
@@ -918,10 +973,18 @@
       <svelte:fragment slot="header">
         <div class="flex items-center gap-2">
           <SectionTitle>
-            <PlanIcon slot="icon" />
+            <Clipboard size={16} slot="icon" />
             Plans
           </SectionTitle>
-          <input bind:value={filterText} class="st-input" placeholder="Filter plans" style="width: 300px" />
+          <Input
+            bind:value={filterText}
+            placeholder="Filter plans"
+            autocomplete="off"
+            class="w-[300px]"
+            sizeVariant="xs"
+            name="name"
+            aria-label="name"
+          />
         </div>
       </svelte:fragment>
 
@@ -943,66 +1006,3 @@
     </Panel>
   </CssGrid>
 </CssGrid>
-
-<style>
-  .model-status {
-    padding: 5px 16px 0;
-  }
-
-  .plan-import-container {
-    background: var(--st-gray-15);
-    border-radius: 5px;
-    margin: 5px;
-    padding: 8px 11px 8px;
-    position: relative;
-  }
-
-  .plan-import-container[hidden] {
-    display: none;
-  }
-
-  .transfer-button-container {
-    display: grid;
-    grid-template-columns: auto auto;
-    position: relative;
-  }
-
-  .transfer-button {
-    column-gap: 4px;
-    position: relative;
-  }
-
-  .import-input-container {
-    column-gap: 0.5rem;
-    display: grid;
-    grid-template-columns: auto min-content;
-  }
-
-  .close-import {
-    background: none;
-    border: 0;
-    cursor: pointer;
-    height: 1.3rem;
-    padding: 0;
-    position: absolute;
-    right: 3px;
-    top: 3px;
-  }
-
-  .error {
-    color: var(--st-red);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .selected-plan-buttons {
-    column-gap: 0.25rem;
-    display: grid;
-    grid-template-columns: repeat(2, min-content);
-  }
-
-  .plan-metadata-item-label {
-    white-space: nowrap;
-  }
-</style>

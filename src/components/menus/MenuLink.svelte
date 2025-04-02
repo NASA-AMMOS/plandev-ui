@@ -21,12 +21,13 @@
 <a
   {...$$restProps}
   class={twMerge(
-    'flex cursor-pointer select-none items-center gap-2 rounded-sm px-3 py-3 text-[13px] font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50',
+    'muted flex cursor-pointer select-none items-center gap-2 rounded-sm px-3 py-3 text-[13px] font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50',
     className,
   )}
   class:disabled
   role="menuitem"
   use:useActions={use || []}
+  on:click
   {href}
 >
   <slot />

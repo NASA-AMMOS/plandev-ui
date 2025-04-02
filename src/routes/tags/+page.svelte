@@ -288,9 +288,9 @@
         <SectionTitle>
           <svelte:fragment slot="icon">
             {#if selectedTag}
-              <PenIcon slot="icon" class="opacity-30" />
+              <PenIcon slot="icon" />
             {:else}
-              <PlusIcon slot="icon" class="opacity-30" />
+              <PlusIcon slot="icon" />
             {/if}
           </svelte:fragment>
           {#if selectedTag}
@@ -317,7 +317,7 @@
                 on:keyup={onNameFieldKeyup}
                 bind:this={nameInputField}
                 autocomplete="off"
-                class="mb-1 h-6 w-full px-2"
+                sizeVariant="xs"
                 name="name"
                 placeholder="Enter tag name"
               />
@@ -334,7 +334,7 @@
                 }}
                 class="w-full"
               >
-                <Input on:keyup={onColorFieldKeyup} autocomplete="off" name="color" class="h-6 w-full px-2" />
+                <Input on:keyup={onColorFieldKeyup} autocomplete="off" name="color" sizeVariant="xs" />
               </div>
               <!-- TODO add permission handler here -->
               <div class="size-6">
@@ -400,7 +400,7 @@
                   permissionError,
                 }}
               >
-                <Button class="w-full dark:text-white" disabled={!submitButtonEnabled || creatingTag} type="submit">
+                <Button class="w-full" disabled={!submitButtonEnabled || creatingTag} type="submit">
                   {creatingTag ? 'Creating...' : 'Create'}
                 </Button>
               </div>
@@ -439,10 +439,10 @@
       <svelte:fragment slot="header">
         <div class="flex w-full max-w-sm items-center gap-1">
           <SectionTitle>
-            <TagsIcon slot="icon" class="opacity-30" />
+            <TagsIcon slot="icon" />
             Tags
           </SectionTitle>
-          <Input bind:value={filterText} placeholder="Filter tags" class="h-6 w-full px-2" />
+          <Input bind:value={filterText} placeholder="Filter tags" sizeVariant="xs" />
         </div>
       </svelte:fragment>
 

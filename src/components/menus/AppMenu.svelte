@@ -4,21 +4,23 @@
   import { base } from '$app/paths';
   import { env } from '$env/dynamic/public';
   import { Button, Popover } from '@nasa-jpl/stellar-svelte';
-  import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
-  import GraphQLIcon from '@nasa-jpl/stellar/icons/graphql.svg?component';
-  import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
-  import TagIcon from '@nasa-jpl/stellar/icons/tag.svg?component';
-  import ArchiveIcon from 'bootstrap-icons/icons/archive.svg?component';
-  import BarChartIcon from 'bootstrap-icons/icons/bar-chart.svg?component';
-  import BoxArrowRightIcon from 'bootstrap-icons/icons/box-arrow-right.svg?component';
-  import BracesAsteriskIcon from 'bootstrap-icons/icons/braces-asterisk.svg?component';
-  import CodeSquareIcon from 'bootstrap-icons/icons/code-square.svg?component';
-  import DiagramIcon from 'bootstrap-icons/icons/diagram-3.svg?component';
-  import InfoCircleIcon from 'bootstrap-icons/icons/info-circle.svg?component';
-  import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
-  import JournalTextIcon from 'bootstrap-icons/icons/journal-text.svg?component';
-  import JournalsIcon from 'bootstrap-icons/icons/journals.svg?component';
-  import { ChevronDown } from 'lucide-svelte';
+  import {
+    Archive,
+    BookA,
+    BookOpen,
+    BugPlay,
+    CalendarRange,
+    ChevronDown,
+    ChevronsLeftRight,
+    Clipboard,
+    FileBox,
+    FileCode2,
+    FlipHorizontal2,
+    Info,
+    LogOut,
+    Network,
+    Tags,
+  } from 'lucide-svelte';
   import { onMount } from 'svelte';
   import AerieWordmarkDark from '../../assets/aerie-wordmark-dark.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
@@ -45,6 +47,10 @@
   onMount(async () => {
     version = await effects.getVersion();
   });
+
+  function closeMenu() {
+    isOpen = false;
+  }
 </script>
 
 <div class="relative -ml-2 flex cursor-pointer items-center justify-center gap-1" role="none">
@@ -66,24 +72,24 @@
         <!-- Planning Column -->
         <div class="flex flex-col gap-0.5">
           <h3 class="px-3 pb-2 pt-2 text-sm font-medium text-muted-foreground">Planning</h3>
-          <MenuLink className="text-sm py-1.5" href="{base}/plans">
-            <PlanIcon />
+          <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/plans">
+            <Clipboard size={16} />
             Plans
           </MenuLink>
-          <MenuLink className="text-sm py-1.5" href="{base}/models">
-            <BarChartIcon />
+          <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/models">
+            <FileBox size={16} />
             Models
           </MenuLink>
-          <MenuLink className="text-sm py-1.5" href="{base}/constraints">
-            <BracesAsteriskIcon />
+          <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/constraints">
+            <FlipHorizontal2 size={16} />
             Constraints
           </MenuLink>
-          <MenuLink className="text-sm py-1.5" href="{base}/scheduling">
-            <CalendarIcon />
+          <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/scheduling">
+            <CalendarRange size={16} />
             Scheduling
           </MenuLink>
-          <MenuLink className="text-sm py-1.5" href="{base}/tags">
-            <TagIcon />
+          <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/tags">
+            <Tags size={16} />
             Tags
           </MenuLink>
         </div>
@@ -91,20 +97,20 @@
         <!-- Sequencing Column -->
         <div class="flex flex-col gap-0.5">
           <h3 class="px-3 pb-2 pt-2 text-sm font-medium text-muted-foreground">Sequencing</h3>
-          <MenuLink className="text-sm py-1.5" href="{base}/sequencing">
-            <JournalCodeIcon />
+          <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/sequencing">
+            <FileCode2 size={16} />
             Sequence Editor
           </MenuLink>
-          <MenuLink className="text-sm py-1.5" href="{base}/dictionaries">
-            <JournalTextIcon />
+          <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/dictionaries">
+            <BookA size={16} />
             Dictionaries
           </MenuLink>
-          <MenuLink className="text-sm py-1.5" href="{base}/expansion/rules">
-            <CodeSquareIcon />
+          <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/expansion/rules">
+            <ChevronsLeftRight size={16} />
             Expansion
           </MenuLink>
-          <MenuLink className="text-sm py-1.5" href="{base}/parcels">
-            <ArchiveIcon />
+          <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/parcels">
+            <Archive size={16} />
             Parcels
           </MenuLink>
         </div>
@@ -112,16 +118,31 @@
         <!-- Resources Column -->
         <div class="flex flex-col gap-0.5">
           <h3 class="px-3 pb-2 pt-2 text-sm font-medium text-muted-foreground">Resources</h3>
-          <MenuLink target="_blank" className="text-sm py-1.5" href="https://nasa-ammos.github.io/aerie-docs/">
-            <JournalsIcon />
+          <MenuLink
+            on:click={closeMenu}
+            target="_blank"
+            className="text-sm py-1.5"
+            href="https://nasa-ammos.github.io/aerie-docs/"
+          >
+            <BookOpen size={16} />
             Documentation
           </MenuLink>
-          <MenuLink target="_blank" className="text-sm py-1.5" href={env.PUBLIC_GATEWAY_CLIENT_URL}>
-            <DiagramIcon />
+          <MenuLink
+            on:click={closeMenu}
+            target="_blank"
+            className="text-sm py-1.5"
+            href={env.PUBLIC_GATEWAY_CLIENT_URL}
+          >
+            <Network size={16} />
             Gateway
           </MenuLink>
-          <MenuLink target="_blank" className="text-sm py-1.5" href="{env.PUBLIC_GATEWAY_CLIENT_URL}/api-playground">
-            <GraphQLIcon />
+          <MenuLink
+            on:click={closeMenu}
+            target="_blank"
+            className="text-sm py-1.5"
+            href="{env.PUBLIC_GATEWAY_CLIENT_URL}/api-playground"
+          >
+            <BugPlay size={16} />
             GraphQL Playground
           </MenuLink>
           <MenuItem
@@ -132,7 +153,7 @@
               showAboutModal();
             }}
           >
-            <InfoCircleIcon />
+            <Info size={16} />
             About
           </MenuItem>
         </div>
@@ -144,8 +165,8 @@
           {#if user}
             <div class="flex items-center gap-2 text-xs">
               Logged in as: {user.id}
-              <Button class="flex items-center gap-2" variant="outline" size="sm" on:click={() => logout()}>
-                <BoxArrowRightIcon />
+              <Button class="flex items-center gap-1" variant="outline" size="sm" on:click={() => logout()}>
+                <LogOut size={12} />
                 Logout
               </Button>
             </div>

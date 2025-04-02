@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Input as InputStellar, Label } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { FieldStore } from '../../types/form';
   import { tooltip } from '../../utilities/tooltip';
@@ -36,11 +37,15 @@
     <Input {layout}>
       {#if label}
         {#if layout === 'inline'}
-          <label use:tooltip={{ content: label, placement: 'top' }} class:error={$field.invalid} for={name}>
-            {label}
-          </label>
+          <div use:tooltip={{ content: label, placement: 'top' }}>
+            <Label size="sm" class="flex pb-1 {$field.invalid ? 'text-red-500' : ''}" for={name}>
+              {label}
+            </Label>
+          </div>
         {:else}
-          <label class:error={$field.invalid} for={name}>{label}</label>
+          <Label size="sm" class="flex pb-1 {$field.invalid ? 'text-red-500' : ''}" for={name}>
+            {label}
+          </Label>
         {/if}
       {/if}
       <DatePicker
@@ -59,24 +64,16 @@
     </Input>
   </div>
 {:else}
-  <div class="date-picker-field-fallback">
+  <div class="[&_fieldset]:p-0">
     <Field {field} on:change={onChange}>
       <Input {layout}>
-        <label use:tooltip={{ content: 'Start Time', placement: 'top' }} for="start-time">
-          {label}
-        </label>
-        <input autocomplete="off" class="st-input w-full" name="start-time" on:keyup={() => {}} />
+        <div use:tooltip={{ content: 'Start Time', placement: 'top' }}>
+          <Label size="sm" class="flex pb-1" for="start-time">
+            {label}
+          </Label>
+        </div>
+        <InputStellar sizeVariant="xs" autocomplete="off" name="start-time" on:keyup={() => {}} {disabled} />
       </Input>
     </Field>
   </div>
 {/if}
-
-<style>
-  .date-picker-field-fallback :global(fieldset) {
-    padding: 0;
-  }
-
-  .date-picker-field :global(.input) {
-    position: inherit;
-  }
-</style>
