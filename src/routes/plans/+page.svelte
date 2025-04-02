@@ -902,7 +902,7 @@
                 }}
               >
                 <Select.Root
-                  disabled={!canCreate}
+                  disabled={!$simulationTemplates.length || !canCreate}
                   name="model"
                   selected={{
                     value: $simTemplateField.value,
