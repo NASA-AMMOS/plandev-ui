@@ -66,7 +66,7 @@ test.describe.serial('Plan Sequences & Expansion', () => {
     await plan.showPanel(PanelNames.SIMULATION, true);
     await plan.runSimulation();
     await page.waitForTimeout(1000); // wait for sim results
-    await plan.showPanel(PanelNames.SEQUENCES_AND_EXPANSION);
+    await plan.showPanel(PanelNames.EXPANSION);
     await plan.sequenceExpansionNewButton.click();
     await plan.sequenceExpansionNewSequenceButton.click();
     await plan.sequenceExpansionNewSequenceName.fill(expansionSequenceName);
@@ -77,7 +77,7 @@ test.describe.serial('Plan Sequences & Expansion', () => {
   test('Sequence Filter can be created', async () => {
     await plan.showPanel(PanelNames.SIMULATION, true);
     await page.waitForTimeout(1000); // wait for sim results
-    await plan.showPanel(PanelNames.SEQUENCES_AND_EXPANSION);
+    await plan.showPanel(PanelNames.EXPANSION);
     await plan.createSequenceFilter(sequenceFilterName);
   });
   test('Sequence Filter can be applied to a plan', async () => {
@@ -85,7 +85,7 @@ test.describe.serial('Plan Sequences & Expansion', () => {
     await plan.showPanel(PanelNames.SIMULATION, true);
     await plan.runSimulation();
     await page.waitForTimeout(1000); // wait for sim results
-    await plan.showPanel(PanelNames.SEQUENCES_AND_EXPANSION);
+    await plan.showPanel(PanelNames.EXPANSION);
     await plan.applySequenceFilter(sequenceFilterName, plans.planId);
   });
 });

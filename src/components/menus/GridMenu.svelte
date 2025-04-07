@@ -96,9 +96,9 @@
       <ExternalEventIcon />
       Selected External Event
     </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('SequencesAndExpansionPanel')}>
+    <MenuItem on:click={() => onClickMenuItem('ExpansionPanel')}>
       <JournalCodeIcon />
-      Sequences & Expansion
+      Expansion
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('SimulationPanel')}>
       <GearWideConnectedIcon />

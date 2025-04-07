@@ -94,7 +94,7 @@ test.describe.serial('Sequence Templates', () => {
   });
   test('Sequence Templating can be run', async () => {
     await plan.goto();
-    await plan.showPanel(PanelNames.SEQUENCES_AND_EXPANSION);
+    await plan.showPanel(PanelNames.EXPANSION);
     await plan.createSequenceFilter(sequenceFilterName);
     await plan.applySequenceFilter(sequenceFilterName, plans.planId);
     const expansionSequenceItem = page.locator('.sne-items').getByText(`${sequenceFilterName} Sequence`);

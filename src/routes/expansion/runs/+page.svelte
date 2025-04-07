@@ -2,7 +2,10 @@
 
 <script lang="ts">
   import ExpansionRuns from '../../../components/expansion/ExpansionRuns.svelte';
-  import { SEQUENCE_EXPANSION_MODE, TYPESCRIPT_EXPANSION_NOT_AVAILABLE_MESSAGE } from '../../../constants/command-expansion';
+  import {
+    SEQUENCE_EXPANSION_MODE,
+    TYPESCRIPT_EXPANSION_NOT_AVAILABLE_MESSAGE,
+  } from '../../../constants/command-expansion';
   import { SequencingMode } from '../../../enums/sequencing';
   import type { PageData } from './$types';
 

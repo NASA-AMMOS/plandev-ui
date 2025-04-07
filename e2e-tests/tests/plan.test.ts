@@ -61,10 +61,10 @@ test.describe.serial('Plan', () => {
     await expect(plan.panelConstraints).toBeVisible();
   });
 
-  test(`Clicking on 'Sequences & Expansion' in the grid menu should show the expansion panel`, async () => {
-    await expect(plan.panelSequencesAndExpansion).not.toBeVisible();
-    await plan.showPanel(PanelNames.SEQUENCES_AND_EXPANSION);
-    await expect(plan.panelSequencesAndExpansion).toBeVisible();
+  test(`Clicking on 'Expansion' in the grid menu should show the expansion panel`, async () => {
+    await expect(plan.panelExpansion).not.toBeVisible();
+    await plan.showPanel(PanelNames.EXPANSION);
+    await expect(plan.panelExpansion).toBeVisible();
   });
 
   test(`Clicking on 'Plan Metadata' in the grid menu should show the plan metadata panel`, async () => {

@@ -88,7 +88,7 @@ test.describe.serial('Expansion', () => {
   });
   test('Typescript Expansion can be run', async () => {
     await plan.goto();
-    await plan.showPanel(PanelNames.SEQUENCES_AND_EXPANSION);
+    await plan.showPanel(PanelNames.EXPANSION);
     await page.waitForSelector(`option:has-text("${expansionSets.expansionSetName}")`, {
       state: 'attached',
     });
