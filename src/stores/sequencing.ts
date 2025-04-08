@@ -5,6 +5,7 @@ import type {
 } from '@nasa-jpl/aerie-ampcs';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 import type { User } from '../types/app';
+import type { SequenceFilter } from '../types/expansion';
 import {
   type ChannelDictionaryMetadata,
   type CommandDictionaryMetadata,
@@ -12,7 +13,6 @@ import {
   type Parcel,
   type ParcelBundle,
   type ParcelToParameterDictionary,
-  type SequenceFilter,
   type UserSequence,
   type Workspace,
 } from '../types/sequencing';

@@ -111,6 +111,8 @@ import type {
   ExpansionSequenceToActivityInsertInput,
   ExpansionSet,
   SeqId,
+  SequenceFilter,
+  SequenceFilterInsertInput,
 } from '../types/expansion';
 import type { Extension, ExtensionPayload } from '../types/extension';
 import type {
@@ -203,8 +205,6 @@ import {
   type ParcelToParameterDictionary,
   type SeqJson,
   type SequenceAdaptationMetadata,
-  type SequenceFilter,
-  type SequenceFilterInsertInput,
   type UserSequence,
   type UserSequenceInsertInput,
   type Workspace,

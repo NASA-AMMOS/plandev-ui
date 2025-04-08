@@ -1,4 +1,6 @@
+import type { ActivityFilterField } from '../enums/filter';
 import type { PartialWith, UserId } from './app';
+import type { DynamicFilter } from './filter';
 import type { SeqJson } from './sequencing';
 import type { SpanId } from './simulation';
 import type { Tag } from './tags';
@@ -16,6 +18,25 @@ export type ExpansionRule = {
   tags: { tag: Tag }[];
   updated_at: string;
   updated_by: UserId;
+};
+
+export type SequenceFilter = {
+  filter: SequenceActivityFilter;
+  id: number;
+  model_id: number;
+  name: string;
+};
+
+export type SequenceFilterInsertInput = Pick<SequenceFilter, 'filter' | 'model_id' | 'name'>;
+
+export type SequenceActivityFilter = {
+  dynamic_type_filters?: DynamicFilter<Pick<typeof ActivityFilterField, 'Type' | 'Subsystem'>>[];
+  other_filters?: DynamicFilter<Pick<typeof ActivityFilterField, 'Tags' | 'Parameter' | 'SchedulingGoalId' | 'Name'>>[];
+  static_types?: string[];
+  type_subfilters?: Record<
+    string,
+    DynamicFilter<Pick<typeof ActivityFilterField, 'Tags' | 'Parameter' | 'SchedulingGoalId' | 'Name'>>[]
+  >;
 };
 
 export type ExpansionRuleSlim = Omit<ExpansionRule, 'tags'> & { tags: { tag_id: number }[] };

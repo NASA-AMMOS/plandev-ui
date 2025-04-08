@@ -12,8 +12,7 @@
   import { sequenceFilters } from '../../stores/sequencing';
   import { simulationDatasetLatest, simulationDatasetsPlan } from '../../stores/simulation';
   import type { User } from '../../types/app';
-  import type { ExpansionSequence } from '../../types/expansion';
-  import type { SequenceFilter } from '../../types/sequencing';
+  import type { ExpansionSequence, SequenceFilter } from '../../types/expansion';
   import type { ActivityLayerFilter } from '../../types/timeline';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
