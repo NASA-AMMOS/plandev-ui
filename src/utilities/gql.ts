@@ -2606,7 +2606,7 @@ const gql = {
 
   SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SEQS: `#graphql
     subscription SubMostRecentExpansion {
-      expanded_sequences {
+      ${Queries.EXPANDED_SEQUENCES} {
         seq_id
         expanded_sequence
         simulation_dataset_id
@@ -2628,7 +2628,7 @@ const gql = {
 
   SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_TEMPS: `#graphql
     subscription SubMostRecentExpansion {
-      expanded_templates {
+      ${Queries.EXPANDED_SEQUENCES} {
         seq_id
         expanded_template
         simulation_dataset_id
