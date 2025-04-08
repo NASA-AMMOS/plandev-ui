@@ -1,6 +1,6 @@
 import { styleTags, tags } from '@lezer/highlight';
 
-export const HandlebarsHighlighter = styleTags({
+export const handlebarsHighlighter = styleTags({
   BIHelper: tags.keyword,
   BlockComment: tags.comment,
   DirectiveContent: tags.variableName,

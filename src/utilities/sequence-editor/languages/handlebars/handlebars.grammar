@@ -85,4 +85,4 @@ Subexp { "(" (space* (Identifier | Number | Bool | String | Equa | Subexp | "|")
   "~"
 }
 
-@external propSource HandlebarsHighlighter from "./handlebars-highlighter.ts"
+@external propSource handlebarsHighlighter from "./handlebars-highlighter.ts"
