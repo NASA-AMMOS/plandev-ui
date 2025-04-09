@@ -1692,4 +1692,3 @@ export {
   isUserOwner,
   queryPermissions,
 };
-
