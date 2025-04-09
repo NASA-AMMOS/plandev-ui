@@ -803,20 +803,19 @@
                   <Select.Trigger value={selectedModel?.id} size="xs">
                     <Select.Value placeholder="Select a model" aria-label="Select Model" />
                   </Select.Trigger>
-                  <Select.Content class="min-w-[240px] p-0" sameWidth={false} align="start" datatype="number">
-                    <Select.Group>
-                      {#each orderedModels as model (model.id)}
-                        <Select.Item
-                          size="xs"
-                          value={model.id}
-                          label={getDisplayNameForModel(model)}
-                          class="flex gap-1"
-                        >
-                          {model.name}
-                          <div class="text-muted-foreground">(Version: {model.version})</div>
-                        </Select.Item>
-                      {/each}
-                    </Select.Group>
+                  <Select.Content
+                    class="min-w-[240px] overflow-auto p-0"
+                    sameWidth={false}
+                    align="start"
+                    datatype="number"
+                    fitViewport
+                  >
+                    {#each orderedModels as model (model.id)}
+                      <Select.Item size="xs" value={model.id} label={getDisplayNameForModel(model)} class="flex gap-1">
+                        {model.name}
+                        <div class="text-muted-foreground">(Version: {model.version})</div>
+                      </Select.Item>
+                    {/each}
                   </Select.Content>
                   <Select.Input type="number" name="model" />
                 </Select.Root>
@@ -915,19 +914,23 @@
                   <Select.Trigger size="xs">
                     <Select.Value aria-label="Select Simulation Template" />
                   </Select.Trigger>
-                  <Select.Content class="min-w-[240px] p-0" sameWidth={false} align="start" datatype="number">
-                    <Select.Group>
-                      {#if !$simulationTemplates.length}
-                        <Select.Item size="xs" value={null} label="Empty">Empty</Select.Item>
-                      {:else}
-                        <Select.Item size="xs" value={null} label="&nbsp;" />
-                        {#each $simulationTemplates as template (template.id)}
-                          <Select.Item size="xs" value={template.id} label={template.description}>
-                            {template.description}
-                          </Select.Item>
-                        {/each}
-                      {/if}
-                    </Select.Group>
+                  <Select.Content
+                    class="min-w-[240px] overflow-auto p-0"
+                    sameWidth={false}
+                    align="start"
+                    datatype="number"
+                    fitViewport
+                  >
+                    {#if !$simulationTemplates.length}
+                      <Select.Item size="xs" value={null} label="Empty">Empty</Select.Item>
+                    {:else}
+                      <Select.Item size="xs" value={null} label="&nbsp;" />
+                      {#each $simulationTemplates as template (template.id)}
+                        <Select.Item size="xs" value={template.id} label={template.description}>
+                          {template.description}
+                        </Select.Item>
+                      {/each}
+                    {/if}
                   </Select.Content>
                   <Select.Input type="number" name="simulation-templates" />
                 </Select.Root>
