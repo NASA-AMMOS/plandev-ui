@@ -21,23 +21,3 @@
     <div class="overflow-hidden text-ellipsis whitespace-nowrap text-red-500">{$field.firstError}</div>
   </div>
 {/if}
-
-<style>
-  /* .error {
-    cursor: default;
-    display: table;
-    table-layout: fixed;
-    width: 100%;
-  } */
-  /*
-  .error.inline {
-    grid-column: 1 / -1;
-  }
-
-  .error > div {
-    color: var(--st-red);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  } */
-</style>
