@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
+  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import CheckmarkIcon from '@nasa-jpl/stellar/icons/check.svg?component';
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
   import VisibleHideIcon from '@nasa-jpl/stellar/icons/visible_hide.svg?component';
@@ -17,7 +18,6 @@
   import { pluralize } from '../../utilities/text';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
-  import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
   import ConstraintViolationButton from './ConstraintViolationButton.svelte';
 
@@ -141,28 +141,28 @@
     </svelte:fragment>
 
     <svelte:fragment slot="contextMenuContent">
-      <ContextMenuItem
-        on:click={() =>
-          window.open(
-            `${base}/constraints/edit/${constraint.id}${
-              constraintPlanSpec.constraint_revision !== null
-                ? `?${SearchParameters.REVISION}=${constraintPlanSpec.constraint_revision}&${SearchParameters.MODEL_ID}=${modelId}`
-                : ''
-            }`,
-            '_blank',
-          )}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasReadPermission,
-              permissionError: 'You do not have permission to edit this constraint',
-            },
-          ],
-        ]}
+      <div
+        use:permissionHandler={{
+          hasPermission: hasReadPermission,
+          permissionError: 'You do not have permission to edit this constraint',
+        }}
       >
-        View Constraint
-      </ContextMenuItem>
+        <ContextMenu.Item
+          size="sm"
+          disabled={!hasReadPermission}
+          on:click={() =>
+            window.open(
+              `${base}/constraints/edit/${constraint.id}${
+                constraintPlanSpec.constraint_revision !== null
+                  ? `?${SearchParameters.REVISION}=${constraintPlanSpec.constraint_revision}&${SearchParameters.MODEL_ID}=${modelId}`
+                  : ''
+              }`,
+              '_blank',
+            )}
+        >
+          View Constraint
+        </ContextMenu.Item>
+      </div>
     </svelte:fragment>
 
     <Collapse title="Description" defaultExpanded={false}>
