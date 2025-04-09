@@ -58,8 +58,10 @@ import effects from './effects';
 /**
  * Listens for clicks on the document body and removes the modal children.
  */
-export function modalBodyClickListener(): void {
-  if (browser) {
+export function modalBodyClickListener(e: MouseEvent): void {
+  // Check that we have browser access and that the click is originating from outside
+  // of the modal element (i.e. the modal's overlay container)
+  if (browser && (e.target as HTMLElement).id === 'modal-container') {
     const target: ModalElement | null = document.querySelector('#svelte-modal');
     if (target && target.resolve && target.getAttribute('data-dismissible') !== 'false') {
       target.replaceChildren();
