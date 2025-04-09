@@ -701,6 +701,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     const queries = [Queries.EXPAND_ALL_ACTIVITIES];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
+  // TODO: Re-visit potential fine-grained permissions for EXPAND_TEMPLATES when implemented in back-end
   EXPAND_TEMPLATES: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.EXPAND_ALL_TEMPLATES], user);
   },
@@ -1691,3 +1692,4 @@ export {
   isUserOwner,
   queryPermissions,
 };
+
