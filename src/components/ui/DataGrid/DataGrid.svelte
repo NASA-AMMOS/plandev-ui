@@ -56,7 +56,7 @@
   import { SvelteComponent, createEventDispatcher, onDestroy, onMount, type ComponentEvents } from 'svelte';
   import type { Dispatcher } from '../../../types/component';
   import type { DataGridRowDoubleClick, DataGridRowSelection, RowId, TRowData } from '../../../types/data-grid';
-  import ContextMenu from '../../context-menu/ContextMenu.svelte';
+  import ContextMenuInternal from '../../context-menu/ContextMenu.svelte';
   import ColumnResizeContextMenu from './column-menu/ColumnResizeContextMenu.svelte';
   import DataGridSkeleton from './DataGridSkeleton.svelte';
 
@@ -134,7 +134,8 @@
   const onColumnStateChangeDebounced = debounce(onColumnStateChange, 500);
   const onWindowResizedDebounced = debounce(sizeColumnsToFit, 50);
 
-  let contextMenu: ContextMenu;
+  let contextMenu: ContextMenuInternal;
+  let contextMenuOpen: boolean = false;
   let gridOptions: GridOptions<RowData>;
   let gridApi: GridApi<RowData> | undefined;
   let gridDiv: HTMLDivElement;
@@ -291,11 +292,16 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       }
 
       contextMenu.show(event.event as MouseEvent);
+      contextMenuOpen = true;
     }
     dispatch('cellContextMenu', event);
   }
 
   onMount(() => {
+    // setTimeout(() => {
+    //   contextMenuOpen = true;
+    // }, 1000);
+
     gridOptions = {
       // each entry here represents one column
       ...(columnShiftResize ? {} : { colResizeDefault: 'shift' }),
@@ -466,10 +472,10 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   <div bind:this={gridDiv} class="ag-theme-stellar table" class:highlightOnSelection tabindex="-1" on:focus on:blur />
 </div>
 
-<ContextMenu bind:this={contextMenu}>
+<ContextMenuInternal bind:this={contextMenu}>
   <slot name="context-menu" />
   <ColumnResizeContextMenu on:autoSizeContent={onAutoSizeContent} on:autoSizeSpace={onAutoSizeSpace} />
-</ContextMenu>
+</ContextMenuInternal>
 
 <style>
   .data-grid-container {

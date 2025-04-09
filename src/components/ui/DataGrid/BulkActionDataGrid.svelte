@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
+
   type RowData = $$Generic<TRowData>;
 
   // eslint-disable-next-line
@@ -19,8 +21,6 @@
   import type { PermissionCheck } from '../../../types/permissions';
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
   import { permissionHandler } from '../../../utilities/permissionHandler';
-  import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
-  import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
 
   export let autoSizeColumnsToFit: boolean = true;
@@ -190,35 +190,31 @@
   <svelte:fragment slot="context-menu">
     {#if showContextMenu}
       <slot name="context-menu" />
-      <ContextMenuHeader>Bulk Actions</ContextMenuHeader>
-      <ContextMenuItem on:click={selectAllItems}>
+      <ContextMenu.Item size="sm" on:click={selectAllItems}>
         Select All {isFiltered ? 'Visible ' : ''}{pluralItemDisplayText}
-      </ContextMenuItem>
+      </ContextMenu.Item>
 
       {#if selectedItemIds.length}
         {#if showCopyMenu}
-          <ContextMenuItem on:click={bulkCopyItems}>
+          <ContextMenu.Item size="sm" on:click={bulkCopyItems}>
             Copy {selectedItemIds.length}
             {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
-          </ContextMenuItem>
+          </ContextMenu.Item>
         {/if}
 
-        <ContextMenuItem
-          use={[
-            [
-              permissionHandler,
-              {
-                hasPermission: deletePermission,
-                permissionError: hasDeletePermissionError,
-              },
-            ],
-          ]}
-          on:click={bulkDeleteItems}
+        <div
+          use:permissionHandler={{
+            hasPermission: deletePermission,
+            permissionError: hasDeletePermissionError,
+          }}
         >
-          Delete {selectedItemIds.length}
-          {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
-        </ContextMenuItem>
+          <ContextMenu.Item size="sm" disabled={!deletePermission} on:click={bulkDeleteItems}>
+            Delete {selectedItemIds.length}
+            {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+          </ContextMenu.Item>
+        </div>
       {/if}
+      <ContextMenu.Separator />
     {/if}
   </svelte:fragment>
 </DataGrid>
