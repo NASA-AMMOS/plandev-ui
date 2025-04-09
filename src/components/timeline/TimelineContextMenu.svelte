@@ -72,7 +72,7 @@
   let activityDirective: ActivityDirective | null;
   let activityDirectiveSpans: Span[] | null = [];
   let activityDirectiveStartDate: Date | null = null;
-  let contextMenuComponent: ContextMenu;
+  let contextMenuComponent: ContextMenuInternal;
   let hasActivityLayer: boolean = false;
   let span: Span | null;
   let hasCreatePermission: boolean = false;
@@ -277,7 +277,7 @@
   }
 </script>
 
-<ContextMenuInternal hideAfterClick on:hide bind:this={contextMenuComponent}>
+<ContextMenuInternal on:hide bind:this={contextMenuComponent}>
   {#if mouseOverOrigin !== 'row-header'}
     {#if activityDirective}
       {#if activityDirectiveSpans && activityDirectiveSpans.length}
@@ -366,7 +366,7 @@
         <ContextMenu.Item
           size="sm"
           disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
-          on:click={e => {
+          on:click={() => {
             if (activityDirective !== null) {
               dispatch('deleteActivityDirective', activityDirective.id);
             }
