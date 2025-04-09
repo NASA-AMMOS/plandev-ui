@@ -27,10 +27,14 @@
 
   let activeElement: HTMLElement;
   let conditionsFilterText: string = '';
+  let hasSpecEditPermission: boolean;
   let filteredSchedulingConditionSpecs: SchedulingConditionPlanSpecification[] = [];
   let numOfPrivateConditions: number = 0;
   let visibleSchedulingConditionSpecs: SchedulingConditionPlanSpecification[] = [];
 
+  $: if ($plan) {
+    hasSpecEditPermission = featurePermissions.schedulingConditionsPlanSpec.canUpdate(user, $plan) && !$planReadOnly;
+  }
   // TODO: remove this after db merge as it becomes redundant
   $: visibleSchedulingConditionSpecs = ($allowedSchedulingConditionSpecs || []).filter(
     ({ condition_metadata: conditionMetadata }) => {
@@ -139,9 +143,10 @@
             <SchedulingCondition
               condition={$schedulingConditionsMap[specCondition.condition_id]}
               conditionPlanSpec={specCondition}
-              hasEditPermission={$plan ? featurePermissions.schedulingConditionsPlanSpec.canUpdate(user, $plan) : false}
+              hasEditPermission={hasSpecEditPermission}
+              hasReadPermission={featurePermissions.schedulingConditions.canRead(user)}
               modelId={$plan?.model.id}
-              permissionError={$planReadOnly
+              editPermissionError={$planReadOnly
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to edit scheduling conditions for this plan.'}
               on:updateConditionPlanSpec={onUpdateCondition}

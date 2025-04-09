@@ -1,9 +1,8 @@
-import type { SchedulingType } from '../enums/scheduling';
+import type { SchedulingDefinitionType } from '../enums/scheduling';
 import type { PartialWith } from './app';
 import type { SchedulingError } from './errors';
 import type { BaseDefinition, BaseMetadata } from './metadata';
 import type { ArgumentsMap } from './parameter';
-import type { ValueSchema } from './schema';
 import type { SchedulingTagsInsertInput } from './tags';
 
 type SchedulingDefinitionResponse<D> = Omit<D, 'tags'> & {
@@ -37,8 +36,7 @@ export type SchedulingConditionMetadataVersionDefinition = Pick<
 export type SchedulingGoalDefinition = BaseDefinition & {
   analyses?: SchedulingGoalAnalysis[];
   goal_id: number;
-  parameter_schema?: ValueSchema;
-  type: SchedulingType;
+  type: SchedulingDefinitionType;
   uploaded_jar_id: number | null;
 };
 
@@ -111,10 +109,30 @@ export type SchedulingGoalPlanSpecInsertInput = Omit<SchedulingGoalPlanSpecSetIn
 export type SchedulingConditionMetadataSetInput = PartialWith<SchedulingConditionMetadata, 'owner'>;
 export type SchedulingGoalMetadataSetInput = PartialWith<SchedulingGoalMetadata, 'owner'>;
 
+export type SchedulingConditionModelSpecificationInsertInput = Omit<
+  SchedulingConditionModelSpecification,
+  'condition_metadata'
+>;
+export type SchedulingConditionModelSpecificationSetInput = Omit<
+  SchedulingConditionModelSpecification,
+  'condition_metadata'
+>;
+export type SchedulingGoalModelSpecificationInsertInput = Omit<
+  SchedulingGoalModelSpecification,
+  'goal_metadata' | 'goal_invocation_id'
+>;
+export type SchedulingPlanSpecificationInsertInput = Omit<SchedulingPlanSpecification, 'id' | 'revision'>;
+
+export type SchedulingGoalModelSpecificationSetInput = Pick<
+  SchedulingGoalModelSpecification,
+  'arguments' | 'goal_invocation_id' | 'goal_revision' | 'priority'
+>;
+
 export type SchedulingGoalAnalysis = {
   analysis_id: number;
   goal_definition: SchedulingGoalDefinition;
   goal_id: number;
+  goal_invocation_id: number;
   goal_revision: number;
   request: { specification_id: number };
   satisfied: boolean;
@@ -127,7 +145,9 @@ export type SchedulingResponse = {
 };
 
 export type SchedulingGoalModelSpecification = {
+  arguments: any;
   goal_id: number;
+  goal_invocation_id: number;
   goal_metadata: Pick<SchedulingGoalMetadata, 'id' | 'name'> | null;
   goal_revision: number | null;
   model_id: number;
@@ -155,18 +175,6 @@ export type SchedulingPlanSpecification = {
   revision: number;
   simulation_arguments: ArgumentsMap;
 };
-
-export type SchedulingConditionModelSpecificationInsertInput = Omit<
-  SchedulingConditionModelSpecification,
-  'condition_metadata'
->;
-export type SchedulingGoalModelSpecificationInsertInput = Omit<SchedulingGoalModelSpecification, 'goal_metadata'>;
-export type SchedulingPlanSpecificationInsertInput = Omit<SchedulingPlanSpecification, 'id' | 'revision'>;
-
-export type SchedulingGoalModelSpecificationSetInput = Pick<
-  SchedulingGoalModelSpecification,
-  'goal_id' | 'goal_revision' | 'priority'
->;
 export type SchedulingConditionPlanSpecification = {
   // condition_definition: SchedulingConditionDefinition;
   condition_id: number;
@@ -188,7 +196,7 @@ export type SchedulingGoalPlanSpecification = {
   goal_invocation_id: number;
   goal_metadata:
     | (Pick<SchedulingGoalMetadata, 'name' | 'owner' | 'public'> & {
-        versions: Pick<SchedulingGoalDefinition, 'revision' | 'analyses' | 'type' | 'parameter_schema'>[];
+        versions: Pick<SchedulingGoalDefinition, 'analyses' | 'parameter_schema' | 'revision' | 'type'>[];
       })
     | null;
   goal_revision: number | null;

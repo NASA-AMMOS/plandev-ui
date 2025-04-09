@@ -53,7 +53,7 @@
     },
     {
       cellClass: 'action-cell-container',
-      cellRenderer: (params: TagsCellRendererParams) => {
+      cellRenderer: (params: TagsCellRendererParams): HTMLDivElement | void => {
         if (params && params.data && params.data.name) {
           const tagDiv = document.createElement('div');
           tagDiv.className = 'tags-cell';
@@ -88,13 +88,14 @@
       headerName: 'Date Created',
       resizable: true,
       sortable: true,
-      valueGetter: (params: ValueGetterParams<Tag>) => {
+      valueGetter: (params: ValueGetterParams<Tag>): string | void => {
         if (params.data?.created_at) {
           return getShortISOForDate(new Date(params.data?.created_at));
         }
       },
     },
   ];
+  const defaultColor = generateRandomPastelColor();
   const permissionError: string = 'You do not have permission to create a tag';
 
   let canCreate: boolean = false;
@@ -108,7 +109,6 @@
   let selectedTagModified: boolean = false;
   let creatingTag: boolean = false;
   let updatingTag: boolean = false;
-  let defaultColor = generateRandomPastelColor();
 
   $: tags = $tagsStore || data.initialTags; // TODO no way to tell if tags store is still loading since an [] is a valid value so can't make use of initialTags.
   $: nameField = field<string>('', [required]);
@@ -288,9 +288,9 @@
         <SectionTitle>
           <svelte:fragment slot="icon">
             {#if selectedTag}
-              <PenIcon slot="icon" />
+              <PenIcon slot="icon" class="opacity-30" />
             {:else}
-              <PlusIcon slot="icon" />
+              <PlusIcon slot="icon" class="opacity-30" />
             {/if}
           </svelte:fragment>
           {#if selectedTag}
@@ -439,7 +439,7 @@
       <svelte:fragment slot="header">
         <div class="flex w-full max-w-sm items-center gap-1">
           <SectionTitle>
-            <TagsIcon slot="icon" />
+            <TagsIcon slot="icon" class="opacity-30" />
             Tags
           </SectionTitle>
           <Input bind:value={filterText} placeholder="Filter tags" sizeVariant="xs" />

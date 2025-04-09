@@ -3,6 +3,7 @@
 <script lang="ts">
   import type { CellEditingStoppedEvent, ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
+  import { DefinitionType } from '../../enums/association';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { Association, AssociationSpecificationMap, BaseMetadata } from '../../types/metadata';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -17,7 +18,7 @@
   export let metadataList: Pick<BaseMetadata, 'id' | 'name' | 'public' | 'versions'>[] = [];
   export let metadataType: Association = 'constraint';
   export let selectedSpecifications: AssociationSpecificationMap = {};
-  export let selectedSpecification: { id: number; revision: number | null } | null = null;
+  export let selectedMetadata: { metadataId: number; revision: number | null } | null = null;
 
   type CellRendererParams = {
     viewMetadata: (metadata: BaseMetadata) => void;
@@ -26,12 +27,13 @@
 
   const dispatch = createEventDispatcher<{
     newMetadata: void;
-    selectSpecification: {
-      id: number;
+    selectDefinition: {
+      definitionType: DefinitionType;
+      metadataId: number;
       revision: number;
     } | null;
     toggleSpecification: {
-      id: number;
+      metadataId: number;
       selected: boolean;
     };
     viewMetadata: number;
@@ -147,7 +149,7 @@
         valueGetter: (params: ValueGetterParams<BaseMetadata>) => {
           const { data } = params;
           if (data) {
-            return !!selectedSpecifications[data.id]?.selected;
+            return !!selectedSpecifications[data.id];
           }
           return false;
         },
@@ -164,14 +166,17 @@
   }
 
   function onSelectDefinition(event: CustomEvent<Pick<BaseMetadata, 'id' | 'name' | 'public' | 'versions'>[]>) {
-    const { detail: selectedMetadata } = event;
-    if (selectedMetadata.length > 0) {
-      dispatch('selectSpecification', {
-        id: selectedMetadata[0].id,
-        revision: selectedMetadata[0].versions[0].revision,
+    const { detail: newSelectedMetadata } = event;
+    if (newSelectedMetadata.length > 0) {
+      const firstSelectedMetadata = newSelectedMetadata[0];
+      dispatch('selectDefinition', {
+        definitionType:
+          firstSelectedMetadata.versions[0].definition === null ? DefinitionType.FILE : DefinitionType.CODE,
+        metadataId: firstSelectedMetadata.id,
+        revision: firstSelectedMetadata.versions[0].revision,
       });
     } else {
-      dispatch('selectSpecification', null);
+      dispatch('selectDefinition', null);
     }
   }
 
@@ -188,7 +193,7 @@
 
     if (data) {
       dispatch('toggleSpecification', {
-        id: data.id,
+        metadataId: data.id,
         selected: !!newValue,
       });
     }
@@ -221,7 +226,7 @@
         {loading}
         rowData={filteredMetadata}
         rowSelection="single"
-        selectedRowIds={selectedSpecification ? [selectedSpecification.id] : []}
+        selectedRowIds={selectedMetadata ? [selectedMetadata.metadataId] : []}
         on:cellEditingStopped={onToggleSpecification}
         on:selectionChanged={onSelectDefinition}
       />

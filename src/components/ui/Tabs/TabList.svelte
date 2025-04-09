@@ -6,7 +6,7 @@
   let className: string = '';
 </script>
 
-<div class:tab-list={true} class={className}>
+<div class:tab-list={true} class={className} role="tablist">
   <slot />
 </div>
 

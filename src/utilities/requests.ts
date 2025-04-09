@@ -55,6 +55,8 @@ export async function reqGateway<T = any>(
   body: any | null,
   user: BaseUser | User | null,
   excludeContentType: boolean,
+  signal?: AbortSignal,
+  asJson: boolean = true,
 ): Promise<T> {
   const GATEWAY_URL = browser ? env.PUBLIC_GATEWAY_CLIENT_URL : env.PUBLIC_GATEWAY_SERVER_URL;
 
@@ -67,6 +69,7 @@ export async function reqGateway<T = any>(
   const options: RequestInit = {
     headers,
     method,
+    signal,
   };
 
   if (body !== null) {
@@ -79,9 +82,11 @@ export async function reqGateway<T = any>(
     throw new Error(response.statusText);
   }
 
-  const data = await response.json();
+  if (asJson) {
+    return await response.json();
+  }
 
-  return data;
+  return (await response.text()) as T;
 }
 
 /**

@@ -12,6 +12,7 @@
   export let disabled: boolean = false;
   export let expanded: boolean = false;
   export let formParameters: FormParameter[] = [];
+  export let hideInfo: boolean = false;
   export let hideRightAdornments: boolean = false;
   export let highlightKeysMap: Record<string, boolean> = {};
   export let levelPadding: number = 20;
@@ -58,7 +59,9 @@
           />
         {/if}
         <div class="parameter-info">
-          <ParameterInfo {disabled} {formParameter} on:reset />
+          {#if !hideInfo}
+            <ParameterInfo {disabled} {formParameter} on:reset />
+          {/if}
         </div>
       </div>
     </Highlight>

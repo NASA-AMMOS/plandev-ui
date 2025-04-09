@@ -6,6 +6,7 @@ import {
   convertDurationStringToUs,
   convertUsToDurationString,
   convertUTCToMs,
+  formatMS,
   getActivityDirectiveStartTimeMs,
   getBalancedDuration,
   getDaysInMonth,
@@ -596,4 +597,12 @@ test('validateTime', () => {
 test('removeDateStringMilliseconds', () => {
   expect(removeDateStringMilliseconds('2024-001T00:00:00.593')).toBe('2024-001T00:00:00');
   expect(removeDateStringMilliseconds('123456.593')).toBe('123456.593');
+});
+
+test('formatMS', () => {
+  expect(formatMS(null)).toBe('–');
+  expect(formatMS(50)).toBe('50ms');
+  expect(formatMS(1000)).toBe('1s');
+  expect(formatMS(31536000000)).toBe('365d');
+  expect(formatMS(32536000000)).toBe('1y');
 });

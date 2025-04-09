@@ -66,17 +66,17 @@ export const permissionHandler: Action<HTMLElement, PermissionHandlerProps> = (
     }
   };
 
-  const handlePermission = (hasPermission: boolean = true, permissionError?: string) => {
+  const handlePermission = (permission: boolean = true, error?: string) => {
     const classList = removeDisabledClass(node.className, disabledClassName);
-    if (hasPermission === false) {
+    if (permission === false) {
       node.setAttribute('tabindex', '-1');
       node.setAttribute('readonly', 'readonly');
       node.setAttribute('class', `${classList} ${disabledClassName}`);
       // Let's make sure the "aria-errormessage" attribute
       // is set so our element is accessible:
       // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-errormessage
-      if (permissionError) {
-        node.setAttribute('aria-errormessage', permissionError);
+      if (error) {
+        node.setAttribute('aria-errormessage', error);
       }
       node.addEventListener('mousedown', preventClick, true);
       node.addEventListener('mouseup', preventClick, true);
@@ -117,9 +117,9 @@ export const permissionHandler: Action<HTMLElement, PermissionHandlerProps> = (
     },
 
     // If the props change, let's update the Tippy instance.
-    update: ({ hasPermission, permissionError, ...newParams }: PermissionHandlerProps) => {
-      handlePermission(hasPermission, permissionError);
-      tip.setProps({ content: permissionError, hasPermission, ...newParams });
+    update: ({ hasPermission: permission, permissionError: error, ...newParams }: PermissionHandlerProps) => {
+      handlePermission(permission, error);
+      tip.setProps({ content: error, hasPermission: permission, ...newParams });
     },
   };
 };
@@ -128,11 +128,11 @@ const permission: Plugin<PermissionHandlerProps & { hasPermission?: boolean }> =
   defaultValue: false,
   fn(instance) {
     return {
-      onBeforeUpdate(instance, partialProps) {
+      onBeforeUpdate(domInstance, partialProps) {
         if (partialProps.hasPermission !== false) {
-          instance.disable();
+          domInstance.disable();
         } else {
-          instance.enable();
+          domInstance.enable();
         }
       },
       onCreate() {

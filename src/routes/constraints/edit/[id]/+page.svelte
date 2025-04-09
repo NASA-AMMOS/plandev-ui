@@ -8,7 +8,12 @@
   import { SearchParameters } from '../../../../enums/searchParameters';
   import { constraintMetadata, constraintMetadataId } from '../../../../stores/constraints';
   import { tags } from '../../../../stores/tags';
-  import type { ConstraintDefinition, ConstraintMetadataVersionDefinition } from '../../../../types/constraint';
+  import type {
+    ConstraintDefinition,
+    ConstraintMetadata,
+    ConstraintMetadataVersionDefinition,
+  } from '../../../../types/constraint';
+  import effects from '../../../../utilities/effects';
   import { getSearchParameterNumber, setQueryParam } from '../../../../utilities/generic';
   import type { PageData } from './$types';
 
@@ -18,12 +23,16 @@
     getSearchParameterNumber(SearchParameters.REVISION, $page.url.searchParams) ??
     data.initialConstraint.versions[0].revision;
 
-  let constraintDefinition: Pick<ConstraintDefinition, 'author' | 'definition' | 'revision' | 'tags'> =
-    data.initialConstraint.versions.find(
-      ({ revision }) => revision === constraintRevision,
-    ) as ConstraintMetadataVersionDefinition;
+  let constraintDefinition: Pick<
+    ConstraintDefinition,
+    'author' | 'definition' | 'revision' | 'tags' | 'type' | 'uploaded_jar_id'
+  > = data.initialConstraint.versions.find(
+    ({ revision }) => revision === constraintRevision,
+  ) as ConstraintMetadataVersionDefinition;
   let constraintDefinitionCode = constraintDefinition?.definition;
   let constraintDefinitionAuthor = constraintDefinition?.author;
+  let constraintDefinitionFilename: string | null = null;
+  let constraintDefinitionType = constraintDefinition.type;
   let constraintDescription = data.initialConstraint.description;
   let constraintId = data.initialConstraint.id;
   let constraintName = data.initialConstraint.name;
@@ -35,23 +44,33 @@
   let referenceModelId: number | null = null;
 
   $: $constraintMetadataId = data.initialConstraint.id;
-  $: if ($constraintMetadata != null && $constraintMetadata.id === $constraintMetadataId) {
-    constraintDefinition = $constraintMetadata.versions.find(
-      ({ revision }) => revision === constraintRevision,
-    ) as ConstraintMetadataVersionDefinition;
-    if (constraintDefinition != null) {
-      constraintDefinitionAuthor = constraintDefinition?.author;
-      constraintDefinitionCode = constraintDefinition?.definition;
-      constraintDefinitionTags = constraintDefinition?.tags.map(({ tag }) => tag);
-    }
+  $: onConstraintMetadataUpdated($constraintMetadata, $constraintMetadataId);
 
-    constraintDescription = $constraintMetadata.description;
-    constraintId = $constraintMetadata.id;
-    constraintName = $constraintMetadata.name;
-    constraintPublic = $constraintMetadata.public;
-    constraintMetadataTags = $constraintMetadata.tags.map(({ tag }) => tag);
-    constraintOwner = $constraintMetadata.owner;
-    constraintRevisions = $constraintMetadata.versions.map(({ revision }) => revision);
+  async function onConstraintMetadataUpdated(constraintMetadata: ConstraintMetadata | null, constraintId: number) {
+    if (constraintMetadata != null && constraintMetadata.id === constraintId) {
+      constraintDefinition = constraintMetadata.versions.find(
+        ({ revision }) => revision === constraintRevision,
+      ) as ConstraintMetadataVersionDefinition;
+      if (constraintDefinition != null) {
+        constraintDefinitionAuthor = constraintDefinition?.author;
+        constraintDefinitionType = constraintDefinition?.type;
+        constraintDefinitionCode = constraintDefinition?.definition;
+        constraintDefinitionTags = constraintDefinition?.tags.map(({ tag }) => tag);
+        if (constraintDefinition.uploaded_jar_id !== null) {
+          constraintDefinitionFilename = await effects.getFileName(constraintDefinition.uploaded_jar_id, data.user);
+        } else {
+          constraintDefinitionFilename = null;
+        }
+      }
+
+      constraintDescription = constraintMetadata.description;
+      constraintId = constraintMetadata.id;
+      constraintName = constraintMetadata.name;
+      constraintPublic = constraintMetadata.public;
+      constraintMetadataTags = constraintMetadata.tags.map(({ tag }) => tag);
+      constraintOwner = constraintMetadata.owner;
+      constraintRevisions = constraintMetadata.versions.map(({ revision }) => revision);
+    }
   }
 
   function onRevisionSelect(event: CustomEvent<number>) {
@@ -79,8 +98,10 @@
 
 <ConstraintForm
   initialConstraintDefinitionAuthor={constraintDefinitionAuthor}
-  initialConstraintDefinitionCode={constraintDefinitionCode ?? ''}
   initialConstraintDescription={constraintDescription}
+  initialConstraintDefinitionType={constraintDefinitionType}
+  initialConstraintDefinitionCode={constraintDefinitionCode}
+  initialConstraintDefinitionFilename={constraintDefinitionFilename}
   initialConstraintId={constraintId}
   initialConstraintName={constraintName}
   initialConstraintPublic={constraintPublic}

@@ -1,4 +1,4 @@
-export enum SchedulingType {
+export enum SchedulingDefinitionType {
   JAR = 'JAR',
   EDSL = 'EDSL',
 }

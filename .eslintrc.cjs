@@ -12,7 +12,7 @@ module.exports = {
     'prettier',
     'plugin:tailwindcss/recommended',
   ],
-  ignorePatterns: ['*.cjs', 'static/*.worker.js', 'static/*.worker.js.map'],
+  ignorePatterns: ['*.cjs', 'static/*.worker.js', 'static/*.worker.js.map', 'e2e-tests/data/*'],
   overrides: [
     {
       files: ['*.svelte'],

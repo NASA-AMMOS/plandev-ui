@@ -136,4 +136,9 @@
     top: 0;
     width: 24px;
   }
+
+  /* Add dark mode styles using CSS variables */
+  :global(.dark) .st-chip {
+    background-color: color-mix(in srgb, var(--background) 80%, transparent);
+  }
 </style>
