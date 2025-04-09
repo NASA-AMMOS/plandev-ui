@@ -126,3 +126,27 @@ export function getValueSchemaDefaultValue(schema: ValueSchema): any {
     throw new Error('Cannot get a default value for given value schema');
   }
 }
+
+/**
+ * Returns a finalized arguments object that does not include any extraneous arguments
+ * using the provided schema for structs
+ */
+export function getCleansedStructArguments(structArguments: ArgumentsMap, schema?: ValueSchema) {
+  let cleansedArguments: Argument = {};
+  if (schema && schema.type === 'struct') {
+    cleansedArguments = Object.keys(structArguments).reduce((prevCleansedArguments: Argument, argumentKey: string) => {
+      const argumentValue = structArguments[argumentKey];
+
+      const doesArgumentExistInSchema =
+        Object.keys(schema.items).find(parameterName => parameterName === argumentKey) != null;
+      if (doesArgumentExistInSchema) {
+        return {
+          ...prevCleansedArguments,
+          [argumentKey]: argumentValue,
+        };
+      }
+      return prevCleansedArguments;
+    }, {});
+  }
+  return cleansedArguments;
+}

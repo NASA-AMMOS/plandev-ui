@@ -7,40 +7,157 @@
   import VisibleHideIcon from '@nasa-jpl/stellar/icons/visible_hide.svg?component';
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
+  import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
+  import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { Status } from '../../enums/status';
-  import type { ConstraintMetadata, ConstraintPlanSpec, ConstraintResponse } from '../../types/constraint';
+  import type {
+    ConstraintDefinition,
+    ConstraintMetadata,
+    ConstraintPlanSpecification,
+    ConstraintResponse,
+  } from '../../types/constraint';
+  import type { Argument, FormParameter } from '../../types/parameter';
   import { getTarget } from '../../utilities/generic';
+  import { getCleansedStructArguments } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { pluralize } from '../../utilities/text';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
   import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
+  import Parameters from '../parameters/Parameters.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
   import ConstraintViolationButton from './ConstraintViolationButton.svelte';
 
   export let constraint: ConstraintMetadata;
-  export let constraintPlanSpec: ConstraintPlanSpec;
+  export let constraintPlanSpec: ConstraintPlanSpecification;
   export let constraintResponse: ConstraintResponse;
+  export let deletePermissionError: string = 'You do not have permission to delete constraints for this plan.';
+  export let editPermissionError: string = 'You do not have permission to edit constraints for this plan.';
   export let modelId: number | undefined;
-  export let hasReadPermission: boolean = false;
+  export let hasDeletePermission: boolean = false;
   export let hasEditPermission: boolean = false;
-  export let readOnly: boolean = false;
+  export let hasReadPermission: boolean = false;
+  export let readPermissionError: string = 'You do not have permission to view this constraint.';
+  export let shouldShowUpButton: boolean | undefined = false;
+  export let shouldShowDownButton: boolean | undefined = false;
   export let totalViolationCount: number = 0;
   export let visible: boolean = true;
 
   const dispatch = createEventDispatcher<{
-    toggleVisibility: { id: number; visible: boolean };
-    updateConstraintPlanSpec: ConstraintPlanSpec;
+    deleteConstraintInvocation: ConstraintPlanSpecification;
+    duplicateConstraintInvocation: ConstraintPlanSpecification;
+    toggleVisibility: { constraintId: number; invocationId: number; visible: boolean };
+    updateConstraintPlanSpec: ConstraintPlanSpecification;
+    updateConstraintPlanSpecOrder: ConstraintPlanSpecification;
   }>();
 
+  let formParameters: FormParameter[] = [];
+  let order: number;
+  let orderInput: HTMLInputElement;
   let revisions: number[] = [];
+  let version: Pick<ConstraintDefinition, 'type' | 'revision' | 'parameter_schema'> | undefined = undefined;
 
   $: revisions = constraint.versions.map(({ revision }) => revision);
   $: violationCount = constraintResponse?.results?.violations?.length;
   $: success = constraintResponse?.success;
+  $: order = constraintPlanSpec.order;
+
+  $: {
+    const version = getSpecVersion(constraint, constraintPlanSpec.constraint_revision);
+
+    const schema = version?.parameter_schema;
+    if (schema && schema.type === 'struct') {
+      formParameters = Object.entries(schema.items).map(([name, subschema], i) => ({
+        errors: null,
+        name,
+        order: i,
+        required: true,
+        schema: subschema,
+        value:
+          constraintPlanSpec && constraintPlanSpec.arguments && constraintPlanSpec.arguments[name] != null
+            ? constraintPlanSpec.arguments[name]
+            : '',
+        valueSource: 'none',
+      }));
+    } else {
+      formParameters = [];
+    }
+  }
+
+  function getSpecVersion(
+    constraintMetadata: ConstraintMetadata,
+    revision: number | string | null,
+  ): Pick<ConstraintDefinition, 'type' | 'revision' | 'parameter_schema'> | undefined {
+    if (revision != null && revision !== '') {
+      const revisionNumber = parseInt(`${revision}`);
+      version = constraintMetadata.versions.find(v => v.revision === revisionNumber);
+    } else {
+      // if the `goal_revision` is null, that means to use the latest version of the definition
+      // the query for this goal returns the versions in descending order, so the first entry in the array should correspond to the latest version
+      version = constraintMetadata.versions[0];
+    }
+    return version;
+  }
+
+  function focusInput() {
+    if (document.activeElement !== orderInput) {
+      orderInput?.focus();
+    }
+
+    return true;
+  }
+
+  function updateOrder(orderUpdate: number) {
+    dispatch('updateConstraintPlanSpecOrder', {
+      ...constraintPlanSpec,
+      order: orderUpdate,
+    });
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === 'ArrowUp') {
+        if (order > 0) {
+          updateOrder(order - 1);
+        }
+      } else {
+        updateOrder(order + 1);
+      }
+    }
+  }
+
+  function onDecreaseOrder() {
+    if (order !== undefined) {
+      focusInput();
+      updateOrder(order + 1);
+    }
+  }
+
+  function onIncreaseOrder() {
+    if (order !== undefined) {
+      focusInput();
+      updateOrder(order - 1);
+    }
+  }
+
+  function onUpdateOrder() {
+    if (order !== undefined) {
+      updateOrder(order);
+    }
+  }
+
+  function onDuplicateConstraintInvocation() {
+    dispatch('duplicateConstraintInvocation', {
+      ...constraintPlanSpec,
+    });
+  }
+  function onDeleteConstraintInvocation() {
+    dispatch('deleteConstraintInvocation', constraintPlanSpec);
+  }
 
   function onEnable(event: Event) {
     const { value: enabled } = getTarget(event);
@@ -52,10 +169,32 @@
 
   function onUpdateRevision(event: Event) {
     const { value: revision } = getTarget(event);
+
+    const version = getSpecVersion(constraint, revision as string | number | null);
+    const schema = version?.parameter_schema;
+
+    let cleansedArguments: Argument = getCleansedStructArguments(constraintPlanSpec.arguments, schema);
     dispatch('updateConstraintPlanSpec', {
       ...constraintPlanSpec,
+      arguments: cleansedArguments,
       constraint_revision: revision === '' ? null : parseInt(`${revision}`),
     });
+  }
+
+  function onChangeFormParameters(event: CustomEvent<FormParameter>) {
+    const {
+      detail: { name, value },
+    } = event;
+
+    const schema = version?.parameter_schema;
+    if (formParameters.length) {
+      let cleansedArguments: Argument = getCleansedStructArguments(constraintPlanSpec.arguments, schema);
+
+      dispatch('updateConstraintPlanSpec', {
+        ...constraintPlanSpec,
+        arguments: { ...cleansedArguments, [name]: value },
+      });
+    }
   }
 </script>
 
@@ -70,9 +209,7 @@
           on:click|stopPropagation
           use:permissionHandler={{
             hasPermission: hasEditPermission,
-            permissionError: readOnly
-              ? PlanStatusMessages.READ_ONLY
-              : 'You do not have permission to edit plan constraints',
+            permissionError: editPermissionError,
           }}
           use:tooltip={{
             content: `${constraintPlanSpec.enabled ? 'Disable constraint' : 'Enable constraint'} on plan`,
@@ -83,7 +220,7 @@
       </div>
     </svelte:fragment>
     <svelte:fragment slot="right">
-      <div class="right-content">
+      <div class="right-content" role="none" on:click|stopPropagation>
         {#if violationCount}
           <div
             class="st-badge violation-badge"
@@ -108,36 +245,83 @@
             <StatusBadge status={Status.Unchecked} />
           </span>
         {/if}
-        <button
-          use:tooltip={{ content: visible ? 'Hide' : 'Show', placement: 'top' }}
-          class="st-button icon"
-          on:click|stopPropagation={() => dispatch('toggleVisibility', { id: constraint.id, visible: !visible })}
-        >
-          {#if visible}
-            <VisibleShowIcon />
-          {:else}
-            <VisibleHideIcon />
+        <div class="order-container">
+          <input
+            bind:this={orderInput}
+            bind:value={order}
+            class="st-input"
+            min="0"
+            style:width="68px"
+            type="number"
+            on:change={onUpdateOrder}
+            on:keydown={onKeyDown}
+            use:permissionHandler={{
+              hasPermission: hasEditPermission,
+              permissionError: editPermissionError,
+            }}
+          />
+          {#if hasEditPermission}
+            <div class="order-buttons">
+              <button
+                use:tooltip={{ content: 'Increase order', placement: 'top' }}
+                class="st-button tertiary up-button"
+                class:hidden={!shouldShowUpButton}
+                tabindex={shouldShowUpButton ? -1 : 0}
+                on:click={onIncreaseOrder}
+              >
+                <CaretUpFillIcon />
+              </button>
+              <button
+                use:tooltip={{ content: 'Decrease order', placement: 'top' }}
+                class="st-button tertiary down-button"
+                class:hidden={!shouldShowDownButton}
+                tabindex={shouldShowDownButton ? -1 : 0}
+                on:click={onDecreaseOrder}
+              >
+                <CaretDownFillIcon />
+              </button>
+            </div>
           {/if}
-        </button>
-        <select
-          class="st-select"
-          value={constraintPlanSpec.constraint_revision}
-          on:change={onUpdateRevision}
-          on:click|stopPropagation
-          use:permissionHandler={{
-            hasPermission: hasEditPermission,
-            permissionError: readOnly
-              ? PlanStatusMessages.READ_ONLY
-              : 'You do not have permission to edit plan constraints',
-          }}
-        >
-          <option value={null}>Always use latest</option>
-          {#each revisions as revision, index}
-            <option value={revision}>{revision}{index === 0 ? ' (Latest)' : ''}</option>
-          {/each}
-        </select>
+          <button
+            use:tooltip={{ content: visible ? 'Hide' : 'Show', placement: 'top' }}
+            class="st-button icon hide-button"
+            on:click|stopPropagation={() =>
+              dispatch('toggleVisibility', {
+                constraintId: constraintPlanSpec.constraint_id,
+                invocationId: constraintPlanSpec.invocation_id,
+                visible: !visible,
+              })}
+          >
+            {#if visible}
+              <VisibleShowIcon />
+            {:else}
+              <VisibleHideIcon />
+            {/if}
+          </button>
+          <select
+            class="st-select"
+            value={constraintPlanSpec.constraint_revision}
+            on:change={onUpdateRevision}
+            on:click|stopPropagation
+            use:permissionHandler={{
+              hasPermission: hasEditPermission,
+              permissionError: editPermissionError,
+            }}
+          >
+            <option value={null}>Always use latest</option>
+            {#each revisions as revision, index}
+              <option value={revision}>{revision}{index === 0 ? ' (Latest)' : ''}</option>
+            {/each}
+          </select>
+        </div>
       </div>
     </svelte:fragment>
+
+    {#if formParameters.length > 0}
+      <Collapse title="Parameters" className="constraint-parameters" defaultExpanded={true}>
+        <Parameters disabled={false} expanded={true} {formParameters} on:change={onChangeFormParameters} />
+      </Collapse>
+    {/if}
 
     <svelte:fragment slot="contextMenuContent">
       <ContextMenuItem
@@ -155,12 +339,40 @@
             permissionHandler,
             {
               hasPermission: hasReadPermission,
-              permissionError: 'You do not have permission to edit this constraint',
+              permissionError: readPermissionError,
             },
           ],
         ]}
       >
         View Constraint
+      </ContextMenuItem>
+      <ContextMenuItem
+        on:click={onDuplicateConstraintInvocation}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasEditPermission,
+              permissionError: editPermissionError,
+            },
+          ],
+        ]}
+      >
+        Duplicate Invocation
+      </ContextMenuItem>
+      <ContextMenuItem
+        on:click={onDeleteConstraintInvocation}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasDeletePermission,
+              permissionError: deletePermissionError,
+            },
+          ],
+        ]}
+      >
+        Delete Invocation
       </ContextMenuItem>
     </svelte:fragment>
 
@@ -250,5 +462,58 @@
     flex-shrink: 0;
     justify-content: center;
     width: 20px;
+  }
+
+  .order-container {
+    column-gap: 5px;
+    display: flex;
+  }
+
+  /* Hide number input "spinners" (up and down arrows) in WebKit browsers ... */
+  .order-container input::-webkit-outer-spin-button,
+  .order-container input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  /* ... and Firefox */
+  .order-container input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+    padding-right: 32px;
+  }
+
+  .order-buttons {
+    align-items: center;
+    display: flex;
+    margin-left: -36px;
+  }
+
+  .order-buttons :global(button) {
+    align-items: center;
+    color: var(--st-gray-40);
+    cursor: pointer;
+    display: flex;
+    min-width: 0;
+    padding: 0;
+    pointer-events: painted;
+  }
+
+  .order-buttons :global(button):hover {
+    background-color: transparent !important;
+    color: var(--st-gray-60);
+  }
+
+  .hide-button {
+    width: auto;
+  }
+
+  .down-button {
+    margin-left: -3px;
+    margin-right: 2px;
+  }
+
+  .hidden {
+    opacity: 0;
+    pointer-events: none;
   }
 </style>

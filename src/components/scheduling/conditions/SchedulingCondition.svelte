@@ -3,7 +3,6 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import { createEventDispatcher } from 'svelte';
-  import { PlanStatusMessages } from '../../../enums/planStatusMessages';
   import { SearchParameters } from '../../../enums/searchParameters';
   import type { SchedulingConditionMetadata, SchedulingConditionPlanSpecification } from '../../../types/scheduling';
   import { getTarget } from '../../../utilities/generic';
@@ -14,10 +13,11 @@
 
   export let condition: SchedulingConditionMetadata;
   export let conditionPlanSpec: SchedulingConditionPlanSpecification;
+  export let editPermissionError: string = 'You do not have permission to edit scheduling conditions for this plan.';
   export let hasEditPermission: boolean = false;
+  export let hasReadPermission: boolean = false;
   export let modelId: number | undefined;
-  export let permissionError: string = '';
-  export let readOnly: boolean = false;
+  export let readPermissionError: string = 'You do not have permission to view this scheduling condition.';
 
   const dispatch = createEventDispatcher<{
     updateConditionPlanSpec: SchedulingConditionPlanSpecification;
@@ -56,7 +56,7 @@
           on:click|stopPropagation
           use:permissionHandler={{
             hasPermission: hasEditPermission,
-            permissionError,
+            permissionError: editPermissionError,
           }}
           use:tooltip={{
             content: `${conditionPlanSpec.enabled ? 'Disable condition' : 'Enable condition'} on plan`,
@@ -75,9 +75,7 @@
           on:click|stopPropagation
           use:permissionHandler={{
             hasPermission: hasEditPermission,
-            permissionError: readOnly
-              ? PlanStatusMessages.READ_ONLY
-              : 'You do not have permission to edit plan conditions',
+            permissionError: editPermissionError,
           }}
         >
           <option value={null}>Always use latest</option>
@@ -103,8 +101,8 @@
           [
             permissionHandler,
             {
-              hasPermission: hasEditPermission,
-              permissionError,
+              hasPermission: hasReadPermission,
+              permissionError: readPermissionError,
             },
           ],
         ]}

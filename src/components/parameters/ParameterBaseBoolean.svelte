@@ -23,6 +23,13 @@
     reset: FormParameter;
   }>();
 
+  let checkboxRef: HTMLInputElement;
+
+  $: if (formParameter.value == null || formParameter.value === '') {
+    if (checkboxRef) {
+      checkboxRef.indeterminate = true;
+    }
+  }
   $: columns = `calc(${labelColumnWidth}px - ${level * levelPadding}px) auto`;
 </script>
 
@@ -30,6 +37,7 @@
   <ParameterName {formParameter} />
   <Input>
     <input
+      bind:this={checkboxRef}
       bind:checked={formParameter.value}
       {disabled}
       type="checkbox"

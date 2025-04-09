@@ -57,32 +57,36 @@ const gql = {
   `,
 
   CHECK_CONSTRAINTS: `#graphql
-    query CheckConstraints($planId: Int!) {
-      constraintResponses: ${Queries.CONSTRAINT_VIOLATIONS}(planId: $planId) {
-        success
-        constraintId
-        constraintName
-        constraintRevision
-        results {
-          resourceIds
-          gaps {
-            end
-            start
-          }
-          violations {
-            activityInstanceIds
-            windows {
+    query CheckConstraints($planId: Int!, $force: Boolean!) {
+      constraintRunResponses: ${Queries.CONSTRAINT_VIOLATIONS}(planId: $planId, force: $force) {
+        requestId
+        constraintsRun {
+          success
+          constraintId
+          constraintInvocationId
+          constraintName
+          constraintRevision
+          results {
+            resourceIds
+            gaps {
               end
               start
             }
+            violations {
+              activityInstanceIds
+              windows {
+                end
+                start
+              }
+            }
           }
-        }
-        errors {
-          message
-          stack
-          location {
-            column
-            line
+          errors {
+            message
+            stack
+            location {
+              column
+              line
+            }
           }
         }
       }
@@ -217,6 +221,18 @@ const gql = {
         constraint_id
         constraint_revision
         model_id
+      }
+    }
+  `,
+
+  CREATE_CONSTRAINT_PLAN_SPECIFICATION: `#graphql
+    mutation CreateConstraintSpecification($constraintPlanSpecification: constraint_specification_insert_input!) {
+      createConstraintSpec: ${Queries.INSERT_CONSTRAINT_SPECIFICATION}(object: $constraintPlanSpecification) {
+        arguments
+        constraint_id
+        enabled
+        order
+        invocation_id
       }
     }
   `,
@@ -536,6 +552,7 @@ const gql = {
   CREATE_SCHEDULING_GOAL_PLAN_SPECIFICATION: `#graphql
     mutation CreateSchedulingSpecGoal($spec_goal: scheduling_specification_goals_insert_input!) {
       createSchedulingSpecGoal: ${Queries.INSERT_SCHEDULING_SPECIFICATION_GOAL}(object: $spec_goal) {
+        arguments
         enabled
         goal_id
         priority
@@ -730,6 +747,18 @@ const gql = {
     }
   `,
 
+  DELETE_CONSTRAINT_INVOCATIONS: `#graphql
+    mutation DeleteConstraintInvocations($constraintInvocationIdsToDelete: [Int!]! = []) {
+      deleteConstraintPlanSpecifications: ${Queries.DELETE_CONSTRAINT_SPECIFICATIONS}(
+        where: {
+          invocation_id: { _in: $constraintInvocationIdsToDelete }
+        }
+      ) {
+        affected_rows
+      }
+    }
+  `,
+
   DELETE_CONSTRAINT_METADATA: `#graphql
     mutation DeleteConstraint($id: Int!) {
       deleteConstraintMetadata: ${Queries.DELETE_CONSTRAINT_METADATA}(id: $id) {
@@ -745,21 +774,6 @@ const gql = {
           constraint_id: { _in: $constraintIds },
           _and: {
             model_id: { _eq: $modelId },
-          }
-        }
-      ) {
-        affected_rows
-      }
-    }
-  `,
-
-  DELETE_CONSTRAINT_PLAN_SPECIFICATIONS: `#graphql
-    mutation DeleteConstraintPlanSpecification($constraintIds: [Int!]!, $planId: Int!) {
-      ${Queries.DELETE_CONSTRAINT_SPECIFICATIONS}(
-        where: {
-          constraint_id: { _in: $constraintIds },
-          _and: {
-            plan_id: { _eq: $planId },
           }
         }
       ) {
@@ -1040,21 +1054,6 @@ const gql = {
       }
     }
   `,
-
-  DELETE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS: `#graphql
-    mutation DeleteSchedulingGoalPlanSpecification($goalIds: [Int!]!, $planId: Int!) {
-      ${Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS}(
-        where: {
-          goal_id: { _in: $goalIds },
-          _and: {
-            plan_id: { _eq: $planId },
-          }
-        }
-      ) {
-        affected_rows
-      }
-    }
-`,
 
   DELETE_SEQUENCE_ADAPTATION: `#graphql
     mutation DeleteSequenceAdaptation($id: Int!) {
@@ -2224,6 +2223,7 @@ const gql = {
         versions(order_by: {revision: desc}) {
           author
           definition
+          parameter_schema
           revision
           tags {
             tag {
@@ -2232,6 +2232,8 @@ const gql = {
               name
             }
           }
+          type
+          uploaded_jar_id
         }
       }
     }
@@ -2264,7 +2266,10 @@ const gql = {
         versions(order_by: {revision: desc}) {
           author
           definition
+          parameter_schema
           revision
+          type
+          uploaded_jar_id
         }
       }
     }
@@ -2286,13 +2291,37 @@ const gql = {
     }
   `,
 
+  SUB_CONSTRAINT_INVOCATIONS: `#graphql
+    subscription SubConstraintInvocations($planId: Int!) {
+      ${Queries.CONSTRAINT_SPECIFICATIONS} (where: {specification: {plan_id: {_eq: $planId}}}) {
+        arguments
+        constraint_id
+        invocation_id
+        constraint_revision
+        enabled
+        specification_id
+        constraint_metadata {
+          name
+          versions(order_by: {revision: desc}) {
+            author
+            revision
+            type
+            parameter_schema
+          }
+        }
+      }
+    }
+  `,
+
   SUB_CONSTRAINT_PLAN_SPECIFICATIONS: `#graphql
     subscription SubConstraintPlanSpecifications($planId: Int!) {
       constraintPlanSpecs: ${Queries.CONSTRAINT_SPECIFICATIONS}(
-        where: {plan_id: {_eq: $planId}},
-        order_by: { constraint_id: desc }
+        where: { plan_id: {_eq: $planId } },
+        order_by: { order: asc }
       ) {
+        arguments
         constraint_id
+        invocation_id
         constraint_revision
         enabled
         constraint_metadata {
@@ -2300,23 +2329,34 @@ const gql = {
           owner
           public
           versions {
+            parameter_schema
             revision
+            type
           }
         }
+        order
         plan_id
       }
     }
   `,
 
-  SUB_CONSTRAINT_RUNS: `#graphql
+  SUB_CONSTRAINT_REQUESTS: `#graphql
     subscription SubConstraintRuns($simulationDatasetId: Int!) {
-      constraintRuns: ${Queries.CONSTRAINT_RUN}(where: { simulation_dataset_id: { _eq: $simulationDatasetId }}) {
-        constraint_id
-        constraint_revision
-        results
-        constraint_metadata {
-          name
+      constraintRuns: ${Queries.CONSTRAINT_REQUEST}(where: { simulation_dataset_id: { _eq: $simulationDatasetId }}, order_by: { id: desc }, limit: 1) {
+        constraints_run {
+          results {
+            arguments
+            constraint_id
+            constraint_revision
+            errors
+            id
+            results
+          }
+          constraint_invocation_id
         }
+        requested_by
+        requested_at
+        simulation_dataset_id
       }
     }
   `,
@@ -2485,8 +2525,10 @@ const gql = {
   SUB_MODEL: `#graphql
     subscription SubModel($id: Int!) {
       model: ${Queries.MISSION_MODEL}(id: $id) {
-        constraint_specification {
+        constraint_specification(order_by: { order: asc }) {
+          arguments
           constraint_id
+          invocation_id
           constraint_revision
           constraint_definition {
             definition
@@ -2498,6 +2540,7 @@ const gql = {
             id
             name
           }
+          order
         }
         created_at
         default_view_id
@@ -2542,8 +2585,10 @@ const gql = {
             name
           }
         }
-        scheduling_specification_goals {
+        scheduling_specification_goals(order_by: { priority: asc }) {
+          arguments
           goal_id
+          goal_invocation_id
           goal_revision
           goal_definition {
             definition
@@ -3065,12 +3110,12 @@ const gql = {
         versions(order_by: {revision: desc}) {
           author
           definition
-          type
-          revision
           parameter_schema
+          revision
           tags {
             tag_id
           }
+          type
           uploaded_jar_id
         }
       }
@@ -3083,6 +3128,7 @@ const gql = {
         analyses(order_by: { analysis_id: desc }) {
           analysis_id
           goal_id
+          goal_invocation_id
           goal_revision
           request {
             specification_id
@@ -3114,40 +3160,13 @@ const gql = {
         versions(order_by: {revision: desc}) {
           author
           definition
+          parameter_schema
           revision
-          type
           tags {
             tag_id
           }
+          type
           uploaded_jar_id
-        }
-      }
-    }
-  `,
-
-  SUB_SCHEDULING_GOAL_INVOCATIONS: `#graphql
-    subscription SubSchedulingGoalInvocations($planId: Int!) {
-      ${Queries.SCHEDULING_SPECIFICATION_GOALS} (where: {specification: {plan_id: {_eq: $planId}}}) {
-        specification_id
-        goal_id
-        goal_invocation_id
-        goal_revision
-        arguments
-        enabled
-        priority
-        simulate_after
-        goal_metadata {
-          name
-          versions(order_by: {revision: desc}) {
-            author
-            definition
-            revision
-            type
-            tags {
-              tag_id
-            }
-            parameter_schema
-          }
         }
       }
     }
@@ -3184,6 +3203,7 @@ const gql = {
             analyses(order_by: { analysis_id: desc }) {
               analysis_id
               goal_id
+              goal_invocation_id
               goal_revision
               request {
                 specification_id
@@ -3204,6 +3224,7 @@ const gql = {
               analyses(order_by: { analysis_id: desc }) {
                 analysis_id
                 goal_id
+                goal_invocation_id
                 goal_revision
                 request {
                   specification_id
@@ -3560,25 +3581,35 @@ const gql = {
     }
   `,
 
+  UPDATE_CONSTRAINT_MODEL_SPECIFICATION: `#graphql
+    mutation UpdateConstraintModelSpecification($arguments: jsonb, $constraintInvocationId: Int!, $revision: Int!, $order: Int!) {
+      updateConstraintModelSpecification: ${Queries.UPDATE_CONSTRAINT_MODEL_SPECIFICATION}(
+        pk_columns: { invocation_id: $constraintInvocationId  },
+        _set: {
+          arguments: $arguments,
+          constraint_revision: $revision,
+          order: $order
+        }
+      ) {
+        constraint_revision
+        order
+      }
+    }
+  `,
+
   UPDATE_CONSTRAINT_MODEL_SPECIFICATIONS: `#graphql
-    mutation UpdateConstraintModelSpecifications($constraintSpecsToUpdate: [constraint_model_specification_insert_input!]!, $constraintIdsToDelete: [Int!]! = [], $modelId: Int!) {
-      updateConstraintModelSpecifications: ${Queries.INSERT_CONSTRAINT_MODEL_SPECIFICATIONS}(
-        objects: $constraintSpecsToUpdate,
-        on_conflict: {
-          constraint: constraint_model_spec_pkey,
-          update_columns: [constraint_revision]
-        },
+    mutation UpdateConstraintModelSpecifications($constraintSpecsToAdd: [constraint_model_specification_insert_input!]!, $constraintInvocationIdsToDelete: [Int!]! = []) {
+      addConstraintModelSpecifications: ${Queries.INSERT_CONSTRAINT_MODEL_SPECIFICATIONS}(
+        objects: $constraintSpecsToAdd
       ) {
         returning {
           constraint_revision
+          order
         }
       }
       deleteConstraintModelSpecifications: ${Queries.DELETE_CONSTRAINT_MODEL_SPECIFICATIONS}(
         where: {
-          constraint_id: { _in: $constraintIdsToDelete },
-          _and: {
-            model_id: { _eq: $modelId },
-          }
+          invocation_id: { _in: $constraintInvocationIdsToDelete }
         }
       ) {
         affected_rows
@@ -3587,12 +3618,14 @@ const gql = {
   `,
 
   UPDATE_CONSTRAINT_PLAN_SPECIFICATION: `#graphql
-    mutation UpdateConstraintPlanSpecification($id: Int!, $revision: Int!, $enabled: Boolean!, $planId: Int!) {
+    mutation UpdateConstraintPlanSpecification($arguments: jsonb, $constraintInvocationId: Int!, $revision: Int!, $enabled: Boolean!, $order: Int!) {
       updateConstraintPlanSpecification: ${Queries.UPDATE_CONSTRAINT_SPECIFICATION}(
-        pk_columns: { constraint_id: $id, plan_id: $planId },
+        pk_columns: { invocation_id: $constraintInvocationId },
         _set: {
+          arguments: $arguments,
           constraint_revision: $revision,
-          enabled: $enabled
+          enabled: $enabled,
+          order: $order
         }
       ) {
         constraint_revision
@@ -3602,13 +3635,9 @@ const gql = {
   `,
 
   UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS: `#graphql
-    mutation UpdateConstraintPlanSpecifications($constraintSpecsToUpdate: [constraint_specification_insert_input!]!, $constraintSpecIdsToDelete: [Int!]! = [], $planId: Int!) {
-      updateConstraintPlanSpecifications: ${Queries.INSERT_CONSTRAINT_SPECIFICATIONS}(
-        objects: $constraintSpecsToUpdate,
-        on_conflict: {
-          constraint: constraint_specification_pkey,
-          update_columns: [constraint_revision, enabled]
-        },
+    mutation UpdateConstraintPlanSpecifications($constraintSpecsToInsert: [constraint_specification_insert_input!]!, $constraintSpecIdsToDelete: [Int!]! = []) {
+      insertConstraintPlanSpecifications: ${Queries.INSERT_CONSTRAINT_SPECIFICATIONS}(
+        objects: $constraintSpecsToInsert,
       ) {
         returning {
           constraint_revision
@@ -3617,10 +3646,7 @@ const gql = {
       }
       deleteConstraintPlanSpecifications: ${Queries.DELETE_CONSTRAINT_SPECIFICATIONS}(
         where: {
-          constraint_id: { _in: $constraintSpecIdsToDelete },
-          _and: {
-            plan_id: { _eq: $planId },
-          }
+          invocation_id: { _in: $constraintSpecIdsToDelete },
         }
       ) {
         affected_rows
@@ -3843,10 +3869,11 @@ const gql = {
   `,
 
   UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION: `#graphql
-    mutation UpdateSchedulingGoalModelSpecification($id: Int!, $revision: Int!, $priority: Int!, $modelId: Int!) {
+    mutation UpdateSchedulingGoalModelSpecification($arguments: jsonb, $goalInvocationId: Int!, $revision: Int!, $priority: Int!) {
       updateSchedulingGoalModelSpecification: ${Queries.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION}(
-        pk_columns: { goal_id: $id, model_id: $modelId },
+        pk_columns: { goal_invocation_id: $goalInvocationId },
         _set: {
+          arguments: $arguments,
           goal_revision: $revision,
           priority: $priority,
         }
@@ -3857,12 +3884,11 @@ const gql = {
   `,
 
   UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS: `#graphql
-    mutation UpdateSchedulingGoalModelSpecifications($goalSpecsToUpdate: [scheduling_model_specification_goals_insert_input!]!, $goalIdsToDelete: [Int!]! = [], $modelId: Int!) {
-      updateSchedulingGoalModelSpecifications: ${Queries.INSERT_SCHEDULING_MODEL_SPECIFICATION_GOALS}(
-        objects: $goalSpecsToUpdate,
+    mutation UpdateSchedulingGoalModelSpecifications($goalSpecsToAdd: [scheduling_model_specification_goals_insert_input!]!, $goalIdsToDelete: [Int!]! = []) {
+      addSchedulingGoalModelSpecifications: ${Queries.INSERT_SCHEDULING_MODEL_SPECIFICATION_GOALS}(
+        objects: $goalSpecsToAdd,
         on_conflict: {
           constraint: scheduling_model_specification_goals_pkey,
-          update_columns: [goal_revision]
         },
       ) {
         returning {
@@ -3871,10 +3897,7 @@ const gql = {
       }
       deleteSchedulingGoalModelSpecifications: ${Queries.DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS}(
         where: {
-          goal_invocation_id: { _in: $goalIdsToDelete },
-          _and: {
-            model_id: { _eq: $modelId }
-          }
+          goal_invocation_id: { _in: $goalIdsToDelete }
         }
       ) {
         affected_rows
@@ -3894,8 +3917,8 @@ const gql = {
           arguments: $arguments
         }
       ) {
-        goal_revision
         enabled
+        goal_revision
       }
     }
   `,
@@ -3906,8 +3929,8 @@ const gql = {
         objects: $goalSpecsToInsert,
       ) {
         returning {
-          goal_revision
           enabled
+          goal_revision
         }
       }
       deleteSchedulingGoalPlanSpecifications: ${Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS}(
@@ -3961,9 +3984,9 @@ const gql = {
   UPDATE_SIMULATION_TEMPLATE: `#graphql
     mutation UpdateSimulationTemplate($id: Int!, $simulationTemplateSetInput: simulation_template_set_input!) {
       ${Queries.UPDATE_SIMULATION_TEMPLATE}(pk_columns: {id: $id}, _set: $simulationTemplateSetInput) {
+        arguments
         id
         description
-        arguments
       }
     }
   `,

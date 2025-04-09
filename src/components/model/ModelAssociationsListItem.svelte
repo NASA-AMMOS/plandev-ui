@@ -4,43 +4,101 @@
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import type { Association } from '../../types/metadata';
+  import { DefinitionType } from '../../enums/association';
+  import type { Association, BaseDefinition } from '../../types/metadata';
+  import type { Argument, FormParameter } from '../../types/parameter';
+  import type { ValueSchema } from '../../types/schema';
   import { getTarget } from '../../utilities/generic';
+  import { getCleansedStructArguments } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { tooltip } from '../../utilities/tooltip';
+  import Collapse from '../Collapse.svelte';
+  import ContextMenu from '../context-menu/ContextMenu.svelte';
+  import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
+  import Parameters from '../parameters/Parameters.svelte';
 
   export let hasEditPermission: boolean = false;
   export let isSelected: boolean = false;
-  export let metadataName: string = '';
+  export let invocationArguments: Argument = null;
+  export let id: string = '';
   export let metadataId: number = -1;
+  export let metadataName: string = '';
   export let metadataType: Association = 'constraint';
-  export let selectedRevision: number | null = null;
-  export let revisions: number[] = [];
   export let priority: number | undefined = undefined;
+  export let priorityLabel: string = 'priority';
+  export let selectedRevision: number | null = null;
+  export let shouldShowUpButton: boolean | undefined = false;
+  export let shouldShowDownButton: boolean | undefined = false;
+  export let versions: BaseDefinition[] = [];
 
   const dispatch = createEventDispatcher<{
-    selectSpecification: {
-      id: number;
+    deleteInvocation: {
+      id: string;
+    };
+    duplicateInvocation: {
+      id: string;
+    };
+    selectDefinition: {
+      definitionType: DefinitionType;
+      id: string;
+      metadataId: number;
       revision: number | null;
     } | null;
+    updateArguments: {
+      arguments: Argument;
+      id: string;
+    };
     updatePriority: {
-      id: number;
+      id: string;
       priority: number;
     };
     updateRevision: {
-      id: number;
+      arguments: Argument;
+      id: string;
       revision: number | null;
     };
   }>();
 
+  let contextMenu: ContextMenu;
+  let formParameters: FormParameter[] = [];
+  let parameterSchema: ValueSchema | undefined;
   let permissionError: string = '';
   let priorityInput: HTMLInputElement;
-  let upButtonHidden: boolean = false;
+  let selectedDefinitionType: DefinitionType = DefinitionType.CODE;
 
+  $: {
+    const selectedVersion = getSpecVersion(versions, selectedRevision);
+    parameterSchema = selectedVersion?.parameter_schema;
+    selectedDefinitionType = selectedVersion?.definition === null ? DefinitionType.FILE : DefinitionType.CODE;
+  }
   $: permissionError = `You do not have permission to edit model ${metadataType}s`;
-  $: upButtonHidden = priority !== undefined && priority <= 0;
-  $: if (metadataId && isSelected) {
+  $: if (id && isSelected) {
     focusPriorityInput();
+  }
+  $: if (parameterSchema && parameterSchema.type === 'struct') {
+    formParameters = Object.entries(parameterSchema.items).map(([name, subschema], i) => ({
+      errors: null,
+      name,
+      order: i,
+      required: true,
+      schema: subschema,
+      value: invocationArguments && invocationArguments[name] != null ? invocationArguments[name] : '',
+      valueSource: 'none',
+    }));
+  } else {
+    formParameters = [];
+  }
+
+  function getSpecVersion(
+    definitionVersions: BaseDefinition[],
+    revision: number | string | null,
+  ): BaseDefinition | undefined {
+    if (revision != null && revision !== '') {
+      const revisionNumber = parseInt(`${revision}`);
+      return definitionVersions.find(v => v.revision === revisionNumber);
+    } else {
+      return definitionVersions[0];
+    }
   }
 
   function focusPriorityInput() {
@@ -92,96 +150,233 @@
   function onUpdateRevision(event: Event) {
     const { value } = getTarget(event);
     const revision = value == null || value === '' ? null : parseInt(`${value}`);
+
+    const version = getSpecVersion(versions, revision as string | number | null);
+    const schema = version?.parameter_schema;
+    const cleansedArguments: Argument = getCleansedStructArguments(invocationArguments, schema);
+
     dispatch('updateRevision', {
-      id: metadataId,
+      arguments: cleansedArguments,
+      id,
       revision,
     });
     select(revision);
   }
 
+  function onDuplicateInvocation() {
+    dispatch('duplicateInvocation', {
+      id,
+    });
+  }
+
+  function onDeleteInvocation() {
+    dispatch('deleteInvocation', {
+      id,
+    });
+  }
+
+  function onChangeFormParameters(event: CustomEvent<FormParameter>) {
+    const {
+      detail: { name, value },
+    } = event;
+    dispatch('updateArguments', {
+      arguments: {
+        [name]: value,
+      },
+      id,
+    });
+  }
+
   function updatePriority(updatedPriority: number) {
     dispatch('updatePriority', {
-      id: metadataId,
+      id,
       priority: updatedPriority,
     });
     select(selectedRevision);
   }
 
   function select(revision: number | null) {
-    dispatch('selectSpecification', {
-      id: metadataId,
+    dispatch('selectDefinition', {
+      definitionType: selectedDefinitionType,
+      id,
+      metadataId,
       revision,
     });
   }
 </script>
 
-<div class="specification-list-item" class:selected={isSelected} on:mousedown={onSelect} role="button" tabindex={1}>
-  <div class="metadata-name">{metadataName}</div>
-  <div class="inputs-container">
-    {#if priority !== undefined}
-      <div class="priority-container">
-        <input
-          bind:this={priorityInput}
-          bind:value={priority}
-          class="st-input"
-          min="0"
-          style:width="68px"
-          type="number"
-          on:change={onUpdatePriority}
-          on:keydown={onKeyDown}
-          use:permissionHandler={{
-            hasPermission: hasEditPermission,
-            permissionError,
-          }}
-        />
-        {#if hasEditPermission}
-          <div class="priority-buttons">
-            <button
-              use:tooltip={{ content: 'Increase Priority', placement: 'top' }}
-              class="st-button tertiary up-button"
-              class:hidden={upButtonHidden}
-              tabindex={upButtonHidden ? -1 : 0}
-              on:click={onIncreasePriority}
-            >
-              <CaretUpFillIcon />
-            </button>
-            <button
-              use:tooltip={{ content: 'Decrease Priority', placement: 'top' }}
-              class="st-button tertiary down-button"
-              on:click={onDecreasePriority}
-            >
-              <CaretDownFillIcon />
-            </button>
-          </div>
-        {/if}
-      </div>
-    {/if}
-    <select
-      class="st-select"
-      value={selectedRevision}
-      on:change={onUpdateRevision}
-      on:click|stopPropagation
-      use:permissionHandler={{
-        hasPermission: hasEditPermission,
-        permissionError,
-      }}
-    >
-      <option value={null}>Always use latest</option>
-      {#each revisions as revision, index}
-        <option value={revision}>{revision}{index === 0 ? ' (Latest)' : ''}</option>
-      {/each}
-    </select>
-  </div>
+<div
+  class="specification-list-item"
+  class:selected={isSelected}
+  on:mousedown={onSelect}
+  on:contextmenu|preventDefault={contextMenu?.show}
+  role="button"
+  tabindex={1}
+>
+  {#if formParameters.length}
+    <Collapse title={metadataName} tooltipContent={metadataName} defaultExpanded={false}>
+      <svelte:fragment slot="right">
+        <div class="inputs-container" role="none" on:click|stopPropagation>
+          {#if hasEditPermission && metadataType !== 'condition'}
+            <div class="priority-container">
+              <input
+                bind:this={priorityInput}
+                bind:value={priority}
+                class="st-input"
+                min="0"
+                style:width="68px"
+                type="number"
+                on:change={onUpdatePriority}
+                on:keydown={onKeyDown}
+                use:permissionHandler={{
+                  hasPermission: hasEditPermission,
+                  permissionError,
+                }}
+              />
+              <div class="priority-buttons">
+                <button
+                  use:tooltip={{ content: `Increase ${priorityLabel}`, placement: 'top' }}
+                  class="st-button tertiary up-button"
+                  class:hidden={!shouldShowUpButton}
+                  tabindex={shouldShowUpButton ? -1 : 0}
+                  on:click={onIncreasePriority}
+                >
+                  <CaretUpFillIcon />
+                </button>
+                <button
+                  use:tooltip={{ content: `Decrease ${priorityLabel}`, placement: 'top' }}
+                  class="st-button tertiary down-button"
+                  class:hidden={!shouldShowDownButton}
+                  tabindex={shouldShowDownButton ? -1 : 0}
+                  on:click={onDecreasePriority}
+                >
+                  <CaretDownFillIcon />
+                </button>
+              </div>
+            </div>
+          {/if}
+          <select
+            class="st-select"
+            value={selectedRevision}
+            on:change={onUpdateRevision}
+            on:click|stopPropagation
+            use:permissionHandler={{
+              hasPermission: hasEditPermission,
+              permissionError,
+            }}
+          >
+            <option value={null}>Always use latest</option>
+            {#each versions as version, index}
+              <option value={version.revision}>{version.revision}{index === 0 ? ' (Latest)' : ''}</option>
+            {/each}
+          </select>
+        </div>
+      </svelte:fragment>
+
+      <Collapse title="Parameters" defaultExpanded={true}>
+        <Parameters disabled={false} expanded={true} {formParameters} on:change={onChangeFormParameters} />
+      </Collapse>
+    </Collapse>
+  {:else}
+    <div class="metadata-name">{metadataName}</div>
+    <div class="inputs-container" role="none" on:click|stopPropagation>
+      {#if metadataType !== 'condition'}
+        <div class="priority-container">
+          <input
+            bind:this={priorityInput}
+            bind:value={priority}
+            class="st-input"
+            min="0"
+            style:width="68px"
+            type="number"
+            on:change={onUpdatePriority}
+            on:keydown={onKeyDown}
+            use:permissionHandler={{
+              hasPermission: hasEditPermission,
+              permissionError,
+            }}
+          />
+          {#if hasEditPermission}
+            <div class="priority-buttons">
+              <button
+                use:tooltip={{ content: `Increase ${priorityLabel}`, placement: 'top' }}
+                class="st-button tertiary up-button"
+                class:hidden={!shouldShowUpButton}
+                tabindex={shouldShowUpButton ? -1 : 0}
+                on:click={onIncreasePriority}
+              >
+                <CaretUpFillIcon />
+              </button>
+              <button
+                use:tooltip={{ content: `Decrease ${priorityLabel}`, placement: 'top' }}
+                class="st-button tertiary down-button"
+                class:hidden={!shouldShowDownButton}
+                tabindex={shouldShowDownButton ? -1 : 0}
+                on:click={onDecreasePriority}
+              >
+                <CaretDownFillIcon />
+              </button>
+            </div>
+          {/if}
+        </div>
+      {/if}
+      <select
+        class="st-select"
+        value={selectedRevision}
+        on:change={onUpdateRevision}
+        on:click|stopPropagation
+        use:permissionHandler={{
+          hasPermission: hasEditPermission,
+          permissionError,
+        }}
+      >
+        <option value={null}>Always use latest</option>
+        {#each versions as version, index}
+          <option value={version.revision}>{version.revision}{index === 0 ? ' (Latest)' : ''}</option>
+        {/each}
+      </select>
+    </div>
+  {/if}
+  {#if metadataType !== 'condition'}
+    <ContextMenu bind:this={contextMenu}>
+      <ContextMenuItem
+        on:click={onDuplicateInvocation}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasEditPermission,
+              permissionError,
+            },
+          ],
+        ]}
+      >
+        Duplicate Invocation
+      </ContextMenuItem>
+      <ContextMenuItem
+        on:click={onDeleteInvocation}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasEditPermission,
+              permissionError,
+            },
+          ],
+        ]}
+      >
+        Delete Invocation
+      </ContextMenuItem>
+    </ContextMenu>
+  {/if}
 </div>
 
 <style>
   .specification-list-item {
     align-items: center;
-    display: grid;
-    grid-template-columns: auto auto;
+    display: flex;
     justify-content: space-between;
     padding: 0.25rem 1rem;
-    row-gap: 1rem;
   }
 
   .specification-list-item:hover {
@@ -192,10 +387,20 @@
     background-color: var(--st-gray-20);
   }
 
+  .metadata-name {
+    color: var(--st-typography-medium-color);
+    font-weight: 500;
+    line-height: 2rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .inputs-container {
-    column-gap: 8px;
-    display: grid;
-    grid-template-columns: auto min-content;
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
   }
 
   .priority-container {

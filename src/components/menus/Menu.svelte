@@ -13,15 +13,15 @@
 
   export function hideAllMenus(type?: MenuType) {
     if (type) {
-      hideFns[type].forEach(hide => {
-        hide();
+      hideFns[type].forEach(hideFn => {
+        hideFn();
       });
     } else {
-      hideFns.dropdown.forEach(hide => {
-        hide();
+      hideFns.dropdown.forEach(hideFn => {
+        hideFn();
       });
-      hideFns.input.forEach(hide => {
-        hide();
+      hideFns.input.forEach(hideFn => {
+        hideFn();
       });
     }
   }

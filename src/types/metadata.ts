@@ -1,6 +1,8 @@
 import type { UserId } from './app';
 import type { Model } from './model';
+import type { ArgumentsMap } from './parameter';
 import type { Plan } from './plan';
+import type { ValueSchema } from './schema';
 import type { Tag } from './tags';
 
 export type BaseDefinition = {
@@ -9,6 +11,7 @@ export type BaseDefinition = {
   definition: string | null;
   metadata: BaseMetadata<BaseDefinition>;
   models_using: Pick<Model, 'id'>[];
+  parameter_schema?: ValueSchema;
   plans_using: Pick<Plan, 'id'>[];
   revision: number;
   tags: { tag: Tag }[];
@@ -39,13 +42,15 @@ export type BaseMetadataSlim<D extends BaseDefinition = BaseDefinition> = Omit<
 export type Association = 'constraint' | 'condition' | 'goal';
 
 export type AssociationSpecificationEntry = {
+  arguments?: ArgumentsMap;
   priority?: number;
   revision: number | null;
-  selected: boolean;
 };
 
 export type AssociationSpecification = AssociationSpecificationEntry & {
-  id: number;
+  id: string;
+  metadata_id: number;
 };
 
-export type AssociationSpecificationMap = Record<number, AssociationSpecificationEntry>;
+export type AssociationSpecificationMap = Record<number, boolean>;
+export type UpdatedAssociationSpecificationMap = Record<string, boolean>;

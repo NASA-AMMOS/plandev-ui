@@ -5,7 +5,7 @@
   import { base } from '$app/paths';
   import { createEventDispatcher } from 'svelte';
   import { DefinitionType } from '../../../enums/association';
-  import { SchedulingType } from '../../../enums/scheduling';
+  import { SchedulingDefinitionType } from '../../../enums/scheduling';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { schedulingGoals } from '../../../stores/scheduling';
   import type { User, UserId } from '../../../types/app';
@@ -27,7 +27,7 @@
   export let initialGoalName: string = '';
   export let initialGoalPublic: boolean = true;
   export let initialGoalDefinitionTags: Tag[] = [];
-  export let initialGoalDefinitionType: SchedulingType = SchedulingType.EDSL;
+  export let initialGoalDefinitionType: SchedulingDefinitionType = SchedulingDefinitionType.EDSL;
   export let initialGoalMetadataTags: Tag[] = [];
   export let initialGoalOwner: UserId = null;
   export let initialGoalRevision: number | null = null;
@@ -120,7 +120,7 @@
       name,
       isPublic,
       metadataTags.map(({ id }) => ({ tag_id: id })),
-      definitionType === DefinitionType.CODE ? SchedulingType.EDSL : SchedulingType.JAR,
+      definitionType === DefinitionType.CODE ? SchedulingDefinitionType.EDSL : SchedulingDefinitionType.JAR,
       definitionCode,
       definitionFile ?? null,
       definitionTags.map(({ id }) => ({ tag_id: id })),
@@ -151,7 +151,7 @@
     if (initialGoalId !== null) {
       const definition = await effects.createSchedulingGoalDefinition(
         initialGoalId,
-        definitionType === DefinitionType.CODE ? SchedulingType.EDSL : SchedulingType.JAR,
+        definitionType === DefinitionType.CODE ? SchedulingDefinitionType.EDSL : SchedulingDefinitionType.JAR,
         definitionCode,
         definitionFile ?? null,
         definitionTags.map(({ id }) => ({ tag_id: id })),
@@ -245,7 +245,9 @@
   {hasWriteDefinitionTagsPermission}
   {hasWriteMetadataPermission}
   initialDefinitionAuthor={initialGoalDefinitionAuthor}
-  initialDefinitionType={initialGoalDefinitionType === SchedulingType.EDSL ? DefinitionType.CODE : DefinitionType.FILE}
+  initialDefinitionType={initialGoalDefinitionType === SchedulingDefinitionType.EDSL
+    ? DefinitionType.CODE
+    : DefinitionType.FILE}
   initialDefinitionCode={initialGoalDefinitionCode}
   initialDefinitionFileName={initialGoalDefinitionFilename}
   initialDescription={initialGoalDescription}
@@ -259,8 +261,8 @@
   {initialReferenceModelId}
   {permissionError}
   revisions={goalRevisions}
-  {tags}
   showDefinitionTypeSelector={true}
+  {tags}
   tsFiles={goalsTsFiles}
   {mode}
   {user}

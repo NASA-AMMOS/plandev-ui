@@ -5,22 +5,23 @@
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
   import PlanLeftArrow from '@nasa-jpl/stellar/icons/plan_with_left_arrow.svg?component';
   import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
+  import RefreshIcon from '@nasa-jpl/stellar/icons/refresh.svg?component';
   import VisibleHideIcon from '@nasa-jpl/stellar/icons/visible_hide.svg?component';
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { Status } from '../../enums/status';
   import {
-    allowedConstraintPlanSpecMap,
-    allowedConstraintSpecs,
+    allowedConstraintPlanSpecs,
     cachedConstraintsStatus,
     constraintPlanSpecs,
     constraintResponseMap,
+    constraintResponses,
     constraintVisibilityMap,
     constraintsMap,
     constraintsStatus,
     initialConstraintPlanSpecsLoading,
-    initialConstraintRunsLoading,
     initialConstraintsLoading,
+    resetConstraintStores,
     setAllConstraintsVisible,
     setConstraintVisibility,
   } from '../../stores/constraints';
@@ -30,9 +31,8 @@
   import { simulationStatus } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type {
-    ConstraintDefinition,
-    ConstraintMetadata,
-    ConstraintPlanSpec,
+    ConstraintInvocationMap,
+    ConstraintPlanSpecification,
     ConstraintResponse,
   } from '../../types/constraint';
   import type { FieldStore } from '../../types/form';
@@ -56,17 +56,21 @@
   export let gridSection: ViewGridSection;
   export let user: User | null;
 
-  let showAll: boolean = true;
-  let filterText: string = '';
-  let filteredConstraints: ConstraintPlanSpec[] = [];
+  let constraintToConstraintResponseMap: ConstraintInvocationMap<ConstraintResponse> = {};
+  let deletePermissionError: string;
+  let editPermissionError: string;
   let endTime: string;
   let endTimeField: FieldStore<string>;
+  let filteredConstraintPlanSpecifications: ConstraintPlanSpecification[] = [];
+  let filteredViolationCount: number = 0;
+  let filterText: string = '';
+  let hasSpecEditPermission: boolean;
   let numOfPrivateConstraints: number = 0;
+  let showAll: boolean = true;
+  let showConstraintsWithNoViolations: boolean = true;
+  let showFilters: boolean = false;
   let startTime: string;
   let startTimeField: FieldStore<string>;
-  let showFilters: boolean = false;
-  let showConstraintsWithNoViolations: boolean = true;
-  let constraintToConstraintResponseMap: Record<ConstraintDefinition['constraint_id'], ConstraintResponse> = {};
 
   $: if ($plan) {
     startTime = formatDate(new Date($plan.start_time), $plugins.time.primary.format);
@@ -76,19 +80,33 @@
     } else {
       endTime = '';
     }
+    hasSpecEditPermission = featurePermissions.constraintsPlanSpec.canUpdate(user, $plan) && !$planReadOnly;
+
+    editPermissionError = $planReadOnly
+      ? PlanStatusMessages.READ_ONLY
+      : 'You do not have permission to edit constraints for this plan.';
+    deletePermissionError = hasSpecEditPermission
+      ? editPermissionError
+      : 'You cannot delete the last invocation of this constraint.';
   }
 
   $: startTimeField = field<string>(startTime, [required, $plugins.time.primary.validate]);
   $: endTimeField = field<string>(endTime, [required, $plugins.time.primary.validate]);
   $: startTimeMs = typeof startTime === 'string' ? $plugins.time.primary.parse(startTime)?.getTime() : null;
   $: endTimeMs = typeof endTime === 'string' ? $plugins.time.primary.parse(endTime)?.getTime() : null;
-  $: if ($allowedConstraintSpecs && $constraintResponseMap && startTimeMs && endTimeMs) {
+  $: if ($allowedConstraintPlanSpecs && $constraintResponseMap && startTimeMs && endTimeMs) {
     constraintToConstraintResponseMap = {};
-    $allowedConstraintSpecs.forEach(constraintPlanSpec => {
-      const constraintResponse = $constraintResponseMap[constraintPlanSpec.constraint_id];
+    $allowedConstraintPlanSpecs.forEach(constraintPlanSpec => {
+      const { constraint_id: constraintId, invocation_id: invocationId } = constraintPlanSpec;
+      const constraintResponse = $constraintResponseMap[constraintId]?.[invocationId];
       if (constraintResponse) {
-        constraintToConstraintResponseMap[constraintPlanSpec.constraint_id] = {
-          constraintId: constraintResponse.constraintId,
+        if (!constraintToConstraintResponseMap[constraintId]) {
+          constraintToConstraintResponseMap[constraintId] = {};
+        }
+
+        constraintToConstraintResponseMap[constraintId][invocationId] = {
+          constraintId,
+          constraintInvocationId: invocationId,
           constraintName: constraintResponse.constraintName,
           errors: constraintResponse.errors,
           results: constraintResponse.results && {
@@ -108,28 +126,29 @@
       }
     });
   }
-  $: filteredConstraints = filterConstraints(
-    $allowedConstraintSpecs,
+  $: filteredConstraintPlanSpecifications = filterConstraints(
+    $allowedConstraintPlanSpecs,
     constraintToConstraintResponseMap,
     filterText,
     showConstraintsWithNoViolations,
   );
-  $: filteredConstraintResponses = Object.values(constraintToConstraintResponseMap).filter(r =>
-    filteredConstraints.find(c => c.constraint_id === r.constraintId),
-  );
-  $: numOfPrivateConstraints = ($constraintPlanSpecs || []).length - $allowedConstraintSpecs.length;
+  $: numOfPrivateConstraints = ($constraintPlanSpecs || []).length - $allowedConstraintPlanSpecs.length;
 
-  $: totalViolationCount = getViolationCount(Object.values($constraintResponseMap));
-  $: filteredViolationCount = getViolationCount(Object.values(filteredConstraintResponses));
+  $: totalViolationCount = getViolationCount($constraintResponses);
+  $: filteredViolationCount = getViolationCount(
+    filteredConstraintPlanSpecifications.map(({ constraint_id: constraintId, invocation_id: invocationId }) => {
+      return constraintToConstraintResponseMap[constraintId]?.[invocationId];
+    }),
+  );
 
   function filterConstraints(
-    planSpecs: ConstraintPlanSpec[],
-    constraintToConstraintResponseMap: Record<ConstraintMetadata['id'], ConstraintResponse>,
-    filterText: string,
-    showConstraintsWithNoViolations: boolean,
+    planSpecs: ConstraintPlanSpecification[],
+    constraintInvocationToConstraintResponseMap: ConstraintInvocationMap<ConstraintResponse>,
+    filter: string,
+    shouldShowConstraintsWithNoViolations: boolean,
   ) {
     return planSpecs.filter(constraintPlanSpec => {
-      const filterTextLowerCase = filterText.toLowerCase();
+      const filterTextLowerCase = filter.toLowerCase();
       const includesName = constraintPlanSpec.constraint_metadata?.name
         .toLocaleLowerCase()
         .includes(filterTextLowerCase);
@@ -137,10 +156,13 @@
         return false;
       }
 
-      const constraintResponse = constraintToConstraintResponseMap[constraintPlanSpec.constraint_id];
+      const constraintResponse =
+        constraintInvocationToConstraintResponseMap[constraintPlanSpec.constraint_id]?.[
+          constraintPlanSpec.invocation_id
+        ];
       // Always show constraints with no violations
       if (!constraintResponse?.results.violations?.length) {
-        return showConstraintsWithNoViolations;
+        return shouldShowConstraintsWithNoViolations;
       }
 
       return true;
@@ -148,11 +170,35 @@
   }
 
   function getViolationCount(constraintResponse: ConstraintResponse[]) {
-    return constraintResponse.reduce((count, constraintResponse) => {
-      return constraintResponse.results.violations
-        ? constraintResponse.results.violations.filter(violation => violation.windows.length > 0).length + count
+    return constraintResponse.reduce((count, response) => {
+      return response?.results.violations
+        ? response.results.violations.filter(violation => violation.windows.length > 0).length + count
         : count;
     }, 0);
+  }
+
+  async function onDuplicateConstraintInvocation(event: CustomEvent<ConstraintPlanSpecification>) {
+    const {
+      detail: { constraint_metadata, invocation_id, order, ...constraintPlanSpec },
+    } = event;
+    if ($plan) {
+      await effects.createConstraintPlanSpecification(
+        {
+          ...constraintPlanSpec,
+          order: order + 1,
+        },
+        user,
+      );
+    }
+  }
+
+  async function onDeleteConstraintInvocation(event: CustomEvent<ConstraintPlanSpecification>) {
+    const {
+      detail: { constraint_metadata, ...constraintPlanSpec },
+    } = event;
+    if ($plan) {
+      await effects.deleteConstraintInvocations($plan, [constraintPlanSpec.invocation_id], user);
+    }
   }
 
   function onManageConstraints() {
@@ -171,7 +217,7 @@
     }
   }
 
-  async function setTimeBoundsToView() {
+  async function onSetTimeBoundsToView() {
     await startTimeField.validateAndSet(formatDate(new Date($viewTimeRange.start), $plugins.time.primary.format));
     await endTimeField.validateAndSet(formatDate(new Date($viewTimeRange.end), $plugins.time.primary.format));
     onUpdateStartTime();
@@ -196,7 +242,18 @@
     }
   }
 
-  async function onUpdateConstraint(event: CustomEvent<ConstraintPlanSpec>) {
+  async function onUpdateConstraint(event: CustomEvent<ConstraintPlanSpecification>) {
+    if ($plan) {
+      const {
+        detail: { constraint_metadata, ...constraintPlanSpec },
+      } = event;
+
+      await effects.updateConstraintPlanSpecification($plan, constraintPlanSpec, user);
+      resetConstraintStores();
+    }
+  }
+
+  async function onUpdateConstraintOrder(event: CustomEvent<ConstraintPlanSpecification>) {
     if ($plan) {
       const {
         detail: { constraint_metadata, ...constraintPlanSpec },
@@ -206,14 +263,14 @@
     }
   }
 
-  function resetFilters() {
+  function onResetFilters() {
     onPlanStartTimeClick();
     onPlanEndTimeClick();
     filterText = '';
   }
 
-  function toggleVisibility(event: CustomEvent) {
-    setConstraintVisibility(event.detail.id, event.detail.visible);
+  function toggleVisibility(event: CustomEvent<{ constraintId: number; invocationId: number; visible: boolean }>) {
+    setConstraintVisibility(event.detail.constraintId, event.detail.invocationId, event.detail.visible);
   }
 
   function toggleGlobalVisibility() {
@@ -225,12 +282,37 @@
 <Panel>
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Constraints" />
-    <PanelHeaderActions status={$constraintsStatus} indeterminate>
+    <PanelHeaderActions
+      status={$constraintsStatus !== Status.Failed ? $cachedConstraintsStatus : $constraintsStatus}
+      indeterminate
+    >
       <PanelHeaderActionButton
-        disabled={$simulationStatus !== Status.Complete}
+        title="Re-Check"
+        disabled={$simulationStatus !== Status.Complete || $constraintsStatus !== Status.Complete}
+        tooltipContent="Re-check constraints"
+        showLabel
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: $plan
+                ? featurePermissions.constraintRuns.canCreate(user, $plan, $plan.model) && !$planReadOnly
+                : false,
+              permissionError: $planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to run constraint checks',
+            },
+          ],
+        ]}
+        on:click={() => $plan && effects.checkConstraints($plan, user, true)}
+      >
+        <RefreshIcon />
+      </PanelHeaderActionButton>
+      <PanelHeaderActionButton
+        disabled={$simulationStatus !== Status.Complete || $constraintsStatus === Status.Complete}
         tooltipContent={$simulationStatus !== Status.Complete ? 'Completed simulation required' : ''}
         title="Check Constraints"
-        on:click={() => $plan && effects.checkConstraints($plan, user)}
+        on:click={() => $plan && effects.checkConstraints($plan, user, false)}
         use={[
           [
             permissionHandler,
@@ -311,17 +393,17 @@
             </DatePickerActionButton>
           </DatePickerField>
         </div>
-        <button class="st-button secondary" on:click={setTimeBoundsToView}> Set from Timeline View Bounds </button>
-        <button class="st-button secondary" on:click={resetFilters}> Reset Filters </button>
+        <button class="st-button secondary" on:click={onSetTimeBoundsToView}> Set from Timeline View Bounds </button>
+        <button class="st-button secondary" on:click={onResetFilters}> Reset Filters </button>
       </fieldset>
     </CollapsibleListControls>
 
     <div class="pt-2">
-      {#if $initialConstraintsLoading || $initialConstraintPlanSpecsLoading || $initialConstraintRunsLoading}
+      {#if $initialConstraintsLoading || $initialConstraintPlanSpecsLoading}
         <div class="p-1">
           <Loading />
         </div>
-      {:else if !filteredConstraints.length}
+      {:else if !filteredConstraintPlanSpecifications.length}
         <div class="pt-1 st-typography-label filter-label-row">
           <div class="filter-label">No constraints found</div>
           <div class="private-label">
@@ -336,7 +418,8 @@
           <div class="filter-label">
             {#if $cachedConstraintsStatus}
               <FilterIcon />
-              {filteredConstraints.length} of {$allowedConstraintSpecs.length} constraints, {filteredViolationCount} of
+              {filteredConstraintPlanSpecifications.length} of {$allowedConstraintPlanSpecs.length} constraints, {filteredViolationCount}
+              of
               {totalViolationCount} violations
             {:else}
               Constraints not checked
@@ -361,18 +444,30 @@
           </button>
         </div>
 
-        {#each filteredConstraints as constraint}
-          {#if $constraintsMap[constraint.constraint_id]}
+        {#each filteredConstraintPlanSpecifications as constraintPlanSpec, specIndex (constraintPlanSpec.invocation_id)}
+          {#if $constraintsMap[constraintPlanSpec.constraint_id]}
             <ConstraintListItem
-              constraint={$constraintsMap[constraint.constraint_id]}
-              constraintPlanSpec={$allowedConstraintPlanSpecMap[constraint.constraint_id]}
-              constraintResponse={constraintToConstraintResponseMap[constraint.constraint_id]}
+              constraint={$constraintsMap[constraintPlanSpec.constraint_id]}
+              {constraintPlanSpec}
+              constraintResponse={constraintToConstraintResponseMap[constraintPlanSpec.constraint_id]?.[
+                constraintPlanSpec.invocation_id
+              ]}
+              {deletePermissionError}
+              {editPermissionError}
+              hasEditPermission={hasSpecEditPermission}
+              hasDeletePermission={hasSpecEditPermission}
               hasReadPermission={featurePermissions.constraints.canRead(user)}
-              hasEditPermission={$plan ? featurePermissions.constraintsPlanSpec.canUpdate(user, $plan) : false}
               modelId={$plan?.model.id}
-              totalViolationCount={$constraintResponseMap[constraint.constraint_id]?.results.violations?.length || 0}
-              visible={$constraintVisibilityMap[constraint.constraint_id]}
+              shouldShowUpButton={(constraintPlanSpec?.order ?? 0) > 0}
+              shouldShowDownButton={specIndex < filteredConstraintPlanSpecifications.length - 1}
+              totalViolationCount={$constraintResponseMap[constraintPlanSpec.constraint_id]?.[
+                constraintPlanSpec.invocation_id
+              ]?.results.violations?.length || 0}
+              visible={$constraintVisibilityMap[constraintPlanSpec.constraint_id]?.[constraintPlanSpec.invocation_id]}
+              on:updateConstraintPlanSpecOrder={onUpdateConstraintOrder}
               on:updateConstraintPlanSpec={onUpdateConstraint}
+              on:duplicateConstraintInvocation={onDuplicateConstraintInvocation}
+              on:deleteConstraintInvocation={onDeleteConstraintInvocation}
               on:toggleVisibility={toggleVisibility}
             />
           {/if}

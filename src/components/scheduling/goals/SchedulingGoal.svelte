@@ -5,15 +5,15 @@
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import { PlanStatusMessages } from '../../../enums/planStatusMessages';
   import { SearchParameters } from '../../../enums/searchParameters';
-  import type { FormParameter } from '../../../types/parameter';
+  import type { Argument, FormParameter } from '../../../types/parameter';
   import type {
     SchedulingGoalDefinition,
     SchedulingGoalMetadata,
     SchedulingGoalPlanSpecification,
   } from '../../../types/scheduling';
   import { getTarget } from '../../../utilities/generic';
+  import { getCleansedStructArguments } from '../../../utilities/parameters';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { tooltip } from '../../../utilities/tooltip';
   import Collapse from '../../Collapse.svelte';
@@ -22,12 +22,15 @@
   import SchedulingGoalAnalysesActivities from './SchedulingGoalAnalysesActivities.svelte';
   import SchedulingGoalAnalysesBadge from './SchedulingGoalAnalysesBadge.svelte';
 
+  export let editPermissionError: string = 'You do not have permission to edit scheduling goals for this plan.';
   export let goal: SchedulingGoalMetadata;
   export let goalPlanSpec: SchedulingGoalPlanSpecification;
   export let hasEditPermission: boolean = false;
+  export let hasReadPermission: boolean = false;
   export let modelId: number | undefined;
-  export let permissionError: string = '';
-  export let readOnly: boolean = false;
+  export let readPermissionError: string = 'You do not have permission to view this scheduling goal.';
+  export let shouldShowUpButton: boolean | undefined = false;
+  export let shouldShowDownButton: boolean | undefined = false;
 
   const dispatch = createEventDispatcher<{
     deleteGoalInvocation: SchedulingGoalPlanSpecification;
@@ -40,7 +43,6 @@
   let revisions: number[] = [];
   let schedulingGoalInput: HTMLInputElement;
   let simulateGoal: boolean = false;
-  let upButtonHidden: boolean = false;
   let formParameters: FormParameter[] = [];
   let version: Pick<SchedulingGoalDefinition, 'type' | 'revision' | 'analyses' | 'parameter_schema'> | undefined =
     undefined;
@@ -49,27 +51,47 @@
   $: {
     enabled = goalPlanSpec.enabled;
     priority = goalPlanSpec.priority;
-    upButtonHidden = priority <= 0;
     simulateGoal = goalPlanSpec.simulate_after; // Copied to local var to reflect changed values immediately in the UI
   }
 
   $: {
-    version = goalPlanSpec.goal_metadata?.versions[0]; // plan gql query already orders by version and limits 1
+    const version = getSpecVersion(goal, goalPlanSpec.goal_revision);
+
     const schema = version?.parameter_schema;
 
     if (schema && schema.type === 'struct') {
-      formParameters = Object.entries(schema.items).map(([name, subschema], i) => ({
-        errors: null,
-        name,
-        order: i,
-        required: true,
-        schema: subschema,
-        value: (goalPlanSpec && goalPlanSpec.arguments && goalPlanSpec.arguments[name]) || '',
-        valueSource: 'none',
-      }));
+      formParameters = Object.entries(schema.items).map(([name, subschema], i) => {
+        return {
+          errors: null,
+          name,
+          order: i,
+          required: true,
+          schema: subschema,
+          value:
+            goalPlanSpec && goalPlanSpec.arguments && goalPlanSpec.arguments[name] != null
+              ? goalPlanSpec.arguments[name]
+              : '',
+          valueSource: 'none',
+        };
+      });
     } else {
       formParameters = [];
     }
+  }
+
+  function getSpecVersion(
+    goalMetadata: SchedulingGoalMetadata,
+    revision: number | string | null,
+  ): Pick<SchedulingGoalDefinition, 'type' | 'revision' | 'analyses' | 'parameter_schema'> | undefined {
+    if (revision != null && revision !== '') {
+      const revisionNumber = parseInt(`${revision}`);
+      version = goalMetadata.versions.find(v => v.revision === revisionNumber);
+    } else {
+      // if the `goal_revision` is null, that means to use the latest version of the definition
+      // the query for this goal returns the versions in descending order, so the first entry in the array should correspond to the latest version
+      version = goalMetadata.versions[0];
+    }
+    return version;
   }
 
   function focusInput() {
@@ -104,8 +126,14 @@
 
   function onUpdateRevision(event: Event) {
     const { value: revision } = getTarget(event);
+
+    const version = getSpecVersion(goal, revision as string | number | null);
+    const schema = version?.parameter_schema;
+
+    let cleansedArguments: Argument = getCleansedStructArguments(goalPlanSpec.arguments, schema);
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
+      arguments: cleansedArguments,
       goal_revision: revision === '' ? null : parseInt(`${revision}`),
     });
   }
@@ -117,16 +145,14 @@
     });
   }
 
-  function duplicateGoalInvocation() {
+  function onDuplicateGoalInvocation() {
     dispatch('duplicateGoalInvocation', {
       ...goalPlanSpec,
     });
   }
 
-  function deleteGoalInvocation() {
-    dispatch('deleteGoalInvocation', {
-      ...goalPlanSpec,
-    });
+  function onDeleteGoalInvocation() {
+    dispatch('deleteGoalInvocation', goalPlanSpec);
   }
 
   function updatePriority(priorityUpdate: number) {
@@ -140,10 +166,15 @@
     const {
       detail: { name, value },
     } = event;
-    dispatch('updateGoalPlanSpec', {
-      ...goalPlanSpec,
-      arguments: { ...goalPlanSpec.arguments, [name]: value },
-    });
+
+    if (formParameters.length) {
+      const schema = version?.parameter_schema;
+      let cleansedArguments: Argument = getCleansedStructArguments(goalPlanSpec.arguments, schema);
+      dispatch('updateGoalPlanSpec', {
+        ...goalPlanSpec,
+        arguments: { ...cleansedArguments, [name]: value },
+      });
+    }
   }
 </script>
 
@@ -159,7 +190,7 @@
           on:click|stopPropagation
           use:permissionHandler={{
             hasPermission: hasEditPermission,
-            permissionError,
+            permissionError: editPermissionError,
           }}
           use:tooltip={{
             content: `${enabled ? 'Disable goal' : 'Enable goal'} on plan`,
@@ -171,7 +202,12 @@
     </svelte:fragment>
     <svelte:fragment slot="right">
       <div class="right-content" role="none" on:click|stopPropagation>
-        <SchedulingGoalAnalysesBadge analyses={goal.analyses} {enabled} />
+        <SchedulingGoalAnalysesBadge
+          analyses={(goal.analyses ?? []).filter(
+            analyses => analyses.goal_invocation_id === goalPlanSpec.goal_invocation_id,
+          )}
+          {enabled}
+        />
         <div class="priority-container">
           <input
             bind:this={schedulingGoalInput}
@@ -185,7 +221,7 @@
             on:keydown={onKeyDown}
             use:permissionHandler={{
               hasPermission: hasEditPermission,
-              permissionError,
+              permissionError: editPermissionError,
             }}
           />
           {#if hasEditPermission}
@@ -193,8 +229,8 @@
               <button
                 use:tooltip={{ content: 'Increase Priority', placement: 'top' }}
                 class="st-button tertiary up-button"
-                class:hidden={upButtonHidden}
-                tabindex={upButtonHidden ? -1 : 0}
+                class:hidden={!shouldShowUpButton}
+                tabindex={shouldShowUpButton ? -1 : 0}
                 on:click={() => focusInput() && updatePriority(priority - 1)}
               >
                 <CaretUpFillIcon />
@@ -202,6 +238,8 @@
               <button
                 use:tooltip={{ content: 'Decrease Priority', placement: 'top' }}
                 class="st-button tertiary down-button"
+                class:hidden={!shouldShowDownButton}
+                tabindex={shouldShowDownButton ? -1 : 0}
                 on:click={() => focusInput() && updatePriority(priority + 1)}
               >
                 <CaretDownFillIcon />
@@ -216,7 +254,7 @@
           on:click|stopPropagation
           use:permissionHandler={{
             hasPermission: hasEditPermission,
-            permissionError: readOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit plan goals',
+            permissionError: editPermissionError,
           }}
         >
           <option value={null}>Always use latest</option>
@@ -227,12 +265,13 @@
       </div>
     </svelte:fragment>
 
-    <Collapse title="Parameters" className="scheduling-goal-analysis-activities" defaultExpanded={true}>
-      <Parameters disabled={false} expanded={true} {formParameters} on:change={onChangeFormParameters} />
-    </Collapse>
+    {#if formParameters.length > 0}
+      <Collapse title="Parameters" className="scheduling-goal-analysis-activities" defaultExpanded={true}>
+        <Parameters disabled={false} expanded={true} {formParameters} on:change={onChangeFormParameters} />
+      </Collapse>
+    {/if}
 
     <SchedulingGoalAnalysesActivities analyses={goal.analyses} />
-
     <svelte:fragment slot="contextMenuContent">
       <ContextMenuItem
         on:click={() =>
@@ -248,8 +287,8 @@
           [
             permissionHandler,
             {
-              hasPermission: hasEditPermission,
-              permissionError,
+              hasPermission: hasReadPermission,
+              permissionError: readPermissionError,
             },
           ],
         ]}
@@ -262,7 +301,7 @@
             permissionHandler,
             {
               hasPermission: hasEditPermission,
-              permissionError,
+              permissionError: editPermissionError,
             },
           ],
         ]}
@@ -278,10 +317,34 @@
           <input bind:checked={simulateGoal} style:cursor="pointer" type="checkbox" /> Simulate After
         </div>
       </ContextMenuItem>
-      {#if version?.type === 'JAR'}
-        <ContextMenuItem on:click={duplicateGoalInvocation}>Duplicate Invocation</ContextMenuItem>
-        <ContextMenuItem on:click={deleteGoalInvocation}>Delete Invocation</ContextMenuItem>
-      {/if}
+      <ContextMenuItem
+        on:click={onDuplicateGoalInvocation}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasEditPermission,
+              permissionError: editPermissionError,
+            },
+          ],
+        ]}
+      >
+        Duplicate Invocation
+      </ContextMenuItem>
+      <ContextMenuItem
+        on:click={onDeleteGoalInvocation}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasEditPermission,
+              permissionError: editPermissionError,
+            },
+          ],
+        ]}
+      >
+        Delete Invocation
+      </ContextMenuItem>
     </svelte:fragment>
   </Collapse>
 </div>
