@@ -16,8 +16,9 @@ This document describes how to set up your development environment to build and 
 Before getting started with developing in this repository read/watch all of the following resources:
 
 1. [Rich Harris - Rethinking Reactivity](https://www.youtube.com/watch?v=AdNJ3fydeao)
-1. [Svelte Tutorial](https://svelte.dev/tutorial/basics)
-1. [Svelte Kit Documentation](https://kit.svelte.dev/docs)
+2. [Svelte Tutorial](https://svelte.dev/tutorial/basics)
+3. [Svelte Kit Documentation](https://kit.svelte.dev/docs)
+4. [TailwindCSS Documentation](https://v3.tailwindcss.com/docs/utility-first)
 
 ## Prerequisite Software
 
@@ -176,3 +177,7 @@ rm -rf build
 ```
 
 After cleaning you can [re-install NPM modules](#installing-npm-modules) and start development.
+
+## Styling
+
+Aerie UI uses TailwindCSS version 3 as its CSS styling solution. TailwindCSS is a CSS framework that provides dynamic utility classes that increase consistency and themability in the UI. TailwindCSS classes are preferred over semantic class names in Aerie UI (this is an ongoing process). If semantic class names are needed for a particular case, it is recommended that you use a tailwind `@apply` directive to include the tailwind classes within the semantic class instead of writing vanilla CSS so that all of the themeing variables are properly included.
