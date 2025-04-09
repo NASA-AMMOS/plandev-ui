@@ -4,6 +4,6 @@ export enum SequenceTypes {
 }
 
 export enum SequencingMode {
-  TYPESCRIPT,
-  TEMPLATING,
+  TYPESCRIPT = 'typescript',
+  TEMPLATING = 'templating',
 }
