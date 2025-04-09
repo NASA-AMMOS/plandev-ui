@@ -291,16 +291,11 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       }
 
       contextMenu.show(event.event as MouseEvent);
-      contextMenuOpen = true;
     }
     dispatch('cellContextMenu', event);
   }
 
   onMount(() => {
-    // setTimeout(() => {
-    //   contextMenuOpen = true;
-    // }, 1000);
-
     gridOptions = {
       // each entry here represents one column
       ...(columnShiftResize ? {} : { colResizeDefault: 'shift' }),
