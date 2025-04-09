@@ -443,24 +443,6 @@
     </svelte:fragment>
 
     <svelte:fragment slot="body">
-      <fieldset>
-        <label for="metadata-name">Name</label>
-        <input
-          bind:value={name}
-          autocomplete="off"
-          class:metadata-form-error={!!nameError}
-          class="st-input w-full"
-          name="metadata-name"
-          placeholder={`Enter ${displayName} Name (required)`}
-          required
-          use:permissionHandler={{
-            hasPermission: hasWriteMetadataPermission,
-            permissionError,
-          }}
-        />
-        <div class="metadata-form-error-message">{nameError}</div>
-      </fieldset>
-
       {#if showDefinitionTypeSelector && !!definitionTypeConfigurations}
         <fieldset>
           <RadioButtons selectedButtonId={definitionType} on:select-radio-button={onSelectDefinitionType}>
