@@ -748,7 +748,7 @@
             </fieldset>
           </div>
           <fieldset>
-            <button class="st-button w-full" on:click={showSelectedPlan}>Open plan</button>
+            <Button on:click={showSelectedPlan}>Open plan</Button>
           </fieldset>
         {:else}
           <form on:submit|preventDefault={createPlan}>
