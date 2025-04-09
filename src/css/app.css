@@ -161,12 +161,8 @@ span.error {
 
 fieldset {
   @apply m-0 flex min-w-0 flex-col border-0 px-4 pb-0 pt-2;
-  @apply font-sans text-foreground;
   /* Using the Inter font from Stellar as font-sans is defined in Tailwind config */
-  font-size: var(--st-typography-body-font-size);
-  font-weight: var(--st-typography-body-font-weight);
-  letter-spacing: var(--st-typography-body-letter-spacing);
-  line-height: var(--st-typography-body-line-height);
+  @apply font-sans text-foreground;
 }
 
 .toastify {
