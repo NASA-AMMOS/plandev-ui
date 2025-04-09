@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import type { ColDef, ColumnState, ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
@@ -12,8 +13,6 @@
   import { copyActivityDirectivesToClipboard } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
-  import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
-  import ContextMenuSeparator from '../context-menu/ContextMenuSeparator.svelte';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -208,8 +207,8 @@
 >
   <svelte:fragment slot="context-menu">
     {#if bulkSelectedActivityDirectiveIds.length === 1}
-      <ContextMenuItem on:click={scrollTimelineToActivityDirective}>Scroll to Activity</ContextMenuItem>
-      <ContextMenuSeparator></ContextMenuSeparator>
+      <ContextMenu.Item size="sm" on:click={scrollTimelineToActivityDirective}>Scroll to Activity</ContextMenu.Item>
+      <ContextMenu.Separator />
     {/if}
     <PasteActivitiesContextMenu
       {hasCreatePermission}
@@ -217,6 +216,6 @@
       planPermissionErrorText={permissionErrorText}
       on:createActivityDirectives={createActivityDirectives}
     />
-    <ContextMenuSeparator></ContextMenuSeparator>
+    <ContextMenu.Separator />
   </svelte:fragment>
 </BulkActionDataGrid>
