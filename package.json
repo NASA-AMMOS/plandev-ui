@@ -49,7 +49,7 @@
     "@nasa-jpl/aerie-ampcs": "^1.0.5",
     "@nasa-jpl/seq-json-schema": "^1.3.1",
     "@nasa-jpl/stellar": "^2.0.0-alpha.30",
-    "@nasa-jpl/stellar-svelte": "^2.0.0-alpha.48",
+    "@nasa-jpl/stellar-svelte": "^2.0.0-alpha.50",
     "@neodrag/svelte": "^2.0.6",
     "@streamparser/json": "^0.0.17",
     "@sveltejs/adapter-node": "5.0.1",
