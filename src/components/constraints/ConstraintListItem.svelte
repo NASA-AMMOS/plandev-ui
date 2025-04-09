@@ -353,7 +353,7 @@
           permissionError: editPermissionError,
         }}
       >
-        <ContextMenu.Item on:click={onDuplicateConstraintInvocation} disabled={!hasEditPermission}>
+        <ContextMenu.Item size="sm" on:click={onDuplicateConstraintInvocation} disabled={!hasEditPermission}>
           Duplicate Invocation
         </ContextMenu.Item>
       </div>
@@ -363,7 +363,7 @@
           permissionError: deletePermissionError,
         }}
       >
-        <ContextMenu.Item on:click={onDeleteConstraintInvocation} disabled={!hasDeletePermission}>
+        <ContextMenu.Item size="sm" on:click={onDeleteConstraintInvocation} disabled={!hasDeletePermission}>
           Delete Invocation
         </ContextMenu.Item>
       </div>

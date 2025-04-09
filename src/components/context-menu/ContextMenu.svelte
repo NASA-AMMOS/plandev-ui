@@ -58,7 +58,14 @@
   });
 </script>
 
-<ContextMenu.Root onOpenChange={open => (shown = open)} bind:open={shown}>
+<ContextMenu.Root
+  onOpenChange={open => {
+    if (!open) {
+      hide(true);
+    }
+  }}
+  bind:open={shown}
+>
   <ContextMenu.Trigger class="h-0 w-0" asChild let:builder>
     <button
       {...builder}
