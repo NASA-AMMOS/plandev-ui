@@ -2616,7 +2616,7 @@ const gql = {
 
   SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SIMS: `#graphql
     subscription SubMostRecentExpansion($planId: Int!) {
-      plan_by_pk(id: $planId) {
+      ${Queries.PLAN}(id: $planId) {
         simulations {
           simulation_datasets {
             id
