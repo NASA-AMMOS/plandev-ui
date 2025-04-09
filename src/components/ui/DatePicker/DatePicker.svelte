@@ -258,6 +258,7 @@
 <div class="cursor-auto" style="position: inherit" bind:this={datePickerContainer}>
   <div use:popperRef use:useActions={use}>
     <Input
+      aria-invalid={!isValid || hasError ? 'true' : 'false'}
       autocomplete="off"
       sizeVariant="xs"
       class={!isValid || hasError ? 'border border-red-500 bg-red-500 bg-opacity-10 text-red-500' : ''}
