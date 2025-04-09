@@ -359,11 +359,11 @@
       </div>
       <div
         use:permissionHandler={{
-          hasPermission: hasEditPermission,
-          permissionError: editPermissionError,
+          hasPermission: hasDeletePermission,
+          permissionError: deletePermissionError,
         }}
       >
-        <ContextMenu.Item on:click={onDeleteConstraintInvocation} disabled={!hasEditPermission}>
+        <ContextMenu.Item on:click={onDeleteConstraintInvocation} disabled={!hasDeletePermission}>
           Delete Invocation
         </ContextMenu.Item>
       </div>
