@@ -269,13 +269,13 @@
       class="z-[99999] min-w-[150px] select-none overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md outline-none"
       use:popperContent={extraOpts}
     >
-      <ul class="m-0 p-0" role="listbox">
+      <ul class="m-0 divide-y divide-solid p-0" role="listbox">
         {#if filteredOptions.length}
-          <Label size="sm" class="flex w-full border-b bg-primary-foreground p-2">Suggestions</Label>
+          <Label size="sm" class="flex w-full bg-primary-foreground p-2">Suggestions</Label>
           {#each filteredOptions as tag}
             <li
               role="option"
-              class="flex cursor-pointer border-b p-2 hover:bg-accent aria-selected:bg-accent"
+              class="flex cursor-pointer p-2 hover:bg-accent aria-selected:bg-accent"
               on:mousedown|stopPropagation
               on:mouseup|stopPropagation={() => addTag(tag, 'select')}
               aria-selected={activeTag ? compareTags(activeTag, tag) : false}
