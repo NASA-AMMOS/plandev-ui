@@ -135,7 +135,6 @@
   const onWindowResizedDebounced = debounce(sizeColumnsToFit, 50);
 
   let contextMenu: ContextMenuInternal;
-  let contextMenuOpen: boolean = false;
   let gridOptions: GridOptions<RowData>;
   let gridApi: GridApi<RowData> | undefined;
   let gridDiv: HTMLDivElement;
