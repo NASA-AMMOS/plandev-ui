@@ -64,6 +64,10 @@
       <VerticalCollapseIcon />
       Constraints
     </MenuItem>
+    <MenuItem on:click={() => onClickMenuItem('ExpansionPanel')}>
+      <JournalCodeIcon />
+      Expansion
+    </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('ExternalSourcesPanel')}>
       <ExternalSourceIcon />
       External Sources
@@ -95,10 +99,6 @@
     <MenuItem on:click={() => onClickMenuItem('ExternalEventFormPanel')}>
       <ExternalEventIcon />
       Selected External Event
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('ExpansionPanel')}>
-      <JournalCodeIcon />
-      Expansion
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('SimulationPanel')}>
       <GearWideConnectedIcon />
