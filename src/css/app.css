@@ -72,6 +72,8 @@
   }
 }
 
+/* CSS reset */
+
 /* Inherit fonts for inputs and buttons */
 input,
 button,
@@ -145,6 +147,8 @@ html:focus-within {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Global app styles */
 
 body {
   min-height: 100vh;
