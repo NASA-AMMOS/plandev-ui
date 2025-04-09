@@ -181,7 +181,7 @@
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
-    <GridMenu {gridSection} title="Sequences & Expansion" />
+    <GridMenu {gridSection} title="Expansion" />
   </svelte:fragment>
 
   <svelte:fragment slot="body">

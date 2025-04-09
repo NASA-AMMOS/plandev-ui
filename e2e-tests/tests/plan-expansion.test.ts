@@ -61,7 +61,7 @@ test.beforeEach(async () => {
   await plan.goto(); // Refresh page to reset the view
 });
 
-test.describe.serial('Plan Sequences & Expansion', () => {
+test.describe.serial('Plan Expansion', () => {
   test('Expansion Sequence can be created', async () => {
     await plan.showPanel(PanelNames.SIMULATION, true);
     await plan.runSimulation();
