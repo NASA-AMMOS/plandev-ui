@@ -255,50 +255,33 @@ export function translateJsonSchemaToValueSchema(jsonSchema: SchemaObject | unde
       };
       const propTranslated = translateJsonSchemaTypeToValueSchema(propType as JSONType, propProperties, propItems);
       if ('items' in propTranslated) {
+        const itemsToTranslate =
+          propTranslated.items.type === 'struct' ? propTranslated.items.items : propTranslated.items;
+        const translatedItems = Object.entries(itemsToTranslate).reduce(
+          (acc: Record<string, ValueSchema>, currentItem: [string, ValueSchema]) => {
+            const {
+              type: currentType,
+              properties: currentProperties,
+              items: currentItems,
+            } = currentItem[1] as {
+              items?: Record<'type', JSONType>;
+              properties?: Record<string, object>;
+              type: JSONType;
+            };
+            const translatedItem = translateJsonSchemaTypeToValueSchema(
+              currentType as JSONType,
+              currentProperties,
+              currentItems,
+            );
+            acc[currentItem[0]] = translatedItem;
+            return acc;
+          },
+          {} as Record<string, ValueSchema>,
+        );
         if (propTranslated.items.type === 'struct') {
-          propTranslated.items.items = Object.entries(propTranslated.items.items).reduce(
-            (acc: Record<string, ValueSchema>, currentItem: [string, ValueSchema]) => {
-              const {
-                type: currentType,
-                properties: currentProperties,
-                items: currentItems,
-              } = currentItem[1] as {
-                items?: Record<'type', JSONType>;
-                properties?: Record<string, object>;
-                type: JSONType;
-              };
-              const translatedItem = translateJsonSchemaTypeToValueSchema(
-                currentType as JSONType,
-                currentProperties,
-                currentItems,
-              );
-              acc[currentItem[0]] = translatedItem;
-              return acc;
-            },
-            {} as Record<string, ValueSchema>,
-          );
+          propTranslated.items.items = translatedItems;
         } else {
-          propTranslated.items = Object.entries(propTranslated.items).reduce(
-            (acc: Record<string, ValueSchema>, currentItem: [string, ValueSchema]) => {
-              const {
-                type: currentType,
-                properties: currentProperties,
-                items: currentItems,
-              } = currentItem[1] as {
-                items?: Record<'type', JSONType>;
-                properties?: Record<string, object>;
-                type: JSONType;
-              };
-              const translatedItem = translateJsonSchemaTypeToValueSchema(
-                currentType as JSONType,
-                currentProperties,
-                currentItems,
-              );
-              acc[currentItem[0]] = translatedItem;
-              return acc;
-            },
-            {} as Record<string, ValueSchema>,
-          );
+          propTranslated.items = translatedItems;
         }
       }
       propertiesAsValueSchema[propName] = propTranslated;
