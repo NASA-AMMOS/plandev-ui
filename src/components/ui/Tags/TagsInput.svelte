@@ -232,9 +232,12 @@
 <svelte:window on:click|capture={onClickOutside} on:touchstart|capture={onClickOutside} />
 
 <div
-  class={classNames('flex max-h-[40vh] gap-2 overflow-hidden rounded-md border border-input bg-background p-[2px]', {
-    'cursor-not-allowed opacity-50': disabled,
-  })}
+  class={classNames(
+    'flex max-h-[40vh] gap-2 overflow-hidden rounded-md border border-input bg-background p-[2px] focus-within:ring-2 focus-within:ring-ring',
+    {
+      'cursor-not-allowed opacity-50': disabled,
+    },
+  )}
   use:useActions={use}
   use:popperRef
   bind:this={tagsRef}
