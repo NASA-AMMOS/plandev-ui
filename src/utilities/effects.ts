@@ -4209,13 +4209,13 @@ const effects = {
       );
       const { external_source } = data;
       if (external_source != null) {
-        const event_types: ExternalEventType[] = [];
+        const eventTypes: ExternalEventType[] = [];
         for (const external_event of external_source[0].external_events) {
-          if (!event_types.map(currentType => currentType.name).includes(external_event.external_event_type.name)) {
-            event_types.push(external_event.external_event_type);
+          if (!eventTypes.map(currentType => currentType.name).includes(external_event.external_event_type.name)) {
+            eventTypes.push(external_event.external_event_type);
           }
         }
-        return event_types;
+        return eventTypes;
       } else {
         throw Error('Unable to retrieve external event types for source');
       }
