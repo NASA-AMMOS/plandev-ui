@@ -4,6 +4,7 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
+  import { groupBy } from 'lodash-es';
   import ExternalEventIcon from '../../assets/external-event-box-with-arrow.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
   import { catchError } from '../../stores/errors';
@@ -511,54 +512,26 @@
     }
 
     // Check that all the External Event Types for the source to-be-uploaded exist
-    const newSourceExternalEventTypes: { [event_type: string]: string[] } = {};
-    for (const event of externalSource.events) {
-      const currentKeySet = new Set(Object.keys(event.attributes));
-      if (newSourceExternalEventTypes[event.event_type] === undefined) {
-        newSourceExternalEventTypes[event.event_type] = Object.keys(event.attributes);
-      } else if (newSourceExternalEventTypes[event.event_type].length === Object.keys(event.attributes).length) {
-        const attributeConsistency = getNonSharedSetElements(
-          currentKeySet,
-          new Set(newSourceExternalEventTypes[event.event_type]),
-        );
-        if (attributeConsistency.length > 0) {
-          uploadDisabledMessage = 'Event attributes are inconsistent across events of type ' + event.event_type + '.';
-          return false;
-        }
-      } else {
-        uploadDisabledMessage = 'Event attributes are inconsistent across events of type ' + event.event_type + '.';
-        return false;
-      }
-    }
+    const newSourceExternalEventTypes = groupBy(externalSource.events, 'event_type');
 
     let eventTypes: string[] = [];
-    for (const entry of Object.entries(newSourceExternalEventTypes)) {
-      if (
-        $externalEventTypes.find(eventTypeFromDB => eventTypeFromDB.name === entry[0]) === undefined &&
-        entry[1].length === 0 // only create new types if they don't have attributes. otherwise, a schema is needed as we do not infer one
-      ) {
-        eventTypes.push(entry[0]);
+    for (const [currentEventType, currentEvents] of Object.entries(newSourceExternalEventTypes)) {
+      if (currentEvents !== undefined && currentEvents !== null) {
+        const anyCurrentEventsHaveAttributes = currentEvents.some(
+          currentEvent => Object.keys(currentEvent.attributes).length,
+        );
+        if (
+          $externalEventTypes.find(eventTypeFromDB => eventTypeFromDB.name === currentEventType) === undefined &&
+          !anyCurrentEventsHaveAttributes // only create new types if they don't have attributes. otherwise, a schema is needed as we do not infer one
+        ) {
+          eventTypes.push(currentEventType);
+        }
       }
     }
     if (eventTypes.length > 0) {
       newExternalEventTypes = eventTypes;
     }
     return true;
-  }
-
-  function getNonSharedSetElements(firstSet: Set<string>, secondSet: Set<string>): string[] {
-    const nonSharedElements: string[] = [];
-    for (const setItem of firstSet) {
-      if (!secondSet.has(setItem)) {
-        nonSharedElements.push(setItem);
-      }
-    }
-    for (const setItem of secondSet) {
-      if (!firstSet.has(setItem)) {
-        nonSharedElements.push(setItem);
-      }
-    }
-    return nonSharedElements;
   }
 
   function onReset() {
