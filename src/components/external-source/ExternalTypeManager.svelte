@@ -44,11 +44,11 @@
   import AlertError from '../ui/AlertError.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
+  import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
-  import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
 
   export let user: User | null;
 
@@ -513,8 +513,8 @@
         parsedExternalSourceEventTypeSchema = undefined;
         throw new Error('External Source & Event Type Schema has Invalid Format');
       }
-    } catch (error) {
-      createExternalSourceEventTypeError.set('External Source & Event Type Schema has Invalid Format');
+    } catch (error: any) {
+      createExternalSourceEventTypeError.set(error);
     }
   }
 </script>
