@@ -42,7 +42,7 @@ test.describe.serial('Plans', () => {
     await models.tableRow().click();
     await models.createPlanButton.click();
     await expect(page).toHaveURL(`${baseURL}/plans`);
-    const { text } = await plans.selectedModel();
+    const text = await plans.selectedModel();
     expect(text).toEqual(`${models.modelName} (Version: ${models.modelVersion})`);
   });
 
@@ -64,14 +64,14 @@ test.describe.serial('Plans', () => {
   test('Entering an invalid start time should display an error, and the create button should be disabled', async () => {
     await plans.inputStartTime.fill('2022-');
     await page.keyboard.press('Tab');
-    await expect(plans.inputStartTime).toHaveClass(/error/);
+    await expect(plans.inputStartTime).toHaveAttribute('aria-invalid', 'true');
     await expect(plans.createButton).toBeDisabled();
   });
 
   test('Entering an invalid end time should display an error, and the create button should be disabled', async () => {
     await plans.inputEndTime.fill('2022-');
     await page.keyboard.press('Tab');
-    await expect(plans.inputEndTime).toHaveClass(/error/);
+    await expect(plans.inputEndTime).toHaveAttribute('aria-invalid', 'true');
     await expect(plans.createButton).toBeDisabled();
   });
 
