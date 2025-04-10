@@ -83,7 +83,7 @@
             <TagIcon />
             Tags
           </MenuLink>
-          <MenuLink className="text-sm py-1.5" href="{base}/tags">
+          <MenuLink className="text-sm py-1.5" href="{base}/external-sources">
             <ExternalSourceIcon />
             External Sources
           </MenuLink>
