@@ -10,10 +10,6 @@ import { plan } from './plan';
 import { gqlSubscribable } from './subscribable';
 import { viewUpdateGrid } from './views';
 
-/* Writeable. */
-export const createExternalEventTypeError: Writable<string | null> = writable(null);
-export const creatingExternalEventType: Writable<boolean | null> = writable(null);
-
 /* Subscriptions. */
 export const selectedExternalEventsRaw = gqlSubscribable<{ external_event: ExternalEventDB }[] | null | undefined>(
   gql.SUB_PLAN_EXTERNAL_EVENTS_DERIVATION_GROUP,
@@ -88,11 +84,6 @@ export const selectedExternalEvent: Readable<ExternalEvent | null> = derived(
     return null;
   },
 );
-
-/** Helper functions. */
-export function resetExternalEventStores(): void {
-  createExternalEventTypeError.set(null);
-}
 
 export function selectExternalEvent(
   externalEventId: ExternalEventId | null,

@@ -12,7 +12,6 @@
   import {
     createDerivationGroupError,
     createExternalSourceError,
-    createExternalSourceTypeError,
     creatingExternalSource,
     externalSources,
     externalSourceTypes,
@@ -182,7 +181,6 @@
   // Clear all error stores when a source is selected as they will not be shown
   $: if (selectedSource !== null) {
     createExternalSourceError.set(null);
-    createExternalSourceTypeError.set(null);
     createDerivationGroupError.set(null);
     parsingError.set(null);
   }
@@ -222,7 +220,6 @@
     // Safeguard against infinitely executing parse logic
     if (file !== files[0]) {
       createExternalSourceError.set(null);
-      createExternalSourceTypeError.set(null);
       createDerivationGroupError.set(null);
       parsingError.set(null);
       isDerivationGroupFieldDisabled = true;
@@ -552,7 +549,6 @@
 
   function resetErrors() {
     $createExternalSourceError = null;
-    $createExternalSourceTypeError = null;
     $createDerivationGroupError = null;
     $parsingError = null;
   }

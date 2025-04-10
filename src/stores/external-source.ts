@@ -15,7 +15,6 @@ import { gqlSubscribable } from './subscribable';
 export const parsingError: Writable<string | null> = writable(null);
 export const creatingExternalSource: Writable<boolean> = writable(false);
 export const createExternalSourceError: Writable<string | null> = writable(null);
-export const createExternalSourceTypeError: Writable<string | null> = writable(null);
 export const createExternalSourceEventTypeError: Writable<string | null> = writable(null);
 export const createDerivationGroupError: Writable<string | null> = writable(null);
 export const derivationGroupPlanLinkError: Writable<string | null> = writable(null);
@@ -71,7 +70,6 @@ export const selectedPlanDerivationGroupNames: Readable<string[]> = derived(
 /* Helper Functions. */
 export function resetExternalSourceStores(): void {
   createExternalSourceError.set(null);
-  createExternalSourceTypeError.set(null);
   createDerivationGroupError.set(null);
   derivationGroupPlanLinkError.set(null);
 }

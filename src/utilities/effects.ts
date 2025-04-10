@@ -31,14 +31,9 @@ import {
   savingExpansionSet as savingExpansionSetStore,
 } from '../stores/expansion';
 import {
-  createExternalEventTypeError as createExternalEventTypeErrorStore,
-  creatingExternalEventType as creatingExternalEventTypeStore,
-} from '../stores/external-event';
-import {
   createDerivationGroupError as createDerivationGroupErrorStore,
   createExternalSourceError as createExternalSourceErrorStore,
   createExternalSourceEventTypeError as createExternalSourceEventTypeErrorStore,
-  createExternalSourceTypeError as createExternalSourceTypeErrorStore,
   creatingExternalSource as creatingExternalSourceStore,
   derivationGroupPlanLinkError as derivationGroupPlanLinkErrorStore,
   parsingError as parsingErrorStore,
@@ -1199,43 +1194,6 @@ const effects = {
     }
   },
 
-  async createExternalEventType(eventTypeName: string, eventTypeAttributesSchema: File, user: User | null) {
-    if (!gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user)) {
-      throwPermissionError('create an external event type');
-    }
-    creatingExternalEventTypeStore.set(true);
-    createExternalEventTypeErrorStore.set(null);
-
-    try {
-      const body = new FormData();
-      body.append('attribute_schema', eventTypeAttributesSchema, eventTypeAttributesSchema.name);
-      body.append('external_event_type_name', eventTypeName);
-
-      const response = await reqGateway(`/uploadExternalEventType`, 'POST', body, user, true);
-      if (response?.errors === undefined) {
-        showSuccessToast('External Event Type Created Successfully');
-      } else {
-        const errorMsg = response.errors.map((respError: { message: string }) => respError.message).join('\n');
-        throw new Error(errorMsg);
-      }
-    } catch (e) {
-      showFailureToast('External Event Type Create Failed');
-      if ((e as Error).message.includes('POST /uploadExternalEventType:')) {
-        // error from gateway
-        createExternalEventTypeErrorStore.set(
-          (e as Error).message.replace(
-            'Internal Server Error\nPOST /uploadExternalEventType: ',
-            'Internal Server Error: ',
-          ),
-        );
-      } else {
-        createExternalEventTypeErrorStore.set((e as Error).message);
-      }
-      catchError(e as Error);
-      return null;
-    }
-  },
-
   async createExternalSource(
     externalSourceTypeName: string,
     derivationGroupName: string,
@@ -1394,42 +1352,6 @@ const effects = {
       createExternalSourceEventTypeErrorStore.set((e as Error).message);
       catchError(e as Error);
       return false;
-    }
-  },
-
-  async createExternalSourceType(sourceTypeName: string, sourceTypeAttributesSchema: File, user: User | null) {
-    if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
-      throwPermissionError('create an external source type');
-    }
-    createExternalSourceTypeErrorStore.set(null);
-
-    try {
-      const body = new FormData();
-      body.append('attribute_schema', sourceTypeAttributesSchema, sourceTypeAttributesSchema.name);
-      body.append('external_source_type_name', sourceTypeName);
-
-      const response = await reqGateway(`/uploadExternalSourceType`, 'POST', body, user, true);
-      if (response?.errors === undefined) {
-        showSuccessToast('External Source Type Created Successfully');
-      } else {
-        showFailureToast('External Source Type Creation Failed');
-      }
-      return response;
-    } catch (e) {
-      showFailureToast('External Source Type Create Failed');
-      if ((e as Error).message.includes('POST /uploadExternalSourceType:')) {
-        // error from gateway
-        createExternalSourceTypeErrorStore.set(
-          (e as Error).message.replace(
-            'Internal Server Error\nPOST /uploadExternalSourceType: ',
-            'Internal Server Error: ',
-          ),
-        );
-      } else {
-        createExternalSourceTypeErrorStore.set((e as Error).message);
-      }
-      catchError(e as Error);
-      return null;
     }
   },
 
