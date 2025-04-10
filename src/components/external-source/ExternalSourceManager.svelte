@@ -501,8 +501,13 @@
     const externalSourceType = $externalSourceTypes.find(
       sourceType => sourceType.name === externalSource.source.source_type,
     );
-    if (externalSourceType === undefined && Object.keys(externalSource.source.attributes).length === 0) {
-      newExternalSourceType = externalSource.source.source_type;
+    if (externalSourceType === undefined) {
+      if (Object.keys(externalSource.source.attributes).length === 0) {
+        newExternalSourceType = externalSource.source.source_type;
+      } else {
+        uploadDisabledMessage = `External Source Type "${externalSource.source.source_type}" does not exist and contains attributes. Please upload a schema prior to using the type.`;
+        return false;
+      }
     }
 
     // Check that all the External Event Types for the source to-be-uploaded exist
@@ -514,11 +519,14 @@
         const anyCurrentEventsHaveAttributes = currentEvents.some(
           currentEvent => Object.keys(currentEvent.attributes).length,
         );
-        if (
-          $externalEventTypes.find(eventTypeFromDB => eventTypeFromDB.name === currentEventType) === undefined &&
-          !anyCurrentEventsHaveAttributes // only create new types if they don't have attributes. otherwise, a schema is needed as we do not infer one
-        ) {
-          eventTypes.push(currentEventType);
+        if ($externalEventTypes.find(eventTypeFromDB => eventTypeFromDB.name === currentEventType) === undefined) {
+          // Only create new types if they don't have attributes. otherwise, a schema is needed as we do not infer one
+          if (!anyCurrentEventsHaveAttributes) {
+            eventTypes.push(currentEventType);
+          } else {
+            uploadDisabledMessage = `External Event Type "${currentEventType}" does not exist and contains attributes. Please upload a schema prior to using the type.`;
+            return false;
+          }
         }
       }
     }
