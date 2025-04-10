@@ -21,6 +21,7 @@
   import { ChevronDown } from 'lucide-svelte';
   import { onMount } from 'svelte';
   import AerieWordmarkDark from '../../assets/aerie-wordmark-dark.svg?component';
+  import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
   import type { User, Version } from '../../types/app';
   import effects from '../../utilities/effects';
   import { logout } from '../../utilities/login';
@@ -82,6 +83,10 @@
             <TagIcon />
             Tags
           </MenuLink>
+          <MenuLink className="text-sm py-1.5" href="{base}/tags">
+            <ExternalSourceIcon />
+            External Sources
+          </MenuLink>
         </div>
 
         <!-- Sequencing Column -->
@@ -89,7 +94,7 @@
           <h3 class="px-3 pb-2 pt-2 text-sm font-medium text-muted-foreground">Sequencing</h3>
           <MenuLink className="text-sm py-1.5" href="{base}/sequencing">
             <JournalCodeIcon />
-            Sequence Editor
+            Sequences
           </MenuLink>
           <MenuLink className="text-sm py-1.5" href="{base}/dictionaries">
             <JournalTextIcon />
