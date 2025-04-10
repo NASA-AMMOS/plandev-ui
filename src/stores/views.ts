@@ -1,9 +1,9 @@
 import { capitalize, isEqual } from 'lodash-es';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
-import type { ActivityLayerFilterField } from '../enums/timeline';
+import type { ActivityFilterField } from '../enums/filter';
+import type { DynamicFilter } from '../types/filter';
 import type { ResourceType } from '../types/simulation';
 import type {
-  ActivityLayerDynamicFilter,
   ActivityLayerFilter,
   Axis,
   Layer,
@@ -577,7 +577,7 @@ export function getUpdatedActivityLayerFilter(
   const hasSelectedFilters = metadata?.selectedFilters && Object.keys(metadata?.selectedFilters).length;
   if (hasTextFilters) {
     (metadata.textFilters || []).forEach(textFilter => {
-      const typeFilter: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>> = {
+      const typeFilter: DynamicFilter<Pick<typeof ActivityFilterField, 'Type' | 'Subsystem'>> = {
         field: 'Type',
         id: getNextThingID(dynamicTypeFilters),
         operator: 'includes',
@@ -591,7 +591,7 @@ export function getUpdatedActivityLayerFilter(
       selectedFilter => selectedFilter.value,
     ) as number[];
     if (subsystems.length) {
-      const typeFilter: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>> = {
+      const typeFilter: DynamicFilter<Pick<typeof ActivityFilterField, 'Type' | 'Subsystem'>> = {
         field: 'Subsystem',
         id: getNextThingID(dynamicTypeFilters),
         operator: 'includes',

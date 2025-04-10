@@ -1,11 +1,14 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { getOptionValueFromText } from '../utilities/selectors.js';
+import { AppNav } from './AppNav.js';
 import { ExpansionRules } from './ExpansionRules.js';
 import { Models } from './Models.js';
 import { Parcels } from './Parcels.js';
 
 export class ExpansionSets {
+  appNav: AppNav;
+  expansionSetName: string;
   inputModel: Locator;
   inputModelSelector: string = 'select[name="modelId"]';
   inputName: Locator;
@@ -26,6 +29,8 @@ export class ExpansionSets {
   ) {
     this.inputRuleSelector = `input[name="${expansionRules.ruleActivityType}"]`;
     this.updatePage(page);
+    this.appNav = new AppNav(page);
+    this.expansionSetName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
   }
 
   async createExpansionSet(baseURL: string | undefined) {
@@ -44,9 +49,8 @@ export class ExpansionSets {
   }
 
   async fillInputName() {
-    const expansionSetName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
     await this.inputName.focus();
-    await this.inputName.fill(expansionSetName);
+    await this.inputName.fill(this.expansionSetName);
     await this.inputName.evaluate(e => e.blur());
   }
 

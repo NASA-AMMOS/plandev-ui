@@ -18,7 +18,7 @@ import type { Axis } from '../types/timeline';
 import { createSpanUtilityMaps } from '../utilities/activities';
 import gql from '../utilities/gql';
 import { getSimulationProgress } from '../utilities/simulation';
-import { modelId, planId, planRevision } from './plan';
+import { planId, planModelId, planRevision } from './plan';
 import { gqlSubscribable } from './subscribable';
 
 /* Writeable. */
@@ -91,7 +91,7 @@ export const simulationDatasetsAll = gqlSubscribable<SimulationDatasetSlim[] | n
 
 export const simulationTemplates = gqlSubscribable<SimulationTemplate[]>(
   gql.SUB_SIMULATION_TEMPLATES,
-  { modelId },
+  { modelId: planModelId },
   [],
   null,
 );

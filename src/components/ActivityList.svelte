@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { activityTypes, subsystemTags } from '../stores/plan';
+  import { planModelActivityTypes, subsystemTags } from '../stores/plan';
   import type { ActivityType } from '../types/activity';
   import type { TimelineItemType } from '../types/timeline';
   import TimelineItemList from './TimelineItemList.svelte';
@@ -12,7 +12,7 @@
 </script>
 
 <TimelineItemList
-  items={$activityTypes}
+  items={$planModelActivityTypes}
   chartType="activity"
   typeName="activity"
   typeNamePlural="Activities"

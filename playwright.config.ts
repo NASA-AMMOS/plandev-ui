@@ -7,25 +7,47 @@ const __dirname = path.dirname(__filename);
 
 export const STORAGE_STATE = path.join(__dirname, 'e2e-test-results/.auth/user.json');
 
+const MAIN_TEST_SUITE_BASE_URL = 'http://localhost:3000';
+const SEQUENCE_TEMPLATE_TEST_SUITE_BASE_URL = 'http://localhost:3001';
+
 const config: PlaywrightTestConfig = {
   forbidOnly: !!process***REMOVED***.CI,
   projects: [
     {
       name: 'setup',
       testMatch: /global\.setup\.ts/,
+      use: {
+        baseURL: MAIN_TEST_SUITE_BASE_URL,
+      },
     },
     {
       dependencies: ['setup'],
       name: 'e2e tests',
-      testMatch: '**/*.test.ts',
+      teardown: 'teardown',
+      testDir: './e2e-tests',
+      testIgnore: /.*\/sequence-templates\.test\.ts/,
       use: {
+        baseURL: MAIN_TEST_SUITE_BASE_URL,
         storageState: STORAGE_STATE,
       },
     },
     {
-      dependencies: ['e2e tests'],
+      dependencies: ['setup'],
+      name: 'e2e sequence template tests',
+      teardown: 'teardown',
+      testDir: './e2e-tests',
+      testMatch: /.*\/sequence-templates\.test\.ts/,
+      use: {
+        baseURL: SEQUENCE_TEMPLATE_TEST_SUITE_BASE_URL,
+        storageState: STORAGE_STATE,
+      },
+    },
+    {
       name: 'teardown',
       testMatch: /global\.teardown\.ts/,
+      use: {
+        storageState: STORAGE_STATE,
+      },
     },
   ],
   reportSlowTests: {
@@ -41,16 +63,21 @@ const config: PlaywrightTestConfig = {
   retries: 2,
   testDir: './e2e-tests',
   use: {
-    baseURL: 'http://localhost:3000',
     browserName: 'chromium',
     trace: process***REMOVED***.CI ? 'retain-on-failure' : 'off',
     video: process***REMOVED***.CI ? 'retain-on-failure' : 'off',
   },
-  webServer: {
-    command: 'npm run preview',
-    port: 3000,
-    reuseExistingServer: !process***REMOVED***.CI,
-  },
+  webServer: [
+    {
+      command: 'npm run preview',
+      port: 3000,
+      reuseExistingServer: !process***REMOVED***.CI,
+    },
+    {
+      command: 'PUBLIC_COMMAND_EXPANSION_MODE=templating npm run preview',
+      port: 3001,
+    },
+  ],
 };
 
 export default config;

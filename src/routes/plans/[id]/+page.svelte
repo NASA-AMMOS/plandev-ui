@@ -33,8 +33,10 @@
   import PlanGrid from '../../../components/ui/PlanGrid.svelte';
   import ProgressLinear from '../../../components/ui/ProgressLinear.svelte';
   import StatusBadge from '../../../components/ui/StatusBadge.svelte';
+  import { SEQUENCE_EXPANSION_MODE } from '../../../constants/command-expansion';
   import { PlanStatusMessages } from '../../../enums/planStatusMessages';
   import { SearchParameters } from '../../../enums/searchParameters';
+  import { SequencingMode } from '../../../enums/sequencing';
   import { Status } from '../../../enums/status';
   import {
     activityArgumentDefaults,
@@ -61,16 +63,21 @@
     schedulingErrors,
     simulationDatasetErrors,
   } from '../../../stores/errors';
-  import { planExpansionStatus, resetExpansionStores, selectedExpansionSetId } from '../../../stores/expansion';
+  import {
+    lastExpandedSimulationDatasetId,
+    planExpansionStatus,
+    resetExpansionStores,
+    selectedExpansionSetId,
+  } from '../../../stores/expansion';
   import { extensions } from '../../../stores/extensions';
   import {
-    activityTypes,
     initialPlan,
     maxTimeRange,
     plan,
     planDatasets,
     planEndTimeMs,
     planId,
+    planModelActivityTypes,
     planReadOnly,
     planReadOnlyMergeRequest,
     planReadOnlySnapshot,
@@ -93,6 +100,8 @@
     schedulingAnalysisStatus,
     schedulingGoalCount,
   } from '../../../stores/scheduling';
+  import { lastTemplatedSimulationDatasetId } from '../../../stores/sequence-template';
+  import { selectedSequence } from '../../../stores/sequencing';
   import {
     enableSimulation,
     externalResourceNames,
@@ -184,6 +193,7 @@
   let simulationDataAbortController: AbortController;
   let resourcesExternalAbortController: AbortController;
   let schedulingStatusText: string = '';
+  let lastSimulationDatasetId: number | null = null;
 
   $: ({ invalidActivityCount, ...activityErrorCounts } = $activityErrorRollups.reduce(
     (prevCounts, activityErrorRollup) => {
@@ -289,7 +299,7 @@
       start: !isNaN(start) ? start : $maxTimeRange.start,
     });
 
-    activityTypes.updateValue(() => data.initialActivityTypes);
+    planModelActivityTypes.updateValue(() => data.initialActivityTypes);
     activityArgumentDefaults.set(data.initialActivityArguments);
     planTags.updateValue(() => data.initialPlanTags);
   }
@@ -437,6 +447,10 @@
       modelErrorCount += 1;
     }
   }
+  $: lastSimulationDatasetId =
+    SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING
+      ? $lastTemplatedSimulationDatasetId
+      : $lastExpandedSimulationDatasetId;
 
   onDestroy(() => {
     resetActivityStores();
@@ -503,6 +517,18 @@
       const success = await effects.editView(updatedView, data.user);
       if (success) {
         resetOriginalView();
+      }
+    }
+  }
+
+  async function onHandleExpansion() {
+    if (SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT) {
+      if ($selectedExpansionSetId != null && $plan) {
+        effects.expand($selectedExpansionSetId, $simulationDatasetLatest?.id || -1, $plan, $plan.model, data.user);
+      }
+    } else if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
+      if ($selectedSequence !== null && $plan !== null && $simulationDatasetLatest !== null) {
+        effects.expandTemplates([$selectedSequence], $simulationDatasetLatest.dataset_id, $plan.model_id, data.user);
       }
     }
   }
@@ -620,24 +646,25 @@
           permissionError={$planReadOnly
             ? PlanStatusMessages.READ_ONLY
             : 'You do not have permission to expand activities'}
-          menuTitle="Expansion Status"
-          disabled={$selectedExpansionSetId === null}
+          menuTitle={SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT
+            ? 'Command Expansion Status'
+            : 'Template Expansion Status'}
+          disabled={SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT
+            ? $selectedExpansionSetId === null
+            : $selectedSequence === null || $simulationDatasetId === null}
           status={$planExpansionStatus}
-          on:click={() => {
-            if ($selectedExpansionSetId != null && $plan) {
-              effects.expand(
-                $selectedExpansionSetId,
-                $simulationDatasetLatest?.id || -1,
-                $plan,
-                $plan.model,
-                data.user,
-              );
-            }
-          }}
+          on:click={() => onHandleExpansion()}
         >
           <PlanIcon />
           <svelte:fragment slot="metadata">
-            <div>Expansion Set ID: {$selectedExpansionSetId || 'None'}</div>
+            {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
+              <div>Expansion Set ID: {$selectedExpansionSetId || 'None'}</div>
+            {/if}
+            {#if !lastSimulationDatasetId}
+              <div>No expansions exist yet.</div>
+            {:else}
+              <div>Last expanded for simulation ID: {lastSimulationDatasetId}</div>
+            {/if}
           </svelte:fragment>
         </PlanNavButton>
         <PlanNavButton

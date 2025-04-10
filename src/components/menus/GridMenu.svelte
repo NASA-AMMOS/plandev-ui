@@ -9,8 +9,8 @@
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import TableWithHeaderIcon from '@nasa-jpl/stellar/icons/table_with_header.svg?component';
   import VerticalCollapseIcon from '@nasa-jpl/stellar/icons/vertical_collapse_with_center_line.svg?component';
-  import CodeSquareIcon from 'bootstrap-icons/icons/code-square.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
+  import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
   import WindowFullscreenIcon from 'bootstrap-icons/icons/window-fullscreen.svg?component';
   import ExternalEventIcon from '../../assets/external-event-box-with-arrow.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
@@ -65,7 +65,7 @@
       Constraints
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('ExpansionPanel')}>
-      <CodeSquareIcon />
+      <JournalCodeIcon />
       Expansion
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('ExternalSourcesPanel')}>

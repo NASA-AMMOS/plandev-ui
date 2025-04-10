@@ -5,6 +5,7 @@ import type {
 } from '@nasa-jpl/aerie-ampcs';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 import type { User } from '../types/app';
+import type { SequenceFilter } from '../types/expansion';
 import {
   type ChannelDictionaryMetadata,
   type CommandDictionaryMetadata,
@@ -27,8 +28,9 @@ export const parsedCommandDictionaries: Writable<Record<string, AmpcsCommandDict
 
 export const parsedParameterDictionaries: Writable<Record<string, AmpcsParameterDictionary>> = writable({});
 
-/* Subscriptions. */
+export const selectedSequence: Writable<string | null> = writable(null);
 
+/* Subscriptions. */
 export const channelDictionaries = gqlSubscribable<ChannelDictionaryMetadata[]>(
   gql.SUB_CHANNEL_DICTIONARIES,
   {},
@@ -87,6 +89,8 @@ export const parcelBundles: Readable<ParcelBundle[]> = derived(
     });
   },
 );
+
+export const sequenceFilters = gqlSubscribable<SequenceFilter[]>(gql.SUB_SEQUENCE_FILTERS, {}, [], null);
 
 export const userParcelColumns: Writable<string> = writable('2fr 3px 1fr');
 

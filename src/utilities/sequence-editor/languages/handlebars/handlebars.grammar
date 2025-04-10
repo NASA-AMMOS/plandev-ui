@@ -1,0 +1,88 @@
+@top Template { (directive | Text)* }
+
+directive {
+  Insert |
+  Escape |
+  RawBlock |
+  BlockComment |
+  OnelineComment
+}
+
+Insert { "{{" (space* (Identifier | BIHelper | Number | Bool | String | Equa | Subexp | "|" | "^" | "~"))*  space* "}}" }
+
+Escape { "{{{" Any "}}}" | "{{{{{" "{"* Any "}"* "}}}}}"}
+
+RawOpen { "{{{{" Any "}}}}" }
+
+RawClose { "{{{{/" Any "}}}}" }
+// @precedence { "/", Any }
+
+// @skip {space} {
+RawBlock { RawOpen (directive | Text)* RawClose }
+// }
+
+@local tokens {
+  blockCommentEnd { "--}}" }
+  blockCommentNewline { "\n" }
+  @else blockCommentContent
+}
+
+@skip {} {
+  BlockComment { "{{!--" (blockCommentContent | blockCommentNewline)* blockCommentEnd }
+}
+@skip { spaces | newline }
+
+@local tokens {
+  oneLineCommentEnd { "}}" }
+  @else oneLineCommentContent
+}
+
+@skip {} {
+  OnelineComment { "{{!" oneLineCommentContent* oneLineCommentEnd }
+}
+
+Bool { @specialize<Identifier, "true" | "false"> }
+Equa { Identifier "=" (Identifier | Number | Bool | String) }
+
+
+Subexp { "(" (space* (Identifier | Number | Bool | String | Equa | Subexp | "|"))*  space* ")" }
+@tokens {
+  spaces[@export] { $[\u0009 \u000b\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]+ }
+  newline[@export] { $[\r\n\u2028\u2029] }
+
+  identifierChar { @asciiLetter | $[_$\u{a1}-\u{10ffff}] | "../" | "@" }
+
+  word { identifierChar (identifierChar | @digit | "." | "#" | "-" | "_")* }
+
+  Identifier { word }
+
+  BIHelper { ("#"|"/"|"*") Identifier | "else" | "else if" | ">" }
+  // Identifier { "."? "./"? @asciiLetter+ ("." @asciiLetter+)?  }
+  Text { ![{] Text? | "{" (@eof | ![{] Text?) }
+  hex { @digit | $[a-fA-F] }
+
+  Any { (![{|}])+ }
+
+  String { ("'" (![\\'] | "\\" _)* "'"?) | ("\"" (![\\"] | "\\" _)* "\""?) }
+  Number {
+    (@digit ("_" | @digit)* ("." ("_" | @digit)*)? | "." @digit ("_" | @digit)*)
+      (("e" | "E") ("+" | "-")? ("_" | @digit)+)? |
+    @digit ("_" | @digit)* "n" |
+    "0x" (hex | "_")+ "n"? |
+    "0b" $[01_]+ "n"? |
+    "0o" $[0-7_]+ "n"?
+  }
+
+  space { @whitespace+ }
+  @precedence { space BIHelper Identifier }
+  @precedence { spaces, newline, Identifier}
+  @precedence { spaces, newline, Text}
+  @precedence { Any, spaces, newline }
+  @precedence { spaces, newline, space }
+  "{{"
+  "}}"
+  "."
+  "~"
+}
+
+@external propSource handlebarsHighlighter from "./handlebars-highlighter.ts"

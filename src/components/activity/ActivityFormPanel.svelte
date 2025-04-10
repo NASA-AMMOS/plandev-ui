@@ -17,9 +17,9 @@
   import { filteredExpansionSequences } from '../../stores/expansion';
   import {
     activityEditingLocked,
-    activityTypes,
-    modelId,
     plan,
+    planModelActivityTypes,
+    planModelId,
     planReadOnly,
     setActivityEditingLocked,
   } from '../../stores/plan';
@@ -101,7 +101,7 @@
     }
 
     const revision: ActivityDirectiveRevision = event.detail;
-    const activityType = $activityTypes.find(type => type.name === $selectedActivityDirective?.type);
+    const activityType = $planModelActivityTypes.find(type => type.name === $selectedActivityDirective?.type);
     const changedKeys: string[] = [];
 
     const potentialChanges: Array<keyof ActivityDirective & keyof ActivityDirectiveRevision> = [
@@ -204,7 +204,7 @@
       <ActivityDirectiveChangelog
         activityDirective={$selectedActivityDirective}
         activityDirectivesMap={$activityDirectivesMap || {}}
-        activityTypes={$activityTypes}
+        activityTypes={$planModelActivityTypes}
         planStartTimeYmd={$plan.start_time}
         on:closeChangelog={onToggleViewChangelog}
         on:previewRevision={onPreviewRevision}
@@ -215,10 +215,10 @@
         activityDirectivesMap={$activityDirectivesMap || {}}
         activityDirective={$selectedActivityDirective}
         activityMetadataDefinitions={$activityMetadataDefinitions}
-        activityTypes={$activityTypes}
+        activityTypes={$planModelActivityTypes}
         tags={$tags}
         editable={!$activityEditingLocked && !previewRevision}
-        modelId={$modelId}
+        modelId={$planModelId}
         planStartTimeYmd={$plan.start_time}
         revision={previewRevision}
         on:viewChangelog={onToggleViewChangelog}
@@ -228,7 +228,7 @@
       />
     {:else if $selectedSpan && $plan !== null}
       <ActivitySpanForm
-        activityTypes={$activityTypes}
+        activityTypes={$planModelActivityTypes}
         filteredExpansionSequences={$filteredExpansionSequences}
         simulationDatasetId={$simulationDatasetId}
         span={$selectedSpan}

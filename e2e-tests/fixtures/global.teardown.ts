@@ -1,6 +1,5 @@
 import { test as setup } from '@playwright/test';
-import { existsSync, unlinkSync } from 'fs';
-import { STORAGE_STATE } from '../../playwright.config';
+import { existsSync, PathLike, unlinkSync } from 'fs';
 
 /**
  * Global teardown
@@ -9,8 +8,8 @@ import { STORAGE_STATE } from '../../playwright.config';
  * @see https://dev.to/playwright/a-better-global-setup-in-playwright-reusing-login-with-project-dependencies-14
  */
 
-setup('teardown', async () => {
-  if (existsSync(STORAGE_STATE)) {
-    unlinkSync(STORAGE_STATE);
+setup('teardown', async ({ page: _page }, testInfo) => {
+  if (existsSync(testInfo.project.use.storageState as PathLike)) {
+    unlinkSync(testInfo.project.use.storageState as PathLike);
   }
 });

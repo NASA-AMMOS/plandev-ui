@@ -20,15 +20,18 @@ import ManagePlanDerivationGroupsModal from '../components/modals/ManagePlanDeri
 import ManagePlanSchedulingConditionsModal from '../components/modals/ManagePlanSchedulingConditionsModal.svelte';
 import ManagePlanSchedulingGoalsModal from '../components/modals/ManagePlanSchedulingGoalsModal.svelte';
 import MergeReviewEndedModal from '../components/modals/MergeReviewEndedModal.svelte';
+import NewSequenceModal from '../components/modals/NewSequenceModal.svelte';
 import PlanBranchesModal from '../components/modals/PlanBranchesModal.svelte';
 import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.svelte';
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
 import RestorePlanSnapshotModal from '../components/modals/RestorePlanSnapshotModal.svelte';
 import RunActionModal from '../components/modals/RunActionModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
+import TimeRangeModal from '../components/modals/TimeRangeModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceModal from '../components/modals/WorkspaceModal.svelte';
 import { type ActionDefinition } from '../types/actions';
+import NewSequenceTemplateModal from '../components/sequence-templates/NewSequenceTemplateModal.svelte';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
 import type { User } from '../types/app';
 import type { ExpansionSequence } from '../types/expansion';
@@ -587,6 +590,45 @@ export async function showWorkspaceModal(
   });
 }
 
+export async function showTemplateModal(): Promise<
+  ModalElementValue<{ activityType: string; language: string; modelId: number; name: string; parcelId: number }>
+> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const workspaceModal = new NewSequenceTemplateModal({
+          props: {},
+          target,
+        });
+        target.resolve = resolve;
+
+        workspaceModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          workspaceModal.$destroy();
+        });
+
+        workspaceModal.$on(
+          'save',
+          (
+            e: CustomEvent<{ activityType: string; language: string; modelId: number; name: string; parcelId: number }>,
+          ) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: true, value: e.detail });
+            workspaceModal.$destroy();
+          },
+        );
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
 export async function showLibrarySequenceModel(): Promise<ModalElementValue<{ libraryFile: File; parcel: number }>> {
   return new Promise(resolve => {
     if (browser) {
@@ -1096,6 +1138,73 @@ export async function showUploadViewModal(): Promise<ModalElementValue<{ definit
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
           uploadViewModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a TimeRangeModal with the supplied arguments.
+ */
+export async function showTimeRangeModal(
+  defaultStartTime: string,
+  defaultEndTime: string,
+): Promise<ModalElementValue<{ timeRangeEnd: string | null; timeRangeStart: string | null }>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const timeRangeModal = new TimeRangeModal({ props: { defaultEndTime, defaultStartTime }, target });
+        target.resolve = resolve;
+
+        timeRangeModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          timeRangeModal.$destroy();
+        });
+
+        timeRangeModal.$on('confirm', (e: CustomEvent<{ timeRangeEnd: string; timeRangeStart: string }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          timeRangeModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a NewSequenceModal.
+ */
+export async function showNewSequenceModal(): Promise<ModalElementValue<{ newSequenceName: string }>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const newSequenceModal = new NewSequenceModal({ props: {}, target });
+        target.resolve = resolve;
+
+        newSequenceModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          newSequenceModal.$destroy();
+        });
+
+        newSequenceModal.$on('confirm', (e: CustomEvent<{ newSequenceName: string }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          newSequenceModal.$destroy();
         });
       }
     } else {

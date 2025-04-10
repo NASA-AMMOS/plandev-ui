@@ -1,351 +1,409 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { base } from '$app/paths';
-  import type { ICellRendererParams } from 'ag-grid-community';
-  import { PlanStatusMessages } from '../../enums/planStatusMessages';
-  import {
-    creatingExpansionSequence,
-    expansionSets,
-    filteredExpansionSequences,
-    planExpansionStatus,
-    selectedExpansionSetId,
-  } from '../../stores/expansion';
-  import { plan, planReadOnly } from '../../stores/plan';
-  import { simulationDatasetId } from '../../stores/simulation';
+  import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
+  import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
+  import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
+  import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
+  import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
+  import { SequencingMode } from '../../enums/sequencing';
+  import { expansionSequences, expansionSets, filteredExpansionSequences } from '../../stores/expansion';
+  import { plan } from '../../stores/plan';
+  import { sequenceFilters } from '../../stores/sequencing';
+  import { simulationDatasetLatest, simulationDatasetsPlan } from '../../stores/simulation';
   import type { User } from '../../types/app';
-  import type { DataGridColumnDef, RowId } from '../../types/data-grid';
-  import type { ExpansionSequence, ExpansionSet } from '../../types/expansion';
+  import type { ExpansionSequence, SequenceFilter } from '../../types/expansion';
+  import type { ActivityLayerFilter } from '../../types/timeline';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
-  import { showExpansionSequenceModal } from '../../utilities/modal';
+  import { showExpansionSequenceModal, showNewSequenceModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { getShortISOForDate } from '../../utilities/time';
-  import Collapse from '../Collapse.svelte';
-  import Input from '../form/Input.svelte';
+  import { tooltip } from '../../utilities/tooltip';
+  import ContextMenu from '../context-menu/ContextMenu.svelte';
+  import ContextMenuHeader from '../context-menu/ContextMenuHeader.svelte';
+  import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
-  import CssGrid from '../ui/CssGrid.svelte';
-  import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
-  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
+  import ModalFooter from '../modals/ModalFooter.svelte';
+  import ActivityFilterBuilder from '../timeline/form/TimelineEditor/ActivityFilterBuilder.svelte';
+  import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
-  import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
-  import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
 
-  type CellRendererParams = {
-    deleteExpansionSequence: (sequence: ExpansionSequence) => void;
-    openExpansionSequence: (sequence: ExpansionSequence, user: User) => void;
-  };
-  type ExpansionSequenceCellRendererParams = ICellRendererParams<ExpansionSequence> & CellRendererParams;
+  const deletePermissionSequenceError: string = 'You do not have permission to delete an expansion sequence.';
+  const deletePermissionSequenceFilterError: string = 'You do not have permission to delete a sequence filter';
 
-  const baseColumnDefs: DataGridColumnDef[] = [
-    {
-      field: 'seq_id',
-      filter: 'text',
-      headerName: 'Seq ID',
-      resizable: true,
-      sortable: true,
-      suppressSizeToFit: true,
-      width: 85,
-    },
-    {
-      field: 'simulation_dataset_id',
-      filter: 'number',
-      headerName: 'Simulation ID',
-      resizable: true,
-      sortable: true,
-    },
-    { field: 'created_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
-  ];
+  let contextMenu: ContextMenu;
+  let filterText: string;
+  let newButton: HTMLElement;
+  let sequencesAndFilters: (ExpansionSequence | SequenceFilter)[] = [];
+  let isExpansionDisabled: boolean = true;
 
-  let columnDefs: DataGridColumnDef[] = baseColumnDefs;
-  let createButtonEnabled: boolean = false;
-  let hasCreatePermission: boolean = false;
-  let hasDeletePermission: boolean = false;
-  let hasExpandPermission: boolean = false;
-  let seqIdInput: string = '';
-  let selectedExpansionSet: ExpansionSet | null;
+  let selectedExpansionSetId: number | null = null;
+  let relevantSimulationDatasetIds: number[] | undefined = [];
+  let relevantExpansionSequences: ExpansionSequence[] = [];
+
+  let filterMenu: ActivityFilterBuilder;
+  let activeSequenceFilterName: string;
+  let activeSequenceFilterId: number | null = null;
+  let filterMenuActiveFilter: ActivityLayerFilter;
+  let creatingNewSequenceFilter: boolean = false;
+
+  let hasDeletePermissionSequence: boolean = false;
+  let hasDeletePermissionSequenceFilter: boolean = false;
 
   $: if (user !== null && $plan !== null) {
-    hasCreatePermission = featurePermissions.expansionSequences.canCreate(user) && !$planReadOnly;
-    hasDeletePermission = featurePermissions.expansionSequences.canDelete(user, $plan) && !$planReadOnly;
-    hasExpandPermission = featurePermissions.expansionSequences.canExpand(user, $plan, $plan.model) && !$planReadOnly;
+    hasDeletePermissionSequence = featurePermissions.expansionSequences.canDelete(user, $plan);
+    hasDeletePermissionSequenceFilter = featurePermissions.sequenceFilter.canDelete(user, $plan.model);
   }
-  $: {
-    columnDefs = [
-      ...baseColumnDefs,
-      {
-        cellClass: 'action-cell-container',
-        cellRenderer: (params: ExpansionSequenceCellRendererParams) => {
-          const actionsDiv = document.createElement('div');
-          actionsDiv.className = 'actions-cell';
-          new DataGridActions({
-            props: {
-              deleteCallback: params.deleteExpansionSequence,
-              deleteTooltip: {
-                content: 'Delete Sequence',
-                placement: 'bottom',
-              },
-              hasDeletePermission,
-              rowData: params.data,
-              viewCallback: data => user && params.openExpansionSequence(data, user),
-              viewTooltip: {
-                content: 'Open Sequence',
-                placement: 'bottom',
-              },
-            },
-            target: actionsDiv,
-          });
 
-          return actionsDiv;
-        },
-        cellRendererParams: {
-          deleteExpansionSequence,
-          openExpansionSequence: showExpansionSequenceModal,
-        } as CellRendererParams,
-        field: 'actions',
-        headerName: '',
-        resizable: false,
-        sortable: false,
-        suppressAutoSize: true,
-        suppressSizeToFit: true,
-        width: 55,
-      },
-    ];
+  $: relevantSimulationDatasetIds = $simulationDatasetsPlan?.map(dataset => dataset.id);
+
+  $: relevantExpansionSequences = $expansionSequences.filter(sequence =>
+    relevantSimulationDatasetIds?.includes(sequence.simulation_dataset_id),
+  );
+
+  $: sequencesAndFilters = [...relevantExpansionSequences, ...$sequenceFilters];
+
+  $: isExpansionDisabled =
+    $simulationDatasetLatest && relevantExpansionSequences.length > 0
+      ? SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING
+        ? false
+        : selectedExpansionSetId === null
+      : true;
+
+  function toggleContextMenu(e: MouseEvent) {
+    const { x, y } = newButton.getBoundingClientRect();
+    const newEvent = new MouseEvent(e.type, { ...e, clientX: x, clientY: y });
+    contextMenu.show(newEvent);
   }
-  $: createButtonEnabled = seqIdInput !== '';
-  $: selectedExpansionSet = $expansionSets.find(s => s.id === $selectedExpansionSetId) ?? null;
 
-  function deleteExpansionSequence(sequence: ExpansionSequence) {
+  function onApplyFilter(sequenceFilter: SequenceFilter) {
+    if ($simulationDatasetLatest !== null && $plan !== null) {
+      effects.applyActivitiesByFilter(
+        sequenceFilter,
+        $simulationDatasetLatest.id,
+        $plan.id,
+        $plan.start_time_doy,
+        $plan.end_time_doy,
+        user,
+      );
+    }
+  }
+
+  function onCreateSequenceFilter() {
+    if ($plan !== null) {
+      creatingNewSequenceFilter = false;
+      effects.createSequenceFilter(
+        filterMenuActiveFilter as ActivityLayerFilter,
+        activeSequenceFilterName,
+        $plan.model_id,
+        user,
+      );
+      filterMenu.toggle();
+    }
+  }
+
+  function onExpandAll() {
+    const useTemplating = SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING;
+    $filteredExpansionSequences.forEach(sequence => {
+      if (useTemplating && $plan !== null) {
+        effects.expandTemplates([sequence.seq_id], sequence.simulation_dataset_id, $plan.model_id, user);
+      } else if (selectedExpansionSetId !== null && $plan !== null) {
+        effects.expand(selectedExpansionSetId, sequence.simulation_dataset_id, $plan, $plan.model, user);
+      }
+    });
+  }
+
+  function onUpdateSequenceFilter() {
+    if ($plan !== null && activeSequenceFilterId !== null) {
+      creatingNewSequenceFilter = false;
+      effects.updateSequenceFilter(
+        filterMenuActiveFilter as ActivityLayerFilter,
+        activeSequenceFilterName,
+        activeSequenceFilterId,
+        $plan.model,
+        user,
+      );
+      filterMenu.toggle();
+    }
+  }
+
+  function onDeleteSequence(sequence: ExpansionSequence) {
     effects.deleteExpansionSequence(sequence, user);
   }
 
-  function deleteExpansionSequenceContext(event: CustomEvent<RowId[]>) {
-    const selectedSequenceId = event.detail[0];
+  function onDeleteSequenceFilter(sequenceFilter: SequenceFilter) {
+    effects.deleteSequenceFilters([sequenceFilter.id], user);
+  }
 
-    const sequenceToDelete = $filteredExpansionSequences.find((sequence: ExpansionSequence) => {
-      return sequence.seq_id === selectedSequenceId;
-    });
-
-    if (sequenceToDelete) {
-      deleteExpansionSequence(sequenceToDelete);
+  function onExpandSequence(sequence: ExpansionSequence) {
+    if ($simulationDatasetLatest !== null && $plan !== null) {
+      if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
+        effects.expandTemplates([sequence.seq_id], $simulationDatasetLatest.id, $plan.model_id, user);
+      } else if (selectedExpansionSetId !== null) {
+        effects.expand(selectedExpansionSetId, $simulationDatasetLatest.id, $plan, $plan.model, user);
+      }
     }
+  }
+
+  function onShowExpandedSequence(sequence: ExpansionSequence) {
+    showExpansionSequenceModal(sequence, user);
+  }
+
+  function onShowFilter(sequenceFilter: SequenceFilter) {
+    creatingNewSequenceFilter = false;
+    activeSequenceFilterName = sequenceFilter.name;
+    activeSequenceFilterId = sequenceFilter.id;
+    filterMenu.setActiveFilter(sequenceFilter.filter);
+    filterMenu.toggle();
+  }
+
+  async function onShowSequenceCreate() {
+    const result = await showNewSequenceModal();
+    if (result.confirm && result.value !== undefined && $simulationDatasetLatest !== null) {
+      effects.createExpansionSequence(result.value.newSequenceName, $simulationDatasetLatest?.id, user);
+    }
+  }
+
+  function onShowFilterCreate() {
+    creatingNewSequenceFilter = true;
+    filterMenu.setActiveFilter({});
+    filterMenu.toggle();
+  }
+
+  function isExpansionSequence(item: ExpansionSequence | SequenceFilter): item is ExpansionSequence {
+    return 'seq_id' in item;
   }
 </script>
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Expansion" />
-    <PanelHeaderActions status={$planExpansionStatus} indeterminate>
-      <PanelHeaderActionButton
-        title="Expand"
-        showLabel
-        disabled={$selectedExpansionSetId === null}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasExpandPermission,
-              permissionError: $planReadOnly
-                ? PlanStatusMessages.READ_ONLY
-                : 'You do not have permission to expand sequences',
-            },
-          ],
-        ]}
-        on:click={() => {
-          if ($selectedExpansionSetId && $plan) {
-            effects.expand($selectedExpansionSetId, $simulationDatasetId, $plan, $plan.model, user);
-          }
-        }}
-      />
-    </PanelHeaderActions>
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <div class="expansion-panel-body">
-      <fieldset>
-        <label for="expansionSet" class="expansion-set-selector">
-          Expansion Set
-          <a href={`${base}/expansion/sets`} target="_blank" rel="noopener noreferrer">View All Expansion Sets</a>
-        </label>
-        <select
-          bind:value={$selectedExpansionSetId}
-          class="st-select w-100"
-          disabled={!$expansionSets.length}
-          name="expansionSet"
+    <ActivityFilterBuilder
+      layerName={activeSequenceFilterName}
+      bind:this={filterMenu}
+      on:rename={newName => {
+        activeSequenceFilterName = newName.detail.name;
+      }}
+      on:filterChange={filter => {
+        filterMenuActiveFilter = filter.detail.filter;
+      }}
+      on:visibilityChange={visibility => {
+        if (!visibility.detail.isShown) {
+          activeSequenceFilterId = null;
+          activeSequenceFilterName = '';
+        }
+      }}
+    >
+      <svelte:fragment slot="footer">
+        {#if creatingNewSequenceFilter}
+          <ModalFooter>
+            <button class="st-button primary" on:click={onCreateSequenceFilter}>Create Sequence Filter</button>
+          </ModalFooter>
+        {:else}
+          <ModalFooter>
+            <button class="st-button secondary" on:click={onUpdateSequenceFilter}>Update Sequence Filter</button>
+          </ModalFooter>
+        {/if}
+      </svelte:fragment>
+    </ActivityFilterBuilder>
+    <div class="sne-controls">
+      <div class="sne-filter">
+        <input
+          bind:value={filterText}
+          class="st-input"
+          name="search"
+          autocomplete="off"
+          placeholder="Filter..."
+          aria-label="Filter..."
+        />
+      </div>
+      {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
+        <div class="sne-expansion-set-select">
+          <select name="expansionSetId" bind:value={selectedExpansionSetId} class="st-select w-100">
+            {#if !$expansionSets.length}
+              <option value={null}>No Expansion Sets</option>
+            {:else}
+              <option value={null} disabled hidden>Expansion Set</option>
+              {#each $expansionSets as expansionSet}
+                <option value={expansionSet.id}>
+                  {expansionSet.name} ({expansionSet.id})
+                </option>
+              {/each}
+            {/if}
+          </select>
+        </div>
+      {/if}
+      <div class="sne-buttons">
+        <button
+          class="st-button secondary new-button"
+          bind:this={newButton}
+          on:click|stopPropagation={toggleContextMenu}
         >
-          {#if !$expansionSets.length}
-            <option value={null}>No Expansion Sets Found</option>
-          {:else}
-            <option value={null} />
-            {#each $expansionSets as set}
-              <option value={set.id}>
-                {set.name} ({set.id})
-              </option>
-            {/each}
-          {/if}
-        </select>
-      </fieldset>
-      <fieldset>
-        <Collapse className="details-container" title="Expansion Set Details" defaultExpanded={false}>
-          {#if !selectedExpansionSet}
-            <div class="st-typography-label">No Expansion Set Selected</div>
-          {:else}
-            <div class="expansion-set-details">
-              <div class="expansion-set-detail">
-                <span class="st-typography-label">Mission Modal ID:</span>
-                <span>{selectedExpansionSet.mission_model_id}</span>
+          New
+        </button>
+        <button
+          class="st-button secondary expand-all-button"
+          disabled={isExpansionDisabled}
+          on:click|stopPropagation={onExpandAll}
+        >
+          Expand All
+        </button>
+        <ContextMenu bind:this={contextMenu}>
+          <ContextMenuHeader>Create new...</ContextMenuHeader>
+          <ContextMenuItem on:click={onShowSequenceCreate}>Sequence</ContextMenuItem>
+          <ContextMenuItem on:click={onShowFilterCreate}>Sequence Filter</ContextMenuItem>
+        </ContextMenu>
+      </div>
+    </div>
+    <div class="sne-items">
+      {#each sequencesAndFilters as sequenceOrFilter}
+        {#if isExpansionSequence(sequenceOrFilter)}
+          <ListItem>
+            <span slot="prefix" class="sne-item">
+              <JournalCodeIcon />
+              {sequenceOrFilter.seq_id}
+            </span>
+            <span slot="suffix">
+              <div use:tooltip={{ content: 'Delete Sequence', placement: 'top' }}>
+                <button
+                  aria-label={`Delete '${sequenceOrFilter.seq_id}'`}
+                  class="st-button icon"
+                  on:click|stopPropagation={() => {
+                    if (isExpansionSequence(sequenceOrFilter)) {
+                      onDeleteSequence(sequenceOrFilter);
+                    }
+                  }}
+                  use:permissionHandler={{
+                    hasPermission: hasDeletePermissionSequence,
+                    permissionError: deletePermissionSequenceError,
+                  }}
+                >
+                  <TrashIcon />
+                </button>
               </div>
-              <div class="expansion-set-detail">
-                <span class="st-typography-label">Parcel ID:</span>
-                <span>{selectedExpansionSet.parcel_id}</span>
+              <div use:tooltip={{ content: 'Show Expanded Sequence', placement: 'top' }}>
+                <button
+                  aria-label={`Show Expanded '${sequenceOrFilter.seq_id}'`}
+                  class="st-button icon"
+                  on:click|stopPropagation={() => {
+                    if (isExpansionSequence(sequenceOrFilter)) {
+                      onShowExpandedSequence(sequenceOrFilter);
+                    }
+                  }}
+                >
+                  <JournalCodeIcon />
+                </button>
               </div>
-              <div class="expansion-set-detail">
-                <span class="st-typography-label">Name:</span>
-                <span>{selectedExpansionSet.name}</span>
+              <div use:tooltip={{ content: 'Expand Sequence', placement: 'top' }}>
+                <button
+                  aria-label={`Expand '${sequenceOrFilter.seq_id}'`}
+                  class="st-button icon"
+                  disabled={isExpansionDisabled}
+                  on:click|stopPropagation={() => {
+                    if (isExpansionSequence(sequenceOrFilter)) {
+                      onExpandSequence(sequenceOrFilter);
+                    }
+                  }}
+                >
+                  <PlayIcon />
+                </button>
               </div>
-              <div class="expansion-set-detail">
-                <span class="st-typography-label">Created At:</span>
-                <span>{getShortISOForDate(new Date(selectedExpansionSet.created_at))}</span>
+            </span>
+          </ListItem>
+        {:else}
+          <ListItem>
+            <span slot="prefix" class="sne-item">
+              <FilterIcon />
+              {sequenceOrFilter.name}
+            </span>
+            <span slot="suffix">
+              <div use:tooltip={{ content: 'Delete Filter', placement: 'top' }}>
+                <button
+                  aria-label={`Delete '${sequenceOrFilter.name}'`}
+                  class="st-button icon"
+                  on:click|stopPropagation={() => {
+                    if (!isExpansionSequence(sequenceOrFilter)) {
+                      onDeleteSequenceFilter(sequenceOrFilter);
+                    }
+                  }}
+                  use:permissionHandler={{
+                    hasPermission: hasDeletePermissionSequenceFilter,
+                    permissionError: deletePermissionSequenceFilterError,
+                  }}
+                >
+                  <TrashIcon />
+                </button>
               </div>
-              <div class="expansion-set-detail">
-                <span class="st-typography-label">Owner:</span>
-                <span>{selectedExpansionSet.owner}</span>
+              <div use:tooltip={{ content: 'Show Filter', placement: 'top' }}>
+                <button
+                  aria-label={`Show '${sequenceOrFilter.name}'`}
+                  class="st-button icon"
+                  on:click|stopPropagation={() => {
+                    if (!isExpansionSequence(sequenceOrFilter)) {
+                      onShowFilter(sequenceOrFilter);
+                    }
+                  }}
+                >
+                  <FilterIcon />
+                </button>
               </div>
-              <div class="expansion-set-detail">
-                <span class="st-typography-label">Updated At:</span>
-                <span>{getShortISOForDate(new Date(selectedExpansionSet.updated_at))}</span>
+              <div use:tooltip={{ content: 'Apply Filter', placement: 'top' }}>
+                <button
+                  disabled={!$simulationDatasetLatest}
+                  aria-label={`Apply '${sequenceOrFilter.name}'`}
+                  class="st-button icon"
+                  on:click|stopPropagation={() => {
+                    if (!isExpansionSequence(sequenceOrFilter)) {
+                      onApplyFilter(sequenceOrFilter);
+                    }
+                  }}
+                >
+                  <PlayIcon />
+                </button>
               </div>
-              <div class="expansion-set-detail">
-                <span class="st-typography-label">Updated By:</span>
-                <span>{selectedExpansionSet.updated_by}</span>
-              </div>
-              <div class="expansion-set-detail">
-                <span class="st-typography-label">Description:</span>
-                <span>{selectedExpansionSet.description}</span>
-              </div>
-            </div>
-          {/if}
-        </Collapse>
-      </fieldset>
-
-      <fieldset>
-        <Collapse className="details-container" title="Sequences">
-          <Input>
-            <label for="simulationDatasetId">Simulation Dataset ID</label>
-            <input class="st-input w-100" disabled name="simulationDatasetId" value={$simulationDatasetId ?? 'None'} />
-          </Input>
-
-          {#if $simulationDatasetId === null}
-            <div class="pb-3">First run a simulation before creating a sequence</div>
-          {:else}
-            <div class="expansion-form-container">
-              <CssGrid class="expansion-form" rows="min-content auto">
-                <CssGrid columns="3fr 1fr" gap="10px">
-                  <input
-                    bind:value={seqIdInput}
-                    class="st-input"
-                    use:permissionHandler={{
-                      hasPermission: hasCreatePermission,
-                      permissionError: $planReadOnly
-                        ? PlanStatusMessages.READ_ONLY
-                        : 'You do not have permission to create an expansion',
-                    }}
-                  />
-                  <button
-                    class="st-button secondary"
-                    disabled={!createButtonEnabled}
-                    use:permissionHandler={{
-                      hasPermission: hasCreatePermission,
-                      permissionError: $planReadOnly
-                        ? PlanStatusMessages.READ_ONLY
-                        : 'You do not have permission to create an expansion',
-                    }}
-                    on:click|stopPropagation={() =>
-                      effects.createExpansionSequence(seqIdInput, $simulationDatasetId, user)}
-                  >
-                    {$creatingExpansionSequence ? 'Creating... ' : 'Create'}
-                  </button>
-                </CssGrid>
-                <div class="mt-2">
-                  {#if $filteredExpansionSequences.length}
-                    <SingleActionDataGrid
-                      getRowId={rowData => rowData.seq_id}
-                      {columnDefs}
-                      {hasDeletePermission}
-                      itemDisplayText="Sequence"
-                      items={$filteredExpansionSequences}
-                      {user}
-                      on:deleteItem={deleteExpansionSequenceContext}
-                      on:rowDoubleClicked={event => showExpansionSequenceModal(event.detail.data, user)}
-                    />
-                  {:else}
-                    <div class="st-typography-label">
-                      No Sequences for Simulation Dataset {$simulationDatasetId ?? ''}
-                    </div>
-                  {/if}
-                </div>
-              </CssGrid>
-            </div>
-          {/if}
-        </Collapse>
-      </fieldset>
+            </span>
+          </ListItem>
+        {/if}
+      {/each}
     </div>
   </svelte:fragment>
 </Panel>
 
 <style>
-  .expansion-panel-body {
-    display: grid;
-    grid-template-rows: min-content auto;
-    height: 100%;
+  .sne-controls {
+    align-items: center;
+    background: rgba(248, 248, 248, 0.6);
+    display: flex;
+    gap: 8px;
+    padding: 8px 8px;
   }
 
-  .expansion-set-selector {
+  .sne-controls :global(.st-input) {
+    flex: 1;
+  }
+
+  :global(.sne-item) {
     align-items: center;
     display: flex;
-    justify-content: space-between;
-  }
-
-  .expansion-set-selector a:visited {
-    color: blue;
-  }
-
-  .expansion-set-details {
-    display: flex;
-    flex-direction: column;
     gap: 8px;
   }
 
-  .expansion-set-detail {
-    display: flex;
-  }
-  .expansion-set-details span:first-child {
-    display: flex;
-    flex: 1;
-    max-width: 200px;
+  .new-button {
+    gap: 4px;
+    position: relative;
+    z-index: 1;
   }
 
-  .expansion-set-details span:last-child {
-    display: flex;
-    flex: 1;
-  }
-
-  :global(.details-container) {
-    height: 100%;
-  }
-  :global(.details-container.collapse .content) {
-    height: calc(100%);
-  }
-
-  :global(.details-container.collapse .expansion-form-container) {
-    height: calc(100% - 48px);
-  }
-
-  :global(.expansion-form) {
-    height: 100%;
+  .expand-all-button {
+    gap: 4px;
+    position: relative;
+    z-index: 1;
   }
 </style>

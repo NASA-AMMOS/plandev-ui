@@ -8,7 +8,7 @@
   import DirectiveIcon from '../../../../assets/timeline-directive.svg?component';
   import SpanIcon from '../../../../assets/timeline-span.svg?component';
   import { activityArgumentDefaultsMap, activityDirectivesMap } from '../../../../stores/activities';
-  import { activityTypes, subsystemTags } from '../../../../stores/plan';
+  import { planModelActivityTypes, subsystemTags } from '../../../../stores/plan';
   import { spans, spanUtilityMaps } from '../../../../stores/simulation';
   import { tags } from '../../../../stores/tags';
   import type { ValueSchemaVariant } from '../../../../types/schema';
@@ -31,7 +31,7 @@
   import Draggable from './Draggable.svelte';
   import DynamicFilter from './DynamicFilter.svelte';
 
-  export let filter: ActivityLayerFilter | undefined;
+  export let filter: ActivityLayerFilter | undefined = undefined;
   export const filterWidth = 1000;
   export const filterHeight = 500;
   export let layerName: string = '';
@@ -57,7 +57,12 @@
   const dispatch = createEventDispatcher<{
     filterChange: { filter: ActivityLayerFilter };
     rename: { name: string };
+    visibilityChange: { isShown: boolean };
   }>();
+
+  export function setActiveFilter(newFilter: ActivityLayerFilter) {
+    dirtyFilter = newFilter;
+  }
 
   export function toggle() {
     if (shown) {
@@ -65,14 +70,17 @@
     } else {
       show();
     }
+    dispatch('visibilityChange', { isShown: shown });
   }
 
   export function show() {
     shown = true;
+    dispatch('visibilityChange', { isShown: shown });
   }
 
   export function hide() {
     shown = false;
+    dispatch('visibilityChange', { isShown: shown });
   }
 
   function onManualTypeToggled(name: string) {
@@ -198,7 +206,7 @@
     dirtyFilter,
     activityDirectives,
     $spans || [],
-    $activityTypes,
+    $planModelActivityTypes,
     $activityArgumentDefaultsMap,
   );
 
@@ -219,7 +227,7 @@
     instanceCount = count;
   }
 
-  $: matchingTypes = getMatchingTypesForActivityLayerFilter(dirtyFilter, $activityTypes);
+  $: matchingTypes = getMatchingTypesForActivityLayerFilter(dirtyFilter, $planModelActivityTypes);
   $: filteredMatchingTypes = matchingTypes.filter(type => {
     if (!resultingTypesInputValue) {
       return true;
@@ -229,7 +237,7 @@
   });
 
   $: {
-    const allParameterTypes = (matchingTypes.length ? matchingTypes : $activityTypes).reduce(
+    const allParameterTypes = (matchingTypes.length ? matchingTypes : $planModelActivityTypes).reduce(
       (acc: Record<string, ActivityLayerFilterSubfieldSchema>, activityType) => {
         Object.entries(activityType.parameters).forEach(([parameterName, parameter]) => {
           const parameterType = parameter.schema.type;
@@ -274,7 +282,7 @@
     parameterSubfields = Object.values(allParameterTypes).sort((a, b) => compare(a.label, b.label));
   }
 
-  $: filteredActivityTypes = $activityTypes.filter(type => {
+  $: filteredActivityTypes = $planModelActivityTypes.filter(type => {
     if (!manualInputValue) {
       return true;
     }
@@ -419,7 +427,7 @@
                       {#if filteredActivityTypes.length > 0}
                         <MenuItem on:click={() => onAddAllManualTypes()}>
                           <div class="st-typography-bold manual-types-add-all">
-                            Add {filteredActivityTypes.length !== $activityTypes.length ? 'Matching' : 'All'} +
+                            Add {filteredActivityTypes.length !== $planModelActivityTypes.length ? 'Matching' : 'All'} +
                           </div>
                         </MenuItem>
                         {#each filteredActivityTypes as type}
@@ -478,9 +486,9 @@
                             includes: { type: 'tag', values: $subsystemTags },
                           },
                           Type: {
-                            does_not_equal: { type: 'variant', values: $activityTypes.map(type => type.name) },
+                            does_not_equal: { type: 'variant', values: $planModelActivityTypes.map(type => type.name) },
                             does_not_include: { type: 'string' },
-                            equals: { type: 'variant', values: $activityTypes.map(type => type.name) },
+                            equals: { type: 'variant', values: $planModelActivityTypes.map(type => type.name) },
                             includes: { type: 'string' },
                           },
                         }}
@@ -612,6 +620,7 @@
           </div>
         </CssGrid>
       </div>
+      <slot name="footer" />
     </Draggable>
   {/if}
 </div>

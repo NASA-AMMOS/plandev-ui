@@ -20,14 +20,14 @@ import {
   ViewLineLayerColorPresets,
   ViewXRangeLayerSchemePresets,
 } from '../constants/view';
-import type { ActivityLayerFilterField } from '../enums/timeline';
+import type { ActivityFilterField } from '../enums/filter';
 import type { ActivityDirective, ActivityType } from '../types/activity';
 import type { ExternalEvent } from '../types/external-event';
+import type { DynamicFilter } from '../types/filter';
 import type { DefaultEffectiveArgumentsMap } from '../types/parameter';
 import type { Resource, ResourceType, ResourceValue, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type {
   ActivityLayer,
-  ActivityLayerDynamicFilter,
   ActivityLayerFilter,
   ActivityOptions,
   Axis,
@@ -1526,7 +1526,7 @@ export function getMatchingTypesForActivityLayerFilter(filter: ActivityLayerFilt
 
 function directiveOrSpanMatchesDynamicFilters(
   directiveOrSpan: ActivityDirective | Span,
-  dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
+  dynamicFilters: DynamicFilter<typeof ActivityFilterField>[],
   activityTypeDefMap: Record<string, ActivityType>,
   defaultArgumentsMap: DefaultEffectiveArgumentsMap,
 ): boolean {
@@ -1575,7 +1575,7 @@ function directiveOrSpanMatchesDynamicFilters(
 // TODO try consolidating with the function above
 function typeMatchesDynamicFilters(
   type: ActivityType,
-  dynamicFilters: ActivityLayerDynamicFilter<typeof ActivityLayerFilterField>[],
+  dynamicFilters: DynamicFilter<typeof ActivityFilterField>[],
 ): boolean {
   return dynamicFilters.reduce((acc, curr) => {
     let matches = false;
@@ -1589,9 +1589,9 @@ function typeMatchesDynamicFilters(
 }
 
 export function matchesDynamicFilter(
-  rawItemValue: ActivityLayerDynamicFilter<ActivityLayerFilterField>['value'], // the actual value
-  operator: ActivityLayerDynamicFilter<ActivityLayerFilterField>['operator'],
-  rawFilterValue: ActivityLayerDynamicFilter<ActivityLayerFilterField>['value'], // the value(s) we're comparing against
+  rawItemValue: DynamicFilter<ActivityFilterField>['value'], // the actual value
+  operator: DynamicFilter<ActivityFilterField>['operator'],
+  rawFilterValue: DynamicFilter<ActivityFilterField>['value'], // the value(s) we're comparing against
 ) {
   const itemValue = lowercase(rawItemValue);
   const filterValue = lowercase(rawFilterValue);

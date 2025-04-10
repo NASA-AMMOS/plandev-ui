@@ -4,18 +4,11 @@
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import {
-    ActivityLayerFilterField,
-    ActivityLayerFilterField as ActivityLayerFilterFieldType,
-    FilterOperator,
-  } from '../../../../enums/timeline';
+  import { ActivityFilterField, FilterOperator } from '../../../../enums/filter';
   import type { SelectedDropdownOptionValue } from '../../../../types/dropdown';
+  import type { DynamicFilter, DynamicFilterDataType } from '../../../../types/filter';
   import type { TagsChangeEvent } from '../../../../types/tags';
-  import {
-    type ActivityLayerDynamicFilter,
-    type ActivityLayerFilterSubfieldSchema,
-    type DynamicFilterDataType,
-  } from '../../../../types/timeline';
+  import { type ActivityLayerFilterSubfieldSchema } from '../../../../types/timeline';
   import { getTarget } from '../../../../utilities/generic';
   import { tooltip } from '../../../../utilities/tooltip';
   import Input from '../../../form/Input.svelte';
@@ -28,20 +21,19 @@
     { type: DynamicFilterDataType; values?: Array<T> }
   >;
 
-  export let filter: ActivityLayerDynamicFilter<any>;
-  export let schema: Partial<Record<keyof typeof ActivityLayerFilterFieldType, Partial<OperatorSchema>>> & {
+  export let filter: DynamicFilter<any>;
+  export let schema: Partial<Record<keyof typeof ActivityFilterField, Partial<OperatorSchema>>> & {
     Parameter?: { subfields: ActivityLayerFilterSubfieldSchema[] };
   } = {};
   export let verb: string = 'Where';
 
   const dispatch = createEventDispatcher<{
-    change: { filter: ActivityLayerDynamicFilter<any> };
+    change: { filter: DynamicFilter<any> };
     remove: void;
   }>();
 
-  let dirtyFilter: ActivityLayerDynamicFilter<any> = structuredClone(filter);
-  let currentField: keyof typeof ActivityLayerFilterFieldType =
-    dirtyFilter.field as keyof typeof ActivityLayerFilterFieldType;
+  let dirtyFilter: DynamicFilter<any> = structuredClone(filter);
+  let currentField: keyof typeof ActivityFilterField = dirtyFilter.field as keyof typeof ActivityFilterField;
   let currentOperator: keyof typeof FilterOperator | null = dirtyFilter.operator;
   let subfields: ActivityLayerFilterSubfieldSchema[] | undefined = undefined;
   let currentSubfieldLabel =
@@ -100,7 +92,7 @@
   }
 
   $: if (currentField && currentOperator && currentValue !== undefined) {
-    const newFilter: ActivityLayerDynamicFilter<any> = {
+    const newFilter: DynamicFilter<any> = {
       field: currentField,
       id: dirtyFilter.id,
       operator: currentOperator,
@@ -138,7 +130,7 @@
     if (value) {
       // Since we changed the field we should reset the value
       currentValue = getDefaultCurrentValue();
-      currentField = value as keyof typeof ActivityLayerFilterFieldType;
+      currentField = value as keyof typeof ActivityFilterField;
     }
   }
 
@@ -172,8 +164,8 @@
     }
   }
 
-  function asActivityLayerFilterField(s: string): keyof typeof ActivityLayerFilterField {
-    return s as keyof typeof ActivityLayerFilterField;
+  function asActivityLayerFilterField(s: string): keyof typeof ActivityFilterField {
+    return s as keyof typeof ActivityFilterField;
   }
 
   function getDefaultCurrentValue() {
@@ -190,7 +182,7 @@
   {/if}
   <select aria-label="field" class="st-select" on:change={onFieldChange} value={currentField}>
     {#each Object.keys(schema) as key}
-      <option value={key}>{ActivityLayerFilterField[asActivityLayerFilterField(key)]}</option>
+      <option value={key}>{ActivityFilterField[asActivityLayerFilterField(key)]}</option>
     {/each}
   </select>
   {#if currentField === 'Parameter' && subfields}

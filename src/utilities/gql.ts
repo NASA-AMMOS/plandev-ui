@@ -4,6 +4,26 @@ import { Queries } from '../enums/gql';
  * GraphQL Query, Mutation, and Subscription strings.
  */
 const gql = {
+  APPLY_ACTIVITIES_BY_FILTER: `#graphql
+    mutation ApplyActivitiesByFilter(
+      $filterId: Int!,
+      $simulationDatasetId: Int!,
+      $seqId: String!,
+      $timeRangeEnd: String!,
+      $timeRangeStart: String!
+    ) {
+      applyActivitiesByFilter: ${Queries.APPLY_ACTIVITIES_BY_FILTER}(
+        filterId: $filterId,
+        simulationDatasetId: $simulationDatasetId,
+        seqId: $seqId,
+        timeRangeEnd: $timeRangeEnd,
+        timeRangeStart: $timeRangeStart
+      ) {
+        success
+      }
+    }
+  `,
+
   APPLY_PRESET_TO_ACTIVITY: `#graphql
     mutation ApplyPresetToActivity($presetId: Int!, $activityId: Int!, $planId: Int!) {
       ${Queries.APPLY_PRESET_TO_ACTIVITY}(args: {
@@ -559,6 +579,30 @@ const gql = {
     }
   `,
 
+  CREATE_SEQUENCE_FILTER: `#graphql
+    mutation CreateSequenceFilter($definition: sequence_filter_insert_input!) {
+      createSequenceFilter: ${Queries.INSERT_SEQUENCE_FILTER}(object: $definition) {
+        id
+      }
+    }
+  `,
+
+  CREATE_SEQUENCE_TEMPLATE: `#graphql
+    mutation AddSequenceTemplate($activityTypeName:String!, $language:String!, $modelId:Int!, $name:String!, $parcelId:Int!, $templateDefinition:String!) {
+      ${Queries.INSERT_SEQUENCE_TEMPLATE}(activityTypeName: $activityTypeName, language:$language, modelId:$modelId, name:$name, parcelId: $parcelId, templateDefinition: $templateDefinition) {
+        id
+        errors {
+          location {
+            column
+            line
+          }
+          message
+          stack
+        }
+      }
+    }
+  `,
+
   CREATE_SIMULATION_TEMPLATE: `#graphql
     mutation CreateSimulationTemplate($simulationTemplateInsertInput: simulation_template_insert_input!) {
       ${Queries.INSERT_SIMULATION_TEMPLATE}(object: $simulationTemplateInsertInput) {
@@ -1019,6 +1063,26 @@ const gql = {
     }
   `,
 
+  DELETE_SEQUENCE_FILTERS: `#graphql
+    mutation DeleteSequenceFilters($sequenceFilterIds: [Int]!) {
+      deleteSequenceFilters: ${Queries.DELETE_SEQUENCE_FILTERS}(
+        where: {
+          id: { _in: $sequenceFilterIds }
+        }
+      ) {
+        affected_rows
+      }
+    }
+  `,
+
+  DELETE_SEQUENCE_TEMPLATE: `#graphql
+    mutation DeleteSequenceTemplates($sequenceTemplateId: Int!) {
+      deleteSequenceTemplates: ${Queries.DELETE_SEQUENCE_TEMPLATE}(id: $sequenceTemplateId) {
+        id
+      }
+    }
+  `,
+
   DELETE_SIMULATION_TEMPLATE: `#graphql
     mutation DeleteSimulationTemplate($id: Int!) {
       deleteSimulationTemplate: ${Queries.DELETE_SIMULATION_TEMPLATE}(id: $id) {
@@ -1073,6 +1137,22 @@ const gql = {
     mutation Expand($expansionSetId: Int!, $simulationDatasetId: Int!) {
       expand: ${Queries.EXPAND_ALL_ACTIVITIES}(expansionSetId: $expansionSetId, simulationDatasetId: $simulationDatasetId) {
         id
+      }
+    }
+  `,
+
+  EXPAND_TEMPLATES: `#graphql
+    mutation ExpandTemplates(
+      $seqIds: [String!]!,
+      $modelId: Int!,
+      $simulationDatasetId: Int!
+    ) {
+      expandTemplates: ${Queries.EXPAND_ALL_TEMPLATES}(
+        seqIds: $seqIds,
+        simulationDatasetId: $simulationDatasetId,
+        modelId: $modelId,
+      ) {
+        success
       }
     }
   `,
@@ -1231,17 +1311,8 @@ const gql = {
 
   GET_EXPANSION_SEQUENCE_SEQ_JSON: `#graphql
     query GetExpansionSequenceSeqJson($seqId: String!, $simulationDatasetId: Int!) {
-      ${Queries.GET_SEQUENCE_SEQ_JSON}(seqId: $seqId, simulationDatasetId: $simulationDatasetId) {
-        errors {
-          location {
-            column
-            line
-          }
-          message
-          stack
-        }
-        seqJson
-        status
+      ${Queries.EXPANDED_SEQUENCES} (where: { _and: [{ seq_id: { _eq: $seqId } }, { simulation_dataset_id: { _eq: $simulationDatasetId } }] }, order_by: { created_at: desc }, limit: 1) {
+        expanded_sequence
       }
     }
   `,
@@ -2313,6 +2384,18 @@ const gql = {
     }
   `,
 
+  SUB_EXPANDED_TEMPLATES: `#graphql
+    subscription SubExpandedTemplates {
+      expandedTemplates: ${Queries.EXPANDED_TEMPLATES}(order_by: { id: desc }) {
+        id
+        seq_id
+        simulation_dataset_id
+        expanded_template
+        created_at
+      }
+    }
+  `,
+
   SUB_EXPANSION_RULES: `#graphql
     subscription SubExpansionRules {
       expansionRules: ${Queries.EXPANSION_RULES}(order_by: { id: desc }) {
@@ -2562,6 +2645,38 @@ const gql = {
           owner
           updated_at
         }
+      }
+    }
+  `,
+
+  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SEQS: `#graphql
+    subscription SubMostRecentExpansion {
+      ${Queries.EXPANDED_SEQUENCES} {
+        seq_id
+        expanded_sequence
+        simulation_dataset_id
+      }
+    }
+  `,
+
+  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SIMS: `#graphql
+    subscription SubMostRecentExpansion($planId: Int!) {
+      ${Queries.PLAN}(id: $planId) {
+        simulations {
+          simulation_datasets {
+            id
+          }
+        }
+      }
+    }
+  `,
+
+  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_TEMPS: `#graphql
+    subscription SubMostRecentExpansion {
+      ${Queries.EXPANDED_SEQUENCES} {
+        seq_id
+        expanded_template
+        simulation_dataset_id
       }
     }
   `,
@@ -3158,6 +3273,32 @@ const gql = {
         id
         name
         updated_by
+      }
+    }
+  `,
+
+  SUB_SEQUENCE_FILTERS: `#graphql
+    subscription SubSequenceFilters {
+      ${Queries.SEQUENCE_FILTER}(order_by: { id: desc }) {
+        filter
+        id
+        model_id
+        name
+      }
+    }
+  `,
+
+  SUB_SEQUENCE_TEMPLATES: `#graphql
+    subscription SubSequenceTemplate {
+      ${Queries.SEQUENCE_TEMPLATE}(order_by: { id: desc }) {
+        activity_type
+        id
+        language
+        model_id
+        name
+        owner
+        parcel_id
+        template_definition
       }
     }
   `,
@@ -3804,6 +3945,26 @@ const gql = {
     mutation UpdateSchedulingSpec($id: Int!, $spec: scheduling_specification_set_input!) {
       updateSchedulingSpec: ${Queries.UPDATE_SCHEDULING_SPECIFICATION}(
         pk_columns: { id: $id }, _set: $spec
+      ) {
+        id
+      }
+    }
+  `,
+
+  UPDATE_SEQUENCE_FILTER: `#graphql
+    mutation UpdateSequenceFilter($filterId: Int!, $filterName: String!, $filter: jsonb!) {
+      updateSequenceFilter: ${Queries.UPDATE_SEQUENCE_FILTER}(
+        pk_columns: { id: $filterId }, _set: { filter: $filter, name: $filterName }
+      ) {
+        id
+      }
+    }
+  `,
+
+  UPDATE_SEQUENCE_TEMPLATE: `#graphql
+    mutation UpdateSequenceTemplate($id: Int!, $definition: String!) {
+      updateSequenceTemplate: ${Queries.UPDATE_SEQUENCE_TEMPLATE}(
+        pk_columns: { id: $id }, _set: { template_definition: $definition }
       ) {
         id
       }

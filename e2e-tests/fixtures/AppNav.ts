@@ -15,6 +15,7 @@ export class AppNav {
   appMenuItemModels: Locator;
   appMenuItemPlans: Locator;
   appMenuItemScheduling: Locator;
+  appMenuItemSequenceTemplates: Locator;
   pageLoadedLocatorNoData: Locator;
   pageLoadedLocatorWithData: Locator;
 
@@ -43,6 +44,7 @@ export class AppNav {
     this.appMenuItemModels = this.appMenu.getByRole('menuitem', { name: 'Models' });
     this.appMenuItemPlans = this.appMenu.getByRole('menuitem', { name: 'Plans' });
     this.appMenuItemScheduling = this.appMenu.getByRole('menuitem', { name: 'Scheduling' });
+    this.appMenuItemSequenceTemplates = this.appMenu.getByRole('menuitem', { name: 'Sequence Templates' });
     this.page = page;
     this.pageLoadedLocatorWithData = page.locator(`.ag-root`);
     this.pageLoadedLocatorNoData = page.locator(`.body:has-text("No Plans Found")`);

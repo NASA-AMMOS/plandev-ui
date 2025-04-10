@@ -70,6 +70,13 @@ export class Plan {
   schedulingGoalsModalFilter: Locator;
   schedulingSatisfiedActivity: Locator;
   schedulingStatusSelector: (status: string) => string;
+  sequenceExpansionNewButton: Locator;
+  sequenceExpansionNewSequenceButton: Locator;
+  sequenceExpansionNewSequenceConfirmButton: Locator;
+  sequenceExpansionNewSequenceFilterButton: Locator;
+  sequenceExpansionNewSequenceName: Locator;
+  sequenceExpansionOutputModal: Locator;
+  sequenceExpansionTimeRangeModal: Locator;
   simulateButton: Locator;
   simulationHistoryList: Locator;
   simulationStatusSelector: (status: string) => string;
@@ -141,6 +148,24 @@ export class Plan {
       ).not.toBeUndefined();
     }
     await this.waitForToast('Plan Collaborators Updated');
+  }
+
+  async applySequenceFilter(sequenceFilterName: string, planId: string) {
+    const sequenceFilterItem = this.page.locator('.sne-items').getByText(sequenceFilterName, { exact: true });
+    await sequenceFilterItem.hover();
+    await this.page.getByLabel(`Apply '${sequenceFilterName}'`).click();
+    await this.sequenceExpansionTimeRangeModal.waitFor({ state: 'attached' });
+    await this.sequenceExpansionTimeRangeModal.waitFor({ state: 'visible' });
+    await this.page.getByRole('button', { exact: true, name: 'Confirm' }).click();
+    await this.waitForToast('Expansion Sequence Created Successfully');
+    await expect(this.page.locator('.sne-items').getByText(`${sequenceFilterName} Sequence`)).toBeVisible();
+    await this.panelActivityDirectivesTable.getByRole('row', { name: 'PeelBanana' }).first().click();
+
+    await this.showPanel(PanelNames.SELECTED_ACTIVITY, true);
+    await this.page.getByLabel('Jump to Simulated Activity').click();
+    await expect(this.page.locator('select[name="sequences"]')).toHaveValue(
+      `${sequenceFilterName} Sequence (Plan ${planId})`,
+    );
   }
 
   async createBranch(
@@ -232,6 +257,17 @@ export class Plan {
       .click({ position: { x: 2, y: 2 } });
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.waitForSelector(this.schedulingGoalListItemSelector(goalName), { state: 'visible', strict: true });
+  }
+
+  async createSequenceFilter(sequenceFilterName: string) {
+    await this.sequenceExpansionNewButton.click();
+    await this.sequenceExpansionNewSequenceFilterButton.click();
+    await this.page.getByPlaceholder('Enter a name for this filter').fill(sequenceFilterName);
+    await this.page.getByPlaceholder('Select types').click();
+    await this.page.getByPlaceholder('Select types').fill('PeelBanana');
+    await this.page.getByRole('menuitem', { name: 'PeelBanana' }).click();
+    await this.page.getByRole('button', { name: 'Create Sequence Filter' }).click();
+    await expect(this.page.locator('.sne-items').getByText(sequenceFilterName, { exact: true })).toBeVisible();
   }
 
   async deleteAllActivities() {
@@ -565,6 +601,13 @@ export class Plan {
     this.schedulingGoalNewButton = page.locator(`button[name="new-scheduling-goal"]`);
     this.schedulingConditionNewButton = page.locator(`button[name="new-scheduling-condition"]`);
     this.schedulingSatisfiedActivity = page.locator('.scheduling-goal-analysis-activities-list > .satisfied-activity');
+    this.sequenceExpansionNewButton = page.getByRole('button', { exact: true, name: 'New' });
+    this.sequenceExpansionNewSequenceButton = page.getByText('Sequence', { exact: true });
+    this.sequenceExpansionNewSequenceFilterButton = page.getByText('Sequence Filter', { exact: true });
+    this.sequenceExpansionNewSequenceName = page.locator('input[name="sequence-name"]');
+    this.sequenceExpansionNewSequenceConfirmButton = page.getByRole('button', { exact: true, name: 'Confirm' });
+    this.sequenceExpansionTimeRangeModal = page.locator(`.modal:has-text("Create Sequence from Filter")`);
+    this.sequenceExpansionOutputModal = page.locator(`.modal:has-text("Sequence ID")`);
   }
 
   async uploadExternalDatasets(importFilePath: string) {

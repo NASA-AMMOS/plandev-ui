@@ -6,13 +6,22 @@ import type { DerivationGroupInsertInput, ExternalSourceTypeInsertInput } from '
 import type { Model } from '../types/model';
 import type { ArgumentsMap, ParametersMap } from '../types/parameter';
 import type { Plan } from '../types/plan';
+import type { SequenceTemplate } from '../types/sequence-template';
+import type { ActivityLayerFilter } from '../types/timeline';
 import effects, { replacePaths } from './effects';
 import * as Modals from './modal';
 import * as Requests from './requests';
 
 const mockPlanStore = await vi.hoisted(() => import('../stores/__mocks__/plan.mock'));
 
-vi.mock('$env/dynamic/public', () => import.meta***REMOVED***); // https://github.com/sveltejs/kit/issues/8180
+vi.mock('$env/dynamic/public', () => {
+  return {
+    env: {
+      PUBLIC_COMMAND_EXPANSION_MODE: 'typescript',
+    },
+  };
+}); // https://github.com/sveltejs/kit/issues/8180
+
 vi.mock('./toast', () => ({
   showFailureToast: vi.fn(),
   showSuccessToast: vi.fn(),
@@ -422,6 +431,102 @@ describe('Handle modal and requests in effects', () => {
         'Create Activity Directive Tags Failed',
         Error('Some activity directive tags were not successfully created'),
       );
+    });
+  });
+
+  describe('createSequenceTemplate', () => {
+    it('should correctly handle null responses', async () => {
+      vi.spyOn(Requests, 'reqHasura').mockResolvedValue({
+        insert_sequence_template_one: null,
+      });
+
+      vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
+
+      await effects.createSequenceTemplate('', '', 0, '', 0, '', mockUser);
+
+      expect(catchErrorSpy).toHaveBeenCalledWith(
+        'Create Sequence Template Failed',
+        Error('Create Sequence Template Failed'),
+      );
+    });
+  });
+
+  describe('deleteSequenceTemplate', () => {
+    it('should correctly handle null responses', async () => {
+      vi.spyOn(Requests, 'reqHasura').mockResolvedValue({
+        delete_sequence_template_by_pk: null,
+      });
+
+      vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
+      vi.spyOn(Modals, 'showConfirmModal').mockResolvedValueOnce({ confirm: true });
+
+      await effects.deleteSequenceTemplate(
+        {
+          activity_type: 'Example',
+          id: 0,
+          language: '',
+          model_id: 0,
+          name: 'Example Sequence',
+          owner: 'user',
+          parcel_id: 0,
+          template_definition: 'definition',
+        } as SequenceTemplate,
+        mockUser,
+      );
+
+      expect(catchErrorSpy).toHaveBeenCalledWith(
+        'Sequence Template Deletion Failed',
+        Error('Unable to delete sequence template with ID: "0"'),
+      );
+    });
+  });
+
+  describe('createSequenceFilter', () => {
+    it('should correctly handle null responses', async () => {
+      vi.spyOn(Requests, 'reqHasura').mockResolvedValue({
+        createSequenceFilter: null,
+      });
+
+      vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
+
+      await effects.createSequenceFilter({} as ActivityLayerFilter, '', 0, mockUser);
+
+      expect(catchErrorSpy).toHaveBeenCalledWith(
+        'Create Sequence Filter Failed',
+        Error('Create Sequence Filter Failed'),
+      );
+    });
+  });
+
+  describe('deleteSequenceFilters', () => {
+    it('should correctly handle null responses', async () => {
+      vi.spyOn(Requests, 'reqHasura').mockResolvedValue({
+        delete_sequence_filter: null,
+      });
+
+      vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
+      vi.spyOn(Modals, 'showConfirmModal').mockResolvedValueOnce({ confirm: true });
+
+      await effects.deleteSequenceFilters([1, 2, 3], mockUser);
+
+      expect(catchErrorSpy).toHaveBeenCalledWith(
+        'Sequence Filter Delete Failed',
+        Error('Unable to delete sequence filters with IDs: "1,2,3"'),
+      );
+    });
+  });
+
+  describe('expandTemplates', () => {
+    it('should correctly handle null responses', async () => {
+      vi.spyOn(Requests, 'reqHasura').mockResolvedValue({
+        expandAllTemplates: null,
+      });
+
+      vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
+
+      await effects.expandTemplates([], 0, 0, mockUser);
+
+      expect(catchErrorSpy).toHaveBeenCalledWith('Sequence Templating Failed', Error('Sequence Templating Failed'));
     });
   });
 

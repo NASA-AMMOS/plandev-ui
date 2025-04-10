@@ -52,15 +52,20 @@ export const plan: Readable<Plan | null> = derived([initialPlan, planMetadata], 
   };
 });
 
-export const modelId: Readable<number> = derived(plan, $plan => ($plan ? $plan.model.id : -1));
+export const planModelId: Readable<number> = derived(plan, $plan => ($plan ? $plan.model.id : -1));
 
 /* Other Subscriptions. */
 
-export const activityTypes = gqlSubscribable<ActivityType[]>(gql.SUB_ACTIVITY_TYPES, { modelId }, [], null);
+export const planModelActivityTypes = gqlSubscribable<ActivityType[]>(
+  gql.SUB_ACTIVITY_TYPES,
+  { modelId: planModelId },
+  [],
+  null,
+);
 
-export const subsystemTags: Readable<Tag[]> = derived(activityTypes, $activityTypes => {
+export const subsystemTags: Readable<Tag[]> = derived(planModelActivityTypes, $planModelActivityTypes => {
   const seenSubsystems: Record<number, boolean> = {};
-  return $activityTypes.reduce((subsystems: Tag[], activityType) => {
+  return $planModelActivityTypes.reduce((subsystems: Tag[], activityType) => {
     if (activityType.subsystem_tag && !seenSubsystems[activityType.subsystem_tag.id]) {
       seenSubsystems[activityType.subsystem_tag.id] = true;
       subsystems.push(activityType.subsystem_tag);

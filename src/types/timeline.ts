@@ -1,10 +1,10 @@
 import type { Selection } from 'd3-selection';
-import type { ActivityLayerFilterField, FilterOperator } from '../enums/timeline';
 import type { ActivityDirective, ActivityDirectiveId, ActivityType } from './activity';
 import type { ConstraintResultWithName } from './constraint';
 import type { ExternalEvent, ExternalEventId, ExternalEventType } from './external-event';
-import type { ValueSchema } from './schema';
+import type { DynamicFilter, DynamicFilterDataType } from './filter';
 import type { ResourceType, Span, SpanId } from './simulation';
+import type { ActivityFilterField } from '../enums/filter';
 
 export type DiscreteTree = DiscreteTreeNode[];
 
@@ -32,31 +32,17 @@ export interface ExternalEventLayer extends Layer {
   externalEventColor: string;
 }
 
-export type DynamicFilterDataType = ValueSchema['type'] | 'tag';
-
 export type ActivityLayerFilter = {
-  dynamic_type_filters?: ActivityLayerDynamicFilter<Pick<typeof ActivityLayerFilterField, 'Type' | 'Subsystem'>>[];
-  other_filters?: ActivityLayerDynamicFilter<
-    Pick<typeof ActivityLayerFilterField, 'Tags' | 'Parameter' | 'SchedulingGoalId' | 'Name'>
-  >[];
+  dynamic_type_filters?: DynamicFilter<Pick<typeof ActivityFilterField, 'Type' | 'Subsystem'>>[];
+  other_filters?: DynamicFilter<Pick<typeof ActivityFilterField, 'Tags' | 'Parameter' | 'SchedulingGoalId' | 'Name'>>[];
   static_types?: string[];
   type_subfilters?: Record<
     string,
-    ActivityLayerDynamicFilter<
-      Pick<typeof ActivityLayerFilterField, 'Tags' | 'Parameter' | 'SchedulingGoalId' | 'Name'>
-    >[]
+    DynamicFilter<Pick<typeof ActivityFilterField, 'Tags' | 'Parameter' | 'SchedulingGoalId' | 'Name'>>[]
   >;
 };
 export type ExternalEventLayerFilter = {
   event_types: string[];
-};
-
-export type ActivityLayerDynamicFilter<T> = {
-  field: keyof T;
-  id: number;
-  operator: keyof typeof FilterOperator;
-  subfield?: { name: string; type: DynamicFilterDataType };
-  value: string | string[] | number | number[] | boolean;
 };
 
 export type ActivityLayerFilterSubfield = { name: string; type: DynamicFilterDataType };

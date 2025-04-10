@@ -25,6 +25,7 @@ import type {
   SchedulingGoalDefinition,
   SchedulingGoalMetadata,
 } from '../types/scheduling';
+import type { SequenceTemplate } from '../types/sequence-template';
 import type { Parcel, UserSequence, Workspace } from '../types/sequencing';
 import type { PlanDataset, Simulation, SimulationTemplate } from '../types/simulation';
 import type { Tag } from '../types/tags';
@@ -294,6 +295,9 @@ async function changeUserRole(role: UserRole): Promise<void> {
 
 type GQLKeys = keyof typeof gql;
 const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => boolean> = {
+  APPLY_ACTIVITIES_BY_FILTER: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.APPLY_ACTIVITIES_BY_FILTER], user);
+  },
   APPLY_PRESET_TO_ACTIVITY: (
     user: User | null,
     plan: PlanWithOwners,
@@ -469,6 +473,12 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   CREATE_SEQUENCE_ADAPTATION: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_ADAPTATION], user);
+  },
+  CREATE_SEQUENCE_FILTER: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_FILTER], user);
+  },
+  CREATE_SEQUENCE_TEMPLATE: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_TEMPLATE], user);
   },
   CREATE_SIMULATION_TEMPLATE: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_SIMULATION_TEMPLATE], user);
@@ -659,7 +669,12 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   DELETE_SEQUENCE_ADAPTATION: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_ADAPTATION], user);
   },
-
+  DELETE_SEQUENCE_FILTERS: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_FILTERS], user);
+  },
+  DELETE_SEQUENCE_TEMPLATE: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_TEMPLATE], user);
+  },
   DELETE_SIMULATION_TEMPLATE: (user: User | null, template: SimulationTemplate): boolean => {
     return (
       isUserAdmin(user) || (getPermission([Queries.DELETE_SIMULATION_TEMPLATE], user) && isUserOwner(user, template))
@@ -684,6 +699,10 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   EXPAND: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
     const queries = [Queries.EXPAND_ALL_ACTIVITIES];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
+  },
+  // TODO: Re-visit potential fine-grained permissions for EXPAND_TEMPLATES when implemented in back-end
+  EXPAND_TEMPLATES: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.EXPAND_ALL_TEMPLATES], user);
   },
   GET_ACTIVITY_DIRECTIVE_CHANGELOG: () => true,
   GET_ACTIVITY_TYPES_EXPANSION_RULES: () => true,
@@ -876,6 +895,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     return isUserAdmin(user) || getPermission([Queries.CONSTRAINT_REQUEST], user);
   },
   SUB_DERIVATION_GROUPS: () => true,
+  SUB_EXPANDED_TEMPLATES: () => true,
   SUB_EXPANSION_RULES: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.EXPANSION_RULES], user);
   },
@@ -891,6 +911,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_EXTERNAL_SOURCE_TYPES: () => true,
   SUB_MODEL: () => true,
   SUB_MODELS: () => true,
+  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SEQS: () => true,
+  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SIMS: () => true,
+  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_TEMPS: () => true,
   SUB_PARAMETER_DICTIONARIES: () => true,
   SUB_PARCELS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.PARCELS], user);
@@ -926,6 +949,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   SUB_SCHEDULING_REQUESTS: () => true,
   SUB_SEQUENCE_ADAPTATIONS: () => true,
+  SUB_SEQUENCE_FILTERS: () => true,
+  SUB_SEQUENCE_TEMPLATES: () => true,
   SUB_SIMULATION: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.SIMULATIONS], user);
   },
@@ -1165,6 +1190,15 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
+  UPDATE_SEQUENCE_FILTER: (user: User | null, model: Model): boolean => {
+    return isUserAdmin(user) || (getPermission([Queries.UPDATE_SEQUENCE_FILTER], user) && isUserOwner(user, model));
+  },
+  UPDATE_SEQUENCE_TEMPLATE: (user: User | null, sequenceTemplate: SequenceTemplate): boolean => {
+    return (
+      isUserAdmin(user) ||
+      (getPermission([Queries.UPDATE_SEQUENCE_TEMPLATE], user) && isUserOwner(user, sequenceTemplate))
+    );
+  },
   UPDATE_SIMULATION: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
@@ -1329,6 +1363,10 @@ interface SchedulingCRUDPermission<T = null> extends RunnableSpecificationCRUDPe
   canAnalyze: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner) => boolean;
 }
 
+interface SequenceTemplateCRUDPermission<T = null> extends CRUDPermission<T> {
+  canExpand: RolePlanPermissionCheck;
+}
+
 interface AssociationCRUDPermission<M, D> extends CRUDPermission<AssetWithOwner<M>> {
   canUpdateDefinition: (user: User | null, definition: AssetWithAuthor<D>) => boolean;
 }
@@ -1368,6 +1406,8 @@ interface FeaturePermissions {
   schedulingGoalsModelSpec: ModelSpecificationCRUDPermission;
   schedulingGoalsPlanSpec: SchedulingCRUDPermission<AssetWithOwner<SchedulingGoalMetadata>>;
   sequenceAdaptation: CRUDPermission<void>;
+  sequenceFilter: CRUDPermission<Model>;
+  sequenceTemplate: SequenceTemplateCRUDPermission<SequenceTemplate>;
   sequences: CRUDPermission<AssetWithOwner<UserSequence>>;
   simulation: RunnableCRUDPermission<AssetWithOwner<Simulation>>;
   simulationTemplates: PlanSimulationTemplateCRUDPermission;
@@ -1584,6 +1624,19 @@ const featurePermissions: FeaturePermissions = {
     canDelete: user => queryPermissions.DELETE_PARAMETER_DICTIONARY(user),
     canRead: () => false, // Not implemented
     canUpdate: () => false, // Not implemented
+  },
+  sequenceFilter: {
+    canCreate: user => queryPermissions.CREATE_SEQUENCE_FILTER(user),
+    canDelete: user => queryPermissions.DELETE_SEQUENCE_FILTERS(user),
+    canRead: () => true,
+    canUpdate: (user, model) => queryPermissions.UPDATE_SEQUENCE_FILTER(user, model),
+  },
+  sequenceTemplate: {
+    canCreate: user => queryPermissions.CREATE_SEQUENCE_TEMPLATE(user),
+    canDelete: (user, sequenceTemplate) => queryPermissions.DELETE_SEQUENCE_TEMPLATE(user, sequenceTemplate),
+    canExpand: (user, plan, model) => queryPermissions.EXPAND_TEMPLATES(user, plan, model),
+    canRead: () => true,
+    canUpdate: (user, sequenceTemplate) => queryPermissions.UPDATE_SEQUENCE_TEMPLATE(user, sequenceTemplate),
   },
   sequences: {
     canCreate: user => queryPermissions.CREATE_USER_SEQUENCE(user),

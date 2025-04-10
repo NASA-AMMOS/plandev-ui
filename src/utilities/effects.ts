@@ -55,6 +55,7 @@ import {
   selectedSchedulingSpecId as selectedSpecIdStore,
 } from '../stores/scheduling';
 import { sequenceAdaptations as sequenceAdaptationsStore } from '../stores/sequence-adaptation';
+import { sequenceTemplateExpansionError, sequenceTemplateExpansionStatus } from '../stores/sequence-template';
 import {
   channelDictionaries as channelDictionariesStore,
   commandDictionaries as commandDictionariesStore,
@@ -102,6 +103,7 @@ import type {
   ConstraintResult,
 } from '../types/constraint';
 import type {
+  ExpandedSequence,
   ExpansionRule,
   ExpansionRuleInsertInput,
   ExpansionRuleSetInput,
@@ -111,6 +113,8 @@ import type {
   ExpansionSequenceToActivityInsertInput,
   ExpansionSet,
   SeqId,
+  SequenceFilter,
+  SequenceFilterInsertInput,
 } from '../types/expansion';
 import type { Extension, ExtensionPayload } from '../types/extension';
 import type {
@@ -193,6 +197,7 @@ import type {
   SchedulingResponse,
 } from '../types/scheduling';
 import type { ValueSchema } from '../types/schema';
+import type { SequenceTemplate } from '../types/sequence-template';
 import {
   type ChannelDictionaryMetadata,
   type CommandDictionaryMetadata,
@@ -240,7 +245,7 @@ import type {
   TagsInsertInput,
   TagsSetInput,
 } from '../types/tags';
-import type { Layer, Row, Timeline } from '../types/timeline';
+import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
 import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
@@ -263,10 +268,11 @@ import {
   showPlanBranchRequestModal,
   showRestorePlanSnapshotModal,
   showRunActionModal,
+  showTimeRangeModal,
   showUploadViewModal,
   showWorkspaceModal,
 } from './modal';
-import { gatewayPermissions, queryPermissions } from './permissions';
+import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
 import { reqExtension, reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
@@ -299,6 +305,56 @@ function throwPermissionError(attemptedAction: string): never {
  * Functions that have side-effects (e.g. HTTP requests, toasts, popovers, store updates, etc.).
  */
 const effects = {
+  async applyActivitiesByFilter(
+    filter: SequenceFilter,
+    simulationDatasetId: number,
+    planId: number,
+    defaultStartTime: string,
+    defaultEndtime: string,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      const { confirm: timeConfirmed, value } = await showTimeRangeModal(defaultStartTime, defaultEndtime);
+
+      if (timeConfirmed && value !== undefined) {
+        const { timeRangeEnd, timeRangeStart } = value;
+        if (timeRangeStart !== null && timeRangeEnd !== null) {
+          console.log(`${filter.name} Sequence (Plan ${planId})`);
+          const sequenceId = await effects.createExpansionSequence(
+            `${filter.name} Sequence (Plan ${planId})`,
+            simulationDatasetId,
+            user,
+          );
+
+          if (!sequenceId) {
+            throw Error('Failed to create sequence');
+          }
+
+          const data = await reqHasura<{ success: boolean }>(
+            gql.APPLY_ACTIVITIES_BY_FILTER,
+            {
+              filterId: filter.id,
+              seqId: sequenceId,
+              simulationDatasetId,
+              timeRangeEnd,
+              timeRangeStart,
+            },
+            user,
+          );
+
+          if (data !== null) {
+            showSuccessToast('Filter Applied Successfully');
+          } else {
+            throw Error('Filter could not be applied successfully');
+          }
+        }
+      }
+    } catch (e) {
+      catchError('Filter Application Failed');
+      showFailureToast('Filter Application Failed');
+    }
+  },
+
   async applyPresetToActivity(
     preset: ActivityPreset,
     activityId: ActivityDirectiveId,
@@ -1010,7 +1066,7 @@ const effects = {
     }
   },
 
-  async createExpansionSequence(seqId: string, simulationDatasetId: number, user: User | null): Promise<void> {
+  async createExpansionSequence(seqId: string, simulationDatasetId: number, user: User | null): Promise<string | null> {
     try {
       if (!queryPermissions.CREATE_EXPANSION_SEQUENCE(user)) {
         throwPermissionError('create an expansion sequence');
@@ -1026,6 +1082,7 @@ const effects = {
       if (data.createExpansionSequence != null) {
         showSuccessToast('Expansion Sequence Created Successfully');
         creatingExpansionSequenceStore.set(false);
+        return data.createExpansionSequence.seq_id;
       } else {
         throw Error(`Unable to create expansion sequence with ID: "${seqId}"`);
       }
@@ -1033,6 +1090,7 @@ const effects = {
       catchError('Expansion Sequence Create Failed', e as Error);
       showFailureToast('Expansion Sequence Create Failed');
       creatingExpansionSequenceStore.set(false);
+      return null;
     }
   },
 
@@ -1940,6 +1998,83 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       return null;
+    }
+  },
+
+  async createSequenceFilter(
+    filter: ActivityLayerFilter,
+    seqName: string,
+    modelId: number,
+    user: User | null,
+  ): Promise<number | undefined> {
+    try {
+      if (!queryPermissions.CREATE_SEQUENCE_FILTER(user)) {
+        throwPermissionError('create a sequence filter');
+      }
+
+      const sequenceFilterInsertInput: SequenceFilterInsertInput = {
+        filter,
+        model_id: modelId,
+        name: seqName,
+      };
+
+      const result = await reqHasura<SequenceFilter>(
+        gql.CREATE_SEQUENCE_FILTER,
+        { definition: sequenceFilterInsertInput },
+        user,
+      );
+
+      const { createSequenceFilter: createSequenceFilter } = result;
+
+      if (createSequenceFilter != null) {
+        showSuccessToast('Sequence Filter Created Successfully');
+        return result.createSequenceFilter?.id;
+      } else {
+        throw Error('Create Sequence Filter Failed');
+      }
+    } catch (e) {
+      catchError('Create Sequence Filter Failed', e as Error);
+      showFailureToast('Create Sequence Filter Failed');
+    }
+    return undefined;
+  },
+
+  async createSequenceTemplate(
+    activityType: string,
+    language: string,
+    modelId: number,
+    name: string,
+    parcelId: number,
+    templateDefinition: string,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      if (!queryPermissions.CREATE_SEQUENCE_TEMPLATE(user)) {
+        throwPermissionError('create a sequence template');
+      }
+
+      const result = await reqHasura<SequenceTemplate>(
+        gql.CREATE_SEQUENCE_TEMPLATE,
+        {
+          activityTypeName: activityType,
+          language,
+          modelId,
+          name,
+          parcelId,
+          templateDefinition,
+        },
+        user,
+      );
+      const { insert_sequence_template_one: insertSequenceTemplateOne } = result;
+
+      if (insertSequenceTemplateOne !== null) {
+        showSuccessToast('Sequence Template Created Successfully');
+      } else {
+        throw Error('Create Sequence Template Failed');
+      }
+    } catch (e) {
+      catchError('Create Sequence Template Failed', e as Error);
+      showFailureToast('Create Sequence Template Failed');
     }
   },
 
@@ -3190,6 +3325,69 @@ const effects = {
     }
   },
 
+  async deleteSequenceFilters(sequenceFilterIds: number[], user: User | null): Promise<void> {
+    try {
+      if (!queryPermissions.DELETE_SEQUENCE_FILTERS(user)) {
+        throwPermissionError('delete the sequence filters');
+      }
+
+      const { confirm } = await showConfirmModal(
+        'Delete',
+        `This will permanently delete the sequence filters '${sequenceFilterIds}'`,
+        'Delete Permanently',
+      );
+
+      if (confirm) {
+        const data = await reqHasura<{ sequenceFilterIds: number[] }>(
+          gql.DELETE_SEQUENCE_FILTERS,
+          { sequenceFilterIds },
+          user,
+        );
+        if (data.deleteSequenceFilters != null) {
+          showSuccessToast('Sequence Filters Deleted Successfully');
+        } else {
+          throw Error(`Unable to delete sequence filters with IDs: "${sequenceFilterIds}"`);
+        }
+      }
+    } catch (e) {
+      catchError('Sequence Filter Delete Failed', e as Error);
+      showFailureToast('Sequence Filter Delete Failed');
+    }
+  },
+
+  async deleteSequenceTemplate(sequenceTemplate: SequenceTemplate, user: User | null): Promise<void> {
+    try {
+      if (!queryPermissions.DELETE_SEQUENCE_TEMPLATE(user)) {
+        throwPermissionError('delete this sequence template');
+      }
+
+      const { confirm } = await showConfirmModal(
+        'Delete',
+        `This will permanently delete the template ("${sequenceTemplate.name}") for the activity type: ${sequenceTemplate.activity_type}`,
+        'Delete Permanently',
+      );
+
+      if (confirm) {
+        const data = await reqHasura<{ sequenceTemplateId: number }>(
+          gql.DELETE_SEQUENCE_TEMPLATE,
+          { sequenceTemplateId: sequenceTemplate.id },
+          user,
+        );
+
+        const { delete_sequence_template_by_pk: deleteSequenceTemplate } = data;
+
+        if (deleteSequenceTemplate !== null) {
+          showSuccessToast('Sequence Template Deleted Successfully');
+        } else {
+          throw Error(`Unable to delete sequence template with ID: "${sequenceTemplate.id}"`);
+        }
+      }
+    } catch (e) {
+      catchError('Sequence Template Deletion Failed', e as Error);
+      showFailureToast('Sequence Template Deletion Failed');
+    }
+  },
+
   async deleteSimulationTemplate(
     simulationTemplate: SimulationTemplate,
     modelName: string,
@@ -3536,6 +3734,44 @@ const effects = {
     }
   },
 
+  async expandTemplates(
+    seqIds: string[],
+    simulationDatasetId: number,
+    modelId: number,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      sequenceTemplateExpansionStatus.set(Status.Incomplete);
+      if (!queryPermissions.EXPAND_TEMPLATES(user)) {
+        throwPermissionError('expand a sequence template');
+      }
+
+      const data = await reqHasura<{ success: boolean }>(
+        gql.EXPAND_TEMPLATES,
+        {
+          modelId,
+          seqIds,
+          simulationDatasetId,
+        },
+        user,
+      );
+
+      const { expandAllTemplates: expandTemplates } = data;
+
+      if (expandTemplates !== null) {
+        sequenceTemplateExpansionStatus.set(Status.Complete);
+        showSuccessToast('Sequence Templating Successfully');
+      } else {
+        throw Error('Sequence Templating Failed');
+      }
+    } catch (e) {
+      catchError('Sequence Templating Failed', e as Error);
+      sequenceTemplateExpansionStatus.set(Status.Failed);
+      sequenceTemplateExpansionError.set(e as string);
+      showFailureToast('Sequence Templating Failed');
+    }
+  },
+
   async getActionRun(actionRunId: number, user: User | null): Promise<ActionRun | null> {
     try {
       const query = convertToQuery(gql.SUB_ACTION_RUN);
@@ -3820,7 +4056,7 @@ const effects = {
     user: User | null,
   ): Promise<string | null> {
     try {
-      const data = await reqHasura<GetSeqJsonResponse>(
+      const data = await reqHasura<ExpandedSequence[]>(
         gql.GET_EXPANSION_SEQUENCE_SEQ_JSON,
         {
           seqId,
@@ -3828,17 +4064,11 @@ const effects = {
         },
         user,
       );
-      const { getSequenceSeqJson } = data;
-      if (getSequenceSeqJson != null) {
-        const { errors, seqJson, status } = getSequenceSeqJson;
 
-        if (status === 'FAILURE') {
-          const [firstError] = errors;
-          const { message } = firstError;
-          return message;
-        } else {
-          return JSON.stringify(seqJson, null, 2);
-        }
+      const { expanded_sequences } = data;
+      if (expanded_sequences != null && expanded_sequences.length === 1) {
+        const { expanded_sequence } = expanded_sequences[0];
+        return JSON.stringify(expanded_sequence, null, 2);
       } else {
         throw Error(`Unable to get expansion sequence seq json for seq ID "${seqId}"`);
       }
@@ -6490,6 +6720,52 @@ const effects = {
       }
     } catch (e) {
       catchError(e as Error);
+    }
+  },
+
+  async updateSequenceFilter(
+    filter: ActivityLayerFilter,
+    filterName: string,
+    filterId: number,
+    model: Model,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      if (!featurePermissions.sequenceFilter.canUpdate(user, model)) {
+        throwPermissionError('update this sequence filter');
+      }
+
+      const data = await reqHasura(gql.UPDATE_SEQUENCE_FILTER, { filter, filterId, filterName }, user);
+      if (data.updateSequenceFilter !== null) {
+        showSuccessToast('Updated Sequence Filter');
+      } else {
+        throw Error(`Unable to update sequence filter with ID: "${filterId}"`);
+      }
+    } catch (e) {
+      catchError('Failed to Update Sequence Filter', e as Error);
+      showFailureToast('Failed To Update Sequence Template');
+    }
+  },
+
+  async updateSequenceTemplate(
+    definition: string,
+    sequenceTemplate: SequenceTemplate,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      if (!queryPermissions.UPDATE_SEQUENCE_TEMPLATE(user, sequenceTemplate)) {
+        throwPermissionError('update this sequence template');
+      }
+
+      const data = await reqHasura(gql.UPDATE_SEQUENCE_TEMPLATE, { definition, id: sequenceTemplate.id }, user);
+      if (data.updateSequenceTemplate !== null) {
+        showSuccessToast('Updated Sequence Template');
+      } else {
+        throw Error(`Unable to update sequence template with ID: "${sequenceTemplate.id}"`);
+      }
+    } catch (e) {
+      catchError('Failed To Update Sequence Template', e as Error);
+      showFailureToast('Failed To Update Sequence Template');
     }
   },
 
