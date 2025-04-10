@@ -1204,7 +1204,7 @@ const effects = {
     externalSourceAttributes: object,
     validAt: string,
     user: User | null,
-  ) {
+  ): Promise<ExternalSourceSlim | null> {
     try {
       if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE(user)) {
         throwPermissionError('upload an external source');
@@ -1223,7 +1223,7 @@ const effects = {
         showFailureToast('Parsing failed.');
         parsingErrorStore.set(`Parsing failed - parsing dates in input failed. ${startTime}, ${endTime}, ${validAt}`);
         creatingExternalSourceStore.set(false);
-        return;
+        return null;
       }
 
       // Check that the start and end times are logical
@@ -1231,7 +1231,7 @@ const effects = {
         showFailureToast('Parsing failed.');
         parsingErrorStore.set(`Parsing failed - start time ${startTimeFormatted} after end time ${endTimeFormatted}.`);
         creatingExternalSourceStore.set(false);
-        return;
+        return null;
       }
 
       // Create external events + external event types mutation inputs for Hasura
@@ -1244,7 +1244,7 @@ const effects = {
           showFailureToast('Parsing failed.');
           catchError(`Event duration has invalid format: ${externalEvent.key}\n`, error as Error);
           creatingExternalSourceStore.set(false);
-          return;
+          return null;
         }
 
         // Validate external event is in the external source's start/stop bounds
@@ -1258,7 +1258,7 @@ const effects = {
             `Upload failed. Event (${externalEvent.key}) not in bounds of source start and end: occurs from [${new Date(externalEventStart)},${new Date(externalEventEnd)}], not subset of [${new Date(startTimeFormatted)},${new Date(endTimeFormatted)}].\n`,
           );
           creatingExternalSourceStore.set(false);
-          return;
+          return null;
         }
 
         // If the event is valid...
@@ -1294,14 +1294,15 @@ const effects = {
 
       const reqResponse = await reqGateway(`/uploadExternalSource`, 'POST', body, user, true);
       if (reqResponse?.errors === undefined) {
+        const { createExternalSource: newExternalSource } = reqResponse;
         showSuccessToast('External Source Created Successfully');
+        creatingExternalSourceStore.set(false);
+        return newExternalSource;
       } else {
         const respErrors = reqResponse.errors.map((respError: { message: string }) => respError.message);
         showFailureToast('External Source Create Failed');
         throw new Error(respErrors);
       }
-      creatingExternalSourceStore.set(false);
-      return reqResponse;
     } catch (e) {
       catchError('External Source Create Failed', e as Error);
       showFailureToast('External Source Create Failed');
@@ -1311,6 +1312,7 @@ const effects = {
         createExternalSourceErrorStore.set((e as Error).message);
       }
       creatingExternalSourceStore.set(false);
+      return null;
     }
   },
 
@@ -1318,7 +1320,7 @@ const effects = {
     eventTypes: object | undefined,
     sourceTypes: object | undefined,
     user: User | null,
-  ) {
+  ): Promise<boolean> {
     if (!gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user) || !gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
       throwPermissionError('create en external source or event type');
     }

@@ -401,9 +401,7 @@
           : true;
 
       if (createdTypes) {
-        const requestResponse:
-          | { createExternalSource: ExternalSourceSlim; upsertDerivationGroup: { name: string } | null }
-          | undefined = await effects.createExternalSource(
+        const requestResponse: ExternalSourceSlim | null = await effects.createExternalSource(
           $sourceTypeField.value,
           $derivationGroupField.value,
           $startTimeDoyField.value,
@@ -415,11 +413,10 @@
           user,
         );
         // Following a successful mutation...
-        if (requestResponse !== undefined) {
-          const { createExternalSource: createExternalSourceResponse } = requestResponse;
+        if (requestResponse !== null) {
           // Auto-select the new source
           selectedSource = {
-            ...createExternalSourceResponse,
+            ...requestResponse,
             created_at: new Date().toISOString().replace('Z', '+00:00'), // technically not the exact time it shows up in the database
           };
           gridRowSizes = gridRowSizesBottomPanel;
