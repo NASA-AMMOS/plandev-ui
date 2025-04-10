@@ -1346,7 +1346,6 @@ const effects = {
         return true;
       } else {
         showFailureToast('External Source & Event Type Create Failed');
-        console.log(response.errors);
         return false;
       }
     } catch (e) {
