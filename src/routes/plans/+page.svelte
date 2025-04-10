@@ -812,7 +812,7 @@
                     {#each orderedModels as model (model.id)}
                       <Select.Item size="xs" value={model.id} label={getDisplayNameForModel(model)} class="flex gap-1">
                         {model.name}
-                        <div class="text-muted-foreground">(Version: {model.version})</div>
+                        <div class="whitespace-nowrap text-muted-foreground">(Version: {model.version})</div>
                       </Select.Item>
                     {/each}
                   </Select.Content>

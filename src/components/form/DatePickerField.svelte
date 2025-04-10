@@ -38,7 +38,7 @@
       {#if label}
         {#if layout === 'inline'}
           <div use:tooltip={{ content: label, placement: 'top' }}>
-            <Label size="sm" class="flex pb-1 {$field.invalid ? 'text-red-500' : ''}" for={name}>
+            <Label size="sm" class="flex {$field.invalid ? 'text-red-500' : ''}" for={name}>
               {label}
             </Label>
           </div>
@@ -68,7 +68,7 @@
     <Field {field} on:change={onChange}>
       <Input {layout}>
         <div use:tooltip={{ content: 'Start Time', placement: 'top' }}>
-          <Label size="sm" class="flex pb-1" for="start-time">
+          <Label size="sm" class="flex {layout === 'stacked' ? 'pb-1' : ''}" for="start-time">
             {label}
           </Label>
         </div>
