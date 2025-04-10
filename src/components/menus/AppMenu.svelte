@@ -8,6 +8,7 @@
     Archive,
     BookA,
     BookOpen,
+    Boxes,
     BugPlay,
     CalendarRange,
     ChevronDown,
@@ -91,6 +92,10 @@
           <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/tags">
             <Tags size={16} />
             Tags
+          </MenuLink>
+          <MenuLink className="text-sm py-1.5" href="{base}/external-sources">
+            <Boxes size={16} />
+            External Sources
           </MenuLink>
         </div>
 
