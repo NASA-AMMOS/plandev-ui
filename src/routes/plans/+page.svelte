@@ -800,8 +800,8 @@
                   selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}
                   disabled={!canCreate}
                 >
-                  <Select.Trigger value={selectedModel?.id} size="xs">
-                    <Select.Value placeholder="Select a model" aria-label="Select Model" />
+                  <Select.Trigger value={selectedModel?.id} size="xs" aria-label="Select Model">
+                    <Select.Value placeholder="Select a model" />
                   </Select.Trigger>
                   <Select.Content
                     class="min-w-[240px] overflow-auto p-0"
@@ -903,7 +903,7 @@
               >
                 <Select.Root
                   disabled={!$simulationTemplates.length || !canCreate}
-                  name="model"
+                  name="simulation-templates"
                   selected={{
                     value: $simTemplateField.value,
                     label: !$simulationTemplates.length
@@ -986,8 +986,7 @@
             autocomplete="off"
             class="w-[300px]"
             sizeVariant="xs"
-            name="name"
-            aria-label="name"
+            aria-label="Filter plans"
           />
         </div>
       </svelte:fragment>
