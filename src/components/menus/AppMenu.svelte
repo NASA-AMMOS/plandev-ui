@@ -100,7 +100,7 @@
           <h3 class="px-3 pb-2 pt-2 text-sm font-medium text-muted-foreground">Sequencing</h3>
           <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/sequencing">
             <FileCode2 size={16} />
-            Sequence Editor
+            Sequences
           </MenuLink>
           <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/dictionaries">
             <BookA size={16} />
