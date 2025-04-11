@@ -538,6 +538,7 @@
         <label for="metadataTags">Tags</label>
         <TagsInput
           name="metadataTags"
+          disabled={!hasWriteDefinitionTagsPermission}
           use={[
             [
               permissionHandler,
@@ -631,6 +632,7 @@
         <label for="definitionTags">Version Tags</label>
         <TagsInput
           name="definitionTags"
+          disabled={!hasUpdateDefinitionPermission}
           use={[
             [
               permissionHandler,

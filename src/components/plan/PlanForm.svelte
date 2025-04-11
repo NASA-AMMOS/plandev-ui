@@ -268,6 +268,7 @@
             <input class="st-input w-full" disabled name="collaborators" value="Loading..." />
           {:else}
             <PlanCollaboratorInput
+              name="collaborators"
               collaborators={plan.collaborators}
               users={users || []}
               plans={userWriteablePlans}
@@ -275,6 +276,7 @@
               {user}
               on:create={onPlanCollaboratorsCreate}
               on:delete={onPlanCollaboratorsDelete}
+              disabled={!hasPlanCollaboratorsUpdatePermission}
               use={[
                 [
                   permissionHandler,
@@ -299,6 +301,7 @@
                 },
               ],
             ]}
+            disabled={!hasPlanUpdatePermission}
             options={tags}
             selected={planTags}
             on:change={onTagsInputChange}

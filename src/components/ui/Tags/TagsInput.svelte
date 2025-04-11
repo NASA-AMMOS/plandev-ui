@@ -242,8 +242,12 @@
   use:popperRef
   bind:this={tagsRef}
   bind:clientWidth={tagsWidth}
+  role="combobox"
+  aria-label="{name} combobox"
+  aria-expanded={suggestionsVisible}
+  aria-controls="tags-input"
 >
-  <div class="m-0 flex w-full flex-1 flex-wrap gap-[2px] p-0">
+  <div class="m-0 flex w-full flex-1 flex-wrap gap-[2px] p-0" data-testid="tags-input-selected-items">
     {#each selectedTags as tag}
       <TagChip {tag} removable={!disabled} on:click={() => onTagRemove(tag)} {disabled} ariaRole="option" />
     {/each}
@@ -251,8 +255,8 @@
       {#if !(!allowMultiple && selectedTags.length)}
         <Input
           {id}
-          {name}
           {disabled}
+          aria-label={name}
           sizeVariant="xs"
           autocomplete="off"
           placeholder={disabled && !showPlaceholderIfDisabled ? '' : placeholder}
@@ -269,6 +273,7 @@
   </div>
   {#if suggestionsVisible}
     <div
+      id="tags-input"
       class="z-[99999] min-w-[150px] select-none overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md outline-none"
       use:popperContent={extraOpts}
     >
