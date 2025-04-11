@@ -248,7 +248,7 @@
     display: flex;
     gap: 8px;
   }
-  .activity-header-button {
+  .activity-header-button.icon {
     border: 1px solid var(--st-gray-30);
   }
 </style>
