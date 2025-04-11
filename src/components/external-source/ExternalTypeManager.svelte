@@ -45,7 +45,6 @@
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
-  import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
@@ -136,10 +135,6 @@
   let derivationGroupColumnsDef: DataGridColumnDef<DerivationGroup>[] = derivationGroupBaseColumnDefs;
   let externalSourceTypeColumnDefs: DataGridColumnDef<ExternalSourceType>[] = externalSourceTypeBaseColumnDefs;
   let externalEventTypeColumnDefs: DataGridColumnDef<ExternalEventType>[] = externalEventTypeBaseColumnDefs;
-
-  let derivationGroupDataGrid: DataGrid<DerivationGroup> | undefined = undefined;
-  let externalSourceTypeDataGrid: DataGrid<ExternalSourceType> | undefined = undefined;
-  let externalEventTypeDataGrid: DataGrid<ExternalEventType> | undefined = undefined;
 
   let hasDeleteExternalSourceTypePermission: boolean = false;
   let hasDeleteExternalEventTypePermission: boolean = false;
@@ -849,7 +844,6 @@
       <svelte:fragment slot="body">
         <div class="derivation-group-table">
           <BulkActionDataGrid
-            dataGrid={derivationGroupDataGrid}
             columnDefs={derivationGroupColumnsDef}
             hasDeletePermission={hasDeleteDerivationGroupPermissionOnRow}
             singleItemDisplayText="Derivation Group"
@@ -880,7 +874,6 @@
       <svelte:fragment slot="body">
         <div class="external-source-type-table">
           <BulkActionDataGrid
-            dataGrid={externalSourceTypeDataGrid}
             columnDefs={externalSourceTypeColumnDefs}
             hasDeletePermission={hasDeleteExternalSourceTypePermission}
             singleItemDisplayText="External Source Type"
@@ -911,7 +904,6 @@
       <svelte:fragment slot="body">
         <div class="external-event-type-table">
           <BulkActionDataGrid
-            dataGrid={externalEventTypeDataGrid}
             columnDefs={externalEventTypeColumnDefs}
             hasDeletePermission={hasDeleteExternalEventTypePermission}
             singleItemDisplayText="External Event Type"
