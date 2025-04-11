@@ -513,8 +513,8 @@
         parsedExternalSourceEventTypeSchema = undefined;
         throw new Error('External Source & Event Type Schema has Invalid Format');
       }
-    } catch (error: any) {
-      createExternalSourceEventTypeError.set(error);
+    } catch (error) {
+      createExternalSourceEventTypeError.set((error as Error).message);
     }
   }
 </script>
