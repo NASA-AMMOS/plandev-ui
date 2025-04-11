@@ -288,6 +288,7 @@ import {
   getIntervalFromDoyRange,
   getIntervalInMs,
   getUnixEpochTimeFromInterval,
+  switchISOTimezoneRepresentation,
 } from './time';
 import { createRow, duplicateRow } from './timeline';
 import { showFailureToast, showSuccessToast } from './toast';
@@ -1213,12 +1214,15 @@ const effects = {
       createExternalSourceErrorStore.set(null);
 
       // Convert all times, validate they exist or else throw a failure
-      const startTimeFormatted: string | undefined = convertDoyToYmd(startTime.replaceAll('Z', ''))?.replace(
-        'Z',
-        '+00:00',
+      const startTimeFormatted: string | undefined = switchISOTimezoneRepresentation(
+        convertDoyToYmd(startTime.replaceAll('Z', '')) ?? '',
       );
-      const endTimeFormatted: string | undefined = convertDoyToYmd(endTime.replaceAll('Z', ''))?.replace('Z', '+00:00');
-      const validAtFormatted: string | undefined = convertDoyToYmd(validAt.replaceAll('Z', ''))?.replace('Z', '+00:00');
+      const endTimeFormatted: string | undefined = switchISOTimezoneRepresentation(
+        convertDoyToYmd(endTime.replaceAll('Z', '')) ?? '',
+      );
+      const validAtFormatted: string | undefined = switchISOTimezoneRepresentation(
+        convertDoyToYmd(validAt.replaceAll('Z', '')) ?? '',
+      );
       if (!startTimeFormatted || !endTimeFormatted || !validAtFormatted) {
         showFailureToast('Parsing failed.');
         parsingErrorStore.set(`Parsing failed - parsing dates in input failed. ${startTime}, ${endTime}, ${validAt}`);

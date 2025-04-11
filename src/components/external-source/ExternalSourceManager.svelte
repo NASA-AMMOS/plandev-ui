@@ -46,7 +46,7 @@
   } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { formatDate } from '../../utilities/time';
+  import { formatDate, switchISOTimezoneRepresentation } from '../../utilities/time';
   import { showFailureToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import { required, timestamp } from '../../utilities/validators';
@@ -417,7 +417,7 @@
           // Auto-select the new source
           selectedSource = {
             ...requestResponse,
-            created_at: new Date().toISOString().replace('Z', '+00:00'), // technically not the exact time it shows up in the database
+            created_at: switchISOTimezoneRepresentation(new Date().toISOString()), // technically not the exact time it shows up in the database
           };
           gridRowSizes = gridRowSizesBottomPanel;
         }
