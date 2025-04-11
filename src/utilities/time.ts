@@ -24,12 +24,12 @@ const EPOCH_SIMPLE = /(^[+-]?)(\d+)(\.[0-9]+)?$/;
  * switchISOTimezoneRepresentation('2024-001T01:02:03+00:00'); // 2024-001T01:02:03Z
  */
 export function switchISOTimezoneRepresentation(time: string): string {
-  if (time.endsWith("Z")) {
-    return time.replace("Z", "+00:00");
-  } else if (time.endsWith("+00:00")) {
-    return time.replace("+00:00", "Z");
+  if (time.endsWith('Z')) {
+    return time.replace('Z', '+00:00');
+  } else if (time.endsWith('+00:00')) {
+    return time.replace('+00:00', 'Z');
   }
-  return time;  // No changes if not a valid ISO 8601 representation
+  return time; // No changes if not a valid ISO 8601 representation
 }
 
 /**
