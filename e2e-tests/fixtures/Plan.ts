@@ -137,7 +137,7 @@ export class Plan {
     // Otherwise it is a plan option and will add an unspecified amount of users
     if (isUsername) {
       await expect(
-        this.planCollaboratorInputContainer.locator('.tags-input-selected-items').getByRole('option', { name }),
+        this.planCollaboratorInputContainer.getByTestId('tags-input-selected-items').getByRole('option', { name }),
       ).not.toBeUndefined();
     }
     await this.waitForToast('Plan Collaborators Updated');
@@ -321,10 +321,7 @@ export class Plan {
   async removePlanCollaborator(name: string) {
     await this.showPanel(PanelNames.PLAN_METADATA, true);
     await this.waitForPlanCollaboratorLoad();
-    await this.planCollaboratorInputContainer
-      .locator('.tags-input-selected-items')
-      .getByRole('option', { name })
-      .click();
+    await this.planCollaboratorInputContainer.getByRole('option', { name }).click();
     await this.waitForToast('Plan Collaborator Removed Successfully');
   }
 
@@ -539,7 +536,7 @@ export class Plan {
     this.panelTimeline = page.locator('[data-component-name="TimelinePanel"]');
     this.panelTimelineEditor = page.locator('[data-component-name="TimelineEditorPanel"]');
     this.planTitle = page.locator(`.plan-title:has-text("${this.planName}")`);
-    this.planCollaboratorInputContainer = this.panelPlanMetadata.locator('.input:has-text("Collaborators")');
+    this.planCollaboratorInputContainer = this.panelPlanMetadata.getByLabel('collaborators combobox');
     this.planCollaboratorInput = this.planCollaboratorInputContainer.getByPlaceholder('Search collaborators or plans');
     this.planNameInput = page.locator('input[name="plan-name"]');
     this.planCollaboratorLoadingInput = this.planCollaboratorInputContainer.getByPlaceholder('Loading...');

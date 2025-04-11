@@ -649,6 +649,7 @@
           <Input layout="inline">
             <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="activityDirectiveTags"> Tags </label>
             <TagsInput
+              disabled={!hasUpdatePermission}
               options={tags}
               selected={activityDirective.tags.map(({ tag }) => tag)}
               use={[

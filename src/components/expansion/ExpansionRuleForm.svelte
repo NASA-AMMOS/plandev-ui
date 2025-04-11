@@ -351,6 +351,7 @@
       <fieldset>
         <label for="tags">Tags</label>
         <TagsInput
+          disabled={!hasPermission}
           use={[
             [
               permissionHandler,
