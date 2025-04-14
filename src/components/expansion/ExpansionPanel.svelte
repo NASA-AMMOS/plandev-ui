@@ -5,6 +5,7 @@
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
+  import CodeSquareIcon from 'bootstrap-icons/icons/code-square.svg?component';
   import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
   import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
   import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
@@ -152,6 +153,20 @@
       } else if (selectedExpansionSetId !== null) {
         effects.expand(selectedExpansionSetId, $simulationDatasetLatest.id, $plan, $plan.model, user);
       }
+    }
+  }
+
+  async function onSendExpandedSequenceToWorkspace(sequence: ExpansionSequence) {
+    let expandedResult: string | null;
+    if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
+      const expandedTemplate = $expandedTemplates.find(expandedTemplate => expandedTemplate.seq_id === sequence.seq_id);
+      expandedResult = expandedTemplate?.expanded_template ?? `No output found for sequence "${sequence.seq_id}"'`;
+    } else {
+      expandedResult = await effects.getExpansionSequenceSeqJson(sequence.seq_id, sequence.simulation_dataset_id, user);
+    }
+
+    if (expandedResult !== null) {
+      await effects.sendSequenceToWorkspace(sequence, expandedResult, user);
     }
   }
 
@@ -303,6 +318,19 @@
                   }}
                 >
                   <JournalCodeIcon />
+                </button>
+              </div>
+              <div use:tooltip={{ content: 'Send Expanded Sequence To Workspace', placement: 'top' }}>
+                <button
+                  aria-label={`Send '${sequenceOrFilter.seq_id}' To Workspace`}
+                  class="st-button icon"
+                  on:click|stopPropagation={() => {
+                    if (isExpansionSequence(sequenceOrFilter)) {
+                      onSendExpandedSequenceToWorkspace(sequenceOrFilter);
+                    }
+                  }}
+                >
+                  <CodeSquareIcon />
                 </button>
               </div>
               <div use:tooltip={{ content: 'Download Expanded Sequence', placement: 'top' }}>

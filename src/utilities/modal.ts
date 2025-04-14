@@ -12,6 +12,7 @@ import DeleteDerivationGroupModal from '../components/modals/DeleteDerivationGro
 import DeleteExternalEventSourceTypeModal from '../components/modals/DeleteExternalEventSourceTypeModal.svelte';
 import DeleteExternalSourceModal from '../components/modals/DeleteExternalSourceModal.svelte';
 import EditViewModal from '../components/modals/EditViewModal.svelte';
+import ExpansionPanelModal from '../components/modals/ExpansionPanelModal.svelte';
 import ExpansionSequenceModal from '../components/modals/ExpansionSequenceModal.svelte';
 import LibrarySequenceModal from '../components/modals/LibrarySequenceModal.svelte';
 import ManageGroupsAndTypesModal from '../components/modals/ManageGroupsAndTypesModal.svelte';
@@ -1259,6 +1260,38 @@ export async function showNewSequenceModal(): Promise<ModalElementValue<{ newSeq
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
           newSequenceModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows an ExpansionPanelModal.
+ */
+export async function showExpansionPanelModal(): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const expansionPanelModal = new ExpansionPanelModal({ props: {}, target });
+        target.resolve = resolve;
+
+        expansionPanelModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          expansionPanelModal.$destroy();
+        });
+
+        expansionPanelModal.$on('save', (e: CustomEvent<{ parcelId: number; workspaceId: number }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          expansionPanelModal.$destroy();
         });
       }
     } else {

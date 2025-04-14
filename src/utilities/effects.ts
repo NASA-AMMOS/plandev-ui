@@ -260,6 +260,7 @@ import {
   showDeleteActivitiesModal,
   showDeleteExternalSourceModal,
   showEditViewModal,
+  showExpansionPanelModal,
   showLibrarySequenceModel,
   showManageGroupsAndTypes,
   showManagePlanConstraintsModal,
@@ -5906,6 +5907,44 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       showFailureToast('Scheduling failed');
+    }
+  },
+
+  async sendSequenceToWorkspace(
+    sequence: ExpansionSequence | null,
+    expandedSequence: string | null,
+    user: User | null,
+  ): Promise<void> {
+    if (sequence === null) {
+      showFailureToast("Sequence Doesn't Exist");
+      return;
+    }
+
+    if (expandedSequence === null) {
+      showFailureToast("Expanded Sequence Doesn't Exist");
+      return;
+    }
+
+    const { confirm, value } = await showExpansionPanelModal();
+
+    if (!confirm || !value) {
+      return;
+    }
+
+    try {
+      const createUserSequenceInsertInput: UserSequenceInsertInput = {
+        definition: expandedSequence,
+        name: sequence.seq_id,
+        parcel_id: value.parcelId,
+        seq_json: '',
+        workspace_id: value.workspaceId,
+      };
+      const userSequenceCreated = await this.createUserSequence(createUserSequenceInsertInput, user);
+      if (!userSequenceCreated) {
+        throw Error('Sequence Import Failed');
+      }
+    } catch (e) {
+      catchError(e as Error);
     }
   },
 
