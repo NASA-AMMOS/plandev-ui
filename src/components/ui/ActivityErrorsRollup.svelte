@@ -134,12 +134,19 @@
   class:icons-only={mode === 'iconsOnly'}
 >
   {#if showTotalCount}
-    <button class="count all" class:selected={selectedCategory === 'all'} value="all" on:click={onSelectCategory}>
+    <button
+      tabindex={selectable ? 0 : -1}
+      class="count all"
+      class:selected={selectedCategory === 'all'}
+      value="all"
+      on:click={onSelectCategory}
+    >
       All ({errorCounts.all})
     </button>
   {/if}
   {#if errorCounts.extra}
     <button
+      tabindex={selectable ? 0 : -1}
       class="count"
       class:selected={selectedCategory === 'extra'}
       class:resettable={mode === 'minimal'}
@@ -160,6 +167,7 @@
   {/if}
   {#if errorCounts.missing}
     <button
+      tabindex={selectable ? 0 : -1}
       class="count"
       class:selected={selectedCategory === 'missing'}
       value="missing"
@@ -174,6 +182,7 @@
   {/if}
   {#if errorCounts.wrongType}
     <button
+      tabindex={selectable ? 0 : -1}
       class="count"
       class:selected={selectedCategory === 'wrongType'}
       value="wrongType"
@@ -189,6 +198,7 @@
   {/if}
   {#if errorCounts.invalidParameter}
     <button
+      tabindex={selectable ? 0 : -1}
       class="count"
       class:selected={selectedCategory === 'invalidParameter'}
       class:resettable={mode === 'minimal'}
@@ -210,6 +220,7 @@
   {/if}
   {#if errorCounts.invalidAnchor}
     <button
+      tabindex={selectable ? 0 : -1}
       class="count"
       class:selected={selectedCategory === 'invalidAnchor'}
       value="invalidAnchor"
@@ -224,6 +235,7 @@
   {/if}
   {#if errorCounts.pending}
     <button
+      tabindex={selectable ? 0 : -1}
       class="count"
       class:selected={selectedCategory === 'pending'}
       value="pending"
@@ -238,6 +250,7 @@
   {/if}
   {#if errorCounts.outOfBounds}
     <button
+      tabindex={selectable ? 0 : -1}
       class="count"
       class:selected={selectedCategory === 'outOfBounds'}
       value="outOfBounds"

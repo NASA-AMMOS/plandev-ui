@@ -1,42 +1,53 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import ModalHeader from './ModalHeader.svelte';
+  import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
+  import type { ColDef, IRowNode, ValueGetterParams } from 'ag-grid-community';
+  import { createEventDispatcher } from 'svelte';
+  import { models } from '../../stores/model';
+  import type { User } from '../../types/app';
+  import type { DataGridRowSelection, RowId } from '../../types/data-grid';
+  import type { ActivityErrorCounts } from '../../types/errors';
+  import type { Model, ModelSlim } from '../../types/model';
+  import type { PlanSlim } from '../../types/plan';
+  import effects from '../../utilities/effects';
+  import { getTarget } from '../../utilities/generic';
+  import { getShortISOForDate } from '../../utilities/time';
+  import Input from '../form/Input.svelte';
+  import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
+  import CssGrid from '../ui/CssGrid.svelte';
+  import CssGridGutter from '../ui/CssGridGutter.svelte';
+  import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
-  import CssGrid from '../ui/CssGrid.svelte';
-  import Input from '../form/Input.svelte';
-  import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
-  import CssGridGutter from '../ui/CssGridGutter.svelte';
-  import DataGrid from '../ui/DataGrid/DataGrid.svelte';
-  import type { ColDef, IRowNode } from 'ag-grid-community';
-  import { models } from '../../stores/model';
-  import type { DataGridRowSelection, RowId } from '../../types/data-grid';
-  import type { ModelSlim } from '../../types/model';
-  import { getTarget } from '../../utilities/generic';
-  import type { ActivityErrorCounts } from '../../types/errors';
-  import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
-  import { createEventDispatcher } from 'svelte';
-  import type { PlanSlim } from '../../types/plan';
-  import effects from '../../utilities/effects';
-  import type { User } from '../../types/app';
+  import ModalHeader from './ModalHeader.svelte';
 
   export let plan: PlanSlim;
   export let user: User | null = null;
 
   const height: number = 500;
-  const width: number = 800;
+  const width: number = 1000;
   const columnDefs: ColDef[] = [
     {
       field: 'name',
       headerName: 'Name',
     },
     {
+      field: 'version',
+      headerName: 'Version',
+      width: 50,
+    },
+    {
       field: 'created_at',
       headerName: 'Created',
       sort: 'desc',
-      width: 80,
+      valueGetter: (params: ValueGetterParams<Model>): string | void => {
+        if (params.data?.created_at) {
+          return getShortISOForDate(new Date(params.data?.created_at));
+        }
+      },
+      width: 100,
     },
   ];
 
@@ -118,8 +129,12 @@
           {#if selectedMissionModel === null}
             <div class="st-typography-label">Select mission model for expected conflicts...</div>
           {:else}
-            <div class="st-typography-label st-typography-bold">Expected conflicts</div>
-            <ActivityErrorsRollup selectable={true} counts={modelMigrationPreviewErrorCounts} showTotalCount={true} />
+            <div class="st-typography-bold">Expected conflicts</div>
+            {#if modelMigrationPreviewErrorCounts === undefined || (modelMigrationPreviewErrorCounts.all !== undefined && modelMigrationPreviewErrorCounts.all < 1)}
+              <div class="st-typography-label no-conflicts">None</div>
+            {:else}
+              <ActivityErrorsRollup counts={modelMigrationPreviewErrorCounts} showTotalCount={true} />
+            {/if}
           {/if}
         </div>
       </CssGrid>
@@ -148,10 +163,20 @@
   }
 
   .model-migration-preview {
-    padding: 8px;
+    padding: 16px;
   }
 
   .model-migration-preview div:first-child {
     height: 20px;
+  }
+
+  .model-migration-preview :global(.counts) {
+    display: flex;
+    flex-direction: column;
+    padding-top: 8px;
+  }
+
+  .no-conflicts {
+    padding-top: 12px;
   }
 </style>
