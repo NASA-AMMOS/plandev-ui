@@ -2978,8 +2978,45 @@ const gql = {
 
   SUB_PLAN_METADATA: `#graphql
     subscription SubPlanMetadata($planId: Int!) {
-      merge_request: ${Queries.PLAN}(id: $planId) {
+      plan_metadata: ${Queries.PLAN}(id: $planId) {
         id
+        model: mission_model {
+          id
+          jar_id
+          name
+          owner
+          parameters {
+            parameters
+          }
+          refresh_activity_type_logs(order_by: { created_at: desc }, limit: 1) {
+            error
+            error_message
+            pending
+            success
+          }
+          refresh_resource_type_logs(order_by: { created_at: desc }, limit: 1) {
+            error
+            error_message
+            pending
+            success
+          }
+          refresh_model_parameter_logs(order_by: { created_at: desc }, limit: 1) {
+            error
+            error_message
+            pending
+            success
+          }
+          version
+          view {
+            created_at
+            definition
+            id
+            name
+            owner
+            updated_at
+          }
+        }
+        model_id
         name
         owner
         updated_at
