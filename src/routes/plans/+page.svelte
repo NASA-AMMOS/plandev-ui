@@ -7,8 +7,9 @@
   import { Button, Input as InputStellar, Label, Select } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import SwapIcon from 'bootstrap-icons/icons/arrow-left-right.svg?component';
+  import XIcon from 'bootstrap-icons/icons/x.svg?component';
   import { flatten } from 'lodash-es';
-  import { Clipboard, Import, X, XIcon } from 'lucide-svelte';
+  import { Clipboard, Import, X } from 'lucide-svelte';
   import { onDestroy, onMount } from 'svelte';
   import ExportIcon from '../../assets/export.svg?component';
   import Nav from '../../components/app/Nav.svelte';
@@ -715,7 +716,7 @@
                   <InputStellar sizeVariant="xs" disabled class="w-full" name="name" value={selectedPlanModelName} />
                 </Input>
                 <button
-                  class="st-button secondary"
+                  class="st-button secondary change-mission-model"
                   use:tooltip={{ content: 'Change Mission Model', placement: 'top' }}
                   use:permissionHandler={{
                     hasPermission: canChangePlanModel,

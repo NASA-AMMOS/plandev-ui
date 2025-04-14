@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import SwapIcon from 'bootstrap-icons/icons/arrow-left-right.svg?component';
   import ExportIcon from '../../assets/export.svg?component';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
@@ -53,6 +54,7 @@
   let hasCreateSnapshotPermission: boolean = false;
   let hasPlanUpdatePermission: boolean = false;
   let hasPlanCollaboratorsUpdatePermission: boolean = false;
+  let hasChangePlanModelPermission: boolean = false;
   let planNameField = field<string>('', [
     required,
     unique(
@@ -80,9 +82,11 @@
       hasPlanUpdatePermission = featurePermissions.plan.canUpdate(user, plan) && !$planReadOnly;
       hasPlanCollaboratorsUpdatePermission =
         featurePermissions.planCollaborators.canCreate(user, plan) && !$planReadOnly;
+      hasChangePlanModelPermission = featurePermissions.plan.canUpdateModel(user, plan);
     } else {
       hasPlanUpdatePermission = false;
       hasPlanCollaboratorsUpdatePermission = false;
+      hasChangePlanModelPermission = false;
     }
   }
 
@@ -148,6 +152,12 @@
     isFilteredBySimulation = !isFilteredBySimulation;
   }
 
+  async function openChangePlanMissionModelModal() {
+    if (plan !== null) {
+      await effects.updatePlanMissionModel(plan, user);
+    }
+  }
+
   async function onPlanNameChange() {
     if (plan && $planNameField.dirtyAndValid && $planNameField.value) {
       // Optimistically update plan metadata
@@ -211,7 +221,20 @@
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Model ID', placement: 'top' }} for="modelId">Model ID</label>
-          <input class="st-input w-full" disabled name="modelId" value={plan.model_id} />
+          <div class="change-mission-model-container">
+            <input class="st-input w-full" disabled name="modelId" value={plan.model_id} />
+            <button
+              class="st-button secondary change-mission-model"
+              use:tooltip={{ content: 'Change Mission Model', placement: 'top' }}
+              use:permissionHandler={{
+                hasPermission: hasChangePlanModelPermission,
+                permissionError: `You don't have permission to change mission model`,
+              }}
+              on:click|stopPropagation={openChangePlanMissionModelModal}
+            >
+              <SwapIcon />
+            </button>
+          </div>
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Model Version', placement: 'top' }} for="modelVersion">Model Version</label>
@@ -406,5 +429,16 @@
   }
   .progress:hover {
     background: none;
+  }
+
+  .change-mission-model-container {
+    display: flex;
+    gap: 8px;
+  }
+
+  .change-mission-model {
+    flex-shrink: 0;
+    padding: 0;
+    width: 24px;
   }
 </style>
