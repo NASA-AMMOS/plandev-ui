@@ -6646,7 +6646,7 @@ const effects = {
       const generatedFilenames = await effects.uploadFiles(newFiles, user);
 
       if (schedulingGoalPlanSpecification.arguments) {
-        schedulingGoalPlanSpecification.arguments = replacePathsForSchedulingGoal(
+        schedulingGoalPlanSpecification.arguments = replacePathsForStructArguments(
           schedulingGoalPlanSpecification.arguments,
           parameterSchema,
           generatedFilenames,
@@ -7201,7 +7201,7 @@ export function replacePaths(
  * @param pathsToReplace A map from old paths to new paths. Any occurrences of old paths in simArgs will be replaced with new paths.
  * @returns
  */
-export function replacePathsForSchedulingGoal(
+export function replacePathsForStructArguments(
   goalParameters: ArgumentsMap,
   parameterSchema: ValueSchemaStruct,
   pathsToReplace: Record<string, string>,
