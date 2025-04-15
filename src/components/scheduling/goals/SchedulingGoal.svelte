@@ -134,8 +134,8 @@
     let cleansedArguments: Argument = getCleansedStructArguments(goalPlanSpec.arguments, schema);
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
-      files: [],
       arguments: cleansedArguments,
+      files: [],
       goal_revision: revision === '' ? null : parseInt(`${revision}`),
     });
   }
