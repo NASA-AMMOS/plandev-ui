@@ -129,11 +129,16 @@
           {#if selectedMissionModel === null}
             <div class="st-typography-label">Select mission model for expected conflicts...</div>
           {:else}
-            <div class="st-typography-bold">Expected conflicts</div>
+            <div class="st-typography-bold">
+              Expected conflicts
+              {typeof modelMigrationPreviewErrorCounts?.all === 'number'
+                ? `(${modelMigrationPreviewErrorCounts.all})`
+                : ''}
+            </div>
             {#if modelMigrationPreviewErrorCounts === undefined || (modelMigrationPreviewErrorCounts.all !== undefined && modelMigrationPreviewErrorCounts.all < 1)}
               <div class="st-typography-label no-conflicts">None</div>
             {:else}
-              <ActivityErrorsRollup counts={modelMigrationPreviewErrorCounts} showTotalCount={true} />
+              <ActivityErrorsRollup counts={modelMigrationPreviewErrorCounts} />
             {/if}
           {/if}
         </div>
