@@ -440,6 +440,10 @@
     gap: 8px;
   }
 
+  .sne-item :global(svg) {
+    flex-shrink: 0;
+  }
+
   .expand-all-button {
     gap: 4px;
     position: relative;
