@@ -12,7 +12,7 @@ describe('from-seq-json.ts', async () => {
         other_arbitrary_metadata: 'test_metadata',
       },
     };
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `@ID "test"
 @METADATA "onboard_name" "test.mod"
 @METADATA "onboard_path" "/eng"
@@ -79,7 +79,7 @@ describe('from-seq-json.ts', async () => {
         },
       ],
     };
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `@ID "testSymbol"
 @LOCALS_BEGIN
 L00UINT UINT
@@ -113,7 +113,7 @@ C DDM_BANANA L00INT L01INT
         },
       ],
     };
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `@ID "test"
 @METADATA "onboard_name" "test.mod"
 @METADATA "onboard_path" "/eng"
@@ -177,7 +177,7 @@ C FSW_CMD_3
         },
       ],
     };
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `@ID "testVariable"
 @INPUT_PARAMS_BEGIN
 L00INT INT
@@ -297,7 +297,7 @@ L01ENUM ENUM
         },
       ],
     };
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `@ID "42"
 
 A2024-001T00:00:00 FSW_CMD_0 true 0xFF "Hello" World [false 0xAA "Foo" BAR true 0xBB "Baz" BAT]
@@ -356,7 +356,7 @@ C FSW_CMD_3
         },
       ],
     };
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `@ID "testCommandModeling"
 @METADATA "onboard_name" "test.mod"
 
@@ -436,7 +436,7 @@ C ECHO "test"
       ],
     };
 
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `@ID "testDescription"
 
 C ECHO "TEST1" # a description
@@ -498,7 +498,7 @@ C FSW_CMD_2 10 "ENUM" # fsw cmd 2 description
       metadata: {},
     };
 
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `@ID "testImmediate"
 
 @IMMEDIATE
@@ -535,7 +535,7 @@ NOOP # noop command, no arguments
       metadata: {},
     };
 
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `@ID "testHardware"
 
 @HARDWARE
@@ -586,7 +586,7 @@ HWC3
       ],
     };
 
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `@ID "testTime"
 
 A2020-173T20:00:00.000 FSA_CMD
@@ -616,7 +616,7 @@ E-00:00:01.000 FSE_CMD 10 "ENUM"
       ],
     };
 
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `
 @ID "id"
 
@@ -646,7 +646,7 @@ A2024-123T12:34:56 @ACTIVATE("activate.name") # No Args
       ],
     };
 
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `
 @ID "id"
 
@@ -691,7 +691,7 @@ A2024-123T12:34:56 @LOAD("load.name")
       ],
     };
 
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
 
     const expectedSequence = `
 @ID "id"
@@ -753,7 +753,7 @@ R123T11:55:33 @GROUND_EVENT("ground_event.name") "foo" 1 2 3
       ],
     };
 
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `@ID "testRepeat"
 
 C FSA_CMD 10 [] "USA" ["96707-898" "92604-623"]
@@ -821,7 +821,7 @@ C FSA_CMD 10 [] "USA" ["96707-898" "92604-623"]
         },
       ],
     };
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `
     @ID "id"
     G+3:00 "GroundEpochName" @REQUEST_BEGIN("request2.name")
@@ -871,7 +871,7 @@ C FSA_CMD 10 [] "USA" ["96707-898" "92604-623"]
       ],
     };
 
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `@ID "escaped_quotes"
 
 C ECHO "Can this handle \\" Escaped\\" quotes??" # Can this handle "escape"
@@ -911,7 +911,7 @@ C ECHO2 "\\"Can\\" this handle leading and trailing Escaped\\" quotes??\\"" # "C
         },
       ],
     };
-    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const sequence = seqJsonToSequence(seqJson);
     const expectedSequence = `@ID "test"
 
 C CMD_0 true false

@@ -136,17 +136,7 @@ export class Sequence {
     await this.jsonImport.evaluate(e => e.blur());
 
     // verify import worked
-    await this.page
-      .getByText(
-        `@ID "testDescription"
-
-    C ECHO "TEST1" # a description
-    R00:00:01 FSW_CMD # fsw command description
-    @MODEL "cmd" TRUE "00:00:00"
-    C FSW_CMD_1
-    C FSW_CMD_2 10 "ENUM" # fsw cmd 2 description`,
-      )
-      .isVisible();
+    await expect(this.page.getByText(`@ID "testDescription"`)).toBeVisible();
 
     await this.page.getByRole('button', { name: 'Close' }).click();
   }

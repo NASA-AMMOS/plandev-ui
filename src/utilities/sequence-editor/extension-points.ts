@@ -8,7 +8,7 @@ import {
   type ParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
 import type { GlobalType } from '../../types/global-type';
-import type { IInputFormat, IOutputFormat, ISequenceAdaptation, LibrarySequence } from '../../types/sequencing';
+import type { IOutputFormat, ISequenceAdaptation, LibrarySequence } from '../../types/sequencing';
 import { seqJsonLinter } from './seq-json-linter';
 import { sequenceLinter } from './sequence-linter';
 
@@ -53,29 +53,28 @@ export async function toInputFormat(
   parameterDictionaries: ParameterDictionary[],
   channelDictionary: ChannelDictionary | null,
   sequenceAdaptation: ISequenceAdaptation,
-  inputFormat?: IInputFormat,
 ) {
   const modifyOutputParse = sequenceAdaptation.modifyOutputParse;
-  if (modifyOutputParse !== undefined) {
-    let modifiedOutput = await modifyOutputParse(output, parameterDictionaries, channelDictionary);
-    if (modifiedOutput === null) {
-      modifiedOutput = 'modifyOutputParse returned null. Verify your adaptation is correct';
-    } else if (modifiedOutput === undefined) {
-      modifiedOutput = 'modifyOutputParse returned undefined. Verify your adaptation is correct';
-    } else if (typeof modifiedOutput === 'object') {
-      modifiedOutput = JSON.stringify(modifiedOutput);
-    } else {
-      modifiedOutput = `${modifiedOutput}`;
-    }
+  let processedOutput = `${output}`;
 
-    return (await inputFormat?.toInputFormat?.(modifiedOutput)) ?? output;
-  } else {
-    try {
-      return (await inputFormat?.toInputFormat?.(output)) ?? output;
-    } catch (e) {
-      console.error(e);
-      return output;
+  if (modifyOutputParse !== undefined) {
+    const modifiedOutput = await modifyOutputParse(output, parameterDictionaries, channelDictionary);
+    if (modifiedOutput === null) {
+      return 'modifyOutputParse returned null. Verify your adaptation is correct';
+    } else if (modifiedOutput === undefined) {
+      return 'modifyOutputParse returned undefined. Verify your adaptation is correct';
+    } else if (typeof modifiedOutput === 'object') {
+      processedOutput = JSON.stringify(modifiedOutput);
+    } else {
+      processedOutput = `${modifiedOutput}`;
     }
+  }
+
+  try {
+    return (await sequenceAdaptation.inputFormat.toInputFormat?.(processedOutput)) ?? processedOutput;
+  } catch (e) {
+    console.error(e);
+    return processedOutput;
   }
 }
 

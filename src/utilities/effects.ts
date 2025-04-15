@@ -6,6 +6,7 @@ import {
   type CommandDictionary as AmpcsCommandDictionary,
   type ParameterDictionary as AmpcsParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
+import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import { get } from 'svelte/store';
 import { ConstraintDefinitionType } from '../enums/constraint';
 import { DictionaryTypes } from '../enums/dictionaryTypes';
@@ -206,7 +207,6 @@ import {
   type Parcel,
   type ParcelInsertInput,
   type ParcelToParameterDictionary,
-  type SeqJson,
   type SequenceAdaptationMetadata,
   type UserSequence,
   type UserSequenceInsertInput,

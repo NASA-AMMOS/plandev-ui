@@ -44,12 +44,12 @@ function seqJsonDefault(): SeqJson {
 /**
  * Walks the sequence parse tree and converts it to a valid Seq JSON object.
  */
-export async function sequenceToSeqJson(
+export function sequenceToSeqJson(
   node: Tree,
   text: string,
   commandDictionary: CommandDictionary | null,
   sequenceName: string,
-): Promise<string> {
+): SeqJson {
   const baseNode = node.topNode;
   const seqJson: SeqJson = seqJsonDefault();
   const variableList: string[] = [];
@@ -93,7 +93,7 @@ export async function sequenceToSeqJson(
     seqJson.requests = undefined;
   }
 
-  return JSON.stringify(seqJson, null, 2);
+  return seqJson;
 }
 
 function parseRequest(requestNode: SyntaxNode, text: string, commandDictionary: CommandDictionary | null): Request {

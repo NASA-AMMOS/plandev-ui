@@ -30,7 +30,9 @@
   $: convertOutputToSequence(selectedSequence);
 
   async function convertOutputToSequence(sequence: ExpandedSequence | null): Promise<void> {
-    sequenceDefinition = (await seqJsonToSequence(sequence?.expanded_sequence)) ?? 'No Sequence Selected';
+    sequenceDefinition = sequence?.expanded_sequence
+      ? seqJsonToSequence(sequence.expanded_sequence)
+      : 'No Sequence Selected';
   }
 
   const columnDefs: DataGridColumnDef[] = [

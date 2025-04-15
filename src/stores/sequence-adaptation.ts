@@ -16,7 +16,7 @@ const defaultAdaptation: ISequenceAdaptation = {
   inputFormat: {
     linter: undefined,
     name: 'SeqN',
-    toInputFormat: seqJsonToSequence,
+    toInputFormat: async input => seqJsonToSequence(JSON.parse(input)),
   },
   modifyOutput: undefined,
   modifyOutputParse: undefined,
@@ -24,7 +24,8 @@ const defaultAdaptation: ISequenceAdaptation = {
     {
       fileExtension: 'json',
       name: 'Seq JSON',
-      toOutputFormat: sequenceToSeqJson,
+      toOutputFormat: async (...args: Parameters<typeof sequenceToSeqJson>) =>
+        JSON.stringify(sequenceToSeqJson(...args), null, 2),
     },
   ],
 };
