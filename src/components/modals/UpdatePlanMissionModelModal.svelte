@@ -143,7 +143,7 @@
   <ModalFooter>
     <div class="st-typography-label">Snapshot will be automatically created</div>
     <button class="st-button secondary" on:click={close}>Cancel</button>
-    <button class="st-button" on:click={confirm}>Change Mission Model</button>
+    <button class="st-button" on:click={confirm} disabled={!selectedMissionModel}>Change Mission Model</button>
   </ModalFooter>
 </Modal>
 
