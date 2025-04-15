@@ -462,6 +462,34 @@ const effects = {
     }
   },
 
+  async cancelActionRun(
+    id: number,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      if (!queryPermissions.UPDATE_ACTION_DEFINITION(user)) {
+        throwPermissionError('update this action definition');
+      }
+
+      const result = await reqHasura<ActionRun>(
+        gql.CANCEL_ACTION_RUN,
+        {
+          id
+        },
+        user,
+      );
+
+      if (result != null) {
+        showSuccessToast(`Action Cancelled`);
+      } else {
+        throw Error(`Unable to cancel action with ID: "${id}"`);
+      }
+    } catch (e) {
+      catchError('Action Cancellation Failed', e as Error);
+      showFailureToast('Action Cancellation Failed');
+    }
+  },
+
   async cancelSchedulingRequest(analysisId: number, user: User | null): Promise<void> {
     try {
       if (!queryPermissions.CANCEL_SCHEDULING_REQUEST(user)) {
