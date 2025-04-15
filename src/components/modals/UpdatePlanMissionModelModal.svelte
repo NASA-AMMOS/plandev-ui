@@ -131,7 +131,7 @@
           {:else}
             <div class="st-typography-bold">
               Expected conflicts
-              {typeof modelMigrationPreviewErrorCounts?.all === 'number'
+              {typeof modelMigrationPreviewErrorCounts?.all === 'number' && modelMigrationPreviewErrorCounts.all > 0
                 ? `(${modelMigrationPreviewErrorCounts.all})`
                 : ''}
             </div>
