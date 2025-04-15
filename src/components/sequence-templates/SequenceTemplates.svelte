@@ -62,15 +62,19 @@
 
     // Check if importing a file, otherwise create a new template
     if ('sequenceTemplateFile' in value) {
-      effects.importSequenceTemplate(
-        value.activityType,
-        value.language,
-        value.modelId,
-        value.name,
-        value.parcelId,
-        value.sequenceTemplateFile as File,
-        user,
-      );
+      const sequenceTemplateFile = value.sequenceTemplateFile as File;
+      if (sequenceTemplateFile !== undefined) {
+        const parsedSequenceTemplateFile: string = await sequenceTemplateFile.text();
+        effects.importSequenceTemplate(
+          value.activityType,
+          value.language,
+          value.modelId,
+          value.name,
+          value.parcelId,
+          parsedSequenceTemplateFile,
+          user,
+        );
+      }
     } else {
       effects.createSequenceTemplate(
         value.activityType,

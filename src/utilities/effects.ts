@@ -5209,27 +5209,27 @@ const effects = {
     modelId: number,
     name: string,
     parcelId: number,
-    sequenceTemplateFile: File,
+    sequenceTemplateContent: string,
     user: User | null,
   ): Promise<SequenceTemplate | null> {
     try {
       if (!gatewayPermissions.IMPORT_SEQUENCE_TEMPLATE(user)) {
         throwPermissionError('import a sequence template');
       }
-      const body = new FormData();
-      body.append('activity_type', `${activityType}`);
-      body.append('language', `${language}`);
-      body.append('model_id', `${modelId}`);
-      body.append('name', `${name}`);
-      body.append('parcel_id', `${parcelId}`);
-      body.append('sequence_template_file', sequenceTemplateFile, sequenceTemplateFile.name);
-
+      const body = {
+        activity_type: activityType,
+        language,
+        model_id: modelId,
+        name,
+        parcel_id: parcelId,
+        sequence_template_file: sequenceTemplateContent,
+      };
       const createdSequenceTemplate = await reqGateway<SequenceTemplate | null>(
         '/importSequenceTemplate',
         'POST',
-        body,
+        JSON.stringify(body),
         user,
-        true,
+        false,
       );
 
       if (createdSequenceTemplate != null) {
