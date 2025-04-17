@@ -11,6 +11,7 @@
     SchedulingGoalDefinition,
     SchedulingGoalMetadata,
     SchedulingGoalPlanSpecification,
+    SchedulingGoalPlanSpecificationUpdate,
   } from '../../../types/scheduling';
   import { getTarget } from '../../../utilities/generic';
   import { getCleansedStructArguments } from '../../../utilities/parameters';
@@ -35,7 +36,7 @@
   const dispatch = createEventDispatcher<{
     deleteGoalInvocation: SchedulingGoalPlanSpecification;
     duplicateGoalInvocation: SchedulingGoalPlanSpecification;
-    updateGoalPlanSpec: SchedulingGoalPlanSpecification;
+    updateGoalPlanSpec: SchedulingGoalPlanSpecificationUpdate;
   }>();
 
   let enabled: boolean;
@@ -134,6 +135,7 @@
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
       arguments: cleansedArguments,
+      files: [],
       goal_revision: revision === '' ? null : parseInt(`${revision}`),
     });
   }
@@ -164,7 +166,7 @@
 
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const {
-      detail: { name, value },
+      detail: { name, value, file },
     } = event;
 
     if (formParameters.length) {
@@ -173,6 +175,7 @@
       dispatch('updateGoalPlanSpec', {
         ...goalPlanSpec,
         arguments: { ...cleansedArguments, [name]: value },
+        files: file ? [file] : [],
       });
     }
   }

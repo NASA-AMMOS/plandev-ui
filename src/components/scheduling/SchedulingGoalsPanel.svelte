@@ -15,7 +15,7 @@
     schedulingGoalsMap,
   } from '../../stores/scheduling';
   import type { User } from '../../types/app';
-  import type { SchedulingGoalPlanSpecification } from '../../types/scheduling';
+  import type { SchedulingGoalPlanSpecification, SchedulingGoalPlanSpecificationUpdate } from '../../types/scheduling';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -27,6 +27,7 @@
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
   import SchedulingGoal from './goals/SchedulingGoal.svelte';
+  import type { ValueSchemaStruct } from '../../types/schema';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -80,13 +81,32 @@
     effects.managePlanSchedulingGoals(user);
   }
 
-  async function onUpdateGoal(event: CustomEvent<SchedulingGoalPlanSpecification>) {
+  async function onUpdateGoal(event: CustomEvent<SchedulingGoalPlanSpecificationUpdate>) {
     const {
-      detail: { goal_metadata, ...goalPlanSpec },
+      detail: { goal_metadata, files = [], ...goalPlanSpec },
     } = event;
 
     if ($plan) {
-      await effects.updateSchedulingGoalPlanSpecification($plan, goalPlanSpec, user);
+      // Get the associated parameter schema, or the latest one if goal_revision does not exist.
+      const matchingVersion = goal_metadata?.versions.find(
+        v => goalPlanSpec.goal_revision != null && v.revision === goalPlanSpec.goal_revision,
+      );
+      const fallbackVersion = goal_metadata?.versions.reduce((latest, current) =>
+        current.revision > (latest?.revision ?? -Infinity) ? current : latest,
+      );
+      const parameterSchema = <ValueSchemaStruct>(
+        (matchingVersion?.parameter_schema ?? fallbackVersion?.parameter_schema ?? null)
+      );
+
+      await effects.updateSchedulingGoalPlanSpecification(
+        $plan,
+        {
+          ...goalPlanSpec,
+        },
+        parameterSchema,
+        files ?? undefined,
+        user,
+      );
     }
   }
 

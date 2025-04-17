@@ -205,6 +205,8 @@ export type SchedulingGoalPlanSpecification = {
   specification_id: number;
 };
 
+export type SchedulingGoalPlanSpecificationUpdate = SchedulingGoalPlanSpecification & { files?: File[] | null };
+
 export type SchedulingRequest = {
   analysis_id: number;
   canceled: boolean;
