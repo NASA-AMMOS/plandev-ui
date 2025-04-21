@@ -100,7 +100,7 @@ export const workspaces = gqlSubscribable<Workspace[]>(gql.SUB_WORKSPACES, {}, [
 
 /* Writeable. */
 
-export const userSequencesColumns: Writable<string> = writable('.75fr 3px 1.5fr 3px 1fr');
+export const userSequencesColumns: Writable<string> = writable('1.5fr 3px 1.5fr 3px 1fr');
 
 export const userSequenceFormColumns: Writable<string> = writable('1fr 3px 2fr');
 

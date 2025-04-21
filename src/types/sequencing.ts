@@ -144,6 +144,7 @@ export type UserSequence = {
   created_at: string;
   definition: string;
   id: number;
+  is_locked: boolean;
   name: string;
   owner: UserId;
   parcel_id: number;

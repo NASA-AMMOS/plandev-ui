@@ -86,6 +86,7 @@
       await effects.createUserSequence(
         {
           definition: seqN.sequence,
+          is_locked: false,
           name: seqN.name,
           parcel_id: parcel,
           seq_json: '',
@@ -162,7 +163,7 @@
     sequenceName={selectedSequence?.name}
     sequenceOutput={selectedSequence?.seq_json}
     title="Sequence - Definition Editor (Read-only)"
-    readOnly={true}
+    previewOnly={true}
     {workspaceId}
     {user}
   />

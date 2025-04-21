@@ -20,7 +20,7 @@
   import { getSearchParameterNumber } from '../../utilities/generic';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import { featurePermissions } from '../../utilities/permissions';
+  import { featurePermissions, isUserAdmin, isUserOwner } from '../../utilities/permissions';
   import { toInputFormat } from '../../utilities/sequence-editor/extension-points';
   import { logError } from '../../utilities/sequence-editor/logger';
   import PageTitle from '../app/PageTitle.svelte';
@@ -36,6 +36,7 @@
   export let initialSequenceName: string = '';
   export let initialSequenceOwner: UserId = '';
   export let initialSequenceParcelId: number | null = null;
+  export let initialIsSequenceReadonly: boolean = false;
   export let initialSequenceUpdatedAt: string | null = null;
   export let mode: 'create' | 'edit' = 'create';
   export let user: User | null;
@@ -55,6 +56,8 @@
   let sequenceName: string = initialSequenceName;
   let sequenceOwner: UserId = initialSequenceOwner;
   let sequenceParcelId: number | null = initialSequenceParcelId;
+  let isSequenceReadonly: boolean = initialIsSequenceReadonly;
+  let savedIsSequenceReadonly: boolean = initialIsSequenceReadonly;
   let savedSequenceName: string = sequenceName;
   let sequenceOutput: string = 'Output has not been generated yet';
   let sequenceUpdatedAt: string | null = initialSequenceUpdatedAt;
@@ -64,16 +67,27 @@
   let selectedWorkspaceId: number | null;
 
   $: parcel = $parcels.find(p => p.id === sequenceParcelId) ?? null;
+  $: sequenceModified =
+    (!isSequenceReadonly && sequenceDefinition !== savedSequenceDefinition) ||
+    (!isSequenceReadonly && sequenceName !== savedSequenceName) ||
+    savedIsSequenceReadonly !== isSequenceReadonly;
   $: saveButtonClass = sequenceModified && saveButtonEnabled ? 'primary' : 'secondary';
   $: saveButtonEnabled =
-    sequenceParcelId !== null && sequenceDefinition !== '' && sequenceName !== '' && isValidWorkspaceId();
-  $: sequenceModified = sequenceDefinition !== savedSequenceDefinition || sequenceName !== savedSequenceName;
+    sequenceParcelId !== null &&
+    sequenceDefinition !== '' &&
+    sequenceName !== '' &&
+    isValidWorkspaceId() &&
+    sequenceModified;
   $: {
     hasPermission =
       mode === 'edit'
         ? featurePermissions.sequences.canUpdate(user, { owner: sequenceOwner })
         : featurePermissions.sequences.canCreate(user);
-    permissionError = `You do not have permission to ${mode === 'edit' ? 'edit this' : 'create a'} sequence.`;
+    if (isSequenceReadonly) {
+      permissionError = 'This sequence has been marked as readonly.';
+    } else {
+      permissionError = `You do not have permission to ${mode === 'edit' ? 'edit this' : 'create a'} sequence.`;
+    }
     pageTitle = mode === 'edit' ? 'Sequencing' : 'New Sequence';
     pageSubtitle = mode === 'edit' ? savedSequenceName : '';
     saveButtonText = mode === 'edit' && !sequenceModified ? 'Saved' : 'Save';
@@ -181,6 +195,7 @@
         if (mode === 'create') {
           const newSequence: UserSequenceInsertInput = {
             definition: sequenceDefinition,
+            is_locked: isSequenceReadonly,
             name: sequenceName,
             parcel_id: sequenceParcelId,
             seq_json: sequenceOutput,
@@ -194,18 +209,28 @@
             goto(newSequenceUrl + (workspaceId !== null ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''));
           }
         } else if (mode === 'edit' && sequenceId !== null) {
-          const updatedSequence: Partial<UserSequence> = {
-            definition: sequenceDefinition,
-            name: sequenceName,
-            parcel_id: sequenceParcelId,
-            seq_json: sequenceOutput,
-          };
+          let updatedSequence: Partial<UserSequence> = {};
+
+          if (isSequenceReadonly) {
+            updatedSequence = {
+              is_locked: true,
+            };
+          } else {
+            updatedSequence = {
+              definition: sequenceDefinition,
+              is_locked: isSequenceReadonly,
+              name: sequenceName,
+              parcel_id: sequenceParcelId,
+              seq_json: sequenceOutput,
+            };
+          }
           const updated_at = await effects.updateUserSequence(sequenceId, updatedSequence, sequenceOwner, user);
           if (updated_at !== null) {
             sequenceUpdatedAt = updated_at;
           }
           savedSequenceDefinition = sequenceDefinition;
           savedSequenceName = sequenceName;
+          savedIsSequenceReadonly = isSequenceReadonly;
         }
       }
       savingSequence = false;
@@ -272,7 +297,7 @@
           class="st-select w-100"
           name="parcel"
           use:permissionHandler={{
-            hasPermission,
+            hasPermission: hasPermission && !isSequenceReadonly,
             permissionError,
           }}
         >
@@ -295,8 +320,24 @@
           placeholder="Enter Sequence Name"
           required
           use:permissionHandler={{
-            hasPermission,
+            hasPermission: hasPermission && !isSequenceReadonly,
             permissionError,
+          }}
+        />
+      </fieldset>
+
+      <fieldset class="readonly-fieldset">
+        <label for="sequenceReadonly">Is Readonly</label>
+        <input
+          bind:checked={isSequenceReadonly}
+          autocomplete="off"
+          class="st-input"
+          name="sequenceReadonly"
+          placeholder="Is Sequence Readonly?"
+          type="checkbox"
+          use:permissionHandler={{
+            hasPermission: isUserAdmin(user) || isUserOwner(user, { owner: sequenceOwner }),
+            permissionError: 'Only the owner and admins can toggle readonly',
           }}
         />
       </fieldset>
@@ -310,7 +351,7 @@
           type="file"
           on:change={onOutputFileUpload}
           use:permissionHandler={{
-            hasPermission,
+            hasPermission: hasPermission && !isSequenceReadonly,
             permissionError,
           }}
         />
@@ -328,9 +369,22 @@
     {sequenceOutput}
     title="{mode === 'create' ? 'New' : 'Edit'} Sequence - Definition Editor"
     {user}
-    readOnly={!hasPermission}
+    readOnly={!hasPermission || isSequenceReadonly}
     workspaceId={selectedWorkspaceId}
     on:sequence={onSequenceChange}
     on:didChangeModelContent={onDidChangeModelContent}
   />
 </CssGrid>
+
+<style>
+  .readonly-fieldset {
+    column-gap: 0.5rem;
+    display: flex;
+    flex-direction: row;
+  }
+
+  .readonly-fieldset > label,
+  input {
+    display: inline;
+  }
+</style>

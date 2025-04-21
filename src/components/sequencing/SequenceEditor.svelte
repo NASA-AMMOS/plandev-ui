@@ -47,6 +47,7 @@
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import effects from '../../utilities/effects';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import type { CommandInfoMapper } from '../../utilities/sequence-editor/command-info-mapper';
   import { inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
   import { setupLanguageSupport } from '../../utilities/sequence-editor/languages/seq-n/seq-n';
@@ -95,6 +96,7 @@
   export let parcel: Parcel | null;
   export let showCommandFormBuilder: boolean = false;
   export let readOnly: boolean = false;
+  export let previewOnly: boolean = false;
   export let sequenceName: string = '';
   export let sequenceDefinition: string = '';
   export let sequenceOutput: string = '';
@@ -115,6 +117,7 @@
   let compartmentSeqTooltip: Compartment;
   let compartmentSeqAutocomplete: Compartment;
   let compartmentSeqHighlighter: Compartment;
+  let compartmentReadonly: Compartment;
   let channelDictionary: ChannelDictionary | null;
   let commandDictionary: CommandDictionary | null;
   let disableCopyAndExport: boolean = true;
@@ -293,6 +296,9 @@
       parameterDictionaries = [];
     }
   }
+  $: editorSequenceView?.dispatch({
+    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly)]),
+  });
 
   $: showOutputs = !isInVmlMode && outputFormats.length > 0;
   $: {
@@ -329,6 +335,7 @@
   );
 
   onMount(() => {
+    compartmentReadonly = new Compartment();
     compartmentSeqJsonLinter = new Compartment();
     compartmentSeqLanguage = new Compartment();
     compartmentSeqLinter = new Compartment();
@@ -356,7 +363,7 @@
         ...($sequenceAdaptation.autoIndent
           ? [compartmentSeqAutocomplete.of(indentService.of($sequenceAdaptation.autoIndent()))]
           : []),
-        EditorState.readOnly.of(readOnly),
+        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
       ],
       parent: editorSequenceDiv,
     });
@@ -591,7 +598,13 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        <div bind:this={editorSequenceDiv} />
+        <div
+          bind:this={editorSequenceDiv}
+          use:permissionHandler={{
+            hasPermission: !readOnly,
+            permissionError: 'This sequence has been marked as readonly.',
+          }}
+        />
       </svelte:fragment>
     </Panel>
 
