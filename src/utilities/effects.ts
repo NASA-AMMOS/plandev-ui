@@ -251,6 +251,7 @@ import { ActivityDeletionAction } from './activities';
 import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
+  showCancelActionRunModal,
   showConfirmModal,
   showCreateGroupsOrTypes,
   showCreatePlanBranchModal,
@@ -471,18 +472,22 @@ const effects = {
         throwPermissionError('update this action definition');
       }
 
-      const result = await reqHasura<ActionRun>(
-        gql.CANCEL_ACTION_RUN,
-        {
-          id
-        },
-        user,
-      );
+      const { confirm } = await showCancelActionRunModal();
 
-      if (result != null) {
-        showSuccessToast(`Action Cancelled`);
-      } else {
-        throw Error(`Unable to cancel action with ID: "${id}"`);
+      if (confirm) {
+        const result = await reqHasura<ActionRun>(
+          gql.CANCEL_ACTION_RUN,
+          {
+            id
+          },
+          user,
+        );
+
+        if (result != null) {
+          showSuccessToast(`Action Cancelled`);
+        } else {
+          throw Error(`Unable to cancel action with ID: "${id}"`);
+        }
       }
     } catch (e) {
       catchError('Action Cancellation Failed', e as Error);
