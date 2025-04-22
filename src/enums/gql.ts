@@ -13,7 +13,6 @@ export enum Queries {
   APPLY_ACTIVITIES_BY_FILTER = 'assignActivitiesByFilter',
   APPLY_PRESET_TO_ACTIVITY = 'apply_preset_to_activity',
   BEGIN_MERGE = 'begin_merge',
-  //CANCEL_ACTION_RUN = 'cancel_action_run',
   CANCEL_MERGE = 'cancel_merge',
   CHANNEL_DICTIONARIES = 'channel_dictionary',
   COMMAND_DICTIONARIES = 'command_dictionary',

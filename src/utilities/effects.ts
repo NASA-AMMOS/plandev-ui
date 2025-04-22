@@ -463,10 +463,7 @@ const effects = {
     }
   },
 
-  async cancelActionRun(
-    id: number,
-    user: User | null,
-  ): Promise<void> {
+  async cancelActionRun(id: number, user: User | null): Promise<void> {
     try {
       if (!queryPermissions.UPDATE_ACTION_DEFINITION(user)) {
         throwPermissionError('update this action definition');
@@ -478,7 +475,7 @@ const effects = {
         const result = await reqHasura<ActionRun>(
           gql.CANCEL_ACTION_RUN,
           {
-            id
+            id,
           },
           user,
         );
