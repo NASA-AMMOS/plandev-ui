@@ -29,7 +29,7 @@
     user,
   );
 
-  async function cancelAction(id: number) {
+  async function cancelAction(id: number | undefined) {
     await effects.cancelActionRun(id, user);
   }
 </script>
@@ -43,7 +43,7 @@
       <ActionRunCard
         actionRun={$actionRun}
         actionDefinition={getActionDefinitionForRun($actionRun, $actionDefinitionsByWorkspace, workspaceId)}
-        cancelAction={() => cancelAction($actionRun.id)}
+        cancelAction={() => cancelAction($actionRun?.id)}
         interactable={false}
       />
       <div>

@@ -21,6 +21,7 @@ test('getActionDefinitionForRun', () => {
       workspace_id: 1,
     },
     action_definition_id: 1,
+    canceled: false,
     duration: 1,
     error: null,
     id: 1,
