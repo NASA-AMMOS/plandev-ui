@@ -13,17 +13,9 @@ import type {
 } from '@nasa-jpl/aerie-ampcs';
 import { closest, distance } from 'fastest-levenshtein';
 
+import { SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
-import {
-  RULE_ARGS,
-  RULE_SEQUENCE_NAME,
-  TOKEN_ACTIVATE,
-  TOKEN_COMMAND,
-  TOKEN_LOAD,
-  TOKEN_REPEAT_ARG,
-  TOKEN_REQUEST,
-} from '../../constants/seq-n-grammar-constants';
 import { TimeTypes } from '../../enums/time';
 import type { GlobalType } from '../../types/global-type';
 import type { ISequenceAdaptation, LibrarySequence } from '../../types/sequencing';
@@ -128,9 +120,9 @@ export function sequenceLinter(
       ...commandLinter(
         sequenceAdaptation,
         [
-          ...commandsNode.getChildren(TOKEN_COMMAND),
-          ...commandsNode.getChildren(TOKEN_LOAD), // TODO: remove in the library sequence PR because that check should validate load and activates
-          ...commandsNode.getChildren(TOKEN_ACTIVATE), // TODO: remove in the library sequence PR because that check should validate load and activates
+          ...commandsNode.getChildren(SEQN_NODES.COMMAND),
+          ...commandsNode.getChildren(SEQN_NODES.LOAD), // TODO: remove in the library sequence PR because that check should validate load and activates
+          ...commandsNode.getChildren(SEQN_NODES.ACTIVATE), // TODO: remove in the library sequence PR because that check should validate load and activates
         ],
         docText,
         variableMap,
@@ -141,7 +133,7 @@ export function sequenceLinter(
     );
     diagnostics.push(
       ...validateRequests(
-        commandsNode.getChildren(TOKEN_REQUEST),
+        commandsNode.getChildren(SEQN_NODES.REQUEST),
         docText,
         variableMap,
         sequenceAdaptation,
@@ -151,17 +143,17 @@ export function sequenceLinter(
       ),
     );
     diagnostics.push(
-      ...validateActivateLoad(commandsNode.getChildren(TOKEN_ACTIVATE), docText, librarySequences),
-      ...validateActivateLoad(commandsNode.getChildren(TOKEN_LOAD), docText, librarySequences),
+      ...validateActivateLoad(commandsNode.getChildren(SEQN_NODES.ACTIVATE), docText, librarySequences),
+      ...validateActivateLoad(commandsNode.getChildren(SEQN_NODES.LOAD), docText, librarySequences),
     );
   }
 
   diagnostics.push(
     ...immediateCommandLinter(
       [
-        ...(treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_COMMAND) ?? []),
-        ...(treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_LOAD) ?? []),
-        ...(treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_ACTIVATE) ?? []),
+        ...(treeNode.getChild('ImmediateCommands')?.getChildren(SEQN_NODES.COMMAND) ?? []),
+        ...(treeNode.getChild('ImmediateCommands')?.getChildren(SEQN_NODES.LOAD) ?? []),
+        ...(treeNode.getChild('ImmediateCommands')?.getChildren(SEQN_NODES.ACTIVATE) ?? []),
       ],
       docText,
       variableMap,
@@ -175,7 +167,7 @@ export function sequenceLinter(
   diagnostics.push(
     ...hardwareCommandLinter(
       sequenceAdaptation,
-      treeNode.getChild('HardwareCommands')?.getChildren(TOKEN_COMMAND) || [],
+      treeNode.getChild('HardwareCommands')?.getChildren(SEQN_NODES.COMMAND) || [],
       docText,
       commandDictionary,
       channelDictionary,
@@ -279,7 +271,7 @@ function validateRequests(
     ...requestNodes.flatMap(request =>
       commandLinter(
         sequenceAdaptation,
-        request.getChild('Steps')?.getChildren(TOKEN_COMMAND) ?? [],
+        request.getChild('Steps')?.getChildren(SEQN_NODES.COMMAND) ?? [],
         text,
         variables,
         commandDictionary,
@@ -306,7 +298,7 @@ function validateCommandTypeMixing(node: SyntaxNode): Diagnostic[] {
   const lgo = commands?.getChild('LoadAndGoDirective') ?? null;
 
   // Check if each command type exists and has at least one child node.
-  const hasCommands = commands !== null && (commands?.getChildren(TOKEN_COMMAND).length > 0 || lgo !== null);
+  const hasCommands = commands !== null && (commands?.getChildren(SEQN_NODES.COMMAND).length > 0 || lgo !== null);
   const hasImmediateCommands = immediateCommands !== null;
   const hasHardwareCommands = hardwareCommands !== null;
 
@@ -511,8 +503,8 @@ function validateActivateLoad(node: SyntaxNode[], text: string, librarySequences
   const diagnostics: Diagnostic[] = [];
 
   node.forEach((activate: SyntaxNode) => {
-    const sequenceName = activate.getChild(RULE_SEQUENCE_NAME);
-    const argNode = activate.getChild(RULE_ARGS);
+    const sequenceName = activate.getChild(SEQN_NODES.SEQUENCE_NAME);
+    const argNode = activate.getChild(SEQN_NODES.ARGS);
 
     if (sequenceName === null || argNode === null) {
       return;
@@ -708,7 +700,7 @@ function commandLinter(
 
     // TODO: remove in the library sequence PR because that check should validate
     // load and activates
-    if (command.name === TOKEN_ACTIVATE || command.name === TOKEN_LOAD) {
+    if (command.name === SEQN_NODES.ACTIVATE || command.name === SEQN_NODES.LOAD) {
       continue;
     }
 
@@ -750,7 +742,7 @@ function validateTimeTags(command: SyntaxNode, text: string): Diagnostic[] {
     });
   } else {
     // Commands can't have a ground epoch time tag
-    if (command.name === TOKEN_COMMAND && timeTagNode.getChild('TimeGroundEpoch')) {
+    if (command.name === SEQN_NODES.COMMAND && timeTagNode.getChild('TimeGroundEpoch')) {
       diagnostics.push({
         actions: [],
         from: timeTagNode.from,
@@ -1502,10 +1494,10 @@ function validateArgument(
       }
       break;
     case 'repeat':
-      if (argType !== TOKEN_REPEAT_ARG) {
+      if (argType !== SEQN_NODES.REPEAT_ARG) {
         diagnostics.push({
           from: argNode.from,
-          message: `Incorrect type - expected '${TOKEN_REPEAT_ARG}' but got ${argType}`,
+          message: `Incorrect type - expected '${SEQN_NODES.REPEAT_ARG}' but got ${argType}`,
           severity: 'error',
           to: argNode.to,
         });

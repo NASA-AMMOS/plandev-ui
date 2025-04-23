@@ -1,44 +1,27 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
 import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
-import {
-  RULE_ARGS,
-  RULE_COMMAND,
-  RULE_GROUND_NAME,
-  RULE_REQUEST_NAME,
-  RULE_SEQUENCE_NAME,
-  RULE_STEM,
-  TOKEN_ACTIVATE,
-  TOKEN_COMMAND,
-  TOKEN_GROUND_BLOCK,
-  TOKEN_GROUND_EVENT,
-  TOKEN_LOAD,
-  TOKEN_NUMBER,
-  TOKEN_REPEAT_ARG,
-  TOKEN_REQUEST,
-  TOKEN_STRING,
-} from '../../../../constants/seq-n-grammar-constants';
+import { parseVariables, SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
 import { SequenceTypes } from '../../../../enums/sequencing';
 import { type LibrarySequence, type UserSequence } from '../../../../types/sequencing';
 import { fswCommandArgDefault } from '../../command-dictionary';
 import type { CommandInfoMapper } from '../../command-info-mapper';
 import { validateVariables } from '../../sequence-linter';
-import { parseVariables } from '../../to-seq-json';
 import { getFromAndTo, getNearestAncestorNodeOfType } from '../../tree-utils';
 import { SeqLanguage } from './seq-n';
 
 export function getNameNode(stepNode: SyntaxNode | null) {
   if (stepNode) {
     switch (stepNode.name) {
-      case TOKEN_ACTIVATE:
-      case TOKEN_LOAD:
-        return stepNode.getChild(RULE_SEQUENCE_NAME);
-      case TOKEN_GROUND_BLOCK:
-      case TOKEN_GROUND_EVENT:
-        return stepNode.getChild(RULE_GROUND_NAME);
-      case TOKEN_COMMAND:
-        return stepNode.getChild(RULE_STEM);
-      case TOKEN_REQUEST:
-        return stepNode.getChild(RULE_REQUEST_NAME);
+      case SEQN_NODES.ACTIVATE:
+      case SEQN_NODES.LOAD:
+        return stepNode.getChild(SEQN_NODES.SEQUENCE_NAME);
+      case SEQN_NODES.GROUND_BLOCK:
+      case SEQN_NODES.GROUND_EVENT:
+        return stepNode.getChild(SEQN_NODES.GROUND_NAME);
+      case SEQN_NODES.COMMAND:
+        return stepNode.getChild(SEQN_NODES.STEM);
+      case SEQN_NODES.REQUEST:
+        return stepNode.getChild(SEQN_NODES.REQUEST_NAME);
     }
   }
 
@@ -47,12 +30,12 @@ export function getNameNode(stepNode: SyntaxNode | null) {
 
 export function getAncestorStepOrRequest(node: SyntaxNode | null) {
   return getNearestAncestorNodeOfType(node, [
-    TOKEN_COMMAND,
-    TOKEN_ACTIVATE,
-    TOKEN_GROUND_BLOCK,
-    TOKEN_GROUND_EVENT,
-    TOKEN_LOAD,
-    TOKEN_REQUEST,
+    SEQN_NODES.COMMAND,
+    SEQN_NODES.ACTIVATE,
+    SEQN_NODES.GROUND_BLOCK,
+    SEQN_NODES.GROUND_EVENT,
+    SEQN_NODES.LOAD,
+    SEQN_NODES.REQUEST,
   ]);
 }
 
@@ -74,21 +57,21 @@ export class SeqNCommandInfoMapper implements CommandInfoMapper {
 
   getArgumentAppendPosition(commandOrRepeatArgNode: SyntaxNode | null): number | undefined {
     if (
-      commandOrRepeatArgNode?.name === RULE_COMMAND ||
-      commandOrRepeatArgNode?.name === TOKEN_ACTIVATE ||
-      commandOrRepeatArgNode?.name === TOKEN_LOAD
+      commandOrRepeatArgNode?.name === SEQN_NODES.COMMAND ||
+      commandOrRepeatArgNode?.name === SEQN_NODES.ACTIVATE ||
+      commandOrRepeatArgNode?.name === SEQN_NODES.LOAD
     ) {
       const argsNode = commandOrRepeatArgNode.getChild('Args');
       const stemNode = commandOrRepeatArgNode.getChild('Stem');
       return getFromAndTo([stemNode, argsNode]).to;
-    } else if (commandOrRepeatArgNode?.name === TOKEN_REPEAT_ARG) {
+    } else if (commandOrRepeatArgNode?.name === SEQN_NODES.REPEAT_ARG) {
       return commandOrRepeatArgNode.to - 1;
     }
     return undefined;
   }
 
   getArgumentNodeContainer(commandNode: SyntaxNode | null): SyntaxNode | null {
-    return commandNode?.getChild(RULE_ARGS) ?? null;
+    return commandNode?.getChild(SEQN_NODES.ARGS) ?? null;
   }
 
   getArgumentsFromContainer(containerNode: SyntaxNode | null): SyntaxNode[] {
@@ -131,14 +114,14 @@ export class SeqNCommandInfoMapper implements CommandInfoMapper {
   }
 
   nodeTypeEnumCompatible(node: SyntaxNode | null): boolean {
-    return node?.name === TOKEN_STRING;
+    return node?.name === SEQN_NODES.STRING;
   }
 
   nodeTypeHasArguments(node: SyntaxNode | null): boolean {
-    return node?.name === TOKEN_COMMAND;
+    return node?.name === SEQN_NODES.COMMAND;
   }
 
   nodeTypeNumberCompatible(node: SyntaxNode | null): boolean {
-    return node?.name === TOKEN_NUMBER;
+    return node?.name === SEQN_NODES.NUMBER;
   }
 }

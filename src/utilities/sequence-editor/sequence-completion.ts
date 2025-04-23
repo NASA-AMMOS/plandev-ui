@@ -1,7 +1,7 @@
 import type { Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete';
 import { syntaxTree } from '@codemirror/language';
 import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
-import { RULE_SEQUENCE_NAME, TOKEN_ACTIVATE, TOKEN_LOAD } from '../../constants/seq-n-grammar-constants';
+import { SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
 import { getGlobals } from '../../stores/sequence-adaptation';
 import type { ISequenceAdaptation, LibrarySequence } from '../../types/sequencing';
 import { getDoyTime } from '../time';
@@ -59,7 +59,8 @@ export function sequenceCompletion(
       const libraryCompletions: Completion[] = [];
 
       const cursor: CursorInfo = {
-        isAfterActivateOrLoad: nodeBefore.parent?.name === TOKEN_ACTIVATE || nodeBefore.parent?.name === TOKEN_LOAD,
+        isAfterActivateOrLoad:
+          nodeBefore.parent?.name === SEQN_NODES.ACTIVATE || nodeBefore.parent?.name === SEQN_NODES.LOAD,
         isAfterTimeTag: (() => {
           const line = context.state.doc.lineAt(context.pos);
           const node = SeqLanguage.parser.parse(line.text).resolveInner(context.pos - line.from, -1);
@@ -67,7 +68,7 @@ export function sequenceCompletion(
           return node.parent?.getChild('TimeGroundEpoch') || node.parent?.getChild('TimeTag') ? true : false;
         })(),
         isAtLineComment: nodeCurrent.name === 'LineComment' || nodeBefore.name === 'LineComment',
-        isAtSequenceName: nodeCurrent.parent?.name === RULE_SEQUENCE_NAME,
+        isAtSequenceName: nodeCurrent.parent?.name === SEQN_NODES.SEQUENCE_NAME,
         isAtSymbolBefore: isAtTyped(context.state.doc.toString(), word),
         isBeforeHDWCommands: context.pos < (baseNode.getChild('HardwareCommands')?.from ?? Infinity),
         isBeforeImmedOrHDWCommands:
@@ -297,7 +298,7 @@ export function sequenceCompletion(
 
             return {
               apply: (view: any, _completion: any, from: number, to: number) => {
-                const t = getNearestAncestorNodeOfType(nodeCurrent, [TOKEN_ACTIVATE, TOKEN_LOAD]);
+                const t = getNearestAncestorNodeOfType(nodeCurrent, [SEQN_NODES.ACTIVATE, SEQN_NODES.LOAD]);
                 view.dispatch({
                   changes: {
                     from,

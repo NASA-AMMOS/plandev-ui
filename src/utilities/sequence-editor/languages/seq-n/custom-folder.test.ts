@@ -1,7 +1,7 @@
 import { EditorState } from '@codemirror/state';
+import { SeqnParser } from '@nasa-jpl/aerie-sequence-languages';
 import { describe, expect, test } from 'vitest';
 import { foldRequest, foldSteps, foldVariables } from './custom-folder';
-import { parser } from './seq-n.grammar';
 
 const COMMANDS = [
   'Command',
@@ -71,7 +71,7 @@ describe('foldCommand', () => {
   test('nothing to fold should return same from and to', () => {
     COMMANDS.forEach(command => {
       const doc = `${command}`;
-      const tree = parser.parse(doc);
+      const tree = SeqnParser.parse(doc);
       const state = EditorState.create({ doc });
 
       const commandNode = tree.topNode.getChild('Commands')?.getChild('Command');
@@ -90,7 +90,7 @@ describe('foldCommand', () => {
     COMMANDS.forEach(command => {
       const doc = `${command}
       @METADATA "Key" "Value"`;
-      const tree = parser.parse(doc);
+      const tree = SeqnParser.parse(doc);
       const state = EditorState.create({ doc });
 
       const commandNode = tree.topNode.getChild('Commands')?.getChild('Command');
@@ -119,7 +119,7 @@ describe('foldCommand', () => {
 
 
       `;
-      const tree = parser.parse(doc);
+      const tree = SeqnParser.parse(doc);
       const state = EditorState.create({ doc });
 
       const commandNode = tree.topNode.getChild('Commands')?.getChild('Command');
@@ -140,7 +140,7 @@ describe('foldGroundBlockAndEvent', () => {
   test('nothing to fold should return same from and to', () => {
     LOAD_ACTIVATES.forEach(step => {
       const doc = `${step}`;
-      const tree = parser.parse(doc);
+      const tree = SeqnParser.parse(doc);
       const state = EditorState.create({ doc });
 
       const node =
@@ -161,7 +161,7 @@ describe('foldGroundBlockAndEvent', () => {
       const doc = `${step}
       @ENGINE 1
       @EPOCH ""`;
-      const tree = parser.parse(doc);
+      const tree = SeqnParser.parse(doc);
       const state = EditorState.create({ doc });
 
       const node =
@@ -194,7 +194,7 @@ describe('foldGroundBlockAndEvent', () => {
 
 
       `;
-      const tree = parser.parse(doc);
+      const tree = SeqnParser.parse(doc);
       const state = EditorState.create({ doc });
 
       const node =
@@ -217,7 +217,7 @@ describe('foldGroundBlockAndEvent', () => {
   test('nothing to fold should return same from and to', () => {
     GROUND_ACTIVITIES.forEach(step => {
       const doc = `${step}`;
-      const tree = parser.parse(doc);
+      const tree = SeqnParser.parse(doc);
       const state = EditorState.create({ doc });
 
       const node =
@@ -241,7 +241,7 @@ describe('foldGroundBlockAndEvent', () => {
     @MODEL "Variable" 0 "Offset"
     @MODEL "Variable" 0 "Offset"
     @MODEL "Variable" 0 "Offset"`;
-      const tree = parser.parse(doc);
+      const tree = SeqnParser.parse(doc);
       const state = EditorState.create({ doc });
 
       const node =
@@ -273,7 +273,7 @@ describe('foldGroundBlockAndEvent', () => {
 
 
       `;
-      const tree = parser.parse(doc);
+      const tree = SeqnParser.parse(doc);
       const state = EditorState.create({ doc });
 
       const node =
@@ -297,7 +297,7 @@ describe('foldRequest', () => {
   test('fold with no metadata', () => {
     REQUEST_ACTIVITIES.forEach(step => {
       const doc = `${step}`;
-      const tree = parser.parse(doc);
+      const tree = SeqnParser.parse(doc);
       const state = EditorState.create({ doc });
 
       const node = tree.topNode.getChild('Commands')?.getChild('Request');
@@ -318,7 +318,7 @@ describe('foldRequest', () => {
     @METADATA "Key" "Value"
     @METADATA "Key" "Value"
     @METADATA "Key" "Value"`;
-      const tree = parser.parse(doc);
+      const tree = SeqnParser.parse(doc);
       const state = EditorState.create({ doc });
 
       const node = tree.topNode.getChild('Commands')?.getChild('Request');
@@ -343,7 +343,7 @@ describe('foldRequest', () => {
     @METADATA "Key" "Value"
 
       `;
-      const tree = parser.parse(doc);
+      const tree = SeqnParser.parse(doc);
       const state = EditorState.create({ doc });
 
       const node = tree.topNode.getChild('Commands')?.getChild('Request');
@@ -365,7 +365,7 @@ describe('foldVariables', () => {
   test('Parameters should return the correct from and to', () => {
     PARAMETERS.forEach((parameter: string) => {
       const doc = parameter;
-      const tree = parser.parse(doc);
+      const tree = SeqnParser.parse(doc);
       const state = EditorState.create({ doc });
 
       const node = tree.topNode.getChild('ParameterDeclaration');
@@ -383,7 +383,7 @@ describe('foldVariables', () => {
   test('Locals should return the correct from and to', () => {
     LOCALS.forEach((local: string) => {
       const doc = local;
-      const tree = parser.parse(doc);
+      const tree = SeqnParser.parse(doc);
       const state = EditorState.create({ doc });
 
       const node = tree.topNode.getChild('LocalDeclaration');
