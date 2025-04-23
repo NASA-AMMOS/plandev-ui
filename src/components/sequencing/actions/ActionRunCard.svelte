@@ -15,7 +15,6 @@
   export let cancelAction: (() => void) | null = null;
 
   function getStatusForActionRun(actionRun: ActionRunSlim): Status {
-
     console.log(actionRun);
     if (actionRun.canceled === true) {
       return Status.Canceled;
@@ -105,5 +104,4 @@
     cursor: pointer;
     display: flex;
   }
-
 </style>
