@@ -309,6 +309,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
       isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model, preset))
     );
   },
+  CANCEL_ACTION_RUN: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.UPDATE_ACTION_RUN], user);
+  },
   CANCEL_SCHEDULING_REQUEST: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.UPDATE_SCHEDULING_REQUEST], user);
   },
