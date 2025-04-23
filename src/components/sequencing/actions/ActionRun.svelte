@@ -37,7 +37,6 @@
   async function cancelAction(id: number) {
     await effects.cancelActionRun(id, user);
   }
-
 </script>
 
 <div class="action-run-container">

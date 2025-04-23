@@ -10,7 +10,6 @@
   export let height: number = 175;
   export let width: number = 300;
 
-
   const dispatch = createEventDispatcher<{
     close: void;
     confirm: boolean;
