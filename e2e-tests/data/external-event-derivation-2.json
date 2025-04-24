@@ -1,7 +1,7 @@
 {
     "source": {
         "key": "external-event-derivation-2.json",
-        "source_type": "DerivationTest",
+        "source_type_name": "DerivationTest",
         "valid_at": "2022-019T00:00:00Z",
         "period": {
             "start_time": "2022-001T00:00:00Z",
@@ -14,7 +14,7 @@
     "events": [
         {
             "key": "1",
-            "event_type": "DerivationA",
+            "event_type_name": "DerivationA",
             "start_time": "2022-001T00:00:00Z",
             "duration": "02:10:00",
             "attributes": {
@@ -25,7 +25,7 @@
         },
         {
             "key": "2",
-            "event_type": "DerivationA",
+            "event_type_name": "DerivationA",
             "start_time": "2022-001T12:00:00Z",
             "duration": "02:10:00",
             "attributes": {
@@ -36,7 +36,7 @@
         },
         {
             "key": "3",
-            "event_type": "DerivationB",
+            "event_type_name": "DerivationB",
             "start_time": "2022-002T23:00:00Z",
             "duration": "03:00:00",
             "attributes": {
@@ -47,7 +47,7 @@
         },
         {
             "key": "4",
-            "event_type": "DerivationB",
+            "event_type_name": "DerivationB",
             "start_time": "2022-005T21:00:00Z",
             "duration": "03:00:00",
             "attributes": {

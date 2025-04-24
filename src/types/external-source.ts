@@ -35,7 +35,7 @@ export type ExternalSourceJson = {
       end_time: string;
       start_time: string;
     };
-    source_type: string;
+    source_type_name: string;
     valid_at: string;
   };
 };

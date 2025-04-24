@@ -35,7 +35,7 @@ export type ExternalEventDB = {
 export type ExternalEventJson = {
   attributes: object;
   duration: string;
-  event_type: string;
+  event_type_name: string;
   key: string;
   start_time: string;
 };

@@ -1,7 +1,7 @@
 {
     "source": {
         "key": "ExampleExternalSource:example-external-source.json",
-        "source_type": "Example External Source",
+        "source_type_name": "Example External Source",
         "valid_at": "2022-001T00:00:00Z",
         "period": {
             "start_time": "2022-001T00:00:00Z",
@@ -15,7 +15,7 @@
     "events": [
         {
             "key": "ExampleEvent:1/sc/sc1:1:X/1",
-            "event_type": "ExampleEvent",
+            "event_type_name": "ExampleEvent",
             "start_time": "2022-001T12:00:00Z",
             "duration": "00:00:00",
             "attributes": {

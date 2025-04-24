@@ -12,7 +12,6 @@ import { planId } from './plan';
 import { gqlSubscribable } from './subscribable';
 
 /* Writeable. */
-export const parsingError: Writable<string | null> = writable(null);
 export const creatingExternalSource: Writable<boolean> = writable(false);
 export const createExternalSourceError: Writable<string | null> = writable(null);
 export const createExternalSourceEventTypeError: Writable<string | null> = writable(null);

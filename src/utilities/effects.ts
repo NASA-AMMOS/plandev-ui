@@ -36,7 +36,6 @@ import {
   createExternalSourceEventTypeError as createExternalSourceEventTypeErrorStore,
   creatingExternalSource as creatingExternalSourceStore,
   derivationGroupPlanLinkError as derivationGroupPlanLinkErrorStore,
-  parsingError as parsingErrorStore,
 } from '../stores/external-source';
 import {
   createModelError as createModelErrorStore,
@@ -118,13 +117,7 @@ import type {
   SequenceFilterInsertInput,
 } from '../types/expansion';
 import type { Extension, ExtensionPayload } from '../types/extension';
-import type {
-  ExternalEvent,
-  ExternalEventDB,
-  ExternalEventInsertInput,
-  ExternalEventJson,
-  ExternalEventType,
-} from '../types/external-event';
+import type { ExternalEvent, ExternalEventDB, ExternalEventType } from '../types/external-event';
 import type {
   DerivationGroup,
   DerivationGroupInsertInput,
@@ -281,14 +274,12 @@ import { parseCdlDictionary, toAmpcsXml } from './sequence-editor/languages/vml/
 import { compareEvents } from './simulation';
 import { pluralize } from './text';
 import {
-  convertDoyToYmd,
   convertUTCToMs,
   getDoyTime,
   getDoyTimeFromInterval,
   getIntervalFromDoyRange,
   getIntervalInMs,
   getUnixEpochTimeFromInterval,
-  switchISOTimezoneRepresentation,
 } from './time';
 import { createRow, duplicateRow } from './timeline';
 import { showFailureToast, showSuccessToast } from './toast';
@@ -1196,14 +1187,8 @@ const effects = {
   },
 
   async createExternalSource(
-    externalSourceTypeName: string,
-    derivationGroupName: string,
-    startTime: string,
-    endTime: string,
-    externalEvents: ExternalEventJson[],
-    externalSourceKey: string,
-    externalSourceAttributes: object,
-    validAt: string,
+    derivationGroupName: string | null,
+    externalSourceFile: File,
     user: User | null,
   ): Promise<ExternalSourceSlim | null> {
     try {
@@ -1213,88 +1198,11 @@ const effects = {
       creatingExternalSourceStore.set(true);
       createExternalSourceErrorStore.set(null);
 
-      // Convert all times, validate they exist or else throw a failure
-      const startTimeFormatted: string | undefined = switchISOTimezoneRepresentation(
-        convertDoyToYmd(startTime.replaceAll('Z', '')) ?? '',
-      );
-      const endTimeFormatted: string | undefined = switchISOTimezoneRepresentation(
-        convertDoyToYmd(endTime.replaceAll('Z', '')) ?? '',
-      );
-      const validAtFormatted: string | undefined = switchISOTimezoneRepresentation(
-        convertDoyToYmd(validAt.replaceAll('Z', '')) ?? '',
-      );
-      if (!startTimeFormatted || !endTimeFormatted || !validAtFormatted) {
-        showFailureToast('Parsing failed.');
-        parsingErrorStore.set(`Parsing failed - parsing dates in input failed. ${startTime}, ${endTime}, ${validAt}`);
-        creatingExternalSourceStore.set(false);
-        return null;
-      }
-
-      // Check that the start and end times are logical
-      if (new Date(startTimeFormatted) > new Date(endTimeFormatted)) {
-        showFailureToast('Parsing failed.');
-        parsingErrorStore.set(`Parsing failed - start time ${startTimeFormatted} after end time ${endTimeFormatted}.`);
-        creatingExternalSourceStore.set(false);
-        return null;
-      }
-
-      // Create external events + external event types mutation inputs for Hasura
-      const externalEventsCreated: ExternalEventInsertInput[] = [];
-      for (const externalEvent of externalEvents) {
-        // Ensure the duration is valid
-        try {
-          getIntervalInMs(externalEvent.duration);
-        } catch (error) {
-          showFailureToast('Parsing failed.');
-          catchError(`Event duration has invalid format: ${externalEvent.key}\n`, error as Error);
-          creatingExternalSourceStore.set(false);
-          return null;
-        }
-
-        // Validate external event is in the external source's start/stop bounds
-        const externalEventStart = Date.parse(convertDoyToYmd(externalEvent.start_time.replace('Z', '')) ?? '');
-        const externalEventEnd = externalEventStart + getIntervalInMs(externalEvent.duration);
-        if (
-          !(externalEventStart >= Date.parse(startTimeFormatted) && externalEventEnd <= Date.parse(endTimeFormatted))
-        ) {
-          showFailureToast('Invalid External Event Time Bounds');
-          parsingErrorStore.set(
-            `Upload failed. Event (${externalEvent.key}) not in bounds of source start and end: occurs from [${new Date(externalEventStart)},${new Date(externalEventEnd)}], not subset of [${new Date(startTimeFormatted)},${new Date(endTimeFormatted)}].\n`,
-          );
-          creatingExternalSourceStore.set(false);
-          return null;
-        }
-
-        // If the event is valid...
-        if (
-          externalEvent.event_type !== undefined &&
-          externalEvent.start_time !== undefined &&
-          externalEvent.duration !== undefined
-        ) {
-          externalEventsCreated.push({
-            attributes: externalEvent.attributes,
-            duration: externalEvent.duration,
-            event_type_name: externalEvent.event_type,
-            key: externalEvent.key,
-            start_time: externalEvent.start_time,
-          });
-        }
-      }
-
-      const sourceData = {
-        attributes: externalSourceAttributes,
-        derivation_group_name: derivationGroupName,
-        key: externalSourceKey,
-        period: {
-          end_time: endTimeFormatted,
-          start_time: startTimeFormatted,
-        },
-        source_type_name: externalSourceTypeName,
-        valid_at: validAtFormatted,
-      };
       const body = new FormData();
-      body.append('source', JSON.stringify(sourceData));
-      body.append('events', JSON.stringify(externalEventsCreated));
+      if (derivationGroupName) {
+        body.append('derivation_group_name', derivationGroupName);
+      }
+      body.append('external_source_file', externalSourceFile);
 
       const reqResponse = await reqGateway(`/uploadExternalSource`, 'POST', body, user, true);
       if (reqResponse?.errors === undefined) {

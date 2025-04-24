@@ -1,7 +1,7 @@
 {
     "source": {
         "key": "external-event-derivation-4.json",
-        "source_type": "DerivationTest",
+        "source_type_name": "DerivationTest",
         "valid_at": "2022-021T00:00:00Z",
         "period": {
             "start_time": "2022-001T12:00:00Z",
@@ -14,7 +14,7 @@
     "events": [
         {
             "key": "9",
-            "event_type": "DerivationC",
+            "event_type_name": "DerivationC",
             "start_time": "2022-002T00:00:00Z",
             "duration": "01:00:00",
             "attributes": {

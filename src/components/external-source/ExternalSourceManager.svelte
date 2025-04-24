@@ -4,18 +4,14 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
-  import { groupBy } from 'lodash-es';
   import ExternalEventIcon from '../../assets/external-event-box-with-arrow.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
-  import { catchError } from '../../stores/errors';
-  import { externalEventTypes } from '../../stores/external-event';
   import {
     createDerivationGroupError,
     createExternalSourceError,
     creatingExternalSource,
     externalSources,
     externalSourceTypes,
-    parsingError,
     planDerivationGroupLinks,
   } from '../../stores/external-source';
   import { field } from '../../stores/form';
@@ -25,7 +21,6 @@
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExternalEvent, ExternalEventId, ExternalEventType } from '../../types/external-event';
   import {
-    type ExternalSourceJson,
     type ExternalSourceSlim,
     type ExternalSourceType,
     type PlanDerivationGroup,
@@ -38,7 +33,6 @@
     getExternalSourceRowId,
     getExternalSourceSlimRowId,
   } from '../../utilities/externalEvents';
-  import { parseJSONStream } from '../../utilities/generic';
   import {
     getFormParameters,
     translateJsonSchemaArgumentsToValueSchema,
@@ -47,13 +41,11 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { formatDate, switchISOTimezoneRepresentation } from '../../utilities/time';
-  import { showFailureToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
-  import { required, timestamp } from '../../utilities/validators';
+  import { required } from '../../utilities/validators';
   import Collapse from '../Collapse.svelte';
   import ExternalEventForm from '../external-events/ExternalEventForm.svelte';
   import ExternalEventsTable from '../external-events/ExternalEventsTable.svelte';
-  import DatePickerField from '../form/DatePickerField.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
   import Parameters from '../parameters/Parameters.svelte';
@@ -66,7 +58,6 @@
   import DatePicker from '../ui/DatePicker/DatePicker.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
-  import ExternalSourceTypeNewCard from './ExternalSourceTypeNewCard.svelte';
 
   export let user: User | null;
 
@@ -97,7 +88,7 @@
       },
     },
     {
-      field: 'source_type',
+      field: 'source_type_name',
       filter: 'text',
       headerName: 'Source Type',
       resizable: true,
@@ -125,15 +116,7 @@
   ];
 
   let dataGrid: DataGrid<ExternalSourceSlim> | undefined = undefined;
-
-  let keyInputField: HTMLInputElement; // need this to set a focus on it. not related to the value
-
-  let keyField = field<string>('', [required]);
-  let sourceTypeField = field<string>('', [required]); // need function to check if in list of allowable types...
   let derivationGroupField = field<string>('', [required]);
-  let startTimeDoyField = field<string>('', [required, timestamp]); // requires validation function
-  let endTimeDoyField = field<string>('', [required, timestamp]); // requires validation function
-  let validAtDoyField = field<string>('', [required, timestamp]); // requires validation function
 
   // table variables
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
@@ -158,11 +141,7 @@
   let files: FileList | undefined;
   let file: File | undefined;
   let externalSourceFileInput: HTMLInputElement;
-  let parsedExternalSource: ExternalSourceJson | undefined;
   let isUploadDisabled: boolean = true;
-  let uploadDisabledMessage: string | null = null;
-  let newExternalSourceType: string | null = null;
-  let newExternalEventTypes: string[] | null = null;
 
   // For filtering purposes (modelled after TimelineEditorLayerFilter):
   let filterExpression: string = '';
@@ -174,15 +153,12 @@
   let hasDeleteExternalSourcePermissionOnSelectedSource: boolean = false;
   let hasCreatePermission: boolean = false;
 
-  let isDerivationGroupFieldDisabled: boolean = true;
-
   let gridRowSizes: string = '1fr 3px 0fr';
 
   // Clear all error stores when a source is selected as they will not be shown
   $: if (selectedSource !== null) {
     createExternalSourceError.set(null);
     createDerivationGroupError.set(null);
-    parsingError.set(null);
   }
 
   $: if (selectedSource !== null) {
@@ -221,14 +197,11 @@
     if (file !== files[0]) {
       createExternalSourceError.set(null);
       createDerivationGroupError.set(null);
-      parsingError.set(null);
-      isDerivationGroupFieldDisabled = true;
 
       file = files[0];
-      if (file !== undefined && /\.json$/.test(file.name)) {
-        parseExternalSourceFileStream(file.stream());
-      } else {
-        parsingError.set('External Source file is not a .json file');
+      if (file === undefined || !/\.json$/.test(file.name)) {
+        createExternalSourceError.set('External Source file is not a .json file');
+        file = undefined;
       }
     }
   }
@@ -340,17 +313,7 @@
     return planDerivationGroupLink.derivation_group_name === selectedSource?.derivation_group_name;
   });
 
-  $: if (parsedExternalSource !== undefined) {
-    if (doesSourceTypeAndEventTypesExist(parsedExternalSource)) {
-      isUploadDisabled = false;
-      uploadDisabledMessage = null;
-    } else {
-      isUploadDisabled = true;
-    }
-  } else {
-    isUploadDisabled = true;
-    uploadDisabledMessage = null;
-  }
+  $: isUploadDisabled = file === undefined;
 
   // Permissions
   $: hasCreatePermission = featurePermissions.externalSource.canCreate(user);
@@ -371,93 +334,24 @@
   }
 
   async function onFormSubmit(_e: SubmitEvent) {
-    if (parsedExternalSource && file) {
+    if (file) {
       resetErrors();
-      let newEventTypes: { [x: string]: object } = {};
-      let newSourceType: { [x: string]: object } = {};
-
-      if (newExternalSourceType !== null) {
-        newSourceType = {
-          [newExternalSourceType]: {
-            properties: {},
-            required: [],
-            type: 'object',
-          },
+      const requestResponse: ExternalSourceSlim | null = await effects.createExternalSource(
+        $derivationGroupField.value,
+        file,
+        user,
+      );
+      // Following a successful mutation...
+      if (requestResponse !== null) {
+        // Auto-select the new source
+        selectedSource = {
+          ...requestResponse,
+          created_at: switchISOTimezoneRepresentation(new Date().toISOString()), // technically not the exact time it shows up in the database
         };
+        gridRowSizes = gridRowSizesBottomPanel;
       }
-      if (newExternalEventTypes !== null) {
-        for (let type of newExternalEventTypes) {
-          newEventTypes[type] = {
-            properties: {},
-            required: [],
-            type: 'object',
-          };
-        }
-      }
-
-      const createdTypes =
-        newExternalSourceType !== null || newExternalEventTypes !== null
-          ? await effects.createExternalSourceEventTypes(newEventTypes, newSourceType, user)
-          : true;
-
-      if (createdTypes) {
-        const requestResponse: ExternalSourceSlim | null = await effects.createExternalSource(
-          $sourceTypeField.value,
-          $derivationGroupField.value,
-          $startTimeDoyField.value,
-          $endTimeDoyField.value,
-          parsedExternalSource.events,
-          parsedExternalSource.source.key,
-          parsedExternalSource.source.attributes,
-          $validAtDoyField.value,
-          user,
-        );
-        // Following a successful mutation...
-        if (requestResponse !== null) {
-          // Auto-select the new source
-          selectedSource = {
-            ...requestResponse,
-            created_at: switchISOTimezoneRepresentation(new Date().toISOString()), // technically not the exact time it shows up in the database
-          };
-          gridRowSizes = gridRowSizesBottomPanel;
-        }
-      }
-
       // Reset the form behind the source
       onReset();
-    }
-  }
-
-  async function parseExternalSourceFileStream(stream: ReadableStream) {
-    parsingError.set(null);
-    try {
-      try {
-        parsedExternalSource = await parseJSONStream<ExternalSourceJson>(stream);
-      } catch (error) {
-        throw new Error('External Source has Invalid Format');
-      }
-      // Check for missing fields - if any are not present, throw an error
-      if (
-        parsedExternalSource.source.key === undefined ||
-        parsedExternalSource.source.source_type === undefined ||
-        parsedExternalSource.source.period.start_time === undefined ||
-        parsedExternalSource.source.period.end_time === undefined ||
-        parsedExternalSource.source.valid_at === undefined
-      ) {
-        throw new Error('Required field is missing in External Source');
-      }
-      $keyField.value = parsedExternalSource.source.key;
-      $sourceTypeField.value = parsedExternalSource.source.source_type;
-      $startTimeDoyField.value = parsedExternalSource.source.period.start_time.replaceAll('Z', '');
-      $endTimeDoyField.value = parsedExternalSource.source.period.end_time.replaceAll('Z', '');
-      $validAtDoyField.value = parsedExternalSource.source.valid_at.replaceAll('Z', '');
-      $derivationGroupField.value = `${$sourceTypeField.value} Default`; // Include source type name because derivation group names are unique
-      isDerivationGroupFieldDisabled = false;
-    } catch (error) {
-      catchError('External Source has Invalid Format', error as Error);
-      showFailureToast('External Source has Invalid Format');
-      parsingError.set('External Source has Invalid Format');
-      parsedExternalSource = undefined;
     }
   }
 
@@ -496,66 +390,15 @@
     }
   }
 
-  function doesSourceTypeAndEventTypesExist(externalSource: ExternalSourceJson) {
-    // Check that the External Source Type for the source to-be-uploaded exists
-    const externalSourceType = $externalSourceTypes.find(
-      sourceType => sourceType.name === externalSource.source.source_type,
-    );
-    if (externalSourceType === undefined) {
-      if (Object.keys(externalSource.source.attributes).length === 0) {
-        newExternalSourceType = externalSource.source.source_type;
-      } else {
-        uploadDisabledMessage = `External Source Type "${externalSource.source.source_type}" does not exist and contains attributes. Please upload a schema prior to using the type.`;
-        return false;
-      }
-    }
-
-    // Check that all the External Event Types for the source to-be-uploaded exist
-    const newSourceExternalEventTypes = groupBy(externalSource.events, 'event_type');
-
-    let eventTypes: string[] = [];
-    for (const [currentEventType, currentEvents] of Object.entries(newSourceExternalEventTypes)) {
-      if (currentEvents !== undefined && currentEvents !== null) {
-        const anyCurrentEventsHaveAttributes = currentEvents.some(
-          currentEvent => Object.keys(currentEvent.attributes).length,
-        );
-        if ($externalEventTypes.find(eventTypeFromDB => eventTypeFromDB.name === currentEventType) === undefined) {
-          // Only create new types if they don't have attributes. otherwise, a schema is needed as we do not infer one
-          if (!anyCurrentEventsHaveAttributes) {
-            eventTypes.push(currentEventType);
-          } else {
-            uploadDisabledMessage = `External Event Type "${currentEventType}" does not exist and contains attributes. Please upload a schema prior to using the type.`;
-            return false;
-          }
-        }
-      }
-    }
-    if (eventTypes.length > 0) {
-      newExternalEventTypes = eventTypes;
-    }
-    return true;
-  }
-
   function onReset() {
-    parsedExternalSource = undefined;
-    isDerivationGroupFieldDisabled = true;
-    newExternalSourceType = null;
-    newExternalEventTypes = null;
     files = undefined;
     file = undefined;
     externalSourceFileInput.value = '';
-    keyField.reset('');
-    sourceTypeField.reset('');
-    startTimeDoyField.reset('');
-    endTimeDoyField.reset('');
-    validAtDoyField.reset('');
-    derivationGroupField.reset('');
   }
 
   function resetErrors() {
     $createExternalSourceError = null;
     $createDerivationGroupError = null;
-    $parsingError = null;
   }
 </script>
 
@@ -728,17 +571,8 @@
           </fieldset>
         </div>
       {:else}
-        {#if newExternalSourceType !== null || newExternalEventTypes !== null}
-          <ExternalSourceTypeNewCard
-            externalSourceType={newExternalSourceType}
-            externalEventTypes={newExternalEventTypes}
-            on:dismiss={onReset}
-          />
-        {/if}
         <form on:submit|preventDefault={onFormSubmit} on:reset={onReset}>
           <AlertError class="m-2" error={$createExternalSourceError} />
-          <AlertError class="m-2" error={$parsingError} />
-          <AlertError class="m-2" error={uploadDisabledMessage} />
           <div class="file-upload-field">
             <fieldset style:flex={1}>
               <label for="file">Source File</label>
@@ -757,7 +591,7 @@
             </fieldset>
 
             <fieldset class="file-upload-fieldset">
-              {#if parsedExternalSource !== undefined}
+              {#if file !== undefined}
                 <div style="padding-top:12px">
                   <button class="st-button secondary w-full" type="reset">Dismiss</button>
                 </div>
@@ -775,51 +609,12 @@
               </button>
             </fieldset>
           </div>
-          <Field field={derivationGroupField}>
-            <label for="derivation-group" slot="label">Derivation Group</label>
-            <input
-              autocomplete="off"
-              class="st-input w-full"
-              name="derivation-group"
-              disabled={isDerivationGroupFieldDisabled}
-            />
-          </Field>
-          <Field field={keyField}>
-            <label for="key" slot="label">Key</label>
-            <input disabled bind:value={keyInputField} autocomplete="off" class="st-input w-full" name="key" required />
-          </Field>
-
-          <Field field={sourceTypeField}>
-            <label for="source-type" slot="label">Source Type</label>
-            <input disabled autocomplete="off" class="st-input w-full" name="source-type" required />
-          </Field>
-
-          <fieldset>
-            <DatePickerField
-              disabled={true}
-              field={startTimeDoyField}
-              label={`Start Time (${$plugins.time.primary.label}) - ${$plugins.time.primary.formatString}`}
-              name="start-time"
-            />
-          </fieldset>
-
-          <fieldset>
-            <DatePickerField
-              disabled={true}
-              field={endTimeDoyField}
-              label={`End Time (${$plugins.time.primary.label}) - ${$plugins.time.primary.formatString}`}
-              name="end_time"
-            />
-          </fieldset>
-
-          <fieldset>
-            <DatePickerField
-              disabled={true}
-              field={validAtDoyField}
-              label={`Valid At Time (${$plugins.time.primary.label}) - ${$plugins.time.primary.formatString}`}
-              name="valid_at"
-            />
-          </fieldset>
+          {#if file !== undefined}
+            <Field field={derivationGroupField}>
+              <label for="derivation-group" slot="label">Derivation Group</label>
+              <input autocomplete="off" class="st-input w-full" name="derivation-group" />
+            </Field>
+          {/if}
         </form>
       {/if}
     </svelte:fragment>
