@@ -88,12 +88,12 @@
     <AlertError class="m-2" {error} {fullError} />
 
     <fieldset>
-      <Label size="sm" for="username" class="pb-1">Username</Label>
+      <Label size="sm" for="username" class="pb-0.5">Username</Label>
       <Input sizeVariant="xs" autocomplete="off" autofocus bind:value={username} name="username" required type="text" />
     </fieldset>
 
     <fieldset>
-      <Label size="sm" for="password" class="pb-1">Password</Label>
+      <Label size="sm" for="password" class="pb-0.5">Password</Label>
       <Input sizeVariant="xs" autocomplete="off" bind:value={password} name="password" required type="password" />
     </fieldset>
 

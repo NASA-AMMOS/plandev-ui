@@ -288,9 +288,9 @@
         <SectionTitle>
           <svelte:fragment slot="icon">
             {#if selectedTag}
-              <PenIcon slot="icon" class="opacity-30" />
+              <PenIcon slot="icon" />
             {:else}
-              <PlusIcon slot="icon" class="opacity-30" />
+              <PlusIcon slot="icon" />
             {/if}
           </svelte:fragment>
           {#if selectedTag}
@@ -306,7 +306,7 @@
           <AlertError class="m-2" error={$createTagError} />
 
           <Field field={nameField}>
-            <Label for="name" slot="label" class="pb-1 text-xs font-normal">Name</Label>
+            <Label for="name" slot="label" class="pb-0.5 text-xs font-normal">Name</Label>
             <div
               use:permissionHandler={{
                 hasPermission: canCreate,
@@ -325,7 +325,7 @@
           </Field>
 
           <Field field={colorField}>
-            <Label for="color" slot="label" class="pb-1 text-xs font-normal">Color</Label>
+            <Label for="color" slot="label" class="pb-0.5 text-xs font-normal">Color</Label>
             <div class="flex w-full gap-2">
               <div
                 use:permissionHandler={{
@@ -381,10 +381,10 @@
           </Field>
 
           <fieldset>
-            <Label for="preview" class="pb-1 text-xs font-normal">Tag Preview</Label>
+            <Label for="preview" class="pb-0.5 text-xs font-normal">Tag Preview</Label>
 
             <!-- tag preview container -->
-            <div class="flex w-full justify-between rounded-md border border-primary/10 bg-secondary p-1">
+            <div class="flex w-full justify-between rounded-md border p-1">
               <TagChip
                 tag={{ color: $colorField.value, id: -1, name: $nameField.value || 'Tag Name' }}
                 removable={false}
@@ -439,7 +439,7 @@
       <svelte:fragment slot="header">
         <div class="flex w-full max-w-sm items-center gap-1">
           <SectionTitle>
-            <TagsIcon slot="icon" class="opacity-30" />
+            <TagsIcon slot="icon" />
             Tags
           </SectionTitle>
           <Input bind:value={filterText} placeholder="Filter tags" sizeVariant="xs" />
