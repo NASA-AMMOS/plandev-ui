@@ -1236,23 +1236,18 @@ const effects = {
     if (!gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user) || !gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
       throwPermissionError('create en external source or event type');
     }
-    if (eventTypes === undefined && sourceTypes === undefined) {
-      showFailureToast('Neither External Source Nor Event Type Not Specified');
-      return false;
-    }
     createExternalSourceEventTypeErrorStore.set(null);
 
     try {
-      // Extract External Source Type schema & format for request to Gateway
-      const body = new FormData();
-      if (eventTypes !== undefined) {
-        body.append('event_types', JSON.stringify(eventTypes));
+      if (eventTypes === undefined && sourceTypes === undefined) {
+        throw new Error('No External Source or Event Types Defined');
       }
-      if (sourceTypes !== undefined) {
-        body.append('source_types', JSON.stringify(sourceTypes));
-      }
+      const body = {
+        event_types: JSON.stringify(eventTypes ?? {}),
+        source_types: JSON.stringify(sourceTypes ?? {}),
+      };
 
-      const response = await reqGateway(`/uploadExternalSourceEventTypes`, 'POST', body, user, true);
+      const response = await reqGateway(`/uploadExternalSourceEventTypes`, 'POST', JSON.stringify(body), user, false);
       if (response?.errors === undefined) {
         showSuccessToast('External Source & Event Type Created Successfully');
         return true;
