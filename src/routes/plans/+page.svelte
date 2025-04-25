@@ -764,7 +764,7 @@
               >
                 <CloseIcon />
               </Button>
-              <Label class="pb-1" size="sm" for="file">Plan File (JSON)</Label>
+              <Label class="pb-0.5" size="sm" for="file">Plan File (JSON)</Label>
               <!-- TODO consider porting the input files fix to stellar https://github.com/huntabyte/shadcn-svelte/pull/1700/files -->
               <input
                 class="leading-1 flex h-6 w-full cursor-pointer rounded-md border border-input bg-background px-2 pl-0 text-xs leading-5
@@ -787,7 +787,7 @@
             </fieldset>
 
             <Field field={modelIdField}>
-              <Label size="sm" for="model" class="pb-1">Model</Label>
+              <Label size="sm" for="model" class="pb-0.5">Model</Label>
               <div
                 use:permissionHandler={{
                   hasPermission: canCreate,
@@ -828,7 +828,7 @@
             {/if}
 
             <Field field={nameField}>
-              <Label size="sm" class="pb-1 text-xs font-normal" for="name" slot="label">Name</Label>
+              <Label size="sm" class="pb-0.5 text-xs font-normal" for="name" slot="label">Name</Label>
               <div
                 use:permissionHandler={{
                   hasPermission: canCreate,
@@ -888,12 +888,12 @@
             </fieldset>
 
             <fieldset>
-              <Label class="pb-1" size="sm" for="plan-duration">Plan Duration</Label>
+              <Label class="pb-0.5" size="sm" for="plan-duration">Plan Duration</Label>
               <Input sizeVariant="xs" disabled id="plan-duration" name="duration" value={durationString} />
             </fieldset>
 
             <Field field={simTemplateField}>
-              <Label class="pb-1" size="sm" for="simulation-templates" slot="label">Simulation Templates</Label>
+              <Label class="pb-0.5" size="sm" for="simulation-templates" slot="label">Simulation Templates</Label>
               <div
                 use:permissionHandler={{
                   hasPermission: canCreate,
@@ -937,7 +937,7 @@
             </Field>
 
             <fieldset>
-              <Label size="sm" for="plan-duration" class="pb-1">Tags</Label>
+              <Label size="sm" for="plan-duration" class="pb-0.5">Tags</Label>
               <TagsInput
                 use={[
                   [
