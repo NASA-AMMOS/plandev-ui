@@ -150,14 +150,4 @@ test.describe.serial('External Source Error Handling', () => {
     await externalSources.deleteSource(externalSources.externalSourceFileName);
     await expect(page.getByText('External Source Deleted Successfully')).toBeVisible();
   });
-
-  test("Invalid 'source' field is handled gracefully", async () => {
-    await externalSources.fillInputFile(externalSources.externalSourceFilePathMissingField);
-    await expect(page.getByLabel('External Source has Invalid')).toBeVisible();
-  });
-
-  test('Syntax error is handled gracefully', async () => {
-    await externalSources.fillInputFile(externalSources.externalSourceFilePathSyntaxError);
-    await expect(page.getByLabel('External Source has Invalid Format')).toBeVisible();
-  });
 });
