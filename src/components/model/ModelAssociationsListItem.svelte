@@ -59,7 +59,7 @@
     };
   }>();
 
-  let contextMenu: ContextMenu;
+  let contextMenu: ContextMenuInternal;
   let formParameters: FormParameter[] = [];
   let parameterSchema: ValueSchema | undefined;
   let permissionError: string = '';
