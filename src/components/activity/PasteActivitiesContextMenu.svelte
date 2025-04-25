@@ -37,13 +37,14 @@
       : directivesInClipboard && directivesInClipboard <= 0
         ? 'No activity directives in clipboard'
         : null}
+  {@const hasPermission = hasCreatePermission && directivesInClipboard > 0}
   <div
     use:permissionHandler={{
-      hasPermission: hasCreatePermission && directivesInClipboard > 0,
+      hasPermission,
       ...(permissionError !== null ? { permissionError } : null),
     }}
   >
-    <ContextMenu.Item size="sm" on:click={() => pasteActivityDirectives(atTime)}>
+    <ContextMenu.Item size="sm" on:click={() => pasteActivityDirectives(atTime)} disabled={!hasPermission}>
       {getPasteActivityDirectivesText(directivesInClipboard)}
       {atTime === undefined ? `` : `At Time`}
     </ContextMenu.Item>
