@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
-  import { Button, Input, Label, Select } from '@nasa-jpl/stellar-svelte';
+  import { Button, Input as InputStellar, Label, Select } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { flatten } from 'lodash-es';
   import { Clipboard, Import, X, XIcon } from 'lucide-svelte';
@@ -15,6 +15,7 @@
   import PageTitle from '../../components/app/PageTitle.svelte';
   import DatePickerField from '../../components/form/DatePickerField.svelte';
   import Field from '../../components/form/Field.svelte';
+  import Input from '../../components/form/Input.svelte';
   import ModelStatusRollup from '../../components/model/ModelStatusRollup.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
@@ -192,7 +193,7 @@
   let filterText: string = '';
   let isPlanImportMode: boolean = false;
   let orderedModels: ModelSlim[] = [];
-  let nameInputField: Input;
+  let nameInputField: InputStellar;
   let planExporting: boolean = false;
   let planTags: Tag[] = [];
   let selectedModel: ModelSlim | undefined;
@@ -700,43 +701,47 @@
         {#if selectedPlan}
           <div class="plan-metadata">
             <fieldset>
-              <!-- TODO consider creating a Layout component to handle stacked vs horizontal label + inputs? -->
-              <div
-                use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}
-                class="grid grid-cols-[40%_auto] items-center gap-2 py-1"
-              >
-                <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="name">Model</Label>
-                <Input sizeVariant="xs" disabled class="w-full" name="name" value={selectedPlanModelName} />
+              <div use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}>
+                <Input layout="inline">
+                  <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="name">Model</Label>
+                  <InputStellar sizeVariant="xs" disabled class="w-full" name="name" value={selectedPlanModelName} />
+                </Input>
               </div>
-              <div class="grid grid-cols-[40%_auto] items-center gap-2 py-1">
+              <Input layout="inline">
                 <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="id">Name</Label>
-                <Input sizeVariant="xs" disabled class="w-full" name="id" value={selectedPlan.name} />
-              </div>
-              <div class="grid grid-cols-[40%_auto] items-center gap-2 py-1">
+                <InputStellar sizeVariant="xs" disabled class="w-full" name="id" value={selectedPlan.name} />
+              </Input>
+              <Input layout="inline">
                 <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="start-time">
                   Start Time - {$plugins.time.primary.label}
                 </Label>
-                <Input sizeVariant="xs" disabled class="w-full" name="start-time" value={selectedPlanStartTime} />
-              </div>
-              <div class="grid grid-cols-[40%_auto] items-center gap-2 py-1">
+                <InputStellar
+                  sizeVariant="xs"
+                  disabled
+                  class="w-full"
+                  name="start-time"
+                  value={selectedPlanStartTime}
+                />
+              </Input>
+              <Input layout="inline">
                 <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="end-time">
                   End Time - {$plugins.time.primary.label}
                 </Label>
-                <Input sizeVariant="xs" disabled class="w-full" name="end-time" value={selectedPlanEndTime} />
-              </div>
-              <div class="grid grid-cols-[40%_auto] items-center gap-2 py-1">
+                <InputStellar sizeVariant="xs" disabled class="w-full" name="end-time" value={selectedPlanEndTime} />
+              </Input>
+              <Input layout="inline">
                 <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="duration">
                   Plan Duration
                 </Label>
-                <Input
+                <InputStellar
                   sizeVariant="xs"
                   disabled
                   class="w-full"
                   name="duration"
                   value={convertUsToDurationString(getIntervalInMs(selectedPlan.duration) * 1000)}
                 />
-              </div>
-              <div class="grid grid-cols-[40%_auto] items-center gap-2 py-1">
+              </Input>
+              <Input layout="inline">
                 <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="tags">Tags</Label>
                 <TagsInput
                   disabled
@@ -744,7 +749,7 @@
                   selected={selectedPlan.tags.map(({ tag }) => tag)}
                   on:change={onTagsInputChange}
                 />
-              </div>
+              </Input>
             </fieldset>
           </div>
           <fieldset>
@@ -842,7 +847,7 @@
                   permissionError,
                 }}
               >
-                <Input
+                <InputStellar
                   disabled={!canCreate}
                   id="plan-name"
                   bind:this={nameInputField}
@@ -896,7 +901,7 @@
 
             <fieldset>
               <Label class="pb-0.5" size="sm" for="plan-duration">Plan Duration</Label>
-              <Input sizeVariant="xs" disabled id="plan-duration" name="duration" value={durationString} />
+              <InputStellar sizeVariant="xs" disabled id="plan-duration" name="duration" value={durationString} />
             </fieldset>
 
             <Field field={simTemplateField}>
@@ -991,7 +996,7 @@
             <Clipboard size={16} slot="icon" />
             Plans
           </SectionTitle>
-          <Input
+          <InputStellar
             bind:value={filterText}
             placeholder="Filter plans"
             autocomplete="off"
