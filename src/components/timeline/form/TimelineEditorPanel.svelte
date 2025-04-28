@@ -495,6 +495,7 @@
                   class="st-input w-full"
                   name="marginLeft"
                   type="number"
+                  aria-label="Margin Left"
                   value={selectedTimeline.marginLeft}
                   on:input|stopPropagation={updateTimelineMarginLeft}
                 />
@@ -507,6 +508,7 @@
                 class="st-input w-full"
                 name="marginRight"
                 type="number"
+                aria-label="Margin Right"
                 value={selectedTimeline.marginRight}
                 on:input|stopPropagation={updateTimelineEvent}
               />

@@ -139,7 +139,7 @@
     <SectionTitle>Sequence Workspaces</SectionTitle>
 
     <Input>
-      <input bind:value={filterText} class="st-input" placeholder="Filter workspaces" style="width: 100%;" />
+      <input bind:value={filterText} class="st-input" aria-label="Filter workspaces" style="width: 100%;" />
     </Input>
 
     <div class="right">

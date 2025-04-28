@@ -281,6 +281,7 @@
                 disabled
                 class="st-input w-full"
                 name="name"
+                aria-label="Model Name"
                 use:tooltip={{ content: name, placement: 'top' }}
                 value={selectedModel.name}
               />
@@ -295,15 +296,27 @@
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="version">Model Version</label>
-              <input disabled class="st-input w-full" name="version" value={selectedModel.version} />
+              <input
+                disabled
+                class="st-input w-full"
+                name="version"
+                value={selectedModel.version}
+                aria-label="Model Version"
+              />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="owner">Owner</label>
-              <input disabled class="st-input w-full" name="owner" value={selectedModel.owner} />
+              <input disabled class="st-input w-full" name="owner" value={selectedModel.owner} aria-label="Owner" />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="defaultView">Default View</label>
-              <input disabled class="st-input w-full" name="defaultView" value={selectedModelDefaultViewName} />
+              <input
+                disabled
+                class="st-input w-full"
+                name="defaultView"
+                value={selectedModelDefaultViewName}
+                aria-label="Default View"
+              />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="created">Date Created</label>
@@ -311,6 +324,7 @@
                 disabled
                 class="st-input w-full"
                 name="created"
+                aria-label="Date Created"
                 value={getShortISOForDate(new Date(selectedModel.created_at))}
               />
             </Input>
@@ -320,6 +334,7 @@
                 {#if modelHasExtractionError}
                   <button
                     class="icon-button"
+                    aria-label="Jar File Status"
                     on:click={onRetriggerModelExtraction}
                     use:permissionHandler={{
                       hasPermission: hasExtractionPermission,
@@ -374,6 +389,7 @@
               autocomplete="off"
               class="st-input w-full"
               name="name"
+              aria-label="Name"
               required
               use:permissionHandler={{
                 hasPermission: hasCreateModelPermission,
@@ -390,6 +406,7 @@
               class="st-input w-full"
               name="version"
               placeholder="0.0.0"
+              aria-label="Version"
               required
               use:permissionHandler={{
                 hasPermission: hasCreateModelPermission,
@@ -405,6 +422,7 @@
               autocomplete="off"
               class="st-input w-full"
               name="description"
+              aria-label="Description"
               placeholder="Enter Model Description (optional)"
             />
           </fieldset>
@@ -416,6 +434,7 @@
               name="file"
               required
               type="file"
+              aria-label="Jar File"
               bind:files
               use:permissionHandler={{
                 hasPermission: hasCreateModelPermission,
