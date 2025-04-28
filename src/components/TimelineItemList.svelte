@@ -145,6 +145,7 @@
         class="st-button secondary menu-button"
         style="position: relative; z-index: 1"
         on:click|stopPropagation={() => menu.toggle()}
+        aria-label="Select {filterName}"
       >
         {filterName}
         <ChevronDownIcon />
@@ -279,7 +280,7 @@
                 }}
                 let:builders
               >
-                <Button {builders} variant="ghost" size="icon-sm">
+                <Button {builders} variant="ghost" size="icon-sm" aria-label="Add filter to row">
                   <CirclePlus size={16} />
                 </Button>
               </LayerPicker>
