@@ -5,10 +5,9 @@
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { Button, Input, Label, Select } from '@nasa-jpl/stellar-svelte';
-  import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { flatten } from 'lodash-es';
-  import { Clipboard, Import, X } from 'lucide-svelte';
+  import { Clipboard, Import, X, XIcon } from 'lucide-svelte';
   import { onDestroy, onMount } from 'svelte';
   import ExportIcon from '../../assets/export.svg?component';
   import ImportIcon from '../../assets/import.svg?component';
@@ -761,17 +760,19 @@
                 variant="ghost"
                 class="absolute right-1 top-1"
                 type="button"
+                aria-label="Hide import plan"
                 on:click={hideImportPlan}
               >
-                <CloseIcon />
+                <XIcon size={12} />
               </Button>
-              <Label class="pb-0.5" size="sm" for="file">Plan File (JSON)</Label>
+              <Label class="pb-0.5" size="sm" for="plan-file">Plan File (JSON)</Label>
               <!-- TODO consider porting the input files fix to stellar https://github.com/huntabyte/shadcn-svelte/pull/1700/files -->
               <input
                 class="leading-1 flex h-6 w-full cursor-pointer rounded-md border border-input bg-background px-2 pl-0 text-xs leading-5
                           ring-offset-background file:cursor-pointer file:border-0 file:bg-transparent file:font-medium
                           placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                name="file"
+                name="Plan File"
+                id="plan-file"
                 type="file"
                 accept="application/json"
                 bind:files={planUploadFiles}
@@ -796,11 +797,16 @@
                 }}
               >
                 <Select.Root
-                  name="model"
                   selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}
                   disabled={!canCreate}
                 >
-                  <Select.Trigger value={selectedModel?.id} size="xs" aria-label="Select Model">
+                  <Select.Trigger
+                    value={selectedModel?.id}
+                    size="xs"
+                    aria-label="Select Model"
+                    aria-labelledby={null}
+                    id="model"
+                  >
                     <Select.Value placeholder="Select a model" />
                   </Select.Trigger>
                   <Select.Content
@@ -817,7 +823,7 @@
                       </Select.Item>
                     {/each}
                   </Select.Content>
-                  <Select.Input type="number" name="model" />
+                  <Select.Input type="number" name="model" aria-label="Select Model hidden input" />
                 </Select.Root>
               </div>
             </Field>
@@ -829,7 +835,7 @@
             {/if}
 
             <Field field={nameField}>
-              <Label size="sm" class="pb-0.5 text-xs font-normal" for="name" slot="label">Name</Label>
+              <Label size="sm" class="pb-0.5 text-xs font-normal" for="plan-name" slot="label">Name</Label>
               <div
                 use:permissionHandler={{
                   hasPermission: canCreate,
@@ -911,7 +917,7 @@
                       : $simulationTemplates.find(t => t.id === $simTemplateField.value)?.description,
                   }}
                 >
-                  <Select.Trigger size="xs">
+                  <Select.Trigger size="xs" aria-labelledby={null}>
                     <Select.Value aria-label="Select Simulation Template" />
                   </Select.Trigger>
                   <Select.Content
@@ -932,13 +938,17 @@
                       {/each}
                     {/if}
                   </Select.Content>
-                  <Select.Input type="number" name="simulation-templates" />
+                  <Select.Input
+                    type="number"
+                    name="simulation-templates"
+                    aria-label="Simulation templates hidden input"
+                  />
                 </Select.Root>
               </div>
             </Field>
 
             <fieldset>
-              <Label size="sm" for="plan-duration" class="pb-0.5">Tags</Label>
+              <Label size="sm" for="plan-tags" class="pb-0.5">Tags</Label>
               <TagsInput
                 use={[
                   [
@@ -949,6 +959,7 @@
                     },
                   ],
                 ]}
+                name="plan-tags"
                 disabled={!canCreate}
                 options={$tags}
                 selected={planTags}

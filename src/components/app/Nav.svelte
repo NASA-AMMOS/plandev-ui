@@ -34,22 +34,16 @@
         onSelectedChange={v => v && changeRole(v.value)}
         loop={false}
       >
-        <Select.Trigger class="min-w-[124px]" value={user?.activeRole} size="xs">
+        <Select.Trigger class="min-w-[124px]" value={user?.activeRole} size="xs" aria-labelledby={null}>
           <Select.Value placeholder="Select a" class="text-secondary-foreground" aria-label="Select Role" />
         </Select.Trigger>
         <Select.Content>
-          <Select.Group>
-            <Select.Label size="xs">Select Role</Select.Label>
-            {#each userRoles as userRole}
-              <Select.Item size="xs" value={userRole} label={userRole}>{userRole}</Select.Item>
-            {/each}
-          </Select.Group>
-          <Select.Separator />
-          <Select.Label size="xs" class="font-normal text-muted-foreground">
-            Logged in as {user?.id || 'Unknown'}
-          </Select.Label>
+          <Select.Label size="xs">Select Role</Select.Label>
+          {#each userRoles as userRole}
+            <Select.Item size="xs" value={userRole} label={userRole}>{userRole}</Select.Item>
+          {/each}
         </Select.Content>
-        <Select.Input name="user-menu" />
+        <Select.Input name="user-menu" aria-label="Select Role hidden input" />
       </Select.Root>
     {/if}
   </div>
