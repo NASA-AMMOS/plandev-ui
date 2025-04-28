@@ -1,6 +1,5 @@
 <script lang="ts">
   import { Button, Input } from '@nasa-jpl/stellar-svelte';
-  // import Calendar from '@nasa-jpl/stellar/icons/calendar.svg?component';
   import ChevronLeft from '@nasa-jpl/stellar/icons/chevron_left.svg?component';
   import ChevronRight from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
   import { CalendarDays, WandSparkles } from 'lucide-svelte';
@@ -25,6 +24,7 @@
   export let dateString: string = '';
   export let disabled: boolean = false;
   export let hasError: boolean = false;
+  export let id: string = '';
   export let name: string = '';
   export let maxDate: Date = new Date(Date.UTC(currentYear + 20, 11)); // add 20 years;
   export let minDate: Date = new Date(Date.UTC(currentYear - 20, 0)); // subtract 20 years
@@ -259,11 +259,13 @@
   <div use:popperRef use:useActions={use}>
     <Input
       aria-invalid={!isValid || hasError ? 'true' : 'false'}
+      aria-label={name}
       autocomplete="off"
       sizeVariant="xs"
       class={!isValid || hasError ? 'border border-red-500 bg-red-500 bg-opacity-10 text-red-500' : ''}
       {disabled}
       {name}
+      {id}
       bind:value={dateString}
       on:change={attemptAutoCompleteDate}
       on:click={openDatePicker}

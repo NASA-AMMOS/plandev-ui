@@ -72,6 +72,7 @@
       use:builder.action
       style="left: {x}px !important; opacity: 0; pointer-events: none; position: absolute;top: {y}px !important;"
       bind:this={buttonRef}
+      aria-label="Context Menu"
     />
   </ContextMenu.Trigger>
   <ContextMenu.Content>
