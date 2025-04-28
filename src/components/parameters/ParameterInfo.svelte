@@ -99,8 +99,8 @@
               </div>
             {/if}
           </div>
-        </div></Popover.Content
-      >
+        </div>
+      </Popover.Content>
     </Popover.Root>
   </div>
 {/if}
