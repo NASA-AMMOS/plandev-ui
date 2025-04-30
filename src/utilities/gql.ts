@@ -246,8 +246,8 @@ const gql = {
   `,
 
   CREATE_DICTIONARY: `#graphql
-    mutation CreateDictionary($dictionary: String!) {
-      createDictionary: ${Queries.UPLOAD_DICTIONARY}(dictionary: $dictionary) {
+    mutation CreateDictionary($dictionary: String!, $persistDictionaryToFilesystem: Boolean!) {
+      createDictionary: ${Queries.UPLOAD_DICTIONARY}(dictionary: $dictionary, persistDictionaryToFilesystem: $persistDictionaryToFilesystem) {
         command
         parameter
         channel
