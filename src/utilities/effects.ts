@@ -5934,6 +5934,7 @@ const effects = {
     try {
       const createUserSequenceInsertInput: UserSequenceInsertInput = {
         definition: expandedSequence,
+        is_locked: false,
         name: sequence.seq_id,
         parcel_id: value.parcelId,
         seq_json: '',
