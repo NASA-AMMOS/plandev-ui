@@ -1,8 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import LinkIcon from '@nasa-jpl/stellar/icons/link.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import DirectiveIcon from '../../assets/timeline-directive.svg?component';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
   import { plugins } from '../../stores/plugins';
   import type { ActivityType } from '../../types/activity';
@@ -195,13 +195,13 @@
           <!-- Only show link to directive parameter if the span is a root span and has a matching directive -->
           {#if typeof span.parent_id !== 'number' && typeof spanDirectiveId === 'number'}
             <button
-              use:tooltip={{ content: 'Open activity directive to edit' }}
+              use:tooltip={{ content: 'Edit in activity directive' }}
               class="st-button tertiary icon"
               on:click={() => {
                 dispatch('jumpToDirectiveParameter', { directiveId: spanDirectiveId, parameterName: parameter.name });
               }}
             >
-              <LinkIcon />
+              <DirectiveIcon />
             </button>
           {/if}
         </svelte:fragment>
