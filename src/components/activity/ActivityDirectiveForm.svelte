@@ -8,7 +8,7 @@
   import { keyBy } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
-  import { activityArgumentDefaultsMap } from '../../stores/activities';
+  import { activityArgumentDefaultsMap, selectedParameterName } from '../../stores/activities';
   import { activityErrorRollupsMap, activityValidationErrors } from '../../stores/errors';
   import { field } from '../../stores/form';
   import { plan, planReadOnly } from '../../stores/plan';
@@ -725,6 +725,7 @@
           disabled={!editable}
           {formParameters}
           {highlightKeysMap}
+          parameterToFlash={$selectedParameterName}
           on:change={onChangeFormParameters}
           on:reset={onResetFormParameters}
           use={[

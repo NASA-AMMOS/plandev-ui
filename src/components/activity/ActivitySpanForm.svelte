@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import LinkIcon from '@nasa-jpl/stellar/icons/link.svg?component';
+  import { createEventDispatcher } from 'svelte';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
   import { plugins } from '../../stores/plugins';
   import type { ActivityType } from '../../types/activity';
@@ -27,6 +29,10 @@
   export let spanUtilityMaps: SpanUtilityMaps;
   export let user: User | null;
 
+  const dispatch = createEventDispatcher<{
+    jumpToDirectiveParameter: { directiveId: number; parameterName: string };
+  }>();
+
   let activityType: ActivityType | null = null;
   let endTime: string | null = null;
   let formParametersComputedAttributes: FormParameter[] = [];
@@ -37,11 +43,13 @@
   let rootSpan: Span | null;
   let rootSpanHasChildren: boolean;
   let seqId: string | null;
+  let spanDirectiveId: number | null = null;
   let startTime: string;
 
   $: activityType = (activityTypes ?? []).find(({ name: activityTypeName }) => span.type === activityTypeName) ?? null;
   $: rootSpan = !spansMap ? null : getSpanRootParent(spansMap, span.span_id);
   $: rootSpanHasChildren = (rootSpan && spanUtilityMaps.spanIdToChildIdsMap[rootSpan.span_id]?.length > 0) ?? false;
+  $: spanDirectiveId = rootSpan ? (spanUtilityMaps.spanIdToDirectiveIdMap[rootSpan.span_id] ?? null) : null;
 
   $: startTime = formatDate(new Date(span.startMs), $plugins.time.primary.format);
 
@@ -182,7 +190,22 @@
       error={parametersWithErrorsCount > 0}
       title={`Parameters${parametersWithErrorsCount > 0 ? ` (${parametersWithErrorsCount} invalid)` : ''}`}
     >
-      <Parameters disabled {formParameters} hideRightAdornments={true} />
+      <Parameters disabled {formParameters} hideRightAdornments={true}>
+        <svelte:fragment slot="right-action" let:parameter>
+          <!-- Only show link to directive parameter if the span is a root span and has a matching directive -->
+          {#if typeof span.parent_id !== 'number' && typeof spanDirectiveId === 'number'}
+            <button
+              use:tooltip={{ content: 'Open activity directive to edit' }}
+              class="st-button tertiary icon"
+              on:click={() => {
+                dispatch('jumpToDirectiveParameter', { directiveId: spanDirectiveId, parameterName: parameter.name });
+              }}
+            >
+              <LinkIcon />
+            </button>
+          {/if}
+        </svelte:fragment>
+      </Parameters>
       {#if formParameters.length === 0}
         <div class="st-typography-label">No Parameters Found</div>
       {/if}

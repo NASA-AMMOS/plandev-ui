@@ -13,6 +13,7 @@
     selectActivity,
     selectedActivityDirective,
     selectedActivityDirectiveId,
+    selectedParameterName,
   } from '../../stores/activities';
   import { filteredExpansionSequences } from '../../stores/expansion';
   import {
@@ -87,6 +88,14 @@
   function onSelectSpan(event: CustomEvent<SpanId | null>) {
     const { detail: spanId } = event;
     selectActivity(null, spanId);
+  }
+
+  function onJumpToDirectiveParameter(event: CustomEvent<{ directiveId: number; parameterName: string }>) {
+    const {
+      detail: { directiveId, parameterName },
+    } = event;
+    selectActivity(directiveId, null);
+    $selectedParameterName = parameterName;
   }
 
   function onToggleViewChangelog() {
@@ -223,6 +232,7 @@
         revision={previewRevision}
         on:viewChangelog={onToggleViewChangelog}
         on:closeRevisionPreview={onCloseRevisionPreview}
+        on:flash={() => ($selectedParameterName = null)}
         {highlightKeys}
         {user}
       />
@@ -236,6 +246,7 @@
         spanUtilityMaps={$spanUtilityMaps}
         {user}
         on:select={onSelectSpan}
+        on:jumpToDirectiveParameter={onJumpToDirectiveParameter}
       />
     {:else}
       <div class="st-typography-label p-2">No Activity Selected</div>

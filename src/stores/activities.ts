@@ -50,6 +50,8 @@ export const activityDirectiveValidationStatuses = gqlSubscribable<ActivityDirec
 
 export const selectedActivityDirectiveId: Writable<ActivityDirectiveId | null> = writable(null);
 
+export const selectedParameterName: Writable<string | null> = writable(null);
+
 // TODO do we even need the list or should we transform it immediately into the map?
 export const activityArgumentDefaults: Writable<DefaultEffectiveArguments[] | null> = writable(null);
 
@@ -142,6 +144,7 @@ export function selectActivity(
 export function resetActivityStores() {
   activityMetadataDefinitions.updateValue(() => []);
   selectedActivityDirectiveId.set(null);
+  selectedParameterName.set(null);
   activityDirectivesDB.updateValue(() => null);
   anchorValidationStatuses.updateValue(() => []);
   activityMetadataDefinitions.updateValue(() => []);
