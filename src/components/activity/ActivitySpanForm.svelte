@@ -49,7 +49,7 @@
   $: activityType = (activityTypes ?? []).find(({ name: activityTypeName }) => span.type === activityTypeName) ?? null;
   $: rootSpan = !spansMap ? null : getSpanRootParent(spansMap, span.span_id);
   $: rootSpanHasChildren = (rootSpan && spanUtilityMaps.spanIdToChildIdsMap[rootSpan.span_id]?.length > 0) ?? false;
-  $: spanDirectiveId = rootSpan ? (spanUtilityMaps.spanIdToDirectiveIdMap[rootSpan.span_id] ?? null) : null;
+  $: spanDirectiveId = rootSpan ? spanUtilityMaps.spanIdToDirectiveIdMap[rootSpan.span_id] ?? null : null;
 
   $: startTime = formatDate(new Date(span.startMs), $plugins.time.primary.format);
 
