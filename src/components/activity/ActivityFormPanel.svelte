@@ -13,7 +13,6 @@
     selectActivity,
     selectedActivityDirective,
     selectedActivityDirectiveId,
-    selectedParameterName,
   } from '../../stores/activities';
   import { filteredExpansionSequences } from '../../stores/expansion';
   import {
@@ -51,6 +50,7 @@
   let viewingActivityDirectiveChangelog: boolean = false;
   let highlightKeys: string[] = [];
   let previewRevision: ActivityDirectiveRevision | undefined;
+  let selectedParameterName: string | null = null;
 
   $: deletePermissionError = $planReadOnly
     ? PlanStatusMessages.READ_ONLY
@@ -95,7 +95,7 @@
       detail: { directiveId, parameterName },
     } = event;
     selectActivity(directiveId, null);
-    $selectedParameterName = parameterName;
+    selectedParameterName = parameterName;
   }
 
   function onToggleViewChangelog() {
@@ -232,7 +232,8 @@
         revision={previewRevision}
         on:viewChangelog={onToggleViewChangelog}
         on:closeRevisionPreview={onCloseRevisionPreview}
-        on:flash={() => ($selectedParameterName = null)}
+        on:flash={() => (selectedParameterName = null)}
+        {selectedParameterName}
         {highlightKeys}
         {user}
       />
