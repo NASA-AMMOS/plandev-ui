@@ -103,7 +103,6 @@ import type {
   ConstraintPlanSpecSetInput,
   ConstraintResult,
 } from '../types/constraint';
-import type { ActivityErrorCounts } from '../types/errors';
 import type {
   ExpandedSequence,
   ExpansionRule,
@@ -157,6 +156,7 @@ import type {
   RolePermissionsMap,
 } from '../types/permissions';
 import type {
+  ModelCompatabilityForPlan,
   Plan,
   PlanBranchRequestAction,
   PlanCollaborator,
@@ -569,23 +569,17 @@ const effects = {
     planId: number,
     newModelId: number,
     user: User | null,
-  ): Promise<ActivityErrorCounts | undefined> {
+  ): Promise<ModelCompatabilityForPlan | undefined> {
     try {
-      const data = await reqHasura(gql.CHECK_MODEL_COMPATABILITY, { new_model_id: newModelId, plan_id: planId }, user);
-      const missingCount = data?.check_model_compatability?.result?.missing_count;
-      const paramMismatchCount = data?.check_model_compatability?.result?.param_mismatch_count;
-      return {
-        all: missingCount + paramMismatchCount,
-        extra: 0,
-        invalidAnchor: 0,
-        invalidParameter: paramMismatchCount,
-        missing: missingCount,
-        outOfBounds: 0,
-        pending: 0,
-        wrongType: 0,
-      };
+      const data = await reqHasura(
+        gql.CHECK_MODEL_COMPATABILITY_FOR_PLAN,
+        { new_model_id: newModelId, plan_id: planId },
+        user,
+      );
+      const modelCompatabilityForPlan: ModelCompatabilityForPlan = data.check_model_compatability_for_plan?.result;
+      return modelCompatabilityForPlan;
     } catch (e) {
-      catchError('Preview Failed', e as Error);
+      catchError('Check Plan Model Migration Compatibility Failed', e as Error);
     }
   },
 

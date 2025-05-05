@@ -93,9 +93,9 @@ const gql = {
     }
   `,
 
-  CHECK_MODEL_COMPATABILITY: `#graphql
-    mutation CheckModelCompatability($plan_id: Int!, $new_model_id: Int!) {
-      ${Queries.CHECK_MODEL_COMPATABILITY}(args: { _plan_id: $plan_id, _new_model_id: $new_model_id } ) {
+  CHECK_MODEL_COMPATABILITY_FOR_PLAN: `#graphql
+    mutation CheckModelCompatabilityForPlan($plan_id: Int!, $new_model_id: Int!) {
+      ${Queries.CHECK_MODEL_COMPATABILITY_FOR_PLAN}(args: { _plan_id: $plan_id, _new_model_id: $new_model_id } ) {
         result
       }
     }

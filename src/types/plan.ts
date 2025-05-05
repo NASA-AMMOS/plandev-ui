@@ -2,7 +2,7 @@ import type { ActivityDirective } from './activity';
 import type { UserId } from './app';
 import type { ConstraintPlanSpecification } from './constraint';
 import type { Model } from './model';
-import type { ArgumentsMap } from './parameter';
+import type { ArgumentsMap, ParametersMap } from './parameter';
 import type { SchedulingPlanSpecification } from './scheduling';
 import type { Tag } from './tags';
 
@@ -144,3 +144,16 @@ export type PlanSchedulingSpec = Pick<
   Plan,
   'id' | 'name' | 'scheduling_specification' | 'model_id' | 'owner' | 'collaborators'
 >;
+
+export type ModelCompatabilityForPlan = {
+  altered_activity_types: Record<string, ModelCompatabilityForPlanSchemaDiff>;
+  problematic_directives: { activity_directive: ActivityDirective; issue: ModelCompatabilityForPlanIssue }[];
+  removed_activity_types: string[];
+};
+
+export type ModelCompatabilityForPlanSchemaDiff = {
+  new_parameter_schema: ParametersMap;
+  old_parameter_schema: ParametersMap;
+};
+
+export type ModelCompatabilityForPlanIssue = 'altered' | 'removed';
