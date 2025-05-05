@@ -7,11 +7,12 @@
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { planMergeRequestsIncoming, planMergeRequestsOutgoing, planReadOnly } from '../../stores/plan';
   import type { User } from '../../types/app';
-  import type { PlanMergeRequest, PlanMergeRequestStatus, PlanMergeRequestTypeFilter } from '../../types/plan';
+  import type { PlanMergeRequest, PlanMergeRequestTypeFilter } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { classNames } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import { getActivePlanMergeRequests } from '../../utilities/plan';
   import { tooltip } from '../../utilities/tooltip';
   import PlanMergeRequestStatusBadge from '../plan/PlanMergeRequestStatusBadge.svelte';
   import UserBadge from '../ui/UserBadge.svelte';
@@ -36,8 +37,8 @@
   let showRejected = true;
   let showWithdrawn = false;
 
-  $: incomingMergeRequestCount = getActiveRequestCount($planMergeRequestsIncoming);
-  $: outgoingMergeRequestCount = getActiveRequestCount($planMergeRequestsOutgoing);
+  $: incomingMergeRequestCount = getActivePlanMergeRequests($planMergeRequestsIncoming).length;
+  $: outgoingMergeRequestCount = getActivePlanMergeRequests($planMergeRequestsOutgoing).length;
 
   $: selectedFilterClass = (filter: PlanMergeRequestTypeFilter) =>
     classNames('st-typography-medium', {
@@ -101,19 +102,6 @@
 
     planMergeRequest.pending = false;
     filteredPlanMergeRequests = [...filteredPlanMergeRequests];
-  }
-
-  function getActiveRequestCount(requests: PlanMergeRequest[]): number {
-    const activeRequestTypes: Record<PlanMergeRequestStatus, boolean> = {
-      accepted: false,
-      'in-progress': true,
-      pending: true,
-      rejected: false,
-      withdrawn: false,
-    };
-    return requests.filter(request => {
-      return activeRequestTypes[request.status];
-    }).length;
   }
 
   function hasPermission(planMergeRequest: PlanMergeRequest) {
