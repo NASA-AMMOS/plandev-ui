@@ -78,7 +78,7 @@
   let selectedMissionModel: ModelSlim | null = null;
 
   $: planMergeRequestsIncoming = gqlSubscribable<PlanMergeRequestSchema[] | null>(
-    gql.SUB_PLAN_MERGE_REQUEST_IDS_INCOMING,
+    gql.SUB_PLAN_MERGE_REQUESTS_INCOMING,
     { planId: plan.id },
     null,
     null,
