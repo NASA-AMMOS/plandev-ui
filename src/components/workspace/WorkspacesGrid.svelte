@@ -5,9 +5,8 @@
   import { createEventDispatcher } from 'svelte';
   import { workspaces } from '../../stores/sequencing';
   import type { User } from '../../types/app';
-  import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
-  import type { Workspace } from '../../types/sequencing';
-  import effects from '../../utilities/effects';
+  import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
+  import type { Workspace } from '../../types/workspace';
   import { featurePermissions } from '../../utilities/permissions';
   import Input from '../form/Input.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
@@ -16,11 +15,12 @@
   import SectionTitle from '../ui/SectionTitle.svelte';
 
   type CellRendererParams = {
-    editWorkspace?: (workspace: Workspace) => void;
+    deleteWorkspace: (workspace: Workspace) => void;
+    viewWorkspace: (workspace: Workspace) => void;
   };
   type WorkspaceCellRendererParams = ICellRendererParams<Workspace> & CellRendererParams;
 
-  export let selectedWorkspaceId: number | undefined;
+  export let selectedWorkspaceId: number | null | undefined;
   export let user: User | null;
 
   let baseColumnDefs: DataGridColumnDef[];
@@ -29,7 +29,9 @@
   let selectedWorkspace: Workspace | null = null;
 
   const dispatch = createEventDispatcher<{
-    workspaceSelected: number;
+    deleteWorkspace: number;
+    selectWorkspace: number;
+    viewWorkspace: number;
   }>();
 
   $: baseColumnDefs = [
@@ -64,15 +66,21 @@
       cellRenderer: (params: WorkspaceCellRendererParams) => {
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'actions-cell';
-        new DataGridActions({
+        new DataGridActions<Workspace>({
           props: {
-            editCallback: params.editWorkspace,
-            editTooltip: {
-              content: 'Edit Workspace',
+            deleteCallback: params.deleteWorkspace,
+            deleteTooltip: {
+              content: 'Delete Workspace',
               placement: 'bottom',
             },
-            hasEditPermission: params.data ? hasEditPermission(user, params.data) : false,
+            hasDeletePermission: params.data ? hasDeletePermission(user, params.data) : false,
+            hasEditPermission: params.data ? hasViewPermission(user, params.data) : false,
             rowData: params.data,
+            viewCallback: data => user && params.viewWorkspace(data),
+            viewTooltip: {
+              content: 'Open Workspace',
+              placement: 'bottom',
+            },
           },
           target: actionsDiv,
         });
@@ -80,7 +88,8 @@
         return actionsDiv;
       },
       cellRendererParams: {
-        editWorkspace,
+        deleteWorkspace,
+        viewWorkspace,
       } as CellRendererParams,
       field: 'actions',
       headerName: '',
@@ -98,29 +107,24 @@
     return includesName;
   });
 
-  async function createNewWorkspace() {
-    await effects.createWorkspace(
-      $workspaces.map(workspace => workspace.name),
-      user,
-    );
-  }
-
-  async function editWorkspace(workspace: Workspace | undefined) {
+  async function deleteWorkspace(workspace: Workspace | undefined) {
     if (workspace !== undefined) {
-      await effects.editWorkspace(
-        workspace,
-        $workspaces.map(workspace => workspace.name),
-        user,
-      );
+      dispatch('deleteWorkspace', workspace.id);
     }
   }
 
-  function editWorkspaceContext(event: CustomEvent<RowId[]>) {
-    editWorkspace($workspaces.find(workspace => workspace.id === (event.detail[0] as number)));
+  function hasDeletePermission(user: User | null, workspace: Workspace) {
+    return featurePermissions.workspaces.canDelete(user, workspace);
   }
 
-  function hasEditPermission(user: User | null, workspace: Workspace) {
-    return featurePermissions.workspace.canUpdate(user, workspace);
+  async function viewWorkspace(workspace: Workspace | undefined) {
+    if (workspace !== undefined) {
+      dispatch('viewWorkspace', workspace.id);
+    }
+  }
+
+  function hasViewPermission(user: User | null, workspace: Workspace) {
+    return featurePermissions.workspaces.canRead(user, workspace);
   }
 
   function workspaceSelected(event: CustomEvent<DataGridRowSelection<Workspace>>) {
@@ -129,7 +133,7 @@
 
     if (isSelected) {
       selectedWorkspace = clickedWorkspace;
-      dispatch('workspaceSelected', selectedWorkspace.id);
+      dispatch('selectWorkspace', selectedWorkspace.id);
     }
   }
 </script>
@@ -147,12 +151,6 @@
         style="width: 100%;"
       />
     </Input>
-
-    <div class="right">
-      <button class="st-button secondary ellipsis" on:click|stopPropagation={createNewWorkspace}>
-        Create Workspace
-      </button>
-    </div>
   </svelte:fragment>
 
   <svelte:fragment slot="body">
@@ -160,14 +158,13 @@
       <SingleActionDataGrid
         columnDefs={baseColumnDefs}
         hasEdit={true}
-        {hasEditPermission}
         itemDisplayText="Workspaces"
         items={filteredWorkspaces}
         selectedItemId={selectedWorkspaceId}
         hasDeletePermission={false}
         {user}
-        on:editItem={editWorkspaceContext}
         on:rowSelected={workspaceSelected}
+        on:rowDoubleClicked={({ detail }) => viewWorkspace(detail.data)}
       />
     {:else}
       <div class="p1 st-typography-label">No Workspaces Found</div>

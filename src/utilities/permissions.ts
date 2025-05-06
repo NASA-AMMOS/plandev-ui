@@ -26,10 +26,12 @@ import type {
   SchedulingGoalMetadata,
 } from '../types/scheduling';
 import type { SequenceTemplate } from '../types/sequence-template';
-import type { Parcel, UserSequence, Workspace } from '../types/sequencing';
+import type { Parcel, UserSequence } from '../types/sequencing';
 import type { PlanDataset, Simulation, SimulationTemplate } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { View, ViewSlim } from '../types/view';
+import type { Workspace } from '../types/workspace';
+import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
 import gql from './gql';
 import { showFailureToast } from './toast';
 
@@ -928,9 +930,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SIMS: () => true,
   SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_TEMPS: () => true,
   SUB_PARAMETER_DICTIONARIES: () => true,
-  SUB_PARCELS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.PARCELS], user);
-  },
+  SUB_PARCEL: (): boolean => true,
+  SUB_PARCELS: (): boolean => true,
   SUB_PARCEL_TO_PARAMETER_DICTIONARIES: () => true,
   SUB_PLANS: () => true,
   SUB_PLANS_USER_WRITABLE: () => true,
@@ -983,6 +984,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   SUB_VIEWS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.VIEWS], user);
+  },
+  SUB_WORKSPACE: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.PARCEL], user);
   },
   SUB_WORKSPACES: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.WORKSPACES], user);
@@ -1389,6 +1393,19 @@ interface AssociationCRUDPermission<M, D> extends CRUDPermission<AssetWithOwner<
   canUpdateDefinition: (user: User | null, definition: AssetWithAuthor<D>) => boolean;
 }
 
+type WorkspaceAssetCreatePermissionCheck = (user: User | null, workspace: Workspace) => boolean;
+type WorkspaceAssetUpdatePermissionCheck<A extends WorkspaceTreeNode> = (
+  user: User | null,
+  workspace: Workspace,
+  asset?: A,
+) => boolean;
+interface WorkspaceAssetCRUDPermission<A extends WorkspaceTreeNode> {
+  canCreate: WorkspaceAssetCreatePermissionCheck;
+  canDelete: WorkspaceAssetUpdatePermissionCheck<A>;
+  canRead: ReadPermissionCheck<A>;
+  canUpdate: WorkspaceAssetUpdatePermissionCheck<A>;
+}
+
 interface FeaturePermissions {
   actionDefinition: CRUDPermission<ActionDefinition>;
   actionRun: CRUDPermission<ActionDefinition>;
@@ -1431,7 +1448,8 @@ interface FeaturePermissions {
   simulationTemplates: PlanSimulationTemplateCRUDPermission;
   tags: CRUDPermission<Tag>;
   view: CRUDPermission<ViewSlim>;
-  workspace: CRUDPermission<AssetWithOwner<Workspace>>;
+  workspace: WorkspaceAssetCRUDPermission<WorkspaceTreeNode>;
+  workspaces: CRUDPermission<AssetWithOwner<Workspace>>;
 }
 
 const featurePermissions: FeaturePermissions = {
@@ -1694,8 +1712,14 @@ const featurePermissions: FeaturePermissions = {
     canUpdate: (user, view) => queryPermissions.UPDATE_VIEW(user, view),
   },
   workspace: {
+    canCreate: (user, workspace) => isUserAdmin(user) || isUserOwner(user, workspace),
+    canDelete: (user, workspace) => isUserAdmin(user) || isUserOwner(user, workspace),
+    canRead: () => true,
+    canUpdate: (user, workspace) => isUserAdmin(user) || isUserOwner(user, workspace),
+  },
+  workspaces: {
     canCreate: user => queryPermissions.CREATE_WORKSPACE(user),
-    canDelete: () => false,
+    canDelete: (user, workspace) => isUserAdmin(user) || isUserOwner(user, workspace),
     canRead: user => queryPermissions.SUB_WORKSPACES(user),
     canUpdate: (user, workspace) => queryPermissions.UPDATE_WORKSPACE(user, workspace),
   },

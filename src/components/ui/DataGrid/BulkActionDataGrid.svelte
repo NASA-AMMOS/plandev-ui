@@ -1,8 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
-
   type RowData = $$Generic<TRowData>;
 
   // eslint-disable-next-line
@@ -12,7 +10,14 @@
   }
 
   import { browser } from '$app/environment';
-  import type { ColDef, ColumnState, IRowNode, RedrawRowsParams } from 'ag-grid-community';
+  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
+  import type {
+    ColDef,
+    ColumnState,
+    IRowNode,
+    IsExternalFilterPresentParams,
+    RedrawRowsParams,
+  } from 'ag-grid-community';
   import { keyBy } from 'lodash-es';
   import { type ComponentEvents, createEventDispatcher, onDestroy } from 'svelte';
   import type { User } from '../../../types/app';
@@ -48,6 +53,9 @@
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => parseInt(data[idKey]);
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
+  export let isExternalFilterPresent: ((params: IsExternalFilterPresentParams<RowData, any>) => boolean) | undefined =
+    undefined;
+  export let doesExternalFilterPass: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
   export let redrawRows: ((params?: RedrawRowsParams<RowData> | undefined) => void) | undefined = undefined;
 
   const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
@@ -158,9 +166,11 @@
   {columnDefs}
   {columnStates}
   {columnsToForceRefreshOnDataUpdate}
-  {getRowId}
   {idKey}
+  {getRowId}
   {isRowSelectable}
+  {isExternalFilterPresent}
+  {doesExternalFilterPass}
   useCustomContextMenu={showContextMenu}
   rowData={items}
   rowSelection="multiple"
@@ -171,6 +181,8 @@
   {filterExpression}
   {loading}
   on:blur={onBlur}
+  on:cellContextMenu
+  on:cellContextMenuHide
   on:cellEditingStarted
   on:cellEditingStopped
   on:cellValueChanged

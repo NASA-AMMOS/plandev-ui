@@ -5,6 +5,7 @@
 
   interface $$Events extends ComponentEvents<SvelteComponent> {
     cellContextMenu: CustomEvent<CellContextMenuEvent<RowData>>;
+    cellContextMenuHide: void;
     cellEditingStarted: CustomEvent<CellEditingStartedEvent<RowData>>;
     cellEditingStopped: CustomEvent<CellEditingStoppedEvent<RowData>>;
     cellMouseOver: CustomEvent<CellMouseOverEvent<RowData>>;
@@ -295,6 +296,10 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     dispatch('cellContextMenu', event);
   }
 
+  function onCellContextMenuHide() {
+    dispatch('cellContextMenuHide');
+  }
+
   onMount(() => {
     gridOptions = {
       // each entry here represents one column
@@ -473,7 +478,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   />
 </div>
 
-<ContextMenuInternal bind:this={contextMenu}>
+<ContextMenuInternal bind:this={contextMenu} on:hide={onCellContextMenuHide}>
   <slot name="context-menu" />
   <ColumnResizeContextMenu on:autoSizeContent={onAutoSizeContent} on:autoSizeSpace={onAutoSizeSpace} />
 </ContextMenuInternal>

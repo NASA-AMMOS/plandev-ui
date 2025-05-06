@@ -14,8 +14,8 @@ import {
   type ParcelBundle,
   type ParcelToParameterDictionary,
   type UserSequence,
-  type Workspace,
 } from '../types/sequencing';
+import type { Workspace } from '../types/workspace';
 import effects from '../utilities/effects';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
@@ -29,6 +29,8 @@ export const parsedCommandDictionaries: Writable<Record<string, AmpcsCommandDict
 export const parsedParameterDictionaries: Writable<Record<string, AmpcsParameterDictionary>> = writable({});
 
 export const selectedSequence: Writable<string | null> = writable(null);
+
+export const creatingWorkspace: Writable<boolean> = writable(false);
 
 /* Subscriptions. */
 export const channelDictionaries = gqlSubscribable<ChannelDictionaryMetadata[]>(

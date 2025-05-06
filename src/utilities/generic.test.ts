@@ -1,11 +1,9 @@
 import { afterAll, describe, expect, test, vi } from 'vitest';
-import { SearchParameters } from '../enums/searchParameters';
 import {
   attemptStringConversion,
   clamp,
   classNames,
   filterEmpty,
-  getSearchParameterNumber,
   isMacOs,
   lowercase,
   parseJSONStream,
@@ -129,31 +127,6 @@ describe('Generic utility function tests', () => {
 
       mockNavigator.platform = 'Linux x86_64';
       expect(isMacOs()).toEqual(false);
-    });
-  });
-
-  describe('getSearchParameterNumber', () => {
-    test.each(
-      Object.keys(SearchParameters).map(key => ({
-        key,
-        parameter: SearchParameters[key as keyof typeof SearchParameters],
-      })),
-    )('Should correctly parse out the $key specified in the URL search query parameter', ({ parameter }) => {
-      const random = Math.random();
-      expect(
-        getSearchParameterNumber(parameter as SearchParameters, new URLSearchParams(`?${parameter}=${random}`)),
-      ).toBe(random);
-    });
-
-    test.each(
-      Object.keys(SearchParameters).map(key => ({
-        key,
-        parameter: SearchParameters[key as keyof typeof SearchParameters],
-      })),
-    )('Should ignore non number values for the $key specified in the URL search query parameter', ({ parameter }) => {
-      expect(getSearchParameterNumber(parameter as SearchParameters, new URLSearchParams(`?${parameter}=foo`))).toBe(
-        null,
-      );
     });
   });
 

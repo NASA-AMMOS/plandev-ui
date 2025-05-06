@@ -136,7 +136,6 @@
   import type { View, ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
   import { getConstraintStatus } from '../../../utilities/constraint';
   import effects from '../../../utilities/effects';
-  import { getSearchParameterNumber, removeQueryParam, setQueryParam } from '../../../utilities/generic';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { closeActiveModal } from '../../../utilities/modal';
   import { getModelStatusRollup } from '../../../utilities/model';
@@ -154,6 +153,7 @@
   import { pluralize } from '../../../utilities/text';
   import { getUnixEpochTime } from '../../../utilities/time';
   import { tooltip } from '../../../utilities/tooltip';
+  import { getSearchParameterNumber, removeQueryParam, setQueryParam } from '../../../utilities/url';
   import type { PageData } from './$types';
 
   export let data: PageData;
