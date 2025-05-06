@@ -7184,7 +7184,7 @@ export function replacePaths(
   }
   const result: ArgumentsMap = {};
   for (const parameterName in modelParameters) {
-    const parameter: Parameter = modelParameters[parameterName];
+    const parameter: Parameter = modelParameters[parameterName] as Parameter;
     const arg: Argument = simArgs[parameterName];
     if (arg !== undefined) {
       result[parameterName] = replacePathsHelper(parameter.schema, arg, pathsToReplace);

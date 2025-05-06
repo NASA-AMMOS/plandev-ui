@@ -57,6 +57,7 @@
       parameterType="action"
       hideRightAdornments
       hideInfo
+      workspaceId={actionDefinition.workspace_id}
       on:change={onChangeFormParameters}
     />
   </ModalContent>

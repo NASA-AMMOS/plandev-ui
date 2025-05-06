@@ -9,6 +9,8 @@
   import ParameterBasePath from './ParameterBasePath.svelte';
   import ParameterBaseString from './ParameterBaseString.svelte';
   import ParameterBaseVariant from './ParameterBaseVariant.svelte';
+  import ParameterBaseSequence from './ParameterBaseSequence.svelte';
+  import ParameterBaseSequenceList from './ParameterBaseSequenceList.svelte';
 
   export let disabled: boolean = false;
   export let formParameter: FormParameter;
@@ -18,6 +20,7 @@
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
   export let use: ActionArray = [];
+  export let workspaceId: number | null = null;
 </script>
 
 {#if formParameter.schema.type === 'boolean'}
@@ -108,6 +111,34 @@
     {formParameter}
     {parameterType}
     {use}
+    on:change
+    on:reset
+  />
+{:else if formParameter.schema.type === 'sequence'}
+  <ParameterBaseSequence
+    {disabled}
+    {hideRightAdornments}
+    {labelColumnWidth}
+    {level}
+    {levelPadding}
+    {formParameter}
+    {parameterType}
+    {use}
+    {workspaceId}
+    on:change
+    on:reset
+  />
+{:else if formParameter.schema.type === 'sequenceList'}
+  <ParameterBaseSequenceList
+    {disabled}
+    {hideRightAdornments}
+    {labelColumnWidth}
+    {level}
+    {levelPadding}
+    {formParameter}
+    {parameterType}
+    {use}
+    {workspaceId}
     on:change
     on:reset
   />

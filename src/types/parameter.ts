@@ -1,4 +1,5 @@
 import type { ValueSchema } from './schema';
+import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
 
 export type DefaultEffectiveArguments = {
   arguments: ArgumentsMap;
@@ -13,7 +14,7 @@ export type EffectiveArguments = {
   success: boolean;
 };
 
-export type FormParameter<T = ValueSchema> = {
+export type FormParameter<T = ValueSchema | ActionValueSchema> = {
   errors: string[] | null;
   file?: File;
   index?: number;
@@ -31,6 +32,7 @@ export type Argument = any;
 export type ArgumentsMap = Record<ParameterName, Argument>;
 
 export type Parameter = { order: number; schema: ValueSchema; unit?: string };
+export type ActionParameter = { order: number; schema: ActionValueSchema; unit?: string };
 export type ComputedParameter = { order: number; schema: ValueSchema; units?: Record<ParameterName, string> };
 
 export type ParameterError = { message: string; schema: ValueSchema };
@@ -41,7 +43,7 @@ export type ParameterName = string;
 
 export type RequiredParametersList = ParameterName[];
 
-export type ParametersMap = Record<ParameterName, Parameter>;
+export type ParametersMap = Record<ParameterName, Parameter | ActionParameter>;
 export type ComputedParametersMap = Record<ParameterName, ComputedParameter>;
 
 export type ParameterValidationError = {
