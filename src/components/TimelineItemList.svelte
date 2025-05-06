@@ -18,6 +18,7 @@
   import { tooltip } from '../utilities/tooltip';
   import Input from './form/Input.svelte';
   import LayerPicker from './LayerPicker.svelte';
+  import Loading from './Loading.svelte';
   import Menu from './menus/Menu.svelte';
   import RowVirtualizerFixed from './RowVirtualizerFixed.svelte';
   import ListItem from './ui/ListItem.svelte';
@@ -30,6 +31,7 @@
   export let filterOptions: TimelineItemListFilterOption[] = [];
   export let filterName: string = 'Filter';
   export let getFilterValueFromItem: (item: TimelineItemType) => string | number;
+  export let loading: boolean = false;
 
   let activeItemIndex: number = -1;
   let menu: Menu;
@@ -252,7 +254,12 @@
   </div>
 
   <div class="list-items">
-    {#if filteredItems.length}
+    {#if loading}
+      <div class="px-3 py-2">
+        <Loading />
+      </div>
+    {/if}
+    {#if filteredItems.length && !loading}
       <RowVirtualizerFixed count={filteredItems.length} overscan={100} let:index disabled={activeItemIndex > -1}>
         {@const item = filteredItems[index]}
         <ListItem

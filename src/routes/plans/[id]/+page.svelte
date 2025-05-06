@@ -450,9 +450,10 @@
       ? `${numConstraintsViolated + numConstraintsWithErrors + $uncheckedConstraintCount}`
       : undefined;
 
-  $: if ($initialPlan && browser) {
+  $: if (typeof $planModelId === 'number' && browser) {
     // Asynchronously fetch resource types
-    effects.getResourceTypes($initialPlan.model_id, data.user).then(initialResourceTypes => {
+    $resourceTypesLoading = true;
+    effects.getResourceTypes($planModelId, data.user).then(initialResourceTypes => {
       $resourceTypes = initialResourceTypes;
       $resourceTypesLoading = false;
     });
