@@ -268,6 +268,7 @@ import {
   showPlanBranchRequestModal,
   showRestorePlanSnapshotModal,
   showRunActionModal,
+  showRunActionResultsModal,
   showTimeRangeModal,
   showUploadViewModal,
   showWorkspaceModal,
@@ -622,6 +623,15 @@ const effects = {
     } catch (e) {
       catchError('Activity Directive Paste Failed', e as Error);
       showFailureToast('Activity Directive Paste Failed');
+    }
+  },
+
+  async confirmOpenActionRunResults(actionRunId: number): Promise<boolean | null> {
+    try {
+      const { confirm } = await showRunActionResultsModal(actionRunId);
+      return confirm;
+    } catch (e) {
+      return null;
     }
   },
 
@@ -4078,6 +4088,7 @@ const effects = {
     }
   },
 
+  // Should be deprecated with the introduction of strict external source schemas, dictating allowable event types for given source types. But for now, this will do.
   async getExternalEventTypes(planId: number, user: User | null): Promise<ExternalEventType[]> {
     try {
       const sourceData = await reqHasura<
@@ -4115,7 +4126,6 @@ const effects = {
     }
   },
 
-  // Should be deprecated with the introduction of strict external source schemas, dictating allowable event types for given source types. But for now, this will do.
   async getExternalEventTypesBySource(
     externalSourceKey: string | null,
     externalSourceDerivationGroup: string | null,
@@ -5718,9 +5728,13 @@ const effects = {
     return null;
   },
 
-  async runAction(actionDefinition: ActionDefinition, user: User | null): Promise<number | null> {
+  async runAction(
+    actionDefinition: ActionDefinition,
+    user: User | null,
+    parameters?: ArgumentsMap,
+  ): Promise<number | null> {
     try {
-      const { confirm, value } = await showRunActionModal(actionDefinition, user);
+      const { confirm, value } = await showRunActionModal(actionDefinition, user, parameters);
       if (confirm && value) {
         const { id } = value;
         return id;

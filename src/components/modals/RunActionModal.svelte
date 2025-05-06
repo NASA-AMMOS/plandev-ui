@@ -16,6 +16,7 @@
 
   export let actionDefinition: ActionDefinition;
   export let user: User | null;
+  export let parameters: ArgumentsMap | undefined;
 
   let running: boolean = false;
   let argumentsMap: ArgumentsMap = {};
@@ -24,6 +25,10 @@
     close: void;
     complete: { actionRunId: number | null };
   }>();
+
+  $: if (parameters !== undefined) {
+    argumentsMap = parameters;
+  }
 
   async function run() {
     running = true;
@@ -47,7 +52,7 @@
   <ModalHeader on:close>Run Action</ModalHeader>
 
   <ModalContent style="max-height: 50vh;overflow: auto">
-    <div class="st-typography-label pb-2">Input parameters for this action run</div>
+    <div class="st-typography-label pb-2">Input parameters to run <b>{actionDefinition.name}</b></div>
     <Parameters
       formParameters={getFormParameters(
         valueSchemaRecordToParametersMap(actionDefinition.parameter_schema),
