@@ -39,13 +39,22 @@
   const width: string = '80vw';
   const columnDefs: ColDef[] = [
     {
+      field: 'id',
+      headerName: 'ID',
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 40,
+    },
+    {
       field: 'name',
       headerName: 'Name',
     },
     {
       field: 'version',
       headerName: 'Version',
-      width: 50,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 70,
     },
     {
       field: 'created_at',
@@ -56,7 +65,7 @@
           return getShortISOForDate(new Date(params.data?.created_at));
         }
       },
-      width: 120,
+      width: 130,
     },
   ];
 
