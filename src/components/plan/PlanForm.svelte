@@ -22,12 +22,12 @@
   import type { PlanSnapshot as PlanSnapshotType } from '../../types/plan-snapshot';
   import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import effects from '../../utilities/effects';
-  import { removeQueryParam, setQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { exportPlan } from '../../utilities/plan';
   import { convertDoyToYmd, formatDate, getShortISOForDate } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
+  import { removeQueryParam, setQueryParam } from '../../utilities/url';
   import { required, unique } from '../../utilities/validators';
   import Collapse from '../Collapse.svelte';
   import Loading from '../Loading.svelte';

@@ -140,17 +140,22 @@ export type GetSeqJsonResponse = {
   status: 'FAILURE' | 'SUCCESS';
 };
 
+// TODO: remove
+// export type UserSequence = {
+//   created_at: string;
+//   definition: string;
+//   id: number;
+//   is_locked: boolean;
+//   name: string;
+//   owner: UserId;
+//   parcel_id: number;
+//   seq_json: string;
+//   updated_at: string;
+//   workspace_id: number;
+// };
 export type UserSequence = {
-  created_at: string;
   definition: string;
-  id: number;
-  is_locked: boolean;
   name: string;
-  owner: UserId;
-  parcel_id: number;
-  seq_json: string;
-  updated_at: string;
-  workspace_id: number;
 };
 
 export type LibrarySequence = {
@@ -163,15 +168,8 @@ export type LibrarySequence = {
 
 export type LibrarySequenceMap = { [sequenceName: string]: LibrarySequence };
 
+// TODO: remove
 export type UserSequenceInsertInput = Omit<UserSequence, 'created_at' | 'id' | 'owner' | 'updated_at'>;
-
-export type Workspace = {
-  created_at: string;
-  id: number;
-  name: string;
-  owner: UserId;
-  updated_at: string;
-};
 
 export type TimeTagInfo = { node: SyntaxNode; text: string } | null | undefined;
 

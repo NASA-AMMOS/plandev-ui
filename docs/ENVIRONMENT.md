@@ -12,5 +12,7 @@ This document provides detailed information about environment variables for Aeri
 | `PUBLIC_GATEWAY_SERVER_URL`      | Url of the Gateway as called from the server (i.e. Node.js container)                                         | `string` | http://localhost:9000            |
 | `PUBLIC_HASURA_CLIENT_URL`       | Url of Hasura as called from the client (i.e. web browser)                                                    | `string` | http://localhost:8080/v1/graphql |
 | `PUBLIC_HASURA_SERVER_URL`       | Url of Hasura as called from the server (i.e. Node.js container)                                              | `string` | http://localhost:8080/v1/graphql |
-| `PUBLIC_HASURA_WEB_SOCKET_URL`   | Url of Hasura called to establish a web-socket connection from the client                                     | `string` | ws://localhost:8080/v1/graphql   |
+| `PUBLIC_WORKSPACE_CLIENT_URL`    | Url of the Workspace Service as called from the client (i.e. web browser)                                     | `string` | http://localhost:8080/v1/graphql |
+| `PUBLIC_WORKSPACE_SERVER_URL`    | Url of the Workspace Service as called from the server (i.e. Node.js container)                               | `string` | http://localhost:8080/v1/graphql |
+| `PUBLIC_HASURA_WEB_SOCKET_URL`   | Url of Hasura called to establish a web-socket connection from the client                                     | `string` | ws://localhost:8080/v1/grap      |
 | `PUBLIC_TIME_PLUGIN_ENABLED`     | Whether the client should load a user-supplied `time-plugin.js` plugin from the `static/resources` directory. | `string` | false                            |

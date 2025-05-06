@@ -10,19 +10,20 @@
   import { parcels, userSequences, userSequencesColumns, workspaces } from '../../stores/sequencing';
   import type { ActionDefinition } from '../../types/actions';
   import type { User } from '../../types/app';
-  import type { Parcel, UserSequence, Workspace } from '../../types/sequencing';
+  import type { Parcel, UserSequence } from '../../types/sequencing';
+  import type { Workspace } from '../../types/workspace';
   import effects from '../../utilities/effects';
-  import { getSearchParameterNumber, setQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { satfToSequence } from '../../utilities/sequence-editor/languages/satf/satf-sasf-utils';
   import { pluralize } from '../../utilities/text';
+  import { getSearchParameterNumber, setQueryParam } from '../../utilities/url';
   import Input from '../form/Input.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
-  import WorkspaceTable from '../workspace/WorkspaceTable.svelte';
+  import WorkspacesGrid from '../workspace/WorkspacesGrid.svelte';
   import SequenceEditor from './SequenceEditor.svelte';
   import SequenceTable from './SequenceTable.svelte';
 
@@ -99,7 +100,7 @@
 </script>
 
 <CssGrid bind:columns={$userSequencesColumns}>
-  <WorkspaceTable {user} selectedWorkspaceId={workspace?.id} on:workspaceSelected={onWorkspaceSelected} />
+  <WorkspacesGrid {user} selectedWorkspaceId={workspace?.id} on:workspaceSelected={onWorkspaceSelected} />
 
   <CssGridGutter track={1} type="column" />
 

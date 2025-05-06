@@ -9,11 +9,13 @@ import {
 } from '@nasa-jpl/aerie-ampcs';
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import { get } from 'svelte/store';
+import { PATH_DELIMITER } from '../constants/workspaces';
 import { ConstraintDefinitionType } from '../enums/constraint';
 import { DictionaryTypes } from '../enums/dictionaryTypes';
 import { SchedulingDefinitionType } from '../enums/scheduling';
 import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
+import { WorkspaceContentType } from '../enums/workspace';
 import {
   activityDirectivesDB as activityDirectivesDBStore,
   selectedActivityDirectiveId as selectedActivityDirectiveIdStore,
@@ -62,6 +64,7 @@ import { sequenceTemplateExpansionError, sequenceTemplateExpansionStatus } from 
 import {
   channelDictionaries as channelDictionariesStore,
   commandDictionaries as commandDictionariesStore,
+  creatingWorkspace,
   parameterDictionaries as parameterDictionariesStore,
 } from '../stores/sequencing';
 import {
@@ -214,7 +217,6 @@ import {
   type SequenceAdaptationMetadata,
   type UserSequence,
   type UserSequenceInsertInput,
-  type Workspace,
 } from '../types/sequencing';
 import type {
   PlanDataset,
@@ -251,8 +253,10 @@ import type {
 } from '../types/tags';
 import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
+import type { Workspace, WorkspaceInsertInput } from '../types/workspace';
+import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
 import { ActivityDeletionAction, addAbsoluteTimeToRevision } from './activities';
-import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
+import { compare, convertToQuery } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
   showCancelActionRunModal,
@@ -265,23 +269,27 @@ import {
   showDeleteExternalSourceModal,
   showEditViewModal,
   showExpansionPanelModal,
+  showImportWorkspaceFileModal,
   showLibrarySequenceModel,
   showManageGroupsAndTypes,
   showManagePlanConstraintsModal,
   showManagePlanDerivationGroups,
   showManagePlanSchedulingConditionsModal,
   showManagePlanSchedulingGoalsModal,
+  showMoveWorkspaceItemModal,
+  showNewWorkspaceFolderModal,
+  showNewWorkspaceSequenceModal,
   showPlanBranchRequestModal,
+  showRenameWorkspaceItemModal,
   showRestorePlanSnapshotModal,
   showRunActionModal,
   showRunActionResultsModal,
   showTimeRangeModal,
   showUpdatePlanMissionModelModal,
   showUploadViewModal,
-  showWorkspaceModal,
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
-import { reqExtension, reqGateway, reqHasura } from './requests';
+import { reqExtension, reqGateway, reqHasura, reqWorkspace } from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
 import { parseCdlDictionary, toAmpcsXml } from './sequence-editor/languages/vml/cdl-dictionary';
@@ -298,6 +306,7 @@ import {
 } from './time';
 import { createRow, duplicateRow } from './timeline';
 import { showFailureToast, showSuccessToast } from './toast';
+import { getSearchParameterNumber, setQueryParam } from './url';
 import {
   applyViewDefinitionMigrations,
   applyViewMigrations,
@@ -307,6 +316,21 @@ import {
 
 function throwPermissionError(attemptedAction: string): never {
   throw Error(`You do not have permission to: ${attemptedAction}.`);
+}
+
+function createFormDataWithFile(fileName: string, fileContent: string, fileKey: string = 'file'): FormData {
+  const file = new File([fileContent], fileName);
+  const body = new FormData();
+  body.append(fileKey, file, file.name);
+
+  return body;
+}
+
+function createWorkspaceSequenceFileFormData(filePath: string, fileContent: string) {
+  const pathParts = filePath.split(PATH_DELIMITER);
+  const fileName = pathParts[pathParts.length - 1];
+
+  return createFormDataWithFile(fileName, fileContent);
 }
 
 /**
@@ -2289,30 +2313,39 @@ const effects = {
     return false;
   },
 
-  async createWorkspace(workspaceNames: string[], user: User | null): Promise<Workspace | null> {
+  async createWorkspace(
+    location: string,
+    parcelId: number,
+    user: User | null,
+    name?: string | null,
+  ): Promise<Workspace | null> {
     try {
       if (!queryPermissions.CREATE_WORKSPACE(user)) {
         throwPermissionError('create a workspace');
       }
 
-      const { confirm, value } = await showWorkspaceModal(workspaceNames);
+      creatingWorkspace.set(true);
 
-      if (confirm && value) {
-        const workspace = value;
-        const data = await reqHasura<Workspace>(gql.CREATE_WORKSPACE, { workspace }, user);
-        const { createWorkspace } = data;
+      const workspaceInsert: WorkspaceInsertInput | null = {
+        parcelId: parcelId,
+        workspaceLocation: location,
+        ...(name ? { workspaceName: name } : {}),
+      };
 
-        if (createWorkspace != null) {
-          showSuccessToast('Workspace Created Successfully');
-          return createWorkspace;
-        } else {
-          throw Error(`Unable to create workspace "${workspace.name}"`);
-        }
+      const newWorkspace = await reqWorkspace<Workspace>(`create`, 'POST', JSON.stringify(workspaceInsert), user);
+
+      if (newWorkspace != null) {
+        showSuccessToast('Workspace Created Successfully');
+        return newWorkspace;
+      } else {
+        throw Error(`Unable to create workspace at "${location}"`);
       }
     } catch (e) {
       catchError('Workspace Create Failed', e as Error);
       showFailureToast('Workspace Create Failed');
     }
+
+    creatingWorkspace.set(false);
 
     return null;
   },
@@ -3693,6 +3726,60 @@ const effects = {
     return false;
   },
 
+  async deleteWorkspace(workspace: Workspace, user: User | null): Promise<boolean> {
+    try {
+      if (!featurePermissions.workspaces.canDelete(user, workspace)) {
+        throwPermissionError('delete this workspace');
+      }
+
+      const { confirm } = await showConfirmModal(
+        'Delete',
+        `Are you sure you want to delete "${workspace.name}"?`,
+        'Delete Workspace',
+      );
+
+      if (confirm) {
+        await reqWorkspace(`${workspace.id}`, 'DELETE', null, user, undefined, false);
+        showSuccessToast('Workspace Deleted Successfully');
+        return true;
+      }
+    } catch (e) {
+      showFailureToast('Workspace Delete Failed');
+      catchError(e as Error);
+    }
+
+    return false;
+  },
+
+  async deleteWorkspaceItem(
+    workspace: Workspace,
+    originalNode: WorkspaceTreeNode,
+    originalPath: string,
+    user: User | null,
+  ): Promise<void> {
+    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
+    try {
+      if (!featurePermissions.workspace.canDelete(user, workspace, originalNode)) {
+        throwPermissionError(`delete this workspace ${typeString.toLowerCase()}`);
+      }
+
+      const { confirm } = await showConfirmModal(
+        'Delete',
+        `This will permanently delete the ${typeString.toLowerCase()} from the workspace: ${workspace.name}`,
+        'Delete Permanently',
+      );
+
+      if (confirm) {
+        await reqWorkspace(`${workspace.id}/${originalPath}`, 'DELETE', null, user, undefined, false);
+
+        showSuccessToast(`Workspace ${typeString} Deleted Successfully`);
+      }
+    } catch (e) {
+      catchError(`Workspace ${typeString.toLowerCase()} was unable to be deleted`, e as Error);
+      showFailureToast(`Workspace ${typeString} Delete Failed`);
+    }
+  },
+
   duplicateTimelineRow(row: Row, timeline: Timeline, timelines: Timeline[]): Row | null {
     const newRow = duplicateRow(row, timelines, timeline.id);
     if (newRow) {
@@ -3738,29 +3825,20 @@ const effects = {
     return false;
   },
 
-  async editWorkspace(workspace: Workspace, workspaceNames: string[], user: User | null): Promise<Workspace | null> {
+  async editWorkspace(workspace: Workspace, user: User | null): Promise<Workspace | null> {
     try {
       if (!queryPermissions.UPDATE_WORKSPACE(user, workspace)) {
         throwPermissionError('update a workspace');
       }
 
-      const { confirm, value } = await showWorkspaceModal(workspaceNames, workspace.name);
+      const data = await reqHasura<Workspace>(gql.UPDATE_WORKSPACE, { workspace }, user);
+      const { updatedWorkspace } = data;
 
-      if (confirm && value) {
-        const updatedName = value;
-        const data = await reqHasura<Workspace>(
-          gql.UPDATE_WORKSPACE,
-          { id: workspace.id, workspace: updatedName },
-          user,
-        );
-        const { updatedWorkspace } = data;
-
-        if (updatedWorkspace != null) {
-          showSuccessToast('Workspace Updated Successfully');
-          return updatedWorkspace;
-        } else {
-          throw Error(`Unable to update workspace "${workspace.name}"`);
-        }
+      if (updatedWorkspace != null) {
+        showSuccessToast('Workspace Updated Successfully');
+        return updatedWorkspace;
+      } else {
+        throw Error(`Unable to update workspace "${workspace.name}"`);
       }
     } catch (e) {
       catchError('Workspace Update Failed', e as Error);
@@ -5176,6 +5254,64 @@ const effects = {
     }
   },
 
+  async getWorkspace(workspaceId: number, user: User | null): Promise<Workspace | null> {
+    try {
+      const query = convertToQuery(gql.SUB_WORKSPACE);
+      const data = await reqHasura<Workspace>(query, { workspaceId }, user);
+      const { workspace } = data;
+
+      if (workspace) {
+        return workspace;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      catchError(e as Error);
+      return null;
+    }
+  },
+
+  async getWorkspaceContents(workspaceId: number, user: User | null): Promise<WorkspaceTreeNode[] | null> {
+    try {
+      const workspaceContents = await reqWorkspace<WorkspaceTreeNode[]>(`${workspaceId}`, 'GET', null, user);
+
+      if (workspaceContents != null) {
+        return workspaceContents;
+      } else {
+        throw Error(`Unable to retrieve workspace contents`);
+      }
+    } catch (e) {
+      catchError('Workspace Retrieval Failed', e as Error);
+      showFailureToast('Workspace Retrieval Failed');
+    }
+
+    return null;
+  },
+
+  async getWorkspaceFileContent(workspaceId: number, filePath: string, user: User | null): Promise<string | null> {
+    try {
+      const fileContents = await reqWorkspace<string>(
+        `${workspaceId}/${filePath}`,
+        'GET',
+        null,
+        user,
+        undefined,
+        false,
+      );
+
+      if (fileContents != null) {
+        return fileContents;
+      } else {
+        throw Error(`Unable to retrieve workspace file`);
+      }
+    } catch (e) {
+      catchError('Workspace File Retrieval Failed', e as Error);
+      showFailureToast('Workspace File Retrieval Failed');
+    }
+
+    return null;
+  },
+
   async importLibrarySequences(
     workspaceId: number | null,
   ): Promise<{ fileContents: string; parcel: number } | undefined> {
@@ -5285,6 +5421,40 @@ const effects = {
       showFailureToast('Failed To Import Sequence Template');
       return null;
     }
+  },
+
+  async importWorkspaceFile(workspace: Workspace, startingPath: string, user: User | null): Promise<string | null> {
+    try {
+      if (!featurePermissions.workspace.canUpdate(user, workspace)) {
+        throwPermissionError(`upload to this workspace`);
+      }
+      const {
+        confirm,
+        value: { file, targetDirectory },
+      } = await showImportWorkspaceFileModal(startingPath);
+      if (confirm) {
+        const body = new FormData();
+        body.append('file', file, file.name);
+        const cleanedTargetPath = `${targetDirectory.replace(/^.\//, '').replace(/\/$/, '')}`;
+
+        await reqWorkspace<Workspace>(
+          `${workspace.id}/${targetDirectory}/${file.name}?type=file`,
+          'PUT',
+          body,
+          user,
+          undefined,
+          false,
+        );
+        showSuccessToast(`Workspace File Uploaded Successfully`);
+
+        return cleanedTargetPath;
+      }
+    } catch (e) {
+      catchError(`Workspace file was unable to be uploaded`, e as Error);
+      showFailureToast(`Workspace File Upload Failed`);
+    }
+
+    return null;
   },
 
   async initialSimulationUpdate(
@@ -5503,6 +5673,90 @@ const effects = {
     } catch (e) {
       catchError('Scheduling Goal Unable To Be Applied To Plan', e as Error);
       showFailureToast('Scheduling Goal Application Failed');
+    }
+  },
+
+  async moveWorkspaceItem(
+    workspace: Workspace,
+    originalNode: WorkspaceTreeNode,
+    originalPath: string,
+    user: User | null,
+  ): Promise<string | null> {
+    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
+    try {
+      if (!featurePermissions.workspace.canUpdate(user, workspace, originalNode)) {
+        throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);
+      }
+      const {
+        confirm,
+        value: { targetPath },
+      } = await showMoveWorkspaceItemModal(originalNode, originalPath);
+      if (confirm) {
+        const cleanedTargetPath = `${targetPath.replace(/^.\//, '').replace(/\/$/, '')}`;
+
+        await reqWorkspace<Workspace>(
+          `${workspace.id}/${originalPath}`,
+          'POST',
+          JSON.stringify({
+            moveTo: `./${cleanedTargetPath}`,
+          }),
+          user,
+          undefined,
+          false,
+        );
+        showSuccessToast(`Workspace ${typeString} Moved Successfully`);
+
+        return cleanedTargetPath;
+      }
+    } catch (e) {
+      catchError(`Workspace ${typeString.toLowerCase()} was unable to be moved`, e as Error);
+      showFailureToast(`Workspace ${typeString} Move Failed`);
+    }
+
+    return null;
+  },
+
+  async newWorkspaceFolder(workspaceId: number, startingPath: string, user: User | null): Promise<void> {
+    try {
+      const {
+        confirm,
+        value: { folderPath },
+      } = await showNewWorkspaceFolderModal(startingPath);
+
+      if (confirm) {
+        await reqWorkspace<Workspace>(
+          `${workspaceId}/${folderPath}?type=directory`,
+          'PUT',
+          null,
+          user,
+          undefined,
+          false,
+        );
+
+        showSuccessToast('Workspace Folder Created Successfully');
+      }
+    } catch (e) {
+      catchError('Workspace folder was unable to be created', e as Error);
+      showFailureToast('Workspace Folder Creation Failed');
+    }
+  },
+
+  async newWorkspaceSequence(workspaceId: number, startingPath: string, user: User | null): Promise<void> {
+    try {
+      const {
+        confirm,
+        value: { sequencePath },
+      } = await showNewWorkspaceSequenceModal(startingPath);
+
+      if (confirm) {
+        const body = createWorkspaceSequenceFileFormData(sequencePath, '');
+
+        await reqWorkspace<Workspace>(`${workspaceId}/${sequencePath}?type=file`, 'PUT', body, user, undefined, false);
+        showSuccessToast('Workspace File Created Successfully');
+      }
+    } catch (e) {
+      catchError('Workspace file was unable to be created', e as Error);
+      showFailureToast('Workspace File Creation Failed');
     }
   },
 
@@ -5734,6 +5988,46 @@ const effects = {
     }
   },
 
+  async renameWorkspaceItem(
+    workspace: Workspace,
+    originalNode: WorkspaceTreeNode,
+    originalPath: string,
+    user: User | null,
+  ): Promise<string | null> {
+    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
+    try {
+      if (!featurePermissions.workspace.canUpdate(user, workspace, originalNode)) {
+        throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);
+      }
+      const {
+        confirm,
+        value: { targetPath },
+      } = await showRenameWorkspaceItemModal(originalNode, originalPath);
+      if (confirm) {
+        const cleanedTargetPath = `${targetPath.replace(/^.\//, '').replace(/\/$/, '')}`;
+
+        await reqWorkspace<Workspace>(
+          `${workspace.id}/${originalPath}`,
+          'POST',
+          JSON.stringify({
+            moveTo: `./${cleanedTargetPath}`,
+          }),
+          user,
+          undefined,
+          false,
+        );
+        showSuccessToast(`Workspace ${typeString} Renamed Successfully`);
+
+        return cleanedTargetPath;
+      }
+    } catch (e) {
+      catchError(`Workspace ${typeString.toLowerCase()} was unable to be renamed`, e as Error);
+      showFailureToast(`Workspace ${typeString} Rename Failed`);
+    }
+
+    return null;
+  },
+
   async restoreActivityFromChangelog(
     activityId: number,
     plan: Plan,
@@ -5864,6 +6158,25 @@ const effects = {
       catchError('Run Action Failed', e as Error);
       showFailureToast('Run Action Failed');
       return null;
+    }
+  },
+
+  async saveWorkspaceFile(workspaceId: number, filePath: string, fileContent: string, user: User | null = null) {
+    try {
+      const body = createWorkspaceSequenceFileFormData(filePath, fileContent);
+
+      await reqWorkspace<Workspace>(
+        `${workspaceId}/${filePath}?type=file&overwrite=true`,
+        'PUT',
+        body,
+        user,
+        undefined,
+        false,
+      );
+      showSuccessToast('Workspace File Saved Successfully');
+    } catch (e) {
+      catchError('Workspace file was unable to be saved', e as Error);
+      showFailureToast('Workspace File Save Failed');
     }
   },
 
@@ -7158,7 +7471,7 @@ const effects = {
         channel?: ChannelDictionaryMetadata;
         command?: CommandDictionaryMetadata;
         parameter?: ParameterDictionaryMetadata;
-      }>(gql.CREATE_DICTIONARY, { dictionary, persistDictionaryToFilesystem }, user);
+      }>(gql.CREATE_DICTIONARY, { dictionary }, user);
 
       const { createDictionary: newDictionaries } = data;
 

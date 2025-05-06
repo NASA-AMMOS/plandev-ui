@@ -7,7 +7,7 @@
   import SchedulingGoalForm from '../../../../components/scheduling/goals/SchedulingGoalForm.svelte';
   import { SearchParameters } from '../../../../enums/searchParameters';
   import { tags } from '../../../../stores/tags';
-  import { getSearchParameterNumber } from '../../../../utilities/generic';
+  import { getSearchParameterNumber } from '../../../../utilities/url';
   import type { PageData } from './$types';
 
   export let data: PageData;
