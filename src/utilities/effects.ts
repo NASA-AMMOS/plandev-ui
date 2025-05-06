@@ -60,6 +60,7 @@ import { sequenceTemplateExpansionError, sequenceTemplateExpansionStatus } from 
 import {
   channelDictionaries as channelDictionariesStore,
   commandDictionaries as commandDictionariesStore,
+  creatingWorkspace,
   parameterDictionaries as parameterDictionariesStore,
 } from '../stores/sequencing';
 import {
@@ -210,7 +211,6 @@ import {
   type SequenceAdaptationMetadata,
   type UserSequence,
   type UserSequenceInsertInput,
-  type Workspace,
 } from '../types/sequencing';
 import type {
   PlanDataset,
@@ -247,6 +247,7 @@ import type {
 } from '../types/tags';
 import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
+import type { Workspace, WorkspaceInsertInput } from '../types/workspace';
 import { ActivityDeletionAction } from './activities';
 import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
 import gql, { convertToGQLArray } from './gql';
@@ -270,10 +271,9 @@ import {
   showRunActionModal,
   showTimeRangeModal,
   showUploadViewModal,
-  showWorkspaceModal,
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
-import { reqExtension, reqGateway, reqHasura } from './requests';
+import { reqExtension, reqGateway, reqHasura, reqWorkspace } from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
 import { parseCdlDictionary, toAmpcsXml } from './sequence-editor/languages/vml/cdl-dictionary';
@@ -2225,30 +2225,50 @@ const effects = {
     return false;
   },
 
-  async createWorkspace(workspaceNames: string[], user: User | null): Promise<Workspace | null> {
+  async createWorkspace(
+    location: string,
+    parcelId: number,
+    user: User | null,
+    name?: string | null,
+  ): Promise<Workspace | null> {
     try {
       if (!queryPermissions.CREATE_WORKSPACE(user)) {
         throwPermissionError('create a workspace');
       }
 
-      const { confirm, value } = await showWorkspaceModal(workspaceNames);
+      creatingWorkspace.set(true);
 
-      if (confirm && value) {
-        const workspace = value;
-        const data = await reqHasura<Workspace>(gql.CREATE_WORKSPACE, { workspace }, user);
-        const { createWorkspace } = data;
+      const workspaceInsert: WorkspaceInsertInput | null = {
+        parcelId: parcelId,
+        workspaceLocation: location,
+        ...(name ? { workspaceName: name } : {}),
+      };
 
-        if (createWorkspace != null) {
-          showSuccessToast('Workspace Created Successfully');
-          return createWorkspace;
-        } else {
-          throw Error(`Unable to create workspace "${workspace.name}"`);
-        }
+      const newWorkspace = await reqWorkspace<Workspace>(`/ws/create`, 'POST', JSON.stringify(workspaceInsert), user);
+      // const data = await reqHasura<Workspace>(gql.CREATE_WORKSPACE, { workspace: workspaceInsert }, user);
+      // const { createWorkspace: newWorkspace } = data;
+      // if (newWorkspace) {
+      //   // Associate new tags with plan
+      //   const newWorkspaceTags: WorkspaceTagsInsertInput[] = (tags || []).map(({ id: tag_id }) => ({
+      //     tag_id,
+      //     workspace_id: newWorkspace.id,
+      //   }));
+      //   newWorkspace.tags = newWorkspaceTags.map(tag => ({ tag }));
+      //   await effects.createWorkspaceTags(newWorkspaceTags, newWorkspace, user);
+      // }
+
+      if (newWorkspace != null) {
+        showSuccessToast('Workspace Created Successfully');
+        return newWorkspace;
+      } else {
+        throw Error(`Unable to create workspace at "${location}"`);
       }
     } catch (e) {
       catchError('Workspace Create Failed', e as Error);
       showFailureToast('Workspace Create Failed');
     }
+
+    creatingWorkspace.set(false);
 
     return null;
   },
@@ -3674,29 +3694,20 @@ const effects = {
     return false;
   },
 
-  async editWorkspace(workspace: Workspace, workspaceNames: string[], user: User | null): Promise<Workspace | null> {
+  async editWorkspace(workspace: Workspace, user: User | null): Promise<Workspace | null> {
     try {
       if (!queryPermissions.UPDATE_WORKSPACE(user, workspace)) {
         throwPermissionError('update a workspace');
       }
 
-      const { confirm, value } = await showWorkspaceModal(workspaceNames, workspace.name);
+      const data = await reqHasura<Workspace>(gql.UPDATE_WORKSPACE, { workspace }, user);
+      const { updatedWorkspace } = data;
 
-      if (confirm && value) {
-        const updatedName = value;
-        const data = await reqHasura<Workspace>(
-          gql.UPDATE_WORKSPACE,
-          { id: workspace.id, workspace: updatedName },
-          user,
-        );
-        const { updatedWorkspace } = data;
-
-        if (updatedWorkspace != null) {
-          showSuccessToast('Workspace Updated Successfully');
-          return updatedWorkspace;
-        } else {
-          throw Error(`Unable to update workspace "${workspace.name}"`);
-        }
+      if (updatedWorkspace != null) {
+        showSuccessToast('Workspace Updated Successfully');
+        return updatedWorkspace;
+      } else {
+        throw Error(`Unable to update workspace "${workspace.name}"`);
       }
     } catch (e) {
       catchError('Workspace Update Failed', e as Error);
@@ -4773,6 +4784,17 @@ const effects = {
     return null;
   },
 
+  async getSequenceDefinition(sequenceId: string, user: User | null): Promise<string | null> {
+    try {
+      // TODO: finish request
+      return `${sequenceId}${user?.id}`;
+    } catch (e) {
+      catchError(e as Error);
+    }
+
+    return null;
+  },
+
   async getSpans(
     datasetId: number,
     planStartTimeYmd: string,
@@ -5097,6 +5119,23 @@ const effects = {
         }
       }
       return generateDefaultView(resourceTypes, externalEventTypes);
+    } catch (e) {
+      catchError(e as Error);
+      return null;
+    }
+  },
+
+  async getWorkspace(workspaceId: string, user: User | null): Promise<Workspace | null> {
+    try {
+      const query = convertToQuery(gql.SUB_WORKSPACE);
+      const data = await reqHasura<Workspace>(query, { workspaceId }, user);
+      const { workspace } = data;
+
+      if (workspace) {
+        return workspace;
+      } else {
+        return null;
+      }
     } catch (e) {
       catchError(e as Error);
       return null;

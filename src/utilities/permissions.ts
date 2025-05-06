@@ -26,10 +26,11 @@ import type {
   SchedulingGoalMetadata,
 } from '../types/scheduling';
 import type { SequenceTemplate } from '../types/sequence-template';
-import type { Parcel, UserSequence, Workspace } from '../types/sequencing';
+import type { Parcel, UserSequence } from '../types/sequencing';
 import type { PlanDataset, Simulation, SimulationTemplate } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { View, ViewSlim } from '../types/view';
+import type { Workspace } from '../types/workspace';
 import gql from './gql';
 import { showFailureToast } from './toast';
 

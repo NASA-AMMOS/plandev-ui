@@ -1,15 +1,17 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { base } from '$app/paths';
   import { page } from '$app/stores';
   import ChevronRightIcon from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
-  import PhoenixIcon from '../../assets/aerie-phoenix-logo.svg?component';
-  import Nav from '../../components/app/Nav.svelte';
-  import CssGrid from '../../components/ui/CssGrid.svelte';
-  import { SearchParameters } from '../../enums/searchParameters';
-  import { workspaces } from '../../stores/sequencing';
-  import type { Workspace } from '../../types/workspace';
-  import { getSearchParameterNumber } from '../../utilities/generic';
+  import PhoenixIcon from '../../../../assets/aerie-phoenix-logo.svg?component';
+  import Nav from '../../../../components/app/Nav.svelte';
+  import CssGrid from '../../../../components/ui/CssGrid.svelte';
+  import { SearchParameters } from '../../../../enums/searchParameters';
+  import { workspaces } from '../../../../stores/sequencing';
+  import type { Workspace } from '../../../../types/workspace';
+  import { getSearchParameterNumber } from '../../../../utilities/generic';
+  import { getWorkspacesUrl } from '../../../../utilities/routes';
   import type { PageData } from './$types';
 
   export let data: PageData;
@@ -24,28 +26,21 @@
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
   <Nav user={data.user}>
     <div class="sequencing-title" slot="title">
-      <a
-        href={`/sequencing${workspace ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`}
-        class="app-icon link"
-      >
+      <a href={getWorkspacesUrl(base, workspaceId)} class="app-icon link">
         <PhoenixIcon height={16} />Phoenix Sequencing
       </a>
-      {#if $page.url.pathname.indexOf('/sequencing/actions') > -1}
-        <a
-          class="link"
-          href={`/sequencing/actions${workspace ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`}
-        >
-          <div class="icon-wrapper">
-            <ChevronRightIcon />
-            {workspace?.name ?? ''} Actions
-          </div>
-        </a>
-      {/if}
-      {#if $page.url.pathname.indexOf('/sequencing/actions/runs') > -1}
+      <a
+        class="link"
+        href={`/sequencing/actions${workspace ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`}
+      >
         <div class="icon-wrapper">
-          <ChevronRightIcon /> Action Run
+          <ChevronRightIcon />
+          {workspace?.name ?? ''} Actions
         </div>
-      {/if}
+      </a>
+      <div class="icon-wrapper">
+        <ChevronRightIcon /> Action Run
+      </div>
     </div>
   </Nav>
   <slot />

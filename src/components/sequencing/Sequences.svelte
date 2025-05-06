@@ -10,7 +10,8 @@
   import { parcels, userSequences, userSequencesColumns, workspaces } from '../../stores/sequencing';
   import type { ActionDefinition } from '../../types/actions';
   import type { User } from '../../types/app';
-  import type { Parcel, UserSequence, Workspace } from '../../types/sequencing';
+  import type { Parcel, UserSequence } from '../../types/sequencing';
+  import type { Workspace } from '../../types/workspace';
   import effects from '../../utilities/effects';
   import { getSearchParameterNumber, setQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';

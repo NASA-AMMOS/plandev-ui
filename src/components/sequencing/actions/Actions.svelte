@@ -16,7 +16,7 @@
   import type { ActionDefinition, ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
-  import type { Workspace } from '../../../types/sequencing';
+  import type { Workspace } from '../../../types/workspace';
   import { getActionDefinitionForRun, valueSchemaRecordToParametersMap } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
   import { getSearchParameterNumber } from '../../../utilities/generic';

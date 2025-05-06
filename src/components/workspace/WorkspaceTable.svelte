@@ -5,9 +5,8 @@
   import { createEventDispatcher } from 'svelte';
   import { workspaces } from '../../stores/sequencing';
   import type { User } from '../../types/app';
-  import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
-  import type { Workspace } from '../../types/sequencing';
-  import effects from '../../utilities/effects';
+  import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
+  import type { Workspace } from '../../types/workspace';
   import { featurePermissions } from '../../utilities/permissions';
   import Input from '../form/Input.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
@@ -16,11 +15,11 @@
   import SectionTitle from '../ui/SectionTitle.svelte';
 
   type CellRendererParams = {
-    editWorkspace?: (workspace: Workspace) => void;
+    viewWorkspace: (workspace: Workspace) => void;
   };
   type WorkspaceCellRendererParams = ICellRendererParams<Workspace> & CellRendererParams;
 
-  export let selectedWorkspaceId: number | undefined;
+  export let selectedWorkspaceId: number | null | undefined;
   export let user: User | null;
 
   let baseColumnDefs: DataGridColumnDef[];
@@ -29,7 +28,8 @@
   let selectedWorkspace: Workspace | null = null;
 
   const dispatch = createEventDispatcher<{
-    workspaceSelected: number;
+    selectWorkspace: number;
+    viewWorkspace: number;
   }>();
 
   $: baseColumnDefs = [
@@ -64,15 +64,15 @@
       cellRenderer: (params: WorkspaceCellRendererParams) => {
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'actions-cell';
-        new DataGridActions({
+        new DataGridActions<Workspace>({
           props: {
-            editCallback: params.editWorkspace,
-            editTooltip: {
-              content: 'Edit Workspace',
+            hasEditPermission: params.data ? hasViewPermission(user, params.data) : false,
+            rowData: params.data,
+            viewCallback: data => user && params.viewWorkspace(data),
+            viewTooltip: {
+              content: 'Open Workspace',
               placement: 'bottom',
             },
-            hasEditPermission: params.data ? hasEditPermission(user, params.data) : false,
-            rowData: params.data,
           },
           target: actionsDiv,
         });
@@ -80,7 +80,7 @@
         return actionsDiv;
       },
       cellRendererParams: {
-        editWorkspace,
+        viewWorkspace,
       } as CellRendererParams,
       field: 'actions',
       headerName: '',
@@ -98,29 +98,14 @@
     return includesName;
   });
 
-  async function createNewWorkspace() {
-    await effects.createWorkspace(
-      $workspaces.map(workspace => workspace.name),
-      user,
-    );
-  }
-
-  async function editWorkspace(workspace: Workspace | undefined) {
+  async function viewWorkspace(workspace: Workspace | undefined) {
     if (workspace !== undefined) {
-      await effects.editWorkspace(
-        workspace,
-        $workspaces.map(workspace => workspace.name),
-        user,
-      );
+      dispatch('viewWorkspace', parseInt(`${workspace.id}`));
     }
   }
 
-  function editWorkspaceContext(event: CustomEvent<RowId[]>) {
-    editWorkspace($workspaces.find(workspace => workspace.id === (event.detail[0] as number)));
-  }
-
-  function hasEditPermission(user: User | null, workspace: Workspace) {
-    return featurePermissions.workspace.canUpdate(user, workspace);
+  function hasViewPermission(user: User | null, workspace: Workspace) {
+    return featurePermissions.workspace.canRead(user, workspace);
   }
 
   function workspaceSelected(event: CustomEvent<DataGridRowSelection<Workspace>>) {
@@ -129,7 +114,7 @@
 
     if (isSelected) {
       selectedWorkspace = clickedWorkspace;
-      dispatch('workspaceSelected', selectedWorkspace.id);
+      dispatch('selectWorkspace', parseInt(`${selectedWorkspace.id}`));
     }
   }
 </script>
@@ -147,12 +132,6 @@
         style="width: 100%;"
       />
     </Input>
-
-    <div class="right">
-      <button class="st-button secondary ellipsis" on:click|stopPropagation={createNewWorkspace}>
-        Create Workspace
-      </button>
-    </div>
   </svelte:fragment>
 
   <svelte:fragment slot="body">
@@ -160,13 +139,11 @@
       <SingleActionDataGrid
         columnDefs={baseColumnDefs}
         hasEdit={true}
-        {hasEditPermission}
         itemDisplayText="Workspaces"
         items={filteredWorkspaces}
         selectedItemId={selectedWorkspaceId}
         hasDeletePermission={false}
         {user}
-        on:editItem={editWorkspaceContext}
         on:rowSelected={workspaceSelected}
       />
     {:else}

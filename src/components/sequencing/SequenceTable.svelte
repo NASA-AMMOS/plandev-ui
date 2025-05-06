@@ -9,7 +9,8 @@
   import { parcels, userSequences } from '../../stores/sequencing';
   import type { User, UserId } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
-  import type { UserSequence, Workspace } from '../../types/sequencing';
+  import type { UserSequence } from '../../types/sequencing';
+  import type { Workspace } from '../../types/workspace';
   import effects from '../../utilities/effects';
   import { getSearchParameterNumber, getTarget } from '../../utilities/generic';
   import { featurePermissions } from '../../utilities/permissions';

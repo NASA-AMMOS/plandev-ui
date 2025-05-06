@@ -11,5 +11,7 @@ export enum SearchParameters {
   START_TIME = 'startTime',
   END_TIME = 'endTime',
   REVISION = 'revision',
+  SEQUENCE_ID = 'sequenceId',
+  LINE_NUMBER = 'lineNum',
   WORKSPACE_ID = 'workspaceId',
 }

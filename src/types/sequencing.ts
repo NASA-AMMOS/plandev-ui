@@ -165,14 +165,6 @@ export type LibrarySequenceMap = { [sequenceName: string]: LibrarySequence };
 
 export type UserSequenceInsertInput = Omit<UserSequence, 'created_at' | 'id' | 'owner' | 'updated_at'>;
 
-export type Workspace = {
-  created_at: string;
-  id: number;
-  name: string;
-  owner: UserId;
-  updated_at: string;
-};
-
 export type TimeTagInfo = { node: SyntaxNode; text: string } | null | undefined;
 
 export type StringArg = FswCommandArgumentVarString | FswCommandArgumentFixedString;

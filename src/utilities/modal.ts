@@ -29,9 +29,8 @@ import RunActionModal from '../components/modals/RunActionModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
 import TimeRangeModal from '../components/modals/TimeRangeModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
-import WorkspaceModal from '../components/modals/WorkspaceModal.svelte';
-import { type ActionDefinition } from '../types/actions';
 import NewSequenceTemplateModal from '../components/sequence-templates/NewSequenceTemplateModal.svelte';
+import { type ActionDefinition } from '../types/actions';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
 import type { User } from '../types/app';
 import type { ExpansionSequence } from '../types/expansion';
@@ -549,41 +548,6 @@ export async function showMergeReviewEndedModal(
           target.resolve = null;
           target.removeAttribute('data-dismissible');
           mergeReviewEndedModal.$destroy();
-        });
-      }
-    } else {
-      resolve({ confirm: false });
-    }
-  });
-}
-
-export async function showWorkspaceModal(
-  workspaceNames: string[],
-  workspaceName?: string,
-): Promise<ModalElementValue<{ name: string }>> {
-  return new Promise(resolve => {
-    if (browser) {
-      const target: ModalElement | null = document.querySelector('#svelte-modal');
-
-      if (target) {
-        const workspaceModal = new WorkspaceModal({
-          props: { initialWorkspaceName: workspaceName, workspaceNames },
-          target,
-        });
-        target.resolve = resolve;
-
-        workspaceModal.$on('close', () => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: false });
-          workspaceModal.$destroy();
-        });
-
-        workspaceModal.$on('save', (e: CustomEvent<{ name: string }>) => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: true, value: e.detail });
-          workspaceModal.$destroy();
         });
       }
     } else {
