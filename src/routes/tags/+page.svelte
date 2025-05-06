@@ -320,6 +320,7 @@
                 sizeVariant="xs"
                 name="name"
                 placeholder="Enter tag name"
+                aria-label="Tag Name"
               />
             </div>
           </Field>
@@ -442,7 +443,7 @@
             <TagsIcon slot="icon" />
             Tags
           </SectionTitle>
-          <Input bind:value={filterText} placeholder="Filter tags" sizeVariant="xs" />
+          <Input bind:value={filterText} placeholder="Filter tags" aria-label="Filter Tags" sizeVariant="xs" />
         </div>
       </svelte:fragment>
 
