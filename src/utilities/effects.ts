@@ -572,11 +572,11 @@ const effects = {
   ): Promise<ModelCompatabilityForPlan | undefined> {
     try {
       const data = await reqHasura(
-        gql.CHECK_MODEL_COMPATABILITY_FOR_PLAN,
+        gql.CHECK_MODEL_COMPATIBILITY_FOR_PLAN,
         { new_model_id: newModelId, plan_id: planId },
         user,
       );
-      const modelCompatabilityForPlan: ModelCompatabilityForPlan = data.check_model_compatability_for_plan?.result;
+      const modelCompatabilityForPlan: ModelCompatabilityForPlan = data.check_model_compatibility_for_plan?.result;
       return modelCompatabilityForPlan;
     } catch (e) {
       catchError('Check Plan Model Migration Compatibility Failed', e as Error);

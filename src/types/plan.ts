@@ -146,8 +146,8 @@ export type PlanSchedulingSpec = Pick<
 >;
 
 export type ModelCompatabilityForPlan = {
-  altered_activity_types: Record<string, ModelCompatabilityForPlanSchemaDiff>;
-  problematic_directives: { activity_directive: ActivityDirective; issue: ModelCompatabilityForPlanIssue }[];
+  impacted_directives: { activity_directive: ActivityDirective; issue: ModelCompatabilityForPlanIssue }[];
+  modified_activity_types: Record<string, ModelCompatabilityForPlanSchemaDiff>;
   removed_activity_types: string[];
 };
 

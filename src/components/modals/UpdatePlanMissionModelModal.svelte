@@ -74,8 +74,8 @@
     confirm: ModelSlim;
   }>();
 
-  let alteredDirectivesTypes: Record<string, ActivityDirective[]> = {};
-  let alteredDirectivesCount: number = 0;
+  let modifiedDirectivesTypes: Record<string, ActivityDirective[]> = {};
+  let modifiedDirectivesCount: number = 0;
   let filterExpression: string = '';
   let isRowSelectable: ((node: IRowNode) => boolean) | undefined = undefined;
   let loadingCompatibility: boolean = false;
@@ -112,21 +112,21 @@
 
   async function previewMissionModelMigration(missionModel: ModelSlim | null) {
     if (missionModel !== null) {
-      alteredDirectivesTypes = {};
+      modifiedDirectivesTypes = {};
       removedDirectivesTypes = {};
-      alteredDirectivesCount = 0;
+      modifiedDirectivesCount = 0;
       removedDirectiveCount = 0;
       loadingCompatibility = true;
       migrationCompatibility = await effects.checkMigrationCompatability(plan.id, missionModel.id, user);
       loadingCompatibility = false;
       if (migrationCompatibility) {
-        migrationCompatibility.problematic_directives.forEach(({ issue, activity_directive }) => {
+        migrationCompatibility.impacted_directives.forEach(({ issue, activity_directive }) => {
           if (issue === 'altered') {
-            if (!alteredDirectivesTypes[activity_directive.type]) {
-              alteredDirectivesTypes[activity_directive.type] = [];
+            if (!modifiedDirectivesTypes[activity_directive.type]) {
+              modifiedDirectivesTypes[activity_directive.type] = [];
             }
-            alteredDirectivesTypes[activity_directive.type].push(activity_directive);
-            alteredDirectivesCount++;
+            modifiedDirectivesTypes[activity_directive.type].push(activity_directive);
+            modifiedDirectivesCount++;
           } else if (issue === 'removed') {
             if (!removedDirectivesTypes[activity_directive.type]) {
               removedDirectivesTypes[activity_directive.type] = [];
@@ -196,44 +196,44 @@
             <div class="st-typography-displayBody mb-2">Expected Incompatibilities</div>
             {#if !migrationCompatibility}
               <div class="st-typography-label mb-3 message">Unable to compute expected incompatibilities</div>
-            {:else if migrationCompatibility?.problematic_directives.length < 1}
+            {:else if migrationCompatibility?.impacted_directives.length < 1}
               <div class="st-typography-label mb-3 message"><CheckIcon /> No expected incompatibilities</div>
             {:else}
               <div class="st-typography-body">
                 <div class="st-typography-body mb-3 message">
                   <WarningIcon class="red-icon" />
-                  {migrationCompatibility.problematic_directives.length} incompatible activity directive{pluralize(
-                    migrationCompatibility.problematic_directives.length,
+                  {migrationCompatibility.impacted_directives.length} incompatible activity directive{pluralize(
+                    migrationCompatibility.impacted_directives.length,
                   )}
                 </div>
-                {#if Object.keys(alteredDirectivesTypes).length > 0}
+                {#if Object.keys(modifiedDirectivesTypes).length > 0}
                   <Collapse>
                     <div slot="title" class="collapse-title">
-                      {Object.keys(alteredDirectivesTypes).length} Modified Activity Type{pluralize(
-                        Object.keys(alteredDirectivesTypes).length,
+                      {Object.keys(modifiedDirectivesTypes).length} Modified Activity Type{pluralize(
+                        Object.keys(modifiedDirectivesTypes).length,
                       )}
                       <div
                         use:tooltip={{
-                          content: `${alteredDirectivesCount} affected activity directive${pluralize(alteredDirectivesCount)} in plan`,
+                          content: `${modifiedDirectivesCount} affected activity directive${pluralize(modifiedDirectivesCount)} in plan`,
                         }}
                         class="directives-badge"
                       >
                         <DirectiveIcon />
-                        {alteredDirectivesCount}
+                        {modifiedDirectivesCount}
                       </div>
                     </div>
-                    {#each Object.keys(alteredDirectivesTypes).sort() as type}
+                    {#each Object.keys(modifiedDirectivesTypes).sort() as type}
                       <Collapse defaultExpanded={false} className="parameter-schema-collapse">
                         <div slot="title" class="collapse-title">
                           {type}
                           <div
                             use:tooltip={{
-                              content: `${alteredDirectivesTypes[type].length} affected activity directive${pluralize(alteredDirectivesTypes[type].length)} in plan`,
+                              content: `${modifiedDirectivesTypes[type].length} affected activity directive${pluralize(modifiedDirectivesTypes[type].length)} in plan`,
                             }}
                             class="directives-badge"
                           >
                             <DirectiveIcon />
-                            {alteredDirectivesTypes[type].length}
+                            {modifiedDirectivesTypes[type].length}
                           </div>
                         </div>
                         <CssGrid columns="50% 50%" gap="8px">
@@ -244,7 +244,7 @@
                             </div>
                             <div class="json">
                               <pre>{JSON.stringify(
-                                  migrationCompatibility.altered_activity_types[type].old_parameter_schema,
+                                  migrationCompatibility.modified_activity_types[type].old_parameter_schema,
                                   undefined,
                                   2,
                                 )}</pre>
@@ -256,7 +256,7 @@
                             </div>
                             <div class="json">
                               <pre>{JSON.stringify(
-                                  migrationCompatibility.altered_activity_types[type].new_parameter_schema,
+                                  migrationCompatibility.modified_activity_types[type].new_parameter_schema,
                                   undefined,
                                   2,
                                 )}</pre>
