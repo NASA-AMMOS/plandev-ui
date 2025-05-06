@@ -225,10 +225,12 @@
             <input class="st-input w-full" disabled name="modelId" value={plan.model_id} />
             <button
               class="st-button secondary change-mission-model"
-              use:tooltip={{ content: 'Change Mission Model', placement: 'top' }}
+              use:tooltip={{ content: !$planReadOnly ? 'Change Mission Model' : '', placement: 'top' }}
               use:permissionHandler={{
-                hasPermission: hasChangePlanModelPermission,
-                permissionError: `You don't have permission to change mission model`,
+                hasPermission: hasChangePlanModelPermission && !$planReadOnly,
+                permissionError: $planReadOnly
+                  ? PlanStatusMessages.READ_ONLY
+                  : "You don't have permission to change mission model",
               }}
               on:click|stopPropagation={openChangePlanMissionModelModal}
             >
@@ -366,6 +368,7 @@
             {#each filteredPlanSnapshots as planSnapshot (planSnapshot.snapshot_id)}
               <PlanSnapshot
                 activePlanSnapshotId={$planSnapshotId}
+                planModelId={plan.model.id}
                 {planSnapshot}
                 on:click={() => {
                   setQueryParam(SearchParameters.SNAPSHOT_ID, `${planSnapshot.snapshot_id}`, 'PUSH');

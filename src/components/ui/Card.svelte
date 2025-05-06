@@ -3,6 +3,7 @@
 
   export let body: string = '';
   export let date: string = '';
+  export let interactable: boolean = true;
   export let selected: boolean = false;
   export let title: string = '';
   export let user: string = '';
@@ -18,7 +19,7 @@
   }
 </script>
 
-<button class="card st-typography-label" class:selected on:click>
+<button class="card st-typography-label" class:selected on:click disabled={!interactable}>
   <div class="card--row card--title-row">
     <div class="card--title t-typography-medium">
       {title}
@@ -67,6 +68,10 @@
     text-align: left;
   }
 
+  .card:disabled {
+    cursor: default;
+  }
+
   .card.selected {
     background: rgba(230, 230, 255, 0.24);
     border-color: var(--st-primary-70);
@@ -112,7 +117,7 @@
     padding: 4px 0px;
   }
 
-  .card:hover:not(.selected) {
+  .card:hover:not(.selected):not(:disabled) {
     border-color: var(--st-gray-30);
   }
 </style>
