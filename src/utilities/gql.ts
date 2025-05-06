@@ -3041,6 +3041,7 @@ const gql = {
     subscription SubPlanSnapshot($planId: Int!) {
       plan_snapshots: ${Queries.PLAN_SNAPSHOTS}(where: { plan_id: { _eq: $planId } }, order_by: { taken_at: desc }) {
         snapshot_id
+        model_id
         plan_id
         revision
         snapshot_name

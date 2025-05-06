@@ -4,6 +4,7 @@ import type { Tag } from './tags';
 
 export type PlanSnapshot = {
   description: string;
+  model_id: number;
   plan_id: number;
   revision: number;
   simulation: SimulationDataset | null;
