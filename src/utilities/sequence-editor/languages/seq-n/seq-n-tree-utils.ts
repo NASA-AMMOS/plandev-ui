@@ -39,14 +39,14 @@ export function getAncestorStepOrRequest(node: SyntaxNode | null) {
   ]);
 }
 
-export function userSequenceToLibrarySequence(sequence: UserSequence): LibrarySequence {
+export function userSequenceToLibrarySequence(sequence: UserSequence, workspaceId: number): LibrarySequence {
   const tree = SeqLanguage.parser.parse(sequence.definition);
   return {
     name: sequence.name,
     parameters: parseVariables(tree.topNode, sequence.definition, SEQN_NODES.PARAMETER_DECLARATION) ?? [],
     tree,
     type: SequenceTypes.LIBRARY,
-    workspace_id: sequence.workspace_id,
+    workspace_id: workspaceId,
   };
 }
 

@@ -17,12 +17,12 @@
   import type { User, UserId } from '../../types/app';
   import type { Parcel, UserSequence, UserSequenceInsertInput } from '../../types/sequencing';
   import effects from '../../utilities/effects';
-  import { getSearchParameterNumber } from '../../utilities/generic';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions, isUserAdmin, isUserOwner } from '../../utilities/permissions';
   import { toInputFormat } from '../../utilities/sequence-editor/extension-points';
   import { logError } from '../../utilities/sequence-editor/logger';
+  import { getSearchParameterNumber } from '../../utilities/url';
   import PageTitle from '../app/PageTitle.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';

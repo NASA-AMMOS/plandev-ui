@@ -256,8 +256,8 @@ const gql = {
   `,
 
   CREATE_DICTIONARY: `#graphql
-    mutation CreateDictionary($dictionary: String!, $persistDictionaryToFilesystem: Boolean!) {
-      createDictionary: ${Queries.UPLOAD_DICTIONARY}(dictionary: $dictionary, persistDictionaryToFilesystem: $persistDictionaryToFilesystem) {
+    mutation CreateDictionary($dictionary: String!) {
+      createDictionary: ${Queries.UPLOAD_DICTIONARY}(dictionary: $dictionary) {
         command
         parameter
         channel
@@ -2707,6 +2707,20 @@ const gql = {
     }
   `,
 
+  SUB_PARCEL: `#graphql
+    subscription SubParcel($parcelId: number) {
+      ${Queries.PARCEL}(where: { id: {_eq: $parcelId } }) {
+        channel_dictionary_id
+        command_dictionary_id
+        created_at
+        id
+        name
+        sequence_adaptation_id
+        updated_at
+      }
+    }
+  `,
+
   SUB_PARCELS: `#graphql
     subscription SubParcels {
       ${Queries.PARCELS}(order_by: { id: desc }) {
@@ -3473,12 +3487,25 @@ const gql = {
     }
   `,
 
+  SUB_WORKSPACE: `#graphql
+    subscription SubWorkspace($workspaceId: Int!) {
+      workspace: ${Queries.WORKSPACE}(id: $workspaceId) {
+        id
+        name
+        parcel_id
+        disk_location
+      }
+    }
+  `,
+
   SUB_WORKSPACES: `#graphql
     subscription SubWorkspaces {
       ${Queries.WORKSPACES}(order_by: { id: desc }) {
         created_at
         id
+        parcel_id
         name
+        disk_location
         owner
         updated_at
       }

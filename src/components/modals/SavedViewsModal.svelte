@@ -7,7 +7,7 @@
   import type { User } from '../../types/app';
   import type { View, ViewSlim } from '../../types/view';
   import effects from '../../utilities/effects';
-  import { setQueryParam } from '../../utilities/generic';
+  import { setQueryParam } from '../../utilities/url';
   import { downloadView as downloadViewUtil } from '../../utilities/view';
   import Tab from '../ui/Tabs/Tab.svelte';
   import TabPanel from '../ui/Tabs/TabPanel.svelte';

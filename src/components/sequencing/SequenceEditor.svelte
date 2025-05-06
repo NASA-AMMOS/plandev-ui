@@ -15,37 +15,20 @@
   import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
-  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
-  import {
-    getGlobals,
-    inputFormat,
-    outputFormat as outputFormatStore,
-    sequenceAdaptation,
-    setSequenceAdaptation,
-  } from '../../stores/sequence-adaptation';
-  import {
-    channelDictionaries,
-    commandDictionaries,
-    getParsedChannelDictionary,
-    getParsedCommandDictionary,
-    getParsedParameterDictionary,
-    parameterDictionaries as parameterDictionariesStore,
-    parcelToParameterDictionaries,
-    userSequenceEditorColumns,
-    userSequenceEditorColumnsWithFormBuilder,
-    userSequences,
-  } from '../../stores/sequencing';
-  import type { User } from '../../types/app';
+  import { createEventDispatcher, onMount } from 'svelte';
+  import { defaultSequenceAdaptation } from '../../constants/sequence-adaptation';
+  import type { GlobalType } from '../../types/global-type';
   import {
     type ArgTextDef,
+    type IInputFormat,
     type IOutputFormat,
+    type ISequenceAdaptation,
     type LibrarySequence,
     type LibrarySequenceMap,
-    type Parcel,
     type TimeTagInfo,
+    type UserSequence,
   } from '../../types/sequencing';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
-  import effects from '../../utilities/effects';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import type { CommandInfoMapper } from '../../utilities/sequence-editor/command-info-mapper';
@@ -93,201 +76,162 @@
   import SectionTitle from '../ui/SectionTitle.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
 
-  export let parcel: Parcel | null;
-  export let showCommandFormBuilder: boolean = false;
-  export let readOnly: boolean = false;
+  export let adaptationGlobals: GlobalType[] = [];
+  export let channelDictionary: ChannelDictionary | null = null;
+  export let commandDictionary: CommandDictionary | null = null;
+  export let inputFormat: IInputFormat | undefined = undefined;
+  export let librarySequences: LibrarySequence[] = [];
+  export let outputFormats: IOutputFormat[] = [];
+  export let parameterDictionaries: ParameterDictionary[] = [];
   export let previewOnly: boolean = false;
-  export let sequenceName: string = '';
+  export let readOnly: boolean = false;
+  export let sequenceAdaptation: ISequenceAdaptation = defaultSequenceAdaptation;
   export let sequenceDefinition: string = '';
+  export let sequenceName: string = '';
   export let sequenceOutput: string = '';
+  export let showCommandFormBuilder: boolean = false;
   export let title: string = 'Sequence - Definition Editor';
-  export let user: User | null;
-  export let workspaceId: number | null;
+  export let userSequenceEditorColumns: string;
+  export let userSequenceEditorColumnsWithFormBuilder: string;
+  export let workspaceId: number | undefined = undefined;
+  export let workspaceSequences: UserSequence[] = [];
 
   const dispatch = createEventDispatcher<{
-    sequence: { input: string; output: string };
+    save: string;
+    sequence: { input: string; output?: string };
   }>();
 
   const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
   const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
+  let adaptation: ISequenceAdaptation = sequenceAdaptation;
+  let argInfoArray: ArgTextDef[] = [];
+  let commandDef: FswCommand | null = null;
+  let commandFormBuilderGrid: string;
+  let commandInfoMapper: CommandInfoMapper = new SeqNCommandInfoMapper();
+  let commandName: string | null = null;
+  let commandNameNode: SyntaxNode | null = null;
+  let commandNode: SyntaxNode | null = null;
+  let compartmentReadonly: Compartment;
+  let compartmentSeqAutocomplete: Compartment;
+  let compartmentSeqHighlighter: Compartment;
   let compartmentSeqJsonLinter: Compartment;
   let compartmentSeqLanguage: Compartment;
   let compartmentSeqLinter: Compartment;
   let compartmentSeqTooltip: Compartment;
-  let compartmentSeqAutocomplete: Compartment;
-  let compartmentSeqHighlighter: Compartment;
-  let compartmentReadonly: Compartment;
-  let channelDictionary: ChannelDictionary | null;
-  let commandDictionary: CommandDictionary | null;
+  let currentTree: Tree;
   let disableCopyAndExport: boolean = true;
-  let parameterDictionaries: ParameterDictionary[] = [];
-  let librarySequenceMap: LibrarySequenceMap = {};
-  let librarySequences: LibrarySequence[] = [];
-  let commandFormBuilderGrid: string;
+  let editorHeights: string = '1.88fr 3px 80px';
   let editorOutputDiv: HTMLDivElement;
   let editorOutputView: EditorView;
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
-  let menu: Menu;
-  let outputFormats: IOutputFormat[] = [];
-  let selectedNode: SyntaxNode | null;
-  let currentTree: Tree;
-  let commandInfoMapper: CommandInfoMapper = new SeqNCommandInfoMapper();
-  let selectedOutputFormat: IOutputFormat | undefined;
-  let toggleSeqJsonPreview: boolean = false;
   let isInVmlMode: boolean = false;
+  let librarySequenceMap: LibrarySequenceMap = {};
+  let menu: Menu;
+  let selectedNode: SyntaxNode | null;
+  let selectedOutputFormat: IOutputFormat | undefined;
   let showOutputs: boolean = true;
-  let editorHeights: string = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
-
-  let argInfoArray: ArgTextDef[] = [];
-  let commandNode: SyntaxNode | null = null;
-  let commandNameNode: SyntaxNode | null = null;
-  let commandName: string | null = null;
-  let commandDef: FswCommand | null = null;
   let timeTagNode: TimeTagInfo = null;
+  let toggleSeqJsonPreview: boolean = false;
   let variablesInScope: string[] = [];
-
-  $: loadSequenceAdaptation(parcel?.sequence_adaptation_id);
+  let updatedSequenceDefinition: string = sequenceDefinition;
+  let isSequenceDefinitionUpdated: boolean = false;
 
   $: isInVmlMode = isVmlSequence(sequenceName);
 
-  $: {
-    if (editorSequenceView) {
-      // insert sequence
+  $: if (editorSequenceView) {
+    // insert sequence
+    editorSequenceView.dispatch({
+      changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
+    });
+  }
+
+  $: if (compartmentSeqHighlighter && editorSequenceView) {
+    if (isInVmlMode) {
       editorSequenceView.dispatch({
-        changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
+        effects: compartmentSeqHighlighter.reconfigure([
+          EditorView.updateListener.of(debouncedVmlHighlightBlock),
+          vmlBlockHighlighter,
+        ]),
+      });
+    } else {
+      editorSequenceView.dispatch({
+        effects: compartmentSeqHighlighter.reconfigure([
+          EditorView.updateListener.of(debouncedSeqNHighlightBlock),
+          seqqNBlockHighlighter,
+        ]),
       });
     }
   }
+  // $: {
+  //   editorSequenceView.dispatch({
+  //     effects: [EditorView.updateListener.of(debounce(sequenceUpdateListener, 250))],
+  //   });
+  // }
 
-  $: {
-    if (compartmentSeqHighlighter && editorSequenceView) {
-      if (isInVmlMode) {
-        editorSequenceView.dispatch({
-          effects: compartmentSeqHighlighter.reconfigure([
-            EditorView.updateListener.of(debouncedVmlHighlightBlock),
-            vmlBlockHighlighter,
-          ]),
-        });
-      } else {
-        editorSequenceView.dispatch({
-          effects: compartmentSeqHighlighter.reconfigure([
-            EditorView.updateListener.of(debouncedSeqNHighlightBlock),
-            seqqNBlockHighlighter,
-          ]),
-        });
-      }
-    }
-  }
+  $: commandFormBuilderGrid = showCommandFormBuilder
+    ? userSequenceEditorColumnsWithFormBuilder
+    : userSequenceEditorColumns;
 
-  $: {
-    commandFormBuilderGrid = showCommandFormBuilder
-      ? $userSequenceEditorColumnsWithFormBuilder
-      : $userSequenceEditorColumns;
-  }
-
-  $: {
-    const unparsedChannelDictionary = $channelDictionaries.find(cd => cd.id === parcel?.channel_dictionary_id);
-    const unparsedCommandDictionary = $commandDictionaries.find(cd => cd.id === parcel?.command_dictionary_id);
-    const unparsedParameterDictionaries = $parameterDictionariesStore.filter(pd => {
-      const parameterDictionary = $parcelToParameterDictionaries.find(
-        p => p.parameter_dictionary_id === pd.id && p.parcel_id === parcel?.id,
-      );
-
-      return parameterDictionary != null;
-    });
-
+  $: if (workspaceId != null) {
     if (isInVmlMode) {
-      librarySequences = $userSequences
-        .filter(sequence => sequence.workspace_id === workspaceId)
-        .flatMap(sequence => parseFunctionSignatures(sequence.definition, sequence.workspace_id));
+      librarySequences = workspaceSequences.flatMap(sequence =>
+        parseFunctionSignatures(sequence.definition, workspaceId),
+      );
     } else {
-      librarySequences = $userSequences
-        .filter(sequence => sequence.workspace_id === workspaceId && sequence.name !== sequenceName)
-        .map(userSequenceToLibrarySequence);
+      librarySequences = workspaceSequences.map(sequence => userSequenceToLibrarySequence(sequence, workspaceId));
     }
-
-    librarySequenceMap = Object.fromEntries(librarySequences.map(seq => [seq.name, seq]));
-
-    if (unparsedCommandDictionary) {
+  }
+  $: librarySequenceMap = Object.fromEntries(librarySequences.map(seq => [seq.name, seq]));
+  $: {
+    if (commandDictionary) {
       if (sequenceName && isInVmlMode) {
-        getParsedCommandDictionary(unparsedCommandDictionary, user).then(parsedCommandDictionary => {
-          commandDictionary = parsedCommandDictionary;
-          editorSequenceView.dispatch({
-            effects: compartmentSeqLanguage.reconfigure(
-              setupVmlLanguageSupport(
-                vmlAutoComplete(commandDictionary, $sequenceAdaptation.globals ?? [], librarySequenceMap),
-              ),
-            ),
-          });
-          editorSequenceView.dispatch({
-            effects: compartmentSeqLinter.reconfigure(
-              vmlLinter(commandDictionary, librarySequenceMap, $sequenceAdaptation.globals ?? []),
-            ),
-          });
-          editorSequenceView.dispatch({
-            effects: compartmentSeqTooltip.reconfigure(vmlTooltip(commandDictionary, librarySequenceMap)),
-          });
+        editorSequenceView.dispatch({
+          effects: compartmentSeqLanguage.reconfigure(
+            setupVmlLanguageSupport(vmlAutoComplete(commandDictionary, adaptation.globals ?? [], librarySequenceMap)),
+          ),
+        });
+        editorSequenceView.dispatch({
+          effects: compartmentSeqLinter.reconfigure(
+            vmlLinter(commandDictionary, librarySequenceMap, adaptation.globals ?? []),
+          ),
+        });
+        editorSequenceView.dispatch({
+          effects: compartmentSeqTooltip.reconfigure(vmlTooltip(commandDictionary, librarySequenceMap)),
         });
       } else {
-        Promise.all([
-          getParsedCommandDictionary(unparsedCommandDictionary, user),
-          unparsedChannelDictionary ? getParsedChannelDictionary(unparsedChannelDictionary, user) : null,
-          ...unparsedParameterDictionaries.map(unparsedParameterDictionary => {
-            return getParsedParameterDictionary(unparsedParameterDictionary, user);
-          }),
-        ]).then(([parsedCommandDictionary, parsedChannelDictionary, ...parsedParameterDictionaries]) => {
-          const nonNullParsedParameterDictionaries = parsedParameterDictionaries.filter(
-            (pd): pd is ParameterDictionary => !!pd,
-          );
-
-          channelDictionary = parsedChannelDictionary;
-          commandDictionary = parsedCommandDictionary;
-          parameterDictionaries = nonNullParsedParameterDictionaries;
-
-          // Reconfigure sequence editor.
-          editorSequenceView.dispatch({
-            effects: [
-              // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
-              compartmentSeqLanguage.reconfigure(
-                setupLanguageSupport(
-                  $sequenceAdaptation.autoComplete(
-                    parsedChannelDictionary,
-                    parsedCommandDictionary,
-                    nonNullParsedParameterDictionaries,
-                    librarySequences,
-                  ),
-                ),
+        // Reconfigure sequence editor.
+        editorSequenceView.dispatch({
+          effects: [
+            // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
+            compartmentSeqLanguage.reconfigure(
+              setupLanguageSupport(
+                adaptation.autoComplete(channelDictionary, commandDictionary, parameterDictionaries, librarySequences),
               ),
-              compartmentSeqLinter.reconfigure(
-                inputLinter(
-                  $sequenceAdaptation,
-                  getGlobals(),
-                  parsedChannelDictionary,
-                  parsedCommandDictionary,
-                  nonNullParsedParameterDictionaries,
-                  librarySequences,
-                ),
+            ),
+            compartmentSeqLinter.reconfigure(
+              inputLinter(
+                adaptation,
+                adaptationGlobals,
+                channelDictionary,
+                commandDictionary,
+                parameterDictionaries,
+                librarySequences,
               ),
-              compartmentSeqTooltip.reconfigure(
-                sequenceTooltip(
-                  $sequenceAdaptation,
-                  parsedChannelDictionary,
-                  parsedCommandDictionary,
-                  nonNullParsedParameterDictionaries,
-                ),
-              ),
-              ...($sequenceAdaptation.autoIndent
-                ? [compartmentSeqAutocomplete.reconfigure(indentService.of($sequenceAdaptation.autoIndent()))]
-                : []),
-            ],
-          });
+            ),
+            compartmentSeqTooltip.reconfigure(
+              sequenceTooltip(adaptation, channelDictionary, commandDictionary, parameterDictionaries),
+            ),
+            ...(adaptation.autoIndent
+              ? [compartmentSeqAutocomplete.reconfigure(indentService.of(adaptation.autoIndent()))]
+              : []),
+          ],
+        });
 
-          // Reconfigure seq JSON editor.
-          editorOutputView.dispatch({
-            effects: compartmentSeqJsonLinter.reconfigure(outputLinter(parsedCommandDictionary, selectedOutputFormat)),
-          });
+        // Reconfigure seq JSON editor.
+        editorOutputView.dispatch({
+          effects: compartmentSeqJsonLinter.reconfigure(outputLinter(commandDictionary, selectedOutputFormat)),
         });
       }
     } else {
@@ -301,14 +245,20 @@
   });
 
   $: showOutputs = !isInVmlMode && outputFormats.length > 0;
-  $: {
-    if (showOutputs) {
-      editorHeights = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
-    } else {
-      editorHeights = '1fr 3px';
-    }
+  $: if (showOutputs) {
+    editorHeights = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
+  } else {
+    editorHeights = '1fr 3px';
   }
 
+  $: if (sequenceAdaptation) {
+    selectedOutputFormat = sequenceAdaptation.outputFormat[0];
+  }
+  $: if (isInVmlMode) {
+    adaptation = vmlAdaptation;
+  } else {
+    adaptation = sequenceAdaptation;
+  }
   $: commandNode = commandInfoMapper.getContainingCommand(selectedNode);
   $: commandNameNode = commandInfoMapper.getNameNode(commandNode);
   $: commandName =
@@ -324,95 +274,18 @@
     commandDef?.arguments,
     undefined,
     parameterDictionaries,
-    $sequenceAdaptation,
+    adaptation,
   );
   $: variablesInScope = getVariablesInScope(
     commandInfoMapper,
     editorSequenceView,
-    $sequenceAdaptation,
+    adaptation,
     currentTree,
     commandNode?.from,
   );
 
-  onMount(() => {
-    compartmentReadonly = new Compartment();
-    compartmentSeqJsonLinter = new Compartment();
-    compartmentSeqLanguage = new Compartment();
-    compartmentSeqLinter = new Compartment();
-    compartmentSeqTooltip = new Compartment();
-    compartmentSeqAutocomplete = new Compartment();
-    compartmentSeqHighlighter = new Compartment();
-
-    editorSequenceView = new EditorView({
-      doc: sequenceDefinition,
-      extensions: [
-        basicSetup,
-        EditorView.lineWrapping,
-        EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
-        lintGutter(),
-        compartmentSeqLanguage.of(setupLanguageSupport($sequenceAdaptation.autoComplete(null, null, [], []))),
-        compartmentSeqLinter.of(inputLinter($sequenceAdaptation, getGlobals())),
-        compartmentSeqTooltip.of(sequenceTooltip($sequenceAdaptation)),
-        EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
-        EditorView.updateListener.of(selectedCommandUpdateListener),
-        blockTheme,
-        compartmentSeqHighlighter.of([
-          EditorView.updateListener.of(debouncedSeqNHighlightBlock),
-          seqqNBlockHighlighter,
-        ]),
-        ...($sequenceAdaptation.autoIndent
-          ? [compartmentSeqAutocomplete.of(indentService.of($sequenceAdaptation.autoIndent()))]
-          : []),
-        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
-      ],
-      parent: editorSequenceDiv,
-    });
-
-    editorOutputView = new EditorView({
-      doc: sequenceOutput,
-      extensions: [
-        basicSetup,
-        EditorView.lineWrapping,
-        EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
-        EditorView.editable.of(false),
-        lintGutter(),
-        json(),
-        compartmentSeqJsonLinter.of(outputLinter()),
-        EditorState.readOnly.of(readOnly),
-      ],
-      parent: editorOutputDiv,
-    });
-  });
-
-  onDestroy(() => {
-    resetSequenceAdaptation();
-  });
-
-  async function loadSequenceAdaptation(id: number | null | undefined): Promise<void> {
-    if (id) {
-      const adaptation = await effects.getSequenceAdaptation(id, user);
-
-      if (adaptation) {
-        try {
-          setSequenceAdaptation(eval(String(adaptation.adaptation)));
-        } catch (e) {
-          console.error(e);
-          showFailureToast('Invalid sequence adaptation');
-        }
-      }
-    } else if (isInVmlMode) {
-      setSequenceAdaptation(vmlAdaptation);
-    } else {
-      resetSequenceAdaptation();
-    }
-
-    outputFormats = $outputFormatStore;
-    selectedOutputFormat = outputFormats[0];
-  }
-
-  function resetSequenceAdaptation(): void {
-    setSequenceAdaptation(undefined);
-  }
+  $: updatedSequenceDefinition = sequenceDefinition;
+  $: isSequenceDefinitionUpdated = updatedSequenceDefinition === sequenceDefinition;
 
   function compile(): void {
     if (selectedOutputFormat?.compile) {
@@ -426,8 +299,8 @@
     const tree = syntaxTree(viewUpdate.state);
     let output = await selectedOutputFormat?.toOutputFormat?.(tree, sequence, commandDictionary, sequenceName);
 
-    if ($sequenceAdaptation?.modifyOutput !== undefined && output !== undefined) {
-      const modifiedOutput = $sequenceAdaptation.modifyOutput(output, parameterDictionaries, channelDictionary);
+    if (adaptation.modifyOutput !== undefined && output !== undefined) {
+      const modifiedOutput = adaptation.modifyOutput(output, parameterDictionaries, channelDictionary);
       if (modifiedOutput === null) {
         output = 'modifyOutput returned null. Verify your adaptation is correct';
       } else if (modifiedOutput === undefined) {
@@ -441,6 +314,7 @@
 
     editorOutputView.dispatch({ changes: { from: 0, insert: output, to: editorOutputView.state.doc.length } });
 
+    updatedSequenceDefinition = sequence;
     if (output !== undefined) {
       dispatch('sequence', { input: sequence, output });
     }
@@ -491,9 +365,9 @@
   async function copyInputFormatToClipboard(): Promise<void> {
     try {
       await navigator.clipboard.writeText(editorSequenceView.state.doc.toString());
-      showSuccessToast(`${$inputFormat?.name} copied to clipboard`);
+      showSuccessToast(`${inputFormat?.name} copied to clipboard`);
     } catch {
-      showFailureToast(`Error copying ${$inputFormat?.name} to clipboard`);
+      showFailureToast(`Error copying ${inputFormat?.name} to clipboard`);
     }
   }
 
@@ -512,6 +386,58 @@
       seqNFormat(editorSequenceView);
     }
   }
+
+  function onSave() {
+    dispatch('save', updatedSequenceDefinition);
+  }
+
+  onMount(() => {
+    compartmentReadonly = new Compartment();
+    compartmentSeqJsonLinter = new Compartment();
+    compartmentSeqLanguage = new Compartment();
+    compartmentSeqLinter = new Compartment();
+    compartmentSeqTooltip = new Compartment();
+    compartmentSeqAutocomplete = new Compartment();
+    compartmentSeqHighlighter = new Compartment();
+
+    editorSequenceView = new EditorView({
+      doc: sequenceDefinition,
+      extensions: [
+        basicSetup,
+        EditorView.lineWrapping,
+        EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
+        lintGutter(),
+        compartmentSeqLanguage.of(setupLanguageSupport(adaptation.autoComplete(null, null, [], []))),
+        compartmentSeqLinter.of(inputLinter(adaptation, adaptationGlobals)),
+        compartmentSeqTooltip.of(sequenceTooltip(adaptation)),
+        EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
+        EditorView.updateListener.of(selectedCommandUpdateListener),
+        blockTheme,
+        compartmentSeqHighlighter.of([
+          EditorView.updateListener.of(debouncedSeqNHighlightBlock),
+          seqqNBlockHighlighter,
+        ]),
+        ...(adaptation.autoIndent ? [compartmentSeqAutocomplete.of(indentService.of(adaptation.autoIndent()))] : []),
+        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
+      ],
+      parent: editorSequenceDiv,
+    });
+
+    editorOutputView = new EditorView({
+      doc: sequenceOutput,
+      extensions: [
+        basicSetup,
+        EditorView.lineWrapping,
+        EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
+        EditorView.editable.of(false),
+        lintGutter(),
+        json(),
+        compartmentSeqJsonLinter.of(outputLinter()),
+        EditorState.readOnly.of(readOnly),
+      ],
+      parent: editorOutputDiv,
+    });
+  });
 </script>
 
 <CssGrid bind:columns={commandFormBuilderGrid} minHeight={'0'}>
@@ -593,6 +519,16 @@
             {#if selectedOutputFormat?.compile}
               <button class="st-button icon-button secondary ellipsis" on:click={compile}>Compile</button>
             {/if}
+          {/if}
+          {#if !readOnly}
+            <button
+              class="st-button icon-button ellipsis"
+              class:secondary={isSequenceDefinitionUpdated}
+              disabled={isSequenceDefinitionUpdated}
+              on:click={onSave}
+            >
+              Save
+            </button>
           {/if}
         </div>
       </svelte:fragment>

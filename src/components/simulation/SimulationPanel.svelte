@@ -31,12 +31,12 @@
   } from '../../types/simulation';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
-  import { setQueryParam } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { getSimulationQueuePosition } from '../../utilities/simulation';
   import { formatDate, getDoyTime } from '../../utilities/time';
+  import { setQueryParam } from '../../utilities/url';
   import { required, validateStartTime } from '../../utilities/validators';
   import Collapse from '../Collapse.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';

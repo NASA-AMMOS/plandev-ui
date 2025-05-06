@@ -41,7 +41,7 @@
   import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import { generateRandomPastelColor } from '../../utilities/color';
   import effects from '../../utilities/effects';
-  import { parseJSONStream, removeQueryParam } from '../../utilities/generic';
+  import { parseJSONStream } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { exportPlan, isDeprecatedPlanTransfer } from '../../utilities/plan';
@@ -55,6 +55,7 @@
     getShortISOForDate,
   } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
+  import { removeQueryParam } from '../../utilities/url';
   import { min, required, unique } from '../../utilities/validators';
   import type { PageData } from './$types';
 
