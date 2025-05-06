@@ -113,6 +113,7 @@ const functionQueryMap: Record<QueryString, FunctionString> = {
   [Queries.GET_CONFLICTING_ACTIVITIES]: 'get_conflicting_activities',
   [Queries.GET_NON_CONFLICTING_ACTIVITIES]: 'get_non_conflicting_activities',
   get_plan_history: 'get_plan_history',
+  [Queries.MIGRATE_PLAN_TO_MODEL]: 'migrate_plan_to_model',
   resourceSamples: 'resource_samples',
   [Queries.RESTORE_FROM_SNAPSHOT]: 'restore_snapshot',
   [Queries.SCHEDULE]: 'schedule',
@@ -1566,7 +1567,9 @@ const featurePermissions: FeaturePermissions = {
     canRead: user => queryPermissions.GET_PLAN(user),
     canUpdate: (user, plan) => queryPermissions.UPDATE_PLAN(user, plan),
     canUpdateModel: (user, plan) =>
-      queryPermissions.CREATE_PLAN_SNAPSHOT(user) && queryPermissions.UPDATE_PLAN(user, plan),
+      queryPermissions.CREATE_PLAN_SNAPSHOT(user) &&
+      queryPermissions.UPDATE_PLAN(user, plan) &&
+      queryPermissions.MIGRATE_PLAN_TO_MODEL(user),
   },
   planBranch: {
     canCreateBranch: (user, plan, model) => queryPermissions.DUPLICATE_PLAN(user, plan, model),

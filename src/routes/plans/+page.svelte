@@ -717,10 +717,10 @@
                 </Input>
                 <button
                   class="st-button secondary change-mission-model"
-                  use:tooltip={{ content: 'Change Mission Model', placement: 'top' }}
+                  use:tooltip={{ content: canChangePlanModel ? 'Change Mission Model' : '', placement: 'top' }}
                   use:permissionHandler={{
                     hasPermission: canChangePlanModel,
-                    permissionError: `You don't have permission to change mission model`,
+                    permissionError: 'You do not have permission to change mission model',
                   }}
                   on:click|stopPropagation={openChangePlanMissionModelModal}
                 >
