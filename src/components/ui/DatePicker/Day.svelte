@@ -60,7 +60,7 @@
   <div class="date">{date.getUTCDate()}</div>
 </Button>
 
-<style>
+<style lang="postcss">
   :global(.date-picker-day) {
     border-radius: 5px;
     cursor: pointer;
