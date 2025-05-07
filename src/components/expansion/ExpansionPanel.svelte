@@ -34,7 +34,7 @@
   const deletePermissionSequenceError: string = 'You do not have permission to delete an expansion sequence.';
   const deletePermissionSequenceFilterError: string = 'You do not have permission to delete a sequence filter';
 
-  let contextMenu: ContextMenu;
+  let contextMenu: ContextMenuInternal;
   let filterText: string;
   let newButton: HTMLElement;
   let sequencesAndFilters: (ExpansionSequence | SequenceFilter)[] = [];
