@@ -533,9 +533,9 @@ export class Plan {
 
   updatePage(page: Page): void {
     this.appError = page.locator('.app-error');
-    this.activitiesTable = page.locator(`div.ag-theme-stellar.table`);
+    this.activitiesTable = page.locator(`div.ag-theme-stellar.data-grid-table`);
     this.activitiesTableFirstRow = page
-      .locator(`div.ag-theme-stellar.table .ag-center-cols-container > .ag-row`)
+      .locator(`div.ag-theme-stellar.data-grid-table .ag-center-cols-container > .ag-row`)
       .nth(0);
     this.constraintManageButton = page.locator(`button[name="manage-constraints"]`);
     this.constraintModalFilter = page.locator('.modal').getByPlaceholder('Filter constraints');
