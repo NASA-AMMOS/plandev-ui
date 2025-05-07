@@ -24,10 +24,8 @@
   } from 'lucide-svelte';
   import { onMount } from 'svelte';
   import AerieWordmarkDark from '../../assets/aerie-wordmark-dark.svg?component';
-  import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
   import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
   import { SequencingMode } from '../../enums/sequencing';
-  import type { User } from '../../types/app';
   import type { User, Version } from '../../types/app';
   import effects from '../../utilities/effects';
   import { logout } from '../../utilities/login';
@@ -110,10 +108,18 @@
             <BookA size={16} />
             Dictionaries
           </MenuLink>
-          <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/expansion/rules">
-            <ChevronsLeftRight size={16} />
-            Expansion
-          </MenuLink>
+          {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
+            <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/expansion/rules">
+              <ChevronsLeftRight size={16} />
+              Expansion
+            </MenuLink>
+          {/if}
+          {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING}
+            <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/sequence-templates">
+              <ChevronsLeftRight size={16} />
+              Expansion
+            </MenuLink>
+          {/if}
           <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/parcels">
             <Archive size={16} />
             Parcels
