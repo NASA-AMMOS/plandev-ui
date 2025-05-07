@@ -31,6 +31,7 @@
   export let modelParametersMap: ParametersMap = {};
   export let planStartTimeMs: number;
   export let planEndTimeMs: number;
+  export let planModelId: number;
   export let selected: boolean = false;
   export let simulationDataset: SimulationDataset;
   export let queuePosition: number = -1;
@@ -50,7 +51,9 @@
   let simulationExtentVizRangeWidth = 0;
   let startTimeText: string = '';
   let status: Status | null = null;
+  let simulationLoadable: boolean = true;
 
+  $: simulationLoadable = planModelId === simulationDataset.model_id;
   $: simulationBoundsVizRangeWidthStyle =
     simulationBoundsVizRangeWidth < 1 ? '4px' : `${simulationBoundsVizRangeWidth}%`;
   $: simulationExtentVizRangeWidthStyle =
@@ -129,6 +132,7 @@
   user={simulationDataset.requested_by}
   {selected}
   on:click={() => dispatch('click')}
+  interactable={simulationLoadable}
 >
   <div slot="right">
     <div class="simulation-dataset-status-chip-container">

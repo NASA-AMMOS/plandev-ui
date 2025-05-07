@@ -3383,6 +3383,7 @@ const gql = {
         dataset_id
         canceled
         id
+        model_id
         plan_revision
         reason
         requested_at
@@ -3406,6 +3407,7 @@ const gql = {
           arguments
           canceled
           id
+          model_id
           dataset_id
           plan_revision
           requested_at
@@ -3439,6 +3441,7 @@ const gql = {
           dataset_id
           canceled
           id
+          model_id
           plan_revision
           reason
           requested_at
