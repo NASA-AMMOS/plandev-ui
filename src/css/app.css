@@ -11,7 +11,6 @@
 @import '@nasa-jpl/stellar/css/button.css';
 @import '@nasa-jpl/stellar/css/input.css';
 @import '@nasa-jpl/stellar/css/select.css';
-@import '@nasa-jpl/stellar/css/table.css';
 @import '@nasa-jpl/stellar/css/badge.css';
 
 @import './stellar.css';
@@ -56,7 +55,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 233 57% 37%;
+    --primary: 210 40% 98%;
     --primary-foreground: 0 0% 9%;
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
@@ -204,4 +203,9 @@ fieldset {
   outline: 0;
   overflow: hidden;
   z-index: 1000;
+}
+
+/* Revert zeroing out of padding on selects for now which is coming from tailwind https://github.com/sindresorhus/modern-normalize/blob/main/modern-normalize.css */
+select {
+  padding: revert !important;
 }
