@@ -119,22 +119,6 @@ export class Plan {
     );
   }
 
-  /* TODO saving this work for a future PR */
-  // async addActivityAsFilter(name: string = 'GrowBanana') {
-  //   const activityListItem = await this.page.waitForSelector(`.list-item:has-text("${name}")`);
-  //   await activityListItem.hover();
-  //   const addButton = await this.page.getByLabel(`AddActivity-${name}`);
-  //   await addButton.click();
-  //   const contextMenuItem = await this.page.waitForSelector(
-  //     '.context-menu .context-menu-item:has-text("Activities by Type")',
-  //   );
-  //   await contextMenuItem.hover();
-  //   const contextSubMenuItem = await contextMenuItem.waitForSelector(
-  //     ".context-menu .context-menu-item:has-text('Activity Layer')",
-  //   );
-  //   await contextSubMenuItem.click();
-  // }
-
   async addPlanCollaborator(name: string, isUsername = true) {
     await this.showPanel(PanelNames.PLAN_METADATA, true);
     await this.waitForPlanCollaboratorLoad();
@@ -274,7 +258,7 @@ export class Plan {
     const gridCells = await this.panelActivityDirectivesTable.getByRole('gridcell');
     if ((await gridCells.count()) > 0) {
       await this.panelActivityDirectivesTable.getByRole('gridcell').first().click({ button: 'right' });
-      await this.page.locator('.context-menu > .context-menu-item:has-text("Select All Activity Directives")').click();
+      await this.page.getByRole('menuitem', { name: 'Select All Activity Directives' });
       await this.panelActivityDirectivesTable.getByRole('gridcell').first().click({ button: 'right' });
       await this.page.getByText(/Delete \d+ Activit(y|ies) Directives?/).click();
 
