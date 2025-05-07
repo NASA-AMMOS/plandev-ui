@@ -101,10 +101,3 @@
   on:rowSelected
   on:selectionChanged
 />
-
-<style>
-  :global(.context-menu-item.disabled) {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-</style>

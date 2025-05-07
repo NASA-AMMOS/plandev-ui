@@ -360,7 +360,7 @@
     margin-left: 0;
   }
 
-  .scheduling-goal.disabled :global(*:not(.collapse-icon *):not(.context-menu *)) {
+  .scheduling-goal.disabled :global(*:not(.collapse-icon *)) {
     color: var(--st-gray-30) !important;
   }
 

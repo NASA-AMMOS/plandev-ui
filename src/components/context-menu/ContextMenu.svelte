@@ -79,20 +79,3 @@
     <slot />
   </ContextMenu.Content>
 </ContextMenu.Root>
-
-<style>
-  .context-menu {
-    background: #fff;
-    border: var(--st-border-popover);
-    border-radius: var(--st-border-radius-popover);
-    box-shadow: var(--st-shadow-popover);
-    display: block;
-    max-height: calc(100vh - 16px);
-    min-width: 150px;
-    outline: 0;
-    overflow: auto;
-    padding: 4px;
-    position: fixed;
-    z-index: 100;
-  }
-</style>
