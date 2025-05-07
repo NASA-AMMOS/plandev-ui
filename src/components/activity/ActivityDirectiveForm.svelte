@@ -524,7 +524,7 @@
 
   <div class="activity-form">
     <fieldset>
-      <Collapse title="Definition">
+      <Collapse title="Definition" contentClass="px-1">
         {#if showActivityName}
           <Highlight highlight={highlightKeysMap.name}>
             <Input layout="inline">
@@ -649,6 +649,7 @@
           <Input layout="inline">
             <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="activityDirectiveTags"> Tags </label>
             <TagsInput
+              name="Directive tags"
               disabled={!hasUpdatePermission}
               options={tags}
               selected={activityDirective.tags.map(({ tag }) => tag)}

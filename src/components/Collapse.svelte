@@ -10,6 +10,7 @@
 
   export let className: string = '';
   export let collapsible: boolean = true;
+  export let contentClass: string = '';
   export let defaultExpanded: boolean = true;
   export let headerHeight: number = 32;
   export let error: boolean = false;
@@ -68,7 +69,12 @@
     </div>
   </button>
   <slot name="action-row" />
-  <div class="content" class:pad-content={padContent} class:expanded aria-hidden={collapsible ? !expanded : false}>
+  <div
+    class={classNames('content', { [contentClass]: !!contentClass })}
+    class:pad-content={padContent}
+    class:expanded
+    aria-hidden={collapsible ? !expanded : false}
+  >
     <slot />
   </div>
 </div>
