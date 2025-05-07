@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import CancelIcon from '@nasa-jpl/stellar/icons/prohibited.svg?component';
+  import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { InvalidDate } from '../../constants/time';
   import { Status } from '../../enums/status';
@@ -206,6 +207,11 @@
         <div class="p-1">No simulation arguments found</div>
       {/if}
     </Collapse>
+    {#if !simulationLoadable}
+    <div class="st-typography-label message" use:tooltip={{ content: `Simulation cannot be loaded since simulation's model (ID: ${simulationDataset.model_id}) does not match current plan's model (ID: ${planModelId})` }}>
+      <WarningIcon class="red-icon" />Model Differs
+    </div>
+    {/if}
   </div>
 </Card>
 
@@ -376,5 +382,18 @@
   .simulation-dataset-status-chip-container {
     display: flex;
     gap: 4px;
+  }
+
+  .message {
+    background: #fff4f4;
+    border: 1px solid var(--st-error-red);
+    border-radius: 24px;
+    color: var(--st-error-red);
+    display: flex;
+    flex: 0;
+    gap: 4px;
+    padding: 4px 8px;
+    white-space: nowrap;
+    width: min-content;
   }
 </style>
