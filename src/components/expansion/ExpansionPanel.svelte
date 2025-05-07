@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
@@ -20,9 +21,7 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { tooltip } from '../../utilities/tooltip';
-  import ContextMenu from '../context-menu/ContextMenu.svelte';
-  import ContextMenuHeader from '../context-menu/ContextMenuHeader.svelte';
-  import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
+  import ContextMenuInternal from '../context-menu/ContextMenu.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import ModalFooter from '../modals/ModalFooter.svelte';
   import ActivityFilterBuilder from '../timeline/form/TimelineEditor/ActivityFilterBuilder.svelte';
@@ -255,11 +254,11 @@
         >
           Expand All
         </button>
-        <ContextMenu bind:this={contextMenu}>
-          <ContextMenuHeader>Create new...</ContextMenuHeader>
-          <ContextMenuItem on:click={onShowSequenceCreate}>Sequence</ContextMenuItem>
-          <ContextMenuItem on:click={onShowFilterCreate}>Sequence Filter</ContextMenuItem>
-        </ContextMenu>
+        <ContextMenuInternal bind:this={contextMenu}>
+          <ContextMenu.Label>Create new...</ContextMenu.Label>
+          <ContextMenu.Item on:click={onShowSequenceCreate}>Sequence</ContextMenu.Item>
+          <ContextMenu.Item on:click={onShowFilterCreate}>Sequence Filter</ContextMenu.Item>
+        </ContextMenuInternal>
       </div>
     </div>
     <div class="sne-items">

@@ -26,7 +26,6 @@
   import { pluralize } from '../../utilities/text';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
-  import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
   import ConstraintViolationButton from './ConstraintViolationButton.svelte';
