@@ -27,7 +27,7 @@
   let file: File;
   let fileInput: HTMLInputElement;
   let isSequenceAdaptation: boolean = false;
-  let persistDictionaryToFilesystem: boolean = false;
+  let persistDictionaryToFilesystem: boolean = true;
   let sequenceAdaptationName: string;
 
   $: hasCreatePermission =
@@ -138,7 +138,7 @@
                 bind:checked={persistDictionaryToFilesystem}
                 class="st-input"
                 name="Save Dictionary"
-                on:change={() => (persistDictionaryToFilesystem = true)}
+                on:change={() => (persistDictionaryToFilesystem = !persistDictionaryToFilesystem)}
                 type="checkbox"
               />
             </fieldset>

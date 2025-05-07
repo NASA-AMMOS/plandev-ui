@@ -6953,7 +6953,7 @@ const effects = {
   async uploadDictionary(
     dictionary: string,
     user: User | null,
-    persistDictionaryToFilesystem: boolean = false,
+    persistDictionaryToFilesystem: boolean = true,
   ): Promise<{
     channel?: ChannelDictionaryMetadata;
     command?: CommandDictionaryMetadata;
