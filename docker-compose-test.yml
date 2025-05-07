@@ -20,7 +20,7 @@ services:
       ACTION_LOCAL_STORE: /usr/src/app/action_file_store
       ACTION_WORKER_NUM: 8
       ACTION_MAX_WORKER_NUM: 8
-    image: 'ghcr.io/nasa-ammos/aerie-actions:${AERIE_IMAGE_TAG:-develop}'
+    image: 'ghcr.io/nasa-ammos/aerie-action:${AERIE_IMAGE_TAG:-develop}'
     ports: ['27186:27186']
     restart: always
     volumes:
