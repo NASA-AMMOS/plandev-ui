@@ -31,7 +31,7 @@
       : planSnapshot.tags.map(tag => tag.tag).slice(0, maxVisibleTags);
   $: snapshotPreviewable = planModelId === planSnapshot.model_id;
   $: disabledPreviewMessage = !snapshotPreviewable
-    ? `Snapshot can be restored but not previewed since plan snapshot model (ID: ${planSnapshot.model_id}) does not match current plan model (ID: ${planModelId})`
+    ? `Snapshot can be restored but not previewed since plan snapshot's model (ID: ${planSnapshot.model_id}) does not match current plan's model (ID: ${planModelId})`
     : '';
 
   const dispatch = createEventDispatcher<{
