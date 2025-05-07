@@ -168,7 +168,7 @@
 <div class="plan-form">
   {#if plan}
     <fieldset>
-      <Collapse title="Details">
+      <Collapse title="Details" contentClass="px-1">
         <svelte:fragment slot="right">
           {#if planExporting}
             <button class="st-button icon progress" on:click|stopPropagation={() => {}}>
