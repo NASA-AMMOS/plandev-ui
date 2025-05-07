@@ -258,7 +258,7 @@ export class Plan {
     const gridCells = await this.panelActivityDirectivesTable.getByRole('gridcell');
     if ((await gridCells.count()) > 0) {
       await this.panelActivityDirectivesTable.getByRole('gridcell').first().click({ button: 'right' });
-      await this.page.getByRole('menuitem', { name: 'Select All Activity Directives' });
+      await this.page.getByRole('menuitem', { name: 'Select All Activity Directives' }).click();
       await this.panelActivityDirectivesTable.getByRole('gridcell').first().click({ button: 'right' });
       await this.page.getByText(/Delete \d+ Activit(y|ies) Directives?/).click();
 
