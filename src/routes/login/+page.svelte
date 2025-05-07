@@ -5,7 +5,6 @@
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { Button, Input, Label } from '@nasa-jpl/stellar-svelte';
-  import { onMount } from 'svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import { SearchParameters } from '../../enums/searchParameters';
   import type { LoginResponseBody } from '../../types/auth';
@@ -21,7 +20,6 @@
   let password = '';
   let reason = $page.url.searchParams.get(SearchParameters.REASON);
   let username = '';
-  let usernameInput: HTMLInputElement | null = null;
 
   $: if (data.user?.permissibleQueries && hasNoAuthorization(data.user)) {
     error = 'You are not authorized';
@@ -40,12 +38,6 @@
 
     removeQueryParam(SearchParameters.REASON);
   }
-
-  onMount(() => {
-    if (usernameInput) {
-      // usernameInput.focus();
-    }
-  });
 
   async function login() {
     error = null;
