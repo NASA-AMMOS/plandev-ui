@@ -33,7 +33,7 @@ describe('TagsInput component', () => {
     });
 
     // Input name should match name prop
-    expect((getByRole('textbox') as HTMLInputElement).name).to.equal('Test Name');
+    expect((getByRole('textbox') as HTMLInputElement).ariaLabel).to.equal('Test Name');
 
     // Input name should match name prop
     selected.forEach(tag => {
