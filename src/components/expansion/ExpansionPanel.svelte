@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
+  import { Button, DropdownMenu } from '@nasa-jpl/stellar-svelte';
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
@@ -21,7 +21,6 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { tooltip } from '../../utilities/tooltip';
-  import ContextMenuInternal from '../context-menu/ContextMenu.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import ModalFooter from '../modals/ModalFooter.svelte';
   import ActivityFilterBuilder from '../timeline/form/TimelineEditor/ActivityFilterBuilder.svelte';
@@ -34,9 +33,7 @@
   const deletePermissionSequenceError: string = 'You do not have permission to delete an expansion sequence.';
   const deletePermissionSequenceFilterError: string = 'You do not have permission to delete a sequence filter';
 
-  let contextMenu: ContextMenuInternal;
   let filterText: string;
-  let newButton: HTMLElement;
   let sequencesAndFilters: (ExpansionSequence | SequenceFilter)[] = [];
   let isExpansionDisabled: boolean = true;
 
@@ -72,12 +69,6 @@
         ? false
         : selectedExpansionSetId === null
       : true;
-
-  function toggleContextMenu(e: MouseEvent) {
-    const { x, y } = newButton.getBoundingClientRect();
-    const newEvent = new MouseEvent(e.type, { ...e, clientX: x, clientY: y });
-    contextMenu.show(newEvent);
-  }
 
   function onApplyFilter(sequenceFilter: SequenceFilter) {
     if ($simulationDatasetLatest !== null && $plan !== null) {
@@ -240,13 +231,16 @@
         </div>
       {/if}
       <div class="sne-buttons">
-        <button
-          class="st-button secondary new-button"
-          bind:this={newButton}
-          on:click|stopPropagation={toggleContextMenu}
-        >
-          New
-        </button>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild let:builder>
+            <Button variant="outline" builders={[builder]}>New</Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content class="w-56" align="start">
+            <DropdownMenu.Label size="sm">Create new...</DropdownMenu.Label>
+            <DropdownMenu.Item size="sm" on:click={onShowSequenceCreate}>Sequence</DropdownMenu.Item>
+            <DropdownMenu.Item size="sm" on:click={onShowFilterCreate}>Sequence Filter</DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
         <button
           class="st-button secondary expand-all-button"
           disabled={isExpansionDisabled}
@@ -254,11 +248,6 @@
         >
           Expand All
         </button>
-        <ContextMenuInternal bind:this={contextMenu}>
-          <ContextMenu.Label>Create new...</ContextMenu.Label>
-          <ContextMenu.Item on:click={onShowSequenceCreate}>Sequence</ContextMenu.Item>
-          <ContextMenu.Item on:click={onShowFilterCreate}>Sequence Filter</ContextMenu.Item>
-        </ContextMenuInternal>
       </div>
     </div>
     <div class="sne-items">
@@ -392,12 +381,6 @@
     align-items: center;
     display: flex;
     gap: 8px;
-  }
-
-  .new-button {
-    gap: 4px;
-    position: relative;
-    z-index: 1;
   }
 
   .expand-all-button {

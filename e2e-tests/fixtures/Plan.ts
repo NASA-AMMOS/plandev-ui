@@ -583,8 +583,11 @@ export class Plan {
     this.schedulingConditionNewButton = page.locator(`button[name="new-scheduling-condition"]`);
     this.schedulingSatisfiedActivity = page.locator('.scheduling-goal-analysis-activities-list > .satisfied-activity');
     this.sequenceExpansionNewButton = page.getByRole('button', { exact: true, name: 'New' });
-    this.sequenceExpansionNewSequenceButton = page.getByText('Sequence', { exact: true });
-    this.sequenceExpansionNewSequenceFilterButton = page.getByText('Sequence Filter', { exact: true });
+    this.sequenceExpansionNewSequenceButton = page.getByRole('menuitem', { exact: true, name: 'Sequence' });
+    this.sequenceExpansionNewSequenceFilterButton = page.getByRole('menuitem', {
+      exact: true,
+      name: 'Sequence Filter',
+    });
     this.sequenceExpansionNewSequenceName = page.locator('input[name="sequence-name"]');
     this.sequenceExpansionNewSequenceConfirmButton = page.getByRole('button', { exact: true, name: 'Confirm' });
     this.sequenceExpansionTimeRangeModal = page.locator(`.modal:has-text("Create Sequence from Filter")`);
