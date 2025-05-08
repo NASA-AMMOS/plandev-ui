@@ -194,16 +194,16 @@
           <Loading />
         {:else}
           <div>
-            <div class="st-typography-displayBody mb-2">Expected Incompatibilities</div>
+            <div class="mb-2 text-base">Expected Incompatibilities</div>
             {#if !migrationCompatibility}
               <div class="mb-3 flex gap-1 text-red-500">Unable to compute expected incompatibilities</div>
             {:else if migrationCompatibility?.impacted_directives.length < 1}
-              <div class="mb-3 flex gap-1 text-muted-foreground">
+              <div class="mb-3 flex gap-1">
                 <Check class="text-green-600" size={16} /> No expected incompatibilities
               </div>
             {:else}
-              <div class="st-typography-body">
-                <div class="st-typography-body mb-3 flex gap-1">
+              <div>
+                <div class="mb-3 flex gap-1">
                   <WarningIcon class="text-red-500" />
                   {migrationCompatibility.impacted_directives.length} incompatible activity directive{pluralize(
                     migrationCompatibility.impacted_directives.length,

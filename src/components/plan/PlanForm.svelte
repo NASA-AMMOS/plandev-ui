@@ -218,7 +218,7 @@
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Model Name', placement: 'top' }} for="modelName">Model Name</label>
-          <div class="flex gap-2">
+          <div class="flex gap-1">
             <input class="st-input w-full" disabled name="modelName" value={plan.model.name} />
             <div
               use:permissionHandler={{
