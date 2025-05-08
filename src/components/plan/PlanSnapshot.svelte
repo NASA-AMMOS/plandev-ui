@@ -68,9 +68,9 @@
           </DropdownMenu.Trigger>
           <DropdownMenu.Content class="" align="start">
             <div use:tooltip={{ content: disabledPreviewMessage }}>
-              <DropdownMenu.Item disabled={!snapshotPreviewable} size="sm" on:click={() => dispatch('click')}
-                >Preview</DropdownMenu.Item
-              >
+              <DropdownMenu.Item disabled={!snapshotPreviewable} size="sm" on:click={() => dispatch('click')}>
+                Preview
+              </DropdownMenu.Item>
             </div>
             <DropdownMenu.Item size="sm" on:click={() => dispatch('restore')}>Restore</DropdownMenu.Item>
             <DropdownMenu.Separator />
