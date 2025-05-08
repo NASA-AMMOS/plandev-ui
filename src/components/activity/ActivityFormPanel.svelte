@@ -90,7 +90,7 @@
     selectActivity(null, spanId);
   }
 
-  function onJumpToDirectiveParameter(event: CustomEvent<{ directiveId: number; parameterName: string }>) {
+  function onJumpToDirectiveParameter(event: CustomEvent<{ directiveId: number | null; parameterName: string }>) {
     const {
       detail: { directiveId, parameterName },
     } = event;

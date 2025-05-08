@@ -30,7 +30,7 @@
   export let user: User | null;
 
   const dispatch = createEventDispatcher<{
-    jumpToDirectiveParameter: { directiveId: number; parameterName: string };
+    jumpToDirectiveParameter: { directiveId: number | null; parameterName: string };
   }>();
 
   let activityType: ActivityType | null = null;
@@ -49,7 +49,7 @@
   $: activityType = (activityTypes ?? []).find(({ name: activityTypeName }) => span.type === activityTypeName) ?? null;
   $: rootSpan = !spansMap ? null : getSpanRootParent(spansMap, span.span_id);
   $: rootSpanHasChildren = (rootSpan && spanUtilityMaps.spanIdToChildIdsMap[rootSpan.span_id]?.length > 0) ?? false;
-  $: spanDirectiveId = rootSpan ? spanUtilityMaps.spanIdToDirectiveIdMap[rootSpan.span_id] ?? null : null;
+  $: spanDirectiveId = rootSpan ? (spanUtilityMaps.spanIdToDirectiveIdMap[rootSpan.span_id] ?? null) : null;
 
   $: startTime = formatDate(new Date(span.startMs), $plugins.time.primary.format);
 
