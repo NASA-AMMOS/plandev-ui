@@ -138,7 +138,6 @@
                 bind:checked={persistDictionaryToFilesystem}
                 class="st-input"
                 name="Save Dictionary"
-                on:change={() => (persistDictionaryToFilesystem = !persistDictionaryToFilesystem)}
                 type="checkbox"
               />
             </fieldset>
