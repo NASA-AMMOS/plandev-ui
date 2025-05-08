@@ -119,22 +119,6 @@ export class Plan {
     );
   }
 
-  /* TODO saving this work for a future PR */
-  // async addActivityAsFilter(name: string = 'GrowBanana') {
-  //   const activityListItem = await this.page.waitForSelector(`.list-item:has-text("${name}")`);
-  //   await activityListItem.hover();
-  //   const addButton = await this.page.getByLabel(`AddActivity-${name}`);
-  //   await addButton.click();
-  //   const contextMenuItem = await this.page.waitForSelector(
-  //     '.context-menu .context-menu-item:has-text("Activities by Type")',
-  //   );
-  //   await contextMenuItem.hover();
-  //   const contextSubMenuItem = await contextMenuItem.waitForSelector(
-  //     ".context-menu .context-menu-item:has-text('Activity Layer')",
-  //   );
-  //   await contextSubMenuItem.click();
-  // }
-
   async addPlanCollaborator(name: string, isUsername = true) {
     await this.showPanel(PanelNames.PLAN_METADATA, true);
     await this.waitForPlanCollaboratorLoad();
@@ -144,7 +128,7 @@ export class Plan {
     // Otherwise it is a plan option and will add an unspecified amount of users
     if (isUsername) {
       await expect(
-        this.planCollaboratorInputContainer.locator('.tags-input-selected-items').getByRole('option', { name }),
+        this.planCollaboratorInputContainer.getByTestId('tags-input-selected-items').getByRole('option', { name }),
       ).not.toBeUndefined();
     }
     await this.waitForToast('Plan Collaborators Updated');
@@ -274,7 +258,7 @@ export class Plan {
     const gridCells = await this.panelActivityDirectivesTable.getByRole('gridcell');
     if ((await gridCells.count()) > 0) {
       await this.panelActivityDirectivesTable.getByRole('gridcell').first().click({ button: 'right' });
-      await this.page.locator('.context-menu > .context-menu-item:has-text("Select All Activity Directives")').click();
+      await this.page.getByRole('menuitem', { name: 'Select All Activity Directives' }).click();
       await this.panelActivityDirectivesTable.getByRole('gridcell').first().click({ button: 'right' });
       await this.page.getByText(/Delete \d+ Activit(y|ies) Directives?/).click();
 
@@ -357,10 +341,7 @@ export class Plan {
   async removePlanCollaborator(name: string) {
     await this.showPanel(PanelNames.PLAN_METADATA, true);
     await this.waitForPlanCollaboratorLoad();
-    await this.planCollaboratorInputContainer
-      .locator('.tags-input-selected-items')
-      .getByRole('option', { name })
-      .click();
+    await this.planCollaboratorInputContainer.getByRole('option', { name }).click();
     await this.waitForToast('Plan Collaborator Removed Successfully');
   }
 
@@ -536,16 +517,16 @@ export class Plan {
 
   updatePage(page: Page): void {
     this.appError = page.locator('.app-error');
-    this.activitiesTable = page.locator(`div.ag-theme-stellar.table`);
+    this.activitiesTable = page.locator(`div.ag-theme-stellar.data-grid-table`);
     this.activitiesTableFirstRow = page
-      .locator(`div.ag-theme-stellar.table .ag-center-cols-container > .ag-row`)
+      .locator(`div.ag-theme-stellar.data-grid-table .ag-center-cols-container > .ag-row`)
       .nth(0);
     this.constraintManageButton = page.locator(`button[name="manage-constraints"]`);
     this.constraintModalFilter = page.locator('.modal').getByPlaceholder('Filter constraints');
     this.constraintNewButton = page.locator(`button[name="new-constraint"]`);
     this.consoleContainer = page.locator(`.console-container`);
     this.externalSourceManageButton = page.getByLabel('Select derivation groups to');
-    this.gridMenuButton = page.locator('.header > .grid-menu');
+    this.gridMenuButton = page.locator('.grid-menu');
     this.gridMenu = this.gridMenuButton.getByRole('menu');
     this.gridMenuItem = (name: string) => this.gridMenu.getByRole('menuitem', { exact: true, name });
     this.navButtonActivityChecking = page.locator(`.nav-button:has-text("Activities")`);
@@ -575,11 +556,11 @@ export class Plan {
     this.panelTimeline = page.locator('[data-component-name="TimelinePanel"]');
     this.panelTimelineEditor = page.locator('[data-component-name="TimelineEditorPanel"]');
     this.planTitle = page.locator(`.plan-title:has-text("${this.planName}")`);
-    this.planCollaboratorInputContainer = this.panelPlanMetadata.locator('.input:has-text("Collaborators")');
+    this.planCollaboratorInputContainer = this.panelPlanMetadata.getByLabel('collaborators combobox');
     this.planCollaboratorInput = this.planCollaboratorInputContainer.getByPlaceholder('Search collaborators or plans');
     this.planNameInput = page.locator('input[name="plan-name"]');
     this.planCollaboratorLoadingInput = this.planCollaboratorInputContainer.getByPlaceholder('Loading...');
-    this.roleSelector = page.locator(`.nav select`);
+    this.roleSelector = page.getByRole('navigation').getByLabel('Select Role');
     this.reSimulateButton = page.locator('.header-actions button:has-text("Re-Run")');
     this.scheduleButton = page.locator('.header-actions button[aria-label="Schedule"]');
     this.simulateButton = page.locator('.header-actions button:has-text("Simulate")');
@@ -597,13 +578,16 @@ export class Plan {
     this.schedulingConditionEnabledCheckboxSelector = (conditionName: string) =>
       page.locator(`.scheduling-condition:has-text("${conditionName}")`).getByRole('checkbox');
     this.schedulingGoalExpand = (goalName: string) =>
-      this.schedulingGoal(goalName).locator('.collapse > button').first();
+      this.schedulingGoal(goalName).locator('.collapse-root > button').first();
     this.schedulingGoalNewButton = page.locator(`button[name="new-scheduling-goal"]`);
     this.schedulingConditionNewButton = page.locator(`button[name="new-scheduling-condition"]`);
     this.schedulingSatisfiedActivity = page.locator('.scheduling-goal-analysis-activities-list > .satisfied-activity');
     this.sequenceExpansionNewButton = page.getByRole('button', { exact: true, name: 'New' });
-    this.sequenceExpansionNewSequenceButton = page.getByText('Sequence', { exact: true });
-    this.sequenceExpansionNewSequenceFilterButton = page.getByText('Sequence Filter', { exact: true });
+    this.sequenceExpansionNewSequenceButton = page.getByRole('menuitem', { exact: true, name: 'Sequence' });
+    this.sequenceExpansionNewSequenceFilterButton = page.getByRole('menuitem', {
+      exact: true,
+      name: 'Sequence Filter',
+    });
     this.sequenceExpansionNewSequenceName = page.locator('input[name="sequence-name"]');
     this.sequenceExpansionNewSequenceConfirmButton = page.getByRole('button', { exact: true, name: 'Confirm' });
     this.sequenceExpansionTimeRangeModal = page.locator(`.modal:has-text("Create Sequence from Filter")`);

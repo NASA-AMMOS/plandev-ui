@@ -8,9 +8,11 @@
   import UserInput from './UserInput.svelte';
 
   export let collaborators: PlanCollaboratorSlim[] = [];
-  export let users: UserId[] = [];
+  export let disabled: boolean = false;
+  export let name: string = '';
   export let plans: PlanSlimmer[] = [];
   export let plan: Plan;
+  export let users: UserId[] = [];
   export let user: User | null;
   export let use: ActionArray = [];
 
@@ -74,6 +76,8 @@
   tagDisplayName="collaborator"
   userGroups={groups}
   users={allowableCollaborators}
+  {name}
+  {disabled}
   {use}
   {user}
   on:create={addTag}

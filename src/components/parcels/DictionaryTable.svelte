@@ -211,7 +211,9 @@
         on:deleteItem={deleteDictionaryContext}
       />
     {:else}
-      No {displayTextPlural} Found
+      <div class="flex flex-1 items-center justify-center text-xs text-muted-foreground">
+        No {displayTextPlural} Found
+      </div>
     {/if}
   </svelte:fragment>
 </Panel>

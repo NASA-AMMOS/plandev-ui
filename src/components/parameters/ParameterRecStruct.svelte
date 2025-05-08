@@ -144,11 +144,11 @@
     cursor: pointer;
   }
 
-  .parameter-rec-struct :global(.collapse > .collapse-header) {
+  .parameter-rec-struct :global(.collapse-root > .collapse-header) {
     gap: 8px;
   }
 
-  .parameter-rec-struct :global(.collapse > .content) {
+  .parameter-rec-struct :global(.collapse-root > .content) {
     margin-left: 0%;
   }
 

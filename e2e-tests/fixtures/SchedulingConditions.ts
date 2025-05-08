@@ -119,7 +119,7 @@ export class SchedulingConditions {
     this.newButton = page.locator(`button:has-text("New")`);
     this.page = page;
     this.saveButton = page.locator(`button:has-text("Save")`);
-    this.table = page.locator('.panel:has-text("Scheduling Conditions")').getByRole('treegrid');
+    this.table = page.locator('div[role="tabpanel"]:has-text("Scheduling Conditions")').getByRole('treegrid');
     this.tableRow = this.table.getByRole('row', { name: this.conditionName });
     this.tableRowDeleteButton = this.tableRow.getByRole('gridcell').getByRole('button', { name: 'Delete Condition' });
   }

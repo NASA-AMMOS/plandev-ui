@@ -12,16 +12,15 @@
 </script>
 
 <script lang="ts">
+  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
+
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
-  import { fade } from 'svelte/transition';
 
   const dispatch = createEventDispatcher<{
     hide: void;
   }>();
 
-  export let hideAfterClick: boolean = true;
-
-  let xAnchor: number | null = null;
+  let buttonRef: HTMLButtonElement;
 
   export function hide(notify = false): void {
     shown = false;
@@ -36,22 +35,16 @@
     return shown;
   }
 
-  export function showDirectly(_x: number, _y: number, _xAnchor: number): void {
-    shown = true;
-    x = _x;
-    y = _y;
-    xAnchor = _xAnchor;
-  }
-
   export function show(e: MouseEvent): void {
     hideAllMenus();
     e.preventDefault();
-    shown = true;
     x = e.clientX;
     y = e.clientY;
+    shown = true;
+    const newEvent = new MouseEvent(e.type, e);
+    buttonRef.dispatchEvent(newEvent);
   }
 
-  let div: HTMLDivElement;
   let shown: boolean = false;
   let x: number;
   let y: number;
@@ -63,67 +56,26 @@
   onDestroy(() => {
     hideFns.delete(hide);
   });
-
-  $: if (div) {
-    const rect = div.getBoundingClientRect();
-    if (x + rect.width > window.innerWidth) {
-      if (xAnchor !== null) {
-        x = xAnchor - rect.width;
-      } else {
-        x = x - rect.width;
-      }
-    }
-    if (y > window.innerHeight - rect.height) {
-      y = Math.max(window.innerHeight - rect.height, 8);
-    }
-  }
-
-  function onClick() {
-    if (hideAfterClick) {
-      hide(true);
-    }
-  }
-
-  function onKeyDown(event: KeyboardEvent) {
-    if (shown && event.key === 'Escape') {
-      hide(true);
-      event.stopPropagation();
-    }
-  }
 </script>
 
-<svelte:body on:click={() => hide(true)} on:keydown|capture={onKeyDown} />
-
-{#if shown}
-  <!-- svelte-ignore a11y-mouse-events-have-key-events -->
-  <div
-    bind:this={div}
-    class="context-menu"
-    role="none"
-    style:left={`${x}px`}
-    style:top={`${y}px`}
-    transition:fade={{ duration: 50 }}
-    on:click|stopPropagation={onClick}
-    on:mouseout
-    on:mouseover
-  >
+<ContextMenu.Root
+  onOpenChange={open => {
+    if (!open) {
+      hide(true);
+    }
+  }}
+  bind:open={shown}
+>
+  <ContextMenu.Trigger class="h-0 w-0" asChild let:builder>
+    <button
+      {...builder}
+      use:builder.action
+      style="left: {x}px !important; opacity: 0; pointer-events: none; position: absolute;top: {y}px !important;"
+      bind:this={buttonRef}
+      aria-label="Context Menu"
+    />
+  </ContextMenu.Trigger>
+  <ContextMenu.Content>
     <slot />
-  </div>
-{/if}
-
-<style>
-  .context-menu {
-    background: #fff;
-    border: var(--st-border-popover);
-    border-radius: var(--st-border-radius-popover);
-    box-shadow: var(--st-shadow-popover);
-    display: block;
-    max-height: calc(100vh - 16px);
-    min-width: 150px;
-    outline: 0;
-    overflow: auto;
-    padding: 4px;
-    position: fixed;
-    z-index: 100;
-  }
-</style>
+  </ContextMenu.Content>
+</ContextMenu.Root>

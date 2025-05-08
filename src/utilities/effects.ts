@@ -87,7 +87,7 @@ import type {
   PlanSnapshotActivity,
 } from '../types/activity';
 import type { ActivityMetadata } from '../types/activity-metadata';
-import type { BaseUser, User, UserId } from '../types/app';
+import type { BaseUser, User, UserId, Version } from '../types/app';
 import type { ReqAuthResponse, ReqSessionResponse } from '../types/auth';
 import type {
   CheckConstraintResponse,
@@ -5026,6 +5026,21 @@ const effects = {
       }
     } catch (e) {
       return (e as Error).message;
+    }
+  },
+
+  async getVersion(): Promise<Version> {
+    try {
+      const versionResponse = await fetch(`${base}/version.json`);
+      return await versionResponse.json();
+    } catch (e) {
+      return {
+        branch: 'unknown',
+        commit: 'unknown',
+        commitUrl: '',
+        date: new Date().toLocaleString(),
+        name: 'aerie-ui',
+      };
     }
   },
 

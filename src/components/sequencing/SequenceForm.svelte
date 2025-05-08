@@ -276,17 +276,17 @@
       {#if mode === 'edit'}
         <fieldset>
           <label for="ruleId">ID</label>
-          <input class="st-input w-100" disabled name="ruleId" value={sequenceId} />
+          <input class="st-input w-full" disabled name="ruleId" value={sequenceId} />
         </fieldset>
 
         <fieldset>
           <label for="createdAt">Created At</label>
-          <input class="st-input w-100" disabled name="createdAt" value={sequenceCreatedAt} />
+          <input class="st-input w-full" disabled name="createdAt" value={sequenceCreatedAt} />
         </fieldset>
 
         <fieldset>
           <label for="updatedAt">Updated At</label>
-          <input class="st-input w-100" disabled name="updatedAt" value={sequenceUpdatedAt} />
+          <input class="st-input w-full" disabled name="updatedAt" value={sequenceUpdatedAt} />
         </fieldset>
       {/if}
 
@@ -294,7 +294,7 @@
         <label for="parcel">Parcel (required)</label>
         <select
           bind:value={sequenceParcelId}
-          class="st-select w-100"
+          class="st-select w-full"
           name="parcel"
           use:permissionHandler={{
             hasPermission: hasPermission && !isSequenceReadonly,
@@ -315,7 +315,7 @@
         <input
           bind:value={sequenceName}
           autocomplete="off"
-          class="st-input w-100"
+          class="st-input w-full"
           name="sequenceName"
           placeholder="Enter Sequence Name"
           required
@@ -346,7 +346,7 @@
         <label for="outputFile">Import Sequence</label>
         <input
           bind:files={outputFiles}
-          class="w-100"
+          class="w-full"
           name="outputFile"
           type="file"
           on:change={onOutputFileUpload}

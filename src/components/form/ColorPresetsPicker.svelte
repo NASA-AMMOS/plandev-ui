@@ -33,13 +33,13 @@
 
 <button
   type="button"
-  class="st-button color-preset-picker color"
+  class="st-button color-preset-picker color relative dark:border-white/20"
   use:tooltip={{ content: tooltipText, placement: 'top' }}
-  style={`position: relative; background: ${value}`}
+  style={`background: ${value}`}
   on:click|stopPropagation={() => pickerMenu.toggle()}
 >
   <Menu bind:this={pickerMenu} hideAfterClick={false} {placement}>
-    <div class="colors">
+    <div class="colors bg-popover">
       {#each presetColors as color}
         <button
           type="button"

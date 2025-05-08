@@ -4,7 +4,7 @@
   import { goto, invalidateAll } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
-  import { onMount } from 'svelte';
+  import { Button, Input, Label } from '@nasa-jpl/stellar-svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import { SearchParameters } from '../../enums/searchParameters';
   import type { LoginResponseBody } from '../../types/auth';
@@ -20,7 +20,6 @@
   let password = '';
   let reason = $page.url.searchParams.get(SearchParameters.REASON);
   let username = '';
-  let usernameInput: HTMLInputElement | null = null;
 
   $: if (data.user?.permissibleQueries && hasNoAuthorization(data.user)) {
     error = 'You are not authorized';
@@ -39,12 +38,6 @@
 
     removeQueryParam(SearchParameters.REASON);
   }
-
-  onMount(() => {
-    if (usernameInput) {
-      usernameInput.focus();
-    }
-  });
 
   async function login() {
     error = null;
@@ -76,63 +69,30 @@
   }
 </script>
 
-<div class="container">
-  <form on:submit|preventDefault={login} class="form">
-    <div class="title st-typography-displayBody">Log in to Aerie</div>
+<div class="flex h-full w-full items-center justify-center bg-accent">
+  <form
+    on:submit|preventDefault={login}
+    class="flex w-[320px] flex-col gap-2 rounded-md border bg-background px-3 py-6 shadow-sm"
+    autocomplete="off"
+  >
+    <div class="flex items-center justify-center text-base tracking-tight">Log in to Aerie</div>
 
     <AlertError class="m-2" {error} {fullError} />
 
     <fieldset>
-      <label for="username"> Username </label>
-      <input
-        autocomplete="off"
-        bind:this={usernameInput}
-        bind:value={username}
-        class="st-input w-100"
-        name="username"
-        required
-        type="text"
-      />
+      <Label size="sm" for="username" class="pb-0.5">Username</Label>
+      <Input sizeVariant="xs" autocomplete="off" autofocus bind:value={username} name="username" required type="text" />
     </fieldset>
 
     <fieldset>
-      <label for="password"> Password </label>
-      <input autocomplete="off" bind:value={password} class="st-input w-100" name="password" required type="password" />
+      <Label size="sm" for="password" class="pb-0.5">Password</Label>
+      <Input sizeVariant="xs" autocomplete="off" bind:value={password} name="password" required type="password" />
     </fieldset>
 
-    <fieldset>
-      <button class="st-button w-100" disabled={password === '' || username === ''} type="submit">
+    <fieldset class="pt-4">
+      <Button disabled={password === '' || username === ''} type="submit">
         {loginButtonText}
-      </button>
+      </Button>
     </fieldset>
   </form>
 </div>
-
-<style>
-  form {
-    background-color: var(--st-primary-background-color);
-    border: 1px solid var(--st-gray-20);
-    width: 300px;
-  }
-
-  .container {
-    align-items: center;
-    display: flex;
-    height: 100%;
-    justify-content: center;
-    width: 100%;
-  }
-
-  .title {
-    align-items: center;
-    display: flex;
-    justify-content: center;
-  }
-
-  .form {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 16px 8px;
-  }
-</style>

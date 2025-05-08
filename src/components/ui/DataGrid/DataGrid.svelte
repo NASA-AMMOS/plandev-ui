@@ -56,7 +56,7 @@
   import { SvelteComponent, createEventDispatcher, onDestroy, onMount, type ComponentEvents } from 'svelte';
   import type { Dispatcher } from '../../../types/component';
   import type { DataGridRowDoubleClick, DataGridRowSelection, RowId, TRowData } from '../../../types/data-grid';
-  import ContextMenu from '../../context-menu/ContextMenu.svelte';
+  import ContextMenuInternal from '../../context-menu/ContextMenu.svelte';
   import ColumnResizeContextMenu from './column-menu/ColumnResizeContextMenu.svelte';
   import DataGridSkeleton from './DataGridSkeleton.svelte';
 
@@ -134,7 +134,7 @@
   const onColumnStateChangeDebounced = debounce(onColumnStateChange, 500);
   const onWindowResizedDebounced = debounce(sizeColumnsToFit, 50);
 
-  let contextMenu: ContextMenu;
+  let contextMenu: ContextMenuInternal;
   let gridOptions: GridOptions<RowData>;
   let gridApi: GridApi<RowData> | undefined;
   let gridDiv: HTMLDivElement;
@@ -463,13 +463,20 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       <DataGridSkeleton columns={columnDefs.filter(c => !c.hide).length} />
     </div>
   {/if}
-  <div bind:this={gridDiv} class="ag-theme-stellar table" class:highlightOnSelection tabindex="-1" on:focus on:blur />
+  <div
+    bind:this={gridDiv}
+    class="ag-theme-stellar data-grid-table"
+    class:highlightOnSelection
+    tabindex="-1"
+    on:focus
+    on:blur
+  />
 </div>
 
-<ContextMenu bind:this={contextMenu}>
+<ContextMenuInternal bind:this={contextMenu}>
   <slot name="context-menu" />
   <ColumnResizeContextMenu on:autoSizeContent={onAutoSizeContent} on:autoSizeSpace={onAutoSizeSpace} />
-</ContextMenu>
+</ContextMenuInternal>
 
 <style>
   .data-grid-container {
@@ -482,7 +489,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     position: absolute;
     width: 100%;
   }
-  .table {
+  .data-grid-table {
     height: 100%;
     width: 100%;
   }
@@ -491,12 +498,12 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     display: flex;
     flex: 1;
     flex-wrap: wrap;
+    gap: 2px;
     min-height: 30px;
     padding: 2px 0px;
   }
 
   :global(.tags-cell .tag.st-chip) {
     display: inline !important;
-    margin-right: 2px;
   }
 </style>

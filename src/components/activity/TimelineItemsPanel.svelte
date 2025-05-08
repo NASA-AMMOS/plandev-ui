@@ -27,9 +27,9 @@
   <svelte:fragment slot="body">
     <Tabs class="timeline-items-tabs" tabListClassName="timeline-items-tabs-list">
       <svelte:fragment slot="tab-list">
-        <Tab class="timeline-items-tab"><DirectiveAndSpanIcon /> Activities</Tab>
-        <Tab class="timeline-items-tab"><TimelineLineLayerIcon /> Resources</Tab>
-        <Tab class="timeline-items-tab"><ExternalEventIcon /> Events</Tab>
+        <Tab class="timeline-items-tab text-xs"><DirectiveAndSpanIcon /> Activities</Tab>
+        <Tab class="timeline-items-tab text-xs"><TimelineLineLayerIcon /> Resources</Tab>
+        <Tab class="timeline-items-tab text-xs"><ExternalEventIcon /> Events</Tab>
       </svelte:fragment>
       <TabPanel>
         <ActivityList />

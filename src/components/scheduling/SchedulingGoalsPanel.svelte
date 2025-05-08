@@ -16,6 +16,7 @@
   } from '../../stores/scheduling';
   import type { User } from '../../types/app';
   import type { SchedulingGoalPlanSpecification, SchedulingGoalPlanSpecificationUpdate } from '../../types/scheduling';
+  import type { ValueSchemaStruct } from '../../types/schema';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -27,7 +28,6 @@
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
   import SchedulingGoal from './goals/SchedulingGoal.svelte';
-  import type { ValueSchemaStruct } from '../../types/schema';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -94,9 +94,9 @@
       const fallbackVersion = goal_metadata?.versions.reduce((latest, current) =>
         current.revision > (latest?.revision ?? -Infinity) ? current : latest,
       );
-      const parameterSchema = <ValueSchemaStruct>(
-        (matchingVersion?.parameter_schema ?? fallbackVersion?.parameter_schema ?? null)
-      );
+      const parameterSchema = (matchingVersion?.parameter_schema ??
+        fallbackVersion?.parameter_schema ??
+        null) as ValueSchemaStruct;
 
       await effects.updateSchedulingGoalPlanSpecification(
         $plan,
@@ -228,7 +228,7 @@
           <Loading />
         </div>
       {:else if !filteredSchedulingGoalSpecs.length}
-        <div class="pt-1 st-typography-label">No scheduling goals found</div>
+        <div class="st-typography-label pt-1">No scheduling goals found</div>
         <div class="private-label">
           {#if numOfPrivateGoals > 0}
             {numOfPrivateGoals} scheduling goal{numOfPrivateGoals !== 1 ? 's' : ''}

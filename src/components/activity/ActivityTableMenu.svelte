@@ -74,18 +74,18 @@
   }
 </script>
 
-<div class="grid-menu st-typography-medium" role="none" on:click|stopPropagation={() => tableMenu.toggle()}>
+<div class="activity-table-menu st-typography-medium" role="none" on:click|stopPropagation={() => tableMenu.toggle()}>
   <div class="button"><div class="button-title">...</div></div>
   <Menu bind:this={tableMenu} hideAfterClick={false}>
     <MenuHeader title="Columns" showBorder={false} />
     <div class="search-field">
       <Input>
-        <input class="st-input w-100" value={searchFilter} on:input={onSearchFilterChange} />
+        <input class="st-input w-full" value={searchFilter} on:input={onSearchFilterChange} />
         <div class="search-icon" slot="left"><SearchIcon /></div>
       </Input>
     </div>
     {#each displayedColumnMenuItems as columnMenuItem (columnMenuItem)}
-      <MenuItem on:click={() => onColumnToggleChange(columnMenuItem)}>
+      <MenuItem className="py-1.5 text-xs" on:click={() => onColumnToggleChange(columnMenuItem)}>
         <input type="checkbox" checked={!columnMenuItem.isHidden} />
         <div class="column-name">{columnMenuItem.name}</div>
       </MenuItem>
@@ -98,7 +98,7 @@
 </div>
 
 <style>
-  .grid-menu {
+  .activity-table-menu {
     --aerie-menu-item-template-columns: min-content auto;
     --aerie-menu-item-line-height: 1rem;
     --aerie-menu-item-font-size: 12px;
@@ -117,7 +117,7 @@
     user-select: none;
   }
 
-  .grid-menu:hover {
+  .activity-table-menu:hover {
     background-color: var(--st-button-secondary-hover-background-color);
   }
 
@@ -133,7 +133,7 @@
     font-weight: bold;
     letter-spacing: -1px;
     line-height: 0px;
-    margin-top: -4px;
+    margin-top: -6.5px;
   }
 
   .search-field {

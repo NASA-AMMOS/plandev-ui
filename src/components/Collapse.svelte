@@ -10,6 +10,7 @@
 
   export let className: string = '';
   export let collapsible: boolean = true;
+  export let contentClass: string = '';
   export let defaultExpanded: boolean = true;
   export let headerHeight: number = 32;
   export let error: boolean = false;
@@ -24,7 +25,7 @@
 
   let contextMenu: ContextMenu;
 
-  $: collapseClasses = classNames('collapse', {
+  $: collapseClasses = classNames('collapse-root', {
     [className]: !!className,
     'has-context-menu': !!$$slots.contextMenuContent,
   });
@@ -68,7 +69,12 @@
     </div>
   </button>
   <slot name="action-row" />
-  <div class="content" class:pad-content={padContent} class:expanded aria-hidden={collapsible ? !expanded : false}>
+  <div
+    class={classNames('content', { [contentClass]: !!contentClass })}
+    class:pad-content={padContent}
+    class:expanded
+    aria-hidden={collapsible ? !expanded : false}
+  >
     <slot />
   </div>
 </div>
@@ -80,13 +86,13 @@
 {/if}
 
 <style>
-  .collapse {
+  .collapse-root {
     display: flex;
     flex-direction: column;
     width: 100%;
   }
 
-  .collapse > .collapse-header {
+  .collapse-root > .collapse-header {
     display: flex;
     flex-direction: row;
     gap: 3px;
@@ -94,20 +100,20 @@
     padding: 8px 0px 8px 0px;
   }
 
-  .collapse > .collapse-header:hover {
+  .collapse-root > .collapse-header:hover {
     background: none;
   }
 
-  .collapse > .collapse-header.static {
+  .collapse-root > .collapse-header.static {
     cursor: default;
   }
 
-  .collapse.error .title,
-  .collapse.error .icon :global(svg) {
+  .collapse-root.error .title,
+  .collapse-root.error .icon :global(svg) {
     color: var(--st-red);
   }
 
-  .collapse.has-context-menu > button {
+  .collapse-root.has-context-menu > button {
     cursor: context-menu !important;
   }
 

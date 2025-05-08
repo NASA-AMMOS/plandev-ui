@@ -466,7 +466,7 @@
             <Input layout="inline">
               Source Type
               <input
-                class="st-input w-100"
+                class="st-input w-full"
                 disabled={true}
                 name="source-type"
                 value={selectedSource.source_type_name}
@@ -476,7 +476,7 @@
             <Input layout="inline">
               Derivation Group
               <input
-                class="st-input w-100"
+                class="st-input w-full"
                 disabled={true}
                 name="derivation-group"
                 value={selectedSource.derivation_group_name}
@@ -485,7 +485,7 @@
 
             <Input layout="inline">
               Owner
-              <input class="st-input w-100" disabled={true} name="owner" value={selectedSource.owner} />
+              <input class="st-input w-full" disabled={true} name="owner" value={selectedSource.owner} />
             </Input>
 
             <Input layout="inline">
@@ -558,7 +558,7 @@
 
             <div class="selected-source-delete">
               <button
-                class="st-button danger w-100"
+                class="st-button danger w-full"
                 use:permissionHandler={{
                   hasPermission: hasDeleteExternalSourcePermissionOnSelectedSource,
                   permissionError: deletePermissionError,
@@ -592,7 +592,7 @@
             <fieldset style:flex={1}>
               <label for="file">Source File</label>
               <input
-                class="w-100"
+                class="w-full"
                 name="file"
                 required
                 type="file"
@@ -607,12 +607,12 @@
             <fieldset class="file-upload-fieldset">
               {#if parsedExternalSource}
                 <div style="padding-top:12px">
-                  <button class="st-button secondary w-100" type="reset">Dismiss</button>
+                  <button class="st-button secondary w-full" type="reset">Dismiss</button>
                 </div>
               {/if}
               <button
                 disabled={!parsedExternalSource}
-                class="st-button w-100"
+                class="st-button w-full"
                 type="submit"
                 use:permissionHandler={{
                   hasPermission: hasCreatePermission,
@@ -627,19 +627,19 @@
             <label for="derivation-group" slot="label">Derivation Group</label>
             <input
               autocomplete="off"
-              class="st-input w-100"
+              class="st-input w-full"
               name="derivation-group"
               disabled={isDerivationGroupFieldDisabled}
             />
           </Field>
           <Field field={keyField}>
             <label for="key" slot="label">Key</label>
-            <input disabled bind:value={keyInputField} autocomplete="off" class="st-input w-100" name="key" required />
+            <input disabled bind:value={keyInputField} autocomplete="off" class="st-input w-full" name="key" required />
           </Field>
 
           <Field field={sourceTypeField}>
             <label for="source-type" slot="label">Source Type</label>
-            <input disabled autocomplete="off" class="st-input w-100" name="source-type" required />
+            <input disabled autocomplete="off" class="st-input w-full" name="source-type" required />
           </Field>
 
           <fieldset>
@@ -758,7 +758,7 @@
                   <input
                     bind:value={externalEventsTableFilterString}
                     autocomplete="off"
-                    class="st-input w-100"
+                    class="st-input w-full"
                     name="filter-ee"
                     placeholder="Filter external events"
                   />

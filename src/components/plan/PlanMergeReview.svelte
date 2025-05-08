@@ -603,7 +603,7 @@
         {#if selectedConflictingActivity}
           <div class="merge-review-button-container">
             <button
-              class="st-button secondary w-100"
+              class="st-button secondary w-full"
               class:selected={selectedConflictingActivityResolution === 'source'}
               on:click={() => {
                 const activityId =
@@ -669,7 +669,7 @@
         {#if selectedConflictingActivity}
           <div class="merge-review-button-container">
             <button
-              class="st-button secondary w-100"
+              class="st-button secondary w-full"
               class:selected={selectedConflictingActivityResolution === 'target'}
               on:click={() => {
                 const activityId =
@@ -797,11 +797,11 @@
     border-right: 1px solid var(--st-gray-20);
   }
 
-  .merge-review-changes-content :global(.collapse > button.collapse-header) {
+  .merge-review-changes-content :global(.collapse-root > button.collapse-header) {
     padding: 8px 16px;
   }
 
-  .merge-review-changes-content :global(.collapse .content) {
+  .merge-review-changes-content :global(.collapse-root .content) {
     gap: 0;
     margin: 0;
   }

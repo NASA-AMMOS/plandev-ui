@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { FieldStore } from '../../types/form';
+  import { classNames } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
 
   export let field: FieldStore<any>;
@@ -8,7 +9,7 @@
 
 {#if $field.invalid}
   <div
-    class="error"
+    class={classNames('table w-full table-fixed cursor-default pt-1 text-red-500', { 'col-span-full': inline })}
     class:inline
     use:tooltip={{
       content: $field.firstError,
@@ -17,26 +18,6 @@
       theme: 'error',
     }}
   >
-    <div>{$field.firstError}</div>
+    <div class="overflow-hidden text-ellipsis whitespace-nowrap text-red-500">{$field.firstError}</div>
   </div>
 {/if}
-
-<style>
-  .error {
-    cursor: default;
-    display: table;
-    table-layout: fixed;
-    width: 100%;
-  }
-
-  .error.inline {
-    grid-column: 1 / -1;
-  }
-
-  .error > div {
-    color: var(--st-red);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-</style>

@@ -105,10 +105,7 @@ test.describe.serial('Plan External Sources', () => {
     await expect(page.locator('.list-item').getByText(externalSources.exampleEventType)).toBeVisible();
     await page.locator('.list-item').getByText(externalSources.exampleEventType).first().hover();
     await page.getByLabel(`AddExternalevent-${externalSources.exampleEventType}`).click();
-    await page
-      .getByLabel(`layer-picker-externalEvent-${externalSources.exampleEventType}`)
-      .getByText('New Row +')
-      .click();
+    await page.getByRole('menuitem', { name: 'New Row +' }).click();
     await expect(
       page.locator('#timeline-0').getByRole('button', { name: externalSources.exampleEventType }),
     ).toBeVisible();

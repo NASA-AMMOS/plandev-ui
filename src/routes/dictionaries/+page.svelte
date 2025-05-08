@@ -101,7 +101,7 @@
             <label for="file">AMPCS XML File or Sequence Adaptation</label>
             <input
               accept=".xml,.js,.json"
-              class="w-100 st-typography-body"
+              class="st-typography-body w-full"
               name="file"
               required
               type="file"
@@ -119,7 +119,7 @@
               <input
                 bind:value={sequenceAdaptationName}
                 autocomplete="off"
-                class="st-input w-100"
+                class="st-input w-full"
                 name="sequenceAdaptationName"
                 placeholder="Enter Sequence Adaptation Name"
                 required={isSequenceAdaptation}
@@ -129,7 +129,7 @@
 
           <fieldset>
             <button
-              class="st-button w-100"
+              class="st-button w-full"
               disabled={createButtonDisabled || creatingDictionary}
               type="submit"
               use:permissionHandler={{

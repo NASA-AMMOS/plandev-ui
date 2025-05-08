@@ -17,7 +17,7 @@
 </script>
 
 <div
-  class="list-item st-typography-body {className}"
+  class="st-typography-body list-item {className}"
   class:dragging
   {draggable}
   role="none"
@@ -52,6 +52,7 @@
     padding: 4px 8px 4px 12px;
   }
 
+  .list-item.active,
   .list-item:hover,
   .list-item:focus-within {
     background: var(--st-gray-10);
@@ -69,6 +70,7 @@
     pointer-events: none;
   }
 
+  .list-item.active .suffix,
   .list-item:hover .suffix,
   .list-item:focus .suffix {
     align-items: center;

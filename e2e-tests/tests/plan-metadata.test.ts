@@ -104,10 +104,9 @@ test.describe.serial('Plan Metadata', () => {
     await plans.goto();
     const planAId = await plans.getPlanId(planA.planName);
     await planA.goto(planAId);
-
     await userB.switchRole('user');
     await planA.showPanel(PanelNames.PLAN_METADATA, true);
-    await expect(planA.planCollaboratorInputContainer.locator('.tags-input')).toHaveAttribute('readonly', 'readonly');
+    await expect(planA.planCollaboratorInputContainer).toHaveAttribute('readonly');
   });
 
   test(`userB can be added as a plan collaborator to userA's plan`, async ({ baseURL }) => {
@@ -149,12 +148,12 @@ test.describe.serial('Plan Metadata', () => {
     await planB.addPlanCollaborator(planA.planName, false);
     await expect(
       planB.planCollaboratorInputContainer
-        .locator('.tags-input-selected-items')
+        .getByTestId('tags-input-selected-items')
         .getByRole('option', { name: userA.username }),
     ).toBeDefined();
     await expect(
       planB.planCollaboratorInputContainer
-        .locator('.tags-input-selected-items')
+        .getByTestId('tags-input-selected-items')
         .getByRole('option', { name: userB.username }),
     ).toBeDefined();
   });

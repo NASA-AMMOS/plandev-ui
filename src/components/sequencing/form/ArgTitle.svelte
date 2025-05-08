@@ -80,7 +80,7 @@
 </script>
 
 <Collapse headerHeight={24} padContent={false} {title} defaultExpanded={false}>
-  <div class="w-100 labeled-values" style="padding-bottom: 4px">
+  <div class="labeled-values w-full" style="padding-bottom: 4px">
     {#if formattedRange}
       <div>Range</div>
       <div>{formattedRange}</div>

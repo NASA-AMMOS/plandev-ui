@@ -392,7 +392,7 @@
     $simulationEvents = null;
   }
 
-  $: compactNavMode = windowWidth < 1100;
+  $: compactNavMode = windowWidth < 1200;
 
   $: if ($schedulingAnalysisStatus) {
     let newSchedulingStatusText = '';
@@ -879,7 +879,7 @@
         <div>
           <ConsoleTab tabId={ConsoleTabs.ALL} numberOfErrors={$allErrors?.length} title="All Errors">All</ConsoleTab>
         </div>
-        <div class="separator">|</div>
+        <div class="separator text-xs">|</div>
         <div class="grouped-error-tabs">
           <ConsoleTab
             tabId={ConsoleTabs.ANCHOR}

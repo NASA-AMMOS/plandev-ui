@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Input as InputStellar, Label } from '@nasa-jpl/stellar-svelte';
+  import { uniqueId } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import type { FieldStore } from '../../types/form';
   import { tooltip } from '../../utilities/tooltip';
@@ -20,6 +22,8 @@
   export let use: ActionArray = [];
   export let useFallback: boolean = false;
 
+  $: id = uniqueId(name);
+
   const dispatch = createEventDispatcher<{
     change: { valid: boolean };
   }>();
@@ -36,17 +40,22 @@
     <Input {layout}>
       {#if label}
         {#if layout === 'inline'}
-          <label use:tooltip={{ content: label, placement: 'top' }} class:error={$field.invalid} for={name}>
-            {label}
-          </label>
+          <div use:tooltip={{ content: label, placement: 'top' }}>
+            <Label size="sm" class="flex {$field.invalid ? 'text-red-500' : ''}" for={id}>
+              {label}
+            </Label>
+          </div>
         {:else}
-          <label class:error={$field.invalid} for={name}>{label}</label>
+          <Label size="sm" class="flex pb-0.5 {$field.invalid ? 'text-red-500' : ''}" for={id}>
+            {label}
+          </Label>
         {/if}
       {/if}
       <DatePicker
         dateString={$field.value}
         {disabled}
         hasError={$field.invalid}
+        {id}
         {name}
         on:change={onChange}
         {minDate}
@@ -59,24 +68,24 @@
     </Input>
   </div>
 {:else}
-  <div class="date-picker-field-fallback">
+  <div class="[&_fieldset]:p-0">
     <Field {field} on:change={onChange}>
       <Input {layout}>
-        <label use:tooltip={{ content: 'Start Time', placement: 'top' }} for="start-time">
-          {label}
-        </label>
-        <input autocomplete="off" class="st-input w-100" name="start-time" on:keyup={() => {}} />
+        <div use:tooltip={{ content: 'Start Time', placement: 'top' }}>
+          <Label size="sm" class="flex {layout === 'stacked' ? 'pb-0.5' : ''}" for={name}>
+            {label}
+          </Label>
+        </div>
+        <InputStellar
+          sizeVariant="xs"
+          autocomplete="off"
+          id={uniqueId(name)}
+          aria-label="Start Time"
+          on:keyup={() => {}}
+          {name}
+          {disabled}
+        />
       </Input>
     </Field>
   </div>
 {/if}
-
-<style>
-  .date-picker-field-fallback :global(fieldset) {
-    padding: 0;
-  }
-
-  .date-picker-field :global(.input) {
-    position: inherit;
-  }
-</style>

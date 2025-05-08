@@ -33,9 +33,9 @@ export class ExpansionRuns {
   updatePage(page: Page): void {
     this.page = page;
     this.runsNavButton = page.locator(`.nav-button:has-text("Runs")`);
-    this.runsTable = page.locator('.panel:has-text("Expansion Runs")').getByRole('treegrid');
+    this.runsTable = page.locator('div[role="tabpanel"]:has-text("Expansion Runs")').getByRole('treegrid');
     this.runsTableRow = this.runsTable.getByRole('row', { name: this.plan.planName });
-    this.sequencesTable = page.locator('.panel:has-text("Expanded Sequences")').getByRole('treegrid');
+    this.sequencesTable = page.locator('div[role="tabpanel"]:has-text("Expanded Sequences")').getByRole('treegrid');
     this.sequencesTableRow = this.sequencesTable.getByRole('row', { name: this.sequenceFilterName });
   }
 

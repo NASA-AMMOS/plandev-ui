@@ -232,7 +232,7 @@ test.describe.serial('Timeline View Editing', () => {
     expect(
       await page
         .locator('.timeline-row-wrapper', { hasText: rowName })
-        .locator('.collapse', { hasText: 'PickBanana' })
+        .locator('.collapse-root', { hasText: 'PickBanana' })
         .count(),
     ).toBe(1);
 

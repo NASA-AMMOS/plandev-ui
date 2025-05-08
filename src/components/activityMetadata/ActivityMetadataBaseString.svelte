@@ -25,7 +25,7 @@
   <ActivityMetadataName {key} />
   <Input>
     <input
-      class="st-input w-100"
+      class="st-input w-full"
       bind:value={stringValue}
       {disabled}
       on:change={() => dispatch('change', { key, value: stringValue })}

@@ -66,13 +66,13 @@
   <ModalContent style="overflow: auto; padding: 0">
     <fieldset>
       <label for="name">View Name</label>
-      <input bind:value={viewName} autocomplete="off" class="st-input w-100" name="name" required />
+      <input bind:value={viewName} autocomplete="off" class="st-input w-full" name="name" required />
     </fieldset>
     <fieldset>
       <label for="file">View JSON File</label>
       <input
         bind:this={fileInput}
-        class="w-100 upload"
+        class="upload w-full"
         class:error={!!errors.length}
         name="file"
         required

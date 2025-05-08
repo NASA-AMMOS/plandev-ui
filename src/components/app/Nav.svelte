@@ -1,8 +1,8 @@
 <script lang="ts">
-  import AppMenu from '../../components/menus/AppMenu.svelte';
+  import { Select } from '@nasa-jpl/stellar-svelte';
   import type { User, UserRole } from '../../types/app';
-  import { getTarget } from '../../utilities/generic';
   import { changeUserRole } from '../../utilities/permissions';
+  import AppMenu from '../menus/AppMenu.svelte';
 
   export let user: User | null;
 
@@ -10,32 +10,41 @@
 
   $: userRoles = user?.allowedRoles ?? [];
 
-  async function changeRole(event: Event) {
-    const { value } = getTarget(event);
-    if (value) {
-      await changeUserRole(value as string);
-      window.location.reload();
-    }
+  async function changeRole(value: string) {
+    await changeUserRole(value as string);
+    window.location.reload();
   }
 </script>
 
-<div class="nav">
-  <div class="left">
+<div class="w-100 flex h-12 items-center bg-[#110D3D] px-4 dark:bg-secondary" role="navigation">
+  <div class="flex flex-1 items-center gap-2">
     <AppMenu {user} />
-    <div class="divider" />
-    <div class="title st-typography-medium">
+    <div class="h-4 w-[1px] bg-white opacity-20" />
+    <div class="text-sm font-medium text-white">
       <slot name="title" />
     </div>
     <slot name="left" />
   </div>
-  <div class="right">
+
+  <div class="inline-flex items-center gap-1">
     <slot name="right" />
     {#if userRoles.length > 1}
-      <select value={user?.activeRole} class="st-select" on:change={changeRole}>
-        {#each userRoles as userRole}
-          <option value={userRole}>{userRole}</option>
-        {/each}
-      </select>
+      <Select.Root
+        selected={{ label: user?.activeRole ?? '', value: user?.activeRole ?? '' }}
+        onSelectedChange={v => v && changeRole(v.value)}
+        loop={false}
+      >
+        <Select.Trigger class="min-w-[124px]" value={user?.activeRole} size="xs" aria-labelledby={null}>
+          <Select.Value placeholder="Select a" class="text-secondary-foreground" aria-label="Select Role" />
+        </Select.Trigger>
+        <Select.Content>
+          <Select.Label size="xs">Select Role</Select.Label>
+          {#each userRoles as userRole}
+            <Select.Item size="xs" value={userRole} label={userRole}>{userRole}</Select.Item>
+          {/each}
+        </Select.Content>
+        <Select.Input name="user-menu" aria-label="Select Role hidden input" />
+      </Select.Root>
     {/if}
   </div>
 </div>
@@ -43,39 +52,5 @@
 <style>
   :root {
     --nav-header-height: 48px;
-  }
-  .nav {
-    align-items: center;
-    background: #110d3e;
-    color: var(--st-primary-background-color);
-    display: flex;
-    height: var(--nav-header-height);
-    padding: 1rem;
-    z-index: 9;
-  }
-
-  .divider {
-    background: var(--st-white);
-    height: 16px;
-    opacity: 0.2;
-    width: 1px;
-  }
-
-  .title {
-    align-items: center;
-    color: var(--st-gray-20);
-    font-size: 14px;
-  }
-
-  .left {
-    align-items: center;
-    display: flex;
-    flex-grow: 1;
-    gap: 10px;
-  }
-
-  .right {
-    align-items: center;
-    display: inline-flex;
   }
 </style>

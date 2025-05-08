@@ -77,7 +77,7 @@
     <Input layout="stacked">
       <label class="st-typography-body" for="file">Resource File</label>
       <input
-        class="w-100"
+        class="w-full text-xs"
         name="file"
         type="file"
         accept="application/json,.csv,.txt"

@@ -99,7 +99,7 @@
 
 <div id={ID_COMMAND_DETAIL_PANE} class="content">
   {#if commandName != null}
-    <div class="command-name">
+    <div class="command-name text-xs">
       {commandName}
       <button
         class="open-dictionary"
@@ -109,12 +109,12 @@
     </div>
   {/if}
   {#if commandDef != null && commandDef.description != null}
-    <div class="command-description">{commandDef.description}</div>
+    <div class="command-description text-xs">{commandDef.description}</div>
   {/if}
   {#if !!timeTagNode}
     <fieldset>
       <label class="label-row" for="timeTag">Time Tag</label>
-      <input class="st-input w-100" disabled name="timeTag" value={timeTagNode.text.trim()} />
+      <input class="st-input w-full" disabled name="timeTag" value={timeTagNode.text.trim()} />
     </fieldset>
   {/if}
   {#if !!commandNode}

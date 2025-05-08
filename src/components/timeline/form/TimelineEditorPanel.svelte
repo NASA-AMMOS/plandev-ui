@@ -464,7 +464,7 @@
       <!-- Select Timeline. -->
       <div class="timeline-select-container">
         <select
-          class="st-select w-100"
+          class="st-select w-full"
           data-type="number"
           name="timelines"
           value={$selectedTimelineId}
@@ -492,7 +492,7 @@
                 <label for="marginLeft">Margin Left</label>
                 <input
                   min={ViewConstants.MIN_MARGIN_LEFT}
-                  class="st-input w-100"
+                  class="st-input w-full"
                   name="marginLeft"
                   type="number"
                   value={selectedTimeline.marginLeft}
@@ -504,7 +504,7 @@
               <label for="marginRight">Margin Right</label>
               <input
                 min={0}
-                class="st-input w-100"
+                class="st-input w-full"
                 name="marginRight"
                 type="number"
                 value={selectedTimeline.marginRight}
@@ -546,7 +546,7 @@
                             viewUpdateTimeline('verticalGuides', newVerticalGuides, $selectedTimelineId);
                           }}
                           autocomplete="off"
-                          class="st-input w-100"
+                          class="st-input w-full"
                           name="text"
                           placeholder="Label"
                         />
@@ -664,7 +664,7 @@
       </button>
       <div class="timeline-select-container">
         <select
-          class="st-select w-100"
+          class="st-select w-full"
           data-type="number"
           name="rows"
           value={$selectedRowId}
@@ -685,7 +685,7 @@
           <Input>
             <label for="name">Row Name</label>
             <input
-              class="st-input w-100"
+              class="st-input w-full"
               name="name"
               autocomplete="off"
               type="string"
@@ -701,7 +701,7 @@
               <input
                 min={ViewConstants.MIN_ROW_HEIGHT}
                 disabled={selectedRow.autoAdjustHeight}
-                class="st-input w-100"
+                class="st-input w-full"
                 name="height"
                 type="number"
                 value={selectedRow.height}
@@ -712,7 +712,7 @@
           <Input>
             <label for="marginLeft">Resize Mode</label>
             <select
-              class="st-select w-100"
+              class="st-select w-full"
               data-type="bool"
               name="autoAdjustHeight"
               value={selectedRow.autoAdjustHeight}
@@ -753,7 +753,7 @@
                           value={horizontalGuide.label.text}
                           on:input={event => handleUpdateHorizontalGuideLabel(event, horizontalGuide)}
                           autocomplete="off"
-                          class="st-input w-100"
+                          class="st-input w-full"
                           name="text"
                         />
                       </Input>
@@ -763,7 +763,7 @@
                           value={horizontalGuide.y}
                           on:input={event => handleUpdateHorizontalGuideNumberValue(event, horizontalGuide)}
                           autocomplete="off"
-                          class="st-input w-100"
+                          class="st-input w-full"
                           name="y"
                           type="number"
                         />
@@ -772,7 +772,7 @@
                         <label for="yAxisId">Y Axis</label>
                         <select
                           on:input={event => handleUpdateHorizontalGuideNumberValue(event, horizontalGuide)}
-                          class="st-select w-100"
+                          class="st-select w-full"
                           data-type="number"
                           name="yAxisId"
                         >
@@ -817,7 +817,7 @@
               <input
                 min={12}
                 autocomplete="off"
-                class="st-input w-100"
+                class="st-input w-full"
                 name="text"
                 type="number"
                 value={discreteOptions.height}
@@ -1024,12 +1024,12 @@
                       <span class="drag-icon">
                         <GripVerticalIcon />
                       </span>
-                      <div class="w-100">
+                      <div class="w-full">
                         <Input layout="stacked" class="editor-input">
                           <label for="text">Y Axis</label>
                           <input
                             autocomplete="off"
-                            class="st-input w-100"
+                            class="st-input w-full"
                             name="text"
                             type="string"
                             value={yAxis.label.text}
@@ -1049,7 +1049,7 @@
                       <Input layout="stacked" class="editor-input">
                         <label for="tickCount">Ticks</label>
                         <input
-                          class="st-input w-100"
+                          class="st-input w-full"
                           name="tickCount"
                           type="number"
                           min="0"

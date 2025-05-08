@@ -1,7 +1,20 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Tag } from '../../../types/tags';
 import TagsInput from './TagsInput.svelte';
+
+Object.defineProperty(window, 'matchMedia', {
+  enumerable: true,
+  value: vi.fn().mockImplementation(query => ({
+    addEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+    matches: false,
+    media: query,
+    onchange: null,
+    removeEventListener: vi.fn(),
+  })),
+  writable: true,
+});
 
 describe('TagsInput component', () => {
   afterEach(() => {
@@ -20,7 +33,7 @@ describe('TagsInput component', () => {
     });
 
     // Input name should match name prop
-    expect((getByRole('textbox') as HTMLInputElement).name).to.equal('Test Name');
+    expect((getByRole('textbox') as HTMLInputElement).ariaLabel).to.equal('Test Name');
 
     // Input name should match name prop
     selected.forEach(tag => {

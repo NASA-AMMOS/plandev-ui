@@ -1,26 +1,118 @@
-@import 'bootstrap/dist/css/bootstrap-utilities.min.css';
 @import 'tippy.js/dist/tippy.css';
 @import 'toastify-js/src/toastify.css';
 @import 'ag-grid-community/styles/ag-grid.min.css';
+@import '@nasa-jpl/stellar-svelte/theme';
+@import '@nasa-jpl/stellar-svelte/font';
 
 @import '@fontsource/jetbrains-mono/index.css';
 
-@import '@nasa-jpl/stellar/font/inter/inter.css';
 @import '@nasa-jpl/stellar/css/variables.css';
 @import '@nasa-jpl/stellar/css/typography.css';
 @import '@nasa-jpl/stellar/css/button.css';
 @import '@nasa-jpl/stellar/css/input.css';
 @import '@nasa-jpl/stellar/css/select.css';
-@import '@nasa-jpl/stellar/css/table.css';
 @import '@nasa-jpl/stellar/css/badge.css';
-
-@import 'modern-css-reset/dist/reset.min.css';
 
 @import './stellar.css';
 @import 'ag-grid-community/styles/ag-theme-alpine.min.css';
 @import './ag-grid-stellar.css';
 @import './tooltip.css';
 @import './icon.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme */
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 233 57% 37%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 72.22% 50.59%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 212 99% 40%;
+    --radius: 0.3rem;
+  }
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+  }
+}
+
+/* CSS reset */
+
+/* Inherit fonts for inputs and buttons */
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+/* Make images easier to work with */
+img,
+picture {
+  display: block;
+  max-width: 100%;
+}
+
+/* A elements that don't have a class get default styles */
+a:not([class]) {
+  text-decoration-skip-ink: auto;
+}
+
+/* Box sizing rules */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Remove default margin */
+body,
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
 
 html,
 body,
@@ -29,12 +121,36 @@ body,
   width: 100vw;
 }
 
+/* Remove list styles on ul, ol elements with a list role, which suggests default styling will be removed */
+ul[role='list'],
+ol[role='list'] {
+  list-style: none;
+}
+
+/* Set core root defaults */
+html:focus-within {
+  scroll-behavior: smooth;
+}
+
+/* Remove all animations and transitions for people that prefer not to see them */
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Global app styles */
+
 body {
-  background-color: var(--st-primary-background-color);
-  color: var(--st-primary-text-color);
-  font-family: Inter, Roboto;
-  font-size: 12px;
-  font-weight: 300;
+  min-height: 100vh;
 }
 
 label.error,
@@ -43,18 +159,9 @@ span.error {
 }
 
 fieldset {
-  border: 0;
-  color: var(--st-typography-body-color);
-  display: flex;
-  flex-direction: column;
-  font-family: var(--st-typography-body-font-family);
-  font-size: var(--st-typography-body-font-size);
-  font-weight: var(--st-typography-body-font-weight);
-  letter-spacing: var(--st-typography-body-letter-spacing);
-  line-height: var(--st-typography-body-line-height);
-  margin: 0;
-  min-width: 0;
-  padding: 8px 16px 0px;
+  @apply m-0 flex min-w-0 flex-col border-0 px-4 pb-0 pt-2;
+  /* Using the Inter font from Stellar as font-sans is defined in Tailwind config */
+  @apply font-sans text-foreground;
 }
 
 .toastify {
@@ -75,6 +182,10 @@ fieldset {
   pointer-events: none;
 }
 
+.permission-disabled * {
+  opacity: 1 !important;
+}
+
 .st-button.permission-disabled {
   opacity: var(--st-button-disabled-opacity);
 }
@@ -92,4 +203,9 @@ fieldset {
   outline: 0;
   overflow: hidden;
   z-index: 1000;
+}
+
+/* Revert zeroing out of padding on selects for now which is coming from tailwind https://github.com/sindresorhus/modern-normalize/blob/main/modern-normalize.css */
+select {
+  padding: revert !important;
 }

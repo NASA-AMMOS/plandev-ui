@@ -1,11 +1,13 @@
 <svelte:options immutable={true} accessors={true} />
 
 <script lang="ts">
+  import { Input, Label } from '@nasa-jpl/stellar-svelte';
   import type { ModifierPhases, State } from '@popperjs/core';
   import { createEventDispatcher } from 'svelte';
   import { createPopperActions } from 'svelte-popperjs';
   import type { Tag, TagChangeType } from '../../../types/tags';
   import { generateRandomPastelColor } from '../../../utilities/color';
+  import { classNames } from '../../../utilities/generic';
   import { useActions, type ActionArray } from '../../../utilities/useActions';
   import TagChip from './Tag.svelte';
 
@@ -29,7 +31,7 @@
   export let getTagName = (tag: Tag) => tag.name;
   export let id: string = '';
   export let ignoreCase: boolean = true;
-  export let inputRef: HTMLInputElement | null = null;
+  export let inputRef: Input | null = null;
   export let minWidth: number = 82;
   export let name: string = '';
   export let placeholder: string = 'Enter a tag...';
@@ -150,6 +152,7 @@
   }
 
   function onKeydown(event: KeyboardEvent) {
+    event.stopPropagation();
     const { key } = event;
 
     // Prevent submission of any parent forms on enter
@@ -229,30 +232,39 @@
 <svelte:window on:click|capture={onClickOutside} on:touchstart|capture={onClickOutside} />
 
 <div
-  class="tags-input"
-  class:disabled
+  class={classNames(
+    'flex max-h-[40vh] gap-2 overflow-hidden rounded-md border border-input bg-background p-[2px] focus-within:ring-2 focus-within:ring-ring',
+    {
+      'cursor-not-allowed opacity-50': disabled,
+    },
+  )}
   use:useActions={use}
   use:popperRef
   bind:this={tagsRef}
   bind:clientWidth={tagsWidth}
+  role="combobox"
+  aria-label="{name} combobox"
+  aria-expanded={suggestionsVisible}
+  aria-controls="tags-input"
 >
-  <div class="tags-input-selected-items">
+  <div class="m-0 flex w-full flex-1 flex-wrap gap-[2px] p-0" data-testid="tags-input-selected-items">
     {#each selectedTags as tag}
       <TagChip {tag} removable={!disabled} on:click={() => onTagRemove(tag)} {disabled} ariaRole="option" />
     {/each}
     {#if !disabled || (disabled && !selectedTags.length)}
       {#if !(!allowMultiple && selectedTags.length)}
-        <input
+        <Input
           {id}
-          {name}
           {disabled}
+          aria-label={name}
+          sizeVariant="xs"
           autocomplete="off"
           placeholder={disabled && !showPlaceholderIfDisabled ? '' : placeholder}
-          class="st-input"
-          style:min-width={`${minWidth}px`}
-          on:mouseup={openSuggestions}
+          style="min-width: {`${minWidth}px`}"
+          class="h-5 w-full flex-1 border-none bg-transparent !ring-transparent !ring-offset-transparent"
+          on:click={openSuggestions}
           on:focus={openSuggestions}
-          on:keydown|stopPropagation={onKeydown}
+          on:keydown={onKeydown}
           bind:value={searchText}
           bind:this={inputRef}
         />
@@ -260,18 +272,21 @@
     {/if}
   </div>
   {#if suggestionsVisible}
-    <div class="tags-input-portal" use:popperContent={extraOpts}>
-      <ul class="tags-input-options" role="listbox">
+    <div
+      id="tags-input"
+      class="z-[99999] min-w-[150px] select-none overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md outline-none"
+      use:popperContent={extraOpts}
+    >
+      <ul class="m-0 divide-y divide-solid p-0" role="listbox">
         {#if filteredOptions.length}
-          <div class="tags-input-option tag-header st-typography-label">Suggestions</div>
+          <Label size="sm" class="flex w-full bg-primary-foreground p-2">Suggestions</Label>
           {#each filteredOptions as tag}
             <li
               role="option"
-              class="tags-input-option"
+              class="flex cursor-pointer p-2 hover:bg-accent aria-selected:bg-accent"
               on:mousedown|stopPropagation
               on:mouseup|stopPropagation={() => addTag(tag, 'select')}
               aria-selected={activeTag ? compareTags(activeTag, tag) : false}
-              class:active={activeTag ? compareTags(activeTag, tag) : false}
             >
               {#if $$slots.default}
                 <slot prop={tag} />
@@ -286,112 +301,29 @@
             <div
               on:mousedown|stopPropagation
               on:mouseup|stopPropagation={() => addTag(createTagObject(searchText || ''), 'create')}
-              class="tags-input-option"
+              class="flex cursor-pointer border-b p-2 hover:bg-accent aria-selected:bg-accent"
               role="button"
               tabindex={0}
             >
               Add "{searchText}" (enter)
             </div>
           {:else if !filteredOptions.length}
-            <div class="tags-input-option tags-input-option-message">No matching {tagDisplayName} found</div>
+            <div class="flex cursor-default border-b p-2">
+              No matching {tagDisplayName} found
+            </div>
           {/if}
         {/if}
         {#if !filteredOptions.length && exactMatchFound && searchText}
-          <div class="tags-input-option tags-input-option-message">{searchText} already added</div>
+          <div class="flex cursor-default border-b p-2">
+            {searchText} already added
+          </div>
         {/if}
         {#if !filteredOptions.length && !exactMatchFound && !searchText}
-          <div class="tags-input-option tags-input-option-message">No other {tagDisplayName}s found</div>
+          <div class="flex cursor-default border-b p-2">
+            No other {tagDisplayName}s found
+          </div>
         {/if}
       </ul>
     </div>
   {/if}
 </div>
-
-<style>
-  .tags-input {
-    background-color: var(--st-input-background-color);
-    border: var(--st-input-border);
-    border-radius: 4px;
-    color: var(--st-input-color);
-    display: flex;
-    gap: 8px;
-    max-height: 40vh;
-    overflow: hidden;
-    padding: 2px;
-  }
-
-  .tags-input.disabled,
-  :global(.tags-input.permission-disabled) {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-
-  .tags-input.disabled input,
-  :global(.tags-input.permission-disabled) input {
-    cursor: not-allowed;
-    opacity: 1;
-  }
-
-  .tags-input-selected-items {
-    display: flex;
-    flex: 1;
-    flex-wrap: wrap;
-    gap: 2px;
-    margin: 0;
-    padding: 0;
-  }
-
-  .tags-input input {
-    background: none;
-    border: none;
-    flex: 1;
-    height: 20px;
-    outline: none;
-    width: 100%;
-  }
-
-  .tags-input input[placeholder] {
-    text-overflow: ellipsis;
-  }
-
-  .tags-input-portal {
-    background: #ffffff;
-    border: 1px solid var(--st-gray-20);
-    border-radius: 10px;
-    box-shadow: var(--st-shadow-popover);
-    min-width: 150px;
-    overflow: hidden;
-    user-select: none;
-    z-index: 99999;
-  }
-
-  .tags-input-options {
-    margin: 0;
-    padding: 0;
-  }
-
-  .tags-input-option {
-    border-bottom: 1px solid var(--st-gray-20);
-    cursor: pointer;
-    display: flex;
-    padding: 8px;
-  }
-
-  .tags-input-option.active,
-  .tags-input-option:hover {
-    background: var(--st-gray-10);
-  }
-
-  .tag-header {
-    background: var(--st-gray-10);
-    cursor: default;
-  }
-
-  .tags-input-option-message {
-    cursor: default;
-  }
-
-  .tags-input-option-message:hover {
-    background: inherit;
-  }
-</style>

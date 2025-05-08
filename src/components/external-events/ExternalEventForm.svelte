@@ -34,7 +34,7 @@
       <Collapse title="Definition">
         <Input layout="inline">
           Type
-          <input class="st-input w-100" disabled={true} name="event-type" value={externalEvent.pkey.event_type_name} />
+          <input class="st-input w-full" disabled={true} name="event-type" value={externalEvent.pkey.event_type_name} />
         </Input>
 
         <DatePickerField
@@ -47,18 +47,18 @@
 
         <Input layout="inline">
           Duration
-          <input class="st-input w-100" disabled={true} name="duration" value={externalEvent.duration} />
+          <input class="st-input w-full" disabled={true} name="duration" value={externalEvent.duration} />
         </Input>
 
         <Input layout="inline">
           Source ID
-          <input class="st-input w-100" disabled={true} name="source-key" value={externalEvent.pkey.source_key} />
+          <input class="st-input w-full" disabled={true} name="source-key" value={externalEvent.pkey.source_key} />
         </Input>
 
         <Input layout="inline">
           Source File
           <input
-            class="st-input w-100"
+            class="st-input w-full"
             disabled={true}
             name="source-key-resolved"
             value={externalEvent.pkey.source_key}

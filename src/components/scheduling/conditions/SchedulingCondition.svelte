@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
+  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import type { SchedulingConditionMetadata, SchedulingConditionPlanSpecification } from '../../../types/scheduling';
@@ -9,7 +10,6 @@
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { tooltip } from '../../../utilities/tooltip';
   import Collapse from '../../Collapse.svelte';
-  import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
 
   export let condition: SchedulingConditionMetadata;
   export let conditionPlanSpec: SchedulingConditionPlanSpecification;
@@ -52,6 +52,7 @@
           type="checkbox"
           checked={conditionPlanSpec.enabled}
           style:cursor="pointer"
+          class="m-1"
           on:change={onEnable}
           on:click|stopPropagation
           use:permissionHandler={{
@@ -87,28 +88,28 @@
     </svelte:fragment>
 
     <svelte:fragment slot="contextMenuContent">
-      <ContextMenuItem
-        on:click={() =>
-          window.open(
-            `${base}/scheduling/conditions/edit/${condition.id}${
-              conditionPlanSpec.condition_revision !== null
-                ? `?${SearchParameters.REVISION}=${conditionPlanSpec.condition_revision}&${SearchParameters.MODEL_ID}=${modelId}`
-                : ''
-            }`,
-            '_blank',
-          )}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasReadPermission,
-              permissionError: readPermissionError,
-            },
-          ],
-        ]}
+      <div
+        use:permissionHandler={{
+          hasPermission: hasReadPermission,
+          permissionError: readPermissionError,
+        }}
       >
-        Edit Condition
-      </ContextMenuItem>
+        <ContextMenu.Item
+          disabled={!hasReadPermission}
+          size="sm"
+          on:click={() =>
+            window.open(
+              `${base}/scheduling/conditions/edit/${condition.id}${
+                conditionPlanSpec.condition_revision !== null
+                  ? `?${SearchParameters.REVISION}=${conditionPlanSpec.condition_revision}&${SearchParameters.MODEL_ID}=${modelId}`
+                  : ''
+              }`,
+              '_blank',
+            )}
+        >
+          Edit Condition
+        </ContextMenu.Item>
+      </div>
     </svelte:fragment>
   </Collapse>
 </div>

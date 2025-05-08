@@ -31,7 +31,7 @@
   <select
     bind:value={enumValues}
     multiple
-    class="st-select w-100"
+    class="st-select w-full"
     {disabled}
     on:change={() => {
       // Filter out the empty value

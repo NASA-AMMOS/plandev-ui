@@ -8,16 +8,15 @@
     editItem: CustomEvent<RowId[]>;
   }
   import { browser } from '$app/environment';
+  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import type { ColDef, ColumnState, IRowNode, RedrawRowsParams } from 'ag-grid-community';
   import { createEventDispatcher, onDestroy, type ComponentEvents } from 'svelte';
   import type { User } from '../../../types/app';
   import type { Dispatcher } from '../../../types/component';
-  import type { RowId, TRowData } from '../../../types/data-grid';
+  import type { RowId } from '../../../types/data-grid';
   import type { PermissionCheck } from '../../../types/permissions';
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
   import { permissionHandler } from '../../../utilities/permissionHandler';
-  import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
-  import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
 
   const defaultDeletePermissionError: string = 'You do not have permission to delete.';
@@ -161,45 +160,30 @@
   on:selectionChanged
 >
   <svelte:fragment slot="context-menu">
-    <ContextMenuHeader>Actions</ContextMenuHeader>
     {#if hasEdit}
-      <ContextMenuItem
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: editPermission,
-              permissionError: editPermissionError,
-            },
-          ],
-        ]}
-        on:click={editItem}
+      <div
+        use:permissionHandler={{
+          hasPermission: editPermission,
+          permissionError: editPermissionError,
+        }}
       >
-        Edit {itemDisplayText}
-      </ContextMenuItem>
+        <ContextMenu.Item size="sm" disabled={!editPermission} on:click={editItem}>
+          Edit {itemDisplayText}
+        </ContextMenu.Item>
+      </div>
     {/if}
     {#if selectedItemId !== null}
-      <ContextMenuItem
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: deletePermission,
-              permissionError: deletePermissionError,
-            },
-          ],
-        ]}
-        on:click={deleteItem}
+      <div
+        use:permissionHandler={{
+          hasPermission: deletePermission,
+          permissionError: deletePermissionError,
+        }}
       >
-        Delete {itemDisplayText}
-      </ContextMenuItem>
+        <ContextMenu.Item size="sm" disabled={!deletePermission} on:click={deleteItem}>
+          Delete {itemDisplayText}
+        </ContextMenu.Item>
+      </div>
     {/if}
+    <ContextMenu.Separator />
   </svelte:fragment>
 </DataGrid>
-
-<style>
-  :global(.context-menu-item.disabled) {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-</style>

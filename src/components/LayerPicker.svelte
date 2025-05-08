@@ -1,89 +1,79 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { DropdownMenu } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { ChartType, Layer, Row, TimelineItemType } from '../types/timeline';
-  import ContextMenu from './context-menu/ContextMenu.svelte';
-  import ContextMenuHeader from './context-menu/ContextMenuHeader.svelte';
-  import ContextMenuItem from './context-menu/ContextMenuItem.svelte';
-  import ContextSubMenuItem from './context-menu/ContextSubMenuItem.svelte';
 
   export let rows: Row[] = [];
   export let chartType: ChartType = 'activity';
+  export let layerItem: TimelineItemType | undefined = undefined;
 
   const dispatch = createEventDispatcher<{
     select: { item?: TimelineItemType; layer?: Layer; row?: Row };
+    visibilityChange: boolean;
   }>();
 
-  let contextMenu: ContextMenu;
-  let layerItem: TimelineItemType | undefined = undefined;
   let isResourceChart: boolean = false;
 
   $: isResourceChart = chartType === 'x-range' || chartType === 'line';
 
-  export function toggle(e: MouseEvent, item?: TimelineItemType) {
-    if (contextMenu.isShown()) {
-      hide();
-    } else {
-      show(e);
-      layerItem = item || undefined;
-    }
-  }
-
-  export function hide() {
-    contextMenu.hide();
-    layerItem = undefined;
-  }
-
-  export function show(e: MouseEvent) {
-    const bounds = (e.target as HTMLElement).getBoundingClientRect();
-    contextMenu.showDirectly(bounds.x, bounds.y + bounds.height + 4, bounds.x);
-  }
-
-  export function onSelect(item: TimelineItemType | undefined, row?: Row, layer?: Layer | undefined) {
+  function onSelect(item: TimelineItemType | undefined, row?: Row, layer?: Layer | undefined) {
     dispatch('select', { item, layer, row });
-    hide();
+  }
+
+  function onOpenChange(open: boolean) {
+    dispatch('visibilityChange', open);
   }
 </script>
 
-<div aria-label={`layer-picker-${chartType}-${layerItem?.name}`}>
-  <ContextMenu hideAfterClick={false} bind:this={contextMenu}>
-    <ContextMenuHeader>Add Filter to Row</ContextMenuHeader>
+<DropdownMenu.Root {onOpenChange}>
+  <DropdownMenu.Trigger asChild let:builder>
+    <slot builders={[builder]} />
+  </DropdownMenu.Trigger>
+  <DropdownMenu.Content
+    avoidCollisions
+    class="w-56"
+    aria-label={`layer-picker-${chartType}-${layerItem?.name}`}
+    align="start"
+  >
+    <DropdownMenu.Label size="sm">Add Filter to Row</DropdownMenu.Label>
     {#if rows.length < 1}
       <div class="st-typography-label empty">No rows found</div>
     {/if}
     {#each rows as row}
-      <!-- Limit selection to rows if resource chart  -->
       {#if isResourceChart}
-        <ContextMenuItem on:click={() => onSelect(layerItem, row)}>
-          {row.name}
-        </ContextMenuItem>
+        <DropdownMenu.Item size="sm" on:click={() => onSelect(layerItem, row)}>{row.name}</DropdownMenu.Item>
       {:else}
-        <ContextSubMenuItem text={row.name} parentMenu={contextMenu} hideAfterClick={false}>
-          {#each row.layers.filter(l => l.chartType === chartType) as layer}
-            <ContextMenuItem on:click={() => onSelect(layerItem, row, layer)}>
-              <div class="layer">
-                {layer.name || `${layer.chartType} Layer`}
-              </div>
-            </ContextMenuItem>
-          {/each}
-          <ContextMenuItem on:click={() => onSelect(layerItem, row)}>
-            <div class="layer-picker-context-menu-blue">New Layer +</div>
-          </ContextMenuItem>
-        </ContextSubMenuItem>
+        <DropdownMenu.Sub>
+          <DropdownMenu.SubTrigger size="sm">{row.name}</DropdownMenu.SubTrigger>
+          <DropdownMenu.SubContent>
+            <!-- Limit selection to rows if resource chart  -->
+            {#if isResourceChart}
+              <DropdownMenu.Item size="sm" on:click={() => onSelect(layerItem, row)}>{row.name}</DropdownMenu.Item>
+            {:else}
+              {#each row.layers.filter(l => l.chartType === chartType) as layer}
+                <DropdownMenu.Item size="sm" on:click={() => onSelect(layerItem, row, layer)}>
+                  <div class="capitalize">
+                    {layer.name || `${layer.chartType} Layer`}
+                  </div>
+                </DropdownMenu.Item>
+              {/each}
+              <DropdownMenu.Item size="sm" on:click={() => onSelect(layerItem, row)}>
+                <div class="layer-picker-context-menu-blue">New Layer +</div>
+              </DropdownMenu.Item>
+            {/if}
+          </DropdownMenu.SubContent>
+        </DropdownMenu.Sub>
       {/if}
     {/each}
-    <ContextMenuItem on:click={() => onSelect(layerItem)}>
+    <DropdownMenu.Item size="sm" on:click={() => onSelect(layerItem)}>
       <div class="layer-picker-context-menu-blue">New Row +</div>
-    </ContextMenuItem>
-  </ContextMenu>
-</div>
+    </DropdownMenu.Item>
+  </DropdownMenu.Content>
+</DropdownMenu.Root>
 
 <style>
-  .layer {
-    text-transform: capitalize;
-  }
-
   .empty {
     padding: 8px 4px;
     user-select: none;

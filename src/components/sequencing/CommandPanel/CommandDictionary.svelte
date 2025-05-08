@@ -97,7 +97,7 @@
 
 <div class="command-dictionary-container">
   <div class="dictionary-name">
-    <div class="breadcrumbs-container">
+    <div class="breadcrumbs-container text-xs">
       {#if selectedCommandDefinition !== null}
         <button class="st-button-link breadcrumb" on:click={onClear}>{commandDictionary.id}</button>
         <ChevronRightIcon />
@@ -118,18 +118,18 @@
     </div>
   </div>
   <div class="dictionary-search" class:hidden={selectedCommandDefinition !== null}>
-    <label for="dictionary-search">Command Dictionary</label>
+    <label for="dictionary-search" class="text-xs">Command Dictionary</label>
     <div class="search-input">
       <Input>
         <div class="search-icon" slot="left"><SearchIcon /></div>
         <input
-          class="st-input w-100"
+          class="st-input w-full"
           name="dictionary-search"
           placeholder={`Search ${searchFieldMap[searchField]}`}
           on:input={onSearch}
         />
       </Input>
-      <select bind:value={searchField} class="st-select w-100">
+      <select bind:value={searchField} class="st-select w-full">
         <option value={'command_name'}>Command name</option>
         <option value={'enum'}>Enum</option>
         <option value={'argument_name'}>Argument name</option>
@@ -145,24 +145,26 @@
           </div>
         {/each}
       {:else}
-        No {searchFieldMap[searchField]} matched your search query.
+        <div class="text-sm">
+          No {searchFieldMap[searchField]} matched your search query.
+        </div>
       {/if}
     </div>
   </div>
   <div class="command-metadata-container" class:hidden={selectedCommandDefinition === null}>
     {#if selectedCommandDefinition}
-      <div class="command-type">
+      <div class="command-type text-xs">
         {#if isFswCommand(selectedCommandDefinition)}
           FSW Command
         {:else}
           HW Command
         {/if}
       </div>
-      <div class="command-description">
+      <div class="command-description text-xs">
         {selectedCommandDefinition?.description}
       </div>
       {#if isFswCommand(selectedCommandDefinition)}
-        <div class="title">Arguments</div>
+        <div class="title text-xs">Arguments</div>
         <div class="command-arguments">
           {#each selectedCommandDefinition.arguments as argument}
             <CommandArgument commandArgumentDefinition={argument} />

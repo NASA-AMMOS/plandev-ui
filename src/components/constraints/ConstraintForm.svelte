@@ -51,7 +51,7 @@
   $: hasCreateDefinitionCodePermission = featurePermissions.constraints.canCreate(user);
   $: if (user) {
     hasWriteDefinitionTagsPermission = featurePermissions.constraints.canUpdateDefinition(user, {
-      author: mode === 'create' ? user.id : initialConstraintDefinitionAuthor ?? user.id,
+      author: mode === 'create' ? user.id : (initialConstraintDefinitionAuthor ?? user.id),
     });
   }
   $: hasWriteMetadataPermission =

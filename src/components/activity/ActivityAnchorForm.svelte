@@ -213,7 +213,7 @@
           Offset
         </label>
         <input
-          class="st-input w-100"
+          class="st-input w-full"
           class:error={!!startOffsetError}
           {disabled}
           name="start-offset"
@@ -262,7 +262,7 @@
     cursor: not-allowed;
   }
 
-  :global(.anchor-collapse.collapse .content) {
+  :global(.anchor-collapse.collapse-root .content) {
     margin-left: 1rem;
   }
 </style>

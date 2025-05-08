@@ -5,6 +5,12 @@ import preprocess from 'svelte-preprocess';
 const config = {
   kit: {
     adapter: adapterNode(),
+    alias: {
+      '@melt-ui/*': './node_modules/@melt-ui/*',
+      '@melt-ui/svelte/index.js': './node_modules/@melt-ui/svelte/dist/index.js',
+      'bits-ui/*': './node_modules/bits-ui/*',
+      'svelte/elements.js': './node_modules/svelte/elements',
+    },
     paths: {
       base: '',
     },

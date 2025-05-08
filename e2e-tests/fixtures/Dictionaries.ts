@@ -251,27 +251,33 @@ export class Dictionaries {
     this.createButton = this.page.locator(`button:has-text("Create")`);
     this.inputFile = this.page.locator('input[name="file"]');
 
-    this.channelDictionaryTable = this.page.locator('.panel:has-text("Channel Dictionaries")').getByRole('treegrid');
+    this.channelDictionaryTable = this.page
+      .locator('div[role="tabpanel"]:has-text("Channel Dictionaries")')
+      .getByRole('treegrid');
     this.channelDictionaryTableRow = this.channelDictionaryTable.getByRole('row', { name: dictionaryName });
     this.channelDictionaryTableRowDeleteButton = this.channelDictionaryTableRow
       .getByRole('gridcell')
       .getByRole('button', { name: `Delete ${DictionaryType.ChannelDictionary}` });
 
-    this.commandDictionaryTable = this.page.locator('.panel:has-text("Command Dictionaries")').getByRole('treegrid');
+    this.commandDictionaryTable = this.page
+      .locator('div[role="tabpanel"]:has-text("Command Dictionaries")')
+      .getByRole('treegrid');
     this.commandDictionaryTableRow = this.commandDictionaryTable.getByRole('row', { name: dictionaryName });
     this.commandDictionaryTableRowDeleteButton = this.commandDictionaryTable
       .getByRole('gridcell')
       .getByRole('button', { name: `Delete ${DictionaryType.CommandDictionary}` });
 
     this.parameterDictionaryTable = this.page
-      .locator('.panel:has-text("Parameter Dictionaries")')
+      .locator('div[role="tabpanel"]:has-text("Parameter Dictionaries")')
       .getByRole('treegrid');
     this.parameterDictionaryTableRow = this.parameterDictionaryTable.getByRole('row', { name: dictionaryName });
     this.parameterDictionaryTableRowDeleteButton = this.parameterDictionaryTable
       .getByRole('gridcell')
       .getByRole('button', { name: `Delete ${DictionaryType.ParameterDictionary}` });
 
-    this.sequenceAdaptationTable = this.page.locator('.panel:has-text("Sequence Adaptations")').getByRole('treegrid');
+    this.sequenceAdaptationTable = this.page
+      .locator('div[role="tabpanel"]:has-text("Sequence Adaptations")')
+      .getByRole('treegrid');
     this.sequenceAdaptationTableRow = this.sequenceAdaptationTable.getByRole('row', { name: dictionaryName });
     this.sequenceAdaptationTableRowDeleteButton = this.sequenceAdaptationTable
       .getByRole('gridcell')

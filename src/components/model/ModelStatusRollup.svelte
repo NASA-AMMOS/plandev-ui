@@ -1,8 +1,10 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Button } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { ModelLog, ModelSlim, ModelStatus } from '../../types/model';
+  import { classNames } from '../../utilities/generic';
   import { getModelStatusRollup } from '../../utilities/model';
   import { tooltip } from '../../utilities/tooltip';
   import ModelStatusIcon from './ModelStatusIcon.svelte';
@@ -80,126 +82,93 @@
   }
 </script>
 
-<div class="model-status-container">
-  {#if mode === 'rollup' || mode === 'iconOnly'}
-    <div
-      class="model-status-rollup st-typography-body"
-      class:icon-only={mode === 'iconOnly'}
-      use:tooltip={{ content: status && rollupTooltipMessages[status] }}
-    >
-      <ModelStatusIcon {showCompleteStatus} {status} />
-      {#if mode === 'rollup'}
-        {#if status === 'extracting'}
-          Extracting
-        {:else if status === 'complete' && showCompleteStatus}
-          Extracted
-        {:else if status === 'error'}
-          Errors extracting
-        {/if}
+{#if mode === 'rollup' || mode === 'iconOnly'}
+  <div
+    aria-label="Model status"
+    class="grid w-fit items-center gap-x-2 whitespace-nowrap {mode === 'iconOnly'
+      ? 'grid-cols-[min-content]'
+      : 'grid-cols-[min-content_auto]'}"
+    use:tooltip={{ content: status && rollupTooltipMessages[status] }}
+  >
+    <ModelStatusIcon {showCompleteStatus} {status} />
+    {#if mode === 'rollup'}
+      {#if status === 'extracting'}
+        Extracting
+      {:else if status === 'complete' && showCompleteStatus}
+        Extracted
+      {:else if status === 'error'}
+        Errors extracting
       {/if}
-    </div>
-  {:else}
-    <div class="model-status-logs-container" class:horizontal={flow === 'horizontal'}>
-      <button
-        class="model-status-button"
-        class:selected={selectedLog === 'activity'}
-        class:disabled={!selectable}
+    {/if}
+  </div>
+{:else}
+  <div
+    class="grid gap-y-3 {flow === 'horizontal'
+      ? 'grid-cols-[repeat(3,_min-content)] gap-x-2'
+      : 'grid-rows-[repeat(3,_min-content)] gap-y-2'}"
+  >
+    <div
+      use:tooltip={{
+        content: activityLog?.error_message ?? activityLogTooltipMessages[activityLogStatus],
+      }}
+    >
+      <Button
+        variant="ghost"
+        class={classNames(
+          'grid w-fit cursor-pointer grid-cols-[min-content_min-content] items-center gap-x-2 whitespace-nowrap border-none p-1 font-normal hover:bg-gray-200 ',
+          {
+            'bg-400': selectedLog !== 'activity',
+            'bg-white hover:bg-white': selectedLog === 'activity',
+            'cursor-default select-text border-none bg-transparent p-0 hover:bg-transparent': !selectable,
+          },
+        )}
         on:click={selectActivityLog}
-        use:tooltip={{
-          content: activityLog?.error_message ?? activityLogTooltipMessages[activityLogStatus],
-        }}
       >
         <ModelStatusIcon {showCompleteStatus} status={activityLogStatus} />
         Extract activity types
-      </button>
-      <button
-        class="model-status-button"
-        class:selected={selectedLog === 'parameter'}
-        class:disabled={!selectable}
+      </Button>
+    </div>
+    <div
+      use:tooltip={{
+        content: parameterLog?.error_message ?? parameterLogTooltipMessages[parameterLogStatus],
+      }}
+    >
+      <Button
+        variant="ghost"
+        class={classNames(
+          'grid w-fit cursor-pointer grid-cols-[min-content_min-content] items-center gap-x-2 whitespace-nowrap border-none p-1 font-normal hover:bg-gray-200 ',
+          {
+            'bg-400': selectedLog !== 'parameter',
+            'bg-white hover:bg-white': selectedLog === 'parameter',
+            'cursor-default select-text border-none bg-transparent p-0 hover:bg-transparent': !selectable,
+          },
+        )}
         on:click={selectParameterLog}
-        use:tooltip={{
-          content: parameterLog?.error_message ?? parameterLogTooltipMessages[parameterLogStatus],
-        }}
       >
         <ModelStatusIcon {showCompleteStatus} status={parameterLogStatus} />
         Extract resource types
-      </button>
-      <button
-        class="model-status-button"
-        class:selected={selectedLog === 'resource'}
-        class:disabled={!selectable}
+      </Button>
+    </div>
+    <div
+      use:tooltip={{
+        content: resourceLog?.error_message ?? resourceLogTooltipMessages[resourceLogStatus],
+      }}
+    >
+      <Button
+        variant="ghost"
+        class={classNames(
+          'grid w-fit cursor-pointer grid-cols-[min-content_min-content] items-center gap-x-2 whitespace-nowrap border-none p-1 font-normal hover:bg-gray-200 ',
+          {
+            'bg-400': selectedLog !== 'resource',
+            'bg-white hover:bg-white': selectedLog === 'resource',
+            'cursor-default select-text border-none bg-transparent p-0 hover:bg-transparent': !selectable,
+          },
+        )}
         on:click={selectResourceLog}
-        use:tooltip={{
-          content: resourceLog?.error_message ?? resourceLogTooltipMessages[resourceLogStatus],
-        }}
       >
         <ModelStatusIcon {showCompleteStatus} status={resourceLogStatus} />
         Extract mission model parameters
-      </button>
+      </Button>
     </div>
-  {/if}
-</div>
-
-<style>
-  .model-status-container {
-    --model-status-gap: 8px;
-  }
-
-  .model-status-rollup {
-    align-items: center;
-    column-gap: var(--model-status-gap);
-    display: grid;
-    grid-template-columns: min-content auto;
-    white-space: nowrap;
-    width: fit-content;
-  }
-
-  .model-status-rollup.icon-only {
-    grid-template-columns: min-content;
-  }
-
-  .model-status-logs-container:not(.horizontal) {
-    display: grid;
-    grid-template-rows: repeat(3, min-content);
-    row-gap: 12px;
-  }
-
-  .model-status-logs-container.horizontal {
-    column-gap: 8px;
-    display: grid;
-    grid-template-columns: repeat(3, min-content);
-  }
-
-  .model-status-logs-container .model-status-button {
-    align-items: center;
-    background: none;
-    border: 0;
-    border-radius: 8px;
-    column-gap: var(--model-status-gap);
-    cursor: pointer;
-    display: grid;
-    grid-template-columns: min-content min-content;
-    padding: 6px;
-    white-space: nowrap;
-  }
-
-  .model-status-logs-container .model-status-button:hover {
-    background-color: var(--tab-hover-background-color, var(--st-gray-20));
-  }
-
-  .model-status-logs-container .model-status-button.selected {
-    background: var(--st-white, #fff);
-  }
-
-  .model-status-logs-container .model-status-button.disabled {
-    background-color: inherit;
-    border: 0;
-    color: var(--st-primary-text-color);
-    cursor: inherit;
-    padding: 0;
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
-    user-select: text;
-  }
-</style>
+  </div>
+{/if}

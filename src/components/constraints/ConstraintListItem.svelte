@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
+  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import CheckmarkIcon from '@nasa-jpl/stellar/icons/check.svg?component';
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
   import VisibleHideIcon from '@nasa-jpl/stellar/icons/visible_hide.svg?component';
@@ -25,7 +26,6 @@
   import { pluralize } from '../../utilities/text';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
-  import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
   import ConstraintViolationButton from './ConstraintViolationButton.svelte';
@@ -205,6 +205,7 @@
         <input
           type="checkbox"
           checked={constraintPlanSpec.enabled}
+          class="m-1"
           on:change={onEnable}
           on:click|stopPropagation
           use:permissionHandler={{
@@ -324,56 +325,47 @@
     {/if}
 
     <svelte:fragment slot="contextMenuContent">
-      <ContextMenuItem
-        on:click={() =>
-          window.open(
-            `${base}/constraints/edit/${constraint.id}${
-              constraintPlanSpec.constraint_revision !== null
-                ? `?${SearchParameters.REVISION}=${constraintPlanSpec.constraint_revision}&${SearchParameters.MODEL_ID}=${modelId}`
-                : ''
-            }`,
-            '_blank',
-          )}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasReadPermission,
-              permissionError: readPermissionError,
-            },
-          ],
-        ]}
+      <div
+        use:permissionHandler={{
+          hasPermission: hasReadPermission,
+          permissionError: readPermissionError,
+        }}
       >
-        View Constraint
-      </ContextMenuItem>
-      <ContextMenuItem
-        on:click={onDuplicateConstraintInvocation}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasEditPermission,
-              permissionError: editPermissionError,
-            },
-          ],
-        ]}
+        <ContextMenu.Item
+          on:click={() =>
+            window.open(
+              `${base}/constraints/edit/${constraint.id}${
+                constraintPlanSpec.constraint_revision !== null
+                  ? `?${SearchParameters.REVISION}=${constraintPlanSpec.constraint_revision}&${SearchParameters.MODEL_ID}=${modelId}`
+                  : ''
+              }`,
+              '_blank',
+            )}
+          disabled={!hasReadPermission}
+        >
+          View Constraint
+        </ContextMenu.Item>
+      </div>
+      <div
+        use:permissionHandler={{
+          hasPermission: hasEditPermission,
+          permissionError: editPermissionError,
+        }}
       >
-        Duplicate Invocation
-      </ContextMenuItem>
-      <ContextMenuItem
-        on:click={onDeleteConstraintInvocation}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasDeletePermission,
-              permissionError: deletePermissionError,
-            },
-          ],
-        ]}
+        <ContextMenu.Item size="sm" on:click={onDuplicateConstraintInvocation} disabled={!hasEditPermission}>
+          Duplicate Invocation
+        </ContextMenu.Item>
+      </div>
+      <div
+        use:permissionHandler={{
+          hasPermission: hasDeletePermission,
+          permissionError: deletePermissionError,
+        }}
       >
-        Delete Invocation
-      </ContextMenuItem>
+        <ContextMenu.Item size="sm" on:click={onDeleteConstraintInvocation} disabled={!hasDeletePermission}>
+          Delete Invocation
+        </ContextMenu.Item>
+      </div>
     </svelte:fragment>
 
     <Collapse title="Description" defaultExpanded={false}>

@@ -1,7 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
-import { getOptionValueFromText, getSelectedOption } from '../utilities/selectors.js';
 import { Models } from './Models.js';
 
 export class Plans {
@@ -13,10 +12,11 @@ export class Plans {
   endTime: string = '2022-006T00:00:00';
   importButton: Locator;
   importFilePath: string = 'e2e-tests/data/banana-plan-export.json';
+  inputButtonModel: Locator;
   inputEndTime: Locator;
   inputFile: Locator;
   inputModel: Locator;
-  inputModelSelector: string = 'select[name="model"]';
+  inputModelSelector: string = 'input[name="model"]';
   inputName: Locator;
   inputStartTime: Locator;
   modelStatus: Locator;
@@ -159,14 +159,12 @@ export class Plans {
   }
 
   async selectInputModel() {
-    const value = await getOptionValueFromText(this.page, this.inputModelSelector, this.models.modelName);
-    await this.inputModel.focus();
-    await this.inputModel.selectOption(value);
-    await this.inputModel.blur();
+    await this.inputButtonModel.click();
+    await this.page.getByRole('option', { name: this.models.modelName }).click();
   }
 
   async selectedModel() {
-    return await getSelectedOption(this.page, this.inputModelSelector);
+    return await this.page.getByLabel('Select Model', { exact: true }).innerText();
   }
 
   updatePage(page: Page): void {
@@ -177,13 +175,14 @@ export class Plans {
     this.durationDisplay = page.locator('input[name="duration"]');
     this.importButton = page.getByRole('button', { name: 'Import' });
     this.inputEndTime = page.locator('input[name="end-time"]');
-    this.inputFile = page.locator('input[name="file"]');
+    this.inputFile = page.locator('input[name="Plan File"]');
+    this.inputButtonModel = page.getByRole('combobox', { name: 'Select Model' });
     this.inputModel = page.locator(this.inputModelSelector);
     this.inputName = page.locator('input[name="name"]');
     this.inputStartTime = page.locator('input[name="start-time"]');
-    this.modelStatus = page.locator('.model-status-container');
+    this.modelStatus = page.getByLabel('Model status');
     this.page = page;
-    this.table = page.locator('.panel:has-text("Plans")').getByRole('treegrid');
+    this.table = page.locator('div[role="tabpanel"]:has-text("Plans")').getByRole('treegrid');
     this.tableRow = (planName: string) => this.table.getByRole('row', { name: planName });
     this.tableRowDeleteButton = (planName: string) =>
       this.tableRow(planName).getByRole('gridcell').getByRole('button', { name: 'Delete Plan' });

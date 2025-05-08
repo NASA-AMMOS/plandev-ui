@@ -192,12 +192,12 @@
     cursor: pointer;
   }
 
-  .parameter-rec-series :global(.collapse > .collapse-header) {
+  .parameter-rec-series :global(.collapse-root > .collapse-header) {
     gap: 8px;
     height: 24px;
   }
 
-  .parameter-rec-series :global(.collapse > .content) {
+  .parameter-rec-series :global(.collapse-root > .content) {
     margin-left: 0px;
   }
 </style>

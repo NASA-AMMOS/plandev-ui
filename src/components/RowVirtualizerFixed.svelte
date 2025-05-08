@@ -4,6 +4,7 @@
   import { createVirtualizer } from '@tanstack/svelte-virtual';
 
   export let count: number = 0;
+  export let disabled: boolean = false;
   export let estimatedItemHeight: number = 32;
   export let selectedIndex: number | undefined = undefined;
   export let maxHeight: string = 'unset';
@@ -28,9 +29,22 @@
   function scrollToIndex(index: number) {
     $virtualizer.scrollToIndex(index, { align: 'center' });
   }
+
+  function onScroll(e: Event) {
+    if (disabled) {
+      e.preventDefault();
+    }
+  }
 </script>
 
-<div class="scroll-container" bind:this={virtualListEl} style:max-height={maxHeight} style:min-width={minWidth}>
+<div
+  class="scroll-container"
+  bind:this={virtualListEl}
+  style:max-height={maxHeight}
+  style:min-width={minWidth}
+  on:scroll={onScroll}
+  on:wheel={onScroll}
+>
   <div style=" height: {$virtualizer.getTotalSize()}px;position: relative; width: 100%;">
     {#each $virtualizer.getVirtualItems() as item, idx (idx)}
       <div

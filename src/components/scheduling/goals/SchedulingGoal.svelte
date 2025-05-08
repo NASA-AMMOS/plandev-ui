@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
+  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import { createEventDispatcher } from 'svelte';
@@ -18,7 +19,6 @@
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { tooltip } from '../../../utilities/tooltip';
   import Collapse from '../../Collapse.svelte';
-  import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
   import Parameters from '../../parameters/Parameters.svelte';
   import SchedulingGoalAnalysesActivities from './SchedulingGoalAnalysesActivities.svelte';
   import SchedulingGoalAnalysesBadge from './SchedulingGoalAnalysesBadge.svelte';
@@ -189,6 +189,7 @@
           type="checkbox"
           checked={enabled}
           style:cursor="pointer"
+          class="m-1"
           on:change={onEnable}
           on:click|stopPropagation
           use:permissionHandler={{
@@ -276,78 +277,67 @@
 
     <SchedulingGoalAnalysesActivities analyses={goal.analyses} />
     <svelte:fragment slot="contextMenuContent">
-      <ContextMenuItem
-        on:click={() =>
-          window.open(
-            `${base}/scheduling/goals/edit/${goal.id}${
-              goalPlanSpec.goal_revision !== null
-                ? `?${SearchParameters.REVISION}=${goalPlanSpec.goal_revision}&${SearchParameters.MODEL_ID}=${modelId}`
-                : ''
-            }`,
-            '_blank',
-          )}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasReadPermission,
-              permissionError: readPermissionError,
-            },
-          ],
-        ]}
+      <div
+        use:permissionHandler={{
+          hasPermission: hasReadPermission,
+          permissionError: readPermissionError,
+        }}
       >
-        View Goal
-      </ContextMenuItem>
-      <ContextMenuItem
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasEditPermission,
-              permissionError: editPermissionError,
-            },
-          ],
-        ]}
-      >
-        <div
-          class="scheduling-goal-simulate-toggle"
-          role="none"
-          on:click|stopPropagation={() => {
-            simulateGoal = !simulateGoal;
-            simulateAfter(simulateGoal);
-          }}
+        <ContextMenu.Item
+          size="sm"
+          disabled={!hasReadPermission}
+          on:click={() =>
+            window.open(
+              `${base}/scheduling/goals/edit/${goal.id}${
+                goalPlanSpec.goal_revision !== null
+                  ? `?${SearchParameters.REVISION}=${goalPlanSpec.goal_revision}&${SearchParameters.MODEL_ID}=${modelId}`
+                  : ''
+              }`,
+              '_blank',
+            )}
         >
-          <input bind:checked={simulateGoal} style:cursor="pointer" type="checkbox" /> Simulate After
-        </div>
-      </ContextMenuItem>
-      <ContextMenuItem
-        on:click={onDuplicateGoalInvocation}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasEditPermission,
-              permissionError: editPermissionError,
-            },
-          ],
-        ]}
+          View Goal
+        </ContextMenu.Item>
+      </div>
+      <div
+        use:permissionHandler={{
+          hasPermission: hasEditPermission,
+          permissionError: editPermissionError,
+        }}
       >
-        Duplicate Invocation
-      </ContextMenuItem>
-      <ContextMenuItem
-        on:click={onDeleteGoalInvocation}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasEditPermission,
-              permissionError: editPermissionError,
-            },
-          ],
-        ]}
+        <ContextMenu.Item size="sm" disabled={!hasEditPermission}>
+          <div
+            class="scheduling-goal-simulate-toggle"
+            role="none"
+            on:click|stopPropagation={() => {
+              simulateGoal = !simulateGoal;
+              simulateAfter(simulateGoal);
+            }}
+          >
+            <input bind:checked={simulateGoal} style:cursor="pointer" type="checkbox" /> Simulate After
+          </div>
+        </ContextMenu.Item>
+      </div>
+      <div
+        use:permissionHandler={{
+          hasPermission: hasEditPermission,
+          permissionError: editPermissionError,
+        }}
       >
-        Delete Invocation
-      </ContextMenuItem>
+        <ContextMenu.Item size="sm" disabled={!hasEditPermission} on:click={onDuplicateGoalInvocation}>
+          Duplicate Invocation
+        </ContextMenu.Item>
+      </div>
+      <div
+        use:permissionHandler={{
+          hasPermission: hasEditPermission,
+          permissionError: editPermissionError,
+        }}
+      >
+        <ContextMenu.Item size="sm" disabled={!hasEditPermission} on:click={onDeleteGoalInvocation}>
+          Delete Invocation
+        </ContextMenu.Item>
+      </div>
     </svelte:fragment>
   </Collapse>
 </div>
@@ -363,13 +353,14 @@
   .scheduling-goal-simulate-toggle {
     align-items: center;
     display: flex;
+    gap: 4px;
   }
 
   .scheduling-goal-simulate-toggle input {
     margin-left: 0;
   }
 
-  .scheduling-goal.disabled :global(*:not(.collapse-icon *):not(.context-menu *)) {
+  .scheduling-goal.disabled :global(*:not(.collapse-icon *)) {
     color: var(--st-gray-30) !important;
   }
 

@@ -18,7 +18,7 @@
   }
 </script>
 
-<div class="modal-container">
+<div id="modal-container">
   <div
     bind:this={modal}
     class="modal st-typography-body"
@@ -32,7 +32,7 @@
 </div>
 
 <style>
-  .modal-container {
+  #modal-container {
     align-items: center;
     background-color: #00000052;
     bottom: 0;
@@ -42,7 +42,7 @@
     position: fixed;
     right: 0;
     top: 0;
-    z-index: 999;
+    z-index: 9999;
   }
 
   .modal {

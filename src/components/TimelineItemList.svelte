@@ -1,11 +1,11 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Button } from '@nasa-jpl/stellar-svelte';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
-
   import GripVerticalIcon from 'bootstrap-icons/icons/grip-vertical.svg?component';
   import { capitalize } from 'lodash-es';
-  import PlusCircledIcon from '../assets/plus-circled.svg?component';
+  import { CirclePlus } from 'lucide-svelte';
   import { view, viewAddFilterToRow } from '../stores/views';
   import type {
     ChartType,
@@ -31,6 +31,7 @@
   export let filterName: string = 'Filter';
   export let getFilterValueFromItem: (item: TimelineItemType) => string | number;
 
+  let activeItemIndex: number = -1;
   let menu: Menu;
   let filteredItems: TimelineItemType[] = [];
   let textFilters: string[] = [];
@@ -121,25 +122,13 @@
     viewAddFilterToRow(filteredItems, typeName, metadata, event.detail.row?.id, event.detail.layer);
   }
 
-  function onBulkAddToRow(e: MouseEvent) {
-    e.stopPropagation();
-    addTextFilter();
-    layerPicker.toggle(e);
-  }
-
   function onIndividualLayerPicked(event: CustomEvent<{ item?: TimelineItemType; layer?: Layer; row?: Row }>) {
     if (event.detail.item) {
       viewAddFilterToRow([event.detail.item], typeName, {}, event.detail.row?.id, event.detail.layer);
     }
   }
-
-  function onFilterIndividualItem(e: MouseEvent, item: TimelineItemType) {
-    e.stopPropagation();
-    layerPickerIndividual.toggle(e, item);
-  }
 </script>
 
-<RowVirtualizerFixed />
 <div class="timeline-item-list">
   <div class="timeline-item-list-filters">
     <input
@@ -157,6 +146,7 @@
         class="st-button secondary menu-button"
         style="position: relative; z-index: 1"
         on:click|stopPropagation={() => menu.toggle()}
+        aria-label="Select {filterName}"
       >
         {filterName}
         <ChevronDownIcon />
@@ -201,13 +191,20 @@
     <div class="controls-header st-typography-medium">
       <div>{typeNamePlural} ({filteredItems.length})</div>
       <div>
-        <button class="st-button secondary" on:click={onBulkAddToRow}> Add Filter to Row </button>
         <LayerPicker
           bind:this={layerPicker}
           rows={timelines[0]?.rows || []}
           {chartType}
           on:select={onBulkLayerPicked}
-        />
+          on:visibilityChange={open => {
+            if (open) {
+              addTextFilter();
+            }
+          }}
+          let:builders
+        >
+          <Button {builders} variant="outline">Add Filter to Row</Button>
+        </LayerPicker>
       </div>
     </div>
     <div
@@ -256,9 +253,10 @@
 
   <div class="list-items">
     {#if filteredItems.length}
-      <RowVirtualizerFixed count={filteredItems.length} overscan={100} let:index>
+      <RowVirtualizerFixed count={filteredItems.length} overscan={100} let:index disabled={activeItemIndex > -1}>
         {@const item = filteredItems[index]}
         <ListItem
+          class={activeItemIndex === index ? 'active' : ''}
           draggable
           style="cursor: move;"
           on:dragend={onDragEnd}
@@ -267,14 +265,26 @@
           {item.name}
           <slot prop={item} />
           <span slot="suffix">
-            <div use:tooltip={{ content: 'Add Filter to Row', placement: 'top' }}>
-              <button
-                aria-label="Add{capitalize(typeName)}-{item.name}"
-                class="st-button icon"
-                on:click={e => onFilterIndividualItem(e, item)}
+            <div use:tooltip={{ content: 'Add Filter to Row', placement: 'top' }} class="flex items-center">
+              <LayerPicker
+                layerItem={item}
+                bind:this={layerPickerIndividual}
+                rows={timelines[0].rows || []}
+                {chartType}
+                on:select={onIndividualLayerPicked}
+                on:visibilityChange={({ detail }) => {
+                  if (detail) {
+                    activeItemIndex = index;
+                  } else {
+                    activeItemIndex = -1;
+                  }
+                }}
+                let:builders
               >
-                <PlusCircledIcon />
-              </button>
+                <Button {builders} variant="ghost" size="icon-sm" aria-label="Add{capitalize(typeName)}-{item.name}">
+                  <CirclePlus size={16} />
+                </Button>
+              </LayerPicker>
             </div>
             <div class="drag">
               <GripVerticalIcon />
@@ -282,12 +292,6 @@
           </span>
         </ListItem>
       </RowVirtualizerFixed>
-      <LayerPicker
-        bind:this={layerPickerIndividual}
-        rows={timelines[0].rows || []}
-        {chartType}
-        on:select={onIndividualLayerPicked}
-      />
     {/if}
   </div>
 </div>

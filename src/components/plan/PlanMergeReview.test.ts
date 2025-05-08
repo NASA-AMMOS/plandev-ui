@@ -10,6 +10,7 @@ import type {
   PlanMergeNonConflictingActivity,
   PlanMergeRequestSchema,
 } from '../../types/plan';
+import effects from '../../utilities/effects';
 import { ADMIN_ROLE } from '../../utilities/permissions';
 import PlanMergeReview from './PlanMergeReview.svelte';
 
@@ -20,6 +21,13 @@ vi.mock('$env/dynamic/public', () => {
     },
   };
 }); // https://github.com/sveltejs/kit/issues/8180
+vi.spyOn(effects, 'getVersion').mockResolvedValue({
+  branch: 'unknown',
+  commit: 'unknown',
+  commitUrl: '',
+  date: new Date().toLocaleString(),
+  name: 'aerie-ui',
+});
 
 const mockMergeRequest: PlanMergeRequestSchema = {
   id: 1,

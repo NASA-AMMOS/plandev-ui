@@ -76,7 +76,7 @@
     <SectionTitle>{title}</SectionTitle>
     <div class="dropdown-select">
       {#if !readOnly}
-        <label for="models">Reference Model:</label>
+        <label class="text-xs text-muted-foreground" for="models">Reference Model:</label>
         <SearchableDropdown
           selectedOptionValues={typeof referenceModelId === 'number' ? [referenceModelId] : []}
           placeholder="No Model"

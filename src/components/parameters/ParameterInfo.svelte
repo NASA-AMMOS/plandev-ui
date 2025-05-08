@@ -1,10 +1,10 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Popover } from '@nasa-jpl/stellar-svelte';
   import InfoIcon from '@nasa-jpl/stellar/icons/info.svg?component';
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ValueSource } from '../../types/parameter';
-  import ContextMenu from '../context-menu/ContextMenu.svelte';
   import ValueSourceBadge from './ValueSourceBadge.svelte';
 
   export let formParameter: FormParameter;
@@ -14,12 +14,12 @@
     reset: FormParameter;
   }>();
 
-  let contextMenu: ContextMenu;
   let isIconHovered: boolean = false;
   let isTooltipHovered: boolean = false;
   let leaveTimeout: NodeJS.Timeout | null = null;
   let source: ValueSource;
   let unit: string | undefined = undefined;
+  let ref: HTMLElement;
 
   $: if (formParameter) {
     source = formParameter.valueSource;
@@ -34,8 +34,6 @@
     leaveTimeout = setTimeout(() => {
       if (isIconHovered || isTooltipHovered) {
         leaveCallback();
-      } else {
-        contextMenu.hide();
       }
     }, 100);
   }
@@ -46,12 +44,8 @@
     }
   }
 
-  function onIconOver(e: MouseEvent) {
+  function onIconOver() {
     isIconHovered = true;
-    if (!contextMenu.isShown()) {
-      const bounds = (e.target as HTMLElement).getBoundingClientRect();
-      contextMenu.showDirectly(bounds.x + bounds.width, bounds.y, bounds.x);
-    }
     hoverCallback();
   }
 
@@ -76,49 +70,37 @@
 </script>
 
 {#if unit || source !== 'none'}
-  <div class="parameter-info-container" role="contentinfo" on:mouseenter={onIconOver} on:mouseleave={onIconOut}>
-    <div><InfoIcon /></div>
-    <ContextMenu hideAfterClick={false} bind:this={contextMenu}>
-      <!-- svelte-ignore a11y-no-static-element-interactions -->
-      <div class="parameter-info-tooltip" on:mouseenter={onTooltipOver} on:mouseleave={onTooltipOut}>
-        <div class="parameter-info-values">
-          {#if unit}
-            <div class="parameter-info-label">Units</div>
-            <div class="parameter-info-value">{unit}</div>
-          {/if}
-          {#if source !== 'none'}
-            <div class="parameter-info-label">Source</div>
-            <div class="parameter-info-value">
-              <ValueSourceBadge {disabled} isCompact={false} {source} on:reset={onReset} />
-            </div>
-          {/if}
+  <div
+    bind:this={ref}
+    class="parameter-info-container"
+    role="contentinfo"
+    on:mouseenter={onIconOver}
+    on:mouseleave={onIconOut}
+  >
+    <Popover.Root bind:open={isIconHovered} onOpenChange={open => (isTooltipHovered = open)} portal={ref}>
+      <Popover.Trigger on:click={e => e.preventDefault()}>
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div on:mouseenter={onTooltipOver}>
+          <InfoIcon />
         </div>
-      </div>
-    </ContextMenu>
+      </Popover.Trigger>
+      <Popover.Content align="center" side="left" strategy="fixed" class="p-3">
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div class="block max-w-[300px]" on:mouseenter={onTooltipOver} on:mouseleave={onTooltipOut}>
+          <div class="grid grid-cols-[1fr_1fr] gap-y-3">
+            {#if unit}
+              <div>Units</div>
+              <div>{unit}</div>
+            {/if}
+            {#if source !== 'none'}
+              <div>Source</div>
+              <div>
+                <ValueSourceBadge {disabled} isCompact={false} {source} on:reset={onReset} />
+              </div>
+            {/if}
+          </div>
+        </div>
+      </Popover.Content>
+    </Popover.Root>
   </div>
 {/if}
-
-<style>
-  .parameter-info-container {
-    color: var(--st-button-icon-color, #293137);
-    margin-top: 1px;
-  }
-
-  .parameter-info-tooltip {
-    display: block;
-    min-width: 300px;
-    padding: 0.5rem;
-  }
-
-  .parameter-info-values {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    row-gap: 12px;
-  }
-
-  .parameter-info-label {
-    color: var(--st-gray-80, #293137);
-    font-size: 12px;
-    font-weight: 400;
-  }
-</style>

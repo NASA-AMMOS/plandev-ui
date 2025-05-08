@@ -126,17 +126,7 @@
 
 {#if shown}
   <!-- svelte-ignore a11y-click-events-have-key-events a11y-interactive-supports-focus -->
-  <div
-    class="menu"
-    role="menu"
-    use:popperRef
-    on:click|stopPropagation={onClick}
-    on:mouseenter={() => {
-      // TODO why is this necessary? Also destroys tooltips and they don't show up
-      // after menus are opened if they were previously shown.
-      // hideAllTooltips();
-    }}
-  >
+  <div class="menu" role="menu" use:popperRef on:click|stopPropagation={onClick}>
     <div
       class="st-menu st-typography-medium"
       style:width={typeof width === 'number' ? `${width}px` : null}

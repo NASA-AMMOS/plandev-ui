@@ -10,6 +10,7 @@
 
   export let allowMultiple: boolean = true;
   export let disabled: boolean = false;
+  export let name: string = '';
   export let placeholder: string = 'Search users';
   export let selectedUsers: UserId[] = [];
   export let tagDisplayName = 'user';
@@ -148,6 +149,7 @@
   on:change={onTagsInputChange}
   let:prop={tag}
   {use}
+  {name}
 >
   <UserInputRow {tag} {selectedUsers} />
 </TagsInput>

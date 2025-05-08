@@ -88,7 +88,7 @@
 </script>
 
 <div class="simulation-template-input-container">
-  <div class="template-input-container st-input w-100">
+  <div class="template-input-container st-input w-full">
     <!-- svelte-ignore a11y-label-has-associated-control -->
     <label class="label" use:tooltip={{ content: 'Choose simulation template', placement: 'top' }}>
       Simulation Template

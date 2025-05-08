@@ -168,7 +168,7 @@
 <div class="plan-form">
   {#if plan}
     <fieldset>
-      <Collapse title="Details">
+      <Collapse title="Details" contentClass="px-1">
         <svelte:fragment slot="right">
           {#if planExporting}
             <button class="st-button icon progress" on:click|stopPropagation={() => {}}>
@@ -190,7 +190,7 @@
               <label use:tooltip={{ content: 'Name', placement: 'top' }} for="plan-name">Plan Name</label>
               <input
                 autocomplete="off"
-                class="st-input w-100"
+                class="st-input w-full"
                 name="plan-name"
                 placeholder="Enter a plan name"
                 use:permissionHandler={{
@@ -203,19 +203,19 @@
         </div>
         <Input layout="inline">
           <label use:tooltip={{ content: 'ID', placement: 'top' }} for="id">Plan ID</label>
-          <input class="st-input w-100" disabled name="id" value={plan.id} />
+          <input class="st-input w-full" disabled name="id" value={plan.id} />
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Model Name', placement: 'top' }} for="modelName">Model Name</label>
-          <input class="st-input w-100" disabled name="modelName" value={plan.model.name} />
+          <input class="st-input w-full" disabled name="modelName" value={plan.model.name} />
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Model ID', placement: 'top' }} for="modelId">Model ID</label>
-          <input class="st-input w-100" disabled name="modelId" value={plan.model_id} />
+          <input class="st-input w-full" disabled name="modelId" value={plan.model_id} />
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Model Version', placement: 'top' }} for="modelVersion">Model Version</label>
-          <input class="st-input w-100" disabled name="modelVersion" value={plan.model.version} />
+          <input class="st-input w-full" disabled name="modelVersion" value={plan.model.version} />
         </Input>
         <Input layout="inline">
           <label
@@ -224,22 +224,22 @@
           >
             Start Time ({$plugins.time.primary.label})
           </label>
-          <input class="st-input w-100" disabled name="startTime" value={planStartTime} />
+          <input class="st-input w-full" disabled name="startTime" value={planStartTime} />
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: `End Time (${$plugins.time.primary.label})`, placement: 'top' }} for="endTime">
             End Time ({$plugins.time.primary.label})
           </label>
-          <input class="st-input w-100" disabled name="endTime" value={planEndTime} />
+          <input class="st-input w-full" disabled name="endTime" value={planEndTime} />
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Owner', placement: 'top' }} for="owner">Owner</label>
-          <input class="st-input w-100" disabled name="owner" value={plan.owner} />
+          <input class="st-input w-full" disabled name="owner" value={plan.owner} />
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Date Created', placement: 'top' }} for="createdAt">Date Created</label>
           <input
-            class="st-input w-100"
+            class="st-input w-full"
             disabled
             name="createdAt"
             value={getShortISOForDate(new Date(plan.created_at))}
@@ -248,7 +248,7 @@
         <Input layout="inline">
           <label use:tooltip={{ content: 'Updated At', placement: 'top' }} for="updatedAt">Updated At</label>
           <input
-            class="st-input w-100"
+            class="st-input w-full"
             disabled
             name="updatedAt"
             value={getShortISOForDate(new Date(plan.updated_at))}
@@ -256,18 +256,19 @@
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Updated By', placement: 'top' }} for="updatedBy">Updated By</label>
-          <input class="st-input w-100" disabled name="updatedBy" value={plan.updated_by} />
+          <input class="st-input w-full" disabled name="updatedBy" value={plan.updated_by} />
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Revision', placement: 'top' }} for="revision">Revision</label>
-          <input class="st-input w-100" disabled name="revision" value={plan.revision} />
+          <input class="st-input w-full" disabled name="revision" value={plan.revision} />
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Collaborators', placement: 'top' }} for="collaborators">Collaborators</label>
           {#if usersLoading || userWriteablePlans === null}
-            <input class="st-input w-100" disabled name="collaborators" value="Loading..." />
+            <input class="st-input w-full" disabled name="collaborators" value="Loading..." />
           {:else}
             <PlanCollaboratorInput
+              name="collaborators"
               collaborators={plan.collaborators}
               users={users || []}
               plans={userWriteablePlans}
@@ -275,6 +276,7 @@
               {user}
               on:create={onPlanCollaboratorsCreate}
               on:delete={onPlanCollaboratorsDelete}
+              disabled={!hasPlanCollaboratorsUpdatePermission}
               use={[
                 [
                   permissionHandler,
@@ -299,6 +301,7 @@
                 },
               ],
             ]}
+            disabled={!hasPlanUpdatePermission}
             options={tags}
             selected={planTags}
             on:change={onTagsInputChange}

@@ -1,14 +1,29 @@
 <script lang="ts">
+  import { classNames } from '../../utilities/generic';
+
   export let borderLeft: boolean = false;
   export let borderRight: boolean = false;
   export let borderTop: boolean = false;
   export let overflowYBody: 'visible' | 'hidden' | 'clip' | 'scroll' | 'auto' = 'auto';
   export let padBody: boolean = true;
   export let padHeader: boolean = true;
+
+  const panelClasses = classNames('grid min-h-20 min-w-20 overflow-hidden w-full', {
+    'border-l': borderLeft,
+    'border-r': borderRight,
+    'border-t': borderTop,
+  });
 </script>
 
-<div class="panel" class:border-left={borderLeft} class:border-right={borderRight} class:border-top={borderTop}>
-  <div class="header" class:pad-header={padHeader}>
+<div
+  class={panelClasses}
+  style:grid-template-rows="var(--nav-header-height) calc(100% - var(--nav-header-height))"
+  role="tabpanel"
+>
+  <div
+    class="flex h-[--nav-header-height] items-center justify-between gap-2 overflow-hidden border-b"
+    class:pad-header={padHeader}
+  >
     <slot name="header" />
   </div>
 
@@ -18,25 +33,6 @@
 </div>
 
 <style>
-  .panel {
-    display: grid;
-    grid-template-rows: var(--nav-header-height) calc(100% - var(--nav-header-height));
-    min-height: 80px;
-    min-width: 80px;
-    overflow: hidden;
-    width: 100%;
-  }
-
-  .header {
-    align-items: center;
-    border-bottom: 1px solid var(--st-gray-20);
-    display: flex;
-    gap: 0.5rem;
-    height: var(--nav-header-height);
-    justify-content: space-between;
-    overflow: hidden;
-  }
-
   .header :global(i) {
     font-size: 1rem;
   }

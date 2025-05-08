@@ -126,7 +126,7 @@
 </script>
 
 <div
-  class="counts"
+  class="counts text-xs"
   class:selectable
   class:full={mode === 'full'}
   class:compact={mode === 'compact'}
@@ -307,6 +307,7 @@
     display: grid;
     font-weight: 500;
     grid-template-columns: min-content max-content;
+    line-height: min(var(--ag-internal-calculated-line-height), var(--ag-internal-padded-row-height));
     padding: 0;
     text-align: left;
   }

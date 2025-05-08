@@ -149,14 +149,14 @@ export class ExpansionRules {
     this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
     this.inputActivityType = page.locator(this.inputActivityTypeSelector);
     this.inputParcel = page.locator(this.inputParcelSelector);
-    this.inputEditor = page.locator('.panel >> textarea.inputarea');
+    this.inputEditor = page.locator('div[role="tabpanel"] >> textarea.inputarea');
     this.inputModel = page.locator(this.inputModelSelector);
     this.inputName = page.locator(this.inputNameSelector);
     this.newButton = page.locator(`button:has-text("New")`);
     this.page = page;
     this.rulesNavButton = page.locator(`.nav-button:has-text("Rules")`);
     this.saveButton = page.locator(`button:has-text("Save")`);
-    this.table = page.locator('.panel:has-text("Expansion Rules")').getByRole('treegrid');
+    this.table = page.locator('div[role="tabpanel"]:has-text("Expansion Rules")').getByRole('treegrid');
     this.tableRow = this.table.getByRole('row', { name: this.expansionRuleName });
     this.tableRowDeleteButton = this.tableRow.getByRole('gridcell').getByRole('button', { name: 'Delete Rule' });
   }

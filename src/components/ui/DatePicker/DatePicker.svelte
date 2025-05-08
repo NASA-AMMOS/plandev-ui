@@ -1,8 +1,8 @@
 <script lang="ts">
-  import Calendar from '@nasa-jpl/stellar/icons/calendar.svg?component';
+  import { Button, Input } from '@nasa-jpl/stellar-svelte';
   import ChevronLeft from '@nasa-jpl/stellar/icons/chevron_left.svg?component';
   import ChevronRight from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
-  import MagicEraser from '@nasa-jpl/stellar/icons/magic_eraser.svg?component';
+  import { CalendarDays, WandSparkles } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { createPopperActions } from 'svelte-popperjs';
   import type { DropdownCustomOption } from '../../../types/datepicker';
@@ -24,6 +24,7 @@
   export let dateString: string = '';
   export let disabled: boolean = false;
   export let hasError: boolean = false;
+  export let id: string = '';
   export let name: string = '';
   export let maxDate: Date = new Date(Date.UTC(currentYear + 20, 11)); // add 20 years;
   export let minDate: Date = new Date(Date.UTC(currentYear - 20, 0)); // subtract 20 years
@@ -254,105 +255,50 @@
   }
 </script>
 
-<div class="date-picker" bind:this={datePickerContainer}>
-  <input
-    autocomplete="off"
-    class="st-input w-100"
-    class:error={!isValid || hasError}
-    {disabled}
-    {name}
-    bind:value={dateString}
-    use:popperRef
-    use:useActions={use}
-    on:change={attemptAutoCompleteDate}
-    on:click={openDatePicker}
-    on:focus={openDatePicker}
-    on:keydown={onInputKeydown}
-  />
+<div class="cursor-auto" style="position: inherit" bind:this={datePickerContainer}>
+  <div use:popperRef use:useActions={use}>
+    <Input
+      aria-invalid={!isValid || hasError ? 'true' : 'false'}
+      aria-label={name}
+      autocomplete="off"
+      sizeVariant="xs"
+      class={!isValid || hasError ? 'border border-red-500 bg-red-500 bg-opacity-10 text-red-500' : ''}
+      {disabled}
+      {name}
+      {id}
+      bind:value={dateString}
+      on:change={attemptAutoCompleteDate}
+      on:click={openDatePicker}
+      on:focus={openDatePicker}
+      on:keydown={onInputKeydown}
+    />
+  </div>
   {#if isOpen}
-    <div class="date-picker-portal" use:popperContent={extraOpts}>
-      <div class="date-picker-inputs">
-        <!-- svelte-ignore a11y-click-events-have-key-events a11y-interactive-supports-focus -->
-        <div><div class="chevron-button button" role="button" on:click={decrementMonth}><ChevronLeft /></div></div>
+    <div
+      class="z-[99999] min-h-[100px] min-w-[150px] select-none rounded border bg-background shadow-md"
+      use:popperContent={extraOpts}
+    >
+      <div class="grid grid-cols-[min-content_auto_auto_min-content] gap-x-1 px-4 pb-1 pt-3">
+        <Button variant="ghost" size="icon" on:click={decrementMonth}><ChevronLeft /></Button>
         <DatePickerDropdown
-          class="date-picker-month-input"
+          class="text-right"
           options={monthsOptions}
           value={viewMonth}
           on:change={onChangeViewMonth}
         />
-        <DatePickerDropdown
-          class="date-picker-years-input"
-          options={yearsRange}
-          value={viewYear}
-          on:change={onChangeViewYear}
-        />
-        <!-- svelte-ignore a11y-click-events-have-key-events a11y-interactive-supports-focus -->
-        <div><div class="chevron-button button" role="button" on:click={incrementMonth}><ChevronRight /></div></div>
+        <DatePickerDropdown options={yearsRange} value={viewYear} on:change={onChangeViewYear} />
+        <Button variant="ghost" size="icon" on:click={incrementMonth}><ChevronRight /></Button>
       </div>
       <Month {maxDate} {minDate} month={viewMonth} year={viewYear} {selectedDate} on:select={onSelect} />
-      <div class="date-picker-actions">
+      <div class="mt-2 grid gap-y-2 border-t p-4">
         <DatePickerActionButton on:click={setToday} text="Today">
-          <Calendar />
+          <CalendarDays size={16} />
         </DatePickerActionButton>
         <slot />
         <DatePickerActionButton on:click={clearDate} text="Clear">
-          <MagicEraser />
+          <WandSparkles size={16} />
         </DatePickerActionButton>
       </div>
     </div>
   {/if}
 </div>
-
-<style>
-  .date-picker {
-    cursor: auto;
-    position: inherit;
-  }
-
-  .date-picker .date-picker-portal {
-    background: #ffffff;
-    border: var(--st-border-popover);
-    border-radius: var(--st-border-radius-popover);
-    box-shadow: var(--st-shadow-popover);
-    min-height: 100px;
-    min-width: 150px;
-    user-select: none;
-    z-index: 99999;
-  }
-
-  .date-picker .date-picker-portal .date-picker-inputs {
-    column-gap: 0.25rem;
-    display: grid;
-    font-size: 1.01rem;
-    font-weight: 300;
-    grid-template-columns: min-content auto auto min-content;
-    padding: 12px 17px 5px;
-  }
-
-  .date-picker-inputs .chevron-button {
-    border-radius: 3px;
-    cursor: pointer;
-    display: grid;
-    padding: 4px;
-  }
-
-  .button:hover {
-    background-color: var(--st-gray-20);
-  }
-
-  .button:active {
-    background-color: var(--st-gray-30);
-  }
-
-  .date-picker-inputs :global(.date-picker-month-input) {
-    text-align: right;
-  }
-
-  .date-picker-actions {
-    border-top: 1px solid var(--st-gray-20);
-    display: grid;
-    margin-top: 7px;
-    padding: 15px 16px;
-    row-gap: 7px;
-  }
-</style>

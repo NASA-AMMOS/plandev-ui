@@ -123,7 +123,7 @@ describe('DatePicker DatePicker Component', () => {
   });
 
   it('Should only show an error after the user first enters a value at least once', async () => {
-    const { getByRole, container } = render(DatePicker, {
+    const { getByRole } = render(DatePicker, {
       dateString: '2021-3333T00:00:00',
     });
 
@@ -131,10 +131,10 @@ describe('DatePicker DatePicker Component', () => {
 
     await fireEvent.change(getByRole('textbox'), { target: { value: '2022-3333' } });
 
-    expect(container.querySelector('.error')).toBeNull();
+    expect(getByRole('textbox').ariaInvalid).toBe('false');
 
     await fireEvent.keyDown(document, { key: 'Escape' });
 
-    expect(container.querySelector('.error')).not.toBeNull();
+    expect(getByRole('textbox').ariaInvalid).toBe('true');
   });
 });

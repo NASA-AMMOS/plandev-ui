@@ -1,15 +1,15 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { modalBodyClickListener, modalBodyKeyListener } from '../utilities/modal';
-
   import { env } from '$env/dynamic/public';
+  import { ModeWatcher } from '@nasa-jpl/stellar-svelte';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { mergeWith } from 'lodash-es';
   import { onMount } from 'svelte';
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
+  import { modalBodyClickListener, modalBodyKeyListener } from '../utilities/modal';
   import { loadPluginCode } from '../utilities/plugins';
 
   let pluginsEnabled = env.PUBLIC_TIME_PLUGIN_ENABLED === 'true';
@@ -58,6 +58,9 @@
 {/if}
 
 <div id="svelte-modal" />
+
+<!-- Disable theme switching for now to prevent user OS/browser dark mode from changing the app which does not yet fully support dark mode -->
+<ModeWatcher track={false} defaultMode="light" />
 
 <style>
   .plans-layout {

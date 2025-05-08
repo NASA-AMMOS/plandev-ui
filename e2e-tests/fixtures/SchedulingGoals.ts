@@ -97,7 +97,7 @@ export class SchedulingGoals {
   }
 
   async goto() {
-    await this.page.goto('/scheduling/goals', { waitUntil: 'networkidle' });
+    await this.page.goto('/scheduling', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
     await this.page.waitForSelector(`input[placeholder="Filter goals"]`, { state: 'attached' });
   }
@@ -117,7 +117,7 @@ export class SchedulingGoals {
     this.newButton = page.locator(`button:has-text("New")`);
     this.page = page;
     this.saveButton = page.locator(`button:has-text("Save")`);
-    this.table = page.locator('.panel:has-text("Scheduling Goals")').getByRole('treegrid');
+    this.table = page.locator('div[role="tabpanel"]:has-text("Scheduling Goals")').getByRole('treegrid');
     this.tableRowSelector = (goalName: string) => this.table.getByRole('row', { name: goalName });
     this.tableRowDeleteButtonSelector = (goalName: string) =>
       this.tableRowSelector(goalName).getByRole('gridcell').getByRole('button', { name: 'Delete Goal' });

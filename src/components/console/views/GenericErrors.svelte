@@ -34,7 +34,7 @@
         </div>
       {/if}
     </div>
-    <div class="errors">
+    <div class="errors text-xs">
       {#each errors as error}
         <div class="error">
           <div class="reason">

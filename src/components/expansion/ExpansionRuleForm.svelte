@@ -240,17 +240,17 @@
       {#if mode === 'edit'}
         <fieldset>
           <label for="ruleId">Rule ID</label>
-          <input class="st-input w-100" disabled name="ruleId" value={ruleId} />
+          <input class="st-input w-full" disabled name="ruleId" value={ruleId} />
         </fieldset>
 
         <fieldset>
           <label for="createdAt">Created At</label>
-          <input class="st-input w-100" disabled name="createdAt" value={ruleCreatedAt} />
+          <input class="st-input w-full" disabled name="createdAt" value={ruleCreatedAt} />
         </fieldset>
 
         <fieldset>
           <label for="updatedAt">Updated At</label>
-          <input class="st-input w-100" disabled name="updatedAt" value={ruleUpdatedAt} />
+          <input class="st-input w-full" disabled name="updatedAt" value={ruleUpdatedAt} />
         </fieldset>
       {/if}
 
@@ -258,7 +258,7 @@
         <label for="parcel">Parcel</label>
         <select
           bind:value={parcelId}
-          class="st-select w-100"
+          class="st-select w-full"
           name="parcel"
           use:permissionHandler={{
             hasPermission: hasAuthoringPermission,
@@ -278,7 +278,7 @@
         <label for="modelId">Model</label>
         <select
           bind:value={ruleModelId}
-          class="st-select w-100"
+          class="st-select w-full"
           name="modelId"
           on:change={() => (ruleActivityType = null)}
           use:permissionHandler={{
@@ -300,7 +300,7 @@
         <label for="activityType">Activity Type</label>
         <select
           bind:value={ruleActivityType}
-          class="st-select w-100"
+          class="st-select w-full"
           name="activityType"
           use:permissionHandler={{
             hasPermission: hasAuthoringPermission,
@@ -321,7 +321,7 @@
         <input
           autocomplete="off"
           bind:value={ruleName}
-          class="st-input w-100"
+          class="st-input w-full"
           name="name"
           placeholder="Enter a rule name (required)"
           required
@@ -337,7 +337,7 @@
         <textarea
           bind:value={ruleDescription}
           autocomplete="off"
-          class="st-input w-100"
+          class="st-input w-full"
           name="description"
           placeholder="Enter a rule description (optional)"
           required
@@ -351,6 +351,7 @@
       <fieldset>
         <label for="tags">Tags</label>
         <TagsInput
+          disabled={!hasPermission}
           use={[
             [
               permissionHandler,

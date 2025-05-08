@@ -173,7 +173,7 @@
     <svelte:fragment slot="body">
       <fieldset>
         <label for="Parcel">Parcels</label>
-        <select bind:value={setParcelId} class="st-select w-100" name="Parcel">
+        <select bind:value={setParcelId} class="st-select w-full" name="Parcel">
           <option value={null} />
           {#each $parcelBundles as parcel}
             <option value={parcel.id}>
@@ -187,7 +187,7 @@
         <label for="modelId">Model</label>
         <select
           bind:value={setModelId}
-          class="st-select w-100"
+          class="st-select w-full"
           name="modelId"
           on:change={() => (selectedExpansionRules = {})}
         >
@@ -206,7 +206,7 @@
         <input
           bind:value={setName}
           autocomplete="off"
-          class="st-input w-100"
+          class="st-input w-full"
           name="name"
           placeholder="Enter Expansion Set Name (optional)"
           use:permissionHandler={{
@@ -221,7 +221,7 @@
         <textarea
           bind:value={setDescription}
           autocomplete="off"
-          class="st-input w-100"
+          class="st-input w-full"
           name="description"
           placeholder="Enter Expansion Set Description (optional)"
           use:permissionHandler={{

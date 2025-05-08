@@ -22,7 +22,7 @@
 </script>
 
 <div class="sequence-tooltip st-typography-body">
-  <div class="container command-name">
+  <div class="command-name container">
     {commandExample}
   </div>
 

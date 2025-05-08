@@ -45,46 +45,16 @@
 </script>
 
 <div
-  class={classNames('date-picker-dropdown', {
+  class={classNames('relative', {
     [className]: !!className,
   })}
 >
-  <div class="display-value st-typography-header">
-    <span class="value">{displayValue}</span>
-    <select class="hidden" data-type="number" {value} tabindex="-1" on:change>
+  <div class="relative inline-block min-w-0 text-base leading-6 [&>span]:hover:bg-accent">
+    <span class="rounded p-1 font-bold">{displayValue}</span>
+    <select data-type="number" {value} tabindex="-1" on:change class="pointer absolute left-0 opacity-0">
       {#each options as option}
         <option value={getOptionValue(option)}>{getOptionLabel(option)}</option>
       {/each}
     </select>
   </div>
 </div>
-
-<style>
-  .date-picker-dropdown {
-    position: relative;
-  }
-
-  .date-picker-dropdown .display-value {
-    display: inline-block;
-    line-height: 25px;
-    min-width: 0;
-    position: relative;
-  }
-
-  .display-value .value {
-    border-radius: 4px;
-    font-weight: bold;
-    padding: 0.25rem;
-  }
-
-  .display-value:hover .value {
-    background-color: var(--st-gray-15);
-  }
-
-  .date-picker-dropdown select {
-    cursor: pointer;
-    left: 0;
-    opacity: 0;
-    position: absolute;
-  }
-</style>

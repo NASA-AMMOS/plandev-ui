@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import { createEventDispatcher } from 'svelte';
@@ -13,8 +14,7 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
-  import ContextMenu from '../context-menu/ContextMenu.svelte';
-  import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
+  import ContextMenuInternal from '../context-menu/ContextMenu.svelte';
   import Parameters from '../parameters/Parameters.svelte';
 
   export let hasEditPermission: boolean = false;
@@ -59,7 +59,7 @@
     };
   }>();
 
-  let contextMenu: ContextMenu;
+  let contextMenu: ContextMenuInternal;
   let formParameters: FormParameter[] = [];
   let parameterSchema: ValueSchema | undefined;
   let permissionError: string = '';
@@ -338,36 +338,24 @@
     </div>
   {/if}
   {#if metadataType !== 'condition'}
-    <ContextMenu bind:this={contextMenu}>
-      <ContextMenuItem
-        on:click={onDuplicateInvocation}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasEditPermission,
-              permissionError,
-            },
-          ],
-        ]}
+    <ContextMenuInternal bind:this={contextMenu}>
+      <div
+        use:permissionHandler={{
+          hasPermission: hasEditPermission,
+          permissionError,
+        }}
       >
-        Duplicate Invocation
-      </ContextMenuItem>
-      <ContextMenuItem
-        on:click={onDeleteInvocation}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasEditPermission,
-              permissionError,
-            },
-          ],
-        ]}
+        <ContextMenu.Item size="sm" on:click={onDuplicateInvocation}>Duplicate Invocation</ContextMenu.Item>
+      </div>
+      <div
+        use:permissionHandler={{
+          hasPermission: hasEditPermission,
+          permissionError,
+        }}
       >
-        Delete Invocation
-      </ContextMenuItem>
-    </ContextMenu>
+        <ContextMenu.Item size="sm" on:click={onDeleteInvocation}>Delete Invocation</ContextMenu.Item>
+      </div>
+    </ContextMenuInternal>
   {/if}
 </div>
 

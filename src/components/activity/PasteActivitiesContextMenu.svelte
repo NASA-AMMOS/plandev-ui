@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { ActivityDirective } from '../../types/activity';
   import type { Plan } from '../../types/plan';
@@ -10,7 +11,6 @@
     getPasteActivityDirectivesText,
   } from '../../utilities/activities';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
 
   const dispatch = createEventDispatcher<{
     createActivityDirectives: ActivityDirective[];
@@ -31,27 +31,22 @@
 </script>
 
 {#await getActivityDirectivesClipboardCount() then directivesInClipboard}
-  <ContextMenuItem
-    use={[
-      [
-        permissionHandler,
-        {
-          hasPermission: hasCreatePermission && directivesInClipboard > 0,
-          permissionError: () => {
-            if (planPermissionErrorText !== null) {
-              return planPermissionErrorText;
-            } else if (directivesInClipboard && directivesInClipboard <= 0) {
-              return 'No activity directives in clipboard';
-            } else {
-              return null;
-            }
-          },
-        },
-      ],
-    ]}
-    on:click={() => pasteActivityDirectives(atTime)}
+  {@const permissionError =
+    planPermissionErrorText !== null
+      ? planPermissionErrorText
+      : directivesInClipboard && directivesInClipboard <= 0
+        ? 'No activity directives in clipboard'
+        : null}
+  {@const hasPermission = hasCreatePermission && directivesInClipboard > 0}
+  <div
+    use:permissionHandler={{
+      hasPermission,
+      ...(permissionError !== null ? { permissionError } : null),
+    }}
   >
-    {getPasteActivityDirectivesText(directivesInClipboard)}
-    {atTime === undefined ? `` : `At Time`}
-  </ContextMenuItem>
+    <ContextMenu.Item size="sm" on:click={() => pasteActivityDirectives(atTime)} disabled={!hasPermission}>
+      {getPasteActivityDirectivesText(directivesInClipboard)}
+      {atTime === undefined ? `` : `At Time`}
+    </ContextMenu.Item>
+  </div>
 {/await}

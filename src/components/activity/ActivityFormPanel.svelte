@@ -238,7 +238,7 @@
         on:select={onSelectSpan}
       />
     {:else}
-      <div class="p-2 st-typography-label">No Activity Selected</div>
+      <div class="st-typography-label p-2">No Activity Selected</div>
     {/if}
   </svelte:fragment>
 </Panel>
@@ -248,7 +248,7 @@
     display: flex;
     gap: 8px;
   }
-  .activity-header-button {
+  .activity-header-button.icon {
     border: 1px solid var(--st-gray-30);
   }
 </style>

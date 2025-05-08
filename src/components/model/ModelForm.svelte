@@ -136,12 +136,12 @@
   }
 </script>
 
-<div class="model-form-container">
+<div class="model-form-container text-xs">
   <div class="inputs">
     <Input layout="inline">
       <label for="name">Model Name</label>
       <input
-        class="st-input w-100"
+        class="st-input w-full"
         name="name"
         autocomplete="off"
         bind:value={name}
@@ -153,12 +153,12 @@
     </Input>
     <Input layout="inline">
       <label for="id">Model ID</label>
-      <input class="st-input w-100" disabled name="id" value={modelId ?? ''} />
+      <input class="st-input w-full" disabled name="id" value={modelId ?? ''} />
     </Input>
     <Input layout="inline">
       <label for="description">Model Description</label>
       <textarea
-        class="st-input w-100"
+        class="st-input w-full"
         name="description"
         bind:value={description}
         use:permissionHandler={{
@@ -170,7 +170,7 @@
     <Input layout="inline">
       <label for="version">Model Version</label>
       <input
-        class="st-input w-100"
+        class="st-input w-full"
         name="version"
         placeholder="0.0.0"
         bind:value={version}
@@ -204,7 +204,7 @@
     </Input>
     <Input layout="inline">
       <label for="view">Default View</label>
-      <select name="view" class="st-select w-100" bind:value={viewId} disabled={viewsLoading}>
+      <select name="view" class="st-select w-full" bind:value={viewId} disabled={viewsLoading}>
         {#if viewsLoading || !views}
           <option>Loading</option>
         {:else}
@@ -218,7 +218,7 @@
     {#if createdAt}
       <Input layout="inline">
         <label use:tooltip={{ content: 'Date Created', placement: 'top' }} for="createdAt">Date Created</label>
-        <input class="st-input w-100" disabled name="createdAt" value={getShortISOForDate(new Date(createdAt))} />
+        <input class="st-input w-full" disabled name="createdAt" value={getShortISOForDate(new Date(createdAt))} />
       </Input>
     {/if}
     {#if modelId}
@@ -251,7 +251,7 @@
   </div>
   <div class="buttons">
     <button
-      class="st-button secondary w-100"
+      class="st-button secondary w-full"
       on:click={onCreatePlanWithModel}
       use:permissionHandler={{
         hasPermission: hasCreatePlanPermission,
@@ -261,7 +261,7 @@
       New plan with model
     </button>
     <button
-      class="st-button danger w-100"
+      class="st-button danger w-full"
       on:click|stopPropagation={onDeleteModel}
       use:permissionHandler={{
         hasPermission: hasDeleteModelPermission,

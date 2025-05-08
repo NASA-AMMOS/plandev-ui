@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { Button } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
+  import { classNames } from '../../../utilities/generic';
   import { getDoy } from '../../../utilities/time';
 
   export let date: Date;
@@ -34,70 +36,70 @@
     return false;
   }
 
-  function onSelect() {
+  function onSelect(event: MouseEvent) {
+    event.stopPropagation();
     if (!isOutsideBounds) {
       dispatch('select', date);
     }
   }
 </script>
 
-<div
-  class="date-picker-day"
-  class:is-outside-bounds={isOutsideBounds}
-  class:is-outside-current-month={isOutsideCurrentMonth}
-  class:is-selected={isSelected}
-  class:is-today={isToday}
+<Button
+  variant="ghost"
+  size="xs"
+  class={classNames('date-picker-day ring-inset !ring-offset-0 ', {
+    'is-outside-bounds': isOutsideBounds,
+    'is-outside-current-month': isOutsideCurrentMonth,
+    'is-selected': isSelected,
+    'is-today': isToday,
+  })}
   role="none"
-  on:click|stopPropagation={onSelect}
+  on:click={onSelect}
 >
   <div class="doy">{getDoy(date)}</div>
   <div class="date">{date.getUTCDate()}</div>
-</div>
+</Button>
 
-<style>
-  .date-picker-day {
+<style lang="postcss">
+  :global(.date-picker-day) {
     border-radius: 5px;
     cursor: pointer;
+    display: block !important;
     font-weight: 400;
+    height: 40px !important;
     padding: 2px 0;
     position: relative;
     text-align: center;
+    width: 40px !important;
   }
 
-  .date-picker-day:hover {
-    background-color: var(--st-primary-10);
-  }
-
-  .date-picker-day .doy {
-    color: var(--st-gray-90);
-  }
-
-  .date-picker-day .date {
-    color: var(--st-gray-50);
+  :global(.date-picker-day .date) {
     font-weight: 500;
-  }
-
-  .date-picker-day.is-selected {
-    background-color: var(--st-primary-50);
-  }
-
-  .date-picker-day.is-selected .doy {
-    color: var(--st-gray-10);
-  }
-
-  .date-picker-day.is-selected .date {
-    color: var(--st-gray-30);
-  }
-
-  .is-today {
-    background-color: var(--st-gray-20);
-  }
-
-  .is-outside-current-month {
     opacity: 0.4;
   }
 
-  .is-outside-bounds {
+  :global(.date-picker-day.is-selected) {
+    @apply bg-primary;
+  }
+
+  :global(.date-picker-day.is-selected .doy) {
+    @apply text-primary-foreground;
+  }
+
+  :global(.date-picker-day.is-selected .date) {
+    @apply text-primary-foreground;
+    opacity: 0.6;
+  }
+
+  :global(.is-today) {
+    @apply bg-secondary;
+  }
+
+  :global(.is-outside-current-month) {
+    @apply text-muted-foreground;
+  }
+
+  :global(.is-outside-bounds) {
     cursor: not-allowed;
     opacity: 0.3;
   }

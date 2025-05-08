@@ -475,7 +475,7 @@
       <input
         bind:value={filterString}
         autocomplete="off"
-        class="st-input w-100"
+        class="st-input w-full"
         name="filter-ee"
         placeholder={`Filter ...`}
       />

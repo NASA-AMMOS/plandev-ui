@@ -472,7 +472,7 @@
             </div>
           {:else}
             <input
-              class="w-100"
+              class="w-full"
               name="file"
               type="file"
               accept={definitionTypeConfigurations?.file.accept ?? 'application/json'}
@@ -509,7 +509,7 @@
         <label for="owner">Owner</label>
         <input
           bind:value={owner}
-          class="st-input w-100"
+          class="st-input w-full"
           name="owner"
           placeholder={`Enter ${displayName} Owner Username (required)`}
           use:permissionHandler={{
@@ -524,7 +524,7 @@
         <textarea
           bind:value={description}
           autocomplete="off"
-          class="st-input w-100"
+          class="st-input w-full"
           name="metadata-description"
           placeholder={`Enter ${displayName} Description (optional)`}
           use:permissionHandler={{
@@ -538,6 +538,7 @@
         <label for="metadataTags">Tags</label>
         <TagsInput
           name="metadataTags"
+          disabled={!hasWriteDefinitionTagsPermission}
           use={[
             [
               permissionHandler,
@@ -556,7 +557,7 @@
       {#if mode === 'edit'}
         <fieldset>
           <label for="id">{displayName} ID</label>
-          <input class="st-input w-100" disabled name="id" value={metadataId} />
+          <input class="st-input w-full" disabled name="id" value={metadataId} />
         </fieldset>
       {/if}
 
@@ -596,7 +597,7 @@
         <fieldset>
           <label for="versions">Version</label>
           {#if !isDefinitionModified}
-            <select value={initialRevision} class="st-select w-100" name="versions" on:change={onRevisionSelection}>
+            <select value={initialRevision} class="st-select w-full" name="versions" on:change={onRevisionSelection}>
               {#each revisions as revision}
                 <option value={revision}>
                   {revision}
@@ -604,7 +605,7 @@
               {/each}
             </select>
           {:else}
-            <select disabled class="st-select w-100" name="versions">
+            <select disabled class="st-select w-full" name="versions">
               <option value={revisions[0] + 1}>
                 {revisions[0] + 1} (Next version)
               </option>
@@ -618,7 +619,7 @@
         <input
           disabled
           value={defintionAuthor}
-          class="st-input w-100"
+          class="st-input w-full"
           name="definitionAuthor"
           use:permissionHandler={{
             hasPermission: hasWriteMetadataPermission,
@@ -631,6 +632,7 @@
         <label for="definitionTags">Version Tags</label>
         <TagsInput
           name="definitionTags"
+          disabled={!hasUpdateDefinitionPermission}
           use={[
             [
               permissionHandler,

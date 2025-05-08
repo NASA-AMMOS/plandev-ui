@@ -461,7 +461,7 @@
             <input
               on:keyup={onActivityNameKeyup}
               autocomplete="off"
-              class="st-input w-100"
+              class="st-input w-full"
               name="activity-name"
               placeholder="Enter activity name"
             />
@@ -524,14 +524,14 @@
 
   <div class="activity-form">
     <fieldset>
-      <Collapse title="Definition">
+      <Collapse title="Definition" contentClass="px-1">
         {#if showActivityName}
           <Highlight highlight={highlightKeysMap.name}>
             <Input layout="inline">
               <label use:tooltip={{ content: 'Activity Name', placement: 'top' }} for="activityName">
                 Activity Name
               </label>
-              <input class="st-input w-100" disabled name="activityName" value={activityDirective.name} />
+              <input class="st-input w-full" disabled name="activityName" value={activityDirective.name} />
             </Input>
           </Highlight>
         {/if}
@@ -539,7 +539,7 @@
         <Highlight highlight={highlightKeysMap.id}>
           <Input layout="inline">
             <label use:tooltip={{ content: 'Activity ID', placement: 'top' }} for="id"> ID</label>
-            <input class="st-input w-100" disabled name="id" value={activityDirective.id} />
+            <input class="st-input w-full" disabled name="id" value={activityDirective.id} />
           </Input>
         </Highlight>
 
@@ -548,7 +548,7 @@
             <label use:tooltip={{ content: 'Activity Type', placement: 'top' }} for="activity-type">
               Activity Type
             </label>
-            <input class="st-input w-100" disabled name="activity-type" value={activityDirective.type} />
+            <input class="st-input w-full" disabled name="activity-type" value={activityDirective.type} />
           </Input>
         </Highlight>
 
@@ -594,7 +594,7 @@
             <label use:tooltip={{ content: 'Creation Time (UTC)', placement: 'top' }} for="creationTime">
               Creation Time (UTC)
             </label>
-            <input class="st-input w-100" disabled name="creationTime" value={activityDirective.created_at} />
+            <input class="st-input w-full" disabled name="creationTime" value={activityDirective.created_at} />
           </Input>
         </Highlight>
 
@@ -603,7 +603,12 @@
             <label use:tooltip={{ content: 'Last Modified Time (UTC)', placement: 'top' }} for="lastModifiedTime">
               Last Modified Time (UTC)
             </label>
-            <input class="st-input w-100" disabled name="lastModifiedTime" value={activityDirective.last_modified_at} />
+            <input
+              class="st-input w-full"
+              disabled
+              name="lastModifiedTime"
+              value={activityDirective.last_modified_at}
+            />
           </Input>
         </Highlight>
 
@@ -612,14 +617,14 @@
             <label use:tooltip={{ content: 'Last Modified By', placement: 'top' }} for="modifiedBy">
               Last Modified By
             </label>
-            <input class="st-input w-100" disabled name="modifiedBy" value={activityDirective.last_modified_by} />
+            <input class="st-input w-full" disabled name="modifiedBy" value={activityDirective.last_modified_by} />
           </Input>
         </Highlight>
 
         <Highlight highlight={highlightKeysMap.last_modified_by}>
           <Input layout="inline">
             <label use:tooltip={{ content: 'Created By', placement: 'top' }} for="createdBy"> Created By </label>
-            <input class="st-input w-100" disabled name="createdBy" value={activityDirective.created_by} />
+            <input class="st-input w-full" disabled name="createdBy" value={activityDirective.created_by} />
           </Input>
         </Highlight>
 
@@ -632,7 +637,7 @@
               Source Scheduling Goal ID
             </label>
             <input
-              class="st-input w-100"
+              class="st-input w-full"
               disabled
               name="sourceSchedulingGoalId"
               value={activityDirective.source_scheduling_goal_id ?? 'None'}
@@ -644,6 +649,8 @@
           <Input layout="inline">
             <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="activityDirectiveTags"> Tags </label>
             <TagsInput
+              name="Directive tags"
+              disabled={!hasUpdatePermission}
               options={tags}
               selected={activityDirective.tags.map(({ tag }) => tag)}
               use={[
