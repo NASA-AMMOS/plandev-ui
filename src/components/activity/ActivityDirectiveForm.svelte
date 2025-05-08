@@ -729,6 +729,7 @@
           parameterToFlash={selectedParameterName}
           on:change={onChangeFormParameters}
           on:reset={onResetFormParameters}
+          on:flash
           use={[
             [
               permissionHandler,
