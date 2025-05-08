@@ -175,7 +175,7 @@ export class Plans {
     this.durationDisplay = page.locator('input[name="duration"]');
     this.importButton = page.getByRole('button', { name: 'Import' });
     this.inputEndTime = page.locator('input[name="end-time"]');
-    this.inputFile = page.locator('input[name="file"]');
+    this.inputFile = page.locator('input[name="Plan File"]');
     this.inputButtonModel = page.getByRole('combobox', { name: 'Select Model' });
     this.inputModel = page.locator(this.inputModelSelector);
     this.inputName = page.locator('input[name="name"]');
