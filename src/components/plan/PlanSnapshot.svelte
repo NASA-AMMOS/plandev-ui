@@ -1,15 +1,13 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import ThreeDotsIcon from '@nasa-jpl/stellar/icons/three_dot.svg?component';
+  import { Button, DropdownMenu } from '@nasa-jpl/stellar-svelte';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
+  import { EllipsisVertical } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { PlanSnapshot } from '../../types/plan-snapshot';
   import { getSimulationProgress, getSimulationStatus } from '../../utilities/simulation';
   import { tooltip } from '../../utilities/tooltip';
-  import Menu from '../menus/Menu.svelte';
-  import MenuDivider from '../menus/MenuDivider.svelte';
-  import MenuItem from '../menus/MenuItem.svelte';
   import Card from '../ui/Card.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
   import Tag from '../ui/Tags/Tag.svelte';
@@ -19,7 +17,6 @@
   export let planModelId: number = -1;
   export let planSnapshot: PlanSnapshot;
 
-  let menu: Menu;
   let showMoreTags: boolean = false;
   let snapshotPreviewable: boolean = true;
   let disabledPreviewMessage: string = '';
@@ -62,21 +59,25 @@
         status={getSimulationStatus(planSnapshot.simulation)}
         progress={getSimulationProgress(planSnapshot.simulation)}
       />
-      <!-- {#if planModelId} -->
       <div class="plan-snapshot--menu-button">
-        <button class="st-button secondary" on:click|stopPropagation={() => menu.toggle()}>
-          <ThreeDotsIcon />
-          <Menu bind:this={menu}>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild let:builder>
+            <Button variant="outline" size="icon" builders={[builder]} on:click={e => e.stopPropagation()}>
+              <EllipsisVertical size={20} />
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content class="" align="start">
             <div use:tooltip={{ content: disabledPreviewMessage }}>
-              <MenuItem disabled={!snapshotPreviewable} on:click={() => dispatch('click')}>Preview</MenuItem>
+              <DropdownMenu.Item disabled={!snapshotPreviewable} size="sm" on:click={() => dispatch('click')}
+                >Preview</DropdownMenu.Item
+              >
             </div>
-            <MenuItem on:click={() => dispatch('restore')}>Restore</MenuItem>
-            <MenuDivider />
-            <MenuItem disabled on:click={() => dispatch('delete')}>Delete</MenuItem>
-          </Menu>
-        </button>
+            <DropdownMenu.Item size="sm" on:click={() => dispatch('restore')}>Restore</DropdownMenu.Item>
+            <DropdownMenu.Separator />
+            <DropdownMenu.Item disabled size="sm" on:click={() => () => dispatch('delete')}>Delete</DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
       </div>
-      <!-- {/if} -->
     </div>
   </div>
   <div class="plan-snapshot--tags">
@@ -112,11 +113,6 @@
 
   .plan-snapshot--menu-button {
     position: relative;
-  }
-
-  .plan-snapshot--menu-button button {
-    padding: 0;
-    width: 24px;
   }
 
   .plan-snapshot--tags {
