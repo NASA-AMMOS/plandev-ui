@@ -6,12 +6,10 @@
   import { page } from '$app/stores';
   import { Button, Input as InputStellar, Label, Select } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
-  import SwapIcon from 'bootstrap-icons/icons/arrow-left-right.svg?component';
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
   import { flatten } from 'lodash-es';
-  import { Clipboard, Import, X } from 'lucide-svelte';
+  import { ArrowLeftRight, Clipboard, FileUp, Import, X } from 'lucide-svelte';
   import { onDestroy, onMount } from 'svelte';
-  import ExportIcon from '../../assets/export.svg?component';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
   import DatePickerField from '../../components/form/DatePickerField.svelte';
@@ -675,7 +673,7 @@
               }}
             >
               <Button variant="outline" disabled={planExporting} class="flex gap-1" on:click={onExportSelectedPlan}>
-                <ExportIcon /> Export{#if planExporting}ing...{/if}
+                <FileUp size={16} /> Export{#if planExporting}ing...{/if}
               </Button>
             </div>
 
@@ -710,22 +708,32 @@
         {#if selectedPlan}
           <div class="plan-metadata">
             <fieldset>
-              <div use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}>
+              <div>
                 <Input layout="inline">
                   <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="name">Model</Label>
-                  <InputStellar sizeVariant="xs" disabled class="w-full" name="name" value={selectedPlanModelName} />
+                  <div class="flex gap-1">
+                    <div use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}>
+                      <InputStellar
+                        sizeVariant="xs"
+                        disabled
+                        class="w-full"
+                        name="name"
+                        value={selectedPlanModelName}
+                      />
+                    </div>
+                    <div
+                      use:tooltip={{ content: canChangePlanModel ? 'Change Mission Model' : '', placement: 'top' }}
+                      use:permissionHandler={{
+                        hasPermission: canChangePlanModel,
+                        permissionError: 'You do not have permission to change mission model',
+                      }}
+                    >
+                      <Button class="shrink-0" variant="outline" size="icon" on:click={openChangePlanMissionModelModal}>
+                        <ArrowLeftRight size={16} />
+                      </Button>
+                    </div>
+                  </div>
                 </Input>
-                <button
-                  class="st-button secondary change-mission-model"
-                  use:tooltip={{ content: canChangePlanModel ? 'Change Mission Model' : '', placement: 'top' }}
-                  use:permissionHandler={{
-                    hasPermission: canChangePlanModel,
-                    permissionError: 'You do not have permission to change mission model',
-                  }}
-                  on:click|stopPropagation={openChangePlanMissionModelModal}
-                >
-                  <SwapIcon />
-                </button>
               </div>
               <Input layout="inline">
                 <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="id">Name</Label>

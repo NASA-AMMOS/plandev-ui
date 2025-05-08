@@ -2,8 +2,7 @@
 
 <script lang="ts">
   import { Button } from '@nasa-jpl/stellar-svelte';
-  import SwapIcon from 'bootstrap-icons/icons/arrow-left-right.svg?component';
-  import ExportIcon from '../../assets/export.svg?component';
+  import { ArrowLeftRight, FileUp } from 'lucide-svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
@@ -192,7 +191,7 @@
               on:click|stopPropagation={onExportPlan}
               use:tooltip={{ content: 'Export Plan JSON' }}
             >
-              <ExportIcon />
+              <FileUp size={16} />
             </button>
           {/if}
         </svelte:fragment>
@@ -231,7 +230,7 @@
               use:tooltip={{ content: !$planReadOnly ? 'Change Mission Model' : '', placement: 'top' }}
             >
               <Button class="shrink-0" variant="outline" size="icon" on:click={openChangePlanMissionModelModal}>
-                <SwapIcon />
+                <ArrowLeftRight size={16} />
               </Button>
             </div>
           </div>
