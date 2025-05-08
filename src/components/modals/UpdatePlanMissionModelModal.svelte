@@ -1,10 +1,10 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
-  import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
+  import { Input as InputStellar } from '@nasa-jpl/stellar-svelte';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import type { ColDef, IRowNode, ValueGetterParams } from 'ag-grid-community';
+  import { Check, Search } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import DirectiveIcon from '../../assets/timeline-directive.svg?component';
   import { models } from '../../stores/model';
@@ -43,7 +43,7 @@
       headerName: 'ID',
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 40,
+      width: 60,
     },
     {
       field: 'name',
@@ -65,7 +65,7 @@
           return getShortISOForDate(new Date(params.data?.created_at));
         }
       },
-      width: 130,
+      width: 150,
     },
   ];
 
@@ -152,7 +152,7 @@
 
 <Modal {height} {width}>
   <ModalHeader on:close>Change Mission Model</ModalHeader>
-  <div class="body">
+  <div class="flex h-full flex-1 flex-col overflow-hidden p-4">
     {#if $planMergeRequestsIncoming !== null && $planMergeRequestsIncoming.length}
       <AlertError
         error="Cannot change model while plan has incoming merge requests"
@@ -161,19 +161,20 @@
       />
     {/if}
     <Input>
-      <div class="search-icon" slot="left">
-        <SearchIcon />
+      <div class="opacity-50" slot="left">
+        <Search size={16} />
       </div>
-      <input
+      <InputStellar
         autocomplete="off"
         name=""
-        class="st-input w-100"
+        class="w-full"
         placeholder="Search mission models"
         on:input={onFiltering}
+        sizeVariant="sm"
       />
     </Input>
-    <CssGrid columns="40% 2px 60%" class="update-plan-model-grid">
-      <div class="mission-model-column">
+    <CssGrid columns="40% 2px 60%" class="flex flex-1 overflow-hidden">
+      <div class="flex-col gap-2 overflow-auto pb-0 pl-0 pr-2 pt-2">
         <DataGrid
           bind:currentSelectedRowId={selectedItemId}
           {columnDefs}
@@ -186,29 +187,31 @@
         />
       </div>
       <CssGridGutter track={1} type="column" />
-      <div class="model-migration-preview mission-model-column">
+      <div class="flex-col gap-2 overflow-auto p-4">
         {#if selectedMissionModel === null}
-          <div class="st-typography-label">Select mission model for expected incompatibilities...</div>
+          <div class="text-muted-foreground">Select mission model for expected incompatibilities...</div>
         {:else if loadingCompatibility}
           <Loading />
         {:else}
           <div>
             <div class="st-typography-displayBody mb-2">Expected Incompatibilities</div>
             {#if !migrationCompatibility}
-              <div class="st-typography-label mb-3 message">Unable to compute expected incompatibilities</div>
+              <div class="mb-3 flex gap-1 text-red-500">Unable to compute expected incompatibilities</div>
             {:else if migrationCompatibility?.impacted_directives.length < 1}
-              <div class="st-typography-label mb-3 message"><CheckIcon /> No expected incompatibilities</div>
+              <div class="mb-3 flex gap-1 text-muted-foreground">
+                <Check class="text-green-600" size={16} /> No expected incompatibilities
+              </div>
             {:else}
               <div class="st-typography-body">
-                <div class="st-typography-body mb-3 message">
-                  <WarningIcon class="red-icon" />
+                <div class="st-typography-body mb-3 flex gap-1">
+                  <WarningIcon class="text-red-500" />
                   {migrationCompatibility.impacted_directives.length} incompatible activity directive{pluralize(
                     migrationCompatibility.impacted_directives.length,
                   )}
                 </div>
                 {#if Object.keys(modifiedDirectivesTypes).length > 0}
                   <Collapse>
-                    <div slot="title" class="collapse-title">
+                    <div slot="title" class="flex gap-2">
                       {Object.keys(modifiedDirectivesTypes).length} Modified Activity Type{pluralize(
                         Object.keys(modifiedDirectivesTypes).length,
                       )}
@@ -216,33 +219,33 @@
                         use:tooltip={{
                           content: `${modifiedDirectivesCount} affected activity directive${pluralize(modifiedDirectivesCount)} in plan`,
                         }}
-                        class="directives-badge"
+                        class="flex items-center gap-0.5 opacity-60"
                       >
                         <DirectiveIcon />
                         {modifiedDirectivesCount}
                       </div>
                     </div>
                     {#each Object.keys(modifiedDirectivesTypes).sort() as type}
-                      <Collapse defaultExpanded={false} className="parameter-schema-collapse">
-                        <div slot="title" class="collapse-title">
+                      <Collapse defaultExpanded={false} className="[&_button]:!h-6">
+                        <div slot="title" class="flex gap-2">
                           {type}
                           <div
                             use:tooltip={{
                               content: `${modifiedDirectivesTypes[type].length} affected activity directive${pluralize(modifiedDirectivesTypes[type].length)} in plan`,
                             }}
-                            class="directives-badge"
+                            class="flex items-center gap-0.5 opacity-60"
                           >
                             <DirectiveIcon />
                             {modifiedDirectivesTypes[type].length}
                           </div>
                         </div>
                         <CssGrid columns="50% 50%" gap="8px">
-                          <div class="parameter-schema">
-                            <div class="st-typography-label mb-1">
+                          <div class="flex flex-grow flex-col overflow-hidden">
+                            <div class="mb-1 text-muted-foreground">
                               Old Parameter Schema ({$models.find(m => m.id === plan.model_id)?.name ??
                                 'Unknown Model'})
                             </div>
-                            <div class="json">
+                            <div class="overflow-auto rounded bg-accent p-2 font-mono">
                               <pre>{JSON.stringify(
                                   migrationCompatibility.modified_activity_types[type].old_parameter_schema,
                                   undefined,
@@ -250,11 +253,11 @@
                                 )}</pre>
                             </div>
                           </div>
-                          <div class="parameter-schema">
-                            <div class="st-typography-label mb-1">
+                          <div class="flex flex-grow flex-col overflow-hidden">
+                            <div class="mb-1 text-muted-foreground">
                               New Parameter Schema ({selectedMissionModel.name})
                             </div>
-                            <div class="json">
+                            <div class="overflow-auto rounded bg-accent p-2 font-mono">
                               <pre>{JSON.stringify(
                                   migrationCompatibility.modified_activity_types[type].new_parameter_schema,
                                   undefined,
@@ -269,7 +272,7 @@
                 {/if}
                 {#if Object.keys(removedDirectivesTypes).length > 0}
                   <Collapse>
-                    <div slot="title" class="collapse-title">
+                    <div slot="title" class="flex gap-2">
                       {Object.keys(removedDirectivesTypes).length} Removed Activity Type{pluralize(
                         Object.keys(removedDirectivesTypes).length,
                       )}
@@ -277,20 +280,22 @@
                         use:tooltip={{
                           content: `${removedDirectiveCount} affected activity directive${pluralize(removedDirectiveCount)} in plan`,
                         }}
-                        class="directives-badge"
+                        class="flex items-center gap-0.5 opacity-60"
                       >
                         <DirectiveIcon />
                         {removedDirectiveCount}
                       </div>
                     </div>
                     {#each Object.keys(removedDirectivesTypes).sort() as type}
-                      <div class="removed-type st-button tertiary">
+                      <div
+                        class="flex cursor-default justify-start gap-2 overflow-hidden text-ellipsis whitespace-nowrap text-left font-medium leading-6 text-black"
+                      >
                         {type}
                         <div
                           use:tooltip={{
                             content: `${removedDirectivesTypes[type].length} affected activity directive${pluralize(removedDirectivesTypes[type].length)} in plan`,
                           }}
-                          class="directives-badge"
+                          class="flex items-center gap-0.5 opacity-60"
                         >
                           <DirectiveIcon />
                           {removedDirectivesTypes[type].length}
@@ -307,7 +312,7 @@
     </CssGrid>
   </div>
   <ModalFooter>
-    <div class="st-typography-label">Snapshot will be automatically created</div>
+    <div class="text-muted">Snapshot will be automatically created</div>
     <button class="st-button secondary" on:click={close}>Cancel</button>
     <button
       class="st-button"
@@ -318,100 +323,3 @@
     </button>
   </ModalFooter>
 </Modal>
-
-<style>
-  .body {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-    padding: 1rem;
-  }
-
-  :global(.update-plan-model-grid) {
-    flex: 1;
-    overflow: hidden;
-  }
-
-  .search-icon {
-    align-items: center;
-    color: var(--st-gray-50);
-    display: flex;
-  }
-
-  .mission-model-column {
-    flex-direction: column;
-    gap: 8px;
-    overflow: auto;
-    padding: 8px 8px 0 0;
-  }
-
-  .model-migration-preview {
-    padding: 16px;
-  }
-
-  .model-migration-preview :global(.counts) {
-    display: flex;
-    flex-direction: column;
-    padding-top: 8px;
-  }
-
-  .message {
-    display: flex;
-    gap: 4px;
-  }
-
-  .json {
-    background: var(--st-gray-10);
-    border-radius: 4px;
-    font-family: 'JetBrains mono';
-    overflow: auto;
-    padding: 8px;
-  }
-
-  .json pre {
-    font-family: 'JetBrains mono';
-    margin: 0;
-  }
-
-  .parameter-schema {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    overflow: hidden;
-  }
-
-  .removed-type {
-    color: var(--st-typography-medium-color);
-    cursor: default;
-    gap: 8px;
-    justify-content: flex-start;
-    line-height: 24px;
-    overflow: hidden;
-    text-align: left;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .removed-type.st-button:hover {
-    background: inherit;
-  }
-
-  :global(.parameter-schema-collapse button.collapse-header) {
-    height: 24px !important;
-  }
-
-  .collapse-title {
-    display: flex;
-    gap: 8px;
-  }
-
-  .directives-badge {
-    align-items: center;
-    color: var(--st-gray-50);
-    display: flex;
-    flex-direction: row;
-    gap: 2px;
-  }
-</style>
