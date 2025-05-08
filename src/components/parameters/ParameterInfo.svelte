@@ -2,7 +2,6 @@
 
 <script lang="ts">
   import { Popover } from '@nasa-jpl/stellar-svelte';
-  // import InfoIcon from '@nasa-jpl/stellar/icons/info.svg?component';
   import { Info } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ValueSource } from '../../types/parameter';
