@@ -164,7 +164,7 @@ export class Plans {
   }
 
   async selectedModel() {
-    return await this.page.getByLabel('Select Model').innerText();
+    return await this.page.getByLabel('Select Model', { exact: true }).innerText();
   }
 
   updatePage(page: Page): void {
