@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Button } from '@nasa-jpl/stellar-svelte';
   import SwapIcon from 'bootstrap-icons/icons/arrow-left-right.svg?component';
   import ExportIcon from '../../assets/export.svg?component';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
@@ -152,7 +153,8 @@
     isFilteredBySimulation = !isFilteredBySimulation;
   }
 
-  async function openChangePlanMissionModelModal() {
+  async function openChangePlanMissionModelModal(e: Event) {
+    e.stopPropagation();
     if (plan !== null) {
       await effects.updatePlanMissionModel(plan, user);
     }
@@ -217,26 +219,26 @@
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Model Name', placement: 'top' }} for="modelName">Model Name</label>
-          <input class="st-input w-full" disabled name="modelName" value={plan.model.name} />
-        </Input>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Model ID', placement: 'top' }} for="modelId">Model ID</label>
-          <div class="change-mission-model-container">
-            <input class="st-input w-full" disabled name="modelId" value={plan.model_id} />
-            <button
-              class="st-button secondary change-mission-model"
-              use:tooltip={{ content: !$planReadOnly ? 'Change Mission Model' : '', placement: 'top' }}
+          <div class="flex gap-2">
+            <input class="st-input w-full" disabled name="modelName" value={plan.model.name} />
+            <div
               use:permissionHandler={{
                 hasPermission: hasChangePlanModelPermission && !$planReadOnly,
                 permissionError: $planReadOnly
                   ? PlanStatusMessages.READ_ONLY
                   : "You don't have permission to change mission model",
               }}
-              on:click|stopPropagation={openChangePlanMissionModelModal}
+              use:tooltip={{ content: !$planReadOnly ? 'Change Mission Model' : '', placement: 'top' }}
             >
-              <SwapIcon />
-            </button>
+              <Button class="shrink-0" variant="outline" size="icon" on:click={openChangePlanMissionModelModal}>
+                <SwapIcon />
+              </Button>
+            </div>
           </div>
+        </Input>
+        <Input layout="inline">
+          <label use:tooltip={{ content: 'Model ID', placement: 'top' }} for="modelId">Model ID</label>
+          <input class="st-input w-full" disabled name="modelId" value={plan.model_id} />
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Model Version', placement: 'top' }} for="modelVersion">Model Version</label>
@@ -432,16 +434,5 @@
   }
   .progress:hover {
     background: none;
-  }
-
-  .change-mission-model-container {
-    display: flex;
-    gap: 8px;
-  }
-
-  .change-mission-model {
-    flex-shrink: 0;
-    padding: 0;
-    width: 24px;
   }
 </style>
