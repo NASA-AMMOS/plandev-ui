@@ -117,7 +117,7 @@
           {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING}
             <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/sequence-templates">
               <ChevronsLeftRight size={16} />
-              Expansion
+              Sequence Templates
             </MenuLink>
           {/if}
           <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/parcels">
