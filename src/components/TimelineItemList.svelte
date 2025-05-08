@@ -4,6 +4,7 @@
   import { Button } from '@nasa-jpl/stellar-svelte';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import GripVerticalIcon from 'bootstrap-icons/icons/grip-vertical.svg?component';
+  import { capitalize } from 'lodash-es';
   import { CirclePlus } from 'lucide-svelte';
   import { view, viewAddFilterToRow } from '../stores/views';
   import type {
@@ -280,7 +281,7 @@
                 }}
                 let:builders
               >
-                <Button {builders} variant="ghost" size="icon-sm" aria-label="Add filter to row">
+                <Button {builders} variant="ghost" size="icon-sm" aria-label="Add{capitalize(typeName)}-{item.name}">
                   <CirclePlus size={16} />
                 </Button>
               </LayerPicker>
