@@ -10,7 +10,10 @@
   import ModalFooter from '../modals/ModalFooter.svelte';
   import ModalHeader from '../modals/ModalHeader.svelte';
 
-  export let height: number = 380;
+  const heightNoImport = 380;
+  const heightWithImport = 450;
+
+  export let height: number = heightNoImport;
   export let width: number = 380;
   export let initialTemplateName: string = '';
 
@@ -49,6 +52,8 @@
     selectedActivityType === '' ||
     selectedActivityType === null ||
     (showImport && sequenceTemplateUploadFiles === undefined);
+
+  $: height = heightWithImport ? showImport : heightNoImport;
 
   function save() {
     if (
@@ -96,7 +101,7 @@
   <ModalHeader on:close>Create Sequence Template</ModalHeader>
 
   <ModalContent>
-    <fieldset>
+    <fieldset class="sequence-template-form">
       <label for="name">Template Name</label>
       <input bind:value={templateName} autocomplete="off" class="st-input w-100" id="name" required type="text" />
 
@@ -154,7 +159,7 @@
         <label for="file">Imported File</label>
         <div class="import-input-container">
           <input
-            class="w-10"
+            class="w-100"
             name="file"
             type="file"
             bind:files={sequenceTemplateUploadFiles}
@@ -177,5 +182,9 @@
     column-gap: 0.5rem;
     display: grid;
     grid-template-columns: auto min-content;
+  }
+
+  .sequence-template-form {
+    gap: 4px;
   }
 </style>
