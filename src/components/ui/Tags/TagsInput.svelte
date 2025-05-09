@@ -256,7 +256,7 @@
         <Input
           {id}
           {disabled}
-          aria-label="Tags"
+          aria-label={name}
           sizeVariant="xs"
           autocomplete="off"
           placeholder={disabled && !showPlaceholderIfDisabled ? '' : placeholder}
