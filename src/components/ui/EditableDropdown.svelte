@@ -160,6 +160,7 @@
       <input
         class="st-input w-full"
         placeholder={`Enter ${optionLabel.toLowerCase()} name`}
+        aria-label={`Enter ${optionLabel.toLowerCase()} name`}
         value={optionName}
         on:input={onUpdateOptionName}
       />

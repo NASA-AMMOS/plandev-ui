@@ -186,7 +186,13 @@
     <SectionTitle>Scheduling Conditions</SectionTitle>
 
     <Input>
-      <input bind:value={filterText} class="st-input" placeholder="Filter conditions" style="width: 100%;" />
+      <input
+        bind:value={filterText}
+        class="st-input"
+        placeholder="Filter conditions"
+        aria-label="Filter Conditions"
+        style="width: 100%;"
+      />
     </Input>
 
     <div class="right">

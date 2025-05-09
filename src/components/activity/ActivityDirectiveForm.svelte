@@ -537,7 +537,7 @@
                 disabled
                 name="activityName"
                 value={activityDirective.name}
-                aria-label="Activity ID"
+                aria-label="Activity Name"
               />
             </Input>
           </Highlight>
@@ -546,7 +546,7 @@
         <Highlight highlight={highlightKeysMap.id}>
           <Input layout="inline">
             <label use:tooltip={{ content: 'Activity ID', placement: 'top' }} for="id"> ID</label>
-            <input class="st-input w-full" disabled name="id" value={activityDirective.id} />
+            <input class="st-input w-full" disabled name="id" value={activityDirective.id} aria-label="Activity ID" />
           </Input>
         </Highlight>
 
@@ -555,7 +555,13 @@
             <label use:tooltip={{ content: 'Activity Type', placement: 'top' }} for="activity-type">
               Activity Type
             </label>
-            <input class="st-input w-full" disabled name="activity-type" value={activityDirective.type} />
+            <input
+              class="st-input w-full"
+              disabled
+              name="activity-type"
+              value={activityDirective.type}
+              aria-label="Activity Type"
+            />
           </Input>
         </Highlight>
 

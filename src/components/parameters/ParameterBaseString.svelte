@@ -33,6 +33,7 @@
       bind:value={formParameter.value}
       class="st-input w-full"
       class:error={formParameter.errors !== null}
+      aria-label={formParameter.name}
       {disabled}
       type="text"
       use:useActions={use}

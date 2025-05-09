@@ -210,6 +210,7 @@
             <input
               class="st-input w-full"
               placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder}
               value={searchFilter}
               on:input={onSearchPresets}
             />
