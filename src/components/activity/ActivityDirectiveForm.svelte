@@ -535,9 +535,9 @@
               <input
                 class="st-input w-full"
                 disabled
+                id="activityName"
                 name="activityName"
                 value={activityDirective.name}
-                aria-label="Activity Name"
               />
             </Input>
           </Highlight>
@@ -546,7 +546,7 @@
         <Highlight highlight={highlightKeysMap.id}>
           <Input layout="inline">
             <label use:tooltip={{ content: 'Activity ID', placement: 'top' }} for="id"> ID</label>
-            <input class="st-input w-full" disabled name="id" value={activityDirective.id} aria-label="Activity ID" />
+            <input class="st-input w-full" disabled name="id" id="id" value={activityDirective.id} />
           </Input>
         </Highlight>
 
@@ -559,8 +559,8 @@
               class="st-input w-full"
               disabled
               name="activity-type"
+              id="activity-type"
               value={activityDirective.type}
-              aria-label="Activity Type"
             />
           </Input>
         </Highlight>
@@ -612,7 +612,7 @@
               disabled
               name="creationTime"
               value={activityDirective.created_at}
-              aria-label="Creation Time (UTC)"
+              id="creationTime"
             />
           </Input>
         </Highlight>
@@ -626,7 +626,7 @@
               class="st-input w-full"
               disabled
               name="lastModifiedTime"
-              aria-label="Last Modified Time (UTC)"
+              id="lastModifiedTime"
               value={activityDirective.last_modified_at}
             />
           </Input>
@@ -642,7 +642,7 @@
               disabled
               name="modifiedBy"
               value={activityDirective.last_modified_by}
-              aria-label="Last Modified By"
+              id="modifiedBy"
             />
           </Input>
         </Highlight>
@@ -655,7 +655,7 @@
               disabled
               name="createdBy"
               value={activityDirective.created_by}
-              aria-label="Created By"
+              id="createdBy"
             />
           </Input>
         </Highlight>
@@ -672,7 +672,7 @@
               class="st-input w-full"
               disabled
               name="sourceSchedulingGoalId"
-              aria-label="Source Scheduling Goal ID"
+              id="sourceSchedulingGoalId"
               value={activityDirective.source_scheduling_goal_id ?? 'None'}
             />
           </Input>
