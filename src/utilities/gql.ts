@@ -2689,7 +2689,7 @@ const gql = {
     subscription SubMostRecentExpansion {
       ${Queries.EXPANDED_SEQUENCES} {
         seq_id
-        expanded_template
+        expanded_sequence
         simulation_dataset_id
       }
     }
