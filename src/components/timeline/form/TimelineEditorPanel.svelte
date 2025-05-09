@@ -494,7 +494,7 @@
                   min={ViewConstants.MIN_MARGIN_LEFT}
                   class="st-input w-full"
                   name="marginLeft"
-                  aria-label="Margin Left"
+                  id="marginLeft"
                   type="number"
                   value={selectedTimeline.marginLeft}
                   on:input|stopPropagation={updateTimelineMarginLeft}
@@ -507,7 +507,7 @@
                 min={0}
                 class="st-input w-full"
                 name="marginRight"
-                aria-label="Margin Right"
+                id="marginRight"
                 type="number"
                 value={selectedTimeline.marginRight}
                 on:input|stopPropagation={updateTimelineEvent}
