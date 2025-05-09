@@ -6350,7 +6350,7 @@ const effects = {
     }
   },
 
-  async updatePlanMissionModel(plan: PlanSlim, user: User | null): Promise<void> {
+  async updatePlanMissionModel(plan: PlanSlim, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.UPDATE_PLAN(user, plan)) {
         throwPermissionError('update plan');
@@ -6364,6 +6364,7 @@ const effects = {
         const data = await reqHasura(gql.MIGRATE_PLAN_TO_MODEL, { new_model_id: value.id, plan_id: plan.id }, user);
         if (data.migrate_plan_to_model?.result === 'success') {
           showSuccessToast('Model Migration Success');
+          return true;
         } else {
           throw Error(data.migrate_plan_to_model?.result);
         }
@@ -6371,8 +6372,8 @@ const effects = {
     } catch (e) {
       catchError('Model Migration Failed', e as Error);
       showFailureToast('Model Migration Failed');
-      return;
     }
+    return false;
   },
 
   async updatePlanSnapshot(id: number, snapshot: Partial<PlanSnapshot>, user: User | null): Promise<void> {

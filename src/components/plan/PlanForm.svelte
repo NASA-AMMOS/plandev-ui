@@ -155,7 +155,11 @@
   async function openChangePlanMissionModelModal(e: Event) {
     e.stopPropagation();
     if (plan !== null) {
-      await effects.updatePlanMissionModel(plan, user);
+      const success = await effects.updatePlanMissionModel(plan, user);
+      if (success) {
+        // Clear active simulation
+        $simulationDatasetId = -1;
+      }
     }
   }
 
