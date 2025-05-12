@@ -181,7 +181,7 @@
       <Label size="sm" for="model" class="pb-0.5">Model</Label>
       <Select.Root selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}>
         <Select.Trigger value={selectedModel?.id} size="xs" aria-label="Select Model" aria-labelledby={null} id="model">
-          <Select.Value placeholder="Select a model" />
+          <Select.Value aria-label="Select a model" placeholder="Select a model" />
         </Select.Trigger>
         <Select.Content
           class="z-[10000] min-w-[240px] overflow-auto p-0"
