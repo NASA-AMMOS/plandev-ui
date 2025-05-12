@@ -32,7 +32,7 @@
     <Highlight
       highlight={highlightKeysMap[formParameter.name]}
       flash={parameterToFlash === formParameter.name}
-      on:flash
+      on:didFlash
     >
       <div bind:clientWidth class="parameter">
         {#if formParameter.schema.type === 'series' || formParameter.schema.type === 'struct'}

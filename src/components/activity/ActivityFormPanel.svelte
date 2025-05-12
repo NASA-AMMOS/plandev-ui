@@ -232,7 +232,7 @@
         revision={previewRevision}
         on:viewChangelog={onToggleViewChangelog}
         on:closeRevisionPreview={onCloseRevisionPreview}
-        on:flash={() => (selectedParameterName = null)}
+        on:didFlash={() => (selectedParameterName = null)}
         {selectedParameterName}
         {highlightKeys}
         {user}
