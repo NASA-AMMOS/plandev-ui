@@ -6,11 +6,13 @@
   import Field from '../../components/form/Field.svelte';
   import { field } from '../../stores/form';
   import { models } from '../../stores/model';
-  import { newTemplateActivityTypes, newTemplateModelId } from '../../stores/sequence-template';
   import { parcels } from '../../stores/sequencing';
   import type { ActivityType } from '../../types/activity';
+  import type { User } from '../../types/app';
   import type { ModelSlim } from '../../types/model';
   import type { Parcel } from '../../types/sequencing';
+  import effects from '../../utilities/effects';
+  import { compare } from '../../utilities/generic';
   import { min, required } from '../../utilities/validators';
   import Modal from '../modals/Modal.svelte';
   import ModalContent from '../modals/ModalContent.svelte';
@@ -24,6 +26,7 @@
 
   export let height: number = heightNoImport;
   export let width: number = 380;
+  export let user: User | null;
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -50,6 +53,7 @@
   let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
   let activityTypeField = field<string>('', [required]);
 
+  let modelActivityTypes: ActivityType[] = [];
   let selectedParcel: Parcel | undefined;
   let selectedModel: ModelSlim | undefined;
   let selectedActivityType: ActivityType | undefined;
@@ -59,23 +63,12 @@
   let sequenceTemplateUploadFiles: FileList | undefined;
   let sequenceTemplateUploadFileInput: HTMLInputElement;
 
-  $: $newTemplateModelId = $modelIdField.value;
   $: selectedParcel = $parcels.find(({ id }) => $parcelIdField.value === id);
   $: selectedModel = $models.find(({ id }) => $modelIdField.value === id);
-  $: selectedActivityType = $newTemplateActivityTypes.find(
-    activityType => $activityTypeField.value === activityType.name,
-  );
+  $: selectedActivityType = modelActivityTypes.find(activityType => $activityTypeField.value === activityType.name);
 
   // sort in descending ID order
-  $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => {
-    if (idA < idB) {
-      return 1;
-    }
-    if (idA > idB) {
-      return -1;
-    }
-    return 0;
-  });
+  $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => compare(idA, idB));
 
   $: saveButtonDisabled =
     $templateNameField.value === '' ||
@@ -86,6 +79,15 @@
     (showImport && sequenceTemplateUploadFiles === undefined);
 
   $: height = showImport ? heightWithImport : heightNoImport;
+
+  async function handleModelChanged(newModelId: { value: string | number | undefined } | undefined) {
+    if (newModelId) {
+      const { value } = newModelId;
+      if (value && typeof value === 'number') {
+        modelActivityTypes = await effects.getActivityTypes(value, user);
+      }
+    }
+  }
 
   function save() {
     if (
@@ -100,7 +102,7 @@
         dispatch('save', {
           activityType: $activityTypeField.value,
           language: $templateLanguageField.value,
-          modelId: $newTemplateModelId,
+          modelId: $modelIdField.value,
           name: $templateNameField.value,
           parcelId: $parcelIdField.value,
         });
@@ -110,7 +112,7 @@
           dispatch('import', {
             activityType: $activityTypeField.value,
             language: $templateLanguageField.value,
-            modelId: $newTemplateModelId,
+            modelId: $modelIdField.value,
             name: $templateNameField.value,
             parcelId: $parcelIdField.value,
             sequenceTemplateFile: sequenceTemplateUploadFile,
@@ -179,7 +181,10 @@
 
     <Field field={modelIdField}>
       <Label size="sm" for="model" class="pb-0.5">Model</Label>
-      <Select.Root selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}>
+      <Select.Root
+        selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}
+        onSelectedChange={handleModelChanged}
+      >
         <Select.Trigger value={selectedModel?.id} size="xs" aria-label="Select Model" aria-labelledby={null} id="model">
           <Select.Value aria-label="Select a model" placeholder="Select a model" />
         </Select.Trigger>
@@ -205,13 +210,13 @@
       <Label size="sm" for="activity-type" class="pb-0.5">Activity Type</Label>
       <Select.Root
         selected={{ label: selectedActivityType?.name ?? '', value: selectedActivityType?.name ?? '' }}
-        disabled={$newTemplateModelId === -1}
+        disabled={$modelIdField.value === -1}
       >
         <Select.Trigger class="min-w-[124px]" value={selectedActivityType?.name} size="xs" aria-labelledby={null}>
           <Select.Value aria-label="Select an activity type" placeholder="Select an activity type" />
         </Select.Trigger>
         <Select.Content class="z-[10000] max-h-48 overflow-y-scroll">
-          {#each $newTemplateActivityTypes as activityType}
+          {#each modelActivityTypes as activityType}
             <Select.Item size="xs" value={activityType.name} label={activityType.name} class="flex gap-1">
               {activityType.name}
             </Select.Item>

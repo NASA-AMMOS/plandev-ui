@@ -1,6 +1,5 @@
 import { derived, writable, type Writable } from 'svelte/store';
 import type { Status } from '../enums/status';
-import type { ActivityType } from '../types/activity';
 import { type ExpandedTemplate, type SequenceTemplate } from '../types/sequence-template';
 import gql from '../utilities/gql';
 import { planSimDatasetMapping } from './expansion';
@@ -14,17 +13,7 @@ export const sequenceTemplateExpansionStatus: Writable<Status | null> = writable
 
 export const sequenceTemplateExpansionError: Writable<string | null> = writable(null);
 
-export const newTemplateModelId: Writable<number> = writable(-1);
-
 /* Subscriptions. */
-
-export const newTemplateActivityTypes = gqlSubscribable<ActivityType[]>(
-  gql.SUB_ACTIVITY_TYPES,
-  { modelId: newTemplateModelId },
-  [],
-  null,
-);
-
 export const expandedTemplates = gqlSubscribable<ExpandedTemplate[]>(gql.SUB_EXPANDED_TEMPLATES, {}, [], null);
 
 export const sequenceTemplates = gqlSubscribable<SequenceTemplate[]>(gql.SUB_SEQUENCE_TEMPLATES, {}, [], null);
@@ -54,5 +43,4 @@ export function resetSequenceTemplateStores(): void {
   selectedSequenceTemplateId.set(null);
   sequenceTemplateExpansionStatus.set(null);
   sequenceTemplateExpansionError.set(null);
-  newTemplateModelId.set(-1);
 }

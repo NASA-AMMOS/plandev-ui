@@ -55,7 +55,7 @@
   }
 
   async function createSequenceTemplate(): Promise<void> {
-    const { confirm, value } = await showTemplateModal();
+    const { confirm, value } = await showTemplateModal(user);
     if (!confirm || value === undefined) {
       return;
     }

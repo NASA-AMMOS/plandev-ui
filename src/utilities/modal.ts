@@ -594,7 +594,9 @@ export async function showWorkspaceModal(
   });
 }
 
-export async function showTemplateModal(): Promise<
+export async function showTemplateModal(
+  user: User | null,
+): Promise<
   ModalElementValue<{ activityType: string; language: string; modelId: number; name: string; parcelId: number }>
 > {
   return new Promise(resolve => {
@@ -603,7 +605,7 @@ export async function showTemplateModal(): Promise<
 
       if (target) {
         const sequenceTemplateModal = new NewSequenceTemplateModal({
-          props: {},
+          props: { user },
           target,
         });
         target.resolve = resolve;
