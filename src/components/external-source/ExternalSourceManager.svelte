@@ -611,7 +611,10 @@
           </div>
           {#if file !== undefined}
             <Field field={derivationGroupField}>
-              <label for="derivation-group" slot="label">Derivation Group</label>
+              <label for="derivation-group" slot="label">
+                Derivation Group
+                <div class="inline text-xs text-muted-foreground">(Optional)</div>
+              </label>
               <input autocomplete="off" class="st-input w-full" name="derivation-group" />
             </Field>
           {/if}

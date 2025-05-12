@@ -50,7 +50,7 @@ test.describe.serial('External Sources', () => {
     const parameterInfo = parameter.getByRole('contentinfo');
     await parameterInfo.hover();
     await expect(
-      page.locator('.parameter-info-values').filter({ hasText: 'Required' }).filter({ hasText: 'false' }),
+      page.getByRole('contentinfo').locator('div').filter({ hasText: 'Required false' }).first(),
     ).toBeVisible();
   });
 
