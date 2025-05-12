@@ -5,6 +5,7 @@
   import MergeIcon from '@nasa-jpl/stellar/icons/merge.svg?component';
   import { createEventDispatcher } from 'svelte';
   import type { Plan, PlanBranchRequestAction, PlanForMerging } from '../../types/plan';
+  import AlertError from '../ui/AlertError.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -35,19 +36,11 @@
   let planList: PlanForMerging[] = [];
   let selectedPlan: PlanForMerging | null = null;
   let selectedPlanId: number | null = null;
+  let planModelsCompatible: boolean = true;
 
-  $: createButtonDisabled = selectedPlanId === null;
   $: selectedPlanId = plan?.parent_plan?.id ?? null;
   $: selectedPlan = planList.find(({ id }) => id === selectedPlanId) ?? null;
-  $: planList = plan.parent_plan
-    ? [
-        {
-          ...plan.parent_plan,
-          model: plan.model,
-          model_id: plan.model_id,
-        },
-      ]
-    : [];
+  $: planList = plan.parent_plan ? [plan.parent_plan] : [];
   $: if (action === 'merge') {
     modalHeader = 'Merge Request';
     actionHeader = 'Merge to';
@@ -57,6 +50,12 @@
     actionHeader = 'Pull changes from';
     actionButtonText = 'Review Changes';
   }
+  $: if (selectedPlan && plan.parent_plan) {
+    planModelsCompatible = plan.model.id === plan.parent_plan.model.id;
+  } else {
+    planModelsCompatible = true;
+  }
+  $: createButtonDisabled = selectedPlanId === null || !planModelsCompatible;
 
   function create() {
     if (!createButtonDisabled && selectedPlan !== null) {
@@ -83,6 +82,12 @@
   <ModalHeader on:close>{modalHeader}</ModalHeader>
   <ModalContent>
     <div class="branch-action-container">
+      {#if !planModelsCompatible}
+        <AlertError
+          fullError={`Current branch's model (ID: ${plan.model_id}) does not match target plan's model (ID: ${plan.parent_plan?.model_id})`}
+          error="Cannot create merge request due to mismatch in source and target plan models"
+        />
+      {/if}
       <div>
         <div class="branch-header">Current branch</div>
         <div class="branch-name"><BranchIcon />{plan.name}</div>
