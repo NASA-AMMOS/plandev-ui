@@ -570,7 +570,7 @@
             <label for="file">Type JSON Schema File</label>
             <input
               bind:this={fileInput}
-              class="w-full upload"
+              class="upload w-full"
               class:error={!!uploadResponseErrors.length}
               name="file"
               required

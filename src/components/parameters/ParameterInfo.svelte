@@ -103,10 +103,10 @@
               </div>
             {/if}
             {#if externalEvent}
-            <div class="parameter-info-label">Required</div>
-            <div class="parameter-info-value"><i>{required}</i></div>
-          {/if}
-        </div>
+              <div class="parameter-info-label">Required</div>
+              <div class="parameter-info-value"><i>{required}</i></div>
+            {/if}
+          </div>
         </div>
       </Popover.Content>
     </Popover.Root>
