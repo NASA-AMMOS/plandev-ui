@@ -7,7 +7,7 @@
   export let flash: boolean = false;
 
   const dispatch = createEventDispatcher<{
-    flash: any;
+    didFlash: any;
   }>();
 
   let el: HTMLDivElement;
@@ -21,7 +21,7 @@
       }
       // Immediately dispatch flash but delay animation class removal
       // to ensure animation has sufficient time to complete
-      dispatch('flash');
+      dispatch('didFlash');
       setTimeout(() => {
         showFlash = false;
       }, 2500);
