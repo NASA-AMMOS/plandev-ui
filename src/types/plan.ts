@@ -83,7 +83,11 @@ export type PlanSchema = {
   model_id: number;
   name: string;
   owner: UserId;
-  parent_plan: Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collaborators' | 'is_locked'> | null;
+  parent_plan:
+    | (Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collaborators' | 'is_locked' | 'model_id'> & {
+        model: Pick<Model, 'id' | 'name' | 'owner' | 'version'>;
+      })
+    | null;
   revision: number;
   scheduling_specification: Pick<SchedulingPlanSpecification, 'id'> | null;
   simulations: [{ id: number; simulation_datasets: [{ id: number; plan_revision: number }] }];

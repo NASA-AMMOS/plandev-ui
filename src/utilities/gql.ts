@@ -1491,6 +1491,13 @@ const gql = {
         owner
         parent_plan {
           id
+          model_id
+          model: mission_model {
+            id
+            name
+            owner
+            version
+          }
           name
           owner
           collaborators {
