@@ -320,8 +320,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     const queries = [Queries.CONSTRAINT_VIOLATIONS];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
-  CHECK_MODEL_COMPATABILITY: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.CHECK_MODEL_COMPATABILITY], user);
+  CHECK_MODEL_COMPATIBILITY_FOR_PLAN: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.CHECK_MODEL_COMPATIBILITY_FOR_PLAN], user);
   },
   CREATE_ACTION_DEFINITION: (user: User | null): boolean => {
     const queries = [Queries.INSERT_ACTION_DEFINITION];
