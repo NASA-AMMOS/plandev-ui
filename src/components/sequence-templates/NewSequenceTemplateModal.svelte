@@ -68,7 +68,7 @@
   $: selectedActivityType = modelActivityTypes.find(activityType => $activityTypeField.value === activityType.name);
 
   // sort in descending ID order
-  $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => compare(idA, idB));
+  $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => compare(idA, idB, false));
 
   $: saveButtonDisabled =
     $templateNameField.value === '' ||
