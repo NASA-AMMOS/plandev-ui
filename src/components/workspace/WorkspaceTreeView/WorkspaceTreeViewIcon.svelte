@@ -7,5 +7,5 @@
 </script>
 
 <div>
-  {treeNode.label} hi
+  {treeNode.name}
 </div>

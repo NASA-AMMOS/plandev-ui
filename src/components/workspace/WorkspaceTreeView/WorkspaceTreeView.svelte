@@ -14,7 +14,7 @@
   import type { WorkspaceTreeNode } from '../../../types/workspace-tree-view';
   import WorkspaceTreeViewParentItem from './WorkspaceTreeViewParentItem.svelte';
 
-  export let treeNode: WorkspaceTreeNode | undefined;
+  export let treeNode: WorkspaceTreeNode | null | undefined = undefined;
 
   const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 </script>

@@ -5,7 +5,7 @@ import type { Workspace } from '../types/workspace';
 /* Writable */
 export const workspaceColumns: Writable<string> = writable('1fr 3px 3fr');
 
-export const workspaceId: Writable<string> = writable('');
+export const workspaceId: Writable<number> = writable(-1);
 
 /* Derived. */
 

@@ -248,6 +248,7 @@ import type {
 import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import type { Workspace, WorkspaceInsertInput } from '../types/workspace';
+import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
 import { ActivityDeletionAction } from './activities';
 import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
 import gql, { convertToGQLArray } from './gql';
@@ -266,6 +267,7 @@ import {
   showManagePlanDerivationGroups,
   showManagePlanSchedulingConditionsModal,
   showManagePlanSchedulingGoalsModal,
+  showNewWorkspaceFolderModal,
   showPlanBranchRequestModal,
   showRestorePlanSnapshotModal,
   showRunActionModal,
@@ -2245,17 +2247,6 @@ const effects = {
       };
 
       const newWorkspace = await reqWorkspace<Workspace>(`/ws/create`, 'POST', JSON.stringify(workspaceInsert), user);
-      // const data = await reqHasura<Workspace>(gql.CREATE_WORKSPACE, { workspace: workspaceInsert }, user);
-      // const { createWorkspace: newWorkspace } = data;
-      // if (newWorkspace) {
-      //   // Associate new tags with plan
-      //   const newWorkspaceTags: WorkspaceTagsInsertInput[] = (tags || []).map(({ id: tag_id }) => ({
-      //     tag_id,
-      //     workspace_id: newWorkspace.id,
-      //   }));
-      //   newWorkspace.tags = newWorkspaceTags.map(tag => ({ tag }));
-      //   await effects.createWorkspaceTags(newWorkspaceTags, newWorkspace, user);
-      // }
 
       if (newWorkspace != null) {
         showSuccessToast('Workspace Created Successfully');
@@ -5125,7 +5116,7 @@ const effects = {
     }
   },
 
-  async getWorkspace(workspaceId: string, user: User | null): Promise<Workspace | null> {
+  async getWorkspace(workspaceId: number, user: User | null): Promise<Workspace | null> {
     try {
       const query = convertToQuery(gql.SUB_WORKSPACE);
       const data = await reqHasura<Workspace>(query, { workspaceId }, user);
@@ -5140,6 +5131,23 @@ const effects = {
       catchError(e as Error);
       return null;
     }
+  },
+
+  async getWorkspaceContents(workspaceId: number, user: User | null): Promise<WorkspaceTreeNode[] | null> {
+    try {
+      const workspaceContents = await reqWorkspace<WorkspaceTreeNode[]>(`/ws/${workspaceId}`, 'GET', null, user);
+
+      if (workspaceContents != null) {
+        return workspaceContents;
+      } else {
+        throw Error(`Unable to retrieve workspace contents`);
+      }
+    } catch (e) {
+      catchError('Workspace Retrieval Failed', e as Error);
+      showFailureToast('Workspace Retrieval Failed');
+    }
+
+    return null;
   },
 
   async importLibrarySequences(
@@ -5427,6 +5435,32 @@ const effects = {
     } catch (e) {
       catchError('Scheduling Goal Unable To Be Applied To Plan', e as Error);
       showFailureToast('Scheduling Goal Application Failed');
+    }
+  },
+
+  async newWorkspaceFolder(workspaceId: number, user: User | null): Promise<void> {
+    try {
+      const {
+        confirm,
+        value: { folderPath },
+      } = await showNewWorkspaceFolderModal();
+
+      if (confirm) {
+        await reqWorkspace<Workspace>(
+          `/ws/${workspaceId}/${folderPath}?type=directory`,
+          'PUT',
+          null,
+          user,
+          undefined,
+          undefined,
+          false,
+        );
+
+        showSuccessToast('Workspace Folder Created Successfully');
+      }
+    } catch (e) {
+      catchError('Workspace folder was unable to be created', e as Error);
+      showFailureToast('Workspace Folder Creation Failed');
     }
   },
 

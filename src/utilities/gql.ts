@@ -3476,10 +3476,11 @@ const gql = {
   `,
 
   SUB_WORKSPACE: `#graphql
-    subscription SubWorkspace($workspaceId: String!) { {
-      workspace: ${Queries.WORKSPACES}(where: { id: { _eq: $workspaceId } }) {
+    subscription SubWorkspace($workspaceId: Int!) {
+      workspace: ${Queries.WORKSPACE}(id: $workspaceId) {
+        id
         name
-        parcel
+        parcel_id
         disk_location
       }
     }

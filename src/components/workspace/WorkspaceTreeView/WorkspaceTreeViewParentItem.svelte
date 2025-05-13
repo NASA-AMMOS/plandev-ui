@@ -10,6 +10,7 @@
   }
 
   import { type ComponentEvents, createEventDispatcher, SvelteComponent } from 'svelte';
+  import { WorkspaceContentType } from '../../../enums/workspace';
   import type { Dispatcher } from '../../../types/component';
   import type { WorkspaceTreeNode } from '../../../types/workspace-tree-view';
   import WorkspaceTreeViewItemLabel from './WorkspaceTreeViewItemLabel.svelte';
@@ -25,15 +26,24 @@
   }
 </script>
 
-<button on:click={onToggle}>
+{#if treeNode.type === WorkspaceContentType.Workspace}
   <WorkspaceTreeViewItemLabel {treeNode} />
-  {#if treeNode.children}
-    {#each treeNode.children as treeNodeChild (treeNodeChild.id)}
-      {#if treeNodeChild.children}
-        <self treeNode={treeNodeChild}></self>
-      {:else}
-        <WorkspaceTreeViewLeafItem treeNode={treeNodeChild} />
-      {/if}
+  {#if treeNode.contents}
+    {#each treeNode.contents as treeNodeChild (treeNodeChild.name)}
+      <svelte:self treeNode={treeNodeChild} />
     {/each}
   {/if}
-</button>
+{:else}
+  <div class="pl-3">
+    {#if treeNode.contents}
+      <WorkspaceTreeViewItemLabel {treeNode} {isOpen} on:click={onToggle} />
+      <div class:hidden={!isOpen}>
+        {#each treeNode.contents as treeNodeChild (treeNodeChild.name)}
+          <svelte:self treeNode={treeNodeChild} />
+        {/each}
+      </div>
+    {:else}
+      <WorkspaceTreeViewLeafItem {treeNode} />
+    {/if}
+  </div>
+{/if}

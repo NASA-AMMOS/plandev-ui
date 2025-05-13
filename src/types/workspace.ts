@@ -3,7 +3,7 @@ import type { UserId } from './app';
 export type Workspace = {
   created_at: string;
   disk_location: string;
-  id: number | string;
+  id: number;
   name: string;
   owner: UserId;
   parcel_id: number;

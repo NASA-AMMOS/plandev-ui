@@ -21,6 +21,7 @@ import ManagePlanSchedulingConditionsModal from '../components/modals/ManagePlan
 import ManagePlanSchedulingGoalsModal from '../components/modals/ManagePlanSchedulingGoalsModal.svelte';
 import MergeReviewEndedModal from '../components/modals/MergeReviewEndedModal.svelte';
 import NewSequenceModal from '../components/modals/NewSequenceModal.svelte';
+import NewWorkspaceFolderModal from '../components/modals/NewWorkspaceFolderModal.svelte';
 import PlanBranchesModal from '../components/modals/PlanBranchesModal.svelte';
 import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.svelte';
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
@@ -514,6 +515,43 @@ export async function showManagePlanSchedulingGoalsModal(user: User | null): Pro
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
           managePlanGoalsModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a NewWorkspaceFolderModal component with the supplied arguments.
+ */
+export async function showNewWorkspaceFolderModal(): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const newWorkspaceFolderModal = new NewWorkspaceFolderModal({
+          target,
+        });
+        target.resolve = resolve;
+
+        // Do not allow users to dismiss this modal
+        target.setAttribute('data-dismissible', 'false');
+
+        newWorkspaceFolderModal.$on('confirm', (e: CustomEvent<{ folderPath: string }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          newWorkspaceFolderModal.$destroy();
+        });
+
+        newWorkspaceFolderModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          target.removeAttribute('data-dismissible');
+          newWorkspaceFolderModal.$destroy();
         });
       }
     } else {

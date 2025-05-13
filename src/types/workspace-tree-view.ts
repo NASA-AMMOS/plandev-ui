@@ -1,6 +1,7 @@
+import type { WorkspaceContentType } from '../enums/workspace';
+
 export type WorkspaceTreeNode = {
-  children?: WorkspaceTreeNode[];
-  id: string | number;
-  label?: string;
-  type?: string;
+  contents?: WorkspaceTreeNode[];
+  name?: string;
+  type?: WorkspaceContentType;
 };
