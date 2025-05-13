@@ -64,9 +64,10 @@
     }
   }
 
-  function onNewFolder() {
+  async function onNewFolder() {
     if ($workspaceId != null && user) {
-      effects.newWorkspaceFolder($workspaceId, user);
+      await effects.newWorkspaceFolder($workspaceId, user);
+      refreshWorkspaceContents();
     }
   }
 

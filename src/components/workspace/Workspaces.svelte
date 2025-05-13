@@ -166,7 +166,7 @@
           <fieldset>
             <label for="parcel">Parcel</label>
             <select
-              class="st-select w-100"
+              class="st-select w-full"
               name="parcel"
               bind:value={selectedWorkspaceParcelId}
               use:permissionHandler={{
@@ -185,24 +185,24 @@
           <Field field={selectedWorkspaceLocationField}>
             <Input layout="stacked">
               <label class="workspace-metadata-item-label" for="location">Workspace Location</label>
-              <input class="st-input w-100" name="location" aria-label="location" />
+              <input class="st-input w-full" name="location" aria-label="location" />
             </Input>
           </Field>
           <fieldset>
             <Input layout="stacked">
               <label class="workspace-metadata-item-label" for="name">Workspace Name</label>
-              <input class="st-input w-100" name="name" aria-label="name" bind:value={selectedWorkspaceName} />
+              <input class="st-input w-full" name="name" aria-label="name" bind:value={selectedWorkspaceName} />
             </Input>
           </fieldset>
         </div>
         <fieldset>
-          <button class="st-button w-100" on:click={onOpenSelectedWorkspace}>Open workspace</button>
+          <button class="st-button w-full" on:click={onOpenSelectedWorkspace}>Open workspace</button>
         </fieldset>
       {:else}
         <Field field={selectedParcelIdField}>
           <label for="parcel">Parcel</label>
           <select
-            class="st-select w-100"
+            class="st-select w-full"
             name="parcel"
             use:permissionHandler={{
               hasPermission,
@@ -221,7 +221,7 @@
           <label for="location" slot="label">Workspace Location</label>
           <input
             autocomplete="off"
-            class="st-input w-100"
+            class="st-input w-full"
             name="location"
             aria-label="location"
             use:permissionHandler={{
@@ -235,7 +235,7 @@
             <label for="name">Workspace Name (Optional)</label>
             <input
               autocomplete="off"
-              class="st-input w-100"
+              class="st-input w-full"
               name="name"
               aria-label="name"
               bind:value={workspaceName}
@@ -249,7 +249,7 @@
 
         <fieldset>
           <button
-            class="st-button w-100"
+            class="st-button w-full"
             disabled={!createButtonEnabled}
             type="submit"
             use:permissionHandler={{
