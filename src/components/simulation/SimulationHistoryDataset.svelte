@@ -208,9 +208,14 @@
       {/if}
     </Collapse>
     {#if !simulationLoadable}
-    <div class="st-typography-label message" use:tooltip={{ content: `Simulation cannot be loaded since simulation's model (ID: ${simulationDataset.model_id}) does not match current plan's model (ID: ${planModelId})` }}>
-      <WarningIcon class="red-icon" />Model Differs
-    </div>
+      <div
+        class="st-typography-label message"
+        use:tooltip={{
+          content: `Simulation cannot be loaded since simulation's model (ID: ${simulationDataset.model_id}) does not match current plan's model (ID: ${planModelId})`,
+        }}
+      >
+        <WarningIcon class="red-icon" />Model Differs
+      </div>
     {/if}
   </div>
 </Card>
