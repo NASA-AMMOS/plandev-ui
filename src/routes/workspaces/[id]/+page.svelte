@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { page } from '$app/stores';
-  import { Button, DropdownMenu } from '@nasa-jpl/stellar-svelte';
+  import { Button, DropdownMenu, Tooltip } from '@nasa-jpl/stellar-svelte';
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import SettingsIcon from '@nasa-jpl/stellar/icons/settings.svg?component';
   import {
@@ -104,9 +104,16 @@
         <Button variant="outline">
           <FolderTree size={16} />
         </Button>
-        <Button variant="outline" on:click={refreshWorkspaceContents}>
-          <RefreshCcw size={16} />
-        </Button>
+        <Tooltip.Root>
+          <Tooltip.Trigger asChild let:builder>
+            <Button builders={[builder]} variant="outline" on:click={refreshWorkspaceContents}>
+              <RefreshCcw size={16} />
+            </Button>
+          </Tooltip.Trigger>
+          <Tooltip.Content>
+            <div>Refresh Workspace Contents</div>
+          </Tooltip.Content>
+        </Tooltip.Root>
         <Button variant="outline">
           <SettingsIcon size={16} />
         </Button>
