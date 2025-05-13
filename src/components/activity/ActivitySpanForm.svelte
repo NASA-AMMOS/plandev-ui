@@ -2,8 +2,8 @@
 
 <script lang="ts">
   import { Button } from '@nasa-jpl/stellar-svelte';
+  import { Pencil } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
-  import DirectiveIcon from '../../assets/timeline-directive.svg?component';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
   import { plugins } from '../../stores/plugins';
   import type { ActivityType } from '../../types/activity';
@@ -203,7 +203,7 @@
                   dispatch('jumpToDirectiveParameter', { directiveId: spanDirectiveId, parameterName: parameter.name });
                 }}
               >
-                <DirectiveIcon />
+                <Pencil size={16} />
               </Button>
             </div>
           {/if}
