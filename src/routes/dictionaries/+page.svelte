@@ -133,7 +133,7 @@
             </fieldset>
           {:else if files !== undefined}
             <fieldset class="save-dictionary-fieldset">
-              <label for="Save Dictionary">Save Command Dictionary to filesystem</label>
+              <label for="Save Dictionary">Save Dictionary to the filesystem</label>
               <input
                 bind:checked={persistDictionaryToFilesystem}
                 class="st-input"
