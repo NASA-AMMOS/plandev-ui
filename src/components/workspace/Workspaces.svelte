@@ -28,13 +28,7 @@
   let selectedParcelIdField = field<number>(-1, [min(1, 'Field is required')]);
   let selectedWorkspaceId: number | null = null;
   let selectedWorkspaceName: string | null = null;
-  let selectedWorkspaceLocationField = field<string>('', [
-    required,
-    unique(
-      $workspaces.map(workspace => workspace.disk_location),
-      'Workspace location already exists',
-    ),
-  ]);
+  let selectedWorkspaceLocation: string | null = null;
   let selectedWorkspaceParcelId: number | null = null;
   let workspaceName: string | null = null;
   let workspaceLocationField = field<string>('', [
@@ -81,27 +75,9 @@
   $: if (selectedWorkspaceId !== null) {
     const selectedWorkspace = $workspaces.find(workspace => workspace.id === selectedWorkspaceId);
     if (selectedWorkspace) {
-      selectedWorkspaceLocationField.updateValidators([
-        value => {
-          return new Promise(resolve => {
-            if (/\//.test(value)) {
-              return resolve('Cannot contain "/"" in location');
-            } else {
-              return resolve(null);
-            }
-          });
-        },
-        unique(
-          $workspaces
-            .filter(workspace => workspace.id !== selectedWorkspaceId)
-            .map(workspace => workspace.disk_location),
-          'Workspace location already exists',
-        ),
-      ]);
-
       selectedWorkspaceName = selectedWorkspace.name ?? null;
       selectedWorkspaceParcelId = selectedWorkspace.parcel_id;
-      selectedWorkspaceLocationField.validateAndSet(selectedWorkspace.disk_location);
+      selectedWorkspaceLocation = selectedWorkspace.disk_location;
     }
   }
 
@@ -182,16 +158,22 @@
               {/each}
             </select>
           </fieldset>
-          <Field field={selectedWorkspaceLocationField}>
-            <Input layout="stacked">
-              <label class="workspace-metadata-item-label" for="location">Workspace Location</label>
-              <input class="st-input w-full" name="location" aria-label="location" />
-            </Input>
-          </Field>
           <fieldset>
             <Input layout="stacked">
               <label class="workspace-metadata-item-label" for="name">Workspace Name</label>
               <input class="st-input w-full" name="name" aria-label="name" bind:value={selectedWorkspaceName} />
+            </Input>
+          </fieldset>
+          <fieldset>
+            <Input layout="stacked">
+              <label class="workspace-metadata-item-label" for="location">Workspace Location</label>
+              <input
+                class="st-input w-full"
+                name="location"
+                aria-label="location"
+                value={selectedWorkspaceLocation}
+                disabled
+              />
             </Input>
           </fieldset>
         </div>
