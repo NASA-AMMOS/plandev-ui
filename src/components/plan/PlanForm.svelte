@@ -233,7 +233,13 @@
               }}
               use:tooltip={{ content: !$planReadOnly ? 'Change Mission Model' : '', placement: 'top' }}
             >
-              <Button class="shrink-0" variant="outline" size="icon" on:click={openChangePlanMissionModelModal}>
+              <Button
+                class="shrink-0"
+                variant="outline"
+                size="icon"
+                on:click={openChangePlanMissionModelModal}
+                aria-label="Change mission model"
+              >
                 <ArrowLeftRight size={16} />
               </Button>
             </div>

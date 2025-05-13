@@ -36,9 +36,9 @@ export class Plans {
     this.updatePage(page);
   }
 
-  async createPlan(planName = this.planName) {
+  async createPlan(planName = this.planName, modelName = this.models.modelName) {
     await expect(this.tableRow(planName)).not.toBeVisible();
-    await this.selectInputModel();
+    await this.selectInputModel(modelName);
     await this.fillInputName(planName);
     await this.fillInputStartTime();
     await this.fillInputEndTime();
@@ -140,10 +140,10 @@ export class Plans {
     await this.page.waitForTimeout(250);
   }
 
-  async importPlan(planName = this.planName) {
+  async importPlan(planName = this.planName, modelName = this.models.modelName) {
     await expect(this.tableRow(planName)).not.toBeVisible();
     await this.importButton.click();
-    await this.selectInputModel();
+    await this.selectInputModel(modelName);
     await this.fillInputFile();
     await this.fillInputName(planName);
     await this.createButton.waitFor({ state: 'attached' });
@@ -158,9 +158,9 @@ export class Plans {
     return planId;
   }
 
-  async selectInputModel() {
+  async selectInputModel(modelName = this.models.modelName) {
     await this.inputButtonModel.click();
-    await this.page.getByRole('option', { name: this.models.modelName }).click();
+    await this.page.getByRole('option', { name: modelName }).click();
   }
 
   async selectedModel() {

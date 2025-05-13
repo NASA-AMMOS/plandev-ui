@@ -8,6 +8,7 @@
   import { tooltip } from '../utilities/tooltip';
   import ContextMenu from './context-menu/ContextMenu.svelte';
 
+  export let ariaTitle: string = '';
   export let className: string = '';
   export let collapsible: boolean = true;
   export let contentClass: string = '';
@@ -33,7 +34,7 @@
   $: expanded = defaultExpanded;
 </script>
 
-<div class={collapseClasses} class:error role="group" aria-label="{title}-collapse">
+<div class={collapseClasses} class:error role="group" aria-label="{ariaTitle || title}-collapse">
   <button
     on:contextmenu|preventDefault={contextMenu?.show}
     tabindex={!collapsible ? -1 : 0}

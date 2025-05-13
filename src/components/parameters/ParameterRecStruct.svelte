@@ -68,7 +68,7 @@
 </script>
 
 <div class="parameter-rec-struct">
-  <Collapse defaultExpanded={expanded} {headerHeight}>
+  <Collapse defaultExpanded={expanded} {headerHeight} ariaTitle={formParameter.name}>
     <div slot="left">
       <ParameterName {formParameter} />
     </div>

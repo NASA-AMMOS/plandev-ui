@@ -169,6 +169,7 @@
         name=""
         class="w-full"
         placeholder="Search mission models"
+        aria-label="Search mission models"
         on:input={onFiltering}
         sizeVariant="sm"
       />

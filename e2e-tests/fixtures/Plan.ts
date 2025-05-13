@@ -13,6 +13,11 @@ export class Plan {
   activityCheckingStatusSelector: (status: string) => string;
   analyzeButton: Locator;
   appError: Locator;
+  changeMissionModelButton: Locator;
+  changeMissionModelFilter: Locator;
+  changeMissionModelMigrateButton: Locator;
+  changeMissionModelModal: Locator;
+  changeMissionModelTableRows: Locator;
   consoleContainer: Locator;
   constraintListItemSelector: string;
   constraintManageButton: Locator;
@@ -467,6 +472,13 @@ export class Plan {
     await expect(this.panelSimulation.getByRole('combobox', { name: templateName })).toBeVisible();
   }
 
+  async showChangeModelModal() {
+    await this.showPanel(PanelNames.PLAN_METADATA, true);
+    await expect(this.changeMissionModelButton).toBeEnabled();
+    await this.changeMissionModelButton.click();
+    await expect(this.changeMissionModelFilter).toBeVisible();
+  }
+
   async showConstraintsLayout() {
     await this.showPanel(PanelNames.CONSTRAINTS);
     await this.panelConstraints.waitFor({ state: 'attached' });
@@ -521,6 +533,13 @@ export class Plan {
     this.activitiesTableFirstRow = page
       .locator(`div.ag-theme-stellar.data-grid-table .ag-center-cols-container > .ag-row`)
       .nth(0);
+    this.changeMissionModelButton = page.getByRole('button', { name: 'Change mission model' });
+    this.changeMissionModelModal = page.locator('.modal:has-text("Change Mission Model")');
+    this.changeMissionModelFilter = this.changeMissionModelModal.getByPlaceholder('Search mission models');
+    this.changeMissionModelTableRows = this.changeMissionModelModal.getByRole('rowgroup');
+    this.changeMissionModelMigrateButton = this.changeMissionModelModal.getByRole('button', {
+      name: 'Change Mission Model',
+    });
     this.constraintManageButton = page.locator(`button[name="manage-constraints"]`);
     this.constraintModalFilter = page.locator('.modal').getByPlaceholder('Filter constraints');
     this.constraintNewButton = page.locator(`button[name="new-constraint"]`);
