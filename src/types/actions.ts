@@ -19,6 +19,7 @@ export type ActionDefinition = {
 export type ActionRun = {
   action_definition: ActionDefinition;
   action_definition_id: number;
+  canceled: boolean;
   duration: number | null;
   error: {
     message: string;

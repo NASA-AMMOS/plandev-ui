@@ -3,21 +3,32 @@
 <script lang="ts">
   import PlayBtnIcon from 'bootstrap-icons/icons/play-btn.svg?component';
   import StopwatchIcon from 'bootstrap-icons/icons/stopwatch.svg?component';
+  import BanIcon from 'bootstrap-icons/icons/ban.svg?component';
   import { Status } from '../../../enums/status';
-  import type { ActionDefinition, ActionRun, ActionRunSlim } from '../../../types/actions';
+  import type { ActionDefinition, ActionRunSlim } from '../../../types/actions';
   import { formatMS } from '../../../utilities/time';
   import StatusBadge from '../../ui/StatusBadge.svelte';
+  import { tooltip } from '../../../utilities/tooltip';
+  import { createEventDispatcher } from 'svelte';
 
   export let actionRun: ActionRunSlim;
   export let actionDefinition: ActionDefinition | null;
   export let interactable: boolean = true;
 
-  function getStatusForActionRun(actionStatus: ActionRun['status']): Status {
+  const dispatch = createEventDispatcher<{
+    cancelAction: void;
+  }>();
+
+  function getStatusForActionRun(actionRun: ActionRunSlim): Status {
+    if (actionRun.canceled === true) {
+      return Status.Canceled;
+    }
+
     if (actionRun.error?.message || actionRun.results?.status === 'FAILED') {
       return Status.Failed;
     }
 
-    switch (actionStatus) {
+    switch (actionRun.status) {
       case 'success':
         return Status.Complete;
       case 'pending':
@@ -32,23 +43,38 @@
   }
 </script>
 
-<button
-  class="action-run st-typography-medium st-button tertiary w-100"
-  class:non-interactable={!interactable}
-  on:click
->
-  <div class="action-run-cell">
-    <StatusBadge status={getStatusForActionRun(actionRun.status)} />
-    {actionDefinition?.name ?? 'Loading...'}
-  </div>
-  <div>@{actionRun.requested_by}</div>
-  <div class="action-run-cell">
-    <PlayBtnIcon />{new Date(actionRun.requested_at).toLocaleString()}
-  </div>
-  <div class="action-run-cell">
-    <StopwatchIcon />{formatMS(actionRun.duration)}
-  </div>
-</button>
+<div class="action-run-wrapper relative w-100">
+  <button
+    class="action-run st-typography-medium st-button tertiary w-100"
+    class:non-interactable={!interactable}
+    on:click
+  >
+    <div class="action-run-cell">
+      <StatusBadge status={getStatusForActionRun(actionRun)} />
+      {actionDefinition?.name ?? 'Loading...'}
+    </div>
+    <div>@{actionRun.requested_by}</div>
+    <div class="action-run-cell">
+      <PlayBtnIcon />{new Date(actionRun.requested_at).toLocaleString()}
+    </div>
+    <div class="action-run-cell">
+      <StopwatchIcon />{formatMS(actionRun.duration)}
+    </div>
+  </button>
+
+  {#if (actionRun.status === 'pending' || actionRun.status === 'incomplete')}
+    <button
+      type="button"
+      class="cancel-button st-button tertiary icon"
+      class:non-interactable={!interactable}
+      on:click|stopPropagation={() => dispatch('cancelAction')}
+      use:tooltip={{ content: 'Cancel Action Run', placement: 'top' }}
+    >
+      <BanIcon />
+    </button>
+  {/if}
+</div>
+
 
 <style>
   button.action-run {
@@ -58,7 +84,7 @@
     column-gap: 8px;
     display: grid;
     gap: 24px;
-    grid-template-columns: 1fr 0.2fr 160px 80px;
+    grid-template-columns: 1fr 0.2fr 160px 80px 80px;
     height: unset;
     padding: 8px;
     text-align: left;
@@ -78,5 +104,16 @@
     align-items: center;
     display: flex;
     gap: 8px;
+  }
+
+  .action-run-wrapper {
+    position: relative;
+  }
+
+  .cancel-button {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    z-index: 10;
   }
 </style>
