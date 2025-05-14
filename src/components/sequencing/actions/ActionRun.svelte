@@ -32,6 +32,10 @@
   async function cancelAction(id: number | undefined) {
     await effects.cancelActionRun(id, user);
   }
+
+  function onCancelAction() {
+    cancelAction($actionRun?.id);
+  }
 </script>
 
 <div class="action-run-container">
@@ -43,7 +47,7 @@
       <ActionRunCard
         actionRun={$actionRun}
         actionDefinition={getActionDefinitionForRun($actionRun, $actionDefinitionsByWorkspace, workspaceId)}
-        cancelAction={() => cancelAction($actionRun?.id)}
+        on:cancelAction={onCancelAction}
         interactable={false}
       />
       <div>
