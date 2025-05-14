@@ -6953,6 +6953,7 @@ const effects = {
   async uploadDictionary(
     dictionary: string,
     user: User | null,
+    persistDictionaryToFilesystem: boolean = true,
   ): Promise<{
     channel?: ChannelDictionaryMetadata;
     command?: CommandDictionaryMetadata;
@@ -6973,7 +6974,7 @@ const effects = {
         channel?: ChannelDictionaryMetadata;
         command?: CommandDictionaryMetadata;
         parameter?: ParameterDictionaryMetadata;
-      }>(gql.CREATE_DICTIONARY, { dictionary }, user);
+      }>(gql.CREATE_DICTIONARY, { dictionary, persistDictionaryToFilesystem }, user);
 
       const { createDictionary: newDictionaries } = data;
 
@@ -6992,6 +6993,7 @@ const effects = {
     file: File,
     user: User | null,
     sequenceAdaptationName?: string | undefined,
+    persistDictionaryToFilesystem: boolean = true,
   ): Promise<void> {
     const text = await file.text();
     if (sequenceAdaptationName) {
@@ -7002,7 +7004,7 @@ const effects = {
       }
       showSuccessToast('Sequence Adaptation Created Successfully');
     } else {
-      const uploadedDictionaries = await this.uploadDictionary(text, user);
+      const uploadedDictionaries = await this.uploadDictionary(text, user, persistDictionaryToFilesystem);
       if (uploadedDictionaries === null) {
         showFailureToast('Failed to upload dictionary file');
         throw Error('Failed to upload dictionary file');
