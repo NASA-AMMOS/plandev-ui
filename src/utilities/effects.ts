@@ -6993,7 +6993,7 @@ const effects = {
     file: File,
     user: User | null,
     sequenceAdaptationName?: string | undefined,
-    persistDictionaryToFilesystem: boolean = false,
+    persistDictionaryToFilesystem: boolean = true,
   ): Promise<void> {
     const text = await file.text();
     if (sequenceAdaptationName) {
