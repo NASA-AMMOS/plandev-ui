@@ -294,7 +294,7 @@
                           $actionDefinitionsByWorkspace,
                           workspaceId,
                         )}
-                        cancelAction={() => cancelAction(actionRun.id)}
+                        on:cancelAction={() => cancelAction(actionRun.id)}
                         on:click={() => onActionRunClick(actionRun.id)}
                       />
                     {/each}
@@ -407,7 +407,7 @@
               <ActionRunCard
                 {actionRun}
                 actionDefinition={getActionDefinitionForRun(actionRun, $actionDefinitionsByWorkspace, workspaceId)}
-                cancelAction={() => cancelAction(actionRun.id)}
+                on:cancelAction={() => cancelAction(actionRun.id)}
                 on:click={() => onActionRunClick(actionRun.id)}
               />
             {/each}
