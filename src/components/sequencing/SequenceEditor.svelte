@@ -12,9 +12,11 @@
   import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
   import ExpandIcon from 'bootstrap-icons/icons/arrow-bar-up.svg?component';
   import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
+  import CodeIcon from 'bootstrap-icons/icons/code-square.svg?component';
   import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
+  import { actionDefinitionsByWorkspace } from '../../stores/actions';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import {
     getGlobals,
@@ -92,6 +94,10 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
+  import type { ActionDefinition } from '../../types/actions';
+  import { getActionParametersOfType, openActionRun } from '../../utilities/actions';
+  import type { ArgumentsMap } from '../../types/parameter';
+  import { pluralize } from '../../utilities/text';
 
   export let parcel: Parcel | null;
   export let showCommandFormBuilder: boolean = false;
@@ -129,6 +135,7 @@
   let editorOutputView: EditorView;
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
+  let actionMenu: Menu;
   let menu: Menu;
   let outputFormats: IOutputFormat[] = [];
   let selectedNode: SyntaxNode | null;
@@ -147,11 +154,18 @@
   let commandDef: FswCommand | null = null;
   let timeTagNode: TimeTagInfo = null;
   let variablesInScope: string[] = [];
+  let actionsWithSequenceParameters: ActionDefinition[] = [];
 
   $: loadSequenceAdaptation(parcel?.sequence_adaptation_id);
 
   $: isInVmlMode = isVmlSequence(sequenceName);
 
+  $: if (typeof workspaceId === 'number') {
+    actionsWithSequenceParameters = Object.values($actionDefinitionsByWorkspace[workspaceId] || {}).filter(action => {
+      const seqParameter = getActionParametersOfType(action, 'sequence');
+      return seqParameter.length > 0;
+    });
+  }
   $: {
     if (editorSequenceView) {
       // insert sequence
@@ -497,6 +511,26 @@
     }
   }
 
+  async function runActionOnSequence(action: ActionDefinition) {
+    //get parameters of type sequence...
+    const sequenceParameters = getActionParametersOfType(action, 'sequence');
+
+    //set this sequence to the first one... FOR NOW.  TODO how do we determine the primary one?
+    let parameters: ArgumentsMap = {};
+    if (sequenceParameters.length > 0) {
+      const primarySequenceParameter = sequenceParameters[0];
+      parameters[primarySequenceParameter] = sequenceName;
+    }
+
+    const actionRunId = await effects.runAction(action, user, parameters);
+    if (actionRunId !== null) {
+      const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
+      if (goToRun === true) {
+        openActionRun(actionRunId, true);
+      }
+    }
+  }
+
   function toggleSeqJsonEditor(): void {
     toggleSeqJsonPreview = !toggleSeqJsonPreview;
   }
@@ -520,7 +554,36 @@
       <svelte:fragment slot="header">
         <SectionTitle>{title}</SectionTitle>
 
-        <div class="right">
+        <div class="app-menu" role="none" on:click|stopPropagation={() => actionMenu.toggle()}>
+          {#if !readOnly && !previewOnly}
+            <button
+              disabled={sequenceName === '' || actionsWithSequenceParameters.length === 0}
+              class="st-button icon-button secondary ellipsis"
+            >
+              {#if actionsWithSequenceParameters.length > 0}
+                <div class="actions-chip">{actionsWithSequenceParameters.length}</div>
+              {/if}
+              Action{pluralize(actionsWithSequenceParameters.length)}
+              <ChevronDownIcon />
+            </button>
+            <Menu bind:this={actionMenu}>
+              {#each actionsWithSequenceParameters as action}
+                <div
+                  role="none"
+                  on:click|stopPropagation={() => {
+                    runActionOnSequence(action);
+                    actionMenu.toggle();
+                  }}
+                >
+                  <MenuItem>
+                    <CodeIcon />
+                    {action?.name}
+                  </MenuItem>
+                </div>
+              {/each}
+            </Menu>
+          {/if}
+
           <button
             use:tooltip={{ content: 'Show Error Panel', placement: 'top' }}
             class="st-button icon-button secondary ellipsis"
@@ -686,6 +749,14 @@
     gap: 5px;
     justify-content: center;
     position: relative;
+  }
+
+  .actions-chip {
+    background-color: var(--st-gray-15);
+    border-radius: 40px;
+    color: black;
+    min-width: 16px;
+    padding: 0px 4px;
   }
 
   .no-selected-parcel {

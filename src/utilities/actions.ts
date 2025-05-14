@@ -1,5 +1,9 @@
 import type { ActionDefinition, ActionRunSlim } from '../types/actions';
 import type { ParametersMap } from '../types/parameter';
+import { getSearchParameterNumber } from './generic';
+import { SearchParameters } from '../enums/searchParameters';
+import { goto } from '$app/navigation';
+import { base } from '$app/paths';
 
 /**
  * Transforms a value schema record to a parameters map
@@ -29,4 +33,24 @@ export function getActionDefinitionForRun(
     }
   }
   return null;
+}
+
+export function getActionParametersOfType(action: ActionDefinition, parameterType: string): string[] {
+  const parametersOfType: string[] = [];
+  for (const [key, value] of Object.entries(action.parameter_schema)) {
+    if (parameterType === value.type) {
+      parametersOfType.push(key);
+    }
+  }
+  return parametersOfType;
+}
+
+export function openActionRun(id: number, newTab?: boolean) {
+  const workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
+  const actionRunUrl = `${base}/sequencing/actions/runs/${id}${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`;
+  if (newTab === true) {
+    window.open(actionRunUrl, '_blank');
+  } else {
+    goto(actionRunUrl);
+  }
 }

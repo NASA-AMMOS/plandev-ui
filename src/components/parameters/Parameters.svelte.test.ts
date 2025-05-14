@@ -1,7 +1,15 @@
 import { cleanup, render } from '@testing-library/svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FormParameter } from '../../types/parameter';
 import Parameters from './Parameters.svelte';
+
+vi.mock('$env/dynamic/public', () => {
+  return {
+    env: {
+      PUBLIC_COMMAND_EXPANSION_MODE: 'typescript',
+    },
+  };
+}); // https://github.com/sveltejs/kit/issues/8180
 
 describe('Parameters component', () => {
   afterEach(() => {

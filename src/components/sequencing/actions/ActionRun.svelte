@@ -76,6 +76,7 @@
             hideRightAdornments
             hideInfo
             disabled
+            {workspaceId}
           />
           <div class="st-typography-medium action-run-label">Action Parameters</div>
           <Parameters
@@ -88,6 +89,7 @@
             hideRightAdornments
             hideInfo
             disabled
+            {workspaceId}
           />
         </div>
       </div>

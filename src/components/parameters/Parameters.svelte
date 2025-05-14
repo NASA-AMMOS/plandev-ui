@@ -18,6 +18,7 @@
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
   export let use: ActionArray = [];
+  export let workspaceId: number | null = null;
 
   let clientWidth: number;
   let level: number = 0;
@@ -56,6 +57,7 @@
             on:change
             on:reset
             {use}
+            {workspaceId}
           />
         {/if}
         <div class="parameter-info">
