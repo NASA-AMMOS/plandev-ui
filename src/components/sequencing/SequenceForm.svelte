@@ -296,6 +296,7 @@
           bind:value={sequenceParcelId}
           class="st-select w-full"
           name="parcel"
+          id="parcel"
           use:permissionHandler={{
             hasPermission: hasPermission && !isSequenceReadonly,
             permissionError,
@@ -317,6 +318,7 @@
           autocomplete="off"
           class="st-input w-full"
           name="sequenceName"
+          id="sequenceName"
           placeholder="Enter Sequence Name"
           required
           use:permissionHandler={{
@@ -333,6 +335,7 @@
           autocomplete="off"
           class="st-input"
           name="sequenceReadonly"
+          id="sequenceReadonly"
           placeholder="Is Sequence Readonly?"
           type="checkbox"
           use:permissionHandler={{
@@ -348,6 +351,7 @@
           bind:files={outputFiles}
           class="w-full"
           name="outputFile"
+          id="outputFile"
           type="file"
           on:change={onOutputFileUpload}
           use:permissionHandler={{
