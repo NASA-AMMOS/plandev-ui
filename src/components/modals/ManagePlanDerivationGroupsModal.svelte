@@ -189,21 +189,22 @@
     dataGrid?.redrawRows();
   }
 
-  $: allDerivationGroupsSelected = (Object.keys(selectedDerivationGroups).length === filteredDerivationGroups.length);
+  $: allDerivationGroupsSelected = Object.keys(selectedDerivationGroups).length === filteredDerivationGroups.length;
 
   function onAllDerivationGroups() {
-    if (allDerivationGroupsSelected) {
-      selectedDerivationGroups = {};
-    } else {
-      selectedDerivationGroups = filteredDerivationGroups.map(derivationGroup => derivationGroup.name).reduce(
-        (prevBooleanMap: Record<string, boolean>, derivationGroupName: string) => {
-          return {
-            ...prevBooleanMap,
-            [derivationGroupName]: true,
-          };
-        },
-        {},
-      );
+    if (filteredDerivationGroups) {
+      if (allDerivationGroupsSelected) {
+        selectedDerivationGroups = {};
+      } else {
+        selectedDerivationGroups = filteredDerivationGroups
+          .map(derivationGroup => derivationGroup.name)
+          .reduce((prevBooleanMap: Record<string, boolean>, derivationGroupName: string) => {
+            return {
+              ...prevBooleanMap,
+              [derivationGroupName]: true,
+            };
+          }, {});
+      }
     }
   }
 
@@ -254,9 +255,7 @@
           <Input layout="inline">
             <input bind:value={filterText} class="st-input" placeholder="Filter derivation groups" />
           </Input>
-          <Button variant="link" on:click={() => window.open(`${base}/external-sources`)}>
-            Upload
-          </Button>
+          <Button variant="link" on:click={() => window.open(`${base}/external-sources`)}>Upload</Button>
         </div>
         <hr />
         <div class="derivation-groups-modal-table-container">
@@ -288,7 +287,7 @@
                 <!-- Collapsible details -->
                 <Collapse title={source.key} tooltipContent={source.key} defaultExpanded={false}>
                   <svelte:fragment slot="right">
-                    <p class="st-typography-body derived-event-count">
+                    <p class="st-typography-body text-gray-600">
                       {selectedDerivationGroup.sources.get(source.key)?.event_counts} events
                     </p>
                   </svelte:fragment>
@@ -334,7 +333,7 @@
   <ModalFooter>
     <div class="flex flex-wrap items-center gap-2">
       <Button variant="outline" on:click={onAllDerivationGroups}>
-        {allDerivationGroupsSelected ? "Deselect All" : "Select All"}
+        {allDerivationGroupsSelected ? 'Deselect All' : 'Select All'}
       </Button>
       <Button
         on:click={() => onUpdateDerivationGroups(selectedDerivationGroups)}
@@ -342,7 +341,7 @@
       >
         Update
       </Button>
-      <Button variant="outline" on:click={() => dispatch('close')}> Close </Button>
+      <Button variant="outline" on:click={() => dispatch('close')}>Close</Button>
     </div>
   </ModalFooter>
 </Modal>
@@ -375,15 +374,5 @@
     height: 100%;
     padding: 0 1rem 0.5rem;
     width: 100%;
-  }
-
-  .derived-event-count {
-    color: var(--st-gray-60);
-  }
-
-  .new-external-source-button {
-    align-items: center;
-    display: flex;
-    width: 100px;
   }
 </style>

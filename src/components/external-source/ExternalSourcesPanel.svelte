@@ -16,6 +16,7 @@
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
   import CollapsibleListControls from '../CollapsibleListControls.svelte';
+  import Loading from '../Loading.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import AlertError from '../ui/AlertError.svelte';
   import CardList from '../ui/CardList.svelte';
@@ -30,7 +31,7 @@
   let filterText: string = '';
   let mappedDerivationGroups: { [key: string]: DerivationGroup[] } = {};
   let unseenSources: ExternalSourceSlim[] = [];
-  let filteredDerivationGroups: DerivationGroup[] = [];
+  let filteredDerivationGroups: DerivationGroup[] | null = null;
 
   // Determine which new and deleted sources are unacknowledged for the user
   $: {
@@ -107,8 +108,10 @@
   }
 
   function onUpdateDismiss() {
-    for (const derivationGroup of filteredDerivationGroups) {
-      effects.updateDerivationGroupAcknowledged($plan ?? undefined, derivationGroup.name, user);
+    if (filteredDerivationGroups) {
+      for (const derivationGroup of filteredDerivationGroups) {
+        effects.updateDerivationGroupAcknowledged($plan ?? undefined, derivationGroup.name, user);
+      }
     }
   }
 </script>
@@ -137,44 +140,41 @@
 
     <AlertError class="m-2" error={$derivationGroupPlanLinkError} />
 
-    {#if unseenSources.length}
-      <div style="padding-top: 10px">
+    <div class="pt-2">
+      {#if filteredDerivationGroups === null}
+        <Loading />
+      {:else if unseenSources.length}
         <CardList>
           {#if unseenSources.length}
             <ExternalSourceUpdateCard {user} deleted={false} sources={unseenSources} on:dismiss={onUpdateDismiss} />
           {/if}
         </CardList>
-      </div>
-    {/if}
-
-    {#if filteredDerivationGroups.length}
-      {#each Object.keys(mappedDerivationGroups) as sourceType}
-        <Collapse title={sourceType.toString()} tooltipContent={sourceType.toString()} defaultExpanded={true}>
-          {#if mappedDerivationGroups[sourceType]}
-            {#each mappedDerivationGroups[sourceType] as group}
-              <ExternalSourcePanelEntry derivationGroup={group} {user} />
-            {/each}
-          {/if}
-        </Collapse>
-      {/each}
-    {:else}
-      <div class="st-typography-body">
-        <p class="no-derivation-groups-linked">No Derivation Groups Linked To This Plan</p>
-      </div>
-      <div class="st-typography-body">
-        <p>
-          <br />
-          <i>Click "Manage Derivation Groups" to associate Derivation Groups to this plan.</i>
-        </p>
-      </div>
-    {/if}
+      {:else if filteredDerivationGroups.length}
+        {#each Object.keys(mappedDerivationGroups) as sourceType}
+          <Collapse title={sourceType.toString()} tooltipContent={sourceType.toString()} defaultExpanded={true}>
+            {#if mappedDerivationGroups[sourceType]}
+              {#each mappedDerivationGroups[sourceType] as group}
+                <ExternalSourcePanelEntry derivationGroup={group} {user} />
+              {/each}
+            {/if}
+          </Collapse>
+        {/each}
+      {:else}
+        <div class="st-typography-body">
+          <p>No Derivation Groups Linked To This Plan</p>
+        </div>
+        <div class="st-typography-body">
+          <p>
+            <br />
+            <i>Click "Manage Derivation Groups" to associate Derivation Groups to this plan.</i>
+          </p>
+        </div>
+      {/if}
+    </div>
   </svelte:fragment>
 </Panel>
 
 <style>
-  .no-derivation-groups-linked {
-    padding-top: 12px;
-  }
   .st-button {
     white-space: nowrap;
   }
