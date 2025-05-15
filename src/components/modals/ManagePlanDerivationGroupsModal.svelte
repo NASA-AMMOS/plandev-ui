@@ -105,7 +105,7 @@
   let modalColumnSize: string = modalColumnSizeNoDetail;
 
   let filterText: string = '';
-  let filteredDerivationGroups: DerivationGroup[] = [];
+  let filteredDerivationGroups: DerivationGroup[] | null = null;
 
   let selectedDerivationGroup: DerivationGroup | undefined = undefined;
   let selectedDerivationGroupSources: ExternalSourceSlim[] = [];
@@ -263,6 +263,7 @@
           {#if filteredDerivationGroups.length}
             <DataGrid
               bind:this={dataGrid}
+              loading={filteredDerivationGroups === null}
               columnDefs={derivationGroupColumnDefs}
               rowData={filteredDerivationGroups}
               getRowId={getDerivationGroupRowId}
