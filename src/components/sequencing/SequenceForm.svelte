@@ -276,17 +276,17 @@
       {#if mode === 'edit'}
         <fieldset>
           <label for="ruleId">ID</label>
-          <input class="st-input w-full" disabled name="ruleId" value={sequenceId} />
+          <input class="st-input w-full" disabled name="ruleId" id="ruleId" value={sequenceId} />
         </fieldset>
 
         <fieldset>
           <label for="createdAt">Created At</label>
-          <input class="st-input w-full" disabled name="createdAt" value={sequenceCreatedAt} />
+          <input class="st-input w-full" disabled name="createdAt" id="createdAt" value={sequenceCreatedAt} />
         </fieldset>
 
         <fieldset>
           <label for="updatedAt">Updated At</label>
-          <input class="st-input w-full" disabled name="updatedAt" value={sequenceUpdatedAt} />
+          <input class="st-input w-full" disabled name="updatedAt" id="updatedAt" value={sequenceUpdatedAt} />
         </fieldset>
       {/if}
 

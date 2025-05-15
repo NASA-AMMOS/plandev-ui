@@ -323,6 +323,7 @@
           bind:value={ruleName}
           class="st-input w-full"
           name="name"
+          id="name"
           placeholder="Enter a rule name (required)"
           required
           use:permissionHandler={{
@@ -339,6 +340,7 @@
           autocomplete="off"
           class="st-input w-full"
           name="description"
+          id="description"
           placeholder="Enter a rule description (optional)"
           required
           use:permissionHandler={{
@@ -352,6 +354,7 @@
         <label for="tags">Tags</label>
         <TagsInput
           disabled={!hasPermission}
+          id="tags"
           use={[
             [
               permissionHandler,
