@@ -45,6 +45,7 @@
     <input
       bind:value={durationString}
       class="st-input w-full"
+      aria-label={formParameter.name}
       class:error={formParameter.errors !== null || durationStringFormatError !== null}
       {disabled}
       type="text"

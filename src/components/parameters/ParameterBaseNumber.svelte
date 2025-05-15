@@ -45,6 +45,7 @@
       class:error={formParameter.errors !== null}
       {disabled}
       type="number"
+      aria-label={formParameter.name}
       use:useActions={use}
       on:change={debouncedOnChange}
     />

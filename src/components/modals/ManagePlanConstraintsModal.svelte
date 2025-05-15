@@ -269,7 +269,13 @@
       <div class="constraints-modal-filter-container">
         <div class="constraints-modal-title">Constraints</div>
         <Input>
-          <input bind:value={filterText} class="st-input" placeholder="Filter constraints" style="width: 100%;" />
+          <input
+            bind:value={filterText}
+            class="st-input"
+            aria-label="Filter constraints"
+            placeholder="Filter constraints"
+            style="width: 100%;"
+          />
         </Input>
         <button
           class="st-button secondary ellipsis"

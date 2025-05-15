@@ -188,7 +188,13 @@
     <SectionTitle>Scheduling Goals</SectionTitle>
 
     <Input>
-      <input bind:value={filterText} class="st-input" placeholder="Filter goals" style="width: 100%;" />
+      <input
+        bind:value={filterText}
+        class="st-input"
+        placeholder="Filter goals"
+        aria-label="Filter goals"
+        style="width: 100%;"
+      />
     </Input>
 
     <div class="right">

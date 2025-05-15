@@ -217,7 +217,7 @@
   </div>
 
   <div>
-    <input type="checkbox" on:change={onFilterToUsersSequences} />
+    <input type="checkbox" on:change={onFilterToUsersSequences} aria-label="Filter to my sequences" />
     <span class=" st-typography-body">Filter to my sequences</span>
   </div>
 </div>

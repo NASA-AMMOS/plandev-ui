@@ -45,6 +45,7 @@
         bind:value={formParameter.value}
         class="st-input w-full"
         class:error={formParameter.errors !== null}
+        aria-label={formParameter.name}
         disabled
         use:useActions={use}
         type="text"

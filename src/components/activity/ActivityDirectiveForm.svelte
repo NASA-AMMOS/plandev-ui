@@ -464,6 +464,7 @@
               class="st-input w-full"
               name="activity-name"
               placeholder="Enter activity name"
+              aria-label="Activity Name"
             />
           </Field>
           <button
@@ -531,7 +532,13 @@
               <label use:tooltip={{ content: 'Activity Name', placement: 'top' }} for="activityName">
                 Activity Name
               </label>
-              <input class="st-input w-full" disabled name="activityName" value={activityDirective.name} />
+              <input
+                class="st-input w-full"
+                disabled
+                id="activityName"
+                name="activityName"
+                value={activityDirective.name}
+              />
             </Input>
           </Highlight>
         {/if}
@@ -539,7 +546,7 @@
         <Highlight highlight={highlightKeysMap.id}>
           <Input layout="inline">
             <label use:tooltip={{ content: 'Activity ID', placement: 'top' }} for="id"> ID</label>
-            <input class="st-input w-full" disabled name="id" value={activityDirective.id} />
+            <input class="st-input w-full" disabled name="id" id="id" value={activityDirective.id} />
           </Input>
         </Highlight>
 
@@ -548,7 +555,13 @@
             <label use:tooltip={{ content: 'Activity Type', placement: 'top' }} for="activity-type">
               Activity Type
             </label>
-            <input class="st-input w-full" disabled name="activity-type" value={activityDirective.type} />
+            <input
+              class="st-input w-full"
+              disabled
+              name="activity-type"
+              id="activity-type"
+              value={activityDirective.type}
+            />
           </Input>
         </Highlight>
 
@@ -594,7 +607,13 @@
             <label use:tooltip={{ content: 'Creation Time (UTC)', placement: 'top' }} for="creationTime">
               Creation Time (UTC)
             </label>
-            <input class="st-input w-full" disabled name="creationTime" value={activityDirective.created_at} />
+            <input
+              class="st-input w-full"
+              disabled
+              name="creationTime"
+              value={activityDirective.created_at}
+              id="creationTime"
+            />
           </Input>
         </Highlight>
 
@@ -607,6 +626,7 @@
               class="st-input w-full"
               disabled
               name="lastModifiedTime"
+              id="lastModifiedTime"
               value={activityDirective.last_modified_at}
             />
           </Input>
@@ -617,14 +637,26 @@
             <label use:tooltip={{ content: 'Last Modified By', placement: 'top' }} for="modifiedBy">
               Last Modified By
             </label>
-            <input class="st-input w-full" disabled name="modifiedBy" value={activityDirective.last_modified_by} />
+            <input
+              class="st-input w-full"
+              disabled
+              name="modifiedBy"
+              value={activityDirective.last_modified_by}
+              id="modifiedBy"
+            />
           </Input>
         </Highlight>
 
         <Highlight highlight={highlightKeysMap.last_modified_by}>
           <Input layout="inline">
             <label use:tooltip={{ content: 'Created By', placement: 'top' }} for="createdBy"> Created By </label>
-            <input class="st-input w-full" disabled name="createdBy" value={activityDirective.created_by} />
+            <input
+              class="st-input w-full"
+              disabled
+              name="createdBy"
+              value={activityDirective.created_by}
+              id="createdBy"
+            />
           </Input>
         </Highlight>
 
@@ -640,6 +672,7 @@
               class="st-input w-full"
               disabled
               name="sourceSchedulingGoalId"
+              id="sourceSchedulingGoalId"
               value={activityDirective.source_scheduling_goal_id ?? 'None'}
             />
           </Input>
