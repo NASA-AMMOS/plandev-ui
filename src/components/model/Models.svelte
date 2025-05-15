@@ -276,7 +276,7 @@
         <div class="model-metadata">
           <fieldset>
             <Input layout="inline">
-              <label class="model-metadata-item-label" for="name">Model Name</label>
+              <label class="" for="name">Model Name</label>
               <input
                 disabled
                 class="st-input w-full"
@@ -292,11 +292,17 @@
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="description">Model Description</label>
-              <textarea disabled class="st-input w-full" name="description" value={selectedModel.description} />
+              <textarea
+                disabled
+                class="st-input w-full"
+                name="description"
+                id="description"
+                value={selectedModel.description}
+              />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="version">Model Version</label>
-              <input disabled class="st-input w-full" name="version" value={selectedModel.version} id="version" />
+              <input disabled class="st-input w-full" name="version" id="version" value={selectedModel.version} />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="owner">Owner</label>
@@ -324,11 +330,10 @@
             </Input>
             <Input layout="inline">
               <div class="model-jar-label">
-                <label class="model-metadata-item-label">Jar File Status</label>
+                <label class="model-metadata-item-label" for="status">Jar File Status</label>
                 {#if modelHasExtractionError}
                   <button
                     class="icon-button"
-                    id="status"
                     on:click={onRetriggerModelExtraction}
                     use:permissionHandler={{
                       hasPermission: hasExtractionPermission,
