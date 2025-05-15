@@ -300,7 +300,7 @@
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="owner">Owner</label>
-              <input disabled class="st-input w-full" name="owner" value={selectedModel.owner} id="owner" /> />
+              <input disabled class="st-input w-full" name="owner" value={selectedModel.owner} id="owner" />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="defaultView">Default View</label>
@@ -324,7 +324,7 @@
             </Input>
             <Input layout="inline">
               <div class="model-jar-label">
-                <label class="model-metadata-item-label" for="status">Jar File Status</label>
+                <label class="model-metadata-item-label">Jar File Status</label>
                 {#if modelHasExtractionError}
                   <button
                     class="icon-button"
