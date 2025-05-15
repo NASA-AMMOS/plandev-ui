@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
+  import { Button } from '@nasa-jpl/stellar-svelte';
   import type { CellEditingStoppedEvent, ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
@@ -13,7 +14,6 @@
   import type { DerivationGroup, ExternalSourceSlim } from '../../types/external-source';
   import effects from '../../utilities/effects';
   import { getDerivationGroupRowId } from '../../utilities/externalEvents';
-  import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { formatDate } from '../../utilities/time';
   import Collapse from '../Collapse.svelte';
@@ -109,8 +109,8 @@
 
   let selectedDerivationGroup: DerivationGroup | undefined = undefined;
   let selectedDerivationGroupSources: ExternalSourceSlim[] = [];
-
   let selectedDerivationGroups: Record<string, boolean> = {};
+  let allDerivationGroupsSelected: boolean = false;
 
   let hasUpdateDerivationGroupLinkPermission: boolean = false;
 
@@ -189,6 +189,24 @@
     dataGrid?.redrawRows();
   }
 
+  $: allDerivationGroupsSelected = (Object.keys(selectedDerivationGroups).length === filteredDerivationGroups.length);
+
+  function onAllDerivationGroups() {
+    if (allDerivationGroupsSelected) {
+      selectedDerivationGroups = {};
+    } else {
+      selectedDerivationGroups = filteredDerivationGroups.map(derivationGroup => derivationGroup.name).reduce(
+        (prevBooleanMap: Record<string, boolean>, derivationGroupName: string) => {
+          return {
+            ...prevBooleanMap,
+            [derivationGroupName]: true,
+          };
+        },
+        {},
+      );
+    }
+  }
+
   function viewDerivationGroup(viewedDerivationGroup: DerivationGroup) {
     const derivationGroup = $derivationGroups.find(
       derivationGroup => derivationGroup.name === viewedDerivationGroup.name,
@@ -236,13 +254,9 @@
           <Input layout="inline">
             <input bind:value={filterText} class="st-input" placeholder="Filter derivation groups" />
           </Input>
-          <button
-            class="st-button secondary ellipsis new-external-source-button"
-            name="new-external-source"
-            on:click={() => window.open(`${base}/external-sources`)}
-          >
+          <Button variant="link" on:click={() => window.open(`${base}/external-sources`)}>
             Upload
-          </button>
+          </Button>
         </div>
         <hr />
         <div class="derivation-groups-modal-table-container">
@@ -317,17 +331,18 @@
     </CssGrid>
   </ModalContent>
   <ModalFooter>
-    <button
-      class="st-button primary"
-      on:click={() => onUpdateDerivationGroups(selectedDerivationGroups)}
-      use:permissionHandler={{
-        hasPermission: hasUpdateDerivationGroupLinkPermission,
-        permissionError: 'You do not have permission to update this derivation group/plan link.',
-      }}
-    >
-      Update
-    </button>
-    <button class="st-button secondary" on:click={() => dispatch('close')}> Close </button>
+    <div class="flex flex-wrap items-center gap-2">
+      <Button variant="outline" on:click={onAllDerivationGroups}>
+        {allDerivationGroupsSelected ? "Deselect All" : "Select All"}
+      </Button>
+      <Button
+        on:click={() => onUpdateDerivationGroups(selectedDerivationGroups)}
+        disabled={!hasUpdateDerivationGroupLinkPermission}
+      >
+        Update
+      </Button>
+      <Button variant="outline" on:click={() => dispatch('close')}> Close </Button>
+    </div>
   </ModalFooter>
 </Modal>
 
