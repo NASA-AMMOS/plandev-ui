@@ -114,6 +114,8 @@
 
   let hasUpdateDerivationGroupLinkPermission: boolean = false;
 
+  $: console.log(selectedDerivationGroups);
+
   $: hasUpdateDerivationGroupLinkPermission =
     featurePermissions.derivationGroupPlanLink.canCreate(user) &&
     featurePermissions.derivationGroupPlanLink.canDelete(user);
@@ -189,22 +191,19 @@
     dataGrid?.redrawRows();
   }
 
-  $: allDerivationGroupsSelected = Object.keys(selectedDerivationGroups).length === filteredDerivationGroups.length;
+  $: allDerivationGroupsSelected = (Object.keys(selectedDerivationGroups).length === filteredDerivationGroups.length) && (Object.values(selectedDerivationGroups).every(derivationGroupToggle => derivationGroupToggle === true));
 
   function onAllDerivationGroups() {
     if (filteredDerivationGroups) {
-      if (allDerivationGroupsSelected) {
-        selectedDerivationGroups = {};
-      } else {
-        selectedDerivationGroups = filteredDerivationGroups
-          .map(derivationGroup => derivationGroup.name)
-          .reduce((prevBooleanMap: Record<string, boolean>, derivationGroupName: string) => {
-            return {
-              ...prevBooleanMap,
-              [derivationGroupName]: true,
-            };
-          }, {});
-      }
+      const candidateDerivationGroupNames = allDerivationGroupsSelected ? Object.keys(selectedDerivationGroups) : filteredDerivationGroups.map(derivationGroup => derivationGroup.name);
+      selectedDerivationGroups = candidateDerivationGroupNames.reduce(
+        (prevBooleanMap: Record<string, boolean>, derivationGroupName: string) => {
+          return {
+            ...prevBooleanMap,
+            [derivationGroupName]: !allDerivationGroupsSelected
+          }
+        }, {}
+      );
     }
   }
 
