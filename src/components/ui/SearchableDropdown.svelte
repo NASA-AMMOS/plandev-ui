@@ -181,7 +181,7 @@
     use:tooltip={{ content: error || selectTooltip, placement: selectTooltipPlacement }}
   >
     <span class="selected-display-value" class:error>{label}</span>
-    <button class="icon st-button icon-right" on:click|stopPropagation={openMenu}>
+    <button class="icon st-button icon-right" aria-label={name} on:click|stopPropagation={openMenu}>
       {#if $$slots.icon}
         <slot name="icon" />
       {:else}

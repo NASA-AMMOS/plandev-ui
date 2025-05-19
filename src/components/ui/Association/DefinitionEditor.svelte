@@ -80,6 +80,7 @@
         <SearchableDropdown
           selectedOptionValues={typeof referenceModelId === 'number' ? [referenceModelId] : []}
           placeholder="No Model"
+          id="models"
           name="models"
           options={modelOptions}
           on:change={onSelectReferenceModel}
