@@ -319,6 +319,7 @@
                 autocomplete="off"
                 sizeVariant="xs"
                 name="name"
+                id="name"
                 placeholder="Enter tag name"
               />
             </div>
@@ -334,7 +335,7 @@
                 }}
                 class="w-full"
               >
-                <Input on:keyup={onColorFieldKeyup} autocomplete="off" name="color" sizeVariant="xs" />
+                <Input on:keyup={onColorFieldKeyup} autocomplete="off" name="color" id="color" sizeVariant="xs" />
               </div>
               <!-- TODO add permission handler here -->
               <div class="size-6">
@@ -442,7 +443,7 @@
             <TagsIcon slot="icon" />
             Tags
           </SectionTitle>
-          <Input bind:value={filterText} placeholder="Filter tags" sizeVariant="xs" />
+          <Input bind:value={filterText} placeholder="Filter tags" aria-label="Filter tags" sizeVariant="xs" />
         </div>
       </svelte:fragment>
 

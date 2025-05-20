@@ -43,6 +43,7 @@
       {#each presetColors as color}
         <button
           type="button"
+          aria-label="new color"
           class="st-button tertiary color"
           on:click={() => onInput(color)}
           style="background:{color}"
