@@ -1,46 +1,31 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { TabId } from '../../types/tabs';
+  import { Tabs } from '@nasa-jpl/stellar-svelte';
   import { tooltip } from '../../utilities/tooltip';
-  import Tab from '../ui/Tabs/Tab.svelte';
-  import { ConsoleContextKey } from './Console.svelte';
 
   export let numberOfErrors: number = 0;
   export let title: string;
-  export let tabId: TabId = {};
-
-  let tab: Tab;
+  export let value: string;
+  export let collapsed: boolean = false;
 </script>
 
-<Tab tabContextKey={ConsoleContextKey} {tabId} bind:this={tab}>
+<Tabs.Trigger
+  {value}
+  class={`tab-trigger ${
+    collapsed
+      ? 'data-[state=active]:bg-transparent data-[state=active]:text-gray-500'
+      : 'data-[state=active]:bg-white data-[state=active]:text-neutral-800'
+  }`}
+>
   <div
-    class="error-tab text-xs"
-    class:has-error={numberOfErrors > 0}
+    class="flex h-2 items-center gap-1 text-xs text-muted-foreground"
+    class:text-neutral-800={numberOfErrors > 0}
     use:tooltip={{ content: title, placement: 'top' }}
   >
-    <slot /><span class="error-number-display">{numberOfErrors}</span>
+    <slot />{#if numberOfErrors > 0}<span
+        class="flex min-w-5 items-center justify-center rounded-full bg-red-100 px-1 text-xs font-semibold text-red-800"
+        >{numberOfErrors}</span
+      >{/if}
   </div>
-</Tab>
-
-<style>
-  .error-tab {
-    align-items: center;
-    column-gap: 0.5rem;
-    display: grid;
-    font-weight: 500;
-    grid-template-columns: repeat(2, min-content);
-  }
-
-  .has-error,
-  .has-error .error-number-display {
-    color: var(--st-error-red);
-  }
-
-  .error-number-display {
-    background-color: var(--st-gray-20);
-    border-radius: 11px;
-    color: var(--st-gray-60);
-    padding: 0 4px;
-  }
-</style>
+</Tabs.Trigger>

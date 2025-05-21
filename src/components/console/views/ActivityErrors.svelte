@@ -1,19 +1,19 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Tabs } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, IRowNode } from 'ag-grid-community';
   import type { DataGridColumnDef } from '../../../types/data-grid';
   import type { ActivityErrorCategories, ActivityErrorCounts, ActivityErrorRollup } from '../../../types/errors';
   import ActivityErrorsRollup from '../../ui/ActivityErrorsRollup.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
-  import TabPanel from '../../ui/Tabs/TabPanel.svelte';
-  import { ConsoleContextKey } from '../Console.svelte';
 
   type ActivityErrorsRollupRendererParams = ICellRendererParams<ActivityErrorRollup>;
 
   export let activityValidationErrorRollups: ActivityErrorRollup[] = [];
   export let activityValidationErrorTotalRollup: ActivityErrorCounts;
   export let title: string;
+  export let value: string;
 
   function doesExternalFilterPass({ data }: IRowNode<ActivityErrorRollup>) {
     if (data) {
@@ -120,13 +120,15 @@
   let selectedCategory: ActivityErrorCategories = 'all';
 </script>
 
-<TabPanel tabContextKey={ConsoleContextKey}>
-  <div class="activity-errors-container">
-    <div class="console-header">
+<Tabs.Content {value} class="h-full">
+  <div class="flex h-full flex-col">
+    <div
+      class="mx-4 my-2.5 grid w-full grid-cols-[auto_min-content] justify-between text-[11px] font-bold uppercase leading-4 text-[var(--st-gray-60)]"
+    >
       <div>{title}</div>
     </div>
-    <div class="errors">
-      <div class="rollups">
+    <div class="grid min-h-0 flex-1 grid-cols-[240px_1fr] bg-[var(--st-gray-15)]">
+      <div class="border-r border-[var(--st-gray-20)] pt-4">
         <ActivityErrorsRollup
           counts={activityValidationErrorTotalRollup}
           selectable
@@ -134,7 +136,7 @@
           on:selectCategory={onSelectCategory}
         />
       </div>
-      <div class="errors-table">
+      <div class="h-full min-h-0">
         <DataGrid
           bind:this={dataGrid}
           {columnDefs}
@@ -148,35 +150,4 @@
       </div>
     </div>
   </div>
-</TabPanel>
-
-<style>
-  .activity-errors-container {
-    display: grid;
-    grid-template-rows: min-content auto;
-    height: 100%;
-  }
-
-  .console-header {
-    color: var(--st-gray-60);
-    display: grid;
-    font-size: 11px;
-    font-weight: 700;
-    grid-template-columns: auto min-content;
-    justify-content: space-between;
-    line-height: 1rem;
-    margin: 0.65rem 1rem;
-    text-transform: uppercase;
-  }
-
-  .errors {
-    background-color: var(--st-primary-background-color);
-    display: grid;
-    grid-template-columns: 240px auto;
-  }
-
-  .rollups {
-    border-right: 1px solid var(--st-gray-20, #ebecec);
-    padding-top: 1rem;
-  }
-</style>
+</Tabs.Content>

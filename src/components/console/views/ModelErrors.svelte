@@ -1,16 +1,16 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Tabs } from '@nasa-jpl/stellar-svelte';
   import type { ModelLog, ModelSlim } from '../../../types/model';
   import { getModelStatusRollup } from '../../../utilities/model';
   import ModelStatusRollup from '../../model/ModelStatusRollup.svelte';
-  import TabPanel from '../../ui/Tabs/TabPanel.svelte';
-  import { ConsoleContextKey } from '../Console.svelte';
 
   export let model:
     | Pick<ModelSlim, 'refresh_activity_type_logs' | 'refresh_model_parameter_logs' | 'refresh_resource_type_logs'>
     | undefined;
   export let title: string;
+  export let value: string;
 
   let selectedLog: 'activity' | 'parameter' | 'resource' | undefined = undefined;
   let selectedModelLog: ModelLog | null = null;
@@ -37,7 +37,7 @@
   }
 </script>
 
-<TabPanel tabContextKey={ConsoleContextKey}>
+<Tabs.Content {value}>
   <div class="model-errors-container">
     <div class="console-header">
       <div class="console-title">{title}</div>
@@ -62,7 +62,7 @@
       </div>
     </div>
   </div>
-</TabPanel>
+</Tabs.Content>
 
 <style>
   .model-errors-container {

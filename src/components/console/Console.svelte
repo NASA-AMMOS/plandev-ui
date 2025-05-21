@@ -7,133 +7,138 @@
 </script>
 
 <script lang="ts">
+  import { Resizable, Tabs } from '@nasa-jpl/stellar-svelte';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import ChevronUpIcon from '@nasa-jpl/stellar/icons/chevron_up.svg?component';
-  import { createEventDispatcher } from 'svelte';
-  import type { TabId } from '../../types/tabs';
-  import Tabs from '../ui/Tabs/Tabs.svelte';
-  import ConsoleDragHandle from './ConsoleDragHandle.svelte';
+  import { createEventDispatcher, onMount, setContext } from 'svelte';
 
-  export function openConsole(tabId: TabId) {
-    tabs.selectTab(tabId);
-    toggleConsole(true);
-  }
+  export let paneApi: any = null; // Accept pane API from parent
+  export let isExpanded: boolean = false; // Make this bindable
 
-  const consoleHeaderHeight: number = 36;
-  const dispatch = createEventDispatcher<{
-    resize: string;
-  }>();
+  export function openConsole(value: string) {
+    // default to 'all' and record last active tab
+    const tab = value || 'all';
+    lastActiveTab = tab;
+    currentSelectedConsoleIndex = tab;
+    isExpanded = true;
 
-  let consoleHeight: number = 0;
-  let consoleHeightString: string;
-  let currentSelectedConsoleIndex: number | null = null;
-  let isOpen: boolean = false;
-  let previousConsoleHeight: number = 300;
-  let tabs: Tabs;
-
-  $: {
-    consoleHeightString = `${consoleHeight + consoleHeaderHeight}px`;
-    dispatch('resize', consoleHeightString);
-  }
-
-  function onSelectTab(event: CustomEvent<{ index: number }>) {
-    const { index } = event.detail;
-    if (currentSelectedConsoleIndex === index) {
-      onToggle();
-    } else {
-      toggleConsole(true);
+    // Use pane API to expand the console
+    if (paneApi) {
+      paneApi.expand();
     }
 
-    currentSelectedConsoleIndex = index;
+    dispatch('toggle', true);
+  }
+
+  // Method called by parent when console is collapsed by dragging
+  export function clearTabSelection() {
+    if (currentSelectedConsoleIndex) {
+      lastActiveTab = currentSelectedConsoleIndex;
+      currentSelectedConsoleIndex = '';
+    }
+  }
+
+  const dispatch = createEventDispatcher<{
+    resize: string;
+    toggle: boolean;
+  }>();
+
+  let currentSelectedConsoleIndex: string = '';
+  let lastActiveTab: string = '';
+
+  // We'll use the isExpanded binding for state management instead of event listeners
+  onMount(() => {
+    // Initialize console state
+    if (!isExpanded) {
+      currentSelectedConsoleIndex = '';
+    } else if (currentSelectedConsoleIndex === '') {
+      // Default to 'all' tab when first expanded
+      currentSelectedConsoleIndex = 'all';
+    }
+  });
+
+  // Set context to provide isExpanded status to child components
+  setContext('console', {
+    isExpanded: () => isExpanded,
+  });
+
+  function onSelectTab(value: string | undefined) {
+    if (!value) {
+      return;
+    }
+
+    if (currentSelectedConsoleIndex === value && isExpanded) {
+      onToggle();
+    } else {
+      lastActiveTab = value;
+      currentSelectedConsoleIndex = value;
+      isExpanded = true;
+      if (paneApi) {
+        paneApi.expand();
+      }
+      dispatch('toggle', true);
+    }
   }
 
   function onToggle() {
-    toggleConsole(!isOpen);
-  }
+    isExpanded = !isExpanded;
 
-  function onUpdateRowHeight(event: CustomEvent<{ newHeight: number }>) {
-    consoleHeight = event.detail.newHeight;
-  }
-
-  function toggleConsole(updatedOpenState: boolean) {
-    if (!updatedOpenState) {
-      previousConsoleHeight = consoleHeight;
-      consoleHeight = 0;
-    } else if (!isOpen) {
-      consoleHeight = previousConsoleHeight;
+    // Use pane API for collapsing/expanding
+    if (paneApi) {
+      if (isExpanded) {
+        paneApi.expand();
+        // Restore the last active tab when expanding without clicking a tab
+        if (lastActiveTab && currentSelectedConsoleIndex === '') {
+          currentSelectedConsoleIndex = lastActiveTab;
+        } else if (currentSelectedConsoleIndex === '') {
+          // Default to 'all' if no previous tab was active
+          currentSelectedConsoleIndex = 'all';
+        }
+      } else {
+        paneApi.collapse();
+        // Remember the last active tab but deselect it visually
+        if (currentSelectedConsoleIndex) {
+          lastActiveTab = currentSelectedConsoleIndex;
+          currentSelectedConsoleIndex = '';
+        }
+      }
     }
 
-    isOpen = updatedOpenState;
+    dispatch('toggle', isExpanded);
+  }
+
+  // reactive: when console is expanded externally (e.g. by dragging), restore or default tab
+  $: if (isExpanded && currentSelectedConsoleIndex === '') {
+    currentSelectedConsoleIndex = lastActiveTab || 'all';
   }
 </script>
 
-<div class="console-container">
-  <div class="console-expand-container" class:expanded={isOpen} style:height={consoleHeightString}>
-    {#if isOpen}
-      <ConsoleDragHandle maxHeight="75%" rowHeight={consoleHeight} on:updateRowHeight={onUpdateRowHeight} />
-    {/if}
-    <Tabs bind:this={tabs} tabContextKey={ConsoleContextKey} on:select-tab={onSelectTab}>
-      <svelte:fragment slot="tab-list">
-        <div class="console-tabs-container">
-          <div class="console-tabs">
-            <slot name="console-tabs" />
-          </div>
-          <div class="console-toggle" role="none" on:click={onToggle}>
-            {#if isOpen}
-              <ChevronDownIcon />
-            {:else}
-              <ChevronUpIcon />
-            {/if}
-          </div>
-        </div>
-      </svelte:fragment>
-      <div class="console-panels">
-        <slot />
+<div class="size-full">
+  <Resizable.PaneGroup direction="vertical">
+    <Resizable.Pane>
+      <div class="flex h-full flex-col bg-[var(--st-gray-15)]">
+        <Tabs.Root value={currentSelectedConsoleIndex} onValueChange={onSelectTab} class="flex h-full flex-col">
+          <Tabs.List class="flex h-[24px] shrink-0 items-center justify-between py-0">
+            <div class="flex w-full items-center justify-between">
+              <div class="flex w-full items-center" class:tabs-inactive={!isExpanded}>
+                <slot name="console-tabs" />
+              </div>
+            </div>
+            <div class="ml-auto cursor-pointer pr-3" role="none" on:click|stopPropagation={onToggle}>
+              {#if isExpanded}
+                <ChevronDownIcon />
+              {:else}
+                <ChevronUpIcon />
+              {/if}
+            </div>
+          </Tabs.List>
+          {#if isExpanded}
+            <div class="flex-1 overflow-y-auto">
+              <slot />
+            </div>
+          {/if}
+        </Tabs.Root>
       </div>
-    </Tabs>
-  </div>
+    </Resizable.Pane>
+  </Resizable.PaneGroup>
 </div>
-
-<style>
-  .console-container {
-    position: relative;
-    width: 100%;
-  }
-
-  .console-expand-container {
-    background-color: var(--st-gray-15);
-    left: 0;
-    overflow: hidden;
-    position: absolute;
-    top: 0;
-    width: 100%;
-    z-index: 1;
-  }
-
-  .console-tabs-container {
-    align-items: center;
-    display: grid;
-    grid-template-columns: auto min-content;
-    justify-content: space-between;
-    width: 100%;
-  }
-
-  .console-tabs {
-    align-items: center;
-    display: flex;
-  }
-
-  .console-toggle {
-    cursor: pointer;
-    margin-right: 1rem;
-  }
-
-  .console-panels {
-    height: 0;
-    overflow: hidden;
-  }
-
-  .console-expand-container.expanded .console-panels {
-    height: 100%;
-  }
-</style>
