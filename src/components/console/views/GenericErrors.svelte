@@ -2,10 +2,8 @@
 
 <script lang="ts">
   import { Tabs } from '@nasa-jpl/stellar-svelte';
-  import { ListX } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { BaseError } from '../../../types/errors';
-  import { tooltip } from '../../../utilities/tooltip';
 
   export let errors: BaseError[] = [];
   export let title: string;
@@ -21,7 +19,7 @@
 
 <Tabs.Content {value} class="h-full w-full">
   <div class="grid h-full w-full grid-rows-[min-content_auto]">
-    <div
+    <!-- <div
       class="mx-4 my-2.5 flex items-center justify-between text-[11px] font-bold uppercase leading-4 text-[var(--st-gray-60)]"
     >
       <div>{title}</div>
@@ -35,7 +33,7 @@
           <ListX />
         </div>
       {/if}
-    </div>
+    </div> -->
     <div class="auto w-full text-xs">
       {#each errors as error}
         <div class="mx-4">

@@ -187,6 +187,7 @@
   let lastSimulationDatasetId: number | null = null;
   let consolePaneApi: any;
   let isConsoleExpanded = false;
+  let selectedConsoleTab = 'all';
 
   $: ({ invalidActivityCount, ...activityErrorCounts } = $activityErrorRollups.reduce(
     (prevCounts, activityErrorRollup) => {
@@ -617,14 +618,41 @@
     viewUpdateGrid({ rightRowSizes: event.detail });
   }
 
-  function handleConsoleStateChange(expanded: boolean) {
-    console.log('Console expanded state:', expanded);
-    isConsoleExpanded = expanded;
+  function openConsole(tab: string) {
+    selectedConsoleTab = tab || 'all';
+    isConsoleExpanded = true;
 
-    // When collapsed by dragging, make sure to clear tab selection in Console component
-    if (!expanded && errorConsole) {
-      errorConsole.clearTabSelection();
+    if (consolePaneApi) {
+      consolePaneApi.expand();
     }
+  }
+
+  function onConsoleToggle(event: CustomEvent<boolean>) {
+    isConsoleExpanded = event.detail;
+
+    if (consolePaneApi) {
+      if (isConsoleExpanded) {
+        consolePaneApi.expand();
+      } else {
+        consolePaneApi.collapse();
+      }
+    }
+  }
+
+  function onSelectConsoleTab(event: CustomEvent<{ expand: boolean; tab: string }>) {
+    const { expand, tab } = event.detail;
+    selectedConsoleTab = tab;
+
+    if (expand && !isConsoleExpanded) {
+      isConsoleExpanded = true;
+      if (consolePaneApi) {
+        consolePaneApi.expand();
+      }
+    }
+  }
+
+  function openConsoleTab(tab: string) {
+    openConsole(tab);
   }
 </script>
 
@@ -666,7 +694,7 @@
               {compactNavMode}
               {invalidActivityCount}
               on:viewActivityValidations={() => {
-                errorConsole.openConsole('activity');
+                openConsoleTab('activity');
               }}
             />
             <PlanNavButton
@@ -891,7 +919,7 @@
             hasErrors={modelErrorCount > 0}
             on:close={onCloseSnapshotPreview}
             on:viewModelErrors={() => {
-              errorConsole.openConsole('model');
+              openConsoleTab('model');
             }}
           />
         {/if}
@@ -906,52 +934,33 @@
       </div>
     </Resizable.Pane>
     <Resizable.Handle />
-    <Resizable.Pane
-      defaultSize={3}
-      minSize={12}
-      collapsible
-      collapsedSize={3}
-      bind:pane={consolePaneApi}
-      onCollapse={() => handleConsoleStateChange(false)}
-      onExpand={() => handleConsoleStateChange(true)}
-    >
+    <Resizable.Pane defaultSize={24} minSize={10} collapsible collapsedSize={3} bind:pane={consolePaneApi}>
       <div class="console-wrapper">
         <Console
           bind:this={errorConsole}
-          paneApi={consolePaneApi}
-          bind:isExpanded={isConsoleExpanded}
-          on:toggle={e => handleConsoleStateChange(e.detail)}
+          expanded={isConsoleExpanded}
+          selectedTab={selectedConsoleTab}
+          on:toggle={onConsoleToggle}
+          on:selectTab={onSelectConsoleTab}
         >
           <svelte:fragment slot="console-tabs">
             <div class="console-tabs">
               <div>
-                <ConsoleTab
-                  collapsed={!isConsoleExpanded}
-                  value="all"
-                  numberOfErrors={$allErrors?.length}
-                  title="All Errors">All Errors</ConsoleTab
-                >
+                <ConsoleTab value="all" numberOfErrors={$allErrors?.length} title="All Errors">All Errors</ConsoleTab>
               </div>
-              <div class="pointer-events-none mx-0 px-0 text-[8px] opacity-50">|</div>
+              <div class="pointer-events-none mx-0 w-1 px-0 text-[8px] opacity-50">|</div>
               <div class="grouped-error-tabs">
                 <ConsoleTab
-                  collapsed={!isConsoleExpanded}
                   value="anchor"
                   numberOfErrors={$anchorValidationErrors?.length}
                   title="Anchor Validation Errors"
                 >
                   Anchor Validation
                 </ConsoleTab>
-                <ConsoleTab
-                  collapsed={!isConsoleExpanded}
-                  value="scheduling"
-                  numberOfErrors={$schedulingErrors?.length}
-                  title="Scheduling Errors"
-                >
+                <ConsoleTab value="scheduling" numberOfErrors={$schedulingErrors?.length} title="Scheduling Errors">
                   Scheduling
                 </ConsoleTab>
                 <ConsoleTab
-                  collapsed={!isConsoleExpanded}
                   value="simulation"
                   numberOfErrors={$simulationDatasetErrors?.length}
                   title="Simulation Errors"
@@ -959,19 +968,13 @@
                   Simulation
                 </ConsoleTab>
                 <ConsoleTab
-                  collapsed={!isConsoleExpanded}
                   value="activity"
                   numberOfErrors={activityErrorCounts.all}
                   title="Activity Validation Errors"
                 >
                   Activity Validation
                 </ConsoleTab>
-                <ConsoleTab
-                  collapsed={!isConsoleExpanded}
-                  value="model"
-                  numberOfErrors={modelErrorCount}
-                  title="Mission Model Errors"
-                >
+                <ConsoleTab value="model" numberOfErrors={modelErrorCount} title="Mission Model Errors">
                   Mission Model
                 </ConsoleTab>
               </div>
@@ -1029,7 +1032,7 @@
 
   .console-tabs {
     align-items: center;
-    column-gap: 1rem;
+    column-gap: 0.1rem;
     display: grid;
     grid-template-columns: min-content min-content auto;
   }
