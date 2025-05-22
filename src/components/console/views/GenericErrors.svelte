@@ -2,7 +2,14 @@
 
 <script lang="ts">
   import { Tabs } from '@nasa-jpl/stellar-svelte';
-  import type { BaseError } from '../../../types/errors';
+  import { selectActivity } from '../../../stores/activities';
+  import type {
+    AnchorValidationError,
+    BaseError,
+    SchedulingError,
+    SimulationDatasetError,
+  } from '../../../types/errors';
+  import { ErrorTypes } from '../../../utilities/errors';
 
   export let errors: BaseError[] = [];
   // Use const for props that aren't bound or updated in component
@@ -11,6 +18,31 @@
   export let value: string;
 
   $: console.log(errors);
+
+  // Function to extract activity IDs from different error types
+  function getActivityIds(error: BaseError): number[] {
+    if (error.type === ErrorTypes.ANCHOR_VALIDATION_ERROR) {
+      return [(error as AnchorValidationError).activityId];
+    } else if (
+      error.type === ErrorTypes.GLOBAL_SCHEDULING_CONDITIONS_FAILED ||
+      error.type === ErrorTypes.SCHEDULING_GOALS_FAILED
+    ) {
+      const schedulingError = error as SchedulingError;
+      if (schedulingError.data?.errors) {
+        return Object.keys(schedulingError.data.errors)
+          .map(id => parseInt(id))
+          .filter(id => !isNaN(id));
+      }
+    } else if (error.type === ErrorTypes.UNEXPECTED_SIMULATION_EXCEPTION) {
+      const simulationError = error as SimulationDatasetError;
+      if (simulationError.data?.errors) {
+        return Object.keys(simulationError.data.errors)
+          .map(id => parseInt(id))
+          .filter(id => !isNaN(id));
+      }
+    }
+    return [];
+  }
 
   // Function to extract quoted text from a message
   function extractQuotes(message: string): { quotes: string[]; text: string } {
@@ -57,6 +89,10 @@
     }
   }
 
+  function handleActivityClick(activityId: number) {
+    selectActivity(activityId, null);
+  }
+
   // Keeping createEventDispatcher for future clear functionality implementation
   // const dispatch = createEventDispatcher<{ clearMessages: void }>();
 
@@ -81,7 +117,7 @@
         <details class="group">
           <summary class="list-none">
             <div
-              class="grid cursor-pointer grid-cols-[200px_minmax(0,1fr)_auto] items-center gap-2 px-1 py-2 hover:bg-[var(--st-gray-10)]"
+              class="grid cursor-pointer grid-cols-[200px_minmax(0,1fr)_auto] items-center gap-2 px-1 py-1 hover:bg-[var(--st-gray-10)]"
             >
               <div class="flex items-center">
                 <span
@@ -109,6 +145,21 @@
                       </span>
                     {/if}
                   {/each}
+                  {#if true}
+                    {@const activityIds = getActivityIds(error)}
+                    {#if activityIds.length > 0}
+                      <div class="ml-2 flex gap-1">
+                        {#each activityIds as activityId}
+                          <button
+                            class="inline-flex shrink-0 items-center rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-950/80 ring-1 ring-inset ring-blue-900/20 hover:bg-blue-100"
+                            on:click|stopPropagation={() => handleActivityClick(activityId)}
+                          >
+                            View Activity {activityId}
+                          </button>
+                        {/each}
+                      </div>
+                    {/if}
+                  {/if}
                 </div>
               {/if}
               <span class="flex items-center justify-end text-xs text-[var(--st-gray-60)]"
@@ -136,7 +187,7 @@
                   )}</pre>
               {/if}
               {#if error.trace}
-                <pre class="m-0 mt-2 whitespace-pre-wrap rounded bg-background p-2 text-xs">{error.trace}</pre>
+                <pre class="m-0 whitespace-pre-wrap rounded bg-background p-2 text-xs">{error.trace}</pre>
               {/if}
             </div>
           {/if}
