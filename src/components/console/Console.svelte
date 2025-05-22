@@ -8,6 +8,7 @@
   // Define the interface for the context
   export interface ConsoleContext {
     expanded: import('svelte/store').Writable<boolean>;
+    onSelectTab: (value: string) => void;
   }
 </script>
 
@@ -36,6 +37,7 @@
   // Set context to provide expanded status to child components
   setContext<ConsoleContext>(ConsoleContextKey, {
     expanded: expandedStore,
+    onSelectTab,
   });
 
   // Public method for external components to open the console
@@ -49,19 +51,17 @@
       return;
     }
 
-    // If console is collapsed, expand it when tab is clicked
+    console.log('Console onSelectTab', { expanded, selectedTab, value });
+
+    // Always expand when any tab is clicked, regardless of state
     if (!expanded) {
+      console.log('Console dispatching selectTab (collapsed)');
       dispatch('selectTab', { expand: true, tab: value });
       return;
     }
 
-    // If clicking the same tab while expanded, toggle it closed
-    if (selectedTab === value) {
-      onToggle();
-    } else {
-      // Otherwise just select the new tab
-      dispatch('selectTab', { expand: true, tab: value });
-    }
+    // If already expanded, just select the tab (don't toggle closed)
+    dispatch('selectTab', { expand: true, tab: value });
   }
 
   function onToggle() {

@@ -628,26 +628,30 @@
   }
 
   function onConsoleToggle(event: CustomEvent<boolean>) {
+    console.log('onConsoleToggle', { newState: event.detail, currentState: isConsoleExpanded });
     isConsoleExpanded = event.detail;
 
     if (consolePaneApi) {
       if (isConsoleExpanded) {
+        console.log('Expanding console via toggle');
         consolePaneApi.expand();
       } else {
+        console.log('Collapsing console via toggle');
         consolePaneApi.collapse();
       }
     }
   }
 
   function onSelectConsoleTab(event: CustomEvent<{ expand: boolean; tab: string }>) {
-    const { expand, tab } = event.detail;
+    const { tab } = event.detail;
+    console.log('onSelectConsoleTab', { tab, currentTab: selectedConsoleTab, isExpanded: isConsoleExpanded });
     selectedConsoleTab = tab;
 
-    if (expand && !isConsoleExpanded) {
-      isConsoleExpanded = true;
-      if (consolePaneApi) {
-        consolePaneApi.expand();
-      }
+    // Always expand if a tab is selected, regardless of expand flag
+    isConsoleExpanded = true;
+    if (consolePaneApi) {
+      console.log('Expanding console via paneApi');
+      consolePaneApi.expand();
     }
   }
 

@@ -19,11 +19,20 @@
 
   // Default to true if context is not available
   $: isExpanded = expandedStore ? $expandedStore : true;
+
+  function onClick() {
+    console.log('ConsoleTab clicked', { isExpanded, value });
+    // Instead of dispatching an event, call onSelectTab directly
+    if (consoleContext?.onSelectTab) {
+      consoleContext.onSelectTab(value);
+    }
+  }
 </script>
 
 <Tabs.Trigger
   {value}
   class={`tab-trigger mx-0.5 px-2 ${!isExpanded ? 'data-[state=active]:bg-transparent data-[state=active]:text-gray-500' : ''}`}
+  on:click={onClick}
 >
   <div
     class="flex h-2 items-center gap-1 text-xs text-muted-foreground"
