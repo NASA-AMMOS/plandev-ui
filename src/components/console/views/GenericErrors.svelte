@@ -10,6 +10,7 @@
     SimulationDatasetError,
   } from '../../../types/errors';
   import { ErrorTypes } from '../../../utilities/errors';
+  import EmptyState from '../../console/EmptyState.svelte';
 
   export let errors: BaseError[] = [];
   // Use const for props that aren't bound or updated in component
@@ -18,6 +19,7 @@
   export let value: string;
 
   $: console.log(errors);
+  $: hasErrors = errors.length > 0;
 
   // Function to extract activity IDs from different error types
   function getActivityIds(error: BaseError): number[] {
@@ -102,99 +104,109 @@
   // }
 </script>
 
-<Tabs.Content {value} class="h-full w-full">
-  <div class="grid h-full w-full grid-rows-[min-content_auto] px-2">
-    <div class="flex flex-col divide-y divide-[var(--st-gray-20)]">
-      <!-- Header -->
-      <!-- <div
-        class="grid grid-cols-[100px_1fr_180px] items-center gap-4 px-1 py-2 text-xs font-medium text-[var(--st-gray-60)]"
-      >
-        <div>Type</div>
-        <div>Message</div>
-        <div>Timestamp</div>
-      </div> -->
-      {#each errors as error}
-        <details class="group">
-          <summary class="list-none">
-            <div
-              class="grid cursor-pointer grid-cols-[200px_minmax(0,1fr)_auto] items-center gap-2 px-1 py-1 hover:bg-[var(--st-gray-10)]"
-            >
-              <div class="flex items-center">
-                <span
-                  class="inline-flex w-fit items-center rounded bg-red-50 px-1.5 py-0.5 text-xs font-medium text-red-950/80 ring-1 ring-inset ring-red-900/20"
-                >
-                  {error.type}
-                </span>
-              </div>
-              {#if error.message}
-                {@const { quotes, text } = extractQuotes(cleanErrorMessage(error.message))}
-                <div class="flex min-w-0 items-center gap-1 overflow-hidden px-2">
-                  {#each text.split('{{QUOTE}}') as part, i (i)}
-                    {#if part}
-                      {@const isLast = i === text.split('{{QUOTE}}').length - 1}
-                      {@const hasQuote = quotes[i] !== undefined}
-                      <span class={`overflow-hidden whitespace-nowrap ${isLast && !hasQuote ? 'text-ellipsis' : ''}`}
-                        >{part}</span
-                      >
-                    {/if}
-                    {#if quotes[i]}
-                      <span
-                        class="inline-flex shrink-0 items-center rounded bg-background px-1 text-gray-900 ring-1 ring-inset ring-gray-800/20"
-                      >
-                        {quotes[i]}
-                      </span>
-                    {/if}
-                  {/each}
-                  {#if true}
-                    {@const activityIds = getActivityIds(error)}
-                    {#if activityIds.length > 0}
-                      <div class="ml-2 flex gap-1">
-                        {#each activityIds as activityId}
-                          <button
-                            class="inline-flex shrink-0 items-center rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-950/80 ring-1 ring-inset ring-blue-900/20 hover:bg-blue-100"
-                            on:click|stopPropagation={() => handleActivityClick(activityId)}
-                          >
-                            View Activity {activityId}
-                          </button>
-                        {/each}
-                      </div>
-                    {/if}
-                  {/if}
-                </div>
-              {/if}
-              <span class="flex items-center justify-end text-xs text-[var(--st-gray-60)]"
-                >{formatTimestamp(error.timestamp)}</span
+<Tabs.Content
+  {value}
+  class="mt-0 h-full w-full ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+>
+  {#if hasErrors}
+    <div class="grid h-full w-full grid-rows-[min-content_auto]">
+      <div class="flex flex-col divide-y divide-[var(--st-gray-20)] pt-2">
+        <!-- Header -->
+        <!-- <div
+          class="grid grid-cols-[100px_1fr_180px] items-center gap-4 px-1 py-2 text-xs font-medium text-[var(--st-gray-60)]"
+        >
+          <div>Type</div>
+          <div>Message</div>
+          <div>Timestamp</div>
+        </div> -->
+        {#each errors as error}
+          <details class="group">
+            <summary class="list-none">
+              <div
+                class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-2 py-1.5 hover:bg-[var(--st-gray-10)]"
               >
-            </div>
-          </summary>
-          {#if error.message || error.data || error.trace}
-            <div class="bg-[var(--st-primary-background-color)] px-4 py-2">
-              <div class="mb-2 text-xs">
-                <span class="font-medium">Timestamp:</span>
-                <div class="mt-1">
-                  <div>{formatTimestamp(error.timestamp)}</div>
-                  <div class="text-[var(--st-gray-60)]">{error.timestamp}</div>
+                <div class="flex items-center">
+                  <span
+                    class="inline-flex w-fit items-center rounded bg-red-50 px-1.5 py-0.5 text-xs font-medium text-red-950/80 ring-1 ring-inset ring-red-900/20"
+                  >
+                    {error.type}
+                  </span>
                 </div>
+                {#if error.message}
+                  {@const { quotes, text } = extractQuotes(cleanErrorMessage(error.message))}
+                  <div class="flex min-w-0 items-center gap-1 overflow-hidden px-2">
+                    {#each text.split('{{QUOTE}}') as part, i (i)}
+                      {#if part}
+                        {@const isLast = i === text.split('{{QUOTE}}').length - 1}
+                        {@const hasQuote = quotes[i] !== undefined}
+                        <span
+                          class={`whitespace-nowrap ${isLast && !hasQuote ? 'overflow-hidden text-ellipsis' : 'min-w-fit'}`}
+                          >{part}</span
+                        >
+                      {/if}
+                      {#if quotes[i]}
+                        <span
+                          class="inline-flex shrink-0 items-center rounded bg-background px-1 text-gray-900 ring-1 ring-inset ring-gray-800/20"
+                        >
+                          {quotes[i]}
+                        </span>
+                      {/if}
+                    {/each}
+                    {#if true}
+                      {@const activityIds = getActivityIds(error)}
+                      {#if activityIds.length > 0}
+                        <div class="ml-2 flex shrink-0 gap-1">
+                          {#each activityIds as activityId}
+                            <button
+                              class="inline-flex shrink-0 items-center rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-950/80 ring-1 ring-inset ring-blue-900/20 hover:bg-blue-100"
+                              on:click|stopPropagation={() => handleActivityClick(activityId)}
+                            >
+                              View Activity {activityId}
+                            </button>
+                          {/each}
+                        </div>
+                      {/if}
+                    {/if}
+                  </div>
+                {/if}
+                <span class="flex items-center justify-end text-xs text-[var(--st-gray-60)]"
+                  >{formatTimestamp(error.timestamp)}</span
+                >
               </div>
-              {#if error.message}
-                <div class="mb-2 whitespace-pre-wrap text-xs">{error.message}</div>
-              {/if}
-              {#if error.data && JSON.stringify(error.data) !== '{}'}
-                <pre class="m-0 whitespace-pre-wrap rounded bg-background p-2 text-xs">{JSON.stringify(
-                    error.data,
-                    undefined,
-                    2,
-                  )}</pre>
-              {/if}
-              {#if error.trace}
-                <pre class="m-0 whitespace-pre-wrap rounded bg-background p-2 text-xs">{error.trace}</pre>
-              {/if}
-            </div>
-          {/if}
-        </details>
-      {/each}
+            </summary>
+            {#if error.message || error.data || error.trace}
+              <div class="bg-[var(--st-primary-background-color)] px-4 py-2">
+                <div class="mb-2 text-xs">
+                  <span class="font-medium">Timestamp:</span>
+                  <div class="mt-1">
+                    <div>{formatTimestamp(error.timestamp)}</div>
+                    <div class="text-[var(--st-gray-60)]">{error.timestamp}</div>
+                  </div>
+                </div>
+                {#if error.message}
+                  <div class="mb-2 whitespace-pre-wrap text-xs">{error.message}</div>
+                {/if}
+                {#if error.data && JSON.stringify(error.data) !== '{}'}
+                  <pre class="m-0 whitespace-pre-wrap rounded bg-background p-2 text-xs">{JSON.stringify(
+                      error.data,
+                      undefined,
+                      2,
+                    )}</pre>
+                {/if}
+                {#if error.trace}
+                  <pre class="m-0 whitespace-pre-wrap rounded bg-background p-2 text-xs">{error.trace}</pre>
+                {/if}
+              </div>
+            {/if}
+          </details>
+        {/each}
+      </div>
     </div>
-  </div>
+  {:else}
+    <div class="flex h-full">
+      <EmptyState />
+    </div>
+  {/if}
 </Tabs.Content>
 
 <style>

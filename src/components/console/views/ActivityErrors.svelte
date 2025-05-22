@@ -5,6 +5,7 @@
   import type { ICellRendererParams, IRowNode } from 'ag-grid-community';
   import type { DataGridColumnDef } from '../../../types/data-grid';
   import type { ActivityErrorCategories, ActivityErrorCounts, ActivityErrorRollup } from '../../../types/errors';
+  import EmptyState from '../../console/EmptyState.svelte';
   import ActivityErrorsRollup from '../../ui/ActivityErrorsRollup.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
 
@@ -12,8 +13,10 @@
 
   export let activityValidationErrorRollups: ActivityErrorRollup[] = [];
   export let activityValidationErrorTotalRollup: ActivityErrorCounts;
-  export let title: string;
+  // export let title: string;
   export let value: string;
+
+  $: hasErrors = activityValidationErrorRollups.length > 0;
 
   function doesExternalFilterPass({ data }: IRowNode<ActivityErrorRollup>) {
     if (data) {
@@ -120,34 +123,40 @@
   let selectedCategory: ActivityErrorCategories = 'all';
 </script>
 
-<Tabs.Content {value} class="h-full">
-  <div class="flex h-full flex-col">
-    <div
-      class="mx-4 my-2.5 grid w-full grid-cols-[auto_min-content] justify-between text-[11px] font-bold uppercase leading-4 text-[var(--st-gray-60)]"
-    >
-      <div>{title}</div>
-    </div>
-    <div class="grid min-h-0 flex-1 grid-cols-[240px_1fr] bg-[var(--st-gray-15)]">
-      <div class="border-r border-[var(--st-gray-20)] pt-4">
-        <ActivityErrorsRollup
-          counts={activityValidationErrorTotalRollup}
-          selectable
-          showTotalCount
-          on:selectCategory={onSelectCategory}
-        />
+<Tabs.Content {value} class="mt-0 h-full overflow-hidden pb-2 pr-2 pt-2">
+  {#if hasErrors}
+    <div class="flex h-full flex-col overflow-hidden">
+      <!-- <div
+        class="mx-4 my-2.5 grid w-full grid-cols-[auto_min-content] justify-between text-[11px] font-bold uppercase leading-4 text-[var(--st-gray-60)]"
+      >
+        <div>{title}</div>
+      </div> -->
+      <div class="grid min-h-0 flex-1 grid-cols-[240px_1fr] overflow-hidden bg-[var(--st-gray-15)]">
+        <div class="overflow-y-auto border-r border-[var(--st-gray-20)] pt-4">
+          <ActivityErrorsRollup
+            counts={activityValidationErrorTotalRollup}
+            selectable
+            showTotalCount
+            on:selectCategory={onSelectCategory}
+          />
+        </div>
+        <div class="h-full min-h-0 overflow-hidden">
+          <DataGrid
+            bind:this={dataGrid}
+            {columnDefs}
+            rowData={activityValidationErrorRollups}
+            rowHeight={34}
+            rowSelection="single"
+            {doesExternalFilterPass}
+            {isExternalFilterPresent}
+            on:selectionChanged
+          />
+        </div>
       </div>
-      <div class="h-full min-h-0">
-        <DataGrid
-          bind:this={dataGrid}
-          {columnDefs}
-          rowData={activityValidationErrorRollups}
-          rowHeight={34}
-          rowSelection="single"
-          {doesExternalFilterPass}
-          {isExternalFilterPresent}
-          on:selectionChanged
-        />
-      </div>
     </div>
-  </div>
+  {:else}
+    <div class="flex h-full overflow-hidden">
+      <EmptyState />
+    </div>
+  {/if}
 </Tabs.Content>

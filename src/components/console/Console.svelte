@@ -89,7 +89,7 @@
         </div>
       </Tabs.List>
       <!-- Always render content, it will be hidden by parent's Resizable pane -->
-      <div class="min-h-0 flex-1 overflow-y-auto">
+      <div class="flex-1 overflow-y-auto">
         <slot />
       </div>
     </Tabs.Root>
