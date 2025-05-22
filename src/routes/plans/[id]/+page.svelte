@@ -952,7 +952,7 @@
           on:selectTab={onSelectConsoleTab}
         >
           <svelte:fragment slot="console-tabs">
-            <div class="console-tabs">
+            <div class="console-tabs overflow-x-hidden">
               <div>
                 <ConsoleTab value="all" numberOfErrors={$allErrors?.length} title="All Errors">All Errors</ConsoleTab>
               </div>
