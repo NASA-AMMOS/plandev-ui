@@ -661,7 +661,7 @@
 <PageTitle subTitle={$plan?.name} title="Plans" />
 
 <div class="plan-container">
-  <Resizable.PaneGroup direction="vertical">
+  <Resizable.PaneGroup direction="vertical" autoSaveId="console">
     <Resizable.Pane>
       <div class="plan-content">
         <Nav user={data.user}>
@@ -934,7 +934,16 @@
       </div>
     </Resizable.Pane>
     <Resizable.Handle />
-    <Resizable.Pane defaultSize={24} minSize={10} collapsible collapsedSize={3} bind:pane={consolePaneApi}>
+    <Resizable.Pane
+      defaultSize={!isConsoleExpanded ? 0 : 24}
+      minSize={16}
+      collapsible
+      collapsedSize={0}
+      onCollapse={() => (isConsoleExpanded = false)}
+      onExpand={() => (isConsoleExpanded = true)}
+      bind:pane={consolePaneApi}
+      class="min-h-[28px]"
+    >
       <div class="console-wrapper">
         <Console
           bind:this={errorConsole}
@@ -949,7 +958,7 @@
                 <ConsoleTab value="all" numberOfErrors={$allErrors?.length} title="All Errors">All Errors</ConsoleTab>
               </div>
               <div class="pointer-events-none mx-0 w-1 px-0 text-[8px] opacity-50">|</div>
-              <div class="grouped-error-tabs">
+              <div class="flex py-0.5">
                 <ConsoleTab
                   value="anchor"
                   numberOfErrors={$anchorValidationErrors?.length}

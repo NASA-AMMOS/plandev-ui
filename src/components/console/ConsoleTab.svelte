@@ -23,15 +23,15 @@
 
 <Tabs.Trigger
   {value}
-  class={`tab-trigger ${!isExpanded ? 'data-[state=active]:bg-transparent data-[state=active]:text-gray-500' : ''}`}
+  class={`tab-trigger mx-0.5 px-2 ${!isExpanded ? 'data-[state=active]:bg-transparent data-[state=active]:text-gray-500' : ''}`}
 >
   <div
     class="flex h-2 items-center gap-1 text-xs text-muted-foreground"
-    class:text-red-900={numberOfErrors > 0}
+    class:text-neutral-800={numberOfErrors > 0}
     use:tooltip={{ content: title, placement: 'top' }}
   >
     <slot />{#if numberOfErrors > 0}<span
-        class="flex min-w-4 items-center justify-center rounded-full bg-red-100 px-1 text-xs font-semibold text-red-800"
+        class="flex min-w-4 items-center justify-center rounded-full bg-red-50 px-1 text-xs font-semibold text-red-800 ring-1 ring-inset ring-red-900/20"
         >{numberOfErrors}</span
       >{/if}
   </div>
