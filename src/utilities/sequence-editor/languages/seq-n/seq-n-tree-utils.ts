@@ -43,7 +43,7 @@ export function userSequenceToLibrarySequence(sequence: UserSequence): LibrarySe
   const tree = SeqLanguage.parser.parse(sequence.definition);
   return {
     name: sequence.name,
-    parameters: parseVariables(tree.topNode, sequence.definition, 'ParameterDeclaration') ?? [],
+    parameters: parseVariables(tree.topNode, sequence.definition, SEQN_NODES.PARAMETER_DECLARATION) ?? [],
     tree,
     type: SequenceTypes.LIBRARY,
     workspace_id: sequence.workspace_id,
@@ -61,8 +61,8 @@ export class SeqNCommandInfoMapper implements CommandInfoMapper {
       commandOrRepeatArgNode?.name === SEQN_NODES.ACTIVATE ||
       commandOrRepeatArgNode?.name === SEQN_NODES.LOAD
     ) {
-      const argsNode = commandOrRepeatArgNode.getChild('Args');
-      const stemNode = commandOrRepeatArgNode.getChild('Stem');
+      const argsNode = commandOrRepeatArgNode.getChild(SEQN_NODES.ARGS);
+      const stemNode = commandOrRepeatArgNode.getChild(SEQN_NODES.STEM);
       return getFromAndTo([stemNode, argsNode]).to;
     } else if (commandOrRepeatArgNode?.name === SEQN_NODES.REPEAT_ARG) {
       return commandOrRepeatArgNode.to - 1;
@@ -100,13 +100,14 @@ export class SeqNCommandInfoMapper implements CommandInfoMapper {
 
   getVariables(docText: string, tree: Tree): string[] {
     return [
-      ...validateVariables(tree.topNode.getChildren('LocalDeclaration'), docText, 'LOCALS').variables,
-      ...validateVariables(tree.topNode.getChildren('ParameterDeclaration'), docText, 'INPUT_PARAMS').variables,
+      ...validateVariables(tree.topNode.getChildren(SEQN_NODES.LOCAL_DECLARATION), docText, 'LOCALS').variables,
+      ...validateVariables(tree.topNode.getChildren(SEQN_NODES.PARAMETER_DECLARATION), docText, 'INPUT_PARAMS')
+        .variables,
     ].map(v => v.name);
   }
 
   isArgumentNodeOfVariableType(argNode: SyntaxNode | null): boolean {
-    return argNode?.name === 'Enum';
+    return argNode?.name === SEQN_NODES.ENUM;
   }
 
   isByteArrayArg(): boolean {
