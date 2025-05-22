@@ -18,7 +18,6 @@
   export const isClearable = true;
   export let value: string;
 
-  $: console.log(errors);
   $: hasErrors = errors.length > 0;
 
   // Function to extract activity IDs from different error types

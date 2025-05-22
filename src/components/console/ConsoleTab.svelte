@@ -21,7 +21,6 @@
   $: isExpanded = expandedStore ? $expandedStore : true;
 
   function onClick() {
-    console.log('ConsoleTab clicked', { isExpanded, value });
     // Instead of dispatching an event, call onSelectTab directly
     if (consoleContext?.onSelectTab) {
       consoleContext.onSelectTab(value);

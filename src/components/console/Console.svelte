@@ -1,8 +1,6 @@
 <svelte:options immutable={true} />
 
 <script context="module" lang="ts">
-  // Tabs implementation taken from: https://svelte.dev/repl/8e68120858e5322272dc9136c4bb79cc?version=3.7.0
-
   export const ConsoleContextKey = 'console';
 
   // Define the interface for the context
@@ -51,11 +49,8 @@
       return;
     }
 
-    console.log('Console onSelectTab', { expanded, selectedTab, value });
-
     // Always expand when any tab is clicked, regardless of state
     if (!expanded) {
-      console.log('Console dispatching selectTab (collapsed)');
       dispatch('selectTab', { expand: true, tab: value });
       return;
     }
