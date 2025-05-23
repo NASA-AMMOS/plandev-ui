@@ -17,6 +17,7 @@
 
   const dispatch = createEventDispatcher<{
     cancelAction: void;
+    showActionRun: void;
   }>();
 
   function getStatusForActionRun(actionRun: ActionRunSlim): Status {
@@ -47,7 +48,7 @@
   <button
     class="action-run st-typography-medium st-button tertiary w-100"
     class:non-interactable={!interactable}
-    on:click
+    on:click|stopPropagation={() => dispatch('showActionRun')}
   >
     <div class="action-run-cell">
       <StatusBadge status={getStatusForActionRun(actionRun)} />

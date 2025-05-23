@@ -316,7 +316,7 @@
                           workspaceId,
                         )}
                         on:cancelAction={() => cancelAction(actionRun.id)}
-                        on:click={() => onActionRunClick(actionRun.id)}
+                        on:showActionRun={() => onActionRunClick(actionRun.id)}
                       />
                     {/each}
                   {/if}
