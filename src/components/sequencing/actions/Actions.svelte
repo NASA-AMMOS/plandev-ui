@@ -315,8 +315,8 @@
                           $actionDefinitionsByWorkspace,
                           workspaceId,
                         )}
-                        on:cancelAction={() => cancelAction(actionRun.id)}
-                        on:showActionRun={() => onActionRunClick(actionRun.id)}
+                        on:cancelAction={(e) => cancelAction(e.detail.id)}
+                        on:showActionRun={(e) => onActionRunClick(e.detail.id)}
                       />
                     {/each}
                   {/if}
@@ -433,7 +433,7 @@
                 {actionRun}
                 actionDefinition={getActionDefinitionForRun(actionRun, $actionDefinitionsByWorkspace, workspaceId)}
                 on:cancelAction={() => cancelAction(actionRun.id)}
-                on:click={() => onActionRunClick(actionRun.id)}
+                on:showActionRun={(e) => onActionRunClick(e.detail.id)}
               />
             {/each}
           {/if}
