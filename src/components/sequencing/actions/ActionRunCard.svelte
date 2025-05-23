@@ -112,7 +112,8 @@
   }
 
   .cancel-button {
-    position: absolute;
+    display: flex;
+    justify-content: space-between;
     top: 0.25rem;
     right: 0.25rem;
     z-index: 10;
