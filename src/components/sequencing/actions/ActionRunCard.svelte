@@ -87,7 +87,7 @@
     display: grid;
     gap: 24px;
     grid-template-columns: 1fr 0.2fr 160px 80px 25px;
-    height: 2.5rem;
+    height: auto;
     padding: 8px;
     text-align: left;
     white-space: nowrap;
@@ -116,5 +116,6 @@
     display: flex;
     justify-self: center;
     cursor: pointer;
+    height: 16px;
   }
 </style>
