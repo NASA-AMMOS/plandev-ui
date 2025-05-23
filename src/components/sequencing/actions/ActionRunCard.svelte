@@ -16,7 +16,7 @@
   export let interactable: boolean = true;
 
   const dispatch = createEventDispatcher<{
-    cancelAction: void;
+    cancelAction: { id: number };
     showActionRun: void;
   }>();
 
@@ -68,7 +68,7 @@
       type="button"
       class="cancel-button st-button tertiary icon"
       class:non-interactable={!interactable}
-      on:click|stopPropagation={() => dispatch('cancelAction')}
+      on:click|stopPropagation={() => dispatch('cancelAction', {id: actionRun.id})}
       use:tooltip={{ content: 'Cancel Action Run', placement: 'top' }}
     >
       <BanIcon />
