@@ -113,9 +113,9 @@
   }
 
   .cancel-button {
-    display: flex;
-    justify-self: center;
     cursor: pointer;
+    display: flex;
     height: 16px;
+    justify-self: center;
   }
 </style>
