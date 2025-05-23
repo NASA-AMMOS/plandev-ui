@@ -34,12 +34,8 @@
     user,
   );
 
-  async function cancelAction(id: number | undefined) {
-    await effects.cancelActionRun(id, user);
-  }
-
-  function onCancelAction() {
-    cancelAction($actionRun?.id);
+  async function onCancelAction() {
+    await effects.cancelActionRun($actionRun?.id, user)
   }
 </script>
 
