@@ -45,9 +45,12 @@
 </script>
 
 <div class="action-run-wrapper relative w-100">
-  <button
+  <div
     class="action-run st-typography-medium st-button tertiary w-100"
     class:non-interactable={!interactable}
+    role="button"
+    tabindex="-1"
+    on:keydown
     on:click|stopPropagation={() => dispatch('showActionRun', {id: actionRun.id})}
   >
     <div class="action-run-cell">
@@ -61,32 +64,32 @@
     <div class="action-run-cell">
       <StopwatchIcon />{formatMS(actionRun.duration)}
     </div>
-  </button>
 
-  {#if (actionRun.status === 'pending' || actionRun.status === 'incomplete')}
-    <button
-      type="button"
-      class="cancel-button st-button tertiary icon"
-      class:non-interactable={!interactable}
-      on:click|stopPropagation={() => dispatch('cancelAction', {id: actionRun.id})}
-      use:tooltip={{ content: 'Cancel Action Run', placement: 'top' }}
-    >
-      <BanIcon />
-    </button>
-  {/if}
+    {#if (actionRun.status === 'pending' || actionRun.status === 'incomplete')}
+      <button
+        type="button"
+        class="cancel-button st-button st-icon tertiary icon"
+        on:click|stopPropagation={() => dispatch('cancelAction', {id: actionRun.id})}
+        use:tooltip={{ content: 'Cancel Action Run', placement: 'top' }}
+      >
+        <BanIcon />
+      </button>
+    {/if}
+
+  </div>
 </div>
 
 
 <style>
-  button.action-run {
+  .action-run {
     align-items: center;
     border: 1px solid var(--st-gray-20);
     border-radius: 4px;
     column-gap: 8px;
     display: grid;
     gap: 24px;
-    grid-template-columns: 1fr 0.2fr 160px 80px 80px;
-    height: unset;
+    grid-template-columns: 1fr 0.2fr 160px 80px 25px;
+    height: 2.5rem;
     padding: 8px;
     text-align: left;
     white-space: nowrap;
@@ -97,7 +100,7 @@
     cursor: default;
   }
 
-  button.action-run.non-interactable:hover {
+  .action-run.non-interactable:hover {
     background: unset;
   }
 
@@ -113,9 +116,7 @@
 
   .cancel-button {
     display: flex;
-    justify-content: space-between;
-    top: 0.25rem;
-    right: 0.25rem;
-    z-index: 10;
+    justify-self: center;
+    cursor: pointer;
   }
 </style>
