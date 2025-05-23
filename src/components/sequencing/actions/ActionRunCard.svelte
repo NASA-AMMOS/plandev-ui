@@ -17,7 +17,7 @@
 
   const dispatch = createEventDispatcher<{
     cancelAction: { id: number };
-    showActionRun:  { id: number };
+    showActionRun: { id: number };
   }>();
 
   function getStatusForActionRun(actionRun: ActionRunSlim): Status {
@@ -44,14 +44,14 @@
   }
 </script>
 
-<div class="action-run-wrapper relative w-100">
+<div class="action-run-wrapper w-100 relative">
   <div
     class="action-run st-typography-medium st-button tertiary w-100"
     class:non-interactable={!interactable}
     role="button"
     tabindex="-1"
     on:keydown
-    on:click|stopPropagation={() => dispatch('showActionRun', {id: actionRun.id})}
+    on:click|stopPropagation={() => dispatch('showActionRun', { id: actionRun.id })}
   >
     <div class="action-run-cell">
       <StatusBadge status={getStatusForActionRun(actionRun)} />
@@ -65,20 +65,18 @@
       <StopwatchIcon />{formatMS(actionRun.duration)}
     </div>
 
-    {#if (actionRun.status === 'pending' || actionRun.status === 'incomplete')}
+    {#if actionRun.status === 'pending' || actionRun.status === 'incomplete'}
       <button
         type="button"
         class="cancel-button st-button st-icon tertiary icon"
-        on:click|stopPropagation={() => dispatch('cancelAction', {id: actionRun.id})}
+        on:click|stopPropagation={() => dispatch('cancelAction', { id: actionRun.id })}
         use:tooltip={{ content: 'Cancel Action Run', placement: 'top' }}
       >
         <BanIcon />
       </button>
     {/if}
-
   </div>
 </div>
-
 
 <style>
   .action-run {
