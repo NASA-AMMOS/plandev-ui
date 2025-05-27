@@ -50,6 +50,7 @@
   let viewingActivityDirectiveChangelog: boolean = false;
   let highlightKeys: string[] = [];
   let previewRevision: ActivityDirectiveRevision | undefined;
+  let selectedParameterName: string | null = null;
 
   $: deletePermissionError = $planReadOnly
     ? PlanStatusMessages.READ_ONLY
@@ -87,6 +88,14 @@
   function onSelectSpan(event: CustomEvent<SpanId | null>) {
     const { detail: spanId } = event;
     selectActivity(null, spanId);
+  }
+
+  function onJumpToDirectiveParameter(event: CustomEvent<{ directiveId: number | null; parameterName: string }>) {
+    const {
+      detail: { directiveId, parameterName },
+    } = event;
+    selectActivity(directiveId, null);
+    selectedParameterName = parameterName;
   }
 
   function onToggleViewChangelog() {
@@ -223,6 +232,8 @@
         revision={previewRevision}
         on:viewChangelog={onToggleViewChangelog}
         on:closeRevisionPreview={onCloseRevisionPreview}
+        on:didFlash={() => (selectedParameterName = null)}
+        {selectedParameterName}
         {highlightKeys}
         {user}
       />
@@ -236,6 +247,7 @@
         spanUtilityMaps={$spanUtilityMaps}
         {user}
         on:select={onSelectSpan}
+        on:jumpToDirectiveParameter={onJumpToDirectiveParameter}
       />
     {:else}
       <div class="st-typography-label p-2">No Activity Selected</div>
