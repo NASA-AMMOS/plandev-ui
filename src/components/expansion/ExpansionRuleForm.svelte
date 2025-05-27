@@ -240,17 +240,17 @@
       {#if mode === 'edit'}
         <fieldset>
           <label for="ruleId">Rule ID</label>
-          <input class="st-input w-full" disabled name="ruleId" value={ruleId} />
+          <input class="st-input w-full" disabled name="ruleId" id="ruleId" value={ruleId} />
         </fieldset>
 
         <fieldset>
           <label for="createdAt">Created At</label>
-          <input class="st-input w-full" disabled name="createdAt" value={ruleCreatedAt} />
+          <input class="st-input w-full" disabled name="createdAt" id="createdAt" value={ruleCreatedAt} />
         </fieldset>
 
         <fieldset>
           <label for="updatedAt">Updated At</label>
-          <input class="st-input w-full" disabled name="updatedAt" value={ruleUpdatedAt} />
+          <input class="st-input w-full" disabled name="updatedAt" id="updatedAt" value={ruleUpdatedAt} />
         </fieldset>
       {/if}
 
@@ -260,6 +260,7 @@
           bind:value={parcelId}
           class="st-select w-full"
           name="parcel"
+          id="parcel"
           use:permissionHandler={{
             hasPermission: hasAuthoringPermission,
             permissionError: authoringPermissionError,
@@ -280,6 +281,7 @@
           bind:value={ruleModelId}
           class="st-select w-full"
           name="modelId"
+          id="modelId"
           on:change={() => (ruleActivityType = null)}
           use:permissionHandler={{
             hasPermission: hasAuthoringPermission,
@@ -302,6 +304,7 @@
           bind:value={ruleActivityType}
           class="st-select w-full"
           name="activityType"
+          id="activityType"
           use:permissionHandler={{
             hasPermission: hasAuthoringPermission,
             permissionError: authoringPermissionError,
@@ -323,6 +326,7 @@
           bind:value={ruleName}
           class="st-input w-full"
           name="name"
+          id="name"
           placeholder="Enter a rule name (required)"
           required
           use:permissionHandler={{
@@ -339,6 +343,7 @@
           autocomplete="off"
           class="st-input w-full"
           name="description"
+          id="description"
           placeholder="Enter a rule description (optional)"
           required
           use:permissionHandler={{
@@ -352,6 +357,7 @@
         <label for="tags">Tags</label>
         <TagsInput
           disabled={!hasPermission}
+          id="tags"
           use={[
             [
               permissionHandler,

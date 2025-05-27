@@ -15,7 +15,7 @@
 </script>
 
 <div class={inputClasses} use:tooltip={{ content: tooltipText, placement: 'top' }}>
-  <input {value} class="color-picker-input" on:input on:change type="color" {name} />
+  <input {value} id={name} class="color-picker-input" on:input on:change type="color" {name} />
   {#if !value}
     <div class="color-wheel">
       <div class="color-wheel-hue" />
