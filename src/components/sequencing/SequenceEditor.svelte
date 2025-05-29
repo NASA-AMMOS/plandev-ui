@@ -98,7 +98,7 @@
   export let readOnly: boolean = false;
   export let previewOnly: boolean = false;
   export let sequenceName: string = '';
-  export let sequenceDefinition: string = '';
+  export let sequenceDefinition: string | null = '';
   export let sequenceOutput: string = '';
   export let title: string = 'Sequence - Definition Editor';
   export let user: User | null;

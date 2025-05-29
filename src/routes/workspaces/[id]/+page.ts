@@ -16,6 +16,6 @@ export const load: PageLoad = async ({ parent, params }) => {
   }
 
   return {
-    initialWorkspace,
+    user,
   };
 };

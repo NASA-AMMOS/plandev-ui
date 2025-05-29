@@ -2697,7 +2697,7 @@ const gql = {
 
   SUB_PARCEL: `#graphql
     subscription SubParcel($parcelId: number) {
-      ${Queries.PARCELS}(where: { id: {_eq: $parcelId } }) {
+      ${Queries.PARCEL}(where: { id: {_eq: $parcelId } }) {
         channel_dictionary_id
         command_dictionary_id
         created_at

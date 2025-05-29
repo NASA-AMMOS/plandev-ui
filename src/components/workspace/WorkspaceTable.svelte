@@ -15,6 +15,7 @@
   import SectionTitle from '../ui/SectionTitle.svelte';
 
   type CellRendererParams = {
+    deleteWorkspace: (workspace: Workspace) => void;
     viewWorkspace: (workspace: Workspace) => void;
   };
   type WorkspaceCellRendererParams = ICellRendererParams<Workspace> & CellRendererParams;
@@ -28,6 +29,7 @@
   let selectedWorkspace: Workspace | null = null;
 
   const dispatch = createEventDispatcher<{
+    deleteWorkspace: number;
     selectWorkspace: number;
     viewWorkspace: number;
   }>();
@@ -66,6 +68,12 @@
         actionsDiv.className = 'actions-cell';
         new DataGridActions<Workspace>({
           props: {
+            deleteCallback: params.deleteWorkspace,
+            deleteTooltip: {
+              content: 'Delete Workspace',
+              placement: 'bottom',
+            },
+            hasDeletePermission: params.data ? hasDeletePermission(user, params.data) : false,
             hasEditPermission: params.data ? hasViewPermission(user, params.data) : false,
             rowData: params.data,
             viewCallback: data => user && params.viewWorkspace(data),
@@ -80,6 +88,7 @@
         return actionsDiv;
       },
       cellRendererParams: {
+        deleteWorkspace,
         viewWorkspace,
       } as CellRendererParams,
       field: 'actions',
@@ -98,9 +107,19 @@
     return includesName;
   });
 
+  async function deleteWorkspace(workspace: Workspace | undefined) {
+    if (workspace !== undefined) {
+      dispatch('deleteWorkspace', workspace.id);
+    }
+  }
+
+  function hasDeletePermission(user: User | null, workspace: Workspace) {
+    return featurePermissions.workspace.canDelete(user, workspace);
+  }
+
   async function viewWorkspace(workspace: Workspace | undefined) {
     if (workspace !== undefined) {
-      dispatch('viewWorkspace', parseInt(`${workspace.id}`));
+      dispatch('viewWorkspace', workspace.id);
     }
   }
 
@@ -114,7 +133,7 @@
 
     if (isSelected) {
       selectedWorkspace = clickedWorkspace;
-      dispatch('selectWorkspace', parseInt(`${selectedWorkspace.id}`));
+      dispatch('selectWorkspace', selectedWorkspace.id);
     }
   }
 </script>
@@ -145,6 +164,7 @@
         hasDeletePermission={false}
         {user}
         on:rowSelected={workspaceSelected}
+        on:rowDoubleClicked={({ detail }) => viewWorkspace(detail.data)}
       />
     {:else}
       <div class="p1 st-typography-label">No Workspaces Found</div>

@@ -23,6 +23,7 @@
   import { SearchParameters } from '../../../enums/searchParameters';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import { parcel, workspaceColumns, workspaceId } from '../../../stores/workspaces';
+  import type { Workspace } from '../../../types/workspace';
   import type { WorkspaceTreeNode } from '../../../types/workspace-tree-view';
   import effects from '../../../utilities/effects';
   import type { PageData } from './$types';
@@ -38,18 +39,18 @@
   $: if (initialWorkspace) {
     $workspaceId = initialWorkspace.id;
     selectedSequenceId = $page.url.searchParams.get(SearchParameters.SEQUENCE_ID);
-    getWorkspaceContents($workspaceId);
+    getWorkspaceContents(initialWorkspace);
   }
 
   $: getSelectedSequenceDefinition(selectedSequenceId);
 
-  async function getWorkspaceContents(workspaceId: number) {
-    if (user) {
-      const workspaceContents = await effects.getWorkspaceContents(workspaceId, user);
+  async function getWorkspaceContents(workspace: Workspace | undefined) {
+    if (workspace) {
+      const workspaceContents = await effects.getWorkspaceContents(workspace.id, user);
       if (workspaceContents) {
         workspaceTree = {
           contents: workspaceContents,
-          name: initialWorkspace.name,
+          name: workspace.name,
           type: WorkspaceContentType.Workspace,
         };
       }
@@ -72,7 +73,7 @@
   }
 
   function refreshWorkspaceContents() {
-    getWorkspaceContents($workspaceId);
+    getWorkspaceContents(initialWorkspace);
   }
 </script>
 

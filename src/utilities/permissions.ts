@@ -916,9 +916,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SIMS: () => true,
   SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_TEMPS: () => true,
   SUB_PARAMETER_DICTIONARIES: () => true,
-  SUB_PARCELS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.PARCELS], user);
-  },
+  SUB_PARCEL: (): boolean => true,
+  SUB_PARCELS: (): boolean => true,
   SUB_PARCEL_TO_PARAMETER_DICTIONARIES: () => true,
   SUB_PLANS: () => true,
   SUB_PLANS_USER_WRITABLE: () => true,
@@ -971,6 +970,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   SUB_VIEWS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.VIEWS], user);
+  },
+  SUB_WORKSPACE: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.PARCEL], user);
   },
   SUB_WORKSPACES: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.WORKSPACES], user);
@@ -1673,7 +1675,7 @@ const featurePermissions: FeaturePermissions = {
   },
   workspace: {
     canCreate: user => queryPermissions.CREATE_WORKSPACE(user),
-    canDelete: () => false,
+    canDelete: (user, workspace) => isUserAdmin(user) || isUserOwner(user, workspace),
     canRead: user => queryPermissions.SUB_WORKSPACES(user),
     canUpdate: (user, workspace) => queryPermissions.UPDATE_WORKSPACE(user, workspace),
   },
