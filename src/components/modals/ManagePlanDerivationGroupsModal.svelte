@@ -191,18 +191,23 @@
     dataGrid?.redrawRows();
   }
 
-  $: allDerivationGroupsSelected = (Object.keys(selectedDerivationGroups).length === filteredDerivationGroups.length) && (Object.values(selectedDerivationGroups).every(derivationGroupToggle => derivationGroupToggle === true));
+  $: allDerivationGroupsSelected =
+    Object.keys(selectedDerivationGroups).length === filteredDerivationGroups.length &&
+    Object.values(selectedDerivationGroups).every(derivationGroupToggle => derivationGroupToggle === true);
 
   function onAllDerivationGroups() {
     if (filteredDerivationGroups) {
-      const candidateDerivationGroupNames = allDerivationGroupsSelected ? Object.keys(selectedDerivationGroups) : filteredDerivationGroups.map(derivationGroup => derivationGroup.name);
+      const candidateDerivationGroupNames = allDerivationGroupsSelected
+        ? Object.keys(selectedDerivationGroups)
+        : filteredDerivationGroups.map(derivationGroup => derivationGroup.name);
       selectedDerivationGroups = candidateDerivationGroupNames.reduce(
         (prevBooleanMap: Record<string, boolean>, derivationGroupName: string) => {
           return {
             ...prevBooleanMap,
-            [derivationGroupName]: !allDerivationGroupsSelected
-          }
-        }, {}
+            [derivationGroupName]: !allDerivationGroupsSelected,
+          };
+        },
+        {},
       );
     }
   }

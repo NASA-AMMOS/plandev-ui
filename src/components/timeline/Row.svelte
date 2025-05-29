@@ -967,11 +967,7 @@
         </g>
       </svg>
       <!-- Loading indicator -->
-      {#if
-        (hasResourceLayer && anyResourcesLoading) ||
-        (hasActivityLayerFilters && (!activityDirectivesMap || !spansMap) ||
-        ((hasExternalEventsLayer && externalEvents !== null) && externalEvents.length === 0))
-      }
+      {#if (hasResourceLayer && anyResourcesLoading) || (hasActivityLayerFilters && (!activityDirectivesMap || !spansMap)) || (hasExternalEventsLayer && externalEvents !== null && externalEvents.length === 0)}
         <div class="layer-message loading st-typography-label">Loading...</div>
       {/if}
       <!-- Empty state -->

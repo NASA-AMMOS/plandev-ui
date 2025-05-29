@@ -11,7 +11,7 @@
   import DataGrid from '../ui/DataGrid/DataGrid.svelte';
 
   export let selectedItemId: ExternalEventId | null;
-  export let items: ExternalEvent[];
+  export let items: ExternalEvent[] | null;
   export let filterExpression = '';
 
   const baseColumnDefs: DataGridColumnDef[] = [
@@ -85,7 +85,7 @@
   {filterExpression}
   getRowId={getExternalEventWholeRowId}
   useCustomContextMenu
-  rowData={items}
+  rowData={items ?? []}
   rowSelection="single"
   on:cellEditingStarted
   on:cellEditingStopped
