@@ -100,7 +100,7 @@
   import RowYAxisTicks from './RowYAxisTicks.svelte';
 
   export let activityDirectives: ActivityDirective[] | null = [];
-  export let externalEvents: ExternalEvent[] = [];
+  export let externalEvents: ExternalEvent[] | null = [];
   export let activityDirectivesMap: ActivityDirectivesMap | null = {};
   export let discreteOptions: DiscreteOptions | undefined = undefined;
   export let discreteTreeExpansionMap: DiscreteTreeExpansionMap = {};
@@ -514,7 +514,7 @@
           .map(link => link.derivation_group_name);
 
         // Apply filter for hiding derivation groups
-        externalEventsFilteredByDG = externalEvents.filter(ee => {
+        externalEventsFilteredByDG = (externalEvents ?? []).filter(ee => {
           let derivationGroup =
             $externalSources.find(
               externalSource =>
@@ -967,7 +967,11 @@
         </g>
       </svg>
       <!-- Loading indicator -->
-      {#if (hasResourceLayer && anyResourcesLoading) || (hasActivityLayerFilters && (!activityDirectivesMap || !spansMap))}
+      {#if
+        (hasResourceLayer && anyResourcesLoading) ||
+        (hasActivityLayerFilters && (!activityDirectivesMap || !spansMap) ||
+        ((hasExternalEventsLayer && externalEvents !== null) && externalEvents.length === 0))
+      }
         <div class="layer-message loading st-typography-label">Loading...</div>
       {/if}
       <!-- Empty state -->

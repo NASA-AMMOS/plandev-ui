@@ -47,7 +47,7 @@
   import TimelineXAxis from './XAxis.svelte';
 
   export let activityDirectivesMap: ActivityDirectivesMap | null = null;
-  export let externalEvents: ExternalEvent[] = [];
+  export let externalEvents: ExternalEvent[] | null = null;
   export let constraintResults: ConstraintResultWithName[] = [];
   export let hasUpdateDirectivePermission: boolean = false;
   export let hasUpdateSimulationPermission: boolean = false;
@@ -129,9 +129,11 @@
   $: derivationGroups = $planDerivationGroupLinks
     .filter(link => link.plan_id === plan?.id)
     .map(link => link.derivation_group_name);
-  $: externalEvents = externalEvents.filter(externalEvent =>
-    derivationGroups.includes(externalEvent.pkey.derivation_group_name),
-  );
+  $: if (externalEvents) {
+    externalEvents = externalEvents.filter(externalEvent =>
+      derivationGroups.includes(externalEvent.pkey.derivation_group_name),
+    );
+  }
   $: rows = timeline?.rows || [];
   $: drawWidth = clientWidth > 0 ? clientWidth - (timeline?.marginLeft ?? 0) - (timeline?.marginRight ?? 0) : 0;
   $: xAxisDrawHeight = 48 + 16 * ($plugins.time.additional.length ? Math.max($plugins.time.additional.length, 1) : 1);
@@ -399,7 +401,7 @@
       <TimelineHistogram
         activityDirectives={activityDirectives || []}
         loading={initialActivityDirectivesLoading || initialSpansLoading || initialConstraintsLoading}
-        {externalEvents}
+        externalEvents={externalEvents || []}
         {constraintResults}
         {cursorEnabled}
         drawHeight={timelineHistogramDrawHeight}
