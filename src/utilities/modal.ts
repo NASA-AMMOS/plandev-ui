@@ -524,6 +524,43 @@ export async function showManagePlanSchedulingGoalsModal(user: User | null): Pro
 }
 
 /**
+ * Shows a NewWorkspaceSequenceModal component with the supplied arguments.
+ */
+export async function showNewWorkspaceSequenceModal(): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const newWorkspaceSequenceModal = new NewSequenceModal({
+          target,
+        });
+        target.resolve = resolve;
+
+        // Do not allow users to dismiss this modal
+        target.setAttribute('data-dismissible', 'false');
+
+        newWorkspaceSequenceModal.$on('confirm', (e: CustomEvent<{ sequencePath: string }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          newWorkspaceSequenceModal.$destroy();
+        });
+
+        newWorkspaceSequenceModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          target.removeAttribute('data-dismissible');
+          newWorkspaceSequenceModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
  * Shows a NewWorkspaceFolderModal component with the supplied arguments.
  */
 export async function showNewWorkspaceFolderModal(): Promise<ModalElementValue> {
@@ -1177,38 +1214,6 @@ export async function showTimeRangeModal(
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
           timeRangeModal.$destroy();
-        });
-      }
-    } else {
-      resolve({ confirm: false });
-    }
-  });
-}
-
-/**
- * Shows a NewSequenceModal.
- */
-export async function showNewSequenceModal(): Promise<ModalElementValue<{ newSequenceName: string }>> {
-  return new Promise(resolve => {
-    if (browser) {
-      const target: ModalElement | null = document.querySelector('#svelte-modal');
-
-      if (target) {
-        const newSequenceModal = new NewSequenceModal({ props: {}, target });
-        target.resolve = resolve;
-
-        newSequenceModal.$on('close', () => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: false });
-          newSequenceModal.$destroy();
-        });
-
-        newSequenceModal.$on('confirm', (e: CustomEvent<{ newSequenceName: string }>) => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: true, value: e.detail });
-          newSequenceModal.$destroy();
         });
       }
     } else {

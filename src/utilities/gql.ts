@@ -246,8 +246,8 @@ const gql = {
   `,
 
   CREATE_DICTIONARY: `#graphql
-    mutation CreateDictionary($dictionary: String!, $persistDictionaryToFilesystem: Boolean!) {
-      createDictionary: ${Queries.UPLOAD_DICTIONARY}(dictionary: $dictionary, persistDictionaryToFilesystem: $persistDictionaryToFilesystem) {
+    mutation CreateDictionary($dictionary: String!) {
+      createDictionary: ${Queries.UPLOAD_DICTIONARY}(dictionary: $dictionary) {
         command
         parameter
         channel
@@ -3491,6 +3491,7 @@ const gql = {
       ${Queries.WORKSPACES}(order_by: { id: desc }) {
         created_at
         id
+        parcel_id
         name
         disk_location
         owner

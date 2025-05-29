@@ -27,20 +27,25 @@
 </script>
 
 {#if treeNode.type === WorkspaceContentType.Workspace}
-  <WorkspaceTreeViewItemLabel {treeNode} />
-  {#if treeNode.contents}
-    {#each treeNode.contents as treeNodeChild (treeNodeChild.name)}
-      <svelte:self treeNode={treeNodeChild} />
-    {/each}
-  {/if}
+  <div>
+    <WorkspaceTreeViewItemLabel {treeNode} />
+    {#if treeNode.contents}
+      {#each treeNode.contents as treeNodeChild (treeNodeChild.name)}
+        <svelte:self treeNode={treeNodeChild} />
+      {/each}
+    {/if}
+  </div>
 {:else}
-  <div class="pl-3">
+  <div>
     {#if treeNode.contents}
       <WorkspaceTreeViewItemLabel {treeNode} {isOpen} on:click={onToggle} />
-      <div class:hidden={!isOpen}>
-        {#each treeNode.contents as treeNodeChild (treeNodeChild.name)}
-          <svelte:self treeNode={treeNodeChild} />
-        {/each}
+      <div class="column-gap-1 grid grid-cols-[0.5rem_auto]" class:hidden={!isOpen}>
+        <div class="border-r"></div>
+        <div>
+          {#each treeNode.contents as treeNodeChild (treeNodeChild.name)}
+            <svelte:self treeNode={treeNodeChild} />
+          {/each}
+        </div>
       </div>
     {:else}
       <WorkspaceTreeViewLeafItem {treeNode} />

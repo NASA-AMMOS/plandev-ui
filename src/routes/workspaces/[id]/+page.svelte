@@ -32,7 +32,7 @@
 
   const { initialWorkspace, user } = data;
 
-  let selectedSequenceDefinition: string | null = null;
+  let selectedSequenceDefinition: string = '';
   let selectedSequenceId: string | null = null;
   let workspaceTree: WorkspaceTreeNode | null = null;
 
@@ -59,15 +59,22 @@
 
   async function getSelectedSequenceDefinition(sequenceId: string | null) {
     if (sequenceId !== null && user) {
-      selectedSequenceDefinition = await effects.getSequenceDefinition(sequenceId, user);
+      selectedSequenceDefinition = (await effects.getSequenceDefinition(sequenceId, user)) ?? '';
     } else {
-      selectedSequenceDefinition = null;
+      selectedSequenceDefinition = '';
     }
   }
 
   async function onNewFolder() {
     if ($workspaceId != null && user) {
       await effects.newWorkspaceFolder($workspaceId, user);
+      refreshWorkspaceContents();
+    }
+  }
+
+  async function onNewSequence() {
+    if ($workspaceId != null && user) {
+      await effects.newWorkspaceSequence($workspaceId, user);
       refreshWorkspaceContents();
     }
   }
@@ -95,7 +102,9 @@
             </Button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Content class="w-56">
-            <DropdownMenu.Item class="cursor-pointer gap-1"><FilePlus size={16} />New Sequence</DropdownMenu.Item>
+            <DropdownMenu.Item class="cursor-pointer gap-1" on:click={onNewSequence}>
+              <FilePlus size={16} />New Sequence
+            </DropdownMenu.Item>
             <DropdownMenu.Item class="cursor-pointer gap-1" on:click={onNewFolder}>
               <FolderPlus size={16} />New Folder
             </DropdownMenu.Item>
@@ -122,7 +131,7 @@
       </div>
     </svelte:fragment>
     <svelte:fragment slot="body">
-      <div class="p-2">
+      <div class="h-max p-2">
         <WorkspaceTreeView treeNode={workspaceTree} />
       </div>
     </svelte:fragment>

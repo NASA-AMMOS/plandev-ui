@@ -7,6 +7,7 @@
   import { field } from '../../stores/form';
   import { creatingWorkspace, parcels, workspaces } from '../../stores/sequencing';
   import type { User } from '../../types/app';
+  import type { Workspace } from '../../types/workspace';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -27,9 +28,8 @@
   let permissionError = 'You do not have permission to create a workspace.';
   let selectedParcelIdField = field<number>(-1, [min(1, 'Field is required')]);
   let selectedWorkspaceId: number | null = null;
-  let selectedWorkspaceName: string | null = null;
-  let selectedWorkspaceLocation: string | null = null;
-  let selectedWorkspaceParcelId: number | null = null;
+  let selectedWorkspace: Workspace | null = null;
+  let selectedWorkspaceParcelName: string | null = null;
   let workspaceName: string | null = null;
   let workspaceLocationField = field<string>('', [
     value => {
@@ -72,13 +72,12 @@
       ),
     ]);
   }
-  $: if (selectedWorkspaceId !== null) {
-    const selectedWorkspace = $workspaces.find(workspace => workspace.id === selectedWorkspaceId);
-    if (selectedWorkspace) {
-      selectedWorkspaceName = selectedWorkspace.name ?? null;
-      selectedWorkspaceParcelId = selectedWorkspace.parcel_id;
-      selectedWorkspaceLocation = selectedWorkspace.disk_location;
-    }
+  $: selectedWorkspace = $workspaces.find(workspace => workspace.id === selectedWorkspaceId) ?? null;
+  $: if (selectedWorkspace) {
+    const selectedWorkspaceParcel = $parcels.find(({ id }) => id === selectedWorkspace.parcel_id);
+    selectedWorkspaceParcelName = selectedWorkspaceParcel?.name ?? null;
+  } else {
+    selectedWorkspaceParcelName = null;
   }
 
   async function onCreateNewWorkspace() {
@@ -116,6 +115,15 @@
       openWorkspace(selectedWorkspaceId);
     }
   }
+
+  function onDeleteWorkspace(event: CustomEvent<number>) {
+    if (event.detail) {
+      const workspaceToDelete = $workspaces.find(({ id }) => id === event.detail);
+      if (workspaceToDelete) {
+        effects.deleteWorkspace(workspaceToDelete, user);
+      }
+    }
+  }
 </script>
 
 <CssGrid columns="20% auto">
@@ -137,31 +145,24 @@
       {/if}
     </svelte:fragment>
     <svelte:fragment slot="body">
-      {#if selectedWorkspaceId !== null}
+      {#if selectedWorkspace !== null}
         <div class="workspace-metadata">
           <fieldset>
-            <label for="parcel">Parcel</label>
-            <select
-              class="st-select w-full"
-              name="parcel"
-              bind:value={selectedWorkspaceParcelId}
-              use:permissionHandler={{
-                hasPermission,
-                permissionError,
-              }}
-            >
-              <option value={null} />
-              {#each $parcels as parcel}
-                <option value={parcel.id} selected={parcel.id === selectedWorkspaceParcelId}>
-                  {parcel.name}
-                </option>
-              {/each}
-            </select>
+            <Input layout="stacked">
+              <label class="workspace-metadata-item-label" for="name">Parcel</label>
+              <input
+                class="st-input w-full"
+                name="name"
+                aria-label="name"
+                value={selectedWorkspaceParcelName}
+                disabled
+              />
+            </Input>
           </fieldset>
           <fieldset>
             <Input layout="stacked">
               <label class="workspace-metadata-item-label" for="name">Workspace Name</label>
-              <input class="st-input w-full" name="name" aria-label="name" bind:value={selectedWorkspaceName} />
+              <input class="st-input w-full" name="name" aria-label="name" value={selectedWorkspace.name} disabled />
             </Input>
           </fieldset>
           <fieldset>
@@ -171,7 +172,7 @@
                 class="st-input w-full"
                 name="location"
                 aria-label="location"
-                value={selectedWorkspaceLocation}
+                value={selectedWorkspace.disk_location}
                 disabled
               />
             </Input>
@@ -250,6 +251,7 @@
   <WorkspaceTable
     {user}
     {selectedWorkspaceId}
+    on:deleteWorkspace={onDeleteWorkspace}
     on:selectWorkspace={onWorkspaceSelected}
     on:viewWorkspace={onOpenWorkspace}
   />

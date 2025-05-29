@@ -10,15 +10,15 @@
   export let height: number = 175;
   export let width: number = 300;
 
-  let newSequenceName: string;
+  let sequencePath: string;
 
   const dispatch = createEventDispatcher<{
     close: void;
-    confirm: { newSequenceName: string };
+    confirm: { sequencePath: string };
   }>();
 
   function onConfirm() {
-    dispatch('confirm', { newSequenceName });
+    dispatch('confirm', { sequencePath });
   }
 </script>
 
@@ -26,8 +26,8 @@
   <ModalHeader on:close>New Sequence</ModalHeader>
   <ModalContent>
     <fieldset>
-      <label for="st-typography-body sequence-name">Sequence Name</label>
-      <input class="st-input" name="sequence-name" bind:value={newSequenceName} />
+      <label for="st-typography-body sequence-name">Sequence Path</label>
+      <input class="st-input" name="sequence-name" autocomplete="off" bind:value={sequencePath} />
     </fieldset>
   </ModalContent>
   <ModalFooter>

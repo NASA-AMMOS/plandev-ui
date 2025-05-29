@@ -268,6 +268,7 @@ import {
   showManagePlanSchedulingConditionsModal,
   showManagePlanSchedulingGoalsModal,
   showNewWorkspaceFolderModal,
+  showNewWorkspaceSequenceModal,
   showPlanBranchRequestModal,
   showRestorePlanSnapshotModal,
   showRunActionModal,
@@ -3640,6 +3641,31 @@ const effects = {
     return false;
   },
 
+  async deleteWorkspace(workspace: Workspace, user: User | null): Promise<boolean> {
+    try {
+      if (!featurePermissions.workspace.canDelete(user, workspace)) {
+        throwPermissionError('delete this workspace');
+      }
+
+      const { confirm } = await showConfirmModal(
+        'Delete',
+        `Are you sure you want to delete "${workspace.name}"?`,
+        'Delete Workspace',
+      );
+
+      if (confirm) {
+        await reqWorkspace(`/ws/${workspace.id}`, 'DELETE', null, user, true, undefined, false);
+        showSuccessToast('Workspace Deleted Successfully');
+        return true;
+      }
+    } catch (e) {
+      showFailureToast('Workspace Delete Failed');
+      catchError(e as Error);
+    }
+
+    return false;
+  },
+
   duplicateTimelineRow(row: Row, timeline: Timeline, timelines: Timeline[]): Row | null {
     const newRow = duplicateRow(row, timelines, timeline.id);
     if (newRow) {
@@ -5464,6 +5490,38 @@ const effects = {
     }
   },
 
+  async newWorkspaceSequence(workspaceId: number, user: User | null): Promise<void> {
+    try {
+      const {
+        confirm,
+        value: { sequencePath },
+      } = await showNewWorkspaceSequenceModal();
+
+      if (confirm) {
+        const pathParts = sequencePath.split('/');
+        const fileName = pathParts[pathParts.length - 1];
+        const file = new File([''], fileName);
+        const body = new FormData();
+        body.append('file', file, file.name);
+
+        await reqWorkspace<Workspace>(
+          `/ws/${workspaceId}/${sequencePath}?type=file`,
+          'PUT',
+          body,
+          user,
+          undefined,
+          undefined,
+          false,
+        );
+
+        showSuccessToast('Workspace Folder Created Successfully');
+      }
+    } catch (e) {
+      catchError('Workspace folder was unable to be created', e as Error);
+      showFailureToast('Workspace Folder Creation Failed');
+    }
+  },
+
   async planMergeBegin(
     mergeRequestId: number,
     sourcePlan: PlanForMerging | undefined,
@@ -7047,7 +7105,7 @@ const effects = {
         channel?: ChannelDictionaryMetadata;
         command?: CommandDictionaryMetadata;
         parameter?: ParameterDictionaryMetadata;
-      }>(gql.CREATE_DICTIONARY, { dictionary, persistDictionaryToFilesystem }, user);
+      }>(gql.CREATE_DICTIONARY, { dictionary }, user);
 
       const { createDictionary: newDictionaries } = data;
 
