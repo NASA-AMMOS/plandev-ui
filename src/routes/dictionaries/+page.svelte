@@ -109,6 +109,7 @@
               accept=".xml,.js,.json"
               class="st-typography-body w-full"
               name="file"
+              id="file"
               required
               type="file"
               bind:files
