@@ -9,6 +9,7 @@ import type {
 } from '../types/parameter';
 import type { ValueSchema } from '../types/schema';
 import { isEmpty } from './generic';
+import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
 
 /**
  * Derive argument given input value, value schema, and optional default value.
@@ -19,7 +20,7 @@ import { isEmpty } from './generic';
  */
 export function getArgument(
   value: Argument,
-  schema: ValueSchema,
+  schema: ValueSchema | ActionValueSchema,
   presetValue?: Argument,
   defaultValue?: Argument,
 ): { value: any; valueSource: ValueSource } {

@@ -9,6 +9,7 @@
   import ParameterBasePath from './ParameterBasePath.svelte';
   import ParameterBaseString from './ParameterBaseString.svelte';
   import ParameterBaseVariant from './ParameterBaseVariant.svelte';
+  import ParameterBaseDropdown from './ParameterBaseDropdown.svelte';
 
   export let disabled: boolean = false;
   export let formParameter: FormParameter;
@@ -107,6 +108,37 @@
     {levelPadding}
     {formParameter}
     {parameterType}
+    {use}
+    on:change
+    on:reset
+  />
+{:else if formParameter.schema.type === 'sequence'}
+  <ParameterBaseDropdown
+    {disabled}
+    {hideRightAdornments}
+    {labelColumnWidth}
+    {level}
+    {levelPadding}
+    {formParameter}
+    {parameterType}
+    placeholder="Select sequence"
+    searchPlaceholder="Filter sequences"
+    {use}
+    on:change
+    on:reset
+  />
+{:else if formParameter.schema.type === 'sequenceList'}
+  <ParameterBaseDropdown
+    allowMultiple={true}
+    {disabled}
+    {hideRightAdornments}
+    {labelColumnWidth}
+    {level}
+    {levelPadding}
+    {formParameter}
+    {parameterType}
+    placeholder="Select list of sequences"
+    searchPlaceholder="Filter sequences"
     {use}
     on:change
     on:reset

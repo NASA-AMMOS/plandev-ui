@@ -143,10 +143,10 @@ import type {
   ArgumentsMap,
   DefaultEffectiveArguments,
   EffectiveArguments,
-  Parameter,
   ParameterValidationError,
   ParameterValidationResponse,
   ParametersMap,
+  BaseParameter,
 } from '../types/parameter';
 import type {
   PermissibleQueriesMap,
@@ -296,6 +296,7 @@ import {
   generateDefaultView,
   validateViewJSONAgainstSchema,
 } from './view';
+import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
 
 function throwPermissionError(attemptedAction: string): never {
   throw Error(`You do not have permission to: ${attemptedAction}.`);
@@ -7201,7 +7202,7 @@ export function replacePaths(
   }
   const result: ArgumentsMap = {};
   for (const parameterName in modelParameters) {
-    const parameter: Parameter = modelParameters[parameterName];
+    const parameter: BaseParameter = modelParameters[parameterName];
     const arg: Argument = simArgs[parameterName];
     if (arg !== undefined) {
       result[parameterName] = replacePathsHelper(parameter.schema, arg, pathsToReplace);
@@ -7233,7 +7234,11 @@ export function replacePathsForStructArguments(
   return result;
 }
 
-function replacePathsHelper(schema: ValueSchema, arg: Argument, pathsToReplace: Record<string, string>) {
+function replacePathsHelper(
+  schema: ValueSchema | ActionValueSchema,
+  arg: Argument,
+  pathsToReplace: Record<string, string>,
+) {
   switch (schema.type) {
     case 'path':
       if (arg in pathsToReplace) {

@@ -5,7 +5,7 @@
   import type { ActionDefinition } from '../../types/actions';
   import type { User } from '../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../types/parameter';
-  import { valueSchemaRecordToParametersMap } from '../../utilities/actions';
+  import { getUserSequencesInWorkspace, valueSchemaRecordToParametersMap } from '../../utilities/actions';
   import effects from '../../utilities/effects';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import Parameters from '../parameters/Parameters.svelte';
@@ -13,6 +13,7 @@
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
+  import { userSequences } from '../../stores/sequencing';
 
   export let actionDefinition: ActionDefinition;
   export let user: User | null;
@@ -39,7 +40,24 @@
 
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
-    argumentsMap = getArguments(argumentsMap, formParameter);
+    if (formParameter.schema.type === 'sequence') {
+      const sequences = $userSequences.find(sequence => sequence.id === parseInt(formParameter.value));
+      formParameter.value = sequences?.name ?? null;
+      argumentsMap = getArguments(argumentsMap, formParameter);
+    } else if (formParameter.schema.type === 'sequenceList') {
+      const ids: string[] = formParameter.value;
+      let sequenceNames: string[] = [];
+      ids.forEach(id => {
+        const seq = $userSequences.find(sequence => sequence.id === parseInt(id));
+        if (seq !== undefined) {
+          sequenceNames.push(seq.name);
+        }
+      });
+      formParameter.value = sequenceNames;
+      argumentsMap = getArguments(argumentsMap, formParameter);
+    } else {
+      argumentsMap = getArguments(argumentsMap, formParameter);
+    }
   }
 </script>
 
@@ -47,10 +65,13 @@
   <ModalHeader on:close>Run Action</ModalHeader>
 
   <ModalContent style="max-height: 50vh;overflow: auto">
-    <div class="st-typography-label pb-2">Input parameters for this action run</div>
+    <div class="st-typography-label pb-2">Input parameters to run <b>{actionDefinition.name}</b></div>
     <Parameters
       formParameters={getFormParameters(
-        valueSchemaRecordToParametersMap(actionDefinition.parameter_schema),
+        valueSchemaRecordToParametersMap(
+          actionDefinition.parameter_schema,
+          getUserSequencesInWorkspace($userSequences, actionDefinition.workspace_id),
+        ),
         argumentsMap,
         [],
       )}

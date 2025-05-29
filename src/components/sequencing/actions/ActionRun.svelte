@@ -7,12 +7,17 @@
   import { gqlSubscribable } from '../../../stores/subscribable';
   import type { ActionRun } from '../../../types/actions';
   import type { User } from '../../../types/app';
-  import { getActionDefinitionForRun, valueSchemaRecordToParametersMap } from '../../../utilities/actions';
+  import {
+    getActionDefinitionForRun,
+    getUserSequencesInWorkspace,
+    valueSchemaRecordToParametersMap,
+  } from '../../../utilities/actions';
   import { getSearchParameterNumber } from '../../../utilities/generic';
   import gql from '../../../utilities/gql';
   import { getFormParameters } from '../../../utilities/parameters';
   import Parameters from '../../parameters/Parameters.svelte';
   import ActionRunCard from './ActionRunCard.svelte';
+  import { userSequences } from '../../../stores/sequencing';
 
   export let initialActionRun: ActionRun | null = null;
   export let user: User | null;
@@ -68,7 +73,10 @@
         <div class="action-run-parameters">
           <Parameters
             formParameters={getFormParameters(
-              valueSchemaRecordToParametersMap($actionRun.action_definition.settings_schema),
+              valueSchemaRecordToParametersMap(
+                $actionRun.action_definition.settings_schema,
+                getUserSequencesInWorkspace($userSequences, workspaceId),
+              ),
               $actionRun.settings,
               [],
             )}
@@ -80,7 +88,10 @@
           <div class="st-typography-medium action-run-label">Action Parameters</div>
           <Parameters
             formParameters={getFormParameters(
-              valueSchemaRecordToParametersMap($actionRun.action_definition.parameter_schema),
+              valueSchemaRecordToParametersMap(
+                $actionRun.action_definition.parameter_schema,
+                getUserSequencesInWorkspace($userSequences, workspaceId),
+              ),
               $actionRun.parameters,
               [],
             )}
