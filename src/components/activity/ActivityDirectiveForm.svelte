@@ -64,6 +64,7 @@
   export let highlightKeys: string[] = [];
   export let modelId: number;
   export let planStartTimeYmd: string;
+  export let selectedParameterName: string | null = null;
   export let showActivityName: boolean = false;
   export let showHeader: boolean = true;
   export let user: User | null;
@@ -725,8 +726,10 @@
           disabled={!editable}
           {formParameters}
           {highlightKeysMap}
+          parameterToFlash={selectedParameterName}
           on:change={onChangeFormParameters}
           on:reset={onResetFormParameters}
+          on:didFlash
           use={[
             [
               permissionHandler,

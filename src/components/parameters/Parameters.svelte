@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { FormParameter, ParameterType } from '../../types/parameter';
+  import type { FormParameter, ParameterName, ParameterType } from '../../types/parameter';
   import { compare } from '../../utilities/generic';
   import type { ActionArray } from '../../utilities/useActions';
   import Highlight from '../ui/Highlight.svelte';
@@ -17,6 +17,7 @@
   export let highlightKeysMap: Record<string, boolean> = {};
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
+  export let parameterToFlash: ParameterName | null = null;
   export let use: ActionArray = [];
 
   let clientWidth: number;
@@ -28,7 +29,11 @@
 
 <div class="parameters-container">
   {#each sortedFormParameters as formParameter (formParameter.name)}
-    <Highlight highlight={highlightKeysMap[formParameter.name]}>
+    <Highlight
+      highlight={highlightKeysMap[formParameter.name]}
+      flash={parameterToFlash === formParameter.name}
+      on:didFlash
+    >
       <div bind:clientWidth class="parameter">
         {#if formParameter.schema.type === 'series' || formParameter.schema.type === 'struct'}
           <ParameterRec
@@ -58,10 +63,11 @@
             {use}
           />
         {/if}
-        <div class="parameter-info">
+        <div class="right-actions">
           {#if !hideInfo}
             <ParameterInfo {disabled} {formParameter} on:reset />
           {/if}
+          <slot name="right-action" parameter={formParameter} />
         </div>
       </div>
     </Highlight>
@@ -72,7 +78,7 @@
   .parameter {
     column-gap: 4px;
     display: grid;
-    grid-template-columns: auto 16px;
+    grid-template-columns: auto min-content;
   }
 
   .parameter :global(.st-input) {
@@ -97,12 +103,13 @@
     border-top: 1px solid var(--st-gray-20);
   }
 
-  .parameter-info {
-    padding-top: 0.2rem;
+  .right-actions {
+    display: flex;
+    gap: 2px;
     transition: visibility 0.1s;
     visibility: hidden;
   }
-  .parameters-container :global(> div.highlight:hover .parameter-info) {
+  .parameters-container :global(> div.highlight:hover .right-actions) {
     visibility: visible;
   }
 </style>
