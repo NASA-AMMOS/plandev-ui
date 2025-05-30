@@ -1,15 +1,14 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import ParameterName from './ParameterName.svelte';
-  import type { FormParameter } from '../../types/parameter.js';
-  import type { ParameterType } from '../../types/parameter.js';
-  import type { ActionArray } from '../../utilities/useActions.js';
   import { createEventDispatcher } from 'svelte';
+  import type { DropdownOptions, SelectedDropdownOptionValue } from '../../types/dropdown';
+  import type { FormParameter, ParameterType } from '../../types/parameter.js';
+  import { isParameterWithOptions } from '../../utilities/parameters';
+  import type { ActionArray } from '../../utilities/useActions.js';
   import SearchableDropdown from '../ui/SearchableDropdown.svelte';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
-  import type { DropdownOptions, SelectedDropdownOptionValue } from '../../types/dropdown';
-  import { isActionValueSchemaWithOptions } from '../../utilities/actions';
+  import ParameterName from './ParameterName.svelte';
 
   export const hideRightAdornments: boolean = false;
 
@@ -19,14 +18,14 @@
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
   export let levelPadding: number = 20;
-  export let parameterType: ParameterType = 'activity';
-  export let placeholder: string = '';
-  export let searchPlaceholder: string = '';
+  export let parameterType: ParameterType = 'action';
   export let use: ActionArray = [];
 
   let columns: string = '';
   let dropdownOptions: DropdownOptions = [];
   let selectedDropdownOptions: SelectedDropdownOptionValue[] = [];
+  let placeholder: string;
+  let searchPlaceholder: string;
 
   const dispatch = createEventDispatcher<{
     change: FormParameter;
@@ -35,38 +34,12 @@
 
   $: columns = `calc(${labelColumnWidth}px - ${level * levelPadding}px) auto`;
 
-  $: if (formParameter) {
-    dropdownOptions = updateDropdownOptions();
-    selectedDropdownOptions = updateDropdownSelection();
-  }
-
-  function updateDropdownOptions(): DropdownOptions {
-    if (isActionValueSchemaWithOptions(formParameter.schema)) {
-      return formParameter.schema.options.map(option => ({ display: option.display, value: option.value }));
-    }
-    return [];
-  }
-
-  function updateDropdownSelection(): SelectedDropdownOptionValue[] {
-    formParameter.errors = null;
-    let selected: SelectedDropdownOptionValue[] = [];
-    let notFound: string[] = [];
-    if (formParameter.value !== null) {
-      const sequences: string[] = allowMultiple ? formParameter.value : [formParameter.value];
-      sequences.forEach(sequenceName => {
-        const option = dropdownOptions.find(o => o.display === sequenceName);
-        if (option === undefined) {
-          notFound.push(sequenceName);
-        } else {
-          selected.push(option.value);
-        }
-      });
-    }
-
-    if (dropdownOptions.length > 0 && notFound.length > 0) {
-      formParameter.errors = [`'${notFound.join(`', '`)}' not found`];
-    }
-    return selected;
+  $: if (isParameterWithOptions(formParameter.schema)) {
+    dropdownOptions = formParameter.schema.options.map(option => ({ display: option.display, value: option.value }));
+    placeholder = allowMultiple
+      ? `Select list of ${formParameter.schema.optionLabel}s`
+      : `Select ${formParameter.schema.optionLabel}`;
+    searchPlaceholder = `Filter ${formParameter.schema.optionLabel}s`;
   }
 
   function onChange(event: CustomEvent<SelectedDropdownOptionValue[]>) {
@@ -78,7 +51,7 @@
   }
 </script>
 
-<div class="parameter-base-sequence" style="grid-template-columns: {columns}">
+<div class="parameter-base-dropdown" style="grid-template-columns: {columns}">
   <ParameterName {formParameter} />
   <SearchableDropdown
     bind:selectedOptionValues={selectedDropdownOptions}
@@ -88,7 +61,7 @@
     placeholder={disabled ? '' : placeholder}
     {searchPlaceholder}
     on:change={onChange}
-  ></SearchableDropdown>
+  />
 </div>
 <div class="parameter-right">
   <ParameterBaseRightAdornments
@@ -102,17 +75,17 @@
 </div>
 
 <style>
-  .parameter-base-sequence {
+  .parameter-base-dropdown {
     align-items: center;
     display: grid;
   }
 
-  .parameter-base-sequence :global(.st-menu) {
+  .parameter-base-dropdown :global(.st-menu) {
     min-width: 250px;
     overflow: hidden;
   }
 
-  .parameter-base-sequence :global(.selected-display) {
+  .parameter-base-dropdown :global(.selected-display) {
     background-color: var(--st-input-background-color);
     border: var(--st-input-border);
     color: var(--st-input-color);

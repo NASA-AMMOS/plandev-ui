@@ -1,41 +1,4 @@
-import type { ValueSchema } from './schema';
-import type {
-  ActionValueSchemaBoolean,
-  ActionValueSchemaDuration,
-  ActionValueSchemaInt,
-  ActionValueSchemaPath,
-  ActionValueSchemaReal,
-  ActionValueSchemaSequence,
-  ActionValueSchemaSequenceList,
-  ActionValueSchemaSeries,
-  ActionValueSchemaString,
-  ActionValueSchemaStruct,
-  ActionValueSchemaVariant,
-} from '@nasa-jpl/aerie-actions/src/types/schema';
-
-export type ActionValueSchemaWithOptions = {
-  options: ActionValueSchemaOption[];
-};
-export type ActionValueSchemaOption = {
-  display: string;
-  value: string;
-};
-
-export type ActionValueSchemaSequenceWithOptions = ActionValueSchemaSequence & ActionValueSchemaWithOptions;
-export type ActionValueSchemaSequenceListWithOptions = ActionValueSchemaSequenceList & ActionValueSchemaWithOptions;
-
-export type UIActionValueSchema =
-  | ActionValueSchemaBoolean
-  | ActionValueSchemaDuration
-  | ActionValueSchemaInt
-  | ActionValueSchemaPath
-  | ActionValueSchemaReal
-  | ActionValueSchemaSequenceWithOptions
-  | ActionValueSchemaSequenceListWithOptions
-  | ActionValueSchemaSeries
-  | ActionValueSchemaString
-  | ActionValueSchemaStruct
-  | ActionValueSchemaVariant;
+import type { UIValueSchemaWithOptionsMultiple, UIValueSchemaWithOptionsSingle, ValueSchema } from './schema';
 
 export type DefaultEffectiveArguments = {
   arguments: ArgumentsMap;
@@ -50,7 +13,7 @@ export type EffectiveArguments = {
   success: boolean;
 };
 
-export type FormParameter<T = ValueSchema | UIActionValueSchema> = {
+export type FormParameter<T = ValueSchema | UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple> = {
   errors: string[] | null;
   file?: File;
   index?: number;
@@ -68,7 +31,6 @@ export type Argument = any;
 export type ArgumentsMap = Record<ParameterName, Argument>;
 
 export type Parameter = { order: number; schema: ValueSchema; unit?: string };
-export type ActionParameter = { order: number; schema: UIActionValueSchema; unit?: string };
 export type ComputedParameter = { order: number; schema: ValueSchema; units?: Record<ParameterName, string> };
 
 export type ParameterError = { message: string; schema: ValueSchema };
@@ -79,8 +41,7 @@ export type ParameterName = string;
 
 export type RequiredParametersList = ParameterName[];
 
-export type BaseParameter = Parameter | ActionParameter;
-export type ParametersMap<T extends BaseParameter = BaseParameter> = Record<ParameterName, T>;
+export type ParametersMap = Record<ParameterName, Parameter>;
 export type ComputedParametersMap = Record<ParameterName, ComputedParameter>;
 
 export type ParameterValidationError = {

@@ -1,22 +1,17 @@
-import type { ActionDefinition, ActionRunSlim } from '../types/actions';
 import type {
-  ActionValueSchemaOption,
-  ActionValueSchemaSequenceListWithOptions,
-  ActionValueSchemaSequenceWithOptions,
-  ParametersMap,
-  UIActionValueSchema,
-} from '../types/parameter';
+  ActionValueSchema,
+  ActionValueSchemaSequence,
+  ActionValueSchemaSequenceList,
+} from '@nasa-jpl/aerie-actions';
+import type { ActionDefinition, ActionParametersMap, ActionRunSlim } from '../types/actions';
+import type { ValueSchema, ValueSchemaOption } from '../types/schema';
 import type { UserSequence } from '../types/sequencing';
-import type { ValueSchema } from '../types/schema';
 
 // TODO explain yourself
-export function isActionValueSchemaWithOptions(
-  schema: UIActionValueSchema | ValueSchema,
-): schema is ActionValueSchemaSequenceWithOptions | ActionValueSchemaSequenceListWithOptions {
-  return (
-    (schema as ActionValueSchemaSequenceWithOptions | ActionValueSchemaSequenceListWithOptions).type === 'sequence' ||
-    (schema as ActionValueSchemaSequenceWithOptions | ActionValueSchemaSequenceListWithOptions).type === 'sequenceList'
-  );
+export function isActionValueSchemaSequence(
+  schema: ValueSchema | ActionValueSchema,
+): schema is ActionValueSchemaSequence | ActionValueSchemaSequenceList {
+  return (schema as ActionValueSchema).type === 'sequence' || (schema as ActionValueSchema).type === 'sequenceList';
 }
 
 /**
@@ -24,14 +19,9 @@ export function isActionValueSchemaWithOptions(
  */
 export function valueSchemaRecordToParametersMap(
   valueSchemaRecord: ActionDefinition['parameter_schema'],
-  options?: ActionValueSchemaOption[],
-): ParametersMap {
-  return Object.entries(valueSchemaRecord).reduce((acc: ParametersMap, [key, valueSchema], i) => {
-    const actionValueSchema: UIActionValueSchema = valueSchema as UIActionValueSchema;
-    if (isActionValueSchemaWithOptions(actionValueSchema) && options !== undefined) {
-      actionValueSchema.options = options;
-    }
-    acc[key] = { order: i, schema: actionValueSchema };
+): ActionParametersMap {
+  return Object.entries(valueSchemaRecord).reduce((acc: ActionParametersMap, [key, valueSchema], i) => {
+    acc[key] = { order: i, schema: valueSchema };
     return acc;
   }, {});
 }
@@ -39,7 +29,7 @@ export function valueSchemaRecordToParametersMap(
 export function getUserSequencesInWorkspace(
   sequences: UserSequence[],
   workspaceId: number | null,
-): ActionValueSchemaOption[] {
+): ValueSchemaOption[] {
   if (workspaceId === null) {
     return [];
   }

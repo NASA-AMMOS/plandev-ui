@@ -4,6 +4,7 @@
   import { page } from '$app/stores';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
+  import { userSequences } from '../../../stores/sequencing';
   import { gqlSubscribable } from '../../../stores/subscribable';
   import type { ActionRun } from '../../../types/actions';
   import type { User } from '../../../types/app';
@@ -17,7 +18,6 @@
   import { getFormParameters } from '../../../utilities/parameters';
   import Parameters from '../../parameters/Parameters.svelte';
   import ActionRunCard from './ActionRunCard.svelte';
-  import { userSequences } from '../../../stores/sequencing';
 
   export let initialActionRun: ActionRun | null = null;
   export let user: User | null;
@@ -73,12 +73,10 @@
         <div class="action-run-parameters">
           <Parameters
             formParameters={getFormParameters(
-              valueSchemaRecordToParametersMap(
-                $actionRun.action_definition.settings_schema,
-                getUserSequencesInWorkspace($userSequences, workspaceId),
-              ),
+              valueSchemaRecordToParametersMap($actionRun.action_definition.settings_schema),
               $actionRun.settings,
               [],
+              getUserSequencesInWorkspace($userSequences, workspaceId),
             )}
             parameterType="action"
             hideRightAdornments
@@ -88,12 +86,10 @@
           <div class="st-typography-medium action-run-label">Action Parameters</div>
           <Parameters
             formParameters={getFormParameters(
-              valueSchemaRecordToParametersMap(
-                $actionRun.action_definition.parameter_schema,
-                getUserSequencesInWorkspace($userSequences, workspaceId),
-              ),
+              valueSchemaRecordToParametersMap($actionRun.action_definition.parameter_schema),
               $actionRun.parameters,
               [],
+              getUserSequencesInWorkspace($userSequences, workspaceId),
             )}
             parameterType="action"
             hideRightAdornments
