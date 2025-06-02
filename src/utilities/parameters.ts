@@ -95,13 +95,6 @@ export function getFormParameters(
     let errors: string[] | null = null;
     let isMultiSelect: boolean = false;
     if (isActionValueSchemaSequence(schema)) {
-      const optionValues: string[] = isMultiSelect ? value : [value];
-      // Determine if there are selected options in the value that are no longer present in the list of options
-      const missingOptions = optionValues.filter(optionValue => {
-        const option = dropdownOptions.find(dropdownOption => dropdownOption.display === optionValue);
-        return option === undefined;
-      });
-
       (formParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).options =
         dropdownOptions;
       (formParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).optionLabel =
@@ -112,6 +105,13 @@ export function getFormParameters(
         formParameterSchema.type = 'options-multiple';
         isMultiSelect = true;
       }
+
+      const optionValues: string[] = isMultiSelect ? value : [value];
+      // Determine if there are selected options in the value that are no longer present in the list of options
+      const missingOptions = optionValues.filter(optionValue => {
+        const option = dropdownOptions.find(dropdownOption => dropdownOption.display === optionValue);
+        return option === undefined;
+      });
 
       if (dropdownOptions.length > 0 && missingOptions.length > 0) {
         errors = [`'${missingOptions.join(', ')}' not found`];
