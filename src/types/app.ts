@@ -18,6 +18,7 @@ export type User = BaseUser & {
 };
 
 export type ParsedUserToken = {
+  auid?: string;
   exp: number;
   'https://hasura.io/jwt/claims': {
     'x-hasura-allowed-roles': UserRole[];

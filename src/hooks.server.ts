@@ -84,8 +84,8 @@ const handleSSOAuth: Handle = async ({ event, resolve }) => {
 
   if (roles) {
     // create and set cookies
-    const userStr = JSON.stringify(user);
-    const userCookie = Buffer.from(userStr).toString('base64');
+    // const userStr = JSON.stringify(user);
+    // const userCookie = Buffer.from(userStr).toString('base64');
     const cookieOpts: CookieSerializeOptions & { path: string } = {
       httpOnly: false,
       path: `${base}/`,
@@ -93,9 +93,9 @@ const handleSSOAuth: Handle = async ({ event, resolve }) => {
     };
 
     // if logout just cleared user cookie, don't re-set it
-    if (!event.url.pathname.includes('/auth/logout')) {
-      event.cookies.set('user', userCookie, cookieOpts);
-    }
+    // if (!event.url.pathname.includes('/auth/logout')) {
+    //   event.cookies.set('user', userCookie, cookieOpts);
+    // }
 
     // don't overwrite existing activeRole, unless it doesn't exist anymore
     if (!activeRoleCookie || activeRoleCookie === 'deleted' || !roles.allowedRoles.includes(activeRoleCookie)) {
@@ -133,6 +133,10 @@ async function computeRolesFromJWT(baseUser: BaseUser, activeRole: string | null
 
   const allowedRoles = decodedToken['https://hasura.io/jwt/claims']['x-hasura-allowed-roles'];
   const defaultRole = decodedToken['https://hasura.io/jwt/claims']['x-hasura-default-role'];
+
+  if (!baseUser.id && decodedToken.auid) { // if baseUser.id is null, then we are using Keycloak, which means auid will be populated.
+    baseUser.id = decodedToken.auid;
+  }
 
   const user: User = {
     ...baseUser,

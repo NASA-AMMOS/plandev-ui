@@ -46,7 +46,7 @@ export function gqlSubscribable<T>(
             console.log(error);
 
             if ('reason' in error && error.reason.includes(EXPIRED_JWT)) {
-              await logout(EXPIRED_JWT);
+              await logout(EXPIRED_JWT); // TODO: expiration flow is an open problem, agnostic of whether or not refresh tokens are used. it currently doesn't work and requires a ticket to be handled. In the case where a user never reloads (i.e. hooks.server.ts never runs), token expiration and regeneration/refreshing/whatever is NOT handled presently. 
             } else {
               subscribers.forEach(({ next }) => {
                 next(initialValue as T);
@@ -89,6 +89,14 @@ export function gqlSubscribable<T>(
   function getTokenFromUserCookie(): string {
     if (browser && document?.cookie) {
       const cookies = document.cookie.split(/\s*;\s*/);
+
+      // start with a case that looks first for the access_token
+      const access_token = cookies.find(entry => entry.startsWith('access_token='));
+      if (access_token) {
+        const splitCookie = access_token.split("access_token=")[1];
+        return splitCookie;
+      }
+
       const userCookie = cookies.find(entry => entry.startsWith('user='));
       if (userCookie) {
         try {
