@@ -2,7 +2,7 @@ import { syntaxTree } from '@codemirror/language';
 import { EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
 import { SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
-import { getFromAndTo } from '../../tree-utils';
+import { getFromAndTo } from '../../../utilities/sequence-editor/tree-utils';
 
 export function customFoldInside(node: SyntaxNode, state: EditorState): { from: number; to: number } | null {
   switch (node.name) {

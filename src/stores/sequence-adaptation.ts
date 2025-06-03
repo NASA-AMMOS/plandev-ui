@@ -1,6 +1,8 @@
-import { derived, get, writable, type Writable } from 'svelte/store';
-import type { GlobalType } from '../types/global-type';
-import type { ISequenceAdaptation, SequenceAdaptationMetadata } from '../types/sequencing';
+import { derived, writable, type Writable } from 'svelte/store';
+import type { ISequenceAdaptation } from '../language-package/interfaces/legacy';
+import type { NewAdaptationInterface } from '../language-package/interfaces/new-adaptation-interface';
+import { defaultAdaptation as defaultNewAdaptation } from '../language-package/languages/seq-n/adaptation';
+import type { SequenceAdaptationMetadata } from '../types/sequencing';
 import gql from '../utilities/gql';
 import { getDefaultSequenceAdaptation } from '../utilities/sequence-editor/sequence-adaptation';
 import { gqlSubscribable } from './subscribable';
@@ -10,6 +12,7 @@ const defaultSequenceAdaptation = getDefaultSequenceAdaptation();
 /* Writeable */
 
 export const sequenceAdaptation: Writable<ISequenceAdaptation> = writable(defaultSequenceAdaptation);
+export const newSequenceAdaptation: Writable<NewAdaptationInterface> = writable(defaultNewAdaptation);
 
 /* Subscriptions. */
 
@@ -26,7 +29,7 @@ export const inputFormat = derived([sequenceAdaptation], ([$sequenceAdaptation])
 
 export const outputFormat = derived(
   [sequenceAdaptation],
-  ([$sequenceAdaptation]) => $sequenceAdaptation?.outputFormat ?? [],
+  ([$sequenceAdaptation]) => $sequenceAdaptation?.outputFormat != undefined ? [$sequenceAdaptation?.outputFormat] : [],
 );
 
 export const adaptationGlobals = derived(
@@ -36,11 +39,8 @@ export const adaptationGlobals = derived(
 
 /* Helpers */
 
-export function getGlobals(): GlobalType[] {
-  return get(sequenceAdaptation).globals ?? [];
-}
-
 export function setSequenceAdaptation(newSequenceAdaptation: Partial<ISequenceAdaptation> | undefined): void {
+  // TODO boo
   sequenceAdaptation.set({
     argDelegator: newSequenceAdaptation?.argDelegator ?? defaultSequenceAdaptation.argDelegator,
     autoComplete: newSequenceAdaptation?.autoComplete ?? defaultSequenceAdaptation.autoComplete,

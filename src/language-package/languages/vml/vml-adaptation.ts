@@ -15,11 +15,11 @@ import type {
   HwCommand,
 } from '@nasa-jpl/aerie-ampcs';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
-import { SequenceTypes } from '../../../../enums/sequencing';
-import type { GlobalType } from '../../../../types/global-type';
-import { type LibrarySequence, type LibrarySequenceMap } from '../../../../types/sequencing';
-import { isFswCommand, unquoteUnescape } from '../../sequence-utils';
-import { getNearestAncestorNodeOfType } from '../../tree-utils';
+import { SequenceTypes } from '../../../enums/sequencing';
+import { isFswCommand, unquoteUnescape } from '../../../utilities/sequence-editor/sequence-utils';
+import { getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
+import { type LibrarySequence, type LibrarySequenceMap } from '../../interfaces/legacy';
+import type { GlobalType } from '../seq-n/global-types';
 import { VmlLanguage } from './vml';
 import { librarySequenceToFswCommand, vmlBlockLibraryToCommandDictionary } from './vml-block-library';
 import {
