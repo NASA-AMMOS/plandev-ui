@@ -9,13 +9,13 @@ import type {
   FswCommandArgumentInteger,
 } from '@nasa-jpl/aerie-ampcs';
 import type { EditorView } from 'codemirror';
-import ArgumentTooltip from '../../../../components/sequencing/ArgumentTooltip.svelte';
-import CommandTooltip from '../../../../components/sequencing/CommandTooltip.svelte';
-import StringTooltip from '../../../../components/sequencing/StringTooltip.svelte';
-import type { LibrarySequence } from '../../../../types/sequencing';
-import { getTokenPositionInLine } from '../../sequence-tooltip';
-import { decodeInt32Array, unquoteUnescape } from '../../sequence-utils';
-import { checkContainment, getNearestAncestorNodeOfType } from '../../tree-utils';
+import ArgumentTooltip from '../../../components/sequencing/ArgumentTooltip.svelte';
+import CommandTooltip from '../../../components/sequencing/CommandTooltip.svelte';
+import StringTooltip from '../../../components/sequencing/StringTooltip.svelte';
+import { decodeInt32Array, unquoteUnescape } from '../../../utilities/sequence-editor/sequence-utils';
+import { checkContainment, getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
+import type { LibrarySequence } from '../../interfaces/legacy';
+import { getTokenPositionInLine } from '../seq-n/sequence-tooltip';
 import { librarySequenceToFswCommand } from './vml-block-library';
 import {
   RULE_BYTE_ARRAY,

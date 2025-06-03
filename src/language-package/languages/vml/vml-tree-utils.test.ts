@@ -1,6 +1,6 @@
 import type { SyntaxNode } from '@lezer/common';
 import { describe, expect, test } from 'vitest';
-import { filterNodes, nodeContents } from '../../tree-utils';
+import { filterNodes, nodeContents } from '../../../utilities/sequence-editor/tree-utils';
 import { VmlLanguage } from './vml';
 import { RULE_CALL_PARAMETERS, RULE_FUNCTION_NAME, RULE_TIME_TAGGED_STATEMENT } from './vml-constants';
 import { getArgumentPosition, VmlCommandInfoMapper } from './vml-tree-utils';

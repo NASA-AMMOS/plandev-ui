@@ -4,9 +4,9 @@ import { Decoration, ViewPlugin, type DecorationSet, type ViewUpdate } from '@co
 import type { SyntaxNode } from '@lezer/common';
 import { styleTags, tags as t } from '@lezer/highlight';
 import type { ChannelDictionary, CommandDictionary } from '@nasa-jpl/aerie-ampcs';
-import type { ISequenceAdaptation } from '../../../../types/sequencing';
-import { blockMark } from '../../../codemirror/themes/block';
-import { getNearestAncestorNodeOfType } from '../../tree-utils';
+import type { ISequenceAdaptation } from '../../../types/sequencing';
+import { blockMark } from '../../../utilities/codemirror/themes/block';
+import { getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
 import { vmlAutoComplete } from './vml-adaptation';
 import {
   RULE_TIME_TAGGED_STATEMENT,

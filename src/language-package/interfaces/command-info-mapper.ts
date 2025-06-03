@@ -1,7 +1,7 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
 import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 
-export interface CommandInfoMapper {
+export interface CommandInfoMapper { // TODO is there a way we can generalize what's in the command panel?
   /** format string of multiple arguments */
   formatArgumentArray(values: string[], commandNode: SyntaxNode | null): string;
 

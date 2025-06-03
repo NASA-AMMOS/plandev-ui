@@ -1,8 +1,12 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
 import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
-import { filterEmpty } from '../../../generic';
-import type { CommandInfoMapper } from '../../command-info-mapper';
-import { filterNodesToArray, getChildrenNode, getNearestAncestorNodeOfType } from '../../tree-utils';
+import { filterEmpty } from '../../../utilities/generic';
+import {
+  filterNodesToArray,
+  getChildrenNode,
+  getNearestAncestorNodeOfType,
+} from '../../../utilities/sequence-editor/tree-utils';
+import type { CommandInfoMapper } from '../../interfaces/command-info-mapper';
 import { getDefaultArgumentValue } from './vml-adaptation';
 import {
   GROUP_STATEMENT_SUB,
