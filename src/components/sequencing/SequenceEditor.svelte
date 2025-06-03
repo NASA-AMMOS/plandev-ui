@@ -1,13 +1,12 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { json } from '@codemirror/lang-json';
   import { indentService, syntaxTree } from '@codemirror/language';
   import { lintGutter, openLintPanel } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate } from '@codemirror/view';
-  import type { SyntaxNode, Tree } from '@lezer/common';
-  import type { ChannelDictionary, CommandDictionary, FswCommand, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+  import type { SyntaxNode } from '@lezer/common';
+  import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
   import ExpandIcon from 'bootstrap-icons/icons/arrow-bar-up.svg?component';
@@ -16,13 +15,10 @@
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onMount } from 'svelte';
-  import { defaultSequenceAdaptation } from '../../constants/sequence-adaptation';
   import type { GlobalType } from '../../types/global-type';
   import {
-    type ArgTextDef,
     type IInputFormat,
     type IOutputFormat,
-    type ISequenceAdaptation,
     type LibrarySequence,
     type LibrarySequenceMap,
     type TimeTagInfo,
@@ -31,33 +27,7 @@
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import type { CommandInfoMapper } from '../../utilities/sequence-editor/command-info-mapper';
-  import { inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
-  import { setupLanguageSupport } from '../../utilities/sequence-editor/languages/seq-n/seq-n';
-  import {
-    seqNHighlightBlock,
-    seqqNBlockHighlighter,
-  } from '../../utilities/sequence-editor/languages/seq-n/seq-n-highlighter';
-  import {
-    SeqNCommandInfoMapper,
-    userSequenceToLibrarySequence,
-  } from '../../utilities/sequence-editor/languages/seq-n/seq-n-tree-utils';
-  import {
-    setupVmlLanguageSupport,
-    vmlAdaptation,
-    vmlBlockHighlighter,
-    vmlHighlightBlock,
-  } from '../../utilities/sequence-editor/languages/vml/vml';
-  import {
-    parseFunctionSignatures,
-    vmlAutoComplete,
-  } from '../../utilities/sequence-editor/languages/vml/vml-adaptation';
-  import { vmlFormat } from '../../utilities/sequence-editor/languages/vml/vml-formatter';
-  import { vmlLinter } from '../../utilities/sequence-editor/languages/vml/vml-linter';
-  import { vmlTooltip } from '../../utilities/sequence-editor/languages/vml/vml-tooltip';
-  import { VmlCommandInfoMapper } from '../../utilities/sequence-editor/languages/vml/vml-tree-utils';
   import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
-  import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
   import {
     getArgumentInfo,
     getCommandDef,
@@ -84,10 +54,8 @@
   export let outputFormats: IOutputFormat[] = [];
   export let parameterDictionaries: ParameterDictionary[] = [];
   export let previewOnly: boolean = false;
-  export let readOnly: boolean = false;
-  export let sequenceAdaptation: ISequenceAdaptation = defaultSequenceAdaptation;
-  export let sequenceDefinition: string = '';
   export let sequenceName: string = '';
+  export let sequenceDefinition: string = ''; // TODO what on earth does this do
   export let sequenceOutput: string = '';
   export let showCommandFormBuilder: boolean = false;
   export let title: string = 'Sequence - Definition Editor';
@@ -104,22 +72,13 @@
   const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
   const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
-  let adaptation: ISequenceAdaptation = sequenceAdaptation;
-  let argInfoArray: ArgTextDef[] = [];
-  let commandDef: FswCommand | null = null;
-  let commandFormBuilderGrid: string;
-  let commandInfoMapper: CommandInfoMapper = new SeqNCommandInfoMapper();
-  let commandName: string | null = null;
-  let commandNameNode: SyntaxNode | null = null;
-  let commandNode: SyntaxNode | null = null;
+  let compartmentSeqAutocomplete: Compartment; // TODO replace with adaptation compartment
+  let compartmentSeqHighlighter: Compartment; // TODO replace with adaptation compartment
+  let compartmentAdaptation: Compartment;
+  let compartmentOutputAdaptation: Compartment;
   let compartmentReadonly: Compartment;
-  let compartmentSeqAutocomplete: Compartment;
-  let compartmentSeqHighlighter: Compartment;
-  let compartmentSeqJsonLinter: Compartment;
-  let compartmentSeqLanguage: Compartment;
-  let compartmentSeqLinter: Compartment;
-  let compartmentSeqTooltip: Compartment;
-  let currentTree: Tree;
+  let channelDictionary: ChannelDictionary | null;
+  let commandDictionary: CommandDictionary | null;
   let disableCopyAndExport: boolean = true;
   let editorHeights: string = '1.88fr 3px 80px';
   let editorOutputDiv: HTMLDivElement;
@@ -137,6 +96,8 @@
   let variablesInScope: string[] = [];
   let updatedSequenceDefinition: string = sequenceDefinition;
   let isSequenceDefinitionUpdated: boolean = false;
+
+  $: isInVmlMode = isVmlSequence(sequenceName); // TODO boo
 
   $: isInVmlMode = isVmlSequence(sequenceName);
 
@@ -187,18 +148,8 @@
   $: {
     if (commandDictionary) {
       if (sequenceName && isInVmlMode) {
-        editorSequenceView.dispatch({
-          effects: compartmentSeqLanguage.reconfigure(
-            setupVmlLanguageSupport(vmlAutoComplete(commandDictionary, adaptation.globals ?? [], librarySequenceMap)),
-          ),
-        });
-        editorSequenceView.dispatch({
-          effects: compartmentSeqLinter.reconfigure(
-            vmlLinter(commandDictionary, librarySequenceMap, adaptation.globals ?? []),
-          ),
-        });
-        editorSequenceView.dispatch({
-          effects: compartmentSeqTooltip.reconfigure(vmlTooltip(commandDictionary, librarySequenceMap)),
+        getParsedCommandDictionary(unparsedCommandDictionary, user).then(parsedCommandDictionary => {
+          commandDictionary = parsedCommandDictionary;
         });
       } else {
         // Reconfigure sequence editor.
@@ -350,7 +301,7 @@
   }
 
   function downloadInputFormat(): void {
-    downloadBlob(new Blob([editorSequenceView.state.doc.toString()], { type: 'text/plain' }), `${sequenceName}.txt`);
+    downloadBlob(new Blob([editorSequenceView.state.doc.toString()], { type: 'text/plain' }), `${sequenceName}.txt`); // TODO configure file extension to be customizable
   }
 
   async function copyOutputFormatToClipboard(): Promise<void> {

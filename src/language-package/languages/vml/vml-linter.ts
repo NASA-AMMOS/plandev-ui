@@ -5,10 +5,10 @@ import type { SyntaxNode, Tree } from '@lezer/common';
 import type { CommandDictionary, FswCommand, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import type { EditorView } from 'codemirror';
 import { closest } from 'fastest-levenshtein';
-import type { GlobalType } from '../../../../types/global-type';
-import type { LibrarySequenceMap } from '../../../../types/sequencing';
-import { quoteEscape, unquoteUnescape } from '../../sequence-utils';
-import { filterNodes, getNearestAncestorNodeOfType } from '../../tree-utils';
+import { quoteEscape, unquoteUnescape } from '../../../utilities/sequence-editor/sequence-utils';
+import { filterNodes, getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
+import type { LibrarySequenceMap } from '../../interfaces/legacy';
+import type { GlobalType } from '../seq-n/global-types';
 import { VmlLanguage } from './vml';
 import {
   RULE_CALL_PARAMETER,

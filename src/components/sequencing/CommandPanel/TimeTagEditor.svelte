@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { SeqLanguage } from '../../../utilities/sequence-editor/languages/seq-n/seq-n';
+  import { SeqLanguage } from '../../../language-package/languages/seq-n/seq-n';
 
   export let initVal: string;
   export let setInEditor: (val: string) => void;
