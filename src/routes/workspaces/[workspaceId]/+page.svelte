@@ -18,10 +18,12 @@
   import WorkspaceSidebar from '../../../components/workspace/WorkspaceSidebar.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { WorkspaceContentType } from '../../../enums/workspace';
+  import { userSequenceToLibrarySequence } from '../../../language-package/languages/seq-n/seq-n-tree-utils';
+  import { parseFunctionSignatures } from '../../../language-package/languages/vml/vml-adaptation';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
   import {
-    adaptationGlobals,
     inputFormat,
+    newSequenceAdaptation,
     outputFormat,
     sequenceAdaptation,
     setSequenceAdaptation,
@@ -60,8 +62,6 @@
   import { showConfirmModal } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
   import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
-  import { userSequenceToLibrarySequence } from '../../../utilities/sequence-editor/languages/seq-n/seq-n-tree-utils';
-  import { parseFunctionSignatures } from '../../../utilities/sequence-editor/languages/vml/vml-adaptation';
   import { isVmlSequence } from '../../../utilities/sequence-editor/sequence-utils';
   import { showFailureToast } from '../../../utilities/toast';
   import { mapWorkspaceTreePaths, separateFilenameFromPath } from '../../../utilities/workspaces';
@@ -518,13 +518,13 @@
           {commandDictionary}
           {parameterDictionaries}
           {actionsWithSequenceParameters}
-          adaptationGlobals={$adaptationGlobals}
           includeActions={true}
           inputFormat={$inputFormat}
           librarySequences={workspaceLibrarySequences}
           outputFormats={$outputFormat}
           readOnly={!hasEditFilePermission}
           sequenceAdaptation={$sequenceAdaptation}
+          newSequenceAdaptation={$newSequenceAdaptation}
           sequenceDefinition={initialSelectedFileContent}
           sequenceName={selectedFileName}
           sequenceOutput={selectedSequenceOutput}

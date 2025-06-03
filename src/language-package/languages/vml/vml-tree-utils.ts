@@ -1,9 +1,18 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
-import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
-import { filterEmpty } from '../../../generic';
-import type { CommandInfoMapper } from '../../command-info-mapper';
-import { filterNodesToArray, getChildrenNode, getNearestAncestorNodeOfType } from '../../tree-utils';
+import type { ChannelDictionary, CommandDictionary, EnumMap, FswCommand, FswCommandArgument, FswCommandArgumentRepeat, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+import type { EditorView } from 'codemirror';
+import type { ArgTextDef, TimeTagInfo } from '../../../types/sequencing';
+import { filterEmpty } from '../../../utilities/generic';
+import { isFswCommandArgumentRepeat } from '../../../utilities/sequence-editor/sequence-utils';
+import {
+  filterNodesToArray,
+  getChildrenNode,
+  getNearestAncestorNodeOfType,
+} from '../../../utilities/sequence-editor/tree-utils';
+import type { CommandInfoMapper } from '../../interfaces/command-info-mapper';
+import type { LibrarySequenceMap } from '../../interfaces/new-adaptation-interface';
 import { getDefaultArgumentValue } from './vml-adaptation';
+import { librarySequenceToFswCommand } from './vml-block-library';
 import {
   GROUP_STATEMENT_SUB,
   RULE_BYTE_ARRAY,
@@ -26,6 +35,7 @@ import {
   RULE_VARIABLE_NAME_CONSTANT,
   RULE_VM_MANAGEMENT,
   TOKEN_COMMA,
+  TOKEN_ERROR,
   TOKEN_HEX_CONST,
   TOKEN_INT_CONST,
   TOKEN_STRING_CONST,
@@ -134,6 +144,103 @@ export class VmlCommandInfoMapper implements CommandInfoMapper {
 
   nodeTypeNumberCompatible(node: SyntaxNode | null): boolean {
     return !!node?.getChild(RULE_SIMPLE_EXPR)?.getChild(RULE_CONSTANT)?.getChild(TOKEN_INT_CONST);
+  }
+
+  getTimeTagInfo(seqEditorView: EditorView, node: SyntaxNode | null): TimeTagInfo {
+    // REVIEW: As far as I can tell, this is the implementation used in VML (same as SeqN).
+    //   However, it looks wrong... I don't see a TimeTag in the VML grammar.
+    const childTimeTagNode = node?.getChild('TimeTag');
+
+    return (
+      childTimeTagNode && {
+        node: childTimeTagNode,
+        text: seqEditorView.state.sliceDoc(childTimeTagNode.from, childTimeTagNode.to) ?? '',
+      }
+    );
+  }
+
+  getArgumentInfo(commandDef: FswCommand | null, channelDictionary: ChannelDictionary | null, seqEditorView: EditorView, args: SyntaxNode | null, argumentDefs: FswCommandArgument[] | undefined, parentArgDef: FswCommandArgumentRepeat | undefined, parameterDictionaries: ParameterDictionary[]): ArgTextDef[] {
+    const argArray: ArgTextDef[] = [];
+    const precedingArgValues: string[] = [];
+    const parentRepeatLength = parentArgDef?.repeat?.arguments.length;
+  
+    if (args) {
+      for (const node of this.getArgumentsFromContainer(args)) {
+        if (node.name === TOKEN_ERROR) {
+          continue;
+        }
+  
+        let argDef: FswCommandArgument | undefined = undefined;
+        if (argumentDefs) {
+          let argDefIndex = argArray.length;
+          if (parentRepeatLength !== undefined) {
+            // for repeat args shift index
+            argDefIndex %= parentRepeatLength;
+          }
+          argDef = argumentDefs[argDefIndex];
+        }
+  
+        let children: ArgTextDef[] | undefined = undefined;
+        if (!!argDef && isFswCommandArgumentRepeat(argDef)) {
+          children = this.getArgumentInfo(
+            commandDef,
+            channelDictionary,
+            seqEditorView,
+            node,
+            argDef.repeat?.arguments,
+            argDef,
+            parameterDictionaries,
+          );
+        }
+        const argValue = seqEditorView.state.sliceDoc(node.from, node.to);
+        argArray.push({
+          argDef,
+          children,
+          node,
+          parentArgDef,
+          text: argValue,
+        });
+        precedingArgValues.push(argValue);
+      }
+    }
+    // add entries for defined arguments missing from editor
+    if (argumentDefs) {
+      if (!parentArgDef) {
+        argArray.push(...argumentDefs.slice(argArray.length).map(argDef => ({ argDef })));
+      } else {
+        const repeatArgs = parentArgDef?.repeat?.arguments;
+        if (repeatArgs) {
+          if (argArray.length % repeatArgs.length !== 0) {
+            argArray.push(...argumentDefs.slice(argArray.length % repeatArgs.length).map(argDef => ({ argDef })));
+          }
+        }
+      }
+    }
+  
+    return argArray;
+  }
+
+  getCommandDef(commandDictionary: CommandDictionary | null, librarySequenceMap: LibrarySequenceMap, stemName: string): FswCommand | null {
+    const commandDefFromCommandDictionary = commandDictionary?.fswCommandMap[stemName];
+    if (commandDefFromCommandDictionary) {
+      return commandDefFromCommandDictionary;
+    }
+
+    const librarySeqDef = librarySequenceMap[stemName];
+    if (librarySeqDef) {
+      return librarySequenceToFswCommand(librarySeqDef);
+    }
+    return null;
+  }
+
+  getVariablesInScope(seqEditorView: EditorView, tree: Tree | null, cursorPosition?: number): string[] {
+    // REVIEW: As far as I can tell, VML just doesn't have globals. We should double-check this, though.
+    const globalNames: string[] = [];
+    if (tree && cursorPosition !== undefined) {
+      const docText = seqEditorView.state.doc.toString();
+      return [...globalNames, ...this.getVariables(docText, tree, cursorPosition)];
+    }
+    return globalNames;
   }
 }
 

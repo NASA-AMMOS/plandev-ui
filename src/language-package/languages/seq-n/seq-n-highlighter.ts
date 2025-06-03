@@ -2,8 +2,8 @@ import { syntaxTree } from '@codemirror/language';
 import { Decoration, ViewPlugin, type DecorationSet, type ViewUpdate } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
 import { SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
-import { blockMark } from '../../../codemirror/themes/block';
-import { getNearestAncestorNodeOfType } from '../../tree-utils';
+import { blockMark } from '../../../utilities/codemirror/themes/block';
+import { getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
 import { computeBlocks, isBlockCommand } from './custom-folder';
 
 export const seqNBlockHighlighter = ViewPlugin.fromClass(
