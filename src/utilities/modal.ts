@@ -1221,3 +1221,35 @@ export async function showTimeRangeModal(
     }
   });
 }
+
+/**
+ * Shows a NewSequenceModal.
+ */
+export async function showNewSequenceModal(): Promise<ModalElementValue<{ newSequenceName: string }>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const newSequenceModal = new NewSequenceModal({ props: {}, target });
+        target.resolve = resolve;
+
+        newSequenceModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          newSequenceModal.$destroy();
+        });
+
+        newSequenceModal.$on('confirm', (e: CustomEvent<{ newSequenceName: string }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          newSequenceModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}

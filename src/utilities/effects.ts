@@ -5509,7 +5509,7 @@ const effects = {
           'PUT',
           body,
           user,
-          undefined,
+          true,
           undefined,
           false,
         );
