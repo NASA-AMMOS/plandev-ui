@@ -12,13 +12,14 @@ import type { IOutputFormat, ISequenceAdaptation, LibrarySequence } from '../../
 import { seqJsonLinter } from './seq-json-linter';
 import { sequenceLinter } from './sequence-linter';
 
+// TODO cleanup this todo
 // TODO: serialization
 // replace parameter names with hex ids
 // replace enum parameter values with the numeric value
 
 //
 
-export type ArgDelegator = {
+export type ArgDelegator = { // TODO consider whether this can be replaced with a single callback that takes in the stem and arg position and cmd dict
   [stem: string]: {
     [arg: string]:
       | undefined

@@ -57,7 +57,7 @@ export function getGlobals(): GlobalType[] {
   return get(sequenceAdaptation).globals ?? [];
 }
 
-export function setSequenceAdaptation(newSequenceAdaptation: Partial<ISequenceAdaptation> | undefined): void {
+export function setSequenceAdaptation(newSequenceAdaptation: Partial<ISequenceAdaptation> | undefined): void { // TODO boo
   sequenceAdaptation.set({
     argDelegator: newSequenceAdaptation?.argDelegator ?? defaultAdaptation.argDelegator,
     autoComplete: newSequenceAdaptation?.autoComplete ?? defaultAdaptation.autoComplete,

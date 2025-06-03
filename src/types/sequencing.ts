@@ -51,9 +51,9 @@ export type DictionaryMetadata = {
 };
 
 export interface IOutputFormat {
-  compile?: (output: string) => Promise<void>;
+  compile?: (output: string) => Promise<void>; // TODO do we use `compile`? Why does it belong to `IOutputFormat` instead of the top-level adaptation? Actions job now?
   fileExtension: string;
-  linter?: (
+  linter?: ( // TODO do we _really_ need a linter for the output format?
     diagnostics: Diagnostic[],
     commandDictionary: AmpcsCommandDictionary,
     view: EditorView,
@@ -79,16 +79,21 @@ export interface IInputFormat {
   toInputFormat?(input: string): Promise<string>;
 }
 
-export interface ISequenceAdaptation {
+export interface PhoenixContext { // TODO consider a unified interface for all this global sequencing context we pass around
+  dictionaries: (AmpcsChannelDictionary | AmpcsCommandDictionary)[];
+  librarySequences: LibrarySequence[];
+}
+
+export interface ISequenceAdaptation { // TODO add CommandInfoMapper here
   argDelegator?: ArgDelegator;
-  autoComplete: (
+  autoComplete: ( // TODO investigate whether we can, instead of defining our own interfaces for all the codemirror features, just pass an editor to be configured by the adaptation
     channelDictionary: AmpcsChannelDictionary | null,
     commandDictionary: AmpcsCommandDictionary | null,
     parameterDictionaries: AmpcsParameterDictionary[],
     librarySequences: LibrarySequence[],
   ) => (context: CompletionContext) => CompletionResult | null;
   autoIndent?: () => (context: IndentContext, pos: number) => number | null | undefined;
-  globals?: GlobalType[];
+  globals?: GlobalType[]; // TODO do we need globals to be known outside the adaptation?
   inputFormat: IInputFormat;
   modifyOutput?: (
     output: string,
@@ -100,7 +105,7 @@ export interface ISequenceAdaptation {
     parameterDictionaries: AmpcsParameterDictionary[],
     channelDictionary: AmpcsChannelDictionary | null,
   ) => any;
-  outputFormat: IOutputFormat[];
+  outputFormat?: IOutputFormat; // TODO why did we previously allow multiple output formats?
 }
 
 export type Parcel = {

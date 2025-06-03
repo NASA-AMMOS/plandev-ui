@@ -136,7 +136,7 @@
   let commandInfoMapper: CommandInfoMapper = new SeqNCommandInfoMapper();
   let selectedOutputFormat: IOutputFormat | undefined;
   let toggleSeqJsonPreview: boolean = false;
-  let isInVmlMode: boolean = false;
+  let isInVmlMode: boolean = false; // TODO boo
   let showOutputs: boolean = true;
   let editorHeights: string = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
 
@@ -150,7 +150,7 @@
 
   $: loadSequenceAdaptation(parcel?.sequence_adaptation_id);
 
-  $: isInVmlMode = isVmlSequence(sequenceName);
+  $: isInVmlMode = isVmlSequence(sequenceName); // TODO boo
 
   $: {
     if (editorSequenceView) {
@@ -164,6 +164,7 @@
   $: {
     if (compartmentSeqHighlighter && editorSequenceView) {
       if (isInVmlMode) {
+        // TODO boo
         editorSequenceView.dispatch({
           effects: compartmentSeqHighlighter.reconfigure([
             EditorView.updateListener.of(debouncedVmlHighlightBlock),
@@ -199,6 +200,7 @@
     });
 
     if (isInVmlMode) {
+      // TODO boo
       librarySequences = $userSequences
         .filter(sequence => sequence.workspace_id === workspaceId)
         .flatMap(sequence => parseFunctionSignatures(sequence.definition, sequence.workspace_id));
@@ -300,7 +302,7 @@
     effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly)]),
   });
 
-  $: showOutputs = !isInVmlMode && outputFormats.length > 0;
+  $: showOutputs = !isInVmlMode && outputFormats.length > 0; // TODO boo. Instead, just check whether we have an output format
   $: {
     if (showOutputs) {
       editorHeights = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
@@ -401,9 +403,9 @@
         }
       }
     } else if (isInVmlMode) {
-      setSequenceAdaptation(vmlAdaptation);
+      setSequenceAdaptation(vmlAdaptation); // TODO boo. Are we just loading the VML adaptation by default for .vml files if no adaptation is set?
     } else {
-      resetSequenceAdaptation();
+      resetSequenceAdaptation(); // TODO rather than "reset default", explicitly set a base SeqN adaptation
     }
 
     outputFormats = $outputFormatStore;
@@ -411,6 +413,7 @@
   }
 
   function resetSequenceAdaptation(): void {
+    // TODO don't do that
     setSequenceAdaptation(undefined);
   }
 
