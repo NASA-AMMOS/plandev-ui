@@ -2,14 +2,13 @@ import type { Completion, CompletionContext, CompletionResult } from '@codemirro
 import { syntaxTree } from '@codemirror/language';
 import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
 import { SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
-import { getGlobals } from '../../stores/sequence-adaptation';
-import type { ISequenceAdaptation, LibrarySequence } from '../../types/sequencing';
-import { getDoyTime } from '../time';
-import { fswCommandArgDefault } from './command-dictionary';
-import { getCustomArgDef } from './extension-points';
-import { SeqLanguage } from './languages/seq-n/seq-n';
-import { getDefaultVariableArgs } from './sequence-utils';
-import { getFromAndTo, getNearestAncestorNodeOfType } from './tree-utils';
+import { fswCommandArgDefault } from '../../../utilities/sequence-editor/command-dictionary';
+import { getDefaultVariableArgs } from '../../../utilities/sequence-editor/sequence-utils';
+import { getFromAndTo, getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
+import { getDoyTime } from '../../../utilities/time';
+import type { ISequenceAdaptation, LibrarySequence } from '../../interfaces/legacy';
+import type { GlobalType } from './global-types';
+import { SeqLanguage } from './seq-n';
 
 type CursorInfo = {
   isAfterActivateOrLoad: boolean;
@@ -277,7 +276,8 @@ export function sequenceCompletion(
       //   }
       // }
 
-      const globals = getGlobals();
+      const globals: GlobalType[] = []
+      // TODO: Define the static list of globals
 
       if (globals) {
         for (const global of globals) {
@@ -366,14 +366,7 @@ function generateCommandCompletions(
       args.forEach(arg => {
         argDefaults.push(
           fswCommandArgDefault(
-            getCustomArgDef(
-              stem,
-              arg,
-              argDefaults.slice(),
-              parameterDictionaries,
-              channelDictionary,
-              sequenceAdaptation,
-            ),
+            arg,
             commandDictionary.enumMap,
           ),
         );

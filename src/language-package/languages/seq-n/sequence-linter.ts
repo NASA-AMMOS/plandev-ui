@@ -1,6 +1,6 @@
 import { syntaxTree } from '@codemirror/language';
-import { type Diagnostic } from '@codemirror/lint';
-import { EditorState } from '@codemirror/state';
+import { linter, type Diagnostic } from '@codemirror/lint';
+import { EditorState, type Extension } from '@codemirror/state';
 import type { SyntaxNode, Tree } from '@lezer/common';
 import type {
   ChannelDictionary,
@@ -16,11 +16,11 @@ import { closest, distance } from 'fastest-levenshtein';
 import { SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
-import { TimeTypes } from '../../enums/time';
-import type { GlobalType } from '../../types/global-type';
-import type { ISequenceAdaptation, LibrarySequence } from '../../types/sequencing';
-import { CustomErrorCodes } from '../../workers/customCodes';
-import { pluralize } from '../text';
+import { TimeTypes } from '../../../enums/time';
+import { TOKEN_ERROR } from '../../../utilities/sequence-editor/sequence-constants';
+import { addDefaultArgs, addDefaultVariableArgs, isHexValue, parseNumericArg, quoteEscape } from '../../../utilities/sequence-editor/sequence-utils';
+import { getChildrenNode, getDeepestNode, getFromAndTo } from '../../../utilities/sequence-editor/tree-utils';
+import { pluralize } from '../../../utilities/text';
 import {
   getBalancedDuration,
   getDoyTime,
@@ -29,13 +29,12 @@ import {
   isTimeMax,
   parseDurationString,
   validateTime,
-} from '../time';
-import { getCustomArgDef } from './extension-points';
-import { closeSuggestion, computeBlocks, openSuggestion } from './languages/seq-n/custom-folder';
-import { SeqNCommandInfoMapper } from './languages/seq-n/seq-n-tree-utils';
-import { TOKEN_ERROR } from './sequence-constants';
-import { addDefaultArgs, addDefaultVariableArgs, isHexValue, parseNumericArg, quoteEscape } from './sequence-utils';
-import { getChildrenNode, getDeepestNode, getFromAndTo } from './tree-utils';
+} from '../../../utilities/time';
+import { CustomErrorCodes } from '../../../workers/customCodes';
+import type { LibrarySequence } from '../../interfaces/legacy';
+import { closeSuggestion, computeBlocks, openSuggestion } from './custom-folder';
+import type { GlobalType } from './global-types';
+import { SeqNCommandInfoMapper } from './seq-n-tree-utils';
 
 const KNOWN_DIRECTIVES = [
   'LOAD_AND_GO',
@@ -66,13 +65,35 @@ type VariableMap = {
   [name: string]: VariableDeclaration;
 };
 
+export function seqnLinter(
+  globalVariables: GlobalType[],
+  channelDictionary: ChannelDictionary | null = null,
+  commandDictionary: CommandDictionary | null = null,
+  parameterDictionaries: ParameterDictionary[] = [],
+  librarySequences: LibrarySequence[] = [],
+): Extension {
+  return linter(view => {
+    let diagnostics: Diagnostic[];
+
+    diagnostics = sequenceLinter(
+      view,
+      channelDictionary,
+      commandDictionary,
+      parameterDictionaries,
+      librarySequences,
+      globalVariables,
+    );
+
+    return diagnostics;
+  });
+}
+
 /**
  * Linter function that returns a Code Mirror extension function.
  * Can be optionally called with a command dictionary so it's available during linting.
  */
 export function sequenceLinter(
   view: EditorView,
-  sequenceAdaptation: ISequenceAdaptation,
   channelDictionary: ChannelDictionary | null = null,
   commandDictionary: CommandDictionary | null = null,
   parameterDictionaries: ParameterDictionary[] = [],
@@ -122,7 +143,6 @@ export function sequenceLinter(
   if (commandsNode) {
     diagnostics.push(
       ...commandLinter(
-        sequenceAdaptation,
         [
           ...commandsNode.getChildren(SEQN_NODES.COMMAND),
           ...commandsNode.getChildren(SEQN_NODES.LOAD), // TODO: remove in the library sequence PR because that check should validate load and activates
@@ -140,7 +160,6 @@ export function sequenceLinter(
         commandsNode.getChildren(SEQN_NODES.REQUEST),
         docText,
         variableMap,
-        sequenceAdaptation,
         commandDictionary,
         channelDictionary,
         parameterDictionaries,
@@ -161,7 +180,6 @@ export function sequenceLinter(
       ],
       docText,
       variableMap,
-      sequenceAdaptation,
       commandDictionary,
       channelDictionary,
       parameterDictionaries,
@@ -170,7 +188,6 @@ export function sequenceLinter(
 
   diagnostics.push(
     ...hardwareCommandLinter(
-      sequenceAdaptation,
       treeNode.getChild('HardwareCommands')?.getChildren(SEQN_NODES.COMMAND) || [],
       docText,
       commandDictionary,
@@ -259,7 +276,6 @@ function validateRequests(
   requestNodes: SyntaxNode[],
   text: string,
   variables: VariableMap,
-  sequenceAdaptation: ISequenceAdaptation,
   commandDictionary: CommandDictionary | null,
   channelDictionary: ChannelDictionary | null,
   parameterDictionaries: ParameterDictionary[],
@@ -274,7 +290,6 @@ function validateRequests(
   diagnostics.push(
     ...requestNodes.flatMap(request =>
       commandLinter(
-        sequenceAdaptation,
         request.getChild('Steps')?.getChildren(SEQN_NODES.COMMAND) ?? [],
         text,
         variables,
@@ -681,7 +696,6 @@ function insertAction(name: string, insert: string) {
  * @return {Diagnostic[]} an array of diagnostics
  */
 function commandLinter(
-  sequenceAdaptation: ISequenceAdaptation,
   commandNodes: SyntaxNode[] | undefined,
   text: string,
   variables: VariableMap,
@@ -715,7 +729,6 @@ function commandLinter(
         text,
         'command',
         variables,
-        sequenceAdaptation,
         commandDictionary,
         channelDictionary,
         parameterDictionaries,
@@ -895,7 +908,6 @@ function immediateCommandLinter(
   commandNodes: SyntaxNode[] | undefined,
   text: string,
   variables: VariableMap,
-  sequenceAdaptation: ISequenceAdaptation,
   commandDictionary: CommandDictionary | null,
   channelDictionary: ChannelDictionary | null,
   parameterDictionaries: ParameterDictionary[],
@@ -931,7 +943,6 @@ function immediateCommandLinter(
         text,
         'immediate',
         variables,
-        sequenceAdaptation,
         commandDictionary,
         channelDictionary,
         parameterDictionaries,
@@ -965,7 +976,6 @@ function immediateCommandLinter(
  * @return {Diagnostic[]} an array of diagnostics
  */
 function hardwareCommandLinter(
-  sequenceAdaptation: ISequenceAdaptation,
   commands: SyntaxNode[] | undefined,
   text: string,
   commandDictionary: CommandDictionary | null,
@@ -1004,7 +1014,6 @@ function hardwareCommandLinter(
         text,
         'hardware',
         {},
-        sequenceAdaptation,
         commandDictionary,
         channelDictionary,
         parameterDictionaries,
@@ -1043,7 +1052,6 @@ function validateCommand(
   text: string,
   type: 'command' | 'immediate' | 'hardware' = 'command',
   variables: VariableMap,
-  sequenceAdaptation: ISequenceAdaptation,
   commandDictionary: CommandDictionary | null,
   channelDictionary: ChannelDictionary | null,
   parameterDictionaries: ParameterDictionary[],
@@ -1090,7 +1098,6 @@ function validateCommand(
       text,
       stemText,
       variables,
-      sequenceAdaptation,
       commandDictionary,
       channelDictionary,
       parameterDictionaries,
@@ -1183,7 +1190,6 @@ function validateAndLintArguments(
   text: string,
   stem: string,
   variables: VariableMap,
-  sequenceAdaptation: ISequenceAdaptation,
   commandDictionary: CommandDictionary | null,
   channelDictionary: ChannelDictionary | null,
   parameterDictionaries: ParameterDictionary[],
@@ -1243,9 +1249,7 @@ function validateAndLintArguments(
         command,
         text,
         stem,
-        argValues.slice(0, i),
         variables,
-        sequenceAdaptation,
         commandDictionary,
         channelDictionary,
         parameterDictionaries,
@@ -1331,22 +1335,11 @@ function validateArgument(
   command: SyntaxNode,
   text: string,
   stemText: string,
-  precedingArgValues: string[],
   variables: VariableMap,
-  sequenceAdaptation: ISequenceAdaptation,
   commandDictionary: CommandDictionary | null,
   channelDictionary: ChannelDictionary | null,
   parameterDictionaries: ParameterDictionary[],
 ): Diagnostic[] {
-  dictArg = getCustomArgDef(
-    stemText,
-    dictArg,
-    precedingArgValues,
-    parameterDictionaries,
-    channelDictionary,
-    sequenceAdaptation,
-  );
-
   const diagnostics: Diagnostic[] = [];
 
   const dictArgType = dictArg.arg_type;
@@ -1582,7 +1575,6 @@ function validateArgument(
                     text,
                     stemText,
                     variables,
-                    sequenceAdaptation,
                     commandDictionary,
                     channelDictionary,
                     parameterDictionaries,

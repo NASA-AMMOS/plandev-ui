@@ -17,6 +17,7 @@ import { SchedulingDefinitionType } from '../enums/scheduling';
 import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
 import { WorkspaceContentType } from '../enums/workspace';
+import { parseCdlDictionary, toAmpcsXml } from '../language-package/languages/vml/cdl-dictionary';
 import {
   activityDirectivesDB as activityDirectivesDBStore,
   selectedActivityDirectiveId as selectedActivityDirectiveIdStore,
@@ -288,7 +289,6 @@ import { featurePermissions, gatewayPermissions, queryPermissions } from './perm
 import { CompoundError, reqActionServer, reqExtension, reqGateway, reqHasura, reqWorkspace } from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
-import { parseCdlDictionary, toAmpcsXml } from './sequence-editor/languages/vml/cdl-dictionary';
 import { compareEvents } from './simulation';
 import { pluralize } from './text';
 import {
