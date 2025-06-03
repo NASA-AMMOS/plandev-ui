@@ -28,10 +28,10 @@ export const selectedExternalEventId: Writable<ExternalEventId | null> = writabl
 
 /* Derived. */
 export const selectedExternalEvents: Readable<ExternalEvent[] | null> = derived(
-  [selectedExternalEventsRaw, plan],
-  ([$externalEventsRaw, $plan]) => {
+  [selectedExternalEventsRaw, selectedPlanDerivationGroupNames, plan],
+  ([$externalEventsRaw, $derivationGroupNames, $plan]) => {
     const completeExternalEvents: ExternalEvent[] = [];
-    if ($externalEventsRaw === null || $externalEventsRaw === undefined) {
+    if ($externalEventsRaw === null || $externalEventsRaw === undefined || $derivationGroupNames.length === 0) {
       return null;
     }
     // get plan bounds in an easily comparable format. The explicit strings are extreme bounds in case of a null plan.
