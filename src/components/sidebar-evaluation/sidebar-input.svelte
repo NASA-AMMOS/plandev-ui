@@ -1,21 +1,19 @@
 <script lang="ts">
-	import type { ComponentProps } from "svelte";
-	import { Input } from "$lib/registry/ui/input/index.js";
-	import { cn } from "$lib/utils.js";
+  import { cn } from '../../utilities/generic';
 
-	let {
-		ref = $bindable(null),
-		value = $bindable(""),
-		class: className,
-		...restProps
-	}: ComponentProps<typeof Input> = $props();
+  // Props
+  export let ref: HTMLInputElement | null = null;
+  export let className: string = '';
+  export let value: string = '';
 </script>
 
-<Input
-	bind:ref
-	bind:value
-	data-slot="sidebar-input"
-	data-sidebar="input"
-	class={cn("bg-background h-8 w-full shadow-none", className)}
-	{...restProps}
+<input
+  bind:this={ref}
+  bind:value
+  data-slot="sidebar-input"
+  data-sidebar="input"
+  class={cn(
+    'border-sidebar-border bg-sidebar ring-sidebar-ring placeholder:text-sidebar-foreground/50 focus-visible:ring-sidebar-ring focus-visible:outline-hidden h-8 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2',
+    className,
+  )}
 />

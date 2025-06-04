@@ -1,21 +1,11 @@
 <script lang="ts">
-	import type { HTMLAttributes } from "svelte/elements";
-	import { cn, type WithElementRef } from "$lib/utils.js";
+  import { cn } from '../../utilities/generic';
 
-	let {
-		ref = $bindable(null),
-		class: className,
-		children,
-		...restProps
-	}: WithElementRef<HTMLAttributes<HTMLElement>> = $props();
+  // Props
+  export let ref: HTMLElement | null = null;
+  export let className: string = '';
 </script>
 
-<div
-	bind:this={ref}
-	data-slot="sidebar-footer"
-	data-sidebar="footer"
-	class={cn("flex flex-col gap-2 p-2", className)}
-	{...restProps}
->
-	{@render children?.()}
+<div bind:this={ref} data-slot="sidebar-footer" data-sidebar="footer" class={cn('flex flex-col gap-2 p-2', className)}>
+  <slot />
 </div>
