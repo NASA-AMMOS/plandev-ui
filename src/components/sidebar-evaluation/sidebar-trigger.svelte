@@ -1,35 +1,28 @@
 <script lang="ts">
-	import { Button } from "$lib/registry/ui/button/index.js";
-	import { cn } from "$lib/utils.js";
-	import PanelLeftIcon from "@lucide/svelte/icons/panel-left";
-	import type { ComponentProps } from "svelte";
-	import { useSidebar } from "./context.svelte.js";
+  import { cn } from '../../utilities/generic';
+  import { useSidebar } from './context';
 
-	let {
-		ref = $bindable(null),
-		class: className,
-		onclick,
-		...restProps
-	}: ComponentProps<typeof Button> & {
-		onclick?: (e: MouseEvent) => void;
-	} = $props();
+  // Props
+  export let ref: HTMLButtonElement | null = null;
+  export let className: string = '';
 
-	const sidebar = useSidebar();
+  const sidebar = useSidebar();
+
+  function handleClick() {
+    sidebar.toggle();
+  }
 </script>
 
-<Button
-	data-sidebar="trigger"
-	data-slot="sidebar-trigger"
-	variant="ghost"
-	size="icon"
-	class={cn("size-7", className)}
-	type="button"
-	onclick={(e) => {
-		onclick?.(e);
-		sidebar.toggle();
-	}}
-	{...restProps}
+<button
+  bind:this={ref}
+  data-slot="sidebar-trigger"
+  data-sidebar="trigger"
+  type="button"
+  on:click={handleClick}
+  class={cn(
+    'ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-7 w-7 rounded-md p-0 transition-colors focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+    className,
+  )}
 >
-	<PanelLeftIcon />
-	<span class="sr-only">Toggle Sidebar</span>
-</Button>
+  <slot />
+</button>

@@ -1,21 +1,16 @@
 <script lang="ts">
-	import { cn, type WithElementRef } from "$lib/utils.js";
-	import type { HTMLAttributes } from "svelte/elements";
+  import { cn } from '../../utilities/generic';
 
-	let {
-		ref = $bindable(null),
-		children,
-		class: className,
-		...restProps
-	}: WithElementRef<HTMLAttributes<HTMLLIElement>> = $props();
+  // Props
+  export let ref: HTMLElement | null = null;
+  export let className: string = '';
 </script>
 
 <li
-	bind:this={ref}
-	data-slot="sidebar-menu-sub-item"
-	data-sidebar="menu-sub-item"
-	class={cn("group/menu-sub-item relative", className)}
-	{...restProps}
+  bind:this={ref}
+  data-slot="sidebar-menu-sub-item"
+  data-sidebar="menu-sub-item"
+  class={cn('group/menu-sub-item relative', className)}
 >
-	{@render children?.()}
+  <slot />
 </li>
