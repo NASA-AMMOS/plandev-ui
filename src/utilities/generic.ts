@@ -80,6 +80,30 @@ export function classNames(baseClass: string, conditionalClasses?: Record<string
 }
 
 /**
+ * More flexible class name utility function compatible with shadcn components
+ * Handles multiple arguments and filters out falsy values
+ * @example cn('foo', true && 'bar', { baz: false }) returns 'foo bar'
+ */
+export function cn(...classes: (string | undefined | null | boolean | Record<string, boolean>)[]): string {
+  return classes
+    .filter(Boolean)
+    .map(cls => {
+      if (typeof cls === 'string') {
+        return cls;
+      }
+      if (typeof cls === 'object' && cls !== null) {
+        // Handle object syntax like { 'class-name': true }
+        return Object.keys(cls)
+          .filter(key => cls[key])
+          .join(' ');
+      }
+      return '';
+    })
+    .filter(Boolean)
+    .join(' ');
+}
+
+/**
  * Helper function for filtering out null or undefined entries in an array
  * @example [0, 1, 2, null, 4, undefined, 5].filter(filterEmpty) return [0, 1, 2, 4, 5]
  */
