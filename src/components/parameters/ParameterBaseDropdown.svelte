@@ -57,13 +57,14 @@
     bind:selectedOptionValues={selectedDropdownOptions}
     {allowMultiple}
     {disabled}
+    showPlaceholderOption={false}
     options={dropdownOptions}
     placeholder={disabled ? '' : placeholder}
     {searchPlaceholder}
     on:change={onChange}
   />
 </div>
-<div class="parameter-right">
+<div class="parameter-right items-center">
   <ParameterBaseRightAdornments
     {disabled}
     {formParameter}
@@ -78,17 +79,6 @@
   .parameter-base-dropdown {
     align-items: center;
     display: grid;
-  }
-
-  .parameter-base-dropdown :global(.st-menu) {
-    min-width: 250px;
-    overflow: hidden;
-  }
-
-  .parameter-base-dropdown :global(.selected-display) {
-    background-color: var(--st-input-background-color);
-    border: var(--st-input-border);
-    color: var(--st-input-color);
   }
 
   .parameter-right {
