@@ -97,8 +97,7 @@ export function getFormParameters(
     if (isActionValueSchemaSequence(schema)) {
       (formParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).options =
         dropdownOptions;
-      (formParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).optionLabel =
-        optionLabel;
+      (formParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).label = optionLabel;
       if (schema.type === 'sequence') {
         formParameterSchema.type = 'options-single';
       } else if (schema.type === 'sequenceList') {

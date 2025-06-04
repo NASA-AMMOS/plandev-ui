@@ -51,13 +51,13 @@ export type ValueSchemaOption = {
 };
 
 export type UIValueSchemaWithOptionsSingle = {
-  optionLabel: string;
+  label: string;
   options: ValueSchemaOption[];
   type: 'options-single';
 } & ValueSchemaMetadata;
 
 export type UIValueSchemaWithOptionsMultiple = {
-  optionLabel: string;
+  label: string;
   options: ValueSchemaOption[];
   type: 'options-multiple';
 } & ValueSchemaMetadata;

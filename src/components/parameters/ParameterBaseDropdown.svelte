@@ -37,9 +37,9 @@
   $: if (isParameterWithOptions(formParameter.schema)) {
     dropdownOptions = formParameter.schema.options.map(option => ({ display: option.display, value: option.value }));
     placeholder = allowMultiple
-      ? `Select list of ${formParameter.schema.optionLabel}s`
-      : `Select ${formParameter.schema.optionLabel}`;
-    searchPlaceholder = `Filter ${formParameter.schema.optionLabel}s`;
+      ? `Select list of ${formParameter.schema.label}s`
+      : `Select ${formParameter.schema.label}`;
+    searchPlaceholder = `Filter ${formParameter.schema.label}s`;
   }
 
   function onChange(event: CustomEvent<SelectedDropdownOptionValue[]>) {
