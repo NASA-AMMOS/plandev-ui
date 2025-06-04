@@ -76,7 +76,10 @@
               valueSchemaRecordToParametersMap($actionRun.action_definition.settings_schema),
               $actionRun.settings,
               [],
+              undefined,
+              undefined,
               getUserSequencesInWorkspace($userSequences, workspaceId),
+              'sequence',
             )}
             parameterType="action"
             hideRightAdornments
@@ -89,7 +92,10 @@
               valueSchemaRecordToParametersMap($actionRun.action_definition.parameter_schema),
               $actionRun.parameters,
               [],
+              undefined,
+              undefined,
               getUserSequencesInWorkspace($userSequences, workspaceId),
+              'sequence',
             )}
             parameterType="action"
             hideRightAdornments

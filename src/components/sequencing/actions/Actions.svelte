@@ -365,7 +365,10 @@
                       valueSchemaRecordToParametersMap(selectedActionDefinition.settings_schema),
                       argumentsMap,
                       [],
+                      undefined,
+                      undefined,
                       getUserSequencesInWorkspace($userSequences, workspaceId),
+                      'sequence',
                     )}
                     parameterType="action"
                     hideRightAdornments
