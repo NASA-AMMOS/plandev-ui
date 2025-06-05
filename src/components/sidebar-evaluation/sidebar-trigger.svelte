@@ -20,7 +20,7 @@
   type="button"
   on:click={handleClick}
   class={cn(
-    'ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-7 w-7 rounded-md p-0 transition-colors focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+    'ring-[var(--sidebar-ring)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)] h-7 w-7 rounded-md p-0 transition-colors focus-visible:ring-2 [&>svg]:w-4 [&>svg]:h-4 [&>svg]:shrink-0',
     className,
   )}
 >

@@ -22,11 +22,11 @@
   on:click={handleClick}
   title="Toggle Sidebar"
   class={cn(
-    'hover:after:bg-sidebar-border focus-visible:after:bg-sidebar-border absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] after:-translate-x-1/2 after:transition-all after:duration-200 sm:flex',
+    'hover:after:bg-[var(--sidebar-border)] focus-visible:after:bg-[var(--sidebar-border)] absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] after:-translate-x-1/2 after:transition-all after:duration-200 sm:flex',
     '[[data-side=left]_&]:right-0 [[data-side=right]_&]:left-0',
     '[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize',
     '[[data-side=left][data-state=expanded]_&]:cursor-w-resize [[data-side=right][data-state=expanded]_&]:cursor-e-resize',
-    'group-data-[collapsible=offcanvas]:hover:bg-sidebar group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full',
+    'group-data-[collapsible=offcanvas]:hover:bg-[var(--sidebar)] group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full',
     '[[data-side=left][data-collapsible=offcanvas]_&]:group-data-[state=collapsed]:right-2',
     '[[data-side=right][data-collapsible=offcanvas]_&]:group-data-[state=collapsed]:left-2',
     className,

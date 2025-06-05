@@ -47,6 +47,7 @@
       {/if}
     </div>
   </Nav>
+
   <slot />
 </CssGrid>
 

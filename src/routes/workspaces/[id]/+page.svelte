@@ -2,31 +2,18 @@
 
 <script lang="ts">
   import { page } from '$app/stores';
-  import { Button, DropdownMenu, Tooltip } from '@nasa-jpl/stellar-svelte';
-  import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
-  import SettingsIcon from '@nasa-jpl/stellar/icons/settings.svg?component';
-  import {
-    ArrowUpFromLine,
-    ChevronDown,
-    Clapperboard,
-    FilePlus,
-    FolderPlus,
-    FolderTree,
-    RefreshCcw,
-  } from 'lucide-svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
-  import CssGrid from '../../../components/ui/CssGrid.svelte';
-  import CssGridGutter from '../../../components/ui/CssGridGutter.svelte';
-  import Panel from '../../../components/ui/Panel.svelte';
-  import SectionTitle from '../../../components/ui/SectionTitle.svelte';
-  import WorkspaceTreeView from '../../../components/workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
+  // Keep these imports for the commented grid layout reference
+  // import WorkspaceTreeView from '../../../components/workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
+  import AppSidebar from '../../../components/AppSidebar.svelte';
+  import * as Sidebar from '../../../components/sidebar-evaluation/index.js';
   import { SearchParameters } from '../../../enums/searchParameters';
-  import { WorkspaceContentType } from '../../../enums/workspace';
-  import { parcel, workspaceColumns, workspaceId } from '../../../stores/workspaces';
-  import type { Workspace } from '../../../types/workspace';
-  import type { WorkspaceTreeNode } from '../../../types/workspace-tree-view';
+  import { parcel, workspaceId } from '../../../stores/workspaces';
   import effects from '../../../utilities/effects';
   import type { PageData } from './$types';
+  import type { Workspace } from '../../../types/workspace';
+  import { WorkspaceContentType } from '../../../enums/workspace';
+  import type { WorkspaceTreeNode } from '../../../types/workspace-tree-view';
 
   export let data: PageData;
 
@@ -57,10 +44,6 @@
     }
   }
 
-  function refreshWorkspaceContents() {
-    getWorkspaceContents(initialWorkspace);
-  }
-
   async function getSelectedSequenceDefinition(sequencePath: string | null) {
     if (sequencePath !== null && user) {
       selectedSequenceDefinition =
@@ -73,14 +56,14 @@
   async function onNewFolder() {
     if ($workspaceId != null && user) {
       await effects.newWorkspaceFolder($workspaceId, user);
-      refreshWorkspaceContents();
+      // refreshWorkspaceContents();
     }
   }
 
   async function onNewSequence() {
     if ($workspaceId != null && user) {
       await effects.newWorkspaceSequence($workspaceId, user);
-      refreshWorkspaceContents();
+      // refreshWorkspaceContents();
     }
   }
 
@@ -113,9 +96,37 @@
 
   function onWorkspaceFileUpdated({ detail: { input } }: CustomEvent<{ input: string; output: string }>) {
     selectedSequenceDefinition = input;
+  // function refreshWorkspaceContents() {
+  //   getWorkspaceContents(initialWorkspace);
+  // }
+
+  // Placeholder refresh function for the new sidebar
+  function refreshWorkspaceContents() {
+    console.log('Refresh workspace contents - to be implemented with new sidebar');
   }
 </script>
 
+<Sidebar.Provider>
+  <AppSidebar {onNewFolder} {onNewSequence} {refreshWorkspaceContents} />
+  <Sidebar.Inset>
+    <div class="grid h-full grid-cols-1 grid-rows-1">
+      <SequenceEditor
+        parcel={$parcel}
+        showCommandFormBuilder={true}
+        sequenceDefinition={selectedSequenceDefinition}
+        title="Sequence - Definition Editor"
+        {user}
+        readOnly={false}
+        workspaceId={$workspaceId}
+        on:sequence
+        on:didChangeModelContent
+      />
+    </div>
+  </Sidebar.Inset>
+</Sidebar.Provider>
+
+<!-- Original grid layout commented out for reference -->
+<!--
 <CssGrid bind:columns={$workspaceColumns}>
   <Panel borderRight padBody={false}>
     <svelte:fragment slot="header">
@@ -189,6 +200,7 @@
     on:sequence={onWorkspaceFileUpdated}
   />
 </CssGrid>
+-->
 
 <style>
 </style>
