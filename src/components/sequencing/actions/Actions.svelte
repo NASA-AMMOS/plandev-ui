@@ -150,11 +150,11 @@
 
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
-    if (formParameter.schema.type === 'sequence') {
+    if (formParameter.schema.type === 'options-single') {
       const sequences = $userSequences.find(sequence => sequence.id === parseInt(formParameter.value));
       formParameter.value = sequences?.name ?? null;
       argumentsMap = getArguments(argumentsMap, formParameter);
-    } else if (formParameter.schema.type === 'sequenceList') {
+    } else if (formParameter.schema.type === 'options-multiple') {
       const ids: string[] = formParameter.value;
       let sequenceNames: string[] = [];
       ids.forEach(id => {
@@ -362,12 +362,13 @@
                   {/if}
                   <Parameters
                     formParameters={getFormParameters(
-                      valueSchemaRecordToParametersMap(
-                        selectedActionDefinition.settings_schema,
-                        getUserSequencesInWorkspace($userSequences, workspaceId),
-                      ),
+                      valueSchemaRecordToParametersMap(selectedActionDefinition.settings_schema),
                       argumentsMap,
                       [],
+                      undefined,
+                      undefined,
+                      getUserSequencesInWorkspace($userSequences, workspaceId),
+                      'sequence',
                     )}
                     parameterType="action"
                     hideRightAdornments

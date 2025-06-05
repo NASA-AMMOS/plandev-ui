@@ -242,12 +242,7 @@
         Object.entries(activityType.parameters).forEach(([parameterName, parameter]) => {
           const parameterType = parameter.schema.type;
           // TODO support series and struct?
-          if (
-            parameterType === 'series' ||
-            parameterType === 'struct' ||
-            parameterType === 'sequence' ||
-            parameterType === 'sequenceList'
-          ) {
+          if (parameterType === 'series' || parameterType === 'struct') {
             return;
           }
           const key = `${parameterName} (${parameterType})`;

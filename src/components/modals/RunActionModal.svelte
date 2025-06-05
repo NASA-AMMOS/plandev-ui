@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { userSequences } from '../../stores/sequencing';
   import type { ActionDefinition } from '../../types/actions';
   import type { User } from '../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../types/parameter';
@@ -13,7 +14,6 @@
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
-  import { userSequences } from '../../stores/sequencing';
 
   export let actionDefinition: ActionDefinition;
   export let user: User | null;
@@ -40,11 +40,11 @@
 
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
-    if (formParameter.schema.type === 'sequence') {
+    if (formParameter.schema.type === 'options-single') {
       const sequences = $userSequences.find(sequence => sequence.id === parseInt(formParameter.value));
       formParameter.value = sequences?.name ?? null;
       argumentsMap = getArguments(argumentsMap, formParameter);
-    } else if (formParameter.schema.type === 'sequenceList') {
+    } else if (formParameter.schema.type === 'options-multiple') {
       const ids: string[] = formParameter.value;
       let sequenceNames: string[] = [];
       ids.forEach(id => {
@@ -68,12 +68,13 @@
     <div class="st-typography-label pb-2">Input parameters to run <b>{actionDefinition.name}</b></div>
     <Parameters
       formParameters={getFormParameters(
-        valueSchemaRecordToParametersMap(
-          actionDefinition.parameter_schema,
-          getUserSequencesInWorkspace($userSequences, actionDefinition.workspace_id),
-        ),
+        valueSchemaRecordToParametersMap(actionDefinition.parameter_schema),
         argumentsMap,
         [],
+        undefined,
+        undefined,
+        getUserSequencesInWorkspace($userSequences, actionDefinition.workspace_id),
+        'sequence',
       )}
       parameterType="action"
       hideRightAdornments

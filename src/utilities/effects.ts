@@ -1,6 +1,7 @@
 import { goto } from '$app/navigation';
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
+import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
 import {
   type ChannelDictionary as AmpcsChannelDictionary,
   type CommandDictionary as AmpcsCommandDictionary,
@@ -69,7 +70,7 @@ import {
 } from '../stores/simulation';
 import { createTagError as createTagErrorStore } from '../stores/tags';
 import { applyViewUpdate, view as viewStore, viewUpdateRow, viewUpdateTimeline } from '../stores/views';
-import type { ActionDefinition, ActionDefinitionSetInput, ActionRun } from '../types/actions';
+import type { ActionDefinition, ActionDefinitionSetInput, ActionParametersMap, ActionRun } from '../types/actions';
 import type {
   ActivityDirective,
   ActivityDirectiveDB,
@@ -146,7 +147,6 @@ import type {
   ParameterValidationError,
   ParameterValidationResponse,
   ParametersMap,
-  BaseParameter,
 } from '../types/parameter';
 import type {
   PermissibleQueriesMap,
@@ -296,7 +296,6 @@ import {
   generateDefaultView,
   validateViewJSONAgainstSchema,
 } from './view';
-import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
 
 function throwPermissionError(attemptedAction: string): never {
   throw Error(`You do not have permission to: ${attemptedAction}.`);
@@ -7193,16 +7192,16 @@ const effects = {
  * @returns
  */
 export function replacePaths(
-  modelParameters: ParametersMap | null,
+  parameters: ParametersMap | ActionParametersMap | null,
   simArgs: ArgumentsMap,
   pathsToReplace: Record<string, string>,
 ): ArgumentsMap {
-  if (modelParameters === null) {
+  if (parameters === null) {
     return simArgs;
   }
   const result: ArgumentsMap = {};
-  for (const parameterName in modelParameters) {
-    const parameter: BaseParameter = modelParameters[parameterName];
+  for (const parameterName in parameters) {
+    const parameter = parameters[parameterName];
     const arg: Argument = simArgs[parameterName];
     if (arg !== undefined) {
       result[parameterName] = replacePathsHelper(parameter.schema, arg, pathsToReplace);

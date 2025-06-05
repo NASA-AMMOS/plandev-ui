@@ -4,12 +4,12 @@
   import type { FormParameter, ParameterType } from '../../types/parameter';
   import type { ActionArray } from '../../utilities/useActions';
   import ParameterBaseBoolean from './ParameterBaseBoolean.svelte';
+  import ParameterBaseDropdown from './ParameterBaseDropdown.svelte';
   import ParameterBaseDuration from './ParameterBaseDuration.svelte';
   import ParameterBaseNumber from './ParameterBaseNumber.svelte';
   import ParameterBasePath from './ParameterBasePath.svelte';
   import ParameterBaseString from './ParameterBaseString.svelte';
   import ParameterBaseVariant from './ParameterBaseVariant.svelte';
-  import ParameterBaseDropdown from './ParameterBaseDropdown.svelte';
 
   export let disabled: boolean = false;
   export let formParameter: FormParameter;
@@ -112,7 +112,7 @@
     on:change
     on:reset
   />
-{:else if formParameter.schema.type === 'sequence'}
+{:else if formParameter.schema.type === 'options-single'}
   <ParameterBaseDropdown
     {disabled}
     {hideRightAdornments}
@@ -121,13 +121,11 @@
     {levelPadding}
     {formParameter}
     {parameterType}
-    placeholder="Select sequence"
-    searchPlaceholder="Filter sequences"
     {use}
     on:change
     on:reset
   />
-{:else if formParameter.schema.type === 'sequenceList'}
+{:else if formParameter.schema.type === 'options-multiple'}
   <ParameterBaseDropdown
     allowMultiple={true}
     {disabled}
@@ -137,8 +135,6 @@
     {levelPadding}
     {formParameter}
     {parameterType}
-    placeholder="Select list of sequences"
-    searchPlaceholder="Filter sequences"
     {use}
     on:change
     on:reset
