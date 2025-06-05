@@ -22,6 +22,7 @@ import ManagePlanSchedulingGoalsModal from '../components/modals/ManagePlanSched
 import MergeReviewEndedModal from '../components/modals/MergeReviewEndedModal.svelte';
 import NewSequenceModal from '../components/modals/NewSequenceModal.svelte';
 import NewWorkspaceFolderModal from '../components/modals/NewWorkspaceFolderModal.svelte';
+import NewWorkspaceSequenceModal from '../components/modals/NewWorkspaceSequenceModal.svelte';
 import PlanBranchesModal from '../components/modals/PlanBranchesModal.svelte';
 import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.svelte';
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
@@ -532,7 +533,7 @@ export async function showNewWorkspaceSequenceModal(): Promise<ModalElementValue
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const newWorkspaceSequenceModal = new NewSequenceModal({
+        const newWorkspaceSequenceModal = new NewWorkspaceSequenceModal({
           target,
         });
         target.resolve = resolve;
