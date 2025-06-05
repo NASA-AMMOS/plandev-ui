@@ -9,13 +9,7 @@
 </script>
 
 <div id="modal-container">
-  <div
-    bind:this={modal}
-    class="modal st-typography-body"
-    role="none"
-    style:height={heightStyle}
-    style:width={widthStyle}
-  >
+  <div class="modal st-typography-body" role="none" style:height={heightStyle} style:width={widthStyle}>
     <slot />
   </div>
 </div>
