@@ -23,12 +23,12 @@
     <Collapsible.Root bind:open={isOpen}>
       <Collapsible.Trigger>
         <Sidebar.MenuButton>
-          <ChevronRight size={16} class="transition-transform {isOpen ? 'rotate-90' : ''}" />
+          <ChevronRight size={16} class={isOpen ? 'rotate-90' : ''} />
           <Folder size={16} />
           {name}
         </Sidebar.MenuButton>
       </Collapsible.Trigger>
-      <Collapsible.Content>
+      <Collapsible.Content transitionConfig={{ duration: 0 }}>
         <Sidebar.MenuSub>
           {#each items as subItem, index (index)}
             <svelte:self item={subItem} />
