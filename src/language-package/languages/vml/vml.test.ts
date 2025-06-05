@@ -1,7 +1,7 @@
 import type { SyntaxNode } from '@lezer/common';
 import type { FswCommandArgumentInteger } from '@nasa-jpl/aerie-ampcs';
 import { assert, describe, expect, it } from 'vitest';
-import { filterNodes, nodeContents } from '../../tree-utils';
+import { filterNodes, nodeContents } from '../../../utilities/sequence-editor/tree-utils';
 import { VmlLanguage } from './vml';
 import { vmlBlockLibraryToCommandDictionary } from './vml-block-library';
 import {

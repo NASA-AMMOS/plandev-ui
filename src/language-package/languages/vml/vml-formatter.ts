@@ -2,7 +2,7 @@ import { syntaxTree } from '@codemirror/language';
 import type { ChangeSpec, EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
 import { EditorView } from 'codemirror';
-import { filterEmpty } from '../../../generic';
+import { filterEmpty } from '../../../utilities/generic';
 import {
   RULE_ASSIGNMENT,
   RULE_CALL_PARAMETERS,

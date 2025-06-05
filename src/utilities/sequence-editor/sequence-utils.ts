@@ -18,6 +18,8 @@ import type {
 } from '@nasa-jpl/aerie-ampcs';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
+import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
+import { librarySequenceToFswCommand } from '../../language-package/languages/vml/vml-block-library';
 import type {
   ArgTextDef,
   ISequenceAdaptation,
@@ -27,9 +29,7 @@ import type {
   TimeTagInfo,
 } from '../../types/sequencing';
 import { fswCommandArgDefault } from './command-dictionary';
-import type { CommandInfoMapper } from './command-info-mapper';
 import { getCustomArgDef } from './extension-points';
-import { librarySequenceToFswCommand } from './languages/vml/vml-block-library';
 import { TOKEN_ERROR } from './sequence-constants';
 
 export function isFswCommand(command: FswCommand | HwCommand): command is FswCommand {

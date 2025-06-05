@@ -7,8 +7,8 @@ import {
   type FswCommandArgument,
   type ParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
+import type { IOutputFormat, ISequenceAdaptation, LibrarySequence } from '../../language-package/interfaces/legacy';
 import type { GlobalType } from '../../types/global-type';
-import type { IOutputFormat, ISequenceAdaptation, LibrarySequence } from '../../types/sequencing';
 import { seqJsonLinter } from './seq-json-linter';
 import { sequenceLinter } from './sequence-linter';
 
@@ -19,7 +19,8 @@ import { sequenceLinter } from './sequence-linter';
 
 //
 
-export type ArgDelegator = { // TODO consider whether this can be replaced with a single callback that takes in the stem and arg position and cmd dict
+export type ArgDelegator = {
+  // TODO consider whether this can be replaced with a single callback that takes in the stem and arg position and cmd dict
   [stem: string]: {
     [arg: string]:
       | undefined

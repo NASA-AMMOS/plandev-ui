@@ -16,6 +16,24 @@
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+  import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
+  import { setupLanguageSupport } from '../../language-package/languages/seq-n/seq-n';
+  import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../language-package/languages/seq-n/seq-n-highlighter';
+  import {
+    SeqNCommandInfoMapper,
+    userSequenceToLibrarySequence,
+  } from '../../language-package/languages/seq-n/seq-n-tree-utils';
+  import {
+    setupVmlLanguageSupport,
+    vmlAdaptation,
+    vmlBlockHighlighter,
+    vmlHighlightBlock,
+  } from '../../language-package/languages/vml/vml';
+  import { parseFunctionSignatures, vmlAutoComplete } from '../../language-package/languages/vml/vml-adaptation';
+  import { vmlFormat } from '../../language-package/languages/vml/vml-formatter';
+  import { vmlLinter } from '../../language-package/languages/vml/vml-linter';
+  import { vmlTooltip } from '../../language-package/languages/vml/vml-tooltip';
+  import { VmlCommandInfoMapper } from '../../language-package/languages/vml/vml-tree-utils';
   import {
     getGlobals,
     inputFormat,
@@ -48,31 +66,7 @@
   import effects from '../../utilities/effects';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import type { CommandInfoMapper } from '../../utilities/sequence-editor/command-info-mapper';
   import { inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
-  import { setupLanguageSupport } from '../../utilities/sequence-editor/languages/seq-n/seq-n';
-  import {
-    seqNHighlightBlock,
-    seqqNBlockHighlighter,
-  } from '../../utilities/sequence-editor/languages/seq-n/seq-n-highlighter';
-  import {
-    SeqNCommandInfoMapper,
-    userSequenceToLibrarySequence,
-  } from '../../utilities/sequence-editor/languages/seq-n/seq-n-tree-utils';
-  import {
-    setupVmlLanguageSupport,
-    vmlAdaptation,
-    vmlBlockHighlighter,
-    vmlHighlightBlock,
-  } from '../../utilities/sequence-editor/languages/vml/vml';
-  import {
-    parseFunctionSignatures,
-    vmlAutoComplete,
-  } from '../../utilities/sequence-editor/languages/vml/vml-adaptation';
-  import { vmlFormat } from '../../utilities/sequence-editor/languages/vml/vml-formatter';
-  import { vmlLinter } from '../../utilities/sequence-editor/languages/vml/vml-linter';
-  import { vmlTooltip } from '../../utilities/sequence-editor/languages/vml/vml-tooltip';
-  import { VmlCommandInfoMapper } from '../../utilities/sequence-editor/languages/vml/vml-tree-utils';
   import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
   import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
   import {

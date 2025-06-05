@@ -1,12 +1,12 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
 import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
 import { parseVariables, SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
-import { SequenceTypes } from '../../../../enums/sequencing';
-import { type LibrarySequence, type UserSequence } from '../../../../types/sequencing';
-import { fswCommandArgDefault } from '../../command-dictionary';
-import type { CommandInfoMapper } from '../../command-info-mapper';
-import { validateVariables } from '../../sequence-linter';
-import { getFromAndTo, getNearestAncestorNodeOfType } from '../../tree-utils';
+import { SequenceTypes } from '../../../enums/sequencing';
+import { type LibrarySequence, type UserSequence } from '../../../types/sequencing';
+import { fswCommandArgDefault } from '../../../utilities/sequence-editor/command-dictionary';
+import { validateVariables } from '../../../utilities/sequence-editor/sequence-linter';
+import { getFromAndTo, getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
+import type { CommandInfoMapper } from '../../interfaces/command-info-mapper';
 import { SeqLanguage } from './seq-n';
 
 export function getNameNode(stepNode: SyntaxNode | null) {

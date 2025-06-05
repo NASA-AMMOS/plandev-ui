@@ -2,12 +2,12 @@ import type { Completion, CompletionContext, CompletionResult } from '@codemirro
 import { syntaxTree } from '@codemirror/language';
 import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
 import { SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
+import { SeqLanguage } from '../../language-package/languages/seq-n/seq-n';
 import { getGlobals } from '../../stores/sequence-adaptation';
 import type { ISequenceAdaptation, LibrarySequence } from '../../types/sequencing';
 import { getDoyTime } from '../time';
 import { fswCommandArgDefault } from './command-dictionary';
 import { getCustomArgDef } from './extension-points';
-import { SeqLanguage } from './languages/seq-n/seq-n';
 import { getDefaultVariableArgs } from './sequence-utils';
 import { getFromAndTo, getNearestAncestorNodeOfType } from './tree-utils';
 

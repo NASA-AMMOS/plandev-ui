@@ -17,6 +17,8 @@ import { SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
 import { TimeTypes } from '../../enums/time';
+import { closeSuggestion, computeBlocks, openSuggestion } from '../../language-package/languages/seq-n/custom-folder';
+import { SeqNCommandInfoMapper } from '../../language-package/languages/seq-n/seq-n-tree-utils';
 import type { GlobalType } from '../../types/global-type';
 import type { ISequenceAdaptation, LibrarySequence } from '../../types/sequencing';
 import { CustomErrorCodes } from '../../workers/customCodes';
@@ -31,8 +33,6 @@ import {
   validateTime,
 } from '../time';
 import { getCustomArgDef } from './extension-points';
-import { closeSuggestion, computeBlocks, openSuggestion } from './languages/seq-n/custom-folder';
-import { SeqNCommandInfoMapper } from './languages/seq-n/seq-n-tree-utils';
 import { TOKEN_ERROR } from './sequence-constants';
 import { addDefaultArgs, addDefaultVariableArgs, isHexValue, parseNumericArg, quoteEscape } from './sequence-utils';
 import { getChildrenNode, getDeepestNode, getFromAndTo } from './tree-utils';
