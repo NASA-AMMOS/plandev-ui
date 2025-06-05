@@ -7,7 +7,9 @@ import type { ActionDefinition, ActionParametersMap, ActionRunSlim } from '../ty
 import type { ValueSchema, ValueSchemaOption } from '../types/schema';
 import type { UserSequence } from '../types/sequencing';
 
-// TODO explain yourself
+/**
+ * Typeguard for determining if a schema is an action sequence/sequenceList schema
+ */
 export function isActionValueSchemaSequence(
   schema: ValueSchema | ActionValueSchema,
 ): schema is ActionValueSchemaSequence | ActionValueSchemaSequenceList {
