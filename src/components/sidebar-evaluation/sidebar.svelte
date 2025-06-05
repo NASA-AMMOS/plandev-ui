@@ -17,7 +17,10 @@
 
 {#if collapsible === 'none'}
   <div
-    class={cn('bg-sidebar text-sidebar-foreground w-(--sidebar-width) flex h-full flex-col', className)}
+    class={cn(
+      'flex h-full w-[var(--sidebar-width)] flex-col bg-[var(--sidebar)] text-[var(--sidebar-foreground)]',
+      className,
+    )}
     bind:this={ref}
   >
     <slot />
@@ -37,32 +40,33 @@
     <div
       data-slot="sidebar-gap"
       class={cn(
-        'w-(--sidebar-width) relative bg-transparent transition-[width] duration-200 ease-linear',
+        'relative w-[var(--sidebar-width)] bg-transparent transition-[width] duration-200 ease-linear',
         'group-data-[collapsible=offcanvas]:w-0',
         'group-data-[side=right]:rotate-180',
         variant === 'floating' || variant === 'inset'
-          ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]'
-          : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)',
+          ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+1rem)]'
+          : 'group-data-[collapsible=icon]:w-[var(--sidebar-width-icon)]',
       )}
     />
     <div
       data-slot="sidebar-container"
       class={cn(
-        'w-(--sidebar-width) fixed inset-y-0 z-10 hidden h-svh transition-[left,right,width] duration-200 ease-linear md:flex',
+        'fixed z-10 hidden w-[var(--sidebar-width)] transition-[left,right,width] duration-200 ease-linear md:flex',
+        'bottom-0 top-[var(--nav-header-height)]',
         side === 'left'
           ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'
           : 'right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]',
         // Adjust the padding for floating and inset variants.
         variant === 'floating' || variant === 'inset'
-          ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'
-          : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l',
+          ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+1rem+2px)]'
+          : 'group-data-[collapsible=icon]:w-[var(--sidebar-width-icon)] group-data-[side=left]:border-r group-data-[side=right]:border-l',
         className,
       )}
     >
       <div
         data-sidebar="sidebar"
         data-slot="sidebar-inner"
-        class="bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
+        class="flex h-full w-full flex-col bg-[var(--sidebar)] group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-[var(--sidebar-border)] group-data-[variant=floating]:shadow-sm"
       >
         <slot />
       </div>

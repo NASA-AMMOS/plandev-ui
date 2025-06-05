@@ -13,7 +13,7 @@
   data-slot="sidebar-input"
   data-sidebar="input"
   class={cn(
-    'border-sidebar-border bg-sidebar ring-sidebar-ring placeholder:text-sidebar-foreground/50 focus-visible:ring-sidebar-ring focus-visible:outline-hidden h-8 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2',
+    'border-[var(--sidebar-border)] bg-[var(--sidebar)] ring-[var(--sidebar-ring)] placeholder:text-[var(--sidebar-foreground)] placeholder:opacity-50 focus-visible:ring-[var(--sidebar-ring)] focus-visible:outline-hidden h-8 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2',
     className,
   )}
 />

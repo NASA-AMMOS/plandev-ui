@@ -49,6 +49,8 @@
     --radius: 0.3rem;
 
     /* Sidebar CSS Variables */
+    --sidebar-width: 16rem;
+    --sidebar-width-icon: 3rem;
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
     --sidebar-primary: oklch(0.205 0 0);
@@ -80,6 +82,8 @@
     --ring: 0 0% 83.1%;
 
     /* Sidebar Dark Mode CSS Variables */
+    --sidebar-width: 16rem;
+    --sidebar-width-icon: 3rem;
     --sidebar: oklch(0.205 0 0);
     --sidebar-foreground: oklch(0.985 0 0);
     --sidebar-primary: oklch(0.488 0.243 264.376);
