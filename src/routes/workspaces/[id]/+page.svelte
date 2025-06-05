@@ -5,10 +5,13 @@
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   // Keep these imports for the commented grid layout reference
   // import WorkspaceTreeView from '../../../components/workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
-  import AppSidebar from '../../../components/AppSidebar.svelte';
   import * as Sidebar from '../../../components/sidebar-evaluation/index.js';
+  import AppSidebar from '../../../components/workspace/AppSidebar.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
+  import { WorkspaceContentType } from '../../../enums/workspace';
   import { parcel, workspaceId } from '../../../stores/workspaces';
+  import type { Workspace } from '../../../types/workspace';
+  import type { WorkspaceTreeNode } from '../../../types/workspace-tree-view';
   import effects from '../../../utilities/effects';
   import type { PageData } from './$types';
   import type { Workspace } from '../../../types/workspace';
@@ -56,14 +59,14 @@
   async function onNewFolder() {
     if ($workspaceId != null && user) {
       await effects.newWorkspaceFolder($workspaceId, user);
-      // refreshWorkspaceContents();
+      refreshWorkspaceContents();
     }
   }
 
   async function onNewSequence() {
     if ($workspaceId != null && user) {
       await effects.newWorkspaceSequence($workspaceId, user);
-      // refreshWorkspaceContents();
+      refreshWorkspaceContents();
     }
   }
 
@@ -102,12 +105,12 @@
 
   // Placeholder refresh function for the new sidebar
   function refreshWorkspaceContents() {
-    console.log('Refresh workspace contents - to be implemented with new sidebar');
+    getWorkspaceContents(initialWorkspace);
   }
 </script>
 
 <Sidebar.Provider>
-  <AppSidebar {onNewFolder} {onNewSequence} {refreshWorkspaceContents} />
+  <AppSidebar {onNewFolder} {onNewSequence} {refreshWorkspaceContents} {workspaceTree} />
   <Sidebar.Inset>
     <div class="grid h-full grid-cols-1 grid-rows-1">
       <SequenceEditor

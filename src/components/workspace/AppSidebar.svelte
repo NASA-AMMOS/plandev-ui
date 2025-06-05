@@ -13,14 +13,26 @@
     Menu,
     RefreshCcw,
   } from 'lucide-svelte';
-  import * as Sidebar from './sidebar-evaluation/index.js';
-  import TreeNode from './TreeNode.svelte';
-  import SectionTitle from './ui/SectionTitle.svelte';
+  import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
+  import * as Sidebar from '../sidebar-evaluation/index.js';
+  import TreeNode from '../TreeNode.svelte';
+  import TreeNodeReal from '../TreeNodeReal.svelte';
+  import SectionTitle from '../ui/SectionTitle.svelte';
 
   export let ref: HTMLDivElement | null = null;
   export let onNewFolder: (() => void) | undefined = undefined;
   export let onNewSequence: (() => void) | undefined = undefined;
   export let refreshWorkspaceContents: (() => void) | undefined = undefined;
+  export let workspaceTree: WorkspaceTreeNode | null | undefined = undefined;
+
+  // todo
+  // 1. way to programmatically open a folder / tree node
+  // 2. Swap icons based on file type
+  // 3. resizable sidebar
+  // 4. fix expand / collapse
+  // 5. figure out how open file works
+  // 6. do later / future
+  // 7. look at the left sidebar nav?
 
   // This is sample data.
   const data = {
@@ -124,7 +136,21 @@
       </Sidebar.GroupContent>
     </Sidebar.Group>
     <Sidebar.Group>
+      <!-- Real workspace tree -->
       <Sidebar.GroupLabel>Files</Sidebar.GroupLabel>
+      <Sidebar.GroupContent>
+        <Sidebar.Menu>
+          {#if workspaceTree}
+            <TreeNodeReal treeNode={workspaceTree} />
+          {:else}
+            <div class="p-2 text-sm text-muted-foreground">No workspace loaded</div>
+          {/if}
+        </Sidebar.Menu>
+      </Sidebar.GroupContent>
+    </Sidebar.Group>
+    <!-- Example -->
+    <Sidebar.Group>
+      <Sidebar.GroupLabel>Example</Sidebar.GroupLabel>
       <Sidebar.GroupContent>
         <Sidebar.Menu>
           {#each data.tree as item, index (index)}
