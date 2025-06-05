@@ -45,6 +45,23 @@ export type ValueSchemaVariant = {
   variants: Variant[];
 } & ValueSchemaMetadata;
 
+export type ValueSchemaOption = {
+  display: string;
+  value: string;
+};
+
+export type UIValueSchemaWithOptionsSingle = {
+  label: string;
+  options: ValueSchemaOption[];
+  type: 'options-single';
+} & ValueSchemaMetadata;
+
+export type UIValueSchemaWithOptionsMultiple = {
+  label: string;
+  options: ValueSchemaOption[];
+  type: 'options-multiple';
+} & ValueSchemaMetadata;
+
 export type ValueSchema =
   | ValueSchemaBoolean
   | ValueSchemaDuration

@@ -1,16 +1,46 @@
-import type { ActionDefinition, ActionRunSlim } from '../types/actions';
-import type { ParametersMap } from '../types/parameter';
+import type {
+  ActionValueSchema,
+  ActionValueSchemaSequence,
+  ActionValueSchemaSequenceList,
+} from '@nasa-jpl/aerie-actions';
+import type { ActionDefinition, ActionParametersMap, ActionRunSlim } from '../types/actions';
+import type { ValueSchema, ValueSchemaOption } from '../types/schema';
+import type { UserSequence } from '../types/sequencing';
+
+/**
+ * Typeguard for determining if a schema is an action sequence/sequenceList schema
+ */
+export function isActionValueSchemaSequence(
+  schema: ValueSchema | ActionValueSchema,
+): schema is ActionValueSchemaSequence | ActionValueSchemaSequenceList {
+  return (schema as ActionValueSchema).type === 'sequence' || (schema as ActionValueSchema).type === 'sequenceList';
+}
 
 /**
  * Transforms a value schema record to a parameters map
  */
 export function valueSchemaRecordToParametersMap(
   valueSchemaRecord: ActionDefinition['parameter_schema'],
-): ParametersMap {
-  return Object.entries(valueSchemaRecord).reduce((acc: ParametersMap, [key, valueSchema], i) => {
+): ActionParametersMap {
+  return Object.entries(valueSchemaRecord).reduce((acc: ActionParametersMap, [key, valueSchema], i) => {
     acc[key] = { order: i, schema: valueSchema };
     return acc;
   }, {});
+}
+
+export function getUserSequencesInWorkspace(
+  sequences: UserSequence[],
+  workspaceId: number | null,
+): ValueSchemaOption[] {
+  if (workspaceId === null) {
+    return [];
+  }
+  return sequences
+    .filter(seq => workspaceId === seq.workspace_id)
+    .map(seq => ({
+      display: seq.name,
+      value: `${seq.id}`,
+    }));
 }
 
 /***

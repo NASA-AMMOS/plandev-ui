@@ -1,5 +1,8 @@
-import type { ArgumentsMap } from './parameter';
-import type { ValueSchema } from './schema';
+import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
+import type { ArgumentsMap, ParameterName } from './parameter';
+
+export type ActionParameter = { order: number; schema: ActionValueSchema; unit?: string };
+export type ActionParametersMap = Record<ParameterName, ActionParameter>;
 
 export type ActionDefinition = {
   action_file_id: number;
@@ -8,9 +11,9 @@ export type ActionDefinition = {
   id: number;
   name: string;
   owner: string | null;
-  parameter_schema: Record<string, ValueSchema>;
+  parameter_schema: Record<string, ActionValueSchema>;
   settings: ArgumentsMap;
-  settings_schema: Record<string, ValueSchema>;
+  settings_schema: Record<string, ActionValueSchema>;
   updated_at: string;
   updated_by: string | null;
   workspace_id: number;

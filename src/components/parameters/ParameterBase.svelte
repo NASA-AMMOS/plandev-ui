@@ -4,6 +4,7 @@
   import type { FormParameter, ParameterType } from '../../types/parameter';
   import type { ActionArray } from '../../utilities/useActions';
   import ParameterBaseBoolean from './ParameterBaseBoolean.svelte';
+  import ParameterBaseDropdown from './ParameterBaseDropdown.svelte';
   import ParameterBaseDuration from './ParameterBaseDuration.svelte';
   import ParameterBaseNumber from './ParameterBaseNumber.svelte';
   import ParameterBasePath from './ParameterBasePath.svelte';
@@ -100,6 +101,33 @@
   />
 {:else if formParameter.schema.type === 'variant'}
   <ParameterBaseVariant
+    {disabled}
+    {hideRightAdornments}
+    {labelColumnWidth}
+    {level}
+    {levelPadding}
+    {formParameter}
+    {parameterType}
+    {use}
+    on:change
+    on:reset
+  />
+{:else if formParameter.schema.type === 'options-single'}
+  <ParameterBaseDropdown
+    {disabled}
+    {hideRightAdornments}
+    {labelColumnWidth}
+    {level}
+    {levelPadding}
+    {formParameter}
+    {parameterType}
+    {use}
+    on:change
+    on:reset
+  />
+{:else if formParameter.schema.type === 'options-multiple'}
+  <ParameterBaseDropdown
+    allowMultiple={true}
     {disabled}
     {hideRightAdornments}
     {labelColumnWidth}
