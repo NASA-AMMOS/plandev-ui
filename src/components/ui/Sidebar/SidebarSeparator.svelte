@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Separator } from '@nasa-jpl/stellar-svelte';
-  import { cn } from '../../utilities/generic';
+  import { cn } from '../../../utilities/generic';
 
   // Props
   export let className: string = '';
@@ -9,5 +9,5 @@
 <Separator
   data-slot="sidebar-separator"
   data-sidebar="separator"
-  class={cn('bg-[var(--sidebar-border)] mx-2 w-auto', className)}
+  class={cn('mx-2 w-auto bg-[var(--sidebar-border)]', className)}
 />

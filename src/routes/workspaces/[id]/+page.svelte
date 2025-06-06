@@ -3,10 +3,8 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
-  // Keep these imports for the commented grid layout reference
-  // import WorkspaceTreeView from '../../../components/workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
-  import * as Sidebar from '../../../components/sidebar-evaluation/index.js';
-  import AppSidebar from '../../../components/workspace/AppSidebar.svelte';
+  import * as Sidebar from '../../../components/ui/Sidebar/index.js';
+  import WorkspaceSidebar from '../../../components/workspace/WorkspaceSidebar.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import { parcel, workspaceId } from '../../../stores/workspaces';
@@ -45,6 +43,10 @@
         };
       }
     }
+  }
+
+  function refreshWorkspaceContents() {
+    getWorkspaceContents(initialWorkspace);
   }
 
   async function getSelectedSequenceDefinition(sequencePath: string | null) {
@@ -110,7 +112,14 @@
 </script>
 
 <Sidebar.Provider>
-  <AppSidebar {onNewFolder} {onNewSequence} {refreshWorkspaceContents} {workspaceTree} />
+  <WorkspaceSidebar
+    on:nodeClicked={onNodeClicked}
+    on:newFolder={onNewFolder}
+    on:newSequence={onNewSequence}
+    on:refreshWorkspace={refreshWorkspaceContents}
+    on:saveSequence={onSaveWorkspaceFile}
+    {workspaceTree}
+  />
   <Sidebar.Inset>
     <div class="grid h-full grid-cols-1 grid-rows-1">
       <SequenceEditor
@@ -121,8 +130,7 @@
         {user}
         readOnly={false}
         workspaceId={$workspaceId}
-        on:sequence
-        on:didChangeModelContent
+        on:sequence={onWorkspaceFileUpdated}
       />
     </div>
   </Sidebar.Inset>

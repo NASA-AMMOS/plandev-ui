@@ -6,65 +6,51 @@
     ArrowUpFromLine,
     ChevronDown,
     Clapperboard,
-    File,
     FilePlus,
     FolderPlus,
     FolderTree,
     Menu,
     RefreshCcw,
   } from 'lucide-svelte';
+  import { createEventDispatcher } from 'svelte';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
-  import * as Sidebar from '../sidebar-evaluation/index.js';
-  import TreeNode from '../TreeNode.svelte';
-  import TreeNodeReal from '../TreeNodeReal.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
+  import * as Sidebar from '../ui/Sidebar/index.js';
+  import WorkspaceTreeView from './WorkspaceTreeView/WorkspaceTreeView.svelte';
 
-  export let ref: HTMLDivElement | null = null;
-  export let onNewFolder: (() => void) | undefined = undefined;
-  export let onNewSequence: (() => void) | undefined = undefined;
-  export let refreshWorkspaceContents: (() => void) | undefined = undefined;
+  const dispatch = createEventDispatcher<{
+    newFolder: void;
+    newSequence: void;
+    refreshWorkspace: void;
+    saveSequence: void;
+  }>();
+
+  export let selectedSequencePath: string | null = null;
   export let workspaceTree: WorkspaceTreeNode | null | undefined = undefined;
 
   // todo
-  // 1. way to programmatically open a folder / tree node
-  // 2. Swap icons based on file type
-  // 3. resizable sidebar
-  // 4. fix expand / collapse
-  // 5. figure out how open file works
-  // 6. do later / future
-  // 7. look at the left sidebar nav?
+  // 1. resizable sidebar
+  // 2. fix expand / collapse
+  // 3. look at the left sidebar nav?
 
-  // This is sample data.
-  const data = {
-    changes: [
-      {
-        file: 'README.md',
-        state: 'M',
-      },
-      {
-        file: 'routes/+page.svelte',
-        state: 'U',
-      },
-      {
-        file: 'routes/+layout.svelte',
-        state: 'M',
-      },
-    ],
-    tree: [
-      ['lib', ['components', 'button.svelte', 'card.svelte'], 'utils.ts'],
-      ['routes', ['hello', '+page.svelte', '+page.ts'], '+page.svelte', '+page.server.ts', '+layout.svelte'],
-      ['static', 'favicon.ico', 'svelte.svg'],
-      'eslint.config.js',
-      '.gitignore',
-      'svelte.config.js',
-      'tailwind.config.js',
-      'package.json',
-      'README.md',
-    ],
-  };
+  function onNewFolder() {
+    dispatch('newFolder');
+  }
+
+  function onNewSequence() {
+    dispatch('newSequence');
+  }
+
+  function onRefreshWorkspace() {
+    dispatch('refreshWorkspace');
+  }
+
+  function onSave() {
+    dispatch('saveSequence');
+  }
 </script>
 
-<Sidebar.Root bind:ref>
+<Sidebar.Root>
   <Sidebar.Header>
     <div class="flex h-16 w-full items-center gap-1">
       <Sidebar.Trigger className="-ml-1">
@@ -77,6 +63,7 @@
             <Clapperboard size={16} />
             Actions
           </Button>
+          <Button variant="outline" class="gap-1" on:click={onSave}>Save</Button>
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild let:builder>
               <Button builders={[builder]} variant="outline" class="gap-1">
@@ -103,7 +90,7 @@
           </Button>
           <Tooltip.Root>
             <Tooltip.Trigger asChild let:builder>
-              <Button builders={[builder]} variant="outline" on:click={refreshWorkspaceContents}>
+              <Button builders={[builder]} variant="outline" on:click={onRefreshWorkspace}>
                 <RefreshCcw size={16} />
               </Button>
             </Tooltip.Trigger>
@@ -120,42 +107,19 @@
   </Sidebar.Header>
   <Sidebar.Content>
     <Sidebar.Group>
-      <Sidebar.GroupLabel>Changes</Sidebar.GroupLabel>
-      <Sidebar.GroupContent>
-        <Sidebar.Menu>
-          {#each data.changes as item, index (index)}
-            <Sidebar.MenuItem>
-              <Sidebar.MenuButton>
-                <File size={16} />
-                {item.file}
-              </Sidebar.MenuButton>
-              <Sidebar.MenuBadge>{item.state}</Sidebar.MenuBadge>
-            </Sidebar.MenuItem>
-          {/each}
-        </Sidebar.Menu>
-      </Sidebar.GroupContent>
-    </Sidebar.Group>
-    <Sidebar.Group>
-      <!-- Real workspace tree -->
       <Sidebar.GroupLabel>Files</Sidebar.GroupLabel>
       <Sidebar.GroupContent>
         <Sidebar.Menu>
           {#if workspaceTree}
-            <TreeNodeReal treeNode={workspaceTree} />
+            <WorkspaceTreeView
+              treeNode={workspaceTree}
+              selectedTreeNodePath={selectedSequencePath}
+              on:nodeClicked
+              on:nodeRightClicked
+            />
           {:else}
             <div class="p-2 text-sm text-muted-foreground">No workspace loaded</div>
           {/if}
-        </Sidebar.Menu>
-      </Sidebar.GroupContent>
-    </Sidebar.Group>
-    <!-- Example -->
-    <Sidebar.Group>
-      <Sidebar.GroupLabel>Example</Sidebar.GroupLabel>
-      <Sidebar.GroupContent>
-        <Sidebar.Menu>
-          {#each data.tree as item, index (index)}
-            <TreeNode {item} />
-          {/each}
         </Sidebar.Menu>
       </Sidebar.GroupContent>
     </Sidebar.Group>

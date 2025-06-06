@@ -1,12 +1,12 @@
 <script lang="ts">
   import { Tooltip } from '@nasa-jpl/stellar-svelte';
   import { tv, type VariantProps } from 'tailwind-variants';
-  import { cn } from '../../utilities/generic';
-  import { useSidebar } from './context';
+  import { cn } from '../../../../utilities/generic';
+  import { useSidebar } from '../context';
 
   // Tailwind variants definition
   const sidebarMenuButtonVariants = tv({
-    base: 'peer/menu-button outline-hidden ring-[var(--sidebar-ring)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)] active:bg-[var(--sidebar-accent)] active:text-[var(--sidebar-accent-foreground)] group-has-data-[sidebar=menu-action]/menu-item:pr-8 data-[active=true]:bg-[var(--sidebar-accent)] data-[active=true]:text-[var(--sidebar-accent-foreground)] data-[state=open]:hover:bg-[var(--sidebar-accent)] data-[state=open]:hover:text-[var(--sidebar-accent-foreground)] group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:p-2 flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm transition-[width,height,padding] focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:font-medium [&>span:last-child]:truncate [&>svg]:w-4 [&>svg]:h-4 [&>svg]:shrink-0',
+    base: 'peer/menu-button outline-hidden group-has-data-[sidebar=menu-action]/menu-item:pr-8 flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm ring-[var(--sidebar-ring)] transition-[width,height,padding] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)] focus-visible:ring-2 active:bg-[var(--sidebar-accent)] active:text-[var(--sidebar-accent-foreground)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-[var(--sidebar-accent)] data-[active=true]:font-medium data-[active=true]:text-[var(--sidebar-accent-foreground)] data-[state=open]:hover:bg-[var(--sidebar-accent)] data-[state=open]:hover:text-[var(--sidebar-accent-foreground)] group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-2 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
     defaultVariants: {
       size: 'default',
       variant: 'default',
@@ -14,13 +14,13 @@
     variants: {
       size: {
         default: 'h-8 text-sm',
-        lg: 'group-data-[collapsible=icon]:p-0 h-12 text-sm',
+        lg: 'h-12 text-sm group-data-[collapsible=icon]:p-0',
         sm: 'h-7 text-xs',
       },
       variant: {
         default: 'hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]',
         outline:
-          'hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)] bg-background shadow-[0_0_0_1px_var(--sidebar-border)] hover:shadow-[0_0_0_1px_var(--sidebar-accent)]',
+          'bg-background shadow-[0_0_0_1px_var(--sidebar-border)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)] hover:shadow-[0_0_0_1px_var(--sidebar-accent)]',
       },
     },
   });
@@ -62,6 +62,8 @@
         data-size={size}
         data-active={isActive}
         class={buttonClass}
+        on:click
+        on:contextmenu
       >
         <slot />
       </button>
@@ -78,6 +80,8 @@
     data-size={size}
     data-active={isActive}
     class={buttonClass}
+    on:click
+    on:contextmenu
   >
     <slot />
   </button>
