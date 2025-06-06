@@ -5,4 +5,4 @@ export const SIDEBAR_WIDTH_ICON = '3rem';
 export const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 
 // Hierarchy indentation constants
-export const SIDEBAR_INDENT_PER_LEVEL = 24; // Consistent padding per nesting level in px
+export const SIDEBAR_INDENT_PER_LEVEL = 16; // Consistent padding per nesting level in px
