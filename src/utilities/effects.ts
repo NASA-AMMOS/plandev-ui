@@ -304,6 +304,21 @@ function throwPermissionError(attemptedAction: string): never {
   throw Error(`You do not have permission to: ${attemptedAction}.`);
 }
 
+function createFormDataWithFile(fileName: string, fileContent: string, fileKey: string = 'file'): FormData {
+  const file = new File([fileContent], fileName);
+  const body = new FormData();
+  body.append(fileKey, file, file.name);
+
+  return body;
+}
+
+function createWorkspaceSequenceFileFormData(filePath: string, fileContent: string) {
+  const pathParts = filePath.split('/');
+  const fileName = pathParts[pathParts.length - 1];
+
+  return createFormDataWithFile(fileName, fileContent);
+}
+
 /**
  * Functions that have side-effects (e.g. HTTP requests, toasts, popovers, store updates, etc.).
  */
@@ -3654,7 +3669,7 @@ const effects = {
       );
 
       if (confirm) {
-        await reqWorkspace(`/ws/${workspace.id}`, 'DELETE', null, user, true, undefined, false);
+        await reqWorkspace(`/ws/${workspace.id}`, 'DELETE', null, user, undefined, false);
         showSuccessToast('Workspace Deleted Successfully');
         return true;
       }
@@ -4801,17 +4816,6 @@ const effects = {
     return null;
   },
 
-  async getSequenceDefinition(sequenceId: string, user: User | null): Promise<string | null> {
-    try {
-      // TODO: finish request
-      return `${sequenceId}${user?.id}`;
-    } catch (e) {
-      catchError(e as Error);
-    }
-
-    return null;
-  },
-
   async getSpans(
     datasetId: number,
     planStartTimeYmd: string,
@@ -5176,6 +5180,30 @@ const effects = {
     return null;
   },
 
+  async getWorkspaceFileContent(workspaceId: number, filePath: string, user: User | null): Promise<string | null> {
+    try {
+      const fileContents = await reqWorkspace<string>(
+        `/ws/${workspaceId}/${filePath}`,
+        'GET',
+        null,
+        user,
+        undefined,
+        false,
+      );
+
+      if (fileContents != null) {
+        return fileContents;
+      } else {
+        throw Error(`Unable to retrieve workspace file`);
+      }
+    } catch (e) {
+      catchError('Workspace File Retrieval Failed', e as Error);
+      showFailureToast('Workspace File Retrieval Failed');
+    }
+
+    return null;
+  },
+
   async importLibrarySequences(
     workspaceId: number | null,
   ): Promise<{ fileContents: string; parcel: number } | undefined> {
@@ -5478,7 +5506,6 @@ const effects = {
           null,
           user,
           undefined,
-          undefined,
           false,
         );
 
@@ -5498,27 +5525,21 @@ const effects = {
       } = await showNewWorkspaceSequenceModal();
 
       if (confirm) {
-        const pathParts = sequencePath.split('/');
-        const fileName = pathParts[pathParts.length - 1];
-        const file = new File([''], fileName);
-        const body = new FormData();
-        body.append('file', file, file.name);
+        const body = createWorkspaceSequenceFileFormData(sequencePath, '');
 
         await reqWorkspace<Workspace>(
           `/ws/${workspaceId}/${sequencePath}?type=file`,
           'PUT',
           body,
           user,
-          true,
           undefined,
           false,
         );
-
-        showSuccessToast('Workspace Folder Created Successfully');
+        showSuccessToast('Workspace File Created Successfully');
       }
     } catch (e) {
-      catchError('Workspace folder was unable to be created', e as Error);
-      showFailureToast('Workspace Folder Creation Failed');
+      catchError('Workspace file was unable to be created', e as Error);
+      showFailureToast('Workspace File Creation Failed');
     }
   },
 
@@ -5876,6 +5897,18 @@ const effects = {
       catchError('Run Action Failed', e as Error);
       showFailureToast('Run Action Failed');
       return null;
+    }
+  },
+
+  async saveWorkspaceFile(workspaceId: number, filePath: string, fileContent: string, user: User | null = null) {
+    try {
+      const body = createWorkspaceSequenceFileFormData(filePath, fileContent);
+
+      await reqWorkspace<Workspace>(`/ws/${workspaceId}/${filePath}?type=file`, 'POST', body, user, undefined, false);
+      showSuccessToast('Workspace File Saved Successfully');
+    } catch (e) {
+      catchError('Workspace file was unable to be saved', e as Error);
+      showFailureToast('Workspace File Save Failed');
     }
   },
 

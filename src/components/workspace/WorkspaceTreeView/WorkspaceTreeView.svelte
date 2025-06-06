@@ -14,7 +14,7 @@
       {treeNode}
       {selectedTreeNodePath}
       treeNodePath={`${treeNode.name}`}
-      on:nodeClicked={event => console.log(event.detail.treeNode)}
+      on:nodeClicked
       on:nodeRightClicked
     />
   {:else}

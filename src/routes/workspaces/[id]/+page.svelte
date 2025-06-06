@@ -33,16 +33,16 @@
   const { initialWorkspace, user } = data;
 
   let selectedSequenceDefinition: string = '';
-  let selectedSequenceId: string | null = null;
+  let selectedSequencePath: string | null = null;
   let workspaceTree: WorkspaceTreeNode | null = null;
 
   $: if (initialWorkspace) {
     $workspaceId = initialWorkspace.id;
-    selectedSequenceId = $page.url.searchParams.get(SearchParameters.SEQUENCE_ID);
+    selectedSequencePath = $page.url.searchParams.get(SearchParameters.SEQUENCE_ID);
     getWorkspaceContents(initialWorkspace);
   }
 
-  $: getSelectedSequenceDefinition(selectedSequenceId);
+  $: getSelectedSequenceDefinition(selectedSequencePath);
 
   async function getWorkspaceContents(workspace: Workspace | undefined) {
     if (workspace) {
@@ -57,9 +57,14 @@
     }
   }
 
-  async function getSelectedSequenceDefinition(sequenceId: string | null) {
-    if (sequenceId !== null && user) {
-      selectedSequenceDefinition = (await effects.getSequenceDefinition(sequenceId, user)) ?? '';
+  function refreshWorkspaceContents() {
+    getWorkspaceContents(initialWorkspace);
+  }
+
+  async function getSelectedSequenceDefinition(sequencePath: string | null) {
+    if (sequencePath !== null && user) {
+      selectedSequenceDefinition =
+        (await effects.getWorkspaceFileContent($workspaceId, removeWorkspaceFromPath(sequencePath), user)) ?? '';
     } else {
       selectedSequenceDefinition = '';
     }
@@ -79,8 +84,35 @@
     }
   }
 
-  function refreshWorkspaceContents() {
-    getWorkspaceContents(initialWorkspace);
+  function removeWorkspaceFromPath(path: string) {
+    return path.replace(`${workspaceTree?.name ?? ''}/`, '');
+  }
+
+  function onNodeClicked({
+    detail: { treeNode, treeNodePath },
+  }: CustomEvent<{
+    toggleState: boolean;
+    treeNode: WorkspaceTreeNode;
+    treeNodePath: string;
+  }>) {
+    if (treeNode.type === WorkspaceContentType.Sequence) {
+      selectedSequencePath = treeNodePath;
+    }
+  }
+
+  function onSaveWorkspaceFile() {
+    if (selectedSequencePath) {
+      effects.saveWorkspaceFile(
+        $workspaceId,
+        removeWorkspaceFromPath(selectedSequencePath),
+        selectedSequenceDefinition,
+        user,
+      );
+    }
+  }
+
+  function onWorkspaceFileUpdated({ detail: { input } }: CustomEvent<{ input: string; output: string }>) {
+    selectedSequenceDefinition = input;
   }
 </script>
 
@@ -92,6 +124,10 @@
         <Button variant="outline" class="gap-1">
           <Clapperboard size={16} />
           Actions
+        </Button>
+        <Button variant="outline" class="gap-1" on:click={onSaveWorkspaceFile}>
+          <Clapperboard size={16} />
+          Save
         </Button>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild let:builder>
@@ -132,7 +168,11 @@
     </svelte:fragment>
     <svelte:fragment slot="body">
       <div class="h-max p-2">
-        <WorkspaceTreeView treeNode={workspaceTree} />
+        <WorkspaceTreeView
+          treeNode={workspaceTree}
+          selectedTreeNodePath={selectedSequencePath}
+          on:nodeClicked={onNodeClicked}
+        />
       </div>
     </svelte:fragment>
   </Panel>
@@ -146,8 +186,7 @@
     {user}
     readOnly={false}
     workspaceId={$workspaceId}
-    on:sequence
-    on:didChangeModelContent
+    on:sequence={onWorkspaceFileUpdated}
   />
 </CssGrid>
 
