@@ -126,9 +126,9 @@
 
 {#if shown}
   <!-- svelte-ignore a11y-click-events-have-key-events a11y-interactive-supports-focus -->
-  <div class="menu" role="menu" use:popperRef on:click|stopPropagation={onClick}>
+  <div class="menu pointer-events-none" role="menu" use:popperRef on:click|stopPropagation={onClick}>
     <div
-      class="st-menu st-typography-medium"
+      class="st-menu st-typography-medium pointer-events-auto"
       style:width={typeof width === 'number' ? `${width}px` : null}
       use:popperContent={extraOpts}
     >
