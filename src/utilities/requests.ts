@@ -178,7 +178,6 @@ export async function reqWorkspace<T = any>(
   method: string,
   body: any | null,
   user: BaseUser | User | null,
-  excludeContentType?: boolean,
   signal?: AbortSignal,
   asJson: boolean = true,
 ): Promise<T> {
@@ -186,7 +185,6 @@ export async function reqWorkspace<T = any>(
 
   const headers: HeadersInit = {
     Authorization: `Bearer ${user?.token ?? ''}`,
-    ...(excludeContentType ? {} : { 'Content-Type': 'application/json' }),
     'x-hasura-role': (user as User)?.activeRole ?? '',
     'x-hasura-user-id': user?.id ?? '',
   };

@@ -3,10 +3,8 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
-  // Keep these imports for the commented grid layout reference
-  // import WorkspaceTreeView from '../../../components/workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
-  import * as Sidebar from '../../../components/sidebar-evaluation/index.js';
-  import AppSidebar from '../../../components/workspace/AppSidebar.svelte';
+  import * as Sidebar from '../../../components/ui/Sidebar/index.js';
+  import WorkspaceSidebar from '../../../components/workspace/WorkspaceSidebar.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import { parcel, workspaceId } from '../../../stores/workspaces';
@@ -20,16 +18,16 @@
   const { initialWorkspace, user } = data;
 
   let selectedSequenceDefinition: string = '';
-  let selectedSequenceId: string | null = null;
+  let selectedSequencePath: string | null = null;
   let workspaceTree: WorkspaceTreeNode | null = null;
 
   $: if (initialWorkspace) {
     $workspaceId = initialWorkspace.id;
-    selectedSequenceId = $page.url.searchParams.get(SearchParameters.SEQUENCE_ID);
+    selectedSequencePath = $page.url.searchParams.get(SearchParameters.SEQUENCE_ID);
     getWorkspaceContents(initialWorkspace);
   }
 
-  $: getSelectedSequenceDefinition(selectedSequenceId);
+  $: getSelectedSequenceDefinition(selectedSequencePath);
 
   async function getWorkspaceContents(workspace: Workspace | undefined) {
     if (workspace) {
@@ -71,13 +69,40 @@
     }
   }
 
-  function refreshWorkspaceContents() {
-    getWorkspaceContents(initialWorkspace);
+  function removeWorkspaceFromPath(path: string) {
+    return path.replace(`${workspaceTree?.name ?? ''}/`, '');
+  }
+
+  function onNodeClicked({
+    detail: { treeNode, treeNodePath },
+  }: CustomEvent<{
+    toggleState: boolean;
+    treeNode: WorkspaceTreeNode;
+    treeNodePath: string;
+  }>) {
+    if (treeNode.type === WorkspaceContentType.Sequence) {
+      selectedSequencePath = treeNodePath;
+    }
+  }
+
+  function onSaveWorkspaceFile() {
+    if (selectedSequencePath) {
+      effects.saveWorkspaceFile(
+        $workspaceId,
+        removeWorkspaceFromPath(selectedSequencePath),
+        selectedSequenceDefinition,
+        user,
+      );
+    }
+  }
+
+  function onWorkspaceFileUpdated({ detail: { input } }: CustomEvent<{ input: string; output: string }>) {
+    selectedSequenceDefinition = input;
   }
 </script>
 
 <Sidebar.Provider>
-  <AppSidebar
+  <WorkspaceSidebar
     on:nodeClicked={onNodeClicked}
     on:newFolder={onNewFolder}
     on:newSequence={onNewSequence}
