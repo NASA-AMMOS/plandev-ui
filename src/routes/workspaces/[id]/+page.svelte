@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { page } from '$app/stores';
+  import { Resizable } from '@nasa-jpl/stellar-svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import * as Sidebar from '../../../components/ui/Sidebar/index.js';
   import WorkspaceSidebar from '../../../components/workspace/WorkspaceSidebar.svelte';
@@ -112,28 +113,35 @@
 </script>
 
 <Sidebar.Provider>
-  <WorkspaceSidebar
-    on:nodeClicked={onNodeClicked}
-    on:newFolder={onNewFolder}
-    on:newSequence={onNewSequence}
-    on:refreshWorkspace={refreshWorkspaceContents}
-    on:saveSequence={onSaveWorkspaceFile}
-    {workspaceTree}
-  />
-  <Sidebar.Inset>
-    <div class="grid h-full grid-cols-1 grid-rows-1">
-      <SequenceEditor
-        parcel={$parcel}
-        showCommandFormBuilder={true}
-        sequenceDefinition={selectedSequenceDefinition}
-        title="Sequence - Definition Editor"
-        {user}
-        readOnly={false}
-        workspaceId={$workspaceId}
-        on:sequence={onWorkspaceFileUpdated}
+  <Resizable.PaneGroup direction="horizontal">
+    <Resizable.Pane defaultSize={20}>
+      <WorkspaceSidebar
+        on:nodeClicked={onNodeClicked}
+        on:newFolder={onNewFolder}
+        on:newSequence={onNewSequence}
+        on:refreshWorkspace={refreshWorkspaceContents}
+        on:saveSequence={onSaveWorkspaceFile}
+        {workspaceTree}
       />
-    </div>
-  </Sidebar.Inset>
+    </Resizable.Pane>
+    <Resizable.Handle />
+    <Resizable.Pane defaultSize={50}>
+      <Sidebar.Inset>
+        <div class="grid h-full grid-cols-1 grid-rows-1">
+          <SequenceEditor
+            parcel={$parcel}
+            showCommandFormBuilder={true}
+            sequenceDefinition={selectedSequenceDefinition}
+            title="Sequence - Definition Editor"
+            {user}
+            readOnly={false}
+            workspaceId={$workspaceId}
+            on:sequence={onWorkspaceFileUpdated}
+          />
+        </div>
+      </Sidebar.Inset>
+    </Resizable.Pane>
+  </Resizable.PaneGroup>
 </Sidebar.Provider>
 
 <!-- Original grid layout commented out for reference -->

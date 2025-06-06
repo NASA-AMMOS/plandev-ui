@@ -16,6 +16,7 @@
         {selectedTreeNodePath}
         treeNode={treeNodeChild}
         treeNodePath={treeNodeChild.name}
+        depth={0}
         on:nodeClicked
         on:nodeRightClicked
       />

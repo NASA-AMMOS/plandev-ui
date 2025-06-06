@@ -50,7 +50,7 @@
   }
 </script>
 
-<Sidebar.Root>
+<Sidebar.Root className="inset-x-0">
   <Sidebar.Header>
     <div class="flex h-16 w-full items-center gap-1">
       <Sidebar.Trigger className="-ml-1">

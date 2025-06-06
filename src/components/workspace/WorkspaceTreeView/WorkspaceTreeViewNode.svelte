@@ -10,6 +10,7 @@
   export let selectedTreeNodePath: string | null | undefined = undefined;
   export let treeNode: WorkspaceTreeNode;
   export let treeNodePath: string = '';
+  export let depth: number = 0;
 
   type NodeClickEvent = {
     toggleState: boolean;
@@ -56,25 +57,47 @@
 {#if isFolder}
   <Sidebar.MenuItem>
     <Collapsible.Root bind:open={isOpen}>
-      <Collapsible.Trigger>
-        <Sidebar.MenuButton on:click={onNodeClicked} on:contextmenu={onNodeRightClicked}>
-          <ChevronRight size={16} class={isOpen ? 'rotate-90' : ''} />
-          {#if isOpen}
-            <FolderOpen size={16} />
-          {:else}
-            <Folder size={16} />
-          {/if}
-          {treeNode.name}
-        </Sidebar.MenuButton>
+      <Collapsible.Trigger class="w-full">
+        {#if depth > 0}
+          <Sidebar.MenuSubButton
+            isActive={selectedTreeNodePath === treeNodePath}
+            {depth}
+            on:click={onNodeClicked}
+            on:contextmenu={onNodeRightClicked}
+          >
+            <ChevronRight size={16} class={isOpen ? 'rotate-90' : ''} />
+            {#if isOpen}
+              <FolderOpen size={16} />
+            {:else}
+              <Folder size={16} />
+            {/if}
+            {treeNode.name}
+          </Sidebar.MenuSubButton>
+        {:else}
+          <Sidebar.MenuButton
+            isActive={selectedTreeNodePath === treeNodePath}
+            on:click={onNodeClicked}
+            on:contextmenu={onNodeRightClicked}
+          >
+            <ChevronRight size={16} class={isOpen ? 'rotate-90' : ''} />
+            {#if isOpen}
+              <FolderOpen size={16} />
+            {:else}
+              <Folder size={16} />
+            {/if}
+            {treeNode.name}
+          </Sidebar.MenuButton>
+        {/if}
       </Collapsible.Trigger>
       <Collapsible.Content transitionConfig={{ duration: 0 }}>
-        <Sidebar.MenuSub>
+        <Sidebar.MenuSub {depth}>
           {#if treeNode.contents}
             {#each treeNode.contents as treeNodeChild (treeNodeChild.name)}
               <svelte:self
                 {selectedTreeNodePath}
                 treeNode={treeNodeChild}
                 treeNodePath={`${treeNodePath}/${treeNodeChild.name}`}
+                depth={depth + 1}
                 on:nodeClicked
                 on:nodeRightClicked
               />
@@ -87,13 +110,27 @@
 {:else}
   <!-- File item -->
   <Sidebar.MenuItem>
-    <Sidebar.MenuButton
-      className="data-[active=true]:bg-transparent"
-      on:click={onNodeClicked}
-      on:contextmenu={onNodeRightClicked}
-    >
-      <WorkspaceTreeViewIcon {treeNode} />
-      {treeNode.name}
-    </Sidebar.MenuButton>
+    <div class="w-full">
+      {#if depth > 0}
+        <Sidebar.MenuSubButton
+          isActive={selectedTreeNodePath === treeNodePath}
+          {depth}
+          on:click={onNodeClicked}
+          on:contextmenu={onNodeRightClicked}
+        >
+          <WorkspaceTreeViewIcon {treeNode} />
+          {treeNode.name}
+        </Sidebar.MenuSubButton>
+      {:else}
+        <Sidebar.MenuButton
+          isActive={selectedTreeNodePath === treeNodePath}
+          on:click={onNodeClicked}
+          on:contextmenu={onNodeRightClicked}
+        >
+          <WorkspaceTreeViewIcon {treeNode} />
+          {treeNode.name}
+        </Sidebar.MenuButton>
+      {/if}
+    </div>
   </Sidebar.MenuItem>
 {/if}
