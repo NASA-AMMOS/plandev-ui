@@ -5879,6 +5879,25 @@ const effects = {
     }
   },
 
+  async saveWorkspaceFile(workspaceId: number, filePath: string, fileContent: string, user: User | null = null) {
+    try {
+      const body = createWorkspaceSequenceFileFormData(filePath, fileContent);
+
+      await reqWorkspace<Workspace>(
+        `/ws/${workspaceId}/${filePath}?type=file&overwrite=true`,
+        'PUT',
+        body,
+        user,
+        undefined,
+        false,
+      );
+      showSuccessToast('Workspace File Saved Successfully');
+    } catch (e) {
+      catchError('Workspace file was unable to be saved', e as Error);
+      showFailureToast('Workspace File Save Failed');
+    }
+  },
+
   async schedule(analysisOnly: boolean = false, plan: Plan | null, user: User | null): Promise<void> {
     try {
       if (plan) {

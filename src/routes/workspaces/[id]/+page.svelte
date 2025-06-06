@@ -44,9 +44,14 @@
     }
   }
 
-  async function getSelectedSequenceDefinition(sequenceId: string | null) {
-    if (sequenceId !== null && user) {
-      selectedSequenceDefinition = (await effects.getSequenceDefinition(sequenceId, user)) ?? '';
+  function refreshWorkspaceContents() {
+    getWorkspaceContents(initialWorkspace);
+  }
+
+  async function getSelectedSequenceDefinition(sequencePath: string | null) {
+    if (sequencePath !== null && user) {
+      selectedSequenceDefinition =
+        (await effects.getWorkspaceFileContent($workspaceId, removeWorkspaceFromPath(sequencePath), user)) ?? '';
     } else {
       selectedSequenceDefinition = '';
     }
@@ -72,7 +77,14 @@
 </script>
 
 <Sidebar.Provider>
-  <AppSidebar {onNewFolder} {onNewSequence} {refreshWorkspaceContents} {workspaceTree} />
+  <AppSidebar
+    on:nodeClicked={onNodeClicked}
+    on:newFolder={onNewFolder}
+    on:newSequence={onNewSequence}
+    on:refreshWorkspace={refreshWorkspaceContents}
+    on:saveSequence={onSaveWorkspaceFile}
+    {workspaceTree}
+  />
   <Sidebar.Inset>
     <div class="grid h-full grid-cols-1 grid-rows-1">
       <SequenceEditor
@@ -83,8 +95,7 @@
         {user}
         readOnly={false}
         workspaceId={$workspaceId}
-        on:sequence
-        on:didChangeModelContent
+        on:sequence={onWorkspaceFileUpdated}
       />
     </div>
   </Sidebar.Inset>

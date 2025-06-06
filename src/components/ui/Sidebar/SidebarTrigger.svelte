@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { cn } from '../../utilities/generic';
+  import { cn } from '../../../utilities/generic';
   import { useSidebar } from './context';
 
   // Props
@@ -20,7 +20,7 @@
   type="button"
   on:click={handleClick}
   class={cn(
-    'ring-[var(--sidebar-ring)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)] h-7 w-7 rounded-md p-0 transition-colors focus-visible:ring-2 [&>svg]:w-4 [&>svg]:h-4 [&>svg]:shrink-0',
+    'h-7 w-7 rounded-md p-0 ring-[var(--sidebar-ring)] transition-colors hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)] focus-visible:ring-2 [&>svg]:h-4 [&>svg]:w-4 [&>svg]:shrink-0',
     className,
   )}
 >

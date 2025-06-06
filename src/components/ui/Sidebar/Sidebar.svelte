@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { cn } from '../../utilities/generic';
+  import { cn } from '../../../utilities/generic';
   import { useSidebar } from './context.js';
 
   // Props
