@@ -36,6 +36,7 @@ function getErrorPosition(error: SyntaxError, doc: Text): number {
   return 0;
 }
 
+// TODO do we really need a SeqJSON linter?
 /**
  * Linter function that returns a Code Mirror extension function.
  * Can be optionally called with a command dictionary so it's available during linting.
