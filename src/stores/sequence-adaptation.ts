@@ -1,7 +1,9 @@
 import { seqJsonToSeqn, seqnToSeqJson } from '@nasa-jpl/aerie-sequence-languages';
 import { derived, get, writable, type Writable } from 'svelte/store';
+import type { ISequenceAdaptation } from '../language-package/interfaces/legacy';
+import type { NewAdaptationInterface } from '../language-package/interfaces/new-adaptation-interface';
 import type { GlobalType } from '../types/global-type';
-import type { ISequenceAdaptation, SequenceAdaptationMetadata } from '../types/sequencing';
+import type { SequenceAdaptationMetadata } from '../types/sequencing';
 import gql from '../utilities/gql';
 import { sequenceAutoIndent } from '../utilities/sequence-editor/sequence-autoindent';
 import { sequenceCompletion } from '../utilities/sequence-editor/sequence-completion';
@@ -32,6 +34,7 @@ const defaultAdaptation: ISequenceAdaptation = {
 /* Writeable */
 
 export const sequenceAdaptation: Writable<ISequenceAdaptation> = writable(defaultAdaptation);
+export const newSequenceAdaptation: Writable<NewAdaptationInterface> = writable({ extension: [] }); // TODO populate
 
 /* Subscriptions. */
 
@@ -57,7 +60,8 @@ export function getGlobals(): GlobalType[] {
   return get(sequenceAdaptation).globals ?? [];
 }
 
-export function setSequenceAdaptation(newSequenceAdaptation: Partial<ISequenceAdaptation> | undefined): void { // TODO boo
+export function setSequenceAdaptation(newSequenceAdaptation: Partial<ISequenceAdaptation> | undefined): void {
+  // TODO boo
   sequenceAdaptation.set({
     argDelegator: newSequenceAdaptation?.argDelegator ?? defaultAdaptation.argDelegator,
     autoComplete: newSequenceAdaptation?.autoComplete ?? defaultAdaptation.autoComplete,

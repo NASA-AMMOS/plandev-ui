@@ -17,6 +17,7 @@
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
+  import type { IOutputFormat, LibrarySequence, LibrarySequenceMap } from '../../language-package/interfaces/legacy';
   import { setupLanguageSupport } from '../../language-package/languages/seq-n/seq-n';
   import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../language-package/languages/seq-n/seq-n-highlighter';
   import {
@@ -37,6 +38,7 @@
   import {
     getGlobals,
     inputFormat,
+    newSequenceAdaptation,
     outputFormat as outputFormatStore,
     sequenceAdaptation,
     setSequenceAdaptation,
@@ -54,14 +56,7 @@
     userSequences,
   } from '../../stores/sequencing';
   import type { User } from '../../types/app';
-  import {
-    type ArgTextDef,
-    type IOutputFormat,
-    type LibrarySequence,
-    type LibrarySequenceMap,
-    type Parcel,
-    type TimeTagInfo,
-  } from '../../types/sequencing';
+  import { type ArgTextDef, type Parcel, type TimeTagInfo } from '../../types/sequencing';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import effects from '../../utilities/effects';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
@@ -92,7 +87,7 @@
   export let readOnly: boolean = false;
   export let previewOnly: boolean = false;
   export let sequenceName: string = '';
-  export let sequenceDefinition: string = '';
+  export let sequenceDefinition: string = ''; // TODO what on earth does this do
   export let sequenceOutput: string = '';
   export let title: string = 'Sequence - Definition Editor';
   export let user: User | null;
@@ -105,12 +100,13 @@
   const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
   const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
-  let compartmentSeqJsonLinter: Compartment;
-  let compartmentSeqLanguage: Compartment;
-  let compartmentSeqLinter: Compartment;
-  let compartmentSeqTooltip: Compartment;
-  let compartmentSeqAutocomplete: Compartment;
-  let compartmentSeqHighlighter: Compartment;
+  let compartmentSeqJsonLinter: Compartment; // TODO get rid of output format linting altogether?
+  let compartmentSeqLanguage: Compartment; // TODO replace with adaptation compartment
+  let compartmentSeqLinter: Compartment; // TODO replace with adaptation compartment
+  let compartmentSeqTooltip: Compartment; // TODO replace with adaptation compartment
+  let compartmentSeqAutocomplete: Compartment; // TODO replace with adaptation compartment
+  let compartmentSeqHighlighter: Compartment; // TODO replace with adaptation compartment
+  let compartmentAdaptation: Compartment;
   let compartmentReadonly: Compartment;
   let channelDictionary: ChannelDictionary | null;
   let commandDictionary: CommandDictionary | null;
@@ -127,9 +123,9 @@
   let outputFormats: IOutputFormat[] = [];
   let selectedNode: SyntaxNode | null;
   let currentTree: Tree;
-  let commandInfoMapper: CommandInfoMapper = new SeqNCommandInfoMapper();
+  let commandInfoMapper: CommandInfoMapper = new SeqNCommandInfoMapper(); // TODO replace with adaptation
   let selectedOutputFormat: IOutputFormat | undefined;
-  let toggleSeqJsonPreview: boolean = false;
+  let toggleSeqJsonPreview: boolean = false; // TODO generalize to "output format"
   let isInVmlMode: boolean = false; // TODO boo
   let showOutputs: boolean = true;
   let editorHeights: string = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
@@ -156,6 +152,7 @@
   }
 
   $: {
+    // TODO also more stuff configuring the editor
     if (compartmentSeqHighlighter && editorSequenceView) {
       if (isInVmlMode) {
         // TODO boo
@@ -244,8 +241,10 @@
 
           // Reconfigure sequence editor.
           editorSequenceView.dispatch({
+            // TODO this is the meat of updating the editor with adaptation components
             effects: [
               // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
+              compartmentAdaptation.reconfigure($newSequenceAdaptation.extension), // TODO probably not that simple
               compartmentSeqLanguage.reconfigure(
                 setupLanguageSupport(
                   $sequenceAdaptation.autoComplete(
@@ -338,6 +337,7 @@
     compartmentSeqTooltip = new Compartment();
     compartmentSeqAutocomplete = new Compartment();
     compartmentSeqHighlighter = new Compartment();
+    compartmentAdaptation = new Compartment();
 
     editorSequenceView = new EditorView({
       doc: sequenceDefinition,
@@ -346,6 +346,7 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
+        compartmentAdaptation.of($newSequenceAdaptation.extension), // TODO improve, probably
         compartmentSeqLanguage.of(setupLanguageSupport($sequenceAdaptation.autoComplete(null, null, [], []))),
         compartmentSeqLinter.of(inputLinter($sequenceAdaptation, getGlobals())),
         compartmentSeqTooltip.of(sequenceTooltip($sequenceAdaptation)),
@@ -473,7 +474,7 @@
   }
 
   function downloadInputFormat(): void {
-    downloadBlob(new Blob([editorSequenceView.state.doc.toString()], { type: 'text/plain' }), `${sequenceName}.txt`);
+    downloadBlob(new Blob([editorSequenceView.state.doc.toString()], { type: 'text/plain' }), `${sequenceName}.txt`); // TODO configure file extension to be customizable
   }
 
   async function copyOutputFormatToClipboard(): Promise<void> {
