@@ -71,7 +71,7 @@
             {:else}
               <Folder size={16} />
             {/if}
-            {treeNode.name}
+            <span class="truncate">{treeNode.name}</span>
           </Sidebar.MenuSubButton>
         {:else}
           <Sidebar.MenuButton
@@ -85,7 +85,7 @@
             {:else}
               <Folder size={16} />
             {/if}
-            {treeNode.name}
+            <span class="truncate">{treeNode.name}</span>
           </Sidebar.MenuButton>
         {/if}
       </Collapsible.Trigger>
@@ -119,7 +119,7 @@
           on:contextmenu={onNodeRightClicked}
         >
           <WorkspaceTreeViewIcon {treeNode} />
-          {treeNode.name}
+          <span class="truncate">{treeNode.name}</span>
         </Sidebar.MenuSubButton>
       {:else}
         <Sidebar.MenuButton
@@ -128,7 +128,7 @@
           on:contextmenu={onNodeRightClicked}
         >
           <WorkspaceTreeViewIcon {treeNode} />
-          {treeNode.name}
+          <span class="truncate">{treeNode.name}</span>
         </Sidebar.MenuButton>
       {/if}
     </div>
