@@ -29,7 +29,7 @@
   <!-- Desktop only implementation -->
   <div
     bind:this={ref}
-    class="text-sidebar-foreground group peer hidden md:block"
+    class="text-sidebar-foreground group peer hidden w-full md:block"
     data-state={$sidebarState}
     data-collapsible={$sidebarState === 'collapsed' ? collapsible : ''}
     data-variant={variant}
@@ -51,7 +51,7 @@
     <div
       data-slot="sidebar-container"
       class={cn(
-        'fixed z-10 hidden w-[var(--sidebar-width)] transition-[left,right,width] duration-200 ease-linear md:flex',
+        'hidden w-[var(--sidebar-width)] transition-[left,right,width] duration-200 ease-linear md:flex',
         'bottom-0 top-[var(--nav-header-height)]',
         side === 'left'
           ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'

@@ -118,7 +118,8 @@
           on:click={onNodeClicked}
           on:contextmenu={onNodeRightClicked}
         >
-          <div class="w-4"></div> <!-- Spacer for missing chevron -->
+          <div class="w-4"></div>
+          <!-- Spacer for missing chevron -->
           <WorkspaceTreeViewIcon {treeNode} />
           <span class="truncate">{treeNode.name}</span>
         </Sidebar.MenuSubButton>
@@ -128,7 +129,8 @@
           on:click={onNodeClicked}
           on:contextmenu={onNodeRightClicked}
         >
-          <div class="w-4"></div> <!-- Spacer for missing chevron -->
+          <div class="w-4"></div>
+          <!-- Spacer for missing chevron -->
           <WorkspaceTreeViewIcon {treeNode} />
           <span class="truncate">{treeNode.name}</span>
         </Sidebar.MenuButton>

@@ -2,13 +2,14 @@
 
 <script lang="ts">
   import { page } from '$app/stores';
-  import { Resizable } from '@nasa-jpl/stellar-svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
+  import CssGrid from '../../../components/ui/CssGrid.svelte';
+  import CssGridGutter from '../../../components/ui/CssGridGutter.svelte';
   import * as Sidebar from '../../../components/ui/Sidebar/index.js';
   import WorkspaceSidebar from '../../../components/workspace/WorkspaceSidebar.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { WorkspaceContentType } from '../../../enums/workspace';
-  import { parcel, workspaceId } from '../../../stores/workspaces';
+  import { parcel, workspaceColumns, workspaceId } from '../../../stores/workspaces';
   import type { Workspace } from '../../../types/workspace';
   import type { WorkspaceTreeNode } from '../../../types/workspace-tree-view';
   import effects from '../../../utilities/effects';
@@ -112,37 +113,33 @@
   }
 </script>
 
-<Sidebar.Provider>
-  <Resizable.PaneGroup direction="horizontal">
-    <Resizable.Pane defaultSize={20}>
-      <WorkspaceSidebar
-        on:nodeClicked={onNodeClicked}
-        on:newFolder={onNewFolder}
-        on:newSequence={onNewSequence}
-        on:refreshWorkspace={refreshWorkspaceContents}
-        on:saveSequence={onSaveWorkspaceFile}
-        {workspaceTree}
+<CssGrid bind:columns={$workspaceColumns}>
+  <Sidebar.Provider style="--sidebar-width: auto">
+    <WorkspaceSidebar
+      on:nodeClicked={onNodeClicked}
+      on:newFolder={onNewFolder}
+      on:newSequence={onNewSequence}
+      on:refreshWorkspace={refreshWorkspaceContents}
+      on:saveSequence={onSaveWorkspaceFile}
+      {workspaceTree}
+    />
+  </Sidebar.Provider>
+  <CssGridGutter track={1} type="column" />
+  <Sidebar.Inset>
+    <div class="grid h-full grid-cols-1 grid-rows-1">
+      <SequenceEditor
+        parcel={$parcel}
+        showCommandFormBuilder={true}
+        sequenceDefinition={selectedSequenceDefinition}
+        title="Sequence - Definition Editor"
+        {user}
+        readOnly={false}
+        workspaceId={$workspaceId}
+        on:sequence={onWorkspaceFileUpdated}
       />
-    </Resizable.Pane>
-    <Resizable.Handle />
-    <Resizable.Pane defaultSize={50}>
-      <Sidebar.Inset>
-        <div class="grid h-full grid-cols-1 grid-rows-1">
-          <SequenceEditor
-            parcel={$parcel}
-            showCommandFormBuilder={true}
-            sequenceDefinition={selectedSequenceDefinition}
-            title="Sequence - Definition Editor"
-            {user}
-            readOnly={false}
-            workspaceId={$workspaceId}
-            on:sequence={onWorkspaceFileUpdated}
-          />
-        </div>
-      </Sidebar.Inset>
-    </Resizable.Pane>
-  </Resizable.PaneGroup>
-</Sidebar.Provider>
+    </div>
+  </Sidebar.Inset>
+</CssGrid>
 
 <!-- Original grid layout commented out for reference -->
 <!--

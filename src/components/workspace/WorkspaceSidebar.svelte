@@ -9,7 +9,6 @@
     FilePlus,
     FolderPlus,
     FolderTree,
-    Menu,
     RefreshCcw,
   } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
@@ -28,11 +27,6 @@
   export let selectedSequencePath: string | null = null;
   export let workspaceTree: WorkspaceTreeNode | null | undefined = undefined;
 
-  // todo
-  // 1. resizable sidebar
-  // 2. fix expand / collapse
-  // 3. look at the left sidebar nav?
-
   function onNewFolder() {
     dispatch('newFolder');
   }
@@ -50,58 +44,51 @@
   }
 </script>
 
-<Sidebar.Root className="inset-x-0">
+<Sidebar.Root className="h-full inset-x-0">
   <Sidebar.Header>
-    <div class="flex h-16 w-full items-center gap-1">
-      <Sidebar.Trigger className="-ml-1">
-        <Menu size={16} />
-      </Sidebar.Trigger>
-      <div class="flex items-center gap-2">
-        <SectionTitle>Workspace</SectionTitle>
-        <div class="flex gap-1">
-          <Button variant="outline" class="gap-1">
-            <Clapperboard size={16} />
-            Actions
-          </Button>
-          <Button variant="outline" class="gap-1" on:click={onSave}>Save</Button>
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild let:builder>
-              <Button builders={[builder]} variant="outline" class="gap-1">
-                <PlusIcon size={16} />
-                New
-                <ChevronDown size={16} />
-              </Button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Content class="w-56">
-              <DropdownMenu.Item class="cursor-pointer gap-1" on:click={onNewSequence}>
-                <FilePlus size={16} />New Sequence
-              </DropdownMenu.Item>
-              <DropdownMenu.Item class="cursor-pointer gap-1" on:click={onNewFolder}>
-                <FolderPlus size={16} />New Folder
-              </DropdownMenu.Item>
-              <DropdownMenu.Separator />
-              <DropdownMenu.Item class="cursor-pointer gap-1"
-                ><ArrowUpFromLine size={16} />Import File</DropdownMenu.Item
-              >
-            </DropdownMenu.Content>
-          </DropdownMenu.Root>
-          <Button variant="outline">
-            <FolderTree size={16} />
-          </Button>
-          <Tooltip.Root>
-            <Tooltip.Trigger asChild let:builder>
-              <Button builders={[builder]} variant="outline" on:click={onRefreshWorkspace}>
-                <RefreshCcw size={16} />
-              </Button>
-            </Tooltip.Trigger>
-            <Tooltip.Content>
-              <div>Refresh Workspace Contents</div>
-            </Tooltip.Content>
-          </Tooltip.Root>
-          <Button variant="outline">
-            <SettingsIcon size={16} />
-          </Button>
-        </div>
+    <div class="flex items-center gap-2">
+      <SectionTitle>Workspace</SectionTitle>
+      <div class="flex gap-1">
+        <Button variant="outline" class="gap-1">
+          <Clapperboard size={16} />
+          Actions
+        </Button>
+        <Button variant="outline" class="gap-1" on:click={onSave}>Save</Button>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild let:builder>
+            <Button builders={[builder]} variant="outline" class="gap-1">
+              <PlusIcon size={16} />
+              New
+              <ChevronDown size={16} />
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content class="w-56">
+            <DropdownMenu.Item class="cursor-pointer gap-1" on:click={onNewSequence}>
+              <FilePlus size={16} />New Sequence
+            </DropdownMenu.Item>
+            <DropdownMenu.Item class="cursor-pointer gap-1" on:click={onNewFolder}>
+              <FolderPlus size={16} />New Folder
+            </DropdownMenu.Item>
+            <DropdownMenu.Separator />
+            <DropdownMenu.Item class="cursor-pointer gap-1"><ArrowUpFromLine size={16} />Import File</DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+        <Button variant="outline">
+          <FolderTree size={16} />
+        </Button>
+        <Tooltip.Root>
+          <Tooltip.Trigger asChild let:builder>
+            <Button builders={[builder]} variant="outline" on:click={onRefreshWorkspace}>
+              <RefreshCcw size={16} />
+            </Button>
+          </Tooltip.Trigger>
+          <Tooltip.Content>
+            <div>Refresh Workspace Contents</div>
+          </Tooltip.Content>
+        </Tooltip.Root>
+        <Button variant="outline">
+          <SettingsIcon size={16} />
+        </Button>
       </div>
     </div>
   </Sidebar.Header>
