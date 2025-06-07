@@ -13,6 +13,7 @@
   import type { Workspace } from '../../../types/workspace';
   import type { WorkspaceTreeNode } from '../../../types/workspace-tree-view';
   import effects from '../../../utilities/effects';
+  import { setQueryParam } from '../../../utilities/generic';
   import type { PageData } from './$types';
   import type { Workspace } from '../../../types/workspace';
   import { WorkspaceContentType } from '../../../enums/workspace';
@@ -53,8 +54,7 @@
 
   async function getSelectedSequenceDefinition(sequencePath: string | null) {
     if (sequencePath !== null && user) {
-      selectedSequenceDefinition =
-        (await effects.getWorkspaceFileContent($workspaceId, removeWorkspaceFromPath(sequencePath), user)) ?? '';
+      selectedSequenceDefinition = (await effects.getWorkspaceFileContent($workspaceId, sequencePath, user)) ?? '';
     } else {
       selectedSequenceDefinition = '';
     }
@@ -74,10 +74,6 @@
     }
   }
 
-  function removeWorkspaceFromPath(path: string) {
-    return path.replace(`${workspaceTree?.name ?? ''}/`, '');
-  }
-
   function onNodeClicked({
     detail: { treeNode, treeNodePath },
   }: CustomEvent<{
@@ -87,17 +83,13 @@
   }>) {
     if (treeNode.type === WorkspaceContentType.Sequence) {
       selectedSequencePath = treeNodePath;
+      setQueryParam(SearchParameters.SEQUENCE_ID, selectedSequencePath, 'PUSH');
     }
   }
 
   function onSaveWorkspaceFile() {
     if (selectedSequencePath) {
-      effects.saveWorkspaceFile(
-        $workspaceId,
-        removeWorkspaceFromPath(selectedSequencePath),
-        selectedSequenceDefinition,
-        user,
-      );
+      effects.saveWorkspaceFile($workspaceId, selectedSequencePath, selectedSequenceDefinition, user);
     }
   }
 
@@ -121,6 +113,7 @@
       on:newSequence={onNewSequence}
       on:refreshWorkspace={refreshWorkspaceContents}
       on:saveSequence={onSaveWorkspaceFile}
+      {selectedSequencePath}
       {workspaceTree}
     />
   </Sidebar.Provider>
