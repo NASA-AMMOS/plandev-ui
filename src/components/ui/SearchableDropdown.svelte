@@ -55,8 +55,19 @@
   }
   export function openMenu() {
     if (!disabled && hasUpdatePermission && menuRef) {
-      dispatch('openMenu');
-      menuRef.show();
+      if (menuOpen) {
+        hideMenu();
+      } else {
+        dispatch('openMenu');
+        menuRef.show();
+      }
+    }
+  }
+  export function toggleMenu() {
+    if (menuOpen) {
+      hideMenu();
+    } else {
+      openMenu();
     }
   }
 
@@ -169,7 +180,7 @@
     class:error
     class:disabled
     {name}
-    on:click|stopPropagation={openMenu}
+    on:click|stopPropagation={toggleMenu}
     role="combobox"
     aria-controls="menu"
     aria-expanded={menuOpen}
@@ -181,7 +192,7 @@
     use:tooltip={{ content: error || selectTooltip, placement: selectTooltipPlacement }}
   >
     <span class="selected-display-value" class:error>{label}</span>
-    <button class="icon st-button icon-right" aria-label={name} on:click|stopPropagation={openMenu}>
+    <button class="icon st-button icon-right" aria-label={name} on:click|stopPropagation={toggleMenu}>
       {#if $$slots.icon}
         <slot name="icon" />
       {:else}
