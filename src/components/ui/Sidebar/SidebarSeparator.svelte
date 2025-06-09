@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { Separator } from '@nasa-jpl/stellar-svelte';
-  import { cn } from '../../../utilities/generic';
+  import { cn, Separator } from '@nasa-jpl/stellar-svelte';
 
   // Props
   export let className: string = '';

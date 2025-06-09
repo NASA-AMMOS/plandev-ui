@@ -1,6 +1,6 @@
 <script lang="ts">
+  import { cn } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
-  import { cn } from '../../../utilities/generic';
   import { SIDEBAR_COOKIE_MAX_AGE, SIDEBAR_COOKIE_NAME, SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON } from './constants.js';
   import { setSidebar } from './context.js';
 

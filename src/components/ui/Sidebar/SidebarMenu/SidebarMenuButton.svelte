@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { Tooltip } from '@nasa-jpl/stellar-svelte';
+  import { cn, Tooltip } from '@nasa-jpl/stellar-svelte';
   import { tv, type VariantProps } from 'tailwind-variants';
-  import { cn } from '../../../../utilities/generic';
   import { useSidebar } from '../context';
 
   // Tailwind variants definition

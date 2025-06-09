@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { cn } from '../../../../utilities/generic';
+  import { cn } from '@nasa-jpl/stellar-svelte';
   import { SIDEBAR_INDENT_PER_LEVEL } from '../constants';
 
   // Props
