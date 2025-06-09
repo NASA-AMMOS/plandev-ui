@@ -96,7 +96,7 @@
 </script>
 
 <CssGrid bind:columns={$workspaceColumns}>
-  <Sidebar.Provider style="--sidebar-width: auto">
+  <Sidebar.Provider style="--sidebar-width: auto" className="min-h-0">
     <WorkspaceSidebar
       on:nodeClicked={onNodeClicked}
       on:newFolder={onNewFolder}
@@ -108,7 +108,7 @@
     />
   </Sidebar.Provider>
   <CssGridGutter track={1} type="column" />
-  <Sidebar.Inset>
+  <Sidebar.Inset className="min-h-0">
     <div class="grid h-full grid-cols-1 grid-rows-1">
       <SequenceEditor
         parcel={$parcel}

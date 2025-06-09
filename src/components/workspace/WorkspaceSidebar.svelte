@@ -44,7 +44,7 @@
   }
 </script>
 
-<Sidebar.Root className="h-full inset-x-0">
+<Sidebar.Root className="h-full inset-x-0 border-none">
   <Sidebar.Header>
     <div class="flex items-center gap-2">
       <SectionTitle>Workspace</SectionTitle>
