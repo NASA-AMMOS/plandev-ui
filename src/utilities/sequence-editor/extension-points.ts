@@ -7,9 +7,8 @@ import {
   type FswCommandArgument,
   type ParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
-import type { IOutputFormat, ISequenceAdaptation, LibrarySequence } from '../../language-package/interfaces/legacy';
+import type { ISequenceAdaptation, LibrarySequence } from '../../language-package/interfaces/legacy';
 import type { GlobalType } from '../../types/global-type';
-import { seqJsonLinter } from './seq-json-linter';
 import { sequenceLinter } from './sequence-linter';
 
 // TODO sort out what this file is actually for -- is this the place we handle custom input/output formats? Should `ArgDelegator` belong with `CommandInfoMapper`?
@@ -101,26 +100,6 @@ export function inputLinter(
 
     if (inputFormatLinter !== undefined && commandDictionary !== null) {
       diagnostics = inputFormatLinter(diagnostics, commandDictionary, view, treeNode);
-    }
-
-    return diagnostics;
-  });
-}
-
-export function outputLinter(
-  commandDictionary: CommandDictionary | null = null,
-  outputFormat: IOutputFormat | undefined = undefined,
-): Extension {
-  return linter(view => {
-    const tree = syntaxTree(view.state);
-    const treeNode = tree.topNode;
-    const outputFormatLinter = outputFormat?.linter;
-    let diagnostics: Diagnostic[];
-
-    diagnostics = seqJsonLinter(view, commandDictionary);
-
-    if (outputFormatLinter !== undefined && commandDictionary !== null) {
-      diagnostics = outputFormatLinter(diagnostics, commandDictionary, view, treeNode);
     }
 
     return diagnostics;

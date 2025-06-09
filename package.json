@@ -109,6 +109,7 @@
     "@types/d3-shape": "^3.1.1",
     "@types/d3-time": "^3.0.0",
     "@types/d3-zoom": "^3.0.8",
+    "@types/json-source-map": "^0.6.0",
     "@types/lodash-es": "^4.17.7",
     "@types/node": "^20.11.30",
     "@types/picomatch": "^2.3.0",

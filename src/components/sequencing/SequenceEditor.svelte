@@ -1,7 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { json } from '@codemirror/lang-json';
   import { indentService, syntaxTree } from '@codemirror/language';
   import { lintGutter, openLintPanel } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
@@ -61,7 +60,7 @@
   import effects from '../../utilities/effects';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import { inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
+  import { inputLinter } from '../../utilities/sequence-editor/extension-points';
   import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
   import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
   import {
@@ -100,13 +99,13 @@
   const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
   const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
-  let compartmentSeqJsonLinter: Compartment; // TODO get rid of output format linting altogether?
   let compartmentSeqLanguage: Compartment; // TODO replace with adaptation compartment
   let compartmentSeqLinter: Compartment; // TODO replace with adaptation compartment
   let compartmentSeqTooltip: Compartment; // TODO replace with adaptation compartment
   let compartmentSeqAutocomplete: Compartment; // TODO replace with adaptation compartment
   let compartmentSeqHighlighter: Compartment; // TODO replace with adaptation compartment
   let compartmentAdaptation: Compartment;
+  let compartmentOutputAdaptation: Compartment;
   let compartmentReadonly: Compartment;
   let channelDictionary: ChannelDictionary | null;
   let commandDictionary: CommandDictionary | null;
@@ -245,6 +244,7 @@
             effects: [
               // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
               compartmentAdaptation.reconfigure($newSequenceAdaptation.extension), // TODO probably not that simple
+              compartmentOutputAdaptation.reconfigure($newSequenceAdaptation.outputExtension),
               compartmentSeqLanguage.reconfigure(
                 setupLanguageSupport(
                   $sequenceAdaptation.autoComplete(
@@ -277,11 +277,6 @@
                 ? [compartmentSeqAutocomplete.reconfigure(indentService.of($sequenceAdaptation.autoIndent()))]
                 : []),
             ],
-          });
-
-          // Reconfigure seq JSON editor.
-          editorOutputView.dispatch({
-            effects: compartmentSeqJsonLinter.reconfigure(outputLinter(parsedCommandDictionary, selectedOutputFormat)),
           });
         });
       }
@@ -331,13 +326,13 @@
 
   onMount(() => {
     compartmentReadonly = new Compartment();
-    compartmentSeqJsonLinter = new Compartment();
     compartmentSeqLanguage = new Compartment();
     compartmentSeqLinter = new Compartment();
     compartmentSeqTooltip = new Compartment();
     compartmentSeqAutocomplete = new Compartment();
     compartmentSeqHighlighter = new Compartment();
     compartmentAdaptation = new Compartment();
+    compartmentOutputAdaptation = new Compartment();
 
     editorSequenceView = new EditorView({
       doc: sequenceDefinition,
@@ -373,8 +368,7 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         EditorView.editable.of(false),
         lintGutter(),
-        json(),
-        compartmentSeqJsonLinter.of(outputLinter()),
+        compartmentOutputAdaptation.of($newSequenceAdaptation.outputExtension), // TODO improve, probably
         EditorState.readOnly.of(readOnly),
       ],
       parent: editorOutputDiv,
