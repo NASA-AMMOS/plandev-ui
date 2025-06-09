@@ -9,13 +9,13 @@ import type {
   FswCommandArgumentInteger,
 } from '@nasa-jpl/aerie-ampcs';
 import type { EditorView } from 'codemirror';
-import ArgumentTooltip from '../../../../components/sequencing/ArgumentTooltip.svelte';
-import CommandTooltip from '../../../../components/sequencing/CommandTooltip.svelte';
-import StringTooltip from '../../../../components/sequencing/StringTooltip.svelte';
-import type { LibrarySequence } from '../../../types/sequencing';
+import ArgumentTooltip from '../../../components/sequencing/ArgumentTooltip.svelte';
+import CommandTooltip from '../../../components/sequencing/CommandTooltip.svelte';
+import StringTooltip from '../../../components/sequencing/StringTooltip.svelte';
 import { getTokenPositionInLine } from '../../../utilities/sequence-editor/sequence-tooltip';
 import { decodeInt32Array, unquoteUnescape } from '../../../utilities/sequence-editor/sequence-utils';
 import { checkContainment, getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
+import type { LibrarySequence } from '../../interfaces/legacy';
 import { librarySequenceToFswCommand } from './vml-block-library';
 import {
   RULE_BYTE_ARRAY,

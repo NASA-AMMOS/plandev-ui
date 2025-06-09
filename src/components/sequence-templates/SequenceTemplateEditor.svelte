@@ -18,6 +18,12 @@
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
+  import {
+    type IOutputFormat,
+    type ISequenceAdaptation,
+    type LibrarySequence,
+    type LibrarySequenceMap,
+  } from '../../language-package/interfaces/legacy';
   import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../language-package/languages/seq-n/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../language-package/languages/seq-n/seq-n-tree-utils';
   import {
@@ -49,15 +55,7 @@
   } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import { type SequenceTemplate } from '../../types/sequence-template';
-  import {
-    type ArgTextDef,
-    type IOutputFormat,
-    type ISequenceAdaptation,
-    type LibrarySequence,
-    type LibrarySequenceMap,
-    type Parcel,
-    type TimeTagInfo,
-  } from '../../types/sequencing';
+  import { type ArgTextDef, type Parcel, type TimeTagInfo } from '../../types/sequencing';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
