@@ -25,7 +25,6 @@ import Trigger from './SidebarTrigger.svelte';
 
 // Export utilities and types
 export type { WithElementRef } from '../../../types/component.js';
-export { cn } from '../../../utilities/generic.js';
 
 // Note: sidebar variants will be exported separately if needed
 
