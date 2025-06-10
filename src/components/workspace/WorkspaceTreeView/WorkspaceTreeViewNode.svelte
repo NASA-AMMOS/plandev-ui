@@ -12,6 +12,8 @@
   export let treeNodePath: string = '';
   export let depth: number = 0;
 
+  let previousSelectedTreeNodePath: string | null | undefined = undefined;
+
   type NodeClickEvent = {
     toggleState: boolean;
     treeNode: WorkspaceTreeNode;
@@ -28,13 +30,14 @@
 
   $: isFolder = treeNode.type === WorkspaceContentType.Directory && (treeNode.contents?.length ?? 0) > 0;
 
-  $: if (selectedTreeNodePath) {
+  $: if (selectedTreeNodePath && selectedTreeNodePath !== previousSelectedTreeNodePath) {
     const pathRegex = new RegExp(`^${treeNodePath}`);
     const isOnPath = pathRegex.test(selectedTreeNodePath);
 
     if (isOnPath) {
       isOpen = true;
     }
+    previousSelectedTreeNodePath = selectedTreeNodePath;
   }
 
   function onNodeClicked() {

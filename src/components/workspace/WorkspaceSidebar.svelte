@@ -12,9 +12,12 @@
     RefreshCcw,
   } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
+  import type { User } from '../../types/app';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
+  import { classNames } from '../../utilities/generic';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
+  import WorkspaceGridView from './WorkspaceGridView/WorkspaceGridView.svelte';
   import WorkspaceTreeView from './WorkspaceTreeView/WorkspaceTreeView.svelte';
 
   const dispatch = createEventDispatcher<{
@@ -25,7 +28,14 @@
   }>();
 
   export let selectedSequencePath: string | null = null;
+  export let user: User | null;
   export let workspaceTree: WorkspaceTreeNode | null | undefined = undefined;
+
+  let isTreeViewActive: boolean = true;
+
+  function toggleTreeView() {
+    isTreeViewActive = !isTreeViewActive;
+  }
 
   function onNewFolder() {
     dispatch('newFolder');
@@ -58,7 +68,6 @@
           <DropdownMenu.Trigger asChild let:builder>
             <Button builders={[builder]} variant="outline" class="gap-1">
               <PlusIcon size={16} />
-              New
               <ChevronDown size={16} />
             </Button>
           </DropdownMenu.Trigger>
@@ -73,9 +82,27 @@
             <DropdownMenu.Item class="cursor-pointer gap-1"><ArrowUpFromLine size={16} />Import File</DropdownMenu.Item>
           </DropdownMenu.Content>
         </DropdownMenu.Root>
-        <Button variant="outline">
-          <FolderTree size={16} />
-        </Button>
+
+        <Tooltip.Root>
+          <Tooltip.Trigger asChild let:builder>
+            <Button builders={[builder]} variant="outline" on:click={toggleTreeView}>
+              <FolderTree
+                class={classNames('toggle-tree', {
+                  disabled: !isTreeViewActive,
+                })}
+                size={16}
+              />
+            </Button>
+          </Tooltip.Trigger>
+          <Tooltip.Content>
+            {#if isTreeViewActive}
+              <div>Disable Page Tree View</div>
+            {:else}
+              <div>Enable Page Tree View</div>
+            {/if}
+          </Tooltip.Content>
+        </Tooltip.Root>
+
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
             <Button builders={[builder]} variant="outline" on:click={onRefreshWorkspace}>
@@ -83,7 +110,7 @@
             </Button>
           </Tooltip.Trigger>
           <Tooltip.Content>
-            <div>Refresh Workspace Contents</div>
+            <div>Refresh File Explorer</div>
           </Tooltip.Content>
         </Tooltip.Root>
         <Button variant="outline">
@@ -98,12 +125,22 @@
       <Sidebar.GroupContent>
         <Sidebar.Menu>
           {#if workspaceTree}
-            <WorkspaceTreeView
-              treeNode={workspaceTree}
-              selectedTreeNodePath={selectedSequencePath}
-              on:nodeClicked
-              on:nodeRightClicked
-            />
+            {#if isTreeViewActive}
+              <WorkspaceTreeView
+                treeNode={workspaceTree}
+                selectedTreeNodePath={selectedSequencePath}
+                on:nodeClicked
+                on:nodeRightClicked
+              />
+            {:else}
+              <WorkspaceGridView
+                treeNode={workspaceTree}
+                selectedTreeNodePath={selectedSequencePath}
+                {user}
+                on:nodeClicked
+                on:nodeRightClicked
+              />
+            {/if}
           {:else}
             <div class="p-2 text-sm text-muted-foreground">No workspace loaded</div>
           {/if}
@@ -112,3 +149,9 @@
     </Sidebar.Group>
   </Sidebar.Content>
 </Sidebar.Root>
+
+<style>
+  :global(.toggle-tree.disabled) {
+    opacity: var(--st-button-disabled-opacity);
+  }
+</style>

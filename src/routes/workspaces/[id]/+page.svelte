@@ -74,7 +74,7 @@
   function onNodeClicked({
     detail: { treeNode, treeNodePath },
   }: CustomEvent<{
-    toggleState: boolean;
+    toggleState?: boolean;
     treeNode: WorkspaceTreeNode;
     treeNodePath: string;
   }>) {
@@ -98,13 +98,14 @@
 <CssGrid bind:columns={$workspaceColumns}>
   <Sidebar.Provider style="--sidebar-width: auto" className="min-h-0">
     <WorkspaceSidebar
+      {selectedSequencePath}
+      {user}
+      {workspaceTree}
       on:nodeClicked={onNodeClicked}
       on:newFolder={onNewFolder}
       on:newSequence={onNewSequence}
       on:refreshWorkspace={refreshWorkspaceContents}
       on:saveSequence={onSaveWorkspaceFile}
-      {selectedSequencePath}
-      {workspaceTree}
     />
   </Sidebar.Provider>
   <CssGridGutter track={1} type="column" />
