@@ -29,7 +29,6 @@ import type {
   TimeTagInfo,
 } from '../../types/sequencing';
 import { fswCommandArgDefault } from './command-dictionary';
-import { getCustomArgDef } from './extension-points';
 import { TOKEN_ERROR } from './sequence-constants';
 
 export function isFswCommand(command: FswCommand | HwCommand): command is FswCommand {
@@ -288,17 +287,6 @@ export function getArgumentInfo(
           argDefIndex %= parentRepeatLength;
         }
         argDef = argumentDefs[argDefIndex];
-      }
-
-      if (commandDef && argDef) {
-        argDef = getCustomArgDef(
-          commandDef?.stem,
-          argDef,
-          precedingArgValues,
-          parameterDictionaries,
-          channelDictionary,
-          sequenceAdaptation,
-        );
       }
 
       let children: ArgTextDef[] | undefined = undefined;

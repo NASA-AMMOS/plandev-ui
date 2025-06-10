@@ -13,8 +13,8 @@ import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
 import { parse as jsonSourceMapParse } from 'json-source-map';
 import type { SequenceTypes } from '../../enums/sequencing';
-import type { GlobalType } from '../../types/global-type';
 import type { ArgDelegator } from '../../utilities/sequence-editor/extension-points';
+import type { GlobalType } from '../languages/seq-n/global-types';
 
 export type LibrarySequence = {
   name: string;

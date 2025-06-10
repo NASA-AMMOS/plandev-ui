@@ -49,6 +49,7 @@ declare global {
     export default content;
   }
 
+  // TODO: What is this? What is it used for? Can/Should it be removed?
   var SequenceAdaptation:
     | {
         argDelegator?: ArgDelegator;
@@ -102,4 +103,5 @@ declare global {
     | undefined;
 }
 
-export {};
+export { };
+

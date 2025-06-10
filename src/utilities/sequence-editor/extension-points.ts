@@ -1,15 +1,9 @@
-import { syntaxTree } from '@codemirror/language';
-import { linter, type Diagnostic } from '@codemirror/lint';
-import type { Extension } from '@codemirror/state';
 import {
   type ChannelDictionary,
-  type CommandDictionary,
   type FswCommandArgument,
-  type ParameterDictionary,
+  type ParameterDictionary
 } from '@nasa-jpl/aerie-ampcs';
-import type { ISequenceAdaptation, LibrarySequence } from '../../language-package/interfaces/legacy';
-import type { GlobalType } from '../../types/global-type';
-import { sequenceLinter } from './sequence-linter';
+import type { ISequenceAdaptation } from '../../language-package/interfaces/legacy';
 
 // TODO sort out what this file is actually for -- is this the place we handle custom input/output formats? Should `ArgDelegator` belong with `CommandInfoMapper`?
 
@@ -26,23 +20,6 @@ export type ArgDelegator = {
         ) => FswCommandArgument | undefined);
   };
 };
-
-export function getCustomArgDef(
-  stem: string,
-  dictArg: FswCommandArgument,
-  precedingArgs: string[],
-  parameterDictionaries: ParameterDictionary[],
-  channelDictionary: ChannelDictionary | null,
-  sequenceAdaptation?: ISequenceAdaptation,
-) {
-  let delegate = undefined;
-
-  if (sequenceAdaptation?.argDelegator !== undefined) {
-    delegate = sequenceAdaptation.argDelegator?.[stem]?.[dictArg.name];
-  }
-
-  return delegate?.(dictArg, parameterDictionaries, channelDictionary, precedingArgs) ?? dictArg;
-}
 
 export async function toInputFormat(
   output: string,
@@ -72,36 +49,4 @@ export async function toInputFormat(
     console.error(e);
     return processedOutput;
   }
-}
-
-export function inputLinter(
-  sequenceAdaptation: ISequenceAdaptation,
-  globalVariables: GlobalType[],
-  channelDictionary: ChannelDictionary | null = null,
-  commandDictionary: CommandDictionary | null = null,
-  parameterDictionaries: ParameterDictionary[] = [],
-  librarySequences: LibrarySequence[] = [],
-): Extension {
-  return linter(view => {
-    const inputFormatLinter = sequenceAdaptation.inputFormat.linter;
-    const tree = syntaxTree(view.state);
-    const treeNode = tree.topNode;
-    let diagnostics: Diagnostic[];
-
-    diagnostics = sequenceLinter(
-      view,
-      sequenceAdaptation,
-      channelDictionary,
-      commandDictionary,
-      parameterDictionaries,
-      librarySequences,
-      globalVariables,
-    );
-
-    if (inputFormatLinter !== undefined && commandDictionary !== null) {
-      diagnostics = inputFormatLinter(diagnostics, commandDictionary, view, treeNode);
-    }
-
-    return diagnostics;
-  });
 }

@@ -12,8 +12,7 @@ import type {
 import { SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
 import ArgumentTooltip from '../../components/sequencing/ArgumentTooltip.svelte';
 import CommandTooltip from '../../components/sequencing/CommandTooltip.svelte';
-import type { ISequenceAdaptation } from '../../types/sequencing';
-import { getCustomArgDef } from './extension-points';
+import type { ISequenceAdaptation } from '../../language-package/interfaces/legacy';
 import { isFswCommandArgumentRepeat } from './sequence-utils';
 
 /**
@@ -147,14 +146,7 @@ export function sequenceTooltip(
             }
 
             if ((argNode.from === from && argNode.to === to) || isRepeatArg) {
-              const arg = getCustomArgDef(
-                text,
-                fswCommand.arguments[i],
-                argValues,
-                parameterDictionaries,
-                channelDictionary,
-                sequenceAdaptation,
-              );
+              const arg = fswCommand.arguments[i]
 
               if (arg) {
                 return {

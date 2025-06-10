@@ -4,10 +4,10 @@ import { parseVariables, SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
 import { SequenceTypes } from '../../../enums/sequencing';
 import { type LibrarySequence, type UserSequence } from '../../../types/sequencing';
 import { fswCommandArgDefault } from '../../../utilities/sequence-editor/command-dictionary';
-import { validateVariables } from '../../../utilities/sequence-editor/sequence-linter';
 import { getFromAndTo, getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
 import type { CommandInfoMapper } from '../../interfaces/command-info-mapper';
 import { SeqLanguage } from './seq-n';
+import { validateVariables } from './sequence-linter';
 
 export function getNameNode(stepNode: SyntaxNode | null) {
   if (stepNode) {

@@ -26,11 +26,9 @@
   import { vmlAdaptation, vmlBlockHighlighter, vmlHighlightBlock } from '../../language-package/languages/vml/vml';
   import { parseFunctionSignatures } from '../../language-package/languages/vml/vml-adaptation';
   import { vmlFormat } from '../../language-package/languages/vml/vml-formatter';
-  import { vmlLinter } from '../../language-package/languages/vml/vml-linter';
   import { vmlTooltip } from '../../language-package/languages/vml/vml-tooltip';
   import { VmlCommandInfoMapper } from '../../language-package/languages/vml/vml-tree-utils';
   import {
-    getGlobals,
     inputFormat,
     newSequenceAdaptation,
     outputFormat as outputFormatStore,
@@ -55,7 +53,6 @@
   import effects from '../../utilities/effects';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import { inputLinter } from '../../utilities/sequence-editor/extension-points';
   import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
   import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
   import {
@@ -94,7 +91,6 @@
   const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
   const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
-  let compartmentSeqLinter: Compartment; // TODO replace with adaptation compartment
   let compartmentSeqTooltip: Compartment; // TODO replace with adaptation compartment
   let compartmentSeqAutocomplete: Compartment; // TODO replace with adaptation compartment
   let compartmentSeqHighlighter: Compartment; // TODO replace with adaptation compartment
@@ -201,11 +197,6 @@
         getParsedCommandDictionary(unparsedCommandDictionary, user).then(parsedCommandDictionary => {
           commandDictionary = parsedCommandDictionary;
           editorSequenceView.dispatch({
-            effects: compartmentSeqLinter.reconfigure(
-              vmlLinter(commandDictionary, librarySequenceMap, $sequenceAdaptation.globals ?? []),
-            ),
-          });
-          editorSequenceView.dispatch({
             effects: compartmentSeqTooltip.reconfigure(vmlTooltip(commandDictionary, librarySequenceMap)),
           });
         });
@@ -237,16 +228,6 @@
             effects: [
               // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
               compartmentAdaptation.reconfigure($newSequenceAdaptation.extension(phoenixContext)), // TODO probably not that simple
-              compartmentSeqLinter.reconfigure(
-                inputLinter(
-                  $sequenceAdaptation,
-                  getGlobals(),
-                  parsedChannelDictionary,
-                  parsedCommandDictionary,
-                  nonNullParsedParameterDictionaries,
-                  librarySequences,
-                ),
-              ),
               compartmentSeqTooltip.reconfigure(
                 sequenceTooltip(
                   $sequenceAdaptation,
@@ -313,7 +294,6 @@
 
   onMount(() => {
     compartmentReadonly = new Compartment();
-    compartmentSeqLinter = new Compartment();
     compartmentSeqTooltip = new Compartment();
     compartmentSeqAutocomplete = new Compartment();
     compartmentSeqHighlighter = new Compartment();
@@ -330,7 +310,6 @@
         compartmentAdaptation.of(
           $newSequenceAdaptation.extension({ commandDictionary, channelDictionary, parameterDictionaries }),
         ), // TODO improve, probably
-        compartmentSeqLinter.of(inputLinter($sequenceAdaptation, getGlobals())),
         compartmentSeqTooltip.of(sequenceTooltip($sequenceAdaptation)),
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),

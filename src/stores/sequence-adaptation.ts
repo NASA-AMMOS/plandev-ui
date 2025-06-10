@@ -1,10 +1,9 @@
 import { seqJsonToSeqn, seqnToSeqJson } from '@nasa-jpl/aerie-sequence-languages';
-import { derived, get, writable, type Writable } from 'svelte/store';
+import { derived, writable, type Writable } from 'svelte/store';
 import type { ISequenceAdaptation } from '../language-package/interfaces/legacy';
 import type { NewAdaptationInterface } from '../language-package/interfaces/new-adaptation-interface';
 import { defaultAdaptation as defaultNewAdaptation } from '../language-package/languages/seq-n/adaptation';
 import { sequenceCompletion } from '../language-package/languages/seq-n/sequence-completion';
-import type { GlobalType } from '../types/global-type';
 import type { SequenceAdaptationMetadata } from '../types/sequencing';
 import gql from '../utilities/gql';
 import { sequenceAutoIndent } from '../utilities/sequence-editor/sequence-autoindent';
@@ -57,10 +56,6 @@ export const outputFormat = derived(
 );
 
 /* Helpers */
-
-export function getGlobals(): GlobalType[] {
-  return get(sequenceAdaptation).globals ?? [];
-}
 
 export function setSequenceAdaptation(newSequenceAdaptation: Partial<ISequenceAdaptation> | undefined): void {
   // TODO boo
