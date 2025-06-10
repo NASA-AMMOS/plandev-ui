@@ -139,6 +139,7 @@
     itemDisplayText="File"
     items={flattenedTree}
     {user}
+    selectedItemId={selectedTreeNodePath}
     {isRowSelectable}
     on:rowSelected={onNodeClicked}
     on:cellContextMenu={onNodeRightClicked}

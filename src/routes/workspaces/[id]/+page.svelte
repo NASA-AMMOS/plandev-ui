@@ -72,13 +72,13 @@
   }
 
   function onNodeClicked({
-    detail: { treeNode, treeNodePath },
+    detail: { toggleState, treeNode, treeNodePath },
   }: CustomEvent<{
     toggleState?: boolean;
     treeNode: WorkspaceTreeNode;
     treeNodePath: string;
   }>) {
-    if (treeNode.type === WorkspaceContentType.Sequence) {
+    if (treeNode.type === WorkspaceContentType.Sequence && toggleState === true) {
       selectedSequencePath = treeNodePath;
       setQueryParam(SearchParameters.SEQUENCE_ID, selectedSequencePath, 'PUSH');
     }
