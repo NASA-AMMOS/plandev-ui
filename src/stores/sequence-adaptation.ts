@@ -2,11 +2,12 @@ import { seqJsonToSeqn, seqnToSeqJson } from '@nasa-jpl/aerie-sequence-languages
 import { derived, get, writable, type Writable } from 'svelte/store';
 import type { ISequenceAdaptation } from '../language-package/interfaces/legacy';
 import type { NewAdaptationInterface } from '../language-package/interfaces/new-adaptation-interface';
+import { defaultAdaptation as defaultNewAdaptation } from '../language-package/languages/seq-n/adaptation';
+import { sequenceCompletion } from '../language-package/languages/seq-n/sequence-completion';
 import type { GlobalType } from '../types/global-type';
 import type { SequenceAdaptationMetadata } from '../types/sequencing';
 import gql from '../utilities/gql';
 import { sequenceAutoIndent } from '../utilities/sequence-editor/sequence-autoindent';
-import { sequenceCompletion } from '../utilities/sequence-editor/sequence-completion';
 import { gqlSubscribable } from './subscribable';
 
 const defaultAdaptation: ISequenceAdaptation = {
@@ -31,10 +32,11 @@ const defaultAdaptation: ISequenceAdaptation = {
   ],
 };
 
+
 /* Writeable */
 
 export const sequenceAdaptation: Writable<ISequenceAdaptation> = writable(defaultAdaptation);
-export const newSequenceAdaptation: Writable<NewAdaptationInterface> = writable({ extension: [] }); // TODO populate
+export const newSequenceAdaptation: Writable<NewAdaptationInterface> = writable(defaultNewAdaptation);
 
 /* Subscriptions. */
 

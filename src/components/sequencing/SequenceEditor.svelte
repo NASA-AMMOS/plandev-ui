@@ -17,19 +17,14 @@
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
   import type { IOutputFormat, LibrarySequence, LibrarySequenceMap } from '../../language-package/interfaces/legacy';
-  import { setupLanguageSupport } from '../../language-package/languages/seq-n/seq-n';
+  import type { PhoenixContext } from '../../language-package/interfaces/new-adaptation-interface';
   import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../language-package/languages/seq-n/seq-n-highlighter';
   import {
     SeqNCommandInfoMapper,
     userSequenceToLibrarySequence,
   } from '../../language-package/languages/seq-n/seq-n-tree-utils';
-  import {
-    setupVmlLanguageSupport,
-    vmlAdaptation,
-    vmlBlockHighlighter,
-    vmlHighlightBlock,
-  } from '../../language-package/languages/vml/vml';
-  import { parseFunctionSignatures, vmlAutoComplete } from '../../language-package/languages/vml/vml-adaptation';
+  import { vmlAdaptation, vmlBlockHighlighter, vmlHighlightBlock } from '../../language-package/languages/vml/vml';
+  import { parseFunctionSignatures } from '../../language-package/languages/vml/vml-adaptation';
   import { vmlFormat } from '../../language-package/languages/vml/vml-formatter';
   import { vmlLinter } from '../../language-package/languages/vml/vml-linter';
   import { vmlTooltip } from '../../language-package/languages/vml/vml-tooltip';
@@ -99,7 +94,6 @@
   const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
   const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
-  let compartmentSeqLanguage: Compartment; // TODO replace with adaptation compartment
   let compartmentSeqLinter: Compartment; // TODO replace with adaptation compartment
   let compartmentSeqTooltip: Compartment; // TODO replace with adaptation compartment
   let compartmentSeqAutocomplete: Compartment; // TODO replace with adaptation compartment
@@ -207,13 +201,6 @@
         getParsedCommandDictionary(unparsedCommandDictionary, user).then(parsedCommandDictionary => {
           commandDictionary = parsedCommandDictionary;
           editorSequenceView.dispatch({
-            effects: compartmentSeqLanguage.reconfigure(
-              setupVmlLanguageSupport(
-                vmlAutoComplete(commandDictionary, $sequenceAdaptation.globals ?? [], librarySequenceMap),
-              ),
-            ),
-          });
-          editorSequenceView.dispatch({
             effects: compartmentSeqLinter.reconfigure(
               vmlLinter(commandDictionary, librarySequenceMap, $sequenceAdaptation.globals ?? []),
             ),
@@ -238,23 +225,18 @@
           commandDictionary = parsedCommandDictionary;
           parameterDictionaries = nonNullParsedParameterDictionaries;
 
+          let phoenixContext: PhoenixContext = {
+            channelDictionary,
+            commandDictionary,
+            parameterDictionaries,
+          };
+
           // Reconfigure sequence editor.
           editorSequenceView.dispatch({
             // TODO this is the meat of updating the editor with adaptation components
             effects: [
               // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
-              compartmentAdaptation.reconfigure($newSequenceAdaptation.extension), // TODO probably not that simple
-              compartmentOutputAdaptation.reconfigure($newSequenceAdaptation.outputExtension),
-              compartmentSeqLanguage.reconfigure(
-                setupLanguageSupport(
-                  $sequenceAdaptation.autoComplete(
-                    parsedChannelDictionary,
-                    parsedCommandDictionary,
-                    nonNullParsedParameterDictionaries,
-                    librarySequences,
-                  ),
-                ),
-              ),
+              compartmentAdaptation.reconfigure($newSequenceAdaptation.extension(phoenixContext)), // TODO probably not that simple
               compartmentSeqLinter.reconfigure(
                 inputLinter(
                   $sequenceAdaptation,
@@ -277,6 +259,11 @@
                 ? [compartmentSeqAutocomplete.reconfigure(indentService.of($sequenceAdaptation.autoIndent()))]
                 : []),
             ],
+          });
+
+          // Reconfigure output editor
+          editorOutputView.dispatch({
+            effects: [compartmentOutputAdaptation.reconfigure($newSequenceAdaptation.outputExtension(phoenixContext))],
           });
         });
       }
@@ -326,7 +313,6 @@
 
   onMount(() => {
     compartmentReadonly = new Compartment();
-    compartmentSeqLanguage = new Compartment();
     compartmentSeqLinter = new Compartment();
     compartmentSeqTooltip = new Compartment();
     compartmentSeqAutocomplete = new Compartment();
@@ -341,8 +327,9 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
-        compartmentAdaptation.of($newSequenceAdaptation.extension), // TODO improve, probably
-        compartmentSeqLanguage.of(setupLanguageSupport($sequenceAdaptation.autoComplete(null, null, [], []))),
+        compartmentAdaptation.of(
+          $newSequenceAdaptation.extension({ commandDictionary, channelDictionary, parameterDictionaries }),
+        ), // TODO improve, probably
         compartmentSeqLinter.of(inputLinter($sequenceAdaptation, getGlobals())),
         compartmentSeqTooltip.of(sequenceTooltip($sequenceAdaptation)),
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
@@ -368,7 +355,13 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         EditorView.editable.of(false),
         lintGutter(),
-        compartmentOutputAdaptation.of($newSequenceAdaptation.outputExtension), // TODO improve, probably
+        compartmentOutputAdaptation.of(
+          $newSequenceAdaptation.outputExtension({
+            commandDictionary,
+            channelDictionary,
+            parameterDictionaries,
+          }),
+        ), // TODO improve, probably
         EditorState.readOnly.of(readOnly),
       ],
       parent: editorOutputDiv,

@@ -15,14 +15,6 @@ import { parse as jsonSourceMapParse } from 'json-source-map';
 import type { SequenceTypes } from '../../enums/sequencing';
 import type { GlobalType } from '../../types/global-type';
 import type { ArgDelegator } from '../../utilities/sequence-editor/extension-points';
-import type { NewAdaptationInterface } from './new-adaptation-interface';
-
-export let defaultAdaptation: NewAdaptationInterface = {
-  extension: [],
-  outputExtension: [
-    outputLinter(), // TODO: Do we need params for this?
-  ],
-}
 
 export type LibrarySequence = {
   name: string;

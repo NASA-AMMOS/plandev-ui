@@ -24,15 +24,10 @@
     type LibrarySequence,
     type LibrarySequenceMap,
   } from '../../language-package/interfaces/legacy';
+  import type { PhoenixContext } from '../../language-package/interfaces/new-adaptation-interface';
   import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../language-package/languages/seq-n/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../language-package/languages/seq-n/seq-n-tree-utils';
-  import {
-    setupVmlLanguageSupport,
-    vmlAdaptation,
-    vmlBlockHighlighter,
-    vmlHighlightBlock,
-  } from '../../language-package/languages/vml/vml';
-  import { vmlAutoComplete } from '../../language-package/languages/vml/vml-adaptation';
+  import { vmlAdaptation, vmlBlockHighlighter, vmlHighlightBlock } from '../../language-package/languages/vml/vml';
   import { librarySequenceToFswCommand } from '../../language-package/languages/vml/vml-block-library';
   import { vmlFormat } from '../../language-package/languages/vml/vml-formatter';
   import { vmlLinter } from '../../language-package/languages/vml/vml-linter';
@@ -40,6 +35,7 @@
   import { VmlCommandInfoMapper } from '../../language-package/languages/vml/vml-tree-utils';
   import {
     getGlobals,
+    newSequenceAdaptation,
     outputFormat,
     sequenceAdaptation,
     setSequenceAdaptation,
@@ -60,7 +56,6 @@
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
   import { getCustomArgDef, inputLinter } from '../../utilities/sequence-editor/extension-points';
-  import { setupLanguageSupport } from '../../utilities/sequence-editor/languages/seq-n-handlebars/seq-n-handlebars';
   import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
   import { TOKEN_ERROR } from '../../utilities/sequence-editor/sequence-constants';
   import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
@@ -99,11 +94,11 @@
   const librarySequences: LibrarySequence[] = [];
 
   let clientHeightGridRightTop: number = 0;
-  let compartmentSeqLanguage: Compartment;
   let compartmentSeqLinter: Compartment;
   let compartmentSeqTooltip: Compartment;
   let compartmentSeqAutocomplete: Compartment;
   let compartmentSeqHighlighter: Compartment;
+  let compartmentAdaptation: Compartment;
   let channelDictionary: ChannelDictionary | null;
   let commandDictionary: CommandDictionary | null;
   let parameterDictionaries: ParameterDictionary[] = [];
@@ -186,13 +181,6 @@
         getParsedCommandDictionary(unparsedCommandDictionary, user).then(parsedCommandDictionary => {
           commandDictionary = parsedCommandDictionary;
           editorSequenceView.dispatch({
-            effects: compartmentSeqLanguage.reconfigure(
-              setupVmlLanguageSupport(
-                vmlAutoComplete(commandDictionary, $sequenceAdaptation.globals ?? [], librarySequenceMap),
-              ),
-            ),
-          });
-          editorSequenceView.dispatch({
             effects: compartmentSeqLinter.reconfigure(
               vmlLinter(commandDictionary, librarySequenceMap, $sequenceAdaptation.globals ?? []),
             ),
@@ -217,20 +205,17 @@
           commandDictionary = parsedCommandDictionary;
           parameterDictionaries = nonNullParsedParameterDictionaries;
 
+          let phoenixContext: PhoenixContext = {
+            commandDictionary,
+            channelDictionary,
+            parameterDictionaries,
+          };
+
           // Reconfigure sequence editor.
           editorSequenceView.dispatch({
             effects: [
               // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
-              compartmentSeqLanguage.reconfigure(
-                setupLanguageSupport(
-                  $sequenceAdaptation.autoComplete(
-                    parsedChannelDictionary,
-                    parsedCommandDictionary,
-                    nonNullParsedParameterDictionaries,
-                    librarySequences,
-                  ),
-                ),
-              ),
+              compartmentAdaptation.reconfigure($newSequenceAdaptation.extension(phoenixContext)),
               compartmentSeqLinter.reconfigure(
                 inputLinter(
                   $sequenceAdaptation,
@@ -286,11 +271,11 @@
   );
 
   onMount(() => {
-    compartmentSeqLanguage = new Compartment();
     compartmentSeqLinter = new Compartment();
     compartmentSeqTooltip = new Compartment();
     compartmentSeqAutocomplete = new Compartment();
     compartmentSeqHighlighter = new Compartment();
+    compartmentAdaptation = new Compartment();
 
     editorSequenceView = new EditorView({
       doc: sequenceDefinition,
@@ -299,7 +284,9 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': `${clientHeightGridRightTop}px` } }),
         lintGutter(),
-        compartmentSeqLanguage.of(setupLanguageSupport($sequenceAdaptation.autoComplete(null, null, [], []))),
+        compartmentAdaptation.of(
+          $newSequenceAdaptation.extension({ commandDictionary, channelDictionary, parameterDictionaries }),
+        ), // TODO improve, probably
         compartmentSeqLinter.of(inputLinter($sequenceAdaptation, getGlobals())),
         compartmentSeqTooltip.of(sequenceTooltip($sequenceAdaptation)),
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),

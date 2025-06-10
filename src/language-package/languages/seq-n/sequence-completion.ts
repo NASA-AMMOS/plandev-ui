@@ -2,14 +2,14 @@ import type { Completion, CompletionContext, CompletionResult } from '@codemirro
 import { syntaxTree } from '@codemirror/language';
 import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
 import { SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
-import { SeqLanguage } from '../../language-package/languages/seq-n/seq-n';
-import { getGlobals } from '../../stores/sequence-adaptation';
-import type { ISequenceAdaptation, LibrarySequence } from '../../types/sequencing';
-import { getDoyTime } from '../time';
-import { fswCommandArgDefault } from './command-dictionary';
-import { getCustomArgDef } from './extension-points';
-import { getDefaultVariableArgs } from './sequence-utils';
-import { getFromAndTo, getNearestAncestorNodeOfType } from './tree-utils';
+import { getGlobals } from '../../../stores/sequence-adaptation';
+import { fswCommandArgDefault } from '../../../utilities/sequence-editor/command-dictionary';
+import { getCustomArgDef } from '../../../utilities/sequence-editor/extension-points';
+import { getDefaultVariableArgs } from '../../../utilities/sequence-editor/sequence-utils';
+import { getFromAndTo, getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
+import { getDoyTime } from '../../../utilities/time';
+import type { ISequenceAdaptation, LibrarySequence } from '../../interfaces/legacy';
+import { SeqLanguage } from './seq-n';
 
 type CursorInfo = {
   isAfterActivateOrLoad: boolean;
