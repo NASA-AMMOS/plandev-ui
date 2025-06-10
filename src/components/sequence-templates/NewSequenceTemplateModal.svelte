@@ -4,6 +4,7 @@
   import { Input as InputStellar, Label, Select } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import Field from '../../components/form/Field.svelte';
+  import { SequencingLanguages } from '../../enums/sequencing';
   import { field } from '../../stores/form';
   import { models } from '../../stores/model';
   import { parcels } from '../../stores/sequencing';
@@ -57,6 +58,7 @@
   let selectedParcel: Parcel | undefined;
   let selectedModel: ModelSlim | undefined;
   let selectedActivityType: ActivityType | undefined;
+  let selectedLanguage: SequencingLanguages | undefined;
   let orderedModels: ModelSlim[] = [];
 
   let showImport: boolean = false;
@@ -158,7 +160,19 @@
 
     <Field field={templateLanguageField}>
       <Label size="sm" for="template-language" class="pb-0.5">Template Language</Label>
-      <InputStellar id="template-language" autocomplete="off" sizeVariant="xs" name="language" aria-label="language" />
+      <Select.Root selected={{ label: selectedLanguage ?? '', value: selectedLanguage ?? ''}}>
+        <Select.Trigger class="min-w-[124px]" value={selectedLanguage} size="xs" aria-labelledby={null}>
+          <Select.Value aria-label="Select a language" placeholder="Select a language" />
+        </Select.Trigger>
+        <Select.Content size="xs" class="z-[10000]">
+          {#each Object.keys(SequencingLanguages) as language}
+            <Select.Item size="xs" value={language} label={language} class="flex gap-1">
+              {language}
+            </Select.Item>
+          {/each}
+        </Select.Content>
+        <Select.Input type="string" name="language" aria-label="Select Language hidden input" />
+      </Select.Root>
     </Field>
 
     <Field field={parcelIdField}>

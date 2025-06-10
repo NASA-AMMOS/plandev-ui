@@ -7,3 +7,9 @@ export enum SequencingMode {
   TYPESCRIPT = 'typescript',
   TEMPLATING = 'templating',
 }
+
+export enum SequencingLanguages {
+  SEQN = 'SEQN',
+  STOL = 'STOL',
+  TEXT = 'TEXT',
+}
