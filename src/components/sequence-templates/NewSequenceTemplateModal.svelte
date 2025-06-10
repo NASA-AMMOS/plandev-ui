@@ -160,7 +160,7 @@
 
     <Field field={templateLanguageField}>
       <Label size="sm" for="template-language" class="pb-0.5">Template Language</Label>
-      <Select.Root selected={{ label: selectedLanguage ?? '', value: selectedLanguage ?? ''}}>
+      <Select.Root selected={{ label: selectedLanguage ?? '', value: selectedLanguage ?? '' }}>
         <Select.Trigger class="min-w-[124px]" value={selectedLanguage} size="xs" aria-labelledby={null}>
           <Select.Value aria-label="Select a language" placeholder="Select a language" />
         </Select.Trigger>
