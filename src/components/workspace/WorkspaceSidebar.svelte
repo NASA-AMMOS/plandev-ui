@@ -120,10 +120,10 @@
     </div>
   </Sidebar.Header>
   <Sidebar.Content>
-    <Sidebar.Group>
+    <Sidebar.Group className="h-full">
       <Sidebar.GroupLabel>Files</Sidebar.GroupLabel>
-      <Sidebar.GroupContent>
-        <Sidebar.Menu>
+      <Sidebar.GroupContent className="h-full">
+        <Sidebar.Menu className="h-full">
           {#if workspaceTree}
             {#if isTreeViewActive}
               <WorkspaceTreeView

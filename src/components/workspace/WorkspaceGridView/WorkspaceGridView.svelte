@@ -131,7 +131,7 @@
   }
 </script>
 
-<div class="h-96">
+<div class="h-full">
   <SingleActionDataGrid
     hasDeletePermission={false}
     getRowId={node => node.fullPath}
