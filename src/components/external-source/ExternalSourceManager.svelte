@@ -544,6 +544,8 @@
                       [],
                       undefined,
                       undefined,
+                      [],
+                      'option',
                       true,
                     )}
                   />

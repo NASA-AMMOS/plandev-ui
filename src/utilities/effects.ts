@@ -133,7 +133,6 @@ import type {
   DefaultEffectiveArguments,
   EffectiveArguments,
   ParametersMap,
-  Parameter,
   ParameterValidationError,
   ParameterValidationResponse,
 } from '../types/parameter';
@@ -7314,7 +7313,11 @@ export function replacePathsForStructArguments(
   return result;
 }
 
-function replacePathsHelper(schema: ValueSchema | ActionValueSchema, arg: Argument, pathsToReplace: Record<string, string>) {
+function replacePathsHelper(
+  schema: ValueSchema | ActionValueSchema,
+  arg: Argument,
+  pathsToReplace: Record<string, string>,
+) {
   switch (schema.type) {
     case 'path':
       if (arg in pathsToReplace) {

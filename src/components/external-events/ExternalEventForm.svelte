@@ -116,6 +116,8 @@
                 requiredAttributes,
                 undefined,
                 undefined,
+                [],
+                'option',
                 true,
               )}
             />

@@ -17,7 +17,7 @@ import type {
   ValueSchemaInt,
   ValueSchemaOption,
   ValueSchemaSeries,
-  ValueSchemaStruct
+  ValueSchemaStruct,
 } from '../types/schema';
 import { isActionValueSchemaSequence } from './actions';
 import { isEmpty } from './generic';
@@ -130,7 +130,7 @@ export function getFormParameters(
     }
 
     const formParameter: FormParameter = {
-      errors: null,
+      errors,
       externalEvent: true,
       name,
       order,
