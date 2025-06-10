@@ -167,7 +167,7 @@
         <Select.Trigger class="min-w-[124px]" value={selectedParcel?.id} size="xs" aria-labelledby={null}>
           <Select.Value aria-label="Select a parcel" placeholder="Select a parcel" />
         </Select.Trigger>
-        <Select.Content class="z-[10000]">
+        <Select.Content size="xs" class="z-[10000]">
           {#each $parcels as parcel}
             <Select.Item size="xs" value={parcel.id} label={getDisplayNameForParcel(parcel)} class="flex gap-1">
               {parcel.name}
@@ -189,7 +189,8 @@
           <Select.Value aria-label="Select a model" placeholder="Select a model" />
         </Select.Trigger>
         <Select.Content
-          class="z-[10000] min-w-[240px] overflow-auto p-0"
+          class="z-[10000] min-w-[240px] overflow-auto"
+          size="xs"
           sameWidth={false}
           align="start"
           datatype="number"
@@ -215,7 +216,7 @@
         <Select.Trigger class="min-w-[124px]" value={selectedActivityType?.name} size="xs" aria-labelledby={null}>
           <Select.Value aria-label="Select an activity type" placeholder="Select an activity type" />
         </Select.Trigger>
-        <Select.Content class="z-[10000] max-h-48 overflow-y-scroll">
+        <Select.Content class="z-[10000] max-h-48 overflow-y-scroll" size="xs">
           {#each modelActivityTypes as activityType}
             <Select.Item size="xs" value={activityType.name} label={activityType.name} class="flex gap-1">
               {activityType.name}
