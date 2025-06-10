@@ -250,7 +250,7 @@ import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput }
 import type { Workspace, WorkspaceInsertInput } from '../types/workspace';
 import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
 import { ActivityDeletionAction } from './activities';
-import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
+import { compare, convertToQuery } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
   showConfirmModal,
@@ -293,6 +293,7 @@ import {
 } from './time';
 import { createRow, duplicateRow } from './timeline';
 import { showFailureToast, showSuccessToast } from './toast';
+import { getSearchParameterNumber, setQueryParam } from './url';
 import {
   applyViewDefinitionMigrations,
   applyViewMigrations,

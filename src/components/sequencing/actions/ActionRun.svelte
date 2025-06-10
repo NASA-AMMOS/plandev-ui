@@ -8,9 +8,9 @@
   import type { ActionRun } from '../../../types/actions';
   import type { User } from '../../../types/app';
   import { getActionDefinitionForRun, valueSchemaRecordToParametersMap } from '../../../utilities/actions';
-  import { getSearchParameterNumber } from '../../../utilities/generic';
   import gql from '../../../utilities/gql';
   import { getFormParameters } from '../../../utilities/parameters';
+  import { getSearchParameterNumber } from '../../../utilities/url';
   import Parameters from '../../parameters/Parameters.svelte';
   import ActionRunCard from './ActionRunCard.svelte';
 

@@ -10,8 +10,8 @@
   import { SearchParameters } from '../../../../enums/searchParameters';
   import { workspaces } from '../../../../stores/sequencing';
   import type { Workspace } from '../../../../types/workspace';
-  import { getSearchParameterNumber } from '../../../../utilities/generic';
   import { getWorkspacesUrl } from '../../../../utilities/routes';
+  import { getSearchParameterNumber } from '../../../../utilities/url';
   import type { PageData } from './$types';
 
   export let data: PageData;

@@ -5,5 +5,10 @@ enum Routes {
 }
 
 export function getWorkspacesUrl(base: string, workspaceId?: number | null, sequenceId?: string | null) {
-  return `${base}/${Routes.Workspaces}${workspaceId != null ? `/${workspaceId}${sequenceId != null ? `?${SearchParameters.SEQUENCE_ID}=${sequenceId}` : ''}` : ''}`;
+  const urlSearchParams = new URLSearchParams();
+  if (sequenceId != null) {
+    urlSearchParams.set(SearchParameters.SEQUENCE_ID, sequenceId);
+  }
+  const params = urlSearchParams.toString();
+  return `${base}/${Routes.Workspaces}${workspaceId != null ? `/${workspaceId}${sequenceId != null ? `?${params}` : ''}` : ''}`;
 }

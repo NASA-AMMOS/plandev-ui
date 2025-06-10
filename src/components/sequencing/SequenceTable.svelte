@@ -12,8 +12,9 @@
   import type { UserSequence } from '../../types/sequencing';
   import type { Workspace } from '../../types/workspace';
   import effects from '../../utilities/effects';
-  import { getSearchParameterNumber, getTarget } from '../../utilities/generic';
+  import { getTarget } from '../../utilities/generic';
   import { featurePermissions } from '../../utilities/permissions';
+  import { getSearchParameterNumber } from '../../utilities/url';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
 

@@ -19,11 +19,11 @@
   import type { Workspace } from '../../../types/workspace';
   import { getActionDefinitionForRun, valueSchemaRecordToParametersMap } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
-  import { getSearchParameterNumber } from '../../../utilities/generic';
   import { showActionCreationModal } from '../../../utilities/modal';
   import { getArguments, getFormParameters } from '../../../utilities/parameters';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { featurePermissions } from '../../../utilities/permissions';
+  import { getSearchParameterNumber } from '../../../utilities/url';
   import Input from '../../form/Input.svelte';
   import Loading from '../../Loading.svelte';
   import Parameters from '../../parameters/Parameters.svelte';

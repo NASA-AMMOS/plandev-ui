@@ -1,7 +1,10 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { page } from '$app/stores';
+  import { onMount } from 'svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import CssGridGutter from '../../../components/ui/CssGridGutter.svelte';
@@ -13,7 +16,7 @@
   import type { Workspace } from '../../../types/workspace';
   import type { WorkspaceTreeNode } from '../../../types/workspace-tree-view';
   import effects from '../../../utilities/effects';
-  import { setQueryParam } from '../../../utilities/generic';
+  import { getWorkspacesUrl } from '../../../utilities/routes';
   import type { PageData } from './$types';
 
   export let data: PageData;
@@ -24,13 +27,10 @@
   let selectedSequencePath: string | null = null;
   let workspaceTree: WorkspaceTreeNode | null = null;
 
-  $: if (initialWorkspace) {
-    $workspaceId = initialWorkspace.id;
+  $: if ($workspaceId !== -1) {
     selectedSequencePath = $page.url.searchParams.get(SearchParameters.SEQUENCE_ID);
-    getWorkspaceContents(initialWorkspace);
+    getSelectedSequenceDefinition(selectedSequencePath);
   }
-
-  $: getSelectedSequenceDefinition(selectedSequencePath);
 
   async function getWorkspaceContents(workspace: Workspace | undefined) {
     if (workspace) {
@@ -79,8 +79,10 @@
     treeNodePath: string;
   }>) {
     if (treeNode.type === WorkspaceContentType.Sequence && toggleState === true) {
-      selectedSequencePath = treeNodePath;
-      setQueryParam(SearchParameters.SEQUENCE_ID, selectedSequencePath, 'PUSH');
+      if (treeNodePath !== selectedSequencePath) {
+        selectedSequencePath = treeNodePath;
+        goto(getWorkspacesUrl(base, $workspaceId, selectedSequencePath));
+      }
     }
   }
 
@@ -93,6 +95,14 @@
   function onWorkspaceFileUpdated({ detail: { input } }: CustomEvent<{ input: string; output: string }>) {
     selectedSequenceDefinition = input;
   }
+
+  onMount(() => {
+    if (initialWorkspace) {
+      $workspaceId = initialWorkspace.id;
+      selectedSequencePath = $page.url.searchParams.get(SearchParameters.SEQUENCE_ID);
+      getWorkspaceContents(initialWorkspace);
+    }
+  });
 </script>
 
 <CssGrid bind:columns={$workspaceColumns}>

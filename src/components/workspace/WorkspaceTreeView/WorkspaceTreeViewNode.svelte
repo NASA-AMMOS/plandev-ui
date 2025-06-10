@@ -31,18 +31,20 @@
   $: isFolder = treeNode.type === WorkspaceContentType.Directory && (treeNode.contents?.length ?? 0) > 0;
 
   $: if (selectedTreeNodePath && selectedTreeNodePath !== previousSelectedTreeNodePath) {
-    const pathRegex = new RegExp(`^${treeNodePath}`);
-    const isOnPath = pathRegex.test(selectedTreeNodePath);
+    if (!isOpen) {
+      const pathRegex = new RegExp(`^${treeNodePath}`);
+      const isOnPath = pathRegex.test(selectedTreeNodePath);
 
-    if (isOnPath) {
-      isOpen = true;
+      if (isOnPath) {
+        isOpen = true;
+      }
     }
     previousSelectedTreeNodePath = selectedTreeNodePath;
   }
 
   function onNodeClicked() {
     dispatch('nodeClicked', {
-      toggleState: isOpen,
+      toggleState: isFolder ? isOpen : true,
       treeNode,
       treeNodePath,
     });

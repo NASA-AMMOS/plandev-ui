@@ -13,11 +13,11 @@
   import type { Parcel, UserSequence } from '../../types/sequencing';
   import type { Workspace } from '../../types/workspace';
   import effects from '../../utilities/effects';
-  import { getSearchParameterNumber, setQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { satfToSequence } from '../../utilities/sequence-editor/languages/satf/satf-sasf-utils';
   import { pluralize } from '../../utilities/text';
+  import { getSearchParameterNumber, setQueryParam } from '../../utilities/url';
   import Input from '../form/Input.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
