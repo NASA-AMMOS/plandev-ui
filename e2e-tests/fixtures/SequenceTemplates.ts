@@ -29,8 +29,8 @@ export class SequenceTemplates {
   async createSequenceTemplate(newSequenceTemplateName: string, newSequenceTemplateLanguage: string) {
     await this.newSequenceTemplateButton.click();
     await this.newSequenceTemplateNameInput.fill(newSequenceTemplateName);
-    await this.newSequenceTemplateLanguageInput.fill(newSequenceTemplateLanguage);
 
+    await this.selectLanguage(newSequenceTemplateLanguage);
     await this.selectParcel();
     await this.selectModel();
     await this.selectActivityType();
@@ -60,6 +60,12 @@ export class SequenceTemplates {
     await this.page.getByRole('option', { name: this.sequenceTemplateActivityType }).click();
   }
 
+  async selectLanguage(language) {
+    await this.newSequenceTemplateLanguageInput.click();
+    await expect(this.page.getByRole('option', { name: language })).toBeVisible();
+    await this.page.getByRole('option', { name: language }).click();
+  }
+
   async selectModel() {
     const { modelName } = this.models;
     await this.newSequenceTemplateModelIdInput.click();
@@ -79,7 +85,7 @@ export class SequenceTemplates {
       .getByRole('combobox')
       .filter({ hasText: 'Select an activity type' });
     this.newSequenceTemplateButton = page.getByRole('button', { name: 'New Template' });
-    this.newSequenceTemplateLanguageInput = page.getByRole('textbox', { name: 'language' });
+    this.newSequenceTemplateLanguageInput = page.getByRole('combobox').filter({ hasText: 'Select a language' });
     this.newSequenceTemplateModelIdInput = page.getByRole('combobox').filter({ hasText: 'Select a model' });
     this.newSequenceTemplateNameInput = page.getByRole('textbox', { name: 'name' });
     this.newSequenceTemplateParcelIdInput = page.getByRole('combobox').filter({ hasText: 'Select a parcel' });
