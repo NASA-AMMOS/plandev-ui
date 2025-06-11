@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { Popover } from '@nasa-jpl/stellar-svelte';
-  import InfoIcon from '@nasa-jpl/stellar/icons/info.svg?component';
+  import { Info } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ValueSource } from '../../types/parameter';
   import ValueSourceBadge from './ValueSourceBadge.svelte';
@@ -70,18 +70,12 @@
 </script>
 
 {#if unit || source !== 'none'}
-  <div
-    bind:this={ref}
-    class="parameter-info-container"
-    role="contentinfo"
-    on:mouseenter={onIconOver}
-    on:mouseleave={onIconOut}
-  >
+  <div bind:this={ref} class="flex h-6" role="contentinfo" on:mouseenter={onIconOver} on:mouseleave={onIconOut}>
     <Popover.Root bind:open={isIconHovered} onOpenChange={open => (isTooltipHovered = open)} portal={ref}>
       <Popover.Trigger on:click={e => e.preventDefault()}>
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div on:mouseenter={onTooltipOver}>
-          <InfoIcon />
+          <Info size={16} />
         </div>
       </Popover.Trigger>
       <Popover.Content align="center" side="left" strategy="fixed" class="p-3">

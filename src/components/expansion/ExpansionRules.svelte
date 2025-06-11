@@ -210,7 +210,13 @@
       <SectionTitle>Expansion Rules</SectionTitle>
 
       <Input>
-        <input bind:value={filterText} class="st-input" placeholder="Filter rules" style="width: 100%;" />
+        <input
+          bind:value={filterText}
+          class="st-input"
+          aria-label="Filter rules"
+          placeholder="Filter rules"
+          style="width: 100%;"
+        />
       </Input>
 
       <div class="right">

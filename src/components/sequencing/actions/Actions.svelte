@@ -12,12 +12,16 @@
     actionRunsByWorkspace,
     actionsColumns,
   } from '../../../stores/actions';
-  import { workspaces } from '../../../stores/sequencing';
+  import { userSequences, workspaces } from '../../../stores/sequencing';
   import type { ActionDefinition, ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
   import type { Workspace } from '../../../types/sequencing';
-  import { getActionDefinitionForRun, valueSchemaRecordToParametersMap } from '../../../utilities/actions';
+  import {
+    getActionDefinitionForRun,
+    getUserSequencesInWorkspace,
+    valueSchemaRecordToParametersMap,
+  } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
   import { getSearchParameterNumber } from '../../../utilities/generic';
   import { showActionCreationModal } from '../../../utilities/modal';
@@ -146,7 +150,24 @@
 
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
-    argumentsMap = getArguments(argumentsMap, formParameter);
+    if (formParameter.schema.type === 'options-single') {
+      const sequences = $userSequences.find(sequence => sequence.id === parseInt(formParameter.value));
+      formParameter.value = sequences?.name ?? null;
+      argumentsMap = getArguments(argumentsMap, formParameter);
+    } else if (formParameter.schema.type === 'options-multiple') {
+      const ids: string[] = formParameter.value;
+      let sequenceNames: string[] = [];
+      ids.forEach(id => {
+        const seq = $userSequences.find(sequence => sequence.id === parseInt(id));
+        if (seq !== undefined) {
+          sequenceNames.push(seq.name);
+        }
+      });
+      formParameter.value = sequenceNames;
+      argumentsMap = getArguments(argumentsMap, formParameter);
+    } else {
+      argumentsMap = getArguments(argumentsMap, formParameter);
+    }
   }
 
   async function save(actionDefinition: ActionDefinition) {
@@ -344,6 +365,10 @@
                       valueSchemaRecordToParametersMap(selectedActionDefinition.settings_schema),
                       argumentsMap,
                       [],
+                      undefined,
+                      undefined,
+                      getUserSequencesInWorkspace($userSequences, workspaceId),
+                      'sequence',
                     )}
                     parameterType="action"
                     hideRightAdornments

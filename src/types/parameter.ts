@@ -1,4 +1,4 @@
-import type { ValueSchema } from './schema';
+import type { UIValueSchemaWithOptionsMultiple, UIValueSchemaWithOptionsSingle, ValueSchema } from './schema';
 
 export type DefaultEffectiveArguments = {
   arguments: ArgumentsMap;
@@ -13,7 +13,7 @@ export type EffectiveArguments = {
   success: boolean;
 };
 
-export type FormParameter<T = ValueSchema> = {
+export type FormParameter<T = ValueSchema | UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple> = {
   errors: string[] | null;
   file?: File;
   index?: number;

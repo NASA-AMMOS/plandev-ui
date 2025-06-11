@@ -1,6 +1,7 @@
 import { goto } from '$app/navigation';
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
+import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
 import {
   type ChannelDictionary as AmpcsChannelDictionary,
   type CommandDictionary as AmpcsCommandDictionary,
@@ -69,7 +70,7 @@ import {
 } from '../stores/simulation';
 import { createTagError as createTagErrorStore } from '../stores/tags';
 import { applyViewUpdate, view as viewStore, viewUpdateRow, viewUpdateTimeline } from '../stores/views';
-import type { ActionDefinition, ActionDefinitionSetInput, ActionRun } from '../types/actions';
+import type { ActionDefinition, ActionDefinitionSetInput, ActionParametersMap, ActionRun } from '../types/actions';
 import type {
   ActivityDirective,
   ActivityDirectiveDB,
@@ -143,7 +144,6 @@ import type {
   ArgumentsMap,
   DefaultEffectiveArguments,
   EffectiveArguments,
-  Parameter,
   ParametersMap,
   ParameterValidationError,
   ParameterValidationResponse,
@@ -6999,6 +6999,7 @@ const effects = {
   async uploadDictionary(
     dictionary: string,
     user: User | null,
+    persistDictionaryToFilesystem: boolean = true,
   ): Promise<{
     channel?: ChannelDictionaryMetadata;
     command?: CommandDictionaryMetadata;
@@ -7019,7 +7020,7 @@ const effects = {
         channel?: ChannelDictionaryMetadata;
         command?: CommandDictionaryMetadata;
         parameter?: ParameterDictionaryMetadata;
-      }>(gql.CREATE_DICTIONARY, { dictionary }, user);
+      }>(gql.CREATE_DICTIONARY, { dictionary, persistDictionaryToFilesystem }, user);
 
       const { createDictionary: newDictionaries } = data;
 
@@ -7038,6 +7039,7 @@ const effects = {
     file: File,
     user: User | null,
     sequenceAdaptationName?: string | undefined,
+    persistDictionaryToFilesystem: boolean = true,
   ): Promise<void> {
     const text = await file.text();
     if (sequenceAdaptationName) {
@@ -7048,7 +7050,7 @@ const effects = {
       }
       showSuccessToast('Sequence Adaptation Created Successfully');
     } else {
-      const uploadedDictionaries = await this.uploadDictionary(text, user);
+      const uploadedDictionaries = await this.uploadDictionary(text, user, persistDictionaryToFilesystem);
       if (uploadedDictionaries === null) {
         showFailureToast('Failed to upload dictionary file');
         throw Error('Failed to upload dictionary file');
@@ -7236,16 +7238,16 @@ const effects = {
  * @returns
  */
 export function replacePaths(
-  modelParameters: ParametersMap | null,
+  parameters: ParametersMap | ActionParametersMap | null,
   simArgs: ArgumentsMap,
   pathsToReplace: Record<string, string>,
 ): ArgumentsMap {
-  if (modelParameters === null) {
+  if (parameters === null) {
     return simArgs;
   }
   const result: ArgumentsMap = {};
-  for (const parameterName in modelParameters) {
-    const parameter: Parameter = modelParameters[parameterName];
+  for (const parameterName in parameters) {
+    const parameter = parameters[parameterName];
     const arg: Argument = simArgs[parameterName];
     if (arg !== undefined) {
       result[parameterName] = replacePathsHelper(parameter.schema, arg, pathsToReplace);
@@ -7277,7 +7279,11 @@ export function replacePathsForStructArguments(
   return result;
 }
 
-function replacePathsHelper(schema: ValueSchema, arg: Argument, pathsToReplace: Record<string, string>) {
+function replacePathsHelper(
+  schema: ValueSchema | ActionValueSchema,
+  arg: Argument,
+  pathsToReplace: Record<string, string>,
+) {
   switch (schema.type) {
     case 'path':
       if (arg in pathsToReplace) {

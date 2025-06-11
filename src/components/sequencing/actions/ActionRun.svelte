@@ -4,10 +4,15 @@
   import { page } from '$app/stores';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
+  import { userSequences } from '../../../stores/sequencing';
   import { gqlSubscribable } from '../../../stores/subscribable';
   import type { ActionRun } from '../../../types/actions';
   import type { User } from '../../../types/app';
-  import { getActionDefinitionForRun, valueSchemaRecordToParametersMap } from '../../../utilities/actions';
+  import {
+    getActionDefinitionForRun,
+    getUserSequencesInWorkspace,
+    valueSchemaRecordToParametersMap,
+  } from '../../../utilities/actions';
   import { getSearchParameterNumber } from '../../../utilities/generic';
   import gql from '../../../utilities/gql';
   import { getFormParameters } from '../../../utilities/parameters';
@@ -71,6 +76,10 @@
               valueSchemaRecordToParametersMap($actionRun.action_definition.settings_schema),
               $actionRun.settings,
               [],
+              undefined,
+              undefined,
+              getUserSequencesInWorkspace($userSequences, workspaceId),
+              'sequence',
             )}
             parameterType="action"
             hideRightAdornments
@@ -83,6 +92,10 @@
               valueSchemaRecordToParametersMap($actionRun.action_definition.parameter_schema),
               $actionRun.parameters,
               [],
+              undefined,
+              undefined,
+              getUserSequencesInWorkspace($userSequences, workspaceId),
+              'sequence',
             )}
             parameterType="action"
             hideRightAdornments

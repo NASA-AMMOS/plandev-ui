@@ -276,17 +276,17 @@
       {#if mode === 'edit'}
         <fieldset>
           <label for="ruleId">ID</label>
-          <input class="st-input w-full" disabled name="ruleId" value={sequenceId} />
+          <input class="st-input w-full" disabled name="ruleId" id="ruleId" value={sequenceId} />
         </fieldset>
 
         <fieldset>
           <label for="createdAt">Created At</label>
-          <input class="st-input w-full" disabled name="createdAt" value={sequenceCreatedAt} />
+          <input class="st-input w-full" disabled name="createdAt" id="createdAt" value={sequenceCreatedAt} />
         </fieldset>
 
         <fieldset>
           <label for="updatedAt">Updated At</label>
-          <input class="st-input w-full" disabled name="updatedAt" value={sequenceUpdatedAt} />
+          <input class="st-input w-full" disabled name="updatedAt" id="updatedAt" value={sequenceUpdatedAt} />
         </fieldset>
       {/if}
 
@@ -296,6 +296,7 @@
           bind:value={sequenceParcelId}
           class="st-select w-full"
           name="parcel"
+          id="parcel"
           use:permissionHandler={{
             hasPermission: hasPermission && !isSequenceReadonly,
             permissionError,
@@ -317,6 +318,7 @@
           autocomplete="off"
           class="st-input w-full"
           name="sequenceName"
+          id="sequenceName"
           placeholder="Enter Sequence Name"
           required
           use:permissionHandler={{
@@ -333,6 +335,7 @@
           autocomplete="off"
           class="st-input"
           name="sequenceReadonly"
+          id="sequenceReadonly"
           placeholder="Is Sequence Readonly?"
           type="checkbox"
           use:permissionHandler={{
@@ -348,6 +351,7 @@
           bind:files={outputFiles}
           class="w-full"
           name="outputFile"
+          id="outputFile"
           type="file"
           on:change={onOutputFileUpload}
           use:permissionHandler={{

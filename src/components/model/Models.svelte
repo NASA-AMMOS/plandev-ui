@@ -276,13 +276,14 @@
         <div class="model-metadata">
           <fieldset>
             <Input layout="inline">
-              <label class="model-metadata-item-label" for="name">Model Name</label>
+              <label class="" for="name">Model Name</label>
               <input
                 disabled
                 class="st-input w-full"
                 name="name"
                 use:tooltip={{ content: name, placement: 'top' }}
                 value={selectedModel.name}
+                id="name"
               />
             </Input>
             <Input layout="inline">
@@ -291,19 +292,31 @@
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="description">Model Description</label>
-              <textarea disabled class="st-input w-full" name="description" value={selectedModel.description} />
+              <textarea
+                disabled
+                class="st-input w-full"
+                name="description"
+                id="description"
+                value={selectedModel.description}
+              />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="version">Model Version</label>
-              <input disabled class="st-input w-full" name="version" value={selectedModel.version} />
+              <input disabled class="st-input w-full" name="version" id="version" value={selectedModel.version} />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="owner">Owner</label>
-              <input disabled class="st-input w-full" name="owner" value={selectedModel.owner} />
+              <input disabled class="st-input w-full" name="owner" value={selectedModel.owner} id="owner" />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="defaultView">Default View</label>
-              <input disabled class="st-input w-full" name="defaultView" value={selectedModelDefaultViewName} />
+              <input
+                disabled
+                class="st-input w-full"
+                name="defaultView"
+                value={selectedModelDefaultViewName}
+                id="defaultView"
+              />
             </Input>
             <Input layout="inline">
               <label class="model-metadata-item-label" for="created">Date Created</label>
@@ -311,6 +324,7 @@
                 disabled
                 class="st-input w-full"
                 name="created"
+                id="created"
                 value={getShortISOForDate(new Date(selectedModel.created_at))}
               />
             </Input>
@@ -374,6 +388,7 @@
               autocomplete="off"
               class="st-input w-full"
               name="name"
+              id="name"
               required
               use:permissionHandler={{
                 hasPermission: hasCreateModelPermission,
@@ -390,6 +405,7 @@
               class="st-input w-full"
               name="version"
               placeholder="0.0.0"
+              id="version"
               required
               use:permissionHandler={{
                 hasPermission: hasCreateModelPermission,
@@ -405,6 +421,7 @@
               autocomplete="off"
               class="st-input w-full"
               name="description"
+              id="description"
               placeholder="Enter Model Description (optional)"
             />
           </fieldset>
@@ -413,6 +430,7 @@
             <label for="file">Jar File</label>
             <input
               class="w-full"
+              id="file"
               name="file"
               required
               type="file"

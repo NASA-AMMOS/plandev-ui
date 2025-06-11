@@ -474,6 +474,7 @@
             <input
               class="w-full"
               name="file"
+              id="file"
               type="file"
               accept={definitionTypeConfigurations?.file.accept ?? 'application/json'}
               bind:files={definitionFiles}
@@ -495,6 +496,7 @@
           class:metadata-form-error={!!nameError}
           class="st-input w-100"
           name="metadata-name"
+          id="metadata-name"
           placeholder={`Enter ${displayName} Name (required)`}
           required
           use:permissionHandler={{
@@ -511,6 +513,7 @@
           bind:value={owner}
           class="st-input w-full"
           name="owner"
+          id="owner"
           placeholder={`Enter ${displayName} Owner Username (required)`}
           use:permissionHandler={{
             hasPermission: hasWriteMetadataPermission,
@@ -526,6 +529,7 @@
           autocomplete="off"
           class="st-input w-full"
           name="metadata-description"
+          id="metadata-description"
           placeholder={`Enter ${displayName} Description (optional)`}
           use:permissionHandler={{
             hasPermission: hasWriteMetadataPermission,
@@ -557,7 +561,7 @@
       {#if mode === 'edit'}
         <fieldset>
           <label for="id">{displayName} ID</label>
-          <input class="st-input w-full" disabled name="id" value={metadataId} />
+          <input class="st-input w-full" disabled name="id" id="id" value={metadataId} />
         </fieldset>
       {/if}
 
@@ -621,6 +625,7 @@
           value={defintionAuthor}
           class="st-input w-full"
           name="definitionAuthor"
+          id="definitionAuthor"
           use:permissionHandler={{
             hasPermission: hasWriteMetadataPermission,
             permissionError,

@@ -16,6 +16,7 @@
   <div class="timeline-cursor-line" style="background: {color}" />
   <button
     class="timeline-cursor-icon"
+    aria-label="Timeline Cursor"
     style="color: {color}"
     on:click
     on:mouseenter={() => (hovered = true)}

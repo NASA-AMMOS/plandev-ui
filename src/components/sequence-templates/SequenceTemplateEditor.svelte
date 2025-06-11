@@ -1,7 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { json } from '@codemirror/lang-json';
   import { indentService, syntaxTree } from '@codemirror/language';
   import { lintGutter, openLintPanel } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
@@ -48,7 +47,7 @@
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
   import type { CommandInfoMapper } from '../../utilities/sequence-editor/command-info-mapper';
-  import { getCustomArgDef, inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
+  import { getCustomArgDef, inputLinter } from '../../utilities/sequence-editor/extension-points';
   import { setupLanguageSupport } from '../../utilities/sequence-editor/languages/seq-n-handlebars/seq-n-handlebars';
   import {
     seqNHighlightBlock,
@@ -83,7 +82,6 @@
   export let showCommandFormBuilder: boolean = false;
   export let readOnly: boolean = false;
   export let template: SequenceTemplate;
-  export let sequenceOutput: string = '';
   export let title: string = 'Sequence Template - Editor';
   export let user: User | null;
 
@@ -104,9 +102,7 @@
   const librarySequenceMap: LibrarySequenceMap = {};
   const librarySequences: LibrarySequence[] = [];
 
-  let clientHeightGridRightBottom: number = 0;
   let clientHeightGridRightTop: number = 0;
-  let compartmentSeqJsonLinter: Compartment;
   let compartmentSeqLanguage: Compartment;
   let compartmentSeqLinter: Compartment;
   let compartmentSeqTooltip: Compartment;
@@ -116,8 +112,6 @@
   let commandDictionary: CommandDictionary | null;
   let parameterDictionaries: ParameterDictionary[] = [];
   let commandFormBuilderGrid: string;
-  let editorOutputDiv: HTMLDivElement;
-  let editorOutputView: EditorView;
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
   let outputFormats: IOutputFormat[] = [];
@@ -264,11 +258,6 @@
                 : []),
             ],
           });
-
-          // Reconfigure seq JSON editor.
-          editorOutputView.dispatch({
-            effects: compartmentSeqJsonLinter.reconfigure(outputLinter(parsedCommandDictionary, selectedOutputFormat)),
-          });
         });
       }
     } else {
@@ -301,7 +290,6 @@
   );
 
   onMount(() => {
-    compartmentSeqJsonLinter = new Compartment();
     compartmentSeqLanguage = new Compartment();
     compartmentSeqLinter = new Compartment();
     compartmentSeqTooltip = new Compartment();
@@ -331,21 +319,6 @@
         EditorState.readOnly.of(readOnly),
       ],
       parent: editorSequenceDiv,
-    });
-
-    editorOutputView = new EditorView({
-      doc: sequenceOutput,
-      extensions: [
-        basicSetup,
-        EditorView.lineWrapping,
-        EditorView.theme({ '.cm-gutter': { 'min-height': `${clientHeightGridRightBottom}px` } }),
-        EditorView.editable.of(false),
-        lintGutter(),
-        json(),
-        compartmentSeqJsonLinter.of(outputLinter()),
-        EditorState.readOnly.of(readOnly),
-      ],
-      parent: editorOutputDiv,
     });
   });
 
@@ -397,8 +370,6 @@
         output = `${modifiedOutput}`;
       }
     }
-
-    editorOutputView.dispatch({ changes: { from: 0, insert: output, to: editorOutputView.state.doc.length } });
 
     if (output !== undefined) {
       dispatch('templateChanged', { input: sequence, output });

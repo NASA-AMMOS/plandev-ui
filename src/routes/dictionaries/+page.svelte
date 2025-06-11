@@ -27,6 +27,7 @@
   let file: File;
   let fileInput: HTMLInputElement;
   let isSequenceAdaptation: boolean = false;
+  let persistDictionaryToFilesystem: boolean = true;
   let sequenceAdaptationName: string;
 
   $: hasCreatePermission =
@@ -49,7 +50,12 @@
     creatingDictionary = true;
 
     try {
-      await effects.uploadDictionaryOrAdaptation(file, data.user, sequenceAdaptationName);
+      await effects.uploadDictionaryOrAdaptation(
+        file,
+        data.user,
+        sequenceAdaptationName,
+        persistDictionaryToFilesystem,
+      );
 
       // Set files to undefined to reset the input form and set the value to empty string to clear the uploaded file.
       files = undefined;
@@ -103,6 +109,7 @@
               accept=".xml,.js,.json"
               class="st-typography-body w-full"
               name="file"
+              id="file"
               required
               type="file"
               bind:files
@@ -123,6 +130,16 @@
                 name="sequenceAdaptationName"
                 placeholder="Enter Sequence Adaptation Name"
                 required={isSequenceAdaptation}
+              />
+            </fieldset>
+          {:else if files !== undefined}
+            <fieldset class="save-dictionary-fieldset">
+              <label for="Save Dictionary">Save Dictionary to the filesystem</label>
+              <input
+                bind:checked={persistDictionaryToFilesystem}
+                class="st-input"
+                name="Save Dictionary"
+                type="checkbox"
               />
             </fieldset>
           {/if}
@@ -192,5 +209,11 @@
 <style>
   .table-container {
     display: grid;
+  }
+
+  .save-dictionary-fieldset {
+    column-gap: 0.5rem;
+    display: flex;
+    flex-direction: row;
   }
 </style>

@@ -39,6 +39,7 @@
     <input
       bind:this={checkboxRef}
       bind:checked={formParameter.value}
+      aria-label={formParameter.name}
       {disabled}
       type="checkbox"
       on:change={() => dispatch('change', formParameter)}

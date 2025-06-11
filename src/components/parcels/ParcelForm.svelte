@@ -240,22 +240,23 @@
       {#if mode === 'edit'}
         <fieldset>
           <label for="parcelId">ID</label>
-          <input class="st-input w-full" disabled name="parcelId" value={parcelId} />
+          <input class="st-input w-full" disabled name="parcelId" id="parcelId" value={parcelId} />
         </fieldset>
 
         <fieldset>
           <label for="createdAt">Created At</label>
-          <input class="st-input w-full" disabled name="createdAt" value={parcelCreatedAt} />
+          <input class="st-input w-full" disabled name="createdAt" id="createdAt" value={parcelCreatedAt} />
         </fieldset>
       {/if}
 
       <fieldset>
-        <label for="sequenceName">Name (required)</label>
+        <label for="parcelName">Name (required)</label>
         <input
           bind:value={parcelName}
           autocomplete="off"
           class="st-input w-full"
           name="parcelName"
+          id="parcelName"
           placeholder="Enter Parcel Name"
           required
           use:permissionHandler={{

@@ -31,7 +31,13 @@
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="External Events Table" />
     <div class="table-menu">
-      <input type="search" bind:value={filterExpression} placeholder="Filter External Events" class="st-input" />
+      <input
+        type="search"
+        bind:value={filterExpression}
+        placeholder="Filter External Events"
+        aria-label="Filter External Events"
+        class="st-input"
+      />
     </div>
   </svelte:fragment>
   <svelte:fragment slot="body">

@@ -173,7 +173,7 @@
     <svelte:fragment slot="body">
       <fieldset>
         <label for="Parcel">Parcels</label>
-        <select bind:value={setParcelId} class="st-select w-full" name="Parcel">
+        <select bind:value={setParcelId} class="st-select w-full" id="Parcel" name="Parcel">
           <option value={null} />
           {#each $parcelBundles as parcel}
             <option value={parcel.id}>
