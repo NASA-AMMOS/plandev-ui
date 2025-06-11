@@ -142,7 +142,9 @@
       downloadBlob(new Blob([outputStr], { type: 'text/plain' }), `${outputName}.txt`);
     } else {
       outputStr = await effects.getExpansionSequenceSeqJson(sequence.seq_id, sequence.simulation_dataset_id, user);
-      downloadJSON(JSON.parse(outputStr ?? `No output found for sequence "${sequence.seq_id}"'`), `${outputName}.json`);
+      if (outputStr) {
+        downloadJSON(JSON.parse(outputStr), `${outputName}.json`);
+      }
     }
   }
 
