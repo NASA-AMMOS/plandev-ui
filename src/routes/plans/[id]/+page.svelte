@@ -524,11 +524,11 @@
   async function onHandleExpansion() {
     if (SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT) {
       if ($selectedExpansionSetId != null && $plan) {
-        effects.expand($selectedExpansionSetId, $simulationDatasetLatest?.id || -1, $plan, $plan.model, data.user);
+        effects.expand($selectedExpansionSetId, $simulationDatasetLatest?.id || -1, $plan, data.user);
       }
     } else if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
       if ($selectedSequence !== null && $plan !== null && $simulationDatasetLatest !== null) {
-        effects.expandTemplates([$selectedSequence], $simulationDatasetLatest.dataset_id, $plan.model_id, data.user);
+        effects.expandTemplates([$selectedSequence], $simulationDatasetLatest.dataset_id, $plan, data.user);
       }
     }
   }
