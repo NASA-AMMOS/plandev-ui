@@ -54,7 +54,6 @@
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
-  import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
   import {
     getArgumentInfo,
     getCommandDef,
@@ -91,7 +90,6 @@
   const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
   const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
-  let compartmentSeqTooltip: Compartment; // TODO replace with adaptation compartment
   let compartmentSeqAutocomplete: Compartment; // TODO replace with adaptation compartment
   let compartmentSeqHighlighter: Compartment; // TODO replace with adaptation compartment
   let compartmentAdaptation: Compartment;
@@ -196,9 +194,6 @@
       if (sequenceName && isInVmlMode) {
         getParsedCommandDictionary(unparsedCommandDictionary, user).then(parsedCommandDictionary => {
           commandDictionary = parsedCommandDictionary;
-          editorSequenceView.dispatch({
-            effects: compartmentSeqTooltip.reconfigure(vmlTooltip(commandDictionary, librarySequenceMap)),
-          });
         });
       } else {
         Promise.all([
@@ -228,14 +223,6 @@
             effects: [
               // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
               compartmentAdaptation.reconfigure($newSequenceAdaptation.extension(phoenixContext)), // TODO probably not that simple
-              compartmentSeqTooltip.reconfigure(
-                sequenceTooltip(
-                  $sequenceAdaptation,
-                  parsedChannelDictionary,
-                  parsedCommandDictionary,
-                  nonNullParsedParameterDictionaries,
-                ),
-              ),
               ...($sequenceAdaptation.autoIndent
                 ? [compartmentSeqAutocomplete.reconfigure(indentService.of($sequenceAdaptation.autoIndent()))]
                 : []),
@@ -294,7 +281,6 @@
 
   onMount(() => {
     compartmentReadonly = new Compartment();
-    compartmentSeqTooltip = new Compartment();
     compartmentSeqAutocomplete = new Compartment();
     compartmentSeqHighlighter = new Compartment();
     compartmentAdaptation = new Compartment();
@@ -310,7 +296,6 @@
         compartmentAdaptation.of(
           $newSequenceAdaptation.extension({ commandDictionary, channelDictionary, parameterDictionaries }),
         ), // TODO improve, probably
-        compartmentSeqTooltip.of(sequenceTooltip($sequenceAdaptation)),
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,

@@ -54,7 +54,6 @@
   import { isSaveEvent } from '../../utilities/keyboardEvents';
   import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
   import { TOKEN_ERROR } from '../../utilities/sequence-editor/sequence-constants';
-  import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
   import { isFswCommandArgumentRepeat, unquoteUnescape } from '../../utilities/sequence-editor/sequence-utils';
   import { showFailureToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
@@ -89,7 +88,6 @@
   const librarySequenceMap: LibrarySequenceMap = {};
 
   let clientHeightGridRightTop: number = 0;
-  let compartmentSeqTooltip: Compartment;
   let compartmentSeqAutocomplete: Compartment;
   let compartmentSeqHighlighter: Compartment;
   let compartmentAdaptation: Compartment;
@@ -174,9 +172,6 @@
       if (sequenceName && isInVmlMode) {
         getParsedCommandDictionary(unparsedCommandDictionary, user).then(parsedCommandDictionary => {
           commandDictionary = parsedCommandDictionary;
-          editorSequenceView.dispatch({
-            effects: compartmentSeqTooltip.reconfigure(vmlTooltip(commandDictionary, librarySequenceMap)),
-          });
         });
       } else {
         Promise.all([
@@ -205,14 +200,6 @@
             effects: [
               // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
               compartmentAdaptation.reconfigure($newSequenceAdaptation.extension(phoenixContext)),
-              compartmentSeqTooltip.reconfigure(
-                sequenceTooltip(
-                  $sequenceAdaptation,
-                  parsedChannelDictionary,
-                  parsedCommandDictionary,
-                  nonNullParsedParameterDictionaries,
-                ),
-              ),
               ...($sequenceAdaptation.autoIndent
                 ? [compartmentSeqAutocomplete.reconfigure(indentService.of($sequenceAdaptation.autoIndent()))]
                 : []),
@@ -250,7 +237,6 @@
   );
 
   onMount(() => {
-    compartmentSeqTooltip = new Compartment();
     compartmentSeqAutocomplete = new Compartment();
     compartmentSeqHighlighter = new Compartment();
     compartmentAdaptation = new Compartment();
@@ -265,7 +251,6 @@
         compartmentAdaptation.of(
           $newSequenceAdaptation.extension({ commandDictionary, channelDictionary, parameterDictionaries }),
         ), // TODO improve, probably
-        compartmentSeqTooltip.of(sequenceTooltip($sequenceAdaptation)),
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,

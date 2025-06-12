@@ -10,10 +10,9 @@ import type {
   ParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
 import { SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
-import ArgumentTooltip from '../../components/sequencing/ArgumentTooltip.svelte';
-import CommandTooltip from '../../components/sequencing/CommandTooltip.svelte';
-import type { ISequenceAdaptation } from '../../language-package/interfaces/legacy';
-import { isFswCommandArgumentRepeat } from './sequence-utils';
+import ArgumentTooltip from '../../../components/sequencing/ArgumentTooltip.svelte';
+import CommandTooltip from '../../../components/sequencing/CommandTooltip.svelte';
+import { isFswCommandArgumentRepeat } from '../../../utilities/sequence-editor/sequence-utils';
 
 /**
  * Searches up through a node's ancestors to find a node by the given name.
@@ -56,7 +55,6 @@ export function getTokenPositionInLine(view: EditorView, pos: number) {
  * Can be optionally called with a command dictionary so it's available during tooltip generation.
  */
 export function sequenceTooltip(
-  sequenceAdaptation: ISequenceAdaptation,
   channelDictionary: ChannelDictionary | null = null,
   commandDictionary: CommandDictionary | null = null,
   parameterDictionaries: ParameterDictionary[] = [],
