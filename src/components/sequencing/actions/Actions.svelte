@@ -139,6 +139,10 @@
     );
   }
 
+  async function onCancelAction(id: number) {
+    await effects.cancelActionRun(id, user);
+  }
+
   async function runAction(action: ActionDefinition) {
     const actionRunId = await effects.runAction(action, user);
     if (typeof actionRunId === 'number') {
@@ -311,7 +315,8 @@
                           $actionDefinitionsByWorkspace,
                           workspaceId,
                         )}
-                        on:click={() => onActionRunClick(actionRun.id)}
+                        on:cancelAction={e => onCancelAction(e.detail.id)}
+                        on:showActionRun={e => onActionRunClick(e.detail.id)}
                       />
                     {/each}
                   {/if}
@@ -427,7 +432,8 @@
               <ActionRunCard
                 {actionRun}
                 actionDefinition={getActionDefinitionForRun(actionRun, $actionDefinitionsByWorkspace, workspaceId)}
-                on:click={() => onActionRunClick(actionRun.id)}
+                on:cancelAction={() => onCancelAction(actionRun.id)}
+                on:showActionRun={e => onActionRunClick(e.detail.id)}
               />
             {/each}
           {/if}

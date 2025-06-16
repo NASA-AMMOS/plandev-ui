@@ -18,6 +18,7 @@
   import { getFormParameters } from '../../../utilities/parameters';
   import Parameters from '../../parameters/Parameters.svelte';
   import ActionRunCard from './ActionRunCard.svelte';
+  import effects from '../../../utilities/effects';
 
   export let initialActionRun: ActionRun | null = null;
   export let user: User | null;
@@ -32,6 +33,10 @@
     initialActionRun,
     user,
   );
+
+  async function onCancelAction(id: number) {
+    await effects.cancelActionRun(id, user);
+  }
 </script>
 
 <div class="action-run-container">
@@ -43,6 +48,7 @@
       <ActionRunCard
         actionRun={$actionRun}
         actionDefinition={getActionDefinitionForRun($actionRun, $actionDefinitionsByWorkspace, workspaceId)}
+        on:cancelAction={e => onCancelAction(e.detail.id)}
         interactable={false}
       />
       <div>
