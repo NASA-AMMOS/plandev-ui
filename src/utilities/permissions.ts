@@ -764,8 +764,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   INSERT_EXPANSION_SEQUENCE_TO_ACTIVITY: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_TO_SIMULATED_ACTIVITY], user);
   },
-  MIGRATE_PLAN_TO_MODEL: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.MIGRATE_PLAN_TO_MODEL], user);
+  MIGRATE_PLAN_TO_MODEL: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
+    const queries = [Queries.MIGRATE_PLAN_TO_MODEL];
+    return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
   PLAN_MERGE_BEGIN: (
     user: User | null,
