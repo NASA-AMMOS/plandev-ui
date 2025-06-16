@@ -139,7 +139,7 @@
     );
   }
 
-  async function cancelAction(id: number) {
+  async function onCancelAction(id: number) {
     await effects.cancelActionRun(id, user);
   }
 
@@ -315,7 +315,7 @@
                           $actionDefinitionsByWorkspace,
                           workspaceId,
                         )}
-                        on:cancelAction={e => cancelAction(e.detail.id)}
+                        on:cancelAction={e => onCancelAction(e.detail.id)}
                         on:showActionRun={e => onActionRunClick(e.detail.id)}
                       />
                     {/each}
@@ -432,7 +432,7 @@
               <ActionRunCard
                 {actionRun}
                 actionDefinition={getActionDefinitionForRun(actionRun, $actionDefinitionsByWorkspace, workspaceId)}
-                on:cancelAction={() => cancelAction(actionRun.id)}
+                on:cancelAction={() => onCancelAction(actionRun.id)}
                 on:showActionRun={e => onActionRunClick(e.detail.id)}
               />
             {/each}
