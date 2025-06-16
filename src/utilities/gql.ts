@@ -36,6 +36,16 @@ const gql = {
     }
   `,
 
+  CANCEL_ACTION_RUN: `#graphql
+    mutation CancelActionRun($id: Int!) {
+      ${Queries.UPDATE_ACTION_RUN}(
+        pk_columns: { id: $id }, _set: {canceled: true}
+      ) {
+        id
+      }
+    }
+  `,
+
   CANCEL_SCHEDULING_REQUEST: `#graphql
     mutation CancelSchedulingRequest($id: Int!) {
       ${Queries.UPDATE_SCHEDULING_REQUEST}(where: { analysis_id: { _eq: $id } }, _set: {
@@ -2031,6 +2041,7 @@ const gql = {
           updated_by
           workspace_id
         }
+        canceled
         duration
         error
         id
@@ -2052,6 +2063,7 @@ const gql = {
         action_definition {
           workspace_id
         }
+        canceled
         duration
         error
         id

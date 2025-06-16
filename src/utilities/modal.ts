@@ -54,6 +54,7 @@ import type { PlanSnapshot } from '../types/plan-snapshot';
 import type { Tag } from '../types/tags';
 import type { ViewDefinition } from '../types/view';
 import effects from './effects';
+import CancelActionRunModal from '../components/modals/CancelActionRunModal.svelte';
 
 /**
  * Listens for clicks on the document body and removes the modal children.
@@ -656,6 +657,38 @@ export async function showLibrarySequenceModel(): Promise<ModalElementValue<{ li
           target.resolve = null;
           resolve({ confirm: true, value: { libraryFile: library, parcel } });
           workspaceModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a CancelActionRun modal.
+ */
+export async function showCancelActionRunModal(): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const cancelActionRunModal = new CancelActionRunModal({ props: {}, target });
+        target.resolve = resolve;
+
+        cancelActionRunModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          cancelActionRunModal.$destroy();
+        });
+
+        cancelActionRunModal.$on('confirm', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true });
+          cancelActionRunModal.$destroy();
         });
       }
     } else {
