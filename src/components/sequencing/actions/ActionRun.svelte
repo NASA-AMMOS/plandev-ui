@@ -4,15 +4,21 @@
   import { page } from '$app/stores';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
+  import { userSequences } from '../../../stores/sequencing';
   import { gqlSubscribable } from '../../../stores/subscribable';
   import type { ActionRun } from '../../../types/actions';
   import type { User } from '../../../types/app';
-  import { getActionDefinitionForRun, valueSchemaRecordToParametersMap } from '../../../utilities/actions';
+  import {
+    getActionDefinitionForRun,
+    getUserSequencesInWorkspace,
+    valueSchemaRecordToParametersMap,
+  } from '../../../utilities/actions';
   import { getSearchParameterNumber } from '../../../utilities/generic';
   import gql from '../../../utilities/gql';
   import { getFormParameters } from '../../../utilities/parameters';
   import Parameters from '../../parameters/Parameters.svelte';
   import ActionRunCard from './ActionRunCard.svelte';
+  import effects from '../../../utilities/effects';
 
   export let initialActionRun: ActionRun | null = null;
   export let user: User | null;
@@ -27,6 +33,10 @@
     initialActionRun,
     user,
   );
+
+  async function onCancelAction(id: number) {
+    await effects.cancelActionRun(id, user);
+  }
 </script>
 
 <div class="action-run-container">
@@ -38,6 +48,7 @@
       <ActionRunCard
         actionRun={$actionRun}
         actionDefinition={getActionDefinitionForRun($actionRun, $actionDefinitionsByWorkspace, workspaceId)}
+        on:cancelAction={e => onCancelAction(e.detail.id)}
         interactable={false}
       />
       <div>
@@ -71,6 +82,10 @@
               valueSchemaRecordToParametersMap($actionRun.action_definition.settings_schema),
               $actionRun.settings,
               [],
+              undefined,
+              undefined,
+              getUserSequencesInWorkspace($userSequences, workspaceId),
+              'sequence',
             )}
             parameterType="action"
             hideRightAdornments
@@ -83,6 +98,10 @@
               valueSchemaRecordToParametersMap($actionRun.action_definition.parameter_schema),
               $actionRun.parameters,
               [],
+              undefined,
+              undefined,
+              getUserSequencesInWorkspace($userSequences, workspaceId),
+              'sequence',
             )}
             parameterType="action"
             hideRightAdornments

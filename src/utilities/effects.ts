@@ -1,6 +1,7 @@
 import { goto } from '$app/navigation';
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
+import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
 import {
   type ChannelDictionary as AmpcsChannelDictionary,
   type CommandDictionary as AmpcsCommandDictionary,
@@ -69,7 +70,7 @@ import {
 } from '../stores/simulation';
 import { createTagError as createTagErrorStore } from '../stores/tags';
 import { applyViewUpdate, view as viewStore, viewUpdateRow, viewUpdateTimeline } from '../stores/views';
-import type { ActionDefinition, ActionDefinitionSetInput, ActionRun } from '../types/actions';
+import type { ActionDefinition, ActionDefinitionSetInput, ActionParametersMap, ActionRun } from '../types/actions';
 import type {
   ActivityDirective,
   ActivityDirectiveDB,
@@ -143,7 +144,6 @@ import type {
   ArgumentsMap,
   DefaultEffectiveArguments,
   EffectiveArguments,
-  Parameter,
   ParameterValidationError,
   ParameterValidationResponse,
   ParametersMap,
@@ -251,6 +251,7 @@ import { ActivityDeletionAction } from './activities';
 import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
+  showCancelActionRunModal,
   showConfirmModal,
   showCreateGroupsOrTypes,
   showCreatePlanBranchModal,
@@ -459,6 +460,35 @@ const effects = {
 
       catchError(failureMessage, error as Error);
       showFailureToast(failureMessage);
+    }
+  },
+
+  async cancelActionRun(id: number | undefined, user: User | null): Promise<void> {
+    try {
+      if (!queryPermissions.UPDATE_ACTION_DEFINITION(user)) {
+        throwPermissionError('update this action definition');
+      }
+
+      const { confirm } = await showCancelActionRunModal();
+
+      if (confirm && id !== undefined) {
+        const result = await reqHasura<ActionRun>(
+          gql.CANCEL_ACTION_RUN,
+          {
+            id,
+          },
+          user,
+        );
+
+        if (result != null) {
+          showSuccessToast(`Action Cancelled`);
+        } else {
+          throw Error(`Unable to cancel action with ID: "${id}"`);
+        }
+      }
+    } catch (e) {
+      catchError('Action Cancellation Failed', e as Error);
+      showFailureToast('Action Cancellation Failed');
     }
   },
 
@@ -7192,16 +7222,16 @@ const effects = {
  * @returns
  */
 export function replacePaths(
-  modelParameters: ParametersMap | null,
+  parameters: ParametersMap | ActionParametersMap | null,
   simArgs: ArgumentsMap,
   pathsToReplace: Record<string, string>,
 ): ArgumentsMap {
-  if (modelParameters === null) {
+  if (parameters === null) {
     return simArgs;
   }
   const result: ArgumentsMap = {};
-  for (const parameterName in modelParameters) {
-    const parameter: Parameter = modelParameters[parameterName];
+  for (const parameterName in parameters) {
+    const parameter = parameters[parameterName];
     const arg: Argument = simArgs[parameterName];
     if (arg !== undefined) {
       result[parameterName] = replacePathsHelper(parameter.schema, arg, pathsToReplace);
@@ -7233,7 +7263,11 @@ export function replacePathsForStructArguments(
   return result;
 }
 
-function replacePathsHelper(schema: ValueSchema, arg: Argument, pathsToReplace: Record<string, string>) {
+function replacePathsHelper(
+  schema: ValueSchema | ActionValueSchema,
+  arg: Argument,
+  pathsToReplace: Record<string, string>,
+) {
   switch (schema.type) {
     case 'path':
       if (arg in pathsToReplace) {

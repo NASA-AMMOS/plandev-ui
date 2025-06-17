@@ -1,4 +1,6 @@
+import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
 import { isEqual, omitBy } from 'lodash-es';
+import type { ActionParametersMap } from '../types/actions';
 import type {
   Argument,
   ArgumentsMap,
@@ -7,8 +9,23 @@ import type {
   RequiredParametersList,
   ValueSource,
 } from '../types/parameter';
-import type { ValueSchema } from '../types/schema';
+import type {
+  UIValueSchemaWithOptionsMultiple,
+  UIValueSchemaWithOptionsSingle,
+  ValueSchema,
+  ValueSchemaOption,
+} from '../types/schema';
+import { isActionValueSchemaSequence } from './actions';
 import { isEmpty } from './generic';
+
+export function isParameterWithOptions(
+  schema: ValueSchema | UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple,
+): schema is UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple {
+  return (
+    (schema as UIValueSchemaWithOptionsSingle).type === 'options-single' ||
+    (schema as UIValueSchemaWithOptionsMultiple).type === 'options-multiple'
+  );
+}
 
 /**
  * Derive argument given input value, value schema, and optional default value.
@@ -19,7 +36,7 @@ import { isEmpty } from './generic';
  */
 export function getArgument(
   value: Argument,
-  schema: ValueSchema,
+  schema: ValueSchema | ActionValueSchema,
   presetValue?: Argument,
   defaultValue?: Argument,
 ): { value: any; valueSource: ValueSource } {
@@ -58,25 +75,56 @@ export function getArguments(argumentsMap: ArgumentsMap, formParameter: FormPara
 }
 
 export function getFormParameters(
-  parametersMap: ParametersMap,
+  parametersMap: ParametersMap | ActionParametersMap,
   argumentsMap: ArgumentsMap,
   requiredParameters: RequiredParametersList,
   presetArgumentsMap: ArgumentsMap = {},
   defaultArgumentsMap: ArgumentsMap = {},
+  dropdownOptions: ValueSchemaOption[] = [],
+  optionLabel: string = 'option',
 ): FormParameter[] {
   const formParameters = Object.entries(parametersMap).map(([name, { order, schema }]) => {
+    const formParameterSchema: ValueSchema | UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple = schema;
+
     const arg: Argument = argumentsMap[name];
     const preset: Argument = presetArgumentsMap[name];
     const defaultArg: Argument | undefined = defaultArgumentsMap[name];
     const { value, valueSource } = getArgument(arg, schema, preset, defaultArg);
     const required = requiredParameters.indexOf(name) > -1;
 
+    let errors: string[] | null = null;
+    let isMultiSelect: boolean = false;
+    if (isActionValueSchemaSequence(schema)) {
+      (formParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).options =
+        dropdownOptions;
+      (formParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).label = optionLabel;
+      if (schema.type === 'sequence') {
+        formParameterSchema.type = 'options-single';
+      } else if (schema.type === 'sequenceList') {
+        formParameterSchema.type = 'options-multiple';
+        isMultiSelect = true;
+      }
+
+      if (value) {
+        const optionValues: string[] = isMultiSelect ? value : [value];
+        // Determine if there are selected options in the value that are no longer present in the list of options
+        const missingOptions = optionValues.filter(optionValue => {
+          const option = dropdownOptions.find(dropdownOption => dropdownOption.display === optionValue);
+          return option === undefined;
+        });
+
+        if (dropdownOptions.length > 0 && missingOptions.length > 0) {
+          errors = [`'${missingOptions.join(', ')}' not found`];
+        }
+      }
+    }
+
     const formParameter: FormParameter = {
-      errors: null,
+      errors,
       name,
       order,
       required,
-      schema,
+      schema: formParameterSchema,
       value,
       valueSource,
     };
