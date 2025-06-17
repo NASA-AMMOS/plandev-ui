@@ -9,9 +9,9 @@ import type {
   HwCommand,
   ParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
+import { SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
 import ArgumentTooltip from '../../components/sequencing/ArgumentTooltip.svelte';
 import CommandTooltip from '../../components/sequencing/CommandTooltip.svelte';
-import { TOKEN_REPEAT_ARG } from '../../constants/seq-n-grammar-constants';
 import type { ISequenceAdaptation } from '../../types/sequencing';
 import { getCustomArgDef } from './extension-points';
 import { isFswCommandArgumentRepeat } from './sequence-utils';
@@ -122,7 +122,7 @@ export function sequenceTooltip(
           if (argDef !== undefined) {
             const isRepeatArg = isFswCommandArgumentRepeat(argDef) && argDef.repeat;
 
-            if (argNode.name === TOKEN_REPEAT_ARG && isRepeatArg) {
+            if (argNode.name === SEQN_NODES.REPEAT_ARG && isRepeatArg) {
               let repeatArgNode = argNode.firstChild;
               let j = 0;
               while (repeatArgNode) {

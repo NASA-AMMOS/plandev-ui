@@ -13,17 +13,9 @@ import type {
 } from '@nasa-jpl/aerie-ampcs';
 import { closest, distance } from 'fastest-levenshtein';
 
+import { SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
-import {
-  RULE_ARGS,
-  RULE_SEQUENCE_NAME,
-  TOKEN_ACTIVATE,
-  TOKEN_COMMAND,
-  TOKEN_LOAD,
-  TOKEN_REPEAT_ARG,
-  TOKEN_REQUEST,
-} from '../../constants/seq-n-grammar-constants';
 import { TimeTypes } from '../../enums/time';
 import type { GlobalType } from '../../types/global-type';
 import type { ISequenceAdaptation, LibrarySequence } from '../../types/sequencing';
@@ -104,11 +96,15 @@ export function sequenceLinter(
 
   diagnostics.push(...validateId(treeNode, docText));
 
-  const localsValidation = validateVariables(treeNode.getChildren('LocalDeclaration'), docText, 'LOCALS');
+  const localsValidation = validateVariables(treeNode.getChildren(SEQN_NODES.LOCAL_DECLARATION), docText, 'LOCALS');
   variables.push(...localsValidation.variables);
   diagnostics.push(...localsValidation.diagnostics);
 
-  const parameterValidation = validateVariables(treeNode.getChildren('ParameterDeclaration'), docText, 'INPUT_PARAMS');
+  const parameterValidation = validateVariables(
+    treeNode.getChildren(SEQN_NODES.PARAMETER_DECLARATION),
+    docText,
+    'INPUT_PARAMS',
+  );
   variables.push(...parameterValidation.variables);
   diagnostics.push(...parameterValidation.diagnostics);
 
@@ -128,9 +124,9 @@ export function sequenceLinter(
       ...commandLinter(
         sequenceAdaptation,
         [
-          ...commandsNode.getChildren(TOKEN_COMMAND),
-          ...commandsNode.getChildren(TOKEN_LOAD), // TODO: remove in the library sequence PR because that check should validate load and activates
-          ...commandsNode.getChildren(TOKEN_ACTIVATE), // TODO: remove in the library sequence PR because that check should validate load and activates
+          ...commandsNode.getChildren(SEQN_NODES.COMMAND),
+          ...commandsNode.getChildren(SEQN_NODES.LOAD), // TODO: remove in the library sequence PR because that check should validate load and activates
+          ...commandsNode.getChildren(SEQN_NODES.ACTIVATE), // TODO: remove in the library sequence PR because that check should validate load and activates
         ],
         docText,
         variableMap,
@@ -141,7 +137,7 @@ export function sequenceLinter(
     );
     diagnostics.push(
       ...validateRequests(
-        commandsNode.getChildren(TOKEN_REQUEST),
+        commandsNode.getChildren(SEQN_NODES.REQUEST),
         docText,
         variableMap,
         sequenceAdaptation,
@@ -151,17 +147,17 @@ export function sequenceLinter(
       ),
     );
     diagnostics.push(
-      ...validateActivateLoad(commandsNode.getChildren(TOKEN_ACTIVATE), docText, librarySequences),
-      ...validateActivateLoad(commandsNode.getChildren(TOKEN_LOAD), docText, librarySequences),
+      ...validateActivateLoad(commandsNode.getChildren(SEQN_NODES.ACTIVATE), docText, librarySequences),
+      ...validateActivateLoad(commandsNode.getChildren(SEQN_NODES.LOAD), docText, librarySequences),
     );
   }
 
   diagnostics.push(
     ...immediateCommandLinter(
       [
-        ...(treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_COMMAND) ?? []),
-        ...(treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_LOAD) ?? []),
-        ...(treeNode.getChild('ImmediateCommands')?.getChildren(TOKEN_ACTIVATE) ?? []),
+        ...(treeNode.getChild('ImmediateCommands')?.getChildren(SEQN_NODES.COMMAND) ?? []),
+        ...(treeNode.getChild('ImmediateCommands')?.getChildren(SEQN_NODES.LOAD) ?? []),
+        ...(treeNode.getChild('ImmediateCommands')?.getChildren(SEQN_NODES.ACTIVATE) ?? []),
       ],
       docText,
       variableMap,
@@ -175,7 +171,7 @@ export function sequenceLinter(
   diagnostics.push(
     ...hardwareCommandLinter(
       sequenceAdaptation,
-      treeNode.getChild('HardwareCommands')?.getChildren(TOKEN_COMMAND) || [],
+      treeNode.getChild('HardwareCommands')?.getChildren(SEQN_NODES.COMMAND) || [],
       docText,
       commandDictionary,
       channelDictionary,
@@ -279,7 +275,7 @@ function validateRequests(
     ...requestNodes.flatMap(request =>
       commandLinter(
         sequenceAdaptation,
-        request.getChild('Steps')?.getChildren(TOKEN_COMMAND) ?? [],
+        request.getChild('Steps')?.getChildren(SEQN_NODES.COMMAND) ?? [],
         text,
         variables,
         commandDictionary,
@@ -306,7 +302,7 @@ function validateCommandTypeMixing(node: SyntaxNode): Diagnostic[] {
   const lgo = commands?.getChild('LoadAndGoDirective') ?? null;
 
   // Check if each command type exists and has at least one child node.
-  const hasCommands = commands !== null && (commands?.getChildren(TOKEN_COMMAND).length > 0 || lgo !== null);
+  const hasCommands = commands !== null && (commands?.getChildren(SEQN_NODES.COMMAND).length > 0 || lgo !== null);
   const hasImmediateCommands = immediateCommands !== null;
   const hasHardwareCommands = hardwareCommands !== null;
 
@@ -357,7 +353,7 @@ export function validateVariables(inputParams: SyntaxNode[], text: string, type:
     ),
   );
 
-  if (inputParams[0].getChildren('Variable').length === 0) {
+  if (inputParams[0].getChildren(SEQN_NODES.VARIABLE).length === 0) {
     diagnostics.push({
       from: inputParams[0].from,
       message: `Missing values for ${type} directive`,
@@ -367,10 +363,10 @@ export function validateVariables(inputParams: SyntaxNode[], text: string, type:
   }
 
   inputParams[0].getChildren('Variable').forEach(parameter => {
-    const typeNode = parameter.getChild('Type');
-    const enumNode = parameter.getChild('EnumName');
-    const rangeNode = parameter.getChild('Range');
-    const objectNode = parameter.getChild('Object');
+    const typeNode = parameter.getChild(SEQN_NODES.TYPE);
+    const enumNode = parameter.getChild(SEQN_NODES.ENUM_NAME);
+    const rangeNode = parameter.getChild(SEQN_NODES.RANGE);
+    const objectNode = parameter.getChild(SEQN_NODES.OBJECT);
 
     const { enumName, name, range, type: variableType } = getVariableInfo(parameter, text);
 
@@ -438,14 +434,14 @@ function getVariableInfo(
   type: string | undefined;
   values: string | undefined;
 } {
-  const nameNode = parameter.getChild('Enum');
-  const typeNode = parameter.getChild('Type');
-  const objectNode = parameter.getChild('Object');
+  const nameNode = parameter.getChild(SEQN_NODES.VARIABLE_NAME);
+  const typeNode = parameter.getChild(SEQN_NODES.TYPE);
+  const objectNode = parameter.getChild(SEQN_NODES.OBJECT);
 
   if (typeNode) {
-    const enumNode = parameter.getChild('EnumName');
-    const rangeNode = parameter.getChild('Range');
-    const valuesNode = parameter.getChild('Values');
+    const enumNode = parameter.getChild(SEQN_NODES.ENUM_NAME);
+    const rangeNode = parameter.getChild(SEQN_NODES.RANGE);
+    const valuesNode = parameter.getChild(SEQN_NODES.VALUES);
     return {
       enumName: enumNode ? text.slice(enumNode.from, enumNode.to) : undefined,
       name: nameNode ? text.slice(nameNode.from, nameNode.to) : undefined,
@@ -454,14 +450,14 @@ function getVariableInfo(
       values: valuesNode ? text.slice(valuesNode.from, valuesNode.to) : undefined,
     };
   } else if (objectNode) {
-    const properties = objectNode.getChildren('Property');
+    const properties = objectNode.getChildren(SEQN_NODES.PROPERTY);
     let range: string | undefined = undefined;
     let type: string | undefined = undefined;
     let enumName: string | undefined = undefined;
     let values: string | undefined = undefined;
 
     properties.forEach(property => {
-      const propertyNameNode = property.getChild('PropertyName');
+      const propertyNameNode = property.getChild(SEQN_NODES.PROPERTY_NAME);
       const propertyValueNode = propertyNameNode?.nextSibling;
 
       if (propertyNameNode !== null && propertyValueNode !== null && propertyValueNode !== undefined) {
@@ -511,8 +507,8 @@ function validateActivateLoad(node: SyntaxNode[], text: string, librarySequences
   const diagnostics: Diagnostic[] = [];
 
   node.forEach((activate: SyntaxNode) => {
-    const sequenceName = activate.getChild(RULE_SEQUENCE_NAME);
-    const argNode = activate.getChild(RULE_ARGS);
+    const sequenceName = activate.getChild(SEQN_NODES.SEQUENCE_NAME);
+    const argNode = activate.getChild(SEQN_NODES.ARGS);
 
     if (sequenceName === null || argNode === null) {
       return;
@@ -708,7 +704,7 @@ function commandLinter(
 
     // TODO: remove in the library sequence PR because that check should validate
     // load and activates
-    if (command.name === TOKEN_ACTIVATE || command.name === TOKEN_LOAD) {
+    if (command.name === SEQN_NODES.ACTIVATE || command.name === SEQN_NODES.LOAD) {
       continue;
     }
 
@@ -737,7 +733,7 @@ function commandLinter(
 
 function validateTimeTags(command: SyntaxNode, text: string): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
-  const timeTagNode = command.getChild('TimeTag');
+  const timeTagNode = command.getChild(SEQN_NODES.TIME_TAG);
 
   // If the TimeTag node is missing, create a diagnostic
   if (!timeTagNode) {
@@ -750,7 +746,7 @@ function validateTimeTags(command: SyntaxNode, text: string): Diagnostic[] {
     });
   } else {
     // Commands can't have a ground epoch time tag
-    if (command.name === TOKEN_COMMAND && timeTagNode.getChild('TimeGroundEpoch')) {
+    if (command.name === SEQN_NODES.COMMAND && timeTagNode.getChild('TimeGroundEpoch')) {
       diagnostics.push({
         actions: [],
         from: timeTagNode.from,
@@ -760,10 +756,11 @@ function validateTimeTags(command: SyntaxNode, text: string): Diagnostic[] {
       });
     }
 
-    const timeTagAbsoluteNode = timeTagNode?.getChild('TimeAbsolute');
-    const timeTagEpochNode = timeTagNode?.getChild('TimeEpoch') ?? timeTagNode.getChild('TimeGroundEpoch');
-    const timeTagRelativeNode = timeTagNode?.getChild('TimeRelative');
-    const timeTagBlockRelativeNode = timeTagNode?.getChild('TimeBlockRelative');
+    const timeTagAbsoluteNode = timeTagNode?.getChild(SEQN_NODES.TIME_ABSOLUTE);
+    const timeTagEpochNode =
+      timeTagNode?.getChild(SEQN_NODES.TIME_EPOCH) ?? timeTagNode.getChild(SEQN_NODES.TIME_GROUND_EPOCH);
+    const timeTagRelativeNode = timeTagNode?.getChild(SEQN_NODES.TIME_RELATIVE);
+    const timeTagBlockRelativeNode = timeTagNode?.getChild(SEQN_NODES.TIME_BLOCK_RELATIVE);
 
     if (timeTagAbsoluteNode) {
       const absoluteText = text.slice(timeTagAbsoluteNode.from + 1, timeTagAbsoluteNode.to).trim();
@@ -914,7 +911,7 @@ function immediateCommandLinter(
   // Iterate over each command node
   for (const command of commandNodes) {
     // Get the TimeTag node for the current command
-    const timeTagNode = command.getChild('TimeTag');
+    const timeTagNode = command.getChild(SEQN_NODES.TIME_TAG);
 
     // If the TimeTag node exists, create a diagnostic
     if (timeTagNode) {
@@ -945,7 +942,7 @@ function immediateCommandLinter(
     diagnostics.push(...validateMetadata(command));
 
     // immediate commands don't have models
-    const modelsNode = command.getChild('Models');
+    const modelsNode = command.getChild(SEQN_NODES.MODELS);
     if (modelsNode) {
       diagnostics.push({
         from: modelsNode.from,
@@ -986,7 +983,7 @@ function hardwareCommandLinter(
   // Iterate over each command node
   for (const command of commands) {
     // Get the TimeTag node for the current command
-    const timeTag = command.getChild('TimeTag');
+    const timeTag = command.getChild(SEQN_NODES.TIME_TAG);
 
     // If the TimeTag node exists, create a diagnostic
     if (timeTag) {
@@ -1018,7 +1015,7 @@ function hardwareCommandLinter(
     diagnostics.push(...validateMetadata(command));
 
     // hardware commands don't have models
-    const modelsNode = command.getChild('Models');
+    const modelsNode = command.getChild(SEQN_NODES.MODELS);
     if (modelsNode) {
       diagnostics.push({
         actions: [],
@@ -1057,7 +1054,7 @@ function validateCommand(
   }
 
   // Get the stem node of the command.
-  const stem = command.getChild('Stem');
+  const stem = command.getChild(SEQN_NODES.STEM);
   // If the stem node is null, return an empty array of diagnostics.
   if (stem === null) {
     return [];
@@ -1081,7 +1078,7 @@ function validateCommand(
     return diagnostics;
   }
 
-  const argNode = command.getChild('Args');
+  const argNode = command.getChild(SEQN_NODES.ARGS);
   const dictArgs = (result as FswCommand).arguments ?? [];
 
   // Lint the arguments of the command.
@@ -1358,7 +1355,7 @@ function validateArgument(
 
   switch (dictArgType) {
     case 'enum':
-      if (argType === 'Enum') {
+      if (argType === SEQN_NODES.ENUM) {
         if (!variables[argText]) {
           // TODO -- potentially check that variable types match usage
           diagnostics.push({
@@ -1368,7 +1365,7 @@ function validateArgument(
             to: argNode.to,
           });
         }
-      } else if (argType !== 'String') {
+      } else if (argType !== SEQN_NODES.STRING) {
         diagnostics.push({
           actions: [],
           from: argNode.from,
@@ -1402,7 +1399,7 @@ function validateArgument(
       }
       break;
     case 'boolean':
-      if (argType !== 'Boolean') {
+      if (argType !== SEQN_NODES.BOOLEAN) {
         diagnostics.push({
           actions: [],
           from: argNode.from,
@@ -1425,7 +1422,7 @@ function validateArgument(
     case 'integer':
     case 'numeric':
     case 'unsigned':
-      if (argType === 'Number') {
+      if (argType === SEQN_NODES.NUMBER) {
         if (dictArg.range === null) {
           break;
         }
@@ -1454,7 +1451,7 @@ function validateArgument(
             to: argNode.to,
           });
         }
-      } else if (argType === 'Enum') {
+      } else if (argType === SEQN_NODES.ENUM) {
         if (!variables[argText]) {
           diagnostics.push({
             from: argNode.from,
@@ -1474,7 +1471,7 @@ function validateArgument(
       break;
     case 'fixed_string':
     case 'var_string':
-      if (argType === 'Enum') {
+      if (argType === SEQN_NODES.ENUM) {
         if (!variables[argText]) {
           const insert = closest(argText, Object.keys(variables));
           diagnostics.push({
@@ -1492,7 +1489,7 @@ function validateArgument(
             to: argNode.to,
           });
         }
-      } else if (argType !== 'String') {
+      } else if (argType !== SEQN_NODES.STRING) {
         diagnostics.push({
           from: argNode.from,
           message: `Incorrect type - expected 'String' but got ${argType}`,
@@ -1502,10 +1499,10 @@ function validateArgument(
       }
       break;
     case 'repeat':
-      if (argType !== TOKEN_REPEAT_ARG) {
+      if (argType !== SEQN_NODES.REPEAT_ARG) {
         diagnostics.push({
           from: argNode.from,
-          message: `Incorrect type - expected '${TOKEN_REPEAT_ARG}' but got ${argType}`,
+          message: `Incorrect type - expected '${SEQN_NODES.REPEAT_ARG}' but got ${argType}`,
           severity: 'error',
           to: argNode.to,
         });
@@ -1607,11 +1604,11 @@ function numFormat(argText: string, num: number): number | string {
 
 function validateId(commandNode: SyntaxNode, text: string): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
-  const idNodes = commandNode.getChildren('IdDeclaration');
+  const idNodes = commandNode.getChildren(SEQN_NODES.ID_DECLARATION);
   if (idNodes.length) {
     const idNode = idNodes[0];
     const idValNode = idNode.firstChild;
-    if (idValNode?.name === 'Enum' || idValNode?.name === 'Number') {
+    if (idValNode?.name === SEQN_NODES.ENUM || idValNode?.name === SEQN_NODES.NUMBER) {
       const { from, to } = getFromAndTo([idValNode]);
       const idVal = text.slice(from, to);
       diagnostics.push({
@@ -1658,13 +1655,13 @@ function validateId(commandNode: SyntaxNode, text: string): Diagnostic[] {
  */
 function validateMetadata(commandNode: SyntaxNode): Diagnostic[] {
   // Get the metadata node of the command node
-  const metadataNode = commandNode.getChild('Metadata');
+  const metadataNode = commandNode.getChild(SEQN_NODES.METADATA);
   // If there is no metadata node, return an empty array
   if (!metadataNode) {
     return [];
   }
   // Get the metadata entry nodes of the metadata node
-  const metadataEntry = metadataNode.getChildren('MetaEntry');
+  const metadataEntry = metadataNode.getChildren(SEQN_NODES.METADATA_ENTRY);
   // If there are no metadata entry nodes, return an empty array
   if (!metadataEntry) {
     return [];
@@ -1713,11 +1710,11 @@ function validateMetadata(commandNode: SyntaxNode): Diagnostic[] {
           const deepestNodeName = getDeepestNode(metadataNodeChild).name;
           // Add a diagnostic based on the name of the deepest node
           switch (deepestNodeName) {
-            case 'String':
+            case SEQN_NODES.STRING:
               break; // do nothing as it is a string
-            case 'Number':
-            case 'Enum':
-            case 'Boolean':
+            case SEQN_NODES.NUMBER:
+            case SEQN_NODES.ENUM:
+            case SEQN_NODES.BOOLEAN:
               diagnostics.push({
                 from: metadataNodeChild.from,
                 message: `Incorrect type - expected 'String' but got ${deepestNodeName}`,
@@ -1742,7 +1739,7 @@ function validateMetadata(commandNode: SyntaxNode): Diagnostic[] {
 }
 
 function validateModel(commandNode: SyntaxNode): Diagnostic[] {
-  const models = commandNode.getChild('Models')?.getChildren('Model');
+  const models = commandNode.getChild(SEQN_NODES.MODELS)?.getChildren(SEQN_NODES.MODEL_ENTRY);
   if (!models) {
     return [];
   }
@@ -1784,7 +1781,7 @@ function validateModel(commandNode: SyntaxNode): Diagnostic[] {
             break;
           } else {
             if (templateName === 'Variable' || templateName === 'Offset') {
-              if (deepestNodeName !== 'String') {
+              if (deepestNodeName !== SEQN_NODES.STRING) {
                 diagnostics.push({
                   from: modelNode.from,
                   message: `Incorrect type - expected 'String' but got ${deepestNodeName}`,
@@ -1795,7 +1792,11 @@ function validateModel(commandNode: SyntaxNode): Diagnostic[] {
               }
             } else {
               // Value
-              if (deepestNodeName !== 'Number' && deepestNodeName !== 'String' && deepestNodeName !== 'Boolean') {
+              if (
+                deepestNodeName !== SEQN_NODES.NUMBER &&
+                deepestNodeName !== SEQN_NODES.STRING &&
+                deepestNodeName !== SEQN_NODES.BOOLEAN
+              ) {
                 diagnostics.push({
                   from: modelNode.from,
                   message: `Incorrect type - expected 'Number', 'String', or 'Boolean' but got ${deepestNodeName}`,
