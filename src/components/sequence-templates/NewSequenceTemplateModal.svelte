@@ -165,7 +165,7 @@
           <Select.Value aria-label="Select a language" placeholder="Select a language" />
         </Select.Trigger>
         <Select.Content size="xs" class="z-[10000]">
-          {#each Object.keys(SequencingLanguages) as language}
+          {#each Object.values(SequencingLanguages) as language}
             <Select.Item size="xs" value={language} label={language} class="flex gap-1">
               {language}
             </Select.Item>

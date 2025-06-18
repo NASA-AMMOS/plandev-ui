@@ -9,7 +9,7 @@ export enum SequencingMode {
 }
 
 export enum SequencingLanguages {
-  SEQN = 'SEQN',
+  SEQN = 'SeqN',
   STOL = 'STOL',
-  TEXT = 'TEXT',
+  TEXT = 'Text',
 }
