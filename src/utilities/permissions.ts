@@ -1642,7 +1642,7 @@ const featurePermissions: FeaturePermissions = {
     canCreate: user => queryPermissions.CREATE_SEQUENCE_TEMPLATE(user),
     canDelete: (user, sequenceTemplate) => queryPermissions.DELETE_SEQUENCE_TEMPLATE(user, sequenceTemplate),
     canExpand: (user, plan, model) => queryPermissions.EXPAND_TEMPLATES(user, plan, model),
-    canImport: (user) => gatewayPermissions.IMPORT_SEQUENCE_TEMPLATE(user),
+    canImport: user => gatewayPermissions.IMPORT_SEQUENCE_TEMPLATE(user),
     canRead: () => true,
     canUpdate: (user, sequenceTemplate) => queryPermissions.UPDATE_SEQUENCE_TEMPLATE(user, sequenceTemplate),
   },
