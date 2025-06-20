@@ -8,6 +8,7 @@
   import type { SequenceTemplate } from '../../types/sequence-template';
   import type { Parcel } from '../../types/sequencing';
   import effects from '../../utilities/effects';
+  import { downloadBlob } from '../../utilities/generic';
   import { showTemplateModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -36,6 +37,13 @@
 
   $: parcel = $parcels.find(p => p.id === selectedTemplate?.parcel_id) ?? null;
 
+  function onDownloadTemplate(sequenceTemplate: SequenceTemplate) {
+    downloadBlob(
+      new Blob([sequenceTemplate.template_definition], { type: 'text/plain' }),
+      `${sequenceTemplate.name}_${sequenceTemplate.activity_type}.${sequenceTemplate.language}`,
+    );
+  }
+
   function onTemplateSelected(event: CustomEvent<SequenceTemplate>) {
     $selectedSequenceTemplateId = event.detail.id;
   }
@@ -47,20 +55,37 @@
   }
 
   async function createSequenceTemplate(): Promise<void> {
-    const { confirm, value } = await showTemplateModal();
+    const { confirm, value } = await showTemplateModal(user);
     if (!confirm || value === undefined) {
       return;
     }
 
-    effects.createSequenceTemplate(
-      value.activityType,
-      value.language,
-      value.modelId,
-      value.name,
-      value.parcelId,
-      '',
-      user,
-    );
+    // Check if importing a file, otherwise create a new template
+    if ('sequenceTemplateFile' in value) {
+      const sequenceTemplateFile = value.sequenceTemplateFile as File;
+      if (sequenceTemplateFile !== undefined) {
+        const parsedSequenceTemplateFile: string = await sequenceTemplateFile.text();
+        effects.importSequenceTemplate(
+          value.activityType,
+          value.language,
+          value.modelId,
+          value.name,
+          value.parcelId,
+          parsedSequenceTemplateFile,
+          user,
+        );
+      }
+    } else {
+      effects.createSequenceTemplate(
+        value.activityType,
+        value.language,
+        value.modelId,
+        value.name,
+        value.parcelId,
+        '',
+        user,
+      );
+    }
   }
 </script>
 
@@ -89,7 +114,12 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        <SequenceTemplateTable {filterText} {user} on:templateSelected={onTemplateSelected} />
+        <SequenceTemplateTable
+          {filterText}
+          {user}
+          on:download={e => onDownloadTemplate(e.detail.template)}
+          on:templateSelected={onTemplateSelected}
+        />
       </svelte:fragment>
     </Panel>
 
@@ -159,6 +189,9 @@
       showCommandFormBuilder={true}
       template={selectedTemplate}
       on:templateChanged={onTemplateChanged}
+      on:download={e => {
+        onDownloadTemplate(e.detail.template);
+      }}
       {user}
     />
   {:else}

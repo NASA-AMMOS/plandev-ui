@@ -16,7 +16,7 @@
   });
 </script>
 
-<PageTitle title="Sequencing" />
+<PageTitle title="Sequence Templates" />
 
 {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
   <span class="st-typography-body">

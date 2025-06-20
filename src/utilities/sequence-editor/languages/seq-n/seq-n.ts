@@ -1,14 +1,14 @@
 import { CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
 import { LRLanguage, LanguageSupport, delimitedIndent, foldNodeProp, indentNodeProp } from '@codemirror/language';
 import { styleTags, tags as t } from '@lezer/highlight';
+import { SeqnParser } from '@nasa-jpl/aerie-sequence-languages';
 import { customFoldInside } from './custom-folder';
-import { parser } from './seq-n.grammar';
 
 export const SeqLanguage = LRLanguage.define({
   languageData: {
     commentTokens: { line: '#' },
   },
-  parser: parser.configure({
+  parser: SeqnParser.configure({
     props: [
       indentNodeProp.add({
         Application: delimitedIndent({ align: false, closing: ')' }),

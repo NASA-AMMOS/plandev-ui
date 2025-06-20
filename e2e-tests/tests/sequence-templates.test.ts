@@ -14,7 +14,8 @@ import { SequenceTemplates } from '../fixtures/SequenceTemplates.js';
 const sequenceFilterName: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 const sequenceTemplateName: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 const sequenceTemplateContent: string = '/C Example_Command "ARG1"';
-const sequenceTemplateLanguage: string = 'Text';
+const sequenceTemplateOutputContent: string = 'C Example_Command "ARG1"';
+const sequenceTemplateLanguage: string = 'SeqN';
 
 let appNav: AppNav;
 let context: BrowserContext;
@@ -105,7 +106,7 @@ test.describe.serial('Sequence Templates', () => {
     await plan.sequenceExpansionOutputModal.waitFor({ state: 'attached' });
     await plan.sequenceExpansionOutputModal.waitFor({ state: 'visible' });
     await page.getByText('Loading Editor...').waitFor({ state: 'detached' });
-    await expect(plan.sequenceExpansionOutputModal.getByText(sequenceTemplateContent)).toBeVisible();
+    await expect(plan.sequenceExpansionOutputModal.getByText(sequenceTemplateOutputContent)).toBeVisible();
   });
   test('Delete a sequence template', async () => {
     await sequenceTemplates.goto();

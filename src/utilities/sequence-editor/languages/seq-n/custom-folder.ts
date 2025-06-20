@@ -1,27 +1,27 @@
 import { syntaxTree } from '@codemirror/language';
 import { EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
-import { TOKEN_COMMAND } from '../../../../constants/seq-n-grammar-constants';
+import { SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
 import { getFromAndTo } from '../../tree-utils';
 
 export function customFoldInside(node: SyntaxNode, state: EditorState): { from: number; to: number } | null {
   switch (node.name) {
-    case 'Activate':
-    case 'Load':
-      return foldSteps(node, 'SequenceName', state);
-    case 'Command':
-      return foldSteps(node, 'Stem', state);
-    case 'GroundBlock':
-    case 'GroundEvent':
-      return foldSteps(node, 'GroundName', state);
-    case 'Request':
+    case SEQN_NODES.ACTIVATE:
+    case SEQN_NODES.LOAD:
+      return foldSteps(node, SEQN_NODES.SEQUENCE_NAME, state);
+    case SEQN_NODES.COMMAND:
+      return foldSteps(node, SEQN_NODES.STEM, state);
+    case SEQN_NODES.GROUND_BLOCK:
+    case SEQN_NODES.GROUND_EVENT:
+      return foldSteps(node, SEQN_NODES.GROUND_NAME, state);
+    case SEQN_NODES.REQUEST:
       return foldRequest(node, state);
-    case 'Metadata':
+    case SEQN_NODES.METADATA:
       return foldMetadataOrModel(node, state, '@Metadata');
-    case 'Models':
+    case SEQN_NODES.MODELS:
       return foldMetadataOrModel(node, state, '@Model');
-    case 'ParameterDeclaration':
-    case 'LocalDeclaration':
+    case SEQN_NODES.PARAMETER_DECLARATION:
+    case SEQN_NODES.LOCAL_DECLARATION:
       return foldVariables(node, state);
   }
   return null;
@@ -49,7 +49,7 @@ export function foldSteps(
     return null;
   }
 
-  if (nodeName === 'Stem') {
+  if (nodeName === SEQN_NODES.STEM) {
     const blockFold = blockFolder(node, state);
     if (blockFold) {
       return blockFold;
@@ -57,14 +57,14 @@ export function foldSteps(
   }
 
   // Get all Args nodes, LineComment node, Metadata nodes, and Models nodes.
-  const argsNodes = containerNode.getChildren('Args');
-  const commentNode = containerNode.getChild('LineComment');
-  const metadataNode = containerNode.getChildren('Metadata');
-  const modelNodes = containerNode.getChildren('Models');
+  const argsNodes = containerNode.getChildren(SEQN_NODES.ARGS);
+  const commentNode = containerNode.getChild(SEQN_NODES.LINE_COMMENT);
+  const metadataNode = containerNode.getChildren(SEQN_NODES.METADATA);
+  const modelNodes = containerNode.getChildren(SEQN_NODES.MODELS);
 
   // Get the Epoch and Engine nodes.
-  const epochNode = containerNode.getChild('Epoch');
-  const engineNode = containerNode.getChild('Engine');
+  const epochNode = containerNode.getChild(SEQN_NODES.EPOCH);
+  const engineNode = containerNode.getChild(SEQN_NODES.ENGINE);
 
   // Calculate the start of the fold range after the target node and any Args, LineComment nodes
   const from = getFromAndTo([node, ...argsNodes, commentNode]).to;
@@ -93,9 +93,9 @@ export function foldSteps(
  *          Returns null if any of the necessary nodes are not present.
  */
 export function foldRequest(requestNode: SyntaxNode, state: EditorState): { from: number; to: number } | null {
-  const requestNameNode = requestNode.getChild('RequestName');
-  const argsNodes = requestNode.getChildren('Args');
-  const commentNode = requestNode.getChild('LineComment');
+  const requestNameNode = requestNode.getChild(SEQN_NODES.REQUEST_NAME);
+  const argsNodes = requestNode.getChildren(SEQN_NODES.ARGS);
+  const commentNode = requestNode.getChild(SEQN_NODES.LINE_COMMENT);
 
   // Calculate the start of the fold range after the RequestName node and any LineComment node
   const from = getFromAndTo([requestNameNode, ...argsNodes, commentNode]).to + (commentNode == null ? 1 : 0);
@@ -123,7 +123,7 @@ export function foldRequest(requestNode: SyntaxNode, state: EditorState): { from
  */
 export function foldVariables(containerNode: SyntaxNode, state: EditorState): { from: number; to: number } | null {
   // Get all the Variable nodes in the container node
-  const variablesNodes = containerNode.getChildren('Variable');
+  const variablesNodes = containerNode.getChildren(SEQN_NODES.VARIABLE);
 
   // Calculate the length of the directive (e.g. "@INPUT_PARAMETERS_BEGIN" or "@LOCALS_BEGIN")
   const directiveLength = state
@@ -406,7 +406,7 @@ export function computeBlocks(state: EditorState): TreeState {
     const commandNodes: SyntaxNode[] = [];
     syntaxTree(state).iterate({
       enter: node => {
-        if (node.name === TOKEN_COMMAND) {
+        if (node.name === SEQN_NODES.COMMAND) {
           const stemNode = node.node.getChild('Stem');
           if (stemNode) {
             commandNodes.push(stemNode);

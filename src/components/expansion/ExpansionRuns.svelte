@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
+  import { seqJsonToSeqn } from '@nasa-jpl/aerie-sequence-languages';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { expansionRunsColumns } from '../../stores/expansion';
   import { parcels } from '../../stores/sequencing';
@@ -9,7 +10,6 @@
   import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
   import type { ActivityInstanceJoin, ExpandedSequence, ExpansionRun } from '../../types/expansion';
   import type { Parcel } from '../../types/sequencing';
-  import { seqJsonToSequence } from '../../utilities/sequence-editor/from-seq-json';
   import SequenceEditor from '../sequencing/SequenceEditor.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -31,7 +31,7 @@
 
   async function convertOutputToSequence(sequence: ExpandedSequence | null): Promise<void> {
     sequenceDefinition = sequence?.expanded_sequence
-      ? seqJsonToSequence(sequence.expanded_sequence)
+      ? seqJsonToSeqn(sequence.expanded_sequence)
       : 'No Sequence Selected';
   }
 

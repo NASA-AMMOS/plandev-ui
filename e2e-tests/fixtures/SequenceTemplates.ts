@@ -1,5 +1,4 @@
 import { expect, Locator, Page } from '@playwright/test';
-import { getOptionValueFromText } from '../utilities/selectors';
 import { Models } from './Models';
 import { Parcels } from './Parcels';
 
@@ -9,14 +8,11 @@ export class SequenceTemplates {
   deleteSequenceTemplateButton: Locator;
   editor: Locator;
   newSequenceTemplateActivityTypeInput: Locator;
-  newSequenceTemplateActivityTypeSelector: string = 'select[name="activityType"]';
   newSequenceTemplateButton: Locator;
   newSequenceTemplateLanguageInput: Locator;
   newSequenceTemplateModelIdInput: Locator;
-  newSequenceTemplateModelIdSelector: string = 'select[name="modelId"]';
   newSequenceTemplateNameInput: Locator;
   newSequenceTemplateParcelIdInput: Locator;
-  newSequenceTemplateParcelIdSelector: string = 'select[name="parcelId"]';
   saveSequenceTemplateButton: Locator;
   sequenceTemplateActivityType: string = 'PeelBanana';
   sequenceTemplateEditorActiveLine: Locator;
@@ -33,8 +29,8 @@ export class SequenceTemplates {
   async createSequenceTemplate(newSequenceTemplateName: string, newSequenceTemplateLanguage: string) {
     await this.newSequenceTemplateButton.click();
     await this.newSequenceTemplateNameInput.fill(newSequenceTemplateName);
-    await this.newSequenceTemplateLanguageInput.fill(newSequenceTemplateLanguage);
 
+    await this.selectLanguage(newSequenceTemplateLanguage);
     await this.selectParcel();
     await this.selectModel();
     await this.selectActivityType();
@@ -59,43 +55,40 @@ export class SequenceTemplates {
   }
 
   async selectActivityType() {
-    await this.page.waitForSelector(`option:has-text("${this.sequenceTemplateActivityType}")`, { state: 'attached' });
-    const value = await getOptionValueFromText(
-      this.page,
-      this.newSequenceTemplateActivityTypeSelector,
-      this.sequenceTemplateActivityType,
-    );
-    await this.newSequenceTemplateActivityTypeInput.focus();
-    await this.newSequenceTemplateActivityTypeInput.selectOption(value);
-    await this.newSequenceTemplateActivityTypeInput.evaluate(e => e.blur());
+    await this.newSequenceTemplateActivityTypeInput.click();
+    await expect(this.page.getByRole('option', { name: this.sequenceTemplateActivityType })).toBeVisible();
+    await this.page.getByRole('option', { name: this.sequenceTemplateActivityType }).click();
+  }
+
+  async selectLanguage(language) {
+    await this.newSequenceTemplateLanguageInput.click();
+    await expect(this.page.getByRole('option', { name: language })).toBeVisible();
+    await this.page.getByRole('option', { name: language }).click();
   }
 
   async selectModel() {
-    const { modelName, modelId } = this.models;
-    await this.page.waitForSelector(`option:has-text("${modelName} (${modelId})")`, { state: 'attached' });
-    const value = await getOptionValueFromText(this.page, this.newSequenceTemplateModelIdSelector, modelName);
-    await this.newSequenceTemplateModelIdInput.focus();
-    await this.newSequenceTemplateModelIdInput.selectOption(value);
-    await this.newSequenceTemplateModelIdInput.evaluate(e => e.blur());
+    const { modelName } = this.models;
+    await this.newSequenceTemplateModelIdInput.click();
+    await expect(this.page.getByRole('option', { name: modelName })).toBeVisible();
+    await this.page.getByRole('option', { name: modelName }).click();
   }
 
   async selectParcel() {
     const { parcelName } = this.parcels;
-    await this.page.locator(this.newSequenceTemplateParcelIdSelector).inputValue();
-    await this.page.waitForSelector(`option:has-text("${parcelName}")`, { state: 'attached' });
-    const value = await getOptionValueFromText(this.page, this.newSequenceTemplateParcelIdSelector, parcelName);
-    await this.newSequenceTemplateParcelIdInput.focus();
-    await this.newSequenceTemplateParcelIdInput.selectOption(value);
-    await this.newSequenceTemplateParcelIdInput.evaluate(e => e.blur());
+    await this.newSequenceTemplateParcelIdInput.click();
+    await expect(this.page.getByRole('option', { name: parcelName })).toBeVisible();
+    await this.page.getByRole('option', { name: parcelName }).click();
   }
 
-  updatePage(page: Page) {
-    this.newSequenceTemplateActivityTypeInput = page.locator(this.newSequenceTemplateActivityTypeSelector);
+  async updatePage(page: Page) {
+    this.newSequenceTemplateActivityTypeInput = page
+      .getByRole('combobox')
+      .filter({ hasText: 'Select an activity type' });
     this.newSequenceTemplateButton = page.getByRole('button', { name: 'New Template' });
-    this.newSequenceTemplateLanguageInput = page.getByLabel('Template Language');
-    this.newSequenceTemplateModelIdInput = page.locator(this.newSequenceTemplateModelIdSelector);
-    this.newSequenceTemplateNameInput = page.getByLabel('Template Name');
-    this.newSequenceTemplateParcelIdInput = page.locator(this.newSequenceTemplateParcelIdSelector);
+    this.newSequenceTemplateLanguageInput = page.getByRole('combobox').filter({ hasText: 'Select a language' });
+    this.newSequenceTemplateModelIdInput = page.getByRole('combobox').filter({ hasText: 'Select a model' });
+    this.newSequenceTemplateNameInput = page.getByRole('textbox', { name: 'name' });
+    this.newSequenceTemplateParcelIdInput = page.getByRole('combobox').filter({ hasText: 'Select a parcel' });
     this.createNewSequenceTemplateButton = page.getByRole('button', { name: 'Create Template' });
     this.sequenceTemplateTable = page.locator('#sequence-templates-table');
     this.sequenceTemplateEditorActiveLine = page.locator('.cm-activeLine');

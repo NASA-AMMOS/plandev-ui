@@ -1,7 +1,7 @@
 import { syntaxTree } from '@codemirror/language';
 import { Decoration, ViewPlugin, type DecorationSet, type ViewUpdate } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
-import { TOKEN_COMMAND } from '../../../../constants/seq-n-grammar-constants';
+import { SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
 import { blockMark } from '../../../codemirror/themes/block';
 import { getNearestAncestorNodeOfType } from '../../tree-utils';
 import { computeBlocks, isBlockCommand } from './custom-folder';
@@ -35,7 +35,7 @@ export function seqNHighlightBlock(viewUpdate: ViewUpdate): SyntaxNode[] {
   const selectionLine = viewUpdate.state.doc.lineAt(viewUpdate.state.selection.asSingle().main.from);
   const leadingWhiteSpaceLength = selectionLine.text.length - selectionLine.text.trimStart().length;
   const updatedSelectionNode = tree.resolveInner(selectionLine.from + leadingWhiteSpaceLength, 1);
-  const stemNode = getNearestAncestorNodeOfType(updatedSelectionNode, [TOKEN_COMMAND])?.getChild('Stem');
+  const stemNode = getNearestAncestorNodeOfType(updatedSelectionNode, [SEQN_NODES.COMMAND])?.getChild(SEQN_NODES.STEM);
 
   if (!stemNode || !isBlockCommand(viewUpdate.state.sliceDoc(stemNode.from, stemNode.to))) {
     return [];
