@@ -260,6 +260,7 @@ import {
   showDeleteActivitiesModal,
   showDeleteExternalSourceModal,
   showEditViewModal,
+  showExpansionPanelModal,
   showLibrarySequenceModel,
   showManageGroupsAndTypes,
   showManagePlanConstraintsModal,
@@ -5202,6 +5203,48 @@ const effects = {
     }
   },
 
+  async importSequenceTemplate(
+    activityType: string,
+    language: string,
+    modelId: number,
+    name: string,
+    parcelId: number,
+    sequenceTemplateContent: string,
+    user: User | null,
+  ): Promise<SequenceTemplate | null> {
+    try {
+      if (!gatewayPermissions.IMPORT_SEQUENCE_TEMPLATE(user)) {
+        throwPermissionError('import a sequence template');
+      }
+      const body = {
+        activity_type: activityType,
+        language,
+        model_id: modelId,
+        name,
+        parcel_id: parcelId,
+        sequence_template_file: sequenceTemplateContent,
+      };
+      const createdSequenceTemplate = await reqGateway<SequenceTemplate | null>(
+        '/importSequenceTemplate',
+        'POST',
+        JSON.stringify(body),
+        user,
+        false,
+      );
+
+      if (createdSequenceTemplate != null) {
+        showSuccessToast('Sequence Template Imported Successfully');
+        return createdSequenceTemplate;
+      }
+
+      return null;
+    } catch (e) {
+      catchError(e as Error);
+      showFailureToast('Failed To Import Sequence Template');
+      return null;
+    }
+  },
+
   async initialSimulationUpdate(
     planId: number,
     simulationTemplateId: number | null = null,
@@ -5864,6 +5907,45 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       showFailureToast('Scheduling failed');
+    }
+  },
+
+  async sendSequenceToWorkspace(
+    sequence: ExpansionSequence | null,
+    expandedSequence: string | null,
+    user: User | null,
+  ): Promise<void> {
+    if (sequence === null) {
+      showFailureToast("Sequence Doesn't Exist");
+      return;
+    }
+
+    if (expandedSequence === null) {
+      showFailureToast("Expanded Sequence Doesn't Exist");
+      return;
+    }
+
+    const { confirm, value } = await showExpansionPanelModal();
+
+    if (!confirm || !value) {
+      return;
+    }
+
+    try {
+      const createUserSequenceInsertInput: UserSequenceInsertInput = {
+        definition: expandedSequence,
+        is_locked: false,
+        name: sequence.seq_id,
+        parcel_id: value.parcelId,
+        seq_json: '',
+        workspace_id: value.workspaceId,
+      };
+      const userSequenceCreated = await this.createUserSequence(createUserSequenceInsertInput, user);
+      if (!userSequenceCreated) {
+        throw Error('Sequence Import Failed');
+      }
+    } catch (e) {
+      catchError(e as Error);
     }
   },
 

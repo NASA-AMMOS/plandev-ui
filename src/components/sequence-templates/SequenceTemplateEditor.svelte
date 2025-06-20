@@ -92,6 +92,7 @@
   $: sequenceDefinition = template?.template_definition ?? '';
 
   const dispatch = createEventDispatcher<{
+    download: { template: SequenceTemplate };
     templateChanged: { input: string; output: string };
   }>();
 
@@ -565,6 +566,14 @@
             on:click={formatDocument}
           >
             Format
+          </button>
+
+          <button
+            use:tooltip={{ content: 'Download sequence template', placement: 'top' }}
+            class="st-button icon-button secondary ellipsis"
+            on:click={() => dispatch('download', { template })}
+          >
+            Download
           </button>
 
           <button

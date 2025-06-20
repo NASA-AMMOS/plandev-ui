@@ -15,6 +15,7 @@
 
   type CellRendererParams = {
     deleteTemplate: (sequence: SequenceTemplate) => void;
+    downloadTemplate: (sequence: SequenceTemplate) => void;
     editTemplate: (sequence: SequenceTemplate) => void;
   };
   type TemplatesCellRendererParams = ICellRendererParams<SequenceTemplate> & CellRendererParams;
@@ -27,6 +28,7 @@
   let selectedTemplate: SequenceTemplate | null = null;
 
   const dispatch = createEventDispatcher<{
+    download: { template: SequenceTemplate };
     templateSelected: SequenceTemplate;
   }>();
 
@@ -85,6 +87,11 @@
               content: 'Delete Template',
               placement: 'bottom',
             },
+            downloadCallback: params.downloadTemplate,
+            downloadTooltip: {
+              content: 'Download Template',
+              placement: 'bottom',
+            },
             editCallback: params.editTemplate,
             editTooltip: {
               content: 'Edit Template',
@@ -101,6 +108,7 @@
       },
       cellRendererParams: {
         deleteTemplate,
+        downloadTemplate,
         editTemplate,
       } as CellRendererParams,
       field: 'actions',
@@ -109,12 +117,16 @@
       sortable: false,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 55,
+      width: 80,
     },
   ];
 
   function deleteTemplate(template: SequenceTemplate) {
     effects.deleteSequenceTemplate(template, user);
+  }
+
+  function downloadTemplate(template: SequenceTemplate) {
+    dispatch('download', { template });
   }
 
   function deleteTemplateContext(event: CustomEvent<RowId[]>) {

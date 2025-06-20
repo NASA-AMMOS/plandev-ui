@@ -5,11 +5,14 @@
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
+  import CodeSquareIcon from 'bootstrap-icons/icons/code-square.svg?component';
+  import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
   import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
   import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
   import { SequencingMode } from '../../enums/sequencing';
   import { expansionSequences, expansionSets, filteredExpansionSequences } from '../../stores/expansion';
   import { plan } from '../../stores/plan';
+  import { expandedTemplates } from '../../stores/sequence-template';
   import { sequenceFilters } from '../../stores/sequencing';
   import { simulationDatasetLatest, simulationDatasetsPlan } from '../../stores/simulation';
   import type { User } from '../../types/app';
@@ -17,6 +20,7 @@
   import type { ActivityLayerFilter } from '../../types/timeline';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
+  import { downloadBlob, downloadJSON } from '../../utilities/generic';
   import { showExpansionSequenceModal, showNewSequenceModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -129,6 +133,21 @@
     effects.deleteSequenceFilters([sequenceFilter.id], user);
   }
 
+  async function onDownloadExpandedSequence(sequence: ExpansionSequence) {
+    let outputStr: string | null;
+    let outputName: string = `${sequence.seq_id}_${sequence.simulation_dataset_id}`;
+    if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
+      const expandedTemplate = $expandedTemplates.find(expandedTemplate => expandedTemplate.seq_id === sequence.seq_id);
+      outputStr = expandedTemplate?.expanded_template ?? `No output found for sequence "${sequence.seq_id}"'`;
+      downloadBlob(new Blob([outputStr], { type: 'text/plain' }), `${outputName}.txt`);
+    } else {
+      outputStr = await effects.getExpansionSequenceSeqJson(sequence.seq_id, sequence.simulation_dataset_id, user);
+      if (outputStr) {
+        downloadJSON(JSON.parse(outputStr), `${outputName}.json`);
+      }
+    }
+  }
+
   function onExpandSequence(sequence: ExpansionSequence) {
     if ($simulationDatasetLatest !== null && $plan !== null) {
       if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
@@ -136,6 +155,20 @@
       } else if (selectedExpansionSetId !== null) {
         effects.expand(selectedExpansionSetId, $simulationDatasetLatest.id, $plan, $plan.model, user);
       }
+    }
+  }
+
+  async function onSendExpandedSequenceToWorkspace(sequence: ExpansionSequence) {
+    let expandedResult: string | null;
+    if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
+      const expandedTemplate = $expandedTemplates.find(expandedTemplate => expandedTemplate.seq_id === sequence.seq_id);
+      expandedResult = expandedTemplate?.expanded_template ?? `No output found for sequence "${sequence.seq_id}"'`;
+    } else {
+      expandedResult = await effects.getExpansionSequenceSeqJson(sequence.seq_id, sequence.simulation_dataset_id, user);
+    }
+
+    if (expandedResult !== null) {
+      await effects.sendSequenceToWorkspace(sequence, expandedResult, user);
     }
   }
 
@@ -289,6 +322,32 @@
                   <JournalCodeIcon />
                 </button>
               </div>
+              <div use:tooltip={{ content: 'Send Expanded Sequence To Workspace', placement: 'top' }}>
+                <button
+                  aria-label={`Send '${sequenceOrFilter.seq_id}' To Workspace`}
+                  class="st-button icon"
+                  on:click|stopPropagation={() => {
+                    if (isExpansionSequence(sequenceOrFilter)) {
+                      onSendExpandedSequenceToWorkspace(sequenceOrFilter);
+                    }
+                  }}
+                >
+                  <CodeSquareIcon />
+                </button>
+              </div>
+              <div use:tooltip={{ content: 'Download Expanded Sequence', placement: 'top' }}>
+                <button
+                  aria-label={`Download Expanded Sequence '${sequenceOrFilter.seq_id}'`}
+                  class="st-button icon"
+                  on:click|stopPropagation={() => {
+                    if (isExpansionSequence(sequenceOrFilter)) {
+                      onDownloadExpandedSequence(sequenceOrFilter);
+                    }
+                  }}
+                >
+                  <DownloadIcon />
+                </button>
+              </div>
               <div use:tooltip={{ content: 'Expand Sequence', placement: 'top' }}>
                 <button
                   aria-label={`Expand '${sequenceOrFilter.seq_id}'`}
@@ -381,6 +440,10 @@
     align-items: center;
     display: flex;
     gap: 8px;
+  }
+
+  .sne-item :global(svg) {
+    flex-shrink: 0;
   }
 
   .expand-all-button {
