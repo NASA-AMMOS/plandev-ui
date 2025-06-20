@@ -1371,6 +1371,7 @@ interface SchedulingCRUDPermission<T = null> extends RunnableSpecificationCRUDPe
 
 interface SequenceTemplateCRUDPermission<T = null> extends CRUDPermission<T> {
   canExpand: RolePlanPermissionCheck;
+  canImport: CreatePermissionCheck;
 }
 
 interface AssociationCRUDPermission<M, D> extends CRUDPermission<AssetWithOwner<M>> {
@@ -1641,6 +1642,7 @@ const featurePermissions: FeaturePermissions = {
     canCreate: user => queryPermissions.CREATE_SEQUENCE_TEMPLATE(user),
     canDelete: (user, sequenceTemplate) => queryPermissions.DELETE_SEQUENCE_TEMPLATE(user, sequenceTemplate),
     canExpand: (user, plan, model) => queryPermissions.EXPAND_TEMPLATES(user, plan, model),
+    canImport: (user) => gatewayPermissions.IMPORT_SEQUENCE_TEMPLATE(user),
     canRead: () => true,
     canUpdate: (user, sequenceTemplate) => queryPermissions.UPDATE_SEQUENCE_TEMPLATE(user, sequenceTemplate),
   },

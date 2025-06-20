@@ -14,6 +14,8 @@
   import type { Parcel } from '../../types/sequencing';
   import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
+  import { featurePermissions } from '../../utilities/permissions';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import { min, required } from '../../utilities/validators';
   import Modal from '../modals/Modal.svelte';
   import ModalContent from '../modals/ModalContent.svelte';
@@ -79,6 +81,8 @@
     $modelIdField.value === -1 ||
     $activityTypeField.value === '' ||
     (showImport && sequenceTemplateUploadFiles === undefined);
+
+  $: hasImportPermission = featurePermissions.sequenceTemplate.canImport(user);
 
   $: height = showImport ? heightWithImport : heightNoImport;
 
@@ -259,7 +263,14 @@
 
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button secondary" on:click={() => (showImport = !showImport)}>
+    <button
+      class="st-button secondary"
+      use:permissionHandler={{
+        hasPermission: hasImportPermission,
+        permissionError: 'You do not have permission to import a sequence template.',
+      }}
+      on:click={() => (showImport = !showImport)}
+    >
       {showImport ? hideImportText : importText}
     </button>
     <button class="st-button" disabled={saveButtonDisabled} on:click={save}> Create Template </button>
