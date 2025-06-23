@@ -3737,17 +3737,11 @@ const effects = {
     return null;
   },
 
-  async expand(
-    expansionSetId: number,
-    simulationDatasetId: number,
-    plan: Plan,
-    model: Model,
-    user: User | null,
-  ): Promise<void> {
+  async expand(expansionSetId: number, simulationDatasetId: number, plan: Plan, user: User | null): Promise<void> {
     try {
       planExpansionStatusStore.set(Status.Incomplete);
 
-      if (!queryPermissions.EXPAND(user, plan, model)) {
+      if (!queryPermissions.EXPAND(user, plan, plan.model)) {
         throwPermissionError('expand this plan');
       }
 
@@ -3765,22 +3759,17 @@ const effects = {
     }
   },
 
-  async expandTemplates(
-    seqIds: string[],
-    simulationDatasetId: number,
-    modelId: number,
-    user: User | null,
-  ): Promise<void> {
+  async expandTemplates(seqIds: string[], simulationDatasetId: number, plan: Plan, user: User | null): Promise<void> {
     try {
       sequenceTemplateExpansionStatus.set(Status.Incomplete);
-      if (!queryPermissions.EXPAND_TEMPLATES(user)) {
+      if (!queryPermissions.EXPAND_TEMPLATES(user, plan, plan.model)) {
         throwPermissionError('expand a sequence template');
       }
 
       const data = await reqHasura<{ success: boolean }>(
         gql.EXPAND_TEMPLATES,
         {
-          modelId,
+          modelId: plan.model.id,
           seqIds,
           simulationDatasetId,
         },

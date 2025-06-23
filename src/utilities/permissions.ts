@@ -109,6 +109,8 @@ const functionQueryMap: Record<QueryString, FunctionString> = {
   [Queries.DENY_MERGE]: 'deny_merge',
   [Queries.DUPLICATE_PLAN]: 'branch_plan',
   [Queries.EXPAND_ALL_ACTIVITIES]: 'expand_all_activities',
+  [Queries.EXPAND_ALL_TEMPLATES]: 'expand_all_templates',
+  [Queries.APPLY_ACTIVITIES_BY_FILTER]: 'assign_activities_by_filter',
   getSequenceSeqJsonBulk: 'sequence_seq_json_bulk',
   [Queries.GET_CONFLICTING_ACTIVITIES]: 'get_conflicting_activities',
   [Queries.GET_NON_CONFLICTING_ACTIVITIES]: 'get_non_conflicting_activities',
@@ -703,9 +705,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     const queries = [Queries.EXPAND_ALL_ACTIVITIES];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
-  // TODO: Re-visit potential fine-grained permissions for EXPAND_TEMPLATES when implemented in back-end
-  EXPAND_TEMPLATES: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.EXPAND_ALL_TEMPLATES], user);
+  EXPAND_TEMPLATES: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
+    const queries = [Queries.EXPAND_ALL_TEMPLATES];
+    return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
   GET_ACTIVITY_DIRECTIVE_CHANGELOG: () => true,
   GET_ACTIVITY_TYPES_EXPANSION_RULES: () => true,
