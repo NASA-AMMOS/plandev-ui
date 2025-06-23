@@ -1,8 +1,7 @@
+import { seqJsonToSeqn, seqnToSeqJson } from '@nasa-jpl/aerie-sequence-languages';
 import type { ISequenceAdaptation } from '../types/sequencing';
-import { seqJsonToSequence } from '../utilities/sequence-editor/from-seq-json';
 import { sequenceAutoIndent } from '../utilities/sequence-editor/sequence-autoindent';
 import { sequenceCompletion } from '../utilities/sequence-editor/sequence-completion';
-import { sequenceToSeqJson } from '../utilities/sequence-editor/to-seq-json';
 
 export const defaultSequenceAdaptation: ISequenceAdaptation = {
   argDelegator: undefined,
@@ -12,7 +11,7 @@ export const defaultSequenceAdaptation: ISequenceAdaptation = {
   inputFormat: {
     linter: undefined,
     name: 'SeqN',
-    toInputFormat: async input => seqJsonToSequence(JSON.parse(input)),
+    toInputFormat: async input => seqJsonToSeqn(JSON.parse(input)),
   },
   modifyOutput: undefined,
   modifyOutputParse: undefined,
@@ -20,8 +19,8 @@ export const defaultSequenceAdaptation: ISequenceAdaptation = {
     {
       fileExtension: 'json',
       name: 'Seq JSON',
-      toOutputFormat: async (...args: Parameters<typeof sequenceToSeqJson>) =>
-        JSON.stringify(sequenceToSeqJson(...args), null, 2),
+      toOutputFormat: async (...args: Parameters<typeof seqnToSeqJson>) =>
+        JSON.stringify(seqnToSeqJson(...args), null, 2),
     },
   ],
 };
