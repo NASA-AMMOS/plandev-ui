@@ -5,7 +5,7 @@
   import { lintGutter, openLintPanel } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate } from '@codemirror/view';
-  import type { SyntaxNode } from '@lezer/common';
+  import type { SyntaxNode, Tree } from '@lezer/common';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
@@ -15,10 +15,22 @@
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onMount } from 'svelte';
-  import type { GlobalType } from '../../types/global-type';
+  import { defaultSequenceAdaptation } from '../../constants/sequence-adaptation';
   import {
     type IInputFormat,
     type IOutputFormat,
+    type ISequenceAdaptation,
+  } from '../../language-package/interfaces/legacy';
+  import type { PhoenixContext } from '../../language-package/interfaces/new-adaptation-interface';
+  import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../language-package/languages/seq-n/seq-n-highlighter';
+  import {
+    SeqNCommandInfoMapper,
+    userSequenceToLibrarySequence,
+  } from '../../language-package/languages/seq-n/seq-n-tree-utils';
+  import { vmlBlockHighlighter, vmlHighlightBlock } from '../../language-package/languages/vml/vml';
+  import { parseFunctionSignatures } from '../../language-package/languages/vml/vml-adaptation';
+  import { newSequenceAdaptation } from '../../stores/sequence-adaptation';
+  import {
     type LibrarySequence,
     type LibrarySequenceMap,
     type TimeTagInfo,
@@ -45,8 +57,10 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
+  import { vmlFormat } from '../../language-package/languages/vml/vml-formatter';
+  import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
+  import { VmlCommandInfoMapper } from '../../language-package/languages/vml/vml-tree-utils';
 
-  export let adaptationGlobals: GlobalType[] = [];
   export let channelDictionary: ChannelDictionary | null = null;
   export let commandDictionary: CommandDictionary | null = null;
   export let inputFormat: IInputFormat | undefined = undefined;
@@ -54,6 +68,8 @@
   export let outputFormats: IOutputFormat[] = [];
   export let parameterDictionaries: ParameterDictionary[] = [];
   export let previewOnly: boolean = false;
+  export let readOnly: boolean = false;
+  export let sequenceAdaptation: ISequenceAdaptation = defaultSequenceAdaptation;
   export let sequenceName: string = '';
   export let sequenceDefinition: string = ''; // TODO what on earth does this do
   export let sequenceOutput: string = '';
@@ -72,13 +88,12 @@
   const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
   const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
+  let adaptation: ISequenceAdaptation = sequenceAdaptation;
   let compartmentSeqAutocomplete: Compartment; // TODO replace with adaptation compartment
   let compartmentSeqHighlighter: Compartment; // TODO replace with adaptation compartment
   let compartmentAdaptation: Compartment;
   let compartmentOutputAdaptation: Compartment;
   let compartmentReadonly: Compartment;
-  let channelDictionary: ChannelDictionary | null;
-  let commandDictionary: CommandDictionary | null;
   let disableCopyAndExport: boolean = true;
   let editorHeights: string = '1.88fr 3px 80px';
   let editorOutputDiv: HTMLDivElement;
@@ -96,6 +111,8 @@
   let variablesInScope: string[] = [];
   let updatedSequenceDefinition: string = sequenceDefinition;
   let isSequenceDefinitionUpdated: boolean = false;
+  let currentTree: Tree;
+  let commandInfoMapper: CommandInfoMapper = new SeqNCommandInfoMapper(); // TODO replace with adaptation
 
   $: isInVmlMode = isVmlSequence(sequenceName); // TODO boo
 
@@ -147,44 +164,19 @@
   $: librarySequenceMap = Object.fromEntries(librarySequences.map(seq => [seq.name, seq]));
   $: {
     if (commandDictionary) {
-      if (sequenceName && isInVmlMode) {
-        getParsedCommandDictionary(unparsedCommandDictionary, user).then(parsedCommandDictionary => {
-          commandDictionary = parsedCommandDictionary;
-        });
-      } else {
-        // Reconfigure sequence editor.
-        editorSequenceView.dispatch({
-          effects: [
-            // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
-            compartmentSeqLanguage.reconfigure(
-              setupLanguageSupport(
-                adaptation.autoComplete(channelDictionary, commandDictionary, parameterDictionaries, librarySequences),
-              ),
-            ),
-            compartmentSeqLinter.reconfigure(
-              inputLinter(
-                adaptation,
-                adaptationGlobals,
-                channelDictionary,
-                commandDictionary,
-                parameterDictionaries,
-                librarySequences,
-              ),
-            ),
-            compartmentSeqTooltip.reconfigure(
-              sequenceTooltip(adaptation, channelDictionary, commandDictionary, parameterDictionaries),
-            ),
-            ...(adaptation.autoIndent
-              ? [compartmentSeqAutocomplete.reconfigure(indentService.of(adaptation.autoIndent()))]
-              : []),
-          ],
-        });
-
-        // Reconfigure seq JSON editor.
-        editorOutputView.dispatch({
-          effects: compartmentSeqJsonLinter.reconfigure(outputLinter(commandDictionary, selectedOutputFormat)),
-        });
-      }
+      let phoenixContext: PhoenixContext = {
+        channelDictionary,
+        commandDictionary,
+        parameterDictionaries,
+      };
+      // Reconfigure sequence editor.
+      editorSequenceView.dispatch({
+        // TODO this is the meat of updating the editor with adaptation components
+        effects: [
+          // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
+          compartmentAdaptation.reconfigure($newSequenceAdaptation.extension(phoenixContext)), // TODO probably not that simple
+        ],
+      });
     } else {
       commandDictionary = null;
       channelDictionary = null;
@@ -203,12 +195,7 @@
   }
 
   $: if (sequenceAdaptation) {
-    selectedOutputFormat = sequenceAdaptation.outputFormat[0];
-  }
-  $: if (isInVmlMode) {
-    adaptation = vmlAdaptation;
-  } else {
-    adaptation = sequenceAdaptation;
+    selectedOutputFormat = sequenceAdaptation.outputFormat;
   }
   $: commandNode = commandInfoMapper.getContainingCommand(selectedNode);
   $: commandNameNode = commandInfoMapper.getNameNode(commandNode);
@@ -344,12 +331,10 @@
 
   onMount(() => {
     compartmentReadonly = new Compartment();
-    compartmentSeqJsonLinter = new Compartment();
-    compartmentSeqLanguage = new Compartment();
-    compartmentSeqLinter = new Compartment();
-    compartmentSeqTooltip = new Compartment();
     compartmentSeqAutocomplete = new Compartment();
     compartmentSeqHighlighter = new Compartment();
+    compartmentAdaptation = new Compartment();
+    compartmentOutputAdaptation = new Compartment();
 
     editorSequenceView = new EditorView({
       doc: sequenceDefinition,
@@ -358,9 +343,9 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
-        compartmentSeqLanguage.of(setupLanguageSupport(adaptation.autoComplete(null, null, [], []))),
-        compartmentSeqLinter.of(inputLinter(adaptation, adaptationGlobals)),
-        compartmentSeqTooltip.of(sequenceTooltip(adaptation)),
+        compartmentAdaptation.of(
+          $newSequenceAdaptation.extension({ commandDictionary, channelDictionary, parameterDictionaries }),
+        ), // TODO improve, probably
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
@@ -382,8 +367,13 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         EditorView.editable.of(false),
         lintGutter(),
-        json(),
-        compartmentSeqJsonLinter.of(outputLinter()),
+        compartmentOutputAdaptation.of(
+          $newSequenceAdaptation.outputExtension({
+            commandDictionary,
+            channelDictionary,
+            parameterDictionaries,
+          }),
+        ), // TODO improve, probably
         EditorState.readOnly.of(readOnly),
       ],
       parent: editorOutputDiv,
