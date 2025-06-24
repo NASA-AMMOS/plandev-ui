@@ -288,4 +288,15 @@ test.describe.serial('Timeline View Editing', () => {
     await resourceLayerEditor.locator('.timeline-layer-editor').first().getByRole('button', { name: 'Delete' }).click();
     expect(await resourceLayerEditor.locator('.timeline-layer-editor').count()).toBe(1);
   });
+
+  test('Open and close the row header context menu', async () => {
+    const rowHeaderMenuButton = await page
+      .getByRole('banner')
+      .filter({ hasText: 'Activities by Type' })
+      .getByLabel('Row Settings');
+    await rowHeaderMenuButton.click();
+    expect(await page.getByRole('menu', { name: 'Context Menu' })).toBeVisible();
+    await page.getByRole('listitem').filter({ hasText: 'Activities by Type' }).click();
+    expect(await page.getByRole('menu', { name: 'Context Menu' })).not.toBeVisible();
+  });
 });
