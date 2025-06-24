@@ -1,19 +1,24 @@
 import { keyBy, omitBy } from 'lodash-es';
 import type { ActivityDirective, ActivityDirectiveDB, ActivityDirectivesMap } from '../types/activity';
 import type { ActivityMetadata, ActivityMetadataKey, ActivityMetadataValue } from '../types/activity-metadata';
+import type { BaseUser, User } from '../types/app';
 import type { Plan } from '../types/plan';
 import type { Span, SpanId, SpanUtilityMaps, SpansMap } from '../types/simulation';
+import { getClipboardContent, setClipboardContent } from './clipboard';
 import { compare, isEmpty } from './generic';
+import { reqHasura } from './requests';
+import { pluralize } from './text';
 import {
+  convertDurationStringToUs,
   getActivityDirectiveStartTimeMs,
   getDoyTime,
   getIntervalFromDoyRange,
   getIntervalInMs,
   getUnixEpochTime,
 } from './time';
-import { getClipboardContent, setClipboardContent } from './clipboard';
 import { showFailureToast, showSuccessToast } from './toast';
-import { pluralize } from './text';
+
+// import { SimulateResponse } from '../types/simulation';
 
 /**
  * Updates activity metadata with a new key/value and removes any empty values.
@@ -275,4 +280,111 @@ export async function getActivityDirectivesToPaste(
     console.error(e);
   }
   return activities;
+}
+
+export async function fetchSimulatedActivityDuration(
+  planId: number,
+  activityId: number,
+  user: BaseUser | User | null,
+): Promise<number | null> {
+  const query = `
+    query MyQuery($_eq: Int!, $_eq1: Int!) {
+      activity_directive(where: {plan_id: {_eq: $_eq}, id: {_eq: $_eq1}}) {
+        simulated_activities {
+          duration
+        }
+      }
+    }
+  `;
+  const variables = { _eq: planId, _eq1: activityId };
+  const data = await reqHasura(query, variables, user);
+  const activities = data?.activity_directive?.[0]?.simulated_activities;
+  console.error('Duration Format:', activities[activities.length - 1].duration);
+  return activities && activities.length > 0
+    ? convertDurationStringToUs(activities[activities.length - 1].duration)
+    : null;
+}
+
+/**
+ * Converts a string of the form "HH:mm:ss.SSSSSS" to microseconds.
+ * Example: "01:23:45.678901" => 1*3600*1e6 + 23*60*1e6 + 45*1e6 + 678901 = 5025678901
+ */
+export function offsetToUs(hms: string): number {
+  const match = /^(\d+):(\d{2}):(\d{2})\.(\d+)$/.exec(hms);
+  if (!match) {
+    throw new Error('Invalid format, expected HH:mm:ss.SSSSSS' + hms);
+  }
+  const [, hh, mm, ss, us] = match;
+  return parseInt(hh) * 3600 * 1e6 + parseInt(mm) * 60 * 1e6 + parseInt(ss) * 1e6 + parseInt(us);
+}
+
+/**
+ * Converts microseconds to a string of the form "HH:mm:ss.SSSSSS".
+ * Example: 5025678901 => "01:23:45.678901"
+ */
+export function usToOffset(us: number): string {
+  const hours = Math.floor(us / 3_600_000_000);
+  us %= 3_600_000_000;
+  const minutes = Math.floor(us / 60_000_000);
+  us %= 60_000_000;
+  const seconds = Math.floor(us / 1_000_000);
+  us %= 1_000_000;
+  const micro = us;
+
+  const pad = (n: number, len: number) => n.toString().padStart(len, '0');
+  return `${pad(hours, 2)}:${pad(minutes, 2)}:${pad(seconds, 2)}.${pad(micro, 6)}`;
+}
+
+export async function packLeftActivityDirectivesInPlan(
+  sourcePlan: Plan,
+  activities: ActivityDirective[],
+  user: BaseUser | User | null,
+): Promise<ActivityDirective[] | void> {
+  const planId = sourcePlan.id;
+  // const selectedActivityIds = new Set(activities.map(a => a.id));
+  console.log('Packing activities', activities);
+  const anchorIds = new Set(activities.map(a => a.anchor_id));
+  if (anchorIds.size > 1) {
+    showFailureToast(`Activities must have the same anchor to copy`);
+    return;
+  }
+
+  if (activities.some(a => a.start_time_ms === null)) {
+    showFailureToast('Some selected activities do not have a start time');
+    return;
+  }
+  console.error('This is the format', activities[0].start_offset);
+  const sortedActivities = [...activities].sort((a, b) => offsetToUs(a.start_offset) - offsetToUs(b.start_offset));
+  let durations: (number | null)[];
+  try {
+    // TODO: Pass the actual user object as the third argument
+    // For now, passing null or replace with the correct user variable in your context
+    durations = await Promise.all(sortedActivities.map(a => fetchSimulatedActivityDuration(planId, a.id, user)));
+  } catch (err) {
+    showFailureToast('You must simulate before packing activities');
+    return;
+  }
+
+  if (durations.some(d => d === null)) {
+    showFailureToast('We hit null');
+    return;
+  }
+  const durationNum = durations.map(d => d as number);
+
+  let cumulativeOffsetMs = convertDurationStringToUs(sortedActivities[0].start_offset);
+  const updatedActivities = sortedActivities.map((activity, idx) => {
+    const durationMs = durationNum[idx];
+
+    const updatedActivity: ActivityDirective = {
+      ...activity,
+      start_offset: usToOffset(cumulativeOffsetMs),
+    };
+
+    cumulativeOffsetMs += durationMs;
+    return updatedActivity;
+  });
+
+  showSuccessToast('Activities packed successfully');
+  // activities = updatedActivities;
+  return updatedActivities;
 }
