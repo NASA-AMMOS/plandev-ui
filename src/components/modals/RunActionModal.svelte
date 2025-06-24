@@ -16,6 +16,7 @@
   import ModalHeader from './ModalHeader.svelte';
 
   export let actionDefinition: ActionDefinition;
+  export let parameters: ArgumentsMap | undefined;
   export let user: User | null;
 
   let running: boolean = false;
@@ -25,6 +26,10 @@
     close: void;
     complete: { actionRunId: number | null };
   }>();
+
+  $: if (parameters !== undefined) {
+    argumentsMap = parameters;
+  }
 
   async function run() {
     running = true;

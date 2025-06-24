@@ -6,6 +6,10 @@ import type {
 import type { ActionDefinition, ActionParametersMap, ActionRunSlim } from '../types/actions';
 import type { ValueSchema, ValueSchemaOption } from '../types/schema';
 import type { UserSequence } from '../types/sequencing';
+import { getSearchParameterNumber } from './generic';
+import { SearchParameters } from '../enums/searchParameters';
+import { base } from '$app/paths';
+import { goto } from '$app/navigation';
 
 /**
  * Typeguard for determining if a schema is an action sequence/sequenceList schema
@@ -59,4 +63,24 @@ export function getActionDefinitionForRun(
     }
   }
   return null;
+}
+
+export function getActionParametersOfType(action: ActionDefinition, parameterType: string): string[] {
+  const parametersOfType: string[] = [];
+  for (const [key, value] of Object.entries(action.parameter_schema)) {
+    if (parameterType === value.type) {
+      parametersOfType.push(key);
+    }
+  }
+  return parametersOfType;
+}
+
+export function openActionRun(id: number, newTab?: boolean) {
+  const workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
+  const actionRunUrl = `${base}/sequencing/actions/runs/${id}${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`;
+  if (newTab === true) {
+    window.open(actionRunUrl, '_blank');
+  } else {
+    goto(actionRunUrl);
+  }
 }
