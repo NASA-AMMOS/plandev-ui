@@ -99,6 +99,20 @@
     on:change
     on:reset
   />
+{:else if formParameter.schema.type === 'secret'}
+  <ParameterBaseString
+    {disabled}
+    {hideRightAdornments}
+    {labelColumnWidth}
+    {level}
+    {levelPadding}
+    {formParameter}
+    {parameterType}
+    {use}
+    type="password"
+    on:change
+    on:reset
+  />
 {:else if formParameter.schema.type === 'variant'}
   <ParameterBaseVariant
     {disabled}

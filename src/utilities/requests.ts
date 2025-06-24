@@ -46,6 +46,36 @@ export async function reqExtension(
   return await response.json();
 }
 
+export async function reqActionServer<T = any>(
+  url: string,
+  method: string,
+  body: any | null,
+  signal?: AbortSignal,
+): Promise<T> {
+  const ACTION_SERVER_URL = browser ? env.PUBLIC_ACTION_SERVER_URL : env.PUBLIC_ACTION_CLIENT_URL;
+
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  const options: RequestInit = {
+    headers,
+    method,
+    signal,
+  };
+
+  if (body !== null) {
+    options.body = body;
+  }
+
+  const response = await fetch(`${ACTION_SERVER_URL}${url}`, options);
+
+  if (!response.ok) {
+    throw new Error(response.statusText);
+  }
+
+  return await response.json();
+}
+
 /**
  * Function to make HTTP requests to the Aerie Gateway.
  */
