@@ -13,10 +13,14 @@
   import EmptyState from '../../console/EmptyState.svelte';
 
   export let errors: BaseError[] = [];
-  // Use const for props that aren't bound or updated in component
-  export const title = 'Errors';
-  export const isClearable = true;
+  // These props accept dynamic values from parent but aren't currently used in template
+  export let title: string = 'Errors';
+  export let isClearable: boolean = true;
   export let value: string;
+
+  // Suppress unused export warnings - these props are passed from parent for future use
+  title;
+  isClearable;
 
   $: hasErrors = errors.length > 0;
 

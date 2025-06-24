@@ -12,5 +12,5 @@
 </script>
 
 <Console>
-  <ModelErrors {model} {title} />
+  <ModelErrors {model} {title} value="model" />
 </Console>

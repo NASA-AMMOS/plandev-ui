@@ -13,8 +13,12 @@
 
   export let activityValidationErrorRollups: ActivityErrorRollup[] = [];
   export let activityValidationErrorTotalRollup: ActivityErrorCounts;
-  // export let title: string;
+  // This prop accepts dynamic values from parent but isn't currently used in template
+  export let title: string = 'Activity Validation Errors';
   export let value: string;
+
+  // Suppress unused export warning - this prop is passed from parent for future use
+  title;
 
   $: hasErrors = activityValidationErrorRollups.length > 0;
 

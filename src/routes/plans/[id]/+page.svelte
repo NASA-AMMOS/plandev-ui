@@ -1045,10 +1045,6 @@
     grid-template-columns: min-content min-content auto;
   }
 
-  .grouped-error-tabs {
-    display: flex;
-  }
-
   .simulation-header {
     display: flex;
     justify-content: space-between;
