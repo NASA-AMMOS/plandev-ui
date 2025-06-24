@@ -9,6 +9,7 @@
     ChevronRight,
     Copy,
     Ellipsis,
+    FileOutput,
     FilePlus,
     FolderOutput,
     FolderPlus,
@@ -48,6 +49,7 @@
   const dispatch = createEventDispatcher<{
     copyFileLocation: string;
     importFile: string;
+    moveToWorkspace: string;
     newFolder: string;
     newSequence: string;
     nodeClicked: WorkspaceNodeEvent;
@@ -243,6 +245,14 @@
     }, []);
   }
 
+  function getPathType(path: RowId | null) {
+    const nodeAtPath = flattenedTree.find(node => node.fullPath === path);
+
+    if (nodeAtPath) {
+      return nodeAtPath.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
+    }
+  }
+
   function isRowSelectable(node: IRowNode<WorkspaceTreeNodeWithFullPath>) {
     return node.data?.type === WorkspaceContentType.Sequence || node.data?.type === WorkspaceContentType.Directory;
   }
@@ -355,6 +365,11 @@
     dispatch('copyFileLocation', targetPath);
   }
 
+  function onMoveToWorkspace(node: WorkspaceTreeNodeWithFullPath) {
+    let targetPath = node?.fullPath ?? '';
+    dispatch('moveToWorkspace', targetPath);
+  }
+
   function onTableMenuRenameNode() {
     if (contextMenuNode) {
       onRenameNode(contextMenuNode);
@@ -388,6 +403,12 @@
   function onTableCopyFileLocation() {
     if (contextMenuNode) {
       onCopyFileLocation(contextMenuNode);
+    }
+  }
+
+  function onTableMoveToWorkspace() {
+    if (contextMenuNode) {
+      onMoveToWorkspace(contextMenuNode);
     }
   }
 </script>
@@ -426,6 +447,16 @@
             <MenuItem className="text-xs py-1.5" on:click={() => onDeleteNode(breadcrumb)}>
               <Trash2 size={16} />
               Delete Folder
+            </MenuItem>
+            <Separator />
+            <MenuItem className="text-xs py-1.5" on:click={() => onCopyFileLocation(breadcrumb)}>
+              <Copy size={16} /> Copy Link to {breadcrumb.type === WorkspaceContentType.Directory
+                ? 'Directory'
+                : 'File'}
+            </MenuItem>
+            <Separator />
+            <MenuItem className="text-xs py-1.5" on:click={() => onMoveToWorkspace(breadcrumb)}>
+              <FileOutput size={16} /> Move to Workspace
             </MenuItem>
             <Separator />
             <MenuItem className="text-xs py-1.5" on:click={() => onNewSequence(breadcrumb)}>
@@ -497,11 +528,13 @@
         </ContextMenu.Item>
       </ContextMenu.Group>
       <ContextMenu.Separator />
-      <ContextMenu.Group>
-        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onTableCopyFileLocation}>
-          <Copy size={16} /> Copy link to file
-        </ContextMenu.Item>
-      </ContextMenu.Group>
+      <ContextMenu.Item class="flex gap-1" size="sm" on:click={onTableCopyFileLocation}>
+        <Copy size={16} /> Copy Link to {getPathType(selectedItemId)}
+      </ContextMenu.Item>
+      <ContextMenu.Separator />
+      <ContextMenu.Item class="flex gap-1" size="sm" on:click={onTableMoveToWorkspace}>
+        <FileOutput size={16} /> Move to Workspace
+      </ContextMenu.Item>
       <ContextMenu.Separator />
       <ContextMenu.Group>
         <ContextMenu.Item class="flex gap-1" size="sm" on:click={onTableNewSequence}>

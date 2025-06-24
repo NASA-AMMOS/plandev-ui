@@ -266,7 +266,12 @@
   async function onNewSequence(event: CustomEvent<string>) {
     if ($workspaceId != null && user) {
       const { detail: startingPath } = event;
-      await effects.newWorkspaceSequence($workspaceId, startingPath, user);
+      const newSequencePath = await effects.newWorkspaceSequence($workspaceId, startingPath, user);
+
+      const didNavigate = await goToSequence(newSequencePath);
+      if (didNavigate) {
+        selectedFilePath = newSequencePath;
+      }
       refreshWorkspaceContents();
     }
   }
@@ -350,6 +355,12 @@
     setClipboardContent(`${WORKSPACE_URL}/ws/${$workspaceId}/${copyPath}`);
   }
 
+  function onMoveToWorkspace({ detail: sourcePath }: CustomEvent<string>) {
+    if (initialWorkspace) {
+      effects.moveWorkspaceItemToWorkspace(initialWorkspace, workspaceTreeMap[sourcePath], sourcePath, user);
+    }
+  }
+
   onMount(() => {
     if (initialWorkspace) {
       $workspaceId = initialWorkspace.id;
@@ -379,6 +390,7 @@
       on:newSequence={onNewSequence}
       on:importFile={onImportFile}
       on:copyFileLocation={onCopyFileLocation}
+      on:moveToWorkspace={onMoveToWorkspace}
       on:refreshWorkspace={refreshWorkspaceContents}
     />
   </Sidebar.Provider>

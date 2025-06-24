@@ -276,6 +276,7 @@ import {
   showManagePlanDerivationGroups,
   showManagePlanSchedulingConditionsModal,
   showManagePlanSchedulingGoalsModal,
+  showMoveItemToWorkspaceModal,
   showMoveWorkspaceItemModal,
   showNewWorkspaceFolderModal,
   showNewWorkspaceSequenceModal,
@@ -5716,7 +5717,52 @@ const effects = {
     return null;
   },
 
-  async newWorkspaceFolder(workspaceId: number, startingPath: string, user: User | null): Promise<void> {
+  async moveWorkspaceItemToWorkspace(
+    workspace: Workspace,
+    originalNode: WorkspaceTreeNode,
+    originalPath: string,
+    user: User | null,
+  ): Promise<string | null> {
+    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
+    const {
+      confirm,
+      value: { shouldCopy, targetPath, targetWorkspace },
+    } = await showMoveItemToWorkspaceModal(workspace, originalNode, originalPath, user);
+
+    try {
+      if (confirm) {
+        if (!featurePermissions.workspace.canUpdate(user, targetWorkspace)) {
+          throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);
+        }
+        const cleanedTargetPath = `${targetPath.replace(/^.\//, '').replace(/\/$/, '')}`;
+
+        await reqWorkspace<Workspace>(
+          `${workspace.id}/${originalPath}`,
+          'POST',
+          JSON.stringify({
+            moveTo: `./${cleanedTargetPath}`,
+            targetWorkspace: `${targetWorkspace.id}/${targetPath}`,
+          }),
+          user,
+          undefined,
+          false,
+        );
+        showSuccessToast(`Workspace ${typeString} ${shouldCopy ? 'Duplicated' : 'Moved'} Successfully`);
+
+        return cleanedTargetPath;
+      }
+    } catch (e) {
+      catchError(
+        `Workspace ${typeString.toLowerCase()} was unable to be ${shouldCopy ? 'duplicated' : 'moved'}`,
+        e as Error,
+      );
+      showFailureToast(`Workspace ${typeString} ${shouldCopy ? 'Duplication' : 'Move'} Failed`);
+    }
+
+    return null;
+  },
+
+  async newWorkspaceFolder(workspaceId: number, startingPath: string, user: User | null): Promise<string | null> {
     try {
       const {
         confirm,
@@ -5734,14 +5780,17 @@ const effects = {
         );
 
         showSuccessToast('Workspace Folder Created Successfully');
+        return folderPath;
       }
     } catch (e) {
       catchError('Workspace folder was unable to be created', e as Error);
       showFailureToast('Workspace Folder Creation Failed');
     }
+
+    return null;
   },
 
-  async newWorkspaceSequence(workspaceId: number, startingPath: string, user: User | null): Promise<void> {
+  async newWorkspaceSequence(workspaceId: number, startingPath: string, user: User | null): Promise<string | null> {
     try {
       const {
         confirm,
@@ -5753,11 +5802,15 @@ const effects = {
 
         await reqWorkspace<Workspace>(`${workspaceId}/${sequencePath}?type=file`, 'PUT', body, user, undefined, false);
         showSuccessToast('Workspace File Created Successfully');
+
+        return sequencePath;
       }
     } catch (e) {
       catchError('Workspace file was unable to be created', e as Error);
       showFailureToast('Workspace File Creation Failed');
     }
+
+    return null;
   },
 
   async planMergeBegin(
@@ -7471,7 +7524,7 @@ const effects = {
         channel?: ChannelDictionaryMetadata;
         command?: CommandDictionaryMetadata;
         parameter?: ParameterDictionaryMetadata;
-      }>(gql.CREATE_DICTIONARY, { dictionary }, user);
+      }>(gql.CREATE_DICTIONARY, { dictionary, persistDictionaryToFilesystem }, user);
 
       const { createDictionary: newDictionaries } = data;
 

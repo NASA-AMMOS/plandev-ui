@@ -23,6 +23,7 @@ import ManagePlanDerivationGroupsModal from '../components/modals/ManagePlanDeri
 import ManagePlanSchedulingConditionsModal from '../components/modals/ManagePlanSchedulingConditionsModal.svelte';
 import ManagePlanSchedulingGoalsModal from '../components/modals/ManagePlanSchedulingGoalsModal.svelte';
 import MergeReviewEndedModal from '../components/modals/MergeReviewEndedModal.svelte';
+import MoveItemToWorkspaceModal from '../components/modals/MoveItemToWorkspaceModal.svelte';
 import MoveWorkspaceItemModal from '../components/modals/MoveWorkspaceItemModal.svelte';
 import NewSequenceModal from '../components/modals/NewSequenceModal.svelte';
 import NewWorkspaceFolderModal from '../components/modals/NewWorkspaceFolderModal.svelte';
@@ -63,6 +64,7 @@ import type {
 import type { PlanSnapshot } from '../types/plan-snapshot';
 import type { Tag } from '../types/tags';
 import type { ViewDefinition } from '../types/view';
+import type { Workspace } from '../types/workspace';
 import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
 import effects from './effects';
 
@@ -388,6 +390,52 @@ export async function showImportWorkspaceFileModal(startingPath: string): Promis
           target.resolve = null;
           target.removeAttribute('data-dismissible');
           importWorkspaceFileModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a MoveItemToWorkspaceModal component with the supplied arguments.
+ */
+export async function showMoveItemToWorkspaceModal(
+  currentWorkspace: Workspace,
+  originalNode: WorkspaceTreeNode,
+  originalPath: string,
+  user: User | null,
+): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const moveWorkspaceFileToWorkspaceModal = new MoveItemToWorkspaceModal({
+          props: { currentWorkspace, originalNode, originalPath, user },
+          target,
+        });
+        target.resolve = resolve;
+
+        // Do not allow users to dismiss this modal
+        target.setAttribute('data-dismissible', 'false');
+
+        moveWorkspaceFileToWorkspaceModal.$on(
+          'confirm',
+          (e: CustomEvent<{ shouldCopy: boolean; targetPath: string; targetWorkspace: Workspace }>) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: true, value: e.detail });
+            moveWorkspaceFileToWorkspaceModal.$destroy();
+          },
+        );
+
+        moveWorkspaceFileToWorkspaceModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          target.removeAttribute('data-dismissible');
+          moveWorkspaceFileToWorkspaceModal.$destroy();
         });
       }
     } else {
