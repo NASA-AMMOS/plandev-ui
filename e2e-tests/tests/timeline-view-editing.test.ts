@@ -272,6 +272,10 @@ test.describe.serial('Timeline View Editing', () => {
     await plan.runSimulation();
 
     // Expect the resource to have a y-axis label in the timline
+    await page
+      .locator('.timeline-row-wrapper', { hasText: rowName })
+      .locator('.row-header-y-axis-label')
+      .waitFor({ state: 'attached' });
     expect(
       await page.locator('.timeline-row-wrapper', { hasText: rowName }).locator('.row-header-y-axis-label').count(),
     ).toBe(1);
