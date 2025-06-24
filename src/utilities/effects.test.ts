@@ -524,7 +524,19 @@ describe('Handle modal and requests in effects', () => {
 
       vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
 
-      await effects.expandTemplates([], 0, 0, mockUser);
+      await effects.expandTemplates(
+        [],
+        0,
+        {
+          id: 3,
+          model: {
+            id: 1,
+            owner: 'test',
+          } as Model,
+          owner: 'test',
+        } as Plan,
+        mockUser,
+      );
 
       expect(catchErrorSpy).toHaveBeenCalledWith('Sequence Templating Failed', Error('Sequence Templating Failed'));
     });
