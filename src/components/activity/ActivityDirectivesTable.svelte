@@ -10,7 +10,7 @@
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/errors';
   import type { Plan } from '../../types/plan';
-  import { copyActivityDirectivesToClipboard } from '../../utilities/activities';
+  import { copyActivityDirectivesToClipboard, packLeftActivityDirectivesInPlan } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
@@ -171,6 +171,12 @@
     }
   }
 
+  async function packLeftActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
+    if (plan !== null) {
+      await packLeftActivityDirectivesInPlan(plan, activities, user);
+    }
+  }
+
   function createActivityDirectives({ detail }: CustomEvent<ActivityDirective[]>) {
     dispatch('createActivityDirectives', detail);
   }
@@ -192,11 +198,13 @@
   scrollToSelection={true}
   singleItemDisplayText="Activity Directive"
   showCopyMenu={true}
+  showPackLeftMenu={true}
   suppressDragLeaveHidesColumns={false}
   {user}
   {filterExpression}
   on:bulkDeleteItems={deleteActivityDirectives}
   on:bulkCopyItems={copyActivityDirectives}
+  on:bulkPackLeftItems={packLeftActivityDirectives}
   on:columnMoved
   on:columnPinned
   on:columnResized
