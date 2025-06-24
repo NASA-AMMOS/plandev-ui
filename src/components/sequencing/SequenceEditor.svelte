@@ -137,6 +137,7 @@
   let selectedNode: SyntaxNode | null;
   let selectedOutputFormat: IOutputFormat | undefined;
   let showOutputs: boolean = true;
+  let previousShowOutputs: boolean = true;
   let timeTagNode: TimeTagInfo = null;
   let toggleSeqJsonPreview: boolean = false;
   let variablesInScope: string[] = [];
@@ -251,7 +252,10 @@
     effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly)]),
   });
 
-  $: showOutputs = !isInVmlMode && outputFormats.length > 0;
+  $: {
+    previousShowOutputs = showOutputs;
+    showOutputs = !isInVmlMode && outputFormats.length > 0;
+  }
   $: if (showOutputs) {
     editorHeights = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
   } else {
@@ -290,6 +294,26 @@
     currentTree,
     commandNode?.from,
   );
+
+  $: if (showOutputs && previousShowOutputs !== showOutputs && editorOutputDiv) {
+    if (editorOutputView) {
+      editorOutputView.destroy();
+    }
+    editorOutputView = new EditorView({
+      doc: sequenceOutput,
+      extensions: [
+        basicSetup,
+        EditorView.lineWrapping,
+        EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
+        EditorView.editable.of(false),
+        lintGutter(),
+        json(),
+        compartmentSeqJsonLinter.of(outputLinter()),
+        EditorState.readOnly.of(readOnly),
+      ],
+      parent: editorOutputDiv,
+    });
+  }
 
   $: updatedSequenceDefinition = sequenceDefinition;
   $: isSequenceDefinitionUpdated = updatedSequenceDefinition === sequenceDefinition;
@@ -627,8 +651,8 @@
                 <CollapseIcon />
               {:else}
                 <ExpandIcon />
-              {/if}</button
-            >
+              {/if}
+            </button>
           </div>
         </svelte:fragment>
 

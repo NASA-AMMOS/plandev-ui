@@ -15,7 +15,6 @@ import {
   type ParcelToParameterDictionary,
   type UserSequence,
 } from '../types/sequencing';
-import type { Workspace } from '../types/workspace';
 import effects from '../utilities/effects';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
@@ -97,8 +96,6 @@ export const sequenceFilters = gqlSubscribable<SequenceFilter[]>(gql.SUB_SEQUENC
 export const userParcelColumns: Writable<string> = writable('2fr 3px 1fr');
 
 export const userSequences = gqlSubscribable<UserSequence[]>(gql.SUB_USER_SEQUENCES, {}, [], null);
-
-export const workspaces = gqlSubscribable<Workspace[]>(gql.SUB_WORKSPACES, {}, [], null);
 
 /* Writeable. */
 

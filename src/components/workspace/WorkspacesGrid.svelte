@@ -3,7 +3,7 @@
 <script lang="ts">
   import type { ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
-  import { workspaces } from '../../stores/sequencing';
+  import { workspaces } from '../../stores/workspaces';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
   import type { Workspace } from '../../types/workspace';

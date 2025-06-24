@@ -11,7 +11,7 @@
 </script>
 
 {#if treeNode}
-  {#if treeNode.type === WorkspaceContentType.Directory}
+  {#if treeNode.type === WorkspaceContentType.Directory || treeNode.type === WorkspaceContentType.Workspace}
     {#if toggleState}
       <FolderOpen size={16} />
     {:else}

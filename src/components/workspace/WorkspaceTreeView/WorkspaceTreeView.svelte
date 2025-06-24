@@ -2,7 +2,16 @@
 
 <script lang="ts">
   import { ContextMenu } from '@nasa-jpl/stellar-svelte';
-  import { ArrowUpFromLine, Copy, FilePlus, FolderOutput, FolderPlus, PencilLine, Trash2 } from 'lucide-svelte';
+  import {
+    ArrowUpFromLine,
+    Copy,
+    FileOutput,
+    FilePlus,
+    FolderOutput,
+    FolderPlus,
+    PencilLine,
+    Trash2,
+  } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { WorkspaceContentType } from '../../../enums/workspace';
@@ -11,12 +20,16 @@
   import ContextMenuInternal from '../../context-menu/ContextMenu.svelte';
   import WorkspaceTreeViewNode from './WorkspaceTreeViewNode.svelte';
 
+  export let enableContextMenu: boolean = true;
   export let selectedTreeNodePath: string | null | undefined = undefined;
+  export let showFiles: boolean = true;
+  export let showRootNode: boolean = false;
   export let treeNode: WorkspaceTreeNode | null | undefined = undefined;
 
   const dispatch = createEventDispatcher<{
     copyFileLocation: string;
     importFile: string;
+    moveToWorkspace: string;
     newFolder: string;
     newSequence: string;
     nodeClicked: WorkspaceNodeEvent;
@@ -34,13 +47,15 @@
     data: WorkspaceNodeEvent;
     event: MouseEvent;
   }>) {
-    const { data, event } = detail;
+    if (enableContextMenu) {
+      const { data, event } = detail;
 
-    contextMenuNode = {
-      ...data.treeNode,
-      fullPath: data.treeNodePath,
-    };
-    contextMenu.show(event);
+      contextMenuNode = {
+        ...data.treeNode,
+        fullPath: data.treeNodePath,
+      };
+      contextMenu.show(event);
+    }
   }
 
   function onContextMenuHide() {
@@ -105,53 +120,78 @@
     let targetPath = contextMenuNode?.fullPath ?? '';
     dispatch('copyFileLocation', targetPath);
   }
+
+  function onMoveToWorkspace() {
+    let targetPath = contextMenuNode?.fullPath ?? '';
+    dispatch('moveToWorkspace', targetPath);
+  }
 </script>
 
-<div class="h-full py-1">
-  <ContextMenuInternal bind:this={contextMenu} on:hide={onContextMenuHide}>
-    <ContextMenu.Group>
-      <ContextMenu.Item class="flex gap-1" size="sm" on:click={onRenameNode}>
-        <PencilLine size={16} />
-        Rename
-      </ContextMenu.Item>
-      <ContextMenu.Item class="flex gap-1" size="sm" on:click={onMoveNode}>
-        <FolderOutput size={16} />
-        Move
-      </ContextMenu.Item>
-      <ContextMenu.Item class="flex gap-1" size="sm" on:click={onDeleteNode}>
-        <Trash2 size={16} />
-        Delete
-      </ContextMenu.Item>
-    </ContextMenu.Group>
-    <ContextMenu.Separator />
-    <ContextMenu.Group>
+<div class="h-auto pt-1">
+  {#if enableContextMenu}
+    <ContextMenuInternal bind:this={contextMenu} on:hide={onContextMenuHide}>
+      <ContextMenu.Group>
+        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onRenameNode}>
+          <PencilLine size={16} />
+          Rename
+        </ContextMenu.Item>
+        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onMoveNode}>
+          <FolderOutput size={16} />
+          Move
+        </ContextMenu.Item>
+        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onDeleteNode}>
+          <Trash2 size={16} />
+          Delete
+        </ContextMenu.Item>
+      </ContextMenu.Group>
+      <ContextMenu.Separator />
       <ContextMenu.Item class="flex gap-1" size="sm" on:click={onCopyFileLocation}>
-        <Copy size={16} /> Copy link to file
+        <Copy size={16} /> Copy Link to {contextMenuNode?.type === WorkspaceContentType.Directory
+          ? 'Directory'
+          : 'File'}
       </ContextMenu.Item>
-    </ContextMenu.Group>
-    <ContextMenu.Separator />
-    <ContextMenu.Group>
-      <ContextMenu.Item class="flex gap-1" size="sm" on:click={onNewSequence}>
-        <FilePlus size={16} /> New Sequence
+      <ContextMenu.Separator />
+      <ContextMenu.Item class="flex gap-1" size="sm" on:click={onMoveToWorkspace}>
+        <FileOutput size={16} /> Move to Workspace
       </ContextMenu.Item>
-      <ContextMenu.Item class="flex gap-1" size="sm" on:click={onNewFolder}>
-        <FolderPlus size={16} /> New Folder
-      </ContextMenu.Item>
-      <ContextMenu.Item class="flex gap-1" size="sm" on:click={onImportFile}>
-        <ArrowUpFromLine size={16} /> Import File
-      </ContextMenu.Item>
-    </ContextMenu.Group>
-  </ContextMenuInternal>
-  {#if treeNode && treeNode.contents}
+      <ContextMenu.Separator />
+      <ContextMenu.Group>
+        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onNewSequence}>
+          <FilePlus size={16} /> New Sequence
+        </ContextMenu.Item>
+        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onNewFolder}>
+          <FolderPlus size={16} /> New Folder
+        </ContextMenu.Item>
+        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onImportFile}>
+          <ArrowUpFromLine size={16} /> Import File
+        </ContextMenu.Item>
+      </ContextMenu.Group>
+    </ContextMenuInternal>
+  {/if}
+  {#if showRootNode && treeNode}
+    <WorkspaceTreeViewNode
+      {selectedTreeNodePath}
+      showKebabMenu={enableContextMenu}
+      {showFiles}
+      {treeNode}
+      treeNodePath={treeNode.name}
+      on:nodeClicked
+      on:nodeRightClicked={onNodeRightClicked}
+    />
+  {:else if treeNode && treeNode.contents}
     <!-- Workspace root - just render its contents -->
     {#each treeNode.contents as treeNodeChild (treeNodeChild.name)}
-      <WorkspaceTreeViewNode
-        {selectedTreeNodePath}
-        treeNode={treeNodeChild}
-        treeNodePath={treeNodeChild.name}
-        on:nodeClicked
-        on:nodeRightClicked={onNodeRightClicked}
-      />
+      {#if (!showFiles && treeNodeChild.type === WorkspaceContentType.Directory) || showFiles}
+        <WorkspaceTreeViewNode
+          {selectedTreeNodePath}
+          showKebabMenu={enableContextMenu}
+          {showFiles}
+          treeNode={treeNodeChild}
+          treeNodePath={treeNodeChild.name}
+          on:nodeClicked
+          on:nodeRightClicked={onNodeRightClicked}
+        />
+      {/if}
     {/each}
   {:else}
     <div class="p-2 text-sm text-muted-foreground">No workspace loaded</div>

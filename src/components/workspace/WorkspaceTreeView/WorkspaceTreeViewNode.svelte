@@ -9,6 +9,8 @@
   import WorkspaceTreeViewIcon from './WorkspaceTreeViewIcon.svelte';
 
   export let selectedTreeNodePath: string | null | undefined = undefined;
+  export let showFiles: boolean = true;
+  export let showKebabMenu: boolean = true;
   export let treeNode: WorkspaceTreeNode;
   export let treeNodePath: string = '';
   export let depth: number = 0;
@@ -27,8 +29,11 @@
 
   let isFolder: boolean = false;
   let isOpen: boolean = false;
+  let setOpenDebounceTimer: NodeJS.Timeout;
 
-  $: isFolder = treeNode.type === WorkspaceContentType.Directory && (treeNode.contents?.length ?? 0) > 0;
+  $: isFolder =
+    (treeNode.type === WorkspaceContentType.Directory || treeNode.type === WorkspaceContentType.Workspace) &&
+    (treeNode.contents?.length ?? 0) > 0;
 
   $: if (selectedTreeNodePath && selectedTreeNodePath !== previousSelectedTreeNodePath) {
     if (!isOpen) {
@@ -36,15 +41,27 @@
       const isOnPath = pathRegex.test(selectedTreeNodePath);
 
       if (isOnPath) {
-        isOpen = true;
+        setOpen(true);
       }
     }
     previousSelectedTreeNodePath = selectedTreeNodePath;
   }
 
+  function setOpen(openState: boolean) {
+    clearTimeout(setOpenDebounceTimer);
+    setOpenDebounceTimer = setTimeout(() => {
+      isOpen = openState;
+    }, 1);
+  }
+
   function onNodeClicked() {
+    let openState: boolean = true;
+    if (isFolder) {
+      openState = !isOpen;
+      setOpen(openState);
+    }
     dispatch('nodeClicked', {
-      toggleState: isFolder ? isOpen : true,
+      toggleState: openState,
       treeNode,
       treeNodePath,
     });
@@ -78,7 +95,7 @@
 
 {#if isFolder}
   <Sidebar.MenuItem>
-    <Collapsible.Root bind:open={isOpen}>
+    <Collapsible.Root open={isOpen}>
       <Collapsible.Trigger class="w-full">
         <Sidebar.MenuSubButton
           isActive={selectedTreeNodePath === treeNodePath}
@@ -90,9 +107,11 @@
           <WorkspaceTreeViewIcon {treeNode} toggleState={isOpen} />
           <div class="group/item grid grid-cols-[auto_min-content] items-center justify-between">
             <span class="truncate">{treeNode.name}</span>
-            <Button variant="ghost" on:click={onKebabClick}>
-              <EllipsisVertical class="invisible group-hover/item:visible" size={16} />
-            </Button>
+            {#if showKebabMenu}
+              <Button variant="ghost" on:click={onKebabClick}>
+                <EllipsisVertical class="invisible group-hover/item:visible" size={16} />
+              </Button>
+            {/if}
           </div>
         </Sidebar.MenuSubButton>
       </Collapsible.Trigger>
@@ -105,6 +124,8 @@
                 treeNode={treeNodeChild}
                 treeNodePath={`${treeNodePath}/${treeNodeChild.name}`}
                 depth={depth + 1}
+                {showFiles}
+                {showKebabMenu}
                 on:nodeClicked
                 on:nodeRightClicked
               />
@@ -114,7 +135,7 @@
       </Collapsible.Content>
     </Collapsible.Root>
   </Sidebar.MenuItem>
-{:else}
+{:else if showFiles}
   <!-- File item -->
   <Sidebar.MenuItem>
     <div class="w-full">
@@ -129,9 +150,11 @@
         <WorkspaceTreeViewIcon {treeNode} />
         <div class="group/item grid grid-cols-[auto_min-content] items-center justify-between">
           <span class="truncate">{treeNode.name}</span>
-          <Button variant="ghost" on:click={onKebabClick}>
-            <EllipsisVertical class="invisible group-hover/item:visible" size={16} />
-          </Button>
+          {#if showKebabMenu}
+            <Button variant="ghost" on:click={onKebabClick}>
+              <EllipsisVertical class="invisible group-hover/item:visible" size={16} />
+            </Button>
+          {/if}
         </div>
       </Sidebar.MenuSubButton>
     </div>

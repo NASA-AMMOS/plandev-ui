@@ -25,6 +25,7 @@
   const dispatch = createEventDispatcher<{
     copyFileLocation: string;
     importFile: string;
+    moveToWorkspace: string;
     newFolder: string;
     newSequence: string;
     refreshWorkspace: void;
@@ -184,6 +185,7 @@
                       on:newSequence
                       on:importFile
                       on:copyFileLocation
+                      on:moveToWorkspace
                     />
                   {:else}
                     <div class="p-2 text-sm text-muted-foreground">No workspace loaded</div>
@@ -256,6 +258,7 @@
                       on:newFolder
                       on:importFile
                       on:copyFileLocation
+                      on:moveToWorkspace
                     />
                   {:else}
                     <div class="p-2 text-sm text-muted-foreground">No workspace loaded</div>

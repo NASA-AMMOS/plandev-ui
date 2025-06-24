@@ -1,6 +1,8 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { Parcel } from '../types/sequencing';
 import type { Workspace } from '../types/workspace';
+import gql from '../utilities/gql';
+import { gqlSubscribable } from './subscribable';
 
 /* Writable */
 export const workspaceColumns: Writable<string> = writable('1fr 3px 3fr');
@@ -8,8 +10,6 @@ export const workspaceColumns: Writable<string> = writable('1fr 3px 3fr');
 export const workspaceId: Writable<number> = writable(-1);
 
 /* Derived. */
-
-/* Subscriptions. */
 export const workspace: Readable<Workspace> = derived([workspaceId], ([$workspaceId]) => {
   return {
     created_at: '',
@@ -34,6 +34,6 @@ export const parcel: Readable<Parcel> = derived([workspace], ([$workspace]) => {
     updated_at: '',
   };
 });
-// export const workspace = gqlSubscribable<Workspace>(gql.SUB_WORKSPACE, { workspaceId }, null, null);
 
-// export const parcel = gqlSubscribable<Parcel>(gql.SUB_PARCEL, { parcelId: get(workspace)?.parcel_id }, null, null);
+/* Subscriptions. */
+export const workspaces = gqlSubscribable<Workspace[]>(gql.SUB_WORKSPACES, {}, [], null);

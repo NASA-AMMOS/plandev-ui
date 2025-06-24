@@ -5,7 +5,8 @@
   import { base } from '$app/paths';
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
   import { field } from '../../stores/form';
-  import { creatingWorkspace, parcels, workspaces } from '../../stores/sequencing';
+  import { creatingWorkspace, parcels } from '../../stores/sequencing';
+  import { workspaces } from '../../stores/workspaces';
   import type { User } from '../../types/app';
   import type { Workspace } from '../../types/workspace';
   import effects from '../../utilities/effects';

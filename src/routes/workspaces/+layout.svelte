@@ -8,7 +8,7 @@
   import Nav from '../../components/app/Nav.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import { SearchParameters } from '../../enums/searchParameters';
-  import { workspaces } from '../../stores/sequencing';
+  import { workspaces } from '../../stores/workspaces';
   import type { Workspace } from '../../types/workspace';
   import { getWorkspacesUrl } from '../../utilities/routes';
   import { getSearchParameterNumber } from '../../utilities/url';
