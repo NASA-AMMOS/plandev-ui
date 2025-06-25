@@ -12,15 +12,15 @@
     actionRunsByWorkspace,
     actionsColumns,
   } from '../../../stores/actions';
-  import { userSequences } from '../../../stores/sequencing';
   import { workspaces } from '../../../stores/workspaces';
   import type { ActionDefinition, ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
+  import type { UserSequence } from '../../../types/sequencing';
   import type { Workspace } from '../../../types/workspace';
   import {
     getActionDefinitionForRun,
-    getUserSequencesInWorkspace,
+    getUserSequenceValueSchemaOptions,
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
@@ -46,6 +46,7 @@
 
   let actionDefinitionsFilterText: string = '';
   let actionRunsFilterText: string = '';
+  let isLoadingWorkspace: boolean = false;
   let selectedActionDefinitionId: number | null = null;
   let selectedActionDefinition: ActionDefinition | null = null;
   let workspace: Workspace | undefined;
@@ -59,11 +60,13 @@
   let codeAbortController: AbortController;
   let argumentsMap: ArgumentsMap = {};
   let saving: boolean = false;
+  let workspaceSequences: UserSequence[] = [];
 
   $: workspace = $workspaces.find(workspace => workspace.id === workspaceId);
   $: if (typeof workspaceId === 'number') {
     workspaceActionDefinitions = Object.values($actionDefinitionsByWorkspace[workspaceId] || {});
     workspaceActionRuns = Object.values($actionRunsByWorkspace[workspaceId] || {});
+    getWorkspaceSequences(workspaceId);
   }
 
   $: selectedActionRuns = (workspaceActionRuns || []).filter(actionRun => {
@@ -109,6 +112,14 @@
     workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
   });
 
+  async function getWorkspaceSequences(idOfWorkspace: number) {
+    isLoadingWorkspace = true;
+
+    workspaceSequences = await effects.getWorkspaceSequences(idOfWorkspace, null, user);
+
+    isLoadingWorkspace = false;
+  }
+
   async function getCode(fileId: number, user: User | null) {
     if (selectedActionDefinition) {
       if (codeAbortController) {
@@ -145,7 +156,7 @@
   }
 
   async function runAction(action: ActionDefinition) {
-    const actionRunId = await effects.runAction(action, user);
+    const actionRunId = await effects.runAction(action, workspaceSequences, user);
     if (typeof actionRunId === 'number') {
       goto(
         `${base}/sequencing/actions/runs/${actionRunId}${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`,
@@ -156,14 +167,14 @@
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     if (formParameter.schema.type === 'options-single') {
-      const sequences = $userSequences.find(sequence => sequence.id === parseInt(formParameter.value));
+      const sequences = workspaceSequences.find(sequence => sequence.name === formParameter.value);
       formParameter.value = sequences?.name ?? null;
       argumentsMap = getArguments(argumentsMap, formParameter);
     } else if (formParameter.schema.type === 'options-multiple') {
-      const ids: string[] = formParameter.value;
-      let sequenceNames: string[] = [];
-      ids.forEach(id => {
-        const seq = $userSequences.find(sequence => sequence.id === parseInt(id));
+      const values: string[] = formParameter.value;
+      const sequenceNames: string[] = [];
+      values.forEach(value => {
+        const seq = workspaceSequences.find(sequence => sequence.name === value);
         if (seq !== undefined) {
           sequenceNames.push(seq.name);
         }
@@ -373,12 +384,13 @@
                       [],
                       undefined,
                       undefined,
-                      getUserSequencesInWorkspace($userSequences, workspaceId),
+                      getUserSequenceValueSchemaOptions(workspaceSequences, workspaceId),
                       'sequence',
                     )}
                     parameterType="action"
                     hideRightAdornments
                     hideInfo
+                    disabled={isLoadingWorkspace}
                     on:change={onChangeFormParameters}
                     use={[
                       [
