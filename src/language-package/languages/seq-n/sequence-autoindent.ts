@@ -1,8 +1,8 @@
 import { indentSelection } from '@codemirror/commands';
 import { syntaxTree, type IndentContext } from '@codemirror/language';
 import { EditorView } from 'codemirror';
-import { computeBlocks } from '../../language-package/languages/seq-n/custom-folder';
-import { getNearestAncestorNodeOfType } from './tree-utils';
+import { getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
+import { computeBlocks } from './custom-folder';
 
 const TAB_SIZE = 2;
 /**

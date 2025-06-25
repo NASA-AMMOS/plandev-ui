@@ -1,7 +1,7 @@
 import { seqJsonToSeqn, seqnToSeqJson } from '@nasa-jpl/aerie-sequence-languages';
 import type { ISequenceAdaptation } from '../language-package/interfaces/legacy';
+import { sequenceAutoIndent } from '../language-package/languages/seq-n/sequence-autoindent';
 import { sequenceCompletion } from '../language-package/languages/seq-n/sequence-completion';
-import { sequenceAutoIndent } from '../utilities/sequence-editor/sequence-autoindent';
 
 export const defaultSequenceAdaptation: ISequenceAdaptation = {
   argDelegator: undefined,

@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { standardKeymap } from '@codemirror/commands';
-  import { indentService, syntaxTree } from '@codemirror/language';
+  import { syntaxTree } from '@codemirror/language';
   import { lintGutter, openLintPanel } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate, keymap } from '@codemirror/view';
@@ -27,6 +27,7 @@
   import type { PhoenixContext } from '../../language-package/interfaces/new-adaptation-interface';
   import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../language-package/languages/seq-n/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../language-package/languages/seq-n/seq-n-tree-utils';
+  import { seqNFormat } from '../../language-package/languages/seq-n/sequence-autoindent';
   import { vmlBlockHighlighter, vmlHighlightBlock } from '../../language-package/languages/vml/vml';
   import { vmlFormat } from '../../language-package/languages/vml/vml-formatter';
   import { VmlCommandInfoMapper } from '../../language-package/languages/vml/vml-tree-utils';
@@ -36,7 +37,6 @@
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
   import {
     getArgumentInfo,
     getCommandDef,
@@ -86,7 +86,6 @@
 
   let actionMenu: Menu;
   let adaptation: ISequenceAdaptation = sequenceAdaptation;
-  let compartmentSeqAutocomplete: Compartment; // TODO replace with adaptation compartment
   let compartmentSeqHighlighter: Compartment; // TODO replace with adaptation compartment
   let compartmentAdaptation: Compartment;
   let compartmentOutputAdaptation: Compartment;
@@ -349,7 +348,6 @@
 
   onMount(() => {
     compartmentReadonly = new Compartment();
-    compartmentSeqAutocomplete = new Compartment();
     compartmentSeqHighlighter = new Compartment();
     compartmentAdaptation = new Compartment();
     compartmentOutputAdaptation = new Compartment();
@@ -372,7 +370,6 @@
           EditorView.updateListener.of(debouncedSeqNHighlightBlock),
           seqqNBlockHighlighter,
         ]),
-        ...(adaptation.autoIndent ? [compartmentSeqAutocomplete.of(indentService.of(adaptation.autoIndent()))] : []),
         compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
       ],
       parent: editorSequenceDiv,

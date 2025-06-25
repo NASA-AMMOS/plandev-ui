@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { indentService, syntaxTree } from '@codemirror/language';
+  import { syntaxTree } from '@codemirror/language';
   import { lintGutter, openLintPanel } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate } from '@codemirror/view';
@@ -26,6 +26,7 @@
   import type { PhoenixContext } from '../../language-package/interfaces/new-adaptation-interface';
   import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../language-package/languages/seq-n/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../language-package/languages/seq-n/seq-n-tree-utils';
+  import { seqNFormat } from '../../language-package/languages/seq-n/sequence-autoindent';
   import { vmlAdaptation, vmlBlockHighlighter, vmlHighlightBlock } from '../../language-package/languages/vml/vml';
   import { librarySequenceToFswCommand } from '../../language-package/languages/vml/vml-block-library';
   import { vmlFormat } from '../../language-package/languages/vml/vml-formatter';
@@ -51,7 +52,6 @@
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
-  import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
   import { TOKEN_ERROR } from '../../utilities/sequence-editor/sequence-constants';
   import { isFswCommandArgumentRepeat, unquoteUnescape } from '../../utilities/sequence-editor/sequence-utils';
   import { showFailureToast } from '../../utilities/toast';
@@ -87,7 +87,6 @@
   const librarySequenceMap: LibrarySequenceMap = {};
 
   let clientHeightGridRightTop: number = 0;
-  let compartmentSeqAutocomplete: Compartment;
   let compartmentSeqHighlighter: Compartment;
   let compartmentAdaptation: Compartment;
   let channelDictionary: ChannelDictionary | null;
@@ -199,9 +198,6 @@
             effects: [
               // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
               compartmentAdaptation.reconfigure($newSequenceAdaptation.extension(phoenixContext)),
-              ...($sequenceAdaptation.autoIndent
-                ? [compartmentSeqAutocomplete.reconfigure(indentService.of($sequenceAdaptation.autoIndent()))]
-                : []),
             ],
           });
         });
@@ -236,7 +232,6 @@
   );
 
   onMount(() => {
-    compartmentSeqAutocomplete = new Compartment();
     compartmentSeqHighlighter = new Compartment();
     compartmentAdaptation = new Compartment();
 
@@ -257,9 +252,6 @@
           EditorView.updateListener.of(debouncedSeqNHighlightBlock),
           seqqNBlockHighlighter,
         ]),
-        ...($sequenceAdaptation.autoIndent
-          ? [compartmentSeqAutocomplete.of(indentService.of($sequenceAdaptation.autoIndent()))]
-          : []),
         EditorState.readOnly.of(readOnly),
       ],
       parent: editorSequenceDiv,

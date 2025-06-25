@@ -19,7 +19,8 @@ export const defaultAdaptation: NewAdaptationInterface = {
         vmlTooltip(
             context.commandDictionary,
             {}, // TODO: library sequences
-        )
+        ),
+        // indentService.of(adaptation.autoIndent()) // VML doesn't seem to have an indenter???
     ],
     "outputExtension": context => [],
 }
