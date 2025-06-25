@@ -1,10 +1,11 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { standardKeymap } from '@codemirror/commands';
   import { json, jsonParseLinter } from '@codemirror/lang-json';
   import { linter, lintGutter } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
-  import { type ViewUpdate } from '@codemirror/view';
+  import { type ViewUpdate, keymap } from '@codemirror/view';
   import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
   import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
   import { basicSetup, EditorView } from 'codemirror';
@@ -12,7 +13,6 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { downloadBlob } from '../../utilities/generic';
-  import { isSaveEvent } from '../../utilities/keyboardEvents';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
@@ -49,7 +49,7 @@
     effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly)]),
   });
   $: updatedTextContent = textFileContent;
-  $: isTextContentUpdated = updatedTextContent === textFileContent;
+  $: isTextContentUpdated = updatedTextContent !== textFileContent;
   $: if (previousIsJSON !== isJSON && editorDiv) {
     if (editorView) {
       editorView.destroy();
@@ -59,6 +59,7 @@
         doc: textFileContent,
         extensions: [
           basicSetup,
+          keymap.of([...standardKeymap, { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave }]),
           EditorView.lineWrapping,
           EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
           lintGutter(),
@@ -74,6 +75,7 @@
         doc: textFileContent,
         extensions: [
           basicSetup,
+          keymap.of([...standardKeymap, { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave }]),
           EditorView.lineWrapping,
           EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
           lintGutter(),
@@ -106,15 +108,11 @@
     }
   }
 
-  function onSave() {
-    dispatch('save', updatedTextContent);
-  }
-
-  function onKeydown(event: KeyboardEvent): void {
-    if (isSaveEvent(event)) {
-      event.preventDefault();
-      onSave();
+  function onSave(): boolean {
+    if (isTextContentUpdated) {
+      dispatch('save', updatedTextContent);
     }
+    return true;
   }
 
   onMount(() => {
@@ -124,6 +122,7 @@
       doc: textFileContent,
       extensions: [
         basicSetup,
+        keymap.of([...standardKeymap, { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave }]),
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
@@ -135,8 +134,6 @@
     });
   });
 </script>
-
-<svelte:window on:keydown={onKeydown} />
 
 <Panel>
   <svelte:fragment slot="header">

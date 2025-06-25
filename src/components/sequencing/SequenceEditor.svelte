@@ -1,11 +1,12 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { standardKeymap } from '@codemirror/commands';
   import { json } from '@codemirror/lang-json';
   import { indentService, syntaxTree } from '@codemirror/language';
   import { lintGutter, openLintPanel } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
-  import { type ViewUpdate } from '@codemirror/view';
+  import { type ViewUpdate, keymap } from '@codemirror/view';
   import type { SyntaxNode, Tree } from '@lezer/common';
   import type { ChannelDictionary, CommandDictionary, FswCommand, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
@@ -31,7 +32,6 @@
   } from '../../types/sequencing';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
-  import { isSaveEvent } from '../../utilities/keyboardEvents';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import type { CommandInfoMapper } from '../../utilities/sequence-editor/command-info-mapper';
   import { inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
@@ -281,6 +281,7 @@
       doc: sequenceOutput,
       extensions: [
         basicSetup,
+        keymap.of([...standardKeymap, { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave }]),
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         EditorView.editable.of(false),
@@ -294,7 +295,7 @@
   }
 
   $: updatedSequenceDefinition = sequenceDefinition;
-  $: isSequenceDefinitionUpdated = updatedSequenceDefinition === sequenceDefinition;
+  $: isSequenceDefinitionUpdated = updatedSequenceDefinition !== sequenceDefinition;
 
   function compile(): void {
     if (selectedOutputFormat?.compile) {
@@ -400,15 +401,11 @@
     dispatch('runAction', action);
   }
 
-  function onSave() {
-    dispatch('save', updatedSequenceDefinition);
-  }
-
-  function onKeydown(event: KeyboardEvent): void {
-    if (isSaveEvent(event)) {
-      event.preventDefault();
-      onSave();
+  function onSave(): boolean {
+    if (isSequenceDefinitionUpdated) {
+      dispatch('save', updatedSequenceDefinition);
     }
+    return true;
   }
 
   onMount(() => {
@@ -424,6 +421,7 @@
       doc: sequenceDefinition,
       extensions: [
         basicSetup,
+        keymap.of([...standardKeymap, { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave }]),
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
@@ -459,8 +457,6 @@
     });
   });
 </script>
-
-<svelte:window on:keydown={onKeydown} />
 
 <CssGrid class="w-full" bind:columns={commandFormBuilderGrid} minHeight={'0'}>
   <CssGrid rows={editorHeights} minHeight={'0'}>
@@ -578,8 +574,8 @@
           {#if !readOnly}
             <button
               class="st-button icon-button ellipsis"
-              class:secondary={isSequenceDefinitionUpdated}
-              disabled={isSequenceDefinitionUpdated}
+              class:secondary={!isSequenceDefinitionUpdated}
+              disabled={!isSequenceDefinitionUpdated}
               on:click={onSave}
             >
               Save
