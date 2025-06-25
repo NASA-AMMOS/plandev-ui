@@ -24,10 +24,10 @@
     type LibrarySequenceMap,
   } from '../../language-package/interfaces/legacy';
   import type { PhoenixContext } from '../../language-package/interfaces/new-adaptation-interface';
-  import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../language-package/languages/seq-n/seq-n-highlighter';
+  import { seqNHighlightBlock } from '../../language-package/languages/seq-n/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../language-package/languages/seq-n/seq-n-tree-utils';
   import { seqNFormat } from '../../language-package/languages/seq-n/sequence-autoindent';
-  import { vmlAdaptation, vmlBlockHighlighter, vmlHighlightBlock } from '../../language-package/languages/vml/vml';
+  import { vmlAdaptation, vmlHighlightBlock } from '../../language-package/languages/vml/vml';
   import { librarySequenceToFswCommand } from '../../language-package/languages/vml/vml-block-library';
   import { vmlFormat } from '../../language-package/languages/vml/vml-formatter';
   import { VmlCommandInfoMapper } from '../../language-package/languages/vml/vml-tree-utils';
@@ -87,7 +87,6 @@
   const librarySequenceMap: LibrarySequenceMap = {};
 
   let clientHeightGridRightTop: number = 0;
-  let compartmentSeqHighlighter: Compartment;
   let compartmentAdaptation: Compartment;
   let channelDictionary: ChannelDictionary | null;
   let commandDictionary: CommandDictionary | null;
@@ -126,26 +125,6 @@
       editorSequenceView.dispatch({
         changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
       });
-    }
-  }
-
-  $: {
-    if (compartmentSeqHighlighter && editorSequenceView) {
-      if (isInVmlMode) {
-        editorSequenceView.dispatch({
-          effects: compartmentSeqHighlighter.reconfigure([
-            EditorView.updateListener.of(debouncedVmlHighlightBlock),
-            vmlBlockHighlighter,
-          ]),
-        });
-      } else {
-        editorSequenceView.dispatch({
-          effects: compartmentSeqHighlighter.reconfigure([
-            EditorView.updateListener.of(debouncedSeqNHighlightBlock),
-            seqqNBlockHighlighter,
-          ]),
-        });
-      }
     }
   }
 
@@ -232,7 +211,6 @@
   );
 
   onMount(() => {
-    compartmentSeqHighlighter = new Compartment();
     compartmentAdaptation = new Compartment();
 
     editorSequenceView = new EditorView({
@@ -248,10 +226,6 @@
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
-        compartmentSeqHighlighter.of([
-          EditorView.updateListener.of(debouncedSeqNHighlightBlock),
-          seqqNBlockHighlighter,
-        ]),
         EditorState.readOnly.of(readOnly),
       ],
       parent: editorSequenceDiv,

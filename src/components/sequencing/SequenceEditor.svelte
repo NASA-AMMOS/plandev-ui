@@ -81,12 +81,8 @@
     sequence: { input: string; output?: string };
   }>();
 
-  const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
-  const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
-
   let actionMenu: Menu;
   let adaptation: ISequenceAdaptation = sequenceAdaptation;
-  let compartmentSeqHighlighter: Compartment; // TODO replace with adaptation compartment
   let compartmentAdaptation: Compartment;
   let compartmentOutputAdaptation: Compartment;
   let compartmentReadonly: Compartment;
@@ -118,24 +114,6 @@
     editorSequenceView.dispatch({
       changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
     });
-  }
-
-  $: if (compartmentSeqHighlighter && editorSequenceView) {
-    if (isInVmlMode) {
-      editorSequenceView.dispatch({
-        effects: compartmentSeqHighlighter.reconfigure([
-          EditorView.updateListener.of(debouncedVmlHighlightBlock),
-          vmlBlockHighlighter,
-        ]),
-      });
-    } else {
-      editorSequenceView.dispatch({
-        effects: compartmentSeqHighlighter.reconfigure([
-          EditorView.updateListener.of(debouncedSeqNHighlightBlock),
-          seqqNBlockHighlighter,
-        ]),
-      });
-    }
   }
 
   $: commandFormBuilderGrid = showCommandFormBuilder
@@ -348,7 +326,6 @@
 
   onMount(() => {
     compartmentReadonly = new Compartment();
-    compartmentSeqHighlighter = new Compartment();
     compartmentAdaptation = new Compartment();
     compartmentOutputAdaptation = new Compartment();
 
@@ -366,10 +343,6 @@
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
-        compartmentSeqHighlighter.of([
-          EditorView.updateListener.of(debouncedSeqNHighlightBlock),
-          seqqNBlockHighlighter,
-        ]),
         compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
       ],
       parent: editorSequenceDiv,
