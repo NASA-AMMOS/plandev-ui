@@ -5717,8 +5717,8 @@ const effects = {
           `${workspace.id}/${originalPath}`,
           'POST',
           JSON.stringify({
-            moveTo: `./${cleanedTargetPath}`,
-            targetWorkspace: `${targetWorkspace.id}/${targetPath}`,
+            [shouldCopy ? 'copyTo' : 'moveTo']: `./${cleanedTargetPath}`,
+            toWorkspace: targetWorkspace.id,
           }),
           user,
           undefined,
