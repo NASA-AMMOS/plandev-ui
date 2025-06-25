@@ -53,7 +53,7 @@
   import effects from '../../../utilities/effects';
   import { filterEmpty } from '../../../utilities/generic';
   import { showConfirmModal } from '../../../utilities/modal';
-  import { getWorkspacesUrl } from '../../../utilities/routes';
+  import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
   import { userSequenceToLibrarySequence } from '../../../utilities/sequence-editor/languages/seq-n/seq-n-tree-utils';
   import { parseFunctionSignatures } from '../../../utilities/sequence-editor/languages/vml/vml-adaptation';
   import { isVmlSequence } from '../../../utilities/sequence-editor/sequence-utils';
@@ -387,6 +387,10 @@
     }
   }
 
+  function onActionsClicked() {
+    window.open(getActionsUrl(base, $workspaceId), '_blank');
+  }
+
   async function onRunActionOnSequence(event: CustomEvent<ActionDefinition>) {
     const { detail: action } = event;
     //get parameters of type sequence...
@@ -402,7 +406,7 @@
     if (actionRunId !== null) {
       const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
       if (goToRun === true) {
-        openActionRun(actionRunId, true);
+        openActionRun($workspaceId, actionRunId, true);
       }
     }
   }
@@ -428,6 +432,7 @@
       {user}
       {workspaceTree}
       {isWorkspaceLoading}
+      on:actionsClick={onActionsClicked}
       on:nodeClicked={onNodeClicked}
       on:nodeDelete={onNodeDelete}
       on:nodeMove={onNodeMove}
@@ -470,9 +475,10 @@
       </div>
       <div class="flex h-full" class:hidden={selectedFileType === WorkspaceContentType.Sequence}>
         <TextEditor
+          isJSON={selectedFileType === WorkspaceContentType.Json}
           textFileName={selectedFileName}
           textFileContent={initialSelectedFileContent}
-          isJSON={selectedFileType === WorkspaceContentType.Json}
+          title={selectedFileType === WorkspaceContentType.Json ? 'JSON Editor' : 'Text Editor'}
           on:save={onSaveWorkspaceFile}
           on:textContentUpdated={onWorkspaceFileUpdated}
         />

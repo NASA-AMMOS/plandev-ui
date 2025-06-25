@@ -1,3 +1,5 @@
+import { goto } from '$app/navigation';
+import { base } from '$app/paths';
 import type {
   ActionValueSchema,
   ActionValueSchemaSequence,
@@ -6,10 +8,7 @@ import type {
 import type { ActionDefinition, ActionParametersMap, ActionRunSlim } from '../types/actions';
 import type { ValueSchema, ValueSchemaOption } from '../types/schema';
 import type { UserSequence } from '../types/sequencing';
-import { getSearchParameterNumber } from './generic';
-import { SearchParameters } from '../enums/searchParameters';
-import { base } from '$app/paths';
-import { goto } from '$app/navigation';
+import { getActionsUrl } from './routes';
 
 /**
  * Typeguard for determining if a schema is an action sequence/sequenceList schema
@@ -75,9 +74,8 @@ export function getActionParametersOfType(action: ActionDefinition, parameterTyp
   return parametersOfType;
 }
 
-export function openActionRun(id: number, newTab?: boolean) {
-  const workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
-  const actionRunUrl = `${base}/sequencing/actions/runs/${id}${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`;
+export function openActionRun(workspaceId: number, id: number, newTab?: boolean) {
+  const actionRunUrl = getActionsUrl(base, workspaceId, id);
   if (newTab === true) {
     window.open(actionRunUrl, '_blank');
   } else {

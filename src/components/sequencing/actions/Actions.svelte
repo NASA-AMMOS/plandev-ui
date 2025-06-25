@@ -12,7 +12,8 @@
     actionRunsByWorkspace,
     actionsColumns,
   } from '../../../stores/actions';
-  import { userSequences, workspaces } from '../../../stores/sequencing';
+  import { userSequences } from '../../../stores/sequencing';
+  import { workspaces } from '../../../stores/workspaces';
   import type { ActionDefinition, ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
