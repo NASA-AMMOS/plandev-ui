@@ -12,10 +12,10 @@
   import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
   import ExpandIcon from 'bootstrap-icons/icons/arrow-bar-up.svg?component';
   import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
-  import CodeIcon from 'bootstrap-icons/icons/code-square.svg?component';
   import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
+  import { SquareCode } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
   import { defaultSequenceAdaptation } from '../../constants/sequence-adaptation';
   import type { ActionDefinition } from '../../types/actions';
@@ -62,6 +62,7 @@
     isVmlSequence,
     unquoteUnescape,
   } from '../../utilities/sequence-editor/sequence-utils';
+  import { pluralize } from '../../utilities/text';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import Menu from '../menus/Menu.svelte';
@@ -72,10 +73,11 @@
   import SectionTitle from '../ui/SectionTitle.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
 
-  export let includeActions: boolean = false;
+  export let actionsWithSequenceParameters: ActionDefinition[] = [];
   export let adaptationGlobals: GlobalType[] = [];
   export let channelDictionary: ChannelDictionary | null = null;
   export let commandDictionary: CommandDictionary | null = null;
+  export let includeActions: boolean = false;
   export let inputFormat: IInputFormat | undefined = undefined;
   export let librarySequences: LibrarySequence[] = [];
   export let outputFormats: IOutputFormat[] = [];
@@ -92,6 +94,7 @@
   export let userSequenceEditorColumnsWithFormBuilder: string;
 
   const dispatch = createEventDispatcher<{
+    runAction: ActionDefinition;
     save: string;
     sequence: { input: string; output?: string };
   }>();
@@ -100,7 +103,6 @@
   const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
   let actionMenu: Menu;
-  let actionsWithSequenceParameters: ActionDefinition[] = [];
   let adaptation: ISequenceAdaptation = sequenceAdaptation;
   let argInfoArray: ArgTextDef[] = [];
   let commandDef: FswCommand | null = null;
@@ -137,13 +139,6 @@
   let isSequenceDefinitionUpdated: boolean = false;
 
   $: isInVmlMode = isVmlSequence(sequenceName);
-
-  $: if (typeof workspaceId === 'number' && includeActions) {
-    actionsWithSequenceParameters = Object.values($actionDefinitionsByWorkspace[workspaceId] || {}).filter(action => {
-      const seqParameter = getActionParametersOfType(action, 'sequence');
-      return seqParameter.length > 0;
-    });
-  }
 
   $: if (editorSequenceView) {
     // insert sequence
@@ -401,23 +396,8 @@
     }
   }
 
-  async function runActionOnSequence(action: ActionDefinition) {
-    //get parameters of type sequence...
-    const sequenceParameters = getActionParametersOfType(action, 'sequence');
-    //set this sequence to the first one... FOR NOW.  TODO how do we determine the primary one?
-    let parameters: ArgumentsMap = {};
-    if (sequenceParameters.length > 0) {
-      const primarySequenceParameter = sequenceParameters[0];
-      parameters[primarySequenceParameter] = sequenceName;
-    }
-
-    const actionRunId = await effects.runAction(action, user, parameters);
-    if (actionRunId !== null) {
-      const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
-      if (goToRun === true) {
-        openActionRun(actionRunId, true);
-      }
-    }
+  function onRunAction(action: ActionDefinition) {
+    dispatch('runAction', action);
   }
 
   function onSave() {
@@ -505,11 +485,11 @@
                 {#each actionsWithSequenceParameters as action}
                   <MenuItem
                     on:click={() => {
-                      runActionOnSequence(action);
+                      onRunAction(action);
                       actionMenu.toggle();
                     }}
                   >
-                    <CodeIcon />
+                    <SquareCode size={16} />
                     {action?.name}
                   </MenuItem>
                 {/each}
