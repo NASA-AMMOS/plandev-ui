@@ -1,7 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { lintGutter } from '@codemirror/lint';
+  import { json, jsonParseLinter } from '@codemirror/lang-json';
+  import { linter, lintGutter } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate } from '@codemirror/view';
   import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
@@ -11,12 +12,14 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { downloadBlob } from '../../utilities/generic';
+  import { isSaveEvent } from '../../utilities/keyboardEvents';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import Panel from './Panel.svelte';
   import SectionTitle from './SectionTitle.svelte';
 
+  export let isJSON: boolean = false;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let textFileContent: string = '';
@@ -27,6 +30,7 @@
     save: string;
     textContentUpdated: { input: string };
   }>();
+  const jsonLinter = linter(jsonParseLinter());
 
   let compartmentReadonly: Compartment;
   let disableCopyAndExport: boolean = true;
@@ -34,9 +38,9 @@
   let editorView: EditorView;
   let updatedTextContent: string = textFileContent;
   let isTextContentUpdated: boolean = false;
+  let previousIsJSON: boolean = isJSON;
 
   $: if (editorView) {
-    // insert sequence
     editorView.dispatch({
       changes: { from: 0, insert: textFileContent, to: editorView.state.doc.length },
     });
@@ -46,6 +50,40 @@
   });
   $: updatedTextContent = textFileContent;
   $: isTextContentUpdated = updatedTextContent === textFileContent;
+  $: if (previousIsJSON !== isJSON && editorDiv) {
+    if (editorView) {
+      editorView.destroy();
+    }
+    if (isJSON) {
+      editorView = new EditorView({
+        doc: textFileContent,
+        extensions: [
+          basicSetup,
+          EditorView.lineWrapping,
+          EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
+          lintGutter(),
+          json(),
+          jsonLinter,
+          EditorView.updateListener.of(debounce(textContentUpdateListener, 250)),
+          compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
+        ],
+        parent: editorDiv,
+      });
+    } else {
+      editorView = new EditorView({
+        doc: textFileContent,
+        extensions: [
+          basicSetup,
+          EditorView.lineWrapping,
+          EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
+          lintGutter(),
+          EditorView.updateListener.of(debounce(textContentUpdateListener, 250)),
+          compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
+        ],
+        parent: editorDiv,
+      });
+    }
+  }
 
   async function textContentUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
     const updatedText = viewUpdate.state.doc.toString();
@@ -72,6 +110,13 @@
     dispatch('save', updatedTextContent);
   }
 
+  function onKeydown(event: KeyboardEvent): void {
+    if (isSaveEvent(event)) {
+      event.preventDefault();
+      onSave();
+    }
+  }
+
   onMount(() => {
     compartmentReadonly = new Compartment();
 
@@ -91,6 +136,8 @@
   });
 </script>
 
+<svelte:window on:keydown={onKeydown} />
+
 <Panel>
   <svelte:fragment slot="header">
     <SectionTitle>{title}</SectionTitle>
@@ -100,8 +147,11 @@
         use:tooltip={{ content: `Copy sequence contents`, placement: 'top' }}
         class="st-button icon-button secondary ellipsis"
         on:click={copyInputFormatToClipboard}
-        disabled={disableCopyAndExport}><ClipboardIcon />Copy</button
+        disabled={disableCopyAndExport}
       >
+        <ClipboardIcon />
+        Copy
+      </button>
       <button
         use:tooltip={{
           content: `Download sequence contents`,
@@ -109,8 +159,11 @@
         }}
         class="st-button icon-button secondary ellipsis"
         on:click|stopPropagation={downloadInputFormat}
-        disabled={disableCopyAndExport}><DownloadIcon />Download</button
+        disabled={disableCopyAndExport}
       >
+        <DownloadIcon />
+        Download
+      </button>
       {#if !readOnly}
         <button
           class="st-button icon-button ellipsis"

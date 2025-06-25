@@ -28,7 +28,7 @@
     confirm: { shouldCopy: boolean; targetPath: string; targetWorkspace: Workspace };
   }>();
 
-  let targetDirectory: string = originalPath;
+  let targetDirectory: string = '';
   let targetFilename: string = '';
   let typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
   let workspacesContents: WorkspaceTreeNode[] = [];
@@ -74,39 +74,39 @@
   }
 
   function onMove() {
-    const workspaceName = targetDirectory.split(PATH_DELIMITER).filter(filterEmpty)[0];
+    const [workspaceName, ...actualTargetDirectory] = targetDirectory.split(PATH_DELIMITER).filter(filterEmpty);
     const targetWorkspace = workspacesMap[workspaceName];
     if (targetWorkspace) {
       dispatch('confirm', {
         shouldCopy: false,
-        targetPath: `${targetDirectory}/${targetFilename}`,
+        targetPath: `${actualTargetDirectory.join(PATH_DELIMITER)}/${targetFilename}`,
         targetWorkspace: targetWorkspace,
       });
     }
   }
 
   function onDuplicate() {
-    const workspaceName = targetDirectory.split(PATH_DELIMITER).filter(filterEmpty)[0];
+    const [workspaceName, ...actualTargetDirectory] = targetDirectory.split(PATH_DELIMITER).filter(filterEmpty);
     const targetWorkspace = workspacesMap[workspaceName];
     if (targetWorkspace) {
       dispatch('confirm', {
         shouldCopy: true,
-        targetPath: `${targetDirectory}/${targetFilename}`,
+        targetPath: `${actualTargetDirectory.join(PATH_DELIMITER)}/${targetFilename}`,
         targetWorkspace: targetWorkspace,
       });
     }
   }
 </script>
 
-<Modal height={500} width={380}>
+<Modal height={450} width={380}>
   <ModalHeader showClose={false}>
-    Move or Duplicate {originalNode.name}
+    <div>Move or Duplicate: <span class="font-bold">{originalNode.name}</span></div>
   </ModalHeader>
   <ModalContent style="overflow: hidden;">
     <div class="grid h-full grid-rows-[min-content_auto_min-content] gap-1 overflow-hidden">
       <div>
         <div class="font-bold">Location</div>
-        <div>Current location: {currentWorkspace.name}/{originalPath}</div>
+        <div>Current location: <span class="font-semibold">{currentWorkspace.name}/{originalPath}</span></div>
       </div>
       <Sidebar.Provider
         style="--sidebar-width: auto"
@@ -127,7 +127,7 @@
           </Sidebar.Menu>
         </Sidebar.Content>
       </Sidebar.Provider>
-      <fieldset>
+      <fieldset class="p-0.5">
         <Label class="pb-0.5" size="sm" for="target-path">Target Directory</Label>
         <Input sizeVariant="xs" id="target-path" name="target-path" autocomplete="off" bind:value={targetDirectory} />
       </fieldset>

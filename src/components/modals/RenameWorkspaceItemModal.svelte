@@ -69,6 +69,6 @@
   </ModalContent>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" on:click={onConfirm}> Move {typeString} </button>
+    <button class="st-button" on:click={onConfirm}> Rename {typeString} </button>
   </ModalFooter>
 </Modal>

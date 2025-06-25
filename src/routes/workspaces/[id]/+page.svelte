@@ -39,7 +39,9 @@
   import type {
     ChannelDictionaryMetadata,
     CommandDictionaryMetadata,
+    LibrarySequence,
     ParameterDictionaryMetadata,
+    UserSequence,
   } from '../../../types/sequencing';
   import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
   import type { WorkspaceTreeNode } from '../../../types/workspace-tree-view';
@@ -48,6 +50,9 @@
   import { filterEmpty } from '../../../utilities/generic';
   import { showConfirmModal } from '../../../utilities/modal';
   import { getWorkspacesUrl } from '../../../utilities/routes';
+  import { userSequenceToLibrarySequence } from '../../../utilities/sequence-editor/languages/seq-n/seq-n-tree-utils';
+  import { parseFunctionSignatures } from '../../../utilities/sequence-editor/languages/vml/vml-adaptation';
+  import { isVmlSequence } from '../../../utilities/sequence-editor/sequence-utils';
   import { showFailureToast } from '../../../utilities/toast';
   import type { PageData } from './$types';
 
@@ -68,6 +73,8 @@
   let selectedFileName: string | undefined = undefined;
   let selectedSequenceOutput: string | undefined = undefined;
   let updatedSelectedFileContent: string = '';
+  let workspaceLibrarySequences: LibrarySequence[] = [];
+  let workspaceSequences: UserSequence[] = [];
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
 
@@ -119,6 +126,15 @@
     } else {
       parameterDictionaries = [];
     }
+  }
+  $: if ($workspaceId != null) {
+    workspaceLibrarySequences = workspaceSequences.flatMap(sequence => {
+      if (isVmlSequence(sequence.name)) {
+        return parseFunctionSignatures(sequence.definition, $workspaceId);
+      } else {
+        return userSequenceToLibrarySequence(sequence, $workspaceId);
+      }
+    });
   }
 
   function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
@@ -355,9 +371,10 @@
     setClipboardContent(`${WORKSPACE_URL}/ws/${$workspaceId}/${copyPath}`);
   }
 
-  function onMoveToWorkspace({ detail: sourcePath }: CustomEvent<string>) {
+  async function onMoveToWorkspace({ detail: sourcePath }: CustomEvent<string>) {
     if (initialWorkspace) {
-      effects.moveWorkspaceItemToWorkspace(initialWorkspace, workspaceTreeMap[sourcePath], sourcePath, user);
+      await effects.moveWorkspaceItemToWorkspace(initialWorkspace, workspaceTreeMap[sourcePath], sourcePath, user);
+      refreshWorkspaceContents();
     }
   }
 
@@ -405,7 +422,7 @@
           sequenceOutput={selectedSequenceOutput}
           title="Sequence - Definition Editor"
           readOnly={false}
-          workspaceId={$workspaceId}
+          librarySequences={workspaceLibrarySequences}
           adaptationGlobals={$adaptationGlobals}
           inputFormat={$inputFormat}
           outputFormats={$outputFormat}
@@ -423,6 +440,7 @@
         <TextEditor
           textFileName={selectedFileName}
           textFileContent={initialSelectedFileContent}
+          isJSON={selectedFileType === WorkspaceContentType.Json}
           on:save={onSaveWorkspaceFile}
           on:textContentUpdated={onWorkspaceFileUpdated}
         />

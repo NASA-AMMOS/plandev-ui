@@ -28,10 +28,10 @@
     type LibrarySequence,
     type LibrarySequenceMap,
     type TimeTagInfo,
-    type UserSequence,
   } from '../../types/sequencing';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
+  import { isSaveEvent } from '../../utilities/keyboardEvents';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import type { CommandInfoMapper } from '../../utilities/sequence-editor/command-info-mapper';
   import { inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
@@ -40,20 +40,14 @@
     seqNHighlightBlock,
     seqqNBlockHighlighter,
   } from '../../utilities/sequence-editor/languages/seq-n/seq-n-highlighter';
-  import {
-    SeqNCommandInfoMapper,
-    userSequenceToLibrarySequence,
-  } from '../../utilities/sequence-editor/languages/seq-n/seq-n-tree-utils';
+  import { SeqNCommandInfoMapper } from '../../utilities/sequence-editor/languages/seq-n/seq-n-tree-utils';
   import {
     setupVmlLanguageSupport,
     vmlAdaptation,
     vmlBlockHighlighter,
     vmlHighlightBlock,
   } from '../../utilities/sequence-editor/languages/vml/vml';
-  import {
-    parseFunctionSignatures,
-    vmlAutoComplete,
-  } from '../../utilities/sequence-editor/languages/vml/vml-adaptation';
+  import { vmlAutoComplete } from '../../utilities/sequence-editor/languages/vml/vml-adaptation';
   import { vmlFormat } from '../../utilities/sequence-editor/languages/vml/vml-formatter';
   import { vmlLinter } from '../../utilities/sequence-editor/languages/vml/vml-linter';
   import { vmlTooltip } from '../../utilities/sequence-editor/languages/vml/vml-tooltip';
@@ -96,8 +90,6 @@
   export let title: string = 'Sequence - Definition Editor';
   export let userSequenceEditorColumns: string;
   export let userSequenceEditorColumnsWithFormBuilder: string;
-  export let workspaceId: number | undefined = undefined;
-  export let workspaceSequences: UserSequence[] = [];
 
   const dispatch = createEventDispatcher<{
     save: string;
@@ -137,7 +129,7 @@
   let selectedNode: SyntaxNode | null;
   let selectedOutputFormat: IOutputFormat | undefined;
   let showOutputs: boolean = true;
-  let previousShowOutputs: boolean = true;
+  let previousShowOutputs: boolean = showOutputs;
   let timeTagNode: TimeTagInfo = null;
   let toggleSeqJsonPreview: boolean = false;
   let variablesInScope: string[] = [];
@@ -182,15 +174,6 @@
     ? userSequenceEditorColumnsWithFormBuilder
     : userSequenceEditorColumns;
 
-  $: if (workspaceId != null) {
-    if (isInVmlMode) {
-      librarySequences = workspaceSequences.flatMap(sequence =>
-        parseFunctionSignatures(sequence.definition, workspaceId),
-      );
-    } else {
-      librarySequences = workspaceSequences.map(sequence => userSequenceToLibrarySequence(sequence, workspaceId));
-    }
-  }
   $: librarySequenceMap = Object.fromEntries(librarySequences.map(seq => [seq.name, seq]));
   $: {
     if (commandDictionary) {
@@ -441,6 +424,13 @@
     dispatch('save', updatedSequenceDefinition);
   }
 
+  function onKeydown(event: KeyboardEvent): void {
+    if (isSaveEvent(event)) {
+      event.preventDefault();
+      onSave();
+    }
+  }
+
   onMount(() => {
     compartmentReadonly = new Compartment();
     compartmentSeqJsonLinter = new Compartment();
@@ -490,7 +480,9 @@
   });
 </script>
 
-<CssGrid bind:columns={commandFormBuilderGrid} minHeight={'0'}>
+<svelte:window on:keydown={onKeydown} />
+
+<CssGrid class="w-full" bind:columns={commandFormBuilderGrid} minHeight={'0'}>
   <CssGrid rows={editorHeights} minHeight={'0'}>
     <Panel>
       <svelte:fragment slot="header">
@@ -545,8 +537,11 @@
             use:tooltip={{ content: `Copy sequence contents`, placement: 'top' }}
             class="st-button icon-button secondary ellipsis"
             on:click={copyInputFormatToClipboard}
-            disabled={disableCopyAndExport}><ClipboardIcon />Copy</button
+            disabled={disableCopyAndExport}
           >
+            <ClipboardIcon />
+            Copy
+          </button>
           <button
             use:tooltip={{
               content: `Download sequence contents`,
@@ -554,14 +549,16 @@
             }}
             class="st-button icon-button secondary ellipsis"
             on:click|stopPropagation={downloadInputFormat}
-            disabled={disableCopyAndExport}><DownloadIcon />Download</button
+            disabled={disableCopyAndExport}
           >
+            <DownloadIcon />
+            Download
+          </button>
 
           {#if showOutputs}
             <div class="app-menu" role="none" on:click|stopPropagation={() => menu.toggle()}>
               <button class="st-button icon-button secondary ellipsis">
                 Output
-
                 <ChevronDownIcon />
               </button>
 
