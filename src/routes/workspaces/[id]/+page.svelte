@@ -7,6 +7,7 @@
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+  import { chunk } from 'lodash-es';
   import { onDestroy, onMount } from 'svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
@@ -47,7 +48,7 @@
     UserSequence,
   } from '../../../types/sequencing';
   import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
-  import type { WorkspaceTreeNode } from '../../../types/workspace-tree-view';
+  import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
   import { getActionParametersOfType, openActionRun } from '../../../utilities/actions';
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
@@ -79,14 +80,12 @@
   let selectedSequenceOutput: string | undefined = undefined;
   let updatedSelectedFileContent: string = '';
   let workspaceLibrarySequences: LibrarySequence[] = [];
-  let workspaceSequences: UserSequence[] = [];
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
 
-  $: workspaceTreeMap = mapWorkspaceTreePaths(workspaceTree?.contents ?? []);
-
   $: if ($workspaceId !== -1) {
     getSelectedFileContent(selectedFilePath);
+
     actionsWithSequenceParameters = Object.values($actionDefinitionsByWorkspace[$workspaceId] || {}).filter(action => {
       const seqParameter = getActionParametersOfType(action, 'sequence');
       return seqParameter.length > 0;
@@ -136,8 +135,40 @@
       parameterDictionaries = [];
     }
   }
-  $: if ($workspaceId != null) {
-    workspaceLibrarySequences = workspaceSequences.flatMap(sequence => {
+
+  async function getWorkspaceSequences(treeMap: WorkspaceTreeMap) {
+    const workspaceSequenceNodes: WorkspaceTreeNodeWithFullPath[] = Object.keys(treeMap).reduce(
+      (currentSequenceNodes: WorkspaceTreeNodeWithFullPath[], treeNodePath: string) => {
+        const treeNode = treeMap[treeNodePath];
+        if (treeNode.type === WorkspaceContentType.Sequence) {
+          currentSequenceNodes.push({
+            ...treeNode,
+            fullPath: treeNodePath,
+          });
+        }
+        return currentSequenceNodes;
+      },
+      [],
+    );
+
+    const chunkedWorkspaceNodes: WorkspaceTreeNodeWithFullPath[][] = chunk(workspaceSequenceNodes, 10);
+    let workspaceSequenceFileContents: UserSequence[] = [];
+
+    for (let i = 0; i < chunkedWorkspaceNodes.length; i++) {
+      const chunkSequenceFileContents: UserSequence[] = await Promise.all(
+        chunkedWorkspaceNodes[i].map(async ({ fullPath }) => {
+          const sequenceDefinition = await effects.getWorkspaceFileContent($workspaceId, fullPath, user);
+          return {
+            definition: sequenceDefinition,
+            name: fullPath,
+          } as UserSequence;
+        }),
+      );
+
+      workspaceSequenceFileContents = workspaceSequenceFileContents.concat(chunkSequenceFileContents);
+    }
+
+    workspaceLibrarySequences = workspaceSequenceFileContents.flatMap(sequence => {
       if (isVmlSequence(sequence.name)) {
         return parseFunctionSignatures(sequence.definition, $workspaceId);
       } else {
@@ -185,6 +216,8 @@
           type: WorkspaceContentType.Workspace,
         };
       }
+      workspaceTreeMap = mapWorkspaceTreePaths(workspaceTree?.contents ?? []);
+      await getWorkspaceSequences(workspaceTreeMap);
       isWorkspaceLoading = false;
       resetRefreshInterval();
     }
