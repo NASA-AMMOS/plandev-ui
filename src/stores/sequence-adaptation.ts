@@ -27,7 +27,7 @@ export const inputFormat = derived([sequenceAdaptation], ([$sequenceAdaptation])
 
 export const outputFormat = derived(
   [sequenceAdaptation],
-  ([$sequenceAdaptation]) => $sequenceAdaptation?.outputFormat ?? [],
+  ([$sequenceAdaptation]) => $sequenceAdaptation?.outputFormat != undefined ? [$sequenceAdaptation?.outputFormat] : [],
 );
 
 export const adaptationGlobals = derived(

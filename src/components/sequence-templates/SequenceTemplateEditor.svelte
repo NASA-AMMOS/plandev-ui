@@ -29,7 +29,6 @@
   import { vmlAdaptation, vmlBlockHighlighter, vmlHighlightBlock } from '../../language-package/languages/vml/vml';
   import { librarySequenceToFswCommand } from '../../language-package/languages/vml/vml-block-library';
   import { vmlFormat } from '../../language-package/languages/vml/vml-formatter';
-  import { vmlTooltip } from '../../language-package/languages/vml/vml-tooltip';
   import { VmlCommandInfoMapper } from '../../language-package/languages/vml/vml-tree-utils';
   import {
     newSequenceAdaptation,

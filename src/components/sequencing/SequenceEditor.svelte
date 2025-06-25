@@ -18,6 +18,7 @@
   import { SquareCode } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
   import { defaultSequenceAdaptation } from '../../constants/sequence-adaptation';
+  import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
   import {
     type IInputFormat,
     type IOutputFormat,
@@ -27,16 +28,14 @@
   import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../language-package/languages/seq-n/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../language-package/languages/seq-n/seq-n-tree-utils';
   import { vmlBlockHighlighter, vmlHighlightBlock } from '../../language-package/languages/vml/vml';
+  import { vmlFormat } from '../../language-package/languages/vml/vml-formatter';
+  import { VmlCommandInfoMapper } from '../../language-package/languages/vml/vml-tree-utils';
   import { newSequenceAdaptation } from '../../stores/sequence-adaptation';
   import type { ActionDefinition } from '../../types/actions';
   import { type LibrarySequence, type LibrarySequenceMap, type TimeTagInfo } from '../../types/sequencing';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import type { CommandInfoMapper } from '../../utilities/sequence-editor/command-info-mapper';
-  import { outputLinter } from '../../utilities/sequence-editor/extension-points';
-  import { vmlFormat } from '../../utilities/sequence-editor/languages/vml/vml-formatter';
-  import { VmlCommandInfoMapper } from '../../utilities/sequence-editor/languages/vml/vml-tree-utils';
   import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
   import {
     getArgumentInfo,
@@ -114,8 +113,6 @@
   let commandInfoMapper: CommandInfoMapper = new SeqNCommandInfoMapper(); // TODO replace with adaptation
 
   $: isInVmlMode = isVmlSequence(sequenceName); // TODO boo
-
-  $: isInVmlMode = isVmlSequence(sequenceName);
 
   $: if (editorSequenceView) {
     // insert sequence
@@ -223,8 +220,13 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         EditorView.editable.of(false),
         lintGutter(),
-        json(),
-        compartmentSeqJsonLinter.of(outputLinter()),
+        compartmentOutputAdaptation.of(
+          $newSequenceAdaptation.outputExtension({
+            commandDictionary,
+            channelDictionary,
+            parameterDictionaries,
+          }),
+        ),
         EditorState.readOnly.of(readOnly),
       ],
       parent: editorOutputDiv,
