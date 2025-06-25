@@ -161,7 +161,7 @@
 
   $: isInVmlMode = isVmlSequence(sequenceName);
 
-  $: if (typeof workspaceId === 'number') {
+  $: if (typeof workspaceId === 'number' && includeActions) {
     actionsWithSequenceParameters = Object.values($actionDefinitionsByWorkspace[workspaceId] || {}).filter(action => {
       const seqParameter = getActionParametersOfType(action, 'sequence');
       return seqParameter.length > 0;

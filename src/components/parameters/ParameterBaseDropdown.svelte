@@ -88,10 +88,9 @@
     <SearchableDropdown
       bind:selectedOptionValues={selectedDropdownOptions}
       {allowMultiple}
-      {disabled}
       showPlaceholderOption={false}
       options={dropdownOptions}
-      placeholder={disabled ? '' : placeholder}
+      placeholder={placeholder}
       {searchPlaceholder}
       on:change={onChange}
     />
