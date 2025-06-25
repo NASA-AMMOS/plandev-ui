@@ -9,6 +9,7 @@
   import type { SyntaxNode, Tree } from '@lezer/common';
   import type { ChannelDictionary, CommandDictionary, FswCommand, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
+  import CodeIcon from 'bootstrap-icons/icons/code-square.svg?component';
   import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
   import ExpandIcon from 'bootstrap-icons/icons/arrow-bar-up.svg?component';
   import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
@@ -92,7 +93,13 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
+  import type { ActionDefinition } from '../../types/actions';
+  import { actionDefinitionsByWorkspace } from '../../stores/actions';
+  import { pluralize } from '../../utilities/text';
+  import type { ArgumentsMap } from '../../types/parameter';
+  import { getActionParametersOfType, openActionRun } from '../../utilities/actions';
 
+  export let includeActions: boolean = false;
   export let parcel: Parcel | null;
   export let showCommandFormBuilder: boolean = false;
   export let readOnly: boolean = false;
@@ -111,6 +118,8 @@
   const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
   const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
+  let actionMenu: Menu;
+  let actionsWithSequenceParameters: ActionDefinition[] = [];
   let compartmentSeqJsonLinter: Compartment;
   let compartmentSeqLanguage: Compartment;
   let compartmentSeqLinter: Compartment;
@@ -151,6 +160,13 @@
   $: loadSequenceAdaptation(parcel?.sequence_adaptation_id);
 
   $: isInVmlMode = isVmlSequence(sequenceName);
+
+  $: if (typeof workspaceId === 'number' && includeActions) {
+    actionsWithSequenceParameters = Object.values($actionDefinitionsByWorkspace[workspaceId] || {}).filter(action => {
+      const seqParameter = getActionParametersOfType(action, 'sequence');
+      return seqParameter.length > 0;
+    });
+  }
 
   $: {
     if (editorSequenceView) {
@@ -512,6 +528,25 @@
       seqNFormat(editorSequenceView);
     }
   }
+
+  async function runActionOnSequence(action: ActionDefinition) {
+    //get parameters of type sequence...
+    const sequenceParameters = getActionParametersOfType(action, 'sequence');
+    //set this sequence to the first one... FOR NOW.  TODO how do we determine the primary one?
+    let parameters: ArgumentsMap = {};
+    if (sequenceParameters.length > 0) {
+      const primarySequenceParameter = sequenceParameters[0];
+      parameters[primarySequenceParameter] = sequenceName;
+    }
+
+    const actionRunId = await effects.runAction(action, user, parameters);
+    if (actionRunId !== null) {
+      const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
+      if (goToRun === true) {
+        openActionRun(actionRunId, true);
+      }
+    }
+  }
 </script>
 
 <CssGrid bind:columns={commandFormBuilderGrid} minHeight={'0'}>
@@ -521,6 +556,34 @@
         <SectionTitle>{title}</SectionTitle>
 
         <div class="right">
+          {#if includeActions}
+            <div class="app-menu" role="none" on:click|stopPropagation={() => actionMenu.toggle()}>
+              <button
+                disabled={sequenceName === '' || actionsWithSequenceParameters.length === 0}
+                class="st-button icon-button secondary ellipsis"
+              >
+                {#if actionsWithSequenceParameters.length > 0}
+                  <div class="actions-chip">{actionsWithSequenceParameters.length}</div>
+                {/if}
+                Action{pluralize(actionsWithSequenceParameters.length)}
+                <ChevronDownIcon />
+              </button>
+              <Menu bind:this={actionMenu}>
+                {#each actionsWithSequenceParameters as action}
+                  <MenuItem
+                    on:click={() => {
+                      runActionOnSequence(action);
+                      actionMenu.toggle();
+                    }}
+                  >
+                    <CodeIcon />
+                    {action?.name}
+                  </MenuItem>
+                {/each}
+              </Menu>
+            </div>
+          {/if}
+
           <button
             use:tooltip={{ content: 'Show Error Panel', placement: 'top' }}
             class="st-button icon-button secondary ellipsis"
@@ -686,6 +749,14 @@
     gap: 5px;
     justify-content: center;
     position: relative;
+  }
+
+  .actions-chip {
+    background-color: var(--st-gray-15);
+    border-radius: 40px;
+    color: black;
+    min-width: 16px;
+    padding: 0px 4px;
   }
 
   .no-selected-parcel {

@@ -57,6 +57,8 @@ import type { PlanSnapshot } from '../types/plan-snapshot';
 import type { Tag } from '../types/tags';
 import type { ViewDefinition } from '../types/view';
 import effects from './effects';
+import type { ArgumentsMap } from '../types/parameter';
+import RunActionResultsModal from '../components/modals/RunActionResultsModal.svelte';
 import CancelActionRunModal from '../components/modals/CancelActionRunModal.svelte';
 
 /**
@@ -1117,13 +1119,14 @@ export async function showRestorePlanSnapshotModal(
 export async function showRunActionModal(
   actionDefinition: ActionDefinition,
   user: User | null,
+  parameters: ArgumentsMap | undefined,
 ): Promise<ModalElementValue<{ id: number | null }>> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const runActionModal = new RunActionModal({ props: { actionDefinition, user }, target });
+        const runActionModal = new RunActionModal({ props: { actionDefinition, parameters, user }, target });
         target.resolve = resolve;
 
         runActionModal.$on('close', () => {
@@ -1138,6 +1141,37 @@ export async function showRunActionModal(
           target.resolve = null;
           resolve({ confirm: true, value: { id: e.detail.actionRunId } });
           runActionModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+export async function showRunActionResultsModal(actionRunId: number): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+      if (target) {
+        const modal = new RunActionResultsModal({
+          props: { actionRunId },
+          target,
+        });
+        target.resolve = resolve;
+
+        modal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          modal.$destroy();
+        });
+
+        modal.$on('confirm', (e: CustomEvent) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          modal.$destroy();
         });
       }
     } else {

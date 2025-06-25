@@ -91,10 +91,9 @@ export function getFormParameters(
     const defaultArg: Argument | undefined = defaultArgumentsMap[name];
     const { value, valueSource } = getArgument(arg, schema, preset, defaultArg);
     const required = requiredParameters.indexOf(name) > -1;
-
     let errors: string[] | null = null;
     let isMultiSelect: boolean = false;
-    if (isActionValueSchemaSequence(schema)) {
+    if (isActionValueSchemaSequence(schema) || schema.type === 'options-single' || schema.type === 'options-multiple') {
       (formParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).options =
         dropdownOptions;
       (formParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).label = optionLabel;
@@ -102,6 +101,9 @@ export function getFormParameters(
         formParameterSchema.type = 'options-single';
       } else if (schema.type === 'sequenceList') {
         formParameterSchema.type = 'options-multiple';
+      }
+
+      if (schema.type === 'options-multiple') {
         isMultiSelect = true;
       }
 
