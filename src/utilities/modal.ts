@@ -29,6 +29,7 @@ import RestorePlanSnapshotModal from '../components/modals/RestorePlanSnapshotMo
 import RunActionModal from '../components/modals/RunActionModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
 import TimeRangeModal from '../components/modals/TimeRangeModal.svelte';
+import UpdatePlanMissionModelModal from '../components/modals/UpdatePlanMissionModelModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceModal from '../components/modals/WorkspaceModal.svelte';
 import NewSequenceTemplateModal from '../components/sequence-templates/NewSequenceTemplateModal.svelte';
@@ -50,6 +51,7 @@ import type {
   PlanForMerging,
   PlanMergeRequestStatus,
   PlanMergeRequestTypeFilter,
+  PlanSlim,
 } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
 import type { Tag } from '../types/tags';
@@ -1262,6 +1264,37 @@ export async function showNewSequenceModal(): Promise<ModalElementValue<{ newSeq
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
           newSequenceModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+export async function showUpdatePlanMissionModelModal(plan: PlanSlim, user: User | null): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+      if (target) {
+        const modal = new UpdatePlanMissionModelModal({
+          props: { plan, user },
+          target,
+        });
+        target.resolve = resolve;
+
+        modal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          modal.$destroy();
+        });
+
+        modal.$on('confirm', (e: CustomEvent) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          modal.$destroy();
         });
       }
     } else {

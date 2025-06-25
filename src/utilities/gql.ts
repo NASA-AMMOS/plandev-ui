@@ -103,6 +103,14 @@ const gql = {
     }
   `,
 
+  CHECK_MODEL_COMPATIBILITY_FOR_PLAN: `#graphql
+    mutation CheckModelCompatabilityForPlan($plan_id: Int!, $new_model_id: Int!) {
+      ${Queries.CHECK_MODEL_COMPATIBILITY_FOR_PLAN}(args: { _plan_id: $plan_id, _new_model_id: $new_model_id } ) {
+        result
+      }
+    }
+  `,
+
   CREATE_ACTION_DEFINITION: `#graphql
     mutation CreateActionDefinition($actionDefinitionInsertInput: action_definition_insert_input!) {
       ${Queries.INSERT_ACTION_DEFINITION}(object: $actionDefinitionInsertInput) {
@@ -1493,6 +1501,13 @@ const gql = {
         owner
         parent_plan {
           id
+          model_id
+          model: mission_model {
+            id
+            name
+            owner
+            version
+          }
           name
           owner
           collaborators {
@@ -1893,6 +1908,14 @@ const gql = {
         }
       ) {
         seq_id
+      }
+    }
+  `,
+
+  MIGRATE_PLAN_TO_MODEL: `#graphql
+    mutation MigratePlanToModel($plan_id: Int!, $new_model_id: Int!) {
+      ${Queries.MIGRATE_PLAN_TO_MODEL}(args: { _plan_id: $plan_id, _new_model_id: $new_model_id } ) {
+        result
       }
     }
   `,
@@ -2974,8 +2997,45 @@ const gql = {
 
   SUB_PLAN_METADATA: `#graphql
     subscription SubPlanMetadata($planId: Int!) {
-      merge_request: ${Queries.PLAN}(id: $planId) {
+      plan_metadata: ${Queries.PLAN}(id: $planId) {
         id
+        model: mission_model {
+          id
+          jar_id
+          name
+          owner
+          parameters {
+            parameters
+          }
+          refresh_activity_type_logs(order_by: { created_at: desc }, limit: 1) {
+            error
+            error_message
+            pending
+            success
+          }
+          refresh_resource_type_logs(order_by: { created_at: desc }, limit: 1) {
+            error
+            error_message
+            pending
+            success
+          }
+          refresh_model_parameter_logs(order_by: { created_at: desc }, limit: 1) {
+            error
+            error_message
+            pending
+            success
+          }
+          version
+          view {
+            created_at
+            definition
+            id
+            name
+            owner
+            updated_at
+          }
+        }
+        model_id
         name
         owner
         updated_at
@@ -3000,6 +3060,7 @@ const gql = {
     subscription SubPlanSnapshot($planId: Int!) {
       plan_snapshots: ${Queries.PLAN_SNAPSHOTS}(where: { plan_id: { _eq: $planId } }, order_by: { taken_at: desc }) {
         snapshot_id
+        model_id
         plan_id
         revision
         snapshot_name
@@ -3341,6 +3402,7 @@ const gql = {
         dataset_id
         canceled
         id
+        model_id
         plan_revision
         reason
         requested_at
@@ -3364,6 +3426,7 @@ const gql = {
           arguments
           canceled
           id
+          model_id
           dataset_id
           plan_revision
           requested_at
@@ -3397,6 +3460,7 @@ const gql = {
           dataset_id
           canceled
           id
+          model_id
           plan_revision
           reason
           requested_at
