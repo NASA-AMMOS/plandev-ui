@@ -23,6 +23,7 @@
   import WorkspaceTreeView from './WorkspaceTreeView/WorkspaceTreeView.svelte';
 
   const dispatch = createEventDispatcher<{
+    actionsClick: void;
     copyFileLocation: string;
     importFile: string;
     moveToWorkspace: string;
@@ -50,6 +51,10 @@
       await new Promise(resolve => setTimeout(resolve, 1000));
       didWorkspaceUpdate = false;
     }
+  }
+
+  function onActionsClick() {
+    dispatch('actionsClick');
   }
 
   function onNewFolder() {
@@ -99,11 +104,9 @@
         </Tooltip.Root>
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
-            <Tabs.Trigger value="actions" class="flex h-10 w-10 items-center justify-center rounded-none shadow-none">
-              <Button builders={[builder]} variant="ghost">
-                <Clapperboard size={16} />
-              </Button>
-            </Tabs.Trigger>
+            <Button class="h-10" builders={[builder]} variant="ghost" on:click={onActionsClick}>
+              <Clapperboard size={16} />
+            </Button>
           </Tooltip.Trigger>
           <Tooltip.Content sideOffset={8}>
             <div>Actions</div>
@@ -268,13 +271,6 @@
             </Sidebar.Group>
           </Sidebar.Content>
         </div>
-      </Tabs.Content>
-      <Tabs.Content value="actions" class="h-full" style="min-height: 300px;">
-        <Sidebar.Menu className="h-full">
-          <div class="flex h-full w-full items-center justify-center bg-muted">
-            <div class="text-sm text-muted-foreground">Actions</div>
-          </div>
-        </Sidebar.Menu>
       </Tabs.Content>
       <Tabs.Content value="settings" class="h-full" style="min-height: 300px;">
         <Sidebar.Menu className="h-full">
