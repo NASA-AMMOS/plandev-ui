@@ -17,6 +17,7 @@
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { WorkspaceContentType } from '../../../enums/workspace';
+  import { actionDefinitionsByWorkspace } from '../../../stores/actions';
   import {
     adaptationGlobals,
     inputFormat,
@@ -36,6 +37,8 @@
     userSequenceEditorColumnsWithFormBuilder,
   } from '../../../stores/sequencing';
   import { parcel, workspace, workspaceColumns, workspaceId } from '../../../stores/workspaces';
+  import type { ActionDefinition } from '../../../types/actions';
+  import type { ArgumentsMap } from '../../../types/parameter';
   import type {
     ChannelDictionaryMetadata,
     CommandDictionaryMetadata,
@@ -45,6 +48,7 @@
   } from '../../../types/sequencing';
   import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
   import type { WorkspaceTreeNode } from '../../../types/workspace-tree-view';
+  import { getActionParametersOfType, openActionRun } from '../../../utilities/actions';
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
   import { filterEmpty } from '../../../utilities/generic';
@@ -62,12 +66,13 @@
 
   const { initialWorkspace, user } = data;
 
-  let refreshInterval: NodeJS.Timeout | null = null;
+  let actionsWithSequenceParameters: ActionDefinition[] = [];
   let channelDictionary: ChannelDictionary | null = null;
   let commandDictionary: CommandDictionary | null = null;
   let parameterDictionaries: ParameterDictionary[] = [];
   let initialSelectedFileContent: string = '';
   let isWorkspaceLoading: boolean = false;
+  let refreshInterval: NodeJS.Timeout | null = null;
   let selectedFileType: WorkspaceContentType | null = null;
   let selectedFilePath: string | null = null;
   let selectedFileName: string | undefined = undefined;
@@ -82,6 +87,10 @@
 
   $: if ($workspaceId !== -1) {
     getSelectedFileContent(selectedFilePath);
+    actionsWithSequenceParameters = Object.values($actionDefinitionsByWorkspace[$workspaceId] || {}).filter(action => {
+      const seqParameter = getActionParametersOfType(action, 'sequence');
+      return seqParameter.length > 0;
+    });
   }
   $: {
     selectedFileName = selectedFilePath?.split(PATH_DELIMITER).pop();
@@ -378,6 +387,26 @@
     }
   }
 
+  async function onRunActionOnSequence(event: CustomEvent<ActionDefinition>) {
+    const { detail: action } = event;
+    //get parameters of type sequence...
+    const sequenceParameters = getActionParametersOfType(action, 'sequence');
+    //set this sequence to the first one... FOR NOW.  TODO how do we determine the primary one?
+    let parameters: ArgumentsMap = {};
+    if (sequenceParameters.length > 0) {
+      const primarySequenceParameter = sequenceParameters[0];
+      parameters[primarySequenceParameter] = selectedFileName;
+    }
+
+    const actionRunId = await effects.runAction(action, user, parameters);
+    if (actionRunId !== null) {
+      const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
+      if (goToRun === true) {
+        openActionRun(actionRunId, true);
+      }
+    }
+  }
+
   onMount(() => {
     if (initialWorkspace) {
       $workspaceId = initialWorkspace.id;
@@ -416,22 +445,25 @@
     <div class="grid h-full grid-cols-1 grid-rows-1">
       <div class="flex h-full" class:hidden={selectedFileType !== WorkspaceContentType.Sequence}>
         <SequenceEditor
-          showCommandFormBuilder={true}
-          sequenceName={selectedFileName}
-          sequenceDefinition={initialSelectedFileContent}
-          sequenceOutput={selectedSequenceOutput}
-          title="Sequence - Definition Editor"
-          readOnly={false}
-          librarySequences={workspaceLibrarySequences}
-          adaptationGlobals={$adaptationGlobals}
-          inputFormat={$inputFormat}
-          outputFormats={$outputFormat}
-          sequenceAdaptation={$sequenceAdaptation}
           {channelDictionary}
           {commandDictionary}
           {parameterDictionaries}
+          {actionsWithSequenceParameters}
+          adaptationGlobals={$adaptationGlobals}
+          includeActions={true}
+          inputFormat={$inputFormat}
+          librarySequences={workspaceLibrarySequences}
+          outputFormats={$outputFormat}
+          readOnly={false}
+          sequenceAdaptation={$sequenceAdaptation}
+          sequenceDefinition={initialSelectedFileContent}
+          sequenceName={selectedFileName}
+          sequenceOutput={selectedSequenceOutput}
+          showCommandFormBuilder={true}
+          title="Sequence - Definition Editor"
           userSequenceEditorColumns={$userSequenceEditorColumns}
           userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
+          on:runAction={onRunActionOnSequence}
           on:save={onSaveWorkspaceFile}
           on:sequence={onWorkspaceFileUpdated}
         />
