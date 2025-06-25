@@ -4,7 +4,6 @@
   import { page } from '$app/stores';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
-  import { userSequences } from '../../../stores/sequencing';
   import { gqlSubscribable } from '../../../stores/subscribable';
   import type { ActionRun } from '../../../types/actions';
   import type { User } from '../../../types/app';
@@ -12,7 +11,7 @@
   import type { ValueSchemaOption } from '../../../types/schema';
   import {
     getActionDefinitionForRun,
-    getUserSequencesInWorkspace,
+    getUserSequenceValueSchemaOptions,
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
@@ -30,8 +29,10 @@
   let actionParameters: FormParameter[] = [];
   let sequenceOptions: ValueSchemaOption[] = [];
 
-  $: sequenceOptions = getUserSequencesInWorkspace($userSequences, workspaceId);
   $: workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID, $page.url.searchParams);
+  $: if (workspaceId != null) {
+    getUserSequenceOptions(workspaceId);
+  }
 
   $: updateActionSettingsAndParameters(); //update on any change
 
@@ -46,6 +47,11 @@
     initialActionRun,
     user,
   );
+
+  async function getUserSequenceOptions(idOfWorkspace: number): Promise<void> {
+    const workspaceSequences = await effects.getWorkspaceSequences(idOfWorkspace, null, user);
+    sequenceOptions = getUserSequenceValueSchemaOptions(workspaceSequences, workspaceId);
+  }
 
   async function onCancelAction(id: number) {
     await effects.cancelActionRun(id, user);

@@ -62,6 +62,7 @@ import type {
   PlanSlim,
 } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
+import type { UserSequence } from '../types/sequencing';
 import type { Tag } from '../types/tags';
 import type { ViewDefinition } from '../types/view';
 import type { Workspace } from '../types/workspace';
@@ -1339,6 +1340,7 @@ export async function showRestorePlanSnapshotModal(
 export async function showRunActionModal(
   actionDefinition: ActionDefinition,
   user: User | null,
+  workspaceSequences: UserSequence[],
   parameters: ArgumentsMap | undefined,
 ): Promise<ModalElementValue<{ id: number | null }>> {
   return new Promise(resolve => {
@@ -1346,7 +1348,10 @@ export async function showRunActionModal(
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const runActionModal = new RunActionModal({ props: { actionDefinition, parameters, user }, target });
+        const runActionModal = new RunActionModal({
+          props: { actionDefinition, parameters, user, workspaceSequences },
+          target,
+        });
         target.resolve = resolve;
 
         runActionModal.$on('close', () => {

@@ -9,3 +9,5 @@ export type WorkspaceTreeNode = {
 export type WorkspaceTreeNodeWithFullPath = WorkspaceTreeNode & {
   fullPath: string;
 };
+
+export type WorkspaceTreeMap = Record<string, WorkspaceTreeNode>;

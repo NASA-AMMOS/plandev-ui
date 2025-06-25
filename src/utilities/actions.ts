@@ -31,19 +31,17 @@ export function valueSchemaRecordToParametersMap(
   }, {});
 }
 
-export function getUserSequencesInWorkspace(
-  sequences: UserSequence[],
+export function getUserSequenceValueSchemaOptions(
+  workspaceSequences: UserSequence[],
   workspaceId: number | null,
 ): ValueSchemaOption[] {
   if (workspaceId === null) {
     return [];
   }
-  return sequences
-    .filter(seq => workspaceId === seq.workspace_id)
-    .map(seq => ({
-      display: seq.name,
-      value: `${seq.id}`,
-    }));
+  return workspaceSequences.map(({ name }) => ({
+    display: name,
+    value: name,
+  }));
 }
 
 /***

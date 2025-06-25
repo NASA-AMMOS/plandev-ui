@@ -7,7 +7,6 @@
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
-  import { chunk } from 'lodash-es';
   import { onDestroy, onMount } from 'svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
@@ -48,7 +47,7 @@
     UserSequence,
   } from '../../../types/sequencing';
   import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
-  import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
+  import type { WorkspaceTreeMap, WorkspaceTreeNode } from '../../../types/workspace-tree-view';
   import { getActionParametersOfType, openActionRun } from '../../../utilities/actions';
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
@@ -59,11 +58,10 @@
   import { parseFunctionSignatures } from '../../../utilities/sequence-editor/languages/vml/vml-adaptation';
   import { isVmlSequence } from '../../../utilities/sequence-editor/sequence-utils';
   import { showFailureToast } from '../../../utilities/toast';
+  import { mapWorkspaceTreePaths } from '../../../utilities/workspaces';
   import type { PageData } from './$types';
 
   export let data: PageData;
-
-  type WorkspaceTreeMap = Record<string, WorkspaceTreeNode>;
 
   const { initialWorkspace, user } = data;
 
@@ -80,6 +78,7 @@
   let selectedSequenceOutput: string | undefined = undefined;
   let updatedSelectedFileContent: string = '';
   let workspaceLibrarySequences: LibrarySequence[] = [];
+  let workspaceSequences: UserSequence[] = [];
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
 
@@ -136,68 +135,6 @@
     }
   }
 
-  async function getWorkspaceSequences(treeMap: WorkspaceTreeMap) {
-    const workspaceSequenceNodes: WorkspaceTreeNodeWithFullPath[] = Object.keys(treeMap).reduce(
-      (currentSequenceNodes: WorkspaceTreeNodeWithFullPath[], treeNodePath: string) => {
-        const treeNode = treeMap[treeNodePath];
-        if (treeNode.type === WorkspaceContentType.Sequence) {
-          currentSequenceNodes.push({
-            ...treeNode,
-            fullPath: treeNodePath,
-          });
-        }
-        return currentSequenceNodes;
-      },
-      [],
-    );
-
-    const chunkedWorkspaceNodes: WorkspaceTreeNodeWithFullPath[][] = chunk(workspaceSequenceNodes, 10);
-    let workspaceSequenceFileContents: UserSequence[] = [];
-
-    for (let i = 0; i < chunkedWorkspaceNodes.length; i++) {
-      const chunkSequenceFileContents: UserSequence[] = await Promise.all(
-        chunkedWorkspaceNodes[i].map(async ({ fullPath }) => {
-          const sequenceDefinition = await effects.getWorkspaceFileContent($workspaceId, fullPath, user);
-          return {
-            definition: sequenceDefinition,
-            name: fullPath,
-          } as UserSequence;
-        }),
-      );
-
-      workspaceSequenceFileContents = workspaceSequenceFileContents.concat(chunkSequenceFileContents);
-    }
-
-    workspaceLibrarySequences = workspaceSequenceFileContents.flatMap(sequence => {
-      if (isVmlSequence(sequence.name)) {
-        return parseFunctionSignatures(sequence.definition, $workspaceId);
-      } else {
-        return userSequenceToLibrarySequence(sequence, $workspaceId);
-      }
-    });
-  }
-
-  function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
-    let treeMap: WorkspaceTreeMap = {};
-
-    nodes.forEach(node => {
-      const nodeName = node.name || `[Unnamed ${node.type || 'Unknown'}]`;
-      const nodeFullPath = [...currentPath, nodeName];
-
-      treeMap[nodeFullPath.join(PATH_DELIMITER)] = node;
-
-      if (node.contents && Array.isArray(node.contents) && node.contents.length > 0) {
-        // Recursively call, passing the updated currentPath and the shared cache
-        treeMap = {
-          ...treeMap,
-          ...mapWorkspaceTreePaths(node.contents, nodeFullPath),
-        };
-      }
-    });
-
-    return treeMap;
-  }
-
   function resetRefreshInterval() {
     if (refreshInterval !== null) {
       clearInterval(refreshInterval);
@@ -217,7 +154,17 @@
         };
       }
       workspaceTreeMap = mapWorkspaceTreePaths(workspaceTree?.contents ?? []);
-      await getWorkspaceSequences(workspaceTreeMap);
+
+      workspaceSequences = await effects.getWorkspaceSequences(workspace.id, workspaceTreeMap, user);
+
+      workspaceLibrarySequences = workspaceSequences.flatMap(sequence => {
+        if (isVmlSequence(sequence.name)) {
+          return parseFunctionSignatures(sequence.definition, $workspaceId);
+        } else {
+          return userSequenceToLibrarySequence(sequence, $workspaceId);
+        }
+      });
+
       isWorkspaceLoading = false;
       resetRefreshInterval();
     }
@@ -435,7 +382,7 @@
       parameters[primarySequenceParameter] = selectedFileName;
     }
 
-    const actionRunId = await effects.runAction(action, user, parameters);
+    const actionRunId = await effects.runAction(action, workspaceSequences, user, parameters);
     if (actionRunId !== null) {
       const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
       if (goToRun === true) {
