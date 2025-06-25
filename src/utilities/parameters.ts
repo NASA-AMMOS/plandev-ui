@@ -116,7 +116,8 @@ export function getFormParameters(
         });
 
         if (dropdownOptions.length > 0 && missingOptions.length > 0) {
-          errors = [`'${missingOptions.join(', ')}' not found`];
+          // format missing options like: 'option 1', 'option 2' not found
+          errors = [`'${missingOptions.join("', '")}' not found`];
         }
       }
     }
