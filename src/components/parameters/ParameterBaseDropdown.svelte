@@ -6,10 +6,10 @@
   import type { FormParameter, ParameterType } from '../../types/parameter.js';
   import { isParameterWithOptions } from '../../utilities/parameters';
   import type { ActionArray } from '../../utilities/useActions.js';
+  import Input from '../form/Input.svelte';
   import SearchableDropdown from '../ui/SearchableDropdown.svelte';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
-  import Input from '../form/Input.svelte';
 
   export const hideRightAdornments: boolean = false;
 
@@ -90,7 +90,7 @@
       {allowMultiple}
       showPlaceholderOption={false}
       options={dropdownOptions}
-      placeholder={placeholder}
+      {placeholder}
       {searchPlaceholder}
       on:change={onChange}
     />
