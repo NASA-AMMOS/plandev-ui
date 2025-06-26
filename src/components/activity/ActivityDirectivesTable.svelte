@@ -10,7 +10,11 @@
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/errors';
   import type { Plan } from '../../types/plan';
-  import { copyActivityDirectivesToClipboard, packLeftActivityDirectivesInPlan } from '../../utilities/activities';
+  import {
+    copyActivityDirectivesToClipboard,
+    packActivityDirectivesInPlanRevamp,
+    packRightActivityDirectivesInPlan,
+  } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
@@ -173,7 +177,13 @@
 
   async function packLeftActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
-      await packLeftActivityDirectivesInPlan(plan, activities, user);
+      await packActivityDirectivesInPlanRevamp(plan, activities, user);
+    }
+  }
+
+  async function packRightActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
+    if (plan !== null) {
+      await packRightActivityDirectivesInPlan(plan, activities, user);
     }
   }
 
@@ -198,13 +208,15 @@
   scrollToSelection={true}
   singleItemDisplayText="Activity Directive"
   showCopyMenu={true}
-  showPackLeftMenu={true}
+  showPackLeftMenu={bulkSelectedActivityDirectiveIds.length > 1}
+  showPackRightMenu={bulkSelectedActivityDirectiveIds.length > 1}
   suppressDragLeaveHidesColumns={false}
   {user}
   {filterExpression}
   on:bulkDeleteItems={deleteActivityDirectives}
   on:bulkCopyItems={copyActivityDirectives}
   on:bulkPackLeftItems={packLeftActivityDirectives}
+  on:bulkPackRightItems={packRightActivityDirectives}
   on:columnMoved
   on:columnPinned
   on:columnResized
