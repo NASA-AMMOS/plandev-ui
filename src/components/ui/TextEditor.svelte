@@ -164,8 +164,8 @@
       {#if !readOnly}
         <button
           class="st-button icon-button ellipsis"
-          class:secondary={isTextContentUpdated}
-          disabled={isTextContentUpdated}
+          class:secondary={!isTextContentUpdated}
+          disabled={!isTextContentUpdated}
           on:click={onSave}
         >
           Save
