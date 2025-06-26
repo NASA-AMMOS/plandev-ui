@@ -1,7 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import ExportIcon from '../../assets/export.svg?component';
+  import { Button } from '@nasa-jpl/stellar-svelte';
+  import { ArrowLeftRight, FileUp } from 'lucide-svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
@@ -53,6 +54,7 @@
   let hasCreateSnapshotPermission: boolean = false;
   let hasPlanUpdatePermission: boolean = false;
   let hasPlanCollaboratorsUpdatePermission: boolean = false;
+  let hasChangePlanModelPermission: boolean = false;
   let planNameField = field<string>('', [
     required,
     unique(
@@ -80,9 +82,11 @@
       hasPlanUpdatePermission = featurePermissions.plan.canUpdate(user, plan) && !$planReadOnly;
       hasPlanCollaboratorsUpdatePermission =
         featurePermissions.planCollaborators.canCreate(user, plan) && !$planReadOnly;
+      hasChangePlanModelPermission = featurePermissions.plan.canUpdateModel(user, plan);
     } else {
       hasPlanUpdatePermission = false;
       hasPlanCollaboratorsUpdatePermission = false;
+      hasChangePlanModelPermission = false;
     }
   }
 
@@ -148,6 +152,17 @@
     isFilteredBySimulation = !isFilteredBySimulation;
   }
 
+  async function openChangePlanMissionModelModal(e: Event) {
+    e.stopPropagation();
+    if (plan !== null) {
+      const success = await effects.updatePlanMissionModel(plan, user);
+      if (success) {
+        // Clear active simulation
+        $simulationDatasetId = -1;
+      }
+    }
+  }
+
   async function onPlanNameChange() {
     if (plan && $planNameField.dirtyAndValid && $planNameField.value) {
       // Optimistically update plan metadata
@@ -180,7 +195,7 @@
               on:click|stopPropagation={onExportPlan}
               use:tooltip={{ content: 'Export Plan JSON' }}
             >
-              <ExportIcon />
+              <FileUp size={16} />
             </button>
           {/if}
         </svelte:fragment>
@@ -208,7 +223,28 @@
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Model Name', placement: 'top' }} for="modelName">Model Name</label>
-          <input class="st-input w-full" disabled name="modelName" value={plan.model.name} id="modelName" />
+          <div class="flex gap-1">
+            <input class="st-input w-full" disabled name="modelName" value={plan.model.name} id="modelName" />
+            <div
+              use:permissionHandler={{
+                hasPermission: hasChangePlanModelPermission && !$planReadOnly,
+                permissionError: $planReadOnly
+                  ? PlanStatusMessages.READ_ONLY
+                  : "You don't have permission to change mission model",
+              }}
+              use:tooltip={{ content: !$planReadOnly ? 'Change Mission Model' : '', placement: 'top' }}
+            >
+              <Button
+                class="shrink-0"
+                variant="outline"
+                size="icon"
+                on:click={openChangePlanMissionModelModal}
+                aria-label="Change mission model"
+              >
+                <ArrowLeftRight size={16} />
+              </Button>
+            </div>
+          </div>
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Model ID', placement: 'top' }} for="modelId">Model ID</label>
@@ -346,6 +382,7 @@
             {#each filteredPlanSnapshots as planSnapshot (planSnapshot.snapshot_id)}
               <PlanSnapshot
                 activePlanSnapshotId={$planSnapshotId}
+                planModelId={plan.model.id}
                 {planSnapshot}
                 on:click={() => {
                   setQueryParam(SearchParameters.SNAPSHOT_ID, `${planSnapshot.snapshot_id}`, 'PUSH');

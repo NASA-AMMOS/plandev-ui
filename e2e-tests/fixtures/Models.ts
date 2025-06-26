@@ -26,7 +26,7 @@ export class Models {
     this.updatePage(page);
   }
 
-  async createModel(baseURL: string | undefined, modelName = this.modelName) {
+  async createModel(baseURL: string | undefined, modelName: string = this.modelName, jarPath: string = this.jarPath) {
     await expect(this.tableRow(modelName)).not.toBeVisible();
     if (modelName) {
       await this.fillInputName(modelName);
@@ -34,7 +34,7 @@ export class Models {
       await this.fillInputName();
     }
     await this.fillInputVersion();
-    await this.fillInputFile();
+    await this.fillInputFile(jarPath);
     await this.createButton.click();
     const editModelUrlRegex = new RegExp(`${baseURL}/models/(?<modelId>\\d+)`);
     await this.page.waitForURL(editModelUrlRegex);

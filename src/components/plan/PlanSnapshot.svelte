@@ -1,29 +1,35 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import ThreeDotsIcon from '@nasa-jpl/stellar/icons/three_dot.svg?component';
+  import { Button, DropdownMenu } from '@nasa-jpl/stellar-svelte';
+  import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
+  import { EllipsisVertical } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { PlanSnapshot } from '../../types/plan-snapshot';
   import { getSimulationProgress, getSimulationStatus } from '../../utilities/simulation';
-  import Menu from '../menus/Menu.svelte';
-  import MenuDivider from '../menus/MenuDivider.svelte';
-  import MenuItem from '../menus/MenuItem.svelte';
+  import { tooltip } from '../../utilities/tooltip';
   import Card from '../ui/Card.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
   import Tag from '../ui/Tags/Tag.svelte';
 
   export let activePlanSnapshotId: PlanSnapshot['snapshot_id'] | null;
   export let maxVisibleTags: number = 4;
+  export let planModelId: number = -1;
   export let planSnapshot: PlanSnapshot;
 
-  let menu: Menu;
   let showMoreTags: boolean = false;
+  let snapshotPreviewable: boolean = true;
+  let disabledPreviewMessage: string = '';
 
   $: moreTagsAvailable = planSnapshot.tags.length > maxVisibleTags;
   $: visibleTags =
     moreTagsAvailable && showMoreTags
       ? planSnapshot.tags.map(tag => tag.tag)
       : planSnapshot.tags.map(tag => tag.tag).slice(0, maxVisibleTags);
+  $: snapshotPreviewable = planModelId === planSnapshot.model_id;
+  $: disabledPreviewMessage = !snapshotPreviewable
+    ? `Snapshot can be restored but not previewed since plan snapshot's model (ID: ${planSnapshot.model_id}) does not match current plan's model (ID: ${planModelId})`
+    : '';
 
   const dispatch = createEventDispatcher<{
     click: void;
@@ -44,6 +50,7 @@
   selected={planSnapshot.snapshot_id === activePlanSnapshotId}
   body={planSnapshot.description}
   on:click={() => dispatch('click')}
+  interactable={snapshotPreviewable}
 >
   <div slot="right">
     <div class="plan-snapshot--right-content">
@@ -53,15 +60,23 @@
         progress={getSimulationProgress(planSnapshot.simulation)}
       />
       <div class="plan-snapshot--menu-button">
-        <button class="st-button secondary" on:click|stopPropagation={() => menu.toggle()}>
-          <ThreeDotsIcon />
-          <Menu bind:this={menu}>
-            <MenuItem on:click={() => dispatch('click')}>Preview</MenuItem>
-            <MenuItem on:click={() => dispatch('restore')}>Restore</MenuItem>
-            <MenuDivider />
-            <MenuItem disabled on:click={() => dispatch('delete')}>Delete</MenuItem>
-          </Menu>
-        </button>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild let:builder>
+            <Button variant="outline" size="icon" builders={[builder]} on:click={e => e.stopPropagation()}>
+              <EllipsisVertical size={20} />
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content class="" align="start">
+            <div use:tooltip={{ content: disabledPreviewMessage }}>
+              <DropdownMenu.Item disabled={!snapshotPreviewable} size="sm" on:click={() => dispatch('click')}>
+                Preview
+              </DropdownMenu.Item>
+            </div>
+            <DropdownMenu.Item size="sm" on:click={() => dispatch('restore')}>Restore</DropdownMenu.Item>
+            <DropdownMenu.Separator />
+            <DropdownMenu.Item disabled size="sm" on:click={() => () => dispatch('delete')}>Delete</DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
       </div>
     </div>
   </div>
@@ -79,6 +94,11 @@
       </button>
     {/if}
   </div>
+  {#if !snapshotPreviewable}
+    <div class="st-typography-label message" use:tooltip={{ content: disabledPreviewMessage }}>
+      <WarningIcon class="red-icon" />Model Differs
+    </div>
+  {/if}
 </Card>
 
 <style>
@@ -93,11 +113,6 @@
 
   .plan-snapshot--menu-button {
     position: relative;
-  }
-
-  .plan-snapshot--menu-button button {
-    padding: 0;
-    width: 24px;
   }
 
   .plan-snapshot--tags {
@@ -120,5 +135,18 @@
   .plan-snapshot--tags-show-more:hover {
     background: unset;
     color: var(--st-gray-100);
+  }
+
+  .message {
+    background: #fff4f4;
+    border: 1px solid var(--st-error-red);
+    border-radius: 24px;
+    color: var(--st-error-red);
+    display: flex;
+    flex: 0;
+    gap: 4px;
+    padding: 4px 8px;
+    white-space: nowrap;
+    width: min-content;
   }
 </style>

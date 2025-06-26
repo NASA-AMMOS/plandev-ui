@@ -2,7 +2,7 @@ import type { ActivityDirective } from './activity';
 import type { UserId } from './app';
 import type { ConstraintPlanSpecification } from './constraint';
 import type { Model } from './model';
-import type { ArgumentsMap } from './parameter';
+import type { ArgumentsMap, ParametersMap } from './parameter';
 import type { SchedulingPlanSpecification } from './scheduling';
 import type { Tag } from './tags';
 
@@ -83,7 +83,11 @@ export type PlanSchema = {
   model_id: number;
   name: string;
   owner: UserId;
-  parent_plan: Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collaborators' | 'is_locked'> | null;
+  parent_plan:
+    | (Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collaborators' | 'is_locked' | 'model_id'> & {
+        model: Pick<Model, 'id' | 'name' | 'owner' | 'version'>;
+      })
+    | null;
   revision: number;
   scheduling_specification: Pick<SchedulingPlanSpecification, 'id'> | null;
   simulations: [{ id: number; simulation_datasets: [{ id: number; plan_revision: number }] }];
@@ -144,3 +148,16 @@ export type PlanSchedulingSpec = Pick<
   Plan,
   'id' | 'name' | 'scheduling_specification' | 'model_id' | 'owner' | 'collaborators'
 >;
+
+export type ModelCompatabilityForPlan = {
+  impacted_directives: { activity_directive: ActivityDirective; issue: ModelCompatabilityForPlanIssue }[];
+  modified_activity_types: Record<string, ModelCompatabilityForPlanSchemaDiff>;
+  removed_activity_types: string[];
+};
+
+export type ModelCompatabilityForPlanSchemaDiff = {
+  new_parameter_schema: ParametersMap;
+  old_parameter_schema: ParametersMap;
+};
+
+export type ModelCompatabilityForPlanIssue = 'altered' | 'removed';

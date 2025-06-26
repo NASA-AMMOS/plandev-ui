@@ -4,7 +4,12 @@
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import UploadIcon from '@nasa-jpl/stellar/icons/upload.svg?component';
   import { plan } from '../stores/plan';
-  import { allResourceTypes, simulationDatasetId } from '../stores/simulation';
+  import {
+    allResourceTypes,
+    fetchingResourcesExternal,
+    resourceTypesLoading,
+    simulationDatasetId,
+  } from '../stores/simulation';
   import type { User } from '../types/app';
   import type { ResourceType } from '../types/simulation';
   import type { TimelineItemType } from '../types/timeline';
@@ -26,8 +31,10 @@
   let useSelectedSimulation: boolean = false;
   let uploadFiles: FileList | undefined;
   let uploadFileInput: HTMLInputElement;
+  let loading: boolean = false;
 
   $: resourceDataTypes = [...new Set($allResourceTypes.map(t => t.schema.type))];
+  $: loading = $fetchingResourcesExternal || $resourceTypesLoading;
   $: if (user !== null && $plan !== null) {
     hasUploadPermission = featurePermissions.externalResources.canCreate(user, $plan);
   }
@@ -68,6 +75,7 @@
   filterOptions={resourceDataTypes.map(t => ({ label: t, value: t }))}
   filterName="Data Type"
   {getFilterValueFromItem}
+  {loading}
   let:prop={item}
 >
   <div slot="header" class="upload-container" hidden={!isUploadVisible}>

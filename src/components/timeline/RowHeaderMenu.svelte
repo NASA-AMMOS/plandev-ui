@@ -14,7 +14,7 @@
 
   function onClick(e: MouseEvent) {
     const { x, y } = button.getBoundingClientRect();
-    const newEvent = new MouseEvent(e.type, { ...e, clientX: x, clientY: y });
+    const newEvent = new MouseEvent('contextmenu', { ...e, clientX: x, clientY: y });
     dispatch('contextMenu', { e: newEvent, origin: 'row-header' });
   }
 </script>

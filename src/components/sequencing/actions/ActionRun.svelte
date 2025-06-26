@@ -19,13 +19,26 @@
   import Parameters from '../../parameters/Parameters.svelte';
   import ActionRunCard from './ActionRunCard.svelte';
   import effects from '../../../utilities/effects';
+  import type { ValueSchemaOption } from '../../../types/schema';
+  import type { FormParameter } from '../../../types/parameter';
 
   export let initialActionRun: ActionRun | null = null;
   export let user: User | null;
 
   let workspaceId: number | null = null;
+  let actionSettings: FormParameter[] = [];
+  let actionParameters: FormParameter[] = [];
+  let sequenceOptions: ValueSchemaOption[] = [];
 
+  $: sequenceOptions = getUserSequencesInWorkspace($userSequences, workspaceId);
   $: workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID, $page.url.searchParams);
+
+  $: updateActionSettingsAndParameters(); //update on any change
+
+  $: if (sequenceOptions.length) {
+    //if the user sequences change, we need to update
+    updateActionSettingsAndParameters();
+  }
 
   const actionRun = gqlSubscribable<ActionRun | null>(
     gql.SUB_ACTION_RUN,
@@ -36,6 +49,30 @@
 
   async function onCancelAction(id: number) {
     await effects.cancelActionRun(id, user);
+  }
+
+  function updateActionSettingsAndParameters() {
+    if (initialActionRun !== null) {
+      actionSettings = getFormParameters(
+        valueSchemaRecordToParametersMap(initialActionRun.action_definition.settings_schema),
+        initialActionRun.settings,
+        [],
+        undefined,
+        undefined,
+        sequenceOptions,
+        'sequence',
+      );
+
+      actionParameters = getFormParameters(
+        valueSchemaRecordToParametersMap(initialActionRun.action_definition.parameter_schema),
+        initialActionRun.parameters,
+        [],
+        undefined,
+        undefined,
+        sequenceOptions,
+        'sequence',
+      );
+    }
   }
 </script>
 
@@ -77,37 +114,9 @@
         {/if}
         <div class="st-typography-medium action-run-label">Action Settings</div>
         <div class="action-run-parameters">
-          <Parameters
-            formParameters={getFormParameters(
-              valueSchemaRecordToParametersMap($actionRun.action_definition.settings_schema),
-              $actionRun.settings,
-              [],
-              undefined,
-              undefined,
-              getUserSequencesInWorkspace($userSequences, workspaceId),
-              'sequence',
-            )}
-            parameterType="action"
-            hideRightAdornments
-            hideInfo
-            disabled
-          />
+          <Parameters formParameters={actionSettings} parameterType="action" hideRightAdornments hideInfo disabled />
           <div class="st-typography-medium action-run-label">Action Parameters</div>
-          <Parameters
-            formParameters={getFormParameters(
-              valueSchemaRecordToParametersMap($actionRun.action_definition.parameter_schema),
-              $actionRun.parameters,
-              [],
-              undefined,
-              undefined,
-              getUserSequencesInWorkspace($userSequences, workspaceId),
-              'sequence',
-            )}
-            parameterType="action"
-            hideRightAdornments
-            hideInfo
-            disabled
-          />
+          <Parameters formParameters={actionParameters} parameterType="action" hideRightAdornments hideInfo disabled />
         </div>
       </div>
     {/if}

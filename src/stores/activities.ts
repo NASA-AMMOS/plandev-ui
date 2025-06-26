@@ -50,6 +50,8 @@ export const activityDirectiveValidationStatuses = gqlSubscribable<ActivityDirec
 
 export const selectedActivityDirectiveId: Writable<ActivityDirectiveId | null> = writable(null);
 
+export const activityArgumentDefaultsModelId: Writable<number> = writable(-1);
+
 // TODO do we even need the list or should we transform it immediately into the map?
 export const activityArgumentDefaults: Writable<DefaultEffectiveArguments[] | null> = writable(null);
 
