@@ -379,7 +379,7 @@ export async function showImportWorkspaceFileModal(startingPath: string): Promis
         // Do not allow users to dismiss this modal
         target.setAttribute('data-dismissible', 'false');
 
-        importWorkspaceFileModal.$on('confirm', (e: CustomEvent<{ file: File; targetDirectory: string }>) => {
+        importWorkspaceFileModal.$on('confirm', (e: CustomEvent<{ files: FileList; targetDirectory: string }>) => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });

@@ -5,6 +5,7 @@
   import { createEventDispatcher } from 'svelte';
   import { WorkspaceContentType } from '../../enums/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
+  import { separateFilenameFromPath } from '../../utilities/workspaces';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -23,13 +24,9 @@
   let typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
 
   $: {
-    const matches = /^((?<path>[^.]+)\/)?(?<filename>[^.]+\.[^.]+)$/.exec(targetDirectory);
-    if (matches && matches.groups) {
-      const { filename, path } = matches.groups;
-
-      targetDirectory = path;
-      targetFilename = filename;
-    }
+    const { filename, path } = separateFilenameFromPath(targetDirectory);
+    targetDirectory = path;
+    targetFilename = filename;
   }
 
   function onConfirm() {

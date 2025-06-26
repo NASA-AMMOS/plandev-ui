@@ -12,6 +12,7 @@
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
   import effects from '../../utilities/effects';
   import { filterEmpty } from '../../utilities/generic';
+  import { separateFilenameFromPath } from '../../utilities/workspaces.js';
   import WorkspaceTreeView from '../workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
@@ -35,13 +36,9 @@
   let workspacesMap: Record<string, Workspace> = {};
 
   $: {
-    const matches = /^((?<path>[^.]+)\/)?(?<filename>[^.]+\.[^.]+)$/.exec(targetDirectory);
-    if (matches && matches.groups) {
-      const { filename, path } = matches.groups;
-
-      targetDirectory = path;
-      targetFilename = filename;
-    }
+    const { filename, path } = separateFilenameFromPath(targetDirectory);
+    targetDirectory = path;
+    targetFilename = filename;
   }
   $: getWorkspacesContents($workspaces);
   $: workspacesMap = $workspaces.reduce((currentWorkspacesMap, workspace) => {

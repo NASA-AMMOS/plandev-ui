@@ -14,7 +14,6 @@
   import * as Sidebar from '../../../components/ui/Sidebar/index.js';
   import TextEditor from '../../../components/ui/TextEditor.svelte';
   import WorkspaceSidebar from '../../../components/workspace/WorkspaceSidebar.svelte';
-  import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
@@ -58,7 +57,7 @@
   import { parseFunctionSignatures } from '../../../utilities/sequence-editor/languages/vml/vml-adaptation';
   import { isVmlSequence } from '../../../utilities/sequence-editor/sequence-utils';
   import { showFailureToast } from '../../../utilities/toast';
-  import { mapWorkspaceTreePaths } from '../../../utilities/workspaces';
+  import { mapWorkspaceTreePaths, separateFilenameFromPath } from '../../../utilities/workspaces';
   import type { PageData } from './$types';
 
   export let data: PageData;
@@ -91,10 +90,18 @@
     });
   }
   $: {
-    selectedFileName = selectedFilePath?.split(PATH_DELIMITER).pop();
     if (selectedFilePath) {
-      selectedFileType = workspaceTreeMap[selectedFilePath]?.type ?? null;
+      const { filename } = separateFilenameFromPath(selectedFilePath);
+
+      if (filename) {
+        selectedFileName = filename;
+        selectedFileType = workspaceTreeMap[selectedFilePath]?.type ?? null;
+      } else {
+        selectedFileName = undefined;
+        selectedFileType = null;
+      }
     } else {
+      selectedFileName = undefined;
       selectedFileType = null;
     }
   }
@@ -271,7 +278,7 @@
   async function onNewSequence(event: CustomEvent<string>) {
     if ($workspaceId != null && user) {
       const { detail: startingPath } = event;
-      const newSequencePath = await effects.newWorkspaceSequence($workspaceId, startingPath, user);
+      const newSequencePath = await effects.newWorkspaceSequence($workspaceId, startingPath, '', user);
 
       const didNavigate = await goToSequence(newSequencePath);
       if (didNavigate) {
@@ -347,11 +354,19 @@
     }
   }
 
-  function onSaveWorkspaceFile(event: CustomEvent<string>) {
+  async function onSaveWorkspaceFile(event: CustomEvent<string>) {
     const { detail: updatedSequenceDefinition } = event;
     if (selectedFilePath) {
       effects.saveWorkspaceFile($workspaceId, selectedFilePath, updatedSequenceDefinition, user);
       initialSelectedFileContent = updatedSequenceDefinition;
+    } else {
+      const newSequencePath = await effects.newWorkspaceSequence($workspaceId, '', updatedSequenceDefinition, user);
+
+      const didNavigate = await goToSequence(newSequencePath);
+      if (didNavigate) {
+        selectedFilePath = newSequencePath;
+      }
+      refreshWorkspaceContents();
     }
   }
 
@@ -428,7 +443,10 @@
   <CssGridGutter track={1} type="column" />
   <Sidebar.Inset className="min-h-0">
     <div class="grid h-full grid-cols-1 grid-rows-1">
-      <div class="flex h-full" class:hidden={selectedFileType !== WorkspaceContentType.Sequence}>
+      <div
+        class="flex h-full"
+        class:hidden={selectedFileType != null && selectedFileType !== WorkspaceContentType.Sequence}
+      >
         <SequenceEditor
           {channelDictionary}
           {commandDictionary}
@@ -453,7 +471,10 @@
           on:sequence={onWorkspaceFileUpdated}
         />
       </div>
-      <div class="flex h-full" class:hidden={selectedFileType === WorkspaceContentType.Sequence}>
+      <div
+        class="flex h-full"
+        class:hidden={selectedFileType == null || selectedFileType === WorkspaceContentType.Sequence}
+      >
         <TextEditor
           isJSON={selectedFileType === WorkspaceContentType.Json}
           textFileName={selectedFileName}
