@@ -40,6 +40,7 @@
   export let showContextMenu: boolean = true;
   export let showCopyMenu: boolean = false;
   export let showPackLeftMenu: boolean = false;
+  export let showPackRightMenu: boolean = false;
   export let showLoadingSkeleton: boolean = false;
   export let singleItemDisplayText: string = '';
   export let suppressDragLeaveHidesColumns: boolean = true;
@@ -106,6 +107,13 @@
     const selectedRows = getRowDataFromSelectedItems();
     if (selectedRows.length) {
       dispatch('bulkPackLeftItems', selectedRows);
+    }
+  }
+
+  function bulkPackRightItems() {
+    const selectedRows = getRowDataFromSelectedItems();
+    if (selectedRows.length) {
+      dispatch('bulkPackRightItems', selectedRows);
     }
   }
 
@@ -213,6 +221,13 @@
         {#if showPackLeftMenu}
           <ContextMenu.Item size="sm" on:click={bulkPackLeftItems}>
             Pack Left {selectedItemIds.length}
+            {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+          </ContextMenu.Item>
+        {/if}
+
+        {#if showPackRightMenu}
+          <ContextMenu.Item size="sm" on:click={bulkPackRightItems}>
+            Pack Right {selectedItemIds.length}
             {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
           </ContextMenu.Item>
         {/if}

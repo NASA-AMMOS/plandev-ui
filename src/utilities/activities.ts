@@ -371,52 +371,158 @@ export function usToOffset(us: number): string {
   return `${pad(hours, 2)}:${pad(minutes, 2)}:${pad(seconds, 2)}.${micro.toString()}`;
 }
 
-export async function packLeftActivityDirectivesInPlan(
+export async function fetchSimulationDatasetIdsForPlan(planId: number, user: BaseUser | User | null): Promise<number> {
+  const query = `
+    query MyQuery($id: Int!) {
+      plan_by_pk(id: $id) {
+        simulations {
+          simulation_dataset {
+            id
+          }
+        }
+      }
+    }
+  `;
+  const variables = { id: planId };
+  const data = await reqHasura(query, variables, user);
+  const simulations = data?.plan_by_pk?.simulations;
+  if (!simulations) {
+    showFailureToast('Must simulate before packing activities');
+    throw new Error('must simulate before packing activities');
+  }
+  const datasetIds = simulations
+    .map((sim: any) => sim.simulation_dataset?.id)
+    .filter((id: number | null | undefined) => typeof id === 'number');
+  return datasetIds.length > 0 ? datasetIds[0] : -1;
+}
+
+export async function packActivityDirectivesInPlanRevamp(
   sourcePlan: Plan,
   activities: ActivityDirective[],
   user: BaseUser | User | null,
 ): Promise<ActivityDirective[] | void> {
   const planId = sourcePlan.id;
-  console.log('Packing activities', activities);
 
-  const anchorIds = new Set(activities.map(a => a.anchor_id));
-  if (anchorIds.size > 1) {
-    showFailureToast(`Activities must have the same anchor to copy`);
-    return;
+  const idToActivitiesMap = new Map<number, ActivityDirective>();
+  for (const activity of activities) {
+    idToActivitiesMap.set(activity.id, activity);
   }
 
-  if (activities.some(a => a.start_time_ms === null)) {
-    showFailureToast('Some selected activities do not have a start time');
-    return;
+  const anchorIds = new Map<number, number | null>();
+  for (const activity of activities) {
+    anchorIds.set(activity.id, activity.anchor_id);
   }
-  console.error('This is the format', activities[0].start_offset);
+
+  const activitiesDirectivesDB = await effects.getActivitiesForPlan(
+    planId,
+    user && 'activeRole' in user ? (user as User) : null,
+  );
+
+  const datasetId = await fetchSimulationDatasetIdsForPlan(planId, user);
+
+  const spansMap = await effects.getSpans(
+    datasetId,
+    sourcePlan.start_time_doy,
+    user && 'activeRole' in user ? (user as User) : null,
+    undefined,
+  );
+
+  const spanUtilityMaps = createSpanUtilityMaps(Object.values(spansMap));
+
+  const activityDirectivesMap = computeActivityDirectivesMap(
+    activitiesDirectivesDB,
+    sourcePlan,
+    spansMap,
+    spanUtilityMaps,
+  );
+
+  // Sort activities by their start times
   activities.sort(sortActivityDirectivesOrSpans);
-  let durations: (number | null)[];
+
+  // Map activity ids to their absolute start times in milliseconds
+  const initialStartTimes = new Map<number, number>();
+  for (const activity of activities) {
+    initialStartTimes.set(
+      activity.id,
+      getActivityDirectiveStartTimeMs(
+        activity.id,
+        sourcePlan.start_time_doy,
+        sourcePlan.end_time_doy,
+        activityDirectivesMap,
+        spansMap,
+        spanUtilityMaps,
+      ),
+    );
+  }
+
+  // Grab all durations for the activities and store in a Map
+  const durations = new Map<number, number>();
   try {
-    durations = await Promise.all(activities.map(a => fetchSimulatedActivityDuration(planId, a.id, user)));
+    const durationResults = await Promise.all(activities.map(a => fetchSimulatedActivityDuration(planId, a.id, user)));
+    for (let i = 0; i < activities.length; i++) {
+      if (durationResults[i] == null) {
+        showFailureToast('You must simulate activities before packing');
+        return;
+      }
+      durations.set(activities[i].id, durationResults[i] as number);
+    }
   } catch (err) {
-    console.error('Error fetching simulated activity durations:', err);
     showFailureToast('You must simulate before packing activities');
     return;
   }
 
-  if (durations.some(d => d === null)) {
-    showFailureToast('You must simulate all activities before packing');
-    return;
-  }
-  for (let idx = 0; idx < durations.length; idx++) {
-    console.log('Activity', activities[idx].id, 'has duration', durations[idx]);
+  // Calculate new start times after packing based on the initial start times and durations
+  const newStartTimes = new Map<number, number>();
+  let postPackingTime = initialStartTimes.get(activities[0].id);
+  if (postPackingTime === undefined) {
+    throw new Error(`Activity ${activities[0].id} not found in initial start times`);
   }
 
-  const durationNum = durations.map(d => d as number);
+  for (const activity of activities) {
+    newStartTimes.set(activity.id, postPackingTime);
+    postPackingTime += durations.get(activity.id)!;
+  }
 
-  let cumulativeOffsetMs = offsetToUs(activities[0].start_offset);
-  for (let idx = 0; idx < activities.length; idx++) {
-    activities[idx].start_offset = usToOffset(cumulativeOffsetMs);
-    if (idx === activities.length - 1) {
-      console.log('Adding duration', durationNum[idx], 'to cumulative offset', 'for activity', activities[idx].id);
+  // Calculate the new start offsets based on the anchor activities
+  function updateAnchorStartOffset(anchorId: number, activityId: number): string {
+    let anchorStartTime;
+    if (newStartTimes.has(anchorId)) {
+      anchorStartTime = newStartTimes.get(anchorId)!;
+    } else {
+      anchorStartTime = getActivityDirectiveStartTimeMs(
+        anchorId,
+        sourcePlan.start_time_doy,
+        sourcePlan.end_time_doy,
+        activityDirectivesMap,
+        spansMap,
+        spanUtilityMaps,
+      );
     }
-    cumulativeOffsetMs += durationNum[idx];
+    const activityStartTime = newStartTimes.get(activityId)!;
+    return usToOffset(activityStartTime - anchorStartTime);
+  }
+
+  // Update each activity directive with the new start offset
+  for (const activity of activities) {
+    if (activity.anchor_id !== null) {
+      activity.start_offset = updateAnchorStartOffset(activity.anchor_id, activity.id);
+    } else {
+      activity.start_offset = usToOffset(newStartTimes.get(activity.id)!);
+    }
+
+    if (activity.id in anchorIds) {
+      // This activity is an anchor, so we need to update its "anchee" (activities connected to it).
+      const connectedActivityIds = Array.from(anchorIds.entries())
+        .filter(([_, anchorId]) => anchorId === activity.id)
+        .map(([id, _]) => id);
+
+      for (const connectedActivityId of connectedActivityIds) {
+        const connectedActivity = idToActivitiesMap.get(connectedActivityId);
+        if (connectedActivity) {
+          connectedActivity.start_offset = updateAnchorStartOffset(activity.id, connectedActivity.id);
+        }
+      }
+    }
   }
 
   const activityTypes = effects.getActivityTypes(
@@ -424,7 +530,6 @@ export async function packLeftActivityDirectivesInPlan(
     user && 'activeRole' in user ? (user as User) : null,
   );
 
-  // 2. Then update the backend for each activity
   for (let idx = 0; idx < activities.length; idx++) {
     const activityType = await findTypes(activities[idx].type, activityTypes);
     await effects.updateActivityDirective(
@@ -436,4 +541,125 @@ export async function packLeftActivityDirectivesInPlan(
     );
   }
   return activities;
+}
+
+export async function packLeftActivityDirectivesInPlan(
+  sourcePlan: Plan,
+  activities: ActivityDirective[],
+  user: BaseUser | User | null,
+): Promise<ActivityDirective[] | void> {
+  const planId = sourcePlan.id;
+  console.log('Plan start time:', sourcePlan.start_time_doy);
+  console.log('Plan end time:', sourcePlan.end_time_doy);
+
+  const anchorIds = new Set(activities.map(a => a.anchor_id));
+  if (anchorIds.size > 1) {
+    showFailureToast(`Activities must have the same anchor to pack`);
+    return;
+  }
+
+  if (activities.some(a => a.start_time_ms === null)) {
+    showFailureToast('Some selected activities do not have a start time');
+    return;
+  }
+
+  activities.sort(sortActivityDirectivesOrSpans);
+  // const spansMap = effects.getSpans(,sourcePlan.start_time_doy, user && 'activeRole' in user ? (user as User) : undefined);
+
+  let durations: (number | null)[];
+  try {
+    durations = await Promise.all(activities.map(a => fetchSimulatedActivityDuration(planId, a.id, user)));
+  } catch (err) {
+    showFailureToast('You must simulate before packing activities');
+    return;
+  }
+
+  if (durations.some(d => d === null)) {
+    showFailureToast('You must simulate activities before packing');
+    return;
+  }
+
+  const durationNum = durations.map(d => d as number);
+
+  let cumulativeOffsetMs = offsetToUs(activities[0].start_offset);
+  for (let idx = 0; idx < activities.length; idx++) {
+    activities[idx].start_offset = usToOffset(cumulativeOffsetMs);
+    cumulativeOffsetMs += durationNum[idx];
+  }
+
+  const activityTypes = effects.getActivityTypes(
+    sourcePlan.model_id,
+    user && 'activeRole' in user ? (user as User) : null,
+  );
+
+  for (let idx = 0; idx < activities.length; idx++) {
+    const activityType = await findTypes(activities[idx].type, activityTypes);
+    await effects.updateActivityDirective(
+      sourcePlan,
+      activities[idx].id,
+      { start_offset: activities[idx].start_offset },
+      activityType || null,
+      user && 'activeRole' in user ? (user as User) : null,
+    );
+  }
+  return activities;
+}
+
+export async function packRightActivityDirectivesInPlan(
+  sourcePlan: Plan,
+  activities: ActivityDirective[],
+  user: BaseUser | User | null,
+): Promise<ActivityDirective[] | void> {
+  const planId = sourcePlan.id;
+
+  const anchorIds = new Set(activities.map(a => a.anchor_id));
+  if (anchorIds.size > 1) {
+    showFailureToast(`Activities must have the same anchor to pack`);
+    return;
+  }
+
+  if (activities.some(a => a.start_time_ms === null)) {
+    showFailureToast('Some selected activities do not have a start time');
+    return;
+  }
+
+  activities.sort(sortActivityDirectivesOrSpans);
+  activities.reverse(); // Reverse to pack from the right
+
+  let durations: (number | null)[];
+  try {
+    durations = await Promise.all(activities.map(a => fetchSimulatedActivityDuration(planId, a.id, user)));
+  } catch (err) {
+    showFailureToast('You must simulate before packing activities');
+    return;
+  }
+
+  if (durations.some(d => d === null)) {
+    showFailureToast('You must simulate all activities before packing');
+    return;
+  }
+
+  const durationNum = durations.map(d => d as number);
+
+  let cumulativeOffsetMs = offsetToUs(activities[0].start_offset);
+  for (let idx = 1; idx < activities.length; idx++) {
+    cumulativeOffsetMs -= durationNum[idx];
+    activities[idx].start_offset = usToOffset(cumulativeOffsetMs);
+  }
+
+  const activityTypes = effects.getActivityTypes(
+    sourcePlan.model_id,
+    user && 'activeRole' in user ? (user as User) : null,
+  );
+
+  for (let idx = activities.length - 1; idx >= 0; idx--) {
+    const activityType = await findTypes(activities[idx].type, activityTypes);
+    await effects.updateActivityDirective(
+      sourcePlan,
+      activities[idx].id,
+      { start_offset: activities[idx].start_offset },
+      activityType || null,
+      user && 'activeRole' in user ? (user as User) : null,
+    );
+  }
 }
