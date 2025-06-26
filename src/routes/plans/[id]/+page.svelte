@@ -40,6 +40,7 @@
   import { Status } from '../../../enums/status';
   import {
     activityArgumentDefaults,
+    activityArgumentDefaultsModelId,
     activityDirectiveValidationStatuses,
     resetActivityStores,
     selectActivity,
@@ -78,6 +79,7 @@
     planEndTimeMs,
     planId,
     planModelActivityTypes,
+    planModelId,
     planReadOnly,
     planReadOnlyMergeRequest,
     planReadOnlySnapshot,
@@ -301,8 +303,29 @@
 
     planModelActivityTypes.updateValue(() => data.initialActivityTypes);
     activityArgumentDefaults.set(data.initialActivityArguments);
+    activityArgumentDefaultsModelId.set(data.initialPlan.model_id);
     planTags.updateValue(() => data.initialPlanTags);
   }
+
+  // Refresh activityArgumentDefaults if the cache is stale
+  $: if (typeof $planModelId === 'number' && $planModelId !== $activityArgumentDefaultsModelId) {
+    if ($planModelId > -1) {
+      effects
+        .getDefaultActivityArguments(
+          $planModelId,
+          $planModelActivityTypes.map(type => type.name),
+          data.user,
+        )
+        .then(argumentDefaults => {
+          activityArgumentDefaults.set(argumentDefaults);
+          activityArgumentDefaultsModelId.set($planModelId);
+        });
+    } else {
+      activityArgumentDefaults.set(null);
+      activityArgumentDefaultsModelId.set(-1);
+    }
+  }
+
   $: if (data.initialPlanSnapshotId !== null) {
     $planSnapshotId = data.initialPlanSnapshotId;
     $planReadOnlySnapshot = true;
@@ -427,9 +450,10 @@
       ? `${numConstraintsViolated + numConstraintsWithErrors + $uncheckedConstraintCount}`
       : undefined;
 
-  $: if ($initialPlan && browser) {
+  $: if (typeof $planModelId === 'number' && browser) {
     // Asynchronously fetch resource types
-    effects.getResourceTypes($initialPlan.model_id, data.user).then(initialResourceTypes => {
+    $resourceTypesLoading = true;
+    effects.getResourceTypes($planModelId, data.user).then(initialResourceTypes => {
       $resourceTypes = initialResourceTypes;
       $resourceTypesLoading = false;
     });

@@ -88,6 +88,7 @@
   let parametersWithErrorsCount: number = 0;
   let startTime: string;
   let startTimeField: FieldStore<string>;
+  let unconstructableArgs: Record<string, string> = {};
 
   $: if (user !== null && $plan !== null) {
     hasUpdatePermission =
@@ -131,14 +132,21 @@
     const activityValidationErrorsMap = keyBy($activityValidationErrors, 'activityId');
     const activityValidationError = activityValidationErrorsMap[activityDirective.id];
 
+    unconstructableArgs = {};
     extraArguments = [];
 
     if (activityValidationError) {
       const instantiationFailure: ActivityDirectiveInstantiationFailure | undefined =
         activityValidationError.errors.find(isInstantiationError) as ActivityDirectiveInstantiationFailure | undefined;
       if (instantiationFailure) {
-        const { extraneousArguments, missingArguments } = instantiationFailure.errors;
+        const { extraneousArguments, missingArguments, unconstructableArguments } = instantiationFailure.errors;
         extraArguments = extraneousArguments;
+        unconstructableArgs = unconstructableArguments.reduce((prevArguments, unconstructableArgument) => {
+          return {
+            ...prevArguments,
+            [unconstructableArgument.name]: unconstructableArgument.failure,
+          };
+        }, {});
         missing = missingArguments.reduce((prevArguments, missingArgument) => {
           return {
             ...prevArguments,
@@ -155,6 +163,12 @@
           errors = [];
         }
         errors.push('Parameter not explicitly set');
+      }
+      if (unconstructableArgs[formParameter.name]) {
+        if (!errors) {
+          errors = [];
+        }
+        errors.push(unconstructableArgs[formParameter.name]);
       }
       return { ...formParameter, errors: errors || null };
     });

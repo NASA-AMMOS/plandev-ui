@@ -6,12 +6,13 @@
   import { planMergeRequestsIncoming, planMergeRequestsOutgoing } from '../../stores/plan';
   import type { User } from '../../types/app';
   import { showPlanMergeRequestsModal } from '../../utilities/modal';
+  import { getActivePlanMergeRequests } from '../../utilities/plan';
   import { tooltip } from '../../utilities/tooltip';
 
   export let user: User | null;
 
-  $: incomingPendingMergeRequests = $planMergeRequestsIncoming.filter(request => request.status === 'pending');
-  $: outgoingPendingMergeRequests = $planMergeRequestsOutgoing.filter(request => request.status === 'pending');
+  $: incomingPendingMergeRequests = getActivePlanMergeRequests($planMergeRequestsIncoming);
+  $: outgoingPendingMergeRequests = getActivePlanMergeRequests($planMergeRequestsOutgoing);
   $: incomingPendingMergeRequestCount = incomingPendingMergeRequests.length;
   $: outgoingPendingMergeRequestCount = outgoingPendingMergeRequests.length;
   $: label = `${incomingPendingMergeRequestCount} incoming, ${outgoingPendingMergeRequestCount} outgoing`;

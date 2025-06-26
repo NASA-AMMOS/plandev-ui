@@ -1,7 +1,14 @@
 import type { ActivityDirective, ActivityDirectiveDB } from '../types/activity';
 import type { User } from '../types/app';
 import type { ArgumentsMap, DefaultEffectiveArgumentsMap } from '../types/parameter';
-import type { DeprecatedPlanTransfer, Plan, PlanSlim, PlanTransfer } from '../types/plan';
+import type {
+  DeprecatedPlanTransfer,
+  Plan,
+  PlanMergeRequestSchema,
+  PlanMergeRequestStatus,
+  PlanSlim,
+  PlanTransfer,
+} from '../types/plan';
 import type { Simulation } from '../types/simulation';
 import effects from './effects';
 import { downloadJSON, unique } from './generic';
@@ -102,4 +109,17 @@ export function isDeprecatedPlanTransfer(
   planTransfer: PlanTransfer | DeprecatedPlanTransfer,
 ): planTransfer is DeprecatedPlanTransfer {
   return (planTransfer as DeprecatedPlanTransfer).end_time != null;
+}
+
+export function getActivePlanMergeRequests(requests: PlanMergeRequestSchema[]): PlanMergeRequestSchema[] {
+  const activeRequestTypes: Record<PlanMergeRequestStatus, boolean> = {
+    accepted: false,
+    'in-progress': true,
+    pending: true,
+    rejected: false,
+    withdrawn: false,
+  };
+  return requests.filter(request => {
+    return activeRequestTypes[request.status];
+  });
 }

@@ -495,6 +495,7 @@
                 simulationDataset={simDataset}
                 planEndTimeMs={$planEndTimeMs}
                 planStartTimeMs={$planStartTimeMs}
+                planModelId={$plan?.model.id ?? -1}
                 selected={simDataset.id === $simulationDatasetId}
                 on:click={() => {
                   simulationDatasetId.set(simDataset.id);

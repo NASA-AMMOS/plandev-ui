@@ -366,6 +366,7 @@
   <CssGridGutter track={1} type="column" />
 
   <SequenceEditor
+    includeActions={true}
     {parcel}
     showCommandFormBuilder={true}
     sequenceDefinition={initialSequenceDefinition}

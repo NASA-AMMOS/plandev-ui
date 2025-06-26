@@ -272,6 +272,10 @@ test.describe.serial('Timeline View Editing', () => {
     await plan.runSimulation();
 
     // Expect the resource to have a y-axis label in the timline
+    await page
+      .locator('.timeline-row-wrapper', { hasText: rowName })
+      .locator('.row-header-y-axis-label')
+      .waitFor({ state: 'attached' });
     expect(
       await page.locator('.timeline-row-wrapper', { hasText: rowName }).locator('.row-header-y-axis-label').count(),
     ).toBe(1);
@@ -287,5 +291,16 @@ test.describe.serial('Timeline View Editing', () => {
     // Delete a resource layer
     await resourceLayerEditor.locator('.timeline-layer-editor').first().getByRole('button', { name: 'Delete' }).click();
     expect(await resourceLayerEditor.locator('.timeline-layer-editor').count()).toBe(1);
+  });
+
+  test('Open and close the row header context menu', async () => {
+    const rowHeaderMenuButton = await page
+      .getByRole('banner')
+      .filter({ hasText: 'Activities by Type' })
+      .getByLabel('Row Settings');
+    await rowHeaderMenuButton.click();
+    expect(await page.getByRole('menu', { name: 'Context Menu' })).toBeVisible();
+    await page.getByRole('listitem').filter({ hasText: 'Activities by Type' }).click();
+    expect(await page.getByRole('menu', { name: 'Context Menu' })).not.toBeVisible();
   });
 });
