@@ -2,6 +2,8 @@ import type { Extension } from '@codemirror/state';
 import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { SequenceTypes } from '../../enums/sequencing';
+import type { CommandInfoMapper } from './command-info-mapper';
+import type { EditorView } from 'codemirror';
 
 export type LibrarySequence = {
   name: string;
@@ -20,6 +22,8 @@ export interface PhoenixContext {
 }
 
 export interface NewAdaptationInterface {
-  extension: (context: PhoenixContext) => Extension;
-  outputExtension: (context: PhoenixContext) => Extension;
+  extension: (context: PhoenixContext) => Extension,
+  commandInfoMapper: CommandInfoMapper,
+  format: (view: EditorView) => void,
+  outputExtension: (context: PhoenixContext) => Extension,
 }

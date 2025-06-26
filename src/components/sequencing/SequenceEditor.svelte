@@ -24,12 +24,11 @@
     type IOutputFormat,
     type ISequenceAdaptation,
   } from '../../language-package/interfaces/legacy';
-  import type { LibrarySequence, LibrarySequenceMap } from '../../language-package/interfaces/new-adaptation-interface';
-  import { SeqNCommandInfoMapper } from '../../language-package/languages/seq-n/seq-n-tree-utils';
-  import { seqNFormat } from '../../language-package/languages/seq-n/sequence-autoindent';
-  import { vmlFormat } from '../../language-package/languages/vml/vml-formatter';
-  import { VmlCommandInfoMapper } from '../../language-package/languages/vml/vml-tree-utils';
-  import { newSequenceAdaptation } from '../../stores/sequence-adaptation';
+  import type {
+    LibrarySequence,
+    LibrarySequenceMap,
+    NewAdaptationInterface,
+  } from '../../language-package/interfaces/new-adaptation-interface';
   import type { ActionDefinition } from '../../types/actions';
   import type { TimeTagInfo } from '../../types/sequencing';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
@@ -65,6 +64,7 @@
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let sequenceAdaptation: ISequenceAdaptation = defaultSequenceAdaptation;
+  export let newSequenceAdaptation: NewAdaptationInterface;
   export let sequenceName: string = '';
   export let sequenceDefinition: string = ''; // TODO what on earth does this do
   export let sequenceOutput: string = '';
@@ -90,7 +90,6 @@
   let editorOutputView: EditorView;
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
-  let isInVmlMode: boolean = false;
   let librarySequenceMap: LibrarySequenceMap = {};
   let menu: Menu;
   let selectedNode: SyntaxNode | null;
@@ -103,9 +102,9 @@
   let updatedSequenceDefinition: string = sequenceDefinition;
   let isSequenceDefinitionUpdated: boolean = false;
   let currentTree: Tree;
-  let commandInfoMapper: CommandInfoMapper = new SeqNCommandInfoMapper(); // TODO replace with adaptation
+  let commandInfoMapper: CommandInfoMapper;
 
-  $: isInVmlMode = isVmlSequence(sequenceName); // TODO boo
+  $: commandInfoMapper = newSequenceAdaptation.commandInfoMapper;
 
   $: if (editorSequenceView) {
     // insert sequence
@@ -125,7 +124,7 @@
       editorSequenceView.dispatch({
         effects: [
           compartmentAdaptation.reconfigure(
-            $newSequenceAdaptation.extension({
+            newSequenceAdaptation.extension({
               channelDictionary,
               commandDictionary,
               parameterDictionaries,
@@ -146,7 +145,7 @@
 
   $: {
     previousShowOutputs = showOutputs;
-    showOutputs = !isInVmlMode && outputFormats.length > 0;
+    showOutputs = outputFormats.length > 0;
   }
   $: if (showOutputs) {
     editorHeights = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
@@ -196,7 +195,7 @@
         EditorView.editable.of(false),
         lintGutter(),
         compartmentOutputAdaptation.of(
-          $newSequenceAdaptation.outputExtension({
+          newSequenceAdaptation.outputExtension({
             commandDictionary,
             channelDictionary,
             parameterDictionaries,
@@ -254,11 +253,6 @@
     const updatedSelectionNode = tree.resolveInner(selectionLine.from + leadingWhiteSpaceLength, 1);
     // minimize triggering selected command view
     if (selectedNode !== updatedSelectionNode) {
-      if (isInVmlMode) {
-        commandInfoMapper = new VmlCommandInfoMapper();
-      } else {
-        commandInfoMapper = new SeqNCommandInfoMapper();
-      }
       selectedNode = updatedSelectionNode;
       currentTree = tree;
     }
@@ -305,11 +299,7 @@
   }
 
   function formatDocument() {
-    if (isInVmlMode) {
-      vmlFormat(editorSequenceView);
-    } else {
-      seqNFormat(editorSequenceView);
-    }
+    newSequenceAdaptation.format(editorSequenceView);
   }
 
   function onRunAction(action: ActionDefinition) {
@@ -337,7 +327,7 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
         compartmentAdaptation.of(
-          $newSequenceAdaptation.extension({
+          newSequenceAdaptation.extension({
             commandDictionary,
             channelDictionary,
             parameterDictionaries,
@@ -361,7 +351,7 @@
         EditorView.editable.of(false),
         lintGutter(),
         compartmentOutputAdaptation.of(
-          $newSequenceAdaptation.outputExtension({
+          newSequenceAdaptation.outputExtension({
             commandDictionary,
             channelDictionary,
             parameterDictionaries,

@@ -3,13 +3,15 @@ import { debounce } from "lodash-es";
 import type { NewAdaptationInterface } from "../../interfaces/new-adaptation-interface";
 import { setupVmlLanguageSupport, vmlBlockHighlighter, vmlHighlightBlock } from "./vml";
 import { vmlAutoComplete } from "./vml-adaptation";
+import { vmlFormat } from "./vml-formatter";
 import { vmlLinter } from "./vml-linter";
 import { vmlTooltip } from "./vml-tooltip";
+import { VmlCommandInfoMapper } from "./vml-tree-utils";
 
 const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
 export const defaultAdaptation: NewAdaptationInterface = {
-    "extension": context => [
+    extension: context => [
         setupVmlLanguageSupport(vmlAutoComplete(
             context.commandDictionary,
             [], // TODO: Globals?
@@ -30,5 +32,7 @@ export const defaultAdaptation: NewAdaptationInterface = {
           vmlBlockHighlighter,
         ],
     ],
-    "outputExtension": context => [],
+    commandInfoMapper: new VmlCommandInfoMapper(),
+    format: vmlFormat,
+    outputExtension: context => [],
 }

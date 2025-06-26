@@ -5,7 +5,8 @@ import { outputLinter } from "../../interfaces/legacy";
 import type { NewAdaptationInterface } from "../../interfaces/new-adaptation-interface";
 import { setupLanguageSupport } from "./seq-n";
 import { seqNHighlightBlock, seqqNBlockHighlighter } from "./seq-n-highlighter";
-import { sequenceAutoIndent } from "./sequence-autoindent";
+import { SeqNCommandInfoMapper } from "./seq-n-tree-utils";
+import { seqNFormat, sequenceAutoIndent } from "./sequence-autoindent";
 import { sequenceCompletion } from "./sequence-completion";
 import { seqnLinter } from "./sequence-linter";
 import { sequenceTooltip } from "./sequence-tooltip";
@@ -13,7 +14,7 @@ import { sequenceTooltip } from "./sequence-tooltip";
 const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
 
 export const defaultAdaptation: NewAdaptationInterface = {
-    "extension": context => [
+    extension: context => [
         setupLanguageSupport(sequenceCompletion(
             context.channelDictionary,
             context.commandDictionary,
@@ -38,7 +39,9 @@ export const defaultAdaptation: NewAdaptationInterface = {
           seqqNBlockHighlighter,
         ],
     ],
-    "outputExtension": context => [
+    commandInfoMapper: new SeqNCommandInfoMapper(),
+    format: seqNFormat,
+    outputExtension: context => [
         outputLinter(context.commandDictionary),
     ],
 }

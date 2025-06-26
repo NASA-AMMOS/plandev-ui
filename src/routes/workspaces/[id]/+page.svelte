@@ -21,6 +21,7 @@
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
   import {
     inputFormat,
+    newSequenceAdaptation,
     outputFormat,
     sequenceAdaptation,
     setSequenceAdaptation,
@@ -457,6 +458,7 @@
           outputFormats={$outputFormat}
           readOnly={false}
           sequenceAdaptation={$sequenceAdaptation}
+          newSequenceAdaptation={$newSequenceAdaptation}
           sequenceDefinition={initialSelectedFileContent}
           sequenceName={selectedFileName}
           sequenceOutput={selectedSequenceOutput}
