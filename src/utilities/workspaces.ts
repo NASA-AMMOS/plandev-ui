@@ -21,3 +21,19 @@ export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: s
 
   return treeMap;
 }
+
+export function separateFilenameFromPath(filePath: string): { filename: string; path: string } {
+  const matches = /^(?<path>.*[\\/])?(?<filename>[^\\/]*\.[^\\/]*)$/.exec(filePath);
+  if (matches && matches.groups) {
+    const { filename, path } = matches.groups;
+    return {
+      filename,
+      path,
+    };
+  }
+
+  return {
+    filename: '',
+    path: filePath,
+  };
+}
