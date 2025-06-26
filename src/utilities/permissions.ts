@@ -115,6 +115,7 @@ const functionQueryMap: Record<QueryString, FunctionString> = {
   [Queries.GET_CONFLICTING_ACTIVITIES]: 'get_conflicting_activities',
   [Queries.GET_NON_CONFLICTING_ACTIVITIES]: 'get_non_conflicting_activities',
   get_plan_history: 'get_plan_history',
+  [Queries.MIGRATE_PLAN_TO_MODEL]: 'migrate_plan_to_model',
   resourceSamples: 'resource_samples',
   [Queries.RESTORE_FROM_SNAPSHOT]: 'restore_snapshot',
   [Queries.SCHEDULE]: 'schedule',
@@ -323,6 +324,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   CHECK_CONSTRAINTS: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
     const queries = [Queries.CONSTRAINT_VIOLATIONS];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
+  },
+  CHECK_MODEL_COMPATIBILITY_FOR_PLAN: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.CHECK_MODEL_COMPATIBILITY_FOR_PLAN], user);
   },
   CREATE_ACTION_DEFINITION: (user: User | null): boolean => {
     const queries = [Queries.INSERT_ACTION_DEFINITION];
@@ -764,6 +768,10 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   INSERT_EXPANSION_SEQUENCE_TO_ACTIVITY: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_TO_SIMULATED_ACTIVITY], user);
+  },
+  MIGRATE_PLAN_TO_MODEL: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
+    const queries = [Queries.MIGRATE_PLAN_TO_MODEL];
+    return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
   PLAN_MERGE_BEGIN: (
     user: User | null,
@@ -1298,6 +1306,7 @@ interface CRUDPermission<T = null> extends BaseCRUDPermission<T> {
 
 interface PlanCRUDPermission extends CRUDPermission<PlanWithOwners> {
   canImport: CreatePermissionCheck;
+  canUpdateModel: UpdatePermissionCheck;
 }
 
 interface PlanBranchCRUDPermission {
@@ -1567,6 +1576,10 @@ const featurePermissions: FeaturePermissions = {
     canImport: user => gatewayPermissions.IMPORT_PLAN(user),
     canRead: user => queryPermissions.GET_PLAN(user),
     canUpdate: (user, plan) => queryPermissions.UPDATE_PLAN(user, plan),
+    canUpdateModel: (user, plan) =>
+      queryPermissions.CREATE_PLAN_SNAPSHOT(user) &&
+      queryPermissions.UPDATE_PLAN(user, plan) &&
+      queryPermissions.MIGRATE_PLAN_TO_MODEL(user),
   },
   planBranch: {
     canCreateBranch: (user, plan, model) => queryPermissions.DUPLICATE_PLAN(user, plan, model),
