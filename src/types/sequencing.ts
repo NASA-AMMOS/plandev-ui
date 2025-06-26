@@ -96,16 +96,6 @@ export type UserSequence = {
   name: string;
 };
 
-export type LibrarySequence = {
-  name: string;
-  parameters: VariableDeclaration[];
-  tree: Tree;
-  type: SequenceTypes.LIBRARY;
-  workspace_id: number;
-};
-
-export type LibrarySequenceMap = { [sequenceName: string]: LibrarySequence };
-
 // TODO: remove
 export type UserSequenceInsertInput = Omit<UserSequence, 'created_at' | 'id' | 'owner' | 'updated_at'>;
 

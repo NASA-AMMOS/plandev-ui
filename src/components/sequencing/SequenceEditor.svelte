@@ -24,16 +24,14 @@
     type IOutputFormat,
     type ISequenceAdaptation,
   } from '../../language-package/interfaces/legacy';
-  import type { PhoenixContext } from '../../language-package/interfaces/new-adaptation-interface';
-  import { seqNHighlightBlock, seqqNBlockHighlighter } from '../../language-package/languages/seq-n/seq-n-highlighter';
+  import type { LibrarySequence, LibrarySequenceMap } from '../../language-package/interfaces/new-adaptation-interface';
   import { SeqNCommandInfoMapper } from '../../language-package/languages/seq-n/seq-n-tree-utils';
   import { seqNFormat } from '../../language-package/languages/seq-n/sequence-autoindent';
-  import { vmlBlockHighlighter, vmlHighlightBlock } from '../../language-package/languages/vml/vml';
   import { vmlFormat } from '../../language-package/languages/vml/vml-formatter';
   import { VmlCommandInfoMapper } from '../../language-package/languages/vml/vml-tree-utils';
   import { newSequenceAdaptation } from '../../stores/sequence-adaptation';
   import type { ActionDefinition } from '../../types/actions';
-  import { type LibrarySequence, type LibrarySequenceMap, type TimeTagInfo } from '../../types/sequencing';
+  import type { TimeTagInfo } from '../../types/sequencing';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -123,17 +121,17 @@
   $: librarySequenceMap = Object.fromEntries(librarySequences.map(seq => [seq.name, seq]));
   $: {
     if (commandDictionary) {
-      let phoenixContext: PhoenixContext = {
-        channelDictionary,
-        commandDictionary,
-        parameterDictionaries,
-      };
       // Reconfigure sequence editor.
       editorSequenceView.dispatch({
-        // TODO this is the meat of updating the editor with adaptation components
         effects: [
-          // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
-          compartmentAdaptation.reconfigure($newSequenceAdaptation.extension(phoenixContext)), // TODO probably not that simple
+          compartmentAdaptation.reconfigure(
+            $newSequenceAdaptation.extension({
+              channelDictionary,
+              commandDictionary,
+              parameterDictionaries,
+              librarySequenceMap,
+            }),
+          ),
         ],
       });
     } else {
@@ -202,6 +200,7 @@
             commandDictionary,
             channelDictionary,
             parameterDictionaries,
+            librarySequenceMap,
           }),
         ),
         EditorState.readOnly.of(readOnly),
@@ -338,7 +337,12 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
         compartmentAdaptation.of(
-          $newSequenceAdaptation.extension({ commandDictionary, channelDictionary, parameterDictionaries }),
+          $newSequenceAdaptation.extension({
+            commandDictionary,
+            channelDictionary,
+            parameterDictionaries,
+            librarySequenceMap,
+          }),
         ), // TODO improve, probably
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
@@ -361,6 +365,7 @@
             commandDictionary,
             channelDictionary,
             parameterDictionaries,
+            librarySequenceMap,
           }),
         ), // TODO improve, probably
         EditorState.readOnly.of(readOnly),

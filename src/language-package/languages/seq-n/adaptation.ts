@@ -18,14 +18,14 @@ export const defaultAdaptation: NewAdaptationInterface = {
             context.channelDictionary,
             context.commandDictionary,
             context.parameterDictionaries,
-            [], // TODO: Library sequences
+            Object.values(context.librarySequenceMap),
         )),
         seqnLinter(
             [], // TODO: globals
             context.channelDictionary,
             context.commandDictionary,
             context.parameterDictionaries,
-            [], // TODO: library sequences
+            Object.values(context.librarySequenceMap),
         ),
         sequenceTooltip(
             context.channelDictionary,

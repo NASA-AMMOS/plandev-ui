@@ -1,10 +1,10 @@
 import { EditorView } from "codemirror";
+import { debounce } from "lodash-es";
 import type { NewAdaptationInterface } from "../../interfaces/new-adaptation-interface";
 import { setupVmlLanguageSupport, vmlBlockHighlighter, vmlHighlightBlock } from "./vml";
 import { vmlAutoComplete } from "./vml-adaptation";
 import { vmlLinter } from "./vml-linter";
 import { vmlTooltip } from "./vml-tooltip";
-import { debounce } from "lodash-es";
 
 const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
@@ -13,16 +13,16 @@ export const defaultAdaptation: NewAdaptationInterface = {
         setupVmlLanguageSupport(vmlAutoComplete(
             context.commandDictionary,
             [], // TODO: Globals?
-            {}, // TODO: library sequences?
+            context.librarySequenceMap,
         )),
         vmlLinter(
             context.commandDictionary,
-            {}, // TODO: library sequences?
+            context.librarySequenceMap,
             [], // TODO: globals?
         ),
         vmlTooltip(
             context.commandDictionary,
-            {}, // TODO: library sequences
+            context.librarySequenceMap,
         ),
         // indentService.of(adaptation.autoIndent()) // VML doesn't seem to have an indenter???
         [

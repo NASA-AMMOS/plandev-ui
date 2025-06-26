@@ -23,7 +23,6 @@
     type ISequenceAdaptation,
     type LibrarySequenceMap,
   } from '../../language-package/interfaces/legacy';
-  import type { PhoenixContext } from '../../language-package/interfaces/new-adaptation-interface';
   import { seqNHighlightBlock } from '../../language-package/languages/seq-n/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../language-package/languages/seq-n/seq-n-tree-utils';
   import { seqNFormat } from '../../language-package/languages/seq-n/sequence-autoindent';
@@ -166,17 +165,17 @@
           commandDictionary = parsedCommandDictionary;
           parameterDictionaries = nonNullParsedParameterDictionaries;
 
-          let phoenixContext: PhoenixContext = {
-            commandDictionary,
-            channelDictionary,
-            parameterDictionaries,
-          };
-
           // Reconfigure sequence editor.
           editorSequenceView.dispatch({
             effects: [
               // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
-              compartmentAdaptation.reconfigure($newSequenceAdaptation.extension(phoenixContext)),
+              compartmentAdaptation.reconfigure(
+                $newSequenceAdaptation.extension({
+                  commandDictionary,
+                  channelDictionary,
+                  parameterDictionaries,
+                }),
+              ),
             ],
           });
         });

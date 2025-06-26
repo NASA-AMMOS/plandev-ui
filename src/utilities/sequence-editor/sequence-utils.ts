@@ -19,11 +19,11 @@ import type {
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
 import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
+import type { ISequenceAdaptation } from '../../language-package/interfaces/legacy';
+import type { LibrarySequenceMap } from '../../language-package/interfaces/new-adaptation-interface';
 import { librarySequenceToFswCommand } from '../../language-package/languages/vml/vml-block-library';
 import type {
   ArgTextDef,
-  ISequenceAdaptation,
-  LibrarySequenceMap,
   NumberArg,
   StringArg,
   TimeTagInfo,

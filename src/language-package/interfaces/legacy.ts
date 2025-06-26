@@ -16,16 +16,6 @@ import type { SequenceTypes } from '../../enums/sequencing';
 import type { ArgDelegator } from '../../utilities/sequence-editor/extension-points';
 import type { GlobalType } from '../languages/seq-n/global-types';
 
-export type LibrarySequence = {
-  name: string;
-  parameters: VariableDeclaration[];
-  tree: Tree;
-  type: SequenceTypes.LIBRARY;
-  workspace_id: number;
-};
-
-export type LibrarySequenceMap = { [sequenceName: string]: LibrarySequence };
-
 export interface IOutputFormat {
   compile?: (output: string) => Promise<void>; // TODO do we use `compile`? Why does it belong to `IOutputFormat` instead of the top-level adaptation? Actions job now?
   fileExtension: string;
