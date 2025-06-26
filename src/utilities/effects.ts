@@ -5479,23 +5479,33 @@ const effects = {
       }
       const {
         confirm,
-        value: { file, targetDirectory },
+        value: { files, targetDirectory },
       } = await showImportWorkspaceFileModal(startingPath);
       if (confirm) {
-        const body = new FormData();
-        body.append('file', file, file.name);
         const cleanedTargetPath = `${targetDirectory.replace(/^.\//, '').replace(/\/$/, '')}`;
 
-        await reqWorkspace<Workspace>(
-          `${workspace.id}/${targetDirectory}/${file.name}?type=file`,
-          'PUT',
-          body,
-          user,
-          undefined,
-          false,
-        );
-        showSuccessToast(`Workspace File Uploaded Successfully`);
+        const chunkedFiles = chunk(Array.from<File>(files), 10);
 
+        for (let i = 0; i < chunkedFiles.length; i++) {
+          const fileChunk: File[] = chunkedFiles[i];
+          await Promise.all(
+            fileChunk.map(async file => {
+              const body = new FormData();
+              body.append('file', file, file.name);
+
+              await reqWorkspace<Workspace>(
+                `${workspace.id}/${targetDirectory}/${file.name}?type=file`,
+                'PUT',
+                body,
+                user,
+                undefined,
+                false,
+              );
+            }),
+          );
+        }
+
+        showSuccessToast(`Workspace File${files.length > 1 ? 's' : ''} Uploaded Successfully`);
         return cleanedTargetPath;
       }
     } catch (e) {
@@ -5838,7 +5848,12 @@ const effects = {
     return null;
   },
 
-  async newWorkspaceSequence(workspaceId: number, startingPath: string, user: User | null): Promise<string | null> {
+  async newWorkspaceSequence(
+    workspaceId: number,
+    startingPath: string,
+    sequenceDefinition: string,
+    user: User | null,
+  ): Promise<string | null> {
     try {
       const {
         confirm,
@@ -5846,7 +5861,7 @@ const effects = {
       } = await showNewWorkspaceSequenceModal(startingPath);
 
       if (confirm) {
-        const body = createWorkspaceSequenceFileFormData(sequencePath, '');
+        const body = createWorkspaceSequenceFileFormData(sequencePath, sequenceDefinition);
 
         await reqWorkspace<Workspace>(`${workspaceId}/${sequencePath}?type=file`, 'PUT', body, user, undefined, false);
         showSuccessToast('Workspace File Created Successfully');

@@ -14,7 +14,7 @@
 
   const dispatch = createEventDispatcher<{
     close: void;
-    confirm: { file: File; targetDirectory: string };
+    confirm: { files: FileList; targetDirectory: string };
   }>();
 
   let targetDirectory: string = startingPath;
@@ -25,7 +25,7 @@
 
   function save() {
     if (!saveButtonDisabled) {
-      dispatch('confirm', { file: filesToUpload[0], targetDirectory });
+      dispatch('confirm', { files: filesToUpload, targetDirectory });
     }
   }
 
@@ -41,12 +41,12 @@
 <svelte:window on:keydown={onKeydown} />
 
 <Modal {height} {width}>
-  <ModalHeader on:close>Upload File To Workspace</ModalHeader>
+  <ModalHeader on:close>Upload File(s) To Workspace</ModalHeader>
 
   <ModalContent>
     <fieldset>
-      <label for="file">File</label>
-      <input bind:files={filesToUpload} class="w-100" name="file" type="file" />
+      <label for="file">File(s)</label>
+      <input bind:files={filesToUpload} multiple class="w-100" name="file" type="file" />
     </fieldset>
     <fieldset>
       <div class="st-typography-body">Target Workspace Directory</div>
