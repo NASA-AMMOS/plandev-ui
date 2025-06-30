@@ -10,11 +10,7 @@
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/errors';
   import type { Plan } from '../../types/plan';
-  import {
-    copyActivityDirectivesToClipboard,
-    packLeftActivityDirectivesInPlan,
-    packRightActivityDirectivesInPlan,
-  } from '../../utilities/activities';
+  import { copyActivityDirectivesToClipboard, packActivityDirectivesBothInPlan } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
@@ -177,13 +173,15 @@
 
   async function packLeftActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
-      await packLeftActivityDirectivesInPlan(plan, activities, user);
+      //await packLeftActivityDirectivesInPlan(plan, activities, user);
+      await packActivityDirectivesBothInPlan(plan, activities, user, 'LEFT');
     }
   }
 
   async function packRightActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
-      await packRightActivityDirectivesInPlan(plan, activities, user);
+      // await packRightActivityDirectivesInPlan(plan, activities, user);
+      await packActivityDirectivesBothInPlan(plan, activities, user, 'RIGHT');
     }
   }
 
