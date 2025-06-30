@@ -12,7 +12,7 @@
   import type { Plan } from '../../types/plan';
   import {
     copyActivityDirectivesToClipboard,
-    packActivityDirectivesInPlanRevamp,
+    packLeftActivityDirectivesInPlan,
     packRightActivityDirectivesInPlan,
   } from '../../utilities/activities';
   import effects from '../../utilities/effects';
@@ -177,7 +177,7 @@
 
   async function packLeftActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
-      await packActivityDirectivesInPlanRevamp(plan, activities, user);
+      await packLeftActivityDirectivesInPlan(plan, activities, user);
     }
   }
 
