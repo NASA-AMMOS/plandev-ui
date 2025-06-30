@@ -208,6 +208,7 @@
   showCopyMenu={true}
   showPackLeftMenu={bulkSelectedActivityDirectiveIds.length > 1}
   showPackRightMenu={bulkSelectedActivityDirectiveIds.length > 1}
+  showPackOffsetMenu={bulkSelectedActivityDirectiveIds.length > 1}
   suppressDragLeaveHidesColumns={false}
   {user}
   {filterExpression}
