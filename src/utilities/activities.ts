@@ -400,7 +400,7 @@ export async function fetchSimulationDatasetIdsForPlan(planId: number, user: Bas
   return datasetIds.length > 0 ? datasetIds[0] : -1;
 }
 
-export async function packActivityDirectivesInPlanRevamp(
+export async function packLeftActivityDirectivesInPlan(
   sourcePlan: Plan,
   activities: ActivityDirective[],
   user: BaseUser | User | null,
@@ -521,7 +521,7 @@ export async function packActivityDirectivesInPlanRevamp(
       activity.start_offset = usToOffset(newStartTimes.get(activity.id)!);
     }
 
-    if (activity.id in anchorIds) {
+    if ([...anchorIds.values()].includes(activity.id)) {
       // This activity is an anchor, so we need to update its "anchee" (activities connected to it).
       const connectedActivityIds = Array.from(anchorIds.entries())
         .filter(([_, anchorId]) => anchorId === activity.id)
@@ -534,68 +534,6 @@ export async function packActivityDirectivesInPlanRevamp(
         }
       }
     }
-  }
-
-  const activityTypes = effects.getActivityTypes(
-    sourcePlan.model_id,
-    user && 'activeRole' in user ? (user as User) : null,
-  );
-
-  for (let idx = 0; idx < activities.length; idx++) {
-    const activityType = await findTypes(activities[idx].type, activityTypes);
-    await effects.updateActivityDirective(
-      sourcePlan,
-      activities[idx].id,
-      { start_offset: activities[idx].start_offset },
-      activityType || null,
-      user && 'activeRole' in user ? (user as User) : null,
-    );
-  }
-  return activities;
-}
-
-export async function packLeftActivityDirectivesInPlan(
-  sourcePlan: Plan,
-  activities: ActivityDirective[],
-  user: BaseUser | User | null,
-): Promise<ActivityDirective[] | void> {
-  const planId = sourcePlan.id;
-  console.log('Plan start time:', sourcePlan.start_time_doy);
-  console.log('Plan end time:', sourcePlan.end_time_doy);
-
-  const anchorIds = new Set(activities.map(a => a.anchor_id));
-  if (anchorIds.size > 1) {
-    showFailureToast(`Activities must have the same anchor to pack`);
-    return;
-  }
-
-  if (activities.some(a => a.start_time_ms === null)) {
-    showFailureToast('Some selected activities do not have a start time');
-    return;
-  }
-
-  activities.sort(sortActivityDirectivesOrSpans);
-  // const spansMap = effects.getSpans(,sourcePlan.start_time_doy, user && 'activeRole' in user ? (user as User) : undefined);
-
-  let durations: (number | null)[];
-  try {
-    durations = await Promise.all(activities.map(a => fetchSimulatedActivityDuration(planId, a.id, user)));
-  } catch (err) {
-    showFailureToast('You must simulate before packing activities');
-    return;
-  }
-
-  if (durations.some(d => d === null)) {
-    showFailureToast('You must simulate activities before packing');
-    return;
-  }
-
-  const durationNum = durations.map(d => d as number);
-
-  let cumulativeOffsetMs = offsetToUs(activities[0].start_offset);
-  for (let idx = 0; idx < activities.length; idx++) {
-    activities[idx].start_offset = usToOffset(cumulativeOffsetMs);
-    cumulativeOffsetMs += durationNum[idx];
   }
 
   const activityTypes = effects.getActivityTypes(
@@ -656,11 +594,6 @@ export async function packRightActivityDirectivesInPlan(
     spanUtilityMaps,
   );
 
-  console.log('Activity Directives Map:');
-  for (const [key, value] of Object.entries(activityDirectivesMap)) {
-    console.log(`${key}: ${value}`);
-  }
-
   // Sort activities by their start times
   activities.sort(sortActivityDirectivesOrSpans).reverse();
 
@@ -693,17 +626,18 @@ export async function packRightActivityDirectivesInPlan(
     return;
   }
 
-  // Calculate new start times after packing based on the initial start times and durations
+  // Calculate new absolute start times after packing based on the initial start times and durations
   const newStartTimes = new Map<number, number>();
   let postPackingTime = initialEndTime;
   if (postPackingTime === undefined) {
     throw new Error(`Activity ${activities[0].id} not found in initial start times`);
   }
 
-  for (let idx = activities.length - 1; idx >= 0; idx--) {
-    if (idx !== activities.length - 1) {
-      postPackingTime -= durations.get(activities[idx].id)!;
-    }
+  //The first activity in the sorted list does not change its start time
+  newStartTimes.set(activities[0].id, postPackingTime);
+
+  for (let idx = 1; idx < activities.length; idx++) {
+    postPackingTime -= durations.get(activities[idx].id)!;
     newStartTimes.set(activities[idx].id, postPackingTime);
   }
 
@@ -739,7 +673,7 @@ export async function packRightActivityDirectivesInPlan(
       activity.start_offset = usToOffset(newStartTimes.get(activity.id)!);
     }
 
-    if (activity.id in anchorIds) {
+    if ([...anchorIds.values()].includes(activity.id)) {
       // This activity is an anchor, so we need to update its "anchee" (activities connected to it).
       const connectedActivityIds = Array.from(anchorIds.entries())
         .filter(([_, anchorId]) => anchorId === activity.id)
@@ -749,6 +683,9 @@ export async function packRightActivityDirectivesInPlan(
         const connectedActivity = idToActivitiesMap.get(connectedActivityId);
         if (connectedActivity) {
           connectedActivity.start_offset = updateAnchorStartOffset(activity.id, connectedActivity.id);
+          console.log(
+            `Updated connected activity ${connectedActivity.id} with new start offset ${connectedActivity.start_offset} for anchor ${activity.id}`,
+          );
         }
       }
     }
@@ -758,6 +695,10 @@ export async function packRightActivityDirectivesInPlan(
     sourcePlan.model_id,
     user && 'activeRole' in user ? (user as User) : null,
   );
+
+  for (const activity of activities) {
+    console.log(`Packing activity ${activity.id} with start offset ${activity.start_offset}`);
+  }
 
   for (let idx = 0; idx < activities.length; idx++) {
     const activityType = await findTypes(activities[idx].type, activityTypes);
