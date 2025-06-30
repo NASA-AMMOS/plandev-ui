@@ -22,6 +22,7 @@
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
+  import PackActivitiesOffsetSelect from '../PackActivitesOffsetSelect.svelte';
 
   export let autoSizeColumnsToFit: boolean = true;
   export let columnDefs: ColDef[];
@@ -41,6 +42,7 @@
   export let showCopyMenu: boolean = false;
   export let showPackLeftMenu: boolean = false;
   export let showPackRightMenu: boolean = false;
+  export let showPackOffsetMenu: boolean = false;
   export let showLoadingSkeleton: boolean = false;
   export let singleItemDisplayText: string = '';
   export let suppressDragLeaveHidesColumns: boolean = true;
@@ -56,6 +58,7 @@
 
   let isFiltered: boolean = false;
   let deletePermission: boolean = true;
+  export let showPackOffsetDialog = false;
 
   $: if (typeof hasDeletePermission === 'function' && user) {
     if (selectedItemIds.length > 0) {
@@ -115,6 +118,10 @@
     if (selectedRows.length) {
       dispatch('bulkPackRightItems', selectedRows);
     }
+  }
+
+  function bulkPackItemsWithOffset() {
+    showPackOffsetDialog = true;
   }
 
   function bulkDeleteItems() {
@@ -232,6 +239,13 @@
           </ContextMenu.Item>
         {/if}
 
+        {#if showPackOffsetMenu}
+          <ContextMenu.Item size="sm" on:click={bulkPackItemsWithOffset}>
+            Pack {selectedItemIds.length}
+            {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText} with Offset
+          </ContextMenu.Item>
+        {/if}
+
         <div
           use:permissionHandler={{
             hasPermission: deletePermission,
@@ -248,3 +262,12 @@
     {/if}
   </svelte:fragment>
 </DataGrid>
+
+{#if showPackOffsetDialog}
+  <PackActivitiesOffsetSelect
+    on:cancel={() => (showPackOffsetDialog = false)}
+    on:pack={() => {
+      showPackOffsetDialog = false;
+    }}
+  />
+{/if}
