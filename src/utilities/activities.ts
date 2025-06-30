@@ -712,3 +712,184 @@ export async function packRightActivityDirectivesInPlan(
   }
   return activities;
 }
+
+export async function packActivityDirectivesBothInPlan(
+  sourcePlan: Plan,
+  activities: ActivityDirective[],
+  user: BaseUser | User | null,
+  direction: 'LEFT' | 'RIGHT',
+): Promise<ActivityDirective[] | void> {
+  const planId = sourcePlan.id;
+
+  const idToActivitiesMap = new Map<number, ActivityDirective>();
+  for (const activity of activities) {
+    idToActivitiesMap.set(activity.id, activity);
+  }
+
+  const anchorIds = new Map<number, number | null>();
+  for (const activity of activities) {
+    anchorIds.set(activity.id, activity.anchor_id);
+  }
+
+  const activitiesDirectivesDB = await effects.getActivitiesForPlan(
+    planId,
+    user && 'activeRole' in user ? (user as User) : null,
+  );
+
+  const datasetId = await fetchSimulationDatasetIdsForPlan(planId, user);
+
+  const spansMap = await effects.getSpans(
+    datasetId,
+    sourcePlan.start_time_doy,
+    user && 'activeRole' in user ? (user as User) : null,
+    undefined,
+  );
+
+  const spanUtilityMaps = createSpanUtilityMaps(Object.values(spansMap));
+
+  const activityDirectivesMap = computeActivityDirectivesMap(
+    activitiesDirectivesDB,
+    sourcePlan,
+    spansMap,
+    spanUtilityMaps,
+  );
+
+  // Map activity ids to their absolute start times in milliseconds
+  const initialStartTimes = new Map<number, number>();
+  for (const activity of activities) {
+    const activityStartTimeMs = getActivityDirectiveStartTimeMs(
+      activity.id,
+      sourcePlan.start_time,
+      sourcePlan.end_time_doy,
+      activityDirectivesMap,
+      spansMap,
+      spanUtilityMaps,
+    );
+    if (activityStartTimeMs === undefined) {
+      throw new Error(`Activity ${activity.id} not found in initial start times`);
+    }
+    initialStartTimes.set(activity.id, activityStartTimeMs);
+  }
+
+  // Sort activities by their start times
+  activities.sort((a, b) => {
+    const aStart = initialStartTimes.get(a.id) ?? 0;
+    const bStart = initialStartTimes.get(b.id) ?? 0;
+    return aStart - bStart;
+  });
+
+  if (direction === 'RIGHT') {
+    activities.reverse();
+  }
+
+  for (let idx = 0; idx < activities.length; idx++) {
+    console.log('Activity:', activities[idx].id, 'idx:', idx);
+  }
+
+  const planStartTimeMs = getUnixEpochTime(sourcePlan.start_time_doy);
+  const activityStartTimeMs = initialStartTimes.get(activities[0].id)!;
+
+  // need a better variable name here
+  const initialTime = (activityStartTimeMs - planStartTimeMs) * 1000; // Convert to microseconds
+
+  // Grab all durations for the activities and store in a Map
+  const durations = new Map<number, number>();
+  try {
+    const durationResults = await Promise.all(activities.map(a => fetchSimulatedActivityDuration(planId, a.id, user)));
+    for (let i = 0; i < activities.length; i++) {
+      if (durationResults[i] == null) {
+        showFailureToast('You must simulate activities before packing');
+        return;
+      }
+      durations.set(activities[i].id, durationResults[i] as number);
+    }
+  } catch (err) {
+    showFailureToast('You must simulate before packing activities');
+    return;
+  }
+
+  // Calculate new absolute start times after packing based on the initial start times and durations
+  const newStartTimes = new Map<number, number>();
+  let postPackingTime = initialTime;
+  if (postPackingTime === undefined) {
+    throw new Error(`Activity ${activities[0].id} not found in initial start times`);
+  }
+
+  //The first activity in the sorted list does not change its start time
+  newStartTimes.set(activities[0].id, postPackingTime);
+
+  for (let idx = 1; idx < activities.length; idx++) {
+    if (direction === 'RIGHT') {
+      postPackingTime -= durations.get(activities[idx].id)!;
+    } else {
+      //direction === 'LEFT'
+
+      postPackingTime += durations.get(activities[idx - 1].id)!;
+    }
+    newStartTimes.set(activities[idx].id, postPackingTime);
+  }
+
+  // Calculate the new start offsets based on the anchor activities
+  const cachedStartTimes: { [activityDirectiveId: number]: number } = {};
+  function updateAnchorStartOffset(anchorId: number, activityId: number): string {
+    let anchorStartTime;
+    if (newStartTimes.has(anchorId)) {
+      anchorStartTime = newStartTimes.get(anchorId)!;
+    } else {
+      anchorStartTime =
+        (getActivityDirectiveStartTimeMs(
+          anchorId,
+          sourcePlan.start_time,
+          sourcePlan.end_time_doy,
+          activityDirectivesMap,
+          spansMap,
+          spanUtilityMaps,
+          cachedStartTimes,
+        ) -
+          planStartTimeMs) *
+        1000; // Convert to microseconds
+    }
+    const activityStartTime = newStartTimes.get(activityId)!;
+    return usToOffset(activityStartTime - anchorStartTime);
+  }
+
+  // Update each activity directive with the new start offset
+  for (const activity of activities) {
+    if (activity.anchor_id !== null) {
+      activity.start_offset = updateAnchorStartOffset(activity.anchor_id, activity.id);
+    } else {
+      activity.start_offset = usToOffset(newStartTimes.get(activity.id)!);
+    }
+
+    if ([...anchorIds.values()].includes(activity.id)) {
+      // This activity is an anchor, so we need to update its "anchee" (activities connected to it).
+      const connectedActivityIds = Array.from(anchorIds.entries())
+        .filter(([_, anchorId]) => anchorId === activity.id)
+        .map(([id, _]) => id);
+
+      for (const connectedActivityId of connectedActivityIds) {
+        const connectedActivity = idToActivitiesMap.get(connectedActivityId);
+        if (connectedActivity) {
+          connectedActivity.start_offset = updateAnchorStartOffset(activity.id, connectedActivity.id);
+        }
+      }
+    }
+  }
+
+  const activityTypes = effects.getActivityTypes(
+    sourcePlan.model_id,
+    user && 'activeRole' in user ? (user as User) : null,
+  );
+
+  for (let idx = 0; idx < activities.length; idx++) {
+    const activityType = await findTypes(activities[idx].type, activityTypes);
+    await effects.updateActivityDirective(
+      sourcePlan,
+      activities[idx].id,
+      { start_offset: activities[idx].start_offset },
+      activityType || null,
+      user && 'activeRole' in user ? (user as User) : null,
+    );
+  }
+  return activities;
+}
