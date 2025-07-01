@@ -14,7 +14,11 @@
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/errors';
   import type { Plan } from '../../types/plan';
-  import { copyActivityDirectivesToClipboard, packActivityDirectivesBothInPlan } from '../../utilities/activities';
+  import {
+    bulkShiftActivityDirectivesInPlan,
+    copyActivityDirectivesToClipboard,
+    packActivityDirectivesBothInPlan,
+  } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
   import { convertDurationStringToUs } from '../../utilities/time';
@@ -229,6 +233,24 @@
     }
   }
 
+  async function bulkShiftActivityDirectives(
+    event: CustomEvent<{ direction: string; selectedRows: ActivityDirective[]; shiftOffset: string }>,
+  ) {
+    if (plan !== null) {
+      const { direction, shiftOffset, selectedRows } = event.detail;
+      const shiftOffsetUS = convertDurationStringToUs(shiftOffset);
+
+      await bulkShiftActivityDirectivesInPlan(
+        plan,
+        selectedRows,
+        user,
+        direction.toUpperCase() as 'LEFT' | 'RIGHT',
+        shiftOffsetUS,
+        get(planModelActivityTypes) ?? [],
+      );
+    }
+  }
+
   function createActivityDirectives({ detail }: CustomEvent<ActivityDirective[]>) {
     dispatch('createActivityDirectives', detail);
   }
@@ -253,6 +275,7 @@
   showPackLeftMenu={bulkSelectedActivityDirectiveIds.length > 1}
   showPackRightMenu={bulkSelectedActivityDirectiveIds.length > 1}
   showPackOffsetMenu={bulkSelectedActivityDirectiveIds.length > 1}
+  showBulkShiftMenu={true}
   suppressDragLeaveHidesColumns={false}
   {user}
   {filterExpression}
@@ -261,6 +284,7 @@
   on:bulkPackLeftItems={packLeftActivityDirectives}
   on:bulkPackRightItems={packRightActivityDirectives}
   on:bulkPackWithOffset={packActivityDirectivesOffset}
+  on:bulkShiftItems={bulkShiftActivityDirectives}
   on:columnMoved
   on:columnPinned
   on:columnResized

@@ -21,6 +21,7 @@
   import type { PermissionCheck } from '../../../types/permissions';
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
   import { permissionHandler } from '../../../utilities/permissionHandler';
+  import BulkShiftActivitiesDialog from '../../activity/BulkShiftActivitiesDialog.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
   import PackActivitiesOffsetSelect from '../PackActivitesOffsetSelect.svelte';
 
@@ -43,6 +44,9 @@
   export let showPackLeftMenu: boolean = false;
   export let showPackRightMenu: boolean = false;
   export let showPackOffsetMenu: boolean = false;
+  export let showPackOffsetDialog = false;
+  export let showBulkShiftDialog = false;
+  export let showBulkShiftMenu: boolean = false;
   export let showLoadingSkeleton: boolean = false;
   export let singleItemDisplayText: string = '';
   export let suppressDragLeaveHidesColumns: boolean = true;
@@ -58,7 +62,6 @@
 
   let isFiltered: boolean = false;
   let deletePermission: boolean = true;
-  export let showPackOffsetDialog = false;
 
   $: if (typeof hasDeletePermission === 'function' && user) {
     if (selectedItemIds.length > 0) {
@@ -124,12 +127,25 @@
     showPackOffsetDialog = true;
   }
 
-  function bulkPackItemsWithOffset(event: CustomEvent<{ direction: string; gapOffset: number }>) {
+  function bulkPackItemsWithOffset(event: CustomEvent<{ direction: string; gapOffset: string }>) {
     showPackOffsetDialog = false;
     const selectedRows = getRowDataFromSelectedItems();
     const { direction, gapOffset } = event.detail;
     if (selectedRows.length) {
       dispatch('bulkPackWithOffset', { direction, gapOffset, selectedRows });
+    }
+  }
+
+  function displayBulkShift() {
+    showBulkShiftDialog = true;
+  }
+
+  function bulkShiftItems(event: CustomEvent<{ direction: string; shiftOffset: string }>) {
+    showBulkShiftDialog = false;
+    const selectedRows = getRowDataFromSelectedItems();
+    const { direction, shiftOffset } = event.detail;
+    if (selectedRows.length) {
+      dispatch('bulkShiftItems', { direction, selectedRows, shiftOffset });
     }
   }
 
@@ -234,6 +250,13 @@
           </ContextMenu.Item>
         {/if}
 
+        {#if showBulkShiftMenu}
+          <ContextMenu.Item size="sm" on:click={displayBulkShift}>
+            Shift {selectedItemIds.length}
+            {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+          </ContextMenu.Item>
+        {/if}
+
         {#if showPackLeftMenu}
           <ContextMenu.Item size="sm" on:click={bulkPackLeftItems}>
             Pack Left {selectedItemIds.length}
@@ -274,4 +297,8 @@
 
 {#if showPackOffsetDialog}
   <PackActivitiesOffsetSelect on:cancel={() => (showPackOffsetDialog = false)} on:pack={bulkPackItemsWithOffset} />
+{/if}
+
+{#if showBulkShiftDialog}
+  <BulkShiftActivitiesDialog on:cancel={() => (showBulkShiftDialog = false)} on:shift={bulkShiftItems} />
 {/if}

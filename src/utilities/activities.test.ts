@@ -1,5 +1,5 @@
 import { keyBy, reverse } from 'lodash-es';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import type { ActivityDirective } from '../types/activity';
 import type { Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import {
@@ -275,3 +275,15 @@ describe('getAllSpanChildrenIds', () => {
     expect(getAllSpanChildrenIds(4, testSpansUtilityMap)).to.deep.equal([]);
   });
 });
+
+vi.mock('./effects', () => ({
+  default: {
+    updateActivityDirective: vi.fn(),
+  },
+}));
+vi.mock('./toast', () => ({
+  showFailureToast: vi.fn(),
+  showSuccessToast: vi.fn(),
+}));
+
+describe('packActivityDirectivesInPlan', () => {});

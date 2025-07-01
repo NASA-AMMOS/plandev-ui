@@ -7,7 +7,6 @@ import type { Span, SpanId, SpanUtilityMaps, SpansMap } from '../types/simulatio
 import { getClipboardContent, setClipboardContent } from './clipboard';
 import effects from './effects';
 import { compare, isEmpty } from './generic';
-import { reqHasura } from './requests';
 import { pluralize } from './text';
 import {
   getActivityDirectiveStartTimeMs,
@@ -282,7 +281,7 @@ export async function getActivityDirectivesToPaste(
   return activities;
 }
 
-export async function fetchSimulatedActivityDuration(
+/*export async function fetchSimulatedActivityDuration(
   planId: number,
   activityId: number,
   user: BaseUser | User | null,
@@ -301,19 +300,22 @@ export async function fetchSimulatedActivityDuration(
   const activities = data?.activity_directive?.[0]?.simulated_activities;
   console.error('Duration Format:', activities[0].duration, 'for activity', activityId);
   return activities && activities.length > 0 ? durationToUs(activities[0].duration) : null;
-}
+}*/
 
 /**
  * Converts a string of the form "HH:mm:ss.SSSSSS" to microseconds.
  * Example: "01:23:45.678901" => 1*3600*1e6 + 23*60*1e6 + 45*1e6 + 678901 = 5025678901
  */
 export function offsetToUs(hms: string): number {
-  const match = /^(\d+):(\d{2}):(\d{2})(?:\.(\d+))?$/.exec(hms);
+  const isNegative = hms.trim().startsWith('-');
+  const absHms = isNegative ? hms.trim().slice(1) : hms.trim();
+  const match = /^(\d+):(\d{2}):(\d{2})(?:\.(\d+))?$/.exec(absHms);
   if (!match) {
     throw new Error('Invalid format, expected "HH:mm:ss[.SSSSSS]"' + hms);
   }
   const [, hh, mm, ss, us = '0'] = match;
-  return parseInt(hh) * 3600 * 1e6 + parseInt(mm) * 60 * 1e6 + parseInt(ss) * 1e6 + parseInt(us);
+  const value = parseInt(hh) * 3600 * 1e6 + parseInt(mm) * 60 * 1e6 + parseInt(ss) * 1e6 + parseInt(us);
+  return isNegative ? -value : value;
 }
 
 /**
@@ -323,7 +325,7 @@ export function offsetToUs(hms: string): number {
  *   "01:23:45.678901"        => (1*3600 + 23*60 + 45) * 1e6 + 678901
  *   "2 days 01:23:45"        => (2*86400 + 1*3600 + 23*60 + 45) * 1e6
  *   "01:23:45"               => (1*3600 + 23*60 + 45) * 1e6
- */
+
 export function durationToUs(duration: string): number {
   const match = /^(?:(\d+)\s+days?)?(?:\s*(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?)?$/.exec(duration.trim());
   if (!match) {
@@ -338,7 +340,7 @@ export function durationToUs(duration: string): number {
     parseInt(ss) * 1e6 +
     parseInt(us)
   );
-}
+}*/
 
 export async function findTypes(type: string, activityTypes: ActivityType[]): Promise<ActivityType | undefined> {
   // const activityTypes = await activityTypesPromise;
@@ -418,7 +420,7 @@ export async function packActivityDirectivesBothInPlan(
     initialStartTimes.set(activity.id, activityStartTimeMs);
   }
 
-  // Sort activities by their start times
+  // Sort activities by their start times, activities with the same start time are arbitrarily ordered
   activities.sort((a, b) => {
     const aStart = initialStartTimes.get(a.id) ?? 0;
     const bStart = initialStartTimes.get(b.id) ?? 0;
@@ -521,16 +523,55 @@ export async function packActivityDirectivesBothInPlan(
     }
   }
 
-  for (let idx = 0; idx < activities.length; idx++) {
-    const activityType = await findTypes(activities[idx].type, activityTypes);
+  for (const activity of activities) {
+    const activityType = await findTypes(activity.type, activityTypes);
     await effects.updateActivityDirective(
       sourcePlan,
-      activities[idx].id,
-      { start_offset: activities[idx].start_offset },
+      activity.id,
+      { start_offset: activity.start_offset },
       activityType || null,
       user && 'activeRole' in user ? (user as User) : null,
     );
   }
+
+  showSuccessToast(
+    `Packed ${activities.length} Activity Directive${pluralize(activities.length)} ${direction.toLowerCase()}`,
+  );
+
+  return activities;
+}
+
+export async function bulkShiftActivityDirectivesInPlan(
+  sourcePlan: Plan,
+  activities: ActivityDirective[],
+  user: BaseUser | User | null,
+  direction: 'LEFT' | 'RIGHT',
+  offsetUS: number,
+  activityTypes: ActivityType[],
+): Promise<ActivityDirective[] | void> {
+  const selectedIds = new Set(activities.map(a => a.id));
+  const updateActivities = activities.filter(a => a.anchor_id === null || !selectedIds.has(a.anchor_id));
+
+  for (const activity of updateActivities) {
+    activity.start_offset = usToOffset(
+      offsetToUs(activity.start_offset) + (direction === 'RIGHT' ? offsetUS : -offsetUS),
+    );
+  }
+
+  for (const activity of updateActivities) {
+    const activityType = await findTypes(activity.type, activityTypes);
+    await effects.updateActivityDirective(
+      sourcePlan,
+      activity.id,
+      { start_offset: activity.start_offset },
+      activityType || null,
+      user && 'activeRole' in user ? (user as User) : null,
+    );
+  }
+
+  showSuccessToast(
+    `Shifted ${updateActivities.length} Activity Directive${pluralize(updateActivities.length)} ${direction.toLowerCase()}`,
+  );
 
   return activities;
 }
