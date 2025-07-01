@@ -377,6 +377,7 @@ export async function packActivityDirectivesBothInPlan(
   activities: ActivityDirective[],
   user: BaseUser | User | null,
   direction: 'LEFT' | 'RIGHT',
+  offsetUS: number,
   activitiesDirectivesDB: ActivityDirectiveDB[],
   spansMap: SpansMap,
   spanUtilityMaps: SpanUtilityMaps,
@@ -464,11 +465,11 @@ export async function packActivityDirectivesBothInPlan(
 
   for (let idx = 1; idx < activities.length; idx++) {
     if (direction === 'RIGHT') {
-      postPackingTime -= durations.get(activities[idx].id)!;
+      postPackingTime -= durations.get(activities[idx].id)! + offsetUS;
     } else {
       //direction === 'LEFT'
 
-      postPackingTime += durations.get(activities[idx - 1].id)!;
+      postPackingTime += durations.get(activities[idx - 1].id)! + offsetUS;
     }
     newStartTimes.set(activities[idx].id, postPackingTime);
   }
