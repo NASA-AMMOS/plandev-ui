@@ -211,9 +211,7 @@
   async function packActivityDirectivesOffset(
     event: CustomEvent<{ direction: string; gapOffset: string; selectedRows: ActivityDirective[] }>,
   ) {
-    console.log('reached packActivityDirectivesOffset');
     if (plan !== null) {
-      console.log('event.detail:', event.detail);
       const { direction, gapOffset, selectedRows } = event.detail;
       const offsetUS = convertDurationStringToUs(gapOffset);
 
