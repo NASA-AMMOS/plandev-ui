@@ -4,7 +4,11 @@
   import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import type { ColDef, ColumnState, ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
+  import { get } from 'svelte/store';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { activityDirectivesDB } from '../../stores/activities';
+  import { planModelActivityTypes } from '../../stores/plan';
+  import { spansMap, spanUtilityMaps } from '../../stores/simulation';
   import type { ActivityDirective, ActivityDirectiveId } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
@@ -174,14 +178,32 @@
   async function packLeftActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
       //await packLeftActivityDirectivesInPlan(plan, activities, user);
-      await packActivityDirectivesBothInPlan(plan, activities, user, 'LEFT');
+      await packActivityDirectivesBothInPlan(
+        plan,
+        activities,
+        user,
+        'LEFT',
+        get(activityDirectivesDB) ?? [],
+        get(spansMap) ?? {},
+        get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
+        get(planModelActivityTypes) ?? [],
+      );
     }
   }
 
   async function packRightActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
       // await packRightActivityDirectivesInPlan(plan, activities, user);
-      await packActivityDirectivesBothInPlan(plan, activities, user, 'RIGHT');
+      await packActivityDirectivesBothInPlan(
+        plan,
+        activities,
+        user,
+        'RIGHT',
+        get(activityDirectivesDB) ?? [],
+        get(spansMap) ?? {},
+        get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
+        get(planModelActivityTypes) ?? [],
+      );
     }
   }
 
