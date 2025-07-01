@@ -8,8 +8,8 @@
   const dispatch = createEventDispatcher();
 
   let direction: 'Left' | 'Right' = 'Left';
-  let startOffsetString: string = '0d 0h 0m 0s 0ms 0us';
-  let startOffsetError: string | null = '';
+  let gapOffsetString: string = '0d 0h 0m 0s 0ms 0us';
+  let gapOffsetError: string | null = '';
   let disabled: boolean = false;
 
   function setDirection(dir: 'Left' | 'Right') {
@@ -21,19 +21,16 @@
   }
 
   function pack() {
-    console.log('Packing activities with offset:', direction, startOffsetString);
-    dispatch('pack', { direction, gapOffset: startOffsetString });
+    dispatch('pack', { direction, gapOffset: gapOffsetString });
   }
 
   function onUpdateStartOffset(event: Event) {
     const { value } = getTarget(event);
-    console.log('Updating start offset:', value);
-
     try {
       convertDurationStringToInterval(`${value}`);
-      console.log('Start offset is valid:', value);
+      gapOffsetError = `${value}`.includes('-') ? 'Negative offsets are not allowed' : '';
     } catch (error: any) {
-      startOffsetError = error.message;
+      gapOffsetError = error.message;
     }
   }
 </script>
@@ -50,23 +47,23 @@
   </div>
 
   <Input layout="inline">
-    <label use:tooltip={{ content: 'The offset duration for the anchor', placement: 'top' }} for="start-offset">
+    <label use:tooltip={{ content: 'The offset duration between packing', placement: 'top' }} for="start-offset">
       Offset
     </label>
     <input
       class="st-input w-full"
-      class:error={!!startOffsetError}
+      class:error={!!gapOffsetError}
       {disabled}
-      name="start-offset"
-      bind:value={startOffsetString}
+      name="gap-offset"
+      bind:value={gapOffsetString}
       on:change={onUpdateStartOffset}
-      use:tooltip={{ content: startOffsetError, placement: 'top' }}
+      use:tooltip={{ content: gapOffsetError, placement: 'top' }}
     />
   </Input>
 
   <div class="buttons">
     <button on:click={cancel}>Cancel</button>
-    <button on:click={pack}>Pack</button>
+    <button on:click={pack} disabled={!!gapOffsetError}>Pack</button>
   </div>
 </div>
 
@@ -125,5 +122,10 @@
     cursor: pointer;
     font-weight: 500;
     padding: 0.5rem 1rem;
+  }
+
+  input.error {
+    background-color: var(--st-input-error-background-color);
+    border: 1px solid var(--st-red);
   }
 </style>

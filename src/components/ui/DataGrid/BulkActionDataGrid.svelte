@@ -126,8 +126,6 @@
 
   function bulkPackItemsWithOffset(event: CustomEvent<{ direction: string; gapOffset: number }>) {
     showPackOffsetDialog = false;
-    console.log('reached bulkPackItemsWithOffset');
-    console.log('event.detail:', event.detail);
     const selectedRows = getRowDataFromSelectedItems();
     const { direction, gapOffset } = event.detail;
     if (selectedRows.length) {
@@ -275,8 +273,5 @@
 </DataGrid>
 
 {#if showPackOffsetDialog}
-  <PackActivitiesOffsetSelect
-    on:cancel={() => (console.log('reached cancel button'), (showPackOffsetDialog = false))}
-    on:pack={bulkPackItemsWithOffset}
-  />
+  <PackActivitiesOffsetSelect on:cancel={() => (showPackOffsetDialog = false)} on:pack={bulkPackItemsWithOffset} />
 {/if}
