@@ -2,6 +2,7 @@
     "source": {
         "key": "ExampleExternalSource:example-external-source.json",
         "source_type_name": "Example External Source",
+        "derivation_group_name": "Example External Source Default",
         "valid_at": "2022-001T00:00:00Z",
         "period": {
             "start_time": "2022-001T00:00:00Z",

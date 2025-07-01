@@ -2,6 +2,7 @@
     "source": {
         "key": "external-event-derivation-3.json",
         "source_type_name": "DerivationTest",
+        "derivation_group_name": "DerivationTest Default",
         "valid_at": "2022-020T00:00:00Z",
         "period": {
             "start_time": "2022-003T00:00:00Z",
