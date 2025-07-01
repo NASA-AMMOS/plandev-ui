@@ -14,7 +14,11 @@
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/errors';
   import type { Plan } from '../../types/plan';
-  import { copyActivityDirectivesToClipboard, packActivityDirectivesBothInPlan } from '../../utilities/activities';
+  import {
+    copyActivityDirectivesToClipboard,
+    findTypes,
+    packActivityDirectivesBothInPlan,
+  } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
@@ -177,25 +181,7 @@
 
   async function packLeftActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
-      //await packLeftActivityDirectivesInPlan(plan, activities, user);
-      await packActivityDirectivesBothInPlan(
-        plan,
-        activities,
-        user,
-        'LEFT',
-        0,
-        get(activityDirectivesDB) ?? [],
-        get(spansMap) ?? {},
-        get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
-        get(planModelActivityTypes) ?? [],
-      );
-    }
-  }
-
-  async function packRightActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
-    if (plan !== null) {
-      // await packRightActivityDirectivesInPlan(plan, activities, user);
-      await packActivityDirectivesBothInPlan(
+      const updatedActivities = await packActivityDirectivesBothInPlan(
         plan,
         activities,
         user,
@@ -204,8 +190,48 @@
         get(activityDirectivesDB) ?? [],
         get(spansMap) ?? {},
         get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
-        get(planModelActivityTypes) ?? [],
       );
+
+      if (Array.isArray(updatedActivities)) {
+        for (const activity of updatedActivities) {
+          const activityType = await findTypes(activity.type, get(planModelActivityTypes) ?? []);
+          await effects.updateActivityDirective(
+            plan,
+            activity.id,
+            { start_offset: activity.start_offset },
+            activityType || null,
+            user && 'activeRole' in user ? (user as User) : null,
+          );
+        }
+      }
+    }
+  }
+
+  async function packRightActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
+    if (plan !== null) {
+      const updatedActivities = await packActivityDirectivesBothInPlan(
+        plan,
+        activities,
+        user,
+        'RIGHT',
+        0,
+        get(activityDirectivesDB) ?? [],
+        get(spansMap) ?? {},
+        get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
+      );
+
+      if (Array.isArray(updatedActivities)) {
+        for (const activity of updatedActivities) {
+          const activityType = await findTypes(activity.type, get(planModelActivityTypes) ?? []);
+          await effects.updateActivityDirective(
+            plan,
+            activity.id,
+            { start_offset: activity.start_offset },
+            activityType || null,
+            user && 'activeRole' in user ? (user as User) : null,
+          );
+        }
+      }
     }
   }
 
