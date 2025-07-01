@@ -120,8 +120,19 @@
     }
   }
 
-  function bulkPackItemsWithOffset() {
+  function displayPackItemsWithOffset() {
     showPackOffsetDialog = true;
+  }
+
+  function bulkPackItemsWithOffset(event: CustomEvent<{ direction: string; gapOffset: number }>) {
+    showPackOffsetDialog = false;
+    console.log('reached bulkPackItemsWithOffset');
+    console.log('event.detail:', event.detail);
+    const selectedRows = getRowDataFromSelectedItems();
+    const { direction, gapOffset } = event.detail;
+    if (selectedRows.length) {
+      dispatch('bulkPackWithOffset', { direction, gapOffset, selectedRows });
+    }
   }
 
   function bulkDeleteItems() {
@@ -240,7 +251,7 @@
         {/if}
 
         {#if showPackOffsetMenu}
-          <ContextMenu.Item size="sm" on:click={bulkPackItemsWithOffset}>
+          <ContextMenu.Item size="sm" on:click={displayPackItemsWithOffset}>
             Pack {selectedItemIds.length}
             {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText} with Offset
           </ContextMenu.Item>
@@ -265,9 +276,7 @@
 
 {#if showPackOffsetDialog}
   <PackActivitiesOffsetSelect
-    on:cancel={() => (showPackOffsetDialog = false)}
-    on:pack={() => {
-      showPackOffsetDialog = false;
-    }}
+    on:cancel={() => (console.log('reached cancel button'), (showPackOffsetDialog = false))}
+    on:pack={bulkPackItemsWithOffset}
   />
 {/if}

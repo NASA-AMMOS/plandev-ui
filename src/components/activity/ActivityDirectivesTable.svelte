@@ -17,6 +17,7 @@
   import { copyActivityDirectivesToClipboard, packActivityDirectivesBothInPlan } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
+  import { convertDurationStringToUs } from '../../utilities/time';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -177,7 +178,6 @@
 
   async function packLeftActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
-      //await packLeftActivityDirectivesInPlan(plan, activities, user);
       await packActivityDirectivesBothInPlan(
         plan,
         activities,
@@ -194,13 +194,35 @@
 
   async function packRightActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
-      // await packRightActivityDirectivesInPlan(plan, activities, user);
       await packActivityDirectivesBothInPlan(
         plan,
         activities,
         user,
         'RIGHT',
         0,
+        get(activityDirectivesDB) ?? [],
+        get(spansMap) ?? {},
+        get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
+        get(planModelActivityTypes) ?? [],
+      );
+    }
+  }
+
+  async function packActivityDirectivesOffset(
+    event: CustomEvent<{ direction: string; gapOffset: string; selectedRows: ActivityDirective[] }>,
+  ) {
+    console.log('reached packActivityDirectivesOffset');
+    if (plan !== null) {
+      console.log('event.detail:', event.detail);
+      const { direction, gapOffset, selectedRows } = event.detail;
+      const offsetUS = convertDurationStringToUs(gapOffset);
+
+      await packActivityDirectivesBothInPlan(
+        plan,
+        selectedRows,
+        user,
+        direction.toUpperCase() as 'LEFT' | 'RIGHT',
+        offsetUS,
         get(activityDirectivesDB) ?? [],
         get(spansMap) ?? {},
         get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
@@ -240,6 +262,7 @@
   on:bulkCopyItems={copyActivityDirectives}
   on:bulkPackLeftItems={packLeftActivityDirectives}
   on:bulkPackRightItems={packRightActivityDirectives}
+  on:bulkPackWithOffset={packActivityDirectivesOffset}
   on:columnMoved
   on:columnPinned
   on:columnResized

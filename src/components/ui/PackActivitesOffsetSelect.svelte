@@ -1,7 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { getTarget } from '../../utilities/generic';
-  import { permissionHandler } from '../../utilities/permissionHandler';
   import { convertDurationStringToInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
@@ -13,10 +12,6 @@
   let startOffsetError: string | null = '';
   let disabled: boolean = false;
 
-  let hasUpdatePermission: boolean = true;
-  let planReadOnly: boolean = false;
-  let updatePermissionError: string = 'You do not have permission to update this field';
-
   function setDirection(dir: 'Left' | 'Right') {
     direction = dir;
   }
@@ -26,14 +21,17 @@
   }
 
   function pack() {
+    console.log('Packing activities with offset:', direction, startOffsetString);
     dispatch('pack', { direction, gapOffset: startOffsetString });
   }
 
   function onUpdateStartOffset(event: Event) {
     const { value } = getTarget(event);
+    console.log('Updating start offset:', value);
 
     try {
       convertDurationStringToInterval(`${value}`);
+      console.log('Start offset is valid:', value);
     } catch (error: any) {
       startOffsetError = error.message;
     }
@@ -60,10 +58,6 @@
       class:error={!!startOffsetError}
       {disabled}
       name="start-offset"
-      use:permissionHandler={{
-        hasPermission: hasUpdatePermission && !planReadOnly,
-        permissionError: updatePermissionError,
-      }}
       bind:value={startOffsetString}
       on:change={onUpdateStartOffset}
       use:tooltip={{ content: startOffsetError, placement: 'top' }}
