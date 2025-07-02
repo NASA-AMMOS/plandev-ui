@@ -5,6 +5,7 @@ import type { BaseUser, User } from '../types/app';
 import type { Plan } from '../types/plan';
 import type { Span, SpanId, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import { getClipboardContent, setClipboardContent } from './clipboard';
+import effects from './effects';
 import { compare, isEmpty } from './generic';
 import { pluralize } from './text';
 import {
@@ -532,7 +533,7 @@ export async function packActivityDirectivesBothInPlan(
       activityType || null,
       user && 'activeRole' in user ? (user as User) : null,
     );
-  }
+  }*/
 
   showSuccessToast(
     `Packed ${activities.length} Activity Directive${pluralize(activities.length)} ${direction.toLowerCase()}`,
@@ -567,7 +568,7 @@ export async function bulkShiftActivityDirectivesInPlan(
       activityType || null,
       user && 'activeRole' in user ? (user as User) : null,
     );
-  }*/
+  }
 
   return activities;
 }

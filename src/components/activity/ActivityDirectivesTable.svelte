@@ -16,12 +16,9 @@
   import type { Plan } from '../../types/plan';
   import {
     bulkShiftActivityDirectivesInPlan,
-
     copyActivityDirectivesToClipboard,
-
     findTypes,
     packActivityDirectivesBothInPlan,
- ,
   } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
