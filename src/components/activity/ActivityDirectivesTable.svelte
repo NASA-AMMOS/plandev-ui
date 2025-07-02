@@ -202,7 +202,7 @@
         plan,
         activities,
         user,
-        'RIGHT',
+        'LEFT',
         0,
         get(activityDirectivesDB) ?? [],
         get(spansMap) ?? {},
