@@ -180,6 +180,21 @@
     }
   }
 
+  async function updateActivities(updatedActivities: ActivityDirective[] | null) {
+    if (plan != null && Array.isArray(updatedActivities)) {
+      for (const activity of updatedActivities) {
+        const activityType = await findTypes(activity.type, get(planModelActivityTypes) ?? []);
+        await effects.updateActivityDirective(
+          plan,
+          activity.id,
+          { start_offset: activity.start_offset },
+          activityType || null,
+          user && 'activeRole' in user ? (user as User) : null,
+        );
+      }
+    }
+  }
+
   async function packLeftActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
       const updatedActivities = await packActivityDirectivesBothInPlan(
@@ -193,17 +208,8 @@
         get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
       );
 
-      if (Array.isArray(updatedActivities)) {
-        for (const activity of updatedActivities) {
-          const activityType = await findTypes(activity.type, get(planModelActivityTypes) ?? []);
-          await effects.updateActivityDirective(
-            plan,
-            activity.id,
-            { start_offset: activity.start_offset },
-            activityType || null,
-            user && 'activeRole' in user ? (user as User) : null,
-          );
-        }
+      if (updatedActivities) {
+        updateActivities(updatedActivities);
       }
     }
   }
@@ -221,17 +227,8 @@
         get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
       );
 
-      if (Array.isArray(updatedActivities)) {
-        for (const activity of updatedActivities) {
-          const activityType = await findTypes(activity.type, get(planModelActivityTypes) ?? []);
-          await effects.updateActivityDirective(
-            plan,
-            activity.id,
-            { start_offset: activity.start_offset },
-            activityType || null,
-            user && 'activeRole' in user ? (user as User) : null,
-          );
-        }
+      if (updatedActivities) {
+        updateActivities(updatedActivities);
       }
     }
   }
@@ -243,7 +240,7 @@
       const { direction, gapOffset, selectedRows } = event.detail;
       const offsetUS = convertDurationStringToUs(gapOffset);
 
-      await packActivityDirectivesBothInPlan(
+      const updatedActivities = await packActivityDirectivesBothInPlan(
         plan,
         selectedRows,
         user,
@@ -253,6 +250,10 @@
         get(spansMap) ?? {},
         get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
       );
+
+      if (updatedActivities) {
+        updateActivities(updatedActivities);
+      }
     }
   }
 
