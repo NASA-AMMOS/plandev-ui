@@ -16,8 +16,12 @@
   import type { Plan } from '../../types/plan';
   import {
     bulkShiftActivityDirectivesInPlan,
+
     copyActivityDirectivesToClipboard,
+
+    findTypes,
     packActivityDirectivesBothInPlan,
+ ,
   } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
@@ -180,25 +184,24 @@
     }
   }
 
-  async function packLeftActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
-    if (plan !== null) {
-      await packActivityDirectivesBothInPlan(
-        plan,
-        activities,
-        user,
-        'LEFT',
-        0,
-        get(activityDirectivesDB) ?? [],
-        get(spansMap) ?? {},
-        get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
-        get(planModelActivityTypes) ?? [],
-      );
+  async function updateActivities(updatedActivities: ActivityDirective[] | null) {
+    if (plan != null && Array.isArray(updatedActivities)) {
+      for (const activity of updatedActivities) {
+        const activityType = await findTypes(activity.type, get(planModelActivityTypes) ?? []);
+        await effects.updateActivityDirective(
+          plan,
+          activity.id,
+          { start_offset: activity.start_offset },
+          activityType || null,
+          user && 'activeRole' in user ? (user as User) : null,
+        );
+      }
     }
   }
 
-  async function packRightActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
+  async function packLeftActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
-      await packActivityDirectivesBothInPlan(
+      const updatedActivities = await packActivityDirectivesBothInPlan(
         plan,
         activities,
         user,
@@ -207,8 +210,30 @@
         get(activityDirectivesDB) ?? [],
         get(spansMap) ?? {},
         get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
-        get(planModelActivityTypes) ?? [],
       );
+
+      if (updatedActivities) {
+        updateActivities(updatedActivities);
+      }
+    }
+  }
+
+  async function packRightActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
+    if (plan !== null) {
+      const updatedActivities = await packActivityDirectivesBothInPlan(
+        plan,
+        activities,
+        user,
+        'RIGHT',
+        0,
+        get(activityDirectivesDB) ?? [],
+        get(spansMap) ?? {},
+        get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
+      );
+
+      if (updatedActivities) {
+        updateActivities(updatedActivities);
+      }
     }
   }
 
@@ -219,7 +244,7 @@
       const { direction, gapOffset, selectedRows } = event.detail;
       const offsetUS = convertDurationStringToUs(gapOffset);
 
-      await packActivityDirectivesBothInPlan(
+      const updatedActivities = await packActivityDirectivesBothInPlan(
         plan,
         selectedRows,
         user,
@@ -228,8 +253,11 @@
         get(activityDirectivesDB) ?? [],
         get(spansMap) ?? {},
         get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
-        get(planModelActivityTypes) ?? [],
       );
+
+      if (updatedActivities) {
+        updateActivities(updatedActivities);
+      }
     }
   }
 
