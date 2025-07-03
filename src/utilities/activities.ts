@@ -3,7 +3,9 @@ import type { ActivityDirective, ActivityDirectiveDB, ActivityDirectivesMap } fr
 import type { ActivityMetadata, ActivityMetadataKey, ActivityMetadataValue } from '../types/activity-metadata';
 import type { Plan } from '../types/plan';
 import type { Span, SpanId, SpanUtilityMaps, SpansMap } from '../types/simulation';
+import { getClipboardContent, setClipboardContent } from './clipboard';
 import { compare, isEmpty } from './generic';
+import { pluralize } from './text';
 import {
   getActivityDirectiveStartTimeMs,
   getDoyTime,
@@ -11,9 +13,7 @@ import {
   getIntervalInMs,
   getUnixEpochTime,
 } from './time';
-import { getClipboardContent, setClipboardContent } from './clipboard';
 import { showFailureToast, showSuccessToast } from './toast';
-import { pluralize } from './text';
 
 /**
  * Updates activity metadata with a new key/value and removes any empty values.
