@@ -43,12 +43,14 @@ export class ExternalSources {
   externalEventTableHeaderEventType: Locator;
   externalEventTableRow: Locator;
   externalEventTypeName: string = 'ExampleEvent';
+  externalSourceEmptyAttributeFilePath: string = 'e2e-tests/data/example-external-source_empty-attr.json';
+  externalSourceEmptyAttributeKey: string = 'ExampleExternalSource:example-external-source_no-attr.json';
   externalSourceFileName: string = 'example-external-source.json';
   externalSourceFilePath: string = 'e2e-tests/data/example-external-source.json';
   externalSourceFilePathMissingField: string = 'e2e-tests/data/example-external-source-missing-field.json';
   externalSourceFilePathSyntaxError: string = 'e2e-tests/data/example-external-source-syntax-error.json';
-  externalSourceNoAttributeFileName: string = 'example-external-source_no-attr.json';
   externalSourceNoAttributeFilePath: string = 'e2e-tests/data/example-external-source_no-attr.json';
+  externalSourceNoAttributeKey: string = 'NoAttrSource:example-external-source_no-attr.json';
   externalSourceSelectedForm: Locator;
   externalSourceTypeName: string = 'Example External Source';
   externalSourceUpload: Locator;
@@ -140,13 +142,14 @@ export class ExternalSources {
     }
   }
 
-  async deleteSource(sourceName: string) {
+  async deleteSource(sourceKey: string) {
     // Only delete a source if its visible in the table
-    if (await this.page.getByRole('gridcell', { name: sourceName }).isVisible()) {
-      await this.selectSource(sourceName);
+
+    if (await this.externalSourcesTable.getByRole('gridcell', { name: sourceKey }).isVisible()) {
+      await this.selectSource(sourceKey);
       await this.deleteSourceButton.click();
       await this.deleteSourceButtonConfirmation.click();
-      await expect(this.externalSourcesTable.getByText(sourceName)).not.toBeVisible();
+      await expect(this.externalSourcesTable.getByRole('gridcell', { name: sourceKey })).not.toBeVisible();
     }
   }
 
