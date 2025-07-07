@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import BulkShiftActivitiesModal from '../../modals/BulkShiftActivitiesModal.svelte';
+
   import { ContextMenu } from '@nasa-jpl/stellar-svelte';
 
   type RowData = $$Generic<TRowData>;
@@ -21,7 +23,6 @@
   import type { PermissionCheck } from '../../../types/permissions';
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
   import { permissionHandler } from '../../../utilities/permissionHandler';
-  import BulkShiftActivitiesDialog from '../../activity/BulkShiftActivitiesDialog.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
   import PackActivitiesOffsetSelect from '../PackActivitesOffsetSelect.svelte';
 
@@ -300,5 +301,5 @@
 {/if}
 
 {#if showBulkShiftDialog}
-  <BulkShiftActivitiesDialog on:cancel={() => (showBulkShiftDialog = false)} on:shift={bulkShiftItems} />
+  <BulkShiftActivitiesModal on:cancel={() => (showBulkShiftDialog = false)} on:shift={bulkShiftItems} />
 {/if}
