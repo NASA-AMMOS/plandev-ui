@@ -105,7 +105,7 @@
       planStartTimeYmd,
       revision ? revision.start_offset : activityDirective.start_offset,
     );*/
-    const startTimeMs = activityDirective.start_time_ms;
+    const startTimeMs = revision ? revision.start_time_ms : activityDirective.start_time_ms;
     startTime = startTimeMs ? formatDate(new Date(startTimeMs), $plugins.time.primary.format) : '';
   }
 
