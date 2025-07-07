@@ -1,5 +1,10 @@
 import { keyBy, omitBy } from 'lodash-es';
-import type { ActivityDirective, ActivityDirectiveDB, ActivityDirectivesMap } from '../types/activity';
+import type {
+  ActivityDirective,
+  ActivityDirectiveDB,
+  ActivityDirectiveRevision,
+  ActivityDirectivesMap,
+} from '../types/activity';
 import type { ActivityMetadata, ActivityMetadataKey, ActivityMetadataValue } from '../types/activity-metadata';
 import type { Plan } from '../types/plan';
 import type { Span, SpanId, SpanUtilityMaps, SpansMap } from '../types/simulation';
@@ -275,4 +280,40 @@ export async function getActivityDirectivesToPaste(
     console.error(e);
   }
   return activities;
+}
+
+export function addAbsoluteTimeToRevision(
+  activityDirectiveRevision: ActivityDirectiveRevision,
+  activityId: number,
+  plan: Plan,
+  activitiesDirectivesDB: ActivityDirectiveDB[],
+  spansMap: SpansMap,
+  spanUtilityMaps: SpanUtilityMaps,
+): void {
+  const activityDirectivesMap = computeActivityDirectivesMap(activitiesDirectivesDB, plan, spansMap, spanUtilityMaps);
+
+  //Temporarily overlay the currentActivity with the revision
+  const tempDirectivesMap: ActivityDirectivesMap = {
+    ...activityDirectivesMap,
+    [activityId]: {
+      ...activityDirectivesMap[activityId],
+      anchor_id: activityDirectiveRevision.anchor_id,
+      anchored_to_start: activityDirectiveRevision.anchored_to_start,
+      arguments: activityDirectiveRevision.arguments,
+      metadata: activityDirectiveRevision.metadata,
+      name: activityDirectiveRevision.name,
+      start_offset: activityDirectiveRevision.start_offset,
+    },
+  };
+
+  const startTimeMs = getActivityDirectiveStartTimeMs(
+    activityId,
+    plan.start_time,
+    plan.end_time_doy,
+    tempDirectivesMap,
+    spansMap,
+    spanUtilityMaps,
+  );
+
+  activityDirectiveRevision.start_time_ms = startTimeMs;
 }
