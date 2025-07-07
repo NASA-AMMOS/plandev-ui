@@ -40,7 +40,7 @@
 </script>
 
 <div class="compact-modal">
-  <Modal height={220} width={400}>
+  <Modal height={150} width={300}>
     <ModalContent>
       <div class="form-container">
         <div class="row">
@@ -136,8 +136,9 @@
   }
 
   .shift-input {
-    flex: 1;
+    flex: 0 0 auto;
     max-width: 200px;
+    width: fit-content;
   }
 
   .button-container {
