@@ -3,6 +3,7 @@ import { describe, expect, test, vi } from 'vitest';
 import type { ActivityDirective } from '../types/activity';
 import type { Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import {
+  bulkShiftActivityDirectivesInPlan,
   createSpanUtilityMaps,
   getActivityMetadata,
   getAllSpanChildrenIds,
@@ -286,4 +287,91 @@ vi.mock('./toast', () => ({
   showSuccessToast: vi.fn(),
 }));
 
-describe('packActivityDirectivesInPlan', () => {});
+describe('bulkShiftActivityDirectivesInPlan', () => {
+  const activityDirectives: ActivityDirective[] = [
+    {
+      anchor_id: null,
+      anchored_to_start: true,
+      applied_preset: null,
+      arguments: {},
+      created_at: '2006-07-11T00:00:00',
+      created_by: 'admin',
+      id: 1,
+      last_modified_arguments_at: '2006-07-11T00:00:00',
+      last_modified_at: '2006-07-11T00:00:00',
+      last_modified_by: 'admin',
+      metadata: {},
+      name: 'foo 1',
+      plan_id: 1,
+      source_scheduling_goal_id: null,
+      start_offset: '10:00:00',
+      start_time_ms: 1152291600000,
+      tags: [],
+      type: 'foo',
+    },
+    {
+      anchor_id: 1,
+      anchored_to_start: false,
+      applied_preset: null,
+      arguments: {},
+      created_at: '2006-07-11T00:00:00',
+      created_by: 'admin',
+      id: 2,
+      last_modified_arguments_at: '2006-07-11T00:00:00',
+      last_modified_at: '2006-07-11T00:00:00',
+      last_modified_by: 'admin',
+      metadata: {},
+      name: 'foo 2',
+      plan_id: 1,
+      source_scheduling_goal_id: null,
+      start_offset: '09:00:00',
+      start_time_ms: 1152324000000,
+      tags: [],
+      type: 'foo',
+    },
+    {
+      anchor_id: 0,
+      anchored_to_start: false,
+      applied_preset: null,
+      arguments: {},
+      created_at: '2006-07-11T00:00:00',
+      created_by: 'admin',
+      id: 3,
+      last_modified_arguments_at: '2006-07-11T00:00:00',
+      last_modified_at: '2006-07-11T00:00:00',
+      last_modified_by: 'admin',
+      metadata: {},
+      name: 'foo 3',
+      plan_id: 1,
+      source_scheduling_goal_id: null,
+      start_offset: '08:00:00',
+      start_time_ms: 1152284400000,
+      tags: [],
+      type: 'foo',
+    },
+  ];
+
+  const shiftedLeft = bulkShiftActivityDirectivesInPlan(
+    activityDirectives,
+    'LEFT',
+    7200000000, //2 hours
+  );
+
+  test('Shifted Activities to the Left by 2 hours', () => {
+    expect(shiftedLeft[0].start_offset === '08:00:00');
+    expect(shiftedLeft[1].start_offset === '09:00:00'); //Was anchored to activity with id=1 so shift happens automatically
+    expect(shiftedLeft[2].start_offset === '06:00:00');
+  });
+
+  const shiftedRight = bulkShiftActivityDirectivesInPlan(
+    activityDirectives,
+    'RIGHT',
+    7200000000, //2 hours
+  );
+
+  test('Shifted Activities to the Right by 2 hours', () => {
+    expect(shiftedRight[0].start_offset === '12:00:00');
+    expect(shiftedRight[1].start_offset === '09:00:00'); //Was anchored to activity with id=1 so shift happens automatically
+    expect(shiftedRight[2].start_offset === '10:00:00');
+  });
+});

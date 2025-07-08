@@ -265,10 +265,8 @@
       const { direction, shiftOffset, selectedRows } = event.detail;
       const shiftOffsetUS = convertDurationStringToUs(shiftOffset);
 
-      const updatedActivities = await bulkShiftActivityDirectivesInPlan(
-        plan,
+      const updatedActivities = bulkShiftActivityDirectivesInPlan(
         selectedRows,
-        user,
         direction.toUpperCase() as 'LEFT' | 'RIGHT',
         shiftOffsetUS,
       );

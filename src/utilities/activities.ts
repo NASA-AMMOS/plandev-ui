@@ -528,20 +528,13 @@ export async function packActivityDirectivesBothInPlan(
   return activities;
 }
 
-export async function bulkShiftActivityDirectivesInPlan(
-  sourcePlan: Plan,
+export function bulkShiftActivityDirectivesInPlan(
   activities: ActivityDirective[],
-  user: BaseUser | User | null,
   direction: 'LEFT' | 'RIGHT',
   offsetUS: number,
-): Promise<ActivityDirective[] | void> {
+): ActivityDirective[] {
   const selectedIds = new Set(activities.map(a => a.id));
   const updateActivities = activities.filter(a => a.anchor_id === null || !selectedIds.has(a.anchor_id));
-
-  for (const activity of activities) {
-    console.log('Start Offset', activity.start_offset, 'for id ', activity.id);
-    console.log(getIntervalInMs(activity.start_offset), 'for id', activity.id);
-  }
 
   for (const activity of updateActivities) {
     activity.start_offset = usToOffset(
