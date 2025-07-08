@@ -183,7 +183,7 @@
   async function updateActivities(updatedActivities: ActivityDirective[] | null) {
     if (plan != null && Array.isArray(updatedActivities)) {
       for (const activity of updatedActivities) {
-        const activityType = await findTypes(activity.type, get(planModelActivityTypes) ?? []);
+        const activityType = findTypes(activity.type, get(planModelActivityTypes) ?? []);
         await effects.updateActivityDirective(
           plan,
           activity.id,
@@ -197,10 +197,9 @@
 
   async function packLeftActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
-      const updatedActivities = await packActivityDirectivesBothInPlan(
+      const updatedActivities = packActivityDirectivesBothInPlan(
         plan,
         activities,
-        user,
         'RIGHT',
         0,
         get(activityDirectivesDB) ?? [],
@@ -216,10 +215,9 @@
 
   async function packRightActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
-      const updatedActivities = await packActivityDirectivesBothInPlan(
+      const updatedActivities = packActivityDirectivesBothInPlan(
         plan,
         activities,
-        user,
         'RIGHT',
         0,
         get(activityDirectivesDB) ?? [],
@@ -243,7 +241,6 @@
       const updatedActivities = await packActivityDirectivesBothInPlan(
         plan,
         selectedRows,
-        user,
         direction.toUpperCase() as 'LEFT' | 'RIGHT',
         offsetUS,
         get(activityDirectivesDB) ?? [],
