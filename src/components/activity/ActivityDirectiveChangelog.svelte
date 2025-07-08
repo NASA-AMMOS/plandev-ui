@@ -120,9 +120,13 @@
           ? formatDate(new Date(previous.start_time_ms), $plugins.time.primary.format)
           : '';
 
-      differences[`Start Time (${$plugins.time.primary.label})`] = {
-        currentValue: currentStartTime,
-        previousValue: previousStartTime,
+      const cycle = current.start_time_ms === null || previous.start_time_ms === null;
+
+      const key = cycle ? 'Anchor Cycle Detected' : `Start Time (${$plugins.time.primary.label})`;
+
+      differences[key] = {
+        currentValue: cycle ? 'Cannot Calculate Absolute Start Time' : currentStartTime,
+        previousValue: cycle ? '' : previousStartTime,
       };
     }
 
