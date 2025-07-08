@@ -369,3 +369,22 @@ export async function parseJSONStream<R>(jsonStream: ReadableStream): Promise<R>
 export function lowercase(value: any) {
   return typeof value === 'string' ? value.toLowerCase() : value;
 }
+
+/**
+ * Extract quoted characters from a string
+ */
+export function extractQuotes(message: string): { quotes: string[]; text: string } {
+  const quoteRegex = /'([^']+)'|"([^"]+)"/g;
+  const quotes: string[] = [];
+  let match;
+
+  // Find all quoted strings
+  while ((match = quoteRegex.exec(message)) !== null) {
+    quotes.push(match[1] || match[2]);
+  }
+
+  // Replace quotes with placeholders for displaying
+  const text = message.replace(quoteRegex, '{{QUOTE}}');
+
+  return { quotes, text };
+}

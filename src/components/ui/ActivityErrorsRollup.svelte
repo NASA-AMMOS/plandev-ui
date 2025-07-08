@@ -280,6 +280,7 @@
   .count.selected {
     background-color: var(--st-gray-15, #f1f2f3);
     color: var(--st-gray-80);
+    font-weight: 600;
   }
 
   .counts.minimal,

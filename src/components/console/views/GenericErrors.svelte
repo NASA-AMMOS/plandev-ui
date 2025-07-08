@@ -3,78 +3,25 @@
 <script lang="ts">
   import { Tabs } from '@nasa-jpl/stellar-svelte';
   import { selectActivity } from '../../../stores/activities';
-  import type {
-    AnchorValidationError,
-    BaseError,
-    SchedulingError,
-    SimulationDatasetError,
-  } from '../../../types/errors';
-  import { ErrorTypes } from '../../../utilities/errors';
+  import type { BaseError } from '../../../types/errors';
+  import { getActivityIdsFromError } from '../../../utilities/errors';
+  import { extractQuotes } from '../../../utilities/generic';
   import EmptyState from '../../console/EmptyState.svelte';
 
   export let errors: BaseError[] = [];
-  // These props accept dynamic values from parent but aren't currently used in template
-  export let title: string = 'Errors';
-  export let isClearable: boolean = true;
   export let value: string;
-
-  // Suppress unused export warnings - these props are passed from parent for future use
-  title;
-  isClearable;
 
   $: hasErrors = errors.length > 0;
 
-  // Function to extract activity IDs from different error types
-  function getActivityIds(error: BaseError): number[] {
-    if (error.type === ErrorTypes.ANCHOR_VALIDATION_ERROR) {
-      return [(error as AnchorValidationError).activityId];
-    } else if (
-      error.type === ErrorTypes.GLOBAL_SCHEDULING_CONDITIONS_FAILED ||
-      error.type === ErrorTypes.SCHEDULING_GOALS_FAILED
-    ) {
-      const schedulingError = error as SchedulingError;
-      if (schedulingError.data?.errors) {
-        return Object.keys(schedulingError.data.errors)
-          .map(id => parseInt(id))
-          .filter(id => !isNaN(id));
-      }
-    } else if (error.type === ErrorTypes.UNEXPECTED_SIMULATION_EXCEPTION) {
-      const simulationError = error as SimulationDatasetError;
-      if (simulationError.data?.errors) {
-        return Object.keys(simulationError.data.errors)
-          .map(id => parseInt(id))
-          .filter(id => !isNaN(id));
-      }
-    }
-    return [];
-  }
-
-  // Function to extract quoted text from a message
-  function extractQuotes(message: string): { quotes: string[]; text: string } {
-    const quoteRegex = /'([^']+)'|"([^"]+)"/g;
-    const quotes: string[] = [];
-    let match;
-
-    // Find all quoted strings
-    while ((match = quoteRegex.exec(message)) !== null) {
-      quotes.push(match[1] || match[2]);
-    }
-
-    // Replace quotes with placeholders for displaying
-    const text = message.replace(quoteRegex, '{{QUOTE}}');
-
-    return { quotes, text };
-  }
-
-  // Function to clean error message by removing redundant prefixes
+  // Clean error message by removing redundant prefixes
   function cleanErrorMessage(message: string): string {
     return message.replace(/^(CAUGHT_ERROR|Error:\s+)+/i, '').trim();
   }
 
-  // Function to format timestamp consistently
-  function formatTimestamp(timestamp: string): string {
+  function formatErrorTimestamp(timestamp: string): string {
     try {
       // Remove any trailing microseconds/nanoseconds after the Z
+      // which are present on certain error types and not parseable by native JS Date.
       const cleanTimestamp = timestamp.replace(/Z\.\d+$/, 'Z');
       const date = new Date(cleanTimestamp);
       if (isNaN(date.getTime())) {
@@ -97,14 +44,6 @@
   function handleActivityClick(activityId: number) {
     selectActivity(activityId, null);
   }
-
-  // Keeping createEventDispatcher for future clear functionality implementation
-  // const dispatch = createEventDispatcher<{ clearMessages: void }>();
-
-  // This function is kept for future implementation of clear functionality
-  // function onClearErrors() {
-  //   dispatch('clearMessages');
-  // }
 </script>
 
 <Tabs.Content
@@ -113,15 +52,7 @@
 >
   {#if hasErrors}
     <div class="grid h-full w-full grid-rows-[min-content_auto]">
-      <div class="flex flex-col divide-y divide-[var(--st-gray-20)] pt-2">
-        <!-- Header -->
-        <!-- <div
-          class="grid grid-cols-[100px_1fr_180px] items-center gap-4 px-1 py-2 text-xs font-medium text-[var(--st-gray-60)]"
-        >
-          <div>Type</div>
-          <div>Message</div>
-          <div>Timestamp</div>
-        </div> -->
+      <div class="flex flex-col divide-y pt-2">
         {#each errors as error}
           <details class="group">
             <summary class="list-none">
@@ -136,6 +67,7 @@
                   </span>
                 </div>
                 {#if error.message}
+                  {@const activityIds = getActivityIdsFromError(error)}
                   {@const { quotes, text } = extractQuotes(cleanErrorMessage(error.message))}
                   <div class="flex min-w-0 items-center gap-1 overflow-hidden px-2">
                     {#each text.split('{{QUOTE}}') as part, i (i)}
@@ -144,8 +76,9 @@
                         {@const hasQuote = quotes[i] !== undefined}
                         <span
                           class={`whitespace-nowrap ${isLast && !hasQuote ? 'overflow-hidden text-ellipsis' : 'min-w-fit'}`}
-                          >{part}</span
                         >
+                          {part}
+                        </span>
                       {/if}
                       {#if quotes[i]}
                         <span
@@ -155,34 +88,29 @@
                         </span>
                       {/if}
                     {/each}
-                    {#if true}
-                      {@const activityIds = getActivityIds(error)}
-                      {#if activityIds.length > 0}
-                        <div class="ml-2 flex shrink-0 gap-1">
-                          {#each activityIds as activityId}
-                            <button
-                              class="inline-flex shrink-0 items-center rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-950/80 ring-1 ring-inset ring-blue-900/20 hover:bg-blue-100"
-                              on:click|stopPropagation={() => handleActivityClick(activityId)}
-                            >
-                              View Activity {activityId}
-                            </button>
-                          {/each}
-                        </div>
-                      {/if}
+                    {#if activityIds.length > 0}
+                      <div class="ml-2 flex shrink-0 gap-1">
+                        {#each activityIds as activityId}
+                          <button
+                            class="inline-flex shrink-0 items-center rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-950/80 ring-1 ring-inset ring-blue-900/20 hover:bg-blue-100"
+                            on:click|stopPropagation={() => handleActivityClick(activityId)}
+                          >
+                            View Activity {activityId}
+                          </button>
+                        {/each}
+                      </div>
                     {/if}
                   </div>
                 {/if}
-                <span class="flex items-center justify-end text-xs text-[var(--st-gray-60)]"
-                  >{formatTimestamp(error.timestamp)}</span
+                <span class="flex items-center justify-end text-xs text-[var(--st-gray-60)]">
+                  {formatErrorTimestamp(error.timestamp)}</span
                 >
               </div>
             </summary>
             {#if error.message || error.data || error.trace}
-              <div class="bg-[var(--st-primary-background-color)] px-4 py-2">
+              <div class="bg-white px-4 py-2">
                 <div class="mb-2 text-xs">
-                  <span class="font-medium">Timestamp:</span>
                   <div class="mt-1">
-                    <div>{formatTimestamp(error.timestamp)}</div>
                     <div class="text-[var(--st-gray-60)]">{error.timestamp}</div>
                   </div>
                 </div>
@@ -190,14 +118,14 @@
                   <div class="mb-2 whitespace-pre-wrap text-xs">{error.message}</div>
                 {/if}
                 {#if error.data && JSON.stringify(error.data) !== '{}'}
-                  <pre class="m-0 whitespace-pre-wrap rounded bg-background p-2 text-xs">{JSON.stringify(
+                  <pre class="m-0 whitespace-pre-wrap rounded bg-background text-xs">{JSON.stringify(
                       error.data,
                       undefined,
                       2,
                     )}</pre>
                 {/if}
                 {#if error.trace}
-                  <pre class="m-0 whitespace-pre-wrap rounded bg-background p-2 text-xs">{error.trace}</pre>
+                  <pre class="m-0 whitespace-pre-wrap rounded bg-background text-xs">{error.trace}</pre>
                 {/if}
               </div>
             {/if}
@@ -219,6 +147,6 @@
   }
 
   details[open] > summary > div {
-    background-color: var(--st-gray-10);
+    @apply bg-accent;
   }
 </style>

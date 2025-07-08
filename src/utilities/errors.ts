@@ -6,6 +6,9 @@ import type {
   ActivityErrorRollup,
   ActivityValidationErrors,
   AnchorValidationError,
+  BaseError,
+  SchedulingError,
+  SimulationDatasetError,
 } from '../types/errors';
 
 export enum ErrorTypes {
@@ -106,4 +109,31 @@ export function generateActivityValidationErrorRollups(
       type,
     };
   });
+}
+
+/**
+ * Extract activity IDs from different error types
+ */
+export function getActivityIdsFromError(error: BaseError): number[] {
+  if (error.type === ErrorTypes.ANCHOR_VALIDATION_ERROR) {
+    return [(error as AnchorValidationError).activityId];
+  } else if (
+    error.type === ErrorTypes.GLOBAL_SCHEDULING_CONDITIONS_FAILED ||
+    error.type === ErrorTypes.SCHEDULING_GOALS_FAILED
+  ) {
+    const schedulingError = error as SchedulingError;
+    if (schedulingError.data?.errors) {
+      return Object.keys(schedulingError.data.errors)
+        .map(id => parseInt(id))
+        .filter(id => !isNaN(id));
+    }
+  } else if (error.type === ErrorTypes.UNEXPECTED_SIMULATION_EXCEPTION) {
+    const simulationError = error as SimulationDatasetError;
+    if (simulationError.data?.errors) {
+      return Object.keys(simulationError.data.errors)
+        .map(id => parseInt(id))
+        .filter(id => !isNaN(id));
+    }
+  }
+  return [];
 }

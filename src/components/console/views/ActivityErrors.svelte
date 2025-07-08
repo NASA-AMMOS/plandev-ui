@@ -13,12 +13,7 @@
 
   export let activityValidationErrorRollups: ActivityErrorRollup[] = [];
   export let activityValidationErrorTotalRollup: ActivityErrorCounts;
-  // This prop accepts dynamic values from parent but isn't currently used in template
-  export let title: string = 'Activity Validation Errors';
   export let value: string;
-
-  // Suppress unused export warning - this prop is passed from parent for future use
-  title;
 
   $: hasErrors = activityValidationErrorRollups.length > 0;
 
@@ -130,11 +125,6 @@
 <Tabs.Content {value} class="mt-0 h-full overflow-hidden pb-2 pr-2 pt-2">
   {#if hasErrors}
     <div class="flex h-full flex-col overflow-hidden">
-      <!-- <div
-        class="mx-4 my-2.5 grid w-full grid-cols-[auto_min-content] justify-between text-[11px] font-bold uppercase leading-4 text-[var(--st-gray-60)]"
-      >
-        <div>{title}</div>
-      </div> -->
       <div class="grid min-h-0 flex-1 grid-cols-[240px_1fr] overflow-hidden bg-[var(--st-gray-15)]">
         <div class="overflow-y-auto border-r border-[var(--st-gray-20)] pt-4">
           <ActivityErrorsRollup

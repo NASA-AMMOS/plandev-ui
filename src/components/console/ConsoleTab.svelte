@@ -34,8 +34,7 @@
   on:click={onClick}
 >
   <div
-    class="flex h-2 items-center gap-1 text-xs text-muted-foreground"
-    class:text-neutral-800={numberOfErrors > 0}
+    class="flex h-2 items-center gap-1 text-xs data-[state=active]:text-neutral-800"
     use:tooltip={{ content: title, placement: 'top' }}
   >
     <slot />{#if numberOfErrors > 0}<span

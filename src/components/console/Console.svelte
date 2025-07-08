@@ -11,13 +11,12 @@
 </script>
 
 <script lang="ts">
-  import { Tabs } from '@nasa-jpl/stellar-svelte';
-  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
-  import ChevronUpIcon from '@nasa-jpl/stellar/icons/chevron_up.svg?component';
+  import { Button, Tabs } from '@nasa-jpl/stellar-svelte';
+  import { ChevronDown, ChevronUp } from 'lucide-svelte';
   import { createEventDispatcher, setContext } from 'svelte';
   import { writable } from 'svelte/store';
+  import { tooltip } from '../../utilities/tooltip';
 
-  // Props
   export let expanded: boolean = false; // Now a regular prop, not bound
   export let selectedTab: string = 'all'; // Current selected tab
 
@@ -75,12 +74,23 @@
             <slot name="console-tabs" />
           </div>
         </div>
-        <div class="ml-auto cursor-pointer pr-3" role="none" on:click|stopPropagation={onToggle}>
-          {#if expanded}
-            <ChevronDownIcon />
-          {:else}
-            <ChevronUpIcon />
-          {/if}
+        <div class="mr-2 flex gap-1">
+          <slot name="console-actions" />
+          <div use:tooltip={{ content: expanded ? 'Collapse' : 'Expand' }}>
+            <Button
+              variant="ghost"
+              size="icon"
+              class="ml-auto flex flex-shrink-0 items-center"
+              role="none"
+              on:click={onToggle}
+            >
+              {#if expanded}
+                <ChevronDown size={16} />
+              {:else}
+                <ChevronUp size={16} />
+              {/if}
+            </Button>
+          </div>
         </div>
       </Tabs.List>
       <!-- Always render content, it will be hidden by parent's Resizable pane -->

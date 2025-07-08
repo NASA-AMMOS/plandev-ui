@@ -421,7 +421,13 @@
   async function validateArguments(newArguments: ArgumentsMap | null): Promise<void> {
     if (newArguments) {
       const { type } = activityDirective;
-      const { errors, success } = await effects.validateActivityArguments(type, modelId, newArguments, user);
+      const { errors, success } = await effects.validateActivityArguments(
+        type,
+        activityDirective.id,
+        modelId,
+        newArguments,
+        user,
+      );
 
       if (!success && errors) {
         parameterErrorMap = errors.reduce((map: Record<string, string[]>, error) => {

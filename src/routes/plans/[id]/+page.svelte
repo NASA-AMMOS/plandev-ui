@@ -5,11 +5,12 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
-  import { Resizable } from '@nasa-jpl/stellar-svelte';
+  import { Button, Resizable } from '@nasa-jpl/stellar-svelte';
   import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
   import VerticalCollapseIcon from '@nasa-jpl/stellar/icons/vertical_collapse_with_center_line.svg?component';
+  import { ListX } from 'lucide-svelte';
   import { onDestroy } from 'svelte';
   import Nav from '../../../components/app/Nav.svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
@@ -157,6 +158,8 @@
 
   export let data: PageData;
 
+  type PlanConsoleTab = 'all' | 'anchor' | 'scheduling' | 'simulation' | 'activity' | 'model';
+
   let activityErrorCounts: ActivityErrorCounts = {
     all: 0,
     extra: 0,
@@ -187,7 +190,7 @@
   let lastSimulationDatasetId: number | null = null;
   let consolePaneApi: any;
   let isConsoleExpanded = false;
-  let selectedConsoleTab = 'all';
+  let selectedConsoleTab: PlanConsoleTab = 'all';
 
   $: ({ invalidActivityCount, ...activityErrorCounts } = $activityErrorRollups.reduce(
     (prevCounts, activityErrorRollup) => {
@@ -486,12 +489,12 @@
     $simulationDatasetId = $simulationDatasetLatest?.id ?? -1;
   }
 
-  function onClearAllErrors() {
-    clearAllErrors();
-  }
-
-  function onClearSchedulingErrors() {
-    clearSchedulingErrors();
+  function onClearErrorsClick(selectedConsoleTab: PlanConsoleTab) {
+    if (selectedConsoleTab === 'all') {
+      clearAllErrors();
+    } else if (selectedConsoleTab === 'scheduling') {
+      clearSchedulingErrors();
+    }
   }
 
   function onCloseSnapshotPreview() {
@@ -618,7 +621,7 @@
     viewUpdateGrid({ rightRowSizes: event.detail });
   }
 
-  function openConsole(tab: string) {
+  function openConsole(tab: PlanConsoleTab) {
     selectedConsoleTab = tab || 'all';
     isConsoleExpanded = true;
 
@@ -641,7 +644,7 @@
 
   function onSelectConsoleTab(event: CustomEvent<{ expand: boolean; tab: string }>) {
     const { tab } = event.detail;
-    selectedConsoleTab = tab;
+    selectedConsoleTab = tab as PlanConsoleTab;
 
     // Always expand if a tab is selected, regardless of expand flag
     isConsoleExpanded = true;
@@ -650,7 +653,7 @@
     }
   }
 
-  function openConsoleTab(tab: string) {
+  function openConsoleTab(tab: PlanConsoleTab) {
     openConsole(tab);
   }
 </script>
@@ -943,7 +946,7 @@
       bind:pane={consolePaneApi}
       class="min-h-[28px]"
     >
-      <div class="console-wrapper">
+      <div class="h-full min-h-6 overflow-hidden">
         <Console
           bind:this={errorConsole}
           expanded={isConsoleExpanded}
@@ -951,12 +954,21 @@
           on:toggle={onConsoleToggle}
           on:selectTab={onSelectConsoleTab}
         >
+          <svelte:fragment slot="console-actions">
+            {#if selectedConsoleTab === 'all' || selectedConsoleTab === 'scheduling'}
+              <div use:tooltip={{ content: 'Clear Errors', placement: 'top' }}>
+                <Button variant="ghost" size="icon" on:click={() => onClearErrorsClick(selectedConsoleTab)}>
+                  <ListX size={16} /></Button
+                >
+              </div>
+            {/if}
+          </svelte:fragment>
           <svelte:fragment slot="console-tabs">
             <div class="console-tabs overflow-x-hidden">
               <div>
                 <ConsoleTab value="all" numberOfErrors={$allErrors?.length} title="All Errors">All Errors</ConsoleTab>
               </div>
-              <div class="pointer-events-none mx-0 w-1 px-0 text-[8px] opacity-50">|</div>
+              <div class="pointer-events-none mx-0 flex w-2 justify-center px-0 text-[8px] opacity-50">|</div>
               <div class="flex py-0.5">
                 <ConsoleTab
                   value="anchor"
@@ -989,30 +1001,14 @@
             </div>
           </svelte:fragment>
 
-          <ConsoleGenericErrors
-            value="all"
-            errors={$allErrors}
-            title="All Errors"
-            on:clearMessages={onClearAllErrors}
-          />
-          <ConsoleGenericErrors value="anchor" errors={$anchorValidationErrors} title="Anchor Validation Errors" />
-          <ConsoleGenericErrors
-            value="scheduling"
-            errors={$schedulingErrors}
-            title="Scheduling Errors"
-            on:clearMessages={onClearSchedulingErrors}
-          />
-          <ConsoleGenericErrors
-            value="simulation"
-            errors={$simulationDatasetErrors}
-            isClearable={false}
-            title="Simulation Errors"
-          />
+          <ConsoleGenericErrors value="all" errors={$allErrors} />
+          <ConsoleGenericErrors value="anchor" errors={$anchorValidationErrors} />
+          <ConsoleGenericErrors value="scheduling" errors={$schedulingErrors} />
+          <ConsoleGenericErrors value="simulation" errors={$simulationDatasetErrors} />
           <ConsoleActivityErrors
             value="activity"
             activityValidationErrorTotalRollup={activityErrorCounts}
             activityValidationErrorRollups={$activityErrorRollups}
-            title="Activity Validation Errors"
             on:selectionChanged={onActivityValidationSelected}
           />
           <ConsoleModelErrors value="model" model={$plan?.model} title="Mission Model Errors" />
@@ -1040,7 +1036,6 @@
 
   .console-tabs {
     align-items: center;
-    column-gap: 0.1rem;
     display: grid;
     grid-template-columns: min-content min-content auto;
   }
@@ -1065,42 +1060,5 @@
   .title {
     display: flex;
     gap: 10px;
-  }
-
-  .console-wrapper {
-    height: 100%;
-    min-height: 24px;
-    overflow: hidden;
-  }
-
-  :global(.console-handle) {
-    background-color: var(--st-gray-20);
-    cursor: row-resize;
-    height: 4px;
-    position: relative;
-    z-index: 10;
-  }
-
-  :global(.console-handle::before) {
-    background-color: var(--st-gray-40);
-    border-radius: 1px;
-    content: '';
-    height: 2px;
-    left: 50%;
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 40px;
-  }
-
-  :global(.plan-container > [data-paneforge-pane]:last-child) {
-    height: auto !important;
-    min-height: 28px !important;
-    overflow: hidden !important;
-  }
-
-  :global(.plan-container > [data-paneforge-pane]:last-child:not(.pf-expanded)) {
-    flex-basis: 28px !important;
-    flex-grow: 0 !important;
   }
 </style>

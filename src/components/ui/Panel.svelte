@@ -38,7 +38,6 @@
   }
 
   .body {
-    background-color: var(--st-gray-10);
     display: flex;
     flex-direction: column;
   }
