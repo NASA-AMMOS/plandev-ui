@@ -17,7 +17,7 @@
   import {
     copyActivityDirectivesToClipboard,
     findTypes,
-    packActivityDirectivesBothInPlan,
+    packActivityDirectivesInPlan,
   } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
@@ -181,11 +181,10 @@
 
   async function packLeftActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
-      const updatedActivities = await packActivityDirectivesBothInPlan(
+      const updatedActivities = packActivityDirectivesInPlan(
         plan,
         activities,
-        user,
-        'RIGHT',
+        'LEFT',
         0,
         get(activityDirectivesDB) ?? [],
         get(spansMap) ?? {},
@@ -209,10 +208,9 @@
 
   async function packRightActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
-      const updatedActivities = await packActivityDirectivesBothInPlan(
+      const updatedActivities = packActivityDirectivesInPlan(
         plan,
         activities,
-        user,
         'RIGHT',
         0,
         get(activityDirectivesDB) ?? [],
