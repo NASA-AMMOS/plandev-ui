@@ -5,7 +5,6 @@ import type { BaseUser, User } from '../types/app';
 import type { Plan } from '../types/plan';
 import type { Span, SpanId, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import { getClipboardContent, setClipboardContent } from './clipboard';
-import effects from './effects';
 import { compare, isEmpty } from './generic';
 import { pluralize } from './text';
 import {
@@ -522,19 +521,6 @@ export async function packActivityDirectivesBothInPlan(
     }
   }
 
-  /*for (const activity of activities) {
-    const activityType = await findTypes(activity.type, activityTypes);
-  for (const activity of activities) {
-    const activityType = await findTypes(activity.type, activityTypes);
-    await effects.updateActivityDirective(
-      sourcePlan,
-      activity.id,
-      { start_offset: activity.start_offset },
-      activityType || null,
-      user && 'activeRole' in user ? (user as User) : null,
-    );
-  }*/
-
   showSuccessToast(
     `Packed ${activities.length} Activity Directive${pluralize(activities.length)} ${direction.toLowerCase()}`,
   );
@@ -548,25 +534,18 @@ export async function bulkShiftActivityDirectivesInPlan(
   user: BaseUser | User | null,
   direction: 'LEFT' | 'RIGHT',
   offsetUS: number,
-  activityTypes: ActivityType[],
 ): Promise<ActivityDirective[] | void> {
   const selectedIds = new Set(activities.map(a => a.id));
   const updateActivities = activities.filter(a => a.anchor_id === null || !selectedIds.has(a.anchor_id));
 
-  for (const activity of updateActivities) {
-    activity.start_offset = usToOffset(
-      offsetToUs(activity.start_offset) + (direction === 'RIGHT' ? offsetUS : -offsetUS),
-    );
+  for (const activity of activities) {
+    console.log('Start Offset', activity.start_offset, 'for id ', activity.id);
+    console.log(getIntervalInMs(activity.start_offset), 'for id', activity.id);
   }
 
   for (const activity of updateActivities) {
-    const activityType = await findTypes(activity.type, activityTypes);
-    await effects.updateActivityDirective(
-      sourcePlan,
-      activity.id,
-      { start_offset: activity.start_offset },
-      activityType || null,
-      user && 'activeRole' in user ? (user as User) : null,
+    activity.start_offset = usToOffset(
+      getIntervalInMs(activity.start_offset) * 1000 + (direction === 'RIGHT' ? offsetUS : -offsetUS),
     );
   }
 

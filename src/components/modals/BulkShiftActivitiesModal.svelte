@@ -7,6 +7,7 @@
   import Modal from '../modals/Modal.svelte';
   import ModalContent from '../modals/ModalContent.svelte';
   import ModalFooter from '../modals/ModalFooter.svelte';
+  import ModalHeader from '../modals/ModalHeader.svelte';
   // import ModalHeader from '../modals/ModalHeader.svelte';
 
   const dispatch = createEventDispatcher();
@@ -41,6 +42,7 @@
 
 <div class="compact-modal">
   <Modal height={150} width={300}>
+    <ModalHeader on:close={cancel}>Shift Directive(s)</ModalHeader>
     <ModalContent>
       <div class="form-container">
         <div class="row">
@@ -114,18 +116,23 @@
   }
 
   .toggle-group {
+    align-items: stretch;
     border: 1px solid #ccc;
     border-radius: 6px;
     display: flex;
     flex: 0 0 auto;
+    height: 2rem;
     overflow: hidden;
   }
 
   .toggle {
+    align-items: center;
     background: #f9f9f9;
     border: none;
     cursor: pointer;
+    display: flex;
     font-weight: 500;
+    height: 100%;
     outline: none;
     padding: 0.5rem 1rem;
   }
@@ -136,8 +143,14 @@
   }
 
   .shift-input {
+    align-items: center;
+    box-sizing: border-box;
+    display: flex;
     flex: 0 0 auto;
+    font-size: 0.75rem;
+    height: 2rem;
     max-width: 200px;
+    padding: 0.5rem 1rem;
     width: fit-content;
   }
 
