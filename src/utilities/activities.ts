@@ -291,7 +291,6 @@ export function addAbsoluteTimeToRevision(
   spanUtilityMaps: SpanUtilityMaps,
 ): void {
   const activityDirectivesMap = computeActivityDirectivesMap(activitiesDirectivesDB, plan, spansMap, spanUtilityMaps);
-
   //Temporarily overlay the currentActivity with the revision
   const tempDirectivesMap: ActivityDirectivesMap = {
     ...activityDirectivesMap,
@@ -306,14 +305,19 @@ export function addAbsoluteTimeToRevision(
     },
   };
 
-  const startTimeMs = getActivityDirectiveStartTimeMs(
-    activityId,
-    plan.start_time,
-    plan.end_time_doy,
-    tempDirectivesMap,
-    spansMap,
-    spanUtilityMaps,
-  );
+  let startTimeMs;
+  try {
+    startTimeMs = getActivityDirectiveStartTimeMs(
+      activityId,
+      plan.start_time,
+      plan.end_time_doy,
+      tempDirectivesMap,
+      spansMap,
+      spanUtilityMaps,
+    );
+  } catch (e) {
+    startTimeMs = null;
+  }
 
   activityDirectiveRevision.start_time_ms = startTimeMs;
 }

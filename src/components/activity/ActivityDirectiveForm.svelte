@@ -101,12 +101,8 @@
   $: activityType =
     (activityTypes ?? []).find(({ name: activityTypeName }) => activityDirective?.type === activityTypeName) ?? null;
   $: {
-    /* const startTimeMs = getUnixEpochTimeFromInterval(
-      planStartTimeYmd,
-      revision ? revision.start_offset : activityDirective.start_offset,
-    );*/
     const startTimeMs = revision ? revision.start_time_ms : activityDirective.start_time_ms;
-    startTime = startTimeMs ? formatDate(new Date(startTimeMs), $plugins.time.primary.format) : '';
+    startTime = startTimeMs ? formatDate(new Date(startTimeMs), $plugins.time.primary.format) : '0000-000T00:00:00:00';
   }
 
   $: startTimeField = field<string>(startTime, [required, $plugins.time.primary.validate]);
