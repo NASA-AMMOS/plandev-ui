@@ -102,7 +102,7 @@
     (activityTypes ?? []).find(({ name: activityTypeName }) => activityDirective?.type === activityTypeName) ?? null;
   $: {
     const startTimeMs = revision ? revision.start_time_ms : activityDirective.start_time_ms;
-    startTime = startTimeMs ? formatDate(new Date(startTimeMs), $plugins.time.primary.format) : '0000-000T00:00:00:00';
+    startTime = startTimeMs ? formatDate(new Date(startTimeMs), $plugins.time.primary.format) : '';
   }
 
   $: startTimeField = field<string>(startTime, [required, $plugins.time.primary.validate]);
