@@ -4,6 +4,7 @@ import {
   type DerivationGroup,
   type ExternalSourceSlim,
   type ExternalSourceType,
+  type ExternalSourceTypeAssociations,
   type ExternalSourceWithEventTypes,
   type PlanDerivationGroup,
 } from '../types/external-source';
@@ -46,7 +47,26 @@ export const sourcesUsingExternalEventTypes = gqlSubscribable<ExternalSourceWith
 );
 
 /* Derived. */
-// reorganization of unacknowledged planDerivationGroupLinks so that it is easy to the derivation groups and when their updates were last acknowledged
+export const externalSourceTypeAssociations: Readable<ExternalSourceTypeAssociations[]> = derived(
+  [externalSourceTypes, externalSources, derivationGroups],
+  ([$externalSourceTypes, $externalSources, $derivationGroups]) => {
+    return $externalSourceTypes.map(sourceType => {
+      const sourceAssociations: number = $externalSources.filter(
+        externalSource => externalSource.source_type_name === sourceType.name,
+      ).length;
+      const derivationGroupAssociations: number = $derivationGroups.filter(
+        derivationGroup => derivationGroup.source_type_name === sourceType.name,
+      ).length;
+      return {
+        ...sourceType,
+        derivation_group_associations: derivationGroupAssociations,
+        source_associations: sourceAssociations,
+      };
+    });
+  },
+);
+
+// Reorganization of unacknowledged planDerivationGroupLinks so that it is easy to the derivation groups and when their updates were last acknowledged
 export const derivationGroupsAcknowledged: Readable<Record<string, { last_acknowledged_at: string }>> = derived(
   planDerivationGroupLinks,
   $planDerivationGroupLinks => {

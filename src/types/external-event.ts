@@ -59,6 +59,10 @@ export type ExternalEventType = {
   name: string;
 };
 
+export type ExternalEventTypeAssociations = ExternalEventType & {
+  source_associations: number;
+};
+
 // This is used for the GraphQL mutation.
 // this doesn't do any actual filtering. extra keys in surplus of this are NOT checked.
 // Typescript doesn't really allow us to check these, so ensuring we don't push additional and unnecessary data to the DB should be caught

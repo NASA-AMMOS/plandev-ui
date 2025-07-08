@@ -1,11 +1,17 @@
 import type { Dictionary } from 'lodash';
 import { keyBy } from 'lodash-es';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import type { ExternalEvent, ExternalEventDB, ExternalEventId, ExternalEventType } from '../types/external-event';
+import type {
+  ExternalEvent,
+  ExternalEventDB,
+  ExternalEventId,
+  ExternalEventType,
+  ExternalEventTypeAssociations,
+} from '../types/external-event';
 import { getExternalEventWholeRowId } from '../utilities/externalEvents';
 import gql from '../utilities/gql';
 import { convertDoyToYmd, convertUTCToMs, getIntervalInMs } from '../utilities/time';
-import { selectedPlanDerivationGroupNames } from './external-source';
+import { selectedPlanDerivationGroupNames, sourcesUsingExternalEventTypes } from './external-source';
 import { plan } from './plan';
 import { gqlSubscribable } from './subscribable';
 import { viewUpdateGrid } from './views';
@@ -23,6 +29,18 @@ export const externalEventTypes = gqlSubscribable<ExternalEventType[]>(gql.SUB_E
 export const selectedExternalEventId: Writable<ExternalEventId | null> = writable(null);
 
 /* Derived. */
+export const externalEventTypeAssociations: Readable<ExternalEventTypeAssociations[]> = derived(
+  [externalEventTypes, sourcesUsingExternalEventTypes],
+  ([$externalEventTypes, $sourcesUsingExternalEventTypes]) => {
+    return $externalEventTypes.map(eventType => {
+      const sourceAssociations: number = $sourcesUsingExternalEventTypes.filter(externalSource =>
+        externalSource.types.includes(eventType.name),
+      ).length;
+      return { ...eventType, source_associations: sourceAssociations };
+    });
+  },
+);
+
 export const selectedExternalEvents: Readable<ExternalEvent[]> = derived(
   [selectedExternalEventsRaw, plan],
   ([$externalEventsRaw, $plan]) => {

@@ -62,6 +62,12 @@ export type ExternalSourceType = {
   attribute_schema: SchemaObject;
   name: string;
 };
+
+export type ExternalSourceTypeAssociations = ExternalSourceType & {
+  derivation_group_associations: number;
+  source_associations: number;
+};
+
 export type ExternalSourceWithEventTypes = { key: string; types: string[] };
 
 export type DerivationGroup = {

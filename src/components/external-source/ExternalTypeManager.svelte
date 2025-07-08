@@ -6,23 +6,28 @@
   import type { ICellRendererParams } from 'ag-grid-community';
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
-  import { externalEventTypes } from '../../stores/external-event';
+  import { externalEventTypeAssociations } from '../../stores/external-event';
   import {
     createExternalSourceEventTypeError,
     derivationGroups,
     externalSources,
-    externalSourceTypes,
+    externalSourceTypeAssociations,
     sourcesUsingExternalEventTypes,
   } from '../../stores/external-source';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
-  import type { ExternalEventType, ExternalEventTypeId } from '../../types/external-event';
+  import type {
+    ExternalEventType,
+    ExternalEventTypeAssociations,
+    ExternalEventTypeId,
+  } from '../../types/external-event';
   import type {
     DerivationGroup,
     DerivationGroupId,
     ExternalSourceEventTypeSchema,
     ExternalSourceSlim,
     ExternalSourceType,
+    ExternalSourceTypeAssociations,
     ExternalSourceTypeId,
   } from '../../types/external-source';
   import type { ParametersMap } from '../../types/parameter';
@@ -57,7 +62,8 @@
     deleteExternalSourceType: (sourceType: ExternalSourceType) => Promise<void>;
   };
   type ModalCellRendererParamsDerivationGroup = ICellRendererParams<DerivationGroup> & CellRendererParams;
-  type ModalCellRendererParamsExternalSourceType = ICellRendererParams<ExternalSourceType> & CellRendererParams;
+  type ModalCellRendererParamsExternalSourceType = ICellRendererParams<ExternalSourceTypeAssociations> &
+    CellRendererParams;
   type ModalCellRendererParamsExternalEventType = ICellRendererParams<ExternalEventType> & CellRendererParams;
 
   /** TODO
@@ -85,26 +91,6 @@
       sortable: true,
     },
     {
-      field: 'derived_event_total',
-      filter: 'number',
-      headerName: 'Derived Events in Derivation Group',
-      sortable: true,
-      valueFormatter: params => {
-        return params?.value.length;
-      },
-      width: 200,
-    },
-    {
-      field: 'sources',
-      filter: 'number',
-      headerName: 'Associated External Sources',
-      sortable: true,
-      valueFormatter: params => {
-        return params?.value.size;
-      },
-      width: 250,
-    },
-    {
       field: 'owner',
       filter: 'string',
       headerName: 'Owner',
@@ -113,7 +99,7 @@
       width: 100,
     },
   ];
-  const externalSourceTypeBaseColumnDefs: DataGridColumnDef<ExternalSourceType>[] = [
+  const externalSourceTypeBaseColumnDefs: DataGridColumnDef<ExternalSourceTypeAssociations>[] = [
     {
       field: 'name',
       filter: 'string',
@@ -121,8 +107,22 @@
       resizable: true,
       sortable: true,
     },
+    {
+      field: 'source_associations',
+      filter: 'number',
+      headerName: 'Associated External Sources',
+      resizable: true,
+      sortable: true,
+    },
+    {
+      field: 'derivation_group_associations',
+      filter: 'number',
+      headerName: 'Associated Derivation Groups',
+      resizable: true,
+      sortable: true,
+    },
   ];
-  const externalEventTypeBaseColumnDefs: DataGridColumnDef<ExternalEventType>[] = [
+  const externalEventTypeBaseColumnDefs: DataGridColumnDef<ExternalEventTypeAssociations>[] = [
     {
       field: 'name',
       filter: 'string',
@@ -130,11 +130,19 @@
       resizable: true,
       sortable: true,
     },
+    {
+      field: 'source_associations',
+      filter: 'number',
+      headerName: 'Associated External Sources',
+      resizable: true,
+      sortable: true,
+    },
   ];
 
   let derivationGroupColumnsDef: DataGridColumnDef<DerivationGroup>[] = derivationGroupBaseColumnDefs;
-  let externalSourceTypeColumnDefs: DataGridColumnDef<ExternalSourceType>[] = externalSourceTypeBaseColumnDefs;
-  let externalEventTypeColumnDefs: DataGridColumnDef<ExternalEventType>[] = externalEventTypeBaseColumnDefs;
+  let externalSourceTypeColumnDefs: DataGridColumnDef<ExternalSourceTypeAssociations>[] =
+    externalSourceTypeBaseColumnDefs;
+  let externalEventTypeColumnDefs: DataGridColumnDef<ExternalEventTypeAssociations>[] = externalEventTypeBaseColumnDefs;
 
   let hasDeleteExternalSourceTypePermission: boolean = false;
   let hasDeleteExternalEventTypePermission: boolean = false;
@@ -238,6 +246,26 @@
   $: derivationGroupColumnsDef = [
     ...derivationGroupBaseColumnDefs,
     {
+      field: 'derived_event_total',
+      filter: 'number',
+      headerName: 'Derived Events in Derivation Group',
+      sortable: true,
+      valueFormatter: params => {
+        return params?.value.length;
+      },
+      width: 200,
+    },
+    {
+      field: 'sources',
+      filter: 'number',
+      headerName: 'Associated External Sources',
+      sortable: true,
+      valueFormatter: params => {
+        return params?.value.size;
+      },
+      width: 250,
+    },
+    {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ModalCellRendererParamsDerivationGroup) => {
         const actionsDiv = document.createElement('div');
@@ -268,24 +296,6 @@
 
   $: externalSourceTypeColumnDefs = [
     ...externalSourceTypeBaseColumnDefs,
-    {
-      filter: 'number',
-      headerName: 'Associated External Sources',
-      sortable: true,
-      valueFormatter: params => {
-        const associatedSources = getAssociatedExternalSourcesBySourceType(params.data?.name);
-        return `${associatedSources.length}`;
-      },
-    },
-    {
-      filter: 'number',
-      headerName: 'Associated Derivation Groups',
-      sortable: true,
-      valueFormatter: params => {
-        const associatedDerivationGroups = getAssociatedDerivationGroupsBySourceTypeName(params.data?.name);
-        return `${associatedDerivationGroups.length}`;
-      },
-    },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ModalCellRendererParamsExternalSourceType) => {
@@ -318,15 +328,6 @@
 
   $: externalEventTypeColumnDefs = [
     ...externalEventTypeBaseColumnDefs,
-    {
-      filter: 'number',
-      headerName: 'Associated External Sources',
-      sortable: true,
-      valueFormatter: params => {
-        const associatedExternalSources = getAssociatedExternalSourcesByEventType(params.data?.name);
-        return `${associatedExternalSources.length}`;
-      },
-    },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ModalCellRendererParamsExternalEventType) => {
@@ -435,26 +436,6 @@
       .filter(entry => entry.types.includes(eventType))
       .map(entry => entry.key); // NOTE: MAY NEED TO REMOVE THIS - COULD BE A VERY SLOW OPERATION.
     return associatedSources;
-  }
-
-  function getAssociatedExternalSourcesBySourceType(sourceType: string | undefined) {
-    if (sourceType === undefined) {
-      return [];
-    }
-    let associatedSources = $externalSources.filter(source => source.source_type_name === sourceType);
-    return associatedSources;
-  }
-
-  function getAssociatedDerivationGroupsBySourceTypeName(sourceTypeName: string | undefined) {
-    if (sourceTypeName === undefined) {
-      return [];
-    }
-
-    let associatedDerivationGroups = $derivationGroups.filter(
-      derivationGroup => derivationGroup.source_type_name === sourceTypeName,
-    );
-
-    return associatedDerivationGroups;
   }
 
   function hasDeleteDerivationGroupPermissionOnRow(
@@ -883,7 +864,7 @@
             singleItemDisplayText="External Source Type"
             pluralItemDisplayText="External Source Types"
             filterExpression={externalSourceTypeFilterString}
-            items={$externalSourceTypes}
+            items={$externalSourceTypeAssociations}
             {user}
             getRowId={getExternalSourceTypeRowId}
             on:rowClicked={({ detail }) => selectExternalSourceType(detail.data)}
@@ -913,7 +894,7 @@
             singleItemDisplayText="External Event Type"
             pluralItemDisplayText="External Event Types"
             filterExpression={externalEventTypeFilterString}
-            items={$externalEventTypes}
+            items={$externalEventTypeAssociations}
             {user}
             getRowId={getExternalEventTypeRowId}
             on:rowClicked={({ detail }) => selectExternalEventType(detail.data)}
