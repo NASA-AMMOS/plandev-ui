@@ -1,5 +1,11 @@
 import { keyBy, omitBy } from 'lodash-es';
-import type { ActivityDirective, ActivityDirectiveDB, ActivityDirectivesMap, ActivityType } from '../types/activity';
+import type {
+  ActivityDirective,
+  ActivityDirectiveDB,
+  ActivityDirectiveRevision,
+  ActivityDirectivesMap,
+  ActivityType,
+} from '../types/activity';
 import type { ActivityMetadata, ActivityMetadataKey, ActivityMetadataValue } from '../types/activity-metadata';
 import type { Plan } from '../types/plan';
 import type { Span, SpanId, SpanUtilityMaps, SpansMap } from '../types/simulation';
@@ -15,8 +21,6 @@ import {
   usToOffset,
 } from './time';
 import { showFailureToast, showSuccessToast } from './toast';
-
-// import { SimulateResponse } from '../types/simulation';
 
 /**
  * Updates activity metadata with a new key/value and removes any empty values.
@@ -278,6 +282,47 @@ export async function getActivityDirectivesToPaste(
     console.error(e);
   }
   return activities;
+}
+
+export function addAbsoluteTimeToRevision(
+  activityDirectiveRevision: ActivityDirectiveRevision,
+  activityId: number,
+  plan: Plan,
+  activitiesDirectivesDB: ActivityDirectiveDB[],
+  spansMap: SpansMap,
+  spanUtilityMaps: SpanUtilityMaps,
+): ActivityDirectiveRevision {
+  const activityDirectivesMap = computeActivityDirectivesMap(activitiesDirectivesDB, plan, spansMap, spanUtilityMaps);
+  //Temporarily overlay the currentActivity with the revision
+  const tempDirectivesMap: ActivityDirectivesMap = {
+    ...activityDirectivesMap,
+    [activityId]: {
+      ...activityDirectivesMap[activityId],
+      anchor_id: activityDirectiveRevision.anchor_id,
+      anchored_to_start: activityDirectiveRevision.anchored_to_start,
+      arguments: activityDirectiveRevision.arguments,
+      metadata: activityDirectiveRevision.metadata,
+      name: activityDirectiveRevision.name,
+      start_offset: activityDirectiveRevision.start_offset,
+    },
+  };
+
+  let startTimeMs;
+  try {
+    startTimeMs = getActivityDirectiveStartTimeMs(
+      activityId,
+      plan.start_time,
+      plan.end_time_doy,
+      tempDirectivesMap,
+      spansMap,
+      spanUtilityMaps,
+    );
+  } catch (e) {
+    startTimeMs = null;
+  }
+
+  activityDirectiveRevision.start_time_ms = startTimeMs;
+  return activityDirectiveRevision;
 }
 
 export async function findTypes(type: string, activityTypes: ActivityType[]): Promise<ActivityType | undefined> {
