@@ -17,7 +17,7 @@
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { convertUsToDurationString, formatDate, getUnixEpochTimeFromInterval } from '../../utilities/time';
+  import { convertUsToDurationString, formatDate } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
 
   const dispatch = createEventDispatcher<{
@@ -29,7 +29,6 @@
   export let activityDirective: ActivityDirective;
   export let activityDirectivesMap: ActivityDirectivesMap = {};
   export let activityTypes: ActivityType[] = [];
-  export let planStartTimeYmd: string;
   export let user: User | null;
 
   let hasUpdatePermission: boolean = false;
@@ -112,19 +111,22 @@
 
     // Manually check remaining fields that could have changed and require extra formatting
 
-    if (current.start_offset !== previous.start_offset) {
-      const currentStartTime = formatDate(
-        new Date(getUnixEpochTimeFromInterval(planStartTimeYmd, current.start_offset)),
-        $plugins.time.primary.format,
-      );
-      const previousStartTime = formatDate(
-        new Date(getUnixEpochTimeFromInterval(planStartTimeYmd, previous.start_offset)),
-        $plugins.time.primary.format,
-      );
+    if (current.start_offset !== previous.start_offset || current.start_time_ms !== previous.start_time_ms) {
+      const currentStartTime =
+        current.start_time_ms !== null ? formatDate(new Date(current.start_time_ms), $plugins.time.primary.format) : '';
 
-      differences[`Start Time (${$plugins.time.primary.label})`] = {
-        currentValue: currentStartTime,
-        previousValue: previousStartTime,
+      const previousStartTime =
+        previous.start_time_ms !== null
+          ? formatDate(new Date(previous.start_time_ms), $plugins.time.primary.format)
+          : '';
+
+      const cycle = current.start_time_ms === null || previous.start_time_ms === null;
+
+      const key = cycle ? 'Anchor Cycle Detected' : `Start Time (${$plugins.time.primary.label})`;
+
+      differences[key] = {
+        currentValue: cycle ? 'Cannot Calculate Absolute Start Time' : currentStartTime,
+        previousValue: cycle ? '' : previousStartTime,
       };
     }
 
