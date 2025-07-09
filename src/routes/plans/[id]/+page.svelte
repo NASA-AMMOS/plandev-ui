@@ -71,6 +71,7 @@
     selectedExpansionSetId,
   } from '../../../stores/expansion';
   import { extensions } from '../../../stores/extensions';
+  import { externalEventTypes } from '../../../stores/external-event';
   import {
     initialPlan,
     maxTimeRange,
@@ -152,8 +153,10 @@
   import { getHumanReadableStatus, statusColors } from '../../../utilities/status';
   import { pluralize } from '../../../utilities/text';
   import { getUnixEpochTime } from '../../../utilities/time';
+  import { showSuccessToast } from '../../../utilities/toast';
   import { tooltip } from '../../../utilities/tooltip';
   import { getSearchParameterNumber, removeQueryParam, setQueryParam } from '../../../utilities/url';
+  import { generateDefaultView } from '../../../utilities/view';
   import type { PageData } from './$types';
 
   export let data: PageData;
@@ -599,6 +602,13 @@
     resetView();
   }
 
+  function onResetViewToDefault() {
+    const defaultView = generateDefaultView($resourceTypes, $externalEventTypes);
+    initializeView(defaultView);
+    removeQueryParam(SearchParameters.VIEW_ID);
+    showSuccessToast('View Reset to Default');
+  }
+
   async function onUploadView() {
     if (hasCreateViewPermission) {
       const success = await effects.uploadView(data.user);
@@ -866,6 +876,7 @@
           on:saveView={onSaveView}
           on:toggleView={onToggleView}
           on:resetView={onResetView}
+          on:resetViewToDefault={onResetViewToDefault}
           on:uploadView={onUploadView}
         />
       </svelte:fragment>

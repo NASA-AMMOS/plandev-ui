@@ -68,6 +68,7 @@ export const load: PageLoad = async ({ parent, params, url }) => {
       return {
         initialActivityArguments,
         initialActivityTypes,
+        initialExternalEventTypes,
         initialPlan,
         initialPlanSnapshotId,
         initialPlanTags,

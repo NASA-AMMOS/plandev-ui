@@ -57,8 +57,8 @@ export function generateDefaultView(
     timeline.rows.push(externalEventRow);
   }
 
-  // Generate a row for every resource
-  resourceTypes.map(resourceType => {
+  // Generate a row for up to 20 resources
+  resourceTypes.slice(0, 20).map(resourceType => {
     const { layer, yAxis } = createTimelineResourceLayer(timelines, resourceType);
     const layers = layer ? [layer] : [];
     const resourceRow = createRow(timelines, {
