@@ -1,7 +1,6 @@
 import { keyBy, omitBy } from 'lodash-es';
 import type { ActivityDirective, ActivityDirectiveDB, ActivityDirectivesMap, ActivityType } from '../types/activity';
 import type { ActivityMetadata, ActivityMetadataKey, ActivityMetadataValue } from '../types/activity-metadata';
-import type { BaseUser, User } from '../types/app';
 import type { Plan } from '../types/plan';
 import type { Span, SpanId, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import { getClipboardContent, setClipboardContent } from './clipboard';
@@ -13,6 +12,7 @@ import {
   getIntervalFromDoyRange,
   getIntervalInMs,
   getUnixEpochTime,
+  usToOffset,
 } from './time';
 import { showFailureToast, showSuccessToast } from './toast';
 
@@ -280,69 +280,7 @@ export async function getActivityDirectivesToPaste(
   return activities;
 }
 
-/*export async function fetchSimulatedActivityDuration(
-  planId: number,
-  activityId: number,
-  user: BaseUser | User | null,
-): Promise<number | null> {
-  const query = `
-    query MyQuery($_eq: Int!, $_eq1: Int!) {
-      activity_directive(where: {plan_id: {_eq: $_eq}, id: {_eq: $_eq1}}) {
-        simulated_activities(order_by: {simulation_dataset_id: desc}){
-          duration
-        }
-      }
-    }
-  `;
-  const variables = { _eq: planId, _eq1: activityId };
-  const data = await reqHasura(query, variables, user);
-  const activities = data?.activity_directive?.[0]?.simulated_activities;
-  console.error('Duration Format:', activities[0].duration, 'for activity', activityId);
-  return activities && activities.length > 0 ? durationToUs(activities[0].duration) : null;
-}*/
-
-/**
- * Converts a string of the form "HH:mm:ss.SSSSSS" to microseconds.
- * Example: "01:23:45.678901" => 1*3600*1e6 + 23*60*1e6 + 45*1e6 + 678901 = 5025678901
- */
-export function offsetToUs(hms: string): number {
-  const isNegative = hms.trim().startsWith('-');
-  const absHms = isNegative ? hms.trim().slice(1) : hms.trim();
-  const match = /^(\d+):(\d{2}):(\d{2})(?:\.(\d+))?$/.exec(absHms);
-  if (!match) {
-    throw new Error('Invalid format, expected "HH:mm:ss[.SSSSSS]"' + hms);
-  }
-  const [, hh, mm, ss, us = '0'] = match;
-  const value = parseInt(hh) * 3600 * 1e6 + parseInt(mm) * 60 * 1e6 + parseInt(ss) * 1e6 + parseInt(us);
-  return isNegative ? -value : value;
-}
-
-/**
- * Converts a string of the form "[N days ]HH:mm:ss[.SSSSSS]" to microseconds.
- * Examples:
- *   "2 days 01:23:45.678901" => (2*86400 + 1*3600 + 23*60 + 45) * 1e6 + 678901
- *   "01:23:45.678901"        => (1*3600 + 23*60 + 45) * 1e6 + 678901
- *   "2 days 01:23:45"        => (2*86400 + 1*3600 + 23*60 + 45) * 1e6
- *   "01:23:45"               => (1*3600 + 23*60 + 45) * 1e6
-
-export function durationToUs(duration: string): number {
-  const match = /^(?:(\d+)\s+days?)?(?:\s*(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?)?$/.exec(duration.trim());
-  if (!match) {
-    throw new Error('Invalid format, expected "[N days ]HH:mm:ss[.SSSSSS]"' + duration);
-  }
-  const [, days = '0', hh = '0', mm = '0', ss = '0', us = '0'] = match;
-
-  return (
-    parseInt(days) * 86400 * 1e6 +
-    parseInt(hh) * 3600 * 1e6 +
-    parseInt(mm) * 60 * 1e6 +
-    parseInt(ss) * 1e6 +
-    parseInt(us)
-  );
-}*/
-
-export async function findTypes(type: string, activityTypes: ActivityType[]): Promise<ActivityType | undefined> {
-  // const activityTypes = await activityTypesPromise;
+export function findTypes(type: string, activityTypes: ActivityType[]): ActivityType | undefined {
   for (let idx = 0; idx < activityTypes.length; idx++) {
     if (activityTypes[idx].name === type) {
       return activityTypes[idx];
@@ -352,37 +290,15 @@ export async function findTypes(type: string, activityTypes: ActivityType[]): Pr
   return undefined;
 }
 
-/**
- * Converts microseconds to a string of the form "HH:mm:ss.SSSSSS".
- * Example: 5025678901 => "01:23:45.678901"
- */
-export function usToOffset(us: number): string {
-  const isNegative = us < 0;
-  us = Math.abs(us);
-
-  const hours = Math.floor(us / 3_600_000_000);
-  us %= 3_600_000_000;
-  const minutes = Math.floor(us / 60_000_000);
-  us %= 60_000_000;
-  const seconds = Math.floor(us / 1_000_000);
-  us %= 1_000_000;
-  const micro = us;
-
-  const pad = (n: number, len: number) => n.toString().padStart(len, '0');
-  const result = `${pad(hours, 2)}:${pad(minutes, 2)}:${pad(seconds, 2)}.${micro.toString()}`;
-  return isNegative ? `-${result}` : result;
-}
-
-export async function packActivityDirectivesBothInPlan(
+export function packActivityDirectivesBothInPlan(
   sourcePlan: Plan,
   activities: ActivityDirective[],
-  user: BaseUser | User | null,
   direction: 'LEFT' | 'RIGHT',
   offsetUS: number,
   activitiesDirectivesDB: ActivityDirectiveDB[],
   spansMap: SpansMap,
   spanUtilityMaps: SpanUtilityMaps,
-): Promise<ActivityDirective[] | void> {
+): ActivityDirective[] | void {
   const idToActivitiesMap = new Map<number, ActivityDirective>();
   for (const activity of activities) {
     idToActivitiesMap.set(activity.id, activity);

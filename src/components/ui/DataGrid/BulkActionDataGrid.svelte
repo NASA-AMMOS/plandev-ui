@@ -23,8 +23,8 @@
   import type { PermissionCheck } from '../../../types/permissions';
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
   import { permissionHandler } from '../../../utilities/permissionHandler';
+  import PackActivitiesOffsetModal from '../../modals/PackActivitiesOffsetModal.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
-  import PackActivitiesOffsetSelect from '../PackActivitesOffsetSelect.svelte';
 
   export let autoSizeColumnsToFit: boolean = true;
   export let columnDefs: ColDef[];
@@ -297,7 +297,7 @@
 </DataGrid>
 
 {#if showPackOffsetDialog}
-  <PackActivitiesOffsetSelect on:cancel={() => (showPackOffsetDialog = false)} on:pack={bulkPackItemsWithOffset} />
+  <PackActivitiesOffsetModal on:cancel={() => (showPackOffsetDialog = false)} on:pack={bulkPackItemsWithOffset} />
 {/if}
 
 {#if showBulkShiftDialog}

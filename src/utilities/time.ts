@@ -931,3 +931,24 @@ export function formatMS(ms: number | null): string {
   }
   return '–';
 }
+
+/**
+ * Converts microseconds to a string of the form "HH:mm:ss.SSSSSS".
+ * Example: 5025678901 => "01:23:45.678901"
+ */
+export function usToOffset(us: number): string {
+  const isNegative = us < 0;
+  us = Math.abs(us);
+
+  const hours = Math.floor(us / 3_600_000_000);
+  us %= 3_600_000_000;
+  const minutes = Math.floor(us / 60_000_000);
+  us %= 60_000_000;
+  const seconds = Math.floor(us / 1_000_000);
+  us %= 1_000_000;
+  const micro = us;
+
+  const pad = (n: number, len: number) => n.toString().padStart(len, '0');
+  const result = `${pad(hours, 2)}:${pad(minutes, 2)}:${pad(seconds, 2)}.${micro.toString()}`;
+  return isNegative ? `-${result}` : result;
+}
