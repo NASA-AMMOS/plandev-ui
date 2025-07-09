@@ -1,8 +1,10 @@
 import { keyBy, reverse } from 'lodash-es';
 import { describe, expect, test } from 'vitest';
 import type { ActivityDirective } from '../types/activity';
+import type { Plan } from '../types/plan';
 import type { Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import {
+  addAbsoluteTimeToRevision,
   createSpanUtilityMaps,
   getActivityMetadata,
   getAllSpanChildrenIds,
@@ -273,5 +275,111 @@ describe('getAllSpanChildrenIds', () => {
     expect(getAllSpanChildrenIds(1, testSpansUtilityMap)).to.deep.equal([2, 3]);
     expect(getAllSpanChildrenIds(2, testSpansUtilityMap)).to.deep.equal([]);
     expect(getAllSpanChildrenIds(4, testSpansUtilityMap)).to.deep.equal([]);
+  });
+});
+
+describe('addAbsoluteTimeToRevision', () => {
+  const plan: Plan = {
+    child_plans: [],
+    collaborators: [],
+    constraint_specification: [],
+    created_at: '2030-01-01T00:00:00',
+    duration: '1y',
+    end_time_doy: '2030-365T00:00:00',
+    id: 1,
+    is_locked: false,
+    model: {
+      constraint_specification: [],
+      created_at: '2030-01-01T00:00:00',
+      default_view_id: 0,
+      id: 1,
+      jar_id: 123,
+      mission: 'Test',
+      name: 'Test Model',
+      owner: 'test',
+      parameters: { parameters: {} },
+      plans: [],
+      refresh_activity_type_logs: [],
+      refresh_model_parameter_logs: [],
+      refresh_resource_type_logs: [],
+      scheduling_specification_conditions: [],
+      scheduling_specification_goals: [],
+      version: '1.0.0',
+      view: null,
+    },
+    model_id: 1,
+    name: 'Foo plan',
+    owner: 'test',
+    parent_plan: null,
+    revision: 1,
+    scheduling_specification: null,
+    simulations: [
+      {
+        id: 3,
+        simulation_datasets: [
+          {
+            id: 1,
+            plan_revision: 1,
+          },
+        ],
+      },
+    ],
+    start_time: '2030-07-01T00:00:00+00:00',
+    start_time_doy: '2030-182T00:00:00',
+    tags: [
+      {
+        tag: {
+          color: '#fff',
+          created_at: '2024-01-01T00:00:00',
+          id: 0,
+          name: 'test tag',
+          owner: 'test',
+        },
+      },
+    ],
+    updated_at: '2030-01-01T00:00:00',
+    updated_by: 'test',
+  };
+
+  const activityDirectiveDB = {
+    anchor_id: null,
+    anchored_to_start: true,
+    applied_preset: null,
+    arguments: {},
+    created_at: '2030-01-01T00:00:00',
+    created_by: 'admin',
+    id: 1,
+    last_modified_arguments_at: '2030-01-01T00:00:00',
+    last_modified_at: '2030-01-01T00:00:00',
+    last_modified_by: 'admin',
+    metadata: {},
+    name: 'foo 1',
+    plan_id: 1,
+    source_scheduling_goal_id: null,
+    start_offset: '05:00:00',
+    tags: [],
+    type: 'foo',
+  };
+
+  const activityDirectiveRevision = {
+    anchor_id: null,
+    anchored_to_start: true,
+    arguments: {},
+    changed_at: '2030-07-03T21:53:22',
+    changed_by: 'admin',
+    metadata: {},
+    name: 'foo 1',
+    revision: 1,
+    start_offset: '10:00:00',
+    start_time_ms: null,
+  };
+
+  const activitiesDirectivesDB = [activityDirectiveDB];
+  const spansMap = {};
+  const spanUtilityMaps = createSpanUtilityMaps([]);
+
+  test('should compute and set start_time_ms on revision', () => {
+    addAbsoluteTimeToRevision(activityDirectiveRevision, 1, plan, activitiesDirectivesDB, spansMap, spanUtilityMaps);
+    expect(activityDirectiveRevision.start_time_ms).toEqual(new Date('2030-07-01T10:00:00+00:00').getTime());
   });
 });

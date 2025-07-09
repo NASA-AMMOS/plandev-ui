@@ -50,6 +50,7 @@ import {
 import {
   createPlanError as createPlanErrorStore,
   creatingPlan as creatingPlanStore,
+  plan,
   planId as planIdStore,
 } from '../stores/plan';
 import {
@@ -67,6 +68,8 @@ import {
   selectedSpanId as selectedSpanIdStore,
   simulationDatasetId as simulationDatasetIdStore,
   simulationDataset as simulationDatasetStore,
+  spansMap,
+  spanUtilityMaps,
 } from '../stores/simulation';
 import { createTagError as createTagErrorStore } from '../stores/tags';
 import { applyViewUpdate, view as viewStore, viewUpdateRow, viewUpdateTimeline } from '../stores/views';
@@ -248,7 +251,7 @@ import type {
 } from '../types/tags';
 import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
-import { ActivityDeletionAction } from './activities';
+import { ActivityDeletionAction, addAbsoluteTimeToRevision } from './activities';
 import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
@@ -3867,8 +3870,28 @@ const effects = {
         user,
       );
       const { activityDirectiveRevisions } = data;
+
       if (activityDirectiveRevisions != null) {
-        return activityDirectiveRevisions;
+        // Fill in start_time_ms for each revision if not already calculated
+        const updatedRevisions = activityDirectiveRevisions.map(revision => {
+          const sourcePlan = get(plan);
+          if (sourcePlan) {
+            return addAbsoluteTimeToRevision(
+              revision,
+              activityId,
+              sourcePlan,
+              get(activityDirectivesDBStore) ?? [],
+              get(spansMap) ?? {},
+              get(spanUtilityMaps) ?? {
+                directiveIdToSpanIdMap: {},
+                spanIdToChildIdsMap: {},
+                spanIdToDirectiveIdMap: {},
+              },
+            );
+          }
+          return revision; // fallback if sourcePlan is undefined
+        });
+        return updatedRevisions;
       } else {
         throw Error('Unable to retrieve activity directive changelog');
       }
