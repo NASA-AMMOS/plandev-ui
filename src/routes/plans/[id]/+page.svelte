@@ -603,7 +603,7 @@
   }
 
   function onResetViewToDefault() {
-    const defaultView = generateDefaultView($resourceTypes, $externalEventTypes);
+    const defaultView = data.initialPlan.model.view || generateDefaultView($resourceTypes, $externalEventTypes);
     initializeView(defaultView);
     removeQueryParam(SearchParameters.VIEW_ID);
     showSuccessToast('View Reset to Default');
