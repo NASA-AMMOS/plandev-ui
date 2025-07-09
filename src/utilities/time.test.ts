@@ -217,6 +217,132 @@ test('getActivityDirectiveStartTimeMs', () => {
   ).toEqual(new Date('2030-07-01T13:58:00+00:00').getTime());
 });
 
+test('getActivityDirectiveStartTimeMs - no cycles, anchor chain', () => {
+  const baseDirective: ActivityDirectiveDB = {
+    anchor_id: null,
+    anchored_to_start: true,
+    applied_preset: null,
+    arguments: {},
+    created_at: '2022-08-03T18:21:51',
+    created_by: 'admin',
+    id: 10,
+    last_modified_arguments_at: '2022-08-03T21:53:22',
+    last_modified_at: '2022-08-03T21:53:22',
+    last_modified_by: 'admin',
+    metadata: {},
+    name: 'root',
+    plan_id: 1,
+    source_scheduling_goal_id: null,
+    start_offset: '01:00:00',
+    tags: [],
+    type: 'bar',
+  };
+
+  const anchored1: ActivityDirectiveDB = {
+    ...baseDirective,
+    anchor_id: 10,
+    id: 11,
+    start_offset: '00:15:00',
+  };
+
+  const anchored2: ActivityDirectiveDB = {
+    ...baseDirective,
+    anchor_id: 11,
+    id: 12,
+    start_offset: '-00:05:00',
+  };
+
+  const anchored3: ActivityDirectiveDB = {
+    ...baseDirective,
+    anchor_id: 12,
+    id: 13,
+    start_offset: '00:30:00',
+  };
+
+  const anchored4: ActivityDirectiveDB = {
+    ...baseDirective,
+    anchor_id: 13,
+    id: 14,
+    start_offset: '-00:20:00',
+  };
+
+  const planStartTimeYmd = '2031-01-01T00:00:00+00:00';
+  const planEndTimeDoy = '2031-365T00:00:00.000';
+
+  const directiveDBMap = keyBy(
+    [baseDirective, anchored1, anchored2, anchored3, anchored4].map(d => ({
+      ...d,
+      start_time_ms: null,
+    })),
+    'id',
+  );
+
+  expect(
+    getActivityDirectiveStartTimeMs(
+      10,
+      planStartTimeYmd,
+      planEndTimeDoy,
+      directiveDBMap,
+      {},
+      createSpanUtilityMaps([]),
+      {},
+      {},
+    ),
+  ).toEqual(new Date('2031-01-01T01:00:00+00:00').getTime());
+
+  expect(
+    getActivityDirectiveStartTimeMs(
+      11,
+      planStartTimeYmd,
+      planEndTimeDoy,
+      directiveDBMap,
+      {},
+      createSpanUtilityMaps([]),
+      {},
+      {},
+    ),
+  ).toEqual(new Date('2031-01-01T01:15:00+00:00').getTime());
+
+  expect(
+    getActivityDirectiveStartTimeMs(
+      12,
+      planStartTimeYmd,
+      planEndTimeDoy,
+      directiveDBMap,
+      {},
+      createSpanUtilityMaps([]),
+      {},
+      {},
+    ),
+  ).toEqual(new Date('2031-01-01T01:10:00+00:00').getTime());
+
+  expect(
+    getActivityDirectiveStartTimeMs(
+      13,
+      planStartTimeYmd,
+      planEndTimeDoy,
+      directiveDBMap,
+      {},
+      createSpanUtilityMaps([]),
+      {},
+      {},
+    ),
+  ).toEqual(new Date('2031-01-01T01:40:00+00:00').getTime());
+
+  expect(
+    getActivityDirectiveStartTimeMs(
+      14,
+      planStartTimeYmd,
+      planEndTimeDoy,
+      directiveDBMap,
+      {},
+      createSpanUtilityMaps([]),
+      {},
+      {},
+    ),
+  ).toEqual(new Date('2031-01-01T01:20:00+00:00').getTime());
+});
+
 test('convertDoyToYmd', () => {
   expect(convertDoyToYmd('2023-001T00:10:12', false)).toEqual('2023-01-01T00:10:12Z');
   expect(convertDoyToYmd('2023-001T00:00:00', false)).toEqual('2023-01-01T00:00:00Z');
