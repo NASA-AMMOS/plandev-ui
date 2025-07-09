@@ -29,24 +29,21 @@
   function handleChange(): void {
     dispatch('change', formParameter);
   }
-
-  const handleInput = (event: Event) => {
-    formParameter.value = (event?.target as HTMLInputElement).value;
-  };
 </script>
 
 <div class="parameter-base-string" style="grid-template-columns: {columns}">
   <ParameterName {formParameter} />
   <Input>
+    <!-- Type can only be text or password so it's safe to overwrite the type and don't coerce the value. -->
     <input
+      bind:value={formParameter.value}
       class="st-input w-full"
       class:error={formParameter.errors !== null}
       aria-label={formParameter.name}
       {disabled}
-      {type}
+      {...{ type }}
       use:useActions={use}
       on:change={handleChange}
-      on:input={handleInput}
     />
     <div class="parameter-right" slot="right">
       <ParameterUnits unit={formParameter.schema?.metadata?.unit?.value} />
