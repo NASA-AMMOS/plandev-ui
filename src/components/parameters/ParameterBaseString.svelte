@@ -17,7 +17,7 @@
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
   export let use: ActionArray = [];
-  export let type: string = 'string';
+  export let type: 'text' | 'password' = 'text';
 
   const dispatch = createEventDispatcher<{
     change: FormParameter;
@@ -29,34 +29,25 @@
   function handleChange(): void {
     dispatch('change', formParameter);
   }
+
+  const handleInput = (event: Event) => {
+    formParameter.value = (event?.target as HTMLInputElement).value;
+  };
 </script>
 
 <div class="parameter-base-string" style="grid-template-columns: {columns}">
   <ParameterName {formParameter} />
   <Input>
-    {#if type === 'password'}
-      <input
-        bind:value={formParameter.value}
-        class="st-input w-full"
-        class:error={formParameter.errors !== null}
-        aria-label={formParameter.name}
-        {disabled}
-        type="password"
-        use:useActions={use}
-        on:change={handleChange}
-      />
-    {:else}
-      <input
-        bind:value={formParameter.value}
-        class="st-input w-full"
-        class:error={formParameter.errors !== null}
-        aria-label={formParameter.name}
-        {disabled}
-        type="string"
-        use:useActions={use}
-        on:change={handleChange}
-      />
-    {/if}
+    <input
+      class="st-input w-full"
+      class:error={formParameter.errors !== null}
+      aria-label={formParameter.name}
+      {disabled}
+      {type}
+      use:useActions={use}
+      on:change={handleChange}
+      on:input={handleInput}
+    />
     <div class="parameter-right" slot="right">
       <ParameterUnits unit={formParameter.schema?.metadata?.unit?.value} />
       <ParameterBaseRightAdornments
