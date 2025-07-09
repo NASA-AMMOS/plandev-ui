@@ -1,6 +1,7 @@
 import { keyBy, reverse } from 'lodash-es';
 import { describe, expect, test } from 'vitest';
 import type { ActivityDirective } from '../types/activity';
+import type { Plan } from '../types/plan';
 import type { Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import {
   addAbsoluteTimeToRevision,
@@ -278,7 +279,7 @@ describe('getAllSpanChildrenIds', () => {
 });
 
 describe('addAbsoluteTimeToRevision', () => {
-  const plan = {
+  const plan: Plan = {
     child_plans: [],
     collaborators: [],
     constraint_specification: [],
@@ -321,16 +322,6 @@ describe('addAbsoluteTimeToRevision', () => {
             plan_revision: 1,
           },
         ],
-      },
-    ] as [
-      {
-        id: number;
-        simulation_datasets: [
-          {
-            id: number;
-            plan_revision: number;
-          },
-        ];
       },
     ],
     start_time: '2030-07-01T00:00:00+00:00',

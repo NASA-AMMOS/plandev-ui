@@ -3873,10 +3873,10 @@ const effects = {
 
       if (activityDirectiveRevisions != null) {
         // Fill in start_time_ms for each revision if not already calculated
-        activityDirectiveRevisions.forEach(revision => {
+        const updatedRevisions = activityDirectiveRevisions.map(revision => {
           const sourcePlan = get(plan);
           if (sourcePlan) {
-            addAbsoluteTimeToRevision(
+            return addAbsoluteTimeToRevision(
               revision,
               activityId,
               sourcePlan,
@@ -3889,9 +3889,9 @@ const effects = {
               },
             );
           }
+          return revision; // fallback if sourcePlan is undefined
         });
-
-        return activityDirectiveRevisions;
+        return updatedRevisions;
       } else {
         throw Error('Unable to retrieve activity directive changelog');
       }
