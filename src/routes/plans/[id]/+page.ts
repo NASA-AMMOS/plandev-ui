@@ -1,5 +1,6 @@
 import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
+import { ViewTimelineResourceRowsLimit } from '../../../constants/view';
 import { SearchParameters } from '../../../enums/searchParameters';
 import { planReadOnlyMergeRequest } from '../../../stores/plan';
 import effects from '../../../utilities/effects';
@@ -50,7 +51,7 @@ export const load: PageLoad = async ({ parent, params, url }) => {
             initialActivityTypes.map(type => type.name),
             user,
           ),
-          await effects.getResourceTypes(initialPlan.model_id, user, 20),
+          await effects.getResourceTypes(initialPlan.model_id, user, ViewTimelineResourceRowsLimit),
           await effects.getExternalEventTypes(planId, user),
           await effects.getPlanTags(initialPlan.id, user),
         ]);
