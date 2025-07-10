@@ -21,7 +21,7 @@
   let saveButtonDisabled: boolean = false;
   let filesToUpload: FileList;
 
-  $: saveButtonDisabled = filesToUpload?.length === 0 || !targetDirectory;
+  $: saveButtonDisabled = filesToUpload?.length === 0;
 
   function save() {
     if (!saveButtonDisabled) {
