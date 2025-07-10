@@ -140,7 +140,7 @@ export function computeActivityDirectivesMap(
 ) {
   // Compute initial map
   const directiveDBMap = keyBy(
-    activityDirectiveDBs.map(d => ({ ...d, start_time_ms: null })),
+    activityDirectiveDBs.map(d => ({ ...d, start_time_ms: -1 })),
     'id',
   );
   const cachedStartTimes = {};
@@ -165,7 +165,7 @@ export function preprocessActivityDirectiveDB(
   spanUtilityMaps: SpanUtilityMaps,
   cachedStartTimes = {},
 ): ActivityDirective {
-  let start_time_ms = null;
+  let start_time_ms = -1;
   if (plan && typeof plan.start_time === 'string') {
     start_time_ms = getActivityDirectiveStartTimeMs(
       activityDirectiveDB.id,
@@ -364,7 +364,8 @@ export function packActivityDirectivesInPlan(
 
   // Map activity ids to their absolute start times in milliseconds
   const planStartTimeMs = getUnixEpochTime(sourcePlan.start_time_doy);
-  const initialStartTimes = new Map<number, number>();
+
+  /*const initialStartTimes = new Map<number, number>();
   for (const activity of activities) {
     const activityStartTimeMs = getActivityDirectiveStartTimeMs(
       activity.id,
@@ -378,23 +379,22 @@ export function packActivityDirectivesInPlan(
       throw new Error(`Activity ${activity.id} not found in initial start times`);
     }
     initialStartTimes.set(activity.id, activityStartTimeMs);
-  }
+  }*/
 
-  // Sort activities by their start times
+  // Sort activities by their absolute start times
   activities.sort((a, b) => {
-    const aStart = initialStartTimes.get(a.id) ?? 0;
-    const bStart = initialStartTimes.get(b.id) ?? 0;
-    return aStart - bStart;
+    // Theoretically start_time_ms should never be null
+    if (a.start_time_ms == null || b.start_time_ms == null) {
+      throw new Error('Cannot calculate absolute start time of certain activities, check for anchor cycles');
+    }
+    return a.start_time_ms - b.start_time_ms;
   });
 
   if (direction === 'RIGHT') {
     activities.reverse();
   }
 
-  const activityStartTimeMs = initialStartTimes.get(activities[0].id)!;
-
-  // need a better variable name here
-  const initialTime = (activityStartTimeMs - planStartTimeMs) * 1000; // Convert to microseconds
+  const initialTime = activities[0].start_time_ms ? (activities[0].start_time_ms - planStartTimeMs) * 1000 : -1;
 
   // Grab all durations for the activities and store in a Map
   const durations = new Map<number, number>();
