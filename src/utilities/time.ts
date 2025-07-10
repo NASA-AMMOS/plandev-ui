@@ -543,7 +543,7 @@ export function getActivityDirectiveStartTimeMs(
   spanUtilityMaps: SpanUtilityMaps,
   cachedStartTimes: { [activityDirectiveId: ActivityDirectiveId]: number } = {},
   traversalMap: { [activityDirectiveId: ActivityDirectiveId]: boolean } = {},
-): number | never {
+): number {
   // If the start time has already been determined in an earlier iteration
   if (cachedStartTimes[id]) {
     return cachedStartTimes[id];
