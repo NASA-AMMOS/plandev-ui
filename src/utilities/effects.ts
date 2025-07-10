@@ -5483,8 +5483,8 @@ const effects = {
       } = await showImportWorkspaceFileModal(startingPath);
       if (confirm) {
         const cleanedTargetPath = `${targetDirectory.replace(/^.\//, '').replace(/\/$/, '')}`;
-
         const chunkedFiles = chunk(Array.from<File>(files), 10);
+        const targetDir = targetDirectory === '' ? '' : `${targetDirectory}/`;
 
         for (let i = 0; i < chunkedFiles.length; i++) {
           const fileChunk: File[] = chunkedFiles[i];
@@ -5494,7 +5494,7 @@ const effects = {
               body.append('file', file, file.name);
 
               await reqWorkspace<Workspace>(
-                `${workspace.id}/${targetDirectory}/${file.name}?type=file`,
+                `${workspace.id}/${targetDir}${file.name}?type=file`,
                 'PUT',
                 body,
                 user,
