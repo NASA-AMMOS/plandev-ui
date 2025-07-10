@@ -8,6 +8,7 @@
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { Workspace } from '../../types/sequencing';
   import effects from '../../utilities/effects';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import Input from '../form/Input.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
@@ -26,6 +27,7 @@
   let baseColumnDefs: DataGridColumnDef[];
   let filterText: string = '';
   let filteredWorkspaces: Workspace[] = [];
+  let hasCreatePermission: boolean = false;
   let selectedWorkspace: Workspace | null = null;
 
   const dispatch = createEventDispatcher<{
@@ -98,6 +100,8 @@
     return includesName;
   });
 
+  $: hasCreatePermission = featurePermissions.workspace.canCreate(user);
+
   async function createNewWorkspace() {
     await effects.createWorkspace(
       $workspaces.map(workspace => workspace.name),
@@ -149,7 +153,14 @@
     </Input>
 
     <div class="right">
-      <button class="st-button secondary ellipsis" on:click|stopPropagation={createNewWorkspace}>
+      <button
+        class="st-button secondary ellipsis"
+        on:click|stopPropagation={createNewWorkspace}
+        use:permissionHandler={{
+          hasPermission: hasCreatePermission,
+          permissionError: 'You do not have permission to create a workspace',
+        }}
+      >
         Create Workspace
       </button>
     </div>
