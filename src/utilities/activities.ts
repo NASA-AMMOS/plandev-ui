@@ -365,36 +365,14 @@ export function packActivityDirectivesInPlan(
   // Map activity ids to their absolute start times in milliseconds
   const planStartTimeMs = getUnixEpochTime(sourcePlan.start_time_doy);
 
-  /*const initialStartTimes = new Map<number, number>();
-  for (const activity of activities) {
-    const activityStartTimeMs = getActivityDirectiveStartTimeMs(
-      activity.id,
-      sourcePlan.start_time,
-      sourcePlan.end_time_doy,
-      activityDirectivesMap,
-      spansMap,
-      spanUtilityMaps,
-    );
-    if (activityStartTimeMs === undefined) {
-      throw new Error(`Activity ${activity.id} not found in initial start times`);
-    }
-    initialStartTimes.set(activity.id, activityStartTimeMs);
-  }*/
-
   // Sort activities by their absolute start times
   activities.sort((a, b) => {
-    // Theoretically start_time_ms should never be null
-    if (a.start_time_ms == null || b.start_time_ms == null) {
-      throw new Error('Cannot calculate absolute start time of certain activities, check for anchor cycles');
-    }
     return a.start_time_ms - b.start_time_ms;
   });
 
   if (direction === 'RIGHT') {
     activities.reverse();
   }
-
-  const initialTime = activities[0].start_time_ms ? (activities[0].start_time_ms - planStartTimeMs) * 1000 : -1;
 
   // Grab all durations for the activities and store in a Map
   const durations = new Map<number, number>();
@@ -415,6 +393,8 @@ export function packActivityDirectivesInPlan(
     }
   }
 
+  const initialTime = (activities[0].start_time_ms - planStartTimeMs) * 1000;
+
   // Calculate new absolute start times after packing based on the initial start times and durations
   const newStartTimes = new Map<number, number>();
   let postPackingTime = initialTime;
@@ -430,31 +410,18 @@ export function packActivityDirectivesInPlan(
       postPackingTime -= durations.get(activities[idx].id)! + offsetUS;
     } else {
       //direction === 'LEFT'
-
       postPackingTime += durations.get(activities[idx - 1].id)! + offsetUS;
     }
     newStartTimes.set(activities[idx].id, postPackingTime);
   }
 
   // Calculate the new start offsets based on the anchor activities
-  const cachedStartTimes: { [activityDirectiveId: number]: number } = {};
   function updateAnchorStartOffset(anchorId: number, activityId: number): string {
     let anchorStartTime;
     if (newStartTimes.has(anchorId)) {
       anchorStartTime = newStartTimes.get(anchorId)!;
     } else {
-      anchorStartTime =
-        (getActivityDirectiveStartTimeMs(
-          anchorId,
-          sourcePlan.start_time,
-          sourcePlan.end_time_doy,
-          activityDirectivesMap,
-          spansMap,
-          spanUtilityMaps,
-          cachedStartTimes,
-        ) -
-          planStartTimeMs) *
-        1000; // Convert to microseconds
+      anchorStartTime = (activityDirectivesMap[anchorId].start_time_ms - planStartTimeMs) * 1000; // Convert to microseconds
     }
     const activityStartTime = newStartTimes.get(activityId)!;
     return usToOffset(activityStartTime - anchorStartTime);
@@ -469,7 +436,7 @@ export function packActivityDirectivesInPlan(
     }
 
     if ([...anchorIds.values()].includes(activity.id)) {
-      // This activity is an anchor to selected activity, so we need to update its "anchee" (activities connected to it).
+      // This activity is an anchor to selected activity, so we need to update its "anchee" (activities connected to it)
       const connectedActivityIds = Array.from(anchorIds.entries())
         .filter(([_, anchorId]) => anchorId === activity.id)
         .map(([id, _]) => id);
