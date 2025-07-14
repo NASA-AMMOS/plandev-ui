@@ -39,7 +39,7 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { pluralize } from '../../utilities/text';
-  import { formatDate, getDoyTime, getIntervalFromDoyRange, getUnixEpochTimeFromInterval } from '../../utilities/time';
+  import { formatDate, getDoyTime, getIntervalFromDoyRange } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import { required } from '../../utilities/validators';
   import Collapse from '../Collapse.svelte';
@@ -101,11 +101,8 @@
   $: activityType =
     (activityTypes ?? []).find(({ name: activityTypeName }) => activityDirective?.type === activityTypeName) ?? null;
   $: {
-    const startTimeMs = getUnixEpochTimeFromInterval(
-      planStartTimeYmd,
-      revision ? revision.start_offset : activityDirective.start_offset,
-    );
-    startTime = formatDate(new Date(startTimeMs), $plugins.time.primary.format);
+    const startTimeMs = revision ? revision.start_time_ms : activityDirective.start_time_ms;
+    startTime = startTimeMs ? formatDate(new Date(startTimeMs), $plugins.time.primary.format) : '';
   }
 
   $: startTimeField = field<string>(startTime, [required, $plugins.time.primary.validate]);
