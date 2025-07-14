@@ -559,33 +559,30 @@ export function getActivityDirectiveStartTimeMs(
         throw Error(`Cycle detected with Activity Directive: ${anchor_id}`);
       }
 
-      const anchoredSpanId = spanUtilityMaps.directiveIdToSpanIdMap[anchor_id];
-      const anchoredSpan = spansMap[anchoredSpanId];
-
-      const anchoredStartTimeMs = getUnixEpochTimeFromInterval(
-        new Date(
-          getUnixEpochTimeFromInterval(
-            new Date(
-              getActivityDirectiveStartTimeMs(
-                anchor_id,
-                planStartTimeYmd,
-                planEndTimeDoy,
-                activityDirectivesMap,
-                spansMap,
-                spanUtilityMaps,
-                cachedStartTimes,
-                { ...traversalMap, [anchor_id]: true },
-              ),
-            ).toISOString(),
-            anchored_to_start ? '0' : (anchoredSpan?.duration ?? '0'),
-          ),
-        ).toISOString(),
-        activityDirective.start_offset,
+      // Retrieve the start time of the anchor
+      const anchorStartTimeMs = getActivityDirectiveStartTimeMs(
+        anchor_id,
+        planStartTimeYmd,
+        planEndTimeDoy,
+        activityDirectivesMap,
+        spansMap,
+        spanUtilityMaps,
+        cachedStartTimes,
+        { ...traversalMap, [anchor_id]: true },
       );
 
-      cachedStartTimes[anchoredSpanId] = anchoredStartTimeMs;
+      //If anchored to the end of an activity, add the duration of the span (respective of the anchor)
+      let baseTimeMs = anchorStartTimeMs;
+      if (!anchored_to_start) {
+        const anchoredSpanId = spanUtilityMaps.directiveIdToSpanIdMap[anchor_id];
+        const anchoredSpan = spansMap[anchoredSpanId];
+        const anchorDurationMs = anchoredSpan ? getIntervalInMs(anchoredSpan.duration) : 0;
+        baseTimeMs += anchorDurationMs;
+      }
 
-      return anchoredStartTimeMs;
+      const startTimeMs = baseTimeMs + getIntervalInMs(activityDirective.start_offset);
+      cachedStartTimes[id] = startTimeMs;
+      return startTimeMs;
     }
 
     const startTimeFromPlanMs = getUnixEpochTimeFromInterval(

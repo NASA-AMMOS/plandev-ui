@@ -66,7 +66,7 @@ export type ActivityDirectiveInsertInput = {
 
 export type ActivityDirectiveSetInput = Partial<ActivityDirectiveInsertInput>;
 
-export type ActivityDirectiveRevision = {
+export type ActivityDirectiveRevisionDB = {
   anchor_id: number | null;
   anchored_to_start: boolean;
   arguments: ArgumentsMap;
@@ -76,6 +76,10 @@ export type ActivityDirectiveRevision = {
   name: string;
   revision: number;
   start_offset: string;
+};
+
+export type ActivityDirectiveRevision = ActivityDirectiveRevisionDB & {
+  start_time_ms: number | null;
 };
 
 export type AppliedPreset = {
