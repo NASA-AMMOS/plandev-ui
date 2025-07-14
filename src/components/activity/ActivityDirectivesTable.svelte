@@ -193,7 +193,7 @@
 
       if (Array.isArray(updatedActivities)) {
         for (const activity of updatedActivities) {
-          const activityType = await findTypes(activity.type, get(planModelActivityTypes) ?? []);
+          const activityType = findTypes(activity.type, get(planModelActivityTypes) ?? []);
           await effects.updateActivityDirective(
             plan,
             activity.id,
@@ -220,7 +220,7 @@
 
       if (Array.isArray(updatedActivities)) {
         for (const activity of updatedActivities) {
-          const activityType = await findTypes(activity.type, get(planModelActivityTypes) ?? []);
+          const activityType = findTypes(activity.type, get(planModelActivityTypes) ?? []);
           await effects.updateActivityDirective(
             plan,
             activity.id,
