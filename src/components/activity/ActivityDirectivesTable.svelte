@@ -6,9 +6,7 @@
   import { createEventDispatcher } from 'svelte';
   import { get } from 'svelte/store';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
-  import { activityDirectivesDB } from '../../stores/activities';
   import { planModelActivityTypes } from '../../stores/plan';
-  import { spansMap, spanUtilityMaps } from '../../stores/simulation';
   import type { ActivityDirective, ActivityDirectiveId } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
@@ -18,7 +16,6 @@
     bulkShiftActivityDirectivesInPlan,
     copyActivityDirectivesToClipboard,
     findTypes,
-    packActivityDirectivesBothInPlan,
   } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
@@ -196,68 +193,6 @@
     }
   }
 
-  async function packLeftActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
-    if (plan !== null) {
-      const updatedActivities = await packActivityDirectivesBothInPlan(
-        plan,
-        activities,
-        user,
-        'LEFT',
-        0,
-        get(activityDirectivesDB) ?? [],
-        get(spansMap) ?? {},
-        get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
-      );
-
-      if (updatedActivities) {
-        updateActivities(updatedActivities);
-      }
-    }
-  }
-
-  async function packRightActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
-    if (plan !== null) {
-      const updatedActivities = await packActivityDirectivesBothInPlan(
-        plan,
-        activities,
-        user,
-        'RIGHT',
-        0,
-        get(activityDirectivesDB) ?? [],
-        get(spansMap) ?? {},
-        get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
-      );
-
-      if (updatedActivities) {
-        updateActivities(updatedActivities);
-      }
-    }
-  }
-
-  async function packActivityDirectivesOffset(
-    event: CustomEvent<{ direction: string; gapOffset: string; selectedRows: ActivityDirective[] }>,
-  ) {
-    if (plan !== null) {
-      const { direction, gapOffset, selectedRows } = event.detail;
-      const offsetUS = convertDurationStringToUs(gapOffset);
-
-      const updatedActivities = await packActivityDirectivesBothInPlan(
-        plan,
-        selectedRows,
-        user,
-        direction.toUpperCase() as 'LEFT' | 'RIGHT',
-        offsetUS,
-        get(activityDirectivesDB) ?? [],
-        get(spansMap) ?? {},
-        get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
-      );
-
-      if (updatedActivities) {
-        updateActivities(updatedActivities);
-      }
-    }
-  }
-
   async function bulkShiftActivityDirectives(
     event: CustomEvent<{ direction: string; selectedRows: ActivityDirective[]; shiftOffset: string }>,
   ) {
@@ -298,18 +233,12 @@
   scrollToSelection={true}
   singleItemDisplayText="Activity Directive"
   showCopyMenu={true}
-  showPackLeftMenu={bulkSelectedActivityDirectiveIds.length > 1}
-  showPackRightMenu={bulkSelectedActivityDirectiveIds.length > 1}
-  showPackOffsetMenu={bulkSelectedActivityDirectiveIds.length > 1}
   showBulkShiftMenu={true}
   suppressDragLeaveHidesColumns={false}
   {user}
   {filterExpression}
   on:bulkDeleteItems={deleteActivityDirectives}
   on:bulkCopyItems={copyActivityDirectives}
-  on:bulkPackLeftItems={packLeftActivityDirectives}
-  on:bulkPackRightItems={packRightActivityDirectives}
-  on:bulkPackWithOffset={packActivityDirectivesOffset}
   on:bulkShiftItems={bulkShiftActivityDirectives}
   on:columnMoved
   on:columnPinned

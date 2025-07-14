@@ -1,7 +1,6 @@
 import { keyBy, omitBy } from 'lodash-es';
 import type { ActivityDirective, ActivityDirectiveDB, ActivityDirectivesMap, ActivityType } from '../types/activity';
 import type { ActivityMetadata, ActivityMetadataKey, ActivityMetadataValue } from '../types/activity-metadata';
-import type { BaseUser, User } from '../types/app';
 import type { Plan } from '../types/plan';
 import type { Span, SpanId, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import { getClipboardContent, setClipboardContent } from './clipboard';
@@ -13,6 +12,7 @@ import {
   getIntervalFromDoyRange,
   getIntervalInMs,
   getUnixEpochTime,
+  usToOffset,
 } from './time';
 import { showFailureToast, showSuccessToast } from './toast';
 
@@ -280,67 +280,6 @@ export async function getActivityDirectivesToPaste(
   return activities;
 }
 
-/*export async function fetchSimulatedActivityDuration(
-  planId: number,
-  activityId: number,
-  user: BaseUser | User | null,
-): Promise<number | null> {
-  const query = `
-    query MyQuery($_eq: Int!, $_eq1: Int!) {
-      activity_directive(where: {plan_id: {_eq: $_eq}, id: {_eq: $_eq1}}) {
-        simulated_activities(order_by: {simulation_dataset_id: desc}){
-          duration
-        }
-      }
-    }
-  `;
-  const variables = { _eq: planId, _eq1: activityId };
-  const data = await reqHasura(query, variables, user);
-  const activities = data?.activity_directive?.[0]?.simulated_activities;
-  console.error('Duration Format:', activities[0].duration, 'for activity', activityId);
-  return activities && activities.length > 0 ? durationToUs(activities[0].duration) : null;
-}*/
-
-/**
- * Converts a string of the form "HH:mm:ss.SSSSSS" to microseconds.
- * Example: "01:23:45.678901" => 1*3600*1e6 + 23*60*1e6 + 45*1e6 + 678901 = 5025678901
- */
-export function offsetToUs(hms: string): number {
-  const isNegative = hms.trim().startsWith('-');
-  const absHms = isNegative ? hms.trim().slice(1) : hms.trim();
-  const match = /^(\d+):(\d{2}):(\d{2})(?:\.(\d+))?$/.exec(absHms);
-  if (!match) {
-    throw new Error('Invalid format, expected "HH:mm:ss[.SSSSSS]"' + hms);
-  }
-  const [, hh, mm, ss, us = '0'] = match;
-  const value = parseInt(hh) * 3600 * 1e6 + parseInt(mm) * 60 * 1e6 + parseInt(ss) * 1e6 + parseInt(us);
-  return isNegative ? -value : value;
-}
-
-/**
- * Converts a string of the form "[N days ]HH:mm:ss[.SSSSSS]" to microseconds.
- * Examples:
- *   "2 days 01:23:45.678901" => (2*86400 + 1*3600 + 23*60 + 45) * 1e6 + 678901
- *   "01:23:45.678901"        => (1*3600 + 23*60 + 45) * 1e6 + 678901
- *   "2 days 01:23:45"        => (2*86400 + 1*3600 + 23*60 + 45) * 1e6
- *   "01:23:45"               => (1*3600 + 23*60 + 45) * 1e6
-
-export function durationToUs(duration: string): number {
-  const match = /^(?:(\d+)\s+days?)?(?:\s*(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?)?$/.exec(duration.trim());
-  if (!match) {
-    throw new Error('Invalid format, expected "[N days ]HH:mm:ss[.SSSSSS]"' + duration);
-  }
-  const [, days = '0', hh = '0', mm = '0', ss = '0', us = '0'] = match;
-
-  return (
-    parseInt(days) * 86400 * 1e6 +
-    parseInt(hh) * 3600 * 1e6 +
-    parseInt(mm) * 60 * 1e6 +
-    parseInt(ss) * 1e6 +
-    parseInt(us)
-  );
-}*/
-
 export async function findTypes(type: string, activityTypes: ActivityType[]): Promise<ActivityType | undefined> {
   // const activityTypes = await activityTypesPromise;
   for (let idx = 0; idx < activityTypes.length; idx++) {
@@ -350,182 +289,6 @@ export async function findTypes(type: string, activityTypes: ActivityType[]): Pr
   }
   console.warn(`Activity type ${type} not found in activity types`);
   return undefined;
-}
-
-/**
- * Converts microseconds to a string of the form "HH:mm:ss.SSSSSS".
- * Example: 5025678901 => "01:23:45.678901"
- */
-export function usToOffset(us: number): string {
-  const isNegative = us < 0;
-  us = Math.abs(us);
-
-  const hours = Math.floor(us / 3_600_000_000);
-  us %= 3_600_000_000;
-  const minutes = Math.floor(us / 60_000_000);
-  us %= 60_000_000;
-  const seconds = Math.floor(us / 1_000_000);
-  us %= 1_000_000;
-  const micro = us;
-
-  const pad = (n: number, len: number) => n.toString().padStart(len, '0');
-  const result = `${pad(hours, 2)}:${pad(minutes, 2)}:${pad(seconds, 2)}.${micro.toString()}`;
-  return isNegative ? `-${result}` : result;
-}
-
-export async function packActivityDirectivesBothInPlan(
-  sourcePlan: Plan,
-  activities: ActivityDirective[],
-  user: BaseUser | User | null,
-  direction: 'LEFT' | 'RIGHT',
-  offsetUS: number,
-  activitiesDirectivesDB: ActivityDirectiveDB[],
-  spansMap: SpansMap,
-  spanUtilityMaps: SpanUtilityMaps,
-): Promise<ActivityDirective[] | void> {
-  const idToActivitiesMap = new Map<number, ActivityDirective>();
-  for (const activity of activities) {
-    idToActivitiesMap.set(activity.id, activity);
-  }
-
-  const anchorIds = new Map<number, number | null>();
-  for (const activity of activities) {
-    anchorIds.set(activity.id, activity.anchor_id);
-  }
-
-  const activityDirectivesMap = computeActivityDirectivesMap(
-    activitiesDirectivesDB,
-    sourcePlan,
-    spansMap,
-    spanUtilityMaps,
-  );
-
-  // Map activity ids to their absolute start times in milliseconds
-  const planStartTimeMs = getUnixEpochTime(sourcePlan.start_time_doy);
-  const initialStartTimes = new Map<number, number>();
-  for (const activity of activities) {
-    const activityStartTimeMs = getActivityDirectiveStartTimeMs(
-      activity.id,
-      sourcePlan.start_time,
-      sourcePlan.end_time_doy,
-      activityDirectivesMap,
-      spansMap,
-      spanUtilityMaps,
-    );
-    if (activityStartTimeMs === undefined) {
-      throw new Error(`Activity ${activity.id} not found in initial start times`);
-    }
-    initialStartTimes.set(activity.id, activityStartTimeMs);
-  }
-
-  // Sort activities by their start times, activities with the same start time are arbitrarily ordered
-  activities.sort((a, b) => {
-    const aStart = initialStartTimes.get(a.id) ?? 0;
-    const bStart = initialStartTimes.get(b.id) ?? 0;
-    return aStart - bStart;
-  });
-
-  if (direction === 'RIGHT') {
-    activities.reverse();
-  }
-
-  const activityStartTimeMs = initialStartTimes.get(activities[0].id)!;
-
-  // need a better variable name here
-  const initialTime = (activityStartTimeMs - planStartTimeMs) * 1000; // Convert to microseconds
-
-  // Grab all durations for the activities and store in a Map
-  const durations = new Map<number, number>();
-
-  for (const activity of activities) {
-    const spanId = spanUtilityMaps.directiveIdToSpanIdMap[activity.id];
-    if (spanId !== undefined) {
-      const span = spansMap[spanId];
-      if (span) {
-        durations.set(activity.id, span.durationMs * 1000);
-      } else {
-        showFailureToast(`You must simulate activities before packing`);
-        return;
-      }
-    } else {
-      showFailureToast('You must simulate activities before packing');
-      return;
-    }
-  }
-
-  // Calculate new absolute start times after packing based on the initial start times and durations
-  const newStartTimes = new Map<number, number>();
-  let postPackingTime = initialTime;
-  if (postPackingTime === undefined) {
-    throw new Error(`Activity ${activities[0].id} not found in initial start times`);
-  }
-
-  //The first activity in the sorted list does not change its start time
-  newStartTimes.set(activities[0].id, postPackingTime);
-
-  for (let idx = 1; idx < activities.length; idx++) {
-    if (direction === 'RIGHT') {
-      postPackingTime -= durations.get(activities[idx].id)! + offsetUS;
-    } else {
-      //direction === 'LEFT'
-
-      postPackingTime += durations.get(activities[idx - 1].id)! + offsetUS;
-    }
-    newStartTimes.set(activities[idx].id, postPackingTime);
-  }
-
-  // Calculate the new start offsets based on the anchor activities
-  const cachedStartTimes: { [activityDirectiveId: number]: number } = {};
-  function updateAnchorStartOffset(anchorId: number, activityId: number): string {
-    let anchorStartTime;
-    if (newStartTimes.has(anchorId)) {
-      anchorStartTime = newStartTimes.get(anchorId)!;
-    } else {
-      anchorStartTime =
-        (getActivityDirectiveStartTimeMs(
-          anchorId,
-          sourcePlan.start_time,
-          sourcePlan.end_time_doy,
-          activityDirectivesMap,
-          spansMap,
-          spanUtilityMaps,
-          cachedStartTimes,
-        ) -
-          planStartTimeMs) *
-        1000; // Convert to microseconds
-    }
-    const activityStartTime = newStartTimes.get(activityId)!;
-    return usToOffset(activityStartTime - anchorStartTime);
-  }
-
-  // Update each activity directive with the new start offset
-  for (const activity of activities) {
-    if (activity.anchor_id !== null) {
-      activity.start_offset = updateAnchorStartOffset(activity.anchor_id, activity.id);
-    } else {
-      activity.start_offset = usToOffset(newStartTimes.get(activity.id)!);
-    }
-
-    if ([...anchorIds.values()].includes(activity.id)) {
-      // This activity is an anchor to selected activity, so we need to update its "anchee" (activities connected to it).
-      const connectedActivityIds = Array.from(anchorIds.entries())
-        .filter(([_, anchorId]) => anchorId === activity.id)
-        .map(([id, _]) => id);
-
-      for (const connectedActivityId of connectedActivityIds) {
-        const connectedActivity = idToActivitiesMap.get(connectedActivityId);
-        if (connectedActivity) {
-          connectedActivity.start_offset = updateAnchorStartOffset(activity.id, connectedActivity.id);
-        }
-      }
-    }
-  }
-
-  showSuccessToast(
-    `Packed ${activities.length} Activity Directive${pluralize(activities.length)} ${direction.toLowerCase()}`,
-  );
-
-  return activities;
 }
 
 export function bulkShiftActivityDirectivesInPlan(

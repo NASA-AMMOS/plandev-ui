@@ -24,7 +24,6 @@
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
-  import PackActivitiesOffsetSelect from '../PackActivitesOffsetSelect.svelte';
 
   export let autoSizeColumnsToFit: boolean = true;
   export let columnDefs: ColDef[];
@@ -42,10 +41,6 @@
   export let selectedItemIds: RowId[] = [];
   export let showContextMenu: boolean = true;
   export let showCopyMenu: boolean = false;
-  export let showPackLeftMenu: boolean = false;
-  export let showPackRightMenu: boolean = false;
-  export let showPackOffsetMenu: boolean = false;
-  export let showPackOffsetDialog = false;
   export let showBulkShiftDialog = false;
   export let showBulkShiftMenu: boolean = false;
   export let showLoadingSkeleton: boolean = false;
@@ -107,33 +102,6 @@
     const selectedRows = getRowDataFromSelectedItems();
     if (selectedRows.length) {
       dispatch('bulkCopyItems', selectedRows);
-    }
-  }
-
-  function bulkPackLeftItems() {
-    const selectedRows = getRowDataFromSelectedItems();
-    if (selectedRows.length) {
-      dispatch('bulkPackLeftItems', selectedRows);
-    }
-  }
-
-  function bulkPackRightItems() {
-    const selectedRows = getRowDataFromSelectedItems();
-    if (selectedRows.length) {
-      dispatch('bulkPackRightItems', selectedRows);
-    }
-  }
-
-  function displayPackItemsWithOffset() {
-    showPackOffsetDialog = true;
-  }
-
-  function bulkPackItemsWithOffset(event: CustomEvent<{ direction: string; gapOffset: string }>) {
-    showPackOffsetDialog = false;
-    const selectedRows = getRowDataFromSelectedItems();
-    const { direction, gapOffset } = event.detail;
-    if (selectedRows.length) {
-      dispatch('bulkPackWithOffset', { direction, gapOffset, selectedRows });
     }
   }
 
@@ -258,27 +226,6 @@
           </ContextMenu.Item>
         {/if}
 
-        {#if showPackLeftMenu}
-          <ContextMenu.Item size="sm" on:click={bulkPackLeftItems}>
-            Pack Left {selectedItemIds.length}
-            {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
-          </ContextMenu.Item>
-        {/if}
-
-        {#if showPackRightMenu}
-          <ContextMenu.Item size="sm" on:click={bulkPackRightItems}>
-            Pack Right {selectedItemIds.length}
-            {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
-          </ContextMenu.Item>
-        {/if}
-
-        {#if showPackOffsetMenu}
-          <ContextMenu.Item size="sm" on:click={displayPackItemsWithOffset}>
-            Pack {selectedItemIds.length}
-            {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText} with Offset
-          </ContextMenu.Item>
-        {/if}
-
         <div
           use:permissionHandler={{
             hasPermission: deletePermission,
@@ -295,10 +242,6 @@
     {/if}
   </svelte:fragment>
 </DataGrid>
-
-{#if showPackOffsetDialog}
-  <PackActivitiesOffsetSelect on:cancel={() => (showPackOffsetDialog = false)} on:pack={bulkPackItemsWithOffset} />
-{/if}
 
 {#if showBulkShiftDialog}
   <BulkShiftActivitiesModal on:cancel={() => (showBulkShiftDialog = false)} on:shift={bulkShiftItems} />
