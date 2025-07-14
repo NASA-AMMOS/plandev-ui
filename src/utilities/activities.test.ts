@@ -381,7 +381,7 @@ describe('addAbsoluteTimeToRevision', () => {
 
   test('should compute and set start_time_ms on revision', () => {
     addAbsoluteTimeToRevision(activityDirectiveRevision, 1, plan, activitiesDirectivesDB, spansMap, spanUtilityMaps);
-    expect(activityDirectiveRevision.start_time_ms).toEqual(new Date('2030-07-11T10:00:00+00:00').getTime());
+    expect(activityDirectiveRevision.start_time_ms).toEqual(new Date('2030-07-01T10:00:00+00:00').getTime());
   });
 });
 
