@@ -214,7 +214,6 @@
         activityDirective={$selectedActivityDirective}
         activityDirectivesMap={$activityDirectivesMap || {}}
         activityTypes={$planModelActivityTypes}
-        planStartTimeYmd={$plan.start_time}
         on:closeChangelog={onToggleViewChangelog}
         on:previewRevision={onPreviewRevision}
         {user}

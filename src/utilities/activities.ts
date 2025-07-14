@@ -1,5 +1,11 @@
 import { keyBy, omitBy } from 'lodash-es';
-import type { ActivityDirective, ActivityDirectiveDB, ActivityDirectivesMap, ActivityType } from '../types/activity';
+import type {
+  ActivityDirective,
+  ActivityDirectiveDB,
+  ActivityDirectiveRevision,
+  ActivityDirectivesMap,
+  ActivityType,
+} from '../types/activity';
 import type { ActivityMetadata, ActivityMetadataKey, ActivityMetadataValue } from '../types/activity-metadata';
 import type { Plan } from '../types/plan';
 import type { Span, SpanId, SpanUtilityMaps, SpansMap } from '../types/simulation';
@@ -15,8 +21,6 @@ import {
   usToOffset,
 } from './time';
 import { showFailureToast, showSuccessToast } from './toast';
-
-// import { SimulateResponse } from '../types/simulation';
 
 /**
  * Updates activity metadata with a new key/value and removes any empty values.
@@ -136,7 +140,7 @@ export function computeActivityDirectivesMap(
 ) {
   // Compute initial map
   const directiveDBMap = keyBy(
-    activityDirectiveDBs.map(d => ({ ...d, start_time_ms: null })),
+    activityDirectiveDBs.map(d => ({ ...d, start_time_ms: -1 })),
     'id',
   );
   const cachedStartTimes = {};
@@ -161,7 +165,7 @@ export function preprocessActivityDirectiveDB(
   spanUtilityMaps: SpanUtilityMaps,
   cachedStartTimes = {},
 ): ActivityDirective {
-  let start_time_ms = null;
+  let start_time_ms = -1;
   if (plan && typeof plan.start_time === 'string') {
     start_time_ms = getActivityDirectiveStartTimeMs(
       activityDirectiveDB.id,
@@ -280,7 +284,49 @@ export async function getActivityDirectivesToPaste(
   return activities;
 }
 
-export function findTypes(type: string, activityTypes: ActivityType[]): ActivityType | undefined {
+export function addAbsoluteTimeToRevision(
+  activityDirectiveRevision: ActivityDirectiveRevision,
+  activityId: number,
+  plan: Plan,
+  activitiesDirectivesDB: ActivityDirectiveDB[],
+  spansMap: SpansMap,
+  spanUtilityMaps: SpanUtilityMaps,
+): ActivityDirectiveRevision {
+  const activityDirectivesMap = computeActivityDirectivesMap(activitiesDirectivesDB, plan, spansMap, spanUtilityMaps);
+  //Temporarily overlay the currentActivity with the revision
+  const tempDirectivesMap: ActivityDirectivesMap = {
+    ...activityDirectivesMap,
+    [activityId]: {
+      ...activityDirectivesMap[activityId],
+      anchor_id: activityDirectiveRevision.anchor_id,
+      anchored_to_start: activityDirectiveRevision.anchored_to_start,
+      arguments: activityDirectiveRevision.arguments,
+      metadata: activityDirectiveRevision.metadata,
+      name: activityDirectiveRevision.name,
+      start_offset: activityDirectiveRevision.start_offset,
+    },
+  };
+
+  let startTimeMs;
+  try {
+    startTimeMs = getActivityDirectiveStartTimeMs(
+      activityId,
+      plan.start_time,
+      plan.end_time_doy,
+      tempDirectivesMap,
+      spansMap,
+      spanUtilityMaps,
+    );
+  } catch (e) {
+    startTimeMs = null;
+  }
+
+  activityDirectiveRevision.start_time_ms = startTimeMs;
+  return activityDirectiveRevision;
+}
+
+export async function findTypes(type: string, activityTypes: ActivityType[]): Promise<ActivityType | undefined> {
+  // const activityTypes = await activityTypesPromise;
   for (let idx = 0; idx < activityTypes.length; idx++) {
     if (activityTypes[idx].name === type) {
       return activityTypes[idx];
@@ -290,7 +336,7 @@ export function findTypes(type: string, activityTypes: ActivityType[]): Activity
   return undefined;
 }
 
-export function packActivityDirectivesBothInPlan(
+export function packActivityDirectivesInPlan(
   sourcePlan: Plan,
   activities: ActivityDirective[],
   direction: 'LEFT' | 'RIGHT',
@@ -318,37 +364,15 @@ export function packActivityDirectivesBothInPlan(
 
   // Map activity ids to their absolute start times in milliseconds
   const planStartTimeMs = getUnixEpochTime(sourcePlan.start_time_doy);
-  const initialStartTimes = new Map<number, number>();
-  for (const activity of activities) {
-    const activityStartTimeMs = getActivityDirectiveStartTimeMs(
-      activity.id,
-      sourcePlan.start_time,
-      sourcePlan.end_time_doy,
-      activityDirectivesMap,
-      spansMap,
-      spanUtilityMaps,
-    );
-    if (activityStartTimeMs === undefined) {
-      throw new Error(`Activity ${activity.id} not found in initial start times`);
-    }
-    initialStartTimes.set(activity.id, activityStartTimeMs);
-  }
 
-  // Sort activities by their start times
+  // Sort activities by their absolute start times
   activities.sort((a, b) => {
-    const aStart = initialStartTimes.get(a.id) ?? 0;
-    const bStart = initialStartTimes.get(b.id) ?? 0;
-    return aStart - bStart;
+    return a.start_time_ms - b.start_time_ms;
   });
 
   if (direction === 'RIGHT') {
     activities.reverse();
   }
-
-  const activityStartTimeMs = initialStartTimes.get(activities[0].id)!;
-
-  // need a better variable name here
-  const initialTime = (activityStartTimeMs - planStartTimeMs) * 1000; // Convert to microseconds
 
   // Grab all durations for the activities and store in a Map
   const durations = new Map<number, number>();
@@ -368,6 +392,7 @@ export function packActivityDirectivesBothInPlan(
       return;
     }
   }
+  const initialTime = (activities[0].start_time_ms - planStartTimeMs) * 1000;
 
   // Calculate new absolute start times after packing based on the initial start times and durations
   const newStartTimes = new Map<number, number>();
@@ -383,32 +408,19 @@ export function packActivityDirectivesBothInPlan(
     if (direction === 'RIGHT') {
       postPackingTime -= durations.get(activities[idx].id)! + offsetUS;
     } else {
-      //direction === 'LEFT'
-
+      //Same as direction === 'LEFT
       postPackingTime += durations.get(activities[idx - 1].id)! + offsetUS;
     }
     newStartTimes.set(activities[idx].id, postPackingTime);
   }
 
-  // Calculate the new start offsets based on the anchor activities
-  const cachedStartTimes: { [activityDirectiveId: number]: number } = {};
+  // Helper function to calculate the new start offsets based on the anchor activities
   function updateAnchorStartOffset(anchorId: number, activityId: number): string {
     let anchorStartTime;
     if (newStartTimes.has(anchorId)) {
       anchorStartTime = newStartTimes.get(anchorId)!;
     } else {
-      anchorStartTime =
-        (getActivityDirectiveStartTimeMs(
-          anchorId,
-          sourcePlan.start_time,
-          sourcePlan.end_time_doy,
-          activityDirectivesMap,
-          spansMap,
-          spanUtilityMaps,
-          cachedStartTimes,
-        ) -
-          planStartTimeMs) *
-        1000; // Convert to microseconds
+      anchorStartTime = (activityDirectivesMap[anchorId].start_time_ms - planStartTimeMs) * 1000; // Convert to microseconds
     }
     const activityStartTime = newStartTimes.get(activityId)!;
     return usToOffset(activityStartTime - anchorStartTime);
@@ -423,7 +435,7 @@ export function packActivityDirectivesBothInPlan(
     }
 
     if ([...anchorIds.values()].includes(activity.id)) {
-      // This activity is an anchor to selected activity, so we need to update its "anchee" (activities connected to it).
+      // This activity is an anchor to selected activity, so we need to update its "anchee" (activities connected to it)
       const connectedActivityIds = Array.from(anchorIds.entries())
         .filter(([_, anchorId]) => anchorId === activity.id)
         .map(([id, _]) => id);

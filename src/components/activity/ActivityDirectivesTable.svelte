@@ -17,7 +17,7 @@
   import {
     copyActivityDirectivesToClipboard,
     findTypes,
-    packActivityDirectivesBothInPlan,
+    packActivityDirectivesInPlan,
   } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
@@ -183,7 +183,7 @@
   async function updateActivities(updatedActivities: ActivityDirective[] | null) {
     if (plan != null && Array.isArray(updatedActivities)) {
       for (const activity of updatedActivities) {
-        const activityType = findTypes(activity.type, get(planModelActivityTypes) ?? []);
+        const activityType = await findTypes(activity.type, get(planModelActivityTypes) ?? []);
         await effects.updateActivityDirective(
           plan,
           activity.id,
@@ -197,10 +197,10 @@
 
   async function packLeftActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
-      const updatedActivities = packActivityDirectivesBothInPlan(
+      const updatedActivities = packActivityDirectivesInPlan(
         plan,
         activities,
-        'RIGHT',
+        'LEFT',
         0,
         get(activityDirectivesDB) ?? [],
         get(spansMap) ?? {},
@@ -215,7 +215,7 @@
 
   async function packRightActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (plan !== null) {
-      const updatedActivities = packActivityDirectivesBothInPlan(
+      const updatedActivities = packActivityDirectivesInPlan(
         plan,
         activities,
         'RIGHT',
@@ -238,7 +238,7 @@
       const { direction, gapOffset, selectedRows } = event.detail;
       const offsetUS = convertDurationStringToUs(gapOffset);
 
-      const updatedActivities = await packActivityDirectivesBothInPlan(
+      const updatedActivities = packActivityDirectivesInPlan(
         plan,
         selectedRows,
         direction.toUpperCase() as 'LEFT' | 'RIGHT',
