@@ -183,7 +183,7 @@
   async function updateActivities(updatedActivities: ActivityDirective[] | null) {
     if (plan != null && Array.isArray(updatedActivities)) {
       for (const activity of updatedActivities) {
-        const activityType = await findTypes(activity.type, get(planModelActivityTypes) ?? []);
+        const activityType = findTypes(activity.type, get(planModelActivityTypes) ?? []);
         await effects.updateActivityDirective(
           plan,
           activity.id,
