@@ -28,6 +28,8 @@
     LibrarySequence,
     LibrarySequenceMap,
     NewAdaptationInterface,
+    OutputLanguageAdaptation,
+    PhoenixContext,
   } from '../../language-package/interfaces/new-adaptation-interface';
   import type { ActionDefinition } from '../../types/actions';
   import type { TimeTagInfo } from '../../types/sequencing';
@@ -39,7 +41,6 @@
     getCommandDef,
     getTimeTagInfo,
     getVariablesInScope,
-    isVmlSequence,
     unquoteUnescape,
   } from '../../utilities/sequence-editor/sequence-utils';
   import { pluralize } from '../../utilities/text';
@@ -91,9 +92,10 @@
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
   let librarySequenceMap: LibrarySequenceMap = {};
+  let phoenixContext: PhoenixContext;
   let menu: Menu;
   let selectedNode: SyntaxNode | null;
-  let selectedOutputFormat: IOutputFormat | undefined;
+  let selectedOutputFormat: OutputLanguageAdaptation | undefined;
   let showOutputs: boolean = true;
   let previousShowOutputs: boolean = showOutputs;
   let timeTagNode: TimeTagInfo = null;
@@ -104,7 +106,7 @@
   let currentTree: Tree;
   let commandInfoMapper: CommandInfoMapper;
 
-  $: commandInfoMapper = newSequenceAdaptation.commandInfoMapper;
+  $: commandInfoMapper = newSequenceAdaptation.input.commandInfoMapper;
 
   $: if (editorSequenceView) {
     // insert sequence
@@ -118,26 +120,26 @@
     : userSequenceEditorColumns;
 
   $: librarySequenceMap = Object.fromEntries(librarySequences.map(seq => [seq.name, seq]));
+  $: phoenixContext = {
+    channelDictionary,
+    commandDictionary,
+    parameterDictionaries,
+    librarySequenceMap,
+  };
   $: {
-    if (commandDictionary) {
-      // Reconfigure sequence editor.
-      editorSequenceView.dispatch({
-        effects: [
-          compartmentAdaptation.reconfigure(
-            newSequenceAdaptation.extension({
-              channelDictionary,
-              commandDictionary,
-              parameterDictionaries,
-              librarySequenceMap,
-            }),
-          ),
-        ],
-      });
-    } else {
+    if (!commandDictionary) {
       commandDictionary = null;
       channelDictionary = null;
       parameterDictionaries = [];
     }
+  }
+  $: {
+    // Configure sequence editor.
+    editorSequenceView.dispatch({
+      effects: [
+        compartmentAdaptation.reconfigure((newSequenceAdaptation.input.editorExtension ?? (_ => []))(phoenixContext)),
+      ],
+    });
   }
   $: editorSequenceView?.dispatch({
     effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly)]),
@@ -153,8 +155,8 @@
     editorHeights = '1fr 3px';
   }
 
-  $: if (sequenceAdaptation) {
-    selectedOutputFormat = sequenceAdaptation.outputFormat;
+  $: if (newSequenceAdaptation.outputs.length > 0) {
+    selectedOutputFormat = newSequenceAdaptation.outputs[0];
   }
   $: commandNode = commandInfoMapper.getContainingCommand(selectedNode);
   $: commandNameNode = commandInfoMapper.getNameNode(commandNode);
@@ -194,14 +196,7 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         EditorView.editable.of(false),
         lintGutter(),
-        compartmentOutputAdaptation.of(
-          newSequenceAdaptation.outputExtension({
-            commandDictionary,
-            channelDictionary,
-            parameterDictionaries,
-            librarySequenceMap,
-          }),
-        ),
+        compartmentOutputAdaptation.of((selectedOutputFormat?.editorExtension ?? (_ => []))(phoenixContext)),
         EditorState.readOnly.of(readOnly),
       ],
       parent: editorOutputDiv,
@@ -221,7 +216,7 @@
     const sequence = viewUpdate.state.doc.toString();
     disableCopyAndExport = sequence === '';
     const tree = syntaxTree(viewUpdate.state);
-    let output = await selectedOutputFormat?.toOutputFormat?.(tree, sequence, commandDictionary, sequenceName);
+    let output = await selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
 
     if (adaptation.modifyOutput !== undefined && output !== undefined) {
       const modifiedOutput = adaptation.modifyOutput(output, parameterDictionaries, channelDictionary);
@@ -299,7 +294,10 @@
   }
 
   function formatDocument() {
-    newSequenceAdaptation.format(editorSequenceView);
+    let format = newSequenceAdaptation.input.format;
+    if (format !== undefined) {
+      format(editorSequenceView);
+    }
   }
 
   function onRunAction(action: ActionDefinition) {
@@ -326,14 +324,7 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
-        compartmentAdaptation.of(
-          newSequenceAdaptation.extension({
-            commandDictionary,
-            channelDictionary,
-            parameterDictionaries,
-            librarySequenceMap,
-          }),
-        ), // TODO improve, probably
+        compartmentAdaptation.of((newSequenceAdaptation.input.editorExtension ?? (_ => []))(phoenixContext)), // TODO improve, probably
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
@@ -350,14 +341,7 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         EditorView.editable.of(false),
         lintGutter(),
-        compartmentOutputAdaptation.of(
-          newSequenceAdaptation.outputExtension({
-            commandDictionary,
-            channelDictionary,
-            parameterDictionaries,
-            librarySequenceMap,
-          }),
-        ), // TODO improve, probably
+        compartmentOutputAdaptation.of((selectedOutputFormat?.editorExtension ?? (_ => []))(phoenixContext)),
         EditorState.readOnly.of(readOnly),
       ],
       parent: editorOutputDiv,

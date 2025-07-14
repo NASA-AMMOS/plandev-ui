@@ -2,7 +2,7 @@ import { indentService } from "@codemirror/language";
 import { EditorView } from "codemirror";
 import { debounce } from "lodash-es";
 import { outputLinter } from "../../interfaces/legacy";
-import type { NewAdaptationInterface } from "../../interfaces/new-adaptation-interface";
+import type { LanguageAdaptation, NewAdaptationInterface } from "../../interfaces/new-adaptation-interface";
 import { setupLanguageSupport } from "./seq-n";
 import { seqNHighlightBlock, seqqNBlockHighlighter } from "./seq-n-highlighter";
 import { SeqNCommandInfoMapper } from "./seq-n-tree-utils";
@@ -13,8 +13,10 @@ import { sequenceTooltip } from "./sequence-tooltip";
 
 const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
 
-export const defaultAdaptation: NewAdaptationInterface = {
-    extension: context => [
+const seqnAdaptation: LanguageAdaptation = {
+    name: "SeqN",
+    fileExtension: ".seqn",
+    editorExtension: context => [
         setupLanguageSupport(sequenceCompletion(
             context.channelDictionary,
             context.commandDictionary,
@@ -41,7 +43,17 @@ export const defaultAdaptation: NewAdaptationInterface = {
     ],
     commandInfoMapper: new SeqNCommandInfoMapper(),
     format: seqNFormat,
-    outputExtension: context => [
+}
+
+const seqJsonAdaptation: LanguageAdaptation = {
+    name: "SeqJSON",
+    fileExtension: ".seq.json",
+    editorExtension: context => [
         outputLinter(context.commandDictionary),
     ],
+}
+
+export const defaultAdaptation: NewAdaptationInterface = {
+    input: seqnAdaptation,
+    outputs: [seqJsonAdaptation],
 }
