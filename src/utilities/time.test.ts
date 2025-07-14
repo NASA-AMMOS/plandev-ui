@@ -151,7 +151,7 @@ test('getActivityDirectiveStartTimeMs', () => {
   const directiveDBMap = keyBy(
     [directive, anchoredDirective1, anchoredDirective2, anchoredDirective3, anchoredDirective4].map(d => ({
       ...d,
-      start_time_ms: null,
+      start_time_ms: -1,
     })),
     'id',
   );
@@ -272,7 +272,7 @@ test('getActivityDirectiveStartTimeMs - no cycles, anchor chain', () => {
   const directiveDBMap = keyBy(
     [baseDirective, anchored1, anchored2, anchored3, anchored4].map(d => ({
       ...d,
-      start_time_ms: null,
+      start_time_ms: -1,
     })),
     'id',
   );
