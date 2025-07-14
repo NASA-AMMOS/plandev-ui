@@ -24,7 +24,6 @@
   onMount(async () => {
     version = await effects.getVersion();
   });
-  $: console.log('version :>> ', version);
 </script>
 
 <Modal height={220} width={640}>
