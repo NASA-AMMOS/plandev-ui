@@ -325,8 +325,7 @@ export function addAbsoluteTimeToRevision(
   return activityDirectiveRevision;
 }
 
-export async function findTypes(type: string, activityTypes: ActivityType[]): Promise<ActivityType | undefined> {
-  // const activityTypes = await activityTypesPromise;
+export function findTypes(type: string, activityTypes: ActivityType[]): ActivityType | undefined {
   for (let idx = 0; idx < activityTypes.length; idx++) {
     if (activityTypes[idx].name === type) {
       return activityTypes[idx];
