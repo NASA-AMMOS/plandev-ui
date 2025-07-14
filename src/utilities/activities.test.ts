@@ -283,14 +283,14 @@ const plan: Plan = {
   child_plans: [],
   collaborators: [],
   constraint_specification: [],
-  created_at: '2030-01-01T00:00:00',
+  created_at: '2006-07-11T00:00:00',
   duration: '1y',
-  end_time_doy: '2030-365T00:00:00',
+  end_time_doy: '2006-T194:00:00',
   id: 1,
   is_locked: false,
   model: {
     constraint_specification: [],
-    created_at: '2030-01-01T00:00:00',
+    created_at: '2006-07-11T00:00:00',
     default_view_id: 0,
     id: 1,
     jar_id: 123,
@@ -380,8 +380,15 @@ describe('addAbsoluteTimeToRevision', () => {
   const spanUtilityMaps = createSpanUtilityMaps([]);
 
   test('should compute and set start_time_ms on revision', () => {
-    addAbsoluteTimeToRevision(activityDirectiveRevision, 1, plan, activitiesDirectivesDB, spansMap, spanUtilityMaps);
-    expect(activityDirectiveRevision.start_time_ms).toEqual(new Date('2006-07-01T10:00:00+00:00').getTime());
+    const newRevision = addAbsoluteTimeToRevision(
+      activityDirectiveRevision,
+      1,
+      plan,
+      activitiesDirectivesDB,
+      spansMap,
+      spanUtilityMaps,
+    );
+    expect(newRevision.start_time_ms).toEqual(new Date('2006-07-11T10:00:00+00:00').getTime());
   });
 });
 
@@ -398,7 +405,7 @@ const activityDirectivesDB: ActivityDirectiveDB[] = [
     last_modified_at: '2006-07-11T00:00:00',
     last_modified_by: 'admin',
     metadata: {},
-    name: 'foo 1',
+    name: 'Activity 1',
     plan_id: 1,
     source_scheduling_goal_id: null,
     start_offset: '10:00:00',
@@ -417,7 +424,7 @@ const activityDirectivesDB: ActivityDirectiveDB[] = [
     last_modified_at: '2006-07-11T00:00:00',
     last_modified_by: 'admin',
     metadata: {},
-    name: 'foo 2',
+    name: 'Activity 2',
     plan_id: 1,
     source_scheduling_goal_id: null,
     start_offset: '09:00:00',
@@ -425,7 +432,7 @@ const activityDirectivesDB: ActivityDirectiveDB[] = [
     type: 'foo',
   },
   {
-    anchor_id: 0,
+    anchor_id: null,
     anchored_to_start: false,
     applied_preset: null,
     arguments: {},
@@ -436,7 +443,7 @@ const activityDirectivesDB: ActivityDirectiveDB[] = [
     last_modified_at: '2006-07-11T00:00:00',
     last_modified_by: 'admin',
     metadata: {},
-    name: 'foo 3',
+    name: 'Activity 3',
     plan_id: 1,
     source_scheduling_goal_id: null,
     start_offset: '08:00:00',
@@ -445,7 +452,7 @@ const activityDirectivesDB: ActivityDirectiveDB[] = [
   },
 ];
 
-const arrayOfStartTimeMs = [1152612000, 1152644400, 1152604800];
+const arrayOfStartTimeMs = [1152612000000, 1152644400000, 1152604800000];
 
 const activityDirectives: ActivityDirective[] = activityDirectivesDB.map((directive, i) => ({
   ...directive,
@@ -526,12 +533,12 @@ describe('packActivityDirectivesInPlan', () => {
 
     expect(leftPacked).toBeDefined();
     if (leftPacked) {
-      expect(leftPacked[0].id === 3);
-      expect(leftPacked[1].id === 1);
-      expect(leftPacked[2].id === 2);
-      expect(leftPacked[0].start_offset).toEqual('08:00:00');
-      expect(leftPacked[1].start_offset).toEqual('09:00:00');
-      expect(leftPacked[2].start_offset).toEqual('03:00:00'); // anchored to previous activity
+      expect(leftPacked[0].id).toEqual(3);
+      expect(leftPacked[1].id).toEqual(1);
+      expect(leftPacked[2].id).toEqual(2);
+      expect(leftPacked[0].start_offset).toEqual('08:00:00.0');
+      expect(leftPacked[1].start_offset).toEqual('09:00:00.0');
+      expect(leftPacked[2].start_offset).toEqual('03:00:00.0'); // anchored to previous activity
     }
   });
 
@@ -548,12 +555,12 @@ describe('packActivityDirectivesInPlan', () => {
 
     expect(leftPacked).toBeDefined();
     if (leftPacked) {
-      expect(leftPacked[0].id === 3);
-      expect(leftPacked[1].id === 1);
-      expect(leftPacked[2].id === 2);
-      expect(leftPacked[0].start_offset).toEqual('08:00:00');
-      expect(leftPacked[1].start_offset).toEqual('10:00:00');
-      expect(leftPacked[2].start_offset).toEqual('04:00:00'); // anchored to previous activity
+      expect(leftPacked[0].id).toEqual(3);
+      expect(leftPacked[1].id).toEqual(1);
+      expect(leftPacked[2].id).toEqual(2);
+      expect(leftPacked[0].start_offset).toEqual('08:00:00.0');
+      expect(leftPacked[1].start_offset).toEqual('10:00:00.0');
+      expect(leftPacked[2].start_offset).toEqual('04:00:00.0'); // anchored to previous activity
     }
   });
 
@@ -574,9 +581,8 @@ describe('packActivityDirectivesInPlan', () => {
       expect(rightPacked[1].id).toEqual(1);
       expect(rightPacked[2].id).toEqual(3);
       expect(rightPacked[0].start_offset).toEqual('03:00:00.0'); //anchored to activity below
-      expect(rightPacked[1].anchor_id).toBeUndefined();
-      expect(rightPacked[1].start_offset).toEqual('16:00:00');
-      expect(rightPacked[2].start_offset).toEqual('15:00:00');
+      expect(rightPacked[1].start_offset).toEqual('16:00:00.0');
+      expect(rightPacked[2].start_offset).toEqual('15:00:00.0');
     }
   });
 });

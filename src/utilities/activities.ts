@@ -392,7 +392,6 @@ export function packActivityDirectivesInPlan(
       return;
     }
   }
-
   const initialTime = (activities[0].start_time_ms - planStartTimeMs) * 1000;
 
   // Calculate new absolute start times after packing based on the initial start times and durations
@@ -409,13 +408,13 @@ export function packActivityDirectivesInPlan(
     if (direction === 'RIGHT') {
       postPackingTime -= durations.get(activities[idx].id)! + offsetUS;
     } else {
-      //direction === 'LEFT'
+      //Same as direction === 'LEFT
       postPackingTime += durations.get(activities[idx - 1].id)! + offsetUS;
     }
     newStartTimes.set(activities[idx].id, postPackingTime);
   }
 
-  // Calculate the new start offsets based on the anchor activities
+  // Helper function to calculate the new start offsets based on the anchor activities
   function updateAnchorStartOffset(anchorId: number, activityId: number): string {
     let anchorStartTime;
     if (newStartTimes.has(anchorId)) {
