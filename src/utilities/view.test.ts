@@ -67,7 +67,7 @@ describe('generateDefaultViewWithEvents', () => {
     const layers = timelines[0].rows[1].layers;
     expect(layers.length).toBe(1);
     expect(layers[0].filter.externalEvent).toBeDefined();
-    expect(layers[0].filter.externalEvent?.event_types).toEqual(['external-event-type_1', 'external-event-type_2']);
+    expect(layers[0].filter.externalEvent?.static_types).toEqual(['external-event-type_1', 'external-event-type_2']);
   });
 });
 

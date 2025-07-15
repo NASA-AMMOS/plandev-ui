@@ -49,7 +49,11 @@ export function generateDefaultView(
   //     return type, so they can be checked as well).
   if (externalEventTypes.length) {
     const externalEventLayer = createTimelineExternalEventLayer(timelines, {
-      filter: { externalEvent: { event_types: externalEventTypes.map(e => e.name) } },
+      filter: {
+        externalEvent: {
+          static_types: externalEventTypes.map(externalEventType => externalEventType.name),
+        },
+      },
     });
     const externalEventRow = createRow(timelines, {
       autoAdjustHeight: false,

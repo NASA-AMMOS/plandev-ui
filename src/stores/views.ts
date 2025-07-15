@@ -635,7 +635,7 @@ export function getUpdatedLayerWithFilters(
     } else if (type === 'externalEvent') {
       return {
         layer: createTimelineExternalEventLayer(timelines, {
-          filter: { externalEvent: { event_types: itemNames } },
+          filter: { externalEvent: { static_types: itemNames } },
         }),
       };
     } else {
@@ -666,7 +666,7 @@ export function getUpdatedLayerWithFilters(
       updatedFilter.activity = getUpdatedActivityLayerFilter(items, metadata, layer.filter.activity);
     } else if (type === 'externalEvent') {
       updatedFilter.externalEvent = {
-        event_types: Array.from(new Set([...(updatedFilter.externalEvent?.event_types || []), ...itemNames])),
+        static_types: Array.from(new Set([...(updatedFilter.externalEvent?.static_types || []), ...itemNames])),
       };
     }
 

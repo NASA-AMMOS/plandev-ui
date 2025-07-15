@@ -3,21 +3,18 @@
 <script lang="ts">
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
+  import TagIcon from '@nasa-jpl/stellar/icons/tag.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import ExternalEventIcon from '../../../../assets/external-event-box-with-arrow.svg?component';
   import FilterWithPlusIcon from '../../../../assets/filter-with-plus.svg?component';
-  import DirectiveIcon from '../../../../assets/timeline-directive.svg?component';
-  import SpanIcon from '../../../../assets/timeline-span.svg?component';
-  import { activityArgumentDefaultsMap, activityDirectivesMap } from '../../../../stores/activities';
-  import { planModelActivityTypes, subsystemTags } from '../../../../stores/plan';
-  import { spans, spanUtilityMaps } from '../../../../stores/simulation';
-  import { tags } from '../../../../stores/tags';
-  import type { ValueSchemaVariant } from '../../../../types/schema';
-  import type { ActivityLayerFilter, ActivityLayerFilterSubfieldSchema } from '../../../../types/timeline';
+  import { externalEventsMap, externalEventTypes } from '../../../../stores/external-event';
+  import type { ExternalEventType } from '../../../../types/external-event';
+  import type { ExternalEventLayerFilter, ExternalEventLayerFilterSubfieldSchema } from '../../../../types/timeline';
   import { compare, getTarget, lowercase } from '../../../../utilities/generic';
   import { pluralize } from '../../../../utilities/text';
   import {
-    applyActivityLayerFilter,
-    getMatchingTypesForActivityLayerFilter,
+    applyExternalEventLayerFilter,
+    getMatchingTypesForExternalEventLayerFilter,
     getNextThingID,
   } from '../../../../utilities/timeline';
   import { tooltip } from '../../../../utilities/tooltip';
@@ -27,17 +24,18 @@
   import MenuItem from '../../../menus/MenuItem.svelte';
   import CssGrid from '../../../ui/CssGrid.svelte';
   import CssGridGutter from '../../../ui/CssGridGutter.svelte';
-  import ActivityTypeResult from './FilterTypeResult.svelte';
   import Draggable from './Draggable.svelte';
   import DynamicFilter from './DynamicFilter.svelte';
+  import FilterTypeResult from './FilterTypeResult.svelte';
 
-  export let filter: ActivityLayerFilter | undefined = undefined;
+  export let filter: ExternalEventLayerFilter | undefined;
   export const filterWidth = 1000;
   export const filterHeight = 500;
   export let layerName: string = '';
 
-  let parameterSubfields: ActivityLayerFilterSubfieldSchema[] = [];
-  let dirtyFilter: ActivityLayerFilter = {
+  let parameterSubfields: ExternalEventLayerFilterSubfieldSchema[] = [];
+  // TODO: Match this type to the activities one?
+  let dirtyFilter: ExternalEventLayerFilter = {
     dynamic_type_filters: [],
     other_filters: [],
     static_types: [],
@@ -55,14 +53,9 @@
   let instanceCount: number = 0;
 
   const dispatch = createEventDispatcher<{
-    filterChange: { filter: ActivityLayerFilter };
+    filterChange: { filter: ExternalEventLayerFilter };
     rename: { name: string };
-    visibilityChange: { isShown: boolean };
   }>();
-
-  export function setActiveFilter(newFilter: ActivityLayerFilter) {
-    dirtyFilter = newFilter;
-  }
 
   export function toggle() {
     if (shown) {
@@ -70,17 +63,14 @@
     } else {
       show();
     }
-    dispatch('visibilityChange', { isShown: shown });
   }
 
   export function show() {
     shown = true;
-    dispatch('visibilityChange', { isShown: shown });
   }
 
   export function hide() {
     shown = false;
-    dispatch('visibilityChange', { isShown: shown });
   }
 
   function onManualTypeToggled(name: string) {
@@ -97,7 +87,7 @@
   }
 
   function onAddAllManualTypes() {
-    dirtyFilter = { ...dirtyFilter, static_types: filteredActivityTypes.map(t => t.name) };
+    dirtyFilter = { ...dirtyFilter, static_types: filteredExternalEventTypes.map(t => t.name) };
     dispatch('filterChange', { filter: dirtyFilter });
   }
 
@@ -133,7 +123,7 @@
   }
 
   function onDynamicFilterRemove(list: 'dynamic_type_filters' | 'other_filters', id: number) {
-    const currentFilters: ActivityLayerFilter['dynamic_type_filters'] | ActivityLayerFilter['other_filters'] =
+    const currentFilters: ExternalEventLayerFilter['dynamic_type_filters'] | ExternalEventLayerFilter['other_filters'] =
       Array.isArray(dirtyFilter[list]) ? dirtyFilter[list] : [];
     dirtyFilter = {
       ...dirtyFilter,
@@ -201,33 +191,15 @@
     dirtyFilter = structuredClone(filter);
   }
 
-  $: activityDirectives = Object.values($activityDirectivesMap || {});
-  $: appliedFilter = applyActivityLayerFilter(
-    dirtyFilter,
-    activityDirectives,
-    $spans || [],
-    $planModelActivityTypes,
-    $activityArgumentDefaultsMap,
-  );
+  $: externalEvents = Object.values($externalEventsMap || {});
+  $: appliedFilter = applyExternalEventLayerFilter(dirtyFilter, externalEvents);
 
+  // TODO: This was doing a lot before and I don't think it needs to be
   $: if (appliedFilter) {
-    const seenSpans: Record<number, boolean> = {};
-    let count = appliedFilter.directives.length;
-    appliedFilter.directives.forEach(directive => {
-      const matchingSpanId = $spanUtilityMaps.directiveIdToSpanIdMap[directive.id];
-      if (typeof matchingSpanId === 'number') {
-        seenSpans[matchingSpanId] = true;
-      }
-    });
-    appliedFilter.spans.forEach(span => {
-      if (!seenSpans[span.span_id]) {
-        count++;
-      }
-    });
-    instanceCount = count;
+    instanceCount = appliedFilter.externalEvents.length;
   }
 
-  $: matchingTypes = getMatchingTypesForActivityLayerFilter(dirtyFilter, $planModelActivityTypes);
+  $: matchingTypes = getMatchingTypesForExternalEventLayerFilter(dirtyFilter, $externalEventTypes);
   $: filteredMatchingTypes = matchingTypes.filter(type => {
     if (!resultingTypesInputValue) {
       return true;
@@ -237,43 +209,54 @@
   });
 
   $: {
-    const allParameterTypes = (matchingTypes.length ? matchingTypes : $planModelActivityTypes).reduce(
-      (acc: Record<string, ActivityLayerFilterSubfieldSchema>, activityType) => {
-        Object.entries(activityType.parameters).forEach(([parameterName, parameter]) => {
-          const parameterType = parameter.schema.type;
-          // TODO support series and struct?
-          if (parameterType === 'series' || parameterType === 'struct') {
-            return;
-          }
-          const key = `${parameterName} (${parameterType})`;
-          const matchingName = !!acc[key];
-          const matchingEntry = matchingName && acc[key].type === parameterType;
-          const isVariant = parameterType === 'variant';
-          let values = null;
-          if (matchingEntry) {
-            acc[key].activityTypes.push(activityType.name);
-            if (isVariant) {
-              // If we have a matching variant, add unique variants to the list
-              const variantValues = (parameter.schema as ValueSchemaVariant).variants.map(variant => variant.key);
-              values = Array.from(new Set([...variantValues, ...(acc[key].values || [])]));
-              acc[key].values = values;
+    const allParameterTypes = (matchingTypes.length ? matchingTypes : $externalEventTypes).reduce(
+      (acc: Record<string, ExternalEventLayerFilterSubfieldSchema>, externalEventType) => {
+        Object.entries(externalEventType.attribute_schema.properties).forEach(
+          ([parameterName, parameterDefinition]) => {
+            const casted: any = parameterDefinition as any; // it has to be casted _somehow_, because it comes in necessarily as unknown but at most it is an any
+            let parameterType = casted.type;
+            // TODO support series and struct?
+            if (parameterType === 'series' || parameterType === 'struct') {
+              return;
             }
-          }
-          if (!matchingEntry) {
-            const values = isVariant
-              ? (parameter.schema as ValueSchemaVariant).variants.map(variant => variant.key)
-              : null;
-            const unit = parameter.schema.metadata?.unit?.value ?? null;
-            acc[key] = {
-              activityTypes: [activityType.name],
-              name: parameterName,
-              type: parameterType,
-              ...(values ? { values } : null),
-              ...(unit ? { unit } : null),
-              label: `${parameterName} (${parameterType})`,
-            };
-          }
-        });
+            if (parameterType === undefined && !!casted.enum) {
+              parameterType = 'enum';
+            }
+            const key = `${parameterName} (${parameterType})`;
+            const matchingName = !!acc[key];
+            const matchingEntry = matchingName && acc[key].type === parameterType;
+            if (matchingEntry) {
+              acc[key].externalEventTypes.push(externalEventType.name);
+              switch (parameterType) {
+                case 'enum':
+                  handleEnumAttribute(acc, parameterName, parameterDefinition, externalEventType);
+                  break;
+                case 'object':
+                  recurseObjectAttributeProperties(acc, casted.properties, parameterName, externalEventType);
+                  break;
+                default:
+                  acc[key].externalEventTypes.push(externalEventType.name);
+              }
+            }
+            if (!matchingEntry) {
+              switch (parameterType) {
+                case 'enum':
+                  handleEnumAttribute(acc, parameterName, parameterDefinition, externalEventType);
+                  break;
+                case 'object':
+                  recurseObjectAttributeProperties(acc, casted.properties, parameterName, externalEventType);
+                  break;
+                default:
+                  acc[key] = {
+                    externalEventTypes: [externalEventType.name],
+                    label: `${parameterName} (${parameterType})`,
+                    name: parameterName,
+                    type: parameterType,
+                  };
+              }
+            }
+          },
+        );
         return acc;
       },
       {},
@@ -282,7 +265,7 @@
     parameterSubfields = Object.values(allParameterTypes).sort((a, b) => compare(a.label, b.label));
   }
 
-  $: filteredActivityTypes = $planModelActivityTypes.filter(type => {
+  $: filteredExternalEventTypes = $externalEventTypes.filter(type => {
     if (!manualInputValue) {
       return true;
     }
@@ -308,6 +291,67 @@
     } else {
       resultingTypesMessage = '';
     }
+  }
+
+  function handleEnumAttribute(
+    acc: Record<string, ExternalEventLayerFilterSubfieldSchema>,
+    parameterName: string,
+    variants: any,
+    externalEventType: ExternalEventType,
+  ) {
+    const matchingName = !!acc[parameterName];
+    const matchingEntry = matchingName && acc[parameterName].type === 'variant';
+    if (matchingEntry) {
+      // handle enums too?
+      acc[parameterName].externalEventTypes.push(externalEventType.name);
+    }
+    if (!matchingEntry) {
+      acc[parameterName] = {
+        externalEventTypes: [externalEventType.name],
+        label: parameterName,
+        name: parameterName,
+        type: 'variant',
+        values: variants.enum,
+      };
+    }
+  }
+
+  function recurseObjectAttributeProperties(
+    acc: Record<string, ExternalEventLayerFilterSubfieldSchema>,
+    properties: any,
+    parameterName: string,
+    externalEventType: ExternalEventType,
+  ) {
+    let props: [string, any][] = Object.entries(properties);
+    props.forEach(prop => {
+      if (prop[1].properties) {
+        recurseObjectAttributeProperties(acc, prop[1].properties, `${parameterName} -> ${prop[0]}`, externalEventType);
+      } else {
+        const key = `${parameterName} -> ${prop[0]}`;
+        let type = prop[1].type;
+        if (type === undefined && !!prop[1].enum) {
+          type = 'enum';
+        }
+        const matchingName = !!acc[key];
+        const matchingEntry = matchingName && acc[key].type === type;
+        if (matchingEntry) {
+          // handle enums too?
+          acc[key].externalEventTypes.push(externalEventType.name);
+        }
+        if (!matchingEntry) {
+          if (type !== 'enum') {
+            acc[key] = {
+              externalEventTypes: [externalEventType.name],
+              label: `${key} (${type})`,
+              name: key,
+              type: type,
+            };
+          } else {
+            handleEnumAttribute(acc, `${parameterName} -> ${prop[0]}`, prop[1], externalEventType);
+          }
+        }
+      }
+    });
   }
 
   function onLayerNameChange(event: Event) {
@@ -351,17 +395,17 @@
   }
 </script>
 
-<div bind:this={rootRef} class="w-full" style:display="grid">
+<div bind:this={rootRef} class="w-100" style:display="grid">
   <slot name="trigger" />
   {#if shown}
     <Draggable
-      className="st-menu activity-filter-builder"
+      className="st-menu external-event-filter-builder"
       initialWidth={filterWidth}
       initialHeight={filterHeight}
       dragOptions={{ defaultPosition: getDefaultPosition() }}
     >
       <div slot="handle">
-        <MenuHeader title="Activity Filtering">
+        <MenuHeader title="External Event Filtering">
           <input
             slot="left"
             value={layerName}
@@ -379,7 +423,7 @@
         </MenuHeader>
       </div>
       <div class="body">
-        <CssGrid columns="0.7fr 3px 0.3fr" columnMinSizes={{ 0: 500, 1: 3, 2: 300 }} class="activity-filter-grid">
+        <CssGrid columns="0.7fr 3px 0.3fr" columnMinSizes={{ 0: 500, 1: 3, 2: 300 }} class="external-event-filter-grid">
           <div class="filters">
             <div class="filter-section" aria-label="manual-types">
               <div class="filter-section-header st-typography-medium">
@@ -402,7 +446,7 @@
                       autocomplete="off"
                       bind:this={manualInputRef}
                       name="manual-types-filter-input"
-                      class="st-input manual-types-filter-input w-full"
+                      class="st-input w-100 manual-types-filter-input"
                       placeholder="Select types"
                       bind:value={manualInputValue}
                       on:click={() => {
@@ -424,13 +468,13 @@
                     on:hide={() => (manualInputOpen = false)}
                   >
                     <div class="manual-types-menu">
-                      {#if filteredActivityTypes.length > 0}
+                      {#if filteredExternalEventTypes.length > 0}
                         <MenuItem on:click={() => onAddAllManualTypes()}>
                           <div class="st-typography-bold manual-types-add-all">
-                            Add {filteredActivityTypes.length !== $planModelActivityTypes.length ? 'Matching' : 'All'} +
+                            Add {filteredExternalEventTypes.length !== $externalEventTypes.length ? 'Matching' : 'All'} +
                           </div>
                         </MenuItem>
-                        {#each filteredActivityTypes as type}
+                        {#each filteredExternalEventTypes as type}
                           <MenuItem on:click={() => onManualTypeToggled(type.name)}>
                             <input
                               type="checkbox"
@@ -442,7 +486,7 @@
                           </MenuItem>
                         {/each}
                       {:else}
-                        <MenuItem disabled>No activities matching your filter</MenuItem>
+                        <MenuItem disabled>No external events matching your filter</MenuItem>
                       {/if}
                     </div>
                   </Menu>
@@ -450,7 +494,8 @@
                 {#if dirtyFilter.static_types?.length}
                   <div class="manual-types-results">
                     {#each dirtyFilter.static_types as name}
-                      <ActivityTypeResult {name} on:remove={() => onManualTypeToggled(name)} />
+                      <!-- TODO: Implement for EE -->
+                      <FilterTypeResult {name} activityOrEvent="event" on:remove={() => onManualTypeToggled(name)} />
                     {/each}
                   </div>
                 {/if}
@@ -481,14 +526,10 @@
                         on:change={event => onDynamicFilterChange('dynamic_type_filters', event)}
                         verb={i === 0 ? 'Where' : 'and'}
                         schema={{
-                          Subsystem: {
-                            does_not_include: { type: 'tag', values: $subsystemTags },
-                            includes: { type: 'tag', values: $subsystemTags },
-                          },
                           Type: {
-                            does_not_equal: { type: 'variant', values: $planModelActivityTypes.map(type => type.name) },
+                            does_not_equal: { type: 'variant', values: $externalEventTypes.map(type => type.name) },
                             does_not_include: { type: 'string' },
-                            equals: { type: 'variant', values: $planModelActivityTypes.map(type => type.name) },
+                            equals: { type: 'variant', values: $externalEventTypes.map(type => type.name) },
                             includes: { type: 'string' },
                           },
                         }}
@@ -502,7 +543,7 @@
               <div class="filter-section-header st-typography-medium">
                 <div class="filter-section-title">
                   Other Filters
-                  <div class="hint st-typography-body">Tags, parameter, scheduling goal, etc...</div>
+                  <div class="hint st-typography-body">Names, attributes</div>
                 </div>
                 <button
                   class="st-button icon"
@@ -517,28 +558,21 @@
                 <div class="filter-section-content">
                   <div class="dynamic-filter-content" role="list">
                     {#each dirtyFilter.other_filters as filter, i (filter.id)}
+                      <!-- TODO: Implement for EE -->
                       <DynamicFilter
                         {filter}
                         on:remove={() => onDynamicFilterRemove('other_filters', filter.id)}
                         on:change={event => onDynamicFilterChange('other_filters', event)}
                         verb={i === 0 ? 'Where' : 'and'}
                         schema={{
+                          Attribute: {
+                            subfields: parameterSubfields,
+                          },
                           Name: {
                             does_not_equal: { type: 'string' },
                             does_not_include: { type: 'string' },
                             equals: { type: 'string' },
                             includes: { type: 'string' },
-                          },
-                          Parameter: {
-                            subfields: parameterSubfields,
-                          },
-                          SchedulingGoalId: {
-                            does_not_equal: { type: 'int' },
-                            equals: { type: 'int' },
-                          },
-                          Tags: {
-                            does_not_include: { type: 'tag', values: $tags },
-                            includes: { type: 'tag', values: $tags },
                           },
                         }}
                       />
@@ -555,17 +589,20 @@
             <div class="resulting-types-title st-typography-medium">
               Resulting Types
               <div class="resulting-types-info-container">
-                <div class="resulting-types-info"><DirectiveIcon /> {matchingTypes.length} types</div>
-                <div class="resulting-types-info"><SpanIcon /> {instanceCount} instance{pluralize(instanceCount)}</div>
+                <div class="resulting-types-info"><TagIcon />{matchingTypes.length} types</div>
+                <div class="resulting-types-info">
+                  <ExternalEventIcon />{instanceCount} instance{pluralize(instanceCount)}
+                </div>
               </div>
             </div>
             <Input>
               <div class="search-icon" slot="left"><SearchIcon /></div>
-              <input class="st-input w-full" placeholder="Filter types" bind:value={resultingTypesInputValue} />
+              <input class="st-input w-100" placeholder="Filter types" bind:value={resultingTypesInputValue} />
             </Input>
             <div class="resulting-types-list">
               {#each filteredMatchingTypes as type}
-                <ActivityTypeResult name={type.name} removable={false}>
+                <!-- TODO: Implement for EE -->
+                <FilterTypeResult activityOrEvent="event" name={type.name} removable={false}>
                   <button
                     slot="right"
                     on:click={() => onAddTypeSubfilter(type.name)}
@@ -585,25 +622,17 @@
                             on:change={event => onTypeSubfilterChange(type.name, event)}
                             verb={''}
                             schema={{
+                              Attribute: {
+                                // Filter subfields to only those matching this type
+                                subfields: parameterSubfields.filter(subfield => {
+                                  return subfield.externalEventTypes.indexOf(type.name) > -1;
+                                }),
+                              },
                               Name: {
                                 does_not_equal: { type: 'string' },
                                 does_not_include: { type: 'string' },
                                 equals: { type: 'string' },
                                 includes: { type: 'string' },
-                              },
-                              Parameter: {
-                                // Filter subfields to only those matching this type
-                                subfields: parameterSubfields.filter(subfield => {
-                                  return subfield.activityTypes.indexOf(type.name) > -1;
-                                }),
-                              },
-                              SchedulingGoalId: {
-                                does_not_equal: { type: 'int' },
-                                equals: { type: 'int' },
-                              },
-                              Tags: {
-                                does_not_include: { type: 'tag', values: $tags },
-                                includes: { type: 'tag', values: $tags },
                               },
                             }}
                           />
@@ -611,7 +640,7 @@
                       </div>
                     {/if}
                   </svelte:fragment>
-                </ActivityTypeResult>
+                </FilterTypeResult>
               {/each}
               {#if resultingTypesMessage}
                 <div class="st-typography-label p-1">{resultingTypesMessage}</div>
@@ -620,13 +649,12 @@
           </div>
         </CssGrid>
       </div>
-      <slot name="footer" />
     </Draggable>
   {/if}
 </div>
 
 <style>
-  :global(.activity-filter-builder) {
+  :global(.external-event-filter-builder) {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -637,7 +665,7 @@
     width: 100%;
   }
 
-  :global(.activity-filter-builder .header) {
+  :global(.external-event-filter-builder .header) {
     cursor: inherit;
   }
 
@@ -769,7 +797,7 @@
     display: flex;
   }
 
-  :global(.activity-filter-grid) {
+  :global(.external-event-filter-grid) {
     width: 100%;
   }
 

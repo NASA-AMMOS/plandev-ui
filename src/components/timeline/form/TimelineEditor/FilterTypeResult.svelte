@@ -3,11 +3,13 @@
 <script lang="ts">
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import ExternalEventIcon from '../../../../assets/external-event-box-with-arrow.svg?component';
   import DirectiveIcon from '../../../../assets/timeline-directive.svg?component';
   import { tooltip } from '../../../../utilities/tooltip';
 
   export let name: string;
   export let removable: boolean = true;
+  export let activityOrEvent: 'activity' | 'event' = 'activity';
 
   const dispatch = createEventDispatcher<{
     addFilter: void;
@@ -15,10 +17,14 @@
   }>();
 </script>
 
-<div class="activity-type-result" role="listitem" aria-label="activity-type-result-{name}">
+<div class="filter-type-result" role="listitem" aria-label="filter-type-result-{name}">
   <div class="top-row">
     <div class="title st-typography-medium">
-      <DirectiveIcon />
+      {#if activityOrEvent === 'activity'}
+        <DirectiveIcon />
+      {:else}
+        <ExternalEventIcon />
+      {/if}
       <div class="title-text">{name}</div>
     </div>
     <slot name="right" />
@@ -36,7 +42,7 @@
 </div>
 
 <style>
-  .activity-type-result {
+  .filter-type-result {
     box-shadow: 0px 0px 0px 1px var(--st-gray-20);
     display: flex;
     flex-direction: column;

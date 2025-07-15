@@ -1,6 +1,7 @@
 import test, { expect, type BrowserContext, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { Constraints } from '../fixtures/Constraints.js';
+import { ExternalSources } from '../fixtures/ExternalSources.js';
 import { Models } from '../fixtures/Models.js';
 import { PanelNames, Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
@@ -9,6 +10,7 @@ import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
 
 let constraints: Constraints;
 let context: BrowserContext;
+let externalSources: ExternalSources;
 let models: Models;
 let page: Page;
 let plan: Plan;
@@ -21,6 +23,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
   page = await context.newPage();
 
   models = new Models(page);
+  externalSources = new ExternalSources(page);
   plans = new Plans(page, models);
   constraints = new Constraints(page);
   schedulingConditions = new SchedulingConditions(page);
@@ -29,8 +32,20 @@ test.beforeAll(async ({ baseURL, browser }) => {
 
   await models.goto();
   await models.createModel(baseURL);
+  await externalSources.goto();
+  await externalSources.createTypes(
+    externalSources.exampleTypeSchema,
+    externalSources.exampleTypeSchemaExpectedSourceTypes,
+    externalSources.exampleTypeSchemaExpectedEventTypes,
+  );
+  await externalSources.uploadExternalSource();
   await plans.goto();
   await plans.createPlan();
+  await plan.goto();
+  await plan.showPanel(PanelNames.EXTERNAL_SOURCES);
+  await plan.externalSourceManageButton.click();
+  await page.getByText('No Derivation Groups Found').waitFor({ state: 'hidden' });
+  await externalSources.linkDerivationGroup(externalSources.exampleDerivationGroup, externalSources.exampleSourceType);
   await plan.goto();
 });
 
@@ -39,6 +54,12 @@ test.afterAll(async () => {
   await plans.deletePlan();
   await models.goto();
   await models.deleteModel();
+  await externalSources.goto();
+  await externalSources.deleteSource(externalSources.externalSourceFileName);
+  await externalSources.gotoTypeManager();
+  await externalSources.deleteDerivationGroup(externalSources.exampleDerivationGroup);
+  await externalSources.deleteExternalSourceType(externalSources.exampleSourceType);
+  await externalSources.deleteExternalEventType(externalSources.exampleEventType);
   await page.close();
   await context.close();
 });
@@ -143,7 +164,7 @@ test.describe.serial('Timeline View Editing', () => {
 
     // Expect that the resulting types list is not empty
     const resultingTypesList = modal.locator('.resulting-types-list');
-    const allActivityTypesCount = await resultingTypesList.locator('.activity-type-result').count();
+    const allActivityTypesCount = await resultingTypesList.locator('.filter-type-result').count();
     expect(allActivityTypesCount).toBeGreaterThan(0);
 
     // Expect that manually selecting types cause the types to appear in the resulting types list
@@ -160,7 +181,7 @@ test.describe.serial('Timeline View Editing', () => {
     await modal.getByLabel('dynamic-types').getByRole('button', { name: 'Add Filter' }).click();
     expect(await modal.getByLabel('dynamic-types').getByRole('listitem').count()).toBe(1);
     await modal.getByLabel('dynamic-types').getByRole('listitem').locator("input[name='filter-value']").fill('banana');
-    expect(await resultingTypesList.locator('.activity-type-result').count()).toEqual(11);
+    expect(await resultingTypesList.locator('.filter-type-result').count()).toEqual(11);
 
     // Expect that other filters can be added
     await modal.getByLabel('other-filters').getByRole('button', { name: 'Add Filter' }).click();
@@ -178,7 +199,7 @@ test.describe.serial('Timeline View Editing', () => {
     expect(await modal.getByText('1 instance')).toBeDefined();
 
     // Expect that type subfilters can be added
-    const activityResult = resultingTypesList.getByRole('listitem', { name: 'activity-type-result-PickBanana' });
+    const activityResult = resultingTypesList.getByRole('listitem', { name: 'filter-type-result-PickBanana' });
     await activityResult.getByRole('button', { name: 'Add Filter' }).click();
     expect(await activityResult.getByRole('listitem').count()).toBe(1);
     // Select name field
@@ -200,14 +221,14 @@ test.describe.serial('Timeline View Editing', () => {
 
     // Expect that dynamic types can be removed
     await modal.getByLabel('dynamic-types').getByRole('button', { name: 'Remove filter' }).click();
-    expect(await resultingTypesList.locator('.activity-type-result').count()).toEqual(2);
+    expect(await resultingTypesList.locator('.filter-type-result').count()).toEqual(2);
 
     // Expect that manual types can be cleared
     await modal.locator("input[name='manual-types-filter-input']").click();
     await modal.getByRole('menuitem', { name: 'ChangeProducer' }).click();
     await page.keyboard.press('Escape');
     await modal.getByRole('button', { name: 'Remove Types' }).click();
-    expect(await resultingTypesList.locator('.activity-type-result').count()).toEqual(allActivityTypesCount);
+    expect(await resultingTypesList.locator('.filter-type-result').count()).toEqual(allActivityTypesCount);
 
     // Give the layer a new name
     await modal.locator('input[name="layer-name"]').fill('Foo');
@@ -291,6 +312,117 @@ test.describe.serial('Timeline View Editing', () => {
     // Delete a resource layer
     await resourceLayerEditor.locator('.timeline-layer-editor').first().getByRole('button', { name: 'Delete' }).click();
     expect(await resourceLayerEditor.locator('.timeline-layer-editor').count()).toBe(1);
+  });
+
+  test('Add an external event layer', async () => {
+    const externalEventLayerEditor = page.getByLabel('Event Layer-editor');
+    const existingLayerCount = await externalEventLayerEditor.locator('.timeline-layer-editor').count();
+
+    // Add an external event layer
+    await externalEventLayerEditor.getByRole('button', { name: 'New Event Layer' }).click();
+    const newLayerCount = await externalEventLayerEditor.locator('.timeline-layer-editor').count();
+    expect(newLayerCount - existingLayerCount).toEqual(1);
+
+    // Expect the external event layer to include all external events
+    // TODO: create a schema + upload a source before this, but still I don't think all show by default?
+  });
+
+  test('Edit an external event layer', async () => {
+    const externalEventLayerEditor = page.getByLabel('Event Layer-editor');
+
+    // Open the external event filter builder
+    await externalEventLayerEditor
+      .locator('.timeline-layer-editor')
+      .first()
+      .getByLabel('Toggle external event filter builder modal')
+      .click();
+
+    // Expect that the modal is present
+    const modal = externalEventLayerEditor.getByRole('dialog');
+    expect(modal).toBeDefined();
+
+    // Expect that layer name is showing in the name input
+    // expect(modal.locator('input[name="layer-name"]')).toHaveValue('Events Layer');
+
+    // Expect that the resulting types list is not empty
+    const resultingTypesList = modal.locator('.resulting-types-list');
+    const allExternalEventTypesCount = await resultingTypesList.locator('.filter-type-result').count();
+    expect(allExternalEventTypesCount).toBeGreaterThan(0);
+
+    // Expect that manually selecting types cause the types to appear in the resulting types list
+    await modal.locator("input[name='manual-types-filter-input']").click();
+    expect(await modal.locator('.manual-types-menu').first()).toBeDefined();
+    await modal.getByRole('menuitem', { name: 'ExampleEvent' }).click();
+    await page.keyboard.press('Escape');
+
+    expect(await resultingTypesList.getByText('ExampleEvent')).toBeDefined();
+
+    // Expect that dynamic types can be added
+    await modal.getByLabel('dynamic-types').getByRole('button', { name: 'Add Filter' }).click();
+    expect(await modal.getByLabel('dynamic-types').getByRole('listitem').count()).toBe(1);
+    // Fill filter value input
+    await modal.getByLabel('dynamic-types').getByRole('listitem').locator("input[name='filter-value']").fill('Example');
+    // Ensure that only one instance (ExampleEvent) is listed
+    expect(await resultingTypesList.locator('.filter-type-result').count()).toEqual(1);
+
+    // Expect that attribute filters can be added
+    await modal.getByLabel('other-filters').getByRole('button', { name: 'Add Filter' }).click();
+    expect(await modal.getByLabel('other-filters').getByRole('listitem').count()).toBe(1);
+    await modal.getByLabel('other-filters').locator("select[aria-label='field']").selectOption('Attribute');
+    await modal.getByLabel('other-filters').getByText('Select Attribute').click();
+    await modal.getByLabel('other-filters').getByText('example2 (number)').click();
+    await modal.getByLabel('other-filters').locator("select[aria-label='operator']").selectOption('equals');
+    await modal.getByLabel('other-filters').getByRole('listitem').locator("input[name='filter-value']").fill('1');
+
+    expect(await modal.getByText('1 instance')).toBeVisible();
+
+    // Clear all filters
+    await modal.getByLabel('other-filters').getByRole('button', { name: 'Remove filter' }).click();
+    await modal.getByLabel('dynamic-types').getByRole('button', { name: 'Remove filter' }).click();
+    await modal.getByRole('button', { name: 'Remove Types' }).click();
+    expect(await modal.getByText('0 instances')).toBeDefined();
+    expect(await resultingTypesList.locator('.filter-type-result').count()).toEqual(allExternalEventTypesCount);
+
+    // Re-add manual filter for future testing
+    await modal.locator("input[name='manual-types-filter-input']").click();
+    expect(await modal.locator('.manual-types-menu').first()).toBeDefined();
+    await modal.getByRole('menuitem', { name: 'ExampleEvent' }).click();
+    await page.keyboard.press('Escape');
+
+    // Give the layer a new name
+    await modal.locator('input[name="layer-name"]').fill('Foo');
+
+    // Close the modal
+    await modal.getByRole('button', { name: 'close' }).click();
+
+    // Expect name to match given name
+    expect(await externalEventLayerEditor.locator('.timeline-layer-editor').first()).toHaveText('  Foo 1        ');
+  });
+
+  test('Change external event layer settings', async () => {
+    const externalEventLayerEditor = await page.getByLabel('Event Layer-editor');
+
+    // Expect to not see an external event tree group in this row
+    expect(await page.locator('.timeline-row-wrapper', { hasText: rowName }).locator('.event-tree').count()).toBe(0);
+
+    // Switch to grouped display mode
+    await page.locator('button', { hasText: 'Grouped' }).click();
+
+    // Expect to see an external event tree group for this event in this row
+    expect(
+      await page
+        .locator('.timeline-row-wrapper', { hasText: rowName })
+        .locator('.collapse', { hasText: 'ExampleEvent' })
+        .count(),
+    ).toBe(1);
+
+    // Delete an external event layer
+    await externalEventLayerEditor
+      .locator('.timeline-layer-editor')
+      .first()
+      .getByRole('button', { name: 'Delete' })
+      .click();
+    expect(await externalEventLayerEditor.locator('.timeline-layer-editor').count()).toBe(0);
   });
 
   test('Open and close the row header context menu', async () => {

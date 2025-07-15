@@ -72,6 +72,6 @@ export const ViewXRangeLayerSchemePresets: Record<XRangeLayerColorScheme, readon
 
 export const ViewTimelineResourceRowsLimit = 20;
 
-export const viewSchemaVersion = 2;
+export const viewSchemaVersion = 3;
 
 export const viewSchemaVersionName = `v${viewSchemaVersion}`;

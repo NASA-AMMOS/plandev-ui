@@ -4,7 +4,6 @@
   import type { ScaleTime } from 'd3-scale';
   import { select, type Selection } from 'd3-selection';
   import { zoom as d3Zoom, zoomIdentity, type D3ZoomEvent, type ZoomBehavior, type ZoomTransform } from 'd3-zoom';
-  import { groupBy } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import FilterWithXIcon from '../../assets/filter-with-x.svg?component';
   import { ViewDefaultDiscreteOptions } from '../../constants/view';
@@ -65,7 +64,7 @@
   import { getAllSpansForActivityDirective } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { getExternalEventRowId } from '../../utilities/externalEvents';
-  import { classNames, unique } from '../../utilities/generic';
+  import { classNames } from '../../utilities/generic';
   import { showConfirmActivityCreationModal } from '../../utilities/modal';
   import { sampleProfiles } from '../../utilities/resources';
   import { getSimulationStatus } from '../../utilities/simulation';
@@ -74,6 +73,7 @@
   import {
     TimelineInteractionMode,
     applyActivityLayerFilter,
+    applyExternalEventLayerFilter,
     directiveInView,
     externalEventInView,
     generateDiscreteTreeUtil,
@@ -367,12 +367,13 @@
 
   // helper for hasExternalEventsLayer; counts how many external event types are associated with this row
   // (if all layers have 0 event types, we don't want to allocate any canvas space in the row for the layer)
-  $: associatedEventTypes = externalEventLayers
-    .map(layer => (layer.filter.externalEvent ? layer.filter.externalEvent.event_types.length : 0))
-    .reduce((currentSum, newValue) => currentSum + newValue, 0);
+  // TODO: Update for new filtering
+  // $: associatedEventTypes = externalEventLayers
+  //   .map(layer => (layer.filter.externalEvent ? layer.filter.externalEvent.event_types.length : 0))
+  //   .reduce((currentSum, newValue) => currentSum + newValue, 0);
 
   // only consider a layer to be present if it is defined AND it actually has types/values selected.
-  $: hasExternalEventsLayer = externalEventLayers.length > 0 && associatedEventTypes > 0;
+  $: hasExternalEventsLayer = externalEventLayers.length > 0; // && associatedEventTypes > 0;
   $: hasResourceLayer = lineLayers.length + xRangeLayers.length > 0;
 
   $: if (discreteTreeExpansionMap === undefined) {
@@ -433,15 +434,16 @@
 
   $: if ((activityLayers && spansMap && activityDirectives) || hasExternalEventsLayer) {
     discreteTree = [];
-    let updatedIdToColorMaps: {
-      directives: Record<ActivityDirectiveId, string>;
-      external_events: Record<ExternalEventId, string>;
-      spans: Record<SpanId, string>;
-    } = {
-      directives: { ...idToColorMaps.directives },
-      external_events: { ...idToColorMaps.external_events },
-      spans: { ...idToColorMaps.spans },
-    };
+    // TODO: What was this used for previously?
+    // let updatedIdToColorMaps: {
+    //   directives: Record<ActivityDirectiveId, string>;
+    //   external_events: Record<ExternalEventId, string>;
+    //   spans: Record<SpanId, string>;
+    // } = {
+    //   directives: { ...idToColorMaps.directives },
+    //   external_events: { ...idToColorMaps.external_events },
+    //   spans: { ...idToColorMaps.spans },
+    // };
     if (activityLayers && spansMap && activityDirectives) {
       let spansList = Object.values(spansMap);
       if (activityLayers.length) {
@@ -511,50 +513,44 @@
       } else {
         hasActivityLayer = false;
       }
+    }
 
-      if (hasExternalEventsLayer) {
-        let externalEventsFilteredByDG = [];
-        filteredExternalEvents = [];
+    if (hasExternalEventsLayer) {
+      filteredExternalEvents = [];
 
-        let filteredDerivationGroups = $planDerivationGroupLinks
-          .filter(
-            link => link.plan_id === plan?.id && !($derivationGroupVisibilityMap[link.derivation_group_name] ?? true),
-          )
-          .map(link => link.derivation_group_name);
+      // Filter what LINKED Derivation Groups are to be shown
+      let filteredDerivationGroups = $planDerivationGroupLinks
+        .filter(
+          link => link.plan_id === plan?.id && !($derivationGroupVisibilityMap[link.derivation_group_name] ?? true),
+        )
+        .map(link => link.derivation_group_name);
 
-        // Apply filter for hiding derivation groups
-        externalEventsFilteredByDG = externalEvents.filter(ee => {
-          let derivationGroup =
-            $externalSources.find(
-              externalSource =>
-                externalSource.derivation_group_name === ee.pkey.derivation_group_name &&
-                externalSource.key === ee.pkey.source_key,
-            )?.derivation_group_name ?? undefined;
-          // the statement below says return true (keep) if the plan is not null and if the filter for this plan does not include this derivation group
-          return plan && derivationGroup ? !filteredDerivationGroups.includes(derivationGroup) : false;
-        });
-        // Filter by external event type
-        const externalEventsByType = groupBy(externalEventsFilteredByDG, 'pkey.event_type_name');
-        externalEventLayers.forEach(layer => {
-          if (layer.filter && layer.filter.externalEvent !== undefined) {
-            const event_types = layer.filter.externalEvent.event_types || [];
-            event_types.forEach(type => {
-              const matchingEvents = externalEventsByType[type];
-              if (matchingEvents) {
-                matchingEvents.forEach(
-                  event =>
-                    (updatedIdToColorMaps.external_events[getExternalEventRowId(event.pkey)] =
-                      layer.externalEventColor),
-                );
-                filteredExternalEvents = filteredExternalEvents.concat(unique(matchingEvents));
-              }
-            });
-          }
-        });
-        filteredExternalEvents.sort((a, b) => (a.start_ms < b.start_ms ? -1 : 1));
+      // Apply filter for hiding derivation groups
+      let externalEventsFilteredByDG = externalEvents.filter(ee => {
+        let derivationGroup =
+          $externalSources.find(
+            externalSource =>
+              externalSource.derivation_group_name === ee.pkey.derivation_group_name &&
+              externalSource.key === ee.pkey.source_key,
+          )?.derivation_group_name ?? undefined;
+        // the statement below says return true (keep) if the plan is not null and if the filter for this plan does not include this derivation group
+        return plan && derivationGroup ? !filteredDerivationGroups.includes(derivationGroup) : false;
+      });
 
-        timeFilteredExternalEvents = filteredExternalEvents; // if not actively filtering by time
-      }
+      externalEventLayers.forEach(layer => {
+        if (layer.filter) {
+          const { externalEvents: matchingExternalEvents } = applyExternalEventLayerFilter(
+            layer.filter.externalEvent,
+            externalEventsFilteredByDG,
+          );
+          matchingExternalEvents.forEach(externalEvent => {
+            idToColorMaps.external_events[getExternalEventRowId(externalEvent.pkey)] = layer.externalEventColor;
+          });
+          filteredExternalEvents = [...filteredExternalEvents, ...matchingExternalEvents];
+          filteredExternalEvents.sort((a, b) => (a.start_ms < b.start_ms ? -1 : 1));
+          timeFilteredExternalEvents = filteredExternalEvents; // if not actively filtering by time
+        }
+      });
     }
   }
 
