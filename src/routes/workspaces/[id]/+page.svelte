@@ -81,7 +81,8 @@
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
 
-  $: if ($workspaceId !== -1) {
+  $: if (initialWorkspace) {
+    $workspaceId = initialWorkspace.id;
     getSelectedFileContent(selectedFilePath);
 
     actionsWithSequenceParameters = Object.values($actionDefinitionsByWorkspace[$workspaceId] || {}).filter(action => {
@@ -268,17 +269,17 @@
   }
 
   async function onNewFolder(event: CustomEvent<string>) {
-    if ($workspaceId != null && user) {
+    if ($workspace && workspaceTree && user) {
       const { detail: startingPath } = event;
-      await effects.newWorkspaceFolder($workspaceId, startingPath, user);
+      await effects.newWorkspaceFolder($workspace, workspaceTree, startingPath, user);
       refreshWorkspaceContents();
     }
   }
 
   async function onNewSequence(event: CustomEvent<string>) {
-    if ($workspaceId != null && user) {
+    if ($workspace != null && workspaceTree && user) {
       const { detail: startingPath } = event;
-      const newSequencePath = await effects.newWorkspaceSequence($workspaceId, startingPath, '', user);
+      const newSequencePath = await effects.newWorkspaceSequence($workspace, workspaceTree, startingPath, '', user);
 
       const didNavigate = await goToSequence(newSequencePath);
       if (didNavigate) {
@@ -289,9 +290,9 @@
   }
 
   async function onImportFile(event: CustomEvent<string>) {
-    if ($workspace != null && user) {
+    if ($workspace != null && workspaceTree && user) {
       const { detail: startingPath } = event;
-      await effects.importWorkspaceFile($workspace, startingPath, user);
+      await effects.importWorkspaceFile($workspace, workspaceTree, startingPath, user);
       refreshWorkspaceContents();
     }
   }
@@ -308,41 +309,47 @@
   }
 
   async function onNodeDelete({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
-    let shouldUpdateSelectedSequencePath = treeNodePath === selectedFilePath;
+    if ($workspace) {
+      let shouldUpdateSelectedSequencePath = treeNodePath === selectedFilePath;
 
-    await effects.deleteWorkspaceItem($workspace, treeNode, treeNodePath, user);
-    refreshWorkspaceContents();
+      await effects.deleteWorkspaceItem($workspace, treeNode, treeNodePath, user);
+      refreshWorkspaceContents();
 
-    if (shouldUpdateSelectedSequencePath) {
-      selectedFilePath = null;
-      goToSequence(selectedFilePath);
+      if (shouldUpdateSelectedSequencePath) {
+        selectedFilePath = null;
+        goToSequence(selectedFilePath);
+      }
     }
   }
 
   async function onNodeMove({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
-    let shouldUpdateSelectedSequencePath = treeNodePath === selectedFilePath;
+    if ($workspace && workspaceTree) {
+      let shouldUpdateSelectedSequencePath = treeNodePath === selectedFilePath;
 
-    const targetPath = await effects.moveWorkspaceItem($workspace, treeNode, treeNodePath, user);
-    refreshWorkspaceContents();
+      const targetPath = await effects.moveWorkspaceItem($workspace, workspaceTree, treeNode, treeNodePath, user);
+      refreshWorkspaceContents();
 
-    if (shouldUpdateSelectedSequencePath) {
-      const didNavigate = await goToSequence(selectedFilePath);
-      if (didNavigate) {
-        selectedFilePath = targetPath;
+      if (shouldUpdateSelectedSequencePath) {
+        const didNavigate = await goToSequence(selectedFilePath);
+        if (didNavigate) {
+          selectedFilePath = targetPath;
+        }
       }
     }
   }
 
   async function onNodeRename({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
-    let shouldUpdateSelectedSequencePath = treeNodePath === selectedFilePath;
+    if ($workspace) {
+      let shouldUpdateSelectedSequencePath = treeNodePath === selectedFilePath;
 
-    const targetPath = await effects.renameWorkspaceItem($workspace, treeNode, treeNodePath, user);
-    refreshWorkspaceContents();
+      const targetPath = await effects.renameWorkspaceItem($workspace, treeNode, treeNodePath, user);
+      refreshWorkspaceContents();
 
-    if (shouldUpdateSelectedSequencePath) {
-      const didNavigate = await goToSequence(selectedFilePath);
-      if (didNavigate) {
-        selectedFilePath = targetPath;
+      if (shouldUpdateSelectedSequencePath) {
+        const didNavigate = await goToSequence(selectedFilePath);
+        if (didNavigate) {
+          selectedFilePath = targetPath;
+        }
       }
     }
   }
@@ -359,8 +366,14 @@
     if (selectedFilePath) {
       effects.saveWorkspaceFile($workspaceId, selectedFilePath, updatedSequenceDefinition, user);
       initialSelectedFileContent = updatedSequenceDefinition;
-    } else {
-      const newSequencePath = await effects.newWorkspaceSequence($workspaceId, '', updatedSequenceDefinition, user);
+    } else if ($workspace && workspaceTree) {
+      const newSequencePath = await effects.newWorkspaceSequence(
+        $workspace,
+        workspaceTree,
+        '',
+        updatedSequenceDefinition,
+        user,
+      );
 
       const didNavigate = await goToSequence(newSequencePath);
       if (didNavigate) {

@@ -170,7 +170,10 @@
   }
 
   function hasDeletePermission(user: User | null, node: WorkspaceTreeNodeWithFullPath) {
-    return featurePermissions.workspace.canDelete(user, $workspace, node);
+    if ($workspace) {
+      return featurePermissions.workspace.canDelete(user, $workspace, node);
+    }
+    return false;
   }
 
   function hasContextMenuUpdatePermission(user: User | null, selectedId: RowId | null) {
@@ -178,7 +181,7 @@
       return treeNode.fullPath === selectedId;
     });
 
-    if (selectedTreeNode) {
+    if ($workspace && selectedTreeNode) {
       return featurePermissions.workspace.canUpdate(user, $workspace, selectedTreeNode);
     }
 

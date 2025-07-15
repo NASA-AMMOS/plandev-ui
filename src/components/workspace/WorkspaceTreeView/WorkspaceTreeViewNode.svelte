@@ -5,6 +5,7 @@
   import { WorkspaceContentType } from '../../../enums/workspace';
   import type { WorkspaceNodeEvent } from '../../../types/workspace';
   import type { WorkspaceTreeNode } from '../../../types/workspace-tree-view.js';
+  import { separateFilenameFromPath } from '../../../utilities/workspaces';
   import * as Sidebar from '../../ui/Sidebar/index.js';
   import WorkspaceTreeViewIcon from './WorkspaceTreeViewIcon.svelte';
 
@@ -31,14 +32,13 @@
   let isOpen: boolean = false;
   let setOpenDebounceTimer: NodeJS.Timeout;
 
-  $: isFolder =
-    (treeNode.type === WorkspaceContentType.Directory || treeNode.type === WorkspaceContentType.Workspace) &&
-    (treeNode.contents?.length ?? 0) > 0;
+  $: isFolder = treeNode.type === WorkspaceContentType.Directory || treeNode.type === WorkspaceContentType.Workspace;
 
   $: if (selectedTreeNodePath && selectedTreeNodePath !== previousSelectedTreeNodePath) {
     if (!isOpen) {
-      const pathRegex = new RegExp(`^${treeNodePath}`);
-      const isOnPath = pathRegex.test(selectedTreeNodePath);
+      const { path } = separateFilenameFromPath(selectedTreeNodePath);
+      const pathRegex = new RegExp(`^${treeNodePath}/`);
+      const isOnPath = pathRegex.test(`${path}/`);
 
       if (isOnPath) {
         setOpen(true);

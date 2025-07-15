@@ -36,8 +36,7 @@
   let workspacesMap: Record<string, Workspace> = {};
 
   $: {
-    const { filename, path } = separateFilenameFromPath(targetDirectory);
-    targetDirectory = path;
+    const { filename } = separateFilenameFromPath(originalPath);
     targetFilename = filename;
   }
   $: getWorkspacesContents($workspaces);
@@ -97,13 +96,13 @@
 
 <Modal height={450} width={380}>
   <ModalHeader showClose={false}>
-    <div>Move or Duplicate: <span class="font-bold">{originalNode.name}</span></div>
+    <div>Move or Duplicate</div>
   </ModalHeader>
   <ModalContent style="overflow: hidden;">
     <div class="grid h-full grid-rows-[min-content_auto_min-content] gap-1 overflow-hidden">
       <div>
-        <div class="font-bold">Location</div>
-        <div>Current location: <span class="font-semibold">{currentWorkspace.name}/{originalPath}</span></div>
+        <div>Current Location:</div>
+        <div class="py-1"><span class="font-semibold">{currentWorkspace.name}/{originalPath}</span></div>
       </div>
       <Sidebar.Provider
         style="--sidebar-width: auto"

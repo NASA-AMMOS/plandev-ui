@@ -1,14 +1,20 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Input as InputStellar } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
+  import * as Sidebar from '../../components/ui/Sidebar/index.js';
+  import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
+  import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
+  import { joinPath, separateFilenameFromPath } from '../../utilities/workspaces.js';
+  import WorkspaceTreeView from '../workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
-  export let height: number = 200;
+  export let currentWorkspace: Workspace;
+  export let currentWorkspaceContents: WorkspaceTreeNode | null;
+  export let height: number = 400;
   export let width: number = 380;
   export let startingPath: string = '';
 
@@ -17,15 +23,32 @@
     confirm: { files: FileList; targetDirectory: string };
   }>();
 
+  let targetPath: string = joinPath([currentWorkspace.name, startingPath]);
   let targetDirectory: string = startingPath;
+  let targetFilename: string = '';
   let saveButtonDisabled: boolean = false;
   let filesToUpload: FileList;
 
+  $: {
+    const { filename, path } = separateFilenameFromPath(targetPath);
+    targetDirectory = path;
+    targetFilename = filename;
+  }
   $: saveButtonDisabled = filesToUpload?.length === 0;
+
+  function onFolderClicked(event: CustomEvent<WorkspaceNodeEvent>) {
+    targetDirectory = event.detail.treeNodePath;
+  }
 
   function save() {
     if (!saveButtonDisabled) {
-      dispatch('confirm', { files: filesToUpload, targetDirectory });
+      dispatch('confirm', {
+        files: filesToUpload,
+        targetDirectory: joinPath([
+          targetDirectory.replace(new RegExp(`^${currentWorkspace.name}`), '.'),
+          targetFilename,
+        ]),
+      });
     }
   }
 
@@ -43,15 +66,30 @@
 <Modal {height} {width}>
   <ModalHeader on:close>Upload File(s) To Workspace</ModalHeader>
 
-  <ModalContent>
-    <fieldset>
-      <label for="file">File(s)</label>
-      <input bind:files={filesToUpload} multiple class="w-100" name="file" type="file" />
-    </fieldset>
-    <fieldset>
-      <div class="st-typography-body">Target Workspace Directory</div>
-      <InputStellar sizeVariant="xs" id="folder-path" name="path" autocomplete="off" bind:value={targetDirectory} />
-    </fieldset>
+  <ModalContent style="overflow: hidden;">
+    <div class="grid h-full grid-rows-[min-content_auto_min-content] gap-1 overflow-hidden">
+      <Sidebar.Provider
+        style="--sidebar-width: auto"
+        className="min-h-full overflow-y-auto rounded-md border-(--st-gray-20) border-2"
+      >
+        <Sidebar.Content>
+          <Sidebar.Menu className="h-full">
+            <WorkspaceTreeView
+              selectedTreeNodePath={targetDirectory}
+              treeNode={currentWorkspaceContents}
+              enableContextMenu={false}
+              showFiles={false}
+              showRootNode={true}
+              on:nodeClicked={onFolderClicked}
+            />
+          </Sidebar.Menu>
+        </Sidebar.Content>
+      </Sidebar.Provider>
+      <fieldset>
+        <label for="file">File(s)</label>
+        <input bind:files={filesToUpload} multiple class="w-100" name="file" type="file" />
+      </fieldset>
+    </div>
   </ModalContent>
 
   <ModalFooter>

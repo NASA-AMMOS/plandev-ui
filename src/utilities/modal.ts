@@ -364,14 +364,18 @@ export async function showDeleteExternalEventSourceTypeModal(
 /**
  * Shows a ImportWorkspaceFileModal component with the supplied arguments.
  */
-export async function showImportWorkspaceFileModal(startingPath: string): Promise<ModalElementValue> {
+export async function showImportWorkspaceFileModal(
+  currentWorkspace: Workspace,
+  currentWorkspaceContents: WorkspaceTreeNode,
+  startingPath: string,
+): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
         const importWorkspaceFileModal = new ImportWorkspaceFileModal({
-          props: { startingPath },
+          props: { currentWorkspace, currentWorkspaceContents, startingPath },
           target,
         });
         target.resolve = resolve;
@@ -624,14 +628,18 @@ export async function showManagePlanSchedulingGoalsModal(user: User | null): Pro
 /**
  * Shows a NewWorkspaceSequenceModal component with the supplied arguments.
  */
-export async function showNewWorkspaceSequenceModal(startingPath: string = ''): Promise<ModalElementValue> {
+export async function showNewWorkspaceSequenceModal(
+  currentWorkspace: Workspace,
+  currentWorkspaceContents: WorkspaceTreeNode,
+  startingPath: string = '',
+): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
         const newWorkspaceSequenceModal = new NewWorkspaceSequenceModal({
-          props: { startingPath },
+          props: { currentWorkspace, currentWorkspaceContents, startingPath },
           target,
         });
         target.resolve = resolve;
@@ -662,14 +670,18 @@ export async function showNewWorkspaceSequenceModal(startingPath: string = ''): 
 /**
  * Shows a NewWorkspaceFolderModal component with the supplied arguments.
  */
-export async function showNewWorkspaceFolderModal(startingPath: string = ''): Promise<ModalElementValue> {
+export async function showNewWorkspaceFolderModal(
+  currentWorkspace: Workspace,
+  currentWorkspaceContents: WorkspaceTreeNode,
+  startingPath: string = '',
+): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
         const newWorkspaceFolderModal = new NewWorkspaceFolderModal({
-          props: { startingPath },
+          props: { currentWorkspace, currentWorkspaceContents, startingPath },
           target,
         });
         target.resolve = resolve;
@@ -735,6 +747,8 @@ export async function showMergeReviewEndedModal(
  * Shows a MoveWorkspaceItemModal component with the supplied arguments.
  */
 export async function showMoveWorkspaceItemModal(
+  currentWorkspace: Workspace,
+  currentWorkspaceContents: WorkspaceTreeNode,
   originalNode: WorkspaceTreeNode,
   originalPath: string,
 ): Promise<ModalElementValue> {
@@ -744,7 +758,7 @@ export async function showMoveWorkspaceItemModal(
 
       if (target) {
         const moveWorkspaceItemModal = new MoveWorkspaceItemModal({
-          props: { originalNode, originalPath },
+          props: { currentWorkspace, currentWorkspaceContents, originalNode, originalPath },
           target,
         });
         target.resolve = resolve;

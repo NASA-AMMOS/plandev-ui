@@ -1,5 +1,6 @@
 import { PATH_DELIMITER } from '../constants/workspaces';
 import type { WorkspaceTreeMap, WorkspaceTreeNode } from '../types/workspace-tree-view';
+import { filterEmpty } from './generic';
 
 export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
   let treeMap: WorkspaceTreeMap = {};
@@ -28,7 +29,7 @@ export function separateFilenameFromPath(filePath: string): { filename: string; 
     const { filename, path } = matches.groups;
     return {
       filename,
-      path,
+      path: cleanPath(path),
     };
   }
 
@@ -36,4 +37,12 @@ export function separateFilenameFromPath(filePath: string): { filename: string; 
     filename: '',
     path: filePath,
   };
+}
+
+export function cleanPath(path: string = '') {
+  return path.replace(/^.\//, '').replace(/\/$/, '');
+}
+
+export function joinPath(pathParts: (string | number | boolean)[]) {
+  return pathParts.filter(filterEmpty).join(PATH_DELIMITER);
 }
