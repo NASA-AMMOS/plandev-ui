@@ -1,11 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  type RowData = $$Generic<TRowData>;
-
   import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import type { ColDef, ColumnState, ICellRendererParams } from 'ag-grid-community';
-  import { keyBy } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import { get } from 'svelte/store';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
@@ -45,7 +42,6 @@
   export let filterExpression: string = '';
   const pluralItemDisplayText: string = 'Activity Directives';
   const singleItemDisplayText: string = 'Activity Directive';
-  export let items: RowData;
 
   const dispatch = createEventDispatcher<{
     createActivityDirectives: ActivityDirective[];
@@ -208,15 +204,10 @@
 
   function bulkShiftItems(event: CustomEvent<{ direction: string; shiftOffset: string }>) {
     showBulkShiftDialog = false;
-    const selectedItemIdsMap = keyBy(bulkSelectedActivityDirectiveIds);
-    console.log('SelectedItemIdsMap', selectedItemIdsMap);
-    const selectedActivityDirectives = items.reduce((selectedRows: RowData[], row: RowData) => {
-      const id = getRowId(row);
-      if (selectedItemIdsMap[id] !== undefined) {
-        selectedRows.push(row);
-      }
-      return selectedRows;
-    }, []);
+
+    const selectedIdSet = new Set(bulkSelectedActivityDirectiveIds);
+    const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
+
     const { direction, shiftOffset } = event.detail;
 
     if (selectedActivityDirectives.length) {
