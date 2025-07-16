@@ -1,8 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import BulkShiftActivitiesModal from '../../modals/BulkShiftActivitiesModal.svelte';
-
   import { ContextMenu } from '@nasa-jpl/stellar-svelte';
 
   type RowData = $$Generic<TRowData>;
@@ -41,8 +39,6 @@
   export let selectedItemIds: RowId[] = [];
   export let showContextMenu: boolean = true;
   export let showCopyMenu: boolean = false;
-  export let showBulkShiftDialog = false;
-  export let showBulkShiftMenu: boolean = false;
   export let showLoadingSkeleton: boolean = false;
   export let singleItemDisplayText: string = '';
   export let suppressDragLeaveHidesColumns: boolean = true;
@@ -102,19 +98,6 @@
     const selectedRows = getRowDataFromSelectedItems();
     if (selectedRows.length) {
       dispatch('bulkCopyItems', selectedRows);
-    }
-  }
-
-  function displayBulkShift() {
-    showBulkShiftDialog = true;
-  }
-
-  function bulkShiftItems(event: CustomEvent<{ direction: string; shiftOffset: string }>) {
-    showBulkShiftDialog = false;
-    const selectedRows = getRowDataFromSelectedItems();
-    const { direction, shiftOffset } = event.detail;
-    if (selectedRows.length) {
-      dispatch('bulkShiftItems', { direction, selectedRows, shiftOffset });
     }
   }
 
@@ -219,13 +202,6 @@
           </ContextMenu.Item>
         {/if}
 
-        {#if showBulkShiftMenu}
-          <ContextMenu.Item size="sm" on:click={displayBulkShift}>
-            Shift {selectedItemIds.length}
-            {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
-          </ContextMenu.Item>
-        {/if}
-
         <div
           use:permissionHandler={{
             hasPermission: deletePermission,
@@ -242,7 +218,3 @@
     {/if}
   </svelte:fragment>
 </DataGrid>
-
-{#if showBulkShiftDialog}
-  <BulkShiftActivitiesModal on:cancel={() => (showBulkShiftDialog = false)} on:shift={bulkShiftItems} />
-{/if}

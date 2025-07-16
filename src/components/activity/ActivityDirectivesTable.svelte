@@ -1,8 +1,11 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  type RowData = $$Generic<TRowData>;
+
   import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import type { ColDef, ColumnState, ICellRendererParams } from 'ag-grid-community';
+  import { keyBy } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import { get } from 'svelte/store';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
@@ -20,6 +23,7 @@
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
   import { convertDurationStringToUs } from '../../utilities/time';
+  import BulkShiftActivitiesModal from '../modals/BulkShiftActivitiesModal.svelte';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -28,6 +32,8 @@
 
   export let activityDirectives: ActivityDirective[] | null = null;
   export let activityDirectiveErrorRollupsMap: Record<ActivityDirectiveId, ActivityErrorRollup> | undefined = undefined;
+  export let showBulkShiftDialog = false;
+  export let showBulkShiftMenu: boolean = true;
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid<ActivityDirective> | undefined = undefined;
@@ -37,6 +43,9 @@
   export let planReadOnly: boolean = false;
   export let user: User | null;
   export let filterExpression: string = '';
+  const pluralItemDisplayText: string = 'Activity Directives';
+  const singleItemDisplayText: string = 'Activity Directive';
+  export let items: RowData;
 
   const dispatch = createEventDispatcher<{
     createActivityDirectives: ActivityDirective[];
@@ -181,7 +190,7 @@
   async function updateActivities(updatedActivities: ActivityDirective[] | null) {
     if (plan != null && Array.isArray(updatedActivities)) {
       for (const activity of updatedActivities) {
-        const activityType = await findTypes(activity.type, get(planModelActivityTypes) ?? []);
+        const activityType = findTypes(activity.type, get(planModelActivityTypes) ?? []);
         await effects.updateActivityDirective(
           plan,
           activity.id,
@@ -193,11 +202,34 @@
     }
   }
 
+  function displayBulkShift() {
+    showBulkShiftDialog = true;
+  }
+
+  function bulkShiftItems(event: CustomEvent<{ direction: string; shiftOffset: string }>) {
+    showBulkShiftDialog = false;
+    const selectedItemIdsMap = keyBy(bulkSelectedActivityDirectiveIds);
+    console.log('SelectedItemIdsMap', selectedItemIdsMap);
+    const selectedActivityDirectives = items.reduce((selectedRows: RowData[], row: RowData) => {
+      const id = getRowId(row);
+      if (selectedItemIdsMap[id] !== undefined) {
+        selectedRows.push(row);
+      }
+      return selectedRows;
+    }, []);
+    const { direction, shiftOffset } = event.detail;
+
+    if (selectedActivityDirectives.length) {
+      bulkShiftActivityDirectives(direction, selectedActivityDirectives, shiftOffset);
+    }
+  }
+
   async function bulkShiftActivityDirectives(
-    event: CustomEvent<{ direction: string; selectedRows: ActivityDirective[]; shiftOffset: string }>,
+    direction: string,
+    selectedRows: ActivityDirective[],
+    shiftOffset: string,
   ) {
     if (plan !== null) {
-      const { direction, shiftOffset, selectedRows } = event.detail;
       const shiftOffsetUS = convertDurationStringToUs(shiftOffset);
 
       const updatedActivities = bulkShiftActivityDirectivesInPlan(
@@ -233,13 +265,11 @@
   scrollToSelection={true}
   singleItemDisplayText="Activity Directive"
   showCopyMenu={true}
-  showBulkShiftMenu={true}
   suppressDragLeaveHidesColumns={false}
   {user}
   {filterExpression}
   on:bulkDeleteItems={deleteActivityDirectives}
   on:bulkCopyItems={copyActivityDirectives}
-  on:bulkShiftItems={bulkShiftActivityDirectives}
   on:columnMoved
   on:columnPinned
   on:columnResized
@@ -260,5 +290,16 @@
       on:createActivityDirectives={createActivityDirectives}
     />
     <ContextMenu.Separator />
+
+    {#if showBulkShiftMenu}
+      <ContextMenu.Item size="sm" on:click={displayBulkShift}>
+        Shift {bulkSelectedActivityDirectiveIds.length}
+        {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+      </ContextMenu.Item>
+    {/if}
   </svelte:fragment>
 </BulkActionDataGrid>
+
+{#if showBulkShiftDialog}
+  <BulkShiftActivitiesModal on:cancel={() => (showBulkShiftDialog = false)} on:shift={bulkShiftItems} />
+{/if}

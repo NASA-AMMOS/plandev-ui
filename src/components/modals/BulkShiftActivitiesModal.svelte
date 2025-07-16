@@ -3,14 +3,18 @@
   import { getTarget } from '../../utilities/generic';
   import { convertDurationStringToInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
-  // import Input from '../form/Input.svelte';
   import Modal from '../modals/Modal.svelte';
   import ModalContent from '../modals/ModalContent.svelte';
   import ModalFooter from '../modals/ModalFooter.svelte';
   import ModalHeader from '../modals/ModalHeader.svelte';
-  // import ModalHeader from '../modals/ModalHeader.svelte';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    cancel: void;
+    shift: {
+      direction: 'Left' | 'Right';
+      shiftOffset: string;
+    };
+  }>();
 
   let direction: 'Left' | 'Right' = 'Left';
   let shiftDurationString: string = '0d 0h 0m 0s 0ms 0us';
@@ -43,17 +47,18 @@
 <div class="compact-modal">
   <Modal height={150} width={300}>
     <ModalHeader on:close={cancel}>Shift Directive(s)</ModalHeader>
+
     <ModalContent>
       <div class="form-container">
         <div class="row">
           <div class="label">Direction</div>
           <div class="toggle-group">
-            <button class="toggle {direction === 'Left' ? 'active' : ''}" on:click={() => setDirection('Left')}
-              >Left</button
-            >
-            <button class="toggle {direction === 'Right' ? 'active' : ''}" on:click={() => setDirection('Right')}
-              >Right</button
-            >
+            <button class="toggle {direction === 'Left' ? 'active' : ''}" on:click={() => setDirection('Left')}>
+              Left
+            </button>
+            <button class="toggle {direction === 'Right' ? 'active' : ''}" on:click={() => setDirection('Right')}>
+              Right
+            </button>
           </div>
         </div>
 
@@ -61,7 +66,7 @@
           <label
             class="label"
             use:tooltip={{ content: 'The duration of how much the activities should be shifted by', placement: 'top' }}
-            for="start-offset"
+            for="shift-offset"
           >
             Shift By:
           </label>
@@ -82,8 +87,8 @@
       <div class="button-container">
         <button class="st-button secondary" on:click={cancel}>Cancel</button>
         <button class="st-button" on:click={shift} disabled={!!shiftOffsetError}>Shift</button>
-      </div></ModalFooter
-    >
+      </div>
+    </ModalFooter>
   </Modal>
 </div>
 

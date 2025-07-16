@@ -284,7 +284,7 @@ export async function getActivityDirectivesToPaste(
   return activities;
 }
 
-export async function findTypes(type: string, activityTypes: ActivityType[]): Promise<ActivityType | undefined> {
+export function findTypes(type: string, activityTypes: ActivityType[]): ActivityType | undefined {
   // const activityTypes = await activityTypesPromise;
   for (let idx = 0; idx < activityTypes.length; idx++) {
     if (activityTypes[idx].name === type) {
@@ -301,15 +301,23 @@ export function bulkShiftActivityDirectivesInPlan(
   offsetUS: number,
 ): ActivityDirective[] {
   const selectedIds = new Set(activities.map(a => a.id));
-  const updateActivities = activities.filter(a => a.anchor_id === null || !selectedIds.has(a.anchor_id));
 
-  for (const activity of updateActivities) {
-    activity.start_offset = usToOffset(
+  return activities.map(activity => {
+    const shouldUpdate = activity.anchor_id === null || !selectedIds.has(activity.anchor_id);
+
+    if (!shouldUpdate) {
+      return activity;
+    }
+
+    const newOffset = usToOffset(
       getIntervalInMs(activity.start_offset) * 1000 + (direction === 'RIGHT' ? offsetUS : -offsetUS),
     );
-  }
 
-  return activities;
+    return {
+      ...activity,
+      start_offset: newOffset,
+    };
+  });
 }
 
 export function addAbsoluteTimeToRevision(

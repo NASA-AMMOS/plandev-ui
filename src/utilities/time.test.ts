@@ -1,5 +1,5 @@
 import { keyBy } from 'lodash-es';
-import { expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import {
   convertDoyToYmd,
   convertDurationStringToInterval,
@@ -20,9 +20,11 @@ import {
   getUnixEpochTime,
   isTimeBalanced,
   isTimeMax,
+  padNumber,
   parseDoyOrYmdTime,
   parseDurationString,
   removeDateStringMilliseconds,
+  usToOffset,
   validateTime,
 } from '../../src/utilities/time';
 import { TimeTypes } from '../enums/time';
@@ -731,4 +733,23 @@ test('formatMS', () => {
   expect(formatMS(1000)).toBe('1s');
   expect(formatMS(31536000000)).toBe('365d');
   expect(formatMS(32536000000)).toBe('1y');
+});
+
+test('usToOffset', () => {
+  expect(usToOffset(5025678901)).toBe('01:23:45.678901');
+  expect(usToOffset(-5025678901)).toBe('-01:23:45.678901');
+  expect(usToOffset(97200000000)).toBe('27:00:00.0');
+  expect(usToOffset(-97200000000)).toBe('-27:00:00.0');
+});
+
+describe('padNumber', () => {
+  test('Should pad the number with leading zeroes', () => {
+    expect(padNumber(5, 2)).toBe('05');
+    expect(padNumber(42, 4)).toBe('0042');
+  });
+
+  test('Should not pad the number with leading zeroes', () => {
+    expect(padNumber(1234, 4)).toBe('1234');
+    expect(padNumber(42, 2)).toBe('42');
+  });
 });

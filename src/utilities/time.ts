@@ -929,6 +929,13 @@ export function formatMS(ms: number | null): string {
   return '–';
 }
 
+/*
+ * Converts a number to a string and pads it with leading zeroes so that its total length is at least len characters
+ */
+export function padNumber(num: number, len: number): string {
+  return num.toString().padStart(len, '0');
+}
+
 /**
  * Converts microseconds to a string of the form "HH:mm:ss.SSSSSS".
  * Example: 5025678901 => "01:23:45.678901"
@@ -945,7 +952,6 @@ export function usToOffset(us: number): string {
   us %= 1_000_000;
   const micro = us;
 
-  const pad = (n: number, len: number) => n.toString().padStart(len, '0');
-  const result = `${pad(hours, 2)}:${pad(minutes, 2)}:${pad(seconds, 2)}.${micro.toString()}`;
+  const result = `${padNumber(hours, 2)}:${padNumber(minutes, 2)}:${padNumber(seconds, 2)}.${micro.toString()}`;
   return isNegative ? `-${result}` : result;
 }
