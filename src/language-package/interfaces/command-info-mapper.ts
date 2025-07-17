@@ -1,5 +1,8 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
-import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
+import type { ChannelDictionary, CommandDictionary, EnumMap, FswCommand, FswCommandArgument, FswCommandArgumentRepeat, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+import type { EditorView } from 'codemirror';
+import type { ArgTextDef, TimeTagInfo } from '../../types/sequencing';
+import type { LibrarySequenceMap } from './new-adaptation-interface';
 
 export interface CommandInfoMapper { // TODO is there a way we can generalize what's in the command panel?
   /** format string of multiple arguments */
@@ -46,4 +49,29 @@ export interface CommandInfoMapper { // TODO is there a way we can generalize wh
 
   /** checks if numeric argument editor should be displayed */
   nodeTypeNumberCompatible(node: SyntaxNode | null): boolean;
+
+  /** Extracts time tag from a given command node */
+  getTimeTagInfo(seqEditorView: EditorView, node: SyntaxNode | null): TimeTagInfo;
+
+  getArgumentInfo(
+    commandDef: FswCommand | null,
+    channelDictionary: ChannelDictionary | null,
+    seqEditorView: EditorView,
+    args: SyntaxNode | null,
+    argumentDefs: FswCommandArgument[] | undefined,
+    parentArgDef: FswCommandArgumentRepeat | undefined,
+    parameterDictionaries: ParameterDictionary[],
+  ): ArgTextDef[];
+
+  getCommandDef(
+    commandDictionary: CommandDictionary | null,
+    librarySequenceMap: LibrarySequenceMap,
+    stemName: string,
+  ): FswCommand | null;
+
+  getVariablesInScope(
+    seqEditorView: EditorView,
+    tree: Tree | null,
+    cursorPosition?: number,
+  ): string[];
 }

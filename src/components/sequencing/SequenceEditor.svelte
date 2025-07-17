@@ -32,17 +32,9 @@
     PhoenixContext,
   } from '../../language-package/interfaces/new-adaptation-interface';
   import type { ActionDefinition } from '../../types/actions';
-  import type { TimeTagInfo } from '../../types/sequencing';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import {
-    getArgumentInfo,
-    getCommandDef,
-    getTimeTagInfo,
-    getVariablesInScope,
-    unquoteUnescape,
-  } from '../../utilities/sequence-editor/sequence-utils';
   import { pluralize } from '../../utilities/text';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
@@ -98,9 +90,7 @@
   let selectedOutputFormat: OutputLanguageAdaptation | undefined;
   let showOutputs: boolean = true;
   let previousShowOutputs: boolean = showOutputs;
-  let timeTagNode: TimeTagInfo = null;
   let toggleSeqJsonPreview: boolean = false;
-  let variablesInScope: string[] = [];
   let updatedSequenceDefinition: string = sequenceDefinition;
   let isSequenceDefinitionUpdated: boolean = false;
   let currentTree: Tree;
@@ -158,30 +148,6 @@
   $: if (newSequenceAdaptation.outputs.length > 0) {
     selectedOutputFormat = newSequenceAdaptation.outputs[0];
   }
-  $: commandNode = commandInfoMapper.getContainingCommand(selectedNode);
-  $: commandNameNode = commandInfoMapper.getNameNode(commandNode);
-  $: commandName =
-    commandNameNode && unquoteUnescape(editorSequenceView.state.sliceDoc(commandNameNode.from, commandNameNode.to));
-  $: commandDef = getCommandDef(commandDictionary, librarySequenceMap, commandName ?? '');
-  $: timeTagNode = getTimeTagInfo(editorSequenceView, commandNode);
-  $: argInfoArray = getArgumentInfo(
-    commandDef,
-    commandInfoMapper,
-    channelDictionary,
-    editorSequenceView,
-    commandInfoMapper.getArgumentNodeContainer(commandNode),
-    commandDef?.arguments,
-    undefined,
-    parameterDictionaries,
-    adaptation,
-  );
-  $: variablesInScope = getVariablesInScope(
-    commandInfoMapper,
-    editorSequenceView,
-    adaptation,
-    currentTree,
-    commandNode?.from,
-  );
 
   $: if (showOutputs && previousShowOutputs !== showOutputs && editorOutputDiv) {
     if (editorOutputView) {
@@ -530,18 +496,7 @@
   {#if showCommandFormBuilder}
     <CssGridGutter track={1} type="column" />
     {#if commandDictionary !== null}
-      <CommandPanel
-        {argInfoArray}
-        {commandDef}
-        {commandDictionary}
-        {commandInfoMapper}
-        {commandName}
-        {commandNameNode}
-        {commandNode}
-        {editorSequenceView}
-        {timeTagNode}
-        {variablesInScope}
-      />
+      <CommandPanel {phoenixContext} {commandInfoMapper} {editorSequenceView} />
     {:else}
       <Panel overflowYBody="hidden" padBody={true}>
         <svelte:fragment slot="header">
