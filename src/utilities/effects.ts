@@ -5344,29 +5344,25 @@ const effects = {
       [],
     );
 
-    if (getFileContents) {
-      const chunkedWorkspaceNodes: WorkspaceTreeNodeWithFullPath[][] = chunk(workspaceSequenceNodes, 10);
+    const chunkedWorkspaceNodes: WorkspaceTreeNodeWithFullPath[][] = chunk(workspaceSequenceNodes, 10);
 
-      for (let i = 0; i < chunkedWorkspaceNodes.length; i++) {
-        const chunkSequenceFileContents: UserSequence[] = await Promise.all(
-          chunkedWorkspaceNodes[i].map(async ({ fullPath }) => {
-            const sequenceDefinition = await effects.getWorkspaceFileContent(workspaceId, fullPath, user);
-            return {
-              definition: sequenceDefinition,
-              name: fullPath,
-            } as UserSequence;
-          }),
-        );
+    for (let i = 0; i < chunkedWorkspaceNodes.length; i++) {
+      const chunkSequenceFileContents: UserSequence[] = await Promise.all(
+        chunkedWorkspaceNodes[i].map(async ({ fullPath }) => {
+          let sequenceDefinition = '';
+          if (getFileContents) {
+            sequenceDefinition = (await effects.getWorkspaceFileContent(workspaceId, fullPath, user)) ?? '';
+          }
+          return {
+            definition: sequenceDefinition,
+            name: fullPath,
+          } as UserSequence;
+        }),
+      );
 
-        workspaceSequenceFileContents = workspaceSequenceFileContents.concat(chunkSequenceFileContents);
-      }
-      return workspaceSequenceFileContents;
-    } else {
-      return workspaceSequenceNodes.map(node => ({
-        definition: '',
-        name: node.name ?? '',
-      }));
+      workspaceSequenceFileContents = workspaceSequenceFileContents.concat(chunkSequenceFileContents);
     }
+    return workspaceSequenceFileContents;
   },
 
   async importLibrarySequences(
