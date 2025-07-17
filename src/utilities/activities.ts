@@ -364,19 +364,21 @@ export function packActivityDirectivesInPlan(
   // Map activity ids to their absolute start times in milliseconds
   const planStartTimeMs = getUnixEpochTime(sourcePlan.start_time_doy);
 
-  // Sort activities by their absolute start times
-  activities.sort((a, b) => {
+  // Sort activities by their absolute start times (create a copy to avoid mutating input)
+  const sortedActivities = [...activities].sort((a, b) => {
     return a.start_time_ms - b.start_time_ms;
   });
 
   if (direction === 'RIGHT') {
-    activities.reverse();
+    sortedActivities.reverse();
   }
+
+  console.log('SortedActivities', sortedActivities);
 
   // Grab all durations for the activities and store in a Map
   const durations = new Map<number, number>();
 
-  for (const activity of activities) {
+  for (const activity of sortedActivities) {
     const spanId = spanUtilityMaps.directiveIdToSpanIdMap[activity.id];
     if (spanId !== undefined) {
       const span = spansMap[spanId];
@@ -391,26 +393,26 @@ export function packActivityDirectivesInPlan(
       return;
     }
   }
-  const initialTime = (activities[0].start_time_ms - planStartTimeMs) * 1000;
+  const initialTime = (sortedActivities[0].start_time_ms - planStartTimeMs) * 1000;
 
   // Calculate new absolute start times after packing based on the initial start times and durations
   const newStartTimes = new Map<number, number>();
   let postPackingTime = initialTime;
   if (postPackingTime === undefined) {
-    throw new Error(`Activity ${activities[0].id} not found in initial start times`);
+    throw new Error(`Activity ${sortedActivities[0].id} not found in initial start times`);
   }
 
   //The first activity in the sorted list does not change its start time
-  newStartTimes.set(activities[0].id, postPackingTime);
+  newStartTimes.set(sortedActivities[0].id, postPackingTime);
 
-  for (let idx = 1; idx < activities.length; idx++) {
+  for (let idx = 1; idx < sortedActivities.length; idx++) {
     if (direction === 'RIGHT') {
-      postPackingTime -= durations.get(activities[idx].id)! + offsetUS;
+      postPackingTime -= durations.get(sortedActivities[idx].id)! + offsetUS;
     } else {
       //Same as direction === 'LEFT
-      postPackingTime += durations.get(activities[idx - 1].id)! + offsetUS;
+      postPackingTime += durations.get(sortedActivities[idx - 1].id)! + offsetUS;
     }
-    newStartTimes.set(activities[idx].id, postPackingTime);
+    newStartTimes.set(sortedActivities[idx].id, postPackingTime);
   }
 
   // Helper function to calculate the new start offsets based on the anchor activities
@@ -425,28 +427,54 @@ export function packActivityDirectivesInPlan(
     return usToOffset(activityStartTime - anchorStartTime);
   }
 
-  // Update each activity directive with the new start offset
-  for (const activity of activities) {
+  // Create a new list with updated activity directives
+  const updatedActivities: ActivityDirective[] = [];
+
+  for (const activity of sortedActivities) {
+    let newStartOffset: string;
+
     if (activity.anchor_id !== null) {
-      activity.start_offset = updateAnchorStartOffset(activity.anchor_id, activity.id);
+      newStartOffset = updateAnchorStartOffset(activity.anchor_id, activity.id);
     } else {
-      activity.start_offset = usToOffset(newStartTimes.get(activity.id)!);
+      newStartOffset = usToOffset(newStartTimes.get(activity.id)!);
     }
 
+    // Create a new activity directive with updated start_offset
+    const updatedActivity: ActivityDirective = {
+      ...activity,
+      start_offset: newStartOffset,
+    };
+
+    updatedActivities.push(updatedActivity);
+  }
+
+  // Handle connected activities (anchees) - collect updates for activities that are anchored to others
+  const activityUpdates = new Map<number, string>();
+
+  for (const activity of updatedActivities) {
     if ([...anchorIds.values()].includes(activity.id)) {
-      // This activity is an anchor to selected activity, so we need to update its "anchee" (activities connected to it)
+      // This activity is an anchor to other activities, so we need to update its "anchees" (activities connected to it)
       const connectedActivityIds = Array.from(anchorIds.entries())
         .filter(([_, anchorId]) => anchorId === activity.id)
         .map(([id, _]) => id);
 
       for (const connectedActivityId of connectedActivityIds) {
-        const connectedActivity = idToActivitiesMap.get(connectedActivityId);
-        if (connectedActivity) {
-          connectedActivity.start_offset = updateAnchorStartOffset(activity.id, connectedActivity.id);
-        }
+        const newOffset = updateAnchorStartOffset(activity.id, connectedActivityId);
+        activityUpdates.set(connectedActivityId, newOffset);
       }
     }
   }
 
-  return activities;
+  // Apply the updates to connected activities
+  const result = updatedActivities.map(activity => {
+    if (activityUpdates.has(activity.id)) {
+      return {
+        ...activity,
+        start_offset: activityUpdates.get(activity.id)!,
+      };
+    }
+    return activity;
+  });
+
+  return result;
 }
