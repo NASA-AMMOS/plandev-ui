@@ -22,6 +22,7 @@
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
   import { convertDurationStringToUs } from '../../utilities/time';
+  import PackActivitiesOffsetModal from '../modals/PackActivitiesOffsetModal.svelte';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -36,9 +37,16 @@
   export let plan: Plan | null;
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let bulkSelectedActivityDirectiveIds: ActivityDirectiveId[] = [];
+  export let showPackLeftMenu: boolean = true;
+  export let showPackRightMenu: boolean = bulkSelectedActivityDirectiveIds.length > 1;
+  export let showPackOffsetMenu: boolean = bulkSelectedActivityDirectiveIds.length > 1;
+  export let showPackOffsetDialog = false;
   export let planReadOnly: boolean = false;
   export let user: User | null;
   export let filterExpression: string = '';
+
+  const pluralItemDisplayText: string = 'Activity Directives';
+  const singleItemDisplayText: string = 'Activity Directive';
 
   const dispatch = createEventDispatcher<{
     createActivityDirectives: ActivityDirective[];
@@ -195,7 +203,40 @@
     }
   }
 
-  async function packLeftActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
+  function bulkPackLeftItems() {
+    const selectedIdSet = new Set(bulkSelectedActivityDirectiveIds);
+    const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
+
+    if (selectedActivityDirectives.length) {
+      packLeftActivityDirectives(selectedActivityDirectives);
+    }
+  }
+
+  function bulkPackRightItems() {
+    const selectedIdSet = new Set(bulkSelectedActivityDirectiveIds);
+    const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
+
+    if (selectedActivityDirectives.length) {
+      packRightActivityDirectives(selectedActivityDirectives);
+    }
+  }
+
+  function displayPackItemsWithOffset() {
+    showPackOffsetDialog = true;
+  }
+
+  function bulkPackItemsWithOffset(event: CustomEvent<{ direction: string; gapOffset: string }>) {
+    showPackOffsetDialog = false;
+    const selectedIdSet = new Set(bulkSelectedActivityDirectiveIds);
+    const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
+
+    const { direction, gapOffset } = event.detail;
+    if (selectedActivityDirectives.length) {
+      packActivityDirectivesOffset(selectedActivityDirectives, gapOffset, direction);
+    }
+  }
+
+  async function packLeftActivityDirectives(activities: ActivityDirective[]) {
     if (plan !== null) {
       const updatedActivities = packActivityDirectivesInPlan(
         plan,
@@ -213,7 +254,7 @@
     }
   }
 
-  async function packRightActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
+  async function packRightActivityDirectives(activities: ActivityDirective[]) {
     if (plan !== null) {
       const updatedActivities = packActivityDirectivesInPlan(
         plan,
@@ -231,16 +272,13 @@
     }
   }
 
-  async function packActivityDirectivesOffset(
-    event: CustomEvent<{ direction: string; gapOffset: string; selectedRows: ActivityDirective[] }>,
-  ) {
+  async function packActivityDirectivesOffset(activities: ActivityDirective[], gapOffset: string, direction: string) {
     if (plan !== null) {
-      const { direction, gapOffset, selectedRows } = event.detail;
       const offsetUS = convertDurationStringToUs(gapOffset);
 
       const updatedActivities = packActivityDirectivesInPlan(
         plan,
-        selectedRows,
+        activities,
         direction.toUpperCase() as 'LEFT' | 'RIGHT',
         offsetUS,
         get(activityDirectivesDB) ?? [],
@@ -275,17 +313,11 @@
   scrollToSelection={true}
   singleItemDisplayText="Activity Directive"
   showCopyMenu={true}
-  showPackLeftMenu={bulkSelectedActivityDirectiveIds.length > 1}
-  showPackRightMenu={bulkSelectedActivityDirectiveIds.length > 1}
-  showPackOffsetMenu={bulkSelectedActivityDirectiveIds.length > 1}
   suppressDragLeaveHidesColumns={false}
   {user}
   {filterExpression}
   on:bulkDeleteItems={deleteActivityDirectives}
   on:bulkCopyItems={copyActivityDirectives}
-  on:bulkPackLeftItems={packLeftActivityDirectives}
-  on:bulkPackRightItems={packRightActivityDirectives}
-  on:bulkPackWithOffset={packActivityDirectivesOffset}
   on:columnMoved
   on:columnPinned
   on:columnResized
@@ -306,5 +338,30 @@
       on:createActivityDirectives={createActivityDirectives}
     />
     <ContextMenu.Separator />
+
+    {#if showPackLeftMenu}
+      <ContextMenu.Item size="sm" on:click={bulkPackLeftItems}>
+        Pack Left {bulkSelectedActivityDirectiveIds.length}
+        {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+      </ContextMenu.Item>
+    {/if}
+
+    {#if showPackRightMenu}
+      <ContextMenu.Item size="sm" on:click={bulkPackRightItems}>
+        Pack Right {bulkSelectedActivityDirectiveIds.length}
+        {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+      </ContextMenu.Item>
+    {/if}
+
+    {#if showPackOffsetMenu}
+      <ContextMenu.Item size="sm" on:click={displayPackItemsWithOffset}>
+        Pack {bulkSelectedActivityDirectiveIds.length}
+        {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText} with Offset
+      </ContextMenu.Item>
+    {/if}
   </svelte:fragment>
 </BulkActionDataGrid>
+
+{#if showPackOffsetDialog}
+  <PackActivitiesOffsetModal on:cancel={() => (showPackOffsetDialog = false)} on:pack={bulkPackItemsWithOffset} />
+{/if}
