@@ -17,13 +17,8 @@
   import { debounce } from 'lodash-es';
   import { SquareCode } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
-  import { defaultSequenceAdaptation } from '../../constants/sequence-adaptation';
   import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
-  import {
-    type IInputFormat,
-    type IOutputFormat,
-    type ISequenceAdaptation,
-  } from '../../language-package/interfaces/legacy';
+  import { type IInputFormat, type IOutputFormat } from '../../language-package/interfaces/legacy';
   import type {
     LibrarySequence,
     LibrarySequenceMap,
@@ -56,7 +51,6 @@
   export let parameterDictionaries: ParameterDictionary[] = [];
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
-  export let sequenceAdaptation: ISequenceAdaptation = defaultSequenceAdaptation;
   export let newSequenceAdaptation: NewAdaptationInterface;
   export let sequenceName: string = '';
   export let sequenceDefinition: string = ''; // TODO what on earth does this do
@@ -73,7 +67,6 @@
   }>();
 
   let actionMenu: Menu;
-  let adaptation: ISequenceAdaptation = sequenceAdaptation;
   let compartmentAdaptation: Compartment;
   let compartmentOutputAdaptation: Compartment;
   let compartmentReadonly: Compartment;
@@ -177,19 +170,6 @@
     disableCopyAndExport = sequence === '';
     const tree = syntaxTree(viewUpdate.state);
     let output = await selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
-
-    if (adaptation.modifyOutput !== undefined && output !== undefined) {
-      const modifiedOutput = adaptation.modifyOutput(output, parameterDictionaries, channelDictionary);
-      if (modifiedOutput === null) {
-        output = 'modifyOutput returned null. Verify your adaptation is correct';
-      } else if (modifiedOutput === undefined) {
-        output = 'modifyOutput returned undefined. Verify your adaptation is correct';
-      } else if (typeof modifiedOutput === 'object') {
-        output = JSON.stringify(modifiedOutput);
-      } else {
-        output = `${modifiedOutput}`;
-      }
-    }
 
     editorOutputView.dispatch({ changes: { from: 0, insert: output, to: editorOutputView.state.doc.length } });
 
