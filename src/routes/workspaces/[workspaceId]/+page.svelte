@@ -178,9 +178,15 @@
       }
       workspaceTreeMap = mapWorkspaceTreePaths(workspaceTree?.contents ?? []);
 
-      if (env.PUBLIC_LIBRARY_SEQUENCES_ENABLED === 'true') {
-        workspaceSequences = await effects.getWorkspaceSequences(workspace.id, workspaceTreeMap, user);
+      const librarySequencesEnabled = env.PUBLIC_LIBRARY_SEQUENCES_ENABLED === 'true';
+      workspaceSequences = await effects.getWorkspaceSequences(
+        workspace.id,
+        workspaceTreeMap,
+        librarySequencesEnabled,
+        user,
+      );
 
+      if (librarySequencesEnabled) {
         workspaceLibrarySequences = workspaceSequences
           .flatMap(sequence => {
             if (isVmlSequence(sequence.name)) {
@@ -425,7 +431,7 @@
     let parameters: ArgumentsMap = {};
     if (sequenceParameters.length > 0) {
       const primarySequenceParameter = sequenceParameters[0];
-      parameters[primarySequenceParameter] = selectedFileName;
+      parameters[primarySequenceParameter] = selectedFilePath;
     }
 
     const actionRunId = await effects.runAction(action, workspaceSequences, user, parameters);

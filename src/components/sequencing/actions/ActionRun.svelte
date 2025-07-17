@@ -45,7 +45,7 @@
   );
 
   async function getUserSequenceOptions(idOfWorkspace: number): Promise<void> {
-    const workspaceSequences = await effects.getWorkspaceSequences(idOfWorkspace, null, user);
+    const workspaceSequences = await effects.getWorkspaceSequences(idOfWorkspace, null, false, user);
     sequenceOptions = getUserSequenceValueSchemaOptions(workspaceSequences, workspaceId);
   }
 

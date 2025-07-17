@@ -114,7 +114,7 @@
   async function getWorkspaceSequences(idOfWorkspace: number) {
     isLoadingWorkspace = true;
 
-    workspaceSequences = await effects.getWorkspaceSequences(idOfWorkspace, null, user);
+    workspaceSequences = await effects.getWorkspaceSequences(idOfWorkspace, null, false, user);
 
     isLoadingWorkspace = false;
   }
