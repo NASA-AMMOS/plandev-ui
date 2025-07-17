@@ -37,13 +37,17 @@
   export let plan: Plan | null;
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let bulkSelectedActivityDirectiveIds: ActivityDirectiveId[] = [];
-  export let showPackLeftMenu: boolean = true;
-  export let showPackRightMenu: boolean = bulkSelectedActivityDirectiveIds.length > 1;
-  export let showPackOffsetMenu: boolean = bulkSelectedActivityDirectiveIds.length > 1;
   export let showPackOffsetDialog = false;
   export let planReadOnly: boolean = false;
   export let user: User | null;
   export let filterExpression: string = '';
+
+  let showPackLeftMenu: boolean = true;
+  let showPackRightMenu: boolean = bulkSelectedActivityDirectiveIds.length > 1;
+  let showPackOffsetMenu: boolean = bulkSelectedActivityDirectiveIds.length > 1;
+  $: showPackLeftMenu = bulkSelectedActivityDirectiveIds.length > 1;
+  $: showPackRightMenu = bulkSelectedActivityDirectiveIds.length > 1;
+  $: showPackOffsetMenu = bulkSelectedActivityDirectiveIds.length > 1;
 
   const pluralItemDisplayText: string = 'Activity Directives';
   const singleItemDisplayText: string = 'Activity Directive';
@@ -331,13 +335,6 @@
       <ContextMenu.Item size="sm" on:click={scrollTimelineToActivityDirective}>Scroll to Activity</ContextMenu.Item>
       <ContextMenu.Separator />
     {/if}
-    <PasteActivitiesContextMenu
-      {hasCreatePermission}
-      {plan}
-      planPermissionErrorText={permissionErrorText}
-      on:createActivityDirectives={createActivityDirectives}
-    />
-    <ContextMenu.Separator />
 
     {#if showPackLeftMenu}
       <ContextMenu.Item size="sm" on:click={bulkPackLeftItems}>
@@ -359,6 +356,14 @@
         {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText} with Offset
       </ContextMenu.Item>
     {/if}
+
+    <PasteActivitiesContextMenu
+      {hasCreatePermission}
+      {plan}
+      planPermissionErrorText={permissionErrorText}
+      on:createActivityDirectives={createActivityDirectives}
+    />
+    <ContextMenu.Separator />
   </svelte:fragment>
 </BulkActionDataGrid>
 
