@@ -61,6 +61,19 @@
       resizable: true,
       sortable: true,
     },
+    anchor_name: {
+      field: 'anchor_name',
+      filter: 'text',
+      headerName: 'Anchor Name',
+      hide: true,
+      resizable: true,
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<ActivityDirective>) => {
+        if (params && params.data && params.data.anchor_id) {
+          return $activityDirectivesMap?.[params.data.anchor_id]?.name;
+        }
+      },
+    },
     anchored_to_start: {
       field: 'anchored_to_start',
       filter: 'text',
