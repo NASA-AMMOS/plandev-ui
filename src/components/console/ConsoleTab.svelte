@@ -34,12 +34,15 @@
   on:click={onClick}
 >
   <div
-    class="flex h-2 items-center gap-1 text-xs data-[state=active]:text-neutral-800"
+    class="flex h-2 items-center gap-1 text-xs hover:text-neutral-800 data-[state=active]:text-neutral-800"
     use:tooltip={{ content: title, placement: 'top' }}
   >
-    <slot />{#if numberOfErrors > 0}<span
+    <slot />
+    {#if numberOfErrors > 0}<span
         class="flex min-w-4 items-center justify-center rounded-full bg-red-50 px-1 text-xs font-semibold text-red-800 ring-1 ring-inset ring-red-900/20"
-        >{numberOfErrors}</span
-      >{/if}
+      >
+        {numberOfErrors}
+      </span>
+    {/if}
   </div>
 </Tabs.Trigger>

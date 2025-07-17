@@ -67,7 +67,7 @@
   <div class="flex h-full flex-col bg-[var(--st-gray-15)]">
     <Tabs.Root value={selectedTab} onValueChange={onSelectTab} class="flex h-full flex-col">
       <Tabs.List
-        class="bg-sedondary/50 flex h-[28px] shrink-0 items-center justify-between rounded-none border-b border-border py-0"
+        class="flex h-[28px] shrink-0 items-center justify-between rounded-none border-b border-border bg-secondary/50 py-0"
       >
         <div class="flex w-full items-center justify-between">
           <div class="flex w-full items-center py-[2px]" class:tabs-inactive={!expanded}>

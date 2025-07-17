@@ -69,7 +69,7 @@
           class="flex flex-1 items-center justify-center rounded border border-dashed border-muted bg-background/50 p-4"
         >
           <div class="text-center">
-            <span class="text-xs font-medium text-muted-foreground">No reported errors</span>
+            <span class="select-none text-xs font-medium text-muted-foreground">No reported errors</span>
           </div>
         </div>
       </div>

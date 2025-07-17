@@ -935,7 +935,9 @@
         />
       </div>
     </Resizable.Pane>
-    <Resizable.Handle />
+    <Resizable.Handle
+      class="hover:after:bg-neutral-300 hover:after:transition-all hover:after:delay-[400ms] data-[active]:after:bg-neutral-300 data-[active]:after:transition-all"
+    />
     <Resizable.Pane
       defaultSize={!isConsoleExpanded ? 0 : 24}
       minSize={16}
