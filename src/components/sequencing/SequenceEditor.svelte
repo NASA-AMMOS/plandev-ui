@@ -172,12 +172,6 @@
   $: updatedSequenceDefinition = sequenceDefinition;
   $: isSequenceDefinitionUpdated = updatedSequenceDefinition !== sequenceDefinition;
 
-  function compile(): void {
-    if (selectedOutputFormat?.compile) {
-      selectedOutputFormat.compile(sequenceOutput);
-    }
-  }
-
   async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
     const sequence = viewUpdate.state.doc.toString();
     disableCopyAndExport = sequence === '';
@@ -423,10 +417,6 @@
                 {/each}
               </Menu>
             </div>
-
-            {#if selectedOutputFormat?.compile}
-              <button class="st-button icon-button secondary ellipsis" on:click={compile}>Compile</button>
-            {/if}
           {/if}
           {#if !readOnly}
             <button
