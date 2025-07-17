@@ -373,8 +373,6 @@ export function packActivityDirectivesInPlan(
     sortedActivities.reverse();
   }
 
-  console.log('SortedActivities', sortedActivities);
-
   // Grab all durations for the activities and store in a Map
   const durations = new Map<number, number>();
 
@@ -416,6 +414,7 @@ export function packActivityDirectivesInPlan(
   }
 
   // Helper function to calculate the new start offsets based on the anchor activities
+  // Stylistically chose ths to be a nested function because it relies on numerous local variables
   function updateAnchorStartOffset(anchorId: number, activityId: number): string {
     let anchorStartTime;
     if (newStartTimes.has(anchorId)) {
@@ -448,7 +447,6 @@ export function packActivityDirectivesInPlan(
     updatedActivities.push(updatedActivity);
   }
 
-  // Handle connected activities (anchees) - collect updates for activities that are anchored to others
   const activityUpdates = new Map<number, string>();
 
   for (const activity of updatedActivities) {
