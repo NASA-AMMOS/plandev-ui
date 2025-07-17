@@ -21,7 +21,6 @@
   import type { PermissionCheck } from '../../../types/permissions';
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
   import { permissionHandler } from '../../../utilities/permissionHandler';
-  import PackActivitiesOffsetModal from '../../modals/PackActivitiesOffsetModal.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
 
   export let autoSizeColumnsToFit: boolean = true;
@@ -40,9 +39,6 @@
   export let selectedItemIds: RowId[] = [];
   export let showContextMenu: boolean = true;
   export let showCopyMenu: boolean = false;
-  export let showPackLeftMenu: boolean = false;
-  export let showPackRightMenu: boolean = false;
-  export let showPackOffsetMenu: boolean = false;
   export let showLoadingSkeleton: boolean = false;
   export let singleItemDisplayText: string = '';
   export let suppressDragLeaveHidesColumns: boolean = true;
@@ -58,7 +54,6 @@
 
   let isFiltered: boolean = false;
   let deletePermission: boolean = true;
-  export let showPackOffsetDialog = false;
 
   $: if (typeof hasDeletePermission === 'function' && user) {
     if (selectedItemIds.length > 0) {
@@ -103,33 +98,6 @@
     const selectedRows = getRowDataFromSelectedItems();
     if (selectedRows.length) {
       dispatch('bulkCopyItems', selectedRows);
-    }
-  }
-
-  function bulkPackLeftItems() {
-    const selectedRows = getRowDataFromSelectedItems();
-    if (selectedRows.length) {
-      dispatch('bulkPackLeftItems', selectedRows);
-    }
-  }
-
-  function bulkPackRightItems() {
-    const selectedRows = getRowDataFromSelectedItems();
-    if (selectedRows.length) {
-      dispatch('bulkPackRightItems', selectedRows);
-    }
-  }
-
-  function displayPackItemsWithOffset() {
-    showPackOffsetDialog = true;
-  }
-
-  function bulkPackItemsWithOffset(event: CustomEvent<{ direction: string; gapOffset: number }>) {
-    showPackOffsetDialog = false;
-    const selectedRows = getRowDataFromSelectedItems();
-    const { direction, gapOffset } = event.detail;
-    if (selectedRows.length) {
-      dispatch('bulkPackWithOffset', { direction, gapOffset, selectedRows });
     }
   }
 
@@ -234,27 +202,6 @@
           </ContextMenu.Item>
         {/if}
 
-        {#if showPackLeftMenu}
-          <ContextMenu.Item size="sm" on:click={bulkPackLeftItems}>
-            Pack Left {selectedItemIds.length}
-            {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
-          </ContextMenu.Item>
-        {/if}
-
-        {#if showPackRightMenu}
-          <ContextMenu.Item size="sm" on:click={bulkPackRightItems}>
-            Pack Right {selectedItemIds.length}
-            {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
-          </ContextMenu.Item>
-        {/if}
-
-        {#if showPackOffsetMenu}
-          <ContextMenu.Item size="sm" on:click={displayPackItemsWithOffset}>
-            Pack {selectedItemIds.length}
-            {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText} with Offset
-          </ContextMenu.Item>
-        {/if}
-
         <div
           use:permissionHandler={{
             hasPermission: deletePermission,
@@ -271,7 +218,3 @@
     {/if}
   </svelte:fragment>
 </DataGrid>
-
-{#if showPackOffsetDialog}
-  <PackActivitiesOffsetModal on:cancel={() => (showPackOffsetDialog = false)} on:pack={bulkPackItemsWithOffset} />
-{/if}
