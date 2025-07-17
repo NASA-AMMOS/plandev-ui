@@ -12,6 +12,8 @@
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
   import effects from '../../utilities/effects';
   import { filterEmpty } from '../../utilities/generic';
+  import { permissionHandler } from '../../utilities/permissionHandler.js';
+  import { featurePermissions } from '../../utilities/permissions.js';
   import { separateFilenameFromPath } from '../../utilities/workspaces.js';
   import WorkspaceTreeView from '../workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
   import Modal from './Modal.svelte';
@@ -34,18 +36,48 @@
   let typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
   let workspacesContents: WorkspaceTreeNode[] = [];
   let workspacesMap: Record<string, Workspace> = {};
+  let workspacePermissionsMap: Record<string, { hasDeletePermission: boolean; hasEditPermission: boolean }> = {};
+  let hasSourceDeletePermission: boolean = false;
+  let hasTargetEditPermission: boolean = false;
 
   $: {
     const { filename } = separateFilenameFromPath(originalPath);
     targetFilename = filename;
   }
   $: getWorkspacesContents($workspaces);
-  $: workspacesMap = $workspaces.reduce((currentWorkspacesMap, workspace) => {
+  $: {
+    workspacesMap = $workspaces.reduce((currentWorkspacesMap, workspace) => {
+      return {
+        ...currentWorkspacesMap,
+        [workspace.name as string]: workspace,
+      };
+    }, {});
+    workspacePermissionsMap = $workspaces.reduce((currentWorkspacePermissionsMap, workspace) => {
+      return {
+        ...currentWorkspacePermissionsMap,
+        [workspace.id]: {
+          hasDeletePermission: featurePermissions.workspace.canDelete(user, workspace),
+          hasEditPermission: featurePermissions.workspace.canUpdate(user, workspace),
+        },
+      };
+    }, {});
+  }
+  $: hasSourceDeletePermission = workspacePermissionsMap[currentWorkspace.id].hasDeletePermission;
+  $: if (targetDirectory) {
+    hasTargetEditPermission =
+      workspacePermissionsMap[workspacesMap[getWorkspaceNameFromPath(targetDirectory).workspaceName]?.id]
+        .hasEditPermission;
+  } else {
+    hasTargetEditPermission = false;
+  }
+
+  function getWorkspaceNameFromPath(path: string) {
+    const [workspaceName, ...actualTargetDirectory] = path.split(PATH_DELIMITER).filter(filterEmpty);
     return {
-      ...currentWorkspacesMap,
-      [workspace.name as string]: workspace,
+      actualTargetDirectory,
+      workspaceName,
     };
-  }, {});
+  }
 
   async function getWorkspacesContents(workspaces: Workspace[]) {
     const fetchedWorkspacesContents = await Promise.all(
@@ -70,7 +102,7 @@
   }
 
   function onMove() {
-    const [workspaceName, ...actualTargetDirectory] = targetDirectory.split(PATH_DELIMITER).filter(filterEmpty);
+    const { workspaceName, actualTargetDirectory } = getWorkspaceNameFromPath(targetDirectory);
     const targetWorkspace = workspacesMap[workspaceName];
     if (targetWorkspace) {
       dispatch('confirm', {
@@ -82,7 +114,7 @@
   }
 
   function onDuplicate() {
-    const [workspaceName, ...actualTargetDirectory] = targetDirectory.split(PATH_DELIMITER).filter(filterEmpty);
+    const { workspaceName, actualTargetDirectory } = getWorkspaceNameFromPath(targetDirectory);
     const targetWorkspace = workspacesMap[workspaceName];
     if (targetWorkspace) {
       dispatch('confirm', {
@@ -117,6 +149,8 @@
                 enableContextMenu={false}
                 showFiles={false}
                 showRootNode={true}
+                workspace={workspacesMap[workspaceContents?.name ?? '']}
+                {user}
                 on:nodeClicked={onFolderClicked}
               />
             {/each}
@@ -131,7 +165,25 @@
   </ModalContent>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" on:click={onMove}> Move {typeString} </button>
-    <button class="st-button" on:click={onDuplicate}> Duplicate {typeString} </button>
+    <button
+      class="st-button"
+      on:click={onMove}
+      use:permissionHandler={{
+        hasPermission: hasSourceDeletePermission,
+        permissionError: 'You do not have permission to move this item from the original workspace.',
+      }}
+    >
+      Move {typeString}
+    </button>
+    <button
+      class="st-button"
+      on:click={onDuplicate}
+      use:permissionHandler={{
+        hasPermission: hasTargetEditPermission,
+        permissionError: 'You do not have permission to copy this item into the target workspace.',
+      }}
+    >
+      Duplicate {typeString}
+    </button>
   </ModalFooter>
 </Modal>

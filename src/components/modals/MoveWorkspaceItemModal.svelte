@@ -4,6 +4,7 @@
   import { createEventDispatcher } from 'svelte';
   import * as Sidebar from '../../components/ui/Sidebar/index.js';
   import { WorkspaceContentType } from '../../enums/workspace';
+  import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
   import { joinPath, separateFilenameFromPath } from '../../utilities/workspaces';
@@ -17,6 +18,8 @@
   export let currentWorkspaceContents: WorkspaceTreeNode | null;
   export let originalNode: WorkspaceTreeNode;
   export let originalPath: string;
+  export let workspace: Workspace | null | undefined = null;
+  export let user: User | null;
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -79,6 +82,8 @@
               enableContextMenu={false}
               showFiles={false}
               showRootNode={true}
+              {workspace}
+              {user}
               on:nodeClicked={onFolderClicked}
             />
           </Sidebar.Menu>

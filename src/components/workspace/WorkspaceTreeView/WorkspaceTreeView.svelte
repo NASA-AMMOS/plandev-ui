@@ -15,8 +15,11 @@
   import { createEventDispatcher } from 'svelte';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { WorkspaceContentType } from '../../../enums/workspace';
-  import type { WorkspaceNodeEvent } from '../../../types/workspace';
+  import type { User } from '../../../types/app';
+  import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
+  import { permissionHandler } from '../../../utilities/permissionHandler';
+  import { featurePermissions } from '../../../utilities/permissions';
   import ContextMenuInternal from '../../context-menu/ContextMenu.svelte';
   import WorkspaceTreeViewNode from './WorkspaceTreeViewNode.svelte';
 
@@ -25,6 +28,8 @@
   export let showFiles: boolean = true;
   export let showRootNode: boolean = false;
   export let treeNode: WorkspaceTreeNode | null | undefined = undefined;
+  export let workspace: Workspace | null | undefined = null;
+  export let user: User | null;
 
   const dispatch = createEventDispatcher<{
     copyFileLocation: string;
@@ -40,6 +45,8 @@
 
   let contextMenu: ContextMenuInternal;
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
+  let hasEditPermission: boolean = false;
+  let hasDeletePermission: boolean = false;
 
   function onNodeRightClicked({
     detail,
@@ -54,6 +61,10 @@
         ...data.treeNode,
         fullPath: data.treeNodePath,
       };
+      if (workspace) {
+        hasEditPermission = featurePermissions.workspace.canUpdate(user, workspace, contextMenuNode);
+        hasDeletePermission = featurePermissions.workspace.canDelete(user, workspace, contextMenuNode);
+      }
       contextMenu.show(event);
     }
   }
@@ -131,39 +142,97 @@
   {#if enableContextMenu}
     <ContextMenuInternal bind:this={contextMenu} on:hide={onContextMenuHide}>
       <ContextMenu.Group>
-        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onRenameNode}>
-          <PencilLine size={16} />
-          Rename
+        <ContextMenu.Item size="sm" on:click={onRenameNode}>
+          <div
+            class="flex gap-1"
+            use:permissionHandler={{
+              hasPermission: hasEditPermission,
+              permissionError: 'You do not have permission to edit this workspace',
+            }}
+          >
+            <PencilLine size={16} />
+            Rename
+          </div>
         </ContextMenu.Item>
-        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onMoveNode}>
-          <FolderOutput size={16} />
-          Move
+        <ContextMenu.Item size="sm" on:click={onMoveNode}>
+          <div
+            class="flex gap-1"
+            use:permissionHandler={{
+              hasPermission: hasEditPermission,
+              permissionError: 'You do not have permission to edit this workspace',
+            }}
+          >
+            <FolderOutput size={16} />
+            Move
+          </div>
         </ContextMenu.Item>
-        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onDeleteNode}>
-          <Trash2 size={16} />
-          Delete
+        <ContextMenu.Item size="sm" on:click={onDeleteNode}>
+          <div
+            class="flex gap-1"
+            use:permissionHandler={{
+              hasPermission: hasDeletePermission,
+              permissionError: 'You do not have permission to delete this workspace',
+            }}
+          >
+            <Trash2 size={16} />
+            Delete
+          </div>
         </ContextMenu.Item>
       </ContextMenu.Group>
       <ContextMenu.Separator />
-      <ContextMenu.Item class="flex gap-1" size="sm" on:click={onCopyFileLocation}>
-        <Copy size={16} /> Copy Link to {contextMenuNode?.type === WorkspaceContentType.Directory
-          ? 'Directory'
-          : 'File'}
+      <ContextMenu.Item size="sm" on:click={onCopyFileLocation}>
+        <div
+          class="flex gap-1"
+          use:permissionHandler={{
+            hasPermission: hasEditPermission,
+            permissionError: 'You do not have permission to edit this workspace',
+          }}
+        >
+          <Copy size={16} /> Copy Link to {contextMenuNode?.type === WorkspaceContentType.Directory
+            ? 'Directory'
+            : 'File'}
+        </div>
       </ContextMenu.Item>
       <ContextMenu.Separator />
-      <ContextMenu.Item class="flex gap-1" size="sm" on:click={onMoveToWorkspace}>
-        <FileOutput size={16} /> Move to Workspace
+      <ContextMenu.Item size="sm" on:click={onMoveToWorkspace}>
+        <div class="flex gap-1">
+          <FileOutput size={16} /> Move to Workspace
+        </div>
       </ContextMenu.Item>
       <ContextMenu.Separator />
       <ContextMenu.Group>
-        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onNewSequence}>
-          <FilePlus size={16} /> New Sequence
+        <ContextMenu.Item size="sm" on:click={onNewSequence}>
+          <div
+            class="flex gap-1"
+            use:permissionHandler={{
+              hasPermission: hasEditPermission,
+              permissionError: 'You do not have permission to edit this workspace',
+            }}
+          >
+            <FilePlus size={16} /> New Sequence
+          </div>
         </ContextMenu.Item>
-        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onNewFolder}>
-          <FolderPlus size={16} /> New Folder
+        <ContextMenu.Item size="sm" on:click={onNewFolder}>
+          <div
+            class="flex gap-1"
+            use:permissionHandler={{
+              hasPermission: hasEditPermission,
+              permissionError: 'You do not have permission to edit this workspace',
+            }}
+          >
+            <FolderPlus size={16} /> New Folder
+          </div>
         </ContextMenu.Item>
-        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onImportFile}>
-          <ArrowUpFromLine size={16} /> Import File
+        <ContextMenu.Item size="sm" on:click={onImportFile}>
+          <div
+            class="flex gap-1"
+            use:permissionHandler={{
+              hasPermission: hasEditPermission,
+              permissionError: 'You do not have permission to edit this workspace',
+            }}
+          >
+            <ArrowUpFromLine size={16} /> Import File
+          </div>
         </ContextMenu.Item>
       </ContextMenu.Group>
     </ContextMenuInternal>

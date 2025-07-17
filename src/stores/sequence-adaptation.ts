@@ -1,9 +1,11 @@
 import { derived, get, writable, type Writable } from 'svelte/store';
-import { defaultSequenceAdaptation } from '../constants/sequence-adaptation';
 import type { GlobalType } from '../types/global-type';
 import type { ISequenceAdaptation, SequenceAdaptationMetadata } from '../types/sequencing';
 import gql from '../utilities/gql';
+import { getDefaultSequenceAdaptation } from '../utilities/sequence-editor/sequence-adaptation';
 import { gqlSubscribable } from './subscribable';
+
+const defaultSequenceAdaptation = getDefaultSequenceAdaptation();
 
 /* Writeable */
 

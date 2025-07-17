@@ -19,7 +19,6 @@
   import { createEventDispatcher } from 'svelte';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { WorkspaceContentType } from '../../../enums/workspace';
-  import { workspace } from '../../../stores/workspaces';
   import type { User } from '../../../types/app';
   import type {
     DataGridColumnDef,
@@ -27,9 +26,15 @@
     DataGridRowSelection,
     RowId,
   } from '../../../types/data-grid';
-  import type { WorkspaceNodeEvent } from '../../../types/workspace';
-  import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
+  import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
+  import type {
+    WorkspaceTreeMap,
+    WorkspaceTreeNode,
+    WorkspaceTreeNodeWithFullPath,
+  } from '../../../types/workspace-tree-view';
+  import { permissionHandler } from '../../../utilities/permissionHandler';
   import { featurePermissions } from '../../../utilities/permissions';
+  import { flattenWorkspaceTreeWithPaths, mapWorkspaceTreePaths } from '../../../utilities/workspaces';
   import MenuItem from '../../menus/MenuItem.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
@@ -38,6 +43,7 @@
 
   export let selectedTreeNodePath: string | null | undefined = undefined;
   export let treeNode: WorkspaceTreeNode | null | undefined = undefined;
+  export let workspace: Workspace | null | undefined = null;
   export let user: User | null;
 
   type CellRendererParams = {
@@ -104,6 +110,7 @@
   let treeNodeBreadcrumbMenuNodes: WorkspaceTreeNodeWithFullPath[] = [];
   let treeNodeBreadcrumbPath: string = '';
   let flattenedTree: WorkspaceTreeNodeWithFullPath[] = [];
+  let workspaceTreeMap: WorkspaceTreeMap = {};
   let isBreadcrumbMenuOpen: boolean = false;
   let isBreadcrumbNavMenuOpen: boolean = false;
 
@@ -152,6 +159,7 @@
   $: if (treeNode) {
     flattenedTree = flattenWorkspaceTreeWithPaths(treeNode?.contents ?? [], []);
     treeNodeBreadcrumbs = getNodeContentsOnPath(treeNode.contents ?? [], treeNodeBreadcrumbPath);
+    workspaceTreeMap = mapWorkspaceTreePaths(treeNode.contents ?? []);
   }
 
   $: if (treeNodeBreadcrumbs.length > 2) {
@@ -170,57 +178,19 @@
   }
 
   function hasDeletePermission(user: User | null, node: WorkspaceTreeNodeWithFullPath) {
-    if ($workspace) {
-      return featurePermissions.workspace.canDelete(user, $workspace, node);
+    if (workspace) {
+      return featurePermissions.workspace.canDelete(user, workspace, node);
     }
     return false;
   }
 
   function hasContextMenuUpdatePermission(user: User | null, selectedId: RowId | null) {
-    const selectedTreeNode = flattenedTree.find(treeNode => {
-      return treeNode.fullPath === selectedId;
-    });
-
-    if ($workspace && selectedTreeNode) {
-      return featurePermissions.workspace.canUpdate(user, $workspace, selectedTreeNode);
+    const selectedTreeNode = selectedId ? workspaceTreeMap[selectedId] : undefined;
+    if (workspace) {
+      return featurePermissions.workspace.canUpdate(user, workspace, selectedTreeNode);
     }
 
     return false;
-  }
-
-  /**
-   * Recursively traverses a WorkspaceTreeNode tree structure, flattens it into an array,
-   * includes the full path to each node, and uses memoization to cache results
-   * based on both the input 'nodes' array and the 'currentPath'.
-   *
-   * @param nodes An array of WorkspaceTreeNode objects to start the traversal from.
-   * @param currentPath (Internal) The path segments leading to the current 'nodes' array.
-   * Defaults to an empty array for the initial top-level call.
-   * @param cache (Internal) The memoization cache. Should typically be initialized by the wrapper.
-   * @returns An array containing all nodes from the tree, each with its 'fullPath'.
-   */
-  function flattenWorkspaceTreeWithPaths(
-    nodes: WorkspaceTreeNode[],
-    currentPath: string[] = [],
-  ): WorkspaceTreeNodeWithFullPath[] {
-    const flattenedArray: WorkspaceTreeNodeWithFullPath[] = [];
-
-    nodes.forEach(node => {
-      const nodeName = node.name || `[Unnamed ${node.type || 'Unknown'}]`;
-      const nodeFullPath = [...currentPath, nodeName];
-
-      flattenedArray.push({
-        ...node,
-        fullPath: nodeFullPath.join(PATH_DELIMITER),
-      });
-
-      if (node.contents && Array.isArray(node.contents) && node.contents.length > 0) {
-        // Recursively call, passing the updated currentPath and the shared cache
-        flattenedArray.push(...flattenWorkspaceTreeWithPaths(node.contents, nodeFullPath));
-      }
-    });
-
-    return flattenedArray;
   }
 
   function getNodeContentsOnPath(rootNodes: WorkspaceTreeNode[], path: string): WorkspaceTreeNodeWithFullPath[] {
@@ -249,7 +219,7 @@
   }
 
   function getPathType(path: RowId | null) {
-    const nodeAtPath = flattenedTree.find(node => node.fullPath === path);
+    const nodeAtPath = path ? workspaceTreeMap[path] : null;
 
     if (nodeAtPath) {
       return nodeAtPath.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
@@ -329,6 +299,7 @@
       treeNode: node,
       treeNodePath: node.fullPath,
     });
+    closeBreadcrumbMenu();
   }
 
   function onRenameNode(node: WorkspaceTreeNodeWithFullPath) {
@@ -337,40 +308,46 @@
       treeNode: node,
       treeNodePath: node.fullPath,
     });
+    closeBreadcrumbMenu();
   }
 
-  function onNewFolder(node: WorkspaceTreeNodeWithFullPath) {
-    let targetPath = node.fullPath ?? '';
-    if (node.type !== WorkspaceContentType.Directory) {
+  function onNewFolder(node?: WorkspaceTreeNode | WorkspaceTreeNodeWithFullPath | null) {
+    let targetPath = (node as WorkspaceTreeNodeWithFullPath).fullPath ?? '';
+    if (node?.type !== WorkspaceContentType.Directory) {
       targetPath = targetPath.split(PATH_DELIMITER).slice(0, -1).join(PATH_DELIMITER);
     }
     dispatch('newFolder', targetPath);
+    closeBreadcrumbMenu();
   }
 
-  function onNewSequence(node: WorkspaceTreeNodeWithFullPath) {
-    let targetPath = node.fullPath ?? '';
-    if (node.type !== WorkspaceContentType.Directory) {
+  function onNewSequence(node?: WorkspaceTreeNode | WorkspaceTreeNodeWithFullPath | null) {
+    let targetPath = (node as WorkspaceTreeNodeWithFullPath).fullPath ?? '';
+    if (node?.type !== WorkspaceContentType.Directory) {
       targetPath = targetPath.split(PATH_DELIMITER).slice(0, -1).join(PATH_DELIMITER);
     }
     dispatch('newSequence', targetPath);
+    closeBreadcrumbMenu();
   }
 
-  function onImportFile(node: WorkspaceTreeNodeWithFullPath) {
-    let targetPath = node.fullPath ?? '';
-    if (node.type !== WorkspaceContentType.Directory) {
+  function onImportFile(node?: WorkspaceTreeNode | WorkspaceTreeNodeWithFullPath | null) {
+    let targetPath = (node as WorkspaceTreeNodeWithFullPath).fullPath ?? '';
+    if (node?.type !== WorkspaceContentType.Directory) {
       targetPath = targetPath.split(PATH_DELIMITER).slice(0, -1).join(PATH_DELIMITER);
     }
     dispatch('importFile', targetPath);
+    closeBreadcrumbMenu();
   }
 
   function onCopyFileLocation(node: WorkspaceTreeNodeWithFullPath) {
     let targetPath = node?.fullPath ?? '';
     dispatch('copyFileLocation', targetPath);
+    closeBreadcrumbMenu();
   }
 
   function onMoveToWorkspace(node: WorkspaceTreeNodeWithFullPath) {
     let targetPath = node?.fullPath ?? '';
     dispatch('moveToWorkspace', targetPath);
+    closeBreadcrumbMenu();
   }
 
   function onTableMenuRenameNode() {
@@ -419,10 +396,49 @@
 <div class="grid h-full grid-rows-[min-content_auto]">
   <div class="flex items-center gap-1">
     {#if treeNodeBreadcrumbDisplay.length === 0}
-      <Button variant="ghost" class="flex items-center gap-1 font-bold">
-        {treeNode?.name}
-        <ChevronDown size={16} />
-      </Button>
+      <Popover.Root bind:open={isBreadcrumbMenuOpen}>
+        <Popover.Trigger asChild let:builder>
+          <Button builders={[builder]} variant="ghost" class="flex items-center gap-1 font-bold">
+            {treeNode?.name}
+            <ChevronDown size={16} />
+          </Button>
+        </Popover.Trigger>
+        <Popover.Content class="w-auto p-0" align="start" role="menu" aria-label="Breadcrumb Menu">
+          <MenuItem className="text-xs py-1.5" on:click={() => onNewSequence(treeNode)}>
+            <div
+              class="flex items-center gap-1"
+              use:permissionHandler={{
+                hasPermission: hasContextMenuUpdatePermission(user, null),
+                permissionError: 'You do not have permission to create a new sequence in this folder.',
+              }}
+            >
+              <FilePlus size={16} /> New Sequence
+            </div>
+          </MenuItem>
+          <MenuItem className="text-xs py-1.5" on:click={() => onNewFolder(treeNode)}>
+            <div
+              class="flex items-center gap-1"
+              use:permissionHandler={{
+                hasPermission: hasContextMenuUpdatePermission(user, null),
+                permissionError: 'You do not have permission to create a new folder in this folder.',
+              }}
+            >
+              <FolderPlus size={16} /> New Folder
+            </div>
+          </MenuItem>
+          <MenuItem className="text-xs py-1.5" on:click={() => onImportFile(treeNode)}>
+            <div
+              class="flex items-center gap-1"
+              use:permissionHandler={{
+                hasPermission: hasContextMenuUpdatePermission(user, null),
+                permissionError: 'You do not have permission to import a file into this folder.',
+              }}
+            >
+              <ArrowUpFromLine size={16} /> Import File
+            </div>
+          </MenuItem>
+        </Popover.Content>
+      </Popover.Root>
     {:else}
       <Button variant="ghost" on:click={() => treeNode && onBreadcrumbClick({ ...treeNode, fullPath: '' })}>
         {treeNode?.name}
@@ -440,36 +456,88 @@
           </Popover.Trigger>
           <Popover.Content class="w-auto p-0" align="start" role="menu" aria-label="Breadcrumb Menu">
             <MenuItem className="text-xs py-1.5" on:click={() => onRenameNode(breadcrumb)}>
-              <PencilLine size={16} />
-              Rename Folder
+              <div
+                class="flex items-center gap-1"
+                use:permissionHandler={{
+                  hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
+                  permissionError: 'You do not have permission to rename this folder.',
+                }}
+              >
+                <PencilLine size={16} />
+                Rename Folder
+              </div>
             </MenuItem>
             <MenuItem className="text-xs py-1.5" on:click={() => onMoveNode(breadcrumb)}>
-              <FolderOutput size={16} />
-              Move Folder
+              <div
+                class="flex items-center gap-1"
+                use:permissionHandler={{
+                  hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
+                  permissionError: 'You do not have permission to move this folder.',
+                }}
+              >
+                <FolderOutput size={16} />
+                Move Folder
+              </div>
             </MenuItem>
             <MenuItem className="text-xs py-1.5" on:click={() => onDeleteNode(breadcrumb)}>
-              <Trash2 size={16} />
-              Delete Folder
+              <div
+                class="flex items-center gap-1"
+                use:permissionHandler={{
+                  hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
+                  permissionError: 'You do not have permission to delete this folder.',
+                }}
+              >
+                <Trash2 size={16} />
+                Delete Folder
+              </div>
             </MenuItem>
             <Separator />
             <MenuItem className="text-xs py-1.5" on:click={() => onCopyFileLocation(breadcrumb)}>
-              <Copy size={16} /> Copy Link to {breadcrumb.type === WorkspaceContentType.Directory
-                ? 'Directory'
-                : 'File'}
+              <div class="flex items-center gap-1">
+                <Copy size={16} /> Copy Link to {breadcrumb.type === WorkspaceContentType.Directory
+                  ? 'Directory'
+                  : 'File'}
+              </div>
             </MenuItem>
             <Separator />
             <MenuItem className="text-xs py-1.5" on:click={() => onMoveToWorkspace(breadcrumb)}>
-              <FileOutput size={16} /> Move to Workspace
+              <div class="flex items-center gap-1">
+                <FileOutput size={16} /> Move to Workspace
+              </div>
             </MenuItem>
             <Separator />
             <MenuItem className="text-xs py-1.5" on:click={() => onNewSequence(breadcrumb)}>
-              <FilePlus size={16} /> New Sequence
+              <div
+                class="flex items-center gap-1"
+                use:permissionHandler={{
+                  hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
+                  permissionError: 'You do not have permission to create a new sequence in this folder.',
+                }}
+              >
+                <FilePlus size={16} /> New Sequence
+              </div>
             </MenuItem>
             <MenuItem className="text-xs py-1.5" on:click={() => onNewFolder(breadcrumb)}>
-              <FolderPlus size={16} /> New Folder
+              <div
+                class="flex items-center gap-1"
+                use:permissionHandler={{
+                  hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
+                  permissionError: 'You do not have permission to create a new folder in this folder.',
+                }}
+              >
+                <FolderPlus size={16} /> New Folder
+              </div>
             </MenuItem>
             <MenuItem className="text-xs py-1.5" on:click={() => onImportFile(breadcrumb)}>
-              <ArrowUpFromLine size={16} /> Import File
+              <div
+                class="flex items-center gap-1"
+                use:permissionHandler={{
+                  hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
+                  permissionError: 'You do not have permission to import a file into this folder.',
+                }}
+              >
+                <ArrowUpFromLine size={16} /> Import File
+              </div>
             </MenuItem>
           </Popover.Content>
         </Popover.Root>
@@ -516,38 +584,77 @@
   >
     <svelte:fragment slot="context-menu" let:selectedItemId>
       <ContextMenu.Group>
-        <ContextMenu.Item class="items-center gap-1" size="sm" on:click={onTableMenuRenameNode}>
-          <PencilLine size={16} />
-          Rename
+        <ContextMenu.Item size="sm" on:click={onTableMenuRenameNode}>
+          <div
+            class="flex items-center gap-1"
+            use:permissionHandler={{
+              hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
+              permissionError: 'You do not have permission to rename this folder.',
+            }}
+          >
+            <PencilLine size={16} />
+            Rename
+          </div>
         </ContextMenu.Item>
-        <ContextMenu.Item
-          class="items-center gap-1"
-          size="sm"
-          disabled={!hasContextMenuUpdatePermission(user, selectedItemId)}
-          on:click={onTableMenuMoveNode}
-        >
-          <FolderOutput size={16} />
-          Move
+        <ContextMenu.Item size="sm" on:click={onTableMenuMoveNode}>
+          <div
+            class="flex items-center gap-1"
+            use:permissionHandler={{
+              hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
+              permissionError: 'You do not have permission to move this folder.',
+            }}
+          >
+            <FolderOutput size={16} />
+            Move
+          </div>
         </ContextMenu.Item>
       </ContextMenu.Group>
       <ContextMenu.Separator />
-      <ContextMenu.Item class="flex gap-1" size="sm" on:click={onTableCopyFileLocation}>
-        <Copy size={16} /> Copy Link to {getPathType(selectedItemId)}
+      <ContextMenu.Item size="sm" on:click={onTableCopyFileLocation}>
+        <div class="flex items-center gap-1">
+          <Copy size={16} /> Copy Link to {getPathType(selectedItemId)}
+        </div>
       </ContextMenu.Item>
       <ContextMenu.Separator />
-      <ContextMenu.Item class="flex gap-1" size="sm" on:click={onTableMoveToWorkspace}>
-        <FileOutput size={16} /> Move to Workspace
+      <ContextMenu.Item size="sm" on:click={onTableMoveToWorkspace}>
+        <div class="flex items-center gap-1">
+          <FileOutput size={16} /> Move to Workspace
+        </div>
       </ContextMenu.Item>
       <ContextMenu.Separator />
       <ContextMenu.Group>
-        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onTableNewSequence}>
-          <FilePlus size={16} /> New Sequence
+        <ContextMenu.Item size="sm" on:click={onTableNewSequence}>
+          <div
+            class="flex items-center gap-1"
+            use:permissionHandler={{
+              hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
+              permissionError: 'You do not have permission to create a new sequence in this folder.',
+            }}
+          >
+            <FilePlus size={16} /> New Sequence
+          </div>
         </ContextMenu.Item>
-        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onTableNewFolder}>
-          <FolderPlus size={16} /> New Folder
+        <ContextMenu.Item size="sm" on:click={onTableNewFolder}>
+          <div
+            class="flex items-center gap-1"
+            use:permissionHandler={{
+              hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
+              permissionError: 'You do not have permission to create a new folder in this folder.',
+            }}
+          >
+            <FolderPlus size={16} /> New Folder
+          </div>
         </ContextMenu.Item>
-        <ContextMenu.Item class="flex gap-1" size="sm" on:click={onTableImportFile}>
-          <ArrowUpFromLine size={16} /> Import File
+        <ContextMenu.Item size="sm" on:click={onTableImportFile}>
+          <div
+            class="flex items-center gap-1"
+            use:permissionHandler={{
+              hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
+              permissionError: 'You do not have permission to import a file into this folder.',
+            }}
+          >
+            <ArrowUpFromLine size={16} /> Import File
+          </div>
         </ContextMenu.Item>
       </ContextMenu.Group>
       <ContextMenu.Separator />

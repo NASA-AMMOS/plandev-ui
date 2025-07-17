@@ -4,6 +4,7 @@
   import { Input as InputStellar, Label } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import * as Sidebar from '../../components/ui/Sidebar/index.js';
+  import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
   import { joinPath } from '../../utilities/workspaces';
@@ -13,13 +14,14 @@
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
-  export let currentWorkspace: Workspace;
+  export let currentWorkspace: Workspace | null | undefined = null;
   export let currentWorkspaceContents: WorkspaceTreeNode | null;
   export let height: number = 500;
   export let width: number = 380;
   export let startingPath: string = '';
+  export let user: User | null;
 
-  let sequencePath: string = joinPath([currentWorkspace.name, startingPath]);
+  let sequencePath: string = joinPath([currentWorkspace?.name ?? '', startingPath]);
   let sequenceName: string = '';
 
   const dispatch = createEventDispatcher<{
@@ -33,7 +35,7 @@
 
   function onConfirm() {
     dispatch('confirm', {
-      sequencePath: joinPath([sequencePath.replace(new RegExp(`^${currentWorkspace.name}`), '.'), sequenceName]),
+      sequencePath: joinPath([sequencePath.replace(new RegExp(`^${currentWorkspace?.name}`), '.'), sequenceName]),
     });
   }
 
@@ -54,7 +56,9 @@
     <div class="grid h-full grid-rows-[min-content_auto_min-content_min-content] gap-1 overflow-hidden">
       <div>
         <div class="pb-0.5 text-xs">Current Location:</div>
-        <div class="py-1"><span class="font-semibold">{joinPath([currentWorkspace.name, startingPath])}</span></div>
+        <div class="py-1">
+          <span class="font-semibold">{joinPath([currentWorkspace?.name ?? '', startingPath])}</span>
+        </div>
       </div>
       <Sidebar.Provider
         style="--sidebar-width: auto"
@@ -68,6 +72,8 @@
               enableContextMenu={false}
               showFiles={false}
               showRootNode={true}
+              workspace={currentWorkspace}
+              {user}
               on:nodeClicked={onFolderClicked}
             />
           </Sidebar.Menu>

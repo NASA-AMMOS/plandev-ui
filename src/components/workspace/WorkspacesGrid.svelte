@@ -5,15 +5,8 @@
   import { createEventDispatcher } from 'svelte';
   import { workspaces } from '../../stores/workspaces';
   import type { User } from '../../types/app';
-<<<<<<< HEAD:src/components/workspace/WorkspaceTable.svelte
-  import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
-  import type { Workspace } from '../../types/sequencing';
-  import effects from '../../utilities/effects';
-  import { permissionHandler } from '../../utilities/permissionHandler';
-=======
   import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
   import type { Workspace } from '../../types/workspace';
->>>>>>> c67ac598 (New Workspaces):src/components/workspace/WorkspacesGrid.svelte
   import { featurePermissions } from '../../utilities/permissions';
   import Input from '../form/Input.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
@@ -33,7 +26,6 @@
   let baseColumnDefs: DataGridColumnDef[];
   let filterText: string = '';
   let filteredWorkspaces: Workspace[] = [];
-  let hasCreatePermission: boolean = false;
   let selectedWorkspace: Workspace | null = null;
 
   const dispatch = createEventDispatcher<{
@@ -115,20 +107,7 @@
     return includesName;
   });
 
-<<<<<<< HEAD:src/components/workspace/WorkspaceTable.svelte
-  $: hasCreatePermission = featurePermissions.workspace.canCreate(user);
-
-  async function createNewWorkspace() {
-    await effects.createWorkspace(
-      $workspaces.map(workspace => workspace.name),
-      user,
-    );
-  }
-
-  async function editWorkspace(workspace: Workspace | undefined) {
-=======
   async function deleteWorkspace(workspace: Workspace | undefined) {
->>>>>>> c67ac598 (New Workspaces):src/components/workspace/WorkspacesGrid.svelte
     if (workspace !== undefined) {
       dispatch('deleteWorkspace', workspace.id);
     }
@@ -172,22 +151,6 @@
         style="width: 100%;"
       />
     </Input>
-<<<<<<< HEAD:src/components/workspace/WorkspaceTable.svelte
-
-    <div class="right">
-      <button
-        class="st-button secondary ellipsis"
-        on:click|stopPropagation={createNewWorkspace}
-        use:permissionHandler={{
-          hasPermission: hasCreatePermission,
-          permissionError: 'You do not have permission to create a workspace',
-        }}
-      >
-        Create Workspace
-      </button>
-    </div>
-=======
->>>>>>> c67ac598 (New Workspaces):src/components/workspace/WorkspacesGrid.svelte
   </svelte:fragment>
 
   <svelte:fragment slot="body">

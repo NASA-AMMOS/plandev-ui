@@ -8,6 +8,6 @@
   export let data: PageData;
 </script>
 
-<PageTitle title="Workspace" />
+<PageTitle title="Workspaces" />
 
 <Workspaces user={data.user} />

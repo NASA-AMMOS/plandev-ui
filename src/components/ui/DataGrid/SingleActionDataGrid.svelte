@@ -68,7 +68,7 @@
   let selectedItemIds: RowId[] = [];
 
   $: if ((typeof hasDeletePermission === 'function' || typeof hasEditPermission === 'function') && user) {
-    const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
+    const selectedItem = items.find(item => getRowId(item) === selectedItemId) ?? null;
     if (selectedItem) {
       if (typeof hasDeletePermission === 'function') {
         deletePermission = hasDeletePermission(user, selectedItem);
@@ -197,7 +197,7 @@
         }}
       >
         <ContextMenu.Item class="items-center gap-1" size="sm" disabled={!deletePermission} on:click={deleteItem}>
-          <Trash2 size={16} /> Delete {itemDisplayText}
+          <Trash2 size={16} /> Delete {itemDisplayText}{selectedItemId}
         </ContextMenu.Item>
       </div>
     {/if}

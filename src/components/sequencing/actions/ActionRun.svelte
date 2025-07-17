@@ -1,8 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { page } from '$app/stores';
-  import { SearchParameters } from '../../../enums/searchParameters';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
   import { gqlSubscribable } from '../../../stores/subscribable';
   import type { ActionRun } from '../../../types/actions';
@@ -17,19 +15,17 @@
   import effects from '../../../utilities/effects';
   import gql from '../../../utilities/gql';
   import { getFormParameters } from '../../../utilities/parameters';
-  import { getSearchParameterNumber } from '../../../utilities/url';
   import Parameters from '../../parameters/Parameters.svelte';
   import ActionRunCard from './ActionRunCard.svelte';
 
   export let initialActionRun: ActionRun | null = null;
   export let user: User | null;
+  export let workspaceId: number | null = null;
 
-  let workspaceId: number | null = null;
   let actionSettings: FormParameter[] = [];
   let actionParameters: FormParameter[] = [];
   let sequenceOptions: ValueSchemaOption[] = [];
 
-  $: workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID, $page.url.searchParams);
   $: if (workspaceId != null) {
     getUserSequenceOptions(workspaceId);
   }

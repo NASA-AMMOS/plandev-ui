@@ -6,7 +6,7 @@ import { blockMark } from '../../../codemirror/themes/block';
 import { getNearestAncestorNodeOfType } from '../../tree-utils';
 import { computeBlocks, isBlockCommand } from './custom-folder';
 
-export const seqqNBlockHighlighter = ViewPlugin.fromClass(
+export const seqNBlockHighlighter = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
     constructor() {

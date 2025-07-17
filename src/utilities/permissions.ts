@@ -36,6 +36,7 @@ import gql from './gql';
 import { showFailureToast } from './toast';
 
 export const ADMIN_ROLE = 'aerie_admin';
+export const VIEWER_ROLE = 'viewer';
 
 export const INVALID_JWT = 'invalid-jwt';
 export const EXPIRED_JWT = 'JWTExpired';
@@ -44,8 +45,16 @@ function isAdminRole(userRole?: UserRole) {
   return userRole === ADMIN_ROLE;
 }
 
+function isViewerRole(userRole?: UserRole) {
+  return userRole === VIEWER_ROLE;
+}
+
 function isUserAdmin(user: User | null) {
   return isAdminRole(user?.activeRole);
+}
+
+function isUserViewer(user: User | null) {
+  return isViewerRole(user?.activeRole);
 }
 
 function isUserOwner(user: User | null, thingWithOwner?: AssetWithOwner | null): boolean {
@@ -1712,16 +1721,16 @@ const featurePermissions: FeaturePermissions = {
     canUpdate: (user, view) => queryPermissions.UPDATE_VIEW(user, view),
   },
   workspace: {
-    canCreate: (user, workspace) => isUserAdmin(user) || isUserOwner(user, workspace),
-    canDelete: (user, workspace) => isUserAdmin(user) || isUserOwner(user, workspace),
+    canCreate: (user, workspace) => isUserAdmin(user) || (!isUserViewer(user) && isUserOwner(user, workspace)),
+    canDelete: (user, workspace) => isUserAdmin(user) || (!isUserViewer(user) && isUserOwner(user, workspace)),
     canRead: () => true,
-    canUpdate: (user, workspace) => isUserAdmin(user) || isUserOwner(user, workspace),
+    canUpdate: (user, workspace) => isUserAdmin(user) || (!isUserViewer(user) && isUserOwner(user, workspace)),
   },
   workspaces: {
-    canCreate: user => queryPermissions.CREATE_WORKSPACE(user),
-    canDelete: (user, workspace) => isUserAdmin(user) || isUserOwner(user, workspace),
+    canCreate: user => isUserAdmin(user) || (!isUserViewer(user) && queryPermissions.CREATE_WORKSPACE(user)),
+    canDelete: (user, workspace) => isUserAdmin(user) || (!isUserViewer(user) && isUserOwner(user, workspace)),
     canRead: user => queryPermissions.SUB_WORKSPACES(user),
-    canUpdate: (user, workspace) => queryPermissions.UPDATE_WORKSPACE(user, workspace),
+    canUpdate: (user, workspace) => isUserAdmin(user) || (!isUserViewer(user) && isUserOwner(user, workspace)),
   },
 };
 
@@ -1739,5 +1748,6 @@ export {
   isPlanOwner,
   isUserAdmin,
   isUserOwner,
+  isUserViewer,
   queryPermissions,
 };

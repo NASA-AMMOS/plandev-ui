@@ -3,6 +3,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import * as Sidebar from '../../components/ui/Sidebar/index.js';
+  import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
   import { joinPath, separateFilenameFromPath } from '../../utilities/workspaces.js';
@@ -17,6 +18,8 @@
   export let height: number = 400;
   export let width: number = 380;
   export let startingPath: string = '';
+  export let workspace: Workspace | null | undefined = null;
+  export let user: User | null;
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -67,7 +70,7 @@
   <ModalHeader on:close>Upload File(s) To Workspace</ModalHeader>
 
   <ModalContent style="overflow: hidden;">
-    <div class="grid h-full grid-rows-[min-content_auto_min-content] gap-1 overflow-hidden">
+    <div class="grid h-full grid-rows-[auto_min-content] gap-1 overflow-hidden">
       <Sidebar.Provider
         style="--sidebar-width: auto"
         className="min-h-full overflow-y-auto rounded-md border-(--st-gray-20) border-2"
@@ -80,6 +83,8 @@
               enableContextMenu={false}
               showFiles={false}
               showRootNode={true}
+              {workspace}
+              {user}
               on:nodeClicked={onFolderClicked}
             />
           </Sidebar.Menu>

@@ -368,6 +368,8 @@ export async function showImportWorkspaceFileModal(
   currentWorkspace: Workspace,
   currentWorkspaceContents: WorkspaceTreeNode,
   startingPath: string,
+  workspace: Workspace | null | undefined,
+  user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
@@ -375,7 +377,13 @@ export async function showImportWorkspaceFileModal(
 
       if (target) {
         const importWorkspaceFileModal = new ImportWorkspaceFileModal({
-          props: { currentWorkspace, currentWorkspaceContents, startingPath },
+          props: {
+            currentWorkspace,
+            currentWorkspaceContents,
+            startingPath,
+            user,
+            workspace,
+          },
           target,
         });
         target.resolve = resolve;
@@ -632,6 +640,7 @@ export async function showNewWorkspaceSequenceModal(
   currentWorkspace: Workspace,
   currentWorkspaceContents: WorkspaceTreeNode,
   startingPath: string = '',
+  user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
@@ -639,7 +648,12 @@ export async function showNewWorkspaceSequenceModal(
 
       if (target) {
         const newWorkspaceSequenceModal = new NewWorkspaceSequenceModal({
-          props: { currentWorkspace, currentWorkspaceContents, startingPath },
+          props: {
+            currentWorkspace,
+            currentWorkspaceContents,
+            startingPath,
+            user,
+          },
           target,
         });
         target.resolve = resolve;
@@ -674,6 +688,7 @@ export async function showNewWorkspaceFolderModal(
   currentWorkspace: Workspace,
   currentWorkspaceContents: WorkspaceTreeNode,
   startingPath: string = '',
+  user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
@@ -681,7 +696,12 @@ export async function showNewWorkspaceFolderModal(
 
       if (target) {
         const newWorkspaceFolderModal = new NewWorkspaceFolderModal({
-          props: { currentWorkspace, currentWorkspaceContents, startingPath },
+          props: {
+            currentWorkspace,
+            currentWorkspaceContents,
+            startingPath,
+            user,
+          },
           target,
         });
         target.resolve = resolve;
@@ -751,6 +771,8 @@ export async function showMoveWorkspaceItemModal(
   currentWorkspaceContents: WorkspaceTreeNode,
   originalNode: WorkspaceTreeNode,
   originalPath: string,
+  workspace: Workspace | null | undefined,
+  user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
@@ -758,7 +780,14 @@ export async function showMoveWorkspaceItemModal(
 
       if (target) {
         const moveWorkspaceItemModal = new MoveWorkspaceItemModal({
-          props: { currentWorkspace, currentWorkspaceContents, originalNode, originalPath },
+          props: {
+            currentWorkspace,
+            currentWorkspaceContents,
+            originalNode,
+            originalPath,
+            user,
+            workspace,
+          },
           target,
         });
         target.resolve = resolve;

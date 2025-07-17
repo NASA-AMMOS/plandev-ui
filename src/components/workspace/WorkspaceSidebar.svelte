@@ -11,11 +11,12 @@
     FolderTree,
     Plus,
     RefreshCw,
-    Settings,
   } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { User } from '../../types/app';
+  import type { Workspace } from '../../types/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import { getTimeAgo } from '../../utilities/time';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
@@ -37,6 +38,8 @@
   export let user: User | null;
   export let isWorkspaceLoading: boolean = false;
   export let workspaceTree: WorkspaceTreeNode | null | undefined = undefined;
+  export let workspace: Workspace | null | undefined = null;
+  export let hasEditWorkspacePermission: boolean = false;
 
   let didWorkspaceUpdate: boolean = false;
   let lastRefreshTime: Date = new Date();
@@ -112,7 +115,7 @@
             <div>Actions</div>
           </Tooltip.Content>
         </Tooltip.Root>
-        <Tooltip.Root>
+        <!-- <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
             <Tabs.Trigger value="settings" class="flex h-10 w-10 items-center justify-center rounded-none shadow-none">
               <Button builders={[builder]} variant="ghost">
@@ -123,7 +126,7 @@
           <Tooltip.Content sideOffset={8}>
             <div>Settings</div>
           </Tooltip.Content>
-        </Tooltip.Root>
+        </Tooltip.Root> -->
       </Tabs.List>
     </div>
     <div class="flex h-full w-full flex-col">
@@ -157,15 +160,39 @@
                     </Button>
                   </DropdownMenu.Trigger>
                   <DropdownMenu.Content class="w-56">
-                    <DropdownMenu.Item class="cursor-pointer gap-1" on:click={onNewSequence}>
-                      <FilePlus size={16} /> New Sequence
+                    <DropdownMenu.Item on:click={onNewSequence}>
+                      <div
+                        class="flex cursor-pointer gap-1"
+                        use:permissionHandler={{
+                          hasPermission: hasEditWorkspacePermission,
+                          permissionError: 'You do not have permission to edit this workspace',
+                        }}
+                      >
+                        <FilePlus size={16} /> New Sequence
+                      </div>
                     </DropdownMenu.Item>
-                    <DropdownMenu.Item class="cursor-pointer gap-1" on:click={onNewFolder}>
-                      <FolderPlus size={16} /> New Folder
+                    <DropdownMenu.Item on:click={onNewFolder}>
+                      <div
+                        class="flex cursor-pointer gap-1"
+                        use:permissionHandler={{
+                          hasPermission: hasEditWorkspacePermission,
+                          permissionError: 'You do not have permission to edit this workspace',
+                        }}
+                      >
+                        <FolderPlus size={16} /> New Folder
+                      </div>
                     </DropdownMenu.Item>
                     <DropdownMenu.Separator />
-                    <DropdownMenu.Item class="cursor-pointer gap-1" on:click={onImportFile}>
-                      <ArrowUpFromLine size={16} />Import File
+                    <DropdownMenu.Item on:click={onImportFile}>
+                      <div
+                        class="flex cursor-pointer gap-1"
+                        use:permissionHandler={{
+                          hasPermission: hasEditWorkspacePermission,
+                          permissionError: 'You do not have permission to edit this workspace',
+                        }}
+                      >
+                        <ArrowUpFromLine size={16} />Import File
+                      </div>
                     </DropdownMenu.Item>
                   </DropdownMenu.Content>
                 </DropdownMenu.Root>
@@ -178,8 +205,10 @@
                 <Sidebar.Menu className="h-full">
                   {#if workspaceTree}
                     <WorkspaceTreeView
-                      treeNode={workspaceTree}
                       selectedTreeNodePath={selectedFilePath}
+                      treeNode={workspaceTree}
+                      {workspace}
+                      {user}
                       on:nodeClicked
                       on:nodeDelete
                       on:nodeMove
@@ -229,15 +258,39 @@
                     </Button>
                   </DropdownMenu.Trigger>
                   <DropdownMenu.Content class="w-56">
-                    <DropdownMenu.Item class="cursor-pointer gap-1" on:click={onNewSequence}>
-                      <FilePlus size={16} /> New Sequence
+                    <DropdownMenu.Item on:click={onNewSequence}>
+                      <div
+                        class="flex cursor-pointer gap-1"
+                        use:permissionHandler={{
+                          hasPermission: hasEditWorkspacePermission,
+                          permissionError: 'You do not have permission to edit this workspace',
+                        }}
+                      >
+                        <FilePlus size={16} /> New Sequence
+                      </div>
                     </DropdownMenu.Item>
-                    <DropdownMenu.Item class="cursor-pointer gap-1" on:click={onNewFolder}>
-                      <FolderPlus size={16} /> New Folder
+                    <DropdownMenu.Item on:click={onNewFolder}>
+                      <div
+                        class="flex cursor-pointer gap-1"
+                        use:permissionHandler={{
+                          hasPermission: hasEditWorkspacePermission,
+                          permissionError: 'You do not have permission to edit this workspace',
+                        }}
+                      >
+                        <FolderPlus size={16} /> New Folder
+                      </div>
                     </DropdownMenu.Item>
                     <DropdownMenu.Separator />
-                    <DropdownMenu.Item class="cursor-pointer gap-1">
-                      <ArrowUpFromLine size={16} />Import File
+                    <DropdownMenu.Item on:click={onImportFile}>
+                      <div
+                        class="flex cursor-pointer gap-1"
+                        use:permissionHandler={{
+                          hasPermission: hasEditWorkspacePermission,
+                          permissionError: 'You do not have permission to edit this workspace',
+                        }}
+                      >
+                        <ArrowUpFromLine size={16} />Import File
+                      </div>
                     </DropdownMenu.Item>
                   </DropdownMenu.Content>
                 </DropdownMenu.Root>
@@ -250,8 +303,9 @@
                 <Sidebar.Menu className="h-full">
                   {#if workspaceTree}
                     <WorkspaceGridView
-                      treeNode={workspaceTree}
                       selectedTreeNodePath={selectedFilePath}
+                      treeNode={workspaceTree}
+                      {workspace}
                       {user}
                       on:nodeClicked
                       on:nodeDelete

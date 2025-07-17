@@ -264,8 +264,8 @@ const gql = {
   `,
 
   CREATE_DICTIONARY: `#graphql
-    mutation CreateDictionary($dictionary: String!) {
-      createDictionary: ${Queries.UPLOAD_DICTIONARY}(dictionary: $dictionary) {
+    mutation CreateDictionary($dictionary: String!, $persistDictionaryToFilesystem: Boolean!) {
+      createDictionary: ${Queries.UPLOAD_DICTIONARY}(dictionary: $dictionary, persistDictionaryToFilesystem: $persistDictionaryToFilesystem) {
         command
         parameter
         channel
@@ -3554,10 +3554,13 @@ const gql = {
   SUB_WORKSPACE: `#graphql
     subscription SubWorkspace($workspaceId: Int!) {
       workspace: ${Queries.WORKSPACE}(id: $workspaceId) {
+        created_at
+        disk_location
         id
         name
+        owner
         parcel_id
-        disk_location
+        updated_at
       }
     }
   `,
@@ -3566,11 +3569,11 @@ const gql = {
     subscription SubWorkspaces {
       ${Queries.WORKSPACES}(order_by: { id: desc }) {
         created_at
-        id
-        parcel_id
-        name
         disk_location
+        id
+        name
         owner
+        parcel_id
         updated_at
       }
     }

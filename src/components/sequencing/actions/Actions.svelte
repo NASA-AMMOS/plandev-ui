@@ -4,7 +4,6 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
-  import { SearchParameters } from '../../../enums/searchParameters';
   import {
     actionDefinitions,
     actionDefinitionsByWorkspace,
@@ -12,7 +11,6 @@
     actionRunsByWorkspace,
     actionsColumns,
   } from '../../../stores/actions';
-  import { workspaces } from '../../../stores/workspaces';
   import type { ActionDefinition, ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
@@ -28,7 +26,7 @@
   import { getArguments, getFormParameters } from '../../../utilities/parameters';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { featurePermissions } from '../../../utilities/permissions';
-  import { getSearchParameterNumber } from '../../../utilities/url';
+  import { getActionsUrl } from '../../../utilities/routes';
   import Input from '../../form/Input.svelte';
   import Loading from '../../Loading.svelte';
   import Parameters from '../../parameters/Parameters.svelte';
@@ -43,13 +41,13 @@
   import ActionRunCard from './ActionRunCard.svelte';
 
   export let user: User | null;
+  export let workspace: Workspace | null;
 
   let actionDefinitionsFilterText: string = '';
   let actionRunsFilterText: string = '';
   let isLoadingWorkspace: boolean = false;
   let selectedActionDefinitionId: number | null = null;
   let selectedActionDefinition: ActionDefinition | null = null;
-  let workspace: Workspace | undefined;
   let workspaceId: number | null = null;
   let workspaceActionDefinitions: ActionDefinition[] = [];
   let workspaceActionRuns: ActionRunSlim[] = [];
@@ -62,7 +60,6 @@
   let saving: boolean = false;
   let workspaceSequences: UserSequence[] = [];
 
-  $: workspace = $workspaces.find(workspace => workspace.id === workspaceId);
   $: if (typeof workspaceId === 'number') {
     workspaceActionDefinitions = Object.values($actionDefinitionsByWorkspace[workspaceId] || {});
     workspaceActionRuns = Object.values($actionRunsByWorkspace[workspaceId] || {});
@@ -109,7 +106,9 @@
   $: saveButtonDisabled = !name;
 
   onMount(() => {
-    workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
+    if (workspace) {
+      workspaceId = workspace.id;
+    }
   });
 
   async function getWorkspaceSequences(idOfWorkspace: number) {
@@ -145,10 +144,7 @@
   }
 
   function onActionRunClick(id: number) {
-    const workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
-    goto(
-      `${base}/sequencing/actions/runs/${id}${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`,
-    );
+    goto(getActionsUrl(base, workspaceId, id));
   }
 
   async function onCancelAction(id: number) {
@@ -158,9 +154,7 @@
   async function runAction(action: ActionDefinition) {
     const actionRunId = await effects.runAction(action, workspaceSequences, user);
     if (typeof actionRunId === 'number') {
-      goto(
-        `${base}/sequencing/actions/runs/${actionRunId}${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`,
-      );
+      goto(getActionsUrl(base, workspaceId, actionRunId));
     }
   }
 

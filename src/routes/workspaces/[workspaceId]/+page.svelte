@@ -8,6 +8,7 @@
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import { onDestroy, onMount } from 'svelte';
+  import PageTitle from '../../../components/app/PageTitle.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import CssGridGutter from '../../../components/ui/CssGridGutter.svelte';
@@ -52,6 +53,7 @@
   import effects from '../../../utilities/effects';
   import { filterEmpty } from '../../../utilities/generic';
   import { showConfirmModal } from '../../../utilities/modal';
+  import { featurePermissions } from '../../../utilities/permissions';
   import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
   import { userSequenceToLibrarySequence } from '../../../utilities/sequence-editor/languages/seq-n/seq-n-tree-utils';
   import { parseFunctionSignatures } from '../../../utilities/sequence-editor/languages/vml/vml-adaptation';
@@ -80,30 +82,43 @@
   let workspaceSequences: UserSequence[] = [];
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
+  let hasEditFilePermission: boolean = false;
+  let hasEditWorkspacePermission: boolean = false;
 
   $: if (initialWorkspace) {
     $workspaceId = initialWorkspace.id;
-    getSelectedFileContent(selectedFilePath);
 
     actionsWithSequenceParameters = Object.values($actionDefinitionsByWorkspace[$workspaceId] || {}).filter(action => {
       const seqParameter = getActionParametersOfType(action, 'sequence');
       return seqParameter.length > 0;
     });
   }
-  $: {
-    if (selectedFilePath) {
-      const { filename } = separateFilenameFromPath(selectedFilePath);
+  $: if (selectedFilePath) {
+    const { filename } = separateFilenameFromPath(selectedFilePath);
+    getSelectedFileContent(selectedFilePath);
 
-      if (filename) {
-        selectedFileName = filename;
-        selectedFileType = workspaceTreeMap[selectedFilePath]?.type ?? null;
-      } else {
-        selectedFileName = undefined;
-        selectedFileType = null;
-      }
+    if (filename) {
+      selectedFileName = filename;
+      selectedFileType = workspaceTreeMap[selectedFilePath]?.type ?? null;
     } else {
       selectedFileName = undefined;
       selectedFileType = null;
+    }
+  } else {
+    selectedFileName = undefined;
+    selectedFileType = null;
+  }
+
+  $: if (initialWorkspace) {
+    hasEditWorkspacePermission = featurePermissions.workspace.canUpdate(user, initialWorkspace);
+    if (selectedFilePath) {
+      hasEditFilePermission = featurePermissions.workspace.canUpdate(
+        user,
+        initialWorkspace,
+        workspaceTreeMap[selectedFilePath],
+      );
+    } else {
+      hasEditFilePermission = true;
     }
   }
 
@@ -150,7 +165,7 @@
     refreshInterval = setInterval(refreshWorkspaceContents, 300000);
   }
 
-  async function getWorkspaceContents(workspace: Workspace | undefined) {
+  async function getWorkspaceContents(workspace: Workspace | null) {
     if (workspace) {
       isWorkspaceLoading = true;
       const workspaceContents = await effects.getWorkspaceContents(workspace.id, user);
@@ -163,15 +178,19 @@
       }
       workspaceTreeMap = mapWorkspaceTreePaths(workspaceTree?.contents ?? []);
 
-      workspaceSequences = await effects.getWorkspaceSequences(workspace.id, workspaceTreeMap, user);
+      if (env.PUBLIC_LIBRARY_SEQUENCES_ENABLED === 'true') {
+        workspaceSequences = await effects.getWorkspaceSequences(workspace.id, workspaceTreeMap, user);
 
-      workspaceLibrarySequences = workspaceSequences.flatMap(sequence => {
-        if (isVmlSequence(sequence.name)) {
-          return parseFunctionSignatures(sequence.definition, $workspaceId);
-        } else {
-          return userSequenceToLibrarySequence(sequence, $workspaceId);
-        }
-      });
+        workspaceLibrarySequences = workspaceSequences
+          .flatMap(sequence => {
+            if (isVmlSequence(sequence.name)) {
+              return parseFunctionSignatures(sequence.definition, $workspaceId);
+            } else {
+              return userSequenceToLibrarySequence(sequence, $workspaceId);
+            }
+          })
+          .filter(({ name }) => name !== '');
+      }
 
       isWorkspaceLoading = false;
       resetRefreshInterval();
@@ -187,7 +206,6 @@
       fileType === WorkspaceContentType.Sequence ||
       fileType === WorkspaceContentType.Json ||
       fileType === WorkspaceContentType.Text ||
-      fileType === WorkspaceContentType.Unknown ||
       fileType === WorkspaceContentType.Metadata
     );
   }
@@ -250,7 +268,7 @@
   }
 
   async function goToSequence(filePath: string | null) {
-    if (updatedSelectedFileContent !== initialSelectedFileContent) {
+    if (updatedSelectedFileContent !== initialSelectedFileContent && selectedFilePath !== null) {
       const { confirm } = await showConfirmModal(
         'Navigate Away',
         `There are unsaved changes. Are you sure you want navigate away from the current sequence?`,
@@ -433,13 +451,17 @@
   });
 </script>
 
+<PageTitle title="Workspace: {$workspace?.name}" />
+
 <CssGrid bind:columns={$workspaceColumns}>
   <Sidebar.Provider style="--sidebar-width: auto" className="min-h-0">
     <WorkspaceSidebar
       {selectedFilePath}
-      {user}
       {workspaceTree}
       {isWorkspaceLoading}
+      {hasEditWorkspacePermission}
+      {user}
+      workspace={$workspace}
       on:actionsClick={onActionsClicked}
       on:nodeClicked={onNodeClicked}
       on:nodeDelete={onNodeDelete}
@@ -470,7 +492,7 @@
           inputFormat={$inputFormat}
           librarySequences={workspaceLibrarySequences}
           outputFormats={$outputFormat}
-          readOnly={false}
+          readOnly={!hasEditFilePermission}
           sequenceAdaptation={$sequenceAdaptation}
           sequenceDefinition={initialSelectedFileContent}
           sequenceName={selectedFileName}
@@ -490,6 +512,7 @@
       >
         <TextEditor
           isJSON={selectedFileType === WorkspaceContentType.Json}
+          readOnly={!hasEditFilePermission}
           textFileName={selectedFileName}
           textFileContent={initialSelectedFileContent}
           title={selectedFileType === WorkspaceContentType.Json ? 'JSON Editor' : 'Text Editor'}

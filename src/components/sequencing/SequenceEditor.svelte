@@ -18,7 +18,6 @@
   import { debounce } from 'lodash-es';
   import { SquareCode } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
-  import { defaultSequenceAdaptation } from '../../constants/sequence-adaptation';
   import type { ActionDefinition } from '../../types/actions';
   import type { GlobalType } from '../../types/global-type';
   import {
@@ -37,8 +36,8 @@
   import { inputLinter, outputLinter } from '../../utilities/sequence-editor/extension-points';
   import { setupLanguageSupport } from '../../utilities/sequence-editor/languages/seq-n/seq-n';
   import {
+    seqNBlockHighlighter,
     seqNHighlightBlock,
-    seqqNBlockHighlighter,
   } from '../../utilities/sequence-editor/languages/seq-n/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../utilities/sequence-editor/languages/seq-n/seq-n-tree-utils';
   import {
@@ -52,6 +51,7 @@
   import { vmlLinter } from '../../utilities/sequence-editor/languages/vml/vml-linter';
   import { vmlTooltip } from '../../utilities/sequence-editor/languages/vml/vml-tooltip';
   import { VmlCommandInfoMapper } from '../../utilities/sequence-editor/languages/vml/vml-tree-utils';
+  import { getDefaultSequenceAdaptation } from '../../utilities/sequence-editor/sequence-adaptation';
   import { seqNFormat } from '../../utilities/sequence-editor/sequence-autoindent';
   import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
   import {
@@ -84,7 +84,7 @@
   export let parameterDictionaries: ParameterDictionary[] = [];
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
-  export let sequenceAdaptation: ISequenceAdaptation = defaultSequenceAdaptation;
+  export let sequenceAdaptation: ISequenceAdaptation = getDefaultSequenceAdaptation();
   export let sequenceDefinition: string = '';
   export let sequenceName: string = '';
   export let sequenceOutput: string = '';
@@ -159,7 +159,7 @@
       editorSequenceView.dispatch({
         effects: compartmentSeqHighlighter.reconfigure([
           EditorView.updateListener.of(debouncedSeqNHighlightBlock),
-          seqqNBlockHighlighter,
+          seqNBlockHighlighter,
         ]),
       });
     }
@@ -431,10 +431,7 @@
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
-        compartmentSeqHighlighter.of([
-          EditorView.updateListener.of(debouncedSeqNHighlightBlock),
-          seqqNBlockHighlighter,
-        ]),
+        compartmentSeqHighlighter.of([EditorView.updateListener.of(debouncedSeqNHighlightBlock), seqNBlockHighlighter]),
         ...(adaptation.autoIndent ? [compartmentSeqAutocomplete.of(indentService.of(adaptation.autoIndent()))] : []),
         compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
       ],
@@ -480,6 +477,15 @@
               <Menu bind:this={actionMenu}>
                 {#each actionsWithSequenceParameters as action}
                   <MenuItem
+                    use={[
+                      [
+                        permissionHandler,
+                        {
+                          hasPermission: !readOnly,
+                          permissionError: 'You do not have permission to run this action.',
+                        },
+                      ],
+                    ]}
                     on:click={() => {
                       onRunAction(action);
                       actionMenu.toggle();

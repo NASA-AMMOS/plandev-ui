@@ -5485,7 +5485,7 @@ const effects = {
       const {
         confirm,
         value: { files, targetDirectory },
-      } = await showImportWorkspaceFileModal(workspace, workspaceContents, startingPath);
+      } = await showImportWorkspaceFileModal(workspace, workspaceContents, startingPath, workspace, user);
       if (confirm) {
         const cleanedTargetPath = cleanPath(targetDirectory);
         const chunkedFiles = chunk(Array.from<File>(files), 10);
@@ -5753,7 +5753,7 @@ const effects = {
       const {
         confirm,
         value: { targetPath },
-      } = await showMoveWorkspaceItemModal(workspace, workspaceContents, originalNode, originalPath);
+      } = await showMoveWorkspaceItemModal(workspace, workspaceContents, originalNode, originalPath, workspace, user);
       if (confirm) {
         const cleanedTargetPath = cleanPath(targetPath);
 
@@ -5834,7 +5834,7 @@ const effects = {
       const {
         confirm,
         value: { folderPath },
-      } = await showNewWorkspaceFolderModal(workspace, workspaceContents, startingPath);
+      } = await showNewWorkspaceFolderModal(workspace, workspaceContents, startingPath, user);
 
       if (confirm) {
         await reqWorkspace<Workspace>(
@@ -5868,7 +5868,7 @@ const effects = {
       const {
         confirm,
         value: { sequencePath },
-      } = await showNewWorkspaceSequenceModal(workspace, workspaceContents, startingPath);
+      } = await showNewWorkspaceSequenceModal(workspace, workspaceContents, startingPath, user);
 
       if (confirm) {
         const body = createWorkspaceSequenceFileFormData(sequencePath, sequenceDefinition);
