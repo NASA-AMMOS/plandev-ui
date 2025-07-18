@@ -615,7 +615,7 @@
             <Field field={derivationGroupField}>
               <label for="derivation-group" slot="label">
                 Derivation Group
-                <div class="inline text-xs text-muted-foreground">(Optional)</div>
+                <div class="inline text-xs text-muted-foreground">(If not specified in source)</div>
               </label>
               <input autocomplete="off" class="st-input w-full" name="derivation-group" />
             </Field>
