@@ -3,12 +3,10 @@
   import { getTarget } from '../../utilities/generic';
   import { convertDurationStringToInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
-  // import Input from '../form/Input.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
-  // import ModalHeader from '../modals/ModalHeader.svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -48,12 +46,12 @@
         <div class="row">
           <div class="label">Direction</div>
           <div class="toggle-group">
-            <button class="toggle {direction === 'Left' ? 'active' : ''}" on:click={() => setDirection('Left')}
-              >Left</button
-            >
-            <button class="toggle {direction === 'Right' ? 'active' : ''}" on:click={() => setDirection('Right')}
-              >Right</button
-            >
+            <button class="toggle {direction === 'Left' ? 'active' : ''}" on:click={() => setDirection('Left')}>
+              Left
+            </button>
+            <button class="toggle {direction === 'Right' ? 'active' : ''}" on:click={() => setDirection('Right')}>
+              Right
+            </button>
           </div>
         </div>
 
@@ -82,8 +80,8 @@
       <div class="button-container">
         <button class="st-button secondary" on:click={cancel}>Cancel</button>
         <button class="st-button" on:click={pack} disabled={!!gapOffsetError}>Pack</button>
-      </div></ModalFooter
-    >
+      </div>
+    </ModalFooter>
   </Modal>
 </div>
 

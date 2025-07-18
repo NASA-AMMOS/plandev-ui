@@ -335,7 +335,9 @@
       <ContextMenu.Item size="sm" on:click={scrollTimelineToActivityDirective}>Scroll to Activity</ContextMenu.Item>
       <ContextMenu.Separator />
     {/if}
+  </svelte:fragment>
 
+  <svelte:fragment slot="context-menu-alt">
     {#if showPackLeftMenu}
       <ContextMenu.Item size="sm" on:click={bulkPackLeftItems}>
         Pack Left {bulkSelectedActivityDirectiveIds.length}
