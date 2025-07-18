@@ -466,7 +466,7 @@
             <div class="app-menu" role="none" on:click|stopPropagation={() => actionMenu.toggle()}>
               <button
                 disabled={sequenceName === '' || actionsWithSequenceParameters.length === 0}
-                class="st-button icon-button secondary ellipsis"
+                class="st-button icon-button secondary"
               >
                 {#if actionsWithSequenceParameters.length > 0}
                   <div class="actions-chip">{actionsWithSequenceParameters.length}</div>
@@ -501,7 +501,7 @@
 
           <button
             use:tooltip={{ content: 'Show Error Panel', placement: 'top' }}
-            class="st-button icon-button secondary ellipsis"
+            class="st-button icon-button secondary"
             on:click={showErrorPanel}
           >
             Error Panel
@@ -509,7 +509,7 @@
 
           <button
             use:tooltip={{ content: 'Format sequence whitespace', placement: 'top' }}
-            class="st-button icon-button secondary ellipsis"
+            class="st-button icon-button secondary"
             on:click={formatDocument}
           >
             Format
@@ -517,7 +517,7 @@
 
           <button
             use:tooltip={{ content: `Copy sequence contents`, placement: 'top' }}
-            class="st-button icon-button secondary ellipsis"
+            class="st-button icon-button secondary"
             on:click={copyInputFormatToClipboard}
             disabled={disableCopyAndExport}
           >
@@ -529,7 +529,7 @@
               content: `Download sequence contents`,
               placement: 'top',
             }}
-            class="st-button icon-button secondary ellipsis"
+            class="st-button icon-button secondary"
             on:click|stopPropagation={downloadInputFormat}
             disabled={disableCopyAndExport}
           >
@@ -539,7 +539,7 @@
 
           {#if showOutputs}
             <div class="app-menu" role="none" on:click|stopPropagation={() => menu.toggle()}>
-              <button class="st-button icon-button secondary ellipsis">
+              <button class="st-button icon-button secondary">
                 Output
                 <ChevronDownIcon />
               </button>
@@ -574,12 +574,12 @@
             </div>
 
             {#if selectedOutputFormat?.compile}
-              <button class="st-button icon-button secondary ellipsis" on:click={compile}>Compile</button>
+              <button class="st-button icon-button secondary" on:click={compile}>Compile</button>
             {/if}
           {/if}
           {#if !readOnly}
             <button
-              class="st-button icon-button ellipsis"
+              class="st-button icon-button"
               class:secondary={!isSequenceDefinitionUpdated}
               disabled={!isSequenceDefinitionUpdated}
               on:click={onSave}

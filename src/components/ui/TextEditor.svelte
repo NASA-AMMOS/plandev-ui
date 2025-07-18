@@ -142,7 +142,7 @@
     <div class="right">
       <button
         use:tooltip={{ content: `Copy sequence contents`, placement: 'top' }}
-        class="st-button icon-button secondary ellipsis"
+        class="st-button icon-button secondary"
         on:click={copyInputFormatToClipboard}
         disabled={disableCopyAndExport}
       >
@@ -154,7 +154,7 @@
           content: `Download sequence contents`,
           placement: 'top',
         }}
-        class="st-button icon-button secondary ellipsis"
+        class="st-button icon-button secondary"
         on:click|stopPropagation={downloadInputFormat}
         disabled={disableCopyAndExport}
       >
@@ -163,7 +163,7 @@
       </button>
       {#if !readOnly}
         <button
-          class="st-button icon-button ellipsis"
+          class="st-button icon-button"
           class:secondary={!isTextContentUpdated}
           disabled={!isTextContentUpdated}
           on:click={onSave}
