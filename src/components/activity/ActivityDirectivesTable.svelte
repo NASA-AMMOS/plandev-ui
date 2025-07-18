@@ -274,6 +274,16 @@
       <ContextMenu.Item size="sm" on:click={scrollTimelineToActivityDirective}>Scroll to Activity</ContextMenu.Item>
       <ContextMenu.Separator />
     {/if}
+  </svelte:fragment>
+
+  <svelte:fragment slot="context-menu-alt">
+    {#if showBulkShiftMenu}
+      <ContextMenu.Item size="sm" on:click={displayBulkShift}>
+        Shift {bulkSelectedActivityDirectiveIds.length}
+        {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+      </ContextMenu.Item>
+    {/if}
+
     <PasteActivitiesContextMenu
       {hasCreatePermission}
       {plan}
@@ -281,13 +291,6 @@
       on:createActivityDirectives={createActivityDirectives}
     />
     <ContextMenu.Separator />
-
-    {#if showBulkShiftMenu}
-      <ContextMenu.Item size="sm" on:click={displayBulkShift}>
-        Shift {bulkSelectedActivityDirectiveIds.length}
-        {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
-      </ContextMenu.Item>
-    {/if}
   </svelte:fragment>
 </BulkActionDataGrid>
 

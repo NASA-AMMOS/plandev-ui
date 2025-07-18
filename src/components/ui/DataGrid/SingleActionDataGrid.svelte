@@ -184,6 +184,8 @@
         </ContextMenu.Item>
       </div>
     {/if}
+
+    <slot name="context-menu-alt" />
     <ContextMenu.Separator />
   </svelte:fragment>
 </DataGrid>

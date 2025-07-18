@@ -214,6 +214,9 @@
           </ContextMenu.Item>
         </div>
       {/if}
+
+      <slot name="context-menu-alt" />
+
       <ContextMenu.Separator />
     {/if}
   </svelte:fragment>
