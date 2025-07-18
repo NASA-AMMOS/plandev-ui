@@ -48,7 +48,7 @@
       dispatch('confirm', {
         files: filesToUpload,
         targetDirectory: joinPath([
-          targetDirectory.replace(new RegExp(`^${currentWorkspace.name}`), '.'),
+          targetDirectory.replace(new RegExp(`^${currentWorkspace.name}`), ''),
           targetFilename,
         ]),
       });

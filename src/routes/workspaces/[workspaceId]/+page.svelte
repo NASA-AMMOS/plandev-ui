@@ -316,8 +316,15 @@
   async function onImportFile(event: CustomEvent<string>) {
     if ($workspace != null && workspaceTree && user) {
       const { detail: startingPath } = event;
-      await effects.importWorkspaceFile($workspace, workspaceTree, startingPath, user);
+      const targetPath = await effects.importWorkspaceFile($workspace, workspaceTree, startingPath, user);
       refreshWorkspaceContents();
+
+      if (targetPath) {
+        const didNavigate = await goToSequence(targetPath);
+        if (didNavigate) {
+          selectedFilePath = targetPath;
+        }
+      }
     }
   }
 
@@ -354,7 +361,7 @@
       refreshWorkspaceContents();
 
       if (shouldUpdateSelectedSequencePath) {
-        const didNavigate = await goToSequence(selectedFilePath);
+        const didNavigate = await goToSequence(targetPath);
         if (didNavigate) {
           selectedFilePath = targetPath;
         }
@@ -370,7 +377,7 @@
       refreshWorkspaceContents();
 
       if (shouldUpdateSelectedSequencePath) {
-        const didNavigate = await goToSequence(selectedFilePath);
+        const didNavigate = await goToSequence(targetPath);
         if (didNavigate) {
           selectedFilePath = targetPath;
         }

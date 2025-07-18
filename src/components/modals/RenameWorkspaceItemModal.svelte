@@ -6,6 +6,7 @@
   import { PATH_DELIMITER } from '../../constants/workspaces';
   import { WorkspaceContentType } from '../../enums/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
+  import { joinPath } from '../../utilities/workspaces';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -32,7 +33,7 @@
   }
 
   function onConfirm() {
-    dispatch('confirm', { originalNode, originalPath, targetPath: `${originalDirectory}/${targetName}` });
+    dispatch('confirm', { originalNode, originalPath, targetPath: joinPath([originalDirectory, targetName]) });
   }
 
   function onKeydown(event: KeyboardEvent) {

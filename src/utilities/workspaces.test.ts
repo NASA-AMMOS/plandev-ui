@@ -36,6 +36,7 @@ describe('Workspace utility function tests', () => {
       expect(cleanPath('foo/bar/')).toEqual('foo/bar');
       expect(cleanPath('./foo/bar')).toEqual('foo/bar');
       expect(cleanPath('./foo/bar/')).toEqual('foo/bar');
+      expect(cleanPath('/foo/bar/')).toEqual('foo/bar');
     });
   });
 

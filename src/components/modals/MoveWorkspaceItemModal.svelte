@@ -45,7 +45,7 @@
     dispatch('confirm', {
       originalNode,
       originalPath,
-      targetPath: joinPath([targetDirectory.replace(new RegExp(`^${currentWorkspace.name}`), '.'), targetFilename]),
+      targetPath: joinPath([targetDirectory.replace(new RegExp(`^${currentWorkspace.name}`), ''), targetFilename]),
     });
   }
 

@@ -3773,7 +3773,7 @@ const effects = {
       );
 
       if (confirm) {
-        await reqWorkspace(`${joinPath([workspace.id, originalPath])}`, 'DELETE', null, user, undefined, false);
+        await reqWorkspace(joinPath([workspace.id, originalPath]), 'DELETE', null, user, undefined, false);
 
         showSuccessToast(`Workspace ${typeString} Deleted Successfully`);
       }
@@ -5294,7 +5294,7 @@ const effects = {
   async getWorkspaceFileContent(workspaceId: number, filePath: string, user: User | null): Promise<string | null> {
     try {
       const fileContents = await reqWorkspace<string>(
-        `${joinPath([workspaceId, filePath])}`,
+        joinPath([workspaceId, filePath]),
         'GET',
         null,
         user,
@@ -5513,7 +5513,7 @@ const effects = {
         }
 
         showSuccessToast(`Workspace File${files.length > 1 ? 's' : ''} Uploaded Successfully`);
-        return cleanedTargetPath;
+        return joinPath([cleanedTargetPath, files[0].name]);
       }
     } catch (e) {
       catchError(`Workspace file was unable to be uploaded`, e as Error);
@@ -5762,7 +5762,7 @@ const effects = {
         const cleanedTargetPath = cleanPath(targetPath);
 
         await reqWorkspace<Workspace>(
-          `${joinPath([workspace.id, originalPath])}`,
+          joinPath([workspace.id, originalPath]),
           'POST',
           JSON.stringify({
             moveTo: `./${cleanedTargetPath}`,
@@ -5803,7 +5803,7 @@ const effects = {
         const cleanedTargetPath = cleanPath(targetPath);
 
         await reqWorkspace<Workspace>(
-          `${joinPath([workspace.id, originalPath])}`,
+          joinPath([workspace.id, originalPath]),
           'POST',
           JSON.stringify({
             [shouldCopy ? 'copyTo' : 'moveTo']: `./${cleanedTargetPath}`,
@@ -6133,11 +6133,11 @@ const effects = {
         confirm,
         value: { targetPath },
       } = await showRenameWorkspaceItemModal(originalNode, originalPath);
+
       if (confirm) {
         const cleanedTargetPath = cleanPath(targetPath);
-
         await reqWorkspace<Workspace>(
-          `${workspace.id}/${originalPath}`,
+          joinPath([workspace.id, originalPath]),
           'POST',
           JSON.stringify({
             moveTo: `./${cleanedTargetPath}`,
@@ -6147,7 +6147,6 @@ const effects = {
           false,
         );
         showSuccessToast(`Workspace ${typeString} Renamed Successfully`);
-
         return cleanedTargetPath;
       }
     } catch (e) {
