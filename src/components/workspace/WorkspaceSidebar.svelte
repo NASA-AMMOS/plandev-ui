@@ -159,8 +159,8 @@
                       <ChevronDown size={16} />
                     </Button>
                   </DropdownMenu.Trigger>
-                  <DropdownMenu.Content class="w-56">
-                    <DropdownMenu.Item on:click={onNewSequence}>
+                  <DropdownMenu.Content>
+                    <DropdownMenu.Item size="sm" on:click={onNewSequence}>
                       <div
                         class="flex cursor-pointer gap-1"
                         use:permissionHandler={{
@@ -171,7 +171,7 @@
                         <FilePlus size={16} /> New Sequence
                       </div>
                     </DropdownMenu.Item>
-                    <DropdownMenu.Item on:click={onNewFolder}>
+                    <DropdownMenu.Item size="sm" on:click={onNewFolder}>
                       <div
                         class="flex cursor-pointer gap-1"
                         use:permissionHandler={{
@@ -183,7 +183,7 @@
                       </div>
                     </DropdownMenu.Item>
                     <DropdownMenu.Separator />
-                    <DropdownMenu.Item on:click={onImportFile}>
+                    <DropdownMenu.Item size="sm" on:click={onImportFile}>
                       <div
                         class="flex cursor-pointer gap-1"
                         use:permissionHandler={{
@@ -257,8 +257,8 @@
                       <ChevronDown size={16} />
                     </Button>
                   </DropdownMenu.Trigger>
-                  <DropdownMenu.Content class="w-56">
-                    <DropdownMenu.Item on:click={onNewSequence}>
+                  <DropdownMenu.Content>
+                    <DropdownMenu.Item size="sm" on:click={onNewSequence}>
                       <div
                         class="flex cursor-pointer gap-1"
                         use:permissionHandler={{
@@ -269,7 +269,7 @@
                         <FilePlus size={16} /> New Sequence
                       </div>
                     </DropdownMenu.Item>
-                    <DropdownMenu.Item on:click={onNewFolder}>
+                    <DropdownMenu.Item size="sm" on:click={onNewFolder}>
                       <div
                         class="flex cursor-pointer gap-1"
                         use:permissionHandler={{
@@ -281,7 +281,7 @@
                       </div>
                     </DropdownMenu.Item>
                     <DropdownMenu.Separator />
-                    <DropdownMenu.Item on:click={onImportFile}>
+                    <DropdownMenu.Item size="sm" on:click={onImportFile}>
                       <div
                         class="flex cursor-pointer gap-1"
                         use:permissionHandler={{
