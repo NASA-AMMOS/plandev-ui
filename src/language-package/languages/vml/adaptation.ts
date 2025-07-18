@@ -1,6 +1,6 @@
 import { EditorView } from "codemirror";
 import { debounce } from "lodash-es";
-import type { NewAdaptationInterface } from "../../interfaces/new-adaptation-interface";
+import type { LanguageAdaptation, NewAdaptationInterface } from "../../interfaces/new-adaptation-interface";
 import { setupVmlLanguageSupport, vmlBlockHighlighter, vmlHighlightBlock } from "./vml";
 import { vmlAutoComplete } from "./vml-adaptation";
 import { vmlFormat } from "./vml-formatter";
@@ -10,8 +10,10 @@ import { VmlCommandInfoMapper } from "./vml-tree-utils";
 
 const debouncedVmlHighlightBlock = debounce(vmlHighlightBlock, 250);
 
-export const defaultAdaptation: NewAdaptationInterface = {
-    extension: context => [
+const vmlAdaptation: LanguageAdaptation = {
+    name: "VML",
+    fileExtension: ".vml",
+    editorExtension: context => [
         setupVmlLanguageSupport(vmlAutoComplete(
             context.commandDictionary,
             [], // TODO: Globals?
@@ -34,5 +36,9 @@ export const defaultAdaptation: NewAdaptationInterface = {
     ],
     commandInfoMapper: new VmlCommandInfoMapper(),
     format: vmlFormat,
-    outputExtension: context => [],
+}
+
+export const defaultAdaptation: NewAdaptationInterface = {
+    input: vmlAdaptation,
+    outputs: [],
 }

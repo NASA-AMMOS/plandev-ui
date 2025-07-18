@@ -1,12 +1,17 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
-import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
+import type { ChannelDictionary, CommandDictionary, EnumMap, FswCommand, FswCommandArgument, FswCommandArgumentRepeat, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
 import { parseVariables, SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
+import type { EditorView } from 'codemirror';
 import { SequenceTypes } from '../../../enums/sequencing';
-import { type LibrarySequence, type UserSequence } from '../../../types/sequencing';
+import { type ArgTextDef, type LibrarySequence, type TimeTagInfo, type UserSequence } from '../../../types/sequencing';
 import { fswCommandArgDefault } from '../../../utilities/sequence-editor/command-dictionary';
+import { isFswCommandArgumentRepeat } from '../../../utilities/sequence-editor/sequence-utils';
 import { getFromAndTo, getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
 import type { CommandInfoMapper } from '../../interfaces/command-info-mapper';
+import type { LibrarySequenceMap } from '../../interfaces/new-adaptation-interface';
+import { globals } from './global-types';
 import { SeqLanguage } from './seq-n';
+import { TOKEN_ERROR } from './seq-n-constants';
 import { validateVariables } from './sequence-linter';
 
 export function getNameNode(stepNode: SyntaxNode | null) {
@@ -51,9 +56,6 @@ export function userSequenceToLibrarySequence(sequence: UserSequence, workspaceI
 }
 
 export class SeqNCommandInfoMapper implements CommandInfoMapper {
-  formatArgumentArray(values: string[]): string {
-    return ' ' + values.join(' ');
-  }
 
   getArgumentAppendPosition(commandOrRepeatArgNode: SyntaxNode | null): number | undefined {
     if (
@@ -124,5 +126,99 @@ export class SeqNCommandInfoMapper implements CommandInfoMapper {
 
   nodeTypeNumberCompatible(node: SyntaxNode | null): boolean {
     return node?.name === SEQN_NODES.NUMBER;
+  }
+
+  getTimeTagInfo(seqEditorView: EditorView, commandNode: SyntaxNode | null): TimeTagInfo {
+    const node = commandNode?.getChild('TimeTag');
+
+    return (
+      node && {
+        node,
+        text: seqEditorView.state.sliceDoc(node.from, node.to) ?? '',
+      }
+    );
+  }
+
+  getArgumentInfo(commandDef: FswCommand | null, channelDictionary: ChannelDictionary | null, seqEditorView: EditorView, args: SyntaxNode | null, argumentDefs: FswCommandArgument[] | undefined, parentArgDef: FswCommandArgumentRepeat | undefined, parameterDictionaries: ParameterDictionary[]): ArgTextDef[] {
+    const argArray: ArgTextDef[] = [];
+    const precedingArgValues: string[] = [];
+    const parentRepeatLength = parentArgDef?.repeat?.arguments.length;
+
+    if (args) {
+      for (const node of this.getArgumentsFromContainer(args)) {
+        if (node.name === TOKEN_ERROR) {
+          continue;
+        }
+
+        let argDef: FswCommandArgument | undefined = undefined;
+        if (argumentDefs) {
+          let argDefIndex = argArray.length;
+          if (parentRepeatLength !== undefined) {
+            // for repeat args shift index
+            argDefIndex %= parentRepeatLength;
+          }
+          argDef = argumentDefs[argDefIndex];
+        }
+
+        let children: ArgTextDef[] | undefined = undefined;
+        if (!!argDef && isFswCommandArgumentRepeat(argDef)) {
+          children = this.getArgumentInfo(
+            commandDef,
+            channelDictionary,
+            seqEditorView,
+            node,
+            argDef.repeat?.arguments,
+            argDef,
+            parameterDictionaries,
+          );
+        }
+        const argValue = seqEditorView.state.sliceDoc(node.from, node.to);
+        argArray.push({
+          argDef,
+          children,
+          node,
+          parentArgDef,
+          text: argValue,
+        });
+        precedingArgValues.push(argValue);
+      }
+    }
+    // add entries for defined arguments missing from editor
+    if (argumentDefs) {
+      if (!parentArgDef) {
+        argArray.push(...argumentDefs.slice(argArray.length).map(argDef => ({ argDef })));
+      } else {
+        const repeatArgs = parentArgDef?.repeat?.arguments;
+        if (repeatArgs) {
+          if (argArray.length % repeatArgs.length !== 0) {
+            argArray.push(...argumentDefs.slice(argArray.length % repeatArgs.length).map(argDef => ({ argDef })));
+          }
+        }
+      }
+    }
+
+    return argArray;
+  }
+
+  getCommandDef(commandDictionary: CommandDictionary | null, librarySequenceMap: LibrarySequenceMap, stemName: string): FswCommand | null {
+    const commandDefFromCommandDictionary = commandDictionary?.fswCommandMap[stemName];
+    if (commandDefFromCommandDictionary) {
+      return commandDefFromCommandDictionary;
+    } else {
+      return null;
+    }
+  }
+
+  getVariablesInScope(seqEditorView: EditorView, tree: Tree | null, cursorPosition?: number): string[] {
+    const globalNames = globals.map(globalVariable => globalVariable.name);
+    if (tree && cursorPosition !== undefined) {
+      const docText = seqEditorView.state.doc.toString();
+      return [...globalNames, ...this.getVariables(docText, tree)];
+    }
+    return globalNames;
+  }
+
+  formatArgumentArray(values: string[]): string {
+    return ' ' + values.join(' ');
   }
 }

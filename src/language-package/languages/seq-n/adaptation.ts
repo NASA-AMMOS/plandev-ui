@@ -1,8 +1,9 @@
 import { indentService } from "@codemirror/language";
+import { seqJsonToSeqn, seqnToSeqJson } from "@nasa-jpl/aerie-sequence-languages";
 import { EditorView } from "codemirror";
 import { debounce } from "lodash-es";
 import { outputLinter } from "../../interfaces/legacy";
-import type { LanguageAdaptation, NewAdaptationInterface } from "../../interfaces/new-adaptation-interface";
+import type { LanguageAdaptation, NewAdaptationInterface, OutputLanguageAdaptation } from "../../interfaces/new-adaptation-interface";
 import { setupLanguageSupport } from "./seq-n";
 import { seqNHighlightBlock, seqqNBlockHighlighter } from "./seq-n-highlighter";
 import { SeqNCommandInfoMapper } from "./seq-n-tree-utils";
@@ -45,12 +46,18 @@ const seqnAdaptation: LanguageAdaptation = {
     format: seqNFormat,
 }
 
-const seqJsonAdaptation: LanguageAdaptation = {
+const seqJsonAdaptation: OutputLanguageAdaptation = {
     name: "SeqJSON",
     fileExtension: ".seq.json",
     editorExtension: context => [
         outputLinter(context.commandDictionary),
     ],
+    toOutputFormat(input, context, name) {
+        return JSON.stringify(seqnToSeqJson(undefined /* TODO: See if we really need this tree parameter */, input, context.commandDictionary, name))
+    },
+    toInputFormat(output, context, name) {
+        return seqJsonToSeqn(JSON.parse(output))
+    },
 }
 
 export const defaultAdaptation: NewAdaptationInterface = {
