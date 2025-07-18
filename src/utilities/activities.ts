@@ -331,8 +331,27 @@ export function findTypes(type: string, activityTypes: ActivityType[]): Activity
       return activityTypes[idx];
     }
   }
-  console.warn(`Activity type ${type} not found in activity types`);
   return undefined;
+}
+
+export function updateAnchorStartOffset(
+  anchorId: number,
+  activityId: number,
+  planStartTimeMs: number,
+  activityDirectivesMap: ActivityDirectivesMap,
+  cachedStartTimes: Map<number, number> = new Map(),
+): string {
+  let anchorStartTime;
+  if (cachedStartTimes.has(anchorId)) {
+    anchorStartTime = cachedStartTimes.get(anchorId)!;
+  } else {
+    anchorStartTime = (activityDirectivesMap[anchorId].start_time_ms - planStartTimeMs) * 1000; // Convert to microseconds
+  }
+  const activityStartTime = cachedStartTimes.has(activityId)
+    ? cachedStartTimes.get(activityId)!
+    : (activityDirectivesMap[activityId].start_time_ms - planStartTimeMs) * 1000;
+
+  return usToOffset(activityStartTime - anchorStartTime);
 }
 
 export function packActivityDirectivesInPlan(
@@ -414,17 +433,7 @@ export function packActivityDirectivesInPlan(
   }
 
   // Helper function to calculate the new start offsets based on the anchor activities
-  // Stylistically chose ths to be a nested function because it relies on numerous local variables
-  function updateAnchorStartOffset(anchorId: number, activityId: number): string {
-    let anchorStartTime;
-    if (newStartTimes.has(anchorId)) {
-      anchorStartTime = newStartTimes.get(anchorId)!;
-    } else {
-      anchorStartTime = (activityDirectivesMap[anchorId].start_time_ms - planStartTimeMs) * 1000; // Convert to microseconds
-    }
-    const activityStartTime = newStartTimes.get(activityId)!;
-    return usToOffset(activityStartTime - anchorStartTime);
-  }
+  // Stylistically chose this to be a nested function because it relies on numerous local variables
 
   // Create a new list with updated activity directives
   const updatedActivities: ActivityDirective[] = [];
@@ -433,7 +442,13 @@ export function packActivityDirectivesInPlan(
     let newStartOffset: string;
 
     if (activity.anchor_id !== null) {
-      newStartOffset = updateAnchorStartOffset(activity.anchor_id, activity.id);
+      newStartOffset = updateAnchorStartOffset(
+        activity.anchor_id,
+        activity.id,
+        planStartTimeMs,
+        activityDirectivesMap,
+        newStartTimes,
+      );
     } else {
       newStartOffset = usToOffset(newStartTimes.get(activity.id)!);
     }
@@ -457,7 +472,13 @@ export function packActivityDirectivesInPlan(
         .map(([id, _]) => id);
 
       for (const connectedActivityId of connectedActivityIds) {
-        const newOffset = updateAnchorStartOffset(activity.id, connectedActivityId);
+        const newOffset = updateAnchorStartOffset(
+          activity.id,
+          connectedActivityId,
+          planStartTimeMs,
+          activityDirectivesMap,
+          newStartTimes,
+        );
         activityUpdates.set(connectedActivityId, newOffset);
       }
     }

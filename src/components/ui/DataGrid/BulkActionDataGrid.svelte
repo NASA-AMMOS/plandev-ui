@@ -189,6 +189,8 @@
 >
   <svelte:fragment slot="context-menu">
     {#if showContextMenu}
+      <slot name="context-menu" />
+
       <ContextMenu.Item size="sm" on:click={selectAllItems}>
         Select All {isFiltered ? 'Visible ' : ''}{pluralItemDisplayText}
       </ContextMenu.Item>
@@ -214,7 +216,7 @@
         </div>
       {/if}
 
-      <slot name="context-menu" />
+      <slot name="context-menu-alt" />
 
       <ContextMenu.Separator />
     {/if}

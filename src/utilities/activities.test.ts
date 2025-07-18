@@ -5,6 +5,7 @@ import type { Plan } from '../types/plan';
 import type { Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import {
   addAbsoluteTimeToRevision,
+  computeActivityDirectivesMap,
   createSpanUtilityMaps,
   getActivityMetadata,
   getAllSpanChildrenIds,
@@ -12,7 +13,9 @@ import {
   getSpanRootParent,
   packActivityDirectivesInPlan,
   sortActivityDirectivesOrSpans,
+  updateAnchorStartOffset,
 } from './activities';
+import { getUnixEpochTime } from './time';
 
 const testSpans: Span[] = [
   {
@@ -458,6 +461,85 @@ const activityDirectives: ActivityDirective[] = activityDirectivesDB.map((direct
   ...directive,
   start_time_ms: arrayOfStartTimeMs[i],
 }));
+
+describe('updateAnchorStartOffset', () => {
+  const spans = [
+    {
+      attributes: {
+        arguments: {},
+        computedAttributes: {},
+        directiveId: 1,
+      },
+      dataset_id: 1,
+      duration: '03:00:00',
+      durationMs: 10800000,
+      endMs: 1,
+      parent_id: null,
+      span_id: 0,
+      startMs: 0,
+      start_offset: '00:00:00',
+      type: 'foo',
+    },
+    {
+      attributes: {
+        arguments: {},
+        computedAttributes: {},
+        directiveId: 2,
+      },
+      dataset_id: 1,
+      duration: '05:00:00',
+      durationMs: 18000000,
+      endMs: 1,
+      parent_id: null,
+      span_id: 1,
+      startMs: 0,
+      start_offset: '00:00:00',
+      type: 'foo',
+    },
+    {
+      attributes: {
+        arguments: {},
+        computedAttributes: {},
+        directiveId: 3,
+      },
+      dataset_id: 1,
+      duration: '01:00:00',
+      durationMs: 3600000,
+      endMs: 1,
+      parent_id: null,
+      span_id: 2,
+      startMs: 0,
+      start_offset: '08:00:00',
+      type: 'foo',
+    },
+  ];
+
+  const spanIdToDirectiveIdMap: Record<number, number> = { 0: 1, 1: 2, 2: 3 };
+  const directiveIdToSpanIdMap: Record<number, number> = { 1: 0, 2: 1, 3: 2 };
+  const spanIdToChildIdsMap: Record<number, number[]> = { 0: [], 1: [], 2: [] };
+  const spanUtilityMaps = {
+    directiveIdToSpanIdMap,
+    spanIdToChildIdsMap,
+    spanIdToDirectiveIdMap,
+  };
+
+  const activityDirectivesMap = computeActivityDirectivesMap(activityDirectivesDB, plan, spans, spanUtilityMaps);
+
+  const planStartTimeMs = getUnixEpochTime(plan.start_time_doy);
+  console.log('Plan start time', planStartTimeMs);
+
+  test('Update start offset', () => {
+    const newStartTimes = new Map();
+
+    newStartTimes.set(2, 43_200_000_000); //12 hours from the plan
+    let startOffset = updateAnchorStartOffset(1, 2, planStartTimeMs, activityDirectivesMap, newStartTimes);
+    expect(startOffset).toBe('02:00:00.0');
+
+    newStartTimes.set(1, 43_200_000_000);
+    startOffset = updateAnchorStartOffset(1, 2, planStartTimeMs, activityDirectivesMap, newStartTimes);
+    expect(startOffset).toBe('00:00:00.0');
+  });
+});
 
 describe('packActivityDirectivesInPlan', () => {
   const spans = [
