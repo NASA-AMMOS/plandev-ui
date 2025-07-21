@@ -91,7 +91,7 @@ test.describe.serial('Plan Model Migration', () => {
     await plan.waitForToast('Model Migration Success');
   });
   test('Plan has the expected number of validation errors', async () => {
-    await expect(page.getByRole('tab', { name: 'Activity Validation Errors' })).toHaveText('3');
+    await expect(page.getByRole('tab', { name: 'Activity Validation Errors' })).toHaveText('Activity Validation 3');
   });
   test('BakeBananaBread temperature parameter is a struct', async () => {
     await plan.showPanel(PanelNames.SELECTED_ACTIVITY);
@@ -106,7 +106,7 @@ test.describe.serial('Plan Model Migration', () => {
     await plan.changeMissionModelTableRows.getByRole('row', { name: modelB }).click();
     await plan.changeMissionModelMigrateButton.click();
     await plan.waitForToast('Model Migration Success');
-    await expect(page.getByRole('tab', { name: 'Activity Validation Errors' })).toHaveText('3');
+    await expect(page.getByRole('tab', { name: 'Activity Validation Errors' })).toHaveText('Activity Validation 3');
     await expect(page.getByLabel('temperature', { exact: true })).toBeAttached();
   });
 });
