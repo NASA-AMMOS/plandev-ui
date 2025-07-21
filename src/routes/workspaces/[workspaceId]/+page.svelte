@@ -18,16 +18,11 @@
   import WorkspaceSidebar from '../../../components/workspace/WorkspaceSidebar.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { WorkspaceContentType } from '../../../enums/workspace';
+  import type { LibrarySequence } from '../../../language-package/interfaces/new-adaptation-interface';
   import { userSequenceToLibrarySequence } from '../../../language-package/languages/seq-n/seq-n-tree-utils';
   import { parseFunctionSignatures } from '../../../language-package/languages/vml/vml-adaptation';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
-  import {
-    inputFormat,
-    newSequenceAdaptation,
-    outputFormat,
-    sequenceAdaptation,
-    setSequenceAdaptation,
-  } from '../../../stores/sequence-adaptation';
+  import { sequenceAdaptation, setSequenceAdaptation } from '../../../stores/sequence-adaptation';
   import {
     channelDictionaries,
     commandDictionaries,
@@ -45,7 +40,6 @@
   import type {
     ChannelDictionaryMetadata,
     CommandDictionaryMetadata,
-    LibrarySequence,
     ParameterDictionaryMetadata,
     UserSequence,
   } from '../../../types/sequencing';
@@ -519,12 +513,9 @@
           {parameterDictionaries}
           {actionsWithSequenceParameters}
           includeActions={true}
-          inputFormat={$inputFormat}
           librarySequences={workspaceLibrarySequences}
-          outputFormats={$outputFormat}
           readOnly={!hasEditFilePermission}
-          sequenceAdaptation={$sequenceAdaptation}
-          newSequenceAdaptation={$newSequenceAdaptation}
+          newSequenceAdaptation={$sequenceAdaptation}
           sequenceDefinition={initialSelectedFileContent}
           sequenceName={selectedFileName}
           sequenceOutput={selectedSequenceOutput}

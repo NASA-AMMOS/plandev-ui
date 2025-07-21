@@ -3,12 +3,12 @@ import type { ChannelDictionary, CommandDictionary, EnumMap, FswCommand, FswComm
 import { parseVariables, SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
 import type { EditorView } from 'codemirror';
 import { SequenceTypes } from '../../../enums/sequencing';
-import { type ArgTextDef, type LibrarySequence, type TimeTagInfo, type UserSequence } from '../../../types/sequencing';
+import { type ArgTextDef, type TimeTagInfo, type UserSequence } from '../../../types/sequencing';
 import { fswCommandArgDefault } from '../../../utilities/sequence-editor/command-dictionary';
 import { isFswCommandArgumentRepeat } from '../../../utilities/sequence-editor/sequence-utils';
 import { getFromAndTo, getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
 import type { CommandInfoMapper } from '../../interfaces/command-info-mapper';
-import type { LibrarySequenceMap } from '../../interfaces/new-adaptation-interface';
+import type { LibrarySequence, LibrarySequenceMap } from '../../interfaces/new-adaptation-interface';
 import { globals } from './global-types';
 import { SeqLanguage } from './seq-n';
 import { TOKEN_ERROR } from './seq-n-constants';
@@ -49,7 +49,6 @@ export function userSequenceToLibrarySequence(sequence: UserSequence, workspaceI
   return {
     name: sequence.name,
     parameters: parseVariables(tree.topNode, sequence.definition, SEQN_NODES.PARAMETER_DECLARATION) ?? [],
-    tree,
     type: SequenceTypes.LIBRARY,
     workspace_id: workspaceId,
   };

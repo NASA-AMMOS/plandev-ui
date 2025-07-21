@@ -31,7 +31,7 @@ import {
   validateTime,
 } from '../../../utilities/time';
 import { CustomErrorCodes } from '../../../workers/customCodes';
-import type { LibrarySequence } from '../../interfaces/legacy';
+import type { LibrarySequence } from '../../interfaces/new-adaptation-interface';
 import { closeSuggestion, computeBlocks, openSuggestion } from './custom-folder';
 import type { GlobalType } from './global-types';
 import { SeqNCommandInfoMapper } from './seq-n-tree-utils';

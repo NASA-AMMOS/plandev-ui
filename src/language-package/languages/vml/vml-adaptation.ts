@@ -18,9 +18,8 @@ import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import { SequenceTypes } from '../../../enums/sequencing';
 import { isFswCommand, unquoteUnescape } from '../../../utilities/sequence-editor/sequence-utils';
 import { getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
-import { type LibrarySequence, type LibrarySequenceMap } from '../../interfaces/legacy';
+import type { LibrarySequence, LibrarySequenceMap } from '../../interfaces/new-adaptation-interface';
 import type { GlobalType } from '../seq-n/global-types';
-import { VmlLanguage } from './vml';
 import { librarySequenceToFswCommand, vmlBlockLibraryToCommandDictionary } from './vml-block-library';
 import {
   RULE_BODY,
@@ -401,7 +400,6 @@ export function parseFunctionSignatures(contents: string, workspaceId: number): 
           type: argTypToVariableType(arg.arg_type),
         };
       }),
-      tree: VmlLanguage.parser.parse(contents),
       type: SequenceTypes.LIBRARY,
       workspace_id: workspaceId,
     }),

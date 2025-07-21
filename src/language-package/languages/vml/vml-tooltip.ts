@@ -14,7 +14,7 @@ import CommandTooltip from '../../../components/sequencing/CommandTooltip.svelte
 import StringTooltip from '../../../components/sequencing/StringTooltip.svelte';
 import { decodeInt32Array, unquoteUnescape } from '../../../utilities/sequence-editor/sequence-utils';
 import { checkContainment, getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
-import type { LibrarySequence } from '../../interfaces/legacy';
+import type { LibrarySequence } from '../../interfaces/new-adaptation-interface';
 import { getTokenPositionInLine } from '../seq-n/sequence-tooltip';
 import { librarySequenceToFswCommand } from './vml-block-library';
 import {
