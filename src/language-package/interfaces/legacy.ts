@@ -2,19 +2,18 @@ import type { CompletionContext, CompletionResult } from '@codemirror/autocomple
 import { syntaxTree, type IndentContext } from '@codemirror/language';
 import { linter, type Diagnostic } from '@codemirror/lint';
 import type { Extension, Text } from '@codemirror/state';
-import type { SyntaxNode, Tree } from '@lezer/common';
+import type { SyntaxNode } from '@lezer/common';
 import type {
   ChannelDictionary as AmpcsChannelDictionary,
   CommandDictionary as AmpcsCommandDictionary,
   ParameterDictionary as AmpcsParameterDictionary,
   CommandDictionary,
 } from '@nasa-jpl/aerie-ampcs';
-import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
 import { parse as jsonSourceMapParse } from 'json-source-map';
-import type { SequenceTypes } from '../../enums/sequencing';
 import type { ArgDelegator } from '../../utilities/sequence-editor/extension-points';
 import type { GlobalType } from '../languages/seq-n/global-types';
+import type { LibrarySequence } from './new-adaptation-interface';
 
 export interface IOutputFormat {
   compile?: (output: string) => Promise<void>; // TODO do we use `compile`? Why does it belong to `IOutputFormat` instead of the top-level adaptation? Actions job now?

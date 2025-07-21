@@ -18,24 +18,21 @@
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
-  import {
-    type IOutputFormat,
-    type ISequenceAdaptation,
-    type LibrarySequenceMap,
-  } from '../../language-package/interfaces/legacy';
+  import { type ISequenceAdaptation } from '../../language-package/interfaces/legacy';
+  import type {
+    LibrarySequenceMap,
+    OutputLanguageAdaptation,
+    PhoenixContext,
+  } from '../../language-package/interfaces/new-adaptation-interface';
   import { seqNHighlightBlock } from '../../language-package/languages/seq-n/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../language-package/languages/seq-n/seq-n-tree-utils';
   import { seqNFormat } from '../../language-package/languages/seq-n/sequence-autoindent';
-  import { vmlAdaptation, vmlHighlightBlock } from '../../language-package/languages/vml/vml';
+  import { defaultAdaptation as vmlAdaptation } from '../../language-package/languages/vml/adaptation';
+  import { vmlHighlightBlock } from '../../language-package/languages/vml/vml';
   import { librarySequenceToFswCommand } from '../../language-package/languages/vml/vml-block-library';
   import { vmlFormat } from '../../language-package/languages/vml/vml-formatter';
   import { VmlCommandInfoMapper } from '../../language-package/languages/vml/vml-tree-utils';
-  import {
-    newSequenceAdaptation,
-    outputFormat,
-    sequenceAdaptation,
-    setSequenceAdaptation,
-  } from '../../stores/sequence-adaptation';
+  import { sequenceAdaptation, setSequenceAdaptation } from '../../stores/sequence-adaptation';
   import {
     channelDictionaries,
     commandDictionaries,
@@ -52,7 +49,7 @@
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
   import { TOKEN_ERROR } from '../../utilities/sequence-editor/sequence-constants';
-  import { isFswCommandArgumentRepeat, unquoteUnescape } from '../../utilities/sequence-editor/sequence-utils';
+  import { isFswCommandArgumentRepeat } from '../../utilities/sequence-editor/sequence-utils';
   import { showFailureToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import CommandPanel from '../sequencing/CommandPanel/CommandPanel.svelte';
@@ -93,23 +90,15 @@
   let commandFormBuilderGrid: string;
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
-  let outputFormats: IOutputFormat[] = [];
   let selectedNode: SyntaxNode | null;
   let currentTree: Tree;
   let commandInfoMapper: CommandInfoMapper = new SeqNCommandInfoMapper();
-  let selectedOutputFormat: IOutputFormat | undefined;
+  let selectedOutputFormat: OutputLanguageAdaptation | undefined;
   let isInVmlMode: boolean = false;
   let editorHeights: string = '1fr 3px';
   let columnsWithFormBuilder: string = '3fr 3px 1.5fr';
   let columnsWithNoFormBuilder: string = '3fr 3px';
-
-  let argInfoArray: ArgTextDef[] = [];
-  let commandNode: SyntaxNode | null = null;
-  let commandNameNode: SyntaxNode | null = null;
-  let commandName: string | null = null;
-  let commandDef: FswCommand | null = null;
-  let timeTagNode: TimeTagInfo = null;
-  let variablesInScope: string[] = [];
+  let phoenixContext: PhoenixContext;
 
   $: {
     loadSequenceAdaptation(parcel?.sequence_adaptation_id);
@@ -130,6 +119,13 @@
   $: {
     commandFormBuilderGrid = showCommandFormBuilder ? columnsWithFormBuilder : columnsWithNoFormBuilder;
   }
+
+  $: phoenixContext = {
+    channelDictionary,
+    commandDictionary,
+    librarySequenceMap,
+    parameterDictionaries,
+  };
 
   $: {
     const unparsedChannelDictionary = $channelDictionaries.find(cd => cd.id === parcel?.channel_dictionary_id);
@@ -164,20 +160,6 @@
           channelDictionary = parsedChannelDictionary;
           commandDictionary = parsedCommandDictionary;
           parameterDictionaries = nonNullParsedParameterDictionaries;
-
-          // Reconfigure sequence editor.
-          editorSequenceView.dispatch({
-            effects: [
-              // TODO: use librarySequenceMap here, requires a change to adaptations so defer until changing adaptation API
-              compartmentAdaptation.reconfigure(
-                $newSequenceAdaptation.extension({
-                  commandDictionary,
-                  channelDictionary,
-                  parameterDictionaries,
-                }),
-              ),
-            ],
-          });
         });
       }
     } else {
@@ -187,27 +169,14 @@
     }
   }
 
-  $: commandNode = commandInfoMapper.getContainingCommand(selectedNode);
-  $: commandNameNode = commandInfoMapper.getNameNode(commandNode);
-  $: commandName =
-    commandNameNode && unquoteUnescape(editorSequenceView.state.sliceDoc(commandNameNode.from, commandNameNode.to));
-  $: commandDef = getCommandDef(commandDictionary, librarySequenceMap, commandName ?? '');
-  $: timeTagNode = getTimeTagInfo(editorSequenceView, commandNode);
-  $: argInfoArray = getArgumentInfo(
-    commandInfoMapper,
-    editorSequenceView,
-    commandInfoMapper.getArgumentNodeContainer(commandNode),
-    commandDef?.arguments,
-    undefined,
-    parameterDictionaries,
-  );
-  $: variablesInScope = getVariablesInScope(
-    commandInfoMapper,
-    editorSequenceView,
-    $sequenceAdaptation,
-    currentTree,
-    commandNode?.from,
-  );
+  $: {
+    // Reconfigure sequence editor if adaptation or context change
+    editorSequenceView.dispatch({
+      effects: [
+        compartmentAdaptation.reconfigure(($sequenceAdaptation.input.editorExtension ?? (_ => []))(phoenixContext)),
+      ],
+    });
+  }
 
   onMount(() => {
     compartmentAdaptation = new Compartment();
@@ -219,9 +188,7 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': `${clientHeightGridRightTop}px` } }),
         lintGutter(),
-        compartmentAdaptation.of(
-          $newSequenceAdaptation.extension({ commandDictionary, channelDictionary, parameterDictionaries }),
-        ), // TODO improve, probably
+        compartmentAdaptation.of(($sequenceAdaptation.input.editorExtension ?? (_ => []))(phoenixContext)), // TODO improve, probably
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
@@ -253,8 +220,7 @@
       resetSequenceAdaptation();
     }
 
-    outputFormats = $outputFormat;
-    selectedOutputFormat = outputFormats[0];
+    selectedOutputFormat = $sequenceAdaptation.outputs[0];
   }
 
   function resetSequenceAdaptation(): void {
@@ -265,20 +231,7 @@
     const sequence = viewUpdate.state.doc.toString();
     sequenceDefinition = sequence;
     const tree = syntaxTree(viewUpdate.state);
-    let output = await selectedOutputFormat?.toOutputFormat?.(tree, sequence, commandDictionary, sequenceName);
-
-    if ($sequenceAdaptation?.modifyOutput !== undefined && output !== undefined) {
-      const modifiedOutput = $sequenceAdaptation.modifyOutput(output, parameterDictionaries, channelDictionary);
-      if (modifiedOutput === null) {
-        output = 'modifyOutput returned null. Verify your adaptation is correct';
-      } else if (modifiedOutput === undefined) {
-        output = 'modifyOutput returned undefined. Verify your adaptation is correct';
-      } else if (typeof modifiedOutput === 'object') {
-        output = JSON.stringify(modifiedOutput);
-      } else {
-        output = `${modifiedOutput}`;
-      }
-    }
+    let output = await selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
 
     if (output !== undefined) {
       dispatch('templateChanged', { input: sequence, output });
@@ -494,18 +447,7 @@
   {#if showCommandFormBuilder}
     <CssGridGutter track={1} type="column" />
     {#if commandDictionary !== null}
-      <CommandPanel
-        {argInfoArray}
-        {commandDef}
-        {commandDictionary}
-        {commandInfoMapper}
-        {commandName}
-        {commandNameNode}
-        {commandNode}
-        {editorSequenceView}
-        {timeTagNode}
-        {variablesInScope}
-      />
+      <CommandPanel {phoenixContext} {commandInfoMapper} {editorSequenceView} />
     {:else}
       <Panel overflowYBody="hidden" padBody={true}>
         <svelte:fragment slot="header">

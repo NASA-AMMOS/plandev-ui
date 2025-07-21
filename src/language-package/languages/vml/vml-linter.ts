@@ -7,7 +7,7 @@ import type { EditorView } from 'codemirror';
 import { closest } from 'fastest-levenshtein';
 import { quoteEscape, unquoteUnescape } from '../../../utilities/sequence-editor/sequence-utils';
 import { filterNodes, getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
-import type { LibrarySequenceMap } from '../../interfaces/legacy';
+import type { LibrarySequenceMap } from '../../interfaces/new-adaptation-interface';
 import type { GlobalType } from '../seq-n/global-types';
 import { VmlLanguage } from './vml';
 import {

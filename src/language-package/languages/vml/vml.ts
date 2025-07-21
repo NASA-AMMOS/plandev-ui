@@ -3,11 +3,8 @@ import { LRLanguage, LanguageSupport, foldInside, foldNodeProp, syntaxTree } fro
 import { Decoration, ViewPlugin, type DecorationSet, type ViewUpdate } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
 import { styleTags, tags as t } from '@lezer/highlight';
-import type { ChannelDictionary, CommandDictionary } from '@nasa-jpl/aerie-ampcs';
-import type { ISequenceAdaptation } from '../../../types/sequencing';
 import { blockMark } from '../../../utilities/codemirror/themes/block';
 import { getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
-import { vmlAutoComplete } from './vml-adaptation';
 import {
   RULE_TIME_TAGGED_STATEMENT,
   TOKEN_CALL,
@@ -126,21 +123,6 @@ export function setupVmlLanguageSupport(
     return new LanguageSupport(VmlLanguage, [vmlBlockFolder]);
   }
 }
-
-export const vmlAdaptation: ISequenceAdaptation = {
-  argDelegator: undefined,
-  autoComplete: (_channelDictionary: ChannelDictionary | null, commandDictionary: CommandDictionary | null) =>
-    vmlAutoComplete(commandDictionary, [], {}),
-  inputFormat: {
-    linter: undefined,
-    name: VML_LANGUAGE_NAME,
-    toInputFormat: (vml: string) => Promise.resolve(vml),
-  },
-  modifyOutput: undefined,
-  modifyOutputParse: undefined,
-  // vml input and output are identical
-  outputFormat: [],
-};
 
 function timeTaggedToKeyword(node: SyntaxNode | undefined | null): SyntaxNode | undefined {
   return node?.firstChild?.nextSibling?.firstChild?.firstChild ?? undefined;
