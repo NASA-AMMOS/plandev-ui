@@ -544,7 +544,7 @@ export class Plan {
     this.constraintManageButton = page.locator(`button[name="manage-constraints"]`);
     this.constraintModalFilter = page.locator('.modal').getByPlaceholder('Filter constraints');
     this.constraintNewButton = page.locator(`button[name="new-constraint"]`);
-    this.consoleContainer = page.locator(`.console-container`);
+    this.consoleContainer = page.getByTestId('console').filter({ hasText: 'All Errors' });
     this.externalSourceManageButton = page.getByLabel('Select derivation groups to');
     this.gridMenuButton = page.locator('.grid-menu');
     this.gridMenu = this.gridMenuButton.getByRole('menu');

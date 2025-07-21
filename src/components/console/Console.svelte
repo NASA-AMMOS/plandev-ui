@@ -63,7 +63,7 @@
   }
 </script>
 
-<div class="size-full">
+<div class="size-full" data-testid="console">
   <div class="flex h-full flex-col bg-[var(--st-gray-15)]">
     <Tabs.Root value={selectedTab} onValueChange={onSelectTab} class="flex h-full flex-col">
       <Tabs.List
