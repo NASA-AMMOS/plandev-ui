@@ -4,8 +4,9 @@ import { EditorView } from "codemirror";
 import { debounce } from "lodash-es";
 import { outputLinter } from "../../interfaces/legacy";
 import type { LanguageAdaptation, NewAdaptationInterface, OutputLanguageAdaptation } from "../../interfaces/new-adaptation-interface";
-import { setupLanguageSupport } from "./seq-n";
-import { seqNHighlightBlock, seqqNBlockHighlighter } from "./seq-n-highlighter";
+import { globals } from "./global-types";
+import { SeqLanguage, setupLanguageSupport } from "./seq-n";
+import { seqNBlockHighlighter, seqNHighlightBlock } from "./seq-n-highlighter";
 import { SeqNCommandInfoMapper } from "./seq-n-tree-utils";
 import { seqNFormat, sequenceAutoIndent } from "./sequence-autoindent";
 import { sequenceCompletion } from "./sequence-completion";
@@ -25,7 +26,7 @@ const seqnAdaptation: LanguageAdaptation = {
             Object.values(context.librarySequenceMap),
         )),
         seqnLinter(
-            [], // TODO: globals
+            globals,
             context.channelDictionary,
             context.commandDictionary,
             context.parameterDictionaries,
@@ -38,8 +39,8 @@ const seqnAdaptation: LanguageAdaptation = {
         ),
         indentService.of(sequenceAutoIndent()),
         [
-          EditorView.updateListener.of(debouncedSeqNHighlightBlock),
-          seqqNBlockHighlighter,
+            EditorView.updateListener.of(debouncedSeqNHighlightBlock),
+            seqNBlockHighlighter,
         ],
     ],
     commandInfoMapper: new SeqNCommandInfoMapper(),
@@ -53,7 +54,7 @@ const seqJsonAdaptation: OutputLanguageAdaptation = {
         outputLinter(context.commandDictionary),
     ],
     toOutputFormat(input, context, name) {
-        return JSON.stringify(seqnToSeqJson(undefined /* TODO: See if we really need this tree parameter */, input, context.commandDictionary, name))
+        return JSON.stringify(seqnToSeqJson(SeqLanguage.parser.parse(input), input, context.commandDictionary, name))
     },
     toInputFormat(output, context, name) {
         return seqJsonToSeqn(JSON.parse(output))

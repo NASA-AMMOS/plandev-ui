@@ -35,6 +35,7 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import ExpandedSequencesDownloadButton from './ExpandedSequencesDownloadButton.svelte';
+  import { sequenceAdaptation } from '../../stores/sequence-adaptation';
 
   export let expansionRuns: ExpansionRun[] = [];
   export let user: User | null;
@@ -277,5 +278,6 @@
     {parameterDictionaries}
     userSequenceEditorColumns={$userSequenceEditorColumns}
     userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
+    newSequenceAdaptation={$sequenceAdaptation}
   />
 </CssGrid>

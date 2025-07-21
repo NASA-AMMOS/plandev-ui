@@ -18,7 +18,7 @@
   import { SquareCode } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
   import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
-  import { type IInputFormat, type IOutputFormat } from '../../language-package/interfaces/legacy';
+  import { type IOutputFormat } from '../../language-package/interfaces/legacy';
   import type {
     LibrarySequence,
     LibrarySequenceMap,
@@ -45,9 +45,7 @@
   export let channelDictionary: ChannelDictionary | null = null;
   export let commandDictionary: CommandDictionary | null = null;
   export let includeActions: boolean = false;
-  export let inputFormat: IInputFormat | undefined = undefined;
   export let librarySequences: LibrarySequence[] = [];
-  export let outputFormats: IOutputFormat[] = [];
   export let parameterDictionaries: ParameterDictionary[] = [];
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
@@ -130,7 +128,7 @@
 
   $: {
     previousShowOutputs = showOutputs;
-    showOutputs = outputFormats.length > 0;
+    showOutputs = newSequenceAdaptation.outputs.length > 0;
   }
   $: if (showOutputs) {
     editorHeights = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
@@ -193,7 +191,7 @@
     }
   }
 
-  function downloadOutputFormat(outputFormat: IOutputFormat): void {
+  function downloadOutputFormat(outputFormat: OutputLanguageAdaptation): void {
     const fileExtension = `${sequenceName}.${selectedOutputFormat?.fileExtension}`;
 
     if (outputFormat?.fileExtension === 'json') {
@@ -219,9 +217,9 @@
   async function copyInputFormatToClipboard(): Promise<void> {
     try {
       await navigator.clipboard.writeText(editorSequenceView.state.doc.toString());
-      showSuccessToast(`${inputFormat?.name} copied to clipboard`);
+      showSuccessToast(`${newSequenceAdaptation.input.name} copied to clipboard`);
     } catch {
-      showFailureToast(`Error copying ${inputFormat?.name} to clipboard`);
+      showFailureToast(`Error copying ${newSequenceAdaptation.input.name} to clipboard`);
     }
   }
 
@@ -379,7 +377,7 @@
               </button>
 
               <Menu bind:this={menu}>
-                {#each outputFormats as outputFormatItem}
+                {#each newSequenceAdaptation.outputs as outputFormatItem}
                   <div
                     use:tooltip={{
                       content: `Copy sequence contents as ${outputFormatItem?.name} to clipboard`,
@@ -438,11 +436,11 @@
           <SectionTitle>{selectedOutputFormat?.name} (Read-only)</SectionTitle>
 
           <div class="right">
-            {#if outputFormats}
+            {#if newSequenceAdaptation.outputs.length > 0}
               <div class="output-format">
                 <label class="text-xs text-muted-foreground" for="outputFormat">Output Format</label>
                 <select bind:value={selectedOutputFormat} class="st-select w-full" name="outputFormat">
-                  {#each outputFormats as outputFormatItem}
+                  {#each newSequenceAdaptation.outputs as outputFormatItem}
                     <option value={outputFormatItem}>
                       {outputFormatItem.name}
                     </option>

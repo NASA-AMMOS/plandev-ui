@@ -6,9 +6,10 @@ import { fswCommandArgDefault } from '../../../utilities/sequence-editor/command
 import { getDefaultVariableArgs } from '../../../utilities/sequence-editor/sequence-utils';
 import { getFromAndTo, getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
 import { getDoyTime } from '../../../utilities/time';
-import type { ISequenceAdaptation, LibrarySequence } from '../../interfaces/legacy';
+import type { ISequenceAdaptation } from '../../interfaces/legacy';
 import type { GlobalType } from './global-types';
 import { SeqLanguage } from './seq-n';
+import type { LibrarySequence } from '../../interfaces/new-adaptation-interface';
 
 type CursorInfo = {
   isAfterActivateOrLoad: boolean;

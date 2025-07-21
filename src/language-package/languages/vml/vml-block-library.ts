@@ -14,8 +14,8 @@ import type {
   NumericRange,
 } from '@nasa-jpl/aerie-ampcs';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
-import type { LibrarySequence } from '../../../types/sequencing';
 import { filterEmpty } from '../../../utilities/generic';
+import type { LibrarySequence } from '../../interfaces/new-adaptation-interface';
 import { VmlLanguage } from './vml';
 import {
   RULE_BLOCK,
