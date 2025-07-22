@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest';
+import type { AnchorValidationError, SchedulingError } from '../types/errors';
 import {
   ErrorTypes,
   generateActivityValidationErrorRollups,
+  getActivityIdsFromError,
   isInstantiationError,
   isUnknownTypeError,
   isValidationNoticesError,
@@ -200,5 +202,35 @@ describe('Errors Util', () => {
         type: 'banana',
       },
     ]);
+  });
+
+  test('getActivityIdsFromError - Should return no IDs when given unsupported error', () => {
+    expect(
+      getActivityIdsFromError({
+        message: '',
+        timestamp: '',
+        type: ErrorTypes.IO_EXCEPTION,
+      }),
+    ).deep.eq([]);
+  });
+
+  test('getActivityIdsFromError - Should return specified ID for ANCHOR_VALIDATION_ERROR', () => {
+    expect(
+      getActivityIdsFromError({
+        activityId: 1,
+        type: ErrorTypes.ANCHOR_VALIDATION_ERROR,
+      } as AnchorValidationError),
+    ).deep.eq([1]);
+  });
+
+  test('getActivityIdsFromError - Should return specified ID for GLOBAL_SCHEDULING_CONDITIONS_FAILED and SCHEDULING_GOALS_FAILED and UNEXPECTED_SIMULATION_EXCEPTION', () => {
+    expect(
+      getActivityIdsFromError({
+        data: { errors: { '1': 'foo', '2': 'bat', bar: 'bob' }, success: false },
+        message: '',
+        timestamp: '',
+        type: ErrorTypes.GLOBAL_SCHEDULING_CONDITIONS_FAILED,
+      } as SchedulingError),
+    ).deep.eq([1, 2]);
   });
 });

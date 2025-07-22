@@ -119,18 +119,12 @@ export function getActivityIdsFromError(error: BaseError): number[] {
     return [(error as AnchorValidationError).activityId];
   } else if (
     error.type === ErrorTypes.GLOBAL_SCHEDULING_CONDITIONS_FAILED ||
-    error.type === ErrorTypes.SCHEDULING_GOALS_FAILED
+    error.type === ErrorTypes.SCHEDULING_GOALS_FAILED ||
+    error.type === ErrorTypes.UNEXPECTED_SIMULATION_EXCEPTION
   ) {
-    const schedulingError = error as SchedulingError;
-    if (schedulingError.data?.errors) {
-      return Object.keys(schedulingError.data.errors)
-        .map(id => parseInt(id))
-        .filter(id => !isNaN(id));
-    }
-  } else if (error.type === ErrorTypes.UNEXPECTED_SIMULATION_EXCEPTION) {
-    const simulationError = error as SimulationDatasetError;
-    if (simulationError.data?.errors) {
-      return Object.keys(simulationError.data.errors)
+    const errorWithIds = error as SchedulingError | SimulationDatasetError;
+    if (errorWithIds.data?.errors) {
+      return Object.keys(errorWithIds.data.errors)
         .map(id => parseInt(id))
         .filter(id => !isNaN(id));
     }
