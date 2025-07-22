@@ -3,10 +3,14 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
+  import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import PageTitle from '../components/app/PageTitle.svelte';
 
+  // TODO: handle failed auth HERE.
+
   const comics = [
+    { id: '538', name: 'security' },
     { id: '927', name: 'standards' },
     { id: '1091', name: 'curiosity' },
     { id: '1356', name: 'orbital_mechanics' },
@@ -21,7 +25,7 @@
   let xkcdUrl: string;
 
   onMount(() => {
-    const { id, name } = comics[Math.floor(Math.random() * comics.length)];
+    const { id, name } = $page.status === 403 ? comics[0] : comics[Math.floor(Math.random() * comics.length)];
     imgUrl = `https://imgs.xkcd.com/comics/${name}.png`;
     xkcdUrl = `https://xkcd.com/${id}/`;
   });
@@ -33,6 +37,7 @@
   <div class="app-error">
     <div class="app-error-title">
       <div>Uh O! Sorry, we can't find that page.</div>
+      <div>{$page.error?.message}</div>
       <button class="st-button" on:click={() => goto(`${base}/`)}> Return Home </button>
     </div>
 

@@ -8,6 +8,7 @@
   import { onMount } from 'svelte';
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
+  import { cookieStoreListener } from '../lib/stores/auth';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
   import { modalBodyClickListener, modalBodyKeyListener } from '../utilities/modal';
   import { loadPluginCode } from '../utilities/plugins';
@@ -16,9 +17,16 @@
   $pluginsLoaded = pluginsEnabled ? false : true;
 
   onMount(() => {
+    const unsubscribe = cookieStoreListener();
+
     if (pluginsEnabled && !$pluginsLoaded) {
       loadPlugins();
     }
+
+    return () => {
+      unsubscribe();
+      console.log('Unsubscribed from cookie store changes.');
+    };
   });
 
   async function loadPlugins() {

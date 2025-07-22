@@ -4,6 +4,7 @@ import { error, type RequestEvent } from '@sveltejs/kit';
 import * as arctic from 'arctic';
 import jwt from 'jsonwebtoken';
 import { JwksClient } from 'jwks-rsa';
+import type { User } from '../../types/app';
 
 const DEFAULT_JWKS_CLIENT = (() => {
   if (env.OIDC_JWKS_URL) {
@@ -25,7 +26,7 @@ const DEFAULT_VERIFY_OPTS: jwt.VerifyOptions = {
  * @param {RequestEvent} event - The SvelteKit request event containing cookies.
  */
 export async function handler(event: RequestEvent): Promise<RequestEvent> {
-  return sanitize(event).then(refresh).then(localize);
+  return sanitize(event).then(refresh);
 }
 
 /**
@@ -62,21 +63,6 @@ async function refresh(evt: RequestEvent) {
       })
       .catch(() => evt.cookies.delete('refreshToken', { path: '/' }));
   }
-  return evt;
-}
-
-/**
- * Sets locals for verified tokens and extracted roles.
- *
- * @param evt
- * @returns RequestEvent
- */
-async function localize(evt: RequestEvent) {
-  evt.locals.tokens = {
-    accessToken: await verify(evt.cookies.get('accessToken')),
-    idToken: await verify(evt.cookies.get('idToken')),
-  };
-  evt.locals.roles = rolesIn(evt.locals.tokens.accessToken);
   return evt;
 }
 
@@ -292,9 +278,9 @@ export function roles(token: MaybeHasuraToken) {
  * await parent() before protected code. Unless every child page depends on
  * returned data from await parent(), the other options will be more performant.
  */
-export function enforce(accessToken: MaybeHasuraToken, rule: Rule): boolean {
+export function enforce(user: User | null, rule: Rule): boolean {
   // Any value other than 'true' is considered a failure. This is intentional.
-  if (rule(accessToken) === true) {
+  if (rule(user) === true) {
     return true;
   } else {
     throw error(403, 'Unauthorized access: Rule evaluation failed');

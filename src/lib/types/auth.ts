@@ -1,5 +1,6 @@
 import type { JwtPayload, VerifyOptions } from 'jsonwebtoken';
 import jwt from 'jsonwebtoken';
+import type { User } from '../../types/app';
 
 // 'auto' means refresh happens only in the Refresh component,
 //      but 'always' means refresh on all reloads as well.
@@ -18,7 +19,7 @@ type HasuraToken = JwtPayload & {
 
 export type MaybeHasuraToken = HasuraToken | undefined | null;
 
-export type Rule = (token?: MaybeHasuraToken) => boolean;
+export type Rule = (user?: User) => boolean;
 
 export type JwtSecret = {
   // either key or jwk_url

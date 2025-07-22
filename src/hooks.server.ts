@@ -1,5 +1,6 @@
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
+import * as auth from '$lib/server/auth';
 import type { Handle } from '@sveltejs/kit';
 import { parse, type CookieSerializeOptions } from 'cookie';
 import { jwtDecode } from 'jwt-decode';
@@ -9,14 +10,44 @@ import effects from './utilities/effects';
 import { reqGatewayForwardCookies } from './utilities/requests';
 
 export const handle: Handle = async ({ event, resolve }) => {
+  if (event.url.pathname.includes('com.chrome.devtools')) {
+    return await resolve(event);
+  }
+
   try {
-    if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
+    if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
+      // Guarantees that only valid tokens (id, access, and refresh) are present
+      // in cookies.
+      console.log(`OIDC hook for ${event.url}`);
+      await auth.handler(event);
+      return await handleOIDCAuth({ event, resolve });
+    } else if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
+      console.log('SSO hook');
       return await handleSSOAuth({ event, resolve });
     } else {
+      console.log('No-Auth hook');
       return await handleJWTAuth({ event, resolve });
     }
   } catch (e) {
     console.log(e);
+    event.locals.user = null;
+  }
+
+  return await resolve(event);
+};
+
+/**
+ * Sets local user to the decoded access token enriched with additional
+ * fine-grained query-related permissions.
+ */
+const handleOIDCAuth: Handle = async ({ event, resolve }) => {
+  const cookies = parse(event.request.headers.get('cookie') ?? '');
+  const { activeRole, accessToken: token = null } = cookies;
+
+  if (token) {
+    const user: BaseUser = { token }; // TODO: for id, need to get id from idToken, but do we get preferred_username? is that even a thing outside of keycloak? hmmm....
+    event.locals.user = await computeRolesFromJWT(user, activeRole);
+  } else {
     event.locals.user = null;
   }
 
@@ -118,14 +149,19 @@ async function computeRolesFromCookies(
   try {
     const baseUser: BaseUser = JSON.parse(userStr);
     return computeRolesFromJWT(baseUser, activeRoleCookie);
-  } catch {
+  } catch (err) {
+    console.error(err);
     return null;
   }
 }
 
+/**
+ * Consult Aerie Gateway to obtain fine grained permissions;
+ */
 async function computeRolesFromJWT(baseUser: BaseUser, activeRole: string | null): Promise<User | null> {
-  const { success } = await effects.session(baseUser);
+  const { success, message } = await effects.session(baseUser);
   if (!success) {
+    console.log(`Could not retrieve roles using the given JWT access token: ${message}`);
     return null;
   }
 

@@ -24,7 +24,10 @@ export type ParsedUserToken = {
     'x-hasura-default-role': UserRole;
     'x-hasura-user-id': string;
   };
+  sub: string;
   iat: number;
+  oid: string;
+  preferred_username: string;
   username: string;
 };
 
