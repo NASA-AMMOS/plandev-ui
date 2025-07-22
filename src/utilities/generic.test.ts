@@ -3,6 +3,7 @@ import {
   attemptStringConversion,
   clamp,
   classNames,
+  extractQuotes,
   filterEmpty,
   filterNullish,
   isMacOs,
@@ -192,6 +193,20 @@ describe('Generic utility function tests', () => {
     });
     test('Should skip lowercasing if a string not provided', () => {
       expect(lowercase([])).to.deep.eq([]);
+    });
+  });
+
+  describe('extractQuotes', () => {
+    test('Should extract all quotes from a string', () => {
+      expect(extractQuotes('')).to.deep.eq({ quotes: [], text: '' });
+      expect(extractQuotes('"')).to.deep.eq({ quotes: [], text: '"' });
+      expect(extractQuotes('"')).to.deep.eq({ quotes: [], text: '"' });
+      expect(extractQuotes('""')).to.deep.eq({ quotes: [], text: '""' });
+      expect(extractQuotes('A "B" C')).to.deep.eq({ quotes: ['B'], text: 'A {{QUOTE}} C' });
+      expect(extractQuotes('"A" "B" "C"')).to.deep.eq({
+        quotes: ['A', 'B', 'C'],
+        text: '{{QUOTE}} {{QUOTE}} {{QUOTE}}',
+      });
     });
   });
 });
