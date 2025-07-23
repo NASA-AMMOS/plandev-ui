@@ -34,16 +34,11 @@ import {
   savingExpansionSet as savingExpansionSetStore,
 } from '../stores/expansion';
 import {
-  createExternalEventTypeError as createExternalEventTypeErrorStore,
-  creatingExternalEventType as creatingExternalEventTypeStore,
-} from '../stores/external-event';
-import {
   createDerivationGroupError as createDerivationGroupErrorStore,
   createExternalSourceError as createExternalSourceErrorStore,
-  createExternalSourceTypeError as createExternalSourceTypeErrorStore,
+  createExternalSourceEventTypeError as createExternalSourceEventTypeErrorStore,
   creatingExternalSource as creatingExternalSourceStore,
   derivationGroupPlanLinkError as derivationGroupPlanLinkErrorStore,
-  parsingError as parsingErrorStore,
 } from '../stores/external-source';
 import {
   createModelError as createModelErrorStore,
@@ -126,22 +121,12 @@ import type {
   SequenceFilterInsertInput,
 } from '../types/expansion';
 import type { Extension, ExtensionPayload } from '../types/extension';
-import type {
-  ExternalEvent,
-  ExternalEventDB,
-  ExternalEventInsertInput,
-  ExternalEventJson,
-  ExternalEventType,
-  ExternalEventTypeInsertInput,
-} from '../types/external-event';
+import type { ExternalEvent, ExternalEventDB, ExternalEventType } from '../types/external-event';
 import type {
   DerivationGroup,
   DerivationGroupInsertInput,
-  ExternalSourceInsertInput,
   ExternalSourcePkey,
   ExternalSourceSlim,
-  ExternalSourceType,
-  ExternalSourceTypeInsertInput,
   PlanDerivationGroup,
 } from '../types/external-source';
 import type { Model, ModelInsertInput, ModelLog, ModelSchema, ModelSetInput, ModelSlim } from '../types/model';
@@ -261,16 +246,16 @@ import gql, { convertToGQLArray } from './gql';
 import {
   showCancelActionRunModal,
   showConfirmModal,
-  showCreateGroupsOrTypes,
   showCreatePlanBranchModal,
   showCreatePlanSnapshotModal,
   showCreateViewModal,
   showDeleteActivitiesModal,
+  showDeleteDerivationGroupModal,
+  showDeleteExternalEventSourceTypeModal,
   showDeleteExternalSourceModal,
   showEditViewModal,
   showImportWorkspaceFileModal,
   showLibrarySequenceModel,
-  showManageGroupsAndTypes,
   showManagePlanConstraintsModal,
   showManagePlanDerivationGroups,
   showManagePlanSchedulingConditionsModal,
@@ -296,7 +281,6 @@ import { parseCdlDictionary, toAmpcsXml } from './sequence-editor/languages/vml/
 import { compareEvents } from './simulation';
 import { pluralize } from './text';
 import {
-  convertDoyToYmd,
   convertUTCToMs,
   getDoyTime,
   getDoyTimeFromInterval,
@@ -1226,161 +1210,34 @@ const effects = {
     }
   },
 
-  async createExternalEventType(eventType: ExternalEventTypeInsertInput, user: User | null) {
-    try {
-      creatingExternalEventTypeStore.set(true);
-      createExternalEventTypeErrorStore.set(null);
-      if (eventType) {
-        const { createExternalEventType: created } = await reqHasura<ExternalEventType>(
-          gql.CREATE_EXTERNAL_EVENT_TYPE,
-          { eventType },
-          user,
-        );
-        if (created) {
-          showSuccessToast('External Event Type Created Successfully');
-          creatingExternalEventTypeStore.set(false);
-          return created.name;
-        } else {
-          throw Error('Unable to create external event type');
-        }
-      } else {
-        throw Error('Unable to create external event type');
-      }
-    } catch (e) {
-      catchError('External Event Type Create Failed', e as Error);
-      showFailureToast('External Event Type Create Failed');
-      createExternalEventTypeErrorStore.set((e as Error).message);
-      creatingExternalEventTypeStore.set(false);
-    }
-  },
-
   async createExternalSource(
-    externalSourceTypeName: string,
-    derivationGroupName: string,
-    startTime: string,
-    endTime: string,
-    externalEvents: ExternalEventJson[],
-    externalSourceKey: string,
-    validAt: string,
+    derivationGroupName: string | null,
+    externalSourceFile: File,
     user: User | null,
-  ) {
+  ): Promise<ExternalSourceSlim | null> {
     try {
-      if (!queryPermissions.CREATE_EXTERNAL_SOURCE(user)) {
+      if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE(user)) {
         throwPermissionError('upload an external source');
       }
       creatingExternalSourceStore.set(true);
       createExternalSourceErrorStore.set(null);
 
-      // Create mutation inputs for Hasura
-      const externalSourceTypeInsert: ExternalSourceTypeInsertInput = {
-        name: externalSourceTypeName,
-      };
-      const derivationGroupInsert: DerivationGroupInsertInput = {
-        name: derivationGroupName !== '' ? derivationGroupName : `${externalSourceTypeName} Default`,
-        source_type_name: externalSourceTypeName,
-      };
-
-      // Convert all times, validate they exist or else throw a failure
-      const startTimeFormatted: string | undefined = convertDoyToYmd(startTime.replaceAll('Z', ''))?.replace(
-        'Z',
-        '+00:00',
-      );
-      const endTimeFormatted: string | undefined = convertDoyToYmd(endTime.replaceAll('Z', ''))?.replace('Z', '+00:00');
-      const validAtFormatted: string | undefined = convertDoyToYmd(validAt.replaceAll('Z', ''))?.replace('Z', '+00:00');
-      if (!startTimeFormatted || !endTimeFormatted || !validAtFormatted) {
-        showFailureToast('Parsing failed.');
-        parsingErrorStore.set(`Parsing failed - parsing dates in input failed. ${startTime}, ${endTime}, ${validAt}`);
-        creatingExternalSourceStore.set(false);
-        return;
+      const body = new FormData();
+      if (derivationGroupName) {
+        body.append('derivation_group_name', derivationGroupName);
       }
+      body.append('external_source_file', externalSourceFile);
 
-      // Check that the start and end times are logical
-      if (new Date(startTimeFormatted) > new Date(endTimeFormatted)) {
-        showFailureToast('Parsing failed.');
-        parsingErrorStore.set(`Parsing failed - start time ${startTimeFormatted} after end time ${endTimeFormatted}.`);
-        creatingExternalSourceStore.set(false);
-        return;
-      }
-
-      // Create external source mutation input for Hasura
-      const externalSourceInsert: ExternalSourceInsertInput = {
-        derivation_group_name: derivationGroupInsert.name,
-        end_time: endTimeFormatted,
-        external_events: {
-          data: null, // updated after this map is created
-        },
-        key: externalSourceKey,
-        source_type_name: externalSourceTypeName,
-        start_time: startTimeFormatted,
-        valid_at: validAtFormatted,
-      };
-
-      // Create external events + external event types mutation inputs for Hasura
-      const externalEventTypeInserts: ExternalEventTypeInsertInput[] = [];
-      let externalEventsCreated: ExternalEventInsertInput[] = [];
-      for (const externalEvent of externalEvents) {
-        externalEventTypeInserts.push({
-          name: externalEvent.event_type,
-        } as ExternalEventTypeInsertInput);
-
-        // Ensure the duration is valid
-        try {
-          getIntervalInMs(externalEvent.duration);
-        } catch (error) {
-          showFailureToast('Parsing failed.');
-          catchError(`Event duration has invalid format: ${externalEvent.key}\n`, error as Error);
-          creatingExternalSourceStore.set(false);
-          return;
-        }
-
-        // Validate external event is in the external source's start/stop bounds
-        const externalEventStart = Date.parse(convertDoyToYmd(externalEvent.start_time.replace('Z', '')) ?? '');
-        const externalEventEnd = externalEventStart + getIntervalInMs(externalEvent.duration);
-        if (
-          !(externalEventStart >= Date.parse(startTimeFormatted) && externalEventEnd <= Date.parse(endTimeFormatted))
-        ) {
-          showFailureToast('Invalid External Event Time Bounds');
-          parsingErrorStore.set(
-            `Upload failed. Event (${externalEvent.key}) not in bounds of source start and end: occurs from [${new Date(externalEventStart)},${new Date(externalEventEnd)}], not subset of [${new Date(startTimeFormatted)},${new Date(endTimeFormatted)}].\n`,
-          );
-          creatingExternalSourceStore.set(false);
-          return;
-        }
-
-        // If the event is valid...
-        if (
-          externalEvent.event_type !== undefined &&
-          externalEvent.start_time !== undefined &&
-          externalEvent.duration !== undefined
-        ) {
-          externalEventsCreated.push({
-            duration: externalEvent.duration,
-            event_type_name: externalEvent.event_type,
-            key: externalEvent.key,
-            start_time: externalEvent.start_time,
-          });
-        }
-      }
-
-      externalSourceInsert.external_events.data = externalEventsCreated;
-      externalEventsCreated = [];
-
-      const { createExternalSource: createExternalSourceResponse } = await reqHasura(
-        gql.CREATE_EXTERNAL_SOURCE,
-        {
-          derivation_group: derivationGroupInsert,
-          event_type: externalEventTypeInserts,
-          source: externalSourceInsert,
-          source_type: externalSourceTypeInsert,
-        },
-        user,
-      );
-      if (createExternalSourceResponse !== undefined && createExternalSourceResponse !== null) {
+      const reqResponse = await reqGateway(`/uploadExternalSource`, 'POST', body, user, true);
+      if (reqResponse?.errors === undefined) {
+        const { createExternalSource: newExternalSource } = reqResponse;
         showSuccessToast('External Source Created Successfully');
         creatingExternalSourceStore.set(false);
-        return createExternalSourceResponse as ExternalSourceSlim;
+        return newExternalSource;
       } else {
-        throw Error(`Unable to create external source`);
+        const respErrors = reqResponse.errors.map((respError: { message: string }) => respError.message);
+        showFailureToast('External Source Create Failed');
+        throw new Error(respErrors);
       }
     } catch (e) {
       catchError('External Source Create Failed', e as Error);
@@ -1391,40 +1248,42 @@ const effects = {
         createExternalSourceErrorStore.set((e as Error).message);
       }
       creatingExternalSourceStore.set(false);
+      return null;
     }
   },
 
-  async createExternalSourceType(
-    sourceType: ExternalSourceTypeInsertInput,
+  async createExternalSourceEventTypes(
+    eventTypes: object | undefined,
+    sourceTypes: object | undefined,
     user: User | null,
-  ): Promise<ExternalSourceType | undefined> {
+  ): Promise<boolean> {
+    if (!gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user) || !gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
+      throwPermissionError('create en external source or event type');
+    }
+    createExternalSourceEventTypeErrorStore.set(null);
+
     try {
-      createExternalSourceTypeErrorStore.set(null);
-      const { createExternalSourceType: created } = await reqHasura(
-        gql.CREATE_EXTERNAL_SOURCE_TYPE,
-        { sourceType },
-        user,
-      );
-      if (created !== null) {
-        showSuccessToast('External Source Type Created Successfully');
-        return created as ExternalSourceType;
+      if (eventTypes === undefined && sourceTypes === undefined) {
+        throw new Error('No External Source or Event Types Defined');
+      }
+      const body = {
+        event_types: JSON.stringify(eventTypes ?? {}),
+        source_types: JSON.stringify(sourceTypes ?? {}),
+      };
+
+      const response = await reqGateway(`/uploadExternalSourceEventTypes`, 'POST', JSON.stringify(body), user, false);
+      if (response?.errors === undefined) {
+        showSuccessToast('External Source & Event Type Created Successfully');
+        return true;
       } else {
-        throw Error(`Unable to create external source type`);
+        showFailureToast('External Source & Event Type Create Failed');
+        return false;
       }
     } catch (e) {
-      catchError('External Source Type Create Failed', e as Error);
-      showFailureToast('External Source Type Create Failed');
-      createExternalSourceTypeErrorStore.set((e as Error).message);
-      return undefined;
-    }
-  },
-
-  async createGroupsOrTypes(user: User | null): Promise<void> {
-    try {
-      await showCreateGroupsOrTypes(user);
-    } catch (e) {
-      catchError('Unable To Be View Derivation Groups and External Types', e as Error);
-      showFailureToast('Derivation Group/External Type Viewing Failed');
+      showFailureToast('External Source & Event Type Create Failed');
+      createExternalSourceEventTypeErrorStore.set((e as Error).message);
+      catchError(e as Error);
+      return false;
     }
   },
 
@@ -2738,22 +2597,29 @@ const effects = {
     }
   },
 
-  async deleteDerivationGroup(derivationGroup: DerivationGroup | null, user: User | null): Promise<void> {
+  async deleteDerivationGroup(derivationGroups: DerivationGroup[] | null, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.DELETE_DERIVATION_GROUP(user, derivationGroup)) {
+      if (!queryPermissions.DELETE_DERIVATION_GROUPS(user, derivationGroups)) {
         throwPermissionError('delete a derivation group');
       }
 
-      if (derivationGroup !== null) {
-        const data = await reqHasura<{ name: string }>(
-          gql.DELETE_DERIVATION_GROUP,
-          { name: derivationGroup.name },
-          user,
-        );
-        if (data.deleteDerivationGroup === null) {
-          throw Error('Unable to delete derivation group');
-        } else {
-          showSuccessToast('Derivation Group Deleted Successfully');
+      if (derivationGroups !== null) {
+        const derivationGroupNames: string[] = derivationGroups.map(derivationGroup => derivationGroup.name);
+
+        // Show confirmation modal prior to running deletion
+        // TODO: Account for non-empty Derivation Groups which cannot be deleted
+        const { confirm } = await showDeleteDerivationGroupModal(derivationGroups);
+        if (confirm) {
+          const data = await reqHasura<{ name: string }>(
+            gql.DELETE_DERIVATION_GROUPS,
+            { derivationGroupNames: derivationGroupNames },
+            user,
+          );
+          if (data.deleteDerivationGroup === null) {
+            throw Error('Unable to delete derivation group');
+          } else {
+            showSuccessToast('Derivation Group Deleted Successfully');
+          }
         }
       }
     } catch (e) {
@@ -2762,7 +2628,11 @@ const effects = {
     }
   },
 
-  async deleteDerivationGroupForPlan(derivationGroupName: string, plan: Plan | null, user: User | null): Promise<void> {
+  async deleteDerivationGroupForPlan(
+    derivation_group_name: string,
+    plan: Plan | null,
+    user: User | null,
+  ): Promise<void> {
     try {
       if ((plan && !queryPermissions.DELETE_PLAN_DERIVATION_GROUP(user, plan)) || !plan) {
         throwPermissionError('delete a derivation group from the plan');
@@ -2781,7 +2651,7 @@ const effects = {
           {
             where: {
               _and: {
-                derivation_group_name: { _eq: derivationGroupName },
+                derivation_group_name: { _eq: derivation_group_name },
                 plan_id: { _eq: plan.id },
               },
             },
@@ -2948,19 +2818,35 @@ const effects = {
     }
   },
 
-  async deleteExternalEventType(eventTypeName: string | null, user: User | null): Promise<void> {
+  async deleteExternalEventType(
+    externalEventTypes: string[] | null,
+    externalEventTypesInUse: ExternalEventType[],
+    user: User | null,
+  ): Promise<void> {
     try {
       if (!queryPermissions.DELETE_EXTERNAL_EVENT_TYPE(user)) {
         throwPermissionError('delete an external event type');
       }
 
-      // to do this, all dgs associated should be deleted.
-      if (eventTypeName !== null) {
-        const data = await reqHasura<{ id: number }>(gql.DELETE_EXTERNAL_EVENT_TYPE, { name: eventTypeName }, user);
-        if (data.deleteDerivationGroup === null) {
-          throw Error('Unable to delete external event type');
+      if (externalEventTypes !== null) {
+        const associatedItems = externalEventTypesInUse.map(externalEventType => externalEventType.name);
+        const { confirm } = await showDeleteExternalEventSourceTypeModal(
+          externalEventTypes,
+          'External Event Type(s)',
+          new Set(associatedItems),
+        );
+
+        if (confirm) {
+          const data = await reqHasura<{ id: number }>(
+            gql.DELETE_EXTERNAL_EVENT_TYPE,
+            { names: externalEventTypes },
+            user,
+          );
+          if (data.deleteDerivationGroup === null) {
+            throw Error('Unable to delete external event type');
+          }
+          showSuccessToast('External Event Type Deleted Successfully');
         }
-        showSuccessToast('External Event Type Deleted Successfully');
       }
     } catch (e) {
       catchError('External Event Type Deletion Failed', e as Error);
@@ -3020,7 +2906,7 @@ const effects = {
             const data = await reqHasura<{ derivationGroupName: string; sourceKeys: string[] }>(
               gql.DELETE_EXTERNAL_SOURCES,
               {
-                derivationGroupName,
+                derivationGroupName: derivationGroupName,
                 sourceKeys: derivationGroups[derivationGroupName],
               },
               user,
@@ -3041,23 +2927,37 @@ const effects = {
     return false;
   },
 
-  async deleteExternalSourceType(externalSourceTypeName: string | null, user: User | null): Promise<void> {
+  async deleteExternalSourceType(
+    externalSourceTypes: string[] | null,
+    externalSources: ExternalSourceSlim[],
+    user: User | null,
+  ): Promise<void> {
     try {
       if (!queryPermissions.DELETE_EXTERNAL_SOURCE_TYPE(user)) {
         throwPermissionError('delete an external source type');
       }
+      if (externalSourceTypes !== null) {
+        const associatedItems = externalSources.filter(externalSource => {
+          return externalSourceTypes.includes(externalSource.source_type_name);
+        });
 
-      // to do this, all dgs associated should be deleted.
-      if (externalSourceTypeName !== null) {
-        const data = await reqHasura<{ name: string }>(
-          gql.DELETE_EXTERNAL_SOURCE_TYPE,
-          { name: externalSourceTypeName },
-          user,
+        const { confirm } = await showDeleteExternalEventSourceTypeModal(
+          externalSourceTypes,
+          'External Source Type(s)',
+          new Set(associatedItems.map(externalSource => externalSource.source_type_name)),
         );
-        if (data.deleteDerivationGroup === null) {
-          throw Error('Unable to delete external source type');
-        } else {
-          showSuccessToast('External Source Type Deletion Successful');
+
+        if (confirm) {
+          const data = await reqHasura<{ name: string }>(
+            gql.DELETE_EXTERNAL_SOURCE_TYPE,
+            { names: externalSourceTypes },
+            user,
+          );
+          if (data.deleteDerivationGroup === null) {
+            throw Error('Unable to delete external source type');
+          } else {
+            showSuccessToast('External Source Type Deletion Successful');
+          }
         }
       }
     } catch (e) {
@@ -4232,7 +4132,7 @@ const effects = {
     }
   },
 
-  async getExternalEventTypes(planId: number, user: User | null): Promise<ExternalEventType[]> {
+  async getExternalEventTypes(plan_id: number, user: User | null): Promise<ExternalEventType[]> {
     try {
       const sourceData = await reqHasura<
         {
@@ -4240,13 +4140,14 @@ const effects = {
             external_sources: {
               external_events: {
                 external_event_type: {
+                  attribute_schema: object;
                   name: string;
                 };
               }[];
             }[];
           };
         }[]
-      >(gql.GET_PLAN_EVENT_TYPES, { plan_id: planId }, user);
+      >(gql.GET_PLAN_EVENT_TYPES, { plan_id }, user);
       const types: ExternalEventType[] = [];
       if (sourceData?.plan_derivation_group !== null) {
         for (const group of sourceData.plan_derivation_group) {
@@ -4274,7 +4175,7 @@ const effects = {
     externalSourceKey: string | null,
     externalSourceDerivationGroup: string | null,
     user: User | null,
-  ): Promise<string[]> {
+  ): Promise<ExternalEventType[]> {
     if (externalSourceKey === null || externalSourceDerivationGroup === null) {
       return [];
     }
@@ -4283,6 +4184,7 @@ const effects = {
         {
           external_events: {
             external_event_type: {
+              attribute_schema: Record<string, any>;
               name: string;
             };
           }[];
@@ -4292,13 +4194,15 @@ const effects = {
         { derivationGroupName: externalSourceDerivationGroup, sourceKey: externalSourceKey },
         user,
       );
-      const { external_source: externalSource } = data;
-      if (externalSource != null) {
-        const eventTypes: string[] = [];
-        for (const externalEvent of externalSource[0].external_events) {
-          eventTypes.push(externalEvent.external_event_type.name);
+      const { external_source } = data;
+      if (external_source != null) {
+        const eventTypes: ExternalEventType[] = [];
+        for (const external_event of external_source[0].external_events) {
+          if (!eventTypes.map(currentType => currentType.name).includes(external_event.external_event_type.name)) {
+            eventTypes.push(external_event.external_event_type);
+          }
         }
-        return Array.from(new Set(eventTypes));
+        return eventTypes;
       } else {
         throw Error('Unable to retrieve external event types for source');
       }
@@ -4333,6 +4237,7 @@ const effects = {
       const externalEvents: ExternalEvent[] = [];
       for (const event of events) {
         externalEvents.push({
+          attributes: event.attributes,
           duration: event.duration,
           duration_ms: getIntervalInMs(event.duration),
           pkey: {
@@ -5694,15 +5599,6 @@ const effects = {
         success: false,
         token: null,
       };
-    }
-  },
-
-  async manageGroupsAndTypes(user: User | null): Promise<void> {
-    try {
-      await showManageGroupsAndTypes(user);
-    } catch (e) {
-      catchError('Unable To Be View Derivation Groups and External Types', e as Error);
-      showFailureToast('Derivation Group/External Type Viewing Failed');
     }
   },
 

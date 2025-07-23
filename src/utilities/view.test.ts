@@ -24,7 +24,13 @@ describe('generateDefaultView', () => {
 
 describe('generateDefaultViewWithEvents', () => {
   test('Should generate a valid view with events', async () => {
-    const view = generateDefaultView([], [{ name: 'external-event-type_1' }, { name: 'external-event-type_2' }]);
+    const view = generateDefaultView(
+      [],
+      [
+        { attribute_schema: {}, name: 'external-event-type_1' },
+        { attribute_schema: {}, name: 'external-event-type_2' },
+      ],
+    );
 
     // validate against schema
     const { valid, errors } = validateViewJSONAgainstSchema(view.definition);

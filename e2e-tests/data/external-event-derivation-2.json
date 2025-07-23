@@ -1,65 +1,60 @@
 {
     "source": {
         "key": "external-event-derivation-2.json",
-        "source_type": "Derivation Test",
+        "source_type_name": "DerivationTest",
+        "derivation_group_name": "DerivationTest Default",
         "valid_at": "2022-019T00:00:00Z",
         "period": {
             "start_time": "2022-001T00:00:00Z",
             "end_time": "2022-007T00:00:00Z"
         },
-        "metadata": {}
+        "attributes": {
+          "exampleAttribute": "TestString"
+        }
     },
     "events": [
         {
             "key": "1",
-            "event_type": "DerivationA",
+            "event_type_name": "DerivationA",
             "start_time": "2022-001T00:00:00Z",
             "duration": "02:10:00",
-            "properties": {
-                "rules": [
-                    1
-                ],
-                "notes": "before everything, subsumed by nothing",
-                "should_present": true
+            "attributes": {
+              "rules": "1",
+              "notes": "before everything, subsumed by nothing",
+              "should_present": true
             }
         },
         {
             "key": "2",
-            "event_type": "DerivationA",
+            "event_type_name": "DerivationA",
             "start_time": "2022-001T12:00:00Z",
             "duration": "02:10:00",
-            "properties": {
-                "rules": [
-                    4
-                ],
-                "notes": "overwritten by key in later file, even with type change",
-                "should_present": false
+            "attributes": {
+              "rules": "4",
+              "notes": "overwritten by key in later file, even with type change",
+              "should_present": false
             }
         },
         {
             "key": "3",
-            "event_type": "DerivationB",
+            "event_type_name": "DerivationB",
             "start_time": "2022-002T23:00:00Z",
             "duration": "03:00:00",
-            "properties": {
-                "rules": [
-                    2
-                ],
-                "notes": "starts before next file though occurs during next file, still included",
-                "should_present": true
+            "attributes": {
+              "rules": "2",
+              "notes": "starts before next file though occurs during next file, still included",
+              "should_present": true
             }
         },
         {
             "key": "4",
-            "event_type": "DerivationB",
+            "event_type_name": "DerivationB",
             "start_time": "2022-005T21:00:00Z",
             "duration": "03:00:00",
-            "properties": {
-                "rules": [
-                    3
-                ],
-                "notes": "start subsumed by 02, not included in final result",
-                "should_present": false
+            "attributes": {
+              "rules": "3",
+              "notes": "start subsumed by 02, not included in final result",
+              "should_present": false
             }
         }
     ]

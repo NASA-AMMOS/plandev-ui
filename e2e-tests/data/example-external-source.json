@@ -1,27 +1,25 @@
 {
     "source": {
         "key": "ExampleExternalSource:example-external-source.json",
-        "source_type": "Example External Source",
+        "source_type_name": "Example External Source",
+        "derivation_group_name": "Example External Source Default",
         "valid_at": "2022-001T00:00:00Z",
         "period": {
             "start_time": "2022-001T00:00:00Z",
             "end_time": "2022-002T00:00:00Z"
         },
-        "metadata": {
+        "attributes": {
             "version": 1,
-            "spacecraft": [
-                "sc1",
-                "sc2"
-            ]
+            "spacecraft": "sc1"
         }
     },
     "events": [
         {
             "key": "ExampleEvent:1/sc/sc1:1:X/1",
-            "event_type": "ExampleEvent",
+            "event_type_name": "ExampleEvent",
             "start_time": "2022-001T12:00:00Z",
             "duration": "00:00:00",
-            "properties": {
+            "attributes": {
                 "example1": "value",
                 "example2": 1
             }

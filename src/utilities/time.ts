@@ -16,6 +16,23 @@ const EPOCH_TIME =
 const EPOCH_SIMPLE = /(^[+-]?)(\d+)(\.[0-9]+)?$/;
 
 /**
+ * Changes the timezone representation of a UTC ISO 8601 between 'Z' and '+00:00'.
+ * @param {string} time - The time string to convert
+ * @returns {string} - The new string with the opposite timezone representation
+ * @example
+ * switchISOTimezoneRepresentation('2024-001T01:02:03Z'); // 2024-001T01:02:03+00:00
+ * switchISOTimezoneRepresentation('2024-001T01:02:03+00:00'); // 2024-001T01:02:03Z
+ */
+export function switchISOTimezoneRepresentation(time: string): string {
+  if (time.endsWith('Z')) {
+    return time.replace('Z', '+00:00');
+  } else if (time.endsWith('+00:00')) {
+    return time.replace('+00:00', 'Z');
+  }
+  return time; // No changes if not a valid ISO 8601 representation
+}
+
+/**
  * Validates a time string based on the specified type.
  * @param {string} time - The time string to validate.
  * @param {TimeTypes} type - The type of time to validate against.

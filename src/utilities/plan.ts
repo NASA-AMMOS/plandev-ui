@@ -12,7 +12,7 @@ import type {
 import type { Simulation } from '../types/simulation';
 import effects from './effects';
 import { downloadJSON, unique } from './generic';
-import { convertDoyToYmd } from './time';
+import { convertDoyToYmd, switchISOTimezoneRepresentation } from './time';
 
 export async function getPlanForTransfer(
   plan: Plan | PlanSlim,
@@ -87,7 +87,7 @@ export async function getPlanForTransfer(
     model_id: plan.model_id,
     name: plan.name,
     simulation_arguments: qualifiedSimulationArguments,
-    start_time: (convertDoyToYmd(plan.start_time_doy) as string).replace('Z', '+00:00'),
+    start_time: switchISOTimezoneRepresentation(convertDoyToYmd(plan.start_time_doy) as string),
     tags: plan.tags.map(({ tag: { color, name } }) => ({ tag: { color, name } })),
     version: '2',
   };

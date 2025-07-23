@@ -1,4 +1,5 @@
 import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
+import type { JSONType, SchemaObject } from 'ajv';
 import { isEqual, omitBy } from 'lodash-es';
 import type { ActionParametersMap } from '../types/actions';
 import type {
@@ -13,7 +14,10 @@ import type {
   UIValueSchemaWithOptionsMultiple,
   UIValueSchemaWithOptionsSingle,
   ValueSchema,
+  ValueSchemaInt,
   ValueSchemaOption,
+  ValueSchemaSeries,
+  ValueSchemaStruct,
 } from '../types/schema';
 import { isActionValueSchemaSequence } from './actions';
 import { isEmpty } from './generic';
@@ -39,11 +43,13 @@ export function getArgument(
   schema: ValueSchema | ActionValueSchema,
   presetValue?: Argument,
   defaultValue?: Argument,
+  ignoreValueSource?: boolean,
 ): { value: any; valueSource: ValueSource } {
   const type = schema.type;
-
   if (value !== null && value !== undefined) {
-    if (presetValue === undefined) {
+    if (ignoreValueSource === true) {
+      return { value, valueSource: 'none' };
+    } else if (presetValue === undefined) {
       return { value, valueSource: 'user on model' };
     } else {
       if (isEqual(value, presetValue)) {
@@ -82,6 +88,7 @@ export function getFormParameters(
   defaultArgumentsMap: ArgumentsMap = {},
   dropdownOptions: ValueSchemaOption[] = [],
   optionLabel: string = 'option',
+  ignoreValueSource?: boolean,
 ): FormParameter[] {
   const formParameters = Object.entries(parametersMap).map(([name, { order, schema }]) => {
     const formParameterSchema: ValueSchema | UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple = schema;
@@ -89,7 +96,7 @@ export function getFormParameters(
     const arg: Argument = argumentsMap[name];
     const preset: Argument = presetArgumentsMap[name];
     const defaultArg: Argument | undefined = defaultArgumentsMap[name];
-    const { value, valueSource } = getArgument(arg, schema, preset, defaultArg);
+    const { value, valueSource } = getArgument(arg, schema, preset, defaultArg, ignoreValueSource);
     const required = requiredParameters.indexOf(name) > -1;
     let errors: string[] | null = null;
     let isMultiSelect: boolean = false;
@@ -127,6 +134,7 @@ export function getFormParameters(
 
     const formParameter: FormParameter = {
       errors,
+      externalEvent: true,
       name,
       order,
       required,
@@ -203,4 +211,123 @@ export function getCleansedStructArguments(structArguments: ArgumentsMap, schema
     }, {});
   }
   return cleansedArguments;
+}
+
+export function translateJsonSchemaArgumentsToValueSchema(jsonArguments: ArgumentsMap): ArgumentsMap {
+  const translatedArgumentsMap = Object.entries(jsonArguments).reduce(
+    (acc: ArgumentsMap, currentAttribute: [string, any]) => {
+      const output = currentAttribute[1];
+      if (typeof output === 'object' && 'properties' in output) {
+        Object.entries(output['properties']).forEach((prop: [string, any]) => {
+          output[prop[0]] = prop[1];
+        });
+        delete output['properties'];
+      }
+      acc[currentAttribute[0]] = output;
+      return acc;
+    },
+    {} as ArgumentsMap,
+  );
+  return translatedArgumentsMap;
+}
+
+/**
+ * Returns a list of ValueSchema objects that represent a JSON schema's properties.
+ */
+export function translateJsonSchemaToValueSchema(jsonSchema: SchemaObject | undefined): Record<string, ValueSchema> {
+  if (jsonSchema === undefined) {
+    throw new Error('Cannot convert a JSON schema of "undefined" to ValueSchema');
+  }
+  const properties: Record<string, object> | undefined = jsonSchema?.properties;
+  const propertiesAsValueSchema: Record<string, ValueSchema> = {};
+  if (properties === undefined) {
+    throw new Error('Cannot convert invalid JSON schema without "properties" to a set of ValueSchema');
+  }
+  Object.entries(properties).forEach((property: [string, object]) => {
+    // Handle nested objects, 'properties' => 'items'
+    const propName: string = property[0];
+    if ('type' in property[1]) {
+      const {
+        type: propType,
+        properties: propProperties,
+        items: propItems,
+      } = property[1] as {
+        items?: Record<'type', JSONType>;
+        properties?: Record<string, object>;
+        type: JSONType;
+      };
+      const propTranslated = translateJsonSchemaTypeToValueSchema(propType as JSONType, propProperties, propItems);
+      if ('items' in propTranslated) {
+        const itemsToTranslate =
+          propTranslated.items.type === 'struct' ? propTranslated.items.items : propTranslated.items;
+        const translatedItems = Object.entries(itemsToTranslate).reduce(
+          (acc: Record<string, ValueSchema>, currentItem: [string, ValueSchema]) => {
+            const {
+              type: currentType,
+              properties: currentProperties,
+              items: currentItems,
+            } = currentItem[1] as {
+              items?: Record<'type', JSONType>;
+              properties?: Record<string, object>;
+              type: JSONType;
+            };
+            const translatedItem = translateJsonSchemaTypeToValueSchema(
+              currentType as JSONType,
+              currentProperties,
+              currentItems,
+            );
+            acc[currentItem[0]] = translatedItem;
+            return acc;
+          },
+          {} as Record<string, ValueSchema>,
+        );
+        if (propTranslated.items.type === 'struct') {
+          propTranslated.items.items = translatedItems;
+        } else {
+          propTranslated.items = translatedItems;
+        }
+      }
+      propertiesAsValueSchema[propName] = propTranslated;
+    } else {
+      throw new Error('Cannot convert invalid JSON schema property - no "type" field exists');
+    }
+  });
+  return propertiesAsValueSchema;
+}
+
+function translateJsonSchemaTypeToValueSchema(
+  jsonSchemaType: JSONType,
+  jsonSchemaProperties?: Record<string, object>,
+  jsonSchemaItems?: Record<string, JSONType> | { properties: Record<string, object>; type: string },
+): ValueSchema {
+  if (jsonSchemaType === 'number' || jsonSchemaType === 'integer') {
+    return { type: 'int' } as ValueSchemaInt;
+  } else if (jsonSchemaType === 'null') {
+    throw new Error('Cannot convert "null" type property from JsonSchema to ValueSchema');
+  } else if (jsonSchemaType === 'object') {
+    if (jsonSchemaProperties === undefined) {
+      throw new Error('Cannot convert "object" from JSON Schema without any nested "properties" defined');
+    }
+    return { items: jsonSchemaProperties, type: 'struct' } as ValueSchemaStruct;
+  } else if (jsonSchemaType === 'array') {
+    if (jsonSchemaItems === undefined) {
+      throw new Error('Cannot convert "array" from JSON Schema without any nested "items" defined');
+    } else if (Object.keys(jsonSchemaItems).length === 0) {
+      throw new Error('Cannot convert "array" from JSON Schema without an "items" field defined');
+    }
+    // ValueSchema expects a singular type for the series where JSON Schema allows multiple. Take the first if the user gave multiple
+    const firstItemType = jsonSchemaItems.type;
+
+    let translatedItem: ValueSchema | undefined = undefined;
+    // Required to properly nest objects within arrays (i.e., structs within series)
+    if (firstItemType === 'object') {
+      const nestedProperties = jsonSchemaItems.properties as Record<string, object>;
+      translatedItem = translateJsonSchemaTypeToValueSchema(firstItemType, nestedProperties);
+    } else {
+      translatedItem = translateJsonSchemaTypeToValueSchema(firstItemType as JSONType);
+    }
+    return { items: translatedItem, type: 'series' } as ValueSchemaSeries;
+  } else {
+    return { type: jsonSchemaType } as ValueSchema;
+  }
 }
