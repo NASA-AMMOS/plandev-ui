@@ -1,5 +1,5 @@
-import { json } from '@sveltejs/kit';
 import * as auth from '$lib/server/auth';
+import { json } from '@sveltejs/kit';
 // import { TokenExpiredError } from 'jsonwebtoken';
 
 /**
@@ -11,41 +11,40 @@ import * as auth from '$lib/server/auth';
  * @returns JSON response with new access token or error.
  */
 export const POST = async ({ cookies }) => {
-	console.debug('/auth/refresh');
+  console.debug('/auth/refresh');
 
-	const refreshToken = cookies.get('refreshToken');
+  const refreshToken = cookies.get('refreshToken');
 
-	if (!refreshToken) {
-		return json({ error: 'unauthenticated' }, { status: 401 });
-	}
+  if (!refreshToken) {
+    return json({ error: 'unauthenticated' }, { status: 401 });
+  }
 
-	try {
-		const client = auth.Client.instance;
-		const tokens = await client.refresh(refreshToken);
+  try {
+    const client = auth.Client.instance;
+    const tokens = await client.refresh(refreshToken);
 
-		if (tokens) {
-			// TODO: Explain why it's not necessary to verify the tokens here...
-			cookies.set('idToken', tokens.idToken(), { path: '/', httpOnly: false });
-			cookies.set('accessToken', tokens.accessToken(), { path: '/', httpOnly: false });
-			cookies.set('refreshToken', tokens.refreshToken(), { path: '/', httpOnly: true });
-			// Tokens are returned as JSON for convenience. The client is able to extract tokens from
-			// cookie values, not JSON.
-			return json({
-				accessToken: tokens.accessToken(),
-				idToken: tokens.idToken()
-			});
-		} else {
-			return json({ huh: "that sure is ood" })
-		}
-
-	} catch (e: any) {
-		console.error('Error refreshing token:', e);
-		return json(
-			{
-				error: 'token_refresh_failed',
-				message: e?.message || 'An error occurred while refreshing the token.'
-			},
-			{ status: 500 }
-		);
-	}
+    if (tokens) {
+      // TODO: Explain why it's not necessary to verify the tokens here...
+      cookies.set('idToken', tokens.idToken(), { httpOnly: false, path: '/' });
+      cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path: '/' });
+      cookies.set('refreshToken', tokens.refreshToken(), { httpOnly: true, path: '/' });
+      // Tokens are returned as JSON for convenience. The client is able to extract tokens from
+      // cookie values, not JSON.
+      return json({
+        accessToken: tokens.accessToken(),
+        idToken: tokens.idToken(),
+      });
+    } else {
+      return json({ huh: 'that sure is ood' });
+    }
+  } catch (e: any) {
+    console.error('Error refreshing token:', e);
+    return json(
+      {
+        error: 'token_refresh_failed',
+        message: e?.message || 'An error occurred while refreshing the token.',
+      },
+      { status: 500 },
+    );
+  }
 };

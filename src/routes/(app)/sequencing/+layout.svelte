@@ -3,13 +3,13 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import ChevronRightIcon from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
+  import PhoenixIcon from '../../../assets/aerie-phoenix-logo.svg?component';
   import Nav from '../../../components/app/Nav.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { workspaces } from '../../../stores/sequencing';
   import type { Workspace } from '../../../types/sequencing';
   import { getSearchParameterNumber } from '../../../utilities/generic';
-  import PhoenixIcon from '../../assets/aerie-phoenix-logo.svg?component';
   import type { PageData } from './$types';
 
   export let data: PageData;

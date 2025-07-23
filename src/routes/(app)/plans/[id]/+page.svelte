@@ -13,6 +13,7 @@
   import WaterfallIcon from '@nasa-jpl/stellar/icons/waterfall.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
   import { onDestroy } from 'svelte';
+  import MissionModelIcon from '../../../../assets/mission-model.svg?component';
   import Nav from '../../../../components/app/Nav.svelte';
   import PageTitle from '../../../../components/app/PageTitle.svelte';
   import Console from '../../../../components/console/Console.svelte';
@@ -153,7 +154,6 @@
   import { pluralize } from '../../../../utilities/text';
   import { getUnixEpochTime } from '../../../../utilities/time';
   import { tooltip } from '../../../../utilities/tooltip';
-  import MissionModelIcon from '../../../assets/mission-model.svg?component';
   import type { PageData } from './$types';
 
   export let data: PageData;

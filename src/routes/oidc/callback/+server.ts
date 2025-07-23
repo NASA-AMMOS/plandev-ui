@@ -2,7 +2,6 @@ console.log('The callback page handles OAuth2 callbacks from the identity provid
 
 import * as auth from '$lib/server/auth';
 import { error, redirect } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
 
 /**
  * The login page produces a code verifier and an authorization URL.
@@ -15,7 +14,7 @@ import type { PageServerLoad } from './$types';
  * 4. **Validate iss, aud, and exp claims** to ensure it is issued by the expected identity provider and is not expired.
  *
  */
-export const load: PageServerLoad = async ({ cookies, url }) => {
+export const GET = async ({ cookies, url }) => {
   console.debug('/oidc/callback load');
 
   const client = auth.Client.instance;
@@ -54,8 +53,8 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
     const idJwt = await auth.verify(tokens.accessToken());
 
     if (accessJwt && idJwt) {
-      cookies.set('idToken', tokens.idToken(), { path: '/', httpOnly: false });
-      cookies.set('accessToken', tokens.accessToken(), { path: '/', httpOnly: false });
+      cookies.set('idToken', tokens.idToken(), { httpOnly: false, path: '/' });
+      cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path: '/' });
       cookies.set('refreshToken', tokens.refreshToken(), { path: '/' });
       // Cleanup cookies used for the OIDC flow.
       cookies.delete('verifier', { path: '/' });

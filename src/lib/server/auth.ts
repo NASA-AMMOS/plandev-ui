@@ -57,9 +57,9 @@ async function refresh(evt: RequestEvent) {
     await Client.instance
       .refresh(evt.cookies.get('refreshToken') || '')
       .then(tokens => {
-        evt.cookies.set('accessToken', tokens.accessToken(), { path, httpOnly: false });
-        evt.cookies.set('idToken', tokens.idToken(), { path, httpOnly: false });
-        evt.cookies.set('refreshToken', tokens.refreshToken(), { path, httpOnly: true });
+        evt.cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path });
+        evt.cookies.set('idToken', tokens.idToken(), { httpOnly: false, path });
+        evt.cookies.set('refreshToken', tokens.refreshToken(), { httpOnly: true, path });
       })
       .catch(() => evt.cookies.delete('refreshToken', { path: '/' }));
   }
@@ -105,12 +105,12 @@ export class Client {
   private static _instance: Client;
 
   private authorizationEndpoint: string;
-  private tokenEndpoint: string;
-  private redirectEndpoint: string;
+  private client: arctic.OAuth2Client;
   private clientId: string;
   private clientSecret: string | null;
+  private redirectEndpoint: string;
   private scopes: string[];
-  private client: arctic.OAuth2Client;
+  private tokenEndpoint: string;
 
   private constructor() {
     if (env.OIDC_WELL_KNOWN_URL) {
@@ -145,6 +145,45 @@ export class Client {
     }
   }
 
+  static get instance() {
+    this._instance ??= new Client();
+    return this._instance;
+  }
+
+  createAuthorizationURLWithPKCE(): { authorizationUrl: URL; state: string; verifier: string } {
+    const verifier: string = arctic.generateCodeVerifier();
+    const state: string = arctic.generateState();
+    const authorizationUrl: URL = this.client.createAuthorizationURLWithPKCE(
+      this.authorizationEndpoint,
+      state,
+      arctic.CodeChallengeMethod.S256,
+      verifier,
+      this.scopes,
+    );
+    return { authorizationUrl, state, verifier };
+  }
+
+  /**
+   * Exchange an authorization code (and verifier) for tokens.
+   *
+   * @param code
+   * @param verifier
+   * @returns
+   */
+  async exchange(code: string, verifier: string): Promise<arctic.OAuth2Tokens | undefined> {
+    return this.client.validateAuthorizationCode(this.tokenEndpoint, code, verifier);
+  }
+
+  /**
+   * Request new tokens using a refresh token.
+   *
+   * @param token - The refresh token to use to obtain new tokens.
+   * @returns
+   */
+  async refresh(token: string): Promise<arctic.OAuth2Tokens> {
+    return this.client.refreshAccessToken(this.tokenEndpoint, token, this.scopes);
+  }
+
   private validateConfiguration(): string[] {
     const problems: string[] = [];
 
@@ -173,45 +212,6 @@ export class Client {
     }
 
     return problems;
-  }
-
-  static get instance() {
-    this._instance ??= new Client();
-    return this._instance;
-  }
-
-  createAuthorizationURLWithPKCE(): { verifier: string; state: string; authorizationUrl: URL } {
-    const verifier: string = arctic.generateCodeVerifier();
-    const state: string = arctic.generateState();
-    const authorizationUrl: URL = this.client.createAuthorizationURLWithPKCE(
-      this.authorizationEndpoint,
-      state,
-      arctic.CodeChallengeMethod.S256,
-      verifier,
-      this.scopes,
-    );
-    return { verifier, state, authorizationUrl };
-  }
-
-  /**
-   * Exchange an authorization code (and verifier) for tokens.
-   *
-   * @param code
-   * @param verifier
-   * @returns
-   */
-  async exchange(code: string, verifier: string): Promise<arctic.OAuth2Tokens | undefined> {
-    return this.client.validateAuthorizationCode(this.tokenEndpoint, code, verifier);
-  }
-
-  /**
-   * Request new tokens using a refresh token.
-   *
-   * @param token - The refresh token to use to obtain new tokens.
-   * @returns
-   */
-  async refresh(token: string): Promise<arctic.OAuth2Tokens> {
-    return this.client.refreshAccessToken(this.tokenEndpoint, token, this.scopes);
   }
 }
 

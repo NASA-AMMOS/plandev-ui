@@ -7,15 +7,15 @@ export const accessToken = writable<JwtPayload | null>(null);
 export const idToken = writable<JwtPayload | null>(null);
 
 type CookieChanged = {
+  domain: string;
+  expires: Date;
   name: string;
   value: string;
-  expires: Date;
-  domain: string;
 };
 
 type CookieDeleted = {
-  name: string;
   domain: string;
+  name: string;
 };
 
 interface CookieChangeEvent extends Event {
@@ -92,7 +92,7 @@ let prior: number | null = null;
 
 export async function refresh(): Promise<void> {
   console.log('Refreshing tokens...');
-  const res = await fetch('/oidc/refresh', { method: 'POST', credentials: 'include' });
+  const res = await fetch('/oidc/refresh', { credentials: 'include', method: 'POST' });
   if (res.ok) {
     console.info('Access token refresh succeeded.');
   } else {
