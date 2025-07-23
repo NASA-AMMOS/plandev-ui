@@ -40,6 +40,7 @@ export async function handler(event: RequestEvent): Promise<RequestEvent> {
 async function sanitize(evt: RequestEvent) {
   await verify(evt.cookies.get('accessToken')).catch(_ => evt.cookies.delete('accessToken', { path: '/' }));
   await verify(evt.cookies.get('idToken')).catch(_ => evt.cookies.delete('idToken', { path: '/' }));
+  // TODO: verify/clear refresh token too? only if its aged
   return evt;
 }
 

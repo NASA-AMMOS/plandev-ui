@@ -10,13 +10,17 @@ export function shouldRedirectToLogin(user: User | null) {
 }
 
 export async function logout(reason?: string) {
-  if (browser) {
-    await fetch(`${base}/auth/logout`, { method: 'POST' });
-    if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
-      // hooks will handle SSO redirect
-      await goto(base, { invalidateAll: true });
-    } else {
-      await goto(`${base}/login${reason ? '?reason=' + reason : ''}`, { invalidateAll: true });
+  if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
+    goto(`${base}/oidc/logout`);
+  } else {
+    if (browser) {
+      await fetch(`${base}/auth/logout`, { method: 'POST' });
+      if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
+        // hooks will handle SSO redirect
+        await goto(base, { invalidateAll: true });
+      } else {
+        await goto(`${base}/login${reason ? '?reason=' + reason : ''}`, { invalidateAll: true });
+      }
     }
   }
 }
