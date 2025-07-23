@@ -18,7 +18,6 @@
   import { SquareCode } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
   import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
-  import { type IOutputFormat } from '../../language-package/interfaces/legacy';
   import type {
     LibrarySequence,
     LibrarySequenceMap,
@@ -116,11 +115,13 @@
   }
   $: {
     // Configure sequence editor.
-    editorSequenceView.dispatch({
-      effects: [
-        compartmentAdaptation.reconfigure((newSequenceAdaptation.input.editorExtension ?? (_ => []))(phoenixContext)),
-      ],
-    });
+    if (editorSequenceView) {
+      editorSequenceView.dispatch({
+        effects: [
+          compartmentAdaptation.reconfigure((newSequenceAdaptation.input.editorExtension ?? (_ => []))(phoenixContext)),
+        ],
+      });
+    }
   }
   $: editorSequenceView?.dispatch({
     effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly)]),
