@@ -17,7 +17,12 @@
   data-sidebar="menu-sub-button"
   data-active={isActive}
   class={cn(
-    'outline-hidden grid h-7 w-full min-w-0 items-center gap-1 overflow-hidden rounded-md text-left text-sm text-[var(--sidebar-foreground)] ring-[var(--sidebar-ring)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)] focus-visible:ring-2 active:bg-[var(--sidebar-accent)] active:text-[var(--sidebar-accent-foreground)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-[var(--sidebar-accent)] data-[active=true]:text-[var(--sidebar-accent-foreground)] [&>span:last-child]:truncate',
+    'outline-hidden grid h-7 w-full min-w-0 items-center gap-1 overflow-hidden rounded-md text-left text-sm text-[var(--sidebar-foreground)] ring-[var(--sidebar-ring)]',
+    'hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]',
+    'focus-visible:ring-2',
+    'active:text-[var(--sidebar-accent-foreground)]',
+    'disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-[var(--sidebar-accent)]',
+    'data-[active=true]:bg-blue-100 data-[active=true]:text-[var(--sidebar-accent-foreground)] [&>span:last-child]:truncate',
     className,
   )}
   role="menuitem"
