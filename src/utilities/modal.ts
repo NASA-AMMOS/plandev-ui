@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import AboutModal from '../components/modals/AboutModal.svelte';
 import ActionCreationModal from '../components/modals/ActionCreationModal.svelte';
+import CancelActionRunModal from '../components/modals/CancelActionRunModal.svelte';
 import ConfirmActivityCreationModal from '../components/modals/ConfirmActivityCreationModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
 import CreatePlanBranchModal from '../components/modals/CreatePlanBranchModal.svelte';
@@ -13,23 +14,29 @@ import DeleteExternalSourceModal from '../components/modals/DeleteExternalSource
 import EditViewModal from '../components/modals/EditViewModal.svelte';
 import ExpansionPanelModal from '../components/modals/ExpansionPanelModal.svelte';
 import ExpansionSequenceModal from '../components/modals/ExpansionSequenceModal.svelte';
+import ImportWorkspaceFileModal from '../components/modals/ImportWorkspaceFileModal.svelte';
 import LibrarySequenceModal from '../components/modals/LibrarySequenceModal.svelte';
 import ManagePlanConstraintsModal from '../components/modals/ManagePlanConstraintsModal.svelte';
 import ManagePlanDerivationGroupsModal from '../components/modals/ManagePlanDerivationGroupsModal.svelte';
 import ManagePlanSchedulingConditionsModal from '../components/modals/ManagePlanSchedulingConditionsModal.svelte';
 import ManagePlanSchedulingGoalsModal from '../components/modals/ManagePlanSchedulingGoalsModal.svelte';
 import MergeReviewEndedModal from '../components/modals/MergeReviewEndedModal.svelte';
+import MoveItemToWorkspaceModal from '../components/modals/MoveItemToWorkspaceModal.svelte';
+import MoveWorkspaceItemModal from '../components/modals/MoveWorkspaceItemModal.svelte';
 import NewSequenceModal from '../components/modals/NewSequenceModal.svelte';
+import NewWorkspaceFolderModal from '../components/modals/NewWorkspaceFolderModal.svelte';
+import NewWorkspaceSequenceModal from '../components/modals/NewWorkspaceSequenceModal.svelte';
 import PlanBranchesModal from '../components/modals/PlanBranchesModal.svelte';
 import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.svelte';
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
+import RenameWorkspaceItemModal from '../components/modals/RenameWorkspaceItemModal.svelte';
 import RestorePlanSnapshotModal from '../components/modals/RestorePlanSnapshotModal.svelte';
 import RunActionModal from '../components/modals/RunActionModal.svelte';
+import RunActionResultsModal from '../components/modals/RunActionResultsModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
 import TimeRangeModal from '../components/modals/TimeRangeModal.svelte';
 import UpdatePlanMissionModelModal from '../components/modals/UpdatePlanMissionModelModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
-import WorkspaceModal from '../components/modals/WorkspaceModal.svelte';
 import NewSequenceTemplateModal from '../components/sequence-templates/NewSequenceTemplateModal.svelte';
 import { type ActionDefinition } from '../types/actions';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
@@ -37,6 +44,7 @@ import type { User } from '../types/app';
 import type { ExpansionSequence } from '../types/expansion';
 import type { DerivationGroup, ExternalSourcePkey, ExternalSourceSlim } from '../types/external-source';
 import type { ModalElement, ModalElementValue } from '../types/modal';
+import type { ArgumentsMap } from '../types/parameter';
 import type {
   Plan,
   PlanBranchRequestAction,
@@ -46,11 +54,11 @@ import type {
   PlanSlim,
 } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
+import type { UserSequence } from '../types/sequencing';
 import type { Tag } from '../types/tags';
 import type { ViewDefinition } from '../types/view';
-import type { ArgumentsMap } from '../types/parameter';
-import RunActionResultsModal from '../components/modals/RunActionResultsModal.svelte';
-import CancelActionRunModal from '../components/modals/CancelActionRunModal.svelte';
+import type { Workspace } from '../types/workspace';
+import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
 
 /**
  * Listens for clicks on the document body and removes the modal children.
@@ -301,6 +309,102 @@ export async function showDeleteExternalEventSourceTypeModal(
 }
 
 /**
+ * Shows a ImportWorkspaceFileModal component with the supplied arguments.
+ */
+export async function showImportWorkspaceFileModal(
+  currentWorkspace: Workspace,
+  currentWorkspaceContents: WorkspaceTreeNode,
+  startingPath: string,
+  workspace: Workspace | null | undefined,
+  user: User | null,
+): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const importWorkspaceFileModal = new ImportWorkspaceFileModal({
+          props: {
+            currentWorkspace,
+            currentWorkspaceContents,
+            startingPath,
+            user,
+            workspace,
+          },
+          target,
+        });
+        target.resolve = resolve;
+
+        // Do not allow users to dismiss this modal
+        target.setAttribute('data-dismissible', 'false');
+
+        importWorkspaceFileModal.$on('confirm', (e: CustomEvent<{ files: FileList; targetDirectory: string }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          importWorkspaceFileModal.$destroy();
+        });
+
+        importWorkspaceFileModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          target.removeAttribute('data-dismissible');
+          importWorkspaceFileModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a MoveItemToWorkspaceModal component with the supplied arguments.
+ */
+export async function showMoveItemToWorkspaceModal(
+  currentWorkspace: Workspace,
+  originalNode: WorkspaceTreeNode,
+  originalPath: string,
+  user: User | null,
+): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const moveWorkspaceFileToWorkspaceModal = new MoveItemToWorkspaceModal({
+          props: { currentWorkspace, originalNode, originalPath, user },
+          target,
+        });
+        target.resolve = resolve;
+
+        // Do not allow users to dismiss this modal
+        target.setAttribute('data-dismissible', 'false');
+
+        moveWorkspaceFileToWorkspaceModal.$on(
+          'confirm',
+          (e: CustomEvent<{ shouldCopy: boolean; targetPath: string; targetWorkspace: Workspace }>) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: true, value: e.detail });
+            moveWorkspaceFileToWorkspaceModal.$destroy();
+          },
+        );
+
+        moveWorkspaceFileToWorkspaceModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          target.removeAttribute('data-dismissible');
+          moveWorkspaceFileToWorkspaceModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
  * Shows a ManagePlanConstraintsModal component with the supplied arguments.
  */
 export async function showManagePlanConstraintsModal(user: User | null): Promise<ModalElementValue> {
@@ -443,6 +547,102 @@ export async function showManagePlanSchedulingGoalsModal(user: User | null): Pro
 }
 
 /**
+ * Shows a NewWorkspaceSequenceModal component with the supplied arguments.
+ */
+export async function showNewWorkspaceSequenceModal(
+  currentWorkspace: Workspace,
+  currentWorkspaceContents: WorkspaceTreeNode,
+  startingPath: string = '',
+  user: User | null,
+): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const newWorkspaceSequenceModal = new NewWorkspaceSequenceModal({
+          props: {
+            currentWorkspace,
+            currentWorkspaceContents,
+            startingPath,
+            user,
+          },
+          target,
+        });
+        target.resolve = resolve;
+
+        // Do not allow users to dismiss this modal
+        target.setAttribute('data-dismissible', 'false');
+
+        newWorkspaceSequenceModal.$on('confirm', (e: CustomEvent<{ sequencePath: string }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          newWorkspaceSequenceModal.$destroy();
+        });
+
+        newWorkspaceSequenceModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          target.removeAttribute('data-dismissible');
+          newWorkspaceSequenceModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a NewWorkspaceFolderModal component with the supplied arguments.
+ */
+export async function showNewWorkspaceFolderModal(
+  currentWorkspace: Workspace,
+  currentWorkspaceContents: WorkspaceTreeNode,
+  startingPath: string = '',
+  user: User | null,
+): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const newWorkspaceFolderModal = new NewWorkspaceFolderModal({
+          props: {
+            currentWorkspace,
+            currentWorkspaceContents,
+            startingPath,
+            user,
+          },
+          target,
+        });
+        target.resolve = resolve;
+
+        // Do not allow users to dismiss this modal
+        target.setAttribute('data-dismissible', 'false');
+
+        newWorkspaceFolderModal.$on('confirm', (e: CustomEvent<{ folderPath: string }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          newWorkspaceFolderModal.$destroy();
+        });
+
+        newWorkspaceFolderModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          target.removeAttribute('data-dismissible');
+          newWorkspaceFolderModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
  * Shows a PlanLockedModal component with the supplied arguments.
  */
 export async function showMergeReviewEndedModal(
@@ -476,33 +676,97 @@ export async function showMergeReviewEndedModal(
   });
 }
 
-export async function showWorkspaceModal(
-  workspaceNames: string[],
-  workspaceName?: string,
-): Promise<ModalElementValue<{ name: string }>> {
+/**
+ * Shows a MoveWorkspaceItemModal component with the supplied arguments.
+ */
+export async function showMoveWorkspaceItemModal(
+  currentWorkspace: Workspace,
+  currentWorkspaceContents: WorkspaceTreeNode,
+  originalNode: WorkspaceTreeNode,
+  originalPath: string,
+  workspace: Workspace | null | undefined,
+  user: User | null,
+): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const workspaceModal = new WorkspaceModal({
-          props: { initialWorkspaceName: workspaceName, workspaceNames },
+        const moveWorkspaceItemModal = new MoveWorkspaceItemModal({
+          props: {
+            currentWorkspace,
+            currentWorkspaceContents,
+            originalNode,
+            originalPath,
+            user,
+            workspace,
+          },
           target,
         });
         target.resolve = resolve;
 
-        workspaceModal.$on('close', () => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: false });
-          workspaceModal.$destroy();
-        });
+        // Do not allow users to dismiss this modal
+        target.setAttribute('data-dismissible', 'false');
 
-        workspaceModal.$on('save', (e: CustomEvent<{ name: string }>) => {
+        moveWorkspaceItemModal.$on(
+          'confirm',
+          (e: CustomEvent<{ originalNode: WorkspaceTreeNode; targetPath: string }>) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: true, value: e.detail });
+            moveWorkspaceItemModal.$destroy();
+          },
+        );
+
+        moveWorkspaceItemModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
-          resolve({ confirm: true, value: e.detail });
-          workspaceModal.$destroy();
+          target.removeAttribute('data-dismissible');
+          moveWorkspaceItemModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a RenameWorkspaceItemModal component with the supplied arguments.
+ */
+export async function showRenameWorkspaceItemModal(
+  originalNode: WorkspaceTreeNode,
+  originalPath: string,
+): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const renameWorkspaceItemModal = new RenameWorkspaceItemModal({
+          props: { originalNode, originalPath },
+          target,
+        });
+        target.resolve = resolve;
+
+        // Do not allow users to dismiss this modal
+        target.setAttribute('data-dismissible', 'false');
+
+        renameWorkspaceItemModal.$on(
+          'confirm',
+          (e: CustomEvent<{ originalNode: WorkspaceTreeNode; targetPath: string }>) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: true, value: e.detail });
+            renameWorkspaceItemModal.$destroy();
+          },
+        );
+
+        renameWorkspaceItemModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          target.removeAttribute('data-dismissible');
+          renameWorkspaceItemModal.$destroy();
         });
       }
     } else {
@@ -1032,6 +1296,7 @@ export async function showRestorePlanSnapshotModal(
 export async function showRunActionModal(
   actionDefinition: ActionDefinition,
   user: User | null,
+  workspaceSequences: UserSequence[],
   parameters: ArgumentsMap | undefined,
 ): Promise<ModalElementValue<{ id: number | null }>> {
   return new Promise(resolve => {
@@ -1039,7 +1304,10 @@ export async function showRunActionModal(
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const runActionModal = new RunActionModal({ props: { actionDefinition, parameters, user }, target });
+        const runActionModal = new RunActionModal({
+          props: { actionDefinition, parameters, user, workspaceSequences },
+          target,
+        });
         target.resolve = resolve;
 
         runActionModal.$on('close', () => {
