@@ -45,7 +45,7 @@ const handleOIDCAuth: Handle = async ({ event, resolve }) => {
   const { activeRole, accessToken: token = null } = cookies;
 
   if (token) {
-    const user: BaseUser = { token }; // TODO: for id, need to get id from idToken, but do we get preferred_username? is that even a thing outside of keycloak? hmmm....
+    const user: BaseUser = { id: null, token }; // TODO: for id, need to get id from idToken, but do we get preferred_username? is that even a thing outside of keycloak? hmmm....
     event.locals.user = await computeRolesFromJWT(user, activeRole);
   } else {
     event.locals.user = null;
@@ -166,6 +166,11 @@ async function computeRolesFromJWT(baseUser: BaseUser, activeRole: string | null
   }
 
   const decodedToken: ParsedUserToken = jwtDecode(baseUser.token);
+
+  if (baseUser.id === null && env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
+    // since our scope is always one that includes email, and that's also a unique id, we can use that
+    baseUser.id = decodedToken.email;
+  }
 
   const allowedRoles = decodedToken['https://hasura.io/jwt/claims']['x-hasura-allowed-roles'];
   const defaultRole = decodedToken['https://hasura.io/jwt/claims']['x-hasura-default-role'];
