@@ -109,6 +109,7 @@ export class Client {
   private client: arctic.OAuth2Client;
   private clientId: string;
   private clientSecret: string | null;
+  private logoutEndpoint: string;
   private redirectEndpoint: string;
   private scopes: string[];
   private tokenEndpoint: string;
@@ -118,8 +119,9 @@ export class Client {
       fetch(env.OIDC_WELL_KNOWN_URL)
         .then(res => res.json())
         .then(data => {
-          this.authorizationEndpoint ??= data.authorizationEndpoint;
-          this.tokenEndpoint ??= data.tokenEndpoint;
+          this.authorizationEndpoint ??= data.authorizationEndpoint ?? data.authorization_endpoint;
+          this.tokenEndpoint ??= data.tokenEndpoint ?? data.token_endpoint;
+          this.logoutEndpoint ??= data.endSessionEndpoint ?? data.end_session_endpoint;
         })
         .catch(err => {
           console.error('Error fetching OIDC configuration:', err);
@@ -130,6 +132,7 @@ export class Client {
     this.authorizationEndpoint ??= env.OIDC_AUTHORIZATION_URL;
     this.tokenEndpoint ??= env.OIDC_TOKEN_URL;
     this.redirectEndpoint ??= env.OIDC_REDIRECT_URI;
+    this.logoutEndpoint ??= env.OIDC_LOGOUT_URL;
     this.clientId ??= env.OIDC_CLIENT_ID;
     this.clientSecret ??= env.OIDC_CLIENT_SECRET || null;
     this.scopes ??= env.OIDC_SCOPES ? env.OIDC_SCOPES.split(' ') : ['openid', 'profile', 'email'];
@@ -173,6 +176,12 @@ export class Client {
    */
   async exchange(code: string, verifier: string): Promise<arctic.OAuth2Tokens | undefined> {
     return this.client.validateAuthorizationCode(this.tokenEndpoint, code, verifier);
+  }
+
+  // arctic handles token revocation, but not logout, as described here https://blog.elest.io/keycloak-token-management-expiration-revocation-and-renewal/, which is what we want to end the session
+  // TODO: test if revoke does the same thing
+  getLogoutEndpoint(): string {
+    return this.logoutEndpoint;
   }
 
   /**
