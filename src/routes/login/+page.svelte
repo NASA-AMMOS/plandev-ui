@@ -8,8 +8,8 @@
   import AlertError from '../../components/ui/AlertError.svelte';
   import { SearchParameters } from '../../enums/searchParameters';
   import type { LoginResponseBody } from '../../types/auth';
-  import { removeQueryParam } from '../../utilities/generic';
   import { EXPIRED_JWT, hasNoAuthorization } from '../../utilities/permissions';
+  import { removeQueryParam } from '../../utilities/url';
   import type { PageData } from './$types';
 
   export let data: PageData;

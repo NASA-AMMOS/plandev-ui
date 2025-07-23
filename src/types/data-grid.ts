@@ -15,6 +15,6 @@ export type DataGridRowsSelection<TRowData> = TRowData[];
 export type RowId = number | string;
 
 export interface TRowData {
-  id?: number;
+  id?: number | string;
   [key: string]: any;
 }

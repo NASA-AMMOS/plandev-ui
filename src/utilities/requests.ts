@@ -170,3 +170,44 @@ export async function reqHasura<T = any>(
   const { data } = json;
   return data;
 }
+
+/**
+ * Function to make HTTP POST requests to the Workspace Service.
+ */
+export async function reqWorkspace<T = any>(
+  url: string,
+  method: string,
+  body: any | null,
+  user: BaseUser | User | null,
+  signal?: AbortSignal,
+  asJson: boolean = true,
+): Promise<T> {
+  const WORKSPACE_URL = browser ? env.PUBLIC_WORKSPACE_CLIENT_URL : env.PUBLIC_WORKSPACE_SERVER_URL;
+
+  const headers: HeadersInit = {
+    Authorization: `Bearer ${user?.token ?? ''}`,
+    'x-hasura-role': (user as User)?.activeRole ?? '',
+    'x-hasura-user-id': user?.id ?? '',
+  };
+  const options: RequestInit = {
+    headers,
+    method,
+    signal,
+  };
+
+  if (body !== null) {
+    options.body = body;
+  }
+
+  const response = await fetch(`${WORKSPACE_URL}/ws/${url}`, options);
+
+  if (!response.ok) {
+    throw new Error(response.statusText);
+  }
+
+  if (asJson) {
+    return await response.json();
+  }
+
+  return (await response.text()) as T;
+}

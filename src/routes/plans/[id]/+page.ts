@@ -3,7 +3,7 @@ import { redirect } from '@sveltejs/kit';
 import { SearchParameters } from '../../../enums/searchParameters';
 import { planReadOnlyMergeRequest } from '../../../stores/plan';
 import effects from '../../../utilities/effects';
-import { getSearchParameterNumber } from '../../../utilities/generic';
+import { getSearchParameterNumber } from '../../../utilities/url';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, params, url }) => {

@@ -18,7 +18,7 @@ export async function getPlanForTransfer(
   plan: Plan | PlanSlim,
   user: User | null,
   activities?: ActivityDirective[],
-): Promise<PlanTransfer | void> {
+): Promise<PlanTransfer> {
   const simulation: Simulation | null = await effects.getPlanLatestSimulation(plan.id, user);
   const qualifiedSimulationArguments: ArgumentsMap = simulation
     ? {
@@ -99,10 +99,7 @@ export async function exportPlan(
   activities?: ActivityDirective[],
 ): Promise<void> {
   const planTransfer = await getPlanForTransfer(plan, user, activities);
-
-  if (planTransfer) {
-    downloadJSON(planTransfer, plan.name);
-  }
+  downloadJSON(planTransfer, plan.name);
 }
 
 export function isDeprecatedPlanTransfer(

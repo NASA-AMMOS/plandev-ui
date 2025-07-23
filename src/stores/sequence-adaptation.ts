@@ -1,37 +1,15 @@
-import { seqJsonToSeqn, seqnToSeqJson } from '@nasa-jpl/aerie-sequence-languages';
 import { derived, get, writable, type Writable } from 'svelte/store';
 import type { GlobalType } from '../types/global-type';
 import type { ISequenceAdaptation, SequenceAdaptationMetadata } from '../types/sequencing';
 import gql from '../utilities/gql';
-import { sequenceAutoIndent } from '../utilities/sequence-editor/sequence-autoindent';
-import { sequenceCompletion } from '../utilities/sequence-editor/sequence-completion';
+import { getDefaultSequenceAdaptation } from '../utilities/sequence-editor/sequence-adaptation';
 import { gqlSubscribable } from './subscribable';
 
-const defaultAdaptation: ISequenceAdaptation = {
-  argDelegator: undefined,
-  autoComplete: sequenceCompletion,
-  autoIndent: sequenceAutoIndent,
-  globals: [],
-  inputFormat: {
-    linter: undefined,
-    name: 'SeqN',
-    toInputFormat: async input => seqJsonToSeqn(JSON.parse(input)),
-  },
-  modifyOutput: undefined,
-  modifyOutputParse: undefined,
-  outputFormat: [
-    {
-      fileExtension: 'json',
-      name: 'Seq JSON',
-      toOutputFormat: async (...args: Parameters<typeof seqnToSeqJson>) =>
-        JSON.stringify(seqnToSeqJson(...args), null, 2),
-    },
-  ],
-};
+const defaultSequenceAdaptation = getDefaultSequenceAdaptation();
 
 /* Writeable */
 
-export const sequenceAdaptation: Writable<ISequenceAdaptation> = writable(defaultAdaptation);
+export const sequenceAdaptation: Writable<ISequenceAdaptation> = writable(defaultSequenceAdaptation);
 
 /* Subscriptions. */
 
@@ -51,6 +29,11 @@ export const outputFormat = derived(
   ([$sequenceAdaptation]) => $sequenceAdaptation?.outputFormat ?? [],
 );
 
+export const adaptationGlobals = derived(
+  [sequenceAdaptation],
+  ([$sequenceAdaptation]) => $sequenceAdaptation.globals ?? [],
+);
+
 /* Helpers */
 
 export function getGlobals(): GlobalType[] {
@@ -59,17 +42,18 @@ export function getGlobals(): GlobalType[] {
 
 export function setSequenceAdaptation(newSequenceAdaptation: Partial<ISequenceAdaptation> | undefined): void {
   sequenceAdaptation.set({
-    argDelegator: newSequenceAdaptation?.argDelegator ?? defaultAdaptation.argDelegator,
-    autoComplete: newSequenceAdaptation?.autoComplete ?? defaultAdaptation.autoComplete,
-    autoIndent: newSequenceAdaptation?.autoIndent ?? defaultAdaptation.autoIndent,
-    globals: newSequenceAdaptation?.globals ?? defaultAdaptation.globals,
+    argDelegator: newSequenceAdaptation?.argDelegator ?? defaultSequenceAdaptation.argDelegator,
+    autoComplete: newSequenceAdaptation?.autoComplete ?? defaultSequenceAdaptation.autoComplete,
+    autoIndent: newSequenceAdaptation?.autoIndent ?? defaultSequenceAdaptation.autoIndent,
+    globals: newSequenceAdaptation?.globals ?? defaultSequenceAdaptation.globals,
     inputFormat: {
-      linter: newSequenceAdaptation?.inputFormat?.linter ?? defaultAdaptation.inputFormat.linter,
-      name: newSequenceAdaptation?.inputFormat?.name ?? defaultAdaptation.inputFormat.name,
-      toInputFormat: newSequenceAdaptation?.inputFormat?.toInputFormat ?? defaultAdaptation.inputFormat.toInputFormat,
+      linter: newSequenceAdaptation?.inputFormat?.linter ?? defaultSequenceAdaptation.inputFormat.linter,
+      name: newSequenceAdaptation?.inputFormat?.name ?? defaultSequenceAdaptation.inputFormat.name,
+      toInputFormat:
+        newSequenceAdaptation?.inputFormat?.toInputFormat ?? defaultSequenceAdaptation.inputFormat.toInputFormat,
     },
-    modifyOutput: newSequenceAdaptation?.modifyOutput ?? defaultAdaptation.modifyOutput,
-    modifyOutputParse: newSequenceAdaptation?.modifyOutputParse ?? defaultAdaptation.modifyOutputParse,
-    outputFormat: newSequenceAdaptation?.outputFormat ?? defaultAdaptation.outputFormat,
+    modifyOutput: newSequenceAdaptation?.modifyOutput ?? defaultSequenceAdaptation.modifyOutput,
+    modifyOutputParse: newSequenceAdaptation?.modifyOutputParse ?? defaultSequenceAdaptation.modifyOutputParse,
+    outputFormat: newSequenceAdaptation?.outputFormat ?? defaultSequenceAdaptation.outputFormat,
   });
 }
