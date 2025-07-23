@@ -188,6 +188,7 @@
           <select
             class="st-select w-full"
             name="parcel"
+            aria-label="Parcel"
             use:permissionHandler={{
               hasPermission,
               permissionError,
@@ -207,7 +208,7 @@
             autocomplete="off"
             class="st-input w-full"
             name="location"
-            aria-label="location"
+            aria-label="Workspace Location"
             use:permissionHandler={{
               hasPermission,
               permissionError,
@@ -221,7 +222,7 @@
               autocomplete="off"
               class="st-input w-full"
               name="name"
-              aria-label="name"
+              aria-label="Workspace Name"
               bind:value={workspaceName}
               use:permissionHandler={{
                 hasPermission,

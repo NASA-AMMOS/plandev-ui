@@ -20,6 +20,7 @@
     'outline-hidden grid h-7 w-full min-w-0 items-center gap-1 overflow-hidden rounded-md text-left text-sm text-[var(--sidebar-foreground)] ring-[var(--sidebar-ring)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)] focus-visible:ring-2 active:bg-[var(--sidebar-accent)] active:text-[var(--sidebar-accent-foreground)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-[var(--sidebar-accent)] data-[active=true]:text-[var(--sidebar-accent-foreground)] [&>span:last-child]:truncate',
     className,
   )}
+  role="menuitem"
   style="grid-template-columns: auto auto minmax(0, 1fr); padding-left: {indentPx}px;"
   on:click
   on:contextmenu

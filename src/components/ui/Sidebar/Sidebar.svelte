@@ -21,6 +21,7 @@
       'flex h-full w-[var(--sidebar-width)] flex-col bg-[var(--sidebar)] text-[var(--sidebar-foreground)]',
       className,
     )}
+    role="complementary"
     bind:this={ref}
   >
     <slot />
@@ -29,6 +30,7 @@
   <!-- Desktop only implementation -->
   <div
     bind:this={ref}
+    role="complementary"
     class="text-sidebar-foreground group peer hidden w-full md:block"
     data-state={$sidebarState}
     data-collapsible={$sidebarState === 'collapsed' ? collapsible : ''}

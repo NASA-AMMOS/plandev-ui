@@ -17,7 +17,7 @@
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
   <Nav user={data.user}>
-    <div class="sequencing-title" slot="title">
+    <div class="workspace-title" slot="title">
       <a class="app-icon link flex flex-nowrap" href={getWorkspacesUrl(base)}>
         <PhoenixIcon height={16} />Sequence Workspaces
       </a>
@@ -40,7 +40,7 @@
 </CssGrid>
 
 <style>
-  .sequencing-title {
+  .workspace-title {
     align-items: center;
     display: flex;
     gap: 6px;

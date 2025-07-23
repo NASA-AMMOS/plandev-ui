@@ -142,7 +142,7 @@
   {#if enableContextMenu}
     <ContextMenuInternal bind:this={contextMenu} on:hide={onContextMenuHide}>
       <ContextMenu.Group>
-        <ContextMenu.Item size="sm" on:click={onRenameNode}>
+        <ContextMenu.Item size="sm" on:click={onRenameNode} aria-label="Rename">
           <div
             class="flex gap-1"
             use:permissionHandler={{
@@ -154,7 +154,7 @@
             Rename
           </div>
         </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onMoveNode}>
+        <ContextMenu.Item size="sm" on:click={onMoveNode} aria-label="Move">
           <div
             class="flex gap-1"
             use:permissionHandler={{
@@ -166,7 +166,7 @@
             Move
           </div>
         </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onDeleteNode}>
+        <ContextMenu.Item size="sm" on:click={onDeleteNode} aria-label="Delete">
           <div
             class="flex gap-1"
             use:permissionHandler={{
@@ -180,7 +180,7 @@
         </ContextMenu.Item>
       </ContextMenu.Group>
       <ContextMenu.Separator />
-      <ContextMenu.Item size="sm" on:click={onCopyFileLocation}>
+      <ContextMenu.Item size="sm" on:click={onCopyFileLocation} aria-label="Copy Link to">
         <div
           class="flex gap-1"
           use:permissionHandler={{
@@ -194,14 +194,14 @@
         </div>
       </ContextMenu.Item>
       <ContextMenu.Separator />
-      <ContextMenu.Item size="sm" on:click={onMoveToWorkspace}>
+      <ContextMenu.Item size="sm" on:click={onMoveToWorkspace} aria-label="Move to Workspace">
         <div class="flex gap-1">
           <FileOutput size={16} /> Move to Workspace
         </div>
       </ContextMenu.Item>
       <ContextMenu.Separator />
       <ContextMenu.Group>
-        <ContextMenu.Item size="sm" on:click={onNewSequence}>
+        <ContextMenu.Item size="sm" on:click={onNewSequence} aria-label="New Sequence">
           <div
             class="flex gap-1"
             use:permissionHandler={{
@@ -212,7 +212,7 @@
             <FilePlus size={16} /> New Sequence
           </div>
         </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onNewFolder}>
+        <ContextMenu.Item size="sm" on:click={onNewFolder} aria-label="New Folder">
           <div
             class="flex gap-1"
             use:permissionHandler={{
@@ -223,7 +223,7 @@
             <FolderPlus size={16} /> New Folder
           </div>
         </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onImportFile}>
+        <ContextMenu.Item size="sm" on:click={onImportFile} aria-label="Import File">
           <div
             class="flex gap-1"
             use:permissionHandler={{

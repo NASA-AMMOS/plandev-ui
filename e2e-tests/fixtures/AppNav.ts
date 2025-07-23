@@ -16,6 +16,7 @@ export class AppNav {
   appMenuItemPlans: Locator;
   appMenuItemScheduling: Locator;
   appMenuItemSequenceTemplates: Locator;
+  appMenuItemSequenceWorkspace: Locator;
   pageLoadedLocatorNoData: Locator;
   pageLoadedLocatorWithData: Locator;
 
@@ -24,9 +25,8 @@ export class AppNav {
   }
 
   async goto() {
-    await this.page.goto('/plans', { waitUntil: 'networkidle' });
-    await this.page.waitForURL('/plans', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(250);
+    await this.page.goto('/plans', { waitUntil: 'domcontentloaded' });
+    await this.pageLoadedLocatorWithData.waitFor({ state: 'visible' });
   }
 
   updatePage(page: Page): void {
@@ -45,6 +45,7 @@ export class AppNav {
     this.appMenuItemPlans = this.appMenu.getByRole('menuitem', { name: 'Plans' });
     this.appMenuItemScheduling = this.appMenu.getByRole('menuitem', { name: 'Scheduling' });
     this.appMenuItemSequenceTemplates = this.appMenu.getByRole('menuitem', { name: 'Sequence Templates' });
+    this.appMenuItemSequenceWorkspace = this.appMenu.getByRole('menuitem', { name: 'Sequence Editor' });
     this.page = page;
     this.pageLoadedLocatorWithData = page.locator(`.ag-root`);
     this.pageLoadedLocatorNoData = page.locator(`.body:has-text("No Plans Found")`);

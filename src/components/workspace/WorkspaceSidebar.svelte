@@ -84,7 +84,7 @@
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
             <Tabs.Trigger value="files" class="flex h-10 w-10 items-center justify-center rounded-none shadow-none">
-              <Button builders={[builder]} variant="ghost">
+              <Button builders={[builder]} variant="ghost" aria-label="Files">
                 <Files size={16} />
               </Button>
             </Tabs.Trigger>
@@ -96,7 +96,7 @@
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
             <Tabs.Trigger value="grid" class="flex h-10 w-10 items-center justify-center rounded-none shadow-none">
-              <Button builders={[builder]} variant="ghost">
+              <Button builders={[builder]} variant="ghost" aria-label="Grid">
                 <FolderTree size={16} />
               </Button>
             </Tabs.Trigger>
@@ -107,7 +107,7 @@
         </Tooltip.Root>
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
-            <Button class="h-10" builders={[builder]} variant="ghost" on:click={onActionsClick}>
+            <Button class="h-10" builders={[builder]} variant="ghost" aria-label="Actions" on:click={onActionsClick}>
               <Clapperboard size={16} />
             </Button>
           </Tooltip.Trigger>
@@ -149,15 +149,27 @@
                     {/if}
                   </Tooltip.Trigger>
                   <Tooltip.Content>
-                    <div class="text-sm">Refresh (last {getTimeAgo(lastRefreshTime, new Date())})</div>
+                    <div class="text-xs">Refresh (last {getTimeAgo(lastRefreshTime, new Date())})</div>
                   </Tooltip.Content>
                 </Tooltip.Root>
                 <DropdownMenu.Root>
                   <DropdownMenu.Trigger asChild let:builder>
-                    <Button builders={[builder]} variant="ghost" class="gap-0">
-                      <Plus size={16} />
-                      <ChevronDown size={16} />
-                    </Button>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger asChild let:builder={tooltipBuilder}>
+                        <Button
+                          builders={[builder, tooltipBuilder]}
+                          variant="ghost"
+                          class="gap-0"
+                          aria-label="New Workspace Item"
+                        >
+                          <Plus size={16} />
+                          <ChevronDown size={16} />
+                        </Button>
+                      </Tooltip.Trigger>
+                      <Tooltip.Content>
+                        <div class="text-xs">New Workspace Item</div>
+                      </Tooltip.Content>
+                    </Tooltip.Root>
                   </DropdownMenu.Trigger>
                   <DropdownMenu.Content>
                     <DropdownMenu.Item size="sm" on:click={onNewSequence}>

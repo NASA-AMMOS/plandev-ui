@@ -158,6 +158,8 @@
     }
   }
 
+  $: console.log('selectedFilePath', selectedFilePath, selectedFileType);
+
   function resetRefreshInterval() {
     if (refreshInterval !== null) {
       clearInterval(refreshInterval);

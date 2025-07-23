@@ -92,7 +92,7 @@
       </Sidebar.Provider>
       <fieldset>
         <label for="file">File(s)</label>
-        <input bind:files={filesToUpload} multiple class="w-100" name="file" type="file" />
+        <input bind:files={filesToUpload} multiple class="w-100" name="file" type="file" aria-label="File(s)" />
       </fieldset>
     </div>
   </ModalContent>

@@ -80,12 +80,13 @@
         </Sidebar.Content>
       </Sidebar.Provider>
       <fieldset>
-        <Label class="pb-0.5" size="sm" for="folder-name">Sequence Name</Label>
+        <Label class="pb-0.5" size="sm" for="sequence-name">Sequence Name</Label>
         <InputStellar
           sizeVariant="xs"
-          id="folder-name"
-          name="folder-name"
+          id="sequence-name"
+          name="sequence-name"
           autocomplete="off"
+          aria-label="Sequence Name"
           bind:value={sequenceName}
         />
       </fieldset>

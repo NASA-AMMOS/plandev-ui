@@ -411,6 +411,7 @@
                 hasPermission: hasContextMenuUpdatePermission(user, null),
                 permissionError: 'You do not have permission to create a new sequence in this folder.',
               }}
+              aria-label="New Sequence"
             >
               <FilePlus size={16} /> New Sequence
             </div>
@@ -422,6 +423,7 @@
                 hasPermission: hasContextMenuUpdatePermission(user, null),
                 permissionError: 'You do not have permission to create a new folder in this folder.',
               }}
+              aria-label="New Folder"
             >
               <FolderPlus size={16} /> New Folder
             </div>
@@ -433,6 +435,7 @@
                 hasPermission: hasContextMenuUpdatePermission(user, null),
                 permissionError: 'You do not have permission to import a file into this folder.',
               }}
+              aria-label="Import File"
             >
               <ArrowUpFromLine size={16} /> Import File
             </div>
@@ -462,6 +465,7 @@
                   hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
                   permissionError: 'You do not have permission to rename this folder.',
                 }}
+                aria-label="Rename"
               >
                 <PencilLine size={16} />
                 Rename Folder
@@ -474,6 +478,7 @@
                   hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
                   permissionError: 'You do not have permission to move this folder.',
                 }}
+                aria-label="Move Folder"
               >
                 <FolderOutput size={16} />
                 Move Folder
@@ -486,6 +491,7 @@
                   hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
                   permissionError: 'You do not have permission to delete this folder.',
                 }}
+                aria-label="Delete Folder"
               >
                 <Trash2 size={16} />
                 Delete Folder
@@ -493,7 +499,7 @@
             </MenuItem>
             <Separator />
             <MenuItem className="text-xs py-1.5" on:click={() => onCopyFileLocation(breadcrumb)}>
-              <div class="flex items-center gap-1">
+              <div class="flex items-center gap-1" aria-label="Copy Link to">
                 <Copy size={16} /> Copy Link to {breadcrumb.type === WorkspaceContentType.Directory
                   ? 'Directory'
                   : 'File'}
@@ -501,7 +507,7 @@
             </MenuItem>
             <Separator />
             <MenuItem className="text-xs py-1.5" on:click={() => onMoveToWorkspace(breadcrumb)}>
-              <div class="flex items-center gap-1">
+              <div class="flex items-center gap-1" aria-label="Move to Workspace">
                 <FileOutput size={16} /> Move to Workspace
               </div>
             </MenuItem>
@@ -513,6 +519,7 @@
                   hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
                   permissionError: 'You do not have permission to create a new sequence in this folder.',
                 }}
+                aria-label="New Sequence"
               >
                 <FilePlus size={16} /> New Sequence
               </div>
@@ -535,6 +542,7 @@
                   hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
                   permissionError: 'You do not have permission to import a file into this folder.',
                 }}
+                aria-label="Import File"
               >
                 <ArrowUpFromLine size={16} /> Import File
               </div>
@@ -584,7 +592,7 @@
   >
     <svelte:fragment slot="context-menu" let:selectedItemId>
       <ContextMenu.Group>
-        <ContextMenu.Item size="sm" on:click={onTableMenuRenameNode}>
+        <ContextMenu.Item size="sm" on:click={onTableMenuRenameNode} aria-label="Rename">
           <div
             class="flex items-center gap-1"
             use:permissionHandler={{
@@ -596,7 +604,7 @@
             Rename
           </div>
         </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onTableMenuMoveNode}>
+        <ContextMenu.Item size="sm" on:click={onTableMenuMoveNode} aria-label="Move">
           <div
             class="flex items-center gap-1"
             use:permissionHandler={{
@@ -610,20 +618,20 @@
         </ContextMenu.Item>
       </ContextMenu.Group>
       <ContextMenu.Separator />
-      <ContextMenu.Item size="sm" on:click={onTableCopyFileLocation}>
+      <ContextMenu.Item size="sm" on:click={onTableCopyFileLocation} aria-label="Copy Link to">
         <div class="flex items-center gap-1">
           <Copy size={16} /> Copy Link to {getPathType(selectedItemId)}
         </div>
       </ContextMenu.Item>
       <ContextMenu.Separator />
-      <ContextMenu.Item size="sm" on:click={onTableMoveToWorkspace}>
+      <ContextMenu.Item size="sm" on:click={onTableMoveToWorkspace} aria-label="Move to Workspace">
         <div class="flex items-center gap-1">
           <FileOutput size={16} /> Move to Workspace
         </div>
       </ContextMenu.Item>
       <ContextMenu.Separator />
       <ContextMenu.Group>
-        <ContextMenu.Item size="sm" on:click={onTableNewSequence}>
+        <ContextMenu.Item size="sm" on:click={onTableNewSequence} aria-label="New Sequence">
           <div
             class="flex items-center gap-1"
             use:permissionHandler={{
@@ -634,7 +642,7 @@
             <FilePlus size={16} /> New Sequence
           </div>
         </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onTableNewFolder}>
+        <ContextMenu.Item size="sm" on:click={onTableNewFolder} aria-label="New Folder">
           <div
             class="flex items-center gap-1"
             use:permissionHandler={{
@@ -645,7 +653,7 @@
             <FolderPlus size={16} /> New Folder
           </div>
         </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onTableImportFile}>
+        <ContextMenu.Item size="sm" on:click={onTableImportFile} aria-label="Import File">
           <div
             class="flex items-center gap-1"
             use:permissionHandler={{
