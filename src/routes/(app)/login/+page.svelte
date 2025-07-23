@@ -5,11 +5,11 @@
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { Button, Input, Label } from '@nasa-jpl/stellar-svelte';
-  import AlertError from '../../components/ui/AlertError.svelte';
-  import { SearchParameters } from '../../enums/searchParameters';
-  import type { LoginResponseBody } from '../../types/auth';
-  import { removeQueryParam } from '../../utilities/generic';
-  import { EXPIRED_JWT, hasNoAuthorization } from '../../utilities/permissions';
+  import AlertError from '../../../components/ui/AlertError.svelte';
+  import { SearchParameters } from '../../../enums/searchParameters';
+  import type { LoginResponseBody } from '../../../types/auth';
+  import { removeQueryParam } from '../../../utilities/generic';
+  import { EXPIRED_JWT, hasNoAuthorization } from '../../../utilities/permissions';
   import type { PageData } from './$types';
 
   export let data: PageData;
