@@ -259,6 +259,7 @@ export enum Queries {
   VALIDATE_ACTIVITY_ARGUMENTS = 'validateActivityArguments',
   VIEW = 'view_by_pk',
   VIEWS = 'view',
+  WORKSPACE = 'workspace_by_pk',
   WORKSPACES = 'workspace',
   WITHDRAW_MERGE_REQUEST = 'withdraw_merge_request',
 }

@@ -76,7 +76,7 @@
     {
       "label": "Aerie Backend",
       "type": "shell",
-      "command": "cd ../aerie && docker compose up --build aerie_gateway aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 aerie_scheduler_worker_1 aerie_scheduler_worker_2 aerie_sequencing aerie_action hasura postgres",
+      "command": "cd ../aerie && docker compose up --build aerie_gateway aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 aerie_scheduler_worker_1 aerie_scheduler_worker_2 aerie_sequencing aerie_workspace aerie_action hasura postgres",
       "detail": "Task to start up Aerie containers.",
       "isBackground": true,
       "problemMatcher": [],

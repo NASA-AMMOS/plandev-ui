@@ -100,14 +100,17 @@ export function getFormParameters(
     const required = requiredParameters.indexOf(name) > -1;
     let errors: string[] | null = null;
     let isMultiSelect: boolean = false;
+    const newFormParameterSchema: ValueSchema | UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple = {
+      ...formParameterSchema,
+    };
     if (isActionValueSchemaSequence(schema) || schema.type === 'options-single' || schema.type === 'options-multiple') {
-      (formParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).options =
+      (newFormParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).options =
         dropdownOptions;
-      (formParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).label = optionLabel;
+      (newFormParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).label = optionLabel;
       if (schema.type === 'sequence') {
-        formParameterSchema.type = 'options-single';
+        newFormParameterSchema.type = 'options-single';
       } else if (schema.type === 'sequenceList') {
-        formParameterSchema.type = 'options-multiple';
+        newFormParameterSchema.type = 'options-multiple';
       }
 
       if (schema.type === 'options-multiple') {
@@ -135,7 +138,7 @@ export function getFormParameters(
       name,
       order,
       required,
-      schema: formParameterSchema,
+      schema: newFormParameterSchema,
       value,
       valueSource,
     };

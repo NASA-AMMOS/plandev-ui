@@ -9,7 +9,14 @@
   }
   import { browser } from '$app/environment';
   import { ContextMenu } from '@nasa-jpl/stellar-svelte';
-  import type { ColDef, ColumnState, IRowNode, RedrawRowsParams } from 'ag-grid-community';
+  import type {
+    ColDef,
+    ColumnState,
+    IRowNode,
+    IsExternalFilterPresentParams,
+    RedrawRowsParams,
+  } from 'ag-grid-community';
+  import { Trash2 } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy, type ComponentEvents } from 'svelte';
   import type { User } from '../../../types/app';
   import type { Dispatcher } from '../../../types/component';
@@ -23,6 +30,7 @@
   const defaultEditPermissionError: string = 'You do not have permission to edit.';
 
   export let autoSizeColumnsToFit: boolean = true;
+  export { className as class };
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let columnsToForceRefreshOnDataUpdate: (keyof RowData)[] = [];
@@ -46,10 +54,15 @@
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => parseInt(data[idKey]);
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
+  export let isExternalFilterPresent: ((params: IsExternalFilterPresentParams<RowData, any>) => boolean) | undefined =
+    undefined;
+  export let doesExternalFilterPass: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
+
   export let redrawRows: ((params?: RedrawRowsParams<RowData> | undefined) => void) | undefined = undefined;
 
   const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
+  let className: string = '';
   let deletePermission: boolean = true;
   let deletePermissionError: string = defaultDeletePermissionError;
   let editPermission: boolean = true;
@@ -57,7 +70,7 @@
   let selectedItemIds: RowId[] = [];
 
   $: if ((typeof hasDeletePermission === 'function' || typeof hasEditPermission === 'function') && user) {
-    const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
+    const selectedItem = items.find(item => getRowId(item) === selectedItemId) ?? null;
     if (selectedItem) {
       if (typeof hasDeletePermission === 'function') {
         deletePermission = hasDeletePermission(user, selectedItem);
@@ -130,13 +143,17 @@
   bind:currentSelectedRowId={selectedItemId}
   bind:selectedRowIds={selectedItemIds}
   bind:redrawRows
+  class={className}
   {autoSizeColumnsToFit}
   {columnDefs}
   {columnStates}
   {columnsToForceRefreshOnDataUpdate}
   {filterExpression}
+  {idKey}
   {getRowId}
   {isRowSelectable}
+  {isExternalFilterPresent}
+  {doesExternalFilterPass}
   useCustomContextMenu
   rowData={items}
   rowSelection="single"
@@ -144,6 +161,8 @@
   {showLoadingSkeleton}
   {loading}
   on:blur={onBlur}
+  on:cellContextMenu
+  on:cellContextMenuHide
   on:cellEditingStarted
   on:cellEditingStopped
   on:cellValueChanged
@@ -160,6 +179,7 @@
   on:selectionChanged
 >
   <svelte:fragment slot="context-menu">
+    <slot name="context-menu" {selectedItemId} />
     {#if hasEdit}
       <div
         use:permissionHandler={{
@@ -179,8 +199,8 @@
           permissionError: deletePermissionError,
         }}
       >
-        <ContextMenu.Item size="sm" disabled={!deletePermission} on:click={deleteItem}>
-          Delete {itemDisplayText}
+        <ContextMenu.Item class="items-center gap-1" size="sm" disabled={!deletePermission} on:click={deleteItem}>
+          <Trash2 size={16} /> Delete {itemDisplayText}{selectedItemId}
         </ContextMenu.Item>
       </div>
     {/if}

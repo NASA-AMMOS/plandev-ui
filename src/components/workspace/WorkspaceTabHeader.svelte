@@ -1,0 +1,111 @@
+<svelte:options immutable={true} />
+
+<script lang="ts">
+  import { Button, DropdownMenu, Tooltip } from '@nasa-jpl/stellar-svelte';
+  import { ArrowUpFromLine, Check, ChevronDown, FilePlus, FolderPlus, Plus, RefreshCw } from 'lucide-svelte';
+  import { createEventDispatcher } from 'svelte';
+  import { permissionHandler } from '../../utilities/permissionHandler';
+  import { getTimeAgo } from '../../utilities/time';
+  import SectionTitle from '../ui/SectionTitle.svelte';
+
+  export let title: string;
+  export let didWorkspaceUpdate: boolean;
+  export let hasEditWorkspacePermission: boolean;
+  export let lastRefreshTime: Date;
+
+  const dispatch = createEventDispatcher<{
+    importFile: void;
+    newFolder: void;
+    newSequence: void;
+    refreshWorkspace: void;
+  }>();
+
+  function onRefreshWorkspace() {
+    dispatch('refreshWorkspace');
+  }
+
+  function onNewSequence() {
+    dispatch('newSequence');
+  }
+
+  function onNewFolder() {
+    dispatch('newFolder');
+  }
+
+  function onImportFile() {
+    dispatch('importFile');
+  }
+</script>
+
+<div class="flex items-center justify-between gap-0 border-b border-border bg-background p-[6px]">
+  <SectionTitle>{title}</SectionTitle>
+  <div class="flex gap-0">
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild let:builder>
+        {#if didWorkspaceUpdate}
+          <Button builders={[builder]} variant="ghost">
+            <Check size={16} />
+          </Button>
+        {:else}
+          <Button builders={[builder]} variant="ghost" on:click={onRefreshWorkspace}>
+            <RefreshCw size={16} />
+          </Button>
+        {/if}
+      </Tooltip.Trigger>
+      <Tooltip.Content>
+        <div class="text-xs">Refresh (last refreshed {getTimeAgo(lastRefreshTime, new Date())})</div>
+      </Tooltip.Content>
+    </Tooltip.Root>
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild let:builder>
+        <Tooltip.Root>
+          <Tooltip.Trigger asChild let:builder={tooltipBuilder}>
+            <Button builders={[builder, tooltipBuilder]} variant="ghost" class="gap-0" aria-label="New Workspace Item">
+              <Plus size={16} />
+              <ChevronDown size={16} />
+            </Button>
+          </Tooltip.Trigger>
+          <Tooltip.Content>
+            <div class="text-xs">New Workspace Item</div>
+          </Tooltip.Content>
+        </Tooltip.Root>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Content>
+        <DropdownMenu.Item size="sm" on:click={onNewSequence}>
+          <div
+            class="flex cursor-pointer gap-1"
+            use:permissionHandler={{
+              hasPermission: hasEditWorkspacePermission,
+              permissionError: 'You do not have permission to edit this workspace',
+            }}
+          >
+            <FilePlus size={16} /> New Sequence
+          </div>
+        </DropdownMenu.Item>
+        <DropdownMenu.Item size="sm" on:click={onNewFolder}>
+          <div
+            class="flex cursor-pointer gap-1"
+            use:permissionHandler={{
+              hasPermission: hasEditWorkspacePermission,
+              permissionError: 'You do not have permission to edit this workspace',
+            }}
+          >
+            <FolderPlus size={16} /> New Folder
+          </div>
+        </DropdownMenu.Item>
+        <DropdownMenu.Separator />
+        <DropdownMenu.Item size="sm" on:click={onImportFile}>
+          <div
+            class="flex cursor-pointer gap-1"
+            use:permissionHandler={{
+              hasPermission: hasEditWorkspacePermission,
+              permissionError: 'You do not have permission to edit this workspace',
+            }}
+          >
+            <ArrowUpFromLine size={16} />Import File
+          </div>
+        </DropdownMenu.Item>
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>
+  </div>
+</div>

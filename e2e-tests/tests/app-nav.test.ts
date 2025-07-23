@@ -62,6 +62,14 @@ test.describe.serial('App Nav', () => {
     await expect(page).toHaveURL(`${baseURL}/models`);
   });
 
+  test(`Clicking on the app menu 'Sequence Editor' option should route to the workspaces page`, async ({ baseURL }) => {
+    await appNav.appMenuButton.click();
+    await appNav.appMenu.waitFor({ state: 'attached' });
+    await appNav.appMenu.waitFor({ state: 'visible' });
+    await appNav.appMenuItemSequenceWorkspace.click();
+    await expect(page).toHaveURL(`${baseURL}/workspaces`);
+  });
+
   test(`Clicking on the app menu 'Dictionaries' option should route to the dictionaries page`, async ({ baseURL }) => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });

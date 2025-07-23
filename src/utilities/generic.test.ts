@@ -1,11 +1,10 @@
 import { afterAll, describe, expect, test, vi } from 'vitest';
-import { SearchParameters } from '../enums/searchParameters';
 import {
   attemptStringConversion,
   clamp,
   classNames,
   filterEmpty,
-  getSearchParameterNumber,
+  filterNullish,
   isMacOs,
   lowercase,
   parseJSONStream,
@@ -66,16 +65,36 @@ describe('Generic utility function tests', () => {
   });
 
   describe('filterEmpty', () => {
-    test('Should correctly determine if something is not null or undefined', () => {
+    test('Should correctly determine if something is not null or undefined or an empty string', () => {
       expect(filterEmpty(0)).toEqual(true);
       expect(filterEmpty(false)).toEqual(true);
       expect(filterEmpty(null)).toEqual(false);
       expect(filterEmpty(undefined)).toEqual(false);
+      expect(filterEmpty('foo')).toEqual(true);
+      expect(filterEmpty('')).toEqual(false);
     });
 
     test('Should correctly filter out null and undefined entries in arrays', () => {
       expect([0, 1, 2, null, 4, undefined, 5].filter(filterEmpty)).toStrictEqual([0, 1, 2, 4, 5]);
-      expect(['false', false, { foo: 1 }, null, undefined].filter(filterEmpty)).toStrictEqual([
+      expect(['false', false, { foo: 1 }, null, undefined, ''].filter(filterEmpty)).toStrictEqual([
+        'false',
+        false,
+        { foo: 1 },
+      ]);
+    });
+  });
+
+  describe('filterNullish', () => {
+    test('Should correctly determine if something is not null or undefined', () => {
+      expect(filterNullish(0)).toEqual(true);
+      expect(filterNullish(false)).toEqual(true);
+      expect(filterNullish(null)).toEqual(false);
+      expect(filterNullish(undefined)).toEqual(false);
+    });
+
+    test('Should correctly filter out null and undefined entries in arrays', () => {
+      expect([0, 1, 2, null, 4, undefined, 5].filter(filterNullish)).toStrictEqual([0, 1, 2, 4, 5]);
+      expect(['false', false, { foo: 1 }, null, undefined].filter(filterNullish)).toStrictEqual([
         'false',
         false,
         { foo: 1 },
@@ -129,31 +148,6 @@ describe('Generic utility function tests', () => {
 
       mockNavigator.platform = 'Linux x86_64';
       expect(isMacOs()).toEqual(false);
-    });
-  });
-
-  describe('getSearchParameterNumber', () => {
-    test.each(
-      Object.keys(SearchParameters).map(key => ({
-        key,
-        parameter: SearchParameters[key as keyof typeof SearchParameters],
-      })),
-    )('Should correctly parse out the $key specified in the URL search query parameter', ({ parameter }) => {
-      const random = Math.random();
-      expect(
-        getSearchParameterNumber(parameter as SearchParameters, new URLSearchParams(`?${parameter}=${random}`)),
-      ).toBe(random);
-    });
-
-    test.each(
-      Object.keys(SearchParameters).map(key => ({
-        key,
-        parameter: SearchParameters[key as keyof typeof SearchParameters],
-      })),
-    )('Should ignore non number values for the $key specified in the URL search query parameter', ({ parameter }) => {
-      expect(getSearchParameterNumber(parameter as SearchParameters, new URLSearchParams(`?${parameter}=foo`))).toBe(
-        null,
-      );
     });
   });
 

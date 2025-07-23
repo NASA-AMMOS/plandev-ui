@@ -2,14 +2,32 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
+  import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import { seqJsonToSeqn } from '@nasa-jpl/aerie-sequence-languages';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { expansionRunsColumns } from '../../stores/expansion';
-  import { parcels } from '../../stores/sequencing';
+  import {
+    channelDictionaries,
+    commandDictionaries,
+    getParsedChannelDictionary,
+    getParsedCommandDictionary,
+    getParsedParameterDictionary,
+    parameterDictionaries as parameterDictionariesStore,
+    parcels,
+    parcelToParameterDictionaries,
+    userSequenceEditorColumns,
+    userSequenceEditorColumnsWithFormBuilder,
+  } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
   import type { ActivityInstanceJoin, ExpandedSequence, ExpansionRun } from '../../types/expansion';
-  import type { Parcel } from '../../types/sequencing';
+  import type {
+    ChannelDictionaryMetadata,
+    CommandDictionaryMetadata,
+    ParameterDictionaryMetadata,
+    Parcel,
+  } from '../../types/sequencing';
+  import { filterEmpty } from '../../utilities/generic';
   import SequenceEditor from '../sequencing/SequenceEditor.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -21,6 +39,9 @@
   export let expansionRuns: ExpansionRun[] = [];
   export let user: User | null;
 
+  let channelDictionary: ChannelDictionary | null = null;
+  let commandDictionary: CommandDictionary | null = null;
+  let parameterDictionaries: ParameterDictionary[] = [];
   let parcel: Parcel | null;
   let selectedSequence: ExpandedSequence | null = null;
   let selectedSequenceIds: number[] = [];
@@ -28,6 +49,66 @@
   let sequenceDefinition: string;
 
   $: convertOutputToSequence(selectedSequence);
+  $: if (parcel) {
+    const unparsedChannelDictionary = $channelDictionaries.find(
+      channelDictionaryMetadata => channelDictionaryMetadata.id === parcel?.channel_dictionary_id,
+    );
+    const unparsedCommandDictionary = $commandDictionaries.find(
+      commandDictionaryMetadata => commandDictionaryMetadata.id === parcel?.command_dictionary_id,
+    );
+    const unparsedParameterDictionaries = $parameterDictionariesStore.filter(parameterDictionaryMetadata => {
+      const parameterDictionary = $parcelToParameterDictionaries.find(
+        parcelToParameterDictionary =>
+          parcelToParameterDictionary.parameter_dictionary_id === parameterDictionaryMetadata.id &&
+          parcelToParameterDictionary.parcel_id === parcel?.id,
+      );
+
+      return parameterDictionary != null;
+    });
+
+    if (unparsedCommandDictionary) {
+      loadCommandDictionary(unparsedCommandDictionary);
+    } else {
+      commandDictionary = null;
+    }
+    if (unparsedChannelDictionary) {
+      loadChannelDictionary(unparsedChannelDictionary);
+    } else {
+      channelDictionary = null;
+    }
+    if (unparsedParameterDictionaries.length > 0) {
+      loadParameterDictionaries(unparsedParameterDictionaries);
+    } else {
+      parameterDictionaries = [];
+    }
+  }
+
+  async function loadCommandDictionary(unparsedCommandDictionary: CommandDictionaryMetadata) {
+    const parsedDictionary = await getParsedCommandDictionary(unparsedCommandDictionary, user);
+    if (parsedDictionary) {
+      commandDictionary = parsedDictionary;
+    }
+  }
+
+  async function loadChannelDictionary(unparsedChannelDictionary?: ChannelDictionaryMetadata) {
+    if (unparsedChannelDictionary) {
+      const parsedDictionary = await getParsedChannelDictionary(unparsedChannelDictionary, user);
+      if (parsedDictionary) {
+        channelDictionary = parsedDictionary;
+      }
+    }
+    channelDictionary = null;
+  }
+
+  async function loadParameterDictionaries(unparsedParameterDictionaries: ParameterDictionaryMetadata[] = []) {
+    parameterDictionaries = (
+      await Promise.all(
+        unparsedParameterDictionaries.map(unparsedParameterDictionary => {
+          return getParsedParameterDictionary(unparsedParameterDictionary, user);
+        }),
+      )
+    ).filter(filterEmpty);
+  }
 
   async function convertOutputToSequence(sequence: ExpandedSequence | null): Promise<void> {
     sequenceDefinition = sequence?.expanded_sequence
@@ -186,13 +267,15 @@
   <CssGridGutter track={1} type="column" />
 
   <SequenceEditor
-    {parcel}
     {sequenceDefinition}
     sequenceName={selectedSequence?.seq_id}
     sequenceOutput={selectedSequence ? JSON.stringify(selectedSequence.expanded_sequence, null, 2) : undefined}
     readOnly={true}
     title="Sequence - Definition Editor (Read-only)"
-    workspaceId={null}
-    {user}
+    {channelDictionary}
+    {commandDictionary}
+    {parameterDictionaries}
+    userSequenceEditorColumns={$userSequenceEditorColumns}
+    userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
   />
 </CssGrid>

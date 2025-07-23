@@ -2712,6 +2712,20 @@ const gql = {
     }
   `,
 
+  SUB_PARCEL: `#graphql
+    subscription SubParcel($parcelId: number) {
+      ${Queries.PARCEL}(where: { id: {_eq: $parcelId } }) {
+        channel_dictionary_id
+        command_dictionary_id
+        created_at
+        id
+        name
+        sequence_adaptation_id
+        updated_at
+      }
+    }
+  `,
+
   SUB_PARCELS: `#graphql
     subscription SubParcels {
       ${Queries.PARCELS}(order_by: { id: desc }) {
@@ -3520,13 +3534,29 @@ const gql = {
     }
   `,
 
+  SUB_WORKSPACE: `#graphql
+    subscription SubWorkspace($workspaceId: Int!) {
+      workspace: ${Queries.WORKSPACE}(id: $workspaceId) {
+        created_at
+        disk_location
+        id
+        name
+        owner
+        parcel_id
+        updated_at
+      }
+    }
+  `,
+
   SUB_WORKSPACES: `#graphql
     subscription SubWorkspaces {
       ${Queries.WORKSPACES}(order_by: { id: desc }) {
         created_at
+        disk_location
         id
         name
         owner
+        parcel_id
         updated_at
       }
     }

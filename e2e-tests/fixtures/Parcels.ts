@@ -8,10 +8,12 @@ export class Parcels {
   createButton: Locator;
   nameField: Locator;
   newButton: Locator;
+  pageLoadedLocatorWithData: Locator;
   parcelName: string;
   table: Locator;
-  tableRow: Locator;
-  tableRowDeleteButton: Locator;
+  tableRow: (parcelName: string) => Locator;
+  tableRowDeleteButton: (parcelName: string) => Locator;
+  tableRowParcelId: (parcelName: string) => Locator;
 
   constructor(public page: Page) {
     this.parcelName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
@@ -32,7 +34,7 @@ export class Parcels {
     parcelTableRowEditButton.click();
 
     this.updatePage(this.page);
-    await expect(this.tableRow).toBeVisible();
+    await expect(this.tableRow(this.parcelName)).toBeVisible();
     await expect(this.page.locator(`.ag-row:has-text("${firstCommandDictionaryName}") >> input`)).toBeChecked();
 
     await this.page.locator(`.ag-row:has-text("${secondCommandDictionaryName}") >> input`).click();
@@ -43,7 +45,7 @@ export class Parcels {
     await this.newButton.click();
     await this.page.getByText(dictionaryName).click();
     this.updatePage(this.page);
-    await expect(this.tableRow).not.toBeVisible();
+    await expect(this.tableRow(this.parcelName)).not.toBeVisible();
     await this.nameField.fill(this.parcelName);
     await this.createButton.click();
 
@@ -55,35 +57,35 @@ export class Parcels {
     const parcelsUrlRegex = new RegExp(`${baseURL}/parcels`);
     await this.page.waitForURL(parcelsUrlRegex);
 
-    await this.tableRow.waitFor({ state: 'attached' });
-    await this.tableRow.waitFor({ state: 'visible' });
+    await this.tableRow(this.parcelName).waitFor({ state: 'attached' });
+    await this.tableRow(this.parcelName).waitFor({ state: 'visible' });
     await this.filterTable(this.parcelName);
   }
 
   async deleteParcel() {
     await this.filterTable(this.parcelName);
-    await expect(this.tableRow).toBeVisible();
+    await expect(this.tableRow(this.parcelName)).toBeVisible();
 
-    await this.tableRow.hover();
-    await expect(this.tableRow.locator('.actions-cell')).toBeVisible();
-    await this.tableRowDeleteButton.waitFor({ state: 'attached' });
-    await this.tableRowDeleteButton.waitFor({ state: 'visible' });
-    await expect(this.tableRowDeleteButton).toBeVisible();
+    await this.tableRow(this.parcelName).hover();
+    await expect(this.tableRow(this.parcelName).locator('.actions-cell')).toBeVisible();
+    await this.tableRowDeleteButton(this.parcelName).waitFor({ state: 'attached' });
+    await this.tableRowDeleteButton(this.parcelName).waitFor({ state: 'visible' });
+    await expect(this.tableRowDeleteButton(this.parcelName)).toBeVisible();
 
     await expect(this.confirmModal).not.toBeVisible();
-    await this.tableRowDeleteButton.click({ position: { x: 2, y: 2 } });
+    await this.tableRowDeleteButton(this.parcelName).click({ position: { x: 2, y: 2 } });
     await this.confirmModal.waitFor({ state: 'attached' });
     await this.confirmModal.waitFor({ state: 'visible' });
     await expect(this.confirmModal).toBeVisible();
 
     await expect(this.confirmModalDeleteButton).toBeVisible();
     await this.confirmModalDeleteButton.click();
-    await this.tableRow.waitFor({ state: 'detached' });
-    await this.tableRow.waitFor({ state: 'hidden' });
-    await expect(this.tableRow).not.toBeVisible();
+    await this.tableRow(this.parcelName).waitFor({ state: 'detached' });
+    await this.tableRow(this.parcelName).waitFor({ state: 'hidden' });
+    await expect(this.tableRow(this.parcelName)).not.toBeVisible();
   }
 
-  private async filterTable(parcelName: string) {
+  async filterTable(parcelName: string) {
     await this.table.waitFor({ state: 'attached' });
     await this.table.waitFor({ state: 'visible' });
 
@@ -99,8 +101,8 @@ export class Parcels {
   }
 
   async goto() {
-    await this.page.goto('/parcels', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(250);
+    await this.page.goto('/parcels', { waitUntil: 'domcontentloaded' });
+    await this.pageLoadedLocatorWithData.waitFor({ state: 'visible' });
   }
 
   updatePage(page: Page): void {
@@ -112,8 +114,11 @@ export class Parcels {
     this.createButton = page.locator(`button:has-text("Save")`);
     this.nameField = page.locator(`input[name="parcelName"]`);
     this.newButton = page.locator(`button:has-text("New")`);
+    this.pageLoadedLocatorWithData = page.locator(`.ag-root`);
     this.table = page.locator('div[role="tabpanel"]:has-text("Parcels")').getByRole('treegrid');
-    this.tableRow = this.table.getByRole('row', { name: this.parcelName });
-    this.tableRowDeleteButton = this.tableRow.getByRole('gridcell').getByRole('button', { name: 'Delete Parcel' });
+    this.tableRow = (parcelName: string) => this.table.getByRole('row', { name: parcelName });
+    this.tableRowDeleteButton = (parcelName: string) =>
+      this.tableRow(parcelName).getByRole('gridcell').getByRole('button', { name: 'Delete Parcel' });
+    this.tableRowParcelId = (parcelName: string) => this.tableRow(parcelName).getByRole('gridcell').first();
   }
 }

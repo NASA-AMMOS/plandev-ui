@@ -1,6 +1,5 @@
 import { browser } from '$app/environment';
 import JSONParser from '@streamparser/json/jsonparser.js';
-import type { SearchParameters } from '../enums/searchParameters';
 
 /**
  * Returns the string version of an object of unknown type or returns null if this operation fails.
@@ -81,10 +80,18 @@ export function classNames(baseClass: string, conditionalClasses?: Record<string
 
 /**
  * Helper function for filtering out null or undefined entries in an array
- * @example [0, 1, 2, null, 4, undefined, 5].filter(filterEmpty) return [0, 1, 2, 4, 5]
+ * @example [0, 1, 2, null, 4, undefined, 5].filter(filterNullish) return [0, 1, 2, 4, 5]
+ */
+export function filterNullish<T>(value: T | null | undefined): value is T {
+  return value != null;
+}
+
+/**
+ * Helper function for filtering out empty-ish entries in an array
+ * @example [0, 1, 2, null, 4, undefined, 5, "", false].filter(filterEmpty) return [0, 1, 2, 4, 5, false]
  */
 export function filterEmpty<T>(value: T | null | undefined): value is T {
-  return value != null;
+  return value != null && value !== '';
 }
 
 /**
@@ -173,88 +180,12 @@ export function parseFloatOrNull(value: string | null): number | null {
   return null;
 }
 
-export function getSearchParameterNumber(key: SearchParameters, searchParams?: URLSearchParams): number | null {
-  let urlSearchParams: URLSearchParams | undefined = searchParams;
-
-  if (!searchParams && window) {
-    urlSearchParams = new URLSearchParams(window.location.search);
-  }
-
-  if (urlSearchParams) {
-    const numberSearchParam = urlSearchParams.get(key);
-
-    return parseFloatOrNull(numberSearchParam);
-  }
-
-  return null;
-}
-
 /**
  * Converts a string with the substring 'subscription' into 'query'.
  * Use to quickly convert a GraphQL subscription into a query.
  */
 export function convertToQuery(gql: string): string {
   return gql.replace('subscription', 'query');
-}
-
-/**
- * Removes a query param from the current URL.
- */
-export function removeQueryParam(key: SearchParameters, mode: 'PUSH' | 'REPLACE' = 'REPLACE'): void {
-  if (!browser) {
-    return;
-  }
-
-  const { history, location } = window;
-  const { hash, host, pathname, protocol, search } = location;
-
-  const urlSearchParams = new URLSearchParams(search);
-  urlSearchParams.delete(key);
-  const params = urlSearchParams.toString();
-
-  let path = `${protocol}//${host}${pathname}`;
-
-  if (params !== '') {
-    path = `${path}?${params}`;
-  }
-
-  if (hash !== '') {
-    path = `${path}${hash}`;
-  }
-
-  if (mode === 'REPLACE') {
-    history.replaceState({ path }, '', path);
-  } else {
-    history.pushState({ path }, '', path);
-  }
-}
-
-/**
- * Changes the current URL to include a query parameter given by [key]=[value].
- * @note Only runs in the browser (not server-side).
- */
-export function setQueryParam(
-  key: SearchParameters,
-  value?: string | null,
-  mode: 'PUSH' | 'REPLACE' = 'REPLACE',
-): void {
-  const { history, location } = window;
-  const { hash, host, pathname, protocol, search } = location;
-
-  const urlSearchParams = new URLSearchParams(search);
-  if (value !== '' && value != null) {
-    urlSearchParams.set(key, value);
-  } else {
-    urlSearchParams.delete(key);
-  }
-  const params = urlSearchParams.toString();
-
-  const path = `${protocol}//${host}${pathname}?${params}${hash}`;
-  if (mode === 'REPLACE') {
-    history.replaceState({ path }, '', path);
-  } else {
-    history.pushState({ path }, '', path);
-  }
 }
 
 /**
