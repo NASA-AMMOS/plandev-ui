@@ -575,6 +575,7 @@
   </div>
   <SingleActionDataGrid
     bind:dataGrid
+    class="workspace-grid-view"
     {hasDeletePermission}
     getRowId={node => node.fullPath}
     {columnDefs}
@@ -676,5 +677,11 @@
     display: flex;
     height: 100%;
     width: 16px;
+  }
+
+  :global(.workspace-grid-view .ag-root-wrapper) {
+    --ag-borders: none;
+    --ag-wrapper-border-radius: 0;
+    border-top: 1px solid var(--ag-border-color);
   }
 </style>

@@ -30,6 +30,7 @@
   const defaultEditPermissionError: string = 'You do not have permission to edit.';
 
   export let autoSizeColumnsToFit: boolean = true;
+  export { className as class };
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let columnsToForceRefreshOnDataUpdate: (keyof RowData)[] = [];
@@ -61,6 +62,7 @@
 
   const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
+  let className: string = '';
   let deletePermission: boolean = true;
   let deletePermissionError: string = defaultDeletePermissionError;
   let editPermission: boolean = true;
@@ -141,6 +143,7 @@
   bind:currentSelectedRowId={selectedItemId}
   bind:selectedRowIds={selectedItemIds}
   bind:redrawRows
+  class={className}
   {autoSizeColumnsToFit}
   {columnDefs}
   {columnStates}

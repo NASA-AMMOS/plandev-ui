@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { classNames } from '../../../utilities/generic';
+
   type RowData = $$Generic<TRowData>;
 
   interface $$Events extends ComponentEvents<SvelteComponent> {
@@ -92,6 +94,7 @@
   }
 
   export let autoSizeColumnsToFit: boolean = true;
+  export { className as class };
   export let columnDefs: ColDef[];
   export let columnsToForceRefreshOnDataUpdate: (keyof RowData)[] = [];
   export let columnShiftResize: boolean = false;
@@ -127,6 +130,7 @@
   };
 
   const CURRENT_SELECTED_ROW_CLASS = 'ag-current-row-selected';
+  let className: string = '';
   const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
   // This is used so that the current instance of ag-grid always has a pointer to the latest current selected row id
@@ -462,7 +466,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   });
 </script>
 
-<div class="data-grid-container">
+<div class={classNames('data-grid-container', { [className]: !!className })}>
   {#if !mounted && showLoadingSkeleton}
     <div class="loading">
       <DataGridSkeleton columns={columnDefs.filter(c => !c.hide).length} />

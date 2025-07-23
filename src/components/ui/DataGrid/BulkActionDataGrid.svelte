@@ -28,6 +28,7 @@
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
 
+  export { className as class };
   export let autoSizeColumnsToFit: boolean = true;
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
@@ -62,6 +63,7 @@
 
   let isFiltered: boolean = false;
   let deletePermission: boolean = true;
+  let className: string = '';
 
   $: if (typeof hasDeletePermission === 'function' && user) {
     if (selectedItemIds.length > 0) {
@@ -162,6 +164,7 @@
   bind:currentSelectedRowId={selectedItemId}
   bind:selectedRowIds={selectedItemIds}
   bind:redrawRows
+  class={className}
   {autoSizeColumnsToFit}
   {columnDefs}
   {columnStates}
