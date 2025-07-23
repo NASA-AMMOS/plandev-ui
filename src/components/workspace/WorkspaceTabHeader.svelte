@@ -37,7 +37,7 @@
   }
 </script>
 
-<div class="flex items-center justify-between gap-0 border-b border-border bg-background p-[8px]">
+<div class="flex items-center justify-between gap-0 border-b border-border bg-background p-[6px]">
   <SectionTitle>{title}</SectionTitle>
   <div class="flex gap-0">
     <Tooltip.Root>
