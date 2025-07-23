@@ -26,7 +26,7 @@
     className,
   )}
   role="menuitem"
-  style="grid-template-columns: auto auto minmax(0, 1fr); padding-left: {indentPx}px;"
+  style="grid-template-columns: auto auto minmax(0, 1fr); margin-left: {indentPx}px;"
   on:click
   on:contextmenu
 >
