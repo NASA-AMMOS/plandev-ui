@@ -6,8 +6,7 @@
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import PageTitle from '../components/app/PageTitle.svelte';
-
-  // TODO: handle failed auth HERE.
+  import WelcomePage from '../components/WelcomePage.svelte';
 
   const comics = [
     { id: '538', name: 'security' },
@@ -24,8 +23,10 @@
   let imgUrl: string;
   let xkcdUrl: string;
 
+  let authError = $page.status === 403;
+
   onMount(() => {
-    const { id, name } = $page.status === 403 ? comics[0] : comics[Math.floor(Math.random() * comics.length)];
+    const { id, name } = authError ? comics[0] : comics[Math.floor(Math.random() * comics.length)];
     imgUrl = `https://imgs.xkcd.com/comics/${name}.png`;
     xkcdUrl = `https://xkcd.com/${id}/`;
   });
@@ -33,19 +34,23 @@
 
 <PageTitle title="404" />
 
-<div class="app-error-container">
-  <div class="app-error">
-    <div class="app-error-title">
-      <div>Uh O! Sorry, we can't find that page.</div>
-      <div>{$page.error?.message}</div>
-      <button class="st-button" on:click={() => goto(`${base}/`)}> Return Home </button>
-    </div>
+{#if authError}
+  <WelcomePage />
+{:else}
+  <div class="app-error-container">
+    <div class="app-error">
+      <div class="app-error-title">
+        <div>Uh O! Sorry, we can't find that page.</div>
+        <div>{$page.error?.message}</div>
+        <button class="st-button" on:click={() => goto(`${base}/`)}> Return Home </button>
+      </div>
 
-    <a href={xkcdUrl} target="_blank" rel="noopener noreferrer">
-      <img alt={imgUrl} src={imgUrl} />
-    </a>
+      <a href={xkcdUrl} target="_blank" rel="noopener noreferrer">
+        <img alt={imgUrl} src={imgUrl} />
+      </a>
+    </div>
   </div>
-</div>
+{/if}
 
 <style>
   .app-error-container {

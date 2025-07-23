@@ -19,7 +19,7 @@ type HasuraToken = JwtPayload & {
 
 export type MaybeHasuraToken = HasuraToken | undefined | null;
 
-export type Rule = (user?: User) => boolean;
+export type Rule = (user: User | null) => boolean;
 
 export type JwtSecret = {
   // either key or jwk_url

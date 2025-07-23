@@ -1,15 +1,11 @@
-import type { MaybeToken, Rule } from "$lib/types/auth";
+import type { Rule } from '$lib/types/auth';
+import type { User } from '../../types/app';
 
-export const alwaysTrue: Rule = (_: MaybeToken): true | false => {
-    return true;
+export const userIsDefined: Rule = (u: User | null) => {
+  return !!u;
 };
 
-export const allPresent: Rule = (token: MaybeToken) => {
-    return !!token
+// if we want to block any pages to just admins, we can enforce it in its +page.server.ts
+export const userIsAdmin: Rule = (u: User | null) => {
+  return u?.activeRole === 'aerie_admin';
 };
-
-// export const hasRole: (role: string) => Rule = (role: string) => {
-//     return (token: MaybeToken): boolean => {
-//         return roles(token).require(role);
-//     }
-// };

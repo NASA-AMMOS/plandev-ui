@@ -1,8 +1,8 @@
 import { base } from '$app/paths';
+import { env } from '$env/dynamic/public';
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
-import { reqGatewayForwardCookies } from '../../../utilities/requests';
-import { env } from '$env/dynamic/public';
+import { reqGatewayForwardCookies } from '../../../../utilities/requests';
 
 export const POST: RequestHandler = async event => {
   const invalidated =

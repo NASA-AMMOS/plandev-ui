@@ -11,7 +11,7 @@ import { reqGatewayForwardCookies } from './utilities/requests';
 
 export const handle: Handle = async ({ event, resolve }) => {
   if (event.url.pathname.includes('com.chrome.devtools')) {
-    return await resolve(event);
+    return new Response(null, { status: 204 });
   }
 
   try {

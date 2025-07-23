@@ -2,9 +2,9 @@ import { base } from '$app/paths';
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { jwtDecode } from 'jwt-decode';
-import type { BaseUser, ParsedUserToken } from '../../../types/app';
-import type { LoginRequestBody, ReqAuthResponse } from '../../../types/auth';
-import effects from '../../../utilities/effects';
+import type { BaseUser, ParsedUserToken } from '../../../../types/app';
+import type { LoginRequestBody, ReqAuthResponse } from '../../../../types/auth';
+import effects from '../../../../utilities/effects';
 
 export const POST: RequestHandler = async event => {
   const body: LoginRequestBody = await event.request.json();

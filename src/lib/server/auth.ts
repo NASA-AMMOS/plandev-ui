@@ -278,6 +278,8 @@ export function roles(token: MaybeHasuraToken) {
  * await parent() before protected code. Unless every child page depends on
  * returned data from await parent(), the other options will be more performant.
  */
+
+// TODO: find a way to curry enforce with locals somewhere high level??
 export function enforce(user: User | null, rule: Rule): boolean {
   // Any value other than 'true' is considered a failure. This is intentional.
   if (rule(user) === true) {

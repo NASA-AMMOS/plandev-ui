@@ -72,7 +72,6 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
   throw redirect(302, back);
 };
 
-// TODO: ??????
 function check(
   verifier: string | undefined,
   code: string | null,

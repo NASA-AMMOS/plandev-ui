@@ -1,7 +1,7 @@
 import { base } from '$app/paths';
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
-import type { ChangeUserRoleRequestBody } from '../../../types/auth';
+import type { ChangeUserRoleRequestBody } from '../../../../types/auth';
 
 export const POST: RequestHandler = async event => {
   const body: ChangeUserRoleRequestBody = await event.request.json();
