@@ -1,26 +1,13 @@
 <script lang="ts">
-  import { Button, DropdownMenu, Tabs, Tooltip } from '@nasa-jpl/stellar-svelte';
-  import {
-    ArrowUpFromLine,
-    Check,
-    ChevronDown,
-    Clapperboard,
-    FilePlus,
-    Files,
-    FolderPlus,
-    FolderTree,
-    Plus,
-    RefreshCw,
-  } from 'lucide-svelte';
+  import { Button, Tabs, Tooltip } from '@nasa-jpl/stellar-svelte';
+  import { Clapperboard, Files, FolderTree } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { User } from '../../types/app';
   import type { Workspace } from '../../types/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
-  import { permissionHandler } from '../../utilities/permissionHandler';
-  import { getTimeAgo } from '../../utilities/time';
-  import SectionTitle from '../ui/SectionTitle.svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
   import WorkspaceGridView from './WorkspaceGridView/WorkspaceGridView.svelte';
+  import WorkspaceTabHeader from './WorkspaceTabHeader.svelte';
   import WorkspaceTreeView from './WorkspaceTreeView/WorkspaceTreeView.svelte';
 
   const dispatch = createEventDispatcher<{
@@ -133,83 +120,16 @@
       <Tabs.Content value="files" class="mt-0 h-full">
         <div class="grid h-full grid-rows-[min-content_auto]">
           <Sidebar.Header className="p-0">
-            <div class="flex items-center justify-between gap-0 border-b border-border bg-background p-[8px]">
-              <SectionTitle>Workspace Tree View</SectionTitle>
-              <div class="flex gap-0">
-                <Tooltip.Root>
-                  <Tooltip.Trigger asChild let:builder>
-                    {#if didWorkspaceUpdate}
-                      <Button builders={[builder]} variant="ghost">
-                        <Check size={16} />
-                      </Button>
-                    {:else}
-                      <Button builders={[builder]} variant="ghost" on:click={onRefreshWorkspace}>
-                        <RefreshCw size={16} />
-                      </Button>
-                    {/if}
-                  </Tooltip.Trigger>
-                  <Tooltip.Content>
-                    <div class="text-xs">Refresh (last {getTimeAgo(lastRefreshTime, new Date())})</div>
-                  </Tooltip.Content>
-                </Tooltip.Root>
-                <DropdownMenu.Root>
-                  <DropdownMenu.Trigger asChild let:builder>
-                    <Tooltip.Root>
-                      <Tooltip.Trigger asChild let:builder={tooltipBuilder}>
-                        <Button
-                          builders={[builder, tooltipBuilder]}
-                          variant="ghost"
-                          class="gap-0"
-                          aria-label="New Workspace Item"
-                        >
-                          <Plus size={16} />
-                          <ChevronDown size={16} />
-                        </Button>
-                      </Tooltip.Trigger>
-                      <Tooltip.Content>
-                        <div class="text-xs">New Workspace Item</div>
-                      </Tooltip.Content>
-                    </Tooltip.Root>
-                  </DropdownMenu.Trigger>
-                  <DropdownMenu.Content>
-                    <DropdownMenu.Item size="sm" on:click={onNewSequence}>
-                      <div
-                        class="flex cursor-pointer gap-1"
-                        use:permissionHandler={{
-                          hasPermission: hasEditWorkspacePermission,
-                          permissionError: 'You do not have permission to edit this workspace',
-                        }}
-                      >
-                        <FilePlus size={16} /> New Sequence
-                      </div>
-                    </DropdownMenu.Item>
-                    <DropdownMenu.Item size="sm" on:click={onNewFolder}>
-                      <div
-                        class="flex cursor-pointer gap-1"
-                        use:permissionHandler={{
-                          hasPermission: hasEditWorkspacePermission,
-                          permissionError: 'You do not have permission to edit this workspace',
-                        }}
-                      >
-                        <FolderPlus size={16} /> New Folder
-                      </div>
-                    </DropdownMenu.Item>
-                    <DropdownMenu.Separator />
-                    <DropdownMenu.Item size="sm" on:click={onImportFile}>
-                      <div
-                        class="flex cursor-pointer gap-1"
-                        use:permissionHandler={{
-                          hasPermission: hasEditWorkspacePermission,
-                          permissionError: 'You do not have permission to edit this workspace',
-                        }}
-                      >
-                        <ArrowUpFromLine size={16} />Import File
-                      </div>
-                    </DropdownMenu.Item>
-                  </DropdownMenu.Content>
-                </DropdownMenu.Root>
-              </div>
-            </div>
+            <WorkspaceTabHeader
+              title="Workspace Tree View"
+              {didWorkspaceUpdate}
+              {lastRefreshTime}
+              {hasEditWorkspacePermission}
+              on:newSequence={onNewSequence}
+              on:newFolder={onNewFolder}
+              on:importFile={onImportFile}
+              on:refreshWorkspace={onRefreshWorkspace}
+            />
           </Sidebar.Header>
           <Sidebar.Content>
             <Sidebar.Group className="p-0 h-full">
@@ -243,71 +163,16 @@
       <Tabs.Content value="grid" class="mt-0 h-full" style="min-height: 300px;">
         <div class="grid h-full grid-rows-[min-content_auto]">
           <Sidebar.Header className="p-0">
-            <div class="flex items-center justify-between gap-0 border-b border-border bg-background p-[8px]">
-              <SectionTitle>Workspace Table View</SectionTitle>
-              <div class="flex gap-0">
-                <Tooltip.Root>
-                  <Tooltip.Trigger asChild let:builder>
-                    {#if didWorkspaceUpdate}
-                      <Button builders={[builder]} variant="ghost">
-                        <Check size={16} />
-                      </Button>
-                    {:else}
-                      <Button builders={[builder]} variant="ghost" on:click={onRefreshWorkspace}>
-                        <RefreshCw size={16} />
-                      </Button>
-                    {/if}
-                  </Tooltip.Trigger>
-                  <Tooltip.Content>
-                    <div class="text-sm">Refresh (last {getTimeAgo(lastRefreshTime, new Date())})</div>
-                  </Tooltip.Content>
-                </Tooltip.Root>
-                <DropdownMenu.Root>
-                  <DropdownMenu.Trigger asChild let:builder>
-                    <Button builders={[builder]} variant="ghost" class="gap-0">
-                      <Plus size={16} />
-                      <ChevronDown size={16} />
-                    </Button>
-                  </DropdownMenu.Trigger>
-                  <DropdownMenu.Content>
-                    <DropdownMenu.Item size="sm" on:click={onNewSequence}>
-                      <div
-                        class="flex cursor-pointer gap-1"
-                        use:permissionHandler={{
-                          hasPermission: hasEditWorkspacePermission,
-                          permissionError: 'You do not have permission to edit this workspace',
-                        }}
-                      >
-                        <FilePlus size={16} /> New Sequence
-                      </div>
-                    </DropdownMenu.Item>
-                    <DropdownMenu.Item size="sm" on:click={onNewFolder}>
-                      <div
-                        class="flex cursor-pointer gap-1"
-                        use:permissionHandler={{
-                          hasPermission: hasEditWorkspacePermission,
-                          permissionError: 'You do not have permission to edit this workspace',
-                        }}
-                      >
-                        <FolderPlus size={16} /> New Folder
-                      </div>
-                    </DropdownMenu.Item>
-                    <DropdownMenu.Separator />
-                    <DropdownMenu.Item size="sm" on:click={onImportFile}>
-                      <div
-                        class="flex cursor-pointer gap-1"
-                        use:permissionHandler={{
-                          hasPermission: hasEditWorkspacePermission,
-                          permissionError: 'You do not have permission to edit this workspace',
-                        }}
-                      >
-                        <ArrowUpFromLine size={16} />Import File
-                      </div>
-                    </DropdownMenu.Item>
-                  </DropdownMenu.Content>
-                </DropdownMenu.Root>
-              </div>
-            </div>
+            <WorkspaceTabHeader
+              title="Workspace Table View"
+              {didWorkspaceUpdate}
+              {lastRefreshTime}
+              {hasEditWorkspacePermission}
+              on:newSequence={onNewSequence}
+              on:newFolder={onNewFolder}
+              on:importFile={onImportFile}
+              on:refreshWorkspace={onRefreshWorkspace}
+            />
           </Sidebar.Header>
           <Sidebar.Content className="h-full">
             <Sidebar.Group className="p-0 h-full">
