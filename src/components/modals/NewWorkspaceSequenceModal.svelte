@@ -7,7 +7,7 @@
   import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
-  import { joinPath } from '../../utilities/workspaces';
+  import { cleanPath, joinPath } from '../../utilities/workspaces';
   import WorkspaceTreeView from '../workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
@@ -35,7 +35,9 @@
 
   function onConfirm() {
     dispatch('confirm', {
-      sequencePath: joinPath([sequencePath.replace(new RegExp(`^${currentWorkspace?.name}`), '.'), sequenceName]),
+      sequencePath: cleanPath(
+        joinPath([sequencePath.replace(new RegExp(`^${currentWorkspace?.name}`), '.'), sequenceName]),
+      ),
     });
   }
 

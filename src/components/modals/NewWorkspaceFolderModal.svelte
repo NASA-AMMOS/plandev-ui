@@ -7,7 +7,7 @@
   import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
-  import { joinPath } from '../../utilities/workspaces.js';
+  import { cleanPath, joinPath } from '../../utilities/workspaces.js';
   import WorkspaceTreeView from '../workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
@@ -35,7 +35,7 @@
 
   function onConfirm() {
     dispatch('confirm', {
-      folderPath: joinPath([folderPath.replace(new RegExp(`^${currentWorkspace?.name}`), '.'), folderName]),
+      folderPath: cleanPath(joinPath([folderPath.replace(new RegExp(`^${currentWorkspace?.name}`), '.'), folderName])),
     });
   }
 

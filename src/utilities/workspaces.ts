@@ -39,8 +39,8 @@ export function separateFilenameFromPath(filePath: string): { filename: string; 
   };
 }
 
-export function cleanPath(path: string = '') {
-  return path.replace(/^\.{0,2}\//, '').replace(/\/$/, '');
+export function cleanPath(path: string | null = '') {
+  return (path ?? '').replace(/^\.{0,2}\//, '').replace(/\/$/, '');
 }
 
 export function joinPath(pathParts: (string | number | boolean)[]) {
