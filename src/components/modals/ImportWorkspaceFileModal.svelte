@@ -89,10 +89,10 @@
           </Sidebar.Menu>
         </Sidebar.Content>
       </Sidebar.Provider>
-      <fieldset>
-        <label for="file">File(s)</label>
+      <div class="py-1">
+        <label class="block pb-0.5" for="file">File(s)</label>
         <input bind:files={filesToUpload} multiple class="w-100" name="file" type="file" aria-label="File(s)" />
-      </fieldset>
+      </div>
     </div>
   </ModalContent>
 

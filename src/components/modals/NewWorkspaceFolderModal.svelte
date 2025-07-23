@@ -79,10 +79,10 @@
           </Sidebar.Menu>
         </Sidebar.Content>
       </Sidebar.Provider>
-      <fieldset>
+      <div class="py-1">
         <Label class="pb-0.5" size="sm" for="folder-name">Folder Name</Label>
         <InputStellar sizeVariant="xs" id="folder-name" name="folder-name" autocomplete="off" bind:value={folderName} />
-      </fieldset>
+      </div>
     </div>
   </ModalContent>
   <ModalFooter>

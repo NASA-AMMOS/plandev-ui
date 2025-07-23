@@ -81,7 +81,7 @@
           </Sidebar.Menu>
         </Sidebar.Content>
       </Sidebar.Provider>
-      <fieldset>
+      <div class="py-1">
         <Label class="pb-0.5" size="sm" for="sequence-name">Sequence Name</Label>
         <InputStellar
           sizeVariant="xs"
@@ -91,7 +91,7 @@
           aria-label="Sequence Name"
           bind:value={sequenceName}
         />
-      </fieldset>
+      </div>
     </div>
   </ModalContent>
   <ModalFooter>
