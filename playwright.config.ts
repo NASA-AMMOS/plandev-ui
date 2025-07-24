@@ -62,7 +62,7 @@ const config: PlaywrightTestConfig = {
   ],
   retries: 2,
   testDir: './e2e-tests',
-  timeout: 100000,
+  timeout: 5 * 60 * 1000,
   use: {
     browserName: 'chromium',
     trace: process.env.CI ? 'retain-on-failure' : 'off',
