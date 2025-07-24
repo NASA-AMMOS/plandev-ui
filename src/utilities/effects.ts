@@ -336,7 +336,6 @@ const effects = {
       if (timeConfirmed && value !== undefined) {
         const { timeRangeEnd, timeRangeStart } = value;
         if (timeRangeStart !== null && timeRangeEnd !== null) {
-          console.log(`${filter.name} Sequence (Plan ${planId})`);
           const sequenceId = await effects.createExpansionSequence(
             `${filter.name} Sequence (Plan ${planId})`,
             simulationDatasetId,
