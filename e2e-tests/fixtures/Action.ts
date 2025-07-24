@@ -17,7 +17,9 @@ export class Action {
   constructor(
     public page: Page,
     public workspaceId: string,
-  ) {}
+  ) {
+    this.updatePage(page);
+  }
 
   async configureAction(): Promise<void> {
     await this.page.getByRole('tab', { name: 'Configure' }).click();

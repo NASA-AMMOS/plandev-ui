@@ -16,6 +16,7 @@ export class Models {
   modelId: string;
   modelName: string;
   modelVersion: string = '1.0.0';
+  pageLoadingLocator: Locator;
   table: Locator;
   tableRow: (modelName?: string) => Locator;
   tableRowDeleteButton: (modelName?: string) => Locator;
@@ -112,8 +113,8 @@ export class Models {
   }
 
   async goto() {
-    await this.page.goto('/models', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(250);
+    await this.page.goto('/models', { waitUntil: 'load' });
+    await this.pageLoadingLocator.waitFor({ state: 'detached' });
   }
 
   updatePage(page: Page): void {
@@ -126,6 +127,7 @@ export class Models {
     this.inputFile = page.locator('input[name="file"]');
     this.inputName = page.locator('input[name="name"]');
     this.inputVersion = page.locator('input[name="version"]');
+    this.pageLoadingLocator = page.locator(`.loading`);
     this.page = page;
     this.table = page.getByRole('treegrid');
     this.tableRow = (modelName: string = this.modelName) => this.table.getByRole('row', { name: modelName });

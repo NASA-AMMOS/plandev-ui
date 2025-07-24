@@ -48,7 +48,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
   await plans.goto();
   await plans.createPlan();
   await plan.goto();
-  viewName = await view.createViewName();
+  viewName = view.createViewName();
   await view.createView(viewName);
   await model.goto();
 });

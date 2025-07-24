@@ -12,7 +12,7 @@ export class Workspaces {
   inputButtonParcel: Locator;
   inputLocation: Locator;
   inputName: Locator;
-  pageLoadedLocatorWithData: Locator;
+  pageLoadingLocator: Locator;
   table: Locator;
   tableRow: (workspaceName: string) => Locator;
   tableRowDeleteButton: (workspaceName: string) => Locator;
@@ -122,14 +122,13 @@ export class Workspaces {
   }
 
   async goto() {
-    await this.page.goto(getWorkspacesUrl(this.baseURL), { waitUntil: 'domcontentloaded' });
-    await this.pageLoadedLocatorWithData.waitFor({ state: 'visible' });
+    await this.page.goto(getWorkspacesUrl(this.baseURL), { waitUntil: 'load' });
+    await this.pageLoadingLocator.waitFor({ state: 'detached' });
   }
 
   async selectInputParcel(parcelName = this.parcels.parcelName) {
     await this.inputButtonParcel.click();
     await this.inputButtonParcel.selectOption(parcelName);
-    // await this.page.getByRole('option', { name: parcelName }).click();
   }
 
   async selectedWorkspace() {
@@ -145,7 +144,7 @@ export class Workspaces {
     this.inputName = page.getByRole('textbox', { name: 'Workspace Name' });
     this.inputLocation = page.getByRole('textbox', { name: 'Workspace Location' });
     this.page = page;
-    this.pageLoadedLocatorWithData = page.locator(`.ag-root`);
+    this.pageLoadingLocator = page.locator(`.loading`);
     this.table = page.locator('div[role="tabpanel"]:has-text("Sequence Workspaces")').getByRole('treegrid');
     this.tableRow = (workspaceName: string) => this.table.getByRole('row', { name: workspaceName });
     this.tableRowDeleteButton = (workspaceName: string) =>

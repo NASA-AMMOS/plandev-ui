@@ -315,9 +315,9 @@ export class Plan {
    * Re-run the tests and increase the timeout if you get consistent failures.
    */
   async goto(planId = this.plans.planId) {
-    await this.page.goto(`/plans/${planId}`);
-    await this.page.waitForURL(`/plans/${planId}`, { waitUntil: 'networkidle' });
-    await expect(this.page.locator('.nav-button-title:has-text("Activities")')).toBeVisible();
+    await this.page.goto(`/plans/${planId}`, { waitUntil: 'load' });
+    await this.page.waitForURL(`/plans/${planId}`, { waitUntil: 'load' });
+    await this.page.locator('.layer-message.loading').waitFor({ state: 'detached' });
   }
 
   async hoverMenu(menuButton: Locator) {

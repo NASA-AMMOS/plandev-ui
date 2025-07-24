@@ -101,7 +101,7 @@ export class Parcels {
   }
 
   async goto() {
-    await this.page.goto('/parcels', { waitUntil: 'domcontentloaded' });
+    await this.page.goto('/parcels', { waitUntil: 'load' });
     await this.pageLoadedLocatorWithData.waitFor({ state: 'visible' });
   }
 

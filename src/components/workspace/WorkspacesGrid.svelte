@@ -156,6 +156,8 @@
   <svelte:fragment slot="body">
     {#if filteredWorkspaces.length}
       <SingleActionDataGrid
+        showLoadingSkeleton
+        loading={$workspaces === null}
         columnDefs={baseColumnDefs}
         hasEdit={true}
         itemDisplayText="Workspaces"

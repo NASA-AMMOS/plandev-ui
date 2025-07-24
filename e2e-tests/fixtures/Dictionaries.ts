@@ -231,7 +231,7 @@ export class Dictionaries {
   }
 
   async goto() {
-    await this.page.goto('/dictionaries', { waitUntil: 'networkidle' });
+    await this.page.goto('/dictionaries', { waitUntil: 'load' });
     await this.page.waitForTimeout(250);
   }
 

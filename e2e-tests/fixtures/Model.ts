@@ -70,8 +70,8 @@ export class Model {
    * Re-run the tests and increase the timeout if you get consistent failures.
    */
   async goto() {
-    await this.page.goto(`/models/${this.models.modelId}`, { waitUntil: 'networkidle' });
-    await expect(this.page.getByText('Jar file status')).toBeVisible();
+    await this.page.goto(`/models/${this.models.modelId}`, { waitUntil: 'load' });
+    await this.page.getByText('Loading Editor...').waitFor({ state: 'detached' });
   }
 
   async saveModel() {

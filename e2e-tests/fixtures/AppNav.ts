@@ -18,15 +18,15 @@ export class AppNav {
   appMenuItemSequenceTemplates: Locator;
   appMenuItemSequenceWorkspace: Locator;
   pageLoadedLocatorNoData: Locator;
-  pageLoadedLocatorWithData: Locator;
+  pageLoadingLocator: Locator;
 
   constructor(public page: Page) {
     this.updatePage(page);
   }
 
   async goto() {
-    await this.page.goto('/plans', { waitUntil: 'domcontentloaded' });
-    await this.pageLoadedLocatorWithData.waitFor({ state: 'visible' });
+    await this.page.goto('/plans', { waitUntil: 'load' });
+    await this.pageLoadingLocator.waitFor({ state: 'detached' });
   }
 
   updatePage(page: Page): void {
@@ -47,7 +47,7 @@ export class AppNav {
     this.appMenuItemSequenceTemplates = this.appMenu.getByRole('menuitem', { name: 'Sequence Templates' });
     this.appMenuItemSequenceWorkspace = this.appMenu.getByRole('menuitem', { name: 'Sequence Editor' });
     this.page = page;
-    this.pageLoadedLocatorWithData = page.locator(`.ag-root`);
+    this.pageLoadingLocator = page.locator(`.loading`);
     this.pageLoadedLocatorNoData = page.locator(`.body:has-text("No Plans Found")`);
   }
 }

@@ -26,7 +26,9 @@ export class Workspace {
     public workspaceId: string,
     public workspaceName: string,
     public baseURL: string = '',
-  ) {}
+  ) {
+    this.updatePage(page);
+  }
 
   async createFolder(folderPath?: string): Promise<string> {
     const path = folderPath || uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
@@ -92,7 +94,7 @@ export class Workspace {
    * Navigate to this specific workspace
    */
   async goto(workspaceId = this.workspaceId): Promise<void> {
-    await this.page.goto(getWorkspacesUrl(this.baseURL, parseInt(workspaceId)), { waitUntil: 'domcontentloaded' });
+    await this.page.goto(getWorkspacesUrl(this.baseURL, parseInt(workspaceId)), { waitUntil: 'load' });
     await this.page.waitForURL(getWorkspacesUrl(this.baseURL, parseInt(workspaceId)));
     await this.pageLoadingLocatorWithData.waitFor({ state: 'detached' });
     await expect(this.page.locator('.workspace-title')).toBeVisible();
