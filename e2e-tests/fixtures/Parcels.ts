@@ -8,7 +8,7 @@ export class Parcels {
   createButton: Locator;
   nameField: Locator;
   newButton: Locator;
-  pageLoadedLocatorWithData: Locator;
+  pageLoadingLocator: Locator;
   parcelName: string;
   table: Locator;
   tableRow: (parcelName: string) => Locator;
@@ -102,7 +102,7 @@ export class Parcels {
 
   async goto() {
     await this.page.goto('/parcels', { waitUntil: 'load' });
-    await this.pageLoadedLocatorWithData.waitFor({ state: 'visible' });
+    await this.pageLoadingLocator.waitFor({ state: 'detached' });
   }
 
   updatePage(page: Page): void {
@@ -114,7 +114,7 @@ export class Parcels {
     this.createButton = page.locator(`button:has-text("Save")`);
     this.nameField = page.locator(`input[name="parcelName"]`);
     this.newButton = page.locator(`button:has-text("New")`);
-    this.pageLoadedLocatorWithData = page.locator(`.ag-root`);
+    this.pageLoadingLocator = page.locator(`.loading`);
     this.table = page.locator('div[role="tabpanel"]:has-text("Parcels")').getByRole('treegrid');
     this.tableRow = (parcelName: string) => this.table.getByRole('row', { name: parcelName });
     this.tableRowDeleteButton = (parcelName: string) =>
