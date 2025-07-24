@@ -79,11 +79,13 @@
 <!-- Disable theme switching for now to prevent user OS/browser dark mode from changing the app which does not yet fully support dark mode -->
 <ModeWatcher track={false} defaultMode="light" />
 
-<div>
+{#if env.PUBLIC_AUTH_OIDC_ENABLED === 'true'}
   <div>
-    <TokenRefresh></TokenRefresh>
+    <div>
+      <TokenRefresh></TokenRefresh>
+    </div>
   </div>
-</div>
+{/if}
 
 <style>
   .plans-layout {
