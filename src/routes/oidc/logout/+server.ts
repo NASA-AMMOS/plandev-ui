@@ -1,4 +1,4 @@
-import * as auth from '$lib/server/auth';
+import * as auth from '$lib/server/oidc';
 import { redirect } from '@sveltejs/kit';
 
 export const GET = async ({ cookies }) => {

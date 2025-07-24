@@ -371,7 +371,10 @@
             },
           ],
         ]}
-        on:click={() => effects.simulate($plan, enableReSimulation, user)}
+        on:click={() => {
+          console.log('HELLO THERE!');
+          effects.simulate($plan, enableReSimulation, user);
+        }}
       />
     </PanelHeaderActions>
   </svelte:fragment>

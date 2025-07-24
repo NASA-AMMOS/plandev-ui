@@ -9,7 +9,7 @@ export type AuthorizeOpts = { refresh: RefreshOpts };
 
 export type MaybeToken = JwtPayload | undefined | null;
 
-type HasuraToken = JwtPayload & {
+export type HasuraToken = JwtPayload & {
   'https://hasura.io/jwt/claims': {
     'x-hasura-allowed-roles': string[];
     'x-hasura-default-role': string;

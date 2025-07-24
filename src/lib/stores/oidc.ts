@@ -1,10 +1,19 @@
 import cookie from 'cookie';
 import { jwtDecode, type JwtPayload } from 'jwt-decode';
-import { derived, get, writable } from 'svelte/store';
+import { derived, get, writable, type Readable } from 'svelte/store';
+import type { BaseUser, User } from '../../types/app';
+import { computeRolesFromJWT } from '../../utilities/auth';
 
 export const accessToken = writable<JwtPayload | null>(null);
 
 export const idToken = writable<JwtPayload | null>(null);
+
+// NOTE: we are suggesting replacing usage of user PageData with a store instead, just so that we can easily update the store on refresh (a case that didn't previously exist)
+export const activeRole = writable<string | null>(null);
+export const user: Readable<User | null> = derived([accessToken, idToken, activeRole], ([_, __, ___]) => {
+  const user: User | null = null; //computeRolesFromJWT({ token: $accessToken, id: 'TODO' }, $activeRole) // TODO: FIX THIS
+  return user;
+});
 
 type CookieChanged = {
   domain: string;
@@ -35,9 +44,12 @@ declare global {
   }
 }
 
-export function cookieStoreListener() {
+// unsure how to access PageData as a type in a .ts file
+type PageData = any;
+
+export function cookieStoreListener(pageData: PageData) {
   if (window && 'cookieStore' in window) {
-    window.cookieStore.addEventListener('change', handleCookieStoreChange);
+    window.cookieStore.addEventListener('change', handleCookieStoreChange(pageData));
     console.log('Added cookie store change listener.');
   } else {
     console.error('Cookie store is not available in this environment. It is *required* for automatic refresh of JWT.');
@@ -60,7 +72,7 @@ export function cookieStoreListener() {
   // and unsubscribe from the delay store.
   return () => {
     console.log('Removing cookie store change listener.');
-    window.cookieStore.removeEventListener('change', handleCookieStoreChange);
+    window.cookieStore.removeEventListener('change', handleCookieStoreChange(pageData));
     unsubscribe();
   };
 }
@@ -117,24 +129,46 @@ function reschedule(fn: () => Promise<void>, delay: number, prior: number | null
  *
  * @param event: CookieChangeEvent - The event containing the changed or deleted cookies.
  */
-const handleCookieStoreChange = ((event: CookieChangeEvent) => {
-  console.log(`Cookie store change detected.`, event);
-  event.changed.forEach(({ name, value }) => {
-    console.log(`Cookie changed: ${name}`);
-    if (name === 'accessToken') {
-      accessToken.set(jwtDecode(value));
-    }
-    if (name === 'idToken') {
-      idToken.set(jwtDecode(value));
-    }
-  });
-  event.deleted.forEach(({ name }) => {
-    console.log(`Cookie deleted`);
-    if (name === 'accessToken') {
-      accessToken.set(null);
-    }
-    if (name === 'idToken') {
-      idToken.set(null);
-    }
-  });
-}) as (this: Window, ev: Event) => any;
+const handleCookieStoreChange = (pageData: PageData) =>
+  ((event: CookieChangeEvent) => {
+    console.log(`Cookie store change detected.`, event);
+    event.changed.forEach(({ name, value }) => {
+      console.log(`Cookie changed: ${name}`);
+      if (name === 'accessToken') {
+        accessToken.set(jwtDecode(value));
+
+        // update user
+        console.log('updating user....', value);
+        const currentUser: User = pageData.user;
+
+        console.log('as i update user, this is the id', currentUser.id);
+
+        const currentBaseUser: BaseUser = { id: currentUser.id, token: value };
+        pageData.user = computeRolesFromJWT(currentBaseUser, currentUser.activeRole);
+      }
+      if (name === 'idToken') {
+        const decoded = jwtDecode(value);
+        idToken.set(decoded);
+
+        // the only thing in pageData.user that could change? id. which is sub, for now.
+        // TODO: if we are no longer using sub as userId, remove this code.
+        pageData.user.id = decoded.sub;
+      }
+    });
+    event.deleted.forEach(({ name }) => {
+      console.log(`Cookie deleted`);
+      if (name === 'accessToken') {
+        accessToken.set(null);
+
+        // update user
+        pageData.user = null;
+      }
+      if (name === 'idToken') {
+        idToken.set(null);
+
+        // update user, if idToken is deleted, then we should just null the user as well
+        // TODO: could be unnecessary
+        pageData.user = null;
+      }
+    });
+  }) as (this: Window, ev: Event) => any;

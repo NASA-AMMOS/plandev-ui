@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
+import cookie from 'cookie';
 import { createClient, type Client, type ClientOptions } from 'graphql-ws';
 import { debounce, isEqual } from 'lodash-es';
 import type { Readable, Subscriber, Unsubscriber, Updater } from 'svelte/store';
@@ -19,6 +20,7 @@ export function gqlSubscribable<T>(
   transformer: (v: any) => T = v => v,
 ): GqlSubscribable<T> {
   const subscribers: Set<Subscription<T>> = new Set();
+  let clientOptions: ClientOptions | null;
   let client: Client | null;
   let unsubscribe: Unsubscriber = () => undefined;
   let value: T | null = initialValue;
@@ -46,9 +48,33 @@ export function gqlSubscribable<T>(
             console.log(error);
 
             if ('reason' in error && error.reason.includes(EXPIRED_JWT)) {
-              await logout(EXPIRED_JWT);
+              // This should never be triggered in the OIDC case, because we have refreshes.
+              console.log('Here');
+
+              // if client options isn't even defined, just ignore
+              if (clientOptions) {
+                const newClientOptions = getClientOptions();
+                const oldAccessToken = (clientOptions.connectionParams as any)['headers']['Authorization'].split(
+                  'Bearer ',
+                )[1];
+                const newAccessToken = (newClientOptions.connectionParams as any)['headers']['Authorization'].split(
+                  'Bearer ',
+                )[1];
+
+                // console.log(oldAccessToken, newAccessToken);
+
+                // if the client's token matches the current token and its still expired, then there's a real problem. but if not, it should be updated
+                if (oldAccessToken !== newAccessToken) {
+                  console.log('RESUBSCRIBING', query.split('{')[0]);
+                  resubscribe(); // replacing tokens and resubscribing seems to be the best we can do. not sure how to trigger a resubscribe for all active gqlSubscribable's on cookie update...
+                } else {
+                  console.log('ITS BEYOND OVER');
+                  await logout(EXPIRED_JWT);
+                }
+              }
             } else {
               subscribers.forEach(({ next }) => {
+                console.log('firing', query.split('{')[0]);
                 next(initialValue as T);
               });
             }
@@ -88,12 +114,10 @@ export function gqlSubscribable<T>(
    */
   function getTokenFromUserCookie(): string {
     if (browser && document?.cookie) {
-      const cookies = document.cookie.split(/\s*;\s*/);
-      const userCookie = cookies.find(entry => entry.startsWith('user='));
+      const userCookie = cookie.parse(document.cookie)['user'];
       if (userCookie) {
         try {
-          const splitCookie = userCookie.split('user=')[1];
-          const decodedUserCookie = atob(decodeURIComponent(splitCookie));
+          const decodedUserCookie = atob(decodeURIComponent(userCookie));
           const parsedUserCookie: BaseUser = JSON.parse(decodedUserCookie);
           return parsedUserCookie.token;
         } catch (e) {
@@ -104,7 +128,6 @@ export function gqlSubscribable<T>(
         console.log(`No 'user' cookie found`);
       }
     }
-
     return '';
   }
 
@@ -115,15 +138,13 @@ export function gqlSubscribable<T>(
    */
   function getRoleFromCookie(): string {
     if (browser && document?.cookie) {
-      const cookies = document.cookie.split(/\s*;\s*/);
-      const roleCookie = cookies.find(entry => entry.startsWith('activeRole='));
-      if (roleCookie) {
-        return roleCookie.split('activeRole=')[1];
+      const activeRoleCookie = cookie.parse(document.cookie)['activeRole'];
+      if (activeRoleCookie) {
+        return activeRoleCookie;
       } else {
-        console.log(`No 'role' cookie found`);
+        console.warn(`No 'activeRole' cookie present.`);
       }
     }
-
     return '';
   }
 
@@ -167,21 +188,30 @@ export function gqlSubscribable<T>(
     }
   }
 
+  function getClientOptions(): ClientOptions {
+    let token: string;
+    if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
+      token = user?.token ?? cookie.parse(document.cookie)['accessToken'];
+    } else {
+      token = user?.token ?? getTokenFromUserCookie();
+    }
+    const clientOptions: ClientOptions = {
+      connectionParams: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'x-hasura-role': getRoleFromCookie(),
+        },
+      },
+      url: env.PUBLIC_HASURA_WEB_SOCKET_URL,
+    };
+    return clientOptions;
+  }
+
   function subscribe(next: Subscriber<T>): Unsubscriber {
     // If we are in the browser and do not yet have a web socket client
     // we will create one and subscribe to variables
     if (browser && !client) {
-      const token = user?.token ?? getTokenFromUserCookie();
-      const clientOptions: ClientOptions = {
-        connectionParams: {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'x-hasura-role': getRoleFromCookie(),
-          },
-        },
-        url: env.PUBLIC_HASURA_WEB_SOCKET_URL,
-      };
-
+      clientOptions = getClientOptions();
       client = createClient(clientOptions); // WS subscription
       subscribeToVariables(initialVariables);
 

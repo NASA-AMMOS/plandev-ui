@@ -121,9 +121,9 @@ export async function reqHasura<T = any>(
   const HASURA_URL = browser ? env.PUBLIC_HASURA_CLIENT_URL : env.PUBLIC_HASURA_SERVER_URL;
 
   const headers: HeadersInit = {
-    Authorization: `Bearer ${user?.token ?? ''}`,
+    Authorization: `Bearer ${user?.token ?? ''}`, // TODO: grab from cookie?
     'Content-Type': 'application/json',
-    'x-hasura-role': (user as User)?.activeRole ?? '',
+    'x-hasura-role': (user as User)?.activeRole ?? '', // TODO: grab from cookie?
     'x-hasura-user-id': user?.id ?? '',
   };
   const options: RequestInit = {
@@ -161,6 +161,8 @@ export async function reqHasura<T = any>(
       }
     } else if (code === INVALID_JWT) {
       // awaiting here only works if SSR is disabled
+      // This should never be triggered in the OIDC case, because we have refreshes.
+      console.log('Oh god...Here');
       logout(error?.message);
     }
 

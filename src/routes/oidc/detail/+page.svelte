@@ -1,7 +1,7 @@
 <script lang="ts">
-  import TokenRefresh from '$lib/components/auth/Refresh.svelte';
-  import { accessToken, idToken } from '$lib/stores/auth';
-  import type { MaybeToken } from '$lib/types/auth';
+  import TokenRefresh from '$lib/components/oidc/Refresh.svelte';
+  import { accessToken, idToken } from '$lib/stores/oidc';
+  import type { MaybeToken } from '$lib/types/oidc';
   import type { PageData } from '../$types';
 
   export let data: PageData;

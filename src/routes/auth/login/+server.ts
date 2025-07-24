@@ -6,6 +6,7 @@ import type { BaseUser, ParsedUserToken } from '../../../types/app';
 import type { LoginRequestBody, ReqAuthResponse } from '../../../types/auth';
 import effects from '../../../utilities/effects';
 
+// TODO: disable for OIDC?
 export const POST: RequestHandler = async event => {
   const body: LoginRequestBody = await event.request.json();
   const { password, username } = body;

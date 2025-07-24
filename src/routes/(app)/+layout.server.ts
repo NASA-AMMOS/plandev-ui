@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/public';
-import { enforce } from '../../lib/server/auth';
+import { enforce } from '../../lib/server/oidc';
 import { userIsDefined } from '../../lib/server/rule';
 import type { LayoutServerLoad } from './$types';
 

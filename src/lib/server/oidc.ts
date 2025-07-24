@@ -1,5 +1,5 @@
 import * as env from '$env/static/private';
-import type { MaybeHasuraToken, MaybeToken, Rule } from '$lib/types/auth';
+import type { MaybeHasuraToken, MaybeToken, Rule } from '$lib/types/oidc';
 import { error, type RequestEvent } from '@sveltejs/kit';
 import * as arctic from 'arctic';
 import jwt from 'jsonwebtoken';

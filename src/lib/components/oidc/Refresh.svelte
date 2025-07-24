@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { expired, refresh, refreshAt } from '$lib/stores/auth';
+  import { expired, refresh, refreshAt } from '$lib/stores/oidc';
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
 

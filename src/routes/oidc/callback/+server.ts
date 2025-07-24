@@ -1,6 +1,8 @@
 console.log('The callback page handles OAuth2 callbacks from the identity provider.');
 
-import * as auth from '$lib/server/auth';
+import { insertUser } from '$lib/client/oidc';
+import * as auth from '$lib/server/oidc';
+import type { HasuraToken } from '$lib/types/oidc';
 import { error, redirect } from '@sveltejs/kit';
 
 /**
@@ -56,6 +58,9 @@ export const GET = async ({ cookies, url }) => {
       cookies.set('idToken', tokens.idToken(), { httpOnly: false, path: '/' });
       cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path: '/' });
       cookies.set('refreshToken', tokens.refreshToken(), { path: '/' });
+
+      insertUser(accessJwt as HasuraToken, tokens.accessToken());
+
       // Cleanup cookies used for the OIDC flow.
       cookies.delete('verifier', { path: '/' });
       cookies.delete('back', { path: '/' });

@@ -1,12 +1,11 @@
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
-import * as auth from '$lib/server/auth';
+import * as auth from '$lib/server/oidc';
 import type { Handle } from '@sveltejs/kit';
 import { parse, type CookieSerializeOptions } from 'cookie';
-import { jwtDecode } from 'jwt-decode';
-import type { BaseUser, ParsedUserToken, User } from './types/app';
+import type { BaseUser } from './types/app';
 import type { ReqValidateSSOResponse } from './types/auth';
-import effects from './utilities/effects';
+import { computeRolesFromCookies, computeRolesFromJWT } from './utilities/auth';
 import { reqGatewayForwardCookies } from './utilities/requests';
 
 export const handle: Handle = async ({ event, resolve }) => {
@@ -16,16 +15,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 
   try {
     if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
-      // Guarantees that only valid tokens (id, access, and refresh) are present
-      // in cookies.
-      console.log(`OIDC hook for ${event.url}`);
       await auth.handler(event);
       return await handleOIDCAuth({ event, resolve });
     } else if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
-      console.log('SSO hook');
       return await handleSSOAuth({ event, resolve });
     } else {
-      console.log('No-Auth hook');
       return await handleJWTAuth({ event, resolve });
     }
   } catch (e) {
@@ -45,8 +39,23 @@ const handleOIDCAuth: Handle = async ({ event, resolve }) => {
   const { activeRole, accessToken: token = null } = cookies;
 
   if (token) {
-    const user: BaseUser = { id: null, token }; // TODO: for id, need to get id from idToken, but do we get preferred_username? is that even a thing outside of keycloak? hmmm....
+    const user: BaseUser = { id: null, token };
     event.locals.user = await computeRolesFromJWT(user, activeRole);
+
+    const cookieHeader = event.request.headers.get('cookie') ?? '';
+    const cookies = parse(cookieHeader);
+    const { activeRole: activeRoleCookie = null } = cookies;
+    if (
+      event.locals.user &&
+      (!activeRoleCookie ||
+        activeRoleCookie === 'deleted' ||
+        !event.locals.user.allowedRoles.includes(activeRoleCookie))
+    ) {
+      event.cookies.set('activeRole', event.locals.user.defaultRole, {
+        httpOnly: false,
+        path: `${base}/`,
+      });
+    }
   } else {
     event.locals.user = null;
   }
@@ -138,56 +147,3 @@ const handleSSOAuth: Handle = async ({ event, resolve }) => {
 
   return await resolve(event);
 };
-
-async function computeRolesFromCookies(
-  userCookie: string | null,
-  activeRoleCookie: string | null,
-): Promise<User | null> {
-  const userBuffer = Buffer.from(userCookie ?? '', 'base64');
-  const userStr = userBuffer.toString('utf-8');
-
-  try {
-    const baseUser: BaseUser = JSON.parse(userStr);
-    return computeRolesFromJWT(baseUser, activeRoleCookie);
-  } catch (err) {
-    console.error(err);
-    return null;
-  }
-}
-
-/**
- * Consult Aerie Gateway to obtain fine grained permissions;
- */
-async function computeRolesFromJWT(baseUser: BaseUser, activeRole: string | null): Promise<User | null> {
-  const { success, message } = await effects.session(baseUser);
-  if (!success) {
-    console.log(`Could not retrieve roles using the given JWT access token: ${message}`);
-    return null;
-  }
-
-  const decodedToken: ParsedUserToken = jwtDecode(baseUser.token);
-
-  if (baseUser.id === null && env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
-    // since our scope is always one that includes email, and that's also a unique id, we can use that
-    baseUser.id = decodedToken.email;
-  }
-
-  const allowedRoles = decodedToken['https://hasura.io/jwt/claims']['x-hasura-allowed-roles'];
-  const defaultRole = decodedToken['https://hasura.io/jwt/claims']['x-hasura-default-role'];
-
-  const user: User = {
-    ...baseUser,
-    activeRole: activeRole ?? defaultRole,
-    allowedRoles,
-    defaultRole,
-    permissibleQueries: null,
-    rolePermissions: null,
-  };
-  const permissibleQueries = await effects.getUserQueries(user);
-  const rolePermissions = await effects.getRolePermissions(user);
-  return {
-    ...user,
-    permissibleQueries,
-    rolePermissions,
-  };
-}
