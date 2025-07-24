@@ -41,6 +41,11 @@
   import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
   import WorkspaceTreeViewIcon from '../WorkspaceTreeView/WorkspaceTreeViewIcon.svelte';
 
+  export let isRowSelectable: (node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>) => boolean = (
+    _node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>,
+  ) => {
+    return true;
+  };
   export let selectedTreeNodePath: string | null | undefined = undefined;
   export let treeNode: WorkspaceTreeNode | null | undefined = undefined;
   export let workspace: Workspace | null | undefined = null;
@@ -226,10 +231,6 @@
     }
   }
 
-  function isRowSelectable(node: IRowNode<WorkspaceTreeNodeWithFullPath>) {
-    return node.data?.type === WorkspaceContentType.Sequence || node.data?.type === WorkspaceContentType.Directory;
-  }
-
   function doesExternalFilterPass(node: IRowNode<WorkspaceTreeNodeWithFullPath>) {
     const fullPath = node.data?.fullPath ?? '';
     const pathRegex = new RegExp(`^${treeNodeBreadcrumbPath}/?`);
@@ -266,9 +267,10 @@
 
   function onNodeClicked(event: CustomEvent<DataGridRowSelection<WorkspaceTreeNodeWithFullPath>>) {
     const row = event.detail;
-    if (row.data.type === WorkspaceContentType.Sequence) {
+
+    if (isRowSelectable(row)) {
       dispatch('nodeClicked', {
-        toggleState: row.isSelected,
+        toggleState: true,
         treeNode: row.data,
         treeNodePath: row.data.fullPath,
       });
@@ -584,7 +586,7 @@
     {user}
     selectedItemId={selectedTreeNodePath}
     isExternalFilterPresent={() => true}
-    {isRowSelectable}
+    suppressRowClickSelection={true}
     {doesExternalFilterPass}
     on:rowClicked={onNodeClicked}
     on:rowDoubleClicked={onRowDoubleClicked}

@@ -50,6 +50,7 @@
   export let selectedItemId: RowId | null = null;
   export let scrollToSelection: boolean = false;
   export let showLoadingSkeleton: boolean = false;
+  export let suppressRowClickSelection: boolean = false;
   export let user: User | null;
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => parseInt(data[idKey]);
@@ -160,6 +161,7 @@
   {scrollToSelection}
   {showLoadingSkeleton}
   {loading}
+  {suppressRowClickSelection}
   on:blur={onBlur}
   on:cellContextMenu
   on:cellContextMenuHide

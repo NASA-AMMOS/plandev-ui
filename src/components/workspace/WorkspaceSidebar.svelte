@@ -1,10 +1,11 @@
 <script lang="ts">
   import { Button, Tabs, Tooltip } from '@nasa-jpl/stellar-svelte';
+  import type { IRowNode } from 'ag-grid-community';
   import { Clapperboard, Files, FolderTree } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { User } from '../../types/app';
   import type { Workspace } from '../../types/workspace';
-  import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
+  import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import * as Sidebar from '../ui/Sidebar/index.js';
   import WorkspaceGridView from './WorkspaceGridView/WorkspaceGridView.svelte';
   import WorkspaceTabHeader from './WorkspaceTabHeader.svelte';
@@ -27,6 +28,11 @@
   export let workspaceTree: WorkspaceTreeNode | null | undefined = undefined;
   export let workspace: Workspace | null | undefined = null;
   export let hasEditWorkspacePermission: boolean = false;
+  export let isRowSelectable: (node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>) => boolean = (
+    _node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>,
+  ) => {
+    return true;
+  };
 
   let didWorkspaceUpdate: boolean = false;
   let lastRefreshTime: Date = new Date();
@@ -184,6 +190,7 @@
                       treeNode={workspaceTree}
                       {workspace}
                       {user}
+                      {isRowSelectable}
                       on:nodeClicked
                       on:nodeDelete
                       on:nodeMove

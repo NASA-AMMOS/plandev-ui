@@ -7,6 +7,7 @@
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+  import type { IRowNode } from 'ag-grid-community';
   import { onDestroy, onMount } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
@@ -47,7 +48,11 @@
     UserSequence,
   } from '../../../types/sequencing';
   import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
-  import type { WorkspaceTreeMap, WorkspaceTreeNode } from '../../../types/workspace-tree-view';
+  import type {
+    WorkspaceTreeMap,
+    WorkspaceTreeNode,
+    WorkspaceTreeNodeWithFullPath,
+  } from '../../../types/workspace-tree-view';
   import { getActionParametersOfType, openActionRun } from '../../../utilities/actions';
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
@@ -214,6 +219,10 @@
       fileType === WorkspaceContentType.Text ||
       fileType === WorkspaceContentType.Metadata
     );
+  }
+
+  function isRowSelectable(node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>): boolean {
+    return isTextFile(node.data?.type ?? WorkspaceContentType.Unknown);
   }
 
   async function getSelectedFileContent(filePath: string | null) {
@@ -475,6 +484,7 @@
       {hasEditWorkspacePermission}
       {user}
       workspace={$workspace}
+      {isRowSelectable}
       on:actionsClick={onActionsClicked}
       on:nodeClicked={onNodeClicked}
       on:nodeDelete={onNodeDelete}
