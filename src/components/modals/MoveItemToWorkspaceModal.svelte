@@ -62,11 +62,11 @@
       };
     }, {});
   }
-  $: hasSourceDeletePermission = workspacePermissionsMap[currentWorkspace.id].hasDeletePermission;
+  $: hasSourceDeletePermission = workspacePermissionsMap[currentWorkspace.id]?.hasDeletePermission ?? false;
   $: if (targetDirectory) {
     hasTargetEditPermission =
       workspacePermissionsMap[workspacesMap[getWorkspaceNameFromPath(targetDirectory).workspaceName]?.id]
-        .hasEditPermission;
+        ?.hasEditPermission ?? false;
   } else {
     hasTargetEditPermission = false;
   }
