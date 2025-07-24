@@ -167,9 +167,10 @@
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
     <button
       class="st-button"
+      disabled={!targetDirectory}
       on:click={onMove}
       use:permissionHandler={{
-        hasPermission: hasSourceDeletePermission,
+        hasPermission: hasSourceDeletePermission && hasTargetEditPermission,
         permissionError: 'You do not have permission to move this item from the original workspace.',
       }}
     >
@@ -177,6 +178,7 @@
     </button>
     <button
       class="st-button"
+      disabled={!targetDirectory}
       on:click={onDuplicate}
       use:permissionHandler={{
         hasPermission: hasTargetEditPermission,
