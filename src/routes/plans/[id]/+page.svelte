@@ -190,7 +190,7 @@
   let schedulingStatusText: string = '';
   let lastSimulationDatasetId: number | null = null;
   let consolePaneApi: PaneAPI;
-  let isConsoleExpanded = false;
+  let isConsoleExpanded: boolean = false;
   let selectedConsoleTab: PlanConsoleTab = 'all';
 
   $: ({ invalidActivityCount, ...activityErrorCounts } = $activityErrorRollups.reduce(
