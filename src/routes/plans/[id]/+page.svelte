@@ -11,6 +11,7 @@
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
   import VerticalCollapseIcon from '@nasa-jpl/stellar/icons/vertical_collapse_with_center_line.svg?component';
   import { ListX } from 'lucide-svelte';
+  import type { PaneAPI } from 'paneforge';
   import { onDestroy } from 'svelte';
   import Nav from '../../../components/app/Nav.svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
@@ -188,7 +189,7 @@
   let resourcesExternalAbortController: AbortController;
   let schedulingStatusText: string = '';
   let lastSimulationDatasetId: number | null = null;
-  let consolePaneApi: any;
+  let consolePaneApi: PaneAPI;
   let isConsoleExpanded = false;
   let selectedConsoleTab: PlanConsoleTab = 'all';
 
