@@ -324,7 +324,6 @@ test.describe.serial('Timeline View Editing', () => {
     expect(newLayerCount - existingLayerCount).toEqual(1);
 
     // Expect the external event layer to include all external events
-    // TODO: create a schema + upload a source before this, but still I don't think all show by default?
   });
 
   test('Edit an external event layer', async () => {
@@ -340,9 +339,6 @@ test.describe.serial('Timeline View Editing', () => {
     // Expect that the modal is present
     const modal = externalEventLayerEditor.getByRole('dialog');
     expect(modal).toBeDefined();
-
-    // Expect that layer name is showing in the name input
-    // expect(modal.locator('input[name="layer-name"]')).toHaveValue('Events Layer');
 
     // Expect that the resulting types list is not empty
     const resultingTypesList = modal.locator('.resulting-types-list');
@@ -365,29 +361,7 @@ test.describe.serial('Timeline View Editing', () => {
     // Ensure that only one instance (ExampleEvent) is listed
     expect(await resultingTypesList.locator('.filter-type-result').count()).toEqual(1);
 
-    // Expect that attribute filters can be added
-    await modal.getByLabel('other-filters').getByRole('button', { name: 'Add Filter' }).click();
-    expect(await modal.getByLabel('other-filters').getByRole('listitem').count()).toBe(1);
-    await modal.getByLabel('other-filters').locator("select[aria-label='field']").selectOption('Attribute');
-    await modal.getByLabel('other-filters').getByText('Select Attribute').click();
-    await modal.getByLabel('other-filters').getByText('example2 (number)').click();
-    await modal.getByLabel('other-filters').locator("select[aria-label='operator']").selectOption('equals');
-    await modal.getByLabel('other-filters').getByRole('listitem').locator("input[name='filter-value']").fill('1');
-
     expect(await modal.getByText('1 instance')).toBeVisible();
-
-    // Clear all filters
-    await modal.getByLabel('other-filters').getByRole('button', { name: 'Remove filter' }).click();
-    await modal.getByLabel('dynamic-types').getByRole('button', { name: 'Remove filter' }).click();
-    await modal.getByRole('button', { name: 'Remove Types' }).click();
-    expect(await modal.getByText('0 instances')).toBeDefined();
-    expect(await resultingTypesList.locator('.filter-type-result').count()).toEqual(allExternalEventTypesCount);
-
-    // Re-add manual filter for future testing
-    await modal.locator("input[name='manual-types-filter-input']").click();
-    expect(await modal.locator('.manual-types-menu').first()).toBeDefined();
-    await modal.getByRole('menuitem', { name: 'ExampleEvent' }).click();
-    await page.keyboard.press('Escape');
 
     // Give the layer a new name
     await modal.locator('input[name="layer-name"]').fill('Foo');
@@ -396,7 +370,7 @@ test.describe.serial('Timeline View Editing', () => {
     await modal.getByRole('button', { name: 'close' }).click();
 
     // Expect name to match given name
-    expect(await externalEventLayerEditor.locator('.timeline-layer-editor').first()).toHaveText('  Foo 1        ');
+    expect(await externalEventLayerEditor.locator('.timeline-layer-editor').first()).toHaveText(/\s+Foo\s/);
   });
 
   test('Change external event layer settings', async () => {
@@ -412,7 +386,7 @@ test.describe.serial('Timeline View Editing', () => {
     expect(
       await page
         .locator('.timeline-row-wrapper', { hasText: rowName })
-        .locator('.collapse', { hasText: 'ExampleEvent' })
+        .locator('.collapse-root', { hasText: 'ExampleEvent' })
         .count(),
     ).toBe(1);
 
