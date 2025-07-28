@@ -3,6 +3,7 @@
 <script lang="ts">
   import { Input as InputStellar, Label } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
+  import InputInternal from '../../components/form/Input.svelte';
   import * as Sidebar from '../../components/ui/Sidebar/index.js';
   import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
@@ -81,8 +82,8 @@
           </Sidebar.Menu>
         </Sidebar.Content>
       </Sidebar.Provider>
-      <div class="py-1">
-        <Label class="pb-0.5" size="sm" for="sequence-name">Sequence Name</Label>
+      <InputInternal layout="stacked" class="px-0.5 py-1">
+        <Label size="sm" for="sequence-name">Sequence Name</Label>
         <InputStellar
           sizeVariant="xs"
           id="sequence-name"
@@ -91,7 +92,7 @@
           aria-label="Sequence Name"
           bind:value={sequenceName}
         />
-      </div>
+      </InputInternal>
     </div>
   </ModalContent>
   <ModalFooter>

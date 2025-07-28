@@ -3,6 +3,7 @@
 <script lang="ts">
   import { Input as InputStellar, Label } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
+  import InputInternal from '../../components/form/Input.svelte';
   import * as Sidebar from '../../components/ui/Sidebar/index.js';
   import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
@@ -79,10 +80,10 @@
           </Sidebar.Menu>
         </Sidebar.Content>
       </Sidebar.Provider>
-      <div class="py-1">
-        <Label class="pb-0.5" size="sm" for="folder-name">Folder Name</Label>
+      <InputInternal layout="stacked" class="px-0.5 py-1">
+        <Label size="sm" for="folder-name">Folder Name</Label>
         <InputStellar sizeVariant="xs" id="folder-name" name="folder-name" autocomplete="off" bind:value={folderName} />
-      </div>
+      </InputInternal>
     </div>
   </ModalContent>
   <ModalFooter>

@@ -3,6 +3,7 @@
 <script lang="ts">
   import { Input, Label } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
+  import InputInternal from '../../components/form/Input.svelte';
   import * as Sidebar from '../../components/ui/Sidebar/index.js';
   import { PATH_DELIMITER } from '../../constants/workspaces.js';
   import { WorkspaceContentType } from '../../enums/workspace';
@@ -157,10 +158,10 @@
           </Sidebar.Menu>
         </Sidebar.Content>
       </Sidebar.Provider>
-      <fieldset class="p-0.5">
-        <Label class="pb-0.5" size="sm" for="target-path">Target Directory</Label>
+      <InputInternal layout="stacked" class="px-0.5 py-1">
+        <Label size="sm" for="target-path">Target Directory</Label>
         <Input sizeVariant="xs" id="target-path" name="target-path" autocomplete="off" bind:value={targetDirectory} />
-      </fieldset>
+      </InputInternal>
     </div>
   </ModalContent>
   <ModalFooter>
