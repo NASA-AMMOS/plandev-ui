@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Button, ContextMenu, Popover, Separator } from '@nasa-jpl/stellar-svelte';
+  import { Button, ContextMenu, DropdownMenu } from '@nasa-jpl/stellar-svelte';
   import type { CellContextMenuEvent, ICellRendererParams, IRowNode } from 'ag-grid-community';
   import {
     ArrowUpFromLine,
@@ -35,7 +35,6 @@
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { featurePermissions } from '../../../utilities/permissions';
   import { flattenWorkspaceTreeWithPaths, mapWorkspaceTreePaths } from '../../../utilities/workspaces';
-  import MenuItem from '../../menus/MenuItem.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
@@ -398,15 +397,15 @@
 <div class="grid h-full grid-rows-[min-content_auto]">
   <div class="flex items-center gap-1">
     {#if treeNodeBreadcrumbDisplay.length === 0}
-      <Popover.Root bind:open={isBreadcrumbMenuOpen}>
-        <Popover.Trigger asChild let:builder>
+      <DropdownMenu.Root bind:open={isBreadcrumbMenuOpen}>
+        <DropdownMenu.Trigger asChild let:builder>
           <Button builders={[builder]} variant="ghost" class="flex items-center gap-1 font-bold">
             {treeNode?.name}
             <ChevronDown size={16} />
           </Button>
-        </Popover.Trigger>
-        <Popover.Content class="w-auto p-0" align="start" role="menu" aria-label="Breadcrumb Menu">
-          <MenuItem className="text-xs py-1.5" on:click={() => onNewSequence(treeNode)}>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Content align="start" role="menu" aria-label="Breadcrumb Menu">
+          <DropdownMenu.Item size="sm" on:click={() => onNewSequence(treeNode)}>
             <div
               class="flex items-center gap-1"
               use:permissionHandler={{
@@ -417,8 +416,8 @@
             >
               <FilePlus size={16} /> New Sequence
             </div>
-          </MenuItem>
-          <MenuItem className="text-xs py-1.5" on:click={() => onNewFolder(treeNode)}>
+          </DropdownMenu.Item>
+          <DropdownMenu.Item size="sm" on:click={() => onNewFolder(treeNode)}>
             <div
               class="flex items-center gap-1"
               use:permissionHandler={{
@@ -429,8 +428,8 @@
             >
               <FolderPlus size={16} /> New Folder
             </div>
-          </MenuItem>
-          <MenuItem className="text-xs py-1.5" on:click={() => onImportFile(treeNode)}>
+          </DropdownMenu.Item>
+          <DropdownMenu.Item size="sm" on:click={() => onImportFile(treeNode)}>
             <div
               class="flex items-center gap-1"
               use:permissionHandler={{
@@ -441,9 +440,9 @@
             >
               <ArrowUpFromLine size={16} /> Import File
             </div>
-          </MenuItem>
-        </Popover.Content>
-      </Popover.Root>
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
     {:else}
       <Button variant="ghost" on:click={() => treeNode && onBreadcrumbClick({ ...treeNode, fullPath: '' })}>
         {treeNode?.name}
@@ -452,15 +451,15 @@
     {/if}
     {#each treeNodeBreadcrumbDisplay as breadcrumb, index}
       {#if index === treeNodeBreadcrumbDisplay.length - 1}
-        <Popover.Root bind:open={isBreadcrumbMenuOpen}>
-          <Popover.Trigger asChild let:builder>
+        <DropdownMenu.Root bind:open={isBreadcrumbMenuOpen}>
+          <DropdownMenu.Trigger asChild let:builder>
             <Button builders={[builder]} variant="ghost" class="flex items-center gap-1 font-bold">
               {breadcrumb.name}
               <ChevronDown size={16} />
             </Button>
-          </Popover.Trigger>
-          <Popover.Content class="w-auto p-0" align="start" role="menu" aria-label="Breadcrumb Menu">
-            <MenuItem className="text-xs py-1.5" on:click={() => onRenameNode(breadcrumb)}>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content align="start" role="menu" aria-label="Breadcrumb Menu">
+            <DropdownMenu.Item size="sm" on:click={() => onRenameNode(breadcrumb)}>
               <div
                 class="flex items-center gap-1"
                 use:permissionHandler={{
@@ -472,8 +471,8 @@
                 <PencilLine size={16} />
                 Rename Folder
               </div>
-            </MenuItem>
-            <MenuItem className="text-xs py-1.5" on:click={() => onMoveNode(breadcrumb)}>
+            </DropdownMenu.Item>
+            <DropdownMenu.Item size="sm" on:click={() => onMoveNode(breadcrumb)}>
               <div
                 class="flex items-center gap-1"
                 use:permissionHandler={{
@@ -485,8 +484,8 @@
                 <FolderOutput size={16} />
                 Move Folder
               </div>
-            </MenuItem>
-            <MenuItem className="text-xs py-1.5" on:click={() => onDeleteNode(breadcrumb)}>
+            </DropdownMenu.Item>
+            <DropdownMenu.Item size="sm" on:click={() => onDeleteNode(breadcrumb)}>
               <div
                 class="flex items-center gap-1"
                 use:permissionHandler={{
@@ -498,23 +497,23 @@
                 <Trash2 size={16} />
                 Delete Folder
               </div>
-            </MenuItem>
-            <Separator />
-            <MenuItem className="text-xs py-1.5" on:click={() => onCopyFileLocation(breadcrumb)}>
+            </DropdownMenu.Item>
+            <DropdownMenu.Separator />
+            <DropdownMenu.Item size="sm" on:click={() => onCopyFileLocation(breadcrumb)}>
               <div class="flex items-center gap-1" aria-label="Copy Link to">
                 <Copy size={16} /> Copy Link to {breadcrumb.type === WorkspaceContentType.Directory
                   ? 'Directory'
                   : 'File'}
               </div>
-            </MenuItem>
-            <Separator />
-            <MenuItem className="text-xs py-1.5" on:click={() => onMoveToWorkspace(breadcrumb)}>
+            </DropdownMenu.Item>
+            <DropdownMenu.Separator />
+            <DropdownMenu.Item size="sm" on:click={() => onMoveToWorkspace(breadcrumb)}>
               <div class="flex items-center gap-1" aria-label="Move to Workspace">
                 <FileOutput size={16} /> Move to Workspace
               </div>
-            </MenuItem>
-            <Separator />
-            <MenuItem className="text-xs py-1.5" on:click={() => onNewSequence(breadcrumb)}>
+            </DropdownMenu.Item>
+            <DropdownMenu.Separator />
+            <DropdownMenu.Item size="sm" on:click={() => onNewSequence(breadcrumb)}>
               <div
                 class="flex items-center gap-1"
                 use:permissionHandler={{
@@ -525,8 +524,8 @@
               >
                 <FilePlus size={16} /> New Sequence
               </div>
-            </MenuItem>
-            <MenuItem className="text-xs py-1.5" on:click={() => onNewFolder(breadcrumb)}>
+            </DropdownMenu.Item>
+            <DropdownMenu.Item size="sm" on:click={() => onNewFolder(breadcrumb)}>
               <div
                 class="flex items-center gap-1"
                 use:permissionHandler={{
@@ -536,8 +535,8 @@
               >
                 <FolderPlus size={16} /> New Folder
               </div>
-            </MenuItem>
-            <MenuItem className="text-xs py-1.5" on:click={() => onImportFile(breadcrumb)}>
+            </DropdownMenu.Item>
+            <DropdownMenu.Item size="sm" on:click={() => onImportFile(breadcrumb)}>
               <div
                 class="flex items-center gap-1"
                 use:permissionHandler={{
@@ -548,23 +547,23 @@
               >
                 <ArrowUpFromLine size={16} /> Import File
               </div>
-            </MenuItem>
-          </Popover.Content>
-        </Popover.Root>
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
       {:else if breadcrumb.name === '...'}
-        <Popover.Root bind:open={isBreadcrumbNavMenuOpen}>
-          <Popover.Trigger asChild let:builder>
+        <DropdownMenu.Root bind:open={isBreadcrumbNavMenuOpen}>
+          <DropdownMenu.Trigger asChild let:builder>
             <Button builders={[builder]} variant="ghost"><Ellipsis size={16} /></Button>
-          </Popover.Trigger>
-          <Popover.Content class="w-auto p-0" align="start" role="menu" aria-label="Breadcrumb Nav Menu">
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content align="start" role="menu" aria-label="Breadcrumb Nav Menu">
             {#each treeNodeBreadcrumbMenuNodes as breadcrumbMenuNode}
-              <MenuItem className="text-sm py-1.5" on:click={() => onBreadcrumbClick(breadcrumbMenuNode)}>
+              <DropdownMenu.Item size="sm" on:click={() => onBreadcrumbClick(breadcrumbMenuNode)}>
                 <WorkspaceTreeViewIcon treeNode={breadcrumbMenuNode} toggleState={true} />
                 {breadcrumbMenuNode.name}
-              </MenuItem>
+              </DropdownMenu.Item>
             {/each}
-          </Popover.Content>
-        </Popover.Root>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
       {:else}
         <Button variant="ghost" on:click={() => onBreadcrumbClick(breadcrumb)}>
           {breadcrumb.name}
