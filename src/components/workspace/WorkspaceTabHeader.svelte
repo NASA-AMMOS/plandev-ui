@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { Button, DropdownMenu, Tooltip } from '@nasa-jpl/stellar-svelte';
-  import { ArrowUpFromLine, Check, ChevronDown, FilePlus, FolderPlus, Plus, RefreshCw } from 'lucide-svelte';
+  import { ArrowUpFromLine, Check, FilePlus, FolderPlus, Plus, RefreshCw } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { getTimeAgo } from '../../utilities/time';
@@ -39,15 +39,15 @@
 
 <div class="flex items-center justify-between gap-0 border-b border-border bg-background p-[6px]">
   <SectionTitle>{title}</SectionTitle>
-  <div class="flex gap-0">
+  <div class="flex gap-1">
     <Tooltip.Root>
-      <Tooltip.Trigger asChild let:builder>
+      <Tooltip.Trigger>
         {#if didWorkspaceUpdate}
-          <Button builders={[builder]} variant="ghost">
+          <Button variant="ghost" size="icon">
             <Check size={16} />
           </Button>
         {:else}
-          <Button builders={[builder]} variant="ghost" on:click={onRefreshWorkspace}>
+          <Button variant="ghost" size="icon" on:click={onRefreshWorkspace}>
             <RefreshCw size={16} />
           </Button>
         {/if}
@@ -59,10 +59,9 @@
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild let:builder>
         <Tooltip.Root>
-          <Tooltip.Trigger asChild let:builder={tooltipBuilder}>
-            <Button builders={[builder, tooltipBuilder]} variant="ghost" class="gap-0" aria-label="New Workspace Item">
+          <Tooltip.Trigger>
+            <Button builders={[builder]} variant="ghost" size="icon" aria-label="New Workspace Item">
               <Plus size={16} />
-              <ChevronDown size={16} />
             </Button>
           </Tooltip.Trigger>
           <Tooltip.Content>
@@ -73,36 +72,36 @@
       <DropdownMenu.Content>
         <DropdownMenu.Item size="sm" on:click={onNewSequence}>
           <div
-            class="flex cursor-pointer gap-1"
+            class="flex cursor-pointer gap-2"
             use:permissionHandler={{
               hasPermission: hasEditWorkspacePermission,
               permissionError: 'You do not have permission to edit this workspace',
             }}
           >
-            <FilePlus size={16} /> New Sequence
+            <FilePlus size={14} /> New Sequence
           </div>
         </DropdownMenu.Item>
         <DropdownMenu.Item size="sm" on:click={onNewFolder}>
           <div
-            class="flex cursor-pointer gap-1"
+            class="flex cursor-pointer gap-2"
             use:permissionHandler={{
               hasPermission: hasEditWorkspacePermission,
               permissionError: 'You do not have permission to edit this workspace',
             }}
           >
-            <FolderPlus size={16} /> New Folder
+            <FolderPlus size={14} /> New Folder
           </div>
         </DropdownMenu.Item>
         <DropdownMenu.Separator />
         <DropdownMenu.Item size="sm" on:click={onImportFile}>
           <div
-            class="flex cursor-pointer gap-1"
+            class="flex cursor-pointer gap-2"
             use:permissionHandler={{
               hasPermission: hasEditWorkspacePermission,
               permissionError: 'You do not have permission to edit this workspace',
             }}
           >
-            <ArrowUpFromLine size={16} />Import File
+            <ArrowUpFromLine size={14} />Import File
           </div>
         </DropdownMenu.Item>
       </DropdownMenu.Content>

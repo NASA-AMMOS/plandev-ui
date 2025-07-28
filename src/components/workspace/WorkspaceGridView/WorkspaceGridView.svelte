@@ -76,7 +76,7 @@
         iconDiv.className = 'node-icon-cell';
         new WorkspaceTreeViewIcon({
           props: {
-            size: 16,
+            size: 14,
             toggleState: (params.data?.contents || []).length > 0,
             treeNode: params.data,
           },
@@ -399,153 +399,157 @@
     {#if treeNodeBreadcrumbDisplay.length === 0}
       <DropdownMenu.Root bind:open={isBreadcrumbMenuOpen}>
         <DropdownMenu.Trigger asChild let:builder>
-          <Button builders={[builder]} variant="ghost" class="flex items-center gap-1 font-bold">
+          <Button builders={[builder]} variant="ghost" class="flex items-center gap-1 rounded-none font-bold">
             {treeNode?.name}
-            <ChevronDown size={16} />
+            <ChevronDown size={14} />
           </Button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content align="start" role="menu" aria-label="Breadcrumb Menu">
           <DropdownMenu.Item size="sm" on:click={() => onNewSequence(treeNode)}>
             <div
-              class="flex items-center gap-1"
+              class="flex items-center gap-2"
               use:permissionHandler={{
                 hasPermission: hasContextMenuUpdatePermission(user, null),
                 permissionError: 'You do not have permission to create a new sequence in this folder.',
               }}
               aria-label="New Sequence"
             >
-              <FilePlus size={16} /> New Sequence
+              <FilePlus size={14} /> New Sequence
             </div>
           </DropdownMenu.Item>
           <DropdownMenu.Item size="sm" on:click={() => onNewFolder(treeNode)}>
             <div
-              class="flex items-center gap-1"
+              class="flex items-center gap-2"
               use:permissionHandler={{
                 hasPermission: hasContextMenuUpdatePermission(user, null),
                 permissionError: 'You do not have permission to create a new folder in this folder.',
               }}
               aria-label="New Folder"
             >
-              <FolderPlus size={16} /> New Folder
+              <FolderPlus size={14} /> New Folder
             </div>
           </DropdownMenu.Item>
           <DropdownMenu.Item size="sm" on:click={() => onImportFile(treeNode)}>
             <div
-              class="flex items-center gap-1"
+              class="flex items-center gap-2"
               use:permissionHandler={{
                 hasPermission: hasContextMenuUpdatePermission(user, null),
                 permissionError: 'You do not have permission to import a file into this folder.',
               }}
               aria-label="Import File"
             >
-              <ArrowUpFromLine size={16} /> Import File
+              <ArrowUpFromLine size={14} /> Import File
             </div>
           </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Root>
     {:else}
-      <Button variant="ghost" on:click={() => treeNode && onBreadcrumbClick({ ...treeNode, fullPath: '' })}>
+      <Button
+        variant="ghost"
+        on:click={() => treeNode && onBreadcrumbClick({ ...treeNode, fullPath: '' })}
+        class="rounded-none"
+      >
         {treeNode?.name}
       </Button>
-      <ChevronRight size={16} />
+      <ChevronRight size={14} />
     {/if}
     {#each treeNodeBreadcrumbDisplay as breadcrumb, index}
       {#if index === treeNodeBreadcrumbDisplay.length - 1}
         <DropdownMenu.Root bind:open={isBreadcrumbMenuOpen}>
           <DropdownMenu.Trigger asChild let:builder>
-            <Button builders={[builder]} variant="ghost" class="flex items-center gap-1 font-bold">
+            <Button builders={[builder]} variant="ghost" class="flex items-center gap-1 rounded-none font-bold">
               {breadcrumb.name}
-              <ChevronDown size={16} />
+              <ChevronDown size={14} />
             </Button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Content align="start" role="menu" aria-label="Breadcrumb Menu">
             <DropdownMenu.Item size="sm" on:click={() => onRenameNode(breadcrumb)}>
               <div
-                class="flex items-center gap-1"
+                class="flex items-center gap-2"
                 use:permissionHandler={{
                   hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
                   permissionError: 'You do not have permission to rename this folder.',
                 }}
                 aria-label="Rename"
               >
-                <PencilLine size={16} />
+                <PencilLine size={14} />
                 Rename Folder
               </div>
             </DropdownMenu.Item>
             <DropdownMenu.Item size="sm" on:click={() => onMoveNode(breadcrumb)}>
               <div
-                class="flex items-center gap-1"
+                class="flex items-center gap-2"
                 use:permissionHandler={{
                   hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
                   permissionError: 'You do not have permission to move this folder.',
                 }}
                 aria-label="Move Folder"
               >
-                <FolderOutput size={16} />
+                <FolderOutput size={14} />
                 Move Folder
               </div>
             </DropdownMenu.Item>
             <DropdownMenu.Item size="sm" on:click={() => onDeleteNode(breadcrumb)}>
               <div
-                class="flex items-center gap-1"
+                class="flex items-center gap-2"
                 use:permissionHandler={{
                   hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
                   permissionError: 'You do not have permission to delete this folder.',
                 }}
                 aria-label="Delete Folder"
               >
-                <Trash2 size={16} />
+                <Trash2 size={14} />
                 Delete Folder
               </div>
             </DropdownMenu.Item>
             <DropdownMenu.Separator />
             <DropdownMenu.Item size="sm" on:click={() => onCopyFileLocation(breadcrumb)}>
-              <div class="flex items-center gap-1" aria-label="Copy Link to">
-                <Copy size={16} /> Copy Link to {breadcrumb.type === WorkspaceContentType.Directory
+              <div class="flex items-center gap-2" aria-label="Copy Link to">
+                <Copy size={14} /> Copy Link to {breadcrumb.type === WorkspaceContentType.Directory
                   ? 'Directory'
                   : 'File'}
               </div>
             </DropdownMenu.Item>
             <DropdownMenu.Separator />
             <DropdownMenu.Item size="sm" on:click={() => onMoveToWorkspace(breadcrumb)}>
-              <div class="flex items-center gap-1" aria-label="Move to Workspace">
-                <FileOutput size={16} /> Move to Workspace
+              <div class="flex items-center gap-2" aria-label="Move to Workspace">
+                <FileOutput size={14} /> Move to Workspace
               </div>
             </DropdownMenu.Item>
             <DropdownMenu.Separator />
             <DropdownMenu.Item size="sm" on:click={() => onNewSequence(breadcrumb)}>
               <div
-                class="flex items-center gap-1"
+                class="flex items-center gap-2"
                 use:permissionHandler={{
                   hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
                   permissionError: 'You do not have permission to create a new sequence in this folder.',
                 }}
                 aria-label="New Sequence"
               >
-                <FilePlus size={16} /> New Sequence
+                <FilePlus size={14} /> New Sequence
               </div>
             </DropdownMenu.Item>
             <DropdownMenu.Item size="sm" on:click={() => onNewFolder(breadcrumb)}>
               <div
-                class="flex items-center gap-1"
+                class="flex items-center gap-2"
                 use:permissionHandler={{
                   hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
                   permissionError: 'You do not have permission to create a new folder in this folder.',
                 }}
               >
-                <FolderPlus size={16} /> New Folder
+                <FolderPlus size={14} /> New Folder
               </div>
             </DropdownMenu.Item>
             <DropdownMenu.Item size="sm" on:click={() => onImportFile(breadcrumb)}>
               <div
-                class="flex items-center gap-1"
+                class="flex items-center gap-2"
                 use:permissionHandler={{
                   hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
                   permissionError: 'You do not have permission to import a file into this folder.',
                 }}
                 aria-label="Import File"
               >
-                <ArrowUpFromLine size={16} /> Import File
+                <ArrowUpFromLine size={14} /> Import File
               </div>
             </DropdownMenu.Item>
           </DropdownMenu.Content>
@@ -553,7 +557,7 @@
       {:else if breadcrumb.name === '...'}
         <DropdownMenu.Root bind:open={isBreadcrumbNavMenuOpen}>
           <DropdownMenu.Trigger asChild let:builder>
-            <Button builders={[builder]} variant="ghost"><Ellipsis size={16} /></Button>
+            <Button builders={[builder]} variant="ghost"><Ellipsis size={14} /></Button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Content align="start" role="menu" aria-label="Breadcrumb Nav Menu">
             {#each treeNodeBreadcrumbMenuNodes as breadcrumbMenuNode}
@@ -569,7 +573,7 @@
           {breadcrumb.name}
         </Button>
         {#if index !== treeNodeBreadcrumbDisplay.length - 1}
-          <ChevronRight size={16} />
+          <ChevronRight size={14} />
         {/if}
       {/if}
     {/each}
@@ -596,74 +600,74 @@
       <ContextMenu.Group>
         <ContextMenu.Item size="sm" on:click={onTableMenuRenameNode} aria-label="Rename">
           <div
-            class="flex items-center gap-1"
+            class="flex items-center gap-2"
             use:permissionHandler={{
               hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
               permissionError: 'You do not have permission to rename this folder.',
             }}
           >
-            <PencilLine size={16} />
+            <PencilLine size={14} />
             Rename
           </div>
         </ContextMenu.Item>
         <ContextMenu.Item size="sm" on:click={onTableMenuMoveNode} aria-label="Move">
           <div
-            class="flex items-center gap-1"
+            class="flex items-center gap-2"
             use:permissionHandler={{
               hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
               permissionError: 'You do not have permission to move this folder.',
             }}
           >
-            <FolderOutput size={16} />
+            <FolderOutput size={14} />
             Move
           </div>
         </ContextMenu.Item>
       </ContextMenu.Group>
       <ContextMenu.Separator />
       <ContextMenu.Item size="sm" on:click={onTableCopyFileLocation} aria-label="Copy Link to">
-        <div class="flex items-center gap-1">
-          <Copy size={16} /> Copy Link to {getPathType(selectedItemId)}
+        <div class="flex items-center gap-2">
+          <Copy size={14} /> Copy Link to {getPathType(selectedItemId)}
         </div>
       </ContextMenu.Item>
       <ContextMenu.Separator />
       <ContextMenu.Item size="sm" on:click={onTableMoveToWorkspace} aria-label="Move to Workspace">
-        <div class="flex items-center gap-1">
-          <FileOutput size={16} /> Move to Workspace
+        <div class="flex items-center gap-2">
+          <FileOutput size={14} /> Move to Workspace
         </div>
       </ContextMenu.Item>
       <ContextMenu.Separator />
       <ContextMenu.Group>
         <ContextMenu.Item size="sm" on:click={onTableNewSequence} aria-label="New Sequence">
           <div
-            class="flex items-center gap-1"
+            class="flex items-center gap-2"
             use:permissionHandler={{
               hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
               permissionError: 'You do not have permission to create a new sequence in this folder.',
             }}
           >
-            <FilePlus size={16} /> New Sequence
+            <FilePlus size={14} /> New Sequence
           </div>
         </ContextMenu.Item>
         <ContextMenu.Item size="sm" on:click={onTableNewFolder} aria-label="New Folder">
           <div
-            class="flex items-center gap-1"
+            class="flex items-center gap-2"
             use:permissionHandler={{
               hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
               permissionError: 'You do not have permission to create a new folder in this folder.',
             }}
           >
-            <FolderPlus size={16} /> New Folder
+            <FolderPlus size={14} /> New Folder
           </div>
         </ContextMenu.Item>
         <ContextMenu.Item size="sm" on:click={onTableImportFile} aria-label="Import File">
           <div
-            class="flex items-center gap-1"
+            class="flex items-center gap-2"
             use:permissionHandler={{
               hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
               permissionError: 'You do not have permission to import a file into this folder.',
             }}
           >
-            <ArrowUpFromLine size={16} /> Import File
+            <ArrowUpFromLine size={14} /> Import File
           </div>
         </ContextMenu.Item>
       </ContextMenu.Group>
@@ -677,7 +681,7 @@
     align-items: center;
     display: flex;
     height: 100%;
-    width: 16px;
+    width: 14px;
   }
 
   :global(.workspace-grid-view .ag-root-wrapper) {

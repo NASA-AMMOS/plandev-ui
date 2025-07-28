@@ -102,13 +102,14 @@
           {depth}
           on:click={onNodeClicked}
           on:contextmenu={onNodeRightClicked}
+          className="group/item"
         >
           <ChevronRight size={16} class={isOpen ? 'rotate-90' : ''} />
           <WorkspaceTreeViewIcon {treeNode} toggleState={isOpen} />
-          <div class="group/item grid grid-cols-[auto_min-content] items-center justify-between">
+          <div class=" grid grid-cols-[auto_min-content] items-center justify-between">
             <span class="truncate">{treeNode.name}</span>
             {#if showKebabMenu}
-              <Button variant="ghost" on:click={onKebabClick}>
+              <Button size="icon-sm" class="mr-1" variant="ghost" on:click={onKebabClick}>
                 <EllipsisVertical class="invisible group-hover/item:visible" size={16} />
               </Button>
             {/if}
@@ -144,14 +145,15 @@
         {depth}
         on:click={onNodeClicked}
         on:contextmenu={onNodeRightClicked}
+        className="group/item"
       >
         <div class="w-4"></div>
         <!-- Spacer for missing chevron -->
         <WorkspaceTreeViewIcon {treeNode} />
-        <div class="group/item grid grid-cols-[auto_min-content] items-center justify-between">
+        <div class="grid grid-cols-[auto_min-content] items-center justify-between">
           <span class="truncate">{treeNode.name}</span>
           {#if showKebabMenu}
-            <Button variant="ghost" on:click={onKebabClick}>
+            <Button size="icon-sm" class="mr-1" variant="ghost" on:click={onKebabClick}>
               <EllipsisVertical class="invisible group-hover/item:visible" size={16} />
             </Button>
           {/if}

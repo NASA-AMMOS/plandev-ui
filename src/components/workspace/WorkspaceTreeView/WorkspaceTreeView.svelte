@@ -144,37 +144,37 @@
       <ContextMenu.Group>
         <ContextMenu.Item size="sm" on:click={onRenameNode} aria-label="Rename">
           <div
-            class="flex gap-1"
+            class="flex items-center gap-2"
             use:permissionHandler={{
               hasPermission: hasEditPermission,
               permissionError: 'You do not have permission to edit this workspace',
             }}
           >
-            <PencilLine size={16} />
+            <PencilLine size={14} />
             Rename
           </div>
         </ContextMenu.Item>
         <ContextMenu.Item size="sm" on:click={onMoveNode} aria-label="Move">
           <div
-            class="flex gap-1"
+            class="flex items-center gap-2"
             use:permissionHandler={{
               hasPermission: hasEditPermission,
               permissionError: 'You do not have permission to edit this workspace',
             }}
           >
-            <FolderOutput size={16} />
+            <FolderOutput size={14} />
             Move
           </div>
         </ContextMenu.Item>
         <ContextMenu.Item size="sm" on:click={onDeleteNode} aria-label="Delete">
           <div
-            class="flex gap-1"
+            class="flex items-center gap-2"
             use:permissionHandler={{
               hasPermission: hasDeletePermission,
               permissionError: 'You do not have permission to delete this workspace',
             }}
           >
-            <Trash2 size={16} />
+            <Trash2 size={14} />
             Delete
           </div>
         </ContextMenu.Item>
@@ -182,56 +182,56 @@
       <ContextMenu.Separator />
       <ContextMenu.Item size="sm" on:click={onCopyFileLocation} aria-label="Copy Link to">
         <div
-          class="flex gap-1"
+          class="flex items-center gap-2"
           use:permissionHandler={{
             hasPermission: hasEditPermission,
             permissionError: 'You do not have permission to edit this workspace',
           }}
         >
-          <Copy size={16} /> Copy Link to {contextMenuNode?.type === WorkspaceContentType.Directory
+          <Copy size={14} /> Copy Link to {contextMenuNode?.type === WorkspaceContentType.Directory
             ? 'Directory'
             : 'File'}
         </div>
       </ContextMenu.Item>
       <ContextMenu.Separator />
       <ContextMenu.Item size="sm" on:click={onMoveToWorkspace} aria-label="Move to Workspace">
-        <div class="flex gap-1">
-          <FileOutput size={16} /> Move to Workspace
+        <div class="flex items-center gap-2">
+          <FileOutput size={14} /> Move to Workspace
         </div>
       </ContextMenu.Item>
       <ContextMenu.Separator />
       <ContextMenu.Group>
         <ContextMenu.Item size="sm" on:click={onNewSequence} aria-label="New Sequence">
           <div
-            class="flex gap-1"
+            class="flex items-center gap-2"
             use:permissionHandler={{
               hasPermission: hasEditPermission,
               permissionError: 'You do not have permission to edit this workspace',
             }}
           >
-            <FilePlus size={16} /> New Sequence
+            <FilePlus size={14} /> New Sequence
           </div>
         </ContextMenu.Item>
         <ContextMenu.Item size="sm" on:click={onNewFolder} aria-label="New Folder">
           <div
-            class="flex gap-1"
+            class="flex items-center gap-2"
             use:permissionHandler={{
               hasPermission: hasEditPermission,
               permissionError: 'You do not have permission to edit this workspace',
             }}
           >
-            <FolderPlus size={16} /> New Folder
+            <FolderPlus size={14} /> New Folder
           </div>
         </ContextMenu.Item>
         <ContextMenu.Item size="sm" on:click={onImportFile} aria-label="Import File">
           <div
-            class="flex gap-1"
+            class="flex items-center gap-2"
             use:permissionHandler={{
               hasPermission: hasEditPermission,
               permissionError: 'You do not have permission to edit this workspace',
             }}
           >
-            <ArrowUpFromLine size={16} /> Import File
+            <ArrowUpFromLine size={14} /> Import File
           </div>
         </ContextMenu.Item>
       </ContextMenu.Group>

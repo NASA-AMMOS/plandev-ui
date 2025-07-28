@@ -201,8 +201,8 @@
           permissionError: deletePermissionError,
         }}
       >
-        <ContextMenu.Item class="items-center gap-1" size="sm" disabled={!deletePermission} on:click={deleteItem}>
-          <Trash2 size={16} /> Delete {itemDisplayText}{selectedItemId}
+        <ContextMenu.Item class="items-center gap-2" size="sm" disabled={!deletePermission} on:click={deleteItem}>
+          <Trash2 size={14} /> Delete {itemDisplayText}{selectedItemId}
         </ContextMenu.Item>
       </div>
     {/if}
