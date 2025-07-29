@@ -583,6 +583,23 @@
           </Input>
         </Highlight>
 
+        {#if activityType && activityType.description}
+          <Highlight highlight={highlightKeysMap.type}>
+            <Input layout="inline">
+              <label use:tooltip={{ content: 'Activity Description', placement: 'top' }} for="activity-description">
+                Description
+              </label>
+              <input
+                class="st-input w-full"
+                disabled
+                name="activity-description"
+                id="activity-description"
+                value={activityType.description}
+              />
+            </Input>
+          </Highlight>
+        {/if}
+
         <Highlight highlight={highlightKeysMap.start_offset}>
           <DatePickerField
             useFallback={!$plugins.time.enableDatePicker}
