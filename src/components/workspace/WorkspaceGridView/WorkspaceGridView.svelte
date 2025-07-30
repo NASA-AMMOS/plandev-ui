@@ -224,7 +224,6 @@
 
   function getPathType(path: RowId | null) {
     const nodeAtPath = path ? workspaceTreeMap[path] : null;
-
     if (nodeAtPath) {
       return nodeAtPath.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
     }
@@ -410,7 +409,7 @@
               class="flex items-center gap-2"
               use:permissionHandler={{
                 hasPermission: hasContextMenuUpdatePermission(user, null),
-                permissionError: 'You do not have permission to create a new sequence in this folder.',
+                permissionError: 'You do not have permission to create a new file in this folder.',
               }}
               aria-label="New File"
             >
@@ -505,9 +504,9 @@
             <DropdownMenu.Separator />
             <DropdownMenu.Item size="sm" on:click={() => onCopyFileLocation(breadcrumb)}>
               <div class="flex items-center gap-2" aria-label="Copy Link to">
-                <Copy size={14} /> Copy Link to {breadcrumb.type === WorkspaceContentType.Directory
-                  ? 'Directory'
-                  : 'File'}
+                <Copy size={14} /> Copy {breadcrumb.type === WorkspaceContentType.Directory
+                  ? 'Link to Directory'
+                  : 'Download Link to File'}
               </div>
             </DropdownMenu.Item>
             <DropdownMenu.Separator />
@@ -522,7 +521,7 @@
                 class="flex items-center gap-2"
                 use:permissionHandler={{
                   hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
-                  permissionError: 'You do not have permission to create a new sequence in this folder.',
+                  permissionError: 'You do not have permission to create a new file in this folder.',
                 }}
                 aria-label="New File"
               >
@@ -603,7 +602,7 @@
             class="flex items-center gap-2"
             use:permissionHandler={{
               hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
-              permissionError: 'You do not have permission to rename this folder.',
+              permissionError: `You do not have permission to rename this ${getPathType(selectedItemId) === 'File' ? 'file' : 'folder'}.`,
             }}
           >
             <PencilLine size={14} />
@@ -615,7 +614,7 @@
             class="flex items-center gap-2"
             use:permissionHandler={{
               hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
-              permissionError: 'You do not have permission to move this folder.',
+              permissionError: `You do not have permission to move this ${getPathType(selectedItemId) === 'File' ? 'file' : 'folder'}.`,
             }}
           >
             <FolderOutput size={14} />
@@ -626,7 +625,9 @@
       <ContextMenu.Separator />
       <ContextMenu.Item size="sm" on:click={onTableCopyFileLocation} aria-label="Copy Link to">
         <div class="flex items-center gap-2">
-          <Copy size={14} /> Copy Link to {getPathType(selectedItemId)}
+          <Copy size={14} /> Copy {getPathType(contextMenuNode?.fullPath ?? null) === 'File'
+            ? 'Download Link to File'
+            : 'Link to Directory'}
         </div>
       </ContextMenu.Item>
       <ContextMenu.Separator />
@@ -642,7 +643,7 @@
             class="flex items-center gap-2"
             use:permissionHandler={{
               hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
-              permissionError: 'You do not have permission to create a new sequence in this folder.',
+              permissionError: 'You do not have permission to create a new file in this folder.',
             }}
           >
             <FilePlus size={14} /> New File

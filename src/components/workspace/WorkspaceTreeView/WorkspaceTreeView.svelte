@@ -188,9 +188,9 @@
             permissionError: 'You do not have permission to edit this workspace',
           }}
         >
-          <Copy size={14} /> Copy Link to {contextMenuNode?.type === WorkspaceContentType.Directory
-            ? 'Directory'
-            : 'File'}
+          <Copy size={14} /> Copy {contextMenuNode?.type === WorkspaceContentType.Directory
+            ? 'Link to Directory'
+            : 'Download Link to File'}
         </div>
       </ContextMenu.Item>
       <ContextMenu.Separator />

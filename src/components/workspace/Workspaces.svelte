@@ -149,31 +149,40 @@
       {#if selectedWorkspace !== null}
         <div class="workspace-metadata">
           <fieldset>
-            <Input layout="stacked">
-              <label class="workspace-metadata-item-label" for="name">Parcel</label>
+            <Input class="gap-0" layout="stacked">
+              <label class="workspace-metadata-item-label" for="parcel">Parcel</label>
               <input
                 class="st-input w-full"
-                name="name"
-                aria-label="name"
+                name="parcel"
+                id="parcel"
+                aria-label="parcel"
                 value={selectedWorkspaceParcelName}
                 disabled
               />
             </Input>
           </fieldset>
           <fieldset>
-            <Input layout="stacked">
-              <label class="workspace-metadata-item-label" for="name">Workspace Name</label>
-              <input class="st-input w-full" name="name" aria-label="name" value={selectedWorkspace.name} disabled />
-            </Input>
-          </fieldset>
-          <fieldset>
-            <Input layout="stacked">
-              <label class="workspace-metadata-item-label" for="location">Workspace Location</label>
+            <Input class="gap-0" layout="stacked">
+              <label class="workspace-metadata-item-label" for="location">Workspace Folder Name</label>
               <input
                 class="st-input w-full"
                 name="location"
-                aria-label="location"
+                id="location"
+                aria-label="Workspace Folder Name"
                 value={selectedWorkspace.disk_location}
+                disabled
+              />
+            </Input>
+          </fieldset>
+          <fieldset>
+            <Input class="gap-0" layout="stacked">
+              <label class="workspace-metadata-item-label" for="name">Workspace Name</label>
+              <input
+                class="st-input w-full"
+                name="name"
+                id="name"
+                aria-label="name"
+                value={selectedWorkspace.name}
                 disabled
               />
             </Input>
@@ -188,6 +197,7 @@
           <select
             class="st-select w-full"
             name="parcel"
+            id="parcel"
             aria-label="Parcel"
             use:permissionHandler={{
               hasPermission,
@@ -203,12 +213,13 @@
           </select>
         </Field>
         <Field field={workspaceLocationField}>
-          <label for="location" slot="label">Workspace Location</label>
+          <label for="location" slot="label">Workspace Folder Name</label>
           <input
             autocomplete="off"
             class="st-input w-full"
             name="location"
-            aria-label="Workspace Location"
+            id="location"
+            aria-label="Workspace Folder Name"
             use:permissionHandler={{
               hasPermission,
               permissionError,
@@ -222,6 +233,7 @@
               autocomplete="off"
               class="st-input w-full"
               name="name"
+              id="name"
               aria-label="Workspace Name"
               bind:value={workspaceName}
               use:permissionHandler={{
