@@ -108,6 +108,7 @@ export class Workspace {
     const file = readFileSync(filePath);
     const fileBuffer = Buffer.from(file);
 
+    await this.page.waitForTimeout(1000);
     await this.fileInput.focus();
     await this.fileInput.setInputFiles({
       buffer: fileBuffer,

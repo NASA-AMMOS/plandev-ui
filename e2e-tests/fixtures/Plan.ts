@@ -283,6 +283,7 @@ export class Plan {
 
   async fillExternalDatasetFileInput(importFilePath: string) {
     const inputFile = this.page.locator('input[name="file"]');
+    await this.page.waitForTimeout(1000);
     await inputFile.focus();
     await inputFile.setInputFiles(importFilePath);
     await inputFile.evaluate(e => e.blur());

@@ -42,7 +42,7 @@ export class Parcels {
   }
 
   async createParcel(dictionaryName: string, baseURL?: string) {
-    await this.newButton.click();
+    await this.page.goto(`${baseURL}/parcels/new`, { waitUntil: 'load' });
     await this.page.getByText(dictionaryName).click();
     this.updatePage(this.page);
     await expect(this.tableRow(this.parcelName)).not.toBeVisible();
@@ -112,8 +112,8 @@ export class Parcels {
     this.confirmModal = page.locator(`.modal:has-text("Delete Parcel")`);
     this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
     this.createButton = page.locator(`button:has-text("Save")`);
-    this.nameField = page.locator(`input[name="parcelName"]`);
-    this.newButton = page.locator(`button:has-text("New")`);
+    this.nameField = page.getByRole('textbox', { name: 'Name' });
+    this.newButton = page.getByRole('button', { name: 'New' });
     this.pageLoadingLocator = page.locator(`.loading`);
     this.table = page.locator('div[role="tabpanel"]:has-text("Parcels")').getByRole('treegrid');
     this.tableRow = (parcelName: string) => this.table.getByRole('row', { name: parcelName });

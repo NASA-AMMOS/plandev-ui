@@ -38,6 +38,7 @@ export class Action {
     await expect(this.page.getByRole('button', { name: 'Create' })).toBeDisabled();
     await this.actionFormName.fill(this.actionName);
     await this.actionFormDescription.fill(this.actionDescription);
+    await this.page.waitForTimeout(1000);
     await this.actionFormPath.setInputFiles(this.actionPath);
     await this.page.getByRole('button', { name: 'Create' }).click();
     await this.waitForToast('Action Created Successfully');
