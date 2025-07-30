@@ -142,7 +142,7 @@ export class Workspaces {
     this.createButton = page.getByRole('button', { name: 'Create' });
     this.inputButtonParcel = page.getByRole('combobox', { name: 'Parcel' });
     this.inputName = page.getByRole('textbox', { name: 'Workspace Name' });
-    this.inputLocation = page.getByRole('textbox', { name: 'Workspace Location' });
+    this.inputLocation = page.getByRole('textbox', { name: 'Workspace Folder Name' });
     this.page = page;
     this.pageLoadingLocator = page.locator(`.loading`);
     this.table = page.locator('div[role="tabpanel"]:has-text("Sequence Workspaces")').getByRole('treegrid');

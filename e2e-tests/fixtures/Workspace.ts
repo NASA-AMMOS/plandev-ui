@@ -142,11 +142,15 @@ export class Workspace {
     this.pageLoadingLocatorWithData = page.getByRole('complementary').getByText('No workspace loaded').first();
     this.saveSequenceButton = page.getByRole('button', { name: 'Save' });
     this.sequenceEditor = page.locator('.cm-activeLine').first();
-    this.sequenceNameInput = page.locator('#modal-container').getByRole('textbox', { name: 'Sequence Name' });
+    this.sequenceNameInput = page.locator('#modal-container').getByRole('textbox', { name: 'File Name' });
     this.textEditor = page.locator('.cm-activeLine').nth(2);
     this.workspaceContextMenu = page.getByRole('menu');
     this.workspaceSidebar = page.getByRole('complementary');
-    this.workspaceContextMenuButton = this.workspaceSidebar.getByRole('button', { name: 'New Workspace Item' });
+    this.workspaceContextMenuButton = this.workspaceSidebar
+      .getByRole('button', {
+        name: 'New Workspace Item',
+      })
+      .first();
   }
 
   async waitForToast(message: string): Promise<void> {

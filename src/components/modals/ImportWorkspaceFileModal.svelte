@@ -98,6 +98,6 @@
 
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" disabled={saveButtonDisabled} on:click={save}> Import </button>
+    <button class="st-button" disabled={saveButtonDisabled} on:click={save}> Upload </button>
   </ModalFooter>
 </Modal>

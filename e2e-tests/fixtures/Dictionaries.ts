@@ -13,13 +13,11 @@ export enum DictionaryType {
 export const COMMAND_DICTIONARY_PATH = 'e2e-tests/data/command-dictionary.xml';
 
 export class Dictionaries {
-  channelDictionaryBuffer: Buffer;
   channelDictionaryName: string;
   channelDictionaryPath: string = 'e2e-tests/data/channel-dictionary.xml';
   channelDictionaryTable: Locator;
   channelDictionaryTableRow: Locator;
   channelDictionaryTableRowDeleteButton: Locator;
-  commandDictionaryBuffer: Buffer;
   commandDictionaryName: string;
   commandDictionaryTable: Locator;
   commandDictionaryTableRow: Locator;
@@ -28,13 +26,11 @@ export class Dictionaries {
   confirmModalDeleteButton: Locator;
   createButton: Locator;
   inputFile: Locator;
-  parameterDictionaryBuffer: Buffer;
   parameterDictionaryName: string;
   parameterDictionaryPath: string = 'e2e-tests/data/parameter-dictionary.xml';
   parameterDictionaryTable: Locator;
   parameterDictionaryTableRow: Locator;
   parameterDictionaryTableRowDeleteButton: Locator;
-  sequenceAdaptationBuffer: Buffer;
   sequenceAdaptationName: string;
   sequenceAdaptationNameInputField: Locator;
   sequenceAdaptationPath: string = 'e2e-tests/data/sequence-adaptation.js';
@@ -45,13 +41,9 @@ export class Dictionaries {
 
   constructor(public page: Page) {
     this.channelDictionaryName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
-    this.channelDictionaryBuffer = this.readDictionary(this.channelDictionaryName, this.channelDictionaryPath);
     this.commandDictionaryName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
-    this.commandDictionaryBuffer = this.readDictionary(this.commandDictionaryName, COMMAND_DICTIONARY_PATH);
     this.parameterDictionaryName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
-    this.parameterDictionaryBuffer = this.readDictionary(this.parameterDictionaryName, this.parameterDictionaryPath);
     this.sequenceAdaptationName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
-    this.sequenceAdaptationBuffer = this.readDictionary(this.sequenceAdaptationName, this.sequenceAdaptationPath);
 
     this.page = page;
   }
@@ -60,7 +52,7 @@ export class Dictionaries {
     await this.updatePage(this.page, DictionaryType.ChannelDictionary, this.channelDictionaryName);
 
     await this.createDictionary(
-      this.channelDictionaryBuffer,
+      this.readDictionary(this.channelDictionaryName, this.channelDictionaryPath),
       this.channelDictionaryName,
       this.channelDictionaryTable,
       this.channelDictionaryTableRow,
@@ -72,7 +64,7 @@ export class Dictionaries {
     await this.updatePage(this.page, DictionaryType.CommandDictionary, this.commandDictionaryName);
 
     await this.createDictionary(
-      this.commandDictionaryBuffer,
+      this.readDictionary(this.commandDictionaryName, COMMAND_DICTIONARY_PATH),
       this.commandDictionaryName,
       this.commandDictionaryTable,
       this.commandDictionaryTableRow,
@@ -105,7 +97,7 @@ export class Dictionaries {
     await this.updatePage(this.page, DictionaryType.ParameterDictionary, this.parameterDictionaryName);
 
     await this.createDictionary(
-      this.parameterDictionaryBuffer,
+      this.readDictionary(this.parameterDictionaryName, this.parameterDictionaryPath),
       this.parameterDictionaryName,
       this.parameterDictionaryTable,
       this.parameterDictionaryTableRow,
@@ -117,7 +109,7 @@ export class Dictionaries {
     await this.updatePage(this.page, DictionaryType.SequenceAdaptation, this.sequenceAdaptationName);
 
     await this.createDictionary(
-      this.sequenceAdaptationBuffer,
+      this.readDictionary(this.sequenceAdaptationName, this.sequenceAdaptationPath),
       this.sequenceAdaptationName,
       this.sequenceAdaptationTable,
       this.sequenceAdaptationTableRow,
