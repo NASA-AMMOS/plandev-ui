@@ -23,10 +23,11 @@
 
   const dispatch = createEventDispatcher<{
     close: void;
-    confirm: { originalNode: WorkspaceTreeNode; originalPath: string; targetPath: string };
+    confirm: { originalNode: WorkspaceTreeNode; originalPath: string; shouldCopy: boolean; targetPath: string };
   }>();
 
   let targetPath: string = joinPath([currentWorkspace.name, originalPath]);
+  let originalDirectory: string = '';
   let targetDirectory: string = '';
   let targetFilename: string = '';
   let typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
@@ -36,32 +37,37 @@
     targetDirectory = path;
     targetFilename = filename;
   }
+  $: {
+    const fullOriginalPath = joinPath([currentWorkspace.name, originalPath]);
+    const { path } = separateFilenameFromPath(fullOriginalPath);
+    originalDirectory = path;
+  }
 
   function onFolderClicked(event: CustomEvent<WorkspaceNodeEvent>) {
     targetDirectory = event.detail.treeNodePath;
   }
 
-  function onConfirm() {
+  function onMove() {
     dispatch('confirm', {
       originalNode,
       originalPath,
+      shouldCopy: false,
       targetPath: joinPath([targetDirectory.replace(new RegExp(`^${currentWorkspace.name}`), ''), targetFilename]),
     });
   }
 
-  function onKeydown(event: KeyboardEvent) {
-    const { key } = event;
-    if (key === 'Enter') {
-      event.preventDefault();
-      onConfirm();
-    }
+  function onDuplicate() {
+    dispatch('confirm', {
+      originalNode,
+      originalPath,
+      shouldCopy: true,
+      targetPath: joinPath([targetDirectory.replace(new RegExp(`^${currentWorkspace.name}`), ''), targetFilename]),
+    });
   }
 </script>
 
-<svelte:window on:keydown={onKeydown} />
-
 <Modal height={400} width={380}>
-  <ModalHeader showClose={false}>
+  <ModalHeader on:close>
     Move Workspace {typeString}
   </ModalHeader>
   <ModalContent style="overflow: hidden;">
@@ -93,6 +99,11 @@
   </ModalContent>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" on:click={onConfirm}> Move {typeString} </button>
+    <button class="st-button" disabled={targetDirectory === originalDirectory} on:click={onMove}>
+      Move {typeString}
+    </button>
+    <button class="st-button" disabled={targetDirectory === originalDirectory} on:click={onDuplicate}>
+      Duplicate {typeString}
+    </button>
   </ModalFooter>
 </Modal>

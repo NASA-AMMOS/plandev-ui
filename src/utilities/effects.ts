@@ -5390,11 +5390,15 @@ const effects = {
       if (!featurePermissions.workspace.canUpdate(user, workspace)) {
         throwPermissionError(`upload to this workspace`);
       }
-      const {
-        confirm,
-        value: { files, targetDirectory },
-      } = await showImportWorkspaceFileModal(workspace, workspaceContents, startingPath, workspace, user);
+      const { confirm, value } = await showImportWorkspaceFileModal(
+        workspace,
+        workspaceContents,
+        startingPath,
+        workspace,
+        user,
+      );
       if (confirm) {
+        const { files, targetDirectory } = value;
         const cleanedTargetPath = cleanPath(targetDirectory);
         const chunkedFiles = chunk(Array.from<File>(files), 10);
 
@@ -5649,18 +5653,23 @@ const effects = {
       if (!featurePermissions.workspace.canUpdate(user, workspace, originalNode)) {
         throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);
       }
-      const {
-        confirm,
-        value: { targetPath },
-      } = await showMoveWorkspaceItemModal(workspace, workspaceContents, originalNode, originalPath, workspace, user);
+      const { confirm, value } = await showMoveWorkspaceItemModal(
+        workspace,
+        workspaceContents,
+        originalNode,
+        originalPath,
+        workspace,
+        user,
+      );
       if (confirm) {
+        const { shouldCopy, targetPath } = value;
         const cleanedTargetPath = cleanPath(targetPath);
 
         await reqWorkspace<Workspace>(
           joinPath([workspace.id, originalPath]),
           'POST',
           JSON.stringify({
-            moveTo: `./${cleanedTargetPath}`,
+            [shouldCopy ? 'copyTo' : 'moveTo']: `./${cleanedTargetPath}`,
           }),
           user,
           undefined,
@@ -5685,13 +5694,11 @@ const effects = {
     user: User | null,
   ): Promise<string | null> {
     const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
-    const {
-      confirm,
-      value: { shouldCopy, targetPath, targetWorkspace },
-    } = await showMoveItemToWorkspaceModal(workspace, originalNode, originalPath, user);
+    const { confirm, value } = await showMoveItemToWorkspaceModal(workspace, originalNode, originalPath, user);
 
-    try {
-      if (confirm) {
+    if (confirm) {
+      const { shouldCopy, targetPath, targetWorkspace } = value;
+      try {
         if (!featurePermissions.workspace.canUpdate(user, targetWorkspace)) {
           throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);
         }
@@ -5711,13 +5718,13 @@ const effects = {
         showSuccessToast(`Workspace ${typeString} ${shouldCopy ? 'Duplicated' : 'Moved'} Successfully`);
 
         return cleanedTargetPath;
+      } catch (e) {
+        catchError(
+          `Workspace ${typeString.toLowerCase()} was unable to be ${shouldCopy ? 'duplicated' : 'moved'}`,
+          e as Error,
+        );
+        showFailureToast(`Workspace ${typeString} ${shouldCopy ? 'Duplication' : 'Move'} Failed`);
       }
-    } catch (e) {
-      catchError(
-        `Workspace ${typeString.toLowerCase()} was unable to be ${shouldCopy ? 'duplicated' : 'moved'}`,
-        e as Error,
-      );
-      showFailureToast(`Workspace ${typeString} ${shouldCopy ? 'Duplication' : 'Move'} Failed`);
     }
 
     return null;
@@ -5729,13 +5736,10 @@ const effects = {
     startingPath: string,
     user: User | null,
   ): Promise<string | null> {
-    try {
-      const {
-        confirm,
-        value: { folderPath },
-      } = await showNewWorkspaceFolderModal(workspace, workspaceContents, startingPath, user);
-
-      if (confirm) {
+    const { confirm, value } = await showNewWorkspaceFolderModal(workspace, workspaceContents, startingPath, user);
+    if (confirm) {
+      const { folderPath } = value;
+      try {
         await reqWorkspace<Workspace>(
           `${workspace.id}/${folderPath}?type=directory`,
           'PUT',
@@ -5747,10 +5751,10 @@ const effects = {
 
         showSuccessToast('Workspace Folder Created Successfully');
         return folderPath;
+      } catch (e) {
+        catchError('Workspace folder was unable to be created', e as Error);
+        showFailureToast('Workspace Folder Creation Failed');
       }
-    } catch (e) {
-      catchError('Workspace folder was unable to be created', e as Error);
-      showFailureToast('Workspace Folder Creation Failed');
     }
 
     return null;
@@ -5763,23 +5767,20 @@ const effects = {
     sequenceDefinition: string,
     user: User | null,
   ): Promise<string | null> {
-    try {
-      const {
-        confirm,
-        value: { sequencePath },
-      } = await showNewWorkspaceSequenceModal(workspace, workspaceContents, startingPath, user);
+    const { confirm, value } = await showNewWorkspaceSequenceModal(workspace, workspaceContents, startingPath, user);
+    if (confirm) {
+      const { filePath } = value;
+      try {
+        const body = createWorkspaceSequenceFileFormData(filePath, sequenceDefinition);
 
-      if (confirm) {
-        const body = createWorkspaceSequenceFileFormData(sequencePath, sequenceDefinition);
-
-        await reqWorkspace<Workspace>(`${workspace.id}/${sequencePath}?type=file`, 'PUT', body, user, undefined, false);
+        await reqWorkspace<Workspace>(`${workspace.id}/${filePath}?type=file`, 'PUT', body, user, undefined, false);
         showSuccessToast('Workspace File Created Successfully');
 
-        return sequencePath;
+        return filePath;
+      } catch (e) {
+        catchError('Workspace file was unable to be created', e as Error);
+        showFailureToast('Workspace File Creation Failed');
       }
-    } catch (e) {
-      catchError('Workspace file was unable to be created', e as Error);
-      showFailureToast('Workspace File Creation Failed');
     }
 
     return null;
@@ -6024,12 +6025,10 @@ const effects = {
       if (!featurePermissions.workspace.canUpdate(user, workspace, originalNode)) {
         throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);
       }
-      const {
-        confirm,
-        value: { targetPath },
-      } = await showRenameWorkspaceItemModal(originalNode, originalPath);
+      const { confirm, value } = await showRenameWorkspaceItemModal(originalNode, originalPath);
 
       if (confirm) {
+        const { targetPath } = value;
         const cleanedTargetPath = cleanPath(targetPath);
         await reqWorkspace<Workspace>(
           joinPath([workspace.id, originalPath]),

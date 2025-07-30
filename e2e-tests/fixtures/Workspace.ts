@@ -52,7 +52,7 @@ export class Workspace {
     const seqName = sequenceFileName || `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`;
 
     await this.openWorkspaceContextMenu();
-    await this.workspaceContextMenu.getByRole('menuitem', { name: 'New Sequence' }).click();
+    await this.workspaceContextMenu.getByRole('menuitem', { name: 'New File' }).click();
     await this.page.locator('#modal-container').getByRole('menuitem', { name: this.workspaceName }).click();
 
     await this.fillSequenceName(seqName, seqPath);
@@ -102,7 +102,7 @@ export class Workspace {
 
   async importSeqJson(filePath: string = this.jsonPath): Promise<void> {
     await this.openWorkspaceContextMenu();
-    await this.workspaceContextMenu.getByRole('menuitem', { name: 'Import File' }).click();
+    await this.workspaceContextMenu.getByRole('menuitem', { name: 'Upload File' }).click();
     await this.page.locator('#modal-container').getByRole('menuitem', { name: this.workspaceName }).click();
 
     const file = readFileSync(filePath);
@@ -116,7 +116,7 @@ export class Workspace {
     });
     await this.fileInput.evaluate(e => e.blur());
 
-    await this.page.getByRole('button', { name: 'Import' }).click();
+    await this.page.getByRole('button', { name: 'Upload' }).click();
 
     await this.waitForToast('Workspace File Uploaded Successfully');
   }

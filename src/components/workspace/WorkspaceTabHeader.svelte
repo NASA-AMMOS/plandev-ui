@@ -78,7 +78,7 @@
               permissionError: 'You do not have permission to edit this workspace',
             }}
           >
-            <FilePlus size={14} /> New Sequence
+            <FilePlus size={14} /> New File
           </div>
         </DropdownMenu.Item>
         <DropdownMenu.Item size="sm" on:click={onNewFolder}>
@@ -101,7 +101,7 @@
               permissionError: 'You do not have permission to edit this workspace',
             }}
           >
-            <ArrowUpFromLine size={14} />Import File
+            <ArrowUpFromLine size={14} />Upload File
           </div>
         </DropdownMenu.Item>
       </DropdownMenu.Content>

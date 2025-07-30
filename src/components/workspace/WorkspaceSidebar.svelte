@@ -77,7 +77,7 @@
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
             <Tabs.Trigger value="files" class="flex h-10 w-10 items-center justify-center rounded-none shadow-none">
-              <Button builders={[builder]} variant="ghost" aria-label="Files">
+              <Button class="hover:bg-transparent" builders={[builder]} variant="ghost" aria-label="Files">
                 <Files size={16} />
               </Button>
             </Tabs.Trigger>
@@ -89,7 +89,7 @@
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
             <Tabs.Trigger value="grid" class="flex h-10 w-10 items-center justify-center rounded-none shadow-none">
-              <Button builders={[builder]} variant="ghost" aria-label="Grid">
+              <Button class="hover:bg-transparent" builders={[builder]} variant="ghost" aria-label="Grid">
                 <FolderTree size={16} />
               </Button>
             </Tabs.Trigger>
@@ -100,7 +100,13 @@
         </Tooltip.Root>
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
-            <Button class="h-10" builders={[builder]} variant="ghost" aria-label="Actions" on:click={onActionsClick}>
+            <Button
+              class="h-10 hover:bg-transparent"
+              builders={[builder]}
+              variant="ghost"
+              aria-label="Actions"
+              on:click={onActionsClick}
+            >
               <Clapperboard size={16} />
             </Button>
           </Tooltip.Trigger>

@@ -67,7 +67,7 @@ test.describe.serial('Workspace', () => {
     await expect(workspace.workspaceContextMenu).toBeVisible();
 
     // Check for expected menu items
-    await expect(workspace.workspaceContextMenu.getByRole('menuitem', { name: 'New Sequence' })).toBeVisible();
+    await expect(workspace.workspaceContextMenu.getByRole('menuitem', { name: 'New File' })).toBeVisible();
 
     // Close menu by pressing Escape
     await page.keyboard.press('Escape');

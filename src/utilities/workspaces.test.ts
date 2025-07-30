@@ -25,8 +25,13 @@ describe('Workspace utility function tests', () => {
       });
 
       expect(separateFilenameFromPath('foo/bar')).toEqual({
-        filename: '',
-        path: 'foo/bar',
+        filename: 'bar',
+        path: 'foo',
+      });
+
+      expect(separateFilenameFromPath('bar')).toEqual({
+        filename: 'bar',
+        path: '',
       });
     });
   });

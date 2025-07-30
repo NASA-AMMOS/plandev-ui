@@ -201,7 +201,7 @@
       </ContextMenu.Item>
       <ContextMenu.Separator />
       <ContextMenu.Group>
-        <ContextMenu.Item size="sm" on:click={onNewSequence} aria-label="New Sequence">
+        <ContextMenu.Item size="sm" on:click={onNewSequence} aria-label="New File">
           <div
             class="flex items-center gap-2"
             use:permissionHandler={{
@@ -209,7 +209,7 @@
               permissionError: 'You do not have permission to edit this workspace',
             }}
           >
-            <FilePlus size={14} /> New Sequence
+            <FilePlus size={14} /> New File
           </div>
         </ContextMenu.Item>
         <ContextMenu.Item size="sm" on:click={onNewFolder} aria-label="New Folder">
@@ -223,7 +223,7 @@
             <FolderPlus size={14} /> New Folder
           </div>
         </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onImportFile} aria-label="Import File">
+        <ContextMenu.Item size="sm" on:click={onImportFile} aria-label="Upload File">
           <div
             class="flex items-center gap-2"
             use:permissionHandler={{
@@ -231,7 +231,7 @@
               permissionError: 'You do not have permission to edit this workspace',
             }}
           >
-            <ArrowUpFromLine size={14} /> Import File
+            <ArrowUpFromLine size={14} /> Upload File
           </div>
         </ContextMenu.Item>
       </ContextMenu.Group>
@@ -247,7 +247,7 @@
       on:nodeClicked
       on:nodeRightClicked={onNodeRightClicked}
     />
-  {:else if treeNode && treeNode.contents}
+  {:else if treeNode && treeNode.contents && treeNode.contents.length > 0}
     <!-- Workspace root - just render its contents -->
     {#each treeNode.contents as treeNodeChild (treeNodeChild.name)}
       {#if (!showFiles && treeNodeChild.type === WorkspaceContentType.Directory) || showFiles}
@@ -262,6 +262,8 @@
         />
       {/if}
     {/each}
+  {:else if treeNode && treeNode.contents?.length === 0}
+    <div class="p-2 text-sm text-muted-foreground">Workspace is empty</div>
   {:else}
     <div class="p-2 text-sm text-muted-foreground">No workspace loaded</div>
   {/if}

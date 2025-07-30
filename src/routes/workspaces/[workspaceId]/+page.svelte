@@ -217,7 +217,8 @@
       fileType === WorkspaceContentType.Sequence ||
       fileType === WorkspaceContentType.Json ||
       fileType === WorkspaceContentType.Text ||
-      fileType === WorkspaceContentType.Metadata
+      fileType === WorkspaceContentType.Metadata ||
+      fileType === WorkspaceContentType.Unknown
     );
   }
 
@@ -304,8 +305,10 @@
   async function onNewFolder(event: CustomEvent<string>) {
     if ($workspace && workspaceTree && user) {
       const { detail: startingPath } = event;
-      await effects.newWorkspaceFolder($workspace, workspaceTree, startingPath, user);
-      refreshWorkspaceContents();
+      const newFolderPath = await effects.newWorkspaceFolder($workspace, workspaceTree, startingPath, user);
+      if (newFolderPath !== null) {
+        refreshWorkspaceContents();
+      }
     }
   }
 
@@ -314,11 +317,13 @@
       const { detail: startingPath } = event;
       const newSequencePath = await effects.newWorkspaceSequence($workspace, workspaceTree, startingPath, '', user);
 
-      const didNavigate = await goToSequence(newSequencePath);
-      if (didNavigate) {
-        selectedFilePath = newSequencePath;
+      if (newSequencePath !== null) {
+        const didNavigate = await goToSequence(newSequencePath);
+        if (didNavigate) {
+          selectedFilePath = newSequencePath;
+        }
+        refreshWorkspaceContents();
       }
-      refreshWorkspaceContents();
     }
   }
 

@@ -48,7 +48,7 @@
 <svelte:window on:keydown={onKeydown} />
 
 <Modal height={200} width={380}>
-  <ModalHeader showClose={false}>
+  <ModalHeader on:close>
     Rename Workspace {typeString}
   </ModalHeader>
   <ModalContent>
@@ -70,6 +70,6 @@
   </ModalContent>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" on:click={onConfirm}> Rename {typeString} </button>
+    <button class="st-button" disabled={originalName === targetName} on:click={onConfirm}> Rename {typeString} </button>
   </ModalFooter>
 </Modal>

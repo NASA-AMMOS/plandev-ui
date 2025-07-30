@@ -128,7 +128,7 @@
 </script>
 
 <Modal height={450} width={380}>
-  <ModalHeader showClose={false}>
+  <ModalHeader on:close>
     <div>Move or Duplicate</div>
   </ModalHeader>
   <ModalContent style="overflow: hidden;">
@@ -143,18 +143,24 @@
       >
         <Sidebar.Content>
           <Sidebar.Menu className="h-full">
-            {#each workspacesContents as workspaceContents}
-              <WorkspaceTreeView
-                selectedTreeNodePath={targetDirectory}
-                treeNode={workspaceContents}
-                enableContextMenu={false}
-                showFiles={false}
-                showRootNode={true}
-                workspace={workspacesMap[workspaceContents?.name ?? '']}
-                {user}
-                on:nodeClicked={onFolderClicked}
-              />
-            {/each}
+            {#if workspacesContents.length > 0}
+              {#each workspacesContents as workspaceContents}
+                <WorkspaceTreeView
+                  selectedTreeNodePath={targetDirectory}
+                  treeNode={workspaceContents}
+                  enableContextMenu={false}
+                  showFiles={false}
+                  showRootNode={true}
+                  workspace={workspacesMap[workspaceContents?.name ?? '']}
+                  {user}
+                  on:nodeClicked={onFolderClicked}
+                />
+              {/each}
+            {:else}
+              <div class="flex h-full items-center justify-center">
+                <div class="text-sm text-gray-500">No other workspaces found</div>
+              </div>
+            {/if}
           </Sidebar.Menu>
         </Sidebar.Content>
       </Sidebar.Provider>

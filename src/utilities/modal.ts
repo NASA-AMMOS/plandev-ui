@@ -335,9 +335,6 @@ export async function showImportWorkspaceFileModal(
         });
         target.resolve = resolve;
 
-        // Do not allow users to dismiss this modal
-        target.setAttribute('data-dismissible', 'false');
-
         importWorkspaceFileModal.$on('confirm', (e: CustomEvent<{ files: FileList; targetDirectory: string }>) => {
           target.replaceChildren();
           target.resolve = null;
@@ -348,7 +345,6 @@ export async function showImportWorkspaceFileModal(
         importWorkspaceFileModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
-          target.removeAttribute('data-dismissible');
           importWorkspaceFileModal.$destroy();
         });
       }
@@ -553,9 +549,6 @@ export async function showMoveItemToWorkspaceModal(
         });
         target.resolve = resolve;
 
-        // Do not allow users to dismiss this modal
-        target.setAttribute('data-dismissible', 'false');
-
         moveWorkspaceFileToWorkspaceModal.$on(
           'confirm',
           (e: CustomEvent<{ shouldCopy: boolean; targetPath: string; targetWorkspace: Workspace }>) => {
@@ -569,7 +562,7 @@ export async function showMoveItemToWorkspaceModal(
         moveWorkspaceFileToWorkspaceModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
-          target.removeAttribute('data-dismissible');
+          resolve({ confirm: false });
           moveWorkspaceFileToWorkspaceModal.$destroy();
         });
       }
@@ -608,9 +601,6 @@ export async function showMoveWorkspaceItemModal(
         });
         target.resolve = resolve;
 
-        // Do not allow users to dismiss this modal
-        target.setAttribute('data-dismissible', 'false');
-
         moveWorkspaceItemModal.$on(
           'confirm',
           (e: CustomEvent<{ originalNode: WorkspaceTreeNode; targetPath: string }>) => {
@@ -624,7 +614,7 @@ export async function showMoveWorkspaceItemModal(
         moveWorkspaceItemModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
-          target.removeAttribute('data-dismissible');
+          resolve({ confirm: false });
           moveWorkspaceItemModal.$destroy();
         });
       }
@@ -659,10 +649,7 @@ export async function showNewWorkspaceSequenceModal(
         });
         target.resolve = resolve;
 
-        // Do not allow users to dismiss this modal
-        target.setAttribute('data-dismissible', 'false');
-
-        newWorkspaceSequenceModal.$on('confirm', (e: CustomEvent<{ sequencePath: string }>) => {
+        newWorkspaceSequenceModal.$on('confirm', (e: CustomEvent<{ filePath: string }>) => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
@@ -672,7 +659,7 @@ export async function showNewWorkspaceSequenceModal(
         newWorkspaceSequenceModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
-          target.removeAttribute('data-dismissible');
+          resolve({ confirm: false });
           newWorkspaceSequenceModal.$destroy();
         });
       }
@@ -707,9 +694,6 @@ export async function showNewWorkspaceFolderModal(
         });
         target.resolve = resolve;
 
-        // Do not allow users to dismiss this modal
-        target.setAttribute('data-dismissible', 'false');
-
         newWorkspaceFolderModal.$on('confirm', (e: CustomEvent<{ folderPath: string }>) => {
           target.replaceChildren();
           target.resolve = null;
@@ -720,7 +704,7 @@ export async function showNewWorkspaceFolderModal(
         newWorkspaceFolderModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
-          target.removeAttribute('data-dismissible');
+          resolve({ confirm: false });
           newWorkspaceFolderModal.$destroy();
         });
       }
@@ -748,9 +732,6 @@ export async function showRenameWorkspaceItemModal(
         });
         target.resolve = resolve;
 
-        // Do not allow users to dismiss this modal
-        target.setAttribute('data-dismissible', 'false');
-
         renameWorkspaceItemModal.$on(
           'confirm',
           (e: CustomEvent<{ originalNode: WorkspaceTreeNode; targetPath: string }>) => {
@@ -764,7 +745,7 @@ export async function showRenameWorkspaceItemModal(
         renameWorkspaceItemModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
-          target.removeAttribute('data-dismissible');
+          resolve({ confirm: false });
           renameWorkspaceItemModal.$destroy();
         });
       }

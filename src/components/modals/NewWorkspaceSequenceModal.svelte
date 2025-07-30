@@ -22,23 +22,21 @@
   export let startingPath: string = '';
   export let user: User | null;
 
-  let sequencePath: string = joinPath([currentWorkspace?.name ?? '', startingPath]);
-  let sequenceName: string = '';
+  let filePath: string = joinPath([currentWorkspace?.name ?? '', startingPath]);
+  let fileName: string = '';
 
   const dispatch = createEventDispatcher<{
     close: void;
-    confirm: { sequencePath: string };
+    confirm: { filePath: string };
   }>();
 
   function onFolderClicked(event: CustomEvent<WorkspaceNodeEvent>) {
-    sequencePath = event.detail.treeNodePath;
+    filePath = event.detail.treeNodePath;
   }
 
   function onConfirm() {
     dispatch('confirm', {
-      sequencePath: cleanPath(
-        joinPath([sequencePath.replace(new RegExp(`^${currentWorkspace?.name}`), '.'), sequenceName]),
-      ),
+      filePath: cleanPath(joinPath([filePath.replace(new RegExp(`^${currentWorkspace?.name}`), '.'), fileName])),
     });
   }
 
@@ -54,7 +52,7 @@
 <svelte:window on:keydown={onKeydown} />
 
 <Modal {height} {width}>
-  <ModalHeader on:close>New Sequence</ModalHeader>
+  <ModalHeader on:close>New File</ModalHeader>
   <ModalContent style="overflow: hidden;">
     <div class="grid h-full grid-rows-[min-content_auto_min-content_min-content] gap-1 overflow-hidden">
       <div>
@@ -70,7 +68,7 @@
         <Sidebar.Content>
           <Sidebar.Menu className="h-full">
             <WorkspaceTreeView
-              selectedTreeNodePath={sequencePath}
+              selectedTreeNodePath={filePath}
               treeNode={currentWorkspaceContents}
               enableContextMenu={false}
               showFiles={false}
@@ -83,14 +81,15 @@
         </Sidebar.Content>
       </Sidebar.Provider>
       <InputInternal layout="stacked" class="px-0.5 py-1">
-        <Label size="sm" for="sequence-name">Sequence Name</Label>
+        <Label size="sm" for="file-name">File Name</Label>
         <InputStellar
           sizeVariant="xs"
-          id="sequence-name"
-          name="sequence-name"
+          id="file-name"
+          name="file-name"
           autocomplete="off"
-          aria-label="Sequence Name"
-          bind:value={sequenceName}
+          aria-label="File Name"
+          placeholder="Enter file name (e.g. my_sequence.seq)"
+          bind:value={fileName}
         />
       </InputInternal>
     </div>

@@ -412,9 +412,9 @@
                 hasPermission: hasContextMenuUpdatePermission(user, null),
                 permissionError: 'You do not have permission to create a new sequence in this folder.',
               }}
-              aria-label="New Sequence"
+              aria-label="New File"
             >
-              <FilePlus size={14} /> New Sequence
+              <FilePlus size={14} /> New File
             </div>
           </DropdownMenu.Item>
           <DropdownMenu.Item size="sm" on:click={() => onNewFolder(treeNode)}>
@@ -434,11 +434,11 @@
               class="flex items-center gap-2"
               use:permissionHandler={{
                 hasPermission: hasContextMenuUpdatePermission(user, null),
-                permissionError: 'You do not have permission to import a file into this folder.',
+                permissionError: 'You do not have permission to upload a file into this folder.',
               }}
-              aria-label="Import File"
+              aria-label="Upload File"
             >
-              <ArrowUpFromLine size={14} /> Import File
+              <ArrowUpFromLine size={14} /> Upload File
             </div>
           </DropdownMenu.Item>
         </DropdownMenu.Content>
@@ -524,9 +524,9 @@
                   hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
                   permissionError: 'You do not have permission to create a new sequence in this folder.',
                 }}
-                aria-label="New Sequence"
+                aria-label="New File"
               >
-                <FilePlus size={14} /> New Sequence
+                <FilePlus size={14} /> New File
               </div>
             </DropdownMenu.Item>
             <DropdownMenu.Item size="sm" on:click={() => onNewFolder(breadcrumb)}>
@@ -545,11 +545,11 @@
                 class="flex items-center gap-2"
                 use:permissionHandler={{
                   hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
-                  permissionError: 'You do not have permission to import a file into this folder.',
+                  permissionError: 'You do not have permission to upload a file into this folder.',
                 }}
-                aria-label="Import File"
+                aria-label="Upload File"
               >
-                <ArrowUpFromLine size={14} /> Import File
+                <ArrowUpFromLine size={14} /> Upload File
               </div>
             </DropdownMenu.Item>
           </DropdownMenu.Content>
@@ -637,7 +637,7 @@
       </ContextMenu.Item>
       <ContextMenu.Separator />
       <ContextMenu.Group>
-        <ContextMenu.Item size="sm" on:click={onTableNewSequence} aria-label="New Sequence">
+        <ContextMenu.Item size="sm" on:click={onTableNewSequence} aria-label="New File">
           <div
             class="flex items-center gap-2"
             use:permissionHandler={{
@@ -645,7 +645,7 @@
               permissionError: 'You do not have permission to create a new sequence in this folder.',
             }}
           >
-            <FilePlus size={14} /> New Sequence
+            <FilePlus size={14} /> New File
           </div>
         </ContextMenu.Item>
         <ContextMenu.Item size="sm" on:click={onTableNewFolder} aria-label="New Folder">
@@ -659,15 +659,15 @@
             <FolderPlus size={14} /> New Folder
           </div>
         </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onTableImportFile} aria-label="Import File">
+        <ContextMenu.Item size="sm" on:click={onTableImportFile} aria-label="Upload File">
           <div
             class="flex items-center gap-2"
             use:permissionHandler={{
               hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
-              permissionError: 'You do not have permission to import a file into this folder.',
+              permissionError: 'You do not have permission to upload a file into this folder.',
             }}
           >
-            <ArrowUpFromLine size={14} /> Import File
+            <ArrowUpFromLine size={14} /> Upload File
           </div>
         </ContextMenu.Item>
       </ContextMenu.Group>

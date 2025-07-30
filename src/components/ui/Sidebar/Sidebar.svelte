@@ -31,7 +31,7 @@
   <div
     bind:this={ref}
     role="complementary"
-    class="text-sidebar-foreground group peer hidden w-full md:block"
+    class="text-sidebar-foreground group peer block w-full"
     data-state={$sidebarState}
     data-collapsible={$sidebarState === 'collapsed' ? collapsible : ''}
     data-variant={variant}
