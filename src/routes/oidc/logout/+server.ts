@@ -12,6 +12,8 @@ export const GET = async ({ cookies }) => {
   cookies.delete('idToken', { path: '/' });
   cookies.delete('refreshToken', { path: '/' });
 
+  cookies.delete('activeRole', { path: '/' });
+
   // redirect browser to logout page (SSO session destroy)
   const logoutUrl = new URL(client.getLogoutEndpoint());
 
