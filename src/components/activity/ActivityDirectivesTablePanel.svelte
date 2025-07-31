@@ -73,7 +73,7 @@
           return $activityDirectivesMap[params.data.anchor_id]?.name ?? '';
         }
         return '';
-      }
+      },
     },
     anchored_to_start: {
       field: 'anchored_to_start',
