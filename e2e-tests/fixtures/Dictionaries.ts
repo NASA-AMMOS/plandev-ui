@@ -48,13 +48,16 @@ export class Dictionaries {
     this.updatePage(this.page);
   }
 
-  async createChannelDictionary(): Promise<void> {
-    this.channelDictionaryTableRow = this.channelDictionaryTable.getByRole('row', { name: this.channelDictionaryName });
+  async createChannelDictionary(
+    dictionaryName: string = this.channelDictionaryName,
+    dictionaryPath: string = this.channelDictionaryPath,
+  ): Promise<void> {
+    this.channelDictionaryTableRow = this.channelDictionaryTable.getByRole('row', { name: dictionaryName });
 
-    const dictionaryBuffer = await this.readDictionary(this.channelDictionaryName, this.channelDictionaryPath);
+    const dictionaryBuffer = await this.readDictionary(dictionaryName, dictionaryPath);
     await this.createDictionary(
       dictionaryBuffer,
-      this.channelDictionaryName,
+      dictionaryName,
       this.channelDictionaryTable,
       this.channelDictionaryTableRow,
       DictionaryType.ChannelDictionary,
@@ -67,13 +70,16 @@ export class Dictionaries {
       .getByRole('button', { name: `Delete ${DictionaryType.ChannelDictionary}` });
   }
 
-  async createCommandDictionary(): Promise<void> {
-    this.commandDictionaryTableRow = this.commandDictionaryTable.getByRole('row', { name: this.commandDictionaryName });
+  async createCommandDictionary(
+    dictionaryName: string = this.commandDictionaryName,
+    dictionaryPath: string = COMMAND_DICTIONARY_PATH,
+  ): Promise<void> {
+    this.commandDictionaryTableRow = this.commandDictionaryTable.getByRole('row', { name: dictionaryName });
 
-    const dictionaryBuffer = await this.readDictionary(this.commandDictionaryName, COMMAND_DICTIONARY_PATH);
+    const dictionaryBuffer = await this.readDictionary(dictionaryName, dictionaryPath);
     await this.createDictionary(
       dictionaryBuffer,
-      this.commandDictionaryName,
+      dictionaryName,
       this.commandDictionaryTable,
       this.commandDictionaryTableRow,
       DictionaryType.CommandDictionary,
@@ -107,15 +113,18 @@ export class Dictionaries {
     await expect(tableRow).toBeVisible();
   }
 
-  async createParameterDictionary(): Promise<void> {
+  async createParameterDictionary(
+    dictionaryName: string = this.parameterDictionaryName,
+    dictionaryPath: string = this.parameterDictionaryPath,
+  ): Promise<void> {
     this.parameterDictionaryTableRow = this.parameterDictionaryTable.getByRole('row', {
-      name: this.parameterDictionaryName,
+      name: dictionaryName,
     });
 
-    const dictionaryBuffer = await this.readDictionary(this.parameterDictionaryName, this.parameterDictionaryPath);
+    const dictionaryBuffer = await this.readDictionary(dictionaryName, dictionaryPath);
     await this.createDictionary(
       dictionaryBuffer,
-      this.parameterDictionaryName,
+      dictionaryName,
       this.parameterDictionaryTable,
       this.parameterDictionaryTableRow,
       DictionaryType.ParameterDictionary,
@@ -128,15 +137,18 @@ export class Dictionaries {
       .getByRole('button', { name: `Delete ${DictionaryType.ParameterDictionary}` });
   }
 
-  async createSequenceAdaptation(): Promise<void> {
+  async createSequenceAdaptation(
+    sequenceName: string = this.sequenceAdaptationName,
+    sequencePath: string = this.sequenceAdaptationPath,
+  ): Promise<void> {
     this.sequenceAdaptationTableRow = this.sequenceAdaptationTable.getByRole('row', {
-      name: this.sequenceAdaptationName,
+      name: sequenceName,
     });
     this.sequenceAdaptationNameInputField = this.page.getByRole('textbox', { name: 'Enter Sequence Adaptation Name' });
-    const dictionaryBuffer = await this.readDictionary(this.sequenceAdaptationName, this.sequenceAdaptationPath);
+    const dictionaryBuffer = await this.readDictionary(sequenceName, sequencePath);
     await this.createDictionary(
       dictionaryBuffer,
-      this.sequenceAdaptationName,
+      sequenceName,
       this.sequenceAdaptationTable,
       this.sequenceAdaptationTableRow,
       DictionaryType.SequenceAdaptation,
