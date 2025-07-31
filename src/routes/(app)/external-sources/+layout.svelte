@@ -5,8 +5,8 @@
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import TagIcon from '@nasa-jpl/stellar/icons/tag.svg?component';
-  import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
-  import Nav from '../../components/app/Nav.svelte';
+  import ExternalSourceIcon from '../../../assets/external-source-box.svg?component';
+  import Nav from '../../../components/app/Nav.svelte';
   import NavButton from '../../../components/app/NavButton.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import type { LayoutData } from './$types';
