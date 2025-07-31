@@ -1,5 +1,7 @@
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
+import { get } from 'svelte/store';
+import { userStore } from '../lib/stores/auth';
 import type { BaseUser, User } from '../types/app';
 import type { ExtensionPayload, ExtensionResponse } from '../types/extension';
 import type { QueryVariables } from '../types/subscribable';
@@ -109,22 +111,87 @@ export async function reqGatewayForwardCookies<T = any>(path: string, cookies: s
   return validationData;
 }
 
+// TODO: extract common functionality between these two
+export async function reqHasuraWhileAuthenticating<T = any>(
+  query: string,
+  variables: QueryVariables = {},
+  user: User, // we actually use the user parameter, since userStore not set yet
+  signal?: AbortSignal,
+): Promise<Record<string, T | null>> {
+  const HASURA_URL = browser ? env.PUBLIC_HASURA_CLIENT_URL : env.PUBLIC_HASURA_SERVER_URL;
+
+  const headers: HeadersInit = {
+    Authorization: `Bearer ${user.token}`,
+    'Content-Type': 'application/json',
+  };
+  const options: RequestInit = {
+    body: JSON.stringify({ query, variables }),
+    headers,
+    method: 'POST',
+    signal,
+  };
+
+  const response: Response = await fetch(HASURA_URL, options);
+  const json = await response.json();
+
+  if (!response.ok) {
+    console.log(response);
+    console.log(json);
+    throw new Error(response.statusText);
+  }
+
+  if (json?.errors && json.errors.length) {
+    console.log(response);
+    console.log(json);
+
+    const defaultError = 'An unexpected error occurred';
+    const [error] = json.errors;
+    const code = error?.extensions?.code;
+
+    if (code === 'unexpected') {
+      // This is often thrown when a Postgres exception is raised for a Hasura query.
+      // @see https://github.com/hasura/graphql-engine/issues/3658
+      throw new Error(error?.extensions?.internal?.error?.message ?? error?.message ?? defaultError);
+    } else if (code === 'parse-failed') {
+      if (error?.extensions?.internal?.response?.body?.errors?.length) {
+        const errorMessage = error?.extensions?.internal?.response?.body?.errors[0];
+        throw new Error(errorMessage ?? defaultError);
+      }
+    } else if (code === INVALID_JWT) {
+      // awaiting here only works if SSR is disabled
+      // This should never be triggered in the OIDC case, because we have refreshes.
+      console.log('Oh god...Here (while authenticating)');
+      logout(error?.message);
+    }
+
+    throw new Error(`while authenticating ${error?.message ?? defaultError}`);
+  }
+
+  const { data } = json;
+  return data;
+}
+
 /**
  * Function to make HTTP POST requests to the Hasura GraphQL API.
  */
 export async function reqHasura<T = any>(
   query: string,
   variables: QueryVariables = {},
-  user: BaseUser | User | null,
+  _: BaseUser | User | null, // TODO: phase this parameter out, like with subscribable. the store should never not be set if using this
   signal?: AbortSignal,
 ): Promise<Record<string, T | null>> {
   const HASURA_URL = browser ? env.PUBLIC_HASURA_CLIENT_URL : env.PUBLIC_HASURA_SERVER_URL;
 
+  const realUser = get(userStore);
+  if (!realUser) {
+    console.log('In reqHasura, and userStore is null', query, variables);
+  }
+
   const headers: HeadersInit = {
-    Authorization: `Bearer ${user?.token ?? ''}`, // TODO: grab from cookie?
+    Authorization: `Bearer ${realUser?.token ?? ''}`, // TODO: grab from cookie?
     'Content-Type': 'application/json',
-    'x-hasura-role': (user as User)?.activeRole ?? '', // TODO: grab from cookie?
-    'x-hasura-user-id': user?.id ?? '',
+    'x-hasura-role': realUser?.activeRole ?? '', // TODO: grab from cookie?
+    'x-hasura-user-id': realUser?.id ?? '',
   };
   const options: RequestInit = {
     body: JSON.stringify({ query, variables }),

@@ -266,7 +266,7 @@ import {
   showWorkspaceModal,
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
-import { reqExtension, reqGateway, reqHasura } from './requests';
+import { reqExtension, reqGateway, reqHasura, reqHasuraWhileAuthenticating } from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
 import { parseCdlDictionary, toAmpcsXml } from './sequence-editor/languages/vml/cdl-dictionary';
@@ -4613,9 +4613,15 @@ const effects = {
     }
   },
 
-  async getRolePermissions(user: User | null): Promise<RolePermissionsMap | null> {
+  // TODO: move this out of effects?
+  async getRolePermissions(user: User): Promise<RolePermissionsMap | null> {
     try {
-      const roleData = await reqHasura<RolePermissionResponse[] | null>(gql.GET_ROLE_PERMISSIONS, {}, user, undefined);
+      const roleData = await reqHasuraWhileAuthenticating<RolePermissionResponse[] | null>(
+        gql.GET_ROLE_PERMISSIONS,
+        {},
+        user,
+        undefined,
+      );
       if (roleData != null) {
         const { rolePermissions } = roleData;
 
@@ -4922,9 +4928,15 @@ const effects = {
     }
   },
 
-  async getUserQueries(user: User | null): Promise<PermissibleQueriesMap | null> {
+  // TODO: move this out of effects?
+  async getUserQueries(user: User): Promise<PermissibleQueriesMap | null> {
     try {
-      const data = await reqHasura<PermissibleQueryResponse | null>(gql.GET_PERMISSIBLE_QUERIES, {}, user, undefined);
+      const data = await reqHasuraWhileAuthenticating<PermissibleQueryResponse | null>(
+        gql.GET_PERMISSIBLE_QUERIES,
+        {},
+        user,
+        undefined,
+      );
       if (data != null) {
         const { queries } = data;
 

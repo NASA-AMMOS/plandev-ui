@@ -11,6 +11,7 @@ export function shouldRedirectToLogin(user: User | null) {
 
 export async function logout(reason?: string) {
   if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
+    // TODO: make sure this never gets called from server, because goto won't work in server code
     goto(`${base}/oidc/logout`);
   } else {
     if (browser) {

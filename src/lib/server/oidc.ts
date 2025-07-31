@@ -5,6 +5,7 @@ import * as arctic from 'arctic';
 import jwt from 'jsonwebtoken';
 import { JwksClient } from 'jwks-rsa';
 import type { User } from '../../types/app';
+import { updateWithNewTokens } from '../../utilities/auth';
 
 const DEFAULT_JWKS_CLIENT = (() => {
   if (env.OIDC_JWKS_URL) {
@@ -53,16 +54,18 @@ async function sanitize(evt: RequestEvent) {
  * @returns RequestEvent
  */
 async function refresh(evt: RequestEvent) {
-  const path = '/';
   if (!evt.cookies.get('accessToken') || !evt.cookies.get('idToken')) {
     await Client.instance
       .refresh(evt.cookies.get('refreshToken') || '')
-      .then(tokens => {
-        evt.cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path });
-        evt.cookies.set('idToken', tokens.idToken(), { httpOnly: false, path });
-        evt.cookies.set('refreshToken', tokens.refreshToken(), { httpOnly: true, path });
+      .then(async tokens => {
+        if (!(await updateWithNewTokens(evt.cookies, tokens))) {
+          throw new Error(`Failed to verify tokens: ${tokens}`);
+        }
       })
-      .catch(() => evt.cookies.delete('refreshToken', { path: '/' }));
+      .catch(err => {
+        console.error('In /lib/server/oidc -> refresh', err);
+        evt.cookies.delete('refreshToken', { path: '/' });
+      });
   }
   return evt;
 }

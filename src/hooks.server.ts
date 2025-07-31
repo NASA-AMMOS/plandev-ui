@@ -3,6 +3,7 @@ import { env } from '$env/dynamic/public';
 import * as auth from '$lib/server/oidc';
 import type { Handle } from '@sveltejs/kit';
 import { parse, type CookieSerializeOptions } from 'cookie';
+import { userStore } from './lib/stores/auth';
 import type { BaseUser } from './types/app';
 import type { ReqValidateSSOResponse } from './types/auth';
 import { computeRolesFromCookies, computeRolesFromJWT } from './utilities/auth';
@@ -13,21 +14,31 @@ export const handle: Handle = async ({ event, resolve }) => {
     return new Response(null, { status: 204 });
   }
 
+  // TODO: clean this up/rewrite this method
+  let toReturn: any | null = null;
+
   try {
     if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
       await auth.handler(event);
-      return await handleOIDCAuth({ event, resolve });
+      toReturn = await handleOIDCAuth({ event, resolve });
     } else if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
-      return await handleSSOAuth({ event, resolve });
+      toReturn = await handleSSOAuth({ event, resolve });
     } else {
-      return await handleJWTAuth({ event, resolve });
+      toReturn = await handleJWTAuth({ event, resolve });
     }
   } catch (e) {
     console.log(e);
     event.locals.user = null;
   }
 
-  return await resolve(event);
+  // update singleton stores
+  userStore.set(event.locals.user ?? undefined); // TODO: resolve undefined vs null for user. this is ridiculous
+  // client singleton
+
+  if (!toReturn) {
+    return await resolve(event);
+  }
+  return toReturn;
 };
 
 /**

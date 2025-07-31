@@ -1,9 +1,8 @@
 console.log('The callback page handles OAuth2 callbacks from the identity provider.');
 
-import { insertUser } from '$lib/client/oidc';
 import * as auth from '$lib/server/oidc';
-import type { HasuraToken } from '$lib/types/oidc';
 import { error, redirect } from '@sveltejs/kit';
+import { updateWithNewTokens } from '../../../utilities/auth';
 
 /**
  * The login page produces a code verifier and an authorization URL.
@@ -50,17 +49,7 @@ export const GET = async ({ cookies, url }) => {
       throw error(500, `Call to OAuth2Client.validateAuthorizationCode returned undefined!`);
     }
 
-    // Check token validity.
-    const accessJwt = await auth.verify(tokens.accessToken());
-    const idJwt = await auth.verify(tokens.accessToken());
-
-    if (accessJwt && idJwt) {
-      cookies.set('idToken', tokens.idToken(), { httpOnly: false, path: '/' });
-      cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path: '/' });
-      cookies.set('refreshToken', tokens.refreshToken(), { path: '/' });
-
-      insertUser(accessJwt as HasuraToken, tokens.accessToken());
-
+    if (await updateWithNewTokens(cookies, tokens)) {
       // Cleanup cookies used for the OIDC flow.
       cookies.delete('verifier', { path: '/' });
       cookies.delete('back', { path: '/' });

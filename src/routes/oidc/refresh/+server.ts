@@ -1,7 +1,6 @@
-import { insertUser } from '$lib/client/oidc';
 import * as auth from '$lib/server/oidc';
-import type { HasuraToken } from '$lib/types/oidc';
 import { error, json } from '@sveltejs/kit';
+import { updateWithNewTokens } from '../../../utilities/auth';
 
 /**
  * Requests a new access and refresh token.
@@ -24,25 +23,12 @@ export const POST = async ({ cookies }) => {
     const client = auth.Client.instance;
     const tokens = await client.refresh(refreshToken);
 
-    // Check token validity.
-    const accessJwt = await auth.verify(tokens.accessToken());
-    const idJwt = await auth.verify(tokens.accessToken());
-
     if (!tokens) {
+      // TODO: move this unto updateWithNewTokens?
       throw error(500, 'tokens came back null');
     }
 
-    if (accessJwt && idJwt) {
-      // TODO: Explain why it's not necessary to verify the tokens here...
-      cookies.set('idToken', tokens.idToken(), { httpOnly: false, path: '/' });
-      cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path: '/' });
-      cookies.set('refreshToken', tokens.refreshToken(), { httpOnly: true, path: '/' });
-
-      // TODO: update the user object in PageData??? because that's technically not valid anymore
-
-      // sort of an edge case, but if default role does change at the idp, it wouldn't hurt to update the local entry
-      insertUser(accessJwt as HasuraToken, tokens.accessToken());
-
+    if (await updateWithNewTokens(cookies, tokens)) {
       // Tokens are returned as JSON for convenience. The client is able to extract tokens from
       // cookie values, not JSON.
       return json({
