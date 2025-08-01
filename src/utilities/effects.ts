@@ -5653,6 +5653,7 @@ const effects = {
       if (!featurePermissions.workspace.canUpdate(user, workspace, originalNode)) {
         throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);
       }
+
       const { confirm, value } = await showMoveWorkspaceItemModal(
         workspace,
         workspaceContents,
@@ -5664,24 +5665,30 @@ const effects = {
       if (confirm) {
         const { shouldCopy, targetPath } = value;
         const cleanedTargetPath = cleanPath(targetPath);
+        try {
+          await reqWorkspace<Workspace>(
+            joinPath([workspace.id, originalPath]),
+            'POST',
+            JSON.stringify({
+              [shouldCopy ? 'copyTo' : 'moveTo']: `./${cleanedTargetPath}`,
+            }),
+            user,
+            undefined,
+            false,
+          );
+          showSuccessToast(`Workspace ${typeString} ${shouldCopy ? 'Copied' : 'Moved'} Successfully`);
 
-        await reqWorkspace<Workspace>(
-          joinPath([workspace.id, originalPath]),
-          'POST',
-          JSON.stringify({
-            [shouldCopy ? 'copyTo' : 'moveTo']: `./${cleanedTargetPath}`,
-          }),
-          user,
-          undefined,
-          false,
-        );
-        showSuccessToast(`Workspace ${typeString} Moved Successfully`);
-
-        return cleanedTargetPath;
+          return cleanedTargetPath;
+        } catch (e) {
+          throw Error(
+            `Workspace ${typeString.toLowerCase()} was unable to be ${shouldCopy ? 'copied' : 'moved'}`,
+            e as Error,
+          );
+        }
       }
     } catch (e) {
-      catchError(`Workspace ${typeString.toLowerCase()} was unable to be moved`, e as Error);
-      showFailureToast(`Workspace ${typeString} Move Failed`);
+      catchError(e as Error);
+      showFailureToast((e as Error).message);
     }
 
     return null;

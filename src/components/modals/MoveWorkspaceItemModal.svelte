@@ -68,7 +68,7 @@
 
 <Modal height={400} width={380}>
   <ModalHeader on:close>
-    Move Workspace {typeString}
+    Move/Copy Workspace {typeString}
   </ModalHeader>
   <ModalContent style="overflow: hidden;">
     <div class="grid h-full grid-rows-[min-content_auto_min-content] gap-1 overflow-hidden">
@@ -103,7 +103,7 @@
       Move {typeString}
     </button>
     <button class="st-button" disabled={targetDirectory === originalDirectory} on:click={onDuplicate}>
-      Duplicate {typeString}
+      Copy {typeString}
     </button>
   </ModalFooter>
 </Modal>

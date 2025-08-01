@@ -154,7 +154,7 @@
             Rename
           </div>
         </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onMoveNode} aria-label="Move">
+        <ContextMenu.Item size="sm" on:click={onMoveNode} aria-label="Move/Copy">
           <div
             class="flex items-center gap-2"
             use:permissionHandler={{
@@ -163,7 +163,7 @@
             }}
           >
             <FolderOutput size={14} />
-            Move
+            Move/Copy
           </div>
         </ContextMenu.Item>
         <ContextMenu.Item size="sm" on:click={onDeleteNode} aria-label="Delete">
