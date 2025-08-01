@@ -102,7 +102,20 @@
       resizable: true,
       sortable: false,
       valueGetter: (params: ValueGetterParams<ActivityDirective>) => {
-        return JSON.stringify(params?.data?.arguments);
+        const args = params?.data?.arguments;
+        params.data?.arguments
+        if (!args || typeof args !== 'object') {return '';}
+
+        return Object.entries(args)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, value]) => {
+          const stringValue = String(value);
+          const truncatedValue = stringValue.length > 20
+            ? stringValue.substring(0, 17) + '...'
+            : stringValue;
+          return `${key}: ${truncatedValue}`;
+        })
+          .join('; ');
       },
     },
     created_at: {
