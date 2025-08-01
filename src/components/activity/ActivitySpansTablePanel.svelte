@@ -182,34 +182,29 @@
     dataGrid?.sizeColumnsToFit();
   }
 
-  function onColumnToggleChange({ detail: { field, isHidden } }: CustomEvent) {
-    const activityColumnStates: ColumnState[] = activitySpansTable?.columnStates ?? [];
-    const existingColumnStateIndex: number = activityColumnStates.findIndex(
-      (columnState: ColumnState) => field === columnState.colId,
-    );
-    if (existingColumnStateIndex >= 0) {
-      viewUpdateActivitySpansTable({
-        columnStates: [
-          ...activityColumnStates.slice(0, existingColumnStateIndex),
-          {
-            ...activityColumnStates[existingColumnStateIndex],
-            hide: isHidden,
-          },
-          ...activityColumnStates.slice(existingColumnStateIndex + 1),
-        ],
-      });
-    } else {
-      viewUpdateActivitySpansTable({
-        columnStates: [
-          ...activityColumnStates,
-          {
-            colId: field,
-            hide: isHidden,
-          },
-        ],
-      });
-    }
+  function onColumnsChanged({
+    detail: { columns },
+  }: CustomEvent<{ columns: { field: any; isHidden: boolean; name: string }[] }>) {
+    viewUpdateActivitySpansTable({
+      columnStates: derivedColumnDefs
+        .map((columnDef: ColDef) => {
+          const activityColumnStates: ColumnState[] = activitySpansTable?.columnStates ?? [];
+          const existingColumnState: ColumnState | undefined = activityColumnStates.find(
+            (columnState: ColumnState) => columnDef.field === columnState.colId,
+          );
+          return existingColumnState
+            ? {
+                ...existingColumnState,
+                hide: columns.find(column => columnDef.field === column.field)?.isHidden ?? false,
+              }
+            : null;
+        })
+        .filter(filterEmpty),
+    });
+    requestAutoSize();
+  }
 
+  function requestAutoSize() {
     setTimeout(() => {
       if (autoSizeColumns === 'fit') {
         autoSizeContent();
@@ -283,6 +278,7 @@
         })
         .filter(filterEmpty),
     });
+    requestAutoSize();
   }
 
   function toggleAutoSizeContent() {
@@ -328,7 +324,7 @@
         </button>
       </div>
       <ActivityTableMenu
-        on:toggle-column={onColumnToggleChange}
+        on:columns-changed={onColumnsChanged}
         on:show-hide-all-columns={onShowHideAllColumns}
         columnDefs={derivedColumnDefs}
         columnStates={activitySpansTable?.columnStates}
