@@ -11,7 +11,7 @@
       if ($refreshAt) {
         countdown.set((($refreshAt?.getTime() - new Date().getTime()) / 1000).toFixed(2));
       } else {
-        console.log('Unknown refresh time.');
+        // console.log('Unknown refresh time.');
       }
     }, 100);
 

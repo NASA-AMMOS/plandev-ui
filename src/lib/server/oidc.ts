@@ -1,11 +1,12 @@
+import { browser } from '$app/environment';
 import * as env from '$env/static/private';
-import type { MaybeHasuraToken, MaybeToken, Rule } from '$lib/types/oidc';
-import { error, type RequestEvent } from '@sveltejs/kit';
+import type { HasuraToken, MaybeHasuraToken, MaybeToken, Rule } from '$lib/types/oidc';
+import { error, type Cookies, type RequestEvent } from '@sveltejs/kit';
 import * as arctic from 'arctic';
 import jwt from 'jsonwebtoken';
 import { JwksClient } from 'jwks-rsa';
 import type { User } from '../../types/app';
-import { updateWithNewTokens } from '../../utilities/auth';
+import { reqHasuraWhileAuthenticating } from '../../utilities/requests';
 
 const DEFAULT_JWKS_CLIENT = (() => {
   if (env.OIDC_JWKS_URL) {
@@ -55,17 +56,26 @@ async function sanitize(evt: RequestEvent) {
  */
 async function refresh(evt: RequestEvent) {
   if (!evt.cookies.get('accessToken') || !evt.cookies.get('idToken')) {
-    await Client.instance
-      .refresh(evt.cookies.get('refreshToken') || '')
-      .then(async tokens => {
-        if (!(await updateWithNewTokens(evt.cookies, tokens))) {
-          throw new Error(`Failed to verify tokens: ${tokens}`);
-        }
-      })
-      .catch(err => {
-        console.error('In /lib/server/oidc -> refresh', err);
-        evt.cookies.delete('refreshToken', { path: '/' });
-      });
+    const refreshToken: string | undefined = evt.cookies.get('refreshToken');
+    if (refreshToken) {
+      await Client.instance
+        .refresh(refreshToken) // if it's '', then what?
+        .then(async tokens => {
+          if (!(await updateWithNewTokens(evt.cookies, tokens))) {
+            throw new Error(`Failed to verify tokens: ${tokens}`);
+          }
+        })
+        .catch(err => {
+          console.error('In /lib/server/oidc -> refresh', err);
+          evt.cookies.delete('refreshToken', { path: '/' });
+
+          // throw an Error, so that we are sent to the error page for login to get a new refresh token
+          throw error(403, `Refresh token is outdated, probably! ${err}`);
+        });
+    } else {
+      // throw an Error, so that we are sent to the error page for login to get a new refresh token
+      throw error(403, 'Refresh token is undefined!');
+    }
   }
   return evt;
 }
@@ -96,6 +106,8 @@ export async function verify(
     }
     const key = await client.getSigningKey(header.kid);
     return jwt.verify(token, key.getPublicKey(), opts) as MaybeToken;
+
+    // TODO: make this throw if verify fails.
   }
 }
 
@@ -269,6 +281,62 @@ export function roles(token: MaybeHasuraToken) {
       return true;
     },
   };
+}
+
+const mutation = `mutation InsertUser($input: users_insert_input!) {
+  insert_users_one(
+    object: $input,
+    on_conflict: {
+      constraint: users_pkey,
+      update_columns: default_role
+    }
+  ) {
+    username
+  }
+}`;
+
+async function insertUser(decodedAccessToken: HasuraToken, accessToken: string): Promise<void> {
+  const username = decodedAccessToken['https://hasura.io/jwt/claims']['x-hasura-user-id'];
+  const defaultRole = decodedAccessToken['https://hasura.io/jwt/claims']['x-hasura-default-role'];
+  const allowedRoles = decodedAccessToken['https://hasura.io/jwt/claims']['x-hasura-allowed-roles'];
+  const input = { default_role: defaultRole, username };
+  const user: User = {
+    activeRole: defaultRole,
+    allowedRoles,
+    defaultRole,
+    id: username, // TODO: not exactly. I think this is supposed to be decodedAccessToken.sub. but we don't even use it.
+    permissibleQueries: null,
+    rolePermissions: null,
+    token: accessToken,
+  };
+  console.log('Registering user:', user);
+  const result = await reqHasuraWhileAuthenticating(mutation, { input }, user);
+  console.log('Registered user: ', result);
+}
+
+// TODO: this is only ever called from the server. so DO NOT UPDATE STORES HERE.
+export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth2Tokens): Promise<boolean> {
+  console.log('RUNNING UPDATE WITH NEW TOKENS!!!', browser);
+
+  // Check token validity.
+  const accessJwt = await verify(tokens.accessToken());
+  const idJwt = await verify(tokens.accessToken());
+
+  if (accessJwt && idJwt) {
+    // update cookies
+
+    // TODO: should we even have these cookies? or just store them as stores???
+    cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path: '/' });
+    cookies.set('idToken', tokens.idToken(), { httpOnly: false, path: '/' });
+
+    cookies.set('refreshToken', tokens.refreshToken(), { httpOnly: true, path: '/' });
+
+    // sort of an edge case, but if default role does change at the idp, it wouldn't hurt to update the local entry
+    insertUser(accessJwt as HasuraToken, tokens.accessToken());
+
+    return true;
+  }
+  return false;
 }
 
 /*

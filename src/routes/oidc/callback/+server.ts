@@ -2,7 +2,6 @@ console.log('The callback page handles OAuth2 callbacks from the identity provid
 
 import * as auth from '$lib/server/oidc';
 import { error, redirect } from '@sveltejs/kit';
-import { updateWithNewTokens } from '../../../utilities/auth';
 
 /**
  * The login page produces a code verifier and an authorization URL.
@@ -49,7 +48,7 @@ export const GET = async ({ cookies, url }) => {
       throw error(500, `Call to OAuth2Client.validateAuthorizationCode returned undefined!`);
     }
 
-    if (await updateWithNewTokens(cookies, tokens)) {
+    if (await auth.updateWithNewTokens(cookies, tokens)) {
       // Cleanup cookies used for the OIDC flow.
       cookies.delete('verifier', { path: '/' });
       cookies.delete('back', { path: '/' });

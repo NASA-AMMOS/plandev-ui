@@ -32,7 +32,7 @@
   });
 </script>
 
-<PageTitle title="404" />
+<PageTitle title={authError ? 'Unauthenticated' : '404'} />
 
 {#if authError}
   <WelcomePage />

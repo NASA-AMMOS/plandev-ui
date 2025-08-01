@@ -1,6 +1,6 @@
 <script lang="ts">
   import TokenRefresh from '$lib/components/oidc/Refresh.svelte';
-  import { accessToken, idToken } from '$lib/stores/oidc';
+  import { accessTokenStore, idTokenStore } from '$lib/stores/oidc';
   import type { MaybeToken } from '$lib/types/oidc';
   import type { PageData } from '../$types';
 
@@ -20,14 +20,14 @@
 <div class="items-top flex justify-between">
   <div class="prose-base mt-4">
     <h3 class="text-xl font-bold">Access Token</h3>
-    <p class="text">Expires in: {expiresAt($accessToken)}</p>
-    <pre class="h-64 overflow-auto border p-4 text-xs">{JSON.stringify($accessToken, null, 2)}</pre>
+    <p class="text">Expires in: {expiresAt($accessTokenStore)}</p>
+    <pre class="h-64 overflow-auto border p-4 text-xs">{JSON.stringify($accessTokenStore, null, 2)}</pre>
   </div>
 
   <div class="prose-base mt-4">
     <h3 class="text-xl font-bold">ID Token</h3>
-    <p class="text">Expires in: {expiresAt($idToken)}</p>
-    <pre class="h-64 overflow-auto border p-4 text-xs">{JSON.stringify($idToken, null, 2)}</pre>
+    <p class="text">Expires in: {expiresAt($idTokenStore)}</p>
+    <pre class="h-64 overflow-auto border p-4 text-xs">{JSON.stringify($idTokenStore, null, 2)}</pre>
   </div>
 </div>
 

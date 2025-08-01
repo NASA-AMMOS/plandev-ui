@@ -160,7 +160,7 @@ export async function reqHasuraWhileAuthenticating<T = any>(
     } else if (code === INVALID_JWT) {
       // awaiting here only works if SSR is disabled
       // This should never be triggered in the OIDC case, because we have refreshes.
-      console.log('Oh god...Here (while authenticating)');
+      console.log('Oh no...Here (while authenticating)');
       logout(error?.message);
     }
 
@@ -230,7 +230,7 @@ export async function reqHasura<T = any>(
       // awaiting here only works if SSR is disabled
       // This should never be triggered in the OIDC case, because we have refreshes.
       console.log('Oh god...Here');
-      logout(error?.message);
+      logout(error?.message); // TODO: calling logout like this invokes a goto, which is flawed because if a request fails to load in a +page.ts, this will be invoked and a goto will be called from the server. NEED AN ALTERNATIVE FOR SERVER-LED LOGOUTS, OR NEED TO CHANGE THE GOTO TO SOMETHING NEUTRAL...
     }
 
     throw new Error(error?.message ?? defaultError);

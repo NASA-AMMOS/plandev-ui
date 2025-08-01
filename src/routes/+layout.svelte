@@ -17,8 +17,6 @@
 
   export let data: PageData;
 
-  // console.log('USER IS REALLY ', data.user);
-
   let pluginsEnabled = env.PUBLIC_TIME_PLUGIN_ENABLED === 'true';
   $pluginsLoaded = pluginsEnabled ? false : true;
 

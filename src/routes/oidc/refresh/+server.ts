@@ -1,6 +1,5 @@
 import * as auth from '$lib/server/oidc';
 import { error, json } from '@sveltejs/kit';
-import { updateWithNewTokens } from '../../../utilities/auth';
 
 /**
  * Requests a new access and refresh token.
@@ -28,7 +27,7 @@ export const POST = async ({ cookies }) => {
       throw error(500, 'tokens came back null');
     }
 
-    if (await updateWithNewTokens(cookies, tokens)) {
+    if (await auth.updateWithNewTokens(cookies, tokens)) {
       // Tokens are returned as JSON for convenience. The client is able to extract tokens from
       // cookie values, not JSON.
       return json({

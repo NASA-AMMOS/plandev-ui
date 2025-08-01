@@ -8,7 +8,6 @@ import type { EditorView } from 'codemirror';
 declare global {
   namespace App {
     interface Locals {
-      __hasThrown403: boolean;
       user: import('./types/app').User | null;
     }
   }

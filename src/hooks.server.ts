@@ -3,7 +3,6 @@ import { env } from '$env/dynamic/public';
 import * as auth from '$lib/server/oidc';
 import type { Handle } from '@sveltejs/kit';
 import { parse, type CookieSerializeOptions } from 'cookie';
-import { userStore } from './lib/stores/auth';
 import type { BaseUser } from './types/app';
 import type { ReqValidateSSOResponse } from './types/auth';
 import { computeRolesFromCookies, computeRolesFromJWT } from './utilities/auth';
@@ -14,31 +13,26 @@ export const handle: Handle = async ({ event, resolve }) => {
     return new Response(null, { status: 204 });
   }
 
-  // TODO: clean this up/rewrite this method
-  let toReturn: any | null = null;
-
   try {
     if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
-      await auth.handler(event);
-      toReturn = await handleOIDCAuth({ event, resolve });
+      return await handleOIDCAuth({ event, resolve });
+      // TODO: throws error before access token cookie is even saved
+
+      // TODO: ensure we handle what happens if all cookies present but access is outdated
+      // TODO: ensure we handle what happens if all cookies present but refresh is outdated
+      // TODO: ensure we handle what happens if all cookies present except access but refresh is outdated
+      // TODO: ensure we handle what happens if all cookies present except access - throws error before access token cookie is even saved, but if u reload its good...
     } else if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
-      toReturn = await handleSSOAuth({ event, resolve });
+      return await handleSSOAuth({ event, resolve });
     } else {
-      toReturn = await handleJWTAuth({ event, resolve });
+      return await handleJWTAuth({ event, resolve });
     }
   } catch (e) {
-    console.log(e);
+    console.error(e);
     event.locals.user = null;
   }
 
-  // update singleton stores
-  userStore.set(event.locals.user ?? undefined); // TODO: resolve undefined vs null for user. this is ridiculous
-  // client singleton
-
-  if (!toReturn) {
-    return await resolve(event);
-  }
-  return toReturn;
+  return await resolve(event);
 };
 
 /**
@@ -46,8 +40,13 @@ export const handle: Handle = async ({ event, resolve }) => {
  * fine-grained query-related permissions.
  */
 const handleOIDCAuth: Handle = async ({ event, resolve }) => {
-  const cookies = parse(event.request.headers.get('cookie') ?? '');
-  const { activeRole, accessToken: token = null } = cookies;
+  event = await auth.handler(event);
+
+  // const cookies = parse(event.request.headers.get('cookie') ?? '');
+  // const { activeRole, accessToken: token = null } = cookies;
+  // the above handler doesn't impact the event.request.headers, but it does impact the cookies object. we only gain information by using that...so let's use it!
+  const activeRole = event.cookies.get('activeRole') ?? null;
+  const token = event.cookies.get('accessToken');
 
   if (token) {
     const user: BaseUser = { id: null, token };
@@ -75,6 +74,7 @@ const handleOIDCAuth: Handle = async ({ event, resolve }) => {
 };
 
 const handleJWTAuth: Handle = async ({ event, resolve }) => {
+  // TODO: make this only use an access token? instead of a full user object cookie?
   const cookieHeader = event.request.headers.get('cookie') ?? '';
   const cookies = parse(cookieHeader);
   const { activeRole: activeRoleCookie = null, user: userCookie } = cookies;
