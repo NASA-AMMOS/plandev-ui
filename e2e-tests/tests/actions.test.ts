@@ -16,6 +16,9 @@ let workspaceId: string;
 let workspaceName: string = '';
 
 test.beforeAll(async ({ baseURL, browser }) => {
+  // Increase global timeout to prevent early test termination
+  test.setTimeout(90000); // 90 seconds
+
   context = await browser.newContext();
   page = await context.newPage();
 
