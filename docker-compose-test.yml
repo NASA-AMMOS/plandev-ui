@@ -216,3 +216,4 @@ services:
 volumes:
   aerie_file_store:
   postgres_data:
+  workspace_file_store:
