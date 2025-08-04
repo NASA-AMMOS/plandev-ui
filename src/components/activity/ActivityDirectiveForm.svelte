@@ -582,13 +582,14 @@
               <label use:tooltip={{ content: 'Activity Description', placement: 'top' }} for="activity-description">
                 Description
               </label>
-              <input
+              <textarea
                 class="st-input w-full"
                 disabled
                 name="activity-description"
                 id="activity-description"
                 value={activityType.description}
-              />
+                readonly
+              ></textarea>
             </Input>
           </Highlight>
         {/if}
