@@ -2590,6 +2590,7 @@ const gql = {
           pending
           success
         }
+        revision
         scheduling_specification_conditions {
           condition_id
           condition_revision
@@ -3022,6 +3023,7 @@ const gql = {
             pending
             success
           }
+          revision
           version
           view {
             created_at
@@ -3400,6 +3402,7 @@ const gql = {
         canceled
         id
         model_id
+        model_revision
         plan_revision
         reason
         requested_at
@@ -3424,6 +3427,7 @@ const gql = {
           canceled
           id
           model_id
+          model_revision
           dataset_id
           plan_revision
           requested_at
@@ -3458,6 +3462,7 @@ const gql = {
           canceled
           id
           model_id
+          model_revision
           plan_revision
           reason
           requested_at
