@@ -54,6 +54,8 @@ export const plan: Readable<Plan | null> = derived([initialPlan, planMetadata], 
 
 export const planModelId: Readable<number> = derived(plan, $plan => ($plan ? $plan.model.id : -1));
 
+export const planModelRevision: Readable<number> = derived(plan, $plan => ($plan ? $plan.model.revision : -1));
+
 /* Other Subscriptions. */
 
 export const planModelActivityTypes = gqlSubscribable<ActivityType[]>(
