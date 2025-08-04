@@ -60,7 +60,10 @@ export function cookieStoreListener() {
 }
 
 export const accessTokenDecoded: Readable<MaybeToken> = derived(userStore, $userStore => {
-  return jwtDecode($userStore?.token ?? '');
+  if ($userStore && $userStore.token) {
+    return jwtDecode($userStore.token) as MaybeToken;
+  }
+  return null;
 });
 
 export const expiresAt = derived(accessTokenDecoded, $accessTokenDecoded => {

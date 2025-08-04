@@ -10,7 +10,7 @@ import { error, json } from '@sveltejs/kit';
  * @returns JSON response with new access token or error.
  */
 export const POST = async ({ cookies }) => {
-  console.debug('/auth/refresh');
+  console.debug('/oidc/refresh');
 
   const refreshToken = cookies.get('refreshToken');
 

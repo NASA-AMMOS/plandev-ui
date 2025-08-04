@@ -13,7 +13,7 @@ const shortLivedCookieOptions = {
  * The login page produces a code verifier and an authorization URL.
  */
 export const GET = async ({ cookies, url }) => {
-  console.debug('/auth/login load');
+  console.debug('/oidc/login load');
 
   // Other pages in this app may redirect to the login page with a `back` query parameter.
   // This allows the login page to redirect back to the original page after a successful login.

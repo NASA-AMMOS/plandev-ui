@@ -2,7 +2,7 @@ import * as auth from '$lib/server/oidc';
 import { redirect } from '@sveltejs/kit';
 
 export const GET = async ({ cookies }) => {
-  console.debug('/auth/logout');
+  console.debug('/oidc/logout');
 
   const client = auth.Client.instance;
   const idToken = cookies.get('idToken') ?? '';
