@@ -185,12 +185,13 @@ export async function reqHasura<T = any>(
   const realUser = get(userStore);
   if (!realUser) {
     console.log('In reqHasura, and userStore is null', query, variables);
+    // TODO: throw?
   }
 
   const headers: HeadersInit = {
-    Authorization: `Bearer ${realUser?.token ?? ''}`, // TODO: grab from cookie?
+    Authorization: `Bearer ${realUser?.token ?? ''}`,
     'Content-Type': 'application/json',
-    'x-hasura-role': realUser?.activeRole ?? '', // TODO: grab from cookie?
+    'x-hasura-role': realUser?.activeRole ?? '',
     'x-hasura-user-id': realUser?.id ?? '',
   };
   const options: RequestInit = {

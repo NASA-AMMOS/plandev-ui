@@ -5,8 +5,8 @@ import type { BaseUser, User } from '../../types/app';
 import { computeRolesFromJWT } from '../../utilities/auth';
 import { userStore } from './auth';
 
+// TODO: purge this
 export const accessTokenStore = writable<JwtPayload | null>(null);
-
 export const idTokenStore = writable<JwtPayload | null>(null);
 
 // // NOTE: we are suggesting replacing usage of user PageData with a store instead, just so that we can easily update the store on refresh (a case that didn't previously exist)
