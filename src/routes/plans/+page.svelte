@@ -346,6 +346,7 @@
     $modelIdField.dirtyAndValid &&
     $nameField.dirtyAndValid &&
     $startTimeField.dirtyAndValid &&
+    !planUploadFilesError &&
     !$creatingPlan;
   $: if ($creatingPlan) {
     createPlanButtonText = planUploadFiles ? 'Creating from .json...' : 'Creating...';
@@ -830,7 +831,6 @@
               />
               {#if planUploadFilesError}
                 <Collapse
-                  title=""
                   ariaTitle="Plan import error"
                   defaultExpanded={false}
                   className="text-destructive [&_*]:!text-destructive "
