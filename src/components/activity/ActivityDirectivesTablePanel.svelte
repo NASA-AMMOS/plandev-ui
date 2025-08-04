@@ -15,10 +15,10 @@
   import { InvalidDate } from '../../constants/time';
   import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
   import { activityErrorRollupsMap } from '../../stores/errors';
-  import { maxTimeRange, plan, planReadOnly, viewTimeRange } from '../../stores/plan';
+  import { maxTimeRange, plan, planModelActivityTypes, planReadOnly, viewTimeRange } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import { view, viewTogglePanel, viewUpdateActivityDirectivesTable } from '../../stores/views';
-  import type { ActivityDirective } from '../../types/activity';
+  import type { ActivityDirective, ActivityType } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { AutoSizeColumns, ViewGridSection, ViewTable } from '../../types/view';
   import effects from '../../utilities/effects';
@@ -103,18 +103,31 @@
       sortable: false,
       valueGetter: (params: ValueGetterParams<ActivityDirective>) => {
         const args = params?.data?.arguments;
-        params.data?.arguments
-        if (!args || typeof args !== 'object') {return '';}
-
+        const activityTypeName = params?.data?.type;
+        if (!args || typeof args !== 'object') {
+          return '';
+        }
+        const activityTypes = $planModelActivityTypes;
+        const activityType = activityTypes.find(
+          (type: ActivityType) => type.name === activityTypeName
+        );
         return Object.entries(args)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => {
-          const stringValue = String(value);
-          const truncatedValue = stringValue.length > 20
-            ? stringValue.substring(0, 17) + '...'
-            : stringValue;
-          return `${key}: ${truncatedValue}`;
-        })
+          .sort(([keyA], [keyB]) => {
+            const orderA = activityType?.parameters[keyA]?.order ?? Number.MAX_SAFE_INTEGER;
+            const orderB = activityType?.parameters[keyB]?.order ?? Number.MAX_SAFE_INTEGER;
+            // If orders are the same, fall back to alphabetical
+            if (orderA === orderB) {
+              return keyA.localeCompare(keyB);
+            }
+            return orderA - orderB;
+          })
+          .map(([key, value]) => {
+            const stringValue = String(value);
+            const truncatedValue = stringValue.length > 20
+              ? stringValue.substring(0, 17) + '...'
+              : stringValue;
+            return `${key}: ${truncatedValue}`;
+          })
           .join('; ');
       },
     },
