@@ -302,6 +302,7 @@ describe('addAbsoluteTimeToRevision', () => {
       refresh_activity_type_logs: [],
       refresh_model_parameter_logs: [],
       refresh_resource_type_logs: [],
+      revision: 1,
       scheduling_specification_conditions: [],
       scheduling_specification_goals: [],
       version: '1.0.0',
