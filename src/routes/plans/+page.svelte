@@ -12,6 +12,7 @@
   import { onDestroy, onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
+  import Collapse from '../../components/Collapse.svelte';
   import DatePickerField from '../../components/form/DatePickerField.svelte';
   import Field from '../../components/form/Field.svelte';
   import Input from '../../components/form/Input.svelte';
@@ -397,7 +398,7 @@
     let startTime = getDoyTime(startTimeDate);
     let endTime = getDoyTime(endTimeDate);
     if (planUploadFiles && planUploadFiles.length) {
-      await effects.importPlan(
+      const { error } = await effects.importPlan(
         $nameField.value,
         $modelIdField.value,
         startTime,
@@ -407,11 +408,15 @@
         planUploadFiles,
         user,
       );
-      planUploadFileInput.value = '';
-      planUploadFiles = undefined;
-      startTimeField.reset('');
-      endTimeField.reset('');
-      nameField.reset('');
+      if (error) {
+        planUploadFilesError = error.message;
+      } else {
+        planUploadFileInput.value = '';
+        planUploadFiles = undefined;
+        startTimeField.reset('');
+        endTimeField.reset('');
+        nameField.reset('');
+      }
     } else {
       const newPlan: PlanSlim | null = await effects.createPlan(
         endTime,
@@ -824,7 +829,15 @@
                 on:change={onPlanFileChange}
               />
               {#if planUploadFilesError}
-                <div class="overflow-hidden text-ellipsis whitespace-nowrap text-red-500">{planUploadFilesError}</div>
+                <Collapse
+                  title=""
+                  ariaTitle="Plan import error"
+                  defaultExpanded={false}
+                  className="text-destructive [&_*]:!text-destructive "
+                >
+                  <div slot="title">Plan import failed</div>
+                  {planUploadFilesError}
+                </Collapse>
               {/if}
             </fieldset>
 
