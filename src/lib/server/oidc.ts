@@ -22,6 +22,7 @@ const DEFAULT_VERIFY_OPTS: jwt.VerifyOptions = {
 
 /**
  * Remove invalid tokens, refresh if appropriate, and set locals for tokens and roles.
+ * Only invoked on page refresh. Does not execute behavior if cookies expire and page doesn't refresh (see cookieStoreListener() for that)
  *
  * Will log but not raise any errors.
  *
@@ -33,6 +34,7 @@ export async function handler(event: RequestEvent): Promise<RequestEvent> {
 
 /**
  * Removes invalid access or id tokens.
+ * Only invoked in handler.
  *
  * Note: This **may** mutate the given event.
  *
@@ -48,6 +50,7 @@ async function sanitize(evt: RequestEvent) {
 
 /**
  * Refreshes tokens iff access or id token is missing.
+ * Only invoked in handler.
  *
  * Note: This **may** mutate the given event.
  *
@@ -328,7 +331,6 @@ export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth
     // TODO: should we even have these cookies? or just store them as stores???
     cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path: '/' });
     cookies.set('idToken', tokens.idToken(), { httpOnly: false, path: '/' });
-
     cookies.set('refreshToken', tokens.refreshToken(), { httpOnly: true, path: '/' });
 
     // sort of an edge case, but if default role does change at the idp, it wouldn't hurt to update the local entry
