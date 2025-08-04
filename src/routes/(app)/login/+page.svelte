@@ -4,6 +4,7 @@
   import { goto, invalidateAll } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
+  import { env } from '$env/dynamic/public';
   import { Button, Input, Label } from '@nasa-jpl/stellar-svelte';
   import AlertError from '../../../components/ui/AlertError.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
@@ -20,6 +21,11 @@
   let password = '';
   let reason = $page.url.searchParams.get(SearchParameters.REASON);
   let username = '';
+
+  // should not be on this page if using OIDC, so just redirect to plans.
+  if (env.PUBLIC_AUTH_OIDC_ENABLED) {
+    goto(`${base}/plans`);
+  }
 
   $: if (data.user?.permissibleQueries && hasNoAuthorization(data.user)) {
     error = 'You are not authorized';
