@@ -5300,7 +5300,7 @@ const effects = {
     tagIds: number[],
     files: FileList,
     user: User | null,
-  ): Promise<PlanSlim | null> {
+  ): Promise<{ error?: Error; plan?: PlanSlim }> {
     try {
       if (!gatewayPermissions.IMPORT_PLAN(user)) {
         throwPermissionError('import a plan');
@@ -5327,14 +5327,14 @@ const effects = {
 
       creatingPlanStore.set(false);
       if (createdPlan != null) {
-        return createdPlan;
+        return { plan: createdPlan };
+      } else {
+        throw new Error('Plan import failed');
       }
-
-      return null;
     } catch (e) {
       catchError(e as Error);
       creatingPlanStore.set(false);
-      return null;
+      return { error: e as Error };
     }
   },
 
