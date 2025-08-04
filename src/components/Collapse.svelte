@@ -36,6 +36,7 @@
 
 <div class={collapseClasses} class:error role="group" aria-label="{ariaTitle || title}-collapse">
   <button
+    type="button"
     on:contextmenu|preventDefault={contextMenu?.show}
     tabindex={!collapsible ? -1 : 0}
     class="collapse-header st-button st-typography-medium tertiary"
