@@ -1,10 +1,17 @@
 <script lang="ts">
   import TokenRefresh from '$lib/components/oidc/Refresh.svelte';
-  import { accessTokenStore, idTokenStore } from '$lib/stores/oidc';
   import type { MaybeToken } from '$lib/types/oidc';
+  import * as cookie from 'cookie';
+  import { jwtDecode } from 'jwt-decode';
   import type { PageData } from '../$types';
+  import { accessTokenDecoded } from '../../../lib/stores/oidc';
 
   export let data: PageData;
+
+  // NOTE: not a store since we don't need to store it with the user object, and we would require
+  //    some extra machinery to save it to a store which is unnecessary given this is the only place
+  //    it gets read
+  let idTokenDecoded = jwtDecode(cookie.parse(document.cookie)['accessToken']);
 
   function expiresAt(token: MaybeToken): Date | string {
     if (token?.exp) {
@@ -20,14 +27,14 @@
 <div class="items-top flex justify-between">
   <div class="prose-base mt-4">
     <h3 class="text-xl font-bold">Access Token</h3>
-    <p class="text">Expires in: {expiresAt($accessTokenStore)}</p>
-    <pre class="h-64 overflow-auto border p-4 text-xs">{JSON.stringify($accessTokenStore, null, 2)}</pre>
+    <p class="text">Expires in: {expiresAt($accessTokenDecoded)}</p>
+    <pre class="h-64 overflow-auto border p-4 text-xs">{JSON.stringify($accessTokenDecoded, null, 2)}</pre>
   </div>
 
   <div class="prose-base mt-4">
     <h3 class="text-xl font-bold">ID Token</h3>
-    <p class="text">Expires in: {expiresAt($idTokenStore)}</p>
-    <pre class="h-64 overflow-auto border p-4 text-xs">{JSON.stringify($idTokenStore, null, 2)}</pre>
+    <p class="text">Expires in: {expiresAt(idTokenDecoded)}</p>
+    <pre class="h-64 overflow-auto border p-4 text-xs">{JSON.stringify(idTokenDecoded, null, 2)}</pre>
   </div>
 </div>
 

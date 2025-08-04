@@ -1,20 +1,9 @@
-import cookie from 'cookie';
-import { jwtDecode, type JwtPayload } from 'jwt-decode';
-import { derived, get, writable } from 'svelte/store';
+import { jwtDecode } from 'jwt-decode';
+import { derived, get, type Readable } from 'svelte/store';
 import type { BaseUser, User } from '../../types/app';
 import { computeRolesFromJWT } from '../../utilities/auth';
+import type { MaybeToken } from '../types/oidc';
 import { userStore } from './auth';
-
-// TODO: purge this
-export const accessTokenStore = writable<JwtPayload | null>(null);
-export const idTokenStore = writable<JwtPayload | null>(null);
-
-// // NOTE: we are suggesting replacing usage of user PageData with a store instead, just so that we can easily update the store on refresh (a case that didn't previously exist)
-// export const activeRole = writable<string | null>(null);
-// export const user: Readable<User | null> = derived([accessTokenStore, idTokenStore, activeRole], ([_, __, ___]) => {
-//   const user: User | null = null; //computeRolesFromJWT({ token: $accessToken, id: 'TODO' }, $activeRole) // TODO: FIX THIS
-//   return user;
-// });
 
 type CookieChanged = {
   domain: string;
@@ -45,23 +34,13 @@ declare global {
   }
 }
 
-// unsure how to access PageData as a type in a .ts file
-type PageData = any;
-
-export function cookieStoreListener(pageData: PageData) {
-  const boundHandler = async (ev: Event) => await handleCookieStoreChange(pageData)(ev);
-
+export function cookieStoreListener() {
   if (window && 'cookieStore' in window) {
-    window.cookieStore.addEventListener('change', boundHandler);
+    window.cookieStore.addEventListener('change', handleCookieStoreChange);
     console.log('Added cookie store change listener.');
   } else {
     console.error('Cookie store is not available in this environment. It is *required* for automatic refresh of JWT.');
   }
-
-  // Set the initial values of the access and id tokens from cookies.
-  const tokens = cookie.parse(document.cookie, { decode: jwtDecode }) as any;
-  accessTokenStore.set(tokens.accessToken ?? null);
-  idTokenStore.set(tokens.idToken ?? null);
 
   // Track the unsubscription function to remove the cookie store change listener.
   const unsubscribe = delay.subscribe(value => {
@@ -75,13 +54,17 @@ export function cookieStoreListener(pageData: PageData) {
   // and unsubscribe from the delay store.
   return () => {
     console.log('Removing cookie store change listener.');
-    window.cookieStore.removeEventListener('change', boundHandler);
+    window.cookieStore.removeEventListener('change', handleCookieStoreChange);
     unsubscribe();
   };
 }
 
-export const expiresAt = derived(accessTokenStore, $accessToken => {
-  return $accessToken?.exp ? new Date($accessToken?.exp * 1000) : null;
+export const accessTokenDecoded: Readable<MaybeToken> = derived(userStore, $userStore => {
+  return jwtDecode($userStore?.token ?? '');
+});
+
+export const expiresAt = derived(accessTokenDecoded, $accessTokenDecoded => {
+  return $accessTokenDecoded?.exp ? new Date($accessTokenDecoded?.exp * 1000) : null;
 });
 
 export const refreshAt = derived(expiresAt, $expiresAt => {
@@ -132,15 +115,13 @@ function reschedule(fn: () => Promise<void>, delay: number, prior: number | null
  *
  * @param event: CookieChangeEvent - The event containing the changed or deleted cookies.
  */
-const handleCookieStoreChange = (pageData: PageData) => async (ev: Event) => {
+const handleCookieStoreChange = async (ev: Event) => {
   const event = ev as CookieChangeEvent;
 
   console.log(`Cookie store change detected.`, event);
   event.changed.forEach(async ({ name, value }) => {
     console.log(`Cookie changed: ${name}`);
     if (name === 'accessToken') {
-      accessTokenStore.set(jwtDecode(value));
-
       // set user store
       // NOTE: no longer using PageData and updating that as we have to pass that everywhere and that's a hassle
       const baseUser: BaseUser = { id: null, token: value }; // id can be null because any time this function is used, its in the context of oidc, and we specifically catch id being null for oidc in computeRolesFromJWT
@@ -151,7 +132,6 @@ const handleCookieStoreChange = (pageData: PageData) => async (ev: Event) => {
     }
     if (name === 'idToken') {
       const decoded = jwtDecode(value);
-      idTokenStore.set(decoded);
 
       // update user store
       userStore.update(user => {
@@ -166,19 +146,6 @@ const handleCookieStoreChange = (pageData: PageData) => async (ev: Event) => {
     }
   });
   event.deleted.forEach(({ name }) => {
-    console.log(`Cookie deleted`);
-    if (name === 'accessToken') {
-      accessTokenStore.set(null);
-
-      // update user
-      pageData.user = null;
-    }
-    if (name === 'idToken') {
-      idTokenStore.set(null);
-
-      // update user, if idToken is deleted, then we should just null the user as well
-      // TODO: could be unnecessary
-      pageData.user = null;
-    }
+    console.log(`Cookie deleted: ${name}`);
   });
 };

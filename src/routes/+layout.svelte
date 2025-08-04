@@ -13,9 +13,6 @@
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
   import { modalBodyClickListener, modalBodyKeyListener } from '../utilities/modal';
   import { loadPluginCode } from '../utilities/plugins';
-  import type { PageData } from './$types';
-
-  export let data: PageData;
 
   let pluginsEnabled = env.PUBLIC_TIME_PLUGIN_ENABLED === 'true';
   $pluginsLoaded = pluginsEnabled ? false : true;
@@ -23,7 +20,7 @@
   onMount(() => {
     let unsubscribe = () => {};
     if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
-      unsubscribe = cookieStoreListener(data);
+      unsubscribe = cookieStoreListener();
     }
 
     if (pluginsEnabled && !$pluginsLoaded) {
