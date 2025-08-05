@@ -2194,6 +2194,8 @@ const effects = {
 
       const newWorkspace = await reqWorkspace<Workspace>(`create`, 'POST', JSON.stringify(workspaceInsert), user);
 
+      creatingWorkspace.set(false);
+
       if (newWorkspace != null) {
         showSuccessToast('Workspace Created Successfully');
         return newWorkspace;
@@ -2204,8 +2206,6 @@ const effects = {
       catchError('Workspace Create Failed', e as Error);
       showFailureToast('Workspace Create Failed');
     }
-
-    creatingWorkspace.set(false);
 
     return null;
   },
