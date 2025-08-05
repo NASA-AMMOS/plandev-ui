@@ -7,12 +7,10 @@
   import Nav from '../../../components/app/Nav.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
+  import { userStore } from '../../../lib/stores/auth';
   import { workspaces } from '../../../stores/sequencing';
   import type { Workspace } from '../../../types/sequencing';
   import { getSearchParameterNumber } from '../../../utilities/generic';
-  import type { PageData } from './$types';
-
-  export let data: PageData;
 
   let workspaceId: number | null = null;
   let workspace: Workspace | undefined = undefined;
@@ -22,7 +20,7 @@
 </script>
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
-  <Nav user={data.user}>
+  <Nav user={$userStore}>
     <div class="sequencing-title" slot="title">
       <a
         href={`/sequencing${workspace ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`}

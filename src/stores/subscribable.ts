@@ -3,13 +3,12 @@ import { env } from '$env/dynamic/public';
 import { type ClientOptions } from 'graphql-ws';
 import { debounce, isEqual } from 'lodash-es';
 import { get, type Readable, type Subscriber, type Unsubscriber, type Updater } from 'svelte/store';
-// import WebSocket from 'ws';
 import { gqlWsClient, userStore } from '../lib/stores/auth';
 import type { User } from '../types/app';
 import type { GqlSubscribable, NextValue, QueryVariables, Subscription } from '../types/subscribable';
+import { logout } from '../utilities/login';
 import { EXPIRED_JWT } from '../utilities/permissions';
 
-// TODO: move this to a different file?
 export function getClientOptions(): ClientOptions {
   if (!browser) {
     throw new Error('getClientOptions() is being called on the server');
@@ -35,24 +34,6 @@ export function getClientOptions(): ClientOptions {
       },
       connected: (_: unknown) => {
         console.log('WebSocket connected...');
-
-        // const socket = uncastedSocket as WebSocket;
-
-        // // TODO: save the unsubscribe somewhere?
-        // // TODO: see what happens if you remove this, since we are 99% sure this didn't even work
-        // userStore.subscribe(() => {
-        //   if (socket.readyState === WebSocket.OPEN) {
-        //     console.log('Sending new bearer token...');
-        //     socket.send(
-        //       JSON.stringify({
-        //         payload: { headers: { Authorization: `Bearer ${get(userStore)?.token}`, type: 'connection_init' } },
-        //       }),
-        //     );
-        //   } else {
-        //     console.warn('Will not send new bearer token, socket is not open.'); // continues to fire every time....even when connection closed. probably wanna clean this up by removing the current subscription. it seems this bearerToken.subscribe doesn't return an unsubscribe
-        //   }
-        // });
-        // // console.log("UNSUBSCRIBE BEARER TOKEN, TYPE?", typeof unsubscribeBearerToken)
       },
     },
     url: env.PUBLIC_HASURA_WEB_SOCKET_URL,
@@ -68,7 +49,7 @@ export function gqlSubscribable<T>(
   query: string,
   initialVariables: QueryVariables | null = null,
   initialValue: T | null = null,
-  _: User | null, // TODO: remove this eventually. leaving it here for ease of use, like in reqHasura, because refactoring all calls is a hassle. but this will use the store instead
+  _: User | null, // TODO: remove this eventually. leaving it here for ease of use, because refactoring all calls is a hassle. but this will use the store instead
   transformer: (v: any) => T = v => v,
 ): GqlSubscribable<T> {
   const subscribers: Set<Subscription<T>> = new Set();
@@ -101,34 +82,13 @@ export function gqlSubscribable<T>(
 
             if ('reason' in error && error.reason.includes(EXPIRED_JWT)) {
               // This should never be triggered in the OIDC case, because we have refreshes.
-              console.log('Here', query, variables);
+              console.error('Expired JWT in subscribe. Query and variables in question:', query, variables);
+              console.error('Logging out...');
 
-              // TODO: if we do land here, what do we do???
-
-              // // if client options isn't even defined, just ignore
-              // if (clientOptions) {
-              //   const newClientOptions = getClientOptions();
-              //   const oldAccessToken = (clientOptions.connectionParams as any)['headers']['Authorization'].split(
-              //     'Bearer ',
-              //   )[1];
-              //   const newAccessToken = (newClientOptions.connectionParams as any)['headers']['Authorization'].split(
-              //     'Bearer ',
-              //   )[1];
-
-              //   // console.log(oldAccessToken, newAccessToken);
-
-              //   // if the client's token matches the current token and its still expired, then there's a real problem. but if not, it should be updated
-              //   if (oldAccessToken !== newAccessToken) {
-              //     console.log('RESUBSCRIBING', query.split('{')[0]);
-              //     resubscribe(); // replacing tokens and resubscribing seems to be the best we can do. not sure how to trigger a resubscribe for all active gqlSubscribable's on cookie update...
-              //   } else {
-              //     console.log('ITS BEYOND OVER');
-              //     await logout(EXPIRED_JWT);
-              //   }
-              // }
+              // NOTE: this is pretty opaque behavior. This shouldn't ever be hit in OIDC case, though.
+              logout('Expired JWT in gqlSubscribable');
             } else {
               subscribers.forEach(({ next }) => {
-                // console.log('firing', query.split('{')[0]);
                 next(initialValue as T);
               });
             }

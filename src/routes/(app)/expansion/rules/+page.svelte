@@ -8,9 +8,7 @@
     TYPESCRIPT_EXPANSION_NOT_AVAILABLE_MESSAGE,
   } from '../../../../constants/command-expansion';
   import { SequencingMode } from '../../../../enums/sequencing';
-  import type { PageData } from './$types';
-
-  export let data: PageData;
+  import { userStore } from '../../../../lib/stores/auth';
 </script>
 
 <PageTitle title="Expansion Rules" />
@@ -20,5 +18,5 @@
     {TYPESCRIPT_EXPANSION_NOT_AVAILABLE_MESSAGE}
   </span>
 {:else}
-  <ExpansionRules user={data.user} />
+  <ExpansionRules user={$userStore} />
 {/if}

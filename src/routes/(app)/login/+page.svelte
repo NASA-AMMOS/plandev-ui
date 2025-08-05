@@ -7,12 +7,10 @@
   import { Button, Input, Label } from '@nasa-jpl/stellar-svelte';
   import AlertError from '../../../components/ui/AlertError.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
+  import { userStore } from '../../../lib/stores/auth';
   import type { LoginResponseBody } from '../../../types/auth';
   import { removeQueryParam } from '../../../utilities/generic';
   import { EXPIRED_JWT, hasNoAuthorization } from '../../../utilities/permissions';
-  import type { PageData } from './$types';
-
-  export let data: PageData;
 
   let error: string | null = null;
   let fullError: string | null = null;
@@ -21,7 +19,7 @@
   let reason = $page.url.searchParams.get(SearchParameters.REASON);
   let username = '';
 
-  $: if (data.user?.permissibleQueries && hasNoAuthorization(data.user)) {
+  $: if ($userStore?.permissibleQueries && hasNoAuthorization($userStore)) {
     error = 'You are not authorized';
     fullError =
       'You are not authorized to access the page that you attempted to view. Please contact a tool administrator to request access.';

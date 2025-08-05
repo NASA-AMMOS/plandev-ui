@@ -1,11 +1,20 @@
+import { browser } from '$app/environment';
 import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
+import { get } from 'svelte/store';
+import { userStore } from '../../../../../lib/stores/auth';
+import type { User } from '../../../../../types/app';
 import effects from '../../../../../utilities/effects';
 import { parseFloatOrNull } from '../../../../../utilities/generic';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, params }) => {
-  const { user } = await parent();
+  let user: User | null;
+  if (browser) {
+    user = (await parent()).user;
+  } else {
+    user = get(userStore);
+  }
 
   const { id: constraintIdParam } = params;
 

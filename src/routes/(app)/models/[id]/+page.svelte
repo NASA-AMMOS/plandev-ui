@@ -92,6 +92,7 @@
   import Panel from '../../../../components/ui/Panel.svelte';
   import SectionTitle from '../../../../components/ui/SectionTitle.svelte';
   import { SearchParameters } from '../../../../enums/searchParameters';
+  import { userStore } from '../../../../lib/stores/auth';
   import { constraints, constraintsMap, initialConstraintsLoading } from '../../../../stores/constraints';
   import { initialModel, model, resetModelStores } from '../../../../stores/model';
   import {
@@ -180,7 +181,7 @@
   let numPrivateConditions: number = 0;
   let numPrivateGoals: number = 0;
 
-  $: user = data.user;
+  $: user = $userStore;
   $: if (data.initialModel) {
     $initialModel = data.initialModel;
     model.updateValue(() => data.initialModel);
@@ -927,7 +928,7 @@
         resourceTypeLogs={$model?.refresh_resource_type_logs}
         modelId={$model?.id}
         createdAt={$model?.created_at}
-        user={data.user}
+        user={$userStore}
         users={$users}
         usersLoading={$initialUsersLoading}
         views={$views}

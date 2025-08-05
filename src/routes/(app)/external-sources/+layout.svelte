@@ -9,13 +9,11 @@
   import Nav from '../../../components/app/Nav.svelte';
   import NavButton from '../../../components/app/NavButton.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
-  import type { LayoutData } from './$types';
-
-  export let data: LayoutData;
+  import { userStore } from '../../../lib/stores/auth';
 </script>
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
-  <Nav user={data.user}>
+  <Nav user={$userStore}>
     <span class="external-sources-title" slot="title">External Sources</span>
 
     <svelte:fragment slot="right">

@@ -2,9 +2,7 @@
 
 <script lang="ts">
   import SequenceForm from '../../../../components/sequencing/SequenceForm.svelte';
-  import type { PageData } from './$types';
-
-  export let data: PageData;
+  import { userStore } from '../../../../lib/stores/auth';
 </script>
 
-<SequenceForm mode="create" user={data.user} />
+<SequenceForm mode="create" user={$userStore} />

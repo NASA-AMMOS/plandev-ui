@@ -7,6 +7,7 @@
   import PageTitle from '../../../../../../components/app/PageTitle.svelte';
   import SchedulingGoalForm from '../../../../../../components/scheduling/goals/SchedulingGoalForm.svelte';
   import { SearchParameters } from '../../../../../../enums/searchParameters';
+  import { userStore } from '../../../../../../lib/stores/auth';
   import { schedulingGoalMetadata, schedulingGoalMetadataId } from '../../../../../../stores/scheduling';
   import { tags } from '../../../../../../stores/tags';
   import type {
@@ -55,7 +56,7 @@
         goalDefinitionCode = goalDefinition?.definition;
         goalDefinitionTags = goalDefinition?.tags.map(({ tag }) => tag);
         if (goalDefinition.uploaded_jar_id !== null) {
-          goalDefinitionFilename = await effects.getFileName(goalDefinition.uploaded_jar_id, data.user);
+          goalDefinitionFilename = await effects.getFileName(goalDefinition.uploaded_jar_id, $userStore);
         } else {
           goalDefinitionFilename = null;
         }
@@ -113,7 +114,7 @@
   {goalRevisions}
   tags={$tags}
   mode="edit"
-  user={data.user}
+  user={$userStore}
   on:selectRevision={onRevisionSelect}
   on:selectReferenceModel={onModelSelect}
 />

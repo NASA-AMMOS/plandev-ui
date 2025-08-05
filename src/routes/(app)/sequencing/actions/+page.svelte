@@ -2,9 +2,7 @@
 
 <script lang="ts">
   import Actions from '../../../../components/sequencing/actions/Actions.svelte';
-  import type { PageData } from './$types';
-
-  export let data: PageData;
+  import { userStore } from '../../../../lib/stores/auth';
 </script>
 
-<Actions user={data.user} />
+<Actions user={$userStore} />

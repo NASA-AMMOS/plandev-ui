@@ -3,10 +3,8 @@
   import type { MaybeToken } from '$lib/types/oidc';
   import * as cookie from 'cookie';
   import { jwtDecode } from 'jwt-decode';
-  import type { PageData } from '../$types';
+  import { userStore } from '../../../lib/stores/auth';
   import { accessTokenDecoded } from '../../../lib/stores/oidc';
-
-  export let data: PageData;
 
   // NOTE: not a store since we don't need to store it with the user object, and we would require
   //    some extra machinery to save it to a store which is unnecessary given this is the only place
@@ -38,7 +36,7 @@
   </div>
 </div>
 
-<div><pre>{JSON.stringify(data.user, null, 2)}</pre></div>
+<div><pre>{JSON.stringify($userStore, null, 2)}</pre></div>
 
 <div>
   <div>

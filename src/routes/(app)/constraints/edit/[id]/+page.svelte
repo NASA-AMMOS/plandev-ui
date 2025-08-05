@@ -6,6 +6,7 @@
   import { onMount } from 'svelte';
   import ConstraintForm from '../../../../../components/constraints/ConstraintForm.svelte';
   import { SearchParameters } from '../../../../../enums/searchParameters';
+  import { userStore } from '../../../../../lib/stores/auth';
   import { constraintMetadata, constraintMetadataId } from '../../../../../stores/constraints';
   import { tags } from '../../../../../stores/tags';
   import type {
@@ -57,7 +58,7 @@
         constraintDefinitionCode = constraintDefinition?.definition;
         constraintDefinitionTags = constraintDefinition?.tags.map(({ tag }) => tag);
         if (constraintDefinition.uploaded_jar_id !== null) {
-          constraintDefinitionFilename = await effects.getFileName(constraintDefinition.uploaded_jar_id, data.user);
+          constraintDefinitionFilename = await effects.getFileName(constraintDefinition.uploaded_jar_id, $userStore);
         } else {
           constraintDefinitionFilename = null;
         }
@@ -113,7 +114,7 @@
   {constraintRevisions}
   tags={$tags}
   mode="edit"
-  user={data.user}
+  user={$userStore}
   on:selectRevision={onRevisionSelect}
   on:selectReferenceModel={onModelSelect}
 />

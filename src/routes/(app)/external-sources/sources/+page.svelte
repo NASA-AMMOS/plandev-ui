@@ -4,10 +4,8 @@
   import { onDestroy } from 'svelte';
   import PageTitle from '../../../../components/app/PageTitle.svelte';
   import ExternalSourceManager from '../../../../components/external-source/ExternalSourceManager.svelte';
+  import { userStore } from '../../../../lib/stores/auth';
   import { resetExternalSourceStores } from '../../../../stores/external-source';
-  import type { PageData } from './$types';
-
-  export let data: PageData;
 
   onDestroy(() => {
     resetExternalSourceStores();
@@ -16,4 +14,4 @@
 
 <PageTitle title="External Sources" />
 
-<ExternalSourceManager user={data.user}></ExternalSourceManager>
+<ExternalSourceManager user={$userStore}></ExternalSourceManager>

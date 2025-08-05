@@ -6,7 +6,7 @@ import * as arctic from 'arctic';
 import jwt from 'jsonwebtoken';
 import { JwksClient } from 'jwks-rsa';
 import type { User } from '../../types/app';
-import { reqHasuraWhileAuthenticating } from '../../utilities/requests';
+import { reqHasura } from '../../utilities/requests';
 
 const DEFAULT_JWKS_CLIENT = (() => {
   if (env.OIDC_JWKS_URL) {
@@ -316,7 +316,7 @@ async function insertUser(decodedAccessToken: HasuraToken, accessToken: string):
     token: accessToken,
   };
   console.log('Registering user:', user);
-  const result = await reqHasuraWhileAuthenticating(mutation, { input }, user);
+  const result = await reqHasura(mutation, { input }, user);
   console.log('Registered user: ', result);
 }
 

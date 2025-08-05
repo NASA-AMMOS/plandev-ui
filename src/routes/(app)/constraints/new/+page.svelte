@@ -5,11 +5,9 @@
   import { onMount } from 'svelte';
   import ConstraintForm from '../../../../components/constraints/ConstraintForm.svelte';
   import { SearchParameters } from '../../../../enums/searchParameters';
+  import { userStore } from '../../../../lib/stores/auth';
   import { tags } from '../../../../stores/tags';
   import { getSearchParameterNumber } from '../../../../utilities/generic';
-  import type { PageData } from './$types';
-
-  export let data: PageData;
 
   let referenceModelId: number | null = null;
 
@@ -30,6 +28,6 @@
   initialReferenceModelId={referenceModelId}
   tags={$tags}
   mode="create"
-  user={data.user}
+  user={$userStore}
   on:selectReferenceModel={onModelSelect}
 />

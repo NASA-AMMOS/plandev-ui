@@ -7,6 +7,7 @@
     TYPESCRIPT_EXPANSION_NOT_AVAILABLE_MESSAGE,
   } from '../../../../../../constants/command-expansion';
   import { SequencingMode } from '../../../../../../enums/sequencing';
+  import { userStore } from '../../../../../../lib/stores/auth';
   import type { PageData } from './$types';
 
   export let data: PageData;
@@ -30,6 +31,6 @@
     initialRuleTags={data.initialRule.tags.map(({ tag }) => tag)}
     initialRuleUpdatedAt={data.initialRule.updated_at}
     mode="edit"
-    user={data.user}
+    user={$userStore}
   />
 {/if}

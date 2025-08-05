@@ -19,6 +19,7 @@
   import Panel from '../../../components/ui/Panel.svelte';
   import SectionTitle from '../../../components/ui/SectionTitle.svelte';
   import TagChip from '../../../components/ui/Tags/Tag.svelte';
+  import { userStore } from '../../../lib/stores/auth';
   import { field } from '../../../stores/form';
   import { createTagError, tags as tagsStore } from '../../../stores/tags';
   import type { User } from '../../../types/app';
@@ -114,7 +115,7 @@
   $: nameField = field<string>('', [required]);
   $: colorField = field<string>('', [required, hex]);
   $: {
-    user = data.user;
+    user = $userStore;
     canCreate = user ? featurePermissions.tags.canCreate(user) : false;
     columnDefs = [
       ...baseColumnDefs,

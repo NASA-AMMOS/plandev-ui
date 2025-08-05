@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import ParcelForm from '../../../../../components/parcels/ParcelForm.svelte';
+  import { userStore } from '../../../../../lib/stores/auth';
   import type { PageData } from './$types';
 
   export let data: PageData;
@@ -16,5 +17,5 @@
   parcelName={data.initialParcel.name}
   parcelOwner={data.initialParcel.owner}
   parcelSequenceAdaptationId={data.initialParcel.sequence_adaptation_id}
-  user={data.user}
+  user={$userStore}
 />

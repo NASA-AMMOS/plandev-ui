@@ -129,9 +129,7 @@ const handleCookieStoreChange = async (ev: Event) => {
       // NOTE: no longer using PageData and updating that as we have to pass that everywhere and that's a hassle
       const baseUser: BaseUser = { id: null, token: value }; // id can be null because any time this function is used, its in the context of oidc, and we specifically catch id being null for oidc in computeRolesFromJWT
       const user: User | null = await computeRolesFromJWT(baseUser, null); // null role because if after a refresh a user has been demoted, wouldn't want to retain an invalid role
-      userStore.set(user ?? undefined);
-
-      // TODO: we need to address every instance of PageData.user being used, and replace it with a userStore which is going to be a more reliable tell
+      userStore.set(user);
     }
     if (name === 'idToken') {
       const decoded = jwtDecode(value);

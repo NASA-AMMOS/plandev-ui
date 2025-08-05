@@ -10,11 +10,10 @@ export const load: LayoutLoad = async ({ data }) => {
   console.log('in +layout.ts!', Object.keys(data));
 
   if (browser) {
-    console.log('HERE!');
-    // TODO: add code to take locals and set the user store and gqlWsClient accordingly
-    userStore.set(data.user ?? undefined); // TODO: resolve undefined vs null for user. this is ridiculous
+    userStore.set(data.user);
     gqlWsClient.set(createClient(getClientOptions()));
   }
 
+  // no PageData should be used client-side. but if it is accessed in other +page.ts or +layout.ts files, that should be okay, for SSR purposes. but anywhere on client, userStore should be used.
   return { ...data };
 };

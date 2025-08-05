@@ -27,6 +27,7 @@
   import TagsInput from '../../../components/ui/Tags/TagsInput.svelte';
   import { InvalidDate } from '../../../constants/time';
   import { SearchParameters } from '../../../enums/searchParameters';
+  import { userStore } from '../../../lib/stores/auth';
   import { field } from '../../../stores/form';
   import { models } from '../../../stores/model';
   import { createPlanError, creatingPlan, resetPlanStores } from '../../../stores/plan';
@@ -260,7 +261,7 @@
     return 0;
   });
   $: {
-    user = data.user;
+    user = $userStore;
     canCreate = user ? featurePermissions.plan.canCreate(user) : false;
     columnDefs = [
       ...baseColumnDefs.slice(0, 3),

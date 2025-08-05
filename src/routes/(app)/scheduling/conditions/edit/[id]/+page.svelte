@@ -7,6 +7,7 @@
   import PageTitle from '../../../../../../components/app/PageTitle.svelte';
   import SchedulingConditionForm from '../../../../../../components/scheduling/conditions/SchedulingConditionForm.svelte';
   import { SearchParameters } from '../../../../../../enums/searchParameters';
+  import { userStore } from '../../../../../../lib/stores/auth';
   import { schedulingConditionMetadata, schedulingConditionMetadataId } from '../../../../../../stores/scheduling';
   import { tags } from '../../../../../../stores/tags';
   import type {
@@ -98,7 +99,7 @@
   {conditionRevisions}
   tags={$tags}
   mode="edit"
-  user={data.user}
+  user={$userStore}
   on:selectRevision={onRevisionSelect}
   on:selectReferenceModel={onModelSelect}
 />

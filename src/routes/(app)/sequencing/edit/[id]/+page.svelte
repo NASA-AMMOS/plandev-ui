@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import SequenceForm from '../../../../../components/sequencing/SequenceForm.svelte';
+  import { userStore } from '../../../../../lib/stores/auth';
   import type { PageData } from './$types';
 
   export let data: PageData;
@@ -17,5 +18,5 @@
   initialSequenceUpdatedAt={data.initialSequence.updated_at}
   initialIsSequenceReadonly={data.initialSequence.is_locked}
   mode="edit"
-  user={data.user}
+  user={$userStore}
 />

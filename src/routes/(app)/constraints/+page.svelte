@@ -3,11 +3,9 @@
 <script lang="ts">
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import Constraints from '../../../components/constraints/Constraints.svelte';
-  import type { PageData } from './$types';
-
-  export let data: PageData;
+  import { userStore } from '../../../lib/stores/auth';
 </script>
 
 <PageTitle title="Constraints" />
 
-<Constraints user={data.user} />
+<Constraints user={$userStore} />
