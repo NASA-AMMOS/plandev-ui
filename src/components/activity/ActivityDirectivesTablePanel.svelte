@@ -23,7 +23,7 @@
   import type { AutoSizeColumns, ViewGridSection, ViewTable } from '../../types/view';
   import effects from '../../utilities/effects';
   import { filterEmpty } from '../../utilities/generic';
-  import { formatDate, getUnixEpochTimeFromInterval } from '../../utilities/time';
+  import { convertUsToDurationString, formatDate, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { getTimeRangeAroundTime } from '../../utilities/timeline';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
@@ -33,6 +33,7 @@
   import Panel from '../ui/Panel.svelte';
   import ActivityDirectivesTable from './ActivityDirectivesTable.svelte';
   import ActivityTableMenu from './ActivityTableMenu.svelte';
+  import type { ValueSchema } from '../../types/schema';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -101,6 +102,13 @@
       hide: true,
       resizable: true,
       sortable: false,
+      autoHeight: true,
+      cellRenderer: (params: ICellRendererParams<ActivityDirective>) => {
+        const div = document.createElement('div');
+        div.innerHTML = params.value || '';
+        div.style.cssText = 'white-space: pre-wrap; word-break: break-word; line-height: 1.4;';
+        return div;
+      },
       valueGetter: (params: ValueGetterParams<ActivityDirective>) => {
         const args = params?.data?.arguments;
         const activityTypeName = params?.data?.type;
@@ -122,13 +130,13 @@
             return orderA - orderB;
           })
           .map(([key, value]) => {
-            const stringValue = String(value);
-            const truncatedValue = stringValue.length > 20
-              ? stringValue.substring(0, 17) + '...'
-              : stringValue;
-            return `${key}: ${truncatedValue}`;
+            const parameterSchema = activityType?.parameters[key]?.schema;
+            const formattedValue = parameterSchema
+              ? formatParameterValue(value, parameterSchema)
+              : String(value);
+            return `<strong>${key}:</strong> ${formattedValue}`;
           })
-          .join('; ');
+          .join('\n');
       },
     },
     created_at: {
@@ -412,6 +420,46 @@
     );
     viewTimeRange.set(centeredTimeRange);
   }
+
+  function formatParameterValue(value: any, schema: ValueSchema): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  switch (schema.type) {
+    case 'duration':
+      try {
+        return convertUsToDurationString(value, true);
+      } catch (error) {
+        return String(value);
+      }
+
+    case 'series':
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          return '[]';
+        } else {
+          return `[ \n${value.map(String).join(', ')}\n]`;
+        }
+      }
+      return String(value);
+
+    case 'struct':
+      if (typeof value === 'object' && value !== null) {
+        const keys = Object.keys(value);
+        if (keys.length === 0) {
+          return '{}';
+        } else {
+          const formattedFields = keys.map(key => `${key}: ${String(value[key])}`);
+          return `{\n${formattedFields.join(',\n')}\n}`;
+        }
+      }
+      return String(value);
+
+    default:
+      return String(value);
+  }
+}
 </script>
 
 <Panel padBody={false}>
