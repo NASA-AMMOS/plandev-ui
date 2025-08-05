@@ -133,20 +133,13 @@ const handleSSOAuth: Handle = async ({ event, resolve }) => {
 
   const roles = await computeRolesFromJWT(user, activeRoleCookie);
 
+  // create and set activeRole cookie
   if (roles) {
-    // create and set cookies
-    const userStr = JSON.stringify(user);
-    const userCookie = Buffer.from(userStr).toString('base64');
     const cookieOpts: CookieSerializeOptions & { path: string } = {
       httpOnly: false,
       path: `${base}/`,
       sameSite: 'none',
     };
-
-    // if logout just cleared user cookie, don't re-set it
-    if (!event.url.pathname.includes('/auth/logout')) {
-      event.cookies.set('user', userCookie, cookieOpts);
-    }
 
     // don't overwrite existing activeRole, unless it doesn't exist anymore
     if (!activeRoleCookie || activeRoleCookie === 'deleted' || !roles.allowedRoles.includes(activeRoleCookie)) {
