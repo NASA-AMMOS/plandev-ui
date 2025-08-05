@@ -9,14 +9,15 @@
   import type { SyntaxNode, Tree } from '@lezer/common';
   import type { ChannelDictionary, CommandDictionary, FswCommand, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
-  import CodeIcon from 'bootstrap-icons/icons/code-square.svg?component';
   import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
   import ExpandIcon from 'bootstrap-icons/icons/arrow-bar-up.svg?component';
   import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
+  import CodeIcon from 'bootstrap-icons/icons/code-square.svg?component';
   import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+  import { actionDefinitionsByWorkspace } from '../../stores/actions';
   import {
     getGlobals,
     inputFormat,
@@ -36,7 +37,9 @@
     userSequenceEditorColumnsWithFormBuilder,
     userSequences,
   } from '../../stores/sequencing';
+  import type { ActionDefinition } from '../../types/actions';
   import type { User } from '../../types/app';
+  import type { ArgumentsMap } from '../../types/parameter';
   import {
     type ArgTextDef,
     type IOutputFormat,
@@ -45,6 +48,7 @@
     type Parcel,
     type TimeTagInfo,
   } from '../../types/sequencing';
+  import { getActionParametersOfType, openActionRun } from '../../utilities/actions';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import effects from '../../utilities/effects';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
@@ -84,6 +88,7 @@
     isVmlSequence,
     unquoteUnescape,
   } from '../../utilities/sequence-editor/sequence-utils';
+  import { pluralize } from '../../utilities/text';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import Menu from '../menus/Menu.svelte';
@@ -93,11 +98,6 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
-  import type { ActionDefinition } from '../../types/actions';
-  import { actionDefinitionsByWorkspace } from '../../stores/actions';
-  import { pluralize } from '../../utilities/text';
-  import type { ArgumentsMap } from '../../types/parameter';
-  import { getActionParametersOfType, openActionRun } from '../../utilities/actions';
 
   export let includeActions: boolean = false;
   export let parcel: Parcel | null;
@@ -160,6 +160,52 @@
   $: loadSequenceAdaptation(parcel?.sequence_adaptation_id);
 
   $: isInVmlMode = isVmlSequence(sequenceName);
+
+  // Initialize sequence editor.
+  $: if (!editorSequenceView && editorSequenceDiv) {
+    editorSequenceView = new EditorView({
+      doc: sequenceDefinition,
+      extensions: [
+        basicSetup,
+        EditorView.lineWrapping,
+        EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
+        lintGutter(),
+        compartmentSeqLanguage.of(setupLanguageSupport($sequenceAdaptation.autoComplete(null, null, [], []))),
+        compartmentSeqLinter.of(inputLinter($sequenceAdaptation, getGlobals())),
+        compartmentSeqTooltip.of(sequenceTooltip($sequenceAdaptation)),
+        EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
+        EditorView.updateListener.of(selectedCommandUpdateListener),
+        blockTheme,
+        compartmentSeqHighlighter.of([
+          EditorView.updateListener.of(debouncedSeqNHighlightBlock),
+          seqqNBlockHighlighter,
+        ]),
+        ...($sequenceAdaptation.autoIndent
+          ? [compartmentSeqAutocomplete.of(indentService.of($sequenceAdaptation.autoIndent()))]
+          : []),
+        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
+      ],
+      parent: editorSequenceDiv,
+    });
+  }
+
+  // Initialize sequence output editor.
+  $: if (!editorOutputView && editorOutputDiv && showOutputs) {
+    editorOutputView = new EditorView({
+      doc: sequenceOutput,
+      extensions: [
+        basicSetup,
+        EditorView.lineWrapping,
+        EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
+        EditorView.editable.of(false),
+        lintGutter(),
+        json(),
+        compartmentSeqJsonLinter.of(outputLinter()),
+        EditorState.readOnly.of(readOnly),
+      ],
+      parent: editorOutputDiv,
+    });
+  }
 
   $: if (typeof workspaceId === 'number' && includeActions) {
     actionsWithSequenceParameters = Object.values($actionDefinitionsByWorkspace[workspaceId] || {}).filter(action => {
@@ -301,7 +347,7 @@
           });
 
           // Reconfigure seq JSON editor.
-          editorOutputView.dispatch({
+          editorOutputView?.dispatch({
             effects: compartmentSeqJsonLinter.reconfigure(outputLinter(parsedCommandDictionary, selectedOutputFormat)),
           });
         });
@@ -358,46 +404,6 @@
     compartmentSeqTooltip = new Compartment();
     compartmentSeqAutocomplete = new Compartment();
     compartmentSeqHighlighter = new Compartment();
-
-    editorSequenceView = new EditorView({
-      doc: sequenceDefinition,
-      extensions: [
-        basicSetup,
-        EditorView.lineWrapping,
-        EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
-        lintGutter(),
-        compartmentSeqLanguage.of(setupLanguageSupport($sequenceAdaptation.autoComplete(null, null, [], []))),
-        compartmentSeqLinter.of(inputLinter($sequenceAdaptation, getGlobals())),
-        compartmentSeqTooltip.of(sequenceTooltip($sequenceAdaptation)),
-        EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
-        EditorView.updateListener.of(selectedCommandUpdateListener),
-        blockTheme,
-        compartmentSeqHighlighter.of([
-          EditorView.updateListener.of(debouncedSeqNHighlightBlock),
-          seqqNBlockHighlighter,
-        ]),
-        ...($sequenceAdaptation.autoIndent
-          ? [compartmentSeqAutocomplete.of(indentService.of($sequenceAdaptation.autoIndent()))]
-          : []),
-        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
-      ],
-      parent: editorSequenceDiv,
-    });
-
-    editorOutputView = new EditorView({
-      doc: sequenceOutput,
-      extensions: [
-        basicSetup,
-        EditorView.lineWrapping,
-        EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
-        EditorView.editable.of(false),
-        lintGutter(),
-        json(),
-        compartmentSeqJsonLinter.of(outputLinter()),
-        EditorState.readOnly.of(readOnly),
-      ],
-      parent: editorOutputDiv,
-    });
   });
 
   onDestroy(() => {
