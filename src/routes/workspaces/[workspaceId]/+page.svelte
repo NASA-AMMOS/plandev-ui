@@ -256,6 +256,8 @@
     const parsedDictionary = await getParsedCommandDictionary(unparsedCommandDictionary, user);
     if (parsedDictionary) {
       commandDictionary = parsedDictionary;
+    } else {
+      commandDictionary = null;
     }
   }
 
@@ -265,8 +267,9 @@
       if (parsedDictionary) {
         channelDictionary = parsedDictionary;
       }
+    } else {
+      channelDictionary = null;
     }
-    channelDictionary = null;
   }
 
   async function loadParameterDictionaries(unparsedParameterDictionaries: ParameterDictionaryMetadata[] = []) {
