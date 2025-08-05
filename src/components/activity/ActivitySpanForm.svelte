@@ -148,6 +148,22 @@
         <input class="st-input w-full" disabled name="activityType" value={span.type} />
       </Input>
 
+      {#if activityType && activityType.description}
+        <Input layout="inline">
+          <label use:tooltip={{ content: 'Activity Description', placement: 'top' }} for="activity-description">
+            Description
+          </label>
+          <textarea
+            class="st-input w-full"
+            disabled
+            name="activity-description"
+            id="activity-description"
+            value={activityType.description}
+            readonly
+          ></textarea>
+        </Input>
+      {/if}
+      
       <Input layout="inline">
         <label use:tooltip={{ content: 'Parent ID', placement: 'top' }} for="parentId">Parent ID</label>
         <input class="st-input w-full" disabled name="parentId" value={span.parent_id ?? 'None (Root)'} />
