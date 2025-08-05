@@ -5,7 +5,7 @@ import { json } from '@sveltejs/kit';
 import { reqGatewayForwardCookies } from '../../../utilities/requests';
 
 export const POST: RequestHandler = async event => {
-  if (env.PUBLIC_AUTH_OIDC_ENABLED) {
+  if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
     throw new Error('Using non-oidc endpoint for login, when OIDC mode is enabled (PUBLIC_AUTH_OIDC_ENABLED=true).');
   }
 
