@@ -15,23 +15,6 @@ export function getClientOptions(): ClientOptions {
     throw new Error('getClientOptions() is being called on the server');
   }
 
-  console.log('HERE2');
-  // let token: string;
-  // if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
-  //   token = user?.token ?? cookie.parse(document.cookie)['accessToken'];
-  // } else {
-  //   token = user?.token ?? getTokenFromUserCookie();
-  // }
-  // const clientOptions: ClientOptions = {
-  //   connectionParams: {
-  //     headers: {
-  //       Authorization: `Bearer ${token}`,
-  //       'x-hasura-role': getRoleFromCookie(),
-  //     },
-  //   },
-  //   url: env.PUBLIC_HASURA_WEB_SOCKET_URL,
-  // };
-
   const clientOptions: ClientOptions = {
     connectionParams: async () => {
       console.log('Calculating connection params for socket...'); // NOTE: provable keeps restarting and not reuisng same connection, but since this is slightly better than error handling and we also know we can piggyback multiple connections, we are going with it. ideally we could reuse the same connection the whole time but it retains the access token and ignores all other connection_inits. if there's a way to make hasura NOT ignore that or something else that would be cool but it seems the graphql-ws protocol is not written to support that :/
@@ -177,47 +160,6 @@ export function gqlSubscribable<T>(
       return currentValue;
     });
   }
-
-  /**
-   * Helper that parses a user cookie to get a token.
-   * @todo We should migrate away from doing this and just pass the
-   * user to the subscription during initialization.
-   *
-  function getTokenFromUserCookie(): string {
-    if (browser && document?.cookie) {
-      const userCookie = cookie.parse(document.cookie)['user'];
-      if (userCookie) {
-        try {
-          const decodedUserCookie = atob(decodeURIComponent(userCookie));
-          const parsedUserCookie: BaseUser = JSON.parse(decodedUserCookie);
-          return parsedUserCookie.token;
-        } catch (e) {
-          console.log(e);
-          return '';
-        }
-      } else {
-        console.log(`No 'user' cookie found`);
-      }
-    }
-    return '';
-  }
-
-  /**
-   * Helper that parses a user cookie to get a token.
-   * @todo We should migrate away from doing this and just pass the
-   * user to the subscription during initialization.
-   *
-  function getRoleFromCookie(): string {
-    if (browser && document?.cookie) {
-      const activeRoleCookie = cookie.parse(document.cookie)['activeRole'];
-      if (activeRoleCookie) {
-        return activeRoleCookie;
-      } else {
-        console.warn(`No 'activeRole' cookie present.`);
-      }
-    }
-    return '';
-  }*/
 
   function resubscribe() {
     unsubscribe();

@@ -197,9 +197,12 @@ export class Client {
   }
 
   // arctic handles token revocation, but not logout, as described here https://blog.elest.io/keycloak-token-management-expiration-revocation-and-renewal/, which is what we want to end the session
-  // TODO: test if revoke does the same thing
   getLogoutEndpoint(): string {
     return this.logoutEndpoint;
+  }
+
+  getRedirectEndpoint(): string {
+    return this.redirectEndpoint;
   }
 
   /**
@@ -327,8 +330,6 @@ export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth
 
   if (accessJwt && idJwt) {
     // update cookies
-
-    // TODO: should we even have these cookies? or just store them as stores???
     cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path: '/' });
     cookies.set('idToken', tokens.idToken(), { httpOnly: false, path: '/' });
     cookies.set('refreshToken', tokens.refreshToken(), { httpOnly: true, path: '/' });
