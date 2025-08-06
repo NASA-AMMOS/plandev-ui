@@ -145,6 +145,15 @@ const handleCookieStoreChange = async (ev: Event) => {
         return user;
       });
     }
+    if (name === 'activeRole') {
+      // update the user store
+      userStore.update(user => {
+        if (user) {
+          user.activeRole = value;
+        }
+        return user;
+      });
+    }
   });
   event.deleted.forEach(({ name }) => {
     console.log(`Cookie deleted: ${name}`);
