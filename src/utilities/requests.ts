@@ -182,7 +182,7 @@ export async function reqWorkspace<T = any>(
   signal?: AbortSignal,
   asJson: boolean = true,
 ): Promise<T> {
-  const WORKSPACE_URL = browser ? env.PUBLIC_WORKSPACE_CLIENT_URL : env.PUBLIC_WORKSPACE_SERVER_URL;
+  const WORKSPACE_URL = env.PUBLIC_WORKSPACE_CLIENT_URL;
 
   const headers: HeadersInit = {
     Authorization: `Bearer ${user?.token ?? ''}`,
