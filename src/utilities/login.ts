@@ -29,10 +29,7 @@ export async function logout(reason?: string) {
       console.log(
         `Logging out from server. NOTE - this is exceptional behavior and this logout handling exists to avoid a crash. Cited reason: ${reason}`,
       );
-      const res = await fetch('/oidc/logout', { credentials: 'include', method: 'POST' });
-      const redirectURI = (await res.json()).redirectURI;
-      console.log(`Redirecting now to: ${redirectURI}...`);
-      redirect(302, redirectURI);
+      redirect(302, '/oidc/logout');
     }
   } else {
     if (browser) {

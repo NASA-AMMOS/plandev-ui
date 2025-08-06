@@ -44,7 +44,9 @@ const handleOIDCAuth: Handle = async ({ event, resolve }) => {
 
   // const cookies = parse(event.request.headers.get('cookie') ?? '');
   // const { activeRole, accessToken: token = null } = cookies;
-  // the above handler doesn't impact the event.request.headers, but it does impact the cookies object. we only gain information by using that...so let's use it!
+  // the above handler doesn't impact the event.request.headers, but it does
+  // impact the cookies object. we only gain information by using that...
+  // so let's use it!
   const activeRole = event.cookies.get('activeRole') ?? null;
   const token = event.cookies.get('accessToken');
 
@@ -52,14 +54,11 @@ const handleOIDCAuth: Handle = async ({ event, resolve }) => {
     const user: BaseUser = { id: null, token };
     event.locals.user = await computeRolesFromJWT(user, activeRole);
 
-    const cookieHeader = event.request.headers.get('cookie') ?? '';
-    const cookies = parse(cookieHeader);
-    const { activeRole: activeRoleCookie = null } = cookies;
+    // If the active role cookie is not in the list of allowed roles, then set
+    // it to the user's default role.
     if (
       event.locals.user &&
-      (!activeRoleCookie ||
-        activeRoleCookie === 'deleted' ||
-        !event.locals.user.allowedRoles.includes(activeRoleCookie))
+      !event.locals.user.allowedRoles.includes(activeRole || '')
     ) {
       event.cookies.set('activeRole', event.locals.user.defaultRole, {
         httpOnly: false,
@@ -95,11 +94,11 @@ const handleJWTAuth: Handle = async ({ event, resolve }) => {
   return event.url.pathname.includes('/login') || event.url.pathname.includes('/auth')
     ? await resolve(event)
     : new Response(null, {
-        headers: {
-          location: `${base}/login`,
-        },
-        status: 307,
-      });
+      headers: {
+        location: `${base}/login`,
+      },
+      status: 307,
+    });
 };
 
 const handleSSOAuth: Handle = async ({ event, resolve }) => {

@@ -6,7 +6,6 @@ import { get, type Readable, type Subscriber, type Unsubscriber, type Updater } 
 import { gqlWsClient, userStore } from '../lib/stores/auth';
 import type { User } from '../types/app';
 import type { GqlSubscribable, NextValue, QueryVariables, Subscription } from '../types/subscribable';
-import { logout } from '../utilities/login';
 import { EXPIRED_JWT } from '../utilities/permissions';
 
 export function getClientOptions(): ClientOptions {
@@ -16,7 +15,14 @@ export function getClientOptions(): ClientOptions {
 
   const clientOptions: ClientOptions = {
     connectionParams: async () => {
-      console.log('Calculating connection params for socket...'); // NOTE: provable keeps restarting and not reuisng same connection, but since this is slightly better than error handling and we also know we can piggyback multiple connections, we are going with it. ideally we could reuse the same connection the whole time but it retains the access token and ignores all other connection_inits. if there's a way to make hasura NOT ignore that or something else that would be cool but it seems the graphql-ws protocol is not written to support that :/
+      console.log('Calculating connection params for socket...');
+      // NOTE: provable keeps restarting and not reuisng same connection, but since
+      // this is slightly better than error handling and we also know we can piggyback
+      // multiple connections, we are going with it. ideally we could reuse the same
+      // connection the whole time but it retains the access token and ignores all
+      // other connection_inits. if there's a way to make hasura NOT ignore that or
+      // something else that would be cool but it seems the graphql-ws protocol is
+      // not written to support that :/
       console.log('Using token ', get(userStore)?.token);
       return {
         headers: {
@@ -75,7 +81,7 @@ export function gqlSubscribable<T>(
           variables,
         },
         {
-          complete: () => {},
+          complete: () => { },
           error: async (error: Error | CloseEvent) => {
             console.log('subscribe error');
             console.log(error);
@@ -84,9 +90,11 @@ export function gqlSubscribable<T>(
               // This should never be triggered in the OIDC case, because we have refreshes.
               console.error('Expired JWT in subscribe. Query and variables in question:', query, variables);
               console.error('Logging out...');
-
+              // An access token is expected to expire, the connection will self-heal though
+              // if it uses a function to provide connection parameters that can dynamically
+              // set the access token.
               // NOTE: this is pretty opaque behavior. This shouldn't ever be hit in OIDC case, though.
-              logout('Expired JWT in gqlSubscribable');
+              // logout('Expired JWT in gqlSubscribable');
             } else {
               subscribers.forEach(({ next }) => {
                 next(initialValue as T);

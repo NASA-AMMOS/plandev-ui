@@ -13,9 +13,9 @@ import type { PageLoad } from './$types';
 export const load: PageLoad = async ({ parent, params, url }) => {
   let user: User | null;
   if (browser) {
-    user = (await parent()).user;
-  } else {
     user = get(userStore);
+  } else {
+    user = (await parent()).user;
   }
 
   const { id } = params;

@@ -3,7 +3,6 @@ import { env } from '$env/dynamic/public';
 import type { BaseUser, User } from '../types/app';
 import type { ExtensionPayload, ExtensionResponse } from '../types/extension';
 import type { QueryVariables } from '../types/subscribable';
-import { logout } from '../utilities/login';
 import { INVALID_JWT } from '../utilities/permissions';
 
 /**
@@ -160,10 +159,15 @@ export async function reqHasura<T = any>(
         throw new Error(errorMessage ?? defaultError);
       }
     } else if (code === INVALID_JWT) {
+      console.error(error);
       // awaiting here only works if SSR is disabled
       // This should never be triggered in the OIDC case, because we have refreshes.
-      console.log('Oh god...Here');
-      logout(error?.message); // TODO: calling logout like this invokes a goto, which is flawed because if a request fails to load in a +page.ts, this will be invoked and a goto will be called from the server. NEED AN ALTERNATIVE FOR SERVER-LED LOGOUTS, OR NEED TO CHANGE THE GOTO TO SOMETHING NEUTRAL...
+      // TODO:
+      //   * Display an error message.
+      //   * Tell the user they need to log in again
+      //   * Provide a way to do so.
+      // Don't automatically initiate logout.
+      // logout(error?.message);
     }
 
     throw new Error(error?.message ?? defaultError);
