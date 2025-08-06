@@ -1,5 +1,5 @@
 import * as auth from '$lib/server/oidc';
-import { error, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 
 /**
  * The login page produces a code verifier and an authorization URL.
@@ -24,7 +24,9 @@ export const GET = async ({ cookies, url }) => {
 
   if (!code) {
     const errorMsg = url.searchParams.get('error_description') || 'No code provided';
-    throw error(400, `Authorization server returned an error: ${errorMsg}`);
+    const code = 500;
+    const message = encodeURI(`Authorization server returned an error: ${errorMsg}`);
+    throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
   }
 
   try {
@@ -34,7 +36,11 @@ export const GET = async ({ cookies, url }) => {
     // Throw problems, if any exist.
     if (problems.size > 0) {
       // hmm... not quite right... throw in a try... it'll work... but... bleh.
-      throw error(500, `Encountered the following problems with the callback state: \n${[...problems].join('\n')}`);
+      const code = 500;
+      const message = encodeURI(
+        `Encountered the following problems with the callback state: \n${[...problems].join('\n')}`,
+      );
+      throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
     }
 
     // Exchange the code for tokens.
@@ -43,7 +49,9 @@ export const GET = async ({ cookies, url }) => {
     // Verify we got something back (verify that tokens is not undefined!)
     if (!tokens) {
       // hmm... not quite right... throw in a try... it'll work... but... bleh.
-      throw error(500, `Call to OAuth2Client.validateAuthorizationCode returned undefined!`);
+      const code = 500;
+      const message = encodeURI(`Call to OAuth2Client.validateAuthorizationCode returned undefined!`);
+      throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
     }
 
     if (await auth.updateWithNewTokens(cookies, tokens)) {
@@ -53,10 +61,14 @@ export const GET = async ({ cookies, url }) => {
       cookies.delete('oidc_state', { path: '/' });
     } else {
       // again: hmm... not quite right... throw in a try... it'll work... but... bleh.
-      throw error(500, `Failed to validate token ${tokens.accessToken()}`);
+      const code = 500;
+      const message = encodeURI(`Failed to validate token ${tokens.accessToken()}`);
+      throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
     }
   } catch (err) {
-    throw error(500, `Failed to handle OIDC callback: ${err}`);
+    const code = 500;
+    const message = encodeURI(`Failed to handle OIDC callback: ${err}`);
+    throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
   }
 
   throw redirect(302, back);

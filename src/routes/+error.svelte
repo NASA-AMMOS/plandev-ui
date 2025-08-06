@@ -26,10 +26,11 @@
   let imgUrl: string;
   let xkcdUrl: string;
 
+  console.log('PAGE ERROR:', $page.error);
+
   let authError = $page.status === 403;
   let expirationError =
-    $page.status === 401 &&
-    ($page.error?.message.includes('JWT Expired in') || $page.error?.message.includes('Logout triggered server-side'));
+    $page.error?.message.includes('JWT Expired in') || $page.error?.message.includes('Logout triggered server-side');
 
   onMount(() => {
     const { id, name } = authError ? comics[0] : comics[Math.floor(Math.random() * comics.length)];
@@ -40,9 +41,7 @@
 
 <PageTitle title={authError ? 'Unauthenticated' : '404'} />
 
-{#if authError}
-  <WelcomePage />
-{:else if expirationError}
+{#if expirationError}
   <div class="w-100 flex h-12 items-center bg-[#110D3D] px-4 dark:bg-secondary" role="navigation">
     <AerieWordmarkDark />
     <!--center this somehow?-->
@@ -65,6 +64,8 @@
       </fieldset>
     </form>
   </div>
+{:else if authError}
+  <WelcomePage />
 {:else}
   <div class="app-error-container">
     <div class="app-error">

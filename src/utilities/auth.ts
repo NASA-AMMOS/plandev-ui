@@ -1,4 +1,5 @@
 import { env } from '$env/dynamic/public';
+import { error } from '@sveltejs/kit';
 import { jwtDecode } from 'jwt-decode';
 import type { BaseUser, ParsedUserToken, User } from '../types/app';
 import effects from './effects';
@@ -25,8 +26,12 @@ export async function computeRolesFromCookies(
 export async function computeRolesFromJWT(baseUser: BaseUser, activeRole: string | null): Promise<User | null> {
   const { success, message } = await effects.session(baseUser);
   if (!success) {
-    console.log(`Could not retrieve roles using the given JWT access token: ${message}`);
-    return null;
+    if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
+      throw error(403, `Could not retrieve roles using the given JWT access token: ${message}`);
+    } else {
+      console.log(`Could not retrieve roles using the given JWT access token: ${message}`);
+      return null; // expect to return in non-oidc case
+    }
   }
 
   const decodedToken: ParsedUserToken = jwtDecode(baseUser.token);

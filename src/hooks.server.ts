@@ -1,7 +1,7 @@
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
 import * as auth from '$lib/server/oidc';
-import type { Handle } from '@sveltejs/kit';
+import { isHttpError, redirect, type Handle } from '@sveltejs/kit';
 import { parse, type CookieSerializeOptions } from 'cookie';
 import type { BaseUser } from './types/app';
 import type { ReqValidateSSOResponse } from './types/auth';
@@ -12,10 +12,32 @@ export const handle: Handle = async ({ event, resolve }) => {
   if (event.url.pathname.includes('com.chrome.devtools')) {
     return new Response(null, { status: 204 });
   }
+  if (event.url.pathname.includes('error')) {
+    // don't want hooks running on an error page
+    return await resolve(event);
+  }
 
   try {
     if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
-      return await handleOIDCAuth({ event, resolve });
+      // separate try catch because we don't want to change hooks' behavior for other auth methods. but necessary here.
+      try {
+        console.log('IN HOOKS');
+        return await handleOIDCAuth({ event, resolve });
+      } catch (e: unknown) {
+        if (e instanceof Error) {
+          const code = 500;
+          const message = encodeURI(`${e.message}`);
+          throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
+        } else if (isHttpError(e)) {
+          const code = e.status;
+          const message = encodeURI(`${JSON.stringify(e.body)}`);
+          throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
+        } else {
+          const code = 500;
+          const message = encodeURI(`Unknown Server Error`);
+          throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
+        }
+      }
       // TODO: throws error before access token cookie is even saved
 
       // TODO: ensure we handle what happens if all cookies present but access is outdated
@@ -56,10 +78,7 @@ const handleOIDCAuth: Handle = async ({ event, resolve }) => {
 
     // If the active role cookie is not in the list of allowed roles, then set
     // it to the user's default role.
-    if (
-      event.locals.user &&
-      !event.locals.user.allowedRoles.includes(activeRole || '')
-    ) {
+    if (event.locals.user && !event.locals.user.allowedRoles.includes(activeRole || '')) {
       event.cookies.set('activeRole', event.locals.user.defaultRole, {
         httpOnly: false,
         path: `${base}/`,
@@ -94,11 +113,11 @@ const handleJWTAuth: Handle = async ({ event, resolve }) => {
   return event.url.pathname.includes('/login') || event.url.pathname.includes('/auth')
     ? await resolve(event)
     : new Response(null, {
-      headers: {
-        location: `${base}/login`,
-      },
-      status: 307,
-    });
+        headers: {
+          location: `${base}/login`,
+        },
+        status: 307,
+      });
 };
 
 const handleSSOAuth: Handle = async ({ event, resolve }) => {

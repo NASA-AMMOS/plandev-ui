@@ -175,7 +175,10 @@ export async function reqHasura<T = any>(
       //   * Tell the user they need to log in again
       //   * Provide a way to do so.
       // Don't automatically initiate logout.
-      throw sverror(401, `JWT Expired in reqHasura.\nCited Reason: ${error.reason}\nFor query: ${query}.`);
+      throw sverror(
+        401,
+        `JWT Expired in reqHasura.\nCited Reason: ${json.errors[0].message ?? error.message}\nFor query: ${query}.`,
+      );
     }
 
     throw new Error(error?.message ?? defaultError);
