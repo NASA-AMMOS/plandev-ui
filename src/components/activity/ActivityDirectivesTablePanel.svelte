@@ -439,7 +439,7 @@
         if (value.length === 0) {
           return '[]';
         } else {
-          return `[ \n${value.map(String).join(', ')}\n]`;
+          return `${value.map(String).join(', ')}`;
         }
       }
       return String(value);
@@ -451,7 +451,7 @@
           return '{}';
         } else {
           const formattedFields = keys.map(key => `${key}: ${String(value[key])}`);
-          return `{\n${formattedFields.join(',\n')}\n}`;
+          return `${formattedFields.join(',\n')}`;
         }
       }
       return String(value);
