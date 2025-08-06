@@ -163,7 +163,7 @@
           ></textarea>
         </Input>
       {/if}
-      
+
       <Input layout="inline">
         <label use:tooltip={{ content: 'Parent ID', placement: 'top' }} for="parentId">Parent ID</label>
         <input class="st-input w-full" disabled name="parentId" value={span.parent_id ?? 'None (Root)'} />
