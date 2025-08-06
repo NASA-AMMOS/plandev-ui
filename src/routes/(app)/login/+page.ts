@@ -17,9 +17,9 @@ export const load: PageLoad = async ({ parent }) => {
 
   let user: User | null;
   if (browser) {
-    user = (await parent()).user;
-  } else {
     user = get(userStore);
+  } else {
+    user = (await parent()).user;
   }
 
   if (user && !hasNoAuthorization(user)) {
