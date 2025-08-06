@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
+import { error as sverror } from '@sveltejs/kit';
 import { type ClientOptions } from 'graphql-ws';
 import { debounce, isEqual } from 'lodash-es';
 import { get, type Readable, type Subscriber, type Unsubscriber, type Updater } from 'svelte/store';
@@ -81,20 +82,29 @@ export function gqlSubscribable<T>(
           variables,
         },
         {
-          complete: () => { },
+          complete: () => {},
           error: async (error: Error | CloseEvent) => {
             console.log('subscribe error');
             console.log(error);
 
             if ('reason' in error && error.reason.includes(EXPIRED_JWT)) {
-              // This should never be triggered in the OIDC case, because we have refreshes.
-              console.error('Expired JWT in subscribe. Query and variables in question:', query, variables);
-              console.error('Logging out...');
               // An access token is expected to expire, the connection will self-heal though
-              // if it uses a function to provide connection parameters that can dynamically
-              // set the access token.
-              // NOTE: this is pretty opaque behavior. This shouldn't ever be hit in OIDC case, though.
-              // logout('Expired JWT in gqlSubscribable');
+              //    if it uses a function to provide connection parameters that can dynamically
+              //    set the access token.
+              // That being said, this should never be triggered in the OIDC case because we
+              //    have refreshes.
+              console.error(
+                'Expired JWT in subscribe. Query, variables, and user in question:',
+                query,
+                variables,
+                JSON.stringify(get(userStore)),
+              );
+              console.error('Throwing error...');
+
+              throw sverror(
+                401,
+                `JWT Expired in gqlSubscribable.\nCited Reason: ${error.reason}\nFor query: ${query}.`,
+              );
             } else {
               subscribers.forEach(({ next }) => {
                 next(initialValue as T);

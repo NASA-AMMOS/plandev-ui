@@ -4,9 +4,12 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
+  import { Button } from '@nasa-jpl/stellar-svelte';
   import { onMount } from 'svelte';
+  import AerieWordmarkDark from '../assets/aerie-wordmark-dark.svg?component';
   import PageTitle from '../components/app/PageTitle.svelte';
   import WelcomePage from '../components/WelcomePage.svelte';
+  import { logout } from '../utilities/login';
 
   const comics = [
     { id: '538', name: 'security' },
@@ -24,6 +27,9 @@
   let xkcdUrl: string;
 
   let authError = $page.status === 403;
+  let expirationError =
+    $page.status === 401 &&
+    ($page.error?.message.includes('JWT Expired in') || $page.error?.message.includes('Logout triggered server-side'));
 
   onMount(() => {
     const { id, name } = authError ? comics[0] : comics[Math.floor(Math.random() * comics.length)];
@@ -36,6 +42,29 @@
 
 {#if authError}
   <WelcomePage />
+{:else if expirationError}
+  <div class="w-100 flex h-12 items-center bg-[#110D3D] px-4 dark:bg-secondary" role="navigation">
+    <AerieWordmarkDark />
+    <!--center this somehow?-->
+  </div>
+  <div>
+    Looks like you encountered an authentication error:
+
+    <div>
+      {$page.error?.message}
+    </div>
+
+    Don't worry, you didn't do anything wrong and we can get you right back in. We are going to log you out, and then
+    you can reauthenticate. Sorry about that!
+  </div>
+
+  <div>
+    <form on:submit={() => logout()}>
+      <fieldset>
+        <Button type="submit">Log Out!</Button>
+      </fieldset>
+    </form>
+  </div>
 {:else}
   <div class="app-error-container">
     <div class="app-error">
