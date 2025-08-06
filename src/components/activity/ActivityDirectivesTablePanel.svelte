@@ -116,9 +116,7 @@
           return '';
         }
         const activityTypes = $planModelActivityTypes;
-        const activityType = activityTypes.find(
-          (type: ActivityType) => type.name === activityTypeName
-        );
+        const activityType = activityTypes.find((type: ActivityType) => type.name === activityTypeName);
         return Object.entries(args)
           .sort(([keyA], [keyB]) => {
             const orderA = activityType?.parameters[keyA]?.order ?? Number.MAX_SAFE_INTEGER;
@@ -131,9 +129,7 @@
           })
           .map(([key, value]) => {
             const parameterSchema = activityType?.parameters[key]?.schema;
-            const formattedValue = parameterSchema
-              ? formatParameterValue(value, parameterSchema)
-              : String(value);
+            const formattedValue = parameterSchema ? formatParameterValue(value, parameterSchema) : String(value);
             return `<strong>${key}:</strong> ${formattedValue}`;
           })
           .join('\n');
@@ -422,44 +418,44 @@
   }
 
   function formatParameterValue(value: any, schema: ValueSchema): string {
-  if (value === null || value === undefined) {
-    return '';
-  }
+    if (value === null || value === undefined) {
+      return '';
+    }
 
-  switch (schema.type) {
-    case 'duration':
-      try {
-        return convertUsToDurationString(value, true);
-      } catch (error) {
+    switch (schema.type) {
+      case 'duration':
+        try {
+          return convertUsToDurationString(value, true);
+        } catch (error) {
+          return String(value);
+        }
+
+      case 'series':
+        if (Array.isArray(value)) {
+          if (value.length === 0) {
+            return '[]';
+          } else {
+            return `${value.map(String).join(', ')}`;
+          }
+        }
         return String(value);
-      }
 
-    case 'series':
-      if (Array.isArray(value)) {
-        if (value.length === 0) {
-          return '[]';
-        } else {
-          return `${value.map(String).join(', ')}`;
+      case 'struct':
+        if (typeof value === 'object' && value !== null) {
+          const keys = Object.keys(value);
+          if (keys.length === 0) {
+            return '{}';
+          } else {
+            const formattedFields = keys.map(key => `${key}: ${String(value[key])}`);
+            return `${formattedFields.join(',\n')}`;
+          }
         }
-      }
-      return String(value);
+        return String(value);
 
-    case 'struct':
-      if (typeof value === 'object' && value !== null) {
-        const keys = Object.keys(value);
-        if (keys.length === 0) {
-          return '{}';
-        } else {
-          const formattedFields = keys.map(key => `${key}: ${String(value[key])}`);
-          return `${formattedFields.join(',\n')}`;
-        }
-      }
-      return String(value);
-
-    default:
-      return String(value);
+      default:
+        return String(value);
+    }
   }
-}
 </script>
 
 <Panel padBody={false}>
