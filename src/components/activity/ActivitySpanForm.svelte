@@ -158,7 +158,7 @@
           ></textarea>
         </Input>
       {/if}
-      
+
       <Input layout="inline">
         <label use:tooltip={{ content: 'Duration', placement: 'top' }} for="duration">Duration</label>
         <input class="st-input w-full" disabled name="duration" value={span.duration ?? 'None'} />
