@@ -1,4 +1,3 @@
-import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
@@ -26,10 +25,9 @@ export const POST: RequestHandler = async event => {
       const parsedUserToken: ParsedUserToken = jwtDecode(user.token);
       const defaultRole = parsedUserToken['https://hasura.io/jwt/claims']['x-hasura-default-role'];
 
-      return json(
-        { success: true, user },
-        { headers: { 'set-cookie': `activeRole=${defaultRole}; path=${base}/,user=${userCookie}; Path=${base}/` } },
-      );
+      event.cookies.set('activeRole', defaultRole, { httpOnly: false, path: '/' });
+      event.cookies.set('user', userCookie, { httpOnly: false, path: '/' });
+      return json({ success: true, user });
     } else {
       return json({ message, success: false });
     }

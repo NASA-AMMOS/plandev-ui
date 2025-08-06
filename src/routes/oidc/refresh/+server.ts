@@ -35,7 +35,7 @@ export const POST = async ({ cookies }) => {
         idToken: tokens.idToken(),
       });
     } else {
-      return json({ huh: 'that sure is ood' });
+      return json({ huh: 'that sure is odd' });
     }
   } catch (e: any) {
     console.error('Error refreshing token:', e);

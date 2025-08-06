@@ -14,12 +14,7 @@ export const POST: RequestHandler = async event => {
       ? await reqGatewayForwardCookies<boolean>('/auth/logoutSSO', event.request.headers.get('cookie') ?? '', base)
       : true;
 
-  return json(
-    { message: 'Logout successful', success: invalidated },
-    {
-      headers: {
-        'set-cookie': `activeRole=deleted; path=${base}/; expires=Thu, 01 Jan 1970 00:00:00 GMT,user=deleted; path=${base}/; expires=Thu, 01 Jan 1970 00:00:00 GMT`,
-      },
-    },
-  );
+  event.cookies.delete('activeRole', { path: '/' });
+  event.cookies.delete('user', { path: '/' });
+  return json({ message: 'Logout successful', success: invalidated });
 };
