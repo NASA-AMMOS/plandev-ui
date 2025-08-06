@@ -9,7 +9,7 @@ import { gqlSubscribable } from './subscribable';
 export const createTagError: Writable<string | null> = writable(null);
 /* Subscriptions. */
 
-export const tags = gqlSubscribable<Tag[]>(gql.SUB_TAGS, {}, [], null);
+export const tags = gqlSubscribable<Tag[]>(gql.SUB_TAGS, {}, []);
 
 /* Derived. */
 export const tagsMap: Readable<TagsMap> = derived([tags], ([$tags]) =>

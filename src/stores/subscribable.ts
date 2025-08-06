@@ -5,7 +5,6 @@ import { type ClientOptions } from 'graphql-ws';
 import { debounce, isEqual } from 'lodash-es';
 import { get, type Readable, type Subscriber, type Unsubscriber, type Updater } from 'svelte/store';
 import { gqlWsClient, userStore } from '../lib/stores/auth';
-import type { User } from '../types/app';
 import type { GqlSubscribable, NextValue, QueryVariables, Subscription } from '../types/subscribable';
 import { EXPIRED_JWT } from '../utilities/permissions';
 
@@ -56,7 +55,6 @@ export function gqlSubscribable<T>(
   query: string,
   initialVariables: QueryVariables | null = null,
   initialValue: T | null = null,
-  _: User | null, // TODO: remove this eventually. leaving it here for ease of use, because refactoring all calls is a hassle. but this will use the store instead
   transformer: (v: any) => T = v => v,
 ): GqlSubscribable<T> {
   const subscribers: Set<Subscription<T>> = new Set();

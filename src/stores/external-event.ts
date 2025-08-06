@@ -21,9 +21,8 @@ export const selectedExternalEventsRaw = gqlSubscribable<{ external_event: Exter
   gql.SUB_PLAN_EXTERNAL_EVENTS_DERIVATION_GROUP,
   { derivation_group_names: selectedPlanDerivationGroupNames },
   [],
-  null,
 );
-export const externalEventTypes = gqlSubscribable<ExternalEventType[]>(gql.SUB_EXTERNAL_EVENT_TYPES, {}, [], null);
+export const externalEventTypes = gqlSubscribable<ExternalEventType[]>(gql.SUB_EXTERNAL_EVENT_TYPES, {}, []);
 
 // use to track which event is selected in the plan view, as this information is shared across several sibling panels
 export const selectedExternalEventId: Writable<ExternalEventId | null> = writable(null);

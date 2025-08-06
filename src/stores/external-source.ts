@@ -21,13 +21,12 @@ export const derivationGroupPlanLinkError: Writable<string | null> = writable(nu
 export const derivationGroupVisibilityMap: Writable<Record<DerivationGroup['name'], boolean>> = writable({});
 
 /* Subscriptions. */
-export const externalSources = gqlSubscribable<ExternalSourceSlim[]>(gql.SUB_EXTERNAL_SOURCES, {}, [], null);
-export const externalSourceTypes = gqlSubscribable<ExternalSourceType[]>(gql.SUB_EXTERNAL_SOURCE_TYPES, {}, [], null);
+export const externalSources = gqlSubscribable<ExternalSourceSlim[]>(gql.SUB_EXTERNAL_SOURCES, {}, []);
+export const externalSourceTypes = gqlSubscribable<ExternalSourceType[]>(gql.SUB_EXTERNAL_SOURCE_TYPES, {}, []);
 export const derivationGroups = gqlSubscribable<DerivationGroup[]>(
   gql.SUB_DERIVATION_GROUPS,
   {},
   [],
-  null,
   transformDerivationGroups,
 );
 export const planDerivationGroupLinks = gqlSubscribable<PlanDerivationGroup[]>(
@@ -36,13 +35,11 @@ export const planDerivationGroupLinks = gqlSubscribable<PlanDerivationGroup[]>(
     plan_id: planId,
   },
   [],
-  null,
 );
 export const sourcesUsingExternalEventTypes = gqlSubscribable<ExternalSourceWithEventTypes[]>(
   gql.SUB_EVENT_TYPES_IN_USE,
   {},
   [],
-  null,
   transformSourcesUsingExternalEventTypes,
 );
 

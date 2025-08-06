@@ -8,19 +8,19 @@
   import { gqlSubscribable } from '../../../stores/subscribable';
   import type { ActionRun } from '../../../types/actions';
   import type { User } from '../../../types/app';
+  import type { FormParameter } from '../../../types/parameter';
+  import type { ValueSchemaOption } from '../../../types/schema';
   import {
     getActionDefinitionForRun,
     getUserSequencesInWorkspace,
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
+  import effects from '../../../utilities/effects';
   import { getSearchParameterNumber } from '../../../utilities/generic';
   import gql from '../../../utilities/gql';
   import { getFormParameters } from '../../../utilities/parameters';
   import Parameters from '../../parameters/Parameters.svelte';
   import ActionRunCard from './ActionRunCard.svelte';
-  import effects from '../../../utilities/effects';
-  import type { ValueSchemaOption } from '../../../types/schema';
-  import type { FormParameter } from '../../../types/parameter';
 
   export let initialActionRun: ActionRun | null = null;
   export let user: User | null;
@@ -44,7 +44,6 @@
     gql.SUB_ACTION_RUN,
     { actionRunId: initialActionRun?.id },
     initialActionRun,
-    user,
   );
 
   async function onCancelAction(id: number) {

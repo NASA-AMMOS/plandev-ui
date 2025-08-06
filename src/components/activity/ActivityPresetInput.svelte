@@ -39,7 +39,6 @@
     gql.SUB_ACTIVITY_PRESETS,
     { activityTypeName: activityDirective?.type, modelId },
     [],
-    user,
   );
   let hasAssignPermission: boolean = false;
   let hasCreatePermission: boolean = false;

@@ -49,7 +49,6 @@
     gql.SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES,
     { merge_request_id: initialMergeRequest?.id },
     initialConflictingActivities,
-    user,
   );
   const mergeRequestStatus = gqlSubscribable<PlanMergeRequestStatus>(
     gql.SUB_PLAN_MERGE_REQUEST_STATUS,
@@ -57,7 +56,6 @@
       mergeRequestId: initialMergeRequest?.id,
     },
     initialMergeRequest?.status,
-    user,
     ({ status }) => status,
   );
 

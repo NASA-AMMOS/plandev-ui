@@ -39,13 +39,11 @@ export const schedulingRequests = gqlSubscribable<SchedulingRequest[]>(
   gql.SUB_SCHEDULING_REQUESTS,
   { specId: selectedSchedulingSpecId },
   [],
-  null,
 );
 
 export const schedulingConditionResponses = gqlSubscribable<SchedulingConditionMetadataResponse[] | null>(
   gql.SUB_SCHEDULING_CONDITIONS,
   {},
-  null,
   null,
 );
 
@@ -53,13 +51,11 @@ export const schedulingGoalResponses = gqlSubscribable<SchedulingGoalMetadataRes
   gql.SUB_SCHEDULING_GOALS,
   {},
   null,
-  null,
 );
 
 export const schedulingConditionResponse = gqlSubscribable<SchedulingConditionMetadataResponse | null>(
   gql.SUB_SCHEDULING_CONDITION,
   { id: schedulingConditionMetadataId },
-  null,
   null,
 );
 
@@ -67,13 +63,11 @@ export const schedulingGoalResponse = gqlSubscribable<SchedulingGoalMetadataResp
   gql.SUB_SCHEDULING_GOAL,
   { id: schedulingGoalMetadataId },
   null,
-  null,
 );
 
 export const schedulingPlanSpecification = gqlSubscribable<SchedulingPlanSpecification | null>(
   gql.SUB_SCHEDULING_PLAN_SPECIFICATION,
   { specificationId: selectedSchedulingSpecId },
-  null,
   null,
 );
 

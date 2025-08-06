@@ -8,19 +8,18 @@ import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
 
-export const expansionRules = gqlSubscribable<ExpansionRuleSlim[]>(gql.SUB_EXPANSION_RULES, {}, [], null);
+export const expansionRules = gqlSubscribable<ExpansionRuleSlim[]>(gql.SUB_EXPANSION_RULES, {}, []);
 
-export const expansionSequences = gqlSubscribable<ExpansionSequence[]>(gql.SUB_EXPANSION_SEQUENCES, {}, [], null);
+export const expansionSequences = gqlSubscribable<ExpansionSequence[]>(gql.SUB_EXPANSION_SEQUENCES, {}, []);
 
-export const expansionSets = gqlSubscribable<ExpansionSet[]>(gql.SUB_EXPANSION_SETS, {}, [], null);
+export const expansionSets = gqlSubscribable<ExpansionSet[]>(gql.SUB_EXPANSION_SETS, {}, []);
 
 export const allSequences = gqlSubscribable<
   { expanded_sequence: string; seq_id: string; simulation_dataset_id: number }[]
->(gql.SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SEQS, {}, null, null);
+>(gql.SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SEQS, {}, null);
 export const planSimDatasetMapping = gqlSubscribable<{ simulations: { simulation_datasets: { id: number }[] }[] }>(
   gql.SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SIMS,
   { planId: planId },
-  null,
   null,
 );
 export const lastExpandedSimulationDatasetId = derived(

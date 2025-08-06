@@ -35,12 +35,7 @@ export const sequenceAdaptation: Writable<ISequenceAdaptation> = writable(defaul
 
 /* Subscriptions. */
 
-export const sequenceAdaptations = gqlSubscribable<SequenceAdaptationMetadata[]>(
-  gql.SUB_SEQUENCE_ADAPTATIONS,
-  {},
-  [],
-  null,
-);
+export const sequenceAdaptations = gqlSubscribable<SequenceAdaptationMetadata[]>(gql.SUB_SEQUENCE_ADAPTATIONS, {}, []);
 
 /* Derived */
 

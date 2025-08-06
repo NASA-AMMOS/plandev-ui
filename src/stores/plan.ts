@@ -38,7 +38,7 @@ export const initialPlan: Writable<Plan | null> = writable(null);
 
 export const planId: Readable<number> = derived(initialPlan, $plan => ($plan ? $plan.id : -1));
 
-export const planMetadata = gqlSubscribable<PlanMetadata | null>(gql.SUB_PLAN_METADATA, { planId }, null, null);
+export const planMetadata = gqlSubscribable<PlanMetadata | null>(gql.SUB_PLAN_METADATA, { planId }, null);
 
 /* Derived. */
 
@@ -60,7 +60,6 @@ export const planModelActivityTypes = gqlSubscribable<ActivityType[]>(
   gql.SUB_ACTIVITY_TYPES,
   { modelId: planModelId },
   [],
-  null,
 );
 
 export const subsystemTags: Readable<Tag[]> = derived(planModelActivityTypes, $planModelActivityTypes => {
@@ -74,17 +73,16 @@ export const subsystemTags: Readable<Tag[]> = derived(planModelActivityTypes, $p
   }, []);
 });
 
-export const planTags = gqlSubscribable<Tag[]>(gql.SUB_PLAN_TAGS, { planId }, [], null, ({ tags }) =>
+export const planTags = gqlSubscribable<Tag[]>(gql.SUB_PLAN_TAGS, { planId }, [], ({ tags }) =>
   tags.map((tag: { tag: Tag }) => tag.tag),
 );
 
-export const planDatasets = gqlSubscribable<PlanDataset[] | null>(gql.SUB_PLAN_DATASET, { planId }, null, null);
+export const planDatasets = gqlSubscribable<PlanDataset[] | null>(gql.SUB_PLAN_DATASET, { planId }, null);
 
 export const planLocked = gqlSubscribable<boolean>(
   gql.SUB_PLAN_LOCKED,
   { planId },
   false,
-  null,
   ({ is_locked }) => is_locked,
 );
 
@@ -92,7 +90,6 @@ export const planMergeRequestsIncoming = gqlSubscribable<PlanMergeRequest[]>(
   gql.SUB_PLAN_MERGE_REQUESTS_INCOMING,
   { planId },
   [],
-  null,
   (planMergeRequests: PlanMergeRequestSchema[]): PlanMergeRequest[] =>
     planMergeRequests.map(planMergeRequest => ({ ...planMergeRequest, pending: false, type: 'incoming' })),
 );
@@ -101,7 +98,6 @@ export const planMergeRequestsOutgoing = gqlSubscribable<PlanMergeRequest[]>(
   gql.SUB_PLAN_MERGE_REQUESTS_OUTGOING,
   { planId },
   [],
-  null,
   (planMergeRequests: PlanMergeRequestSchema[]): PlanMergeRequest[] =>
     planMergeRequests.map(planMergeRequest => ({ ...planMergeRequest, pending: false, type: 'outgoing' })),
 );
@@ -110,7 +106,6 @@ export const planRevision = gqlSubscribable<number>(
   gql.SUB_PLAN_REVISION,
   { planId },
   -1,
-  null,
   ({ revision }: Pick<Plan, 'revision'>) => revision,
 );
 
