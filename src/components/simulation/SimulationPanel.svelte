@@ -372,7 +372,6 @@
           ],
         ]}
         on:click={() => {
-          console.log('HELLO THERE!');
           effects.simulate($plan, enableReSimulation, user);
         }}
       />

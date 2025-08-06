@@ -7,8 +7,6 @@ import { gqlWsClient, userStore } from '../lib/stores/auth';
 import { getClientOptions } from '../stores/subscribable';
 
 export const load: LayoutLoad = async ({ data }) => {
-  console.log('in +layout.ts!', Object.keys(data));
-
   if (browser) {
     userStore.set(data.user);
     gqlWsClient.set(createClient(getClientOptions()));

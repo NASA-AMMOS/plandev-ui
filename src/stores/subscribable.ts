@@ -15,15 +15,13 @@ export function getClientOptions(): ClientOptions {
 
   const clientOptions: ClientOptions = {
     connectionParams: async () => {
-      console.log('Calculating connection params for socket...');
-      // NOTE: provable keeps restarting and not reuisng same connection, but since
+      // NOTE: provably keeps restarting and not reuisng same connection, but since
       // this is slightly better than error handling and we also know we can piggyback
       // multiple connections, we are going with it. ideally we could reuse the same
       // connection the whole time but it retains the access token and ignores all
       // other connection_inits. if there's a way to make hasura NOT ignore that or
       // something else that would be cool but it seems the graphql-ws protocol is
       // not written to support that :/
-      console.log('Using token ', get(userStore)?.token);
       return {
         headers: {
           Authorization: `Bearer ${get(userStore)?.token}`,
@@ -33,13 +31,11 @@ export function getClientOptions(): ClientOptions {
     },
     on: {
       closed: (socket: unknown) => {
-        // console.log(typeof unsubscribeBearerToken)
-        // unsubscribeBearerToken();
-        console.log("WebSocket closed, I don't know if it really is disconnected though.");
+        console.log('WebSocket closed.');
         console.debug(socket as WebSocket);
       },
       connected: (_: unknown) => {
-        console.log('WebSocket connected...');
+        console.log('WebSocket connected.');
       },
     },
     url: env.PUBLIC_HASURA_WEB_SOCKET_URL,

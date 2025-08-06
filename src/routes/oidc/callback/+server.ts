@@ -1,5 +1,3 @@
-console.log('The callback page handles OAuth2 callbacks from the identity provider.');
-
 import * as auth from '$lib/server/oidc';
 import { error, redirect } from '@sveltejs/kit';
 

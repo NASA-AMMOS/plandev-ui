@@ -322,7 +322,7 @@ async function insertUser(decodedAccessToken: HasuraToken, accessToken: string):
 
 // TODO: this is only ever called from the server. so DO NOT UPDATE STORES HERE.
 export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth2Tokens): Promise<boolean> {
-  console.log('RUNNING UPDATE WITH NEW TOKENS!!!', browser);
+  console.log('Persisting tokens following a refresh...', browser);
 
   // Check token validity.
   const accessJwt = await verify(tokens.accessToken());
