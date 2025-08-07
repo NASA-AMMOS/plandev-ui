@@ -47,7 +47,7 @@
     "@lezer/generator": "^1.7.3",
     "@lezer/highlight": "^1.2.1",
     "@lezer/lr": "^1.4.2",
-    "@nasa-jpl/aerie-actions": "1.0.0",
+    "@nasa-jpl/aerie-actions": "1.0.2",
     "@nasa-jpl/aerie-ampcs": "^1.0.5",
     "@nasa-jpl/aerie-sequence-languages": "0.0.8",
     "@nasa-jpl/seq-json-schema": "^1.3.1",
