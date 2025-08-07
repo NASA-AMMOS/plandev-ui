@@ -1,3 +1,6 @@
+import { browser } from '$app/environment';
+import { goto } from '$app/navigation';
+import { error, redirect } from '@sveltejs/kit';
 import { jwtDecode } from 'jwt-decode';
 import { derived, get, type Readable } from 'svelte/store';
 import type { BaseUser, User } from '../../types/app';
@@ -97,8 +100,9 @@ export async function refresh(): Promise<void> {
   if (res.ok) {
     console.info('Access token refresh succeeded.');
   } else {
+    const errorMessage = await res.json();
     console.error('Access token refresh failed, refresh token is probably expired.');
-    window.location.href = '/oidc/login';
+    throw error(401, `Refresh failed, with the following message: ${JSON.stringify(errorMessage)}`);
   }
 }
 
@@ -108,8 +112,20 @@ function reschedule(fn: () => Promise<void>, delay: number, prior: number | null
     clearTimeout(prior);
   }
   console.log(`Scheduling ${fn.name} in ${delay}ms`);
-  return setTimeout(() => {
-    fn();
+  return setTimeout(async () => {
+    try {
+      await fn();
+    } catch (err) {
+      console.error('Error in rescheduled function:', err);
+
+      const code = 401;
+      const message = encodeURI(`Scheduled refresh error: ${JSON.stringify(err)}`);
+      if (browser) {
+        goto(`/error-redirect?code=${code}&message=${message}`);
+      } else {
+        throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
+      }
+    }
   }, delay);
 }
 
@@ -126,7 +142,6 @@ const handleCookieStoreChange = async (ev: Event) => {
     console.log(`Cookie changed: ${name}`);
     if (name === 'accessToken') {
       // set user store
-      // NOTE: no longer using PageData and updating that as we have to pass that everywhere and that's a hassle
       const baseUser: BaseUser = { id: null, token: value }; // id can be null because any time this function is used, its in the context of oidc, and we specifically catch id being null for oidc in computeRolesFromJWT
       const user: User | null = await computeRolesFromJWT(baseUser, null); // null role because if after a refresh a user has been demoted, wouldn't want to retain an invalid role
       userStore.set(user);

@@ -23,8 +23,9 @@ export const POST = async ({ cookies }) => {
     const tokens = await client.refresh(refreshToken);
 
     if (!tokens) {
-      // TODO: move this unto updateWithNewTokens?
-      throw error(500, 'tokens came back null');
+      // okay to throw here, since it's a POST, not a GET.
+      console.error('Tokens came back null.');
+      throw error(401, 'Tokens came back null.');
     }
 
     if (await auth.updateWithNewTokens(cookies, tokens)) {
@@ -35,16 +36,10 @@ export const POST = async ({ cookies }) => {
         idToken: tokens.idToken(),
       });
     } else {
-      return json({ huh: 'that sure is odd' });
+      throw error(401, `Failed to verify new access token after refresh.`);
     }
   } catch (e: any) {
     console.error('Error refreshing token:', e);
-    return json(
-      {
-        error: 'token_refresh_failed',
-        message: e?.message || 'An error occurred while refreshing the token.',
-      },
-      { status: 500 },
-    );
+    throw error(401, `Error refreshing token: ${JSON.stringify(e)}`);
   }
 };

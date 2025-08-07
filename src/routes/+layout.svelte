@@ -10,6 +10,7 @@
   import { onMount } from 'svelte';
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
+  import { gqlWsClient } from '../lib/stores/auth';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
   import { modalBodyClickListener, modalBodyKeyListener } from '../utilities/modal';
   import { loadPluginCode } from '../utilities/plugins';
@@ -30,6 +31,13 @@
     return () => {
       unsubscribe();
       console.log('Unsubscribed from cookie store changes.');
+
+      // dispose of the client on dismount
+      gqlWsClient.update(client => {
+        client?.dispose();
+        return client;
+      });
+      console.log('Disposed of graphql-ws client.');
     };
   });
 

@@ -73,11 +73,11 @@ async function refresh(evt: RequestEvent) {
         evt.cookies.delete('refreshToken', { path: '/' });
 
         // throw an Error, so that we are sent to the error page for login to get a new refresh token
-        throw error(403, `Refresh token is outdated, probably! ${err}`);
+        throw error(401, `Refresh token is outdated, probably! ${err}`);
       }
     } else {
       // throw an Error, so that we are sent to the error page for login to get a new refresh token
-      throw error(403, 'Refresh token is undefined!');
+      throw error(401, 'Refresh token is undefined!');
     }
   }
   return evt;
@@ -100,17 +100,19 @@ export async function verify(
     return undefined;
   }
   if (!client) {
-    return new Error('Cannot verify without a configured JWKS Client');
+    throw error(401, 'Cannot verify without a configured JWKS Client');
   }
   if (client) {
     const header = jwt.decode(token, { complete: true })?.header;
     if (!header) {
-      throw new Error('Malformed token: no header present.');
+      throw error(401, 'Malformed token: no header present.');
     }
-    const key = await client.getSigningKey(header.kid);
-    return jwt.verify(token, key.getPublicKey(), opts) as MaybeToken;
-
-    // TODO: make this throw if verify fails.
+    try {
+      const key = await client.getSigningKey(header.kid);
+      return jwt.verify(token, key.getPublicKey(), opts) as MaybeToken;
+    } catch (e) {
+      throw error(401, `Failed to verify jwt token ${token}; cited error: ${JSON.stringify(e)}`);
+    }
   }
 }
 
@@ -274,7 +276,7 @@ export function roles(token: MaybeHasuraToken) {
   // people could present perfectly valid tokens and still get an error that tells them
   // they don't have a role.
   if (!roles) {
-    throw error(403, "Token is present but your IdP did not add Hasura claims 'https://hasura.io/jwt/claims'");
+    throw error(401, "Token is present but your IdP did not add Hasura claims 'https://hasura.io/jwt/claims'");
   }
 
   // We think it's ok to tell people the expected role without leaking sensitive security
@@ -320,7 +322,6 @@ async function insertUser(decodedAccessToken: HasuraToken, accessToken: string):
   console.log('Registered user: ', result);
 }
 
-// TODO: this is only ever called from the server. so DO NOT UPDATE STORES HERE.
 export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth2Tokens): Promise<boolean> {
   console.log('Persisting tokens following a refresh...', browser);
 
@@ -363,7 +364,6 @@ export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth
  * returned data from await parent(), the other options will be more performant.
  */
 
-// TODO: find a way to curry enforce with locals somewhere high level??
 export function enforce(user: User | null, rule: Rule): boolean {
   // Any value other than 'true' is considered a failure. This is intentional.
   if (rule(user) === true) {

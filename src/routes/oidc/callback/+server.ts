@@ -67,7 +67,7 @@ export const GET = async ({ cookies, url }) => {
     }
   } catch (err) {
     const code = 500;
-    const message = encodeURI(`Failed to handle OIDC callback: ${err}`);
+    const message = encodeURI(`Failed to handle OIDC callback: ${JSON.stringify(err)}`);
     throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
   }
 

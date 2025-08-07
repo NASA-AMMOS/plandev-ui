@@ -248,8 +248,11 @@
       selectedPlanModelName = $models.find(model => model.id === selectedPlan?.model_id)?.name ?? null;
     }
   }
+
+  // NOTE: why do we do this? wouldn't the subscribed store be more accurate? If +page.ts for this route loads before userStore (happens 75% of the time), data.plans will erroneously be []. But then the stores, as they are subscriptions, populate to the correct value. As such, is not this statement and all of +page.ts not needed?
   $: plans.updateValue(() => data.plans);
   $: models.updateValue(() => data.models);
+
   // sort in descending ID order
   $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => {
     if (idA < idB) {

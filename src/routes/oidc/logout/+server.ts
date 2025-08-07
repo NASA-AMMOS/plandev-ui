@@ -1,3 +1,4 @@
+import { ORIGIN } from '$env/static/private';
 import * as auth from '$lib/server/oidc';
 import { redirect } from '@sveltejs/kit';
 
@@ -17,7 +18,7 @@ export const GET = async ({ cookies }) => {
   // redirect browser to logout page (SSO session destroy)
   const logoutUrl = new URL(client.getLogoutEndpoint());
 
-  logoutUrl.searchParams.set('post_logout_redirect_uri', client.getRedirectEndpoint());
+  logoutUrl.searchParams.set('post_logout_redirect_uri', `${ORIGIN}`);
   logoutUrl.searchParams.set('id_token_hint', idToken);
 
   // redirect to the logout endpoint

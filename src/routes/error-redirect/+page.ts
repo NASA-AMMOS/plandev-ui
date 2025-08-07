@@ -1,4 +1,3 @@
-// routes/unauthorized/+page.server.ts
 import { browser } from '$app/environment';
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from '../$types';

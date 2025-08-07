@@ -27,7 +27,7 @@ export async function computeRolesFromJWT(baseUser: BaseUser, activeRole: string
   const { success, message } = await effects.session(baseUser);
   if (!success) {
     if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
-      throw error(403, `Could not retrieve roles using the given JWT access token: ${message}`);
+      throw error(401, `Could not retrieve roles using the given JWT access token: ${message}`);
     } else {
       console.log(`Could not retrieve roles using the given JWT access token: ${message}`);
       return null; // expect to return in non-oidc case
@@ -39,8 +39,6 @@ export async function computeRolesFromJWT(baseUser: BaseUser, activeRole: string
   if (baseUser.id === null && env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
     // since our scope is always one that includes email, and that's also a unique id, we can use that
     //    BUT sub is the one that matches hasura's expected x-hasura-user-id, which is important.
-
-    // TODO: we could expand the BaseUser object to have UserId (the hasura token, which would be valid regardless of auth mechanism), UserName, and then token
     baseUser.id = decodedToken.sub;
   }
 
@@ -55,11 +53,19 @@ export async function computeRolesFromJWT(baseUser: BaseUser, activeRole: string
     permissibleQueries: null,
     rolePermissions: null,
   };
-  const permissibleQueries = await effects.getUserQueries(user); // TODO: move out of effects maybe....
+  const permissibleQueries = await effects.getUserQueries(user);
   const rolePermissions = await effects.getRolePermissions(user);
   return {
     ...user,
     permissibleQueries,
     rolePermissions,
   };
+}
+
+export function goToLogin() {
+  if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
+    document.location.href = '/oidc/login';
+  } else {
+    document.location.href = '/login';
+  }
 }

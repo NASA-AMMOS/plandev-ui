@@ -25,7 +25,6 @@ export function getClientOptions(): ClientOptions {
       return {
         headers: {
           Authorization: `Bearer ${get(userStore)?.token}`,
-          fakeHeader: 'from original connectionParams',
         },
       };
     },
@@ -176,8 +175,7 @@ export function gqlSubscribable<T>(
   function subscribe(next: Subscriber<T>): Unsubscriber {
     // If we are in the browser and do not yet have a web socket client
     // we will create one and subscribe to variables
-    // if (browser && !client) { // this check only made sense if client:gqlSubscribe was 1:1
-    subscribeToVariables(variables); // TODO: I'm 90% sure not harmful if this runs every time subscribe is called....  //initialVariables);
+    subscribeToVariables(variables); // should not be harmful if this runs every time subscribe is called
 
     // Subscribe within the WS to the GQL query
     // Note that subscribeToVariables may immediately result in a resubscription if
@@ -186,7 +184,6 @@ export function gqlSubscribable<T>(
     // in as variables. If resubscribe is called by subscribeToVariables then the debounce
     // should take care of the duplication.
     debouncedClientSubscribe();
-    // }
 
     const subscriber: Subscription<T> = { next };
     subscribers.add(subscriber);
@@ -196,14 +193,9 @@ export function gqlSubscribable<T>(
       subscribers.delete(subscriber);
 
       if (subscribers.size === 0) {
-        //&& client) {
         unsubscribe();
         variableUnsubscribers.forEach(variableUnsubscribe => variableUnsubscribe());
         variableUnsubscribers = [];
-
-        // TODO: move this to the destroy method for the client, or maybe the onDestroy of layout.svelte
-        // client.dispose();
-        // client = null;
       }
     };
   }

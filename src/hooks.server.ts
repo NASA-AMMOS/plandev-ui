@@ -1,7 +1,7 @@
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
 import * as auth from '$lib/server/oidc';
-import { isHttpError, redirect, type Handle } from '@sveltejs/kit';
+import { isHttpError, redirect, type Handle, type Redirect } from '@sveltejs/kit';
 import { parse, type CookieSerializeOptions } from 'cookie';
 import type { BaseUser } from './types/app';
 import type { ReqValidateSSOResponse } from './types/auth';
@@ -12,7 +12,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   if (event.url.pathname.includes('com.chrome.devtools')) {
     return new Response(null, { status: 204 });
   }
-  if (event.url.pathname.includes('error')) {
+  if (event.url.pathname.includes('error') || event.url.pathname.includes('oidc')) {
     // don't want hooks running on an error page
     return await resolve(event);
   }
@@ -21,7 +21,6 @@ export const handle: Handle = async ({ event, resolve }) => {
     if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
       // separate try catch because we don't want to change hooks' behavior for other auth methods. but necessary here.
       try {
-        console.log('IN HOOKS');
         return await handleOIDCAuth({ event, resolve });
       } catch (e: unknown) {
         if (e instanceof Error) {
@@ -38,20 +37,18 @@ export const handle: Handle = async ({ event, resolve }) => {
           throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
         }
       }
-      // TODO: throws error before access token cookie is even saved
-
-      // TODO: ensure we handle what happens if all cookies present but access is outdated
-      // TODO: ensure we handle what happens if all cookies present but refresh is outdated
-      // TODO: ensure we handle what happens if all cookies present except access but refresh is outdated
-      // TODO: ensure we handle what happens if all cookies present except access - throws error before access token cookie is even saved, but if u reload its good...
     } else if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
       return await handleSSOAuth({ event, resolve });
     } else {
       return await handleJWTAuth({ event, resolve });
     }
   } catch (e) {
-    console.error(e);
-    event.locals.user = null;
+    // the redirect thrown gets caught here, so we need to make sure it REALLY throws
+    if ((e as Redirect).status === 303) {
+      return redirect(303, (e as Redirect).location);
+    } else {
+      event.locals.user = null;
+    }
   }
 
   return await resolve(event);
@@ -64,8 +61,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 const handleOIDCAuth: Handle = async ({ event, resolve }) => {
   event = await auth.handler(event);
 
-  // const cookies = parse(event.request.headers.get('cookie') ?? '');
-  // const { activeRole, accessToken: token = null } = cookies;
   // the above handler doesn't impact the event.request.headers, but it does
   // impact the cookies object. we only gain information by using that...
   // so let's use it!
@@ -92,7 +87,6 @@ const handleOIDCAuth: Handle = async ({ event, resolve }) => {
 };
 
 const handleJWTAuth: Handle = async ({ event, resolve }) => {
-  // TODO: make this only use an access token? instead of a full user object cookie?
   const cookieHeader = event.request.headers.get('cookie') ?? '';
   const cookies = parse(cookieHeader);
   const { activeRole: activeRoleCookie = null, user: userCookie } = cookies;
