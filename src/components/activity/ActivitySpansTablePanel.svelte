@@ -7,13 +7,14 @@
   import { debounce } from 'lodash-es';
   import { InvalidDate } from '../../constants/time';
   import { selectActivity } from '../../stores/activities';
+  import { plan } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import { initialSpansLoading, selectedSpanId, spans } from '../../stores/simulation';
   import { view, viewTogglePanel, viewUpdateActivitySpansTable } from '../../stores/views';
   import type { Span } from '../../types/simulation';
   import type { AutoSizeColumns, ViewGridSection, ViewTable } from '../../types/view';
   import { filterEmpty } from '../../utilities/generic';
-  import { formatDate } from '../../utilities/time';
+  import { formatDate, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -82,6 +83,15 @@
       hide: true,
       resizable: true,
       sortable: true,
+      comparator: (valueA: string, valueB: string) => {
+        if ($plan) {
+          return (
+            getUnixEpochTimeFromInterval($plan.start_time, valueA) -
+            getUnixEpochTimeFromInterval($plan.start_time, valueB)
+          );
+        }
+        return valueA.localeCompare(valueB);
+      },
     },
     derived_start_time: {
       filter: 'text',
