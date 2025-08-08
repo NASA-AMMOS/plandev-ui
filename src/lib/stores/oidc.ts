@@ -1,10 +1,9 @@
-import { browser } from '$app/environment';
-import { goto } from '$app/navigation';
-import { error, redirect } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import { jwtDecode } from 'jwt-decode';
 import { derived, get, type Readable } from 'svelte/store';
 import type { BaseUser, User } from '../../types/app';
 import { computeRolesFromJWT } from '../../utilities/auth';
+import { showFailureToast } from '../../utilities/toast';
 import type { MaybeToken } from '../types/oidc';
 import { userStore } from './auth';
 
@@ -45,7 +44,12 @@ export function cookieStoreListener() {
     console.error('Cookie store is not available in this environment. It is *required* for automatic refresh of JWT.');
   }
 
-  // Track the unsubscription function to remove the cookie store change listener.
+  // Delay is a `derived` value, ultimately from the user store... (see below).
+  // Whenever the delay changes, any prior timeout is cancelled and a new timeout
+  // is created (using the new value of delay).
+  //
+  // We track an unsubscribe function to remove the cookie store change listener
+  // when the component is unmounted.
   const unsubscribe = delay.subscribe(value => {
     if (value) {
       console.log(`Delay changed to ${value}ms`);
@@ -62,6 +66,8 @@ export function cookieStoreListener() {
   };
 }
 
+// The decoded access token contains a timestamp that indicates when
+// it will expire.
 export const accessTokenDecoded: Readable<MaybeToken> = derived(userStore, $userStore => {
   if ($userStore && $userStore.token) {
     return jwtDecode($userStore.token) as MaybeToken;
@@ -69,18 +75,17 @@ export const accessTokenDecoded: Readable<MaybeToken> = derived(userStore, $user
   return null;
 });
 
+// We convert the expiration time to a javascript date value.
 export const expiresAt = derived(accessTokenDecoded, $accessTokenDecoded => {
   return $accessTokenDecoded?.exp ? new Date($accessTokenDecoded?.exp * 1000) : null;
 });
 
+// We calculate a refresh time that is 10 seconds before the expiration time.
 export const refreshAt = derived(expiresAt, $expiresAt => {
   return $expiresAt ? new Date($expiresAt.getTime() - 10 * 1000) : null;
 });
 
-export const expired = derived(expiresAt, $expiresAt => {
-  return $expiresAt && $expiresAt < new Date();
-});
-
+// The delay is used to schedule a timeout.
 export const delay = derived(refreshAt, $refreshAt => {
   const $expiresAt = get(expiresAt);
   if ($expiresAt && $refreshAt && $refreshAt > new Date()) {
@@ -90,6 +95,7 @@ export const delay = derived(refreshAt, $refreshAt => {
   }
 });
 
+// This number is the result of calling setTimeout.
 let prior: number | null = null;
 
 /// Private Helpers.
@@ -117,14 +123,7 @@ function reschedule(fn: () => Promise<void>, delay: number, prior: number | null
       await fn();
     } catch (err) {
       console.error('Error in rescheduled function:', err);
-
-      const code = 401;
-      const message = encodeURI(`Scheduled refresh error: ${JSON.stringify(err)}`);
-      if (browser) {
-        goto(`/error-redirect?code=${code}&message=${message}`);
-      } else {
-        throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
-      }
+      showFailureToast('Failed to refresh your credentials, please login again.');
     }
   }, delay);
 }
@@ -148,7 +147,6 @@ const handleCookieStoreChange = async (ev: Event) => {
     }
     if (name === 'idToken') {
       const decoded = jwtDecode(value);
-
       // update user store
       userStore.update(user => {
         if (user && decoded.sub) {

@@ -29,6 +29,11 @@ const DEFAULT_VERIFY_OPTS: jwt.VerifyOptions = {
  * @param {RequestEvent} event - The SvelteKit request event containing cookies.
  */
 export async function handler(event: RequestEvent): Promise<RequestEvent> {
+
+  // This is really important to do but isn't part of this hook handler...
+  // sort of an edge case, but if default role does change at the idp, it wouldn't hurt to update the local entry
+  // await insertUser(accessJwt as HasuraToken, tokens.accessToken());
+
   return sanitize(event).then(refresh);
 }
 
@@ -61,23 +66,8 @@ async function refresh(evt: RequestEvent) {
   if (!evt.cookies.get('accessToken') || !evt.cookies.get('idToken')) {
     const refreshToken: string | undefined = evt.cookies.get('refreshToken');
     if (refreshToken) {
-      try {
-        const tokens = await Client.instance.refresh(refreshToken);
-
-        const verified = await updateWithNewTokens(evt.cookies, tokens);
-        if (!verified) {
-          throw error(401, `Failed to verify tokens: ${tokens}`);
-        }
-      } catch (err) {
-        console.error('In /lib/server/oidc -> refresh', err);
-        evt.cookies.delete('refreshToken', { path: '/' });
-
-        // throw an Error, so that we are sent to the error page for login to get a new refresh token
-        throw error(401, `Refresh token is outdated, probably! ${err}`);
-      }
-    } else {
-      // throw an Error, so that we are sent to the error page for login to get a new refresh token
-      throw error(401, 'Refresh token is undefined!');
+      const tokens = await Client.instance.refresh(refreshToken);
+      const verified = await updateWithNewTokens(evt.cookies, tokens);
     }
   }
   return evt;
@@ -327,19 +317,15 @@ export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth
 
   // Check token validity.
   const accessJwt = await verify(tokens.accessToken());
-  const idJwt = await verify(tokens.accessToken());
+  const idJwt = await verify(tokens.idToken());
 
   if (accessJwt && idJwt) {
-    // update cookies
     cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path: '/' });
     cookies.set('idToken', tokens.idToken(), { httpOnly: false, path: '/' });
     cookies.set('refreshToken', tokens.refreshToken(), { httpOnly: true, path: '/' });
-
-    // sort of an edge case, but if default role does change at the idp, it wouldn't hurt to update the local entry
-    await insertUser(accessJwt as HasuraToken, tokens.accessToken());
-
     return true;
   }
+
   return false;
 }
 

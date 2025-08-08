@@ -1,7 +1,7 @@
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
 import * as auth from '$lib/server/oidc';
-import { isHttpError, redirect, type Handle, type Redirect } from '@sveltejs/kit';
+import { redirect, type Handle, type Redirect } from '@sveltejs/kit';
 import { parse, type CookieSerializeOptions } from 'cookie';
 import type { BaseUser } from './types/app';
 import type { ReqValidateSSOResponse } from './types/auth';
@@ -23,19 +23,20 @@ export const handle: Handle = async ({ event, resolve }) => {
       try {
         return await handleOIDCAuth({ event, resolve });
       } catch (e: unknown) {
-        if (e instanceof Error) {
-          const code = 500;
-          const message = encodeURI(`${e.message}`);
-          throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
-        } else if (isHttpError(e)) {
-          const code = e.status;
-          const message = encodeURI(`${JSON.stringify(e.body)}`);
-          throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
-        } else {
-          const code = 500;
-          const message = encodeURI(`Unknown Server Error`);
-          throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
-        }
+        console.log(e);
+        // if (e instanceof Error) {
+        //   const code = 500;
+        //   const message = encodeURI(`${e.message}`);
+        //   throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
+        // } else if (isHttpError(e)) {
+        //   const code = e.status;
+        //   const message = encodeURI(`${JSON.stringify(e.body)}`);
+        //   throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
+        // } else {
+        //   const code = 500;
+        //   const message = encodeURI(`Unknown Server Error`);
+        //   throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
+        // }
       }
     } else if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
       return await handleSSOAuth({ event, resolve });
@@ -107,11 +108,11 @@ const handleJWTAuth: Handle = async ({ event, resolve }) => {
   return event.url.pathname.includes('/login') || event.url.pathname.includes('/auth')
     ? await resolve(event)
     : new Response(null, {
-        headers: {
-          location: `${base}/login`,
-        },
-        status: 307,
-      });
+      headers: {
+        location: `${base}/login`,
+      },
+      status: 307,
+    });
 };
 
 const handleSSOAuth: Handle = async ({ event, resolve }) => {
