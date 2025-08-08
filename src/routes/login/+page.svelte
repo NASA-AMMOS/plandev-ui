@@ -85,7 +85,7 @@
     {#if isOidcEnabled()}
       <fieldset class="pt-4">
         <div>
-          <Button type="button" on:click={() => goto('/oidc/login')}>Login Using OIDC</Button>
+          <Button type="button" on:click={() => goto(`${base}/oidc/login`)}>Login Using OIDC</Button>
         </div>
       </fieldset>
     {:else}

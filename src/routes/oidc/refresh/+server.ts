@@ -1,5 +1,5 @@
 import * as auth from '$lib/server/oidc';
-import { error, json } from '@sveltejs/kit';
+import { json } from '@sveltejs/kit';
 
 /**
  * Requests a new access and refresh token.
@@ -15,31 +15,26 @@ export const POST = async ({ cookies }) => {
   const refreshToken = cookies.get('refreshToken');
 
   if (!refreshToken) {
-    return json({ error: 'unauthenticated' }, { status: 401 });
+    throw new Error(`Error refreshing token - user is unauthenticated.`);
   }
 
-  try {
-    const client = auth.Client.instance;
-    const tokens = await client.refresh(refreshToken);
+  const client = auth.Client.instance;
+  const tokens = await client.refresh(refreshToken);
 
-    if (!tokens) {
-      // okay to throw here, since it's a POST, not a GET.
-      console.error('Tokens came back null.');
-      throw error(401, 'Tokens came back null.');
-    }
+  if (!tokens) {
+    // okay to throw here, since it's a POST, not a GET.
+    console.error('Tokens came back null.');
+    throw new Error('Tokens came back null.');
+  }
 
-    if (await auth.updateWithNewTokens(cookies, tokens)) {
-      // Tokens are returned as JSON for convenience. The client is able to extract tokens from
-      // cookie values, not JSON.
-      return json({
-        accessToken: tokens.accessToken(),
-        idToken: tokens.idToken(),
-      });
-    } else {
-      throw error(401, `Failed to verify new access token after refresh.`);
-    }
-  } catch (e: any) {
-    console.error('Error refreshing token:', e);
-    throw error(401, `Error refreshing token: ${JSON.stringify(e)}`);
+  if (await auth.updateWithNewTokens(cookies, tokens)) {
+    // Tokens are returned as JSON for convenience. The client is able to extract tokens from
+    // cookie values, not JSON.
+    return json({
+      accessToken: tokens.accessToken(),
+      idToken: tokens.idToken(),
+    });
+  } else {
+    throw new Error(`Failed to verify new access token after refresh.`);
   }
 };

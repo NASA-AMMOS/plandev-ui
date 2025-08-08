@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import * as env from '$env/static/private';
-import type { HasuraToken, MaybeHasuraToken, MaybeToken, Rule } from '$lib/types/oidc';
-import { error, type Cookies, type RequestEvent } from '@sveltejs/kit';
+import type { HasuraToken, MaybeToken, Rule } from '$lib/types/oidc';
+import { type Cookies, type RequestEvent } from '@sveltejs/kit';
 import * as arctic from 'arctic';
 import jwt from 'jsonwebtoken';
 import { JwksClient } from 'jwks-rsa';
@@ -29,11 +29,6 @@ const DEFAULT_VERIFY_OPTS: jwt.VerifyOptions = {
  * @param {RequestEvent} event - The SvelteKit request event containing cookies.
  */
 export async function handler(event: RequestEvent): Promise<RequestEvent> {
-
-  // This is really important to do but isn't part of this hook handler...
-  // sort of an edge case, but if default role does change at the idp, it wouldn't hurt to update the local entry
-  // await insertUser(accessJwt as HasuraToken, tokens.accessToken());
-
   return sanitize(event).then(refresh);
 }
 
@@ -49,7 +44,6 @@ export async function handler(event: RequestEvent): Promise<RequestEvent> {
 async function sanitize(evt: RequestEvent) {
   await verify(evt.cookies.get('accessToken')).catch(_ => evt.cookies.delete('accessToken', { path: '/' }));
   await verify(evt.cookies.get('idToken')).catch(_ => evt.cookies.delete('idToken', { path: '/' }));
-  // TODO: verify/clear refresh token too? only if its aged
   return evt;
 }
 
@@ -66,8 +60,10 @@ async function refresh(evt: RequestEvent) {
   if (!evt.cookies.get('accessToken') || !evt.cookies.get('idToken')) {
     const refreshToken: string | undefined = evt.cookies.get('refreshToken');
     if (refreshToken) {
+      // unconditionally clear refreshToken. if it was invalid, we don't want it, and if it's valid, it will be replaced!
+      evt.cookies.delete('refreshToken', { path: '/' });
       const tokens = await Client.instance.refresh(refreshToken);
-      const verified = await updateWithNewTokens(evt.cookies, tokens);
+      await updateWithNewTokens(evt.cookies, tokens);
     }
   }
   return evt;
@@ -90,19 +86,15 @@ export async function verify(
     return undefined;
   }
   if (!client) {
-    throw error(401, 'Cannot verify without a configured JWKS Client');
+    throw new Error('Cannot verify JWT without a configured JWKS Client');
   }
   if (client) {
     const header = jwt.decode(token, { complete: true })?.header;
     if (!header) {
-      throw error(401, 'Malformed token: no header present.');
+      throw new Error('Malformed JWT token: no header present.');
     }
-    try {
-      const key = await client.getSigningKey(header.kid);
-      return jwt.verify(token, key.getPublicKey(), opts) as MaybeToken;
-    } catch (e) {
-      throw error(401, `Failed to verify jwt token ${token}; cited error: ${JSON.stringify(e)}`);
-    }
+    const key = await client.getSigningKey(header.kid);
+    return jwt.verify(token, key.getPublicKey(), opts) as MaybeToken;
   }
 }
 
@@ -238,49 +230,6 @@ export class Client {
   }
 }
 
-/// Helpers for guarding against unauthorized access.
-///
-
-export function rolesIn(token: MaybeHasuraToken): string[] {
-  return token?.['https://hasura.io/jwt/claims']?.['x-hasura-allowed-roles'] || [];
-}
-
-/**
- * Helper function for +server.ts or +page.server.ts to enforce the existence of certain roles.
- *
- * @param token
- * @returns
- */
-export function roles(token: MaybeHasuraToken) {
-  if (!token) {
-    throw error(401, 'No token found, you must be logged in to view this page');
-  }
-
-  // This is intentionally specific to Hasura claims... Other parts of the Aerie system
-  // rely on this to determine a user's roles. In theory, this could be factored out to use
-  // a jq or JSON path expression provided as an environment variable, but that adds a lot
-  // more sophistication than what we can handle right now.
-  const roles = rolesIn(token);
-
-  // This error is intended to help people get their IdP configured properly. Without it
-  // people could present perfectly valid tokens and still get an error that tells them
-  // they don't have a role.
-  if (!roles) {
-    throw error(401, "Token is present but your IdP did not add Hasura claims 'https://hasura.io/jwt/claims'");
-  }
-
-  // We think it's ok to tell people the expected role without leaking sensitive security
-  // details.
-  return {
-    require: (role: string) => {
-      if (!roles.includes(role)) {
-        throw error(403, `Your token's roles do not include '${role}'`);
-      }
-      return true;
-    },
-  };
-}
-
 const mutation = `mutation InsertUser($input: users_insert_input!) {
   insert_users_one(
     object: $input,
@@ -291,9 +240,9 @@ const mutation = `mutation InsertUser($input: users_insert_input!) {
   ) {
     username
   }
-}`;
+}`; // TODO: update other user tables in permissions schema?
 
-async function insertUser(decodedAccessToken: HasuraToken, accessToken: string): Promise<void> {
+async function upsertUser(decodedAccessToken: HasuraToken, accessToken: string): Promise<void> {
   const username = decodedAccessToken['https://hasura.io/jwt/claims']['x-hasura-user-id'];
   const defaultRole = decodedAccessToken['https://hasura.io/jwt/claims']['x-hasura-default-role'];
   const allowedRoles = decodedAccessToken['https://hasura.io/jwt/claims']['x-hasura-allowed-roles'];
@@ -323,6 +272,10 @@ export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth
     cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path: '/' });
     cookies.set('idToken', tokens.idToken(), { httpOnly: false, path: '/' });
     cookies.set('refreshToken', tokens.refreshToken(), { httpOnly: true, path: '/' });
+
+    // sort of an edge case, but if default role does change at the idp, it wouldn't hurt to update the local entry
+    // TODO: should this be here? Where else could it go?
+    await upsertUser(accessJwt as HasuraToken, tokens.accessToken());
     return true;
   }
 
@@ -355,6 +308,6 @@ export function enforce(user: User | null, rule: Rule): boolean {
   if (rule(user) === true) {
     return true;
   } else {
-    throw error(403, 'Unauthorized access: Rule evaluation failed');
+    throw new Error('Unauthorized access: Rule evaluation failed');
   }
 }

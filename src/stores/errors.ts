@@ -1,5 +1,3 @@
-import type { HttpError } from '@sveltejs/kit';
-import { error as sverror } from '@sveltejs/kit';
 import { keyBy } from 'lodash-es';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActivityDirectiveId } from '../types/activity';
@@ -136,12 +134,6 @@ export function catchError(error: string | Error, details?: string | Error, shou
   // ignore the error if it is an AbortError
   if ((error as Error).name && (error as Error).name === 'AbortError') {
     return;
-  }
-
-  // if auth error, don't just log it but propagate it upwards!
-  //    can occur if problems are there with access token.
-  if ((error as unknown as HttpError).status === 401 || (error as unknown as HttpError).status === 403) {
-    throw sverror((error as unknown as HttpError).status, (error as unknown as HttpError).body);
   }
 
   caughtErrors.update(errors => {

@@ -15,7 +15,6 @@ import type { PageServerLoad } from './$types';
  */
 
 export const load: PageServerLoad = async ({ cookies, url }) => {
-
   console.debug('/oidc/callback load');
 
   const client = auth.Client.instance;
@@ -25,51 +24,40 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
   const returnedState = url.searchParams.get('state');
   const back = cookies.get('back') || '/';
 
+  // These cookies are only used during this step of the OIDC flow, if the exchange fails for
+  // any reason, the flow will need to be reinitiated. So they are unconditionally deleted.
+  cookies.delete('verifier', { path: '/' });
+  cookies.delete('back', { path: '/' });
+  cookies.delete('oidc_state', { path: '/' });
+
   if (!code) {
     const errorMsg = url.searchParams.get('error_description') || 'No code provided';
     const message = `Authorization server returned an error: ${errorMsg}`;
-    error(500, message);
+    error(401, message);
   }
 
   try {
-    // Validate the state, verifier, and code.
     const problems = check(verifier, code, expectedState, returnedState);
-
-    // Throw problems, if any exist.
     if (problems.size > 0) {
-      // hmm... not quite right... throw in a try... it'll work... but... bleh.
-      const message = encodeURI(
-        `Encountered the following problems with the callback state: \n${[...problems].join('\n')}`,
-      );
-      error(500, message);
+      throw new Error(`Encountered the following problems with the callback state: \n${[...problems].join('\n')}`);
     }
 
-    // Exchange the code for tokens.
     const tokens = await client.exchange(code, verifier as string);
-
-    // Verify we got something back (verify that tokens is not undefined!)
     if (!tokens) {
-      // hmm... not quite right... throw in a try... it'll work... but... bleh.
-      const message = `Call to OAuth2Client.validateAuthorizationCode returned undefined!`;
-      error(500, message);
+      throw new Error(`Could not exchange authorization code for tokens.`);
     }
 
-    if (await auth.updateWithNewTokens(cookies, tokens)) {
-      // Cleanup cookies used for the OIDC flow.
-      cookies.delete('verifier', { path: '/' });
-      cookies.delete('back', { path: '/' });
-      cookies.delete('oidc_state', { path: '/' });
-    } else {
-      // again: hmm... not quite right... throw in a try... it'll work... but... bleh.
-      const message = `Failed to validate token ${tokens.accessToken()}`;
-      error(500, message);
+    const success = await auth.updateWithNewTokens(cookies, tokens);
+    if (!success) {
+      throw new Error(`Failed to validate token ${tokens.accessToken()}`);
     }
   } catch (err) {
+    console.error(err);
     const message = `Failed to handle OIDC callback: ${err}`;
-    error(500, message)
+    error(401, message);
   }
 
-  throw redirect(302, back);
+  redirect(302, back);
 };
 
 function check(

@@ -1,6 +1,5 @@
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
-import { error as sverror } from '@sveltejs/kit';
 import type { BaseUser, User } from '../types/app';
 import type { ExtensionPayload, ExtensionResponse } from '../types/extension';
 import type { QueryVariables } from '../types/subscribable';
@@ -175,8 +174,7 @@ export async function reqHasura<T = any>(
       //   * Tell the user they need to log in again
       //   * Provide a way to do so.
       // Don't automatically initiate logout.
-      throw sverror(
-        401,
+      throw new Error(
         `JWT Expired in reqHasura.\nCited Reason: ${json.errors[0].message ?? error.message}\nFor query: ${query}.`,
       );
     }

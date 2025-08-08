@@ -3,12 +3,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import PageTitle from '../components/app/PageTitle.svelte';
 
   const comics = [
-    { id: '538', name: 'security' },
     { id: '927', name: 'standards' },
     { id: '1091', name: 'curiosity' },
     { id: '1356', name: 'orbital_mechanics' },
@@ -22,28 +20,19 @@
   let imgUrl: string;
   let xkcdUrl: string;
 
-  console.error($page.error);
-
-  let authError = $page.status === 403;
-  let expirationError =
-    $page.status === 401 ||
-    $page.error?.message.includes('JWT Expired in') ||
-    $page.error?.message.includes('Logout triggered server-side');
-
   onMount(() => {
-    const { id, name } = authError ? comics[0] : comics[Math.floor(Math.random() * comics.length)];
+    const { id, name } = comics[Math.floor(Math.random() * comics.length)];
     imgUrl = `https://imgs.xkcd.com/comics/${name}.png`;
     xkcdUrl = `https://xkcd.com/${id}/`;
   });
 </script>
 
-<PageTitle title={authError ? 'Unauthenticated' : '404'} />
+<PageTitle title="404" />
 
 <div class="app-error-container">
   <div class="app-error">
     <div class="app-error-title">
       <div>Uh O! Sorry, we can't find that page.</div>
-      <div>{$page.error?.message}</div>
       <button class="st-button" on:click={() => goto(`${base}/`)}> Return Home </button>
     </div>
 

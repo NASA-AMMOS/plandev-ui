@@ -2,7 +2,6 @@ import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
-import { error as sverror } from '@sveltejs/kit';
 import type { User } from '../types/app';
 import { hasNoAuthorization } from './permissions';
 
@@ -13,14 +12,14 @@ export function shouldRedirectToLogin(user: User | null) {
 export async function logout(reason?: string) {
   if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
     if (browser) {
-      goto(`${base}/oidc/logout`);
+      await goto(`${base}/oidc/logout`);
     } else {
       console.error(
         `Logout triggered from server. NOTE - this is exceptional behavior and this logout handling exists to avoid a crash. Cited reason: ${reason}:`,
         reason,
       );
 
-      throw sverror(401, `Logout triggered server-side.\nCited Reason: ${reason}.`);
+      throw new Error(`Logout triggered server-side.\nCited Reason: ${reason}.`);
     }
   } else {
     if (browser) {

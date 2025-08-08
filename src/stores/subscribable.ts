@@ -1,6 +1,5 @@
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
-import { error as sverror } from '@sveltejs/kit';
 import { type ClientOptions } from 'graphql-ws';
 import { debounce, isEqual } from 'lodash-es';
 import { get, type Readable, type Subscriber, type Unsubscriber, type Updater } from 'svelte/store';
@@ -94,10 +93,7 @@ export function gqlSubscribable<T>(
               );
               console.error('Throwing error...');
 
-              throw sverror(
-                401,
-                `JWT Expired in gqlSubscribable.\nCited Reason: ${error.reason}\nFor query: ${query}.`,
-              );
+              throw new Error(`JWT Expired in gqlSubscribable.\nCited Reason: ${error.reason}\nFor query: ${query}.`);
             } else {
               subscribers.forEach(({ next }) => {
                 next(initialValue as T);

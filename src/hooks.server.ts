@@ -1,7 +1,7 @@
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
 import * as auth from '$lib/server/oidc';
-import { redirect, type Handle, type Redirect } from '@sveltejs/kit';
+import { error, type Handle } from '@sveltejs/kit';
 import { parse, type CookieSerializeOptions } from 'cookie';
 import type { BaseUser } from './types/app';
 import type { ReqValidateSSOResponse } from './types/auth';
@@ -9,6 +9,8 @@ import { computeRolesFromCookies, computeRolesFromJWT } from './utilities/auth';
 import { reqGatewayForwardCookies } from './utilities/requests';
 
 export const handle: Handle = async ({ event, resolve }) => {
+  console.log('HOOKS IS ALSO RUNNING!');
+
   if (event.url.pathname.includes('com.chrome.devtools')) {
     return new Response(null, { status: 204 });
   }
@@ -16,40 +18,23 @@ export const handle: Handle = async ({ event, resolve }) => {
     // don't want hooks running on an error page
     return await resolve(event);
   }
+  if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true' && event.url.pathname.includes('auth')) {
+    error(
+      500,
+      `Attempting to access /auth endpoint "${event.url.pathname}" while OIDC enabled (env.PUBLIC_AUTH_OIDC_ENABLED='true').`,
+    );
+  }
 
   try {
     if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
-      // separate try catch because we don't want to change hooks' behavior for other auth methods. but necessary here.
-      try {
-        return await handleOIDCAuth({ event, resolve });
-      } catch (e: unknown) {
-        console.log(e);
-        // if (e instanceof Error) {
-        //   const code = 500;
-        //   const message = encodeURI(`${e.message}`);
-        //   throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
-        // } else if (isHttpError(e)) {
-        //   const code = e.status;
-        //   const message = encodeURI(`${JSON.stringify(e.body)}`);
-        //   throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
-        // } else {
-        //   const code = 500;
-        //   const message = encodeURI(`Unknown Server Error`);
-        //   throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
-        // }
-      }
+      return await handleOIDCAuth({ event, resolve });
     } else if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
       return await handleSSOAuth({ event, resolve });
     } else {
       return await handleJWTAuth({ event, resolve });
     }
   } catch (e) {
-    // the redirect thrown gets caught here, so we need to make sure it REALLY throws
-    if ((e as Redirect).status === 303) {
-      return redirect(303, (e as Redirect).location);
-    } else {
-      event.locals.user = null;
-    }
+    event.locals.user = null;
   }
 
   return await resolve(event);
@@ -108,11 +93,11 @@ const handleJWTAuth: Handle = async ({ event, resolve }) => {
   return event.url.pathname.includes('/login') || event.url.pathname.includes('/auth')
     ? await resolve(event)
     : new Response(null, {
-      headers: {
-        location: `${base}/login`,
-      },
-      status: 307,
-    });
+        headers: {
+          location: `${base}/login`,
+        },
+        status: 307,
+      });
 };
 
 const handleSSOAuth: Handle = async ({ event, resolve }) => {

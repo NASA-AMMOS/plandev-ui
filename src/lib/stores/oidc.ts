@@ -1,4 +1,3 @@
-import { error } from '@sveltejs/kit';
 import { jwtDecode } from 'jwt-decode';
 import { derived, get, type Readable } from 'svelte/store';
 import type { BaseUser, User } from '../../types/app';
@@ -108,7 +107,7 @@ export async function refresh(): Promise<void> {
   } else {
     const errorMessage = await res.json();
     console.error('Access token refresh failed, refresh token is probably expired.');
-    throw error(401, `Refresh failed, with the following message: ${JSON.stringify(errorMessage)}`);
+    throw new Error(`Refresh failed, with the following message: ${JSON.stringify(errorMessage)}`);
   }
 }
 
@@ -123,6 +122,8 @@ function reschedule(fn: () => Promise<void>, delay: number, prior: number | null
       await fn();
     } catch (err) {
       console.error('Error in rescheduled function:', err);
+
+      // TODO: show a modal?
       showFailureToast('Failed to refresh your credentials, please login again.');
     }
   }, delay);

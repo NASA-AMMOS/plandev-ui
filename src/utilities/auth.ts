@@ -25,7 +25,15 @@ export async function computeRolesFromCookies(
 export async function computeRolesFromJWT(baseUser: BaseUser, activeRole: string | null): Promise<User | null> {
   const { success, message } = await effects.session(baseUser);
   if (!success) {
-    console.log(`Could not retrieve roles using the given JWT access token: ${message}`);
+    console.error(
+      `Could not verify token and retrieve roles in Aerie-Gateway using the given JWT access token: ${message}`,
+    );
+    if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
+      console.error(
+        `OIDC is enabled, please ensure Aerie-Gateway's "HASURA_GRAPHQL_JWT_SECRET" environment variable specifies the same jwks_url as Aerie UI.`,
+      );
+    }
+
     return null; // expect to return in non-oidc case
   }
 

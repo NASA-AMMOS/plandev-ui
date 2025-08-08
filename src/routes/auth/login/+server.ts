@@ -1,20 +1,11 @@
-import { env } from '$env/dynamic/public';
 import type { RequestHandler } from '@sveltejs/kit';
-import { json, redirect } from '@sveltejs/kit';
+import { json } from '@sveltejs/kit';
 import { jwtDecode } from 'jwt-decode';
 import type { BaseUser, ParsedUserToken } from '../../../types/app';
 import type { LoginRequestBody, ReqAuthResponse } from '../../../types/auth';
 import effects from '../../../utilities/effects';
 
 export const POST: RequestHandler = async event => {
-  if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
-    const code = 401;
-    const message = encodeURI(
-      'Using non-oidc endpoint for login, when OIDC mode is enabled (PUBLIC_AUTH_OIDC_ENABLED=true).',
-    );
-    throw redirect(303, `/error-redirect?code=${code}&message=${message}`);
-  }
-
   const body: LoginRequestBody = await event.request.json();
   const { password, username } = body;
 

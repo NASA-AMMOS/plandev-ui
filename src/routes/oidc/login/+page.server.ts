@@ -1,5 +1,6 @@
 import * as auth from '$lib/server/oidc';
 import { redirect } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
 
 const shortLivedCookieOptions = {
   httpOnly: true,
@@ -12,7 +13,7 @@ const shortLivedCookieOptions = {
 /**
  * The login page produces a code verifier and an authorization URL.
  */
-export const GET = async ({ cookies, url }) => {
+export const load: PageServerLoad = async ({ cookies, url }) => {
   console.debug('/oidc/login load');
 
   // Other pages in this app may redirect to the login page with a `back` query parameter.
@@ -28,5 +29,5 @@ export const GET = async ({ cookies, url }) => {
   const { verifier, state, authorizationUrl } = client.createAuthorizationURLWithPKCE();
   cookies.set('verifier', verifier, shortLivedCookieOptions);
   cookies.set('oidc_state', state, shortLivedCookieOptions);
-  return redirect(302, authorizationUrl.toString());
+  redirect(302, authorizationUrl.toString());
 };

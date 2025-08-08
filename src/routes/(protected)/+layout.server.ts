@@ -11,7 +11,8 @@ export const load: LayoutServerLoad = async ({ locals }) => {
     try {
       enforce(locals?.user, userIsDefined);
     } catch (error) {
-      redirect(302, `${base}/login`)
+      console.log(error);
+      redirect(302, `${base}/login`);
     }
   }
   return { ...locals };
