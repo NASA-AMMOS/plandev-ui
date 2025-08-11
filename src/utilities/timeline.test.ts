@@ -50,7 +50,7 @@ const testActivityTypes: ActivityType[] = [
       items: {},
       type: 'struct',
     },
-    description: "",
+    description: '',
     name: 'child',
     parameters: {
       counter: {
@@ -68,7 +68,7 @@ const testActivityTypes: ActivityType[] = [
       items: {},
       type: 'struct',
     },
-    description: "",
+    description: '',
     name: 'parent',
     parameters: {
       label: {
@@ -109,7 +109,7 @@ const testActivityTypes: ActivityType[] = [
       },
       type: 'struct',
     },
-    description: "",
+    description: '',
     name: 'BiteBanana',
     parameters: {
       biteSize: {
@@ -134,7 +134,7 @@ const testActivityTypes: ActivityType[] = [
     computed_attributes_value_schema: {
       type: 'int',
     },
-    description: "",
+    description: '',
     name: 'BakeBananaBread',
     parameters: {
       glutenFree: {
