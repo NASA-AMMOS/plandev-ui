@@ -35,7 +35,7 @@
   import { plugins } from '../../stores/plugins';
   import { simulationTemplates } from '../../stores/simulation';
   import { tags } from '../../stores/tags';
-  import type { User } from '../../types/app';
+  import { getUserStore } from '../../stores/user';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ModelSlim } from '../../types/model';
   import type { DeprecatedPlanTransfer, Plan, PlanSlim, PlanTransfer } from '../../types/plan';
@@ -186,6 +186,7 @@
     },
   ];
   const permissionError: string = 'You do not have permission to create a plan';
+  const user = getUserStore();
 
   let canCreate: boolean = false;
   let canChangePlanModel: boolean = false;
@@ -204,8 +205,6 @@
   let selectedPlanModelName: string | null = null;
   let selectedPlanStartTime: string | null = null;
   let selectedPlanEndTime: string | null = null;
-  let user: User | null = null;
-
   let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
   let nameField = field<string>('', [
     required,
@@ -221,7 +220,7 @@
 
   $: startTimeField = field<string>('', [required, $plugins.time.primary.validate]);
   $: endTimeField = field<string>('', [required, $plugins.time.primary.validate]);
-  $: canChangePlanModel = selectedPlan !== undefined && featurePermissions.plan.canUpdateModel(user, selectedPlan);
+  $: canChangePlanModel = selectedPlan !== undefined && featurePermissions.plan.canUpdateModel($user, selectedPlan);
 
   $: if ($plans) {
     nameField.updateValidators([
@@ -262,8 +261,7 @@
     return 0;
   });
   $: {
-    user = data.user;
-    canCreate = user ? featurePermissions.plan.canCreate(user) : false;
+    canCreate = $user ? featurePermissions.plan.canCreate($user) : false;
     columnDefs = [
       ...baseColumnDefs.slice(0, 3),
       {
@@ -312,9 +310,9 @@
               },
               isDownloadCancellable: true,
               useExportIcon: true,
-              hasDeletePermission: params.data && user ? featurePermissions.plan.canDelete(user, params.data) : false,
+              hasDeletePermission: params.data && $user ? featurePermissions.plan.canDelete($user, params.data) : false,
               rowData: params.data,
-              viewCallback: data => user && params.viewPlan(data),
+              viewCallback: data => $user && params.viewPlan(data),
               viewTooltip: {
                 content: 'Open Plan',
                 placement: 'bottom',
@@ -407,7 +405,7 @@
         $simTemplateField.value,
         planTags.map(({ id }) => id),
         planUploadFiles,
-        user,
+        $user,
       );
       if (error) {
         planUploadFilesError = error.message;
@@ -425,7 +423,7 @@
         $nameField.value,
         startTime,
         $simTemplateField.value,
-        user,
+        $user,
       );
       if (newPlan) {
         // Associate new tags with plan
@@ -437,7 +435,7 @@
         if (!($plans || []).find(({ id }) => newPlan.id === id)) {
           plans.updateValue(storePlans => [...(storePlans || []), newPlan]);
         }
-        await effects.createPlanTags(newPlanTags, newPlan, user);
+        await effects.createPlanTags(newPlanTags, newPlan, $user);
         startTimeField.reset('');
         endTimeField.reset('');
         nameField.reset('');
@@ -446,7 +444,7 @@
   }
 
   async function deletePlan(plan: PlanSlim): Promise<void> {
-    const success = await effects.deletePlan(plan, user);
+    const success = await effects.deletePlan(plan, $user);
 
     if (success) {
       plans.updateValue(storePlans => (storePlans || []).filter(p => plan.id !== p.id));
@@ -460,7 +458,7 @@
   async function onExportPlan(plan: PlanSlim): Promise<void> {
     if (!planExporting) {
       planExporting = true;
-      await exportPlan(plan, user);
+      await exportPlan(plan, $user);
       planExporting = false;
     }
   }
@@ -480,7 +478,7 @@
     } else if (type === 'create' || type === 'select') {
       let tagsToAdd: Tag[] = [tag];
       if (type === 'create') {
-        tagsToAdd = (await effects.createTags([{ color: tag.color, name: tag.name }], user)) || [];
+        tagsToAdd = (await effects.createTags([{ color: tag.color, name: tag.name }], $user)) || [];
       }
       planTags = planTags.concat(tagsToAdd);
     }
@@ -601,7 +599,7 @@
         await Promise.all(
           importedPlanTags.newTags.map(async ({ color: tagColor, name: tagName }) => {
             return (
-              (await effects.createTags([{ color: tagColor ?? generateRandomPastelColor(), name: tagName }], user)) ||
+              (await effects.createTags([{ color: tagColor ?? generateRandomPastelColor(), name: tagName }], $user)) ||
               []
             );
           }),
@@ -655,16 +653,23 @@
 
   async function openChangePlanMissionModelModal() {
     if (selectedPlan !== undefined) {
-      await effects.updatePlanMissionModel(selectedPlan, user);
+      await effects.updatePlanMissionModel(selectedPlan, $user);
     }
   }
+
+  // function onRoleChange(event: CustomEvent<string>) {
+  //   // activeRole = event.detail;
+  //   if ($user) {
+  //     user.set({ ...$user, activeRole: event.detail });
+  //   }
+  // }
 </script>
 
 <PageTitle title="Plans" />
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
-  <Nav {user}>
-    <span slot="title">Plans</span>
+  <Nav>
+    <span slot="title">Plans / {$user?.activeRole}</span>
   </Nav>
 
   <CssGrid columns="20% auto">
@@ -1063,7 +1068,7 @@
           hasDeletePermission={featurePermissions.plan.canDelete}
           itemDisplayText="Plan"
           items={filteredPlans}
-          {user}
+          user={$user}
           selectedItemId={selectedPlanId ?? null}
           on:deleteItem={event => deletePlanContext(event, filteredPlans)}
           on:rowClicked={({ detail }) => selectPlan(detail.data.id)}

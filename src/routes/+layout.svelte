@@ -6,15 +6,26 @@
   import { ModeWatcher } from '@nasa-jpl/stellar-svelte';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { mergeWith } from 'lodash-es';
-  import { onMount } from 'svelte';
+  import { onMount, setContext } from 'svelte';
+  import { writable } from 'svelte/store';
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
   import { clearLogs } from '../stores/errors';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
+  import type { UserStore } from '../types/app';
   import { loadPluginCode } from '../utilities/plugins';
+  import type { PageData } from './$types';
+
+  export let data: PageData;
+
+  const user: UserStore = writable(null);
 
   let pluginsEnabled = env.PUBLIC_TIME_PLUGIN_ENABLED === 'true';
+
   $pluginsLoaded = pluginsEnabled ? false : true;
+
+  // TODO resolve typing issue
+  $: user.set(data.user || null);
 
   onMount(() => {
     if (pluginsEnabled && !$pluginsLoaded) {
@@ -39,13 +50,15 @@
       $pluginsError = `Unable to load plugin: ${err}`;
     }
   }
+
+  setContext('user', user);
 </script>
 
 {#if !pluginsEnabled || ($pluginsLoaded && !$pluginsError)}
   <slot />
 {:else}
   <div class="plans-layout">
-    <Nav user={null} />
+    <Nav />
     <div class="message st-typography-header">
       {#if $pluginsError}
         <div class="error">

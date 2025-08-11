@@ -29,6 +29,12 @@ export type ReqAuthResponse = {
   token: JsonWebToken | null;
 };
 
+export type ReqChangeRoleResponse = {
+  message: string;
+  success: boolean;
+  user: User | null;
+};
+
 export type ReqSessionResponse = {
   message: string;
   success: boolean;
