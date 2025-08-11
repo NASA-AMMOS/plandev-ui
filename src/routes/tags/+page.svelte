@@ -20,7 +20,7 @@
   import TagChip from '../../components/ui/Tags/Tag.svelte';
   import { field } from '../../stores/form';
   import { createTagError, tagsStore } from '../../stores/tags';
-  import type { User } from '../../types/app';
+  import { getUserStore } from '../../stores/user';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { Tag } from '../../types/tags';
   import { generateRandomPastelColor } from '../../utilities/color';
@@ -96,6 +96,7 @@
   ];
   const defaultColor = generateRandomPastelColor();
   const permissionError: string = 'You do not have permission to create a tag';
+  const user = getUserStore();
 
   let canCreate: boolean = false;
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
@@ -103,7 +104,6 @@
   let filterText: string = '';
   let tags: Tag[];
   let nameInputField: InputType;
-  let user: User | null = null;
   let selectedTag: Tag | null = null;
   let selectedTagModified: boolean = false;
   let creatingTag: boolean = false;
@@ -114,8 +114,7 @@
   $: nameField = field<string>('', [required]);
   $: colorField = field<string>('', [required, hex]);
   $: {
-    user = data.user;
-    canCreate = user ? featurePermissions.tags.canCreate(user) : false;
+    canCreate = $user ? featurePermissions.tags.canCreate($user) : false;
     columnDefs = [
       ...baseColumnDefs,
       {
@@ -130,7 +129,7 @@
                 content: 'Delete Tag',
                 placement: 'top',
               },
-              hasDeletePermission: params.data && user ? featurePermissions.tags.canDelete(user, params.data) : false,
+              hasDeletePermission: params.data && $user ? featurePermissions.tags.canDelete($user, params.data) : false,
               rowData: params.data,
             },
             target: actionsDiv,
@@ -185,7 +184,7 @@
       color: $colorField.value,
       name: $nameField.value,
     };
-    const newTag = await effects.createTag(tag, user);
+    const newTag = await effects.createTag(tag, $user);
     resetTagFields();
     if (newTag && !($tagsStore || []).find(({ id }) => newTag.id === id)) {
       tagsStore.updateValue(tags => [...(tags ?? []), newTag]);
@@ -203,7 +202,7 @@
       name: $nameField.value,
       owner: selectedTag.owner,
     };
-    const updatedTag = await effects.updateTag(selectedTag.id, tag, user);
+    const updatedTag = await effects.updateTag(selectedTag.id, tag, $user);
     if (updatedTag) {
       tags = tags.map(t => {
         if (t.id === updatedTag.id) {
@@ -235,7 +234,7 @@
       'Delete Tag',
     );
     if (confirm) {
-      const success = await effects.deleteTag(tag, user);
+      const success = await effects.deleteTag(tag, $user);
       if (success) {
         tagsStore.updateValue(tags => (tags || []).filter(t => t.id !== tag.id));
       }
@@ -281,7 +280,7 @@
 <PageTitle title="Tags" />
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
-  <Nav {user}>
+  <Nav>
     <span slot="title">Tags</span>
   </Nav>
 
@@ -454,7 +453,7 @@
           hasDeletePermission={featurePermissions.tags.canDelete}
           itemDisplayText="Tag"
           items={filteredTags}
-          {user}
+          user={$user}
           loading={$tagsStore === null}
           noRowsOverlayText="No Tags Found"
           on:deleteItem={deleteTagContext}

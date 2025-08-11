@@ -4,7 +4,7 @@ import { Queries } from '../enums/gql';
 import type { ActionDefinition, ActionRun } from '../types/actions';
 import type { ActivityDirective, ActivityPreset } from '../types/activity';
 import type { User, UserRole } from '../types/app';
-import type { ReqAuthResponse } from '../types/auth';
+import type { ReqChangeRoleResponse } from '../types/auth';
 import type { ConstraintDefinition, ConstraintMetadata, ConstraintRun } from '../types/constraint';
 import type { ExpansionRule, ExpansionSequence, ExpansionSet } from '../types/expansion';
 import type { DerivationGroup, ExternalSource, ExternalSourceSlim } from '../types/external-source';
@@ -332,7 +332,7 @@ function getRoleWorkspacePermission(queries: string[], user: User | null, worksp
   return false;
 }
 
-async function changeUserRole(role: UserRole): Promise<void> {
+async function changeUserRole(role: UserRole): Promise<User | null> {
   try {
     const options = {
       body: JSON.stringify({ role }),
@@ -340,14 +340,16 @@ async function changeUserRole(role: UserRole): Promise<void> {
       method: 'POST',
     };
     const response = await fetch(`${base}/auth/changeRole`, options);
-    const changeUserResponse: ReqAuthResponse = await response.json();
-    const { message, success } = changeUserResponse;
+    const changeUserResponse: ReqChangeRoleResponse = await response.json();
+    const { message, success, user } = changeUserResponse;
 
     if (!success) {
       throw new Error(message);
     }
+    return user;
   } catch (e) {
     showFailureToast((e as Error).message);
+    return null;
   }
 }
 
