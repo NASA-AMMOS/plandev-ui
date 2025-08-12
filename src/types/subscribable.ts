@@ -4,6 +4,7 @@ export type GqlSubscribable<T> = {
   setVariables: (newVariables: QueryVariables) => void;
   subscribe: (next: Subscriber<T>) => Unsubscriber;
   filterValueById(id: number): void;
+  restartSocket(): void;
   updateValue(fn: Updater<T>): void;
 };
 
