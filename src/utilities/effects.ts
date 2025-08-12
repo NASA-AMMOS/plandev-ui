@@ -6478,7 +6478,7 @@ const effects = {
       }
     } catch (e) {
       catchError('Activity Directive Update Failed', e as Error);
-      showFailureToast('Activity Directive Update Failed');
+      showFailureToast(`Activity Directive Update Failed: \n${(e as Error).message}`);
     }
   },
 
