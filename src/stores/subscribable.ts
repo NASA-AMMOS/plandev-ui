@@ -1,12 +1,13 @@
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
-import { createClient, type Client, type ClientOptions } from 'graphql-ws';
-import { debounce, isEqual } from 'lodash-es';
-import type { Readable, Subscriber, Unsubscriber, Updater } from 'svelte/store';
+import { createClient, type Client, type ClientOptions, type Message } from 'graphql-ws';
+import { debounce, isEqual, uniqueId } from 'lodash-es';
+import { type Readable, type Subscriber, type Unsubscriber, type Updater } from 'svelte/store';
 import type { BaseUser, User } from '../types/app';
 import type { GqlSubscribable, NextValue, QueryVariables, Subscription } from '../types/subscribable';
 import { logout } from '../utilities/login';
 import { EXPIRED_JWT } from '../utilities/permissions';
+import { addSubscription, removeSubscription, updateSubscription } from './subscriptionsManager';
 
 /**
  * Returns a Svelte store that listens to GraphQL subscriptions via graphql-ws.
@@ -24,10 +25,17 @@ export function gqlSubscribable<T>(
   let value: T | null = initialValue;
   let variableUnsubscribers: Unsubscriber[] = [];
   let variables: QueryVariables | null = initialVariables;
+  let loading: boolean = true;
+  let error: string = '';
+
   // Debounce clientSubscribe calls within the same call stack so that the last subscribe call is the
   // only one within the stack that actually executes, otherwise we end up with duplicative subscriptions
   // with potentially stale data that the underyling graphql-ws library does not immediately cancel.
   const debouncedClientSubscribe = debounce(clientSubscribe, 0, { trailing: true });
+
+  let restartRequested = false;
+  let restart: () => void = () => (restartRequested = true);
+  const id = uniqueId();
 
   /**
    * Creates a subscription to the query within the web socket
@@ -41,13 +49,20 @@ export function gqlSubscribable<T>(
         },
         {
           complete: () => {},
-          error: async (error: Error | CloseEvent) => {
-            console.log('subscribe error');
-            console.log(error);
+          error: async (err: Error | CloseEvent) => {
+            console.error('Socket subscribe error', err);
 
-            if ('reason' in error && error.reason.includes(EXPIRED_JWT)) {
+            if ('reason' in err && err.reason.includes(EXPIRED_JWT)) {
               await logout(EXPIRED_JWT);
             } else {
+              if (Array.isArray(err)) {
+                error = err.map(e => e.message ?? 'Unknown socket error').join(', ');
+              } else if ('message' in err) {
+                error = err.message;
+              } else {
+                error = 'Unknown socket error';
+              }
+              updateSubscription(id, { error });
               subscribers.forEach(({ next }) => {
                 next(initialValue as T);
               });
@@ -132,6 +147,12 @@ export function gqlSubscribable<T>(
     debouncedClientSubscribe();
   }
 
+  function restartSocket() {
+    loading = true;
+    updateSubscription(id, { loading });
+    restart();
+  }
+
   function setVariables(newVariables: QueryVariables): void {
     newVariables = { ...variables, ...newVariables };
 
@@ -173,16 +194,50 @@ export function gqlSubscribable<T>(
     if (browser && !client) {
       const token = user?.token ?? getTokenFromUserCookie();
       const clientOptions: ClientOptions = {
-        connectionParams: {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'x-hasura-role': getRoleFromCookie(),
+        connectionParams: () => {
+          return {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'x-hasura-role': getRoleFromCookie(),
+            },
+          };
+        },
+        on: {
+          error: (err: unknown) => {
+            error = err ? err.toString() : 'Unknown socket error';
+            updateSubscription(id, { error });
+          },
+          message: (message: Message) => {
+            if (loading && message.type === 'next') {
+              loading = false;
+              updateSubscription(id, { loading });
+            }
+          },
+          opened: (socket: unknown) => {
+            restart = () => {
+              const ws = socket as WebSocket;
+              if (ws.readyState === WebSocket.OPEN) {
+                // if the socket is still open for the restart, do the restart
+                ws.close(4205, 'Client Restart');
+              } else {
+                // otherwise the socket might've closed, indicate that you want
+                // a restart on the next opened event
+                restartRequested = true;
+              }
+            };
+
+            // just in case you were eager to restart
+            if (restartRequested) {
+              restartRequested = false;
+              restart();
+            }
           },
         },
         url: env.PUBLIC_HASURA_WEB_SOCKET_URL,
       };
 
       client = createClient(clientOptions); // WS subscription
+      addSubscription(id, { error, loading, restart: restartSocket, query });
       subscribeToVariables(initialVariables);
 
       // Subscribe within the WS to the GQL query
@@ -207,6 +262,7 @@ export function gqlSubscribable<T>(
         variableUnsubscribers = [];
         client.dispose();
         client = null;
+        removeSubscription(id);
       }
     };
   }
@@ -220,6 +276,7 @@ export function gqlSubscribable<T>(
 
   return {
     filterValueById,
+    restartSocket,
     setVariables,
     subscribe,
     updateValue,
