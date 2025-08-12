@@ -5815,7 +5815,7 @@ const effects = {
         throw Error('Unable to begin plan merge');
       }
     } catch (error) {
-      showFailureToast('Begin Merge Failed');
+      showFailureToast((error as Error)?.message ?? error);
       catchError('Begin Merge Failed', error as Error);
       return false;
     }
