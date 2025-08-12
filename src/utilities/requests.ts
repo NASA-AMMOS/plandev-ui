@@ -149,22 +149,25 @@ export async function reqHasura<T = any>(
     const defaultError = 'An unexpected error occurred';
     const [error] = json.errors;
     const code = error?.extensions?.code;
+    const cause = error?.extensions?.cause;
+    const errorMessage = error?.extensions?.internal?.error?.message ?? error?.message ?? defaultError;
 
     if (code === 'unexpected' || code === 'postgres-error') {
       // This is often thrown when a Postgres exception is raised for a Hasura query.
       // @see https://github.com/hasura/graphql-engine/issues/3658
-      throw new Error(error?.extensions?.internal?.error?.message ?? error?.message ?? defaultError);
+      throw new Error(errorMessage, { cause });
     } else if (code === 'parse-failed') {
       if (error?.extensions?.internal?.response?.body?.errors?.length) {
-        const errorMessage = error?.extensions?.internal?.response?.body?.errors[0];
-        throw new Error(errorMessage ?? defaultError);
+        const parseFailedErrorMessage = error?.extensions?.internal?.response?.body?.errors[0];
+
+        throw new Error(parseFailedErrorMessage ?? defaultError);
       }
     } else if (code === INVALID_JWT) {
       // awaiting here only works if SSR is disabled
       logout(error?.message);
     }
 
-    throw new Error(error?.message ?? defaultError);
+    throw new Error(errorMessage ?? defaultError, { cause });
   }
 
   const { data } = json;
