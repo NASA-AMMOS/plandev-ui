@@ -12,6 +12,7 @@
   import Loading from '../components/Loading.svelte';
   import { clearLogs } from '../stores/errors';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
+  import { restartSubscriptions, subscriptionsLoading } from '../stores/subscriptionsManager';
   import type { UserStore } from '../types/app';
   import { loadPluginCode } from '../utilities/plugins';
   import type { PageData } from './$types';
@@ -24,8 +25,15 @@
 
   $pluginsLoaded = pluginsEnabled ? false : true;
 
-  // TODO resolve typing issue
-  $: user.set(data.user || null);
+  $: {
+    // TODO resolve typing issue
+    user.set(data.user || null);
+  }
+
+  $: if ($user) {
+    // Restart subscriptions when user changes
+    restartSubscriptions();
+  }
 
   onMount(() => {
     if (pluginsEnabled && !$pluginsLoaded) {
@@ -75,6 +83,10 @@
 {/if}
 
 <div id="svelte-modal" />
+
+{#if !$subscriptionsLoading}
+  <div class="hidden" aria-hidden="true" data-testid="subscription-loading-complete" />
+{/if}
 
 <!-- Disable theme switching for now to prevent user OS/browser dark mode from changing the app which does not yet fully support dark mode -->
 <ModeWatcher track={false} defaultMode="light" />
