@@ -336,7 +336,7 @@ async function changeUserRole(role: UserRole): Promise<User | null> {
   try {
     const options = {
       body: JSON.stringify({ role }),
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Active-Role': role, 'Content-Type': 'application/json' },
       method: 'POST',
     };
     const response = await fetch(`${base}/auth/changeRole`, options);
