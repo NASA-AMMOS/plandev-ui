@@ -193,7 +193,7 @@
   }
 
   function downloadOutputFormat(outputFormat: OutputLanguageAdaptation): void {
-    const fileExtension = `${sequenceName}.${selectedOutputFormat?.fileExtension}`;
+    const fileExtension = `${sequenceName}${selectedOutputFormat?.fileExtension}`;
 
     if (outputFormat?.fileExtension === 'json') {
       downloadJSON(JSON.parse(editorOutputView.state.doc.toString()), fileExtension);
