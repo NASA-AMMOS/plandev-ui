@@ -4,8 +4,8 @@
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition, ActionParametersMap } from '../../types/actions';
   import type { User } from '../../types/app';
-  import type { ArgumentsMap, FormParameter } from '../../types/parameter';
   import type { UserSequence } from '../../types/sequencing';
+  import type { Argument, ArgumentsMap, FormParameter, ParameterName } from '../../types/parameter';
   import { getUserSequenceValueSchemaOptions, valueSchemaRecordToParametersMap } from '../../utilities/actions';
   import effects from '../../utilities/effects';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
@@ -46,14 +46,20 @@
     for (const param of Object.keys(parametersMap)) {
       if (parametersMap[param].schema.type === 'secret') {
         secretParametersMap[param] = argumentsMap[param];
-        delete parametersMap[param];
-        delete argumentsMap[param];
       }
     }
 
     const actionRunId = await effects.createActionRun(
       actionDefinition.id,
-      argumentsMap,
+      // Only send non-secret arguments to the db.
+      Object.entries(argumentsMap).reduce((acc: ArgumentsMap, [paramName, argument]: [ParameterName, Argument]) => {
+        console.log(paramName, argument);
+        if (parametersMap[paramName].schema.type !== 'secret') {
+          acc[paramName] = argument;
+        }
+
+        return acc;
+      }, {}),
       actionDefinition.settings,
       Object.keys(secretParametersMap).length > 0, // The DB only needs to know if there are secrets or not.
       user,

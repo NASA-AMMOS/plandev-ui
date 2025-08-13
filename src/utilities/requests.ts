@@ -52,7 +52,7 @@ export async function reqActionServer<T = any>(
   body: any | null,
   signal?: AbortSignal,
 ): Promise<T> {
-  const ACTION_SERVER_URL = browser ? env.PUBLIC_ACTION_SERVER_URL : env.PUBLIC_ACTION_CLIENT_URL;
+  const ACTION_SERVER_URL = env.PUBLIC_ACTION_CLIENT_URL;
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
