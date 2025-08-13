@@ -106,13 +106,12 @@ export const planMergeRequestsOutgoing = gqlSubscribable<PlanMergeRequest[]>(
     planMergeRequests.map(planMergeRequest => ({ ...planMergeRequest, pending: false, type: 'outgoing' })),
 );
 
-export const planRevision = gqlSubscribable<number>(
-  gql.SUB_PLAN_REVISION,
-  { planId },
-  -1,
-  null,
-  ({ revision }: Pick<Plan, 'revision'>) => revision,
-);
+export const planRevision = gqlSubscribable<number>(gql.SUB_PLAN_REVISION, { planId }, -1, null, revisionObject => {
+  if (revisionObject && revisionObject['plan'] && revisionObject['plan']['revision']) {
+    return revisionObject['plan']['revision'];
+  }
+  return -1;
+});
 
 /* Helper Functions. */
 
