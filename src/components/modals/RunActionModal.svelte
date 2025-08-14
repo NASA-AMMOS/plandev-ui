@@ -4,8 +4,8 @@
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition, ActionParametersMap } from '../../types/actions';
   import type { User } from '../../types/app';
-  import type { UserSequence } from '../../types/sequencing';
   import type { Argument, ArgumentsMap, FormParameter, ParameterName } from '../../types/parameter';
+  import type { UserSequence } from '../../types/sequencing';
   import { getUserSequenceValueSchemaOptions, valueSchemaRecordToParametersMap } from '../../utilities/actions';
   import effects from '../../utilities/effects';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
@@ -53,7 +53,6 @@
       actionDefinition.id,
       // Only send non-secret arguments to the db.
       Object.entries(argumentsMap).reduce((acc: ArgumentsMap, [paramName, argument]: [ParameterName, Argument]) => {
-        console.log(paramName, argument);
         if (parametersMap[paramName].schema.type !== 'secret') {
           acc[paramName] = argument;
         }
