@@ -55,10 +55,10 @@ Before you can run aerie-ui you must install and configure the following product
   ```sh
   git clone https://github.com/NASA-AMMOS/aerie.git
   cd aerie
-  cp .env.template .env
+  cp ***REMOVED***.template ***REMOVED***
   ```
 
-  Fill out the `.env` file with the following default environment variables:
+  Fill out the `***REMOVED***` file with the following default environment variables:
 
   ```sh
   AERIE_PASSWORD=aerie

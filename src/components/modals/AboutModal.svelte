@@ -26,33 +26,22 @@
   });
 </script>
 
-<Modal height={220} width={640}>
+<Modal height={300} width={600}>
   <ModalHeader on:close>About</ModalHeader>
   <ModalContent>
     <div class="text-sm leading-relaxed">
+      <div>Copyright 2021, by the California Institute of Technology.</div>
+      <div>ALL RIGHTS RESERVED.</div>
       <div>
-        Aerie is an open source, extensible software system for planning, scheduling, and commanding space missions.
-        Learn more about Aerie by visiting our <a
-          href="https://nasa-ammos.github.io/aerie-docs/introduction/"
-          target="_blank"
-          rel="noreferrer"
-          class="text-blue-600 underline hover:text-blue-800"
-        >
-          documentation site.
-        </a>
+        United States Government sponsorship acknowledged. Any commercial use must be negotiated with the Office of
+        Technology Transfer at the California Institute of Technology.
       </div>
-      <div class="mt-3 text-muted-foreground">Copyright 2021, by the California Institute of Technology.</div>
-      <div class="text-muted-foreground">
-        {version.name} –
-        <a
-          href={version.commitUrl}
-          rel="noopener noreferrer"
-          target="_blank"
-          class="text-blue-600 underline hover:text-blue-800"
-        >
+      <div class="mt-3">
+        {version.name} -
+        <a href={version.commitUrl} rel="noopener noreferrer" target="_blank">
           {version.branch}:{version.commit}
         </a>
-        –
+        -
         {version.date}
       </div>
     </div>

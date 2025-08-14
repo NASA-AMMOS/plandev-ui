@@ -50,8 +50,8 @@
   import { getCustomArgDef, inputLinter } from '../../utilities/sequence-editor/extension-points';
   import { setupLanguageSupport } from '../../utilities/sequence-editor/languages/seq-n-handlebars/seq-n-handlebars';
   import {
-    seqNBlockHighlighter,
     seqNHighlightBlock,
+    seqqNBlockHighlighter,
   } from '../../utilities/sequence-editor/languages/seq-n/seq-n-highlighter';
   import { SeqNCommandInfoMapper } from '../../utilities/sequence-editor/languages/seq-n/seq-n-tree-utils';
   import {
@@ -162,7 +162,7 @@
         editorSequenceView.dispatch({
           effects: compartmentSeqHighlighter.reconfigure([
             EditorView.updateListener.of(debouncedSeqNHighlightBlock),
-            seqNBlockHighlighter,
+            seqqNBlockHighlighter,
           ]),
         });
       }
@@ -310,7 +310,10 @@
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
-        compartmentSeqHighlighter.of([EditorView.updateListener.of(debouncedSeqNHighlightBlock), seqNBlockHighlighter]),
+        compartmentSeqHighlighter.of([
+          EditorView.updateListener.of(debouncedSeqNHighlightBlock),
+          seqqNBlockHighlighter,
+        ]),
         ...($sequenceAdaptation.autoIndent
           ? [compartmentSeqAutocomplete.of(indentService.of($sequenceAdaptation.autoIndent()))]
           : []),

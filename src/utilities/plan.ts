@@ -12,13 +12,13 @@ import type {
 import type { Simulation } from '../types/simulation';
 import effects from './effects';
 import { downloadJSON, unique } from './generic';
-import { convertDoyToYmd, switchISOTimezoneRepresentation } from './time';
+import { convertDoyToYmd } from './time';
 
 export async function getPlanForTransfer(
   plan: Plan | PlanSlim,
   user: User | null,
   activities?: ActivityDirective[],
-): Promise<PlanTransfer> {
+): Promise<PlanTransfer | void> {
   const simulation: Simulation | null = await effects.getPlanLatestSimulation(plan.id, user);
   const qualifiedSimulationArguments: ArgumentsMap = simulation
     ? {
@@ -87,7 +87,7 @@ export async function getPlanForTransfer(
     model_id: plan.model_id,
     name: plan.name,
     simulation_arguments: qualifiedSimulationArguments,
-    start_time: switchISOTimezoneRepresentation(convertDoyToYmd(plan.start_time_doy) as string),
+    start_time: (convertDoyToYmd(plan.start_time_doy) as string).replace('Z', '+00:00'),
     tags: plan.tags.map(({ tag: { color, name } }) => ({ tag: { color, name } })),
     version: '2',
   };
@@ -99,7 +99,10 @@ export async function exportPlan(
   activities?: ActivityDirective[],
 ): Promise<void> {
   const planTransfer = await getPlanForTransfer(plan, user, activities);
-  downloadJSON(planTransfer, plan.name);
+
+  if (planTransfer) {
+    downloadJSON(planTransfer, plan.name);
+  }
 }
 
 export function isDeprecatedPlanTransfer(

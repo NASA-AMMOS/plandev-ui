@@ -11,7 +11,7 @@ const MAIN_TEST_SUITE_BASE_URL = 'http://localhost:3000';
 const SEQUENCE_TEMPLATE_TEST_SUITE_BASE_URL = 'http://localhost:3001';
 
 const config: PlaywrightTestConfig = {
-  forbidOnly: !!process.env.CI,
+  forbidOnly: !!process***REMOVED***.CI,
   projects: [
     {
       name: 'setup',
@@ -55,7 +55,7 @@ const config: PlaywrightTestConfig = {
     threshold: 60000,
   },
   reporter: [
-    [process.env.CI ? 'github' : 'list'],
+    [process***REMOVED***.CI ? 'github' : 'list'],
     ['html', { open: 'never', outputFile: 'index.html', outputFolder: 'e2e-test-results' }],
     ['json', { outputFile: 'e2e-test-results/json-results.json' }],
     ['junit', { outputFile: 'e2e-test-results/junit-results.xml' }],
@@ -64,14 +64,14 @@ const config: PlaywrightTestConfig = {
   testDir: './e2e-tests',
   use: {
     browserName: 'chromium',
-    trace: process.env.CI ? 'retain-on-failure' : 'off',
-    video: process.env.CI ? 'retain-on-failure' : 'off',
+    trace: process***REMOVED***.CI ? 'retain-on-failure' : 'off',
+    video: process***REMOVED***.CI ? 'retain-on-failure' : 'off',
   },
   webServer: [
     {
       command: 'npm run preview',
       port: 3000,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: !process***REMOVED***.CI,
     },
     {
       command: 'PUBLIC_COMMAND_EXPANSION_MODE=templating npm run preview',

@@ -162,8 +162,6 @@
   <svelte:fragment slot="body">
     {#if filteredParcels.length}
       <SingleActionDataGrid
-        showLoadingSkeleton
-        loading={$parcels === null}
         {columnDefs}
         hasEdit={true}
         {hasEditPermission}

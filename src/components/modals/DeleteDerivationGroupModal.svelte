@@ -8,18 +8,9 @@
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
-  export let width: number = 380;
   export let height: number = 200;
-  export let derivationGroups: DerivationGroup[];
-
-  let derivationGroupsAreAllEmpty: boolean;
-
-  $: derivationGroupsAreAllEmpty = derivationGroups.reduce(
-    (isEmptyAcc: boolean, currentDerivationGroup: DerivationGroup) => {
-      return isEmptyAcc && currentDerivationGroup.sources.size === 0;
-    },
-    true,
-  );
+  export let derivationGroup: DerivationGroup;
+  export let width: number = 380;
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -39,7 +30,7 @@
 
 <Modal {height} {width}>
   <ModalHeader on:close>
-    {#if !derivationGroupsAreAllEmpty}
+    {#if derivationGroup.sources.size > 0}
       Derivation Group Cannot Be Deleted
     {:else}
       Delete Derivation Group
@@ -47,29 +38,20 @@
   </ModalHeader>
   <div class="modal-body">
     <ModalContent>
-      {#if !derivationGroupsAreAllEmpty}
+      {#if derivationGroup.sources.size > 0}
         <span class="st-typography-body">
-          These Derivation Groups still contain the following sources which must be deleted first:
-          {#each derivationGroups as derivationGroup}
-            {#each derivationGroup.sources as source}
-              <ul class="modal-content-text">
-                <li>
-                  {source[0]}
-                </li>
-              </ul>
-            {/each}
+          This Derivation Group still contains the following sources which must be deleted first:
+          {#each derivationGroup.sources as source}
+            <ul class="modal-content-text">
+              <li>
+                {source[0]}
+              </li>
+            </ul>
           {/each}
         </span>
       {:else}
         <span class="st-typography-body modal-content-text">
-          Are you sure you want to delete the following Derivation Groups:
-          <ul class="modal-content-text">
-            {#each derivationGroups as derivationGroup}
-              <li>
-                {derivationGroup.name}
-              </li>
-            {/each}
-          </ul>
+          Are you sure you want to delete "{derivationGroup.name}"?
           <br />
           <i>This action cannot be undone.</i>
         </span>
@@ -77,7 +59,7 @@
     </ModalContent>
   </div>
   <ModalFooter>
-    {#if !derivationGroupsAreAllEmpty}
+    {#if derivationGroup.sources.size > 0}
       <button class="st-button" on:click={() => dispatch('close')}> Close </button>
     {:else}
       <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>

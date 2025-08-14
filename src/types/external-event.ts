@@ -1,4 +1,3 @@
-import type { SchemaObject } from 'ajv';
 import type { ExternalSourceDB } from './external-source';
 
 // Represents all fields used as a composite primary key for merlin.external_event
@@ -17,11 +16,9 @@ export type ExternalEventPkey = {
 //    is clearly our best candidate. See this string of comments for more detail:
 //      https://github.com/NASA-AMMOS/aerie-ui/pull/1396#discussion_r1746175203
 export type ExternalEventId = string;
-export type ExternalEventTypeId = string;
 
 // This is the type that conforms with the database schema.
 export type ExternalEventDB = {
-  attributes: object;
   derivation_group_name: string;
   duration: string;
   event_type_name: string;
@@ -33,9 +30,8 @@ export type ExternalEventDB = {
 
 // This is the JSON type that the user can upload.
 export type ExternalEventJson = {
-  attributes: object;
   duration: string;
-  event_type_name: string;
+  event_type: string;
   key: string;
   start_time: string;
 };
@@ -43,7 +39,6 @@ export type ExternalEventJson = {
 // no analogue to ExternalSourceSlim as we have no subevents or anything of the sort that we may elect to exclude
 
 export type ExternalEvent = {
-  attributes: object;
   duration: string;
   duration_ms: number;
   pkey: ExternalEventPkey;
@@ -55,17 +50,14 @@ export type ExternalEvent = {
 // no analgoue to PlanExternalSource as such a link doesn't exist for external events
 
 export type ExternalEventType = {
-  attribute_schema: SchemaObject;
   name: string;
-};
-
-export type ExternalEventTypeAssociations = ExternalEventType & {
-  source_associations: number;
 };
 
 // This is used for the GraphQL mutation.
 // this doesn't do any actual filtering. extra keys in surplus of this are NOT checked.
 // Typescript doesn't really allow us to check these, so ensuring we don't push additional and unnecessary data to the DB should be caught
 // https://stackoverflow.com/questions/64263271/typescript-validate-excess-keys-on-value-returned-from-function
-export type ExternalEventInsertInput = Pick<ExternalEventDB, 'attributes' | 'start_time' | 'duration'> &
+export type ExternalEventInsertInput = Pick<ExternalEventDB, 'start_time' | 'duration'> &
   Pick<ExternalEventPkey, 'event_type_name' | 'key'>;
+
+export type ExternalEventTypeInsertInput = Pick<ExternalEventType, 'name'>;

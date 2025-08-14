@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { readFile } from 'fs/promises';
+import { readFileSync } from 'fs';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
 export enum DictionaryType {
@@ -13,11 +13,13 @@ export enum DictionaryType {
 export const COMMAND_DICTIONARY_PATH = 'e2e-tests/data/command-dictionary.xml';
 
 export class Dictionaries {
+  channelDictionaryBuffer: Buffer;
   channelDictionaryName: string;
   channelDictionaryPath: string = 'e2e-tests/data/channel-dictionary.xml';
   channelDictionaryTable: Locator;
   channelDictionaryTableRow: Locator;
   channelDictionaryTableRowDeleteButton: Locator;
+  commandDictionaryBuffer: Buffer;
   commandDictionaryName: string;
   commandDictionaryTable: Locator;
   commandDictionaryTableRow: Locator;
@@ -26,11 +28,13 @@ export class Dictionaries {
   confirmModalDeleteButton: Locator;
   createButton: Locator;
   inputFile: Locator;
+  parameterDictionaryBuffer: Buffer;
   parameterDictionaryName: string;
   parameterDictionaryPath: string = 'e2e-tests/data/parameter-dictionary.xml';
   parameterDictionaryTable: Locator;
   parameterDictionaryTableRow: Locator;
   parameterDictionaryTableRowDeleteButton: Locator;
+  sequenceAdaptationBuffer: Buffer;
   sequenceAdaptationName: string;
   sequenceAdaptationNameInputField: Locator;
   sequenceAdaptationPath: string = 'e2e-tests/data/sequence-adaptation.js';
@@ -41,55 +45,39 @@ export class Dictionaries {
 
   constructor(public page: Page) {
     this.channelDictionaryName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+    this.channelDictionaryBuffer = this.readDictionary(this.channelDictionaryName, this.channelDictionaryPath);
     this.commandDictionaryName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+    this.commandDictionaryBuffer = this.readDictionary(this.commandDictionaryName, COMMAND_DICTIONARY_PATH);
     this.parameterDictionaryName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+    this.parameterDictionaryBuffer = this.readDictionary(this.parameterDictionaryName, this.parameterDictionaryPath);
     this.sequenceAdaptationName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+    this.sequenceAdaptationBuffer = this.readDictionary(this.sequenceAdaptationName, this.sequenceAdaptationPath);
 
-    this.updatePage(this.page);
+    this.page = page;
   }
 
-  async createChannelDictionary(
-    dictionaryName: string = this.channelDictionaryName,
-    dictionaryPath: string = this.channelDictionaryPath,
-  ): Promise<void> {
-    this.channelDictionaryTableRow = this.channelDictionaryTable.getByRole('row', { name: dictionaryName });
+  async createChannelDictionary(): Promise<void> {
+    await this.updatePage(this.page, DictionaryType.ChannelDictionary, this.channelDictionaryName);
 
-    const dictionaryBuffer = await this.readDictionary(dictionaryName, dictionaryPath);
     await this.createDictionary(
-      dictionaryBuffer,
-      dictionaryName,
+      this.channelDictionaryBuffer,
+      this.channelDictionaryName,
       this.channelDictionaryTable,
       this.channelDictionaryTableRow,
       DictionaryType.ChannelDictionary,
     );
-
-    this.confirmModal = this.page.locator(`.modal:has-text("Delete ${DictionaryType.ChannelDictionary}")`);
-    this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
-    this.channelDictionaryTableRowDeleteButton = this.channelDictionaryTableRow
-      .getByRole('gridcell')
-      .getByRole('button', { name: `Delete ${DictionaryType.ChannelDictionary}` });
   }
 
-  async createCommandDictionary(
-    dictionaryName: string = this.commandDictionaryName,
-    dictionaryPath: string = COMMAND_DICTIONARY_PATH,
-  ): Promise<void> {
-    this.commandDictionaryTableRow = this.commandDictionaryTable.getByRole('row', { name: dictionaryName });
+  async createCommandDictionary(): Promise<void> {
+    await this.updatePage(this.page, DictionaryType.CommandDictionary, this.commandDictionaryName);
 
-    const dictionaryBuffer = await this.readDictionary(dictionaryName, dictionaryPath);
     await this.createDictionary(
-      dictionaryBuffer,
-      dictionaryName,
+      this.commandDictionaryBuffer,
+      this.commandDictionaryName,
       this.commandDictionaryTable,
       this.commandDictionaryTableRow,
       DictionaryType.CommandDictionary,
     );
-
-    this.confirmModal = this.page.locator(`.modal:has-text("Delete ${DictionaryType.CommandDictionary}")`);
-    this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
-    this.commandDictionaryTableRowDeleteButton = this.commandDictionaryTable
-      .getByRole('gridcell')
-      .getByRole('button', { name: `Delete ${DictionaryType.CommandDictionary}` });
   }
 
   async createDictionary(
@@ -113,60 +101,39 @@ export class Dictionaries {
     await expect(tableRow).toBeVisible();
   }
 
-  async createParameterDictionary(
-    dictionaryName: string = this.parameterDictionaryName,
-    dictionaryPath: string = this.parameterDictionaryPath,
-  ): Promise<void> {
-    this.parameterDictionaryTableRow = this.parameterDictionaryTable.getByRole('row', {
-      name: dictionaryName,
-    });
+  async createParameterDictionary(): Promise<void> {
+    await this.updatePage(this.page, DictionaryType.ParameterDictionary, this.parameterDictionaryName);
 
-    const dictionaryBuffer = await this.readDictionary(dictionaryName, dictionaryPath);
     await this.createDictionary(
-      dictionaryBuffer,
-      dictionaryName,
+      this.parameterDictionaryBuffer,
+      this.parameterDictionaryName,
       this.parameterDictionaryTable,
       this.parameterDictionaryTableRow,
       DictionaryType.ParameterDictionary,
     );
-
-    this.confirmModal = this.page.locator(`.modal:has-text("Delete ${DictionaryType.ParameterDictionary}")`);
-    this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
-    this.parameterDictionaryTableRowDeleteButton = this.parameterDictionaryTable
-      .getByRole('gridcell')
-      .getByRole('button', { name: `Delete ${DictionaryType.ParameterDictionary}` });
   }
 
-  async createSequenceAdaptation(
-    sequenceName: string = this.sequenceAdaptationName,
-    sequencePath: string = this.sequenceAdaptationPath,
-  ): Promise<void> {
-    this.sequenceAdaptationTableRow = this.sequenceAdaptationTable.getByRole('row', {
-      name: sequenceName,
-    });
-    this.sequenceAdaptationNameInputField = this.page.getByRole('textbox', { name: 'Enter Sequence Adaptation Name' });
-    const dictionaryBuffer = await this.readDictionary(sequenceName, sequencePath);
+  async createSequenceAdaptation(): Promise<void> {
+    await this.updatePage(this.page, DictionaryType.SequenceAdaptation, this.sequenceAdaptationName);
+
     await this.createDictionary(
-      dictionaryBuffer,
-      sequenceName,
+      this.sequenceAdaptationBuffer,
+      this.sequenceAdaptationName,
       this.sequenceAdaptationTable,
       this.sequenceAdaptationTableRow,
       DictionaryType.SequenceAdaptation,
     );
-
-    this.confirmModal = this.page.locator(`.modal:has-text("Delete ${DictionaryType.SequenceAdaptation}")`);
-    this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
-    this.sequenceAdaptationTableRowDeleteButton = this.sequenceAdaptationTable
-      .getByRole('gridcell')
-      .getByRole('button', { name: `Delete ${DictionaryType.SequenceAdaptation}` });
   }
 
   async deleteChannelDictionary(): Promise<void> {
+    await this.updatePage(this.page, DictionaryType.ChannelDictionary, this.channelDictionaryName);
+
     await this.filterTable(this.channelDictionaryTable, this.channelDictionaryName, DictionaryType.ChannelDictionary);
     await this.deleteDictionary(this.channelDictionaryTableRow, this.channelDictionaryTableRowDeleteButton);
   }
 
   async deleteCommandDictionary(): Promise<void> {
+    await this.updatePage(this.page, DictionaryType.CommandDictionary, this.commandDictionaryName);
     await this.filterTable(this.commandDictionaryTable, this.commandDictionaryName, DictionaryType.CommandDictionary);
 
     await this.deleteDictionary(this.commandDictionaryTableRow, this.commandDictionaryTableRowDeleteButton);
@@ -199,6 +166,8 @@ export class Dictionaries {
   }
 
   async deleteParameterDictionary(): Promise<void> {
+    await this.updatePage(this.page, DictionaryType.ParameterDictionary, this.parameterDictionaryName);
+
     await this.filterTable(
       this.parameterDictionaryTable,
       this.parameterDictionaryName,
@@ -208,6 +177,8 @@ export class Dictionaries {
   }
 
   async deleteSequenceAdaptation(): Promise<void> {
+    await this.updatePage(this.page, DictionaryType.SequenceAdaptation, this.sequenceAdaptationName);
+
     await this.filterTable(
       this.sequenceAdaptationTable,
       this.sequenceAdaptationName,
@@ -228,14 +199,13 @@ export class Dictionaries {
       name = dictionaryName + '.xml';
     }
 
-    await this.page.waitForTimeout(1000);
     await this.inputFile.focus();
     await this.inputFile.setInputFiles({
       buffer: dictionaryBuffer,
       mimeType,
       name,
     });
-    await this.inputFile.blur();
+    await this.inputFile.evaluate(e => e.blur());
   }
 
   private async filterTable(table: Locator, dictionaryName: string, type: DictionaryType) {
@@ -261,41 +231,57 @@ export class Dictionaries {
   }
 
   async goto() {
-    await this.page.goto('/dictionaries', { waitUntil: 'load' });
+    await this.page.goto('/dictionaries', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
   }
 
-  async readDictionary(dictionaryName: string, dictionaryPath: string): Promise<Buffer> {
-    try {
-      const dictionaryBuffer = await readFile(dictionaryPath);
-      const dictionaryFile = dictionaryBuffer.toString().replace(/GENERIC/, dictionaryName);
+  readDictionary(dictionaryName: string, dictionaryPath: string): Buffer {
+    const dictionaryFile = readFileSync(dictionaryPath)
+      .toString()
+      .replace(/GENERIC/, dictionaryName);
+    const dictionary = dictionaryFile.toString().replace(/GENERIC/, dictionaryName);
 
-      return Buffer.from(dictionaryFile);
-    } catch (error) {
-      console.error('Error reading dictionary', error);
-      throw error;
-    }
+    return Buffer.from(dictionary);
   }
 
-  async updatePage(page: Page): Promise<void> {
+  async updatePage(page: Page, dictionaryType: DictionaryType, dictionaryName?: string | undefined): Promise<void> {
     this.page = page;
+    this.confirmModal = this.page.locator(`.modal:has-text("Delete ${dictionaryType}")`);
+    this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
     this.createButton = this.page.locator(`button:has-text("Create")`);
     this.inputFile = this.page.locator('input[name="file"]');
 
     this.channelDictionaryTable = this.page
       .locator('div[role="tabpanel"]:has-text("Channel Dictionaries")')
       .getByRole('treegrid');
+    this.channelDictionaryTableRow = this.channelDictionaryTable.getByRole('row', { name: dictionaryName });
+    this.channelDictionaryTableRowDeleteButton = this.channelDictionaryTableRow
+      .getByRole('gridcell')
+      .getByRole('button', { name: `Delete ${DictionaryType.ChannelDictionary}` });
 
     this.commandDictionaryTable = this.page
       .locator('div[role="tabpanel"]:has-text("Command Dictionaries")')
       .getByRole('treegrid');
+    this.commandDictionaryTableRow = this.commandDictionaryTable.getByRole('row', { name: dictionaryName });
+    this.commandDictionaryTableRowDeleteButton = this.commandDictionaryTable
+      .getByRole('gridcell')
+      .getByRole('button', { name: `Delete ${DictionaryType.CommandDictionary}` });
 
     this.parameterDictionaryTable = this.page
       .locator('div[role="tabpanel"]:has-text("Parameter Dictionaries")')
       .getByRole('treegrid');
+    this.parameterDictionaryTableRow = this.parameterDictionaryTable.getByRole('row', { name: dictionaryName });
+    this.parameterDictionaryTableRowDeleteButton = this.parameterDictionaryTable
+      .getByRole('gridcell')
+      .getByRole('button', { name: `Delete ${DictionaryType.ParameterDictionary}` });
 
     this.sequenceAdaptationTable = this.page
       .locator('div[role="tabpanel"]:has-text("Sequence Adaptations")')
       .getByRole('treegrid');
+    this.sequenceAdaptationTableRow = this.sequenceAdaptationTable.getByRole('row', { name: dictionaryName });
+    this.sequenceAdaptationTableRowDeleteButton = this.sequenceAdaptationTable
+      .getByRole('gridcell')
+      .getByRole('button', { name: `Delete ${DictionaryType.SequenceAdaptation}` });
+    this.sequenceAdaptationNameInputField = this.page.locator(`input[name="sequenceAdaptationName"]`);
   }
 }

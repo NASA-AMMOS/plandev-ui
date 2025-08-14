@@ -1,34 +1,37 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { page } from '$app/stores';
+  import { SearchParameters } from '../../../enums/searchParameters';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
+  import { userSequences } from '../../../stores/sequencing';
   import { gqlSubscribable } from '../../../stores/subscribable';
   import type { ActionRun } from '../../../types/actions';
   import type { User } from '../../../types/app';
-  import type { FormParameter } from '../../../types/parameter';
-  import type { ValueSchemaOption } from '../../../types/schema';
   import {
     getActionDefinitionForRun,
-    getUserSequenceValueSchemaOptions,
+    getUserSequencesInWorkspace,
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
-  import effects from '../../../utilities/effects';
+  import { getSearchParameterNumber } from '../../../utilities/generic';
   import gql from '../../../utilities/gql';
   import { getFormParameters } from '../../../utilities/parameters';
   import Parameters from '../../parameters/Parameters.svelte';
   import ActionRunCard from './ActionRunCard.svelte';
+  import effects from '../../../utilities/effects';
+  import type { ValueSchemaOption } from '../../../types/schema';
+  import type { FormParameter } from '../../../types/parameter';
 
   export let initialActionRun: ActionRun | null = null;
   export let user: User | null;
-  export let workspaceId: number | null = null;
 
+  let workspaceId: number | null = null;
   let actionSettings: FormParameter[] = [];
   let actionParameters: FormParameter[] = [];
   let sequenceOptions: ValueSchemaOption[] = [];
 
-  $: if (workspaceId != null) {
-    getUserSequenceOptions(workspaceId);
-  }
+  $: sequenceOptions = getUserSequencesInWorkspace($userSequences, workspaceId);
+  $: workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID, $page.url.searchParams);
 
   $: updateActionSettingsAndParameters(); //update on any change
 
@@ -43,11 +46,6 @@
     initialActionRun,
     user,
   );
-
-  async function getUserSequenceOptions(idOfWorkspace: number): Promise<void> {
-    const workspaceSequences = await effects.getWorkspaceSequences(idOfWorkspace, null, false, user);
-    sequenceOptions = getUserSequenceValueSchemaOptions(workspaceSequences, workspaceId);
-  }
 
   async function onCancelAction(id: number) {
     await effects.cancelActionRun(id, user);

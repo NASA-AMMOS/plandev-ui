@@ -1,12 +1,5 @@
-export function setClipboardContent(content: any, success?: () => void, fail?: () => void) {
-  let contentString = '';
-
-  if (typeof content === 'object') {
-    contentString = JSON.stringify(content);
-  } else {
-    contentString = content;
-  }
-  navigator.clipboard.writeText(contentString).then(
+export function setClipboardContent(content: object, success?: () => void, fail?: () => void) {
+  navigator.clipboard.writeText(JSON.stringify(content)).then(
     () => {
       if (success !== undefined) {
         success(); //optional success callback

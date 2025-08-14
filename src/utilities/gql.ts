@@ -314,6 +314,66 @@ const gql = {
     }
   `,
 
+  CREATE_EXTERNAL_EVENT_TYPE: `#graphql
+    mutation CreateExternalEventType($eventType: external_event_type_insert_input!) {
+      createExternalEventType: ${Queries.INSERT_EXTERNAL_EVENT_TYPE_ONE}(object: $eventType) {
+        name
+      }
+    }
+  `,
+
+  CREATE_EXTERNAL_SOURCE: `#graphql
+    mutation CreateExternalSource(
+      $derivation_group: derivation_group_insert_input!,
+      $event_type: [external_event_type_insert_input!]!
+      $source: external_source_insert_input!,
+      $source_type: external_source_type_insert_input!,
+    ) {
+      upsertExternalEventType: ${Queries.INSERT_EXTERNAL_EVENT_TYPE}(
+        objects: $event_type,
+        on_conflict: {
+          constraint: external_event_type_pkey
+        }
+      ) {
+        returning {
+          name
+        }
+      }
+      upsertExternalSourceType: ${Queries.INSERT_EXTERNAL_SOURCE_TYPE} (
+        object: $source_type,
+        on_conflict: {
+          constraint: external_source_type_pkey
+        }
+      ) {
+        name
+      }
+      upsertDerivationGroup: ${Queries.INSERT_DERIVATION_GROUP} (
+        object: $derivation_group,
+        on_conflict: {
+          constraint: derivation_group_pkey
+        }
+      ) {
+        name
+      }
+      createExternalSource: ${Queries.INSERT_EXTERNAL_SOURCE}(object: $source) {
+        end_time,
+        key,
+        derivation_group_name,
+        source_type_name,
+        start_time,
+        valid_at,
+      }
+    }
+  `,
+
+  CREATE_EXTERNAL_SOURCE_TYPE: `#graphql
+    mutation CreateExternalSourceType($sourceType: external_source_type_insert_input!) {
+      createExternalSourceType: ${Queries.INSERT_EXTERNAL_SOURCE_TYPE}(object: $sourceType) {
+        name
+      }
+    }
+  `,
+
   CREATE_MODEL: `#graphql
     mutation CreateModel($model: mission_model_insert_input!) {
       createModel: ${Queries.INSERT_MISSION_MODEL}(object: $model) {
@@ -739,30 +799,15 @@ const gql = {
       }
     }
   `,
-  DELETE_CONSTRAINT_PLAN_SPECIFICATIONS: `#graphql
-    mutation DeleteConstraintPlanSpecification($constraintIds: [Int!]!, $planId: Int!) {
-      ${Queries.DELETE_CONSTRAINT_SPECIFICATIONS}(
-        where: {
-          constraint_id: { _in: $constraintIds },
-          _and: {
-            plan_id: { _eq: $planId },
-          }
-        }
-      ) {
-        affected_rows
-      }
-    }
-  `,
 
-  DELETE_DERIVATION_GROUPS: `#graphql
-    mutation DeleteDerivationGroup($derivationGroupNames: [String]!) {
-      deleteDerivationGroupForPlan: ${Queries.DELETE_PLAN_DERIVATION_GROUP}(where: { derivation_group_name: { _in: $derivationGroupNames }}) {
+  DELETE_DERIVATION_GROUP: `#graphql
+    mutation DeleteDerivationGroup($name: String!) {
+      deleteDerivationGroupForPlan: ${Queries.DELETE_PLAN_DERIVATION_GROUP}(where: { derivation_group_name: { _eq: $name }}) {
         returning {
           derivation_group_name
-          plan_id
         }
       }
-      deleteDerivationGroup: ${Queries.DELETE_DERIVATION_GROUP}(where: { name: { _in: $derivationGroupNames } }) {
+      deleteDerivationGroup: ${Queries.DELETE_DERIVATION_GROUP}(where: { name: { _eq: $name } }) {
         returning {
           name
         }
@@ -814,13 +859,9 @@ const gql = {
   `,
 
   DELETE_EXTERNAL_EVENT_TYPE: `#graphql
-    mutation DeleteExternalEventType($names: [String]!) {
-      deleteExternalEventType: ${Queries.DELETE_EXTERNAL_EVENT_TYPE}(where: {
-        name: { _in: $names }
-      }) {
-        returning {
-          name
-        }
+    mutation DeleteExternalEventType($name: String!) {
+      deleteExternalEventType: ${Queries.DELETE_EXTERNAL_EVENT_TYPE}(name: $name) {
+        name
       }
     }
   `,
@@ -842,12 +883,9 @@ const gql = {
   `,
 
   DELETE_EXTERNAL_SOURCE_TYPE: `#graphql
-    mutation DeleteExternalSourceType($names: [String]!) {
-      deleteExternalSourceType: ${Queries.DELETE_EXTERNAL_SOURCE_TYPE}(where: {
-        name: { _in: $names }}) {
-          returning {
-            name
-          }
+    mutation DeleteExternalSourceType($name: String!) {
+      deleteExternalSourceType: ${Queries.DELETE_EXTERNAL_SOURCE_TYPE}(name: $name) {
+        name
       }
     }
   `,
@@ -1308,7 +1346,6 @@ const gql = {
           derivation_group_name: {_eq: $derivationGroupName}
         }
       ) {
-        attributes
         event_type_name
         key
         duration
@@ -1330,7 +1367,6 @@ const gql = {
         external_events {
           external_event_type {
             name
-            attribute_schema
           }
         }
       }
@@ -1575,7 +1611,6 @@ const gql = {
           external_sources {
             external_events {
               external_event_type {
-                attribute_schema
                 name
               }
             }
@@ -2386,19 +2421,6 @@ const gql = {
     }
   `,
 
-  SUB_EVENT_TYPES_IN_USE: `#graphql
-  subscription EventTypesInUser {
-    external_source {
-      key
-      external_events {
-        external_event_type {
-          name
-        }
-      }
-    }
-  }
-  `,
-
   SUB_EXPANDED_TEMPLATES: `#graphql
     subscription SubExpandedTemplates {
       expandedTemplates: ${Queries.EXPANDED_TEMPLATES}(order_by: { id: desc }) {
@@ -2496,7 +2518,6 @@ const gql = {
     subscription SubExternalEventTypes {
       models: ${Queries.EXTERNAL_EVENT_TYPES}(order_by: { name: asc }) {
         name
-        attribute_schema
       }
     }
   `,
@@ -2511,7 +2532,6 @@ const gql = {
         valid_at
         created_at
         owner
-        attributes
       }
     }
   `,
@@ -2527,7 +2547,6 @@ const gql = {
         valid_at
         created_at
         owner
-        attributes
       }
     }
   `,
@@ -2536,7 +2555,6 @@ const gql = {
     subscription SubExternalSourceTypes {
       models: ${Queries.EXTERNAL_SOURCE_TYPES}(order_by: { name: asc }) {
         name
-        attribute_schema
       }
     }
   `,
@@ -2590,7 +2608,6 @@ const gql = {
           pending
           success
         }
-        revision
         scheduling_specification_conditions {
           condition_id
           condition_revision
@@ -2713,20 +2730,6 @@ const gql = {
     }
   `,
 
-  SUB_PARCEL: `#graphql
-    subscription SubParcel($parcelId: number) {
-      ${Queries.PARCEL}(where: { id: {_eq: $parcelId } }) {
-        channel_dictionary_id
-        command_dictionary_id
-        created_at
-        id
-        name
-        sequence_adaptation_id
-        updated_at
-      }
-    }
-  `,
-
   SUB_PARCELS: `#graphql
     subscription SubParcels {
       ${Queries.PARCELS}(order_by: { id: desc }) {
@@ -2824,7 +2827,6 @@ const gql = {
     subscription SubPlanExternalEventsDerivationGroup($derivation_group_names: [String!]!){
       events: ${Queries.DERIVED_EVENTS}(where: {derivation_group_name: {_in: $derivation_group_names}}) {
         external_event {
-          attributes
           event_type_name
           key
           duration
@@ -3023,7 +3025,6 @@ const gql = {
             pending
             success
           }
-          revision
           version
           view {
             created_at
@@ -3402,7 +3403,6 @@ const gql = {
         canceled
         id
         model_id
-        model_revision
         plan_revision
         reason
         requested_at
@@ -3427,7 +3427,6 @@ const gql = {
           canceled
           id
           model_id
-          model_revision
           dataset_id
           plan_revision
           requested_at
@@ -3462,7 +3461,6 @@ const gql = {
           canceled
           id
           model_id
-          model_revision
           plan_revision
           reason
           requested_at
@@ -3539,29 +3537,13 @@ const gql = {
     }
   `,
 
-  SUB_WORKSPACE: `#graphql
-    subscription SubWorkspace($workspaceId: Int!) {
-      workspace: ${Queries.WORKSPACE}(id: $workspaceId) {
-        created_at
-        disk_location
-        id
-        name
-        owner
-        parcel_id
-        updated_at
-      }
-    }
-  `,
-
   SUB_WORKSPACES: `#graphql
     subscription SubWorkspaces {
       ${Queries.WORKSPACES}(order_by: { id: desc }) {
         created_at
-        disk_location
         id
         name
         owner
-        parcel_id
         updated_at
       }
     }

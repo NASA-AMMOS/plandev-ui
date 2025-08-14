@@ -20,7 +20,6 @@ export class Plans {
   inputName: Locator;
   inputStartTime: Locator;
   modelStatus: Locator;
-  pageLoadingLocator: Locator;
   planId: string;
   planName: string;
   startTime: string = '2022-001T00:00:00';
@@ -91,7 +90,6 @@ export class Plans {
   }
 
   async fillInputFile(importFilePath: string = this.importFilePath) {
-    await this.page.waitForTimeout(1000);
     await this.inputFile.focus();
     await this.inputFile.setInputFiles(importFilePath);
     await this.inputFile.evaluate(e => e.blur());
@@ -137,9 +135,9 @@ export class Plans {
   }
 
   async goto() {
-    await this.page.goto('/plans', { waitUntil: 'load' });
-    await this.page.waitForURL('/plans', { waitUntil: 'load' });
-    await this.pageLoadingLocator.waitFor({ state: 'detached' });
+    await this.page.goto('/plans', { waitUntil: 'networkidle' });
+    await this.page.waitForURL('/plans', { waitUntil: 'networkidle' });
+    await this.page.waitForTimeout(250);
   }
 
   async importPlan(planName = this.planName, modelName = this.models.modelName) {
@@ -183,7 +181,6 @@ export class Plans {
     this.inputName = page.locator('input[name="name"]');
     this.inputStartTime = page.locator('input[name="start-time"]');
     this.modelStatus = page.getByLabel('Model status');
-    this.pageLoadingLocator = page.locator(`.loading`);
     this.page = page;
     this.table = page.locator('div[role="tabpanel"]:has-text("Plans")').getByRole('treegrid');
     this.tableRow = (planName: string) => this.table.getByRole('row', { name: planName });

@@ -37,7 +37,7 @@
     const structKeys = Object.keys(keys).sort();
 
     const subFormParameters = structKeys.map((key, index) => {
-      let subFormParameter: FormParameter = {
+      const subFormParameter: FormParameter = {
         errors: null,
         key,
         name: key,
@@ -46,6 +46,7 @@
         value: value !== null ? value[key] : null,
         valueSource: formParameter.valueSource,
       };
+
       return subFormParameter;
     });
 
@@ -72,7 +73,7 @@
       <ParameterName {formParameter} />
     </div>
     <div class="right" slot="right">
-      <ParameterUnits unit={formParameter.schema.metadata?.unit?.value} />
+      <ParameterUnits unit={formParameter.schema?.metadata?.unit?.value} />
       <ParameterBaseRightAdornments
         {disabled}
         hidden={hideRightAdornments}

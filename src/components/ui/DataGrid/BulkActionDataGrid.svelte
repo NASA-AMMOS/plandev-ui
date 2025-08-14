@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
+
   type RowData = $$Generic<TRowData>;
 
   // eslint-disable-next-line
@@ -10,14 +12,7 @@
   }
 
   import { browser } from '$app/environment';
-  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
-  import type {
-    ColDef,
-    ColumnState,
-    IRowNode,
-    IsExternalFilterPresentParams,
-    RedrawRowsParams,
-  } from 'ag-grid-community';
+  import type { ColDef, ColumnState, IRowNode, RedrawRowsParams } from 'ag-grid-community';
   import { keyBy } from 'lodash-es';
   import { type ComponentEvents, createEventDispatcher, onDestroy } from 'svelte';
   import type { User } from '../../../types/app';
@@ -28,7 +23,6 @@
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
 
-  export { className as class };
   export let autoSizeColumnsToFit: boolean = true;
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
@@ -54,21 +48,17 @@
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => parseInt(data[idKey]);
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
-  export let isExternalFilterPresent: ((params: IsExternalFilterPresentParams<RowData, any>) => boolean) | undefined =
-    undefined;
-  export let doesExternalFilterPass: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
   export let redrawRows: ((params?: RedrawRowsParams<RowData> | undefined) => void) | undefined = undefined;
 
   const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
   let isFiltered: boolean = false;
   let deletePermission: boolean = true;
-  let className: string = '';
 
   $: if (typeof hasDeletePermission === 'function' && user) {
     if (selectedItemIds.length > 0) {
       const selectedItems = items.filter(item => {
-        return getRowId(item) !== undefined && selectedItemIds.includes(getRowId(item));
+        return item.id !== undefined && selectedItemIds.includes(item.id);
       });
       if (selectedItems.length !== undefined && selectedItems.length > 0) {
         // Check that the user has delete permission on all selected items, or else don't let them delete any
@@ -79,7 +69,7 @@
         });
       }
     } else {
-      const selectedItem = items.find(item => getRowId(item) === selectedItemId) ?? null;
+      const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
       if (selectedItem) {
         if (typeof hasDeletePermission === 'function') {
           deletePermission = hasDeletePermission(user, selectedItem);
@@ -164,16 +154,13 @@
   bind:currentSelectedRowId={selectedItemId}
   bind:selectedRowIds={selectedItemIds}
   bind:redrawRows
-  class={className}
   {autoSizeColumnsToFit}
   {columnDefs}
   {columnStates}
   {columnsToForceRefreshOnDataUpdate}
-  {idKey}
   {getRowId}
+  {idKey}
   {isRowSelectable}
-  {isExternalFilterPresent}
-  {doesExternalFilterPass}
   useCustomContextMenu={showContextMenu}
   rowData={items}
   rowSelection="multiple"
@@ -184,8 +171,6 @@
   {filterExpression}
   {loading}
   on:blur={onBlur}
-  on:cellContextMenu
-  on:cellContextMenuHide
   on:cellEditingStarted
   on:cellEditingStopped
   on:cellValueChanged
@@ -205,6 +190,7 @@
   <svelte:fragment slot="context-menu">
     {#if showContextMenu}
       <slot name="context-menu" />
+
       <ContextMenu.Item size="sm" on:click={selectAllItems}>
         Select All {isFiltered ? 'Visible ' : ''}{pluralItemDisplayText}
       </ContextMenu.Item>
@@ -229,6 +215,9 @@
           </ContextMenu.Item>
         </div>
       {/if}
+
+      <slot name="context-menu-alt" />
+
       <ContextMenu.Separator />
     {/if}
   </svelte:fragment>

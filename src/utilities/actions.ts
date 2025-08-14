@@ -1,5 +1,3 @@
-import { goto } from '$app/navigation';
-import { base } from '$app/paths';
 import type {
   ActionValueSchema,
   ActionValueSchemaSequence,
@@ -8,7 +6,10 @@ import type {
 import type { ActionDefinition, ActionParametersMap, ActionRunSlim } from '../types/actions';
 import type { ValueSchema, ValueSchemaOption } from '../types/schema';
 import type { UserSequence } from '../types/sequencing';
-import { getActionsUrl } from './routes';
+import { getSearchParameterNumber } from './generic';
+import { SearchParameters } from '../enums/searchParameters';
+import { base } from '$app/paths';
+import { goto } from '$app/navigation';
 
 /**
  * Typeguard for determining if a schema is an action sequence/sequenceList schema
@@ -31,17 +32,19 @@ export function valueSchemaRecordToParametersMap(
   }, {});
 }
 
-export function getUserSequenceValueSchemaOptions(
-  workspaceSequences: UserSequence[],
+export function getUserSequencesInWorkspace(
+  sequences: UserSequence[],
   workspaceId: number | null,
 ): ValueSchemaOption[] {
   if (workspaceId === null) {
     return [];
   }
-  return workspaceSequences.map(({ name }) => ({
-    display: name,
-    value: name,
-  }));
+  return sequences
+    .filter(seq => workspaceId === seq.workspace_id)
+    .map(seq => ({
+      display: seq.name,
+      value: `${seq.id}`,
+    }));
 }
 
 /***
@@ -72,8 +75,9 @@ export function getActionParametersOfType(action: ActionDefinition, parameterTyp
   return parametersOfType;
 }
 
-export function openActionRun(workspaceId: number, id: number, newTab?: boolean) {
-  const actionRunUrl = getActionsUrl(base, workspaceId, id);
+export function openActionRun(id: number, newTab?: boolean) {
+  const workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
+  const actionRunUrl = `${base}/sequencing/actions/runs/${id}${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`;
   if (newTab === true) {
     window.open(actionRunUrl, '_blank');
   } else {

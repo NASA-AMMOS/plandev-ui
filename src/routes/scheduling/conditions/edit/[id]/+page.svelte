@@ -13,7 +13,7 @@
     SchedulingConditionDefinition,
     SchedulingConditionMetadataVersionDefinition,
   } from '../../../../../types/scheduling';
-  import { getSearchParameterNumber, setQueryParam } from '../../../../../utilities/url';
+  import { getSearchParameterNumber, setQueryParam } from '../../../../../utilities/generic';
   import type { PageData } from './$types';
 
   export let data: PageData;

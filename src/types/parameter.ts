@@ -15,7 +15,6 @@ export type EffectiveArguments = {
 
 export type FormParameter<T = ValueSchema | UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple> = {
   errors: string[] | null;
-  externalEvent?: boolean;
   file?: File;
   index?: number;
   key?: string;

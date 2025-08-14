@@ -46,9 +46,6 @@ const config = ({ mode }) => {
     ],
     server: {
       host: viteEnvVars.VITE_HOST ?? 'localhost',
-      watch: {
-        ignored: ['**/e2e-test-results/**', '**/e2e-tests/**'],
-      },
     },
     test: {
       alias: [{ find: /^svelte$/, replacement: 'svelte/internal' }], // https://github.com/vitest-dev/vitest/issues/2834

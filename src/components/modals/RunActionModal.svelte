@@ -2,11 +2,11 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { userSequences } from '../../stores/sequencing';
   import type { ActionDefinition } from '../../types/actions';
   import type { User } from '../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../types/parameter';
-  import type { UserSequence } from '../../types/sequencing';
-  import { getUserSequenceValueSchemaOptions, valueSchemaRecordToParametersMap } from '../../utilities/actions';
+  import { getUserSequencesInWorkspace, valueSchemaRecordToParametersMap } from '../../utilities/actions';
   import effects from '../../utilities/effects';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import Parameters from '../parameters/Parameters.svelte';
@@ -18,11 +18,9 @@
   export let actionDefinition: ActionDefinition;
   export let parameters: ArgumentsMap | undefined;
   export let user: User | null;
-  export let workspaceSequences: UserSequence[] = [];
 
-  let argumentsMap: ArgumentsMap = {};
-  let isLoadingWorkspace: boolean = false;
   let running: boolean = false;
+  let argumentsMap: ArgumentsMap = {};
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -48,14 +46,14 @@
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     if (formParameter.schema.type === 'options-single') {
-      const sequences = workspaceSequences.find(sequence => sequence.name === formParameter.value);
+      const sequences = $userSequences.find(sequence => sequence.id === parseInt(formParameter.value));
       formParameter.value = sequences?.name ?? null;
       argumentsMap = getArguments(argumentsMap, formParameter);
     } else if (formParameter.schema.type === 'options-multiple') {
-      const values: string[] = formParameter.value;
-      const sequenceNames: string[] = [];
-      values.forEach(value => {
-        const seq = workspaceSequences.find(sequence => sequence.name === value);
+      const ids: string[] = formParameter.value;
+      let sequenceNames: string[] = [];
+      ids.forEach(id => {
+        const seq = $userSequences.find(sequence => sequence.id === parseInt(id));
         if (seq !== undefined) {
           sequenceNames.push(seq.name);
         }
@@ -80,13 +78,12 @@
         [],
         undefined,
         undefined,
-        getUserSequenceValueSchemaOptions(workspaceSequences, actionDefinition.workspace_id),
+        getUserSequencesInWorkspace($userSequences, actionDefinition.workspace_id),
         'sequence',
       )}
       parameterType="action"
       hideRightAdornments
       hideInfo
-      disabled={isLoadingWorkspace}
       on:change={onChangeFormParameters}
     />
   </ModalContent>

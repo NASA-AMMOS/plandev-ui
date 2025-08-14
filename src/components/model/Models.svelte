@@ -478,7 +478,6 @@
         itemDisplayText="Model"
         items={$models}
         showLoadingSkeleton
-        loading={$models === null}
         {user}
         selectedItemId={selectedModel?.id ?? null}
         on:deleteItem={deleteModelContext}

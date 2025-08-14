@@ -16,23 +16,6 @@ const EPOCH_TIME =
 const EPOCH_SIMPLE = /(^[+-]?)(\d+)(\.[0-9]+)?$/;
 
 /**
- * Changes the timezone representation of a UTC ISO 8601 between 'Z' and '+00:00'.
- * @param {string} time - The time string to convert
- * @returns {string} - The new string with the opposite timezone representation
- * @example
- * switchISOTimezoneRepresentation('2024-001T01:02:03Z'); // 2024-001T01:02:03+00:00
- * switchISOTimezoneRepresentation('2024-001T01:02:03+00:00'); // 2024-001T01:02:03Z
- */
-export function switchISOTimezoneRepresentation(time: string): string {
-  if (time.endsWith('Z')) {
-    return time.replace('Z', '+00:00');
-  } else if (time.endsWith('+00:00')) {
-    return time.replace('+00:00', 'Z');
-  }
-  return time; // No changes if not a valid ISO 8601 representation
-}
-
-/**
  * Validates a time string based on the specified type.
  * @param {string} time - The time string to validate.
  * @param {TimeTypes} type - The type of time to validate against.
@@ -560,7 +543,7 @@ export function getActivityDirectiveStartTimeMs(
   spanUtilityMaps: SpanUtilityMaps,
   cachedStartTimes: { [activityDirectiveId: ActivityDirectiveId]: number } = {},
   traversalMap: { [activityDirectiveId: ActivityDirectiveId]: boolean } = {},
-): number | never {
+): number {
   // If the start time has already been determined in an earlier iteration
   if (cachedStartTimes[id]) {
     return cachedStartTimes[id];
@@ -944,4 +927,31 @@ export function formatMS(ms: number | null): string {
     return `${convertUsToDurationString(ms * 1000).split(' ')[0]}`;
   }
   return '–';
+}
+
+/*
+ * Converts a number to a string and pads it with leading zeroes so that its total length is at least len characters
+ */
+export function padNumber(num: number, len: number): string {
+  return num.toString().padStart(len, '0');
+}
+
+/**
+ * Converts microseconds to a string of the form "HH:mm:ss.SSSSSS".
+ * Example: 5025678901 => "01:23:45.678901"
+ */
+export function usToOffset(us: number): string {
+  const isNegative = us < 0;
+  us = Math.abs(us);
+
+  const hours = Math.floor(us / 3_600_000_000);
+  us %= 3_600_000_000;
+  const minutes = Math.floor(us / 60_000_000);
+  us %= 60_000_000;
+  const seconds = Math.floor(us / 1_000_000);
+  us %= 1_000_000;
+  const micro = us;
+
+  const result = `${padNumber(hours, 2)}:${padNumber(minutes, 2)}:${padNumber(seconds, 2)}.${micro.toString()}`;
+  return isNegative ? `-${result}` : result;
 }

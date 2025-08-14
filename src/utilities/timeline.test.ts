@@ -344,7 +344,6 @@ function generateSpan(properties: Partial<Span>): Span {
 
 function generateExternalEvent(properties: Partial<ExternalEvent>): ExternalEvent {
   return {
-    attributes: {},
     duration: '',
     duration_ms: 0,
     pkey: {
@@ -538,7 +537,7 @@ test('filterResourcesByLayer', () => {
 
 test('directiveInView', () => {
   const viewTimeRange: TimeRange = { end: 1716332383895 + 60000, start: 1716332383895 }; // One minute duration
-  expect(directiveInView(generateActivityDirective({ start_time_ms: null }), viewTimeRange)).toBe(false);
+  expect(directiveInView(generateActivityDirective({ start_time_ms: -1 }), viewTimeRange)).toBe(false);
   expect(directiveInView(generateActivityDirective({ start_time_ms: 1716332383894 }), viewTimeRange)).toBe(false);
   expect(directiveInView(generateActivityDirective({ start_time_ms: 1716332383895 }), viewTimeRange)).toBe(true);
   expect(directiveInView(generateActivityDirective({ start_time_ms: 1716332383896 }), viewTimeRange)).toBe(true);
@@ -1227,7 +1226,6 @@ test('generateDiscreteTree', () => {
               items: [
                 {
                   externalEvent: {
-                    attributes: {},
                     duration: '',
                     duration_ms: 0,
                     pkey: {
@@ -1252,7 +1250,6 @@ test('generateDiscreteTree', () => {
           items: [
             {
               externalEvent: {
-                attributes: {},
                 duration: '',
                 duration_ms: 0,
                 pkey: {
@@ -1277,7 +1274,6 @@ test('generateDiscreteTree', () => {
       items: [
         {
           externalEvent: {
-            attributes: {},
             duration: '',
             duration_ms: 0,
             pkey: {

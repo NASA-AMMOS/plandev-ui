@@ -23,18 +23,11 @@ import {
   parseDoyOrYmdTime,
   parseDurationString,
   removeDateStringMilliseconds,
-  switchISOTimezoneRepresentation,
   validateTime,
 } from '../../src/utilities/time';
 import { TimeTypes } from '../enums/time';
 import type { ActivityDirectiveDB } from '../types/activity';
 import { createSpanUtilityMaps } from './activities';
-
-test('switchISOTimezoneRepresentation', () => {
-  expect(switchISOTimezoneRepresentation('2024-001T01:02:03Z')).toEqual('2024-001T01:02:03+00:00');
-  expect(switchISOTimezoneRepresentation('2024-001T01:02:03+00:00')).toEqual('2024-001T01:02:03Z');
-  expect(switchISOTimezoneRepresentation('2024-001T01:02:03')).toEqual('2024-001T01:02:03');
-});
 
 test('convertDurationStringToUs', () => {
   expect(convertDurationStringToUs('2y 318d 6h 16m 19s 200ms 0us')).toEqual(90577779200000);
@@ -158,7 +151,7 @@ test('getActivityDirectiveStartTimeMs', () => {
   const directiveDBMap = keyBy(
     [directive, anchoredDirective1, anchoredDirective2, anchoredDirective3, anchoredDirective4].map(d => ({
       ...d,
-      start_time_ms: null,
+      start_time_ms: -1,
     })),
     'id',
   );
@@ -279,7 +272,7 @@ test('getActivityDirectiveStartTimeMs - no cycles, anchor chain', () => {
   const directiveDBMap = keyBy(
     [baseDirective, anchored1, anchored2, anchored3, anchored4].map(d => ({
       ...d,
-      start_time_ms: null,
+      start_time_ms: -1,
     })),
     'id',
   );

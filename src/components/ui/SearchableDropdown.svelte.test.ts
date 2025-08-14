@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import type { DropdownOptions } from '../../types/dropdown';
 import SearchableDropdown from './SearchableDropdown.svelte';
 
-vi.mock('$env/dynamic/public', () => import.meta.env); // https://github.com/sveltejs/kit/issues/8180
+vi.mock('$env/dynamic/public', () => import.meta***REMOVED***); // https://github.com/sveltejs/kit/issues/8180
 
 describe('Searchable Dropdown component', () => {
   // Store original function and restore after tests complete

@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import DynamicFilter from './DynamicFilter.svelte';
 
-vi.mock('$env/dynamic/public', () => import.meta.env); // https://github.com/sveltejs/kit/issues/8180
+vi.mock('$env/dynamic/public', () => import.meta***REMOVED***); // https://github.com/sveltejs/kit/issues/8180
 
 describe('Dynamic Filter component', () => {
   afterEach(() => {

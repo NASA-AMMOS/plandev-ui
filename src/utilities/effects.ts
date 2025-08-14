@@ -8,15 +8,12 @@ import {
   type ParameterDictionary as AmpcsParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
-import { chunk } from 'lodash-es';
 import { get } from 'svelte/store';
-import { PATH_DELIMITER } from '../constants/workspaces';
 import { ConstraintDefinitionType } from '../enums/constraint';
 import { DictionaryTypes } from '../enums/dictionaryTypes';
 import { SchedulingDefinitionType } from '../enums/scheduling';
 import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
-import { WorkspaceContentType } from '../enums/workspace';
 import {
   activityDirectivesDB as activityDirectivesDBStore,
   selectedActivityDirectiveId as selectedActivityDirectiveIdStore,
@@ -34,11 +31,16 @@ import {
   savingExpansionSet as savingExpansionSetStore,
 } from '../stores/expansion';
 import {
+  createExternalEventTypeError as createExternalEventTypeErrorStore,
+  creatingExternalEventType as creatingExternalEventTypeStore,
+} from '../stores/external-event';
+import {
   createDerivationGroupError as createDerivationGroupErrorStore,
   createExternalSourceError as createExternalSourceErrorStore,
-  createExternalSourceEventTypeError as createExternalSourceEventTypeErrorStore,
+  createExternalSourceTypeError as createExternalSourceTypeErrorStore,
   creatingExternalSource as creatingExternalSourceStore,
   derivationGroupPlanLinkError as derivationGroupPlanLinkErrorStore,
+  parsingError as parsingErrorStore,
 } from '../stores/external-source';
 import {
   createModelError as createModelErrorStore,
@@ -60,7 +62,6 @@ import { sequenceTemplateExpansionError, sequenceTemplateExpansionStatus } from 
 import {
   channelDictionaries as channelDictionariesStore,
   commandDictionaries as commandDictionariesStore,
-  creatingWorkspace,
   parameterDictionaries as parameterDictionariesStore,
 } from '../stores/sequencing';
 import {
@@ -121,12 +122,22 @@ import type {
   SequenceFilterInsertInput,
 } from '../types/expansion';
 import type { Extension, ExtensionPayload } from '../types/extension';
-import type { ExternalEvent, ExternalEventDB, ExternalEventType } from '../types/external-event';
+import type {
+  ExternalEvent,
+  ExternalEventDB,
+  ExternalEventInsertInput,
+  ExternalEventJson,
+  ExternalEventType,
+  ExternalEventTypeInsertInput,
+} from '../types/external-event';
 import type {
   DerivationGroup,
   DerivationGroupInsertInput,
+  ExternalSourceInsertInput,
   ExternalSourcePkey,
   ExternalSourceSlim,
+  ExternalSourceType,
+  ExternalSourceTypeInsertInput,
   PlanDerivationGroup,
 } from '../types/external-source';
 import type { Model, ModelInsertInput, ModelLog, ModelSchema, ModelSetInput, ModelSlim } from '../types/model';
@@ -202,6 +213,8 @@ import {
   type ParcelToParameterDictionary,
   type SequenceAdaptationMetadata,
   type UserSequence,
+  type UserSequenceInsertInput,
+  type Workspace,
 } from '../types/sequencing';
 import type {
   PlanDataset,
@@ -238,49 +251,44 @@ import type {
 } from '../types/tags';
 import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
-import type { Workspace, WorkspaceInsertInput } from '../types/workspace';
-import type { WorkspaceTreeMap, WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 import { ActivityDeletionAction, addAbsoluteTimeToRevision } from './activities';
-import { compare, convertToQuery } from './generic';
+import { compare, convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
   showCancelActionRunModal,
   showConfirmModal,
+  showCreateGroupsOrTypes,
   showCreatePlanBranchModal,
   showCreatePlanSnapshotModal,
   showCreateViewModal,
   showDeleteActivitiesModal,
-  showDeleteDerivationGroupModal,
-  showDeleteExternalEventSourceTypeModal,
   showDeleteExternalSourceModal,
   showEditViewModal,
-  showImportWorkspaceFileModal,
+  showExpansionPanelModal,
   showLibrarySequenceModel,
+  showManageGroupsAndTypes,
   showManagePlanConstraintsModal,
   showManagePlanDerivationGroups,
   showManagePlanSchedulingConditionsModal,
   showManagePlanSchedulingGoalsModal,
-  showMoveItemToWorkspaceModal,
-  showMoveWorkspaceItemModal,
-  showNewWorkspaceFolderModal,
-  showNewWorkspaceSequenceModal,
   showPlanBranchRequestModal,
-  showRenameWorkspaceItemModal,
   showRestorePlanSnapshotModal,
   showRunActionModal,
   showRunActionResultsModal,
   showTimeRangeModal,
   showUpdatePlanMissionModelModal,
   showUploadViewModal,
+  showWorkspaceModal,
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
-import { reqExtension, reqGateway, reqHasura, reqWorkspace } from './requests';
+import { reqExtension, reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
 import { parseCdlDictionary, toAmpcsXml } from './sequence-editor/languages/vml/cdl-dictionary';
 import { compareEvents } from './simulation';
 import { pluralize } from './text';
 import {
+  convertDoyToYmd,
   convertUTCToMs,
   getDoyTime,
   getDoyTimeFromInterval,
@@ -290,32 +298,15 @@ import {
 } from './time';
 import { createRow, duplicateRow } from './timeline';
 import { showFailureToast, showSuccessToast } from './toast';
-import { getSearchParameterNumber, setQueryParam } from './url';
 import {
   applyViewDefinitionMigrations,
   applyViewMigrations,
   generateDefaultView,
   validateViewJSONAgainstSchema,
 } from './view';
-import { cleanPath, joinPath, mapWorkspaceTreePaths } from './workspaces';
 
 function throwPermissionError(attemptedAction: string): never {
   throw Error(`You do not have permission to: ${attemptedAction}.`);
-}
-
-function createFormDataWithFile(fileName: string, fileContent: string, fileKey: string = 'file'): FormData {
-  const file = new File([fileContent], fileName);
-  const body = new FormData();
-  body.append(fileKey, file, file.name);
-
-  return body;
-}
-
-function createWorkspaceSequenceFileFormData(filePath: string, fileContent: string) {
-  const pathParts = filePath.split(PATH_DELIMITER);
-  const fileName = pathParts[pathParts.length - 1];
-
-  return createFormDataWithFile(fileName, fileContent);
 }
 
 /**
@@ -336,6 +327,7 @@ const effects = {
       if (timeConfirmed && value !== undefined) {
         const { timeRangeEnd, timeRangeStart } = value;
         if (timeRangeStart !== null && timeRangeEnd !== null) {
+          console.log(`${filter.name} Sequence (Plan ${planId})`);
           const sequenceId = await effects.createExpansionSequence(
             `${filter.name} Sequence (Plan ${planId})`,
             simulationDatasetId,
@@ -1209,34 +1201,161 @@ const effects = {
     }
   },
 
-  async createExternalSource(
-    derivationGroupName: string | null,
-    externalSourceFile: File,
-    user: User | null,
-  ): Promise<ExternalSourceSlim | null> {
+  async createExternalEventType(eventType: ExternalEventTypeInsertInput, user: User | null) {
     try {
-      if (!gatewayPermissions.CREATE_EXTERNAL_SOURCE(user)) {
+      creatingExternalEventTypeStore.set(true);
+      createExternalEventTypeErrorStore.set(null);
+      if (eventType) {
+        const { createExternalEventType: created } = await reqHasura<ExternalEventType>(
+          gql.CREATE_EXTERNAL_EVENT_TYPE,
+          { eventType },
+          user,
+        );
+        if (created) {
+          showSuccessToast('External Event Type Created Successfully');
+          creatingExternalEventTypeStore.set(false);
+          return created.name;
+        } else {
+          throw Error('Unable to create external event type');
+        }
+      } else {
+        throw Error('Unable to create external event type');
+      }
+    } catch (e) {
+      catchError('External Event Type Create Failed', e as Error);
+      showFailureToast('External Event Type Create Failed');
+      createExternalEventTypeErrorStore.set((e as Error).message);
+      creatingExternalEventTypeStore.set(false);
+    }
+  },
+
+  async createExternalSource(
+    externalSourceTypeName: string,
+    derivationGroupName: string,
+    startTime: string,
+    endTime: string,
+    externalEvents: ExternalEventJson[],
+    externalSourceKey: string,
+    validAt: string,
+    user: User | null,
+  ) {
+    try {
+      if (!queryPermissions.CREATE_EXTERNAL_SOURCE(user)) {
         throwPermissionError('upload an external source');
       }
       creatingExternalSourceStore.set(true);
       createExternalSourceErrorStore.set(null);
 
-      const body = new FormData();
-      if (derivationGroupName) {
-        body.append('derivation_group_name', derivationGroupName);
-      }
-      body.append('external_source_file', externalSourceFile);
+      // Create mutation inputs for Hasura
+      const externalSourceTypeInsert: ExternalSourceTypeInsertInput = {
+        name: externalSourceTypeName,
+      };
+      const derivationGroupInsert: DerivationGroupInsertInput = {
+        name: derivationGroupName !== '' ? derivationGroupName : `${externalSourceTypeName} Default`,
+        source_type_name: externalSourceTypeName,
+      };
 
-      const reqResponse = await reqGateway(`/uploadExternalSource`, 'POST', body, user, true);
-      if (reqResponse?.errors === undefined) {
-        const { createExternalSource: newExternalSource } = reqResponse;
+      // Convert all times, validate they exist or else throw a failure
+      const startTimeFormatted: string | undefined = convertDoyToYmd(startTime.replaceAll('Z', ''))?.replace(
+        'Z',
+        '+00:00',
+      );
+      const endTimeFormatted: string | undefined = convertDoyToYmd(endTime.replaceAll('Z', ''))?.replace('Z', '+00:00');
+      const validAtFormatted: string | undefined = convertDoyToYmd(validAt.replaceAll('Z', ''))?.replace('Z', '+00:00');
+      if (!startTimeFormatted || !endTimeFormatted || !validAtFormatted) {
+        showFailureToast('Parsing failed.');
+        parsingErrorStore.set(`Parsing failed - parsing dates in input failed. ${startTime}, ${endTime}, ${validAt}`);
+        creatingExternalSourceStore.set(false);
+        return;
+      }
+
+      // Check that the start and end times are logical
+      if (new Date(startTimeFormatted) > new Date(endTimeFormatted)) {
+        showFailureToast('Parsing failed.');
+        parsingErrorStore.set(`Parsing failed - start time ${startTimeFormatted} after end time ${endTimeFormatted}.`);
+        creatingExternalSourceStore.set(false);
+        return;
+      }
+
+      // Create external source mutation input for Hasura
+      const externalSourceInsert: ExternalSourceInsertInput = {
+        derivation_group_name: derivationGroupInsert.name,
+        end_time: endTimeFormatted,
+        external_events: {
+          data: null, // updated after this map is created
+        },
+        key: externalSourceKey,
+        source_type_name: externalSourceTypeName,
+        start_time: startTimeFormatted,
+        valid_at: validAtFormatted,
+      };
+
+      // Create external events + external event types mutation inputs for Hasura
+      const externalEventTypeInserts: ExternalEventTypeInsertInput[] = [];
+      let externalEventsCreated: ExternalEventInsertInput[] = [];
+      for (const externalEvent of externalEvents) {
+        externalEventTypeInserts.push({
+          name: externalEvent.event_type,
+        } as ExternalEventTypeInsertInput);
+
+        // Ensure the duration is valid
+        try {
+          getIntervalInMs(externalEvent.duration);
+        } catch (error) {
+          showFailureToast('Parsing failed.');
+          catchError(`Event duration has invalid format: ${externalEvent.key}\n`, error as Error);
+          creatingExternalSourceStore.set(false);
+          return;
+        }
+
+        // Validate external event is in the external source's start/stop bounds
+        const externalEventStart = Date.parse(convertDoyToYmd(externalEvent.start_time.replace('Z', '')) ?? '');
+        const externalEventEnd = externalEventStart + getIntervalInMs(externalEvent.duration);
+        if (
+          !(externalEventStart >= Date.parse(startTimeFormatted) && externalEventEnd <= Date.parse(endTimeFormatted))
+        ) {
+          showFailureToast('Invalid External Event Time Bounds');
+          parsingErrorStore.set(
+            `Upload failed. Event (${externalEvent.key}) not in bounds of source start and end: occurs from [${new Date(externalEventStart)},${new Date(externalEventEnd)}], not subset of [${new Date(startTimeFormatted)},${new Date(endTimeFormatted)}].\n`,
+          );
+          creatingExternalSourceStore.set(false);
+          return;
+        }
+
+        // If the event is valid...
+        if (
+          externalEvent.event_type !== undefined &&
+          externalEvent.start_time !== undefined &&
+          externalEvent.duration !== undefined
+        ) {
+          externalEventsCreated.push({
+            duration: externalEvent.duration,
+            event_type_name: externalEvent.event_type,
+            key: externalEvent.key,
+            start_time: externalEvent.start_time,
+          });
+        }
+      }
+
+      externalSourceInsert.external_events.data = externalEventsCreated;
+      externalEventsCreated = [];
+
+      const { createExternalSource: createExternalSourceResponse } = await reqHasura(
+        gql.CREATE_EXTERNAL_SOURCE,
+        {
+          derivation_group: derivationGroupInsert,
+          event_type: externalEventTypeInserts,
+          source: externalSourceInsert,
+          source_type: externalSourceTypeInsert,
+        },
+        user,
+      );
+      if (createExternalSourceResponse !== undefined && createExternalSourceResponse !== null) {
         showSuccessToast('External Source Created Successfully');
         creatingExternalSourceStore.set(false);
-        return newExternalSource;
+        return createExternalSourceResponse as ExternalSourceSlim;
       } else {
-        const respErrors = reqResponse.errors.map((respError: { message: string }) => respError.message);
-        showFailureToast('External Source Create Failed');
-        throw new Error(respErrors);
+        throw Error(`Unable to create external source`);
       }
     } catch (e) {
       catchError('External Source Create Failed', e as Error);
@@ -1247,42 +1366,40 @@ const effects = {
         createExternalSourceErrorStore.set((e as Error).message);
       }
       creatingExternalSourceStore.set(false);
-      return null;
     }
   },
 
-  async createExternalSourceEventTypes(
-    eventTypes: object | undefined,
-    sourceTypes: object | undefined,
+  async createExternalSourceType(
+    sourceType: ExternalSourceTypeInsertInput,
     user: User | null,
-  ): Promise<boolean> {
-    if (!gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user) || !gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user)) {
-      throwPermissionError('create en external source or event type');
-    }
-    createExternalSourceEventTypeErrorStore.set(null);
-
+  ): Promise<ExternalSourceType | undefined> {
     try {
-      if (eventTypes === undefined && sourceTypes === undefined) {
-        throw new Error('No External Source or Event Types Defined');
-      }
-      const body = {
-        event_types: JSON.stringify(eventTypes ?? {}),
-        source_types: JSON.stringify(sourceTypes ?? {}),
-      };
-
-      const response = await reqGateway(`/uploadExternalSourceEventTypes`, 'POST', JSON.stringify(body), user, false);
-      if (response?.errors === undefined) {
-        showSuccessToast('External Source & Event Type Created Successfully');
-        return true;
+      createExternalSourceTypeErrorStore.set(null);
+      const { createExternalSourceType: created } = await reqHasura(
+        gql.CREATE_EXTERNAL_SOURCE_TYPE,
+        { sourceType },
+        user,
+      );
+      if (created !== null) {
+        showSuccessToast('External Source Type Created Successfully');
+        return created as ExternalSourceType;
       } else {
-        showFailureToast('External Source & Event Type Create Failed');
-        return false;
+        throw Error(`Unable to create external source type`);
       }
     } catch (e) {
-      showFailureToast('External Source & Event Type Create Failed');
-      createExternalSourceEventTypeErrorStore.set((e as Error).message);
-      catchError(e as Error);
-      return false;
+      catchError('External Source Type Create Failed', e as Error);
+      showFailureToast('External Source Type Create Failed');
+      createExternalSourceTypeErrorStore.set((e as Error).message);
+      return undefined;
+    }
+  },
+
+  async createGroupsOrTypes(user: User | null): Promise<void> {
+    try {
+      await showCreateGroupsOrTypes(user);
+    } catch (e) {
+      catchError('Unable To Be View Derivation Groups and External Types', e as Error);
+      showFailureToast('Derivation Group/External Type Viewing Failed');
     }
   },
 
@@ -2119,28 +2236,27 @@ const effects = {
     }
   },
 
-  // TODO: remove this after expansion runs are made to work in new workspaces
-  // async createUserSequence(sequence: UserSequenceInsertInput, user: User | null): Promise<number | null> {
-  //   try {
-  //     if (!queryPermissions.CREATE_USER_SEQUENCE(user)) {
-  //       throwPermissionError('create a user sequence');
-  //     }
+  async createUserSequence(sequence: UserSequenceInsertInput, user: User | null): Promise<number | null> {
+    try {
+      if (!queryPermissions.CREATE_USER_SEQUENCE(user)) {
+        throwPermissionError('create a user sequence');
+      }
 
-  //     const data = await reqHasura<Pick<UserSequence, 'id'>>(gql.CREATE_USER_SEQUENCE, { sequence }, user);
-  //     const { createUserSequence } = data;
-  //     if (createUserSequence != null) {
-  //       const { id } = createUserSequence;
-  //       showSuccessToast('User Sequence Created Successfully');
-  //       return id;
-  //     } else {
-  //       throw Error(`Unable to create user sequence "${sequence.name}"`);
-  //     }
-  //   } catch (e) {
-  //     catchError('User Sequence Create Failed', e as Error);
-  //     showFailureToast('User Sequence Create Failed');
-  //     return null;
-  //   }
-  // },
+      const data = await reqHasura<Pick<UserSequence, 'id'>>(gql.CREATE_USER_SEQUENCE, { sequence }, user);
+      const { createUserSequence } = data;
+      if (createUserSequence != null) {
+        const { id } = createUserSequence;
+        showSuccessToast('User Sequence Created Successfully');
+        return id;
+      } else {
+        throw Error(`Unable to create user sequence "${sequence.name}"`);
+      }
+    } catch (e) {
+      catchError('User Sequence Create Failed', e as Error);
+      showFailureToast('User Sequence Create Failed');
+      return null;
+    }
+  },
 
   async createView(definition: ViewDefinition, user: User | null): Promise<boolean> {
     try {
@@ -2173,34 +2289,25 @@ const effects = {
     return false;
   },
 
-  async createWorkspace(
-    location: string,
-    parcelId: number,
-    user: User | null,
-    name?: string | null,
-  ): Promise<Workspace | null> {
+  async createWorkspace(workspaceNames: string[], user: User | null): Promise<Workspace | null> {
     try {
       if (!queryPermissions.CREATE_WORKSPACE(user)) {
         throwPermissionError('create a workspace');
       }
 
-      creatingWorkspace.set(true);
+      const { confirm, value } = await showWorkspaceModal(workspaceNames);
 
-      const workspaceInsert: WorkspaceInsertInput | null = {
-        parcelId: parcelId,
-        workspaceLocation: location,
-        ...(name ? { workspaceName: name } : {}),
-      };
+      if (confirm && value) {
+        const workspace = value;
+        const data = await reqHasura<Workspace>(gql.CREATE_WORKSPACE, { workspace }, user);
+        const { createWorkspace } = data;
 
-      const newWorkspace = await reqWorkspace<Workspace>(`create`, 'POST', JSON.stringify(workspaceInsert), user);
-
-      creatingWorkspace.set(false);
-
-      if (newWorkspace != null) {
-        showSuccessToast('Workspace Created Successfully');
-        return newWorkspace;
-      } else {
-        throw Error(`Unable to create workspace at "${location}"`);
+        if (createWorkspace != null) {
+          showSuccessToast('Workspace Created Successfully');
+          return createWorkspace;
+        } else {
+          throw Error(`Unable to create workspace "${workspace.name}"`);
+        }
       }
     } catch (e) {
       catchError('Workspace Create Failed', e as Error);
@@ -2596,29 +2703,22 @@ const effects = {
     }
   },
 
-  async deleteDerivationGroup(derivationGroups: DerivationGroup[] | null, user: User | null): Promise<void> {
+  async deleteDerivationGroup(derivationGroup: DerivationGroup | null, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.DELETE_DERIVATION_GROUPS(user, derivationGroups)) {
+      if (!queryPermissions.DELETE_DERIVATION_GROUP(user, derivationGroup)) {
         throwPermissionError('delete a derivation group');
       }
 
-      if (derivationGroups !== null) {
-        const derivationGroupNames: string[] = derivationGroups.map(derivationGroup => derivationGroup.name);
-
-        // Show confirmation modal prior to running deletion
-        // TODO: Account for non-empty Derivation Groups which cannot be deleted
-        const { confirm } = await showDeleteDerivationGroupModal(derivationGroups);
-        if (confirm) {
-          const data = await reqHasura<{ name: string }>(
-            gql.DELETE_DERIVATION_GROUPS,
-            { derivationGroupNames: derivationGroupNames },
-            user,
-          );
-          if (data.deleteDerivationGroup === null) {
-            throw Error('Unable to delete derivation group');
-          } else {
-            showSuccessToast('Derivation Group Deleted Successfully');
-          }
+      if (derivationGroup !== null) {
+        const data = await reqHasura<{ name: string }>(
+          gql.DELETE_DERIVATION_GROUP,
+          { name: derivationGroup.name },
+          user,
+        );
+        if (data.deleteDerivationGroup === null) {
+          throw Error('Unable to delete derivation group');
+        } else {
+          showSuccessToast('Derivation Group Deleted Successfully');
         }
       }
     } catch (e) {
@@ -2627,11 +2727,7 @@ const effects = {
     }
   },
 
-  async deleteDerivationGroupForPlan(
-    derivation_group_name: string,
-    plan: Plan | null,
-    user: User | null,
-  ): Promise<void> {
+  async deleteDerivationGroupForPlan(derivationGroupName: string, plan: Plan | null, user: User | null): Promise<void> {
     try {
       if ((plan && !queryPermissions.DELETE_PLAN_DERIVATION_GROUP(user, plan)) || !plan) {
         throwPermissionError('delete a derivation group from the plan');
@@ -2650,7 +2746,7 @@ const effects = {
           {
             where: {
               _and: {
-                derivation_group_name: { _eq: derivation_group_name },
+                derivation_group_name: { _eq: derivationGroupName },
                 plan_id: { _eq: plan.id },
               },
             },
@@ -2817,35 +2913,19 @@ const effects = {
     }
   },
 
-  async deleteExternalEventType(
-    externalEventTypes: string[] | null,
-    externalEventTypesInUse: ExternalEventType[],
-    user: User | null,
-  ): Promise<void> {
+  async deleteExternalEventType(eventTypeName: string | null, user: User | null): Promise<void> {
     try {
       if (!queryPermissions.DELETE_EXTERNAL_EVENT_TYPE(user)) {
         throwPermissionError('delete an external event type');
       }
 
-      if (externalEventTypes !== null) {
-        const associatedItems = externalEventTypesInUse.map(externalEventType => externalEventType.name);
-        const { confirm } = await showDeleteExternalEventSourceTypeModal(
-          externalEventTypes,
-          'External Event Type(s)',
-          new Set(associatedItems),
-        );
-
-        if (confirm) {
-          const data = await reqHasura<{ id: number }>(
-            gql.DELETE_EXTERNAL_EVENT_TYPE,
-            { names: externalEventTypes },
-            user,
-          );
-          if (data.deleteDerivationGroup === null) {
-            throw Error('Unable to delete external event type');
-          }
-          showSuccessToast('External Event Type Deleted Successfully');
+      // to do this, all dgs associated should be deleted.
+      if (eventTypeName !== null) {
+        const data = await reqHasura<{ id: number }>(gql.DELETE_EXTERNAL_EVENT_TYPE, { name: eventTypeName }, user);
+        if (data.deleteDerivationGroup === null) {
+          throw Error('Unable to delete external event type');
         }
+        showSuccessToast('External Event Type Deleted Successfully');
       }
     } catch (e) {
       catchError('External Event Type Deletion Failed', e as Error);
@@ -2905,7 +2985,7 @@ const effects = {
             const data = await reqHasura<{ derivationGroupName: string; sourceKeys: string[] }>(
               gql.DELETE_EXTERNAL_SOURCES,
               {
-                derivationGroupName: derivationGroupName,
+                derivationGroupName,
                 sourceKeys: derivationGroups[derivationGroupName],
               },
               user,
@@ -2926,37 +3006,23 @@ const effects = {
     return false;
   },
 
-  async deleteExternalSourceType(
-    externalSourceTypes: string[] | null,
-    externalSources: ExternalSourceSlim[],
-    user: User | null,
-  ): Promise<void> {
+  async deleteExternalSourceType(externalSourceTypeName: string | null, user: User | null): Promise<void> {
     try {
       if (!queryPermissions.DELETE_EXTERNAL_SOURCE_TYPE(user)) {
         throwPermissionError('delete an external source type');
       }
-      if (externalSourceTypes !== null) {
-        const associatedItems = externalSources.filter(externalSource => {
-          return externalSourceTypes.includes(externalSource.source_type_name);
-        });
 
-        const { confirm } = await showDeleteExternalEventSourceTypeModal(
-          externalSourceTypes,
-          'External Source Type(s)',
-          new Set(associatedItems.map(externalSource => externalSource.source_type_name)),
+      // to do this, all dgs associated should be deleted.
+      if (externalSourceTypeName !== null) {
+        const data = await reqHasura<{ name: string }>(
+          gql.DELETE_EXTERNAL_SOURCE_TYPE,
+          { name: externalSourceTypeName },
+          user,
         );
-
-        if (confirm) {
-          const data = await reqHasura<{ name: string }>(
-            gql.DELETE_EXTERNAL_SOURCE_TYPE,
-            { names: externalSourceTypes },
-            user,
-          );
-          if (data.deleteDerivationGroup === null) {
-            throw Error('Unable to delete external source type');
-          } else {
-            showSuccessToast('External Source Type Deletion Successful');
-          }
+        if (data.deleteDerivationGroup === null) {
+          throw Error('Unable to delete external source type');
+        } else {
+          showSuccessToast('External Source Type Deletion Successful');
         }
       }
     } catch (e) {
@@ -3527,36 +3593,35 @@ const effects = {
     }
   },
 
-  // TODO: remove this after expansion runs are made to work in new workspaces
-  // async deleteUserSequence(sequence: UserSequence, user: User | null): Promise<boolean> {
-  //   try {
-  //     if (!queryPermissions.DELETE_USER_SEQUENCE(user, sequence)) {
-  //       throwPermissionError('delete this user sequence');
-  //     }
+  async deleteUserSequence(sequence: UserSequence, user: User | null): Promise<boolean> {
+    try {
+      if (!queryPermissions.DELETE_USER_SEQUENCE(user, sequence)) {
+        throwPermissionError('delete this user sequence');
+      }
 
-  //     const { confirm } = await showConfirmModal(
-  //       'Delete',
-  //       `Are you sure you want to delete "${sequence.name}"?`,
-  //       'Delete User Sequence',
-  //     );
+      const { confirm } = await showConfirmModal(
+        'Delete',
+        `Are you sure you want to delete "${sequence.name}"?`,
+        'Delete User Sequence',
+      );
 
-  //     if (confirm) {
-  //       const data = await reqHasura<{ id: number }>(gql.DELETE_USER_SEQUENCE, { id: sequence.id }, user);
-  //       if (data.deleteUserSequence != null) {
-  //         showSuccessToast('User Sequence Deleted Successfully');
-  //         return true;
-  //       } else {
-  //         throw Error(`Unable to delete user sequence "${sequence.name}"`);
-  //       }
-  //     }
+      if (confirm) {
+        const data = await reqHasura<{ id: number }>(gql.DELETE_USER_SEQUENCE, { id: sequence.id }, user);
+        if (data.deleteUserSequence != null) {
+          showSuccessToast('User Sequence Deleted Successfully');
+          return true;
+        } else {
+          throw Error(`Unable to delete user sequence "${sequence.name}"`);
+        }
+      }
 
-  //     return false;
-  //   } catch (e) {
-  //     catchError('User Sequence Delete Failed', e as Error);
-  //     showFailureToast('User Sequence Delete Failed');
-  //     return false;
-  //   }
-  // },
+      return false;
+    } catch (e) {
+      catchError('User Sequence Delete Failed', e as Error);
+      showFailureToast('User Sequence Delete Failed');
+      return false;
+    }
+  },
 
   async deleteView(view: ViewSlim, user: User | null): Promise<boolean> {
     try {
@@ -3628,60 +3693,6 @@ const effects = {
     return false;
   },
 
-  async deleteWorkspace(workspace: Workspace, user: User | null): Promise<boolean> {
-    try {
-      if (!featurePermissions.workspaces.canDelete(user, workspace)) {
-        throwPermissionError('delete this workspace');
-      }
-
-      const { confirm } = await showConfirmModal(
-        'Delete',
-        `Are you sure you want to delete "${workspace.name}"?`,
-        'Delete Workspace',
-      );
-
-      if (confirm) {
-        await reqWorkspace(`${workspace.id}`, 'DELETE', null, user, undefined, false);
-        showSuccessToast('Workspace Deleted Successfully');
-        return true;
-      }
-    } catch (e) {
-      showFailureToast('Workspace Delete Failed');
-      catchError(e as Error);
-    }
-
-    return false;
-  },
-
-  async deleteWorkspaceItem(
-    workspace: Workspace,
-    originalNode: WorkspaceTreeNode,
-    originalPath: string,
-    user: User | null,
-  ): Promise<void> {
-    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
-    try {
-      if (!featurePermissions.workspace.canDelete(user, workspace, originalNode)) {
-        throwPermissionError(`delete this workspace ${typeString.toLowerCase()}`);
-      }
-
-      const { confirm } = await showConfirmModal(
-        'Delete',
-        `This will permanently delete the ${typeString.toLowerCase()} from the workspace: ${workspace.name}`,
-        'Delete Permanently',
-      );
-
-      if (confirm) {
-        await reqWorkspace(joinPath([workspace.id, originalPath]), 'DELETE', null, user, undefined, false);
-
-        showSuccessToast(`Workspace ${typeString} Deleted Successfully`);
-      }
-    } catch (e) {
-      catchError(`Workspace ${typeString.toLowerCase()} was unable to be deleted`, e as Error);
-      showFailureToast(`Workspace ${typeString} Delete Failed`);
-    }
-  },
-
   duplicateTimelineRow(row: Row, timeline: Timeline, timelines: Timeline[]): Row | null {
     const newRow = duplicateRow(row, timelines, timeline.id);
     if (newRow) {
@@ -3727,20 +3738,29 @@ const effects = {
     return false;
   },
 
-  async editWorkspace(workspace: Workspace, user: User | null): Promise<Workspace | null> {
+  async editWorkspace(workspace: Workspace, workspaceNames: string[], user: User | null): Promise<Workspace | null> {
     try {
       if (!queryPermissions.UPDATE_WORKSPACE(user, workspace)) {
         throwPermissionError('update a workspace');
       }
 
-      const data = await reqHasura<Workspace>(gql.UPDATE_WORKSPACE, { workspace }, user);
-      const { updatedWorkspace } = data;
+      const { confirm, value } = await showWorkspaceModal(workspaceNames, workspace.name);
 
-      if (updatedWorkspace != null) {
-        showSuccessToast('Workspace Updated Successfully');
-        return updatedWorkspace;
-      } else {
-        throw Error(`Unable to update workspace "${workspace.name}"`);
+      if (confirm && value) {
+        const updatedName = value;
+        const data = await reqHasura<Workspace>(
+          gql.UPDATE_WORKSPACE,
+          { id: workspace.id, workspace: updatedName },
+          user,
+        );
+        const { updatedWorkspace } = data;
+
+        if (updatedWorkspace != null) {
+          showSuccessToast('Workspace Updated Successfully');
+          return updatedWorkspace;
+        } else {
+          throw Error(`Unable to update workspace "${workspace.name}"`);
+        }
       }
     } catch (e) {
       catchError('Workspace Update Failed', e as Error);
@@ -4131,7 +4151,7 @@ const effects = {
     }
   },
 
-  async getExternalEventTypes(plan_id: number, user: User | null): Promise<ExternalEventType[]> {
+  async getExternalEventTypes(planId: number, user: User | null): Promise<ExternalEventType[]> {
     try {
       const sourceData = await reqHasura<
         {
@@ -4139,14 +4159,13 @@ const effects = {
             external_sources: {
               external_events: {
                 external_event_type: {
-                  attribute_schema: object;
                   name: string;
                 };
               }[];
             }[];
           };
         }[]
-      >(gql.GET_PLAN_EVENT_TYPES, { plan_id }, user);
+      >(gql.GET_PLAN_EVENT_TYPES, { plan_id: planId }, user);
       const types: ExternalEventType[] = [];
       if (sourceData?.plan_derivation_group !== null) {
         for (const group of sourceData.plan_derivation_group) {
@@ -4174,7 +4193,7 @@ const effects = {
     externalSourceKey: string | null,
     externalSourceDerivationGroup: string | null,
     user: User | null,
-  ): Promise<ExternalEventType[]> {
+  ): Promise<string[]> {
     if (externalSourceKey === null || externalSourceDerivationGroup === null) {
       return [];
     }
@@ -4183,7 +4202,6 @@ const effects = {
         {
           external_events: {
             external_event_type: {
-              attribute_schema: Record<string, any>;
               name: string;
             };
           }[];
@@ -4193,15 +4211,13 @@ const effects = {
         { derivationGroupName: externalSourceDerivationGroup, sourceKey: externalSourceKey },
         user,
       );
-      const { external_source } = data;
-      if (external_source != null) {
-        const eventTypes: ExternalEventType[] = [];
-        for (const external_event of external_source[0].external_events) {
-          if (!eventTypes.map(currentType => currentType.name).includes(external_event.external_event_type.name)) {
-            eventTypes.push(external_event.external_event_type);
-          }
+      const { external_source: externalSource } = data;
+      if (externalSource != null) {
+        const eventTypes: string[] = [];
+        for (const externalEvent of externalSource[0].external_events) {
+          eventTypes.push(externalEvent.external_event_type.name);
         }
-        return eventTypes;
+        return Array.from(new Set(eventTypes));
       } else {
         throw Error('Unable to retrieve external event types for source');
       }
@@ -4236,7 +4252,6 @@ const effects = {
       const externalEvents: ExternalEvent[] = [];
       for (const event of events) {
         externalEvents.push({
-          attributes: event.attributes,
           duration: event.duration,
           duration_ms: getIntervalInMs(event.duration),
           pkey: {
@@ -5161,114 +5176,6 @@ const effects = {
     }
   },
 
-  async getWorkspace(workspaceId: number, user: User | null): Promise<Workspace | null> {
-    try {
-      const query = convertToQuery(gql.SUB_WORKSPACE);
-      const data = await reqHasura<Workspace>(query, { workspaceId }, user);
-      const { workspace } = data;
-
-      if (workspace) {
-        return workspace;
-      } else {
-        return null;
-      }
-    } catch (e) {
-      catchError(e as Error);
-      return null;
-    }
-  },
-
-  async getWorkspaceContents(workspaceId: number, user: User | null): Promise<WorkspaceTreeNode[] | null> {
-    try {
-      const workspaceContents = await reqWorkspace<WorkspaceTreeNode[]>(`${workspaceId}`, 'GET', null, user);
-
-      if (workspaceContents != null) {
-        return workspaceContents;
-      } else {
-        throw Error(`Unable to retrieve workspace contents`);
-      }
-    } catch (e) {
-      catchError('Workspace Retrieval Failed', e as Error);
-      showFailureToast('Workspace Retrieval Failed');
-    }
-
-    return null;
-  },
-
-  async getWorkspaceFileContent(workspaceId: number, filePath: string, user: User | null): Promise<string | null> {
-    try {
-      const fileContents = await reqWorkspace<string>(
-        joinPath([workspaceId, filePath]),
-        'GET',
-        null,
-        user,
-        undefined,
-        false,
-      );
-
-      if (fileContents != null) {
-        return fileContents;
-      } else {
-        throw Error(`Unable to retrieve workspace file`);
-      }
-    } catch (e) {
-      catchError('Workspace File Retrieval Failed', e as Error);
-      showFailureToast('Workspace File Retrieval Failed');
-    }
-
-    return null;
-  },
-
-  async getWorkspaceSequences(
-    workspaceId: number,
-    workspaceTreeMap: WorkspaceTreeMap | null,
-    getFileContents: boolean = true,
-    user: User | null,
-  ): Promise<UserSequence[]> {
-    let workspaceSequenceFileContents: UserSequence[] = [];
-    let treeMap: WorkspaceTreeMap = workspaceTreeMap ?? {};
-    if (!workspaceTreeMap) {
-      const workspaceContents = await effects.getWorkspaceContents(workspaceId, user);
-
-      if (workspaceContents) {
-        treeMap = mapWorkspaceTreePaths(workspaceContents);
-      }
-    }
-    const workspaceSequenceNodes: WorkspaceTreeNodeWithFullPath[] = Object.keys(treeMap).reduce(
-      (currentSequenceNodes: WorkspaceTreeNodeWithFullPath[], treeNodePath: string) => {
-        const treeNode = treeMap[treeNodePath];
-        if (treeNode.type === WorkspaceContentType.Sequence) {
-          currentSequenceNodes.push({
-            ...treeNode,
-            fullPath: treeNodePath,
-          });
-        }
-        return currentSequenceNodes;
-      },
-      [],
-    );
-
-    const chunkedWorkspaceNodes: WorkspaceTreeNodeWithFullPath[][] = chunk(workspaceSequenceNodes, 10);
-
-    for (let i = 0; i < chunkedWorkspaceNodes.length; i++) {
-      const chunkSequenceFileContents: UserSequence[] = await Promise.all(
-        chunkedWorkspaceNodes[i].map(async ({ fullPath }) => {
-          let sequenceDefinition = '';
-          if (getFileContents) {
-            sequenceDefinition = (await effects.getWorkspaceFileContent(workspaceId, fullPath, user)) ?? '';
-          }
-          return {
-            definition: sequenceDefinition,
-            name: fullPath,
-          } as UserSequence;
-        }),
-      );
-
-      workspaceSequenceFileContents = workspaceSequenceFileContents.concat(chunkSequenceFileContents);
-    }
-    return workspaceSequenceFileContents;
-  },
-
   async importLibrarySequences(
     workspaceId: number | null,
   ): Promise<{ fileContents: string; parcel: number } | undefined> {
@@ -5378,57 +5285,6 @@ const effects = {
       showFailureToast('Failed To Import Sequence Template');
       return null;
     }
-  },
-
-  async importWorkspaceFile(
-    workspace: Workspace,
-    workspaceContents: WorkspaceTreeNode,
-    startingPath: string,
-    user: User | null,
-  ): Promise<string | null> {
-    try {
-      if (!featurePermissions.workspace.canUpdate(user, workspace)) {
-        throwPermissionError(`upload to this workspace`);
-      }
-      const { confirm, value } = await showImportWorkspaceFileModal(
-        workspace,
-        workspaceContents,
-        startingPath,
-        workspace,
-        user,
-      );
-      if (confirm) {
-        const { files, targetDirectory } = value;
-        const cleanedTargetPath = cleanPath(targetDirectory);
-        const chunkedFiles = chunk(Array.from<File>(files), 10);
-
-        for (let i = 0; i < chunkedFiles.length; i++) {
-          const fileChunk: File[] = chunkedFiles[i];
-          await Promise.all(
-            fileChunk.map(async file => {
-              const body = new FormData();
-              body.append('file', file, file.name);
-              await reqWorkspace<Workspace>(
-                `${joinPath([workspace.id, cleanedTargetPath, file.name])}?type=file`,
-                'PUT',
-                body,
-                user,
-                undefined,
-                false,
-              );
-            }),
-          );
-        }
-
-        showSuccessToast(`Workspace File${files.length > 1 ? 's' : ''} Uploaded Successfully`);
-        return joinPath([cleanedTargetPath, files[0].name]);
-      }
-    } catch (e) {
-      catchError(`Workspace file was unable to be uploaded`, e as Error);
-      showFailureToast(`Workspace File Upload Failed`);
-    }
-
-    return null;
   },
 
   async initialSimulationUpdate(
@@ -5605,6 +5461,15 @@ const effects = {
     }
   },
 
+  async manageGroupsAndTypes(user: User | null): Promise<void> {
+    try {
+      await showManageGroupsAndTypes(user);
+    } catch (e) {
+      catchError('Unable To Be View Derivation Groups and External Types', e as Error);
+      showFailureToast('Derivation Group/External Type Viewing Failed');
+    }
+  },
+
   async managePlanConstraints(user: User | null): Promise<void> {
     try {
       await showManagePlanConstraintsModal(user);
@@ -5641,158 +5506,6 @@ const effects = {
     }
   },
 
-  async moveWorkspaceItem(
-    workspace: Workspace,
-    workspaceContents: WorkspaceTreeNode,
-    originalNode: WorkspaceTreeNode,
-    originalPath: string,
-    user: User | null,
-  ): Promise<string | null> {
-    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
-    try {
-      if (!featurePermissions.workspace.canUpdate(user, workspace, originalNode)) {
-        throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);
-      }
-
-      const { confirm, value } = await showMoveWorkspaceItemModal(
-        workspace,
-        workspaceContents,
-        originalNode,
-        originalPath,
-        workspace,
-        user,
-      );
-      if (confirm) {
-        const { shouldCopy, targetPath } = value;
-        const cleanedTargetPath = cleanPath(targetPath);
-        try {
-          await reqWorkspace<Workspace>(
-            joinPath([workspace.id, originalPath]),
-            'POST',
-            JSON.stringify({
-              [shouldCopy ? 'copyTo' : 'moveTo']: `./${cleanedTargetPath}`,
-            }),
-            user,
-            undefined,
-            false,
-          );
-          showSuccessToast(`Workspace ${typeString} ${shouldCopy ? 'Copied' : 'Moved'} Successfully`);
-
-          return cleanedTargetPath;
-        } catch (e) {
-          throw Error(
-            `Workspace ${typeString.toLowerCase()} was unable to be ${shouldCopy ? 'copied' : 'moved'}`,
-            e as Error,
-          );
-        }
-      }
-    } catch (e) {
-      catchError(e as Error);
-      showFailureToast((e as Error).message);
-    }
-
-    return null;
-  },
-
-  async moveWorkspaceItemToWorkspace(
-    workspace: Workspace,
-    originalNode: WorkspaceTreeNode,
-    originalPath: string,
-    user: User | null,
-  ): Promise<string | null> {
-    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
-    const { confirm, value } = await showMoveItemToWorkspaceModal(workspace, originalNode, originalPath, user);
-
-    if (confirm) {
-      const { shouldCopy, targetPath, targetWorkspace } = value;
-      try {
-        if (!featurePermissions.workspace.canUpdate(user, targetWorkspace)) {
-          throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);
-        }
-        const cleanedTargetPath = cleanPath(targetPath);
-
-        await reqWorkspace<Workspace>(
-          joinPath([workspace.id, originalPath]),
-          'POST',
-          JSON.stringify({
-            [shouldCopy ? 'copyTo' : 'moveTo']: `./${cleanedTargetPath}`,
-            toWorkspace: targetWorkspace.id,
-          }),
-          user,
-          undefined,
-          false,
-        );
-        showSuccessToast(`Workspace ${typeString} ${shouldCopy ? 'Duplicated' : 'Moved'} Successfully`);
-
-        return cleanedTargetPath;
-      } catch (e) {
-        catchError(
-          `Workspace ${typeString.toLowerCase()} was unable to be ${shouldCopy ? 'duplicated' : 'moved'}`,
-          e as Error,
-        );
-        showFailureToast(`Workspace ${typeString} ${shouldCopy ? 'Duplication' : 'Move'} Failed`);
-      }
-    }
-
-    return null;
-  },
-
-  async newWorkspaceFolder(
-    workspace: Workspace,
-    workspaceContents: WorkspaceTreeNode,
-    startingPath: string,
-    user: User | null,
-  ): Promise<string | null> {
-    const { confirm, value } = await showNewWorkspaceFolderModal(workspace, workspaceContents, startingPath, user);
-    if (confirm) {
-      const { folderPath } = value;
-      try {
-        await reqWorkspace<Workspace>(
-          `${workspace.id}/${folderPath}?type=directory`,
-          'PUT',
-          null,
-          user,
-          undefined,
-          false,
-        );
-
-        showSuccessToast('Workspace Folder Created Successfully');
-        return folderPath;
-      } catch (e) {
-        catchError('Workspace folder was unable to be created', e as Error);
-        showFailureToast('Workspace Folder Creation Failed');
-      }
-    }
-
-    return null;
-  },
-
-  async newWorkspaceSequence(
-    workspace: Workspace,
-    workspaceContents: WorkspaceTreeNode,
-    startingPath: string,
-    sequenceDefinition: string,
-    user: User | null,
-  ): Promise<string | null> {
-    const { confirm, value } = await showNewWorkspaceSequenceModal(workspace, workspaceContents, startingPath, user);
-    if (confirm) {
-      const { filePath } = value;
-      try {
-        const body = createWorkspaceSequenceFileFormData(filePath, sequenceDefinition);
-
-        await reqWorkspace<Workspace>(`${workspace.id}/${filePath}?type=file`, 'PUT', body, user, undefined, false);
-        showSuccessToast('Workspace File Created Successfully');
-
-        return filePath;
-      } catch (e) {
-        catchError('Workspace file was unable to be created', e as Error);
-        showFailureToast('Workspace File Creation Failed');
-      }
-    }
-
-    return null;
-  },
-
   async planMergeBegin(
     mergeRequestId: number,
     sourcePlan: PlanForMerging | undefined,
@@ -5815,7 +5528,7 @@ const effects = {
         throw Error('Unable to begin plan merge');
       }
     } catch (error) {
-      showFailureToast((error as Error)?.message ?? error);
+      showFailureToast('Begin Merge Failed');
       catchError('Begin Merge Failed', error as Error);
       return false;
     }
@@ -6021,43 +5734,6 @@ const effects = {
     }
   },
 
-  async renameWorkspaceItem(
-    workspace: Workspace,
-    originalNode: WorkspaceTreeNode,
-    originalPath: string,
-    user: User | null,
-  ): Promise<string | null> {
-    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
-    try {
-      if (!featurePermissions.workspace.canUpdate(user, workspace, originalNode)) {
-        throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);
-      }
-      const { confirm, value } = await showRenameWorkspaceItemModal(originalNode, originalPath);
-
-      if (confirm) {
-        const { targetPath } = value;
-        const cleanedTargetPath = cleanPath(targetPath);
-        await reqWorkspace<Workspace>(
-          joinPath([workspace.id, originalPath]),
-          'POST',
-          JSON.stringify({
-            moveTo: `./${cleanedTargetPath}`,
-          }),
-          user,
-          undefined,
-          false,
-        );
-        showSuccessToast(`Workspace ${typeString} Renamed Successfully`);
-        return cleanedTargetPath;
-      }
-    } catch (e) {
-      catchError(`Workspace ${typeString.toLowerCase()} was unable to be renamed`, e as Error);
-      showFailureToast(`Workspace ${typeString} Rename Failed`);
-    }
-
-    return null;
-  },
-
   async restoreActivityFromChangelog(
     activityId: number,
     plan: Plan,
@@ -6174,12 +5850,11 @@ const effects = {
 
   async runAction(
     actionDefinition: ActionDefinition,
-    workspaceSequences: UserSequence[],
     user: User | null,
     parameters?: ArgumentsMap,
   ): Promise<number | null> {
     try {
-      const { confirm, value } = await showRunActionModal(actionDefinition, user, workspaceSequences, parameters);
+      const { confirm, value } = await showRunActionModal(actionDefinition, user, parameters);
       if (confirm && value) {
         const { id } = value;
         return id;
@@ -6189,25 +5864,6 @@ const effects = {
       catchError('Run Action Failed', e as Error);
       showFailureToast('Run Action Failed');
       return null;
-    }
-  },
-
-  async saveWorkspaceFile(workspaceId: number, filePath: string, fileContent: string, user: User | null = null) {
-    try {
-      const body = createWorkspaceSequenceFileFormData(filePath, fileContent);
-
-      await reqWorkspace<Workspace>(
-        `${workspaceId}/${filePath}?type=file&overwrite=true`,
-        'PUT',
-        body,
-        user,
-        undefined,
-        false,
-      );
-      showSuccessToast('Workspace File Saved Successfully');
-    } catch (e) {
-      catchError('Workspace file was unable to be saved', e as Error);
-      showFailureToast('Workspace File Save Failed');
     }
   },
 
@@ -6300,45 +5956,44 @@ const effects = {
     }
   },
 
-  // TODO: remove this after expansion runs are made to work in new workspaces
-  // async sendSequenceToWorkspace(
-  //   sequence: ExpansionSequence | null,
-  //   expandedSequence: string | null,
-  //   user: User | null,
-  // ): Promise<void> {
-  //   if (sequence === null) {
-  //     showFailureToast("Sequence Doesn't Exist");
-  //     return;
-  //   }
+  async sendSequenceToWorkspace(
+    sequence: ExpansionSequence | null,
+    expandedSequence: string | null,
+    user: User | null,
+  ): Promise<void> {
+    if (sequence === null) {
+      showFailureToast("Sequence Doesn't Exist");
+      return;
+    }
 
-  //   if (expandedSequence === null) {
-  //     showFailureToast("Expanded Sequence Doesn't Exist");
-  //     return;
-  //   }
+    if (expandedSequence === null) {
+      showFailureToast("Expanded Sequence Doesn't Exist");
+      return;
+    }
 
-  //   const { confirm, value } = await showExpansionPanelModal();
+    const { confirm, value } = await showExpansionPanelModal();
 
-  //   if (!confirm || !value) {
-  //     return;
-  //   }
+    if (!confirm || !value) {
+      return;
+    }
 
-  //   try {
-  //     const createUserSequenceInsertInput: UserSequenceInsertInput = {
-  //       definition: expandedSequence,
-  //       is_locked: false,
-  //       name: sequence.seq_id,
-  //       parcel_id: value.parcelId,
-  //       seq_json: '',
-  //       workspace_id: value.workspaceId,
-  //     };
-  //     const userSequenceCreated = await this.createUserSequence(createUserSequenceInsertInput, user);
-  //     if (!userSequenceCreated) {
-  //       throw Error('Sequence Import Failed');
-  //     }
-  //   } catch (e) {
-  //     catchError(e as Error);
-  //   }
-  // },
+    try {
+      const createUserSequenceInsertInput: UserSequenceInsertInput = {
+        definition: expandedSequence,
+        is_locked: false,
+        name: sequence.seq_id,
+        parcel_id: value.parcelId,
+        seq_json: '',
+        workspace_id: value.workspaceId,
+      };
+      const userSequenceCreated = await this.createUserSequence(createUserSequenceInsertInput, user);
+      if (!userSequenceCreated) {
+        throw Error('Sequence Import Failed');
+      }
+    } catch (e) {
+      catchError(e as Error);
+    }
+  },
 
   async session(user: BaseUser | null): Promise<ReqSessionResponse> {
     try {
@@ -6478,7 +6133,7 @@ const effects = {
       }
     } catch (e) {
       catchError('Activity Directive Update Failed', e as Error);
-      showFailureToast(`Activity Directive Update Failed: \n${(e as Error).message}`);
+      showFailureToast('Activity Directive Update Failed');
     }
   },
 
@@ -7428,37 +7083,36 @@ const effects = {
     }
   },
 
-  // TODO: remove this after expansion runs are made to work in new workspaces
-  // async updateUserSequence(
-  //   id: number,
-  //   sequence: Partial<UserSequence>,
-  //   sequenceOwner: UserId,
-  //   user: User | null,
-  // ): Promise<string | null> {
-  //   try {
-  //     if (!queryPermissions.UPDATE_USER_SEQUENCE(user, { owner: sequenceOwner })) {
-  //       throwPermissionError('update this user sequence');
-  //     }
+  async updateUserSequence(
+    id: number,
+    sequence: Partial<UserSequence>,
+    sequenceOwner: UserId,
+    user: User | null,
+  ): Promise<string | null> {
+    try {
+      if (!queryPermissions.UPDATE_USER_SEQUENCE(user, { owner: sequenceOwner })) {
+        throwPermissionError('update this user sequence');
+      }
 
-  //     const data = await reqHasura<Pick<UserSequence, 'id' | 'updated_at'>>(
-  //       gql.UPDATE_USER_SEQUENCE,
-  //       { id, sequence },
-  //       user,
-  //     );
-  //     const { updateUserSequence } = data;
-  //     if (updateUserSequence != null) {
-  //       const { updated_at: updatedAt } = updateUserSequence;
-  //       showSuccessToast('User Sequence Updated Successfully');
-  //       return updatedAt;
-  //     } else {
-  //       throw Error(`Unable to update user sequence with ID: "${id}"`);
-  //     }
-  //   } catch (e) {
-  //     catchError('User Sequence Update Failed', e as Error);
-  //     showFailureToast('User Sequence Update Failed');
-  //     return null;
-  //   }
-  // },
+      const data = await reqHasura<Pick<UserSequence, 'id' | 'updated_at'>>(
+        gql.UPDATE_USER_SEQUENCE,
+        { id, sequence },
+        user,
+      );
+      const { updateUserSequence } = data;
+      if (updateUserSequence != null) {
+        const { updated_at: updatedAt } = updateUserSequence;
+        showSuccessToast('User Sequence Updated Successfully');
+        return updatedAt;
+      } else {
+        throw Error(`Unable to update user sequence with ID: "${id}"`);
+      }
+    } catch (e) {
+      catchError('User Sequence Update Failed', e as Error);
+      showFailureToast('User Sequence Update Failed');
+      return null;
+    }
+  },
 
   async updateView(id: number, view: Partial<View>, message: string | null, user: User | null): Promise<boolean> {
     try {
