@@ -36,6 +36,7 @@
 
   const deletePermissionSequenceError: string = 'You do not have permission to delete an expansion sequence.';
   const deletePermissionSequenceFilterError: string = 'You do not have permission to delete a sequence filter';
+  const selectExpansionSetMessage: string = 'First, select an Expansion Set!';
 
   let filterText: string;
   let sequencesAndFilters: (ExpansionSequence | SequenceFilter)[] = [];
@@ -237,11 +238,11 @@
         {/if}
       </svelte:fragment>
     </ActivityFilterBuilder>
-    <div class="sne-controls">
+    <div class="sne-controls flex flex-wrap">
       <div class="sne-filter">
         <input
           bind:value={filterText}
-          class="st-input"
+          class="st-input w-32"
           name="search"
           autocomplete="off"
           placeholder="Filter..."
@@ -249,8 +250,8 @@
         />
       </div>
       {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
-        <div class="sne-expansion-set-select">
-          <select name="expansionSetId" bind:value={selectedExpansionSetId} class="st-select w-full">
+        <div class="sne-expansion-set-select min-w-28">
+          <select name="expansionSetId" bind:value={selectedExpansionSetId} class="st-select w-32">
             {#if !$expansionSets.length}
               <option value={null}>No Expansion Sets</option>
             {:else}
@@ -264,7 +265,7 @@
           </select>
         </div>
       {/if}
-      <div class="sne-buttons">
+      <div class="sne-buttons flex flex-wrap gap-1">
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild let:builder>
             <Button variant="outline" builders={[builder]}>New</Button>
@@ -275,13 +276,20 @@
             <DropdownMenu.Item size="sm" on:click={onShowFilterCreate}>Sequence Filter</DropdownMenu.Item>
           </DropdownMenu.Content>
         </DropdownMenu.Root>
-        <button
-          class="st-button secondary expand-all-button"
-          disabled={isExpansionDisabled}
-          on:click|stopPropagation={onExpandAll}
+        <div
+          use:tooltip={{
+            content: isExpansionDisabled ? selectExpansionSetMessage : 'Expand All Sequences',
+            placement: 'top',
+          }}
         >
-          Expand All
-        </button>
+          <button
+            class="st-button secondary expand-all-button"
+            disabled={isExpansionDisabled}
+            on:click|stopPropagation={onExpandAll}
+          >
+            Expand All
+          </button>
+        </div>
       </div>
     </div>
     <div class="sne-items">
@@ -349,7 +357,12 @@
                   <DownloadIcon />
                 </button>
               </div>
-              <div use:tooltip={{ content: 'Expand Sequence', placement: 'top' }}>
+              <div
+                use:tooltip={{
+                  content: isExpansionDisabled ? selectExpansionSetMessage : 'Expand Sequence',
+                  placement: 'top',
+                }}
+              >
                 <button
                   aria-label={`Expand '${sequenceOrFilter.seq_id}'`}
                   class="st-button icon"
@@ -428,7 +441,6 @@
   .sne-controls {
     align-items: center;
     background: rgba(248, 248, 248, 0.6);
-    display: flex;
     gap: 8px;
     padding: 8px 8px;
   }
