@@ -27,7 +27,7 @@
   } from '../../language-package/interfaces/new-adaptation-interface';
   import type { ActionDefinition } from '../../types/actions';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
-  import { downloadBlob, downloadJSON } from '../../utilities/generic';
+  import { downloadBlob } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { pluralize } from '../../utilities/text';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
@@ -193,17 +193,12 @@
   }
 
   function downloadOutputFormat(outputFormat: OutputLanguageAdaptation): void {
-    const fileExtension = `${sequenceName}${selectedOutputFormat?.fileExtension}`;
-
-    if (outputFormat?.fileExtension === 'json') {
-      downloadJSON(JSON.parse(editorOutputView.state.doc.toString()), fileExtension);
-    } else {
-      downloadBlob(new Blob([editorOutputView.state.doc.toString()], { type: 'text/plain' }), fileExtension);
-    }
+    const fileExtension = sequenceName.replace(newSequenceAdaptation.input.fileExtension, outputFormat.fileExtension);
+    downloadBlob(new Blob([editorOutputView.state.doc.toString()], { type: 'text/plain' }), fileExtension);
   }
 
   function downloadInputFormat(): void {
-    downloadBlob(new Blob([editorSequenceView.state.doc.toString()], { type: 'text/plain' }), `${sequenceName}.txt`); // TODO configure file extension to be customizable
+    downloadBlob(new Blob([editorSequenceView.state.doc.toString()], { type: 'text/plain' }), sequenceName);
   }
 
   async function copyOutputFormatToClipboard(): Promise<void> {

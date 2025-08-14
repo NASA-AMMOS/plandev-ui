@@ -22,8 +22,8 @@ export interface PhoenixContext {
 }
 
 export interface LanguageAdaptation {
-  name: String,
-  fileExtension: String,
+  name: string,
+  fileExtension: string,
   editorExtension?: (context: PhoenixContext) => Extension,
   commandInfoMapper: CommandInfoMapper,
   format?: (view: EditorView) => void,
