@@ -17,7 +17,7 @@ const debouncedSeqNHighlightBlock = debounce(seqNHighlightBlock, 250);
 
 const seqnAdaptation: LanguageAdaptation = {
     name: "SeqN",
-    fileExtension: ".seqn",
+    fileExtension: ".seqN.txt",
     editorExtension: context => [
         setupLanguageSupport(sequenceCompletion(
             context.channelDictionary,
