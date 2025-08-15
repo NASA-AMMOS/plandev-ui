@@ -195,7 +195,3 @@ export function decodeInt32Array(encoded: string[]) {
     })
     .join('');
 }
-
-export function isVmlSequence(sequenceName: string | undefined): boolean {
-  return sequenceName !== undefined && sequenceName.endsWith('.vml');
-}

@@ -3,6 +3,7 @@ import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
 import type { SequenceTypes } from '../../enums/sequencing';
+import type { UserSequence } from '../../types/sequencing';
 import type { CommandInfoMapper } from './command-info-mapper';
 
 export type LibrarySequence = {
@@ -27,6 +28,7 @@ export interface LanguageAdaptation {
   editorExtension?: (context: PhoenixContext) => Extension,
   commandInfoMapper: CommandInfoMapper,
   format?: (view: EditorView) => void,
+  getLibrarySequences?: (sequence: UserSequence, workspaceId: number) => LibrarySequence[]
 }
 
 export interface OutputLanguageAdaptation extends Omit<LanguageAdaptation, "commandInfoMapper" | "format"> {

@@ -7,7 +7,7 @@ import { globals } from "./global-types";
 import { outputLinter } from "./output-linter";
 import { SeqLanguage, setupLanguageSupport } from "./seq-n";
 import { seqNBlockHighlighter, seqNHighlightBlock } from "./seq-n-highlighter";
-import { SeqNCommandInfoMapper } from "./seq-n-tree-utils";
+import { SeqNCommandInfoMapper, userSequenceToLibrarySequence } from "./seq-n-tree-utils";
 import { seqNFormat, sequenceAutoIndent } from "./sequence-autoindent";
 import { sequenceCompletion } from "./sequence-completion";
 import { seqnLinter } from "./sequence-linter";
@@ -45,6 +45,7 @@ const seqnAdaptation: LanguageAdaptation = {
     ],
     commandInfoMapper: new SeqNCommandInfoMapper(),
     format: seqNFormat,
+    getLibrarySequences: (sequence, workspaceId) => [userSequenceToLibrarySequence(sequence, workspaceId)]
 }
 
 const seqJsonAdaptation: OutputLanguageAdaptation = {
