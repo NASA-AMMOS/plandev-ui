@@ -19,8 +19,6 @@
   import { SearchParameters } from '../../../enums/searchParameters';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import type { LibrarySequence } from '../../../language-package/interfaces/new-adaptation-interface';
-  import { userSequenceToLibrarySequence } from '../../../language-package/languages/seq-n/seq-n-tree-utils';
-  import { parseFunctionSignatures } from '../../../language-package/languages/vml/vml-adaptation';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
   import { sequenceAdaptation, setSequenceAdaptation } from '../../../stores/sequence-adaptation';
   import {
@@ -56,7 +54,6 @@
   import { showConfirmModal } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
   import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
-  import { isVmlSequence } from '../../../utilities/sequence-editor/sequence-utils';
   import { showFailureToast } from '../../../utilities/toast';
   import { mapWorkspaceTreePaths, separateFilenameFromPath } from '../../../utilities/workspaces';
   import type { PageData } from './$types';
@@ -187,13 +184,7 @@
 
       if (librarySequencesEnabled) {
         workspaceLibrarySequences = workspaceSequences
-          .flatMap(sequence => {
-            if (isVmlSequence(sequence.name)) {
-              return parseFunctionSignatures(sequence.definition, $workspaceId);
-            } else {
-              return userSequenceToLibrarySequence(sequence, $workspaceId);
-            }
-          })
+          .flatMap(sequence => ($sequenceAdaptation.input.getLibrarySequences ?? (_ => []))(sequence, $workspaceId))
           .filter(({ name }) => name !== '');
       }
 

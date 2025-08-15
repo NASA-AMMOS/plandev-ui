@@ -4,7 +4,7 @@ import { debounce } from "lodash-es";
 import type { LanguageAdaptation, NewAdaptationInterface } from "../../interfaces/new-adaptation-interface";
 import { globals } from "../seq-n/global-types";
 import { seqNBlockHighlighter, seqNHighlightBlock } from "../seq-n/seq-n-highlighter";
-import { SeqNCommandInfoMapper } from "../seq-n/seq-n-tree-utils";
+import { SeqNCommandInfoMapper, userSequenceToLibrarySequence } from "../seq-n/seq-n-tree-utils";
 import { seqNFormat, sequenceAutoIndent } from "../seq-n/sequence-autoindent";
 import { sequenceCompletion } from "../seq-n/sequence-completion";
 import { seqnLinter } from "../seq-n/sequence-linter";
@@ -43,6 +43,7 @@ const seqnAdaptation: LanguageAdaptation = {
     ],
     commandInfoMapper: new SeqNCommandInfoMapper(),
     format: seqNFormat,
+    getLibrarySequences: (sequence, workspaceId) => [userSequenceToLibrarySequence(sequence, workspaceId)]
 }
 
 export const defaultAdaptation: NewAdaptationInterface = {
