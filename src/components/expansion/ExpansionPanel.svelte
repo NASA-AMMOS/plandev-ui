@@ -36,7 +36,7 @@
 
   const deletePermissionSequenceError: string = 'You do not have permission to delete an expansion sequence.';
   const deletePermissionSequenceFilterError: string = 'You do not have permission to delete a sequence filter';
-  const selectExpansionSetMessage: string = 'First, select an Expansion Set!';
+  const selectExpansionSetMessage: string = 'No expansion set selected';
 
   let filterText: string;
   let sequencesAndFilters: (ExpansionSequence | SequenceFilter)[] = [];
@@ -250,8 +250,8 @@
         />
       </div>
       {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
-        <div class="sne-expansion-set-select min-w-28">
-          <select name="expansionSetId" bind:value={selectedExpansionSetId} class="st-select w-32">
+        <div class="sne-expansion-set-select flex-1">
+          <select name="expansionSetId" bind:value={selectedExpansionSetId} class="st-select min-w-36">
             {#if !$expansionSets.length}
               <option value={null}>No Expansion Sets</option>
             {:else}
@@ -296,8 +296,8 @@
       {#each sequencesAndFilters as sequenceOrFilter}
         {#if isExpansionSequence(sequenceOrFilter)}
           <ListItem>
-            <span slot="prefix" class="sne-item">
-              <JournalCodeIcon />
+            <span slot="prefix" class="text-ellipsis overflow-hidden whitespace-nowrap align-middle">
+              <JournalCodeIcon size={16} class="inline"/>
               {sequenceOrFilter.seq_id}
             </span>
             <span slot="suffix">
@@ -380,8 +380,8 @@
           </ListItem>
         {:else}
           <ListItem>
-            <span slot="prefix" class="sne-item">
-              <FilterIcon />
+            <span slot="prefix" class="text-ellipsis overflow-hidden whitespace-nowrap align-middle">
+              <FilterIcon size={16} class="inline"/>
               {sequenceOrFilter.name}
             </span>
             <span slot="suffix">
@@ -447,16 +447,6 @@
 
   .sne-controls :global(.st-input) {
     flex: 1;
-  }
-
-  :global(.sne-item) {
-    align-items: center;
-    display: flex;
-    gap: 8px;
-  }
-
-  .sne-item :global(svg) {
-    flex-shrink: 0;
   }
 
   .expand-all-button {
