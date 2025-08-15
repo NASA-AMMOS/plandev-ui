@@ -11,7 +11,7 @@ import type {
 } from '@nasa-jpl/aerie-ampcs';
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import type { DictionaryTypes } from '../enums/dictionaryTypes';
-import type { ISequenceAdaptation } from '../language-package/interfaces/legacy';
+import type { NewAdaptationInterface } from '../language-package/interfaces/new-adaptation-interface';
 import type { UserId } from './app';
 
 export type ChannelDictionaryMetadata = {
@@ -27,9 +27,9 @@ export type ParameterDictionaryMetadata = {
 } & DictionaryMetadata;
 
 export type SequenceAdaptationMetadata = {
-  adaptation: ISequenceAdaptation;
   name: string;
   type: DictionaryTypes.ADAPTATION;
+  adaptation: NewAdaptationInterface;
 } & DictionaryMetadata;
 
 export type DictionaryMetadata = {
