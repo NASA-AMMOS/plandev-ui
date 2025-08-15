@@ -10,7 +10,6 @@
     | Pick<ModelSlim, 'refresh_activity_type_logs' | 'refresh_model_parameter_logs' | 'refresh_resource_type_logs'>
     | undefined;
   export let title: string;
-  export let value: string;
 
   let selectedLog: 'activity' | 'parameter' | 'resource' | undefined = undefined;
   let selectedModelLog: ModelLog | null = null;
@@ -40,7 +39,7 @@
   }
 </script>
 
-<Tabs.Content {value} class="mt-0 h-full w-full">
+<Tabs.Content value="model" class="mt-0 h-full w-full">
   <div class="grid h-full grid-rows-[min-content_auto] gap-y-[5px] p-3">
     <div class="flex flex-col">
       <div class="my-2.5 text-[11px] font-bold uppercase leading-4 text-[var(--st-gray-60)]">{title}</div>

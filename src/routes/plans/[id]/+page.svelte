@@ -1009,12 +1009,11 @@
           <ConsoleGenericErrors value="scheduling" errors={$schedulingErrors} />
           <ConsoleGenericErrors value="simulation" errors={$simulationDatasetErrors} />
           <ConsoleActivityErrors
-            value="activity"
             activityValidationErrorTotalRollup={activityErrorCounts}
             activityValidationErrorRollups={$activityErrorRollups}
             on:selectionChanged={onActivityValidationSelected}
           />
-          <ConsoleModelErrors value="model" model={$plan?.model} title="Mission Model Errors" />
+          <ConsoleModelErrors model={$plan?.model} title="Mission Model Errors" />
         </Console>
       </div>
     </Resizable.Pane>

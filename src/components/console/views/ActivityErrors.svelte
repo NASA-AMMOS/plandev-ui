@@ -13,7 +13,6 @@
 
   export let activityValidationErrorRollups: ActivityErrorRollup[] = [];
   export let activityValidationErrorTotalRollup: ActivityErrorCounts;
-  export let value: string;
 
   $: hasErrors = activityValidationErrorRollups.length > 0;
 
@@ -122,7 +121,7 @@
   let selectedCategory: ActivityErrorCategories = 'all';
 </script>
 
-<Tabs.Content {value} class="mt-0 h-full overflow-hidden pb-2 pr-2 pt-2">
+<Tabs.Content value="activity" class="mt-0 h-full overflow-hidden pb-2 pr-2 pt-2">
   {#if hasErrors}
     <div class="flex h-full flex-col overflow-hidden">
       <div class="grid min-h-0 flex-1 grid-cols-[240px_1fr] overflow-hidden bg-[var(--st-gray-15)]">
