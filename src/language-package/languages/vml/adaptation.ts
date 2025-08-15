@@ -2,7 +2,7 @@ import { EditorView } from "codemirror";
 import { debounce } from "lodash-es";
 import type { LanguageAdaptation, NewAdaptationInterface } from "../../interfaces/new-adaptation-interface";
 import { setupVmlLanguageSupport, vmlBlockHighlighter, vmlHighlightBlock } from "./vml";
-import { vmlAutoComplete } from "./vml-adaptation";
+import { parseFunctionSignatures, vmlAutoComplete } from "./vml-adaptation";
 import { vmlFormat } from "./vml-formatter";
 import { vmlLinter } from "./vml-linter";
 import { vmlTooltip } from "./vml-tooltip";
@@ -36,6 +36,7 @@ const vmlAdaptation: LanguageAdaptation = {
     ],
     commandInfoMapper: new VmlCommandInfoMapper(),
     format: vmlFormat,
+    getLibrarySequences: (sequence, workspaceId) => parseFunctionSignatures(sequence.definition, workspaceId)
 }
 
 export const defaultAdaptation: NewAdaptationInterface = {
