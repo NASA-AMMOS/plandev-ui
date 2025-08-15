@@ -1,8 +1,8 @@
 import { CompletionContext, completeFromList, type CompletionResult } from '@codemirror/autocomplete';
 import { LRLanguage, LanguageSupport } from '@codemirror/language';
 import { parseMixed } from '@lezer/common';
-import { SeqLanguage } from '../../../../language-package/languages/seq-n/seq-n';
 import { handlebarsLanguage } from '../handlebars/handlebars';
+import { SeqLanguage } from '../seq-n/seq-n';
 
 export const HandlebarsOverSeqLanguage = LRLanguage.define({
   languageData: {
