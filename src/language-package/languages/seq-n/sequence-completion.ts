@@ -6,10 +6,10 @@ import { fswCommandArgDefault } from '../../../utilities/sequence-editor/command
 import { getDefaultVariableArgs } from '../../../utilities/sequence-editor/sequence-utils';
 import { getFromAndTo, getNearestAncestorNodeOfType } from '../../../utilities/sequence-editor/tree-utils';
 import { getDoyTime } from '../../../utilities/time';
-import type { ISequenceAdaptation } from '../../interfaces/legacy';
+import type { LibrarySequence } from '../../interfaces/new-adaptation-interface';
 import type { GlobalType } from './global-types';
 import { SeqLanguage } from './seq-n';
-import type { LibrarySequence } from '../../interfaces/new-adaptation-interface';
+import { parse as jsonSourceMapParse } from 'json-source-map';
 
 type CursorInfo = {
   isAfterActivateOrLoad: boolean;
@@ -31,7 +31,6 @@ export function sequenceCompletion(
   commandDictionary: CommandDictionary | null = null,
   parameterDictionaries: ParameterDictionary[],
   librarySequences: LibrarySequence[],
-  sequenceAdaptation?: ISequenceAdaptation,
 ) {
   return (context: CompletionContext): CompletionResult | null => {
     const nodeBefore = syntaxTree(context.state).resolveInner(context.pos, -1);
@@ -252,7 +251,6 @@ export function sequenceCompletion(
             commandDictionary,
             cursor,
             parameterDictionaries,
-            sequenceAdaptation,
           ),
         );
 
@@ -346,7 +344,6 @@ function generateCommandCompletions(
   commandDictionary: CommandDictionary | null,
   cursor: CursorInfo,
   parameterDictionaries: ParameterDictionary[],
-  sequenceAdaptation?: ISequenceAdaptation,
 ): Completion[] {
   if (commandDictionary === null) {
     return [];
