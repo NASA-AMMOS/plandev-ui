@@ -160,7 +160,7 @@ export async function reqHasura<T = any>(
       if (error?.extensions?.internal?.response?.body?.errors?.length) {
         const parseFailedErrorMessage = error?.extensions?.internal?.response?.body?.errors[0];
 
-        throw new Error(parseFailedErrorMessage ?? defaultError);
+        throw new Error(parseFailedErrorMessage ?? defaultError, { cause });
       }
     } else if (code === INVALID_JWT) {
       // awaiting here only works if SSR is disabled
