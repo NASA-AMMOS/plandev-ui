@@ -239,10 +239,10 @@
       </svelte:fragment>
     </ActivityFilterBuilder>
     <div class="sne-controls flex flex-wrap">
-      <div class="sne-filter">
+      <div class="sne-filter flex-1">
         <input
           bind:value={filterText}
-          class="st-input w-32"
+          class="st-input w-full min-w-32"
           name="search"
           autocomplete="off"
           placeholder="Filter..."
