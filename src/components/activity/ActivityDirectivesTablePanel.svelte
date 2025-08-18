@@ -18,12 +18,12 @@
   import { maxTimeRange, plan, planModelActivityTypes, planReadOnly, viewTimeRange } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import { view, viewTogglePanel, viewUpdateActivityDirectivesTable } from '../../stores/views';
-  import type { ActivityDirective, ActivityType } from '../../types/activity';
+  import type { ActivityDirective } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { AutoSizeColumns, ViewGridSection, ViewTable } from '../../types/view';
   import effects from '../../utilities/effects';
   import { filterEmpty } from '../../utilities/generic';
-  import { convertUsToDurationString, formatDate, getUnixEpochTimeFromInterval } from '../../utilities/time';
+  import { formatDate, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { getTimeRangeAroundTime } from '../../utilities/timeline';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
@@ -33,7 +33,7 @@
   import Panel from '../ui/Panel.svelte';
   import ActivityDirectivesTable from './ActivityDirectivesTable.svelte';
   import ActivityTableMenu from './ActivityTableMenu.svelte';
-  import type { ValueSchema } from '../../types/schema';
+  import ArgumentsCellRenderer from './ArgumentsCellRenderer.svelte';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -105,34 +105,17 @@
       autoHeight: true,
       cellRenderer: (params: ICellRendererParams<ActivityDirective>) => {
         const div = document.createElement('div');
-        div.innerHTML = params.value || '';
-        div.style.cssText = 'white-space: pre-wrap; word-break: break-word; line-height: 1.4;';
-        return div;
-      },
-      valueGetter: (params: ValueGetterParams<ActivityDirective>) => {
-        const args = params?.data?.arguments;
-        const activityTypeName = params?.data?.type;
-        if (!args || typeof args !== 'object') {
-          return '';
+        if (!params.data) {
+          return div;
         }
-        const activityTypes = $planModelActivityTypes;
-        const activityType = activityTypes.find((type: ActivityType) => type.name === activityTypeName);
-        return Object.entries(args)
-          .sort(([keyA], [keyB]) => {
-            const orderA = activityType?.parameters[keyA]?.order ?? Number.MAX_SAFE_INTEGER;
-            const orderB = activityType?.parameters[keyB]?.order ?? Number.MAX_SAFE_INTEGER;
-            // If orders are the same, fall back to alphabetical
-            if (orderA === orderB) {
-              return keyA.localeCompare(keyB);
-            }
-            return orderA - orderB;
-          })
-          .map(([key, value]) => {
-            const parameterSchema = activityType?.parameters[key]?.schema;
-            const formattedValue = parameterSchema ? formatParameterValue(value, parameterSchema) : String(value);
-            return `<strong>${key}:</strong> ${formattedValue}`;
-          })
-          .join('\n');
+        new ArgumentsCellRenderer({
+          target: div,
+          props: {
+            data: params.data,
+            activityTypes: $planModelActivityTypes,
+          },
+        });
+        return div;
       },
     },
     created_at: {
@@ -415,46 +398,6 @@
       get(maxTimeRange),
     );
     viewTimeRange.set(centeredTimeRange);
-  }
-
-  function formatParameterValue(value: any, schema: ValueSchema): string {
-    if (value === null || value === undefined) {
-      return '';
-    }
-
-    switch (schema.type) {
-      case 'duration':
-        try {
-          return convertUsToDurationString(value, true);
-        } catch (error) {
-          return String(value);
-        }
-
-      case 'series':
-        if (Array.isArray(value)) {
-          if (value.length === 0) {
-            return '[]';
-          } else {
-            return `${value.map(String).join(', ')}`;
-          }
-        }
-        return String(value);
-
-      case 'struct':
-        if (typeof value === 'object' && value !== null) {
-          const keys = Object.keys(value);
-          if (keys.length === 0) {
-            return '{}';
-          } else {
-            const formattedFields = keys.map(key => `${key}: ${value[key]}`);
-            return `${formattedFields.join(',\n')}`;
-          }
-        }
-        return String(value);
-
-      default:
-        return String(value);
-    }
   }
 </script>
 
