@@ -27,7 +27,7 @@
 
   $: columns = `calc(${labelColumnWidth}px - ${level * levelPadding}px) auto`;
 
-  $: durationString = convertUsToDurationString(formParameter.value, true);
+  $: durationString = convertUsToDurationString(formParameter.value, false);
 
   function onChange() {
     try {
