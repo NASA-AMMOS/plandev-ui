@@ -446,7 +446,7 @@
           if (keys.length === 0) {
             return '{}';
           } else {
-            const formattedFields = keys.map(key => `${key}: ${String(value[key])}`);
+            const formattedFields = keys.map(key => `${key}: ${value[key]}`);
             return `${formattedFields.join(',\n')}`;
           }
         }
