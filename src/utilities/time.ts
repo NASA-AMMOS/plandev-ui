@@ -533,7 +533,7 @@ export function convertUsToDurationString(durationUs: number, includeZeros: bool
   const millisecondsString = milliseconds ? `${milliseconds}ms` : '';
   const microsecondsString = microseconds ? `${microseconds}us` : '';
 
-  const allParts =  [
+  const allParts = [
     yearsString,
     daysString,
     hoursString,
@@ -541,7 +541,7 @@ export function convertUsToDurationString(durationUs: number, includeZeros: bool
     secondsString,
     millisecondsString,
     microsecondsString,
-  ]
+  ];
 
   const firstIndex = allParts.findIndex(part => part !== '');
 
@@ -549,9 +549,7 @@ export function convertUsToDurationString(durationUs: number, includeZeros: bool
     return '0us';
   }
 
-  return [negativeString, ...allParts]
-    .filter(Boolean)
-    .join(' ');
+  return [negativeString, ...allParts].filter(Boolean).join(' ');
 }
 
 /**
