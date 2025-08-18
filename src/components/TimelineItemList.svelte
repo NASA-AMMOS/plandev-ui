@@ -129,6 +129,10 @@
       viewAddFilterToRow([event.detail.item], typeName, {}, event.detail.row?.id, event.detail.layer);
     }
   }
+
+  function hasDescription(item: TimelineItemType): item is TimelineItemType & { description: string } {
+    return 'description' in item;
+  }
 </script>
 
 <div class="timeline-item-list">
@@ -268,6 +272,9 @@
           style="cursor: move;"
           on:dragend={onDragEnd}
           on:dragstart={e => onDragStart(e.detail, [item])}
+          {tooltip}
+          tooltipContent={hasDescription(item) ? item.description : 'No description available.'}
+          tooltipEnabled={hasDescription(item) && !!item.description}
         >
           {item.name}
           <slot prop={item} />
