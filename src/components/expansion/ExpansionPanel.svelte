@@ -250,7 +250,7 @@
         />
       </div>
       {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
-        <div class="sne-expansion-set-select flex-1">
+        <div class="sne-expansion-set-select">
           <select name="expansionSetId" bind:value={selectedExpansionSetId} class="st-select min-w-36">
             {#if !$expansionSets.length}
               <option value={null}>No Expansion Sets</option>
@@ -296,8 +296,8 @@
       {#each sequencesAndFilters as sequenceOrFilter}
         {#if isExpansionSequence(sequenceOrFilter)}
           <ListItem>
-            <span slot="prefix" class="text-ellipsis overflow-hidden whitespace-nowrap align-middle">
-              <JournalCodeIcon size={16} class="inline"/>
+            <span slot="prefix" class="overflow-hidden text-ellipsis whitespace-nowrap align-middle">
+              <JournalCodeIcon size={16} class="inline" />
               {sequenceOrFilter.seq_id}
             </span>
             <span slot="suffix">
@@ -380,8 +380,8 @@
           </ListItem>
         {:else}
           <ListItem>
-            <span slot="prefix" class="text-ellipsis overflow-hidden whitespace-nowrap align-middle">
-              <FilterIcon size={16} class="inline"/>
+            <span slot="prefix" class="overflow-hidden text-ellipsis whitespace-nowrap align-middle">
+              <FilterIcon size={16} class="inline" />
               {sequenceOrFilter.name}
             </span>
             <span slot="suffix">
