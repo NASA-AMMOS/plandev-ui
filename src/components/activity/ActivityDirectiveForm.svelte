@@ -654,7 +654,7 @@
         </Highlight>
       </Collapse>
     </fieldset>
-    <fieldSet>
+    <fieldset>
       <Collapse title="Metadata" contentClass="px-1" defaultExpanded={false}>
         <Highlight highlight={highlightKeysMap.id}>
           <Input layout="inline">
@@ -721,7 +721,7 @@
           </Input>
         </Highlight>
       </Collapse>
-    </fieldSet>
+    </fieldset>
 
     <fieldset>
       <Collapse
