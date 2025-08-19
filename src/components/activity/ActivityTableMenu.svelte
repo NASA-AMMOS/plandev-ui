@@ -54,7 +54,7 @@
 
   function onColumnsChanged(columns: { value: string | number | symbol }[]) {
     const newColumns = columnMenuItems.map(item => {
-      return { ...item, isHidden: !columns.find(i => i.value === item.field) };
+      return { ...item, isHidden: !columns.find(column => column.value === item.field) };
     });
     dispatch('columns-changed', { columns: newColumns });
   }

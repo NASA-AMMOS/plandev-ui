@@ -144,22 +144,15 @@
   function onColumnsChanged({
     detail: { columns },
   }: CustomEvent<{ columns: { field: any; isHidden: boolean; name: string }[] }>) {
-    viewUpdateSimulationEventsTable({
-      columnStates: derivedColumnDefs
-        .map((columnDef: ColDef) => {
-          const activityColumnStates: ColumnState[] = simulationEventsTable?.columnStates ?? [];
-          const existingColumnState: ColumnState | undefined = activityColumnStates.find(
-            (columnState: ColumnState) => columnDef.field === columnState.colId,
-          );
-          return existingColumnState
-            ? {
-                ...existingColumnState,
-                hide: columns.find(column => columnDef.field === column.field)?.isHidden ?? false,
-              }
-            : null;
-        })
-        .filter(filterEmpty),
+    const activityColumnStates: ColumnState[] = simulationEventsTable?.columnStates ?? [];
+    const newActivityColumnStates = activityColumnStates.map(columnState => {
+      return { ...columnState, hide: columns.find(column => columnState.colId === column.field)?.isHidden ?? false };
     });
+
+    viewUpdateSimulationEventsTable({
+      columnStates: newActivityColumnStates.filter(filterEmpty),
+    });
+
     requestAutoSize();
   }
 
