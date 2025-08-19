@@ -11,7 +11,6 @@ import type {
 } from '@nasa-jpl/aerie-ampcs';
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import type { DictionaryTypes } from '../enums/dictionaryTypes';
-import type { NewAdaptationInterface } from '../language-package/interfaces/new-adaptation-interface';
 import type { UserId } from './app';
 
 export type ChannelDictionaryMetadata = {
@@ -92,6 +91,7 @@ export type GetSeqJsonResponse = {
 //   workspace_id: number;
 // };
 export type UserSequence = {
+  // TODO get from aerie-sequence-languages
   definition: string;
   name: string;
 };
@@ -99,7 +99,7 @@ export type UserSequence = {
 // TODO: remove
 export type UserSequenceInsertInput = Omit<UserSequence, 'created_at' | 'id' | 'owner' | 'updated_at'>;
 
-export type TimeTagInfo = { node: SyntaxNode; text: string } | null | undefined;
+export type TimeTagInfo = { node: SyntaxNode; text: string } | null | undefined; // TODO get from aerie-sequence-languages
 
 export type StringArg = FswCommandArgumentVarString | FswCommandArgumentFixedString;
 
@@ -110,6 +110,7 @@ export type NumberArg =
   | FswCommandArgumentUnsigned;
 
 export type ArgTextDef = {
+  // TODO get from aerie-sequence-languages
   argDef?: FswCommandArgument;
   children?: ArgTextDef[];
   node?: SyntaxNode;
