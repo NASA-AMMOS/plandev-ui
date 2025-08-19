@@ -1,4 +1,4 @@
-export enum SequenceTypes {
+export enum SequenceTypes { // TODO get from aerie-sequence-languages
   LIBRARY = 'library',
   USER = 'user',
 }
