@@ -6,7 +6,7 @@
   import { lintGutter, openLintPanel } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate, keymap } from '@codemirror/view';
-  import type { SyntaxNode } from '@lezer/common';
+  import type { SyntaxNode, Tree } from '@lezer/common';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
   import ExpandIcon from 'bootstrap-icons/icons/arrow-bar-up.svg?component';
