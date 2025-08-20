@@ -6,8 +6,7 @@
   import { lintGutter, openLintPanel } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate, keymap } from '@codemirror/view';
-  import type { SyntaxNode, Tree } from '@lezer/common';
-  import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+  import type { SyntaxNode } from '@lezer/common';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
   import ExpandIcon from 'bootstrap-icons/icons/arrow-bar-up.svg?component';
@@ -19,8 +18,6 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
   import type {
-    LibrarySequence,
-    LibrarySequenceMap,
     NewAdaptationInterface,
     OutputLanguageAdaptation,
     PhoenixContext,
@@ -41,11 +38,13 @@
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
 
   export let actionsWithSequenceParameters: ActionDefinition[] = [];
-  export let channelDictionary: ChannelDictionary | null = null;
-  export let commandDictionary: CommandDictionary | null = null;
+  export let phoenixContext: PhoenixContext = {
+    channelDictionary: null,
+    commandDictionary: null,
+    librarySequenceMap: {},
+    parameterDictionaries: [],
+  };
   export let includeActions: boolean = false;
-  export let librarySequences: LibrarySequence[] = [];
-  export let parameterDictionaries: ParameterDictionary[] = [];
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let newSequenceAdaptation: NewAdaptationInterface;
@@ -73,8 +72,6 @@
   let editorOutputView: EditorView;
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
-  let librarySequenceMap: LibrarySequenceMap = {};
-  let phoenixContext: PhoenixContext;
   let menu: Menu;
   let selectedNode: SyntaxNode | null;
   let selectedOutputFormat: OutputLanguageAdaptation | undefined;
@@ -99,18 +96,12 @@
     ? userSequenceEditorColumnsWithFormBuilder
     : userSequenceEditorColumns;
 
-  $: librarySequenceMap = Object.fromEntries(librarySequences.map(seq => [seq.name, seq]));
-  $: phoenixContext = {
-    channelDictionary,
-    commandDictionary,
-    parameterDictionaries,
-    librarySequenceMap,
-  };
   $: {
-    if (!commandDictionary) {
-      commandDictionary = null;
-      channelDictionary = null;
-      parameterDictionaries = [];
+    // TODO why is this necessary? Can we not just handle it all together??
+    if (!phoenixContext.commandDictionary) {
+      phoenixContext.commandDictionary = null;
+      phoenixContext.channelDictionary = null;
+      phoenixContext.parameterDictionaries = [];
     }
   }
   $: {
@@ -468,7 +459,7 @@
 
   {#if showCommandFormBuilder}
     <CssGridGutter track={1} type="column" />
-    {#if commandDictionary !== null}
+    {#if phoenixContext.commandDictionary !== null}
       <CommandPanel {phoenixContext} {commandInfoMapper} {editorSequenceView} />
     {:else}
       <Panel overflowYBody="hidden" padBody={true}>

@@ -6,7 +6,6 @@
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
-  import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type { IRowNode } from 'ag-grid-community';
   import { onDestroy, onMount } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
@@ -18,7 +17,7 @@
   import WorkspaceSidebar from '../../../components/workspace/WorkspaceSidebar.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { WorkspaceContentType } from '../../../enums/workspace';
-  import type { LibrarySequence } from '../../../language-package/interfaces/new-adaptation-interface';
+  import type { PhoenixContext } from '../../../language-package/interfaces/new-adaptation-interface';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
   import { sequenceAdaptation, setSequenceAdaptation } from '../../../stores/sequence-adaptation';
   import {
@@ -63,9 +62,13 @@
   const { initialWorkspace, user } = data;
 
   let actionsWithSequenceParameters: ActionDefinition[] = [];
-  let channelDictionary: ChannelDictionary | null = null;
-  let commandDictionary: CommandDictionary | null = null;
-  let parameterDictionaries: ParameterDictionary[] = [];
+  let phoenixContext: PhoenixContext = {
+    // This feels like un-Svelte-onic
+    channelDictionary: null,
+    commandDictionary: null,
+    librarySequenceMap: {},
+    parameterDictionaries: [],
+  };
   let initialSelectedFileContent: string = '';
   let isWorkspaceLoading: boolean = false;
   let refreshInterval: NodeJS.Timeout | null = null;
@@ -74,7 +77,6 @@
   let selectedFileName: string | undefined = undefined;
   let selectedSequenceOutput: string | undefined = undefined;
   let updatedSelectedFileContent: string = '';
-  let workspaceLibrarySequences: LibrarySequence[] = [];
   let workspaceSequences: UserSequence[] = [];
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
@@ -140,17 +142,17 @@
     if (unparsedCommandDictionary) {
       loadCommandDictionary(unparsedCommandDictionary);
     } else {
-      commandDictionary = null;
+      phoenixContext.commandDictionary = null;
     }
     if (unparsedChannelDictionary) {
       loadChannelDictionary(unparsedChannelDictionary);
     } else {
-      channelDictionary = null;
+      phoenixContext.channelDictionary = null;
     }
     if (unparsedParameterDictionaries.length > 0) {
       loadParameterDictionaries(unparsedParameterDictionaries);
     } else {
-      parameterDictionaries = [];
+      phoenixContext.parameterDictionaries = [];
     }
   }
 
@@ -183,9 +185,12 @@
       );
 
       if (librarySequencesEnabled) {
-        workspaceLibrarySequences = workspaceSequences
-          .flatMap(sequence => ($sequenceAdaptation.input.getLibrarySequences ?? (_ => []))(sequence, $workspaceId))
-          .filter(({ name }) => name !== '');
+        phoenixContext.librarySequenceMap = Object.fromEntries(
+          workspaceSequences
+            .flatMap(sequence => ($sequenceAdaptation.input.getLibrarySequences ?? (_ => []))(sequence, $workspaceId))
+            .filter(({ name }) => name !== '')
+            .map(seq => [seq.name, seq]),
+        );
       }
 
       isWorkspaceLoading = false;
@@ -240,9 +245,9 @@
   async function loadCommandDictionary(unparsedCommandDictionary: CommandDictionaryMetadata) {
     const parsedDictionary = await getParsedCommandDictionary(unparsedCommandDictionary, user);
     if (parsedDictionary) {
-      commandDictionary = parsedDictionary;
+      phoenixContext.commandDictionary = parsedDictionary;
     } else {
-      commandDictionary = null;
+      phoenixContext.commandDictionary = null;
     }
   }
 
@@ -250,15 +255,15 @@
     if (unparsedChannelDictionary) {
       const parsedDictionary = await getParsedChannelDictionary(unparsedChannelDictionary, user);
       if (parsedDictionary) {
-        channelDictionary = parsedDictionary;
+        phoenixContext.channelDictionary = parsedDictionary;
       }
     } else {
-      channelDictionary = null;
+      phoenixContext.channelDictionary = null;
     }
   }
 
   async function loadParameterDictionaries(unparsedParameterDictionaries: ParameterDictionaryMetadata[] = []) {
-    parameterDictionaries = (
+    phoenixContext.parameterDictionaries = (
       await Promise.all(
         unparsedParameterDictionaries.map(unparsedParameterDictionary => {
           return getParsedParameterDictionary(unparsedParameterDictionary, user);
@@ -318,7 +323,14 @@
   async function onImportFile(event: CustomEvent<string>) {
     if ($workspace != null && workspaceTree && user) {
       const { detail: startingPath } = event;
-      const targetPath = await effects.importWorkspaceFile($workspace, workspaceTree, startingPath, user);
+      const targetPath = await effects.importWorkspaceFile(
+        $workspace,
+        workspaceTree,
+        $sequenceAdaptation,
+        phoenixContext,
+        startingPath,
+        user,
+      );
       refreshWorkspaceContents();
 
       if (targetPath) {
@@ -499,12 +511,9 @@
         class:hidden={selectedFileType != null && selectedFileType !== WorkspaceContentType.Sequence}
       >
         <SequenceEditor
-          {channelDictionary}
-          {commandDictionary}
-          {parameterDictionaries}
+          {phoenixContext}
           {actionsWithSequenceParameters}
           includeActions={true}
-          librarySequences={workspaceLibrarySequences}
           readOnly={!hasEditFilePermission}
           newSequenceAdaptation={$sequenceAdaptation}
           sequenceDefinition={initialSelectedFileContent}

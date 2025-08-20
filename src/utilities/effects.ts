@@ -17,6 +17,7 @@ import { SchedulingDefinitionType } from '../enums/scheduling';
 import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
 import { WorkspaceContentType } from '../enums/workspace';
+import type { NewAdaptationInterface, PhoenixContext } from '../language-package/interfaces/new-adaptation-interface';
 import { parseCdlDictionary, toAmpcsXml } from '../language-package/languages/vml/cdl-dictionary';
 import {
   activityDirectivesDB as activityDirectivesDBStore,
@@ -5383,6 +5384,8 @@ const effects = {
   async importWorkspaceFile(
     workspace: Workspace,
     workspaceContents: WorkspaceTreeNode,
+    adaptation: NewAdaptationInterface,
+    context: PhoenixContext,
     startingPath: string,
     user: User | null,
   ): Promise<string | null> {
@@ -5400,7 +5403,29 @@ const effects = {
       if (confirm) {
         const { files, targetDirectory } = value;
         const cleanedTargetPath = cleanPath(targetDirectory);
-        const chunkedFiles = chunk(Array.from<File>(files), 10);
+        const inputFileExtension = adaptation.input.fileExtension;
+        const convertedFiles = await Promise.all(
+          Array.from<File>(files).map(async file => {
+            let outputFile;
+            for (let i = 0; i < adaptation.outputs.length; i++) {
+              const output = adaptation.outputs[i];
+              if (file.name.toLowerCase().endsWith(output.fileExtension.toLowerCase())) {
+                const newName = file.name.slice(0, -output.fileExtension.length).concat(inputFileExtension);
+                console.log(`Converting sequence ${file.name} to ${newName}`);
+                const convertedSequence = output.toInputFormat(await file.text(), context, file.name);
+                outputFile = new File([convertedSequence], newName);
+              }
+            }
+            if (outputFile) {
+              console.log(`Modified return: ${outputFile.name}`);
+              return outputFile;
+            } else {
+              console.log(`Default return: ${file.name}`);
+              return file;
+            }
+          }),
+        );
+        const chunkedFiles = chunk(convertedFiles, 10);
 
         for (let i = 0; i < chunkedFiles.length; i++) {
           const fileChunk: File[] = chunkedFiles[i];
@@ -5420,8 +5445,8 @@ const effects = {
           );
         }
 
-        showSuccessToast(`Workspace File${files.length > 1 ? 's' : ''} Uploaded Successfully`);
-        return joinPath([cleanedTargetPath, files[0].name]);
+        showSuccessToast(`Workspace File${convertedFiles.length > 1 ? 's' : ''} Uploaded Successfully`);
+        return joinPath([cleanedTargetPath, convertedFiles[0].name]);
       }
     } catch (e) {
       catchError(`Workspace file was unable to be uploaded`, e as Error);
