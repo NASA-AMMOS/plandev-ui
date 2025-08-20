@@ -149,6 +149,18 @@
       </Input>
 
       <Input layout="inline">
+        <label use:tooltip={{ content: 'Simulation Status', placement: 'top' }} for="simulationStatus">
+          Simulation Status
+        </label>
+        <input
+          class="st-input w-full"
+          disabled
+          name="simulationStatus"
+          value={span.duration === null ? 'Unfinished' : span.duration ? 'Finished' : 'None'}
+        />
+      </Input>
+
+      <Input layout="inline">
         <label use:tooltip={{ content: 'Start Time', placement: 'top' }} for="startTime">
           Start Time ({$plugins.time.primary.label})
         </label>
@@ -174,18 +186,6 @@
       <Input layout="inline">
         <label use:tooltip={{ content: 'Parent ID', placement: 'top' }} for="parentId">Parent ID</label>
         <input class="st-input w-full" disabled name="parentId" value={span.parent_id ?? 'None (Root)'} />
-      </Input>
-
-      <Input layout="inline">
-        <label use:tooltip={{ content: 'Simulation Status', placement: 'top' }} for="simulationStatus">
-          Simulation Status
-        </label>
-        <input
-          class="st-input w-full"
-          disabled
-          name="simulationStatus"
-          value={span.duration === null ? 'Unfinished' : span.duration ? 'Finished' : 'None'}
-        />
       </Input>
     </Collapse>
   </fieldset>
