@@ -7,17 +7,17 @@
   import { type ViewUpdate } from '@codemirror/view';
   import type { SyntaxNode, Tree } from '@lezer/common';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
-  import { basicSetup, EditorView } from 'codemirror';
-  import { debounce } from 'lodash-es';
-  import { createEventDispatcher, onMount } from 'svelte';
-  import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
   import type {
+    CommandInfoMapper,
     LibrarySequence,
     LibrarySequenceMap,
     NewAdaptationInterface,
     OutputLanguageAdaptation,
     PhoenixContext,
-  } from '../../language-package/interfaces/new-adaptation-interface';
+  } from '@nasa-jpl/aerie-sequence-languages';
+  import { basicSetup, EditorView } from 'codemirror';
+  import { debounce } from 'lodash-es';
+  import { createEventDispatcher, onMount } from 'svelte';
   import type { User } from '../../types/app';
   import { type SequenceTemplate } from '../../types/sequence-template';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
