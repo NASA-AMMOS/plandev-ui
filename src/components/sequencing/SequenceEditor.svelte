@@ -8,6 +8,14 @@
   import { type ViewUpdate, keymap } from '@codemirror/view';
   import type { SyntaxNode, Tree } from '@lezer/common';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+  import type {
+    CommandInfoMapper,
+    LibrarySequence,
+    LibrarySequenceMap,
+    NewAdaptationInterface,
+    OutputLanguageAdaptation,
+    PhoenixContext,
+  } from '@nasa-jpl/aerie-sequence-languages';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
   import ExpandIcon from 'bootstrap-icons/icons/arrow-bar-up.svg?component';
@@ -17,14 +25,6 @@
   import { debounce } from 'lodash-es';
   import { SquareCode } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
-  import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
-  import type {
-    LibrarySequence,
-    LibrarySequenceMap,
-    NewAdaptationInterface,
-    OutputLanguageAdaptation,
-    PhoenixContext,
-  } from '../../language-package/interfaces/new-adaptation-interface';
   import type { ActionDefinition } from '../../types/actions';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { downloadBlob } from '../../utilities/generic';

@@ -2,7 +2,8 @@
 
 <script lang="ts">
   import type { CommandDictionary, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
-  import { getAllEnumSymbols } from '../../language-package/languages/seq-n/sequence-linter';
+  import { getAllEnumSymbols } from '@nasa-jpl/aerie-sequence-languages';
+  // TODO don't get this from here
 
   export let arg: FswCommandArgument;
   export let commandDictionary: CommandDictionary | null;
@@ -12,6 +13,7 @@
   let enumSymbolsDisplayStr: string = '';
 
   $: if (commandDictionary && arg?.arg_type === 'enum') {
+    // TODO make this more general - don't rely on the AMPCS dictionary or `getAllEnumSymbols` interfaces
     const enumValues = getAllEnumSymbols(commandDictionary.enumMap, arg.enum_name);
     const values = enumValues ?? [];
     enumSymbolsDisplayStr = values.slice(0, MAX_ENUMS_TO_DISPLAY).join('  |  ');

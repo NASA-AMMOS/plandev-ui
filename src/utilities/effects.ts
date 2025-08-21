@@ -7,6 +7,7 @@ import {
   type CommandDictionary as AmpcsCommandDictionary,
   type ParameterDictionary as AmpcsParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
+import { parseCdlDictionary, toAmpcsXml } from '@nasa-jpl/aerie-sequence-languages';
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import { chunk } from 'lodash-es';
 import { get } from 'svelte/store';
@@ -17,7 +18,6 @@ import { SchedulingDefinitionType } from '../enums/scheduling';
 import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
 import { WorkspaceContentType } from '../enums/workspace';
-import { parseCdlDictionary, toAmpcsXml } from '../language-package/languages/vml/cdl-dictionary';
 import {
   activityDirectivesDB as activityDirectivesDBStore,
   selectedActivityDirectiveId as selectedActivityDirectiveIdStore,

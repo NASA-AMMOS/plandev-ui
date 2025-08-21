@@ -12,16 +12,12 @@ import type {
   FswCommandArgumentRepeat,
   FswCommandArgumentUnsigned,
   FswCommandArgumentVarString,
-  HwCommand
+  HwCommand,
 } from '@nasa-jpl/aerie-ampcs';
+import type { CommandInfoMapper } from '@nasa-jpl/aerie-sequence-languages';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
-import type { CommandInfoMapper } from '../../language-package/interfaces/command-info-mapper';
-import type {
-  ArgTextDef,
-  NumberArg,
-  StringArg
-} from '../../types/sequencing';
+import type { ArgTextDef, NumberArg, StringArg } from '../../types/sequencing';
 import { fswCommandArgDefault } from './command-dictionary';
 
 export function isFswCommand(command: FswCommand | HwCommand): command is FswCommand {
