@@ -248,7 +248,7 @@ export function parseDurationString(
     const number = parseInt(int);
     const decimalNum = decimal ? parseFloat(decimal) : 0;
 
-    //shift everthing based on units
+    //shift everything based on units
     switch (units) {
       case 'microseconds':
         microsecond = number;
@@ -295,7 +295,7 @@ export function parseDurationString(
     day += Math.floor(hour / 24);
     hour = hour % 24;
 
-    // Normlize days and years
+    // Normalize days and years
     year += Math.floor(day / 365);
     day = day % 365;
 
@@ -525,31 +525,30 @@ export function convertUsToDurationString(durationUs: number, includeZeros: bool
   }
 
   const negativeString = isNegative ? '-' : '';
-  const yearsString = years ? `${years}y` : '';
-  const daysString = days ? `${days}d` : '';
-  const hoursString = hours ? `${hours}h` : '';
-  const minutesString = minutes ? `${minutes}m` : '';
-  const secondsString = seconds ? `${seconds}s` : '';
-  const millisecondsString = milliseconds ? `${milliseconds}ms` : '';
-  const microsecondsString = microseconds ? `${microseconds}us` : '';
-
-  const allParts = [
-    yearsString,
-    daysString,
-    hoursString,
-    minutesString,
-    secondsString,
-    millisecondsString,
-    microsecondsString,
+  const components: [number, string][] = [
+    [years, 'y'],
+    [days, 'd'],
+    [hours, 'h'],
+    [minutes, 'm'],
+    [seconds, 's'],
+    [milliseconds, 'ms'],
+    [microseconds, 'us']
   ];
 
-  const firstIndex = allParts.findIndex(part => part !== '');
+  const firstNonZeroIndex = components.findIndex(([value]) => value > 0);
+  const lastNonZeroIndex = components.findLastIndex(([value]) => value > 0);
 
-  if (firstIndex === -1) {
+  if (firstNonZeroIndex === -1) {
     return '0us';
   }
 
-  return [negativeString, ...allParts].filter(Boolean).join(' ');
+  const parts = [];
+  for (let i = firstNonZeroIndex; i <= lastNonZeroIndex; i++) {
+    const [value, unit] = components[i];
+    parts.push(`${value}${unit}`);
+  }
+
+  return [negativeString, ...parts].filter(Boolean).join(' ');
 }
 
 /**
