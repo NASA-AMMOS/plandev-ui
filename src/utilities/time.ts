@@ -532,7 +532,7 @@ export function convertUsToDurationString(durationUs: number, includeZeros: bool
     [minutes, 'm'],
     [seconds, 's'],
     [milliseconds, 'ms'],
-    [microseconds, 'us']
+    [microseconds, 'us'],
   ];
 
   const firstNonZeroIndex = components.findIndex(([value]) => value > 0);
