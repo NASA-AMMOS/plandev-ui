@@ -5,9 +5,8 @@
   import { StateEffect } from '@codemirror/state';
   import type { SyntaxNode, Tree } from '@lezer/common';
   import type { CommandDictionary, FswCommand, HwCommand } from '@nasa-jpl/aerie-ampcs';
+  import type { CommandInfoMapper, PhoenixContext } from '@nasa-jpl/aerie-sequence-languages';
   import { EditorView } from 'codemirror';
-  import type { CommandInfoMapper } from '../../../language-package/interfaces/command-info-mapper';
-  import type { PhoenixContext } from '../../../language-package/interfaces/new-adaptation-interface';
   import { unquoteUnescape } from '../../../utilities/sequence-editor/sequence-utils';
   import Tab from '../../ui/Tabs/Tab.svelte';
   import TabPanel from '../../ui/Tabs/TabPanel.svelte';

@@ -18,7 +18,7 @@
   import WorkspaceSidebar from '../../../components/workspace/WorkspaceSidebar.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { WorkspaceContentType } from '../../../enums/workspace';
-  import type { LibrarySequence } from '../../../language-package/interfaces/new-adaptation-interface';
+  import type { LibrarySequence } from '@nasa-jpl/aerie-sequence-languages';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
   import { sequenceAdaptation, setSequenceAdaptation } from '../../../stores/sequence-adaptation';
   import {
