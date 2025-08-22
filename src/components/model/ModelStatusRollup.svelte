@@ -130,27 +130,6 @@
     </div>
     <div
       use:tooltip={{
-        content: parameterLog?.error_message ?? parameterLogTooltipMessages[parameterLogStatus],
-      }}
-    >
-      <Button
-        variant="ghost"
-        class={classNames(
-          'grid w-fit cursor-pointer grid-cols-[min-content_min-content] items-center gap-x-2 whitespace-nowrap border-none p-1 font-normal hover:bg-gray-200 ',
-          {
-            'bg-400': selectedLog !== 'parameter',
-            'bg-white hover:bg-white': selectedLog === 'parameter',
-            'cursor-default select-text border-none bg-transparent p-0 hover:bg-transparent': !selectable,
-          },
-        )}
-        on:click={selectParameterLog}
-      >
-        <ModelStatusIcon {showCompleteStatus} status={parameterLogStatus} />
-        Extract resource types
-      </Button>
-    </div>
-    <div
-      use:tooltip={{
         content: resourceLog?.error_message ?? resourceLogTooltipMessages[resourceLogStatus],
       }}
     >
@@ -167,6 +146,27 @@
         on:click={selectResourceLog}
       >
         <ModelStatusIcon {showCompleteStatus} status={resourceLogStatus} />
+        Extract resource types
+      </Button>
+    </div>
+    <div
+      use:tooltip={{
+        content: parameterLog?.error_message ?? parameterLogTooltipMessages[parameterLogStatus],
+      }}
+    >
+      <Button
+        variant="ghost"
+        class={classNames(
+          'grid w-fit cursor-pointer grid-cols-[min-content_min-content] items-center gap-x-2 whitespace-nowrap border-none p-1 font-normal hover:bg-gray-200 ',
+          {
+            'bg-400': selectedLog !== 'parameter',
+            'bg-white hover:bg-white': selectedLog === 'parameter',
+            'cursor-default select-text border-none bg-transparent p-0 hover:bg-transparent': !selectable,
+          },
+        )}
+        on:click={selectParameterLog}
+      >
+        <ModelStatusIcon {showCompleteStatus} status={parameterLogStatus} />
         Extract mission model parameters
       </Button>
     </div>
