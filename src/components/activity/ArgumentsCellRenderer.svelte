@@ -46,32 +46,34 @@
     }
   }
 
-  $: formattedArguments = (() => {
+  let formattedArguments: { key: string; value: string }[] = [];
+
+  $: {
     const args = data?.arguments;
     const activityTypeName = data?.type;
 
     if (!args || typeof args !== 'object') {
-      return [];
+      formattedArguments = [];
+    } else {
+      const activityType = activityTypes.find((type: ActivityType) => type.name === activityTypeName);
+
+      formattedArguments = Object.entries(args)
+        .sort(([keyA], [keyB]) => {
+          const orderA = activityType?.parameters[keyA]?.order ?? Number.MAX_SAFE_INTEGER;
+          const orderB = activityType?.parameters[keyB]?.order ?? Number.MAX_SAFE_INTEGER;
+          // If orders are the same, fall back to alphabetical
+          if (orderA === orderB) {
+            return keyA.localeCompare(keyB);
+          }
+          return orderA - orderB;
+        })
+        .map(([key, value]) => {
+          const parameterSchema = activityType?.parameters[key]?.schema;
+          const formattedValue = parameterSchema ? formatParameterValue(value, parameterSchema) : String(value);
+          return { key, value: formattedValue };
+        });
     }
-
-    const activityType = activityTypes.find((type: ActivityType) => type.name === activityTypeName);
-
-    return Object.entries(args)
-      .sort(([keyA], [keyB]) => {
-        const orderA = activityType?.parameters[keyA]?.order ?? Number.MAX_SAFE_INTEGER;
-        const orderB = activityType?.parameters[keyB]?.order ?? Number.MAX_SAFE_INTEGER;
-        // If orders are the same, fall back to alphabetical
-        if (orderA === orderB) {
-          return keyA.localeCompare(keyB);
-        }
-        return orderA - orderB;
-      })
-      .map(([key, value]) => {
-        const parameterSchema = activityType?.parameters[key]?.schema;
-        const formattedValue = parameterSchema ? formatParameterValue(value, parameterSchema) : String(value);
-        return { key, value: formattedValue };
-      });
-  })();
+  }
 </script>
 
 <div class="arguments-container">
