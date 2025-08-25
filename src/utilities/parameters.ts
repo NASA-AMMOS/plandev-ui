@@ -47,6 +47,24 @@ export function formatParameterValue(value: any, schema: ValueSchema): string {
         if (value.length === 0) {
           return '[]';
         } else {
+          const isMapStructure = value.every(
+            item =>
+              typeof item === 'object' &&
+              item !== null &&
+              'key' in item &&
+              'value' in item &&
+              Object.keys(item).length === 2,
+          );
+
+          if (isMapStructure) {
+            const mapEntries = value.map(item => `${item.key}: ${item.value}`);
+            return `${mapEntries.join(', ')} `;
+          }
+          const itemSchema = (schema as ValueSchemaSeries).items;
+          if (itemSchema) {
+            const formattedItems = value.map(item => formatParameterValue(item, itemSchema));
+            return `${formattedItems.join(', ')}`;
+          }
           return `${value.map(String).join(', ')}`;
         }
       }
@@ -58,7 +76,17 @@ export function formatParameterValue(value: any, schema: ValueSchema): string {
         if (keys.length === 0) {
           return '{}';
         } else {
-          const formattedFields = keys.map(key => `${key}: ${value[key]}`);
+          const formattedFields = keys.map(key => {
+            const fieldValue = value[key];
+            const fieldSchema = (schema as ValueSchemaStruct).items?.[key];
+
+            if (fieldSchema) {
+              const formattedValue = formatParameterValue(fieldValue, fieldSchema);
+              return `${key}: ${formattedValue}`;
+            }
+
+            return `${key}: ${String(fieldValue)}`;
+          });
           return `${formattedFields.join(',\n')}`;
         }
       }

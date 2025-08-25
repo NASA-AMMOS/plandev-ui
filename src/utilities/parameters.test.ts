@@ -246,6 +246,26 @@ describe('formatParameterValue', () => {
     expect(formatParameterValue(['a', 'b', 'c'], { items: { type: 'string' }, type: 'series' })).toBe('a, b, c');
   });
 
+  test('Should format map structures (arrays of key-value objects) properly', () => {
+    const intMapValue = [
+      { key: 551, value: 56111 },
+      { key: 5311, value: 541 },
+    ];
+    expect(formatParameterValue(intMapValue, { items: { type: 'string' }, type: 'series' })).toBe(
+      '551: 56111, 5311: 541 ',
+    );
+
+    const stringMapValue = [
+      { key: '699', value: '70' },
+      { key: '711', value: '721' },
+    ];
+    expect(formatParameterValue(stringMapValue, { items: { type: 'string' }, type: 'series' })).toBe(
+      '699: 70, 711: 721 ',
+    );
+
+    expect(formatParameterValue([], { items: { type: 'string' }, type: 'series' })).toBe('[]');
+  });
+
   test('Should format struct values with keys and values', () => {
     expect(formatParameterValue({}, { items: {}, type: 'struct' })).toBe('{}');
     expect(formatParameterValue({ a: 1, b: 2 }, { items: {}, type: 'struct' })).toBe('a: 1,\nb: 2');
