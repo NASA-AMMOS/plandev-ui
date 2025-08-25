@@ -1,50 +1,9 @@
 <script lang="ts">
   import type { ActivityDirective, ActivityType } from '../../types/activity';
-  import type { ValueSchema } from '../../types/schema';
-  import { convertUsToDurationString } from '../../utilities/time';
+  import { formatParameterValue } from '../../utilities/parameters';
 
   export let data: ActivityDirective;
   export let activityTypes: ActivityType[];
-
-  function formatParameterValue(value: any, schema: ValueSchema): string {
-    if (value === null || value === undefined) {
-      return '';
-    }
-
-    switch (schema.type) {
-      case 'duration':
-        try {
-          return convertUsToDurationString(value, true);
-        } catch (error) {
-          return String(value);
-        }
-
-      case 'series':
-        if (Array.isArray(value)) {
-          if (value.length === 0) {
-            return '[]';
-          } else {
-            return `${value.map(String).join(', ')}`;
-          }
-        }
-        return String(value);
-
-      case 'struct':
-        if (typeof value === 'object' && value !== null) {
-          const keys = Object.keys(value);
-          if (keys.length === 0) {
-            return '{}';
-          } else {
-            const formattedFields = keys.map(key => `${key}: ${value[key]}`);
-            return `${formattedFields.join(',\n')}`;
-          }
-        }
-        return String(value);
-
-      default:
-        return String(value);
-    }
-  }
 
   let formattedArguments: { key: string; value: string }[] = [];
 
