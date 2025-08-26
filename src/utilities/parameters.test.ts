@@ -252,7 +252,7 @@ describe('formatParameterValue', () => {
       { key: 5311, value: 541 },
     ];
     expect(formatParameterValue(intMapValue, { items: { type: 'string' }, type: 'series' })).toBe(
-      '551: 56111, 5311: 541 ',
+      '551: 56111, 5311: 541',
     );
 
     const stringMapValue = [
@@ -260,7 +260,7 @@ describe('formatParameterValue', () => {
       { key: '711', value: '721' },
     ];
     expect(formatParameterValue(stringMapValue, { items: { type: 'string' }, type: 'series' })).toBe(
-      '699: 70, 711: 721 ',
+      '699: 70, 711: 721',
     );
 
     expect(formatParameterValue([], { items: { type: 'string' }, type: 'series' })).toBe('[]');
