@@ -57,8 +57,24 @@ export function formatParameterValue(value: any, schema: ValueSchema): string {
           );
 
           if (isMapStructure) {
-            const mapEntries = value.map(item => `${item.key}: ${item.value}`);
-            return `${mapEntries.join(', ')} `;
+            const itemSchema = (schema as ValueSchemaSeries).items;
+            const mapEntries = value.map(item => {
+              let keySchema: ValueSchema | undefined;
+              let valueSchema: ValueSchema | undefined;
+
+              if (itemSchema && itemSchema.type === 'struct' && itemSchema.items) {
+                keySchema = itemSchema.items['key'];
+                valueSchema = itemSchema.items['value'];
+              } else {
+                keySchema = itemSchema;
+                valueSchema = itemSchema;
+              }
+
+              const formattedKey = keySchema ? formatParameterValue(item.key, keySchema) : String(item.key);
+              const formattedValue = valueSchema ? formatParameterValue(item.value, valueSchema) : String(item.value);
+              return `${formattedKey}: ${formattedValue}`;
+            });
+            return `${mapEntries.join(', ')}`;
           }
           const itemSchema = (schema as ValueSchemaSeries).items;
           if (itemSchema) {
