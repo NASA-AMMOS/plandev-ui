@@ -5384,7 +5384,10 @@ const effects = {
     workspace: Workspace,
     workspaceContents: WorkspaceTreeNode,
     startingPath: string,
+    inputLanguageName: string,
+    outputLanguageExtensions: string[],
     user: User | null,
+    toInputFormat: (input: string) => Promise<string>,
   ): Promise<string | null> {
     try {
       if (!featurePermissions.workspace.canUpdate(user, workspace)) {
@@ -5393,14 +5396,71 @@ const effects = {
       const { confirm, value } = await showImportWorkspaceFileModal(
         workspace,
         workspaceContents,
+        inputLanguageName,
+        outputLanguageExtensions,
         startingPath,
         workspace,
         user,
       );
       if (confirm) {
-        const { files, targetDirectory } = value;
+        const { convertedFileExtension, files, keepOriginalFiles, shouldConvert, targetDirectory } = value as {
+          convertedFileExtension: string;
+          files: FileList;
+          keepOriginalFiles: boolean;
+          shouldConvert: boolean;
+          targetDirectory: string;
+        };
+
+        let fileArray: File[] = [];
+        if (shouldConvert) {
+          const { convertableFiles, leftoverFiles } = Array.from(files).reduce(
+            (previousFileGroupings: { convertableFiles: File[]; leftoverFiles: File[] }, file) => {
+              const extension = file.name.replace(/^(?:[^.]+)(\..+)?$/, '$1');
+              if (
+                extension &&
+                outputLanguageExtensions.findIndex(
+                  fileExtension => extension === `.${fileExtension.replace(/^\./, '')}`,
+                ) > -1
+              ) {
+                return {
+                  ...previousFileGroupings,
+                  convertableFiles: [...previousFileGroupings.convertableFiles, file],
+                };
+              }
+              return {
+                ...previousFileGroupings,
+                leftoverFiles: [...previousFileGroupings.leftoverFiles, file],
+              };
+            },
+            { convertableFiles: [], leftoverFiles: [] },
+          );
+
+          const convertedFiles: File[] = await Promise.all(
+            convertableFiles.map(async file => {
+              const fileName = file.name.replace(
+                /^([^.]+)(?:\..+)?$/,
+                `$1.${convertedFileExtension.replace(/^\./, '')}`,
+              );
+              const lastModified = Date.now();
+              const content = await file.text();
+              const convertedContent = await toInputFormat(content);
+              const fileBlob = new Blob([convertedContent], { type: 'text/plain' });
+
+              return new File([fileBlob], fileName, { lastModified, type: 'text/plain' });
+            }),
+          );
+
+          if (keepOriginalFiles) {
+            fileArray = [...convertedFiles, ...convertableFiles, ...leftoverFiles];
+          } else {
+            fileArray = [...convertedFiles, ...leftoverFiles];
+          }
+        } else {
+          fileArray = Array.from<File>(files);
+        }
+
         const cleanedTargetPath = cleanPath(targetDirectory);
-        const chunkedFiles = chunk(Array.from<File>(files), 10);
+        const chunkedFiles = chunk(fileArray, 10);
 
         for (let i = 0; i < chunkedFiles.length; i++) {
           const fileChunk: File[] = chunkedFiles[i];
@@ -5419,13 +5479,11 @@ const effects = {
             }),
           );
         }
-
-        showSuccessToast(`Workspace File${files.length > 1 ? 's' : ''} Uploaded Successfully`);
-        return joinPath([cleanedTargetPath, files[0].name]);
+        showSuccessToast(`Workspace File${fileArray.length > 1 ? 's' : ''} Uploaded Successfully`);
+        return joinPath([cleanedTargetPath, fileArray[0].name]);
       }
     } catch (e) {
       catchError(`Workspace file was unable to be uploaded`, e as Error);
-      showFailureToast(`Workspace File Upload Failed`);
     }
 
     return null;

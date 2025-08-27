@@ -1,12 +1,14 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Input } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import * as Sidebar from '../../components/ui/Sidebar/index.js';
   import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
-  import { cleanPath, joinPath, separateFilenameFromPath } from '../../utilities/workspaces.js';
+  import { cleanPath, joinPath } from '../../utilities/workspaces.js';
+  import InputInternal from '../form/Input.svelte';
   import WorkspaceTreeView from '../workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
@@ -15,6 +17,8 @@
 
   export let currentWorkspace: Workspace;
   export let currentWorkspaceContents: WorkspaceTreeNode | null;
+  export let inputLanguageName: string = 'SeqN';
+  export let outputLanguageExtensions: string[] = ['.seq.json'];
   export let height: number = 400;
   export let width: number = 380;
   export let startingPath: string = '';
@@ -23,21 +27,37 @@
 
   const dispatch = createEventDispatcher<{
     close: void;
-    confirm: { files: FileList; targetDirectory: string };
+    confirm: {
+      convertedFileExtension: string;
+      files: FileList;
+      keepOriginalFiles: boolean;
+      shouldConvert: boolean;
+      targetDirectory: string;
+    };
   }>();
 
-  let targetPath: string = joinPath([currentWorkspace.name, startingPath]);
-  let targetDirectory: string = startingPath;
-  let targetFilename: string = '';
+  let targetDirectory: string = joinPath([currentWorkspace?.name ?? '', startingPath]);
   let saveButtonDisabled: boolean = false;
   let filesToUpload: FileList;
+  let keepOriginalFiles: boolean = false;
+  let shouldConvert: boolean = false;
+  let convertedFileExtension: string = '.seqN.txt';
+  let numberOfConvertableFiles: number = 0;
 
   $: {
-    const { filename, path } = separateFilenameFromPath(targetPath);
-    targetDirectory = path;
-    targetFilename = filename;
+    saveButtonDisabled = filesToUpload?.length === 0;
+    numberOfConvertableFiles = 0;
+    for (let i = 0; i < (filesToUpload?.length ?? 0); i++) {
+      const file = filesToUpload[i];
+      const extension = file.name.replace(/^(?:[^.]+)(\..+)?$/, '$1');
+      if (
+        extension &&
+        outputLanguageExtensions.findIndex(fileExtension => extension === `.${fileExtension.replace(/^\./, '')}`) > -1
+      ) {
+        numberOfConvertableFiles++;
+      }
+    }
   }
-  $: saveButtonDisabled = filesToUpload?.length === 0;
 
   function onFolderClicked(event: CustomEvent<WorkspaceNodeEvent>) {
     targetDirectory = event.detail.treeNodePath;
@@ -46,10 +66,11 @@
   function save() {
     if (!saveButtonDisabled) {
       dispatch('confirm', {
+        convertedFileExtension,
         files: filesToUpload,
-        targetDirectory: cleanPath(
-          joinPath([targetDirectory.replace(new RegExp(`^${currentWorkspace.name}`), ''), targetFilename]),
-        ),
+        keepOriginalFiles,
+        shouldConvert,
+        targetDirectory: cleanPath(joinPath([targetDirectory.replace(new RegExp(`^${currentWorkspace.name}`), '')])),
       });
     }
   }
@@ -69,7 +90,7 @@
   <ModalHeader on:close>Upload File(s) To Workspace</ModalHeader>
 
   <ModalContent style="overflow: hidden;">
-    <div class="grid h-full grid-rows-[auto_min-content] gap-1 overflow-hidden">
+    <div class="grid h-full grid-rows-[auto_min-content] gap-1">
       <Sidebar.Provider
         style="--sidebar-width: auto"
         className="min-h-full overflow-y-auto rounded-md border-(--st-gray-20) border-2"
@@ -89,9 +110,45 @@
           </Sidebar.Menu>
         </Sidebar.Content>
       </Sidebar.Provider>
-      <div class="py-1">
-        <label class="block pb-0.5" for="file">File(s)</label>
-        <input bind:files={filesToUpload} multiple class="w-100" name="file" type="file" aria-label="File(s)" />
+      <div class="flex flex-col gap-2 py-1">
+        <InputInternal layout="stacked">
+          <label class="block pb-0.5" for="file">File(s)</label>
+          <input bind:files={filesToUpload} multiple class="w-100" name="file" type="file" aria-label="File(s)" />
+        </InputInternal>
+        {#if numberOfConvertableFiles > 0}
+          <div class="flex gap-8">
+            <div class="flex items-center gap-1">
+              <input bind:checked={shouldConvert} aria-label="Should translate" id="should-convert" type="checkbox" />
+              <label class="select-none" for="should-convert">
+                Translate{numberOfConvertableFiles > 1 ? ` ${numberOfConvertableFiles} files ` : ' '}to {inputLanguageName}
+              </label>
+            </div>
+            {#if shouldConvert}
+              <div class="flex items-center gap-1">
+                <input
+                  bind:checked={keepOriginalFiles}
+                  aria-label="Keep original files"
+                  id="keep-files"
+                  type="checkbox"
+                />
+                <label class="select-none" for="keep-files">Keep original files</label>
+              </div>
+            {/if}
+          </div>
+          {#if shouldConvert}
+            <InputInternal layout="stacked">
+              <label class="block pb-0.5" for="file-extension">Translated file extension</label>
+              <Input
+                class="mx-1"
+                sizeVariant="xs"
+                bind:value={convertedFileExtension}
+                aria-label="Translated file extension"
+                id="file-extension"
+                type="text"
+              />
+            </InputInternal>
+          {/if}
+        {/if}
       </div>
     </div>
   </ModalContent>

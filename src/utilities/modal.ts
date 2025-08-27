@@ -314,6 +314,8 @@ export async function showDeleteExternalEventSourceTypeModal(
 export async function showImportWorkspaceFileModal(
   currentWorkspace: Workspace,
   currentWorkspaceContents: WorkspaceTreeNode,
+  inputLanguageName: string,
+  outputLanguageExtensions: string[],
   startingPath: string,
   workspace: Workspace | null | undefined,
   user: User | null,
@@ -327,6 +329,8 @@ export async function showImportWorkspaceFileModal(
           props: {
             currentWorkspace,
             currentWorkspaceContents,
+            inputLanguageName,
+            outputLanguageExtensions,
             startingPath,
             user,
             workspace,
