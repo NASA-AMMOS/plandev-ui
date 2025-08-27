@@ -5403,60 +5403,33 @@ const effects = {
         user,
       );
       if (confirm) {
-        const { convertedFileExtension, files, keepOriginalFiles, shouldConvert, targetDirectory } = value as {
-          convertedFileExtension: string;
-          files: FileList;
-          keepOriginalFiles: boolean;
-          shouldConvert: boolean;
-          targetDirectory: string;
-        };
+        const { convertedFileExtension, filesToConvert, filesToUpload, shouldKeepOriginalFiles, targetDirectory } =
+          value as {
+            convertedFileExtension: string;
+            filesToConvert: File[];
+            filesToUpload: File[];
+            shouldKeepOriginalFiles: boolean;
+            targetDirectory: string;
+          };
 
         let fileArray: File[] = [];
-        if (shouldConvert) {
-          const { convertableFiles, leftoverFiles } = Array.from(files).reduce(
-            (previousFileGroupings: { convertableFiles: File[]; leftoverFiles: File[] }, file) => {
-              const extension = file.name.replace(/^(?:[^.]+)(\..+)?$/, '$1');
-              if (
-                extension &&
-                outputLanguageExtensions.findIndex(
-                  fileExtension => extension === `.${fileExtension.replace(/^\./, '')}`,
-                ) > -1
-              ) {
-                return {
-                  ...previousFileGroupings,
-                  convertableFiles: [...previousFileGroupings.convertableFiles, file],
-                };
-              }
-              return {
-                ...previousFileGroupings,
-                leftoverFiles: [...previousFileGroupings.leftoverFiles, file],
-              };
-            },
-            { convertableFiles: [], leftoverFiles: [] },
-          );
 
-          const convertedFiles: File[] = await Promise.all(
-            convertableFiles.map(async file => {
-              const fileName = file.name.replace(
-                /^([^.]+)(?:\..+)?$/,
-                `$1.${convertedFileExtension.replace(/^\./, '')}`,
-              );
-              const lastModified = Date.now();
-              const content = await file.text();
-              const convertedContent = await toInputFormat(content);
-              const fileBlob = new Blob([convertedContent], { type: 'text/plain' });
+        const convertedFiles: File[] = await Promise.all(
+          filesToConvert.map(async file => {
+            const fileName = file.name.replace(/^([^.]+)(?:\..+)?$/, `$1.${convertedFileExtension.replace(/^\./, '')}`);
+            const lastModified = Date.now();
+            const content = await file.text();
+            const convertedContent = await toInputFormat(content);
+            const fileBlob = new Blob([convertedContent], { type: 'text/plain' });
 
-              return new File([fileBlob], fileName, { lastModified, type: 'text/plain' });
-            }),
-          );
+            return new File([fileBlob], fileName, { lastModified, type: 'text/plain' });
+          }),
+        );
 
-          if (keepOriginalFiles) {
-            fileArray = [...convertedFiles, ...convertableFiles, ...leftoverFiles];
-          } else {
-            fileArray = [...convertedFiles, ...leftoverFiles];
-          }
+        if (shouldKeepOriginalFiles) {
+          fileArray = [...convertedFiles, ...filesToConvert, ...filesToUpload];
         } else {
-          fileArray = Array.from<File>(files);
+          fileArray = [...convertedFiles, ...filesToUpload];
         }
 
         const cleanedTargetPath = cleanPath(targetDirectory);

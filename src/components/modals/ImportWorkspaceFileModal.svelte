@@ -29,34 +29,45 @@
     close: void;
     confirm: {
       convertedFileExtension: string;
-      files: FileList;
-      keepOriginalFiles: boolean;
-      shouldConvert: boolean;
+      filesToConvert: File[];
+      filesToUpload: File[];
+      shouldKeepOriginalFiles: boolean;
       targetDirectory: string;
     };
   }>();
 
   let targetDirectory: string = joinPath([currentWorkspace?.name ?? '', startingPath]);
   let saveButtonDisabled: boolean = false;
-  let filesToUpload: FileList;
-  let keepOriginalFiles: boolean = false;
+  let files: FileList;
+  let selectedFileGroupings: { convertableFiles: File[]; uploadableFiles: File[] } = {
+    convertableFiles: [],
+    uploadableFiles: [],
+  };
   let shouldConvert: boolean = false;
+  let shouldKeepOriginalFiles: boolean = false;
   let convertedFileExtension: string = '.seqN.txt';
-  let numberOfConvertableFiles: number = 0;
 
   $: {
-    saveButtonDisabled = filesToUpload?.length === 0;
-    numberOfConvertableFiles = 0;
-    for (let i = 0; i < (filesToUpload?.length ?? 0); i++) {
-      const file = filesToUpload[i];
-      const extension = file.name.replace(/^(?:[^.]+)(\..+)?$/, '$1');
-      if (
-        extension &&
-        outputLanguageExtensions.findIndex(fileExtension => extension === `.${fileExtension.replace(/^\./, '')}`) > -1
-      ) {
-        numberOfConvertableFiles++;
-      }
-    }
+    saveButtonDisabled = files?.length === 0;
+    selectedFileGroupings = Array.from(files ?? []).reduce(
+      (previousFileGroupings: { convertableFiles: File[]; uploadableFiles: File[] }, file) => {
+        const extension = file.name.replace(/^(?:[^.]+)(\..+)?$/, '$1');
+        if (
+          extension &&
+          outputLanguageExtensions.findIndex(fileExtension => extension === `.${fileExtension.replace(/^\./, '')}`) > -1
+        ) {
+          return {
+            ...previousFileGroupings,
+            convertableFiles: [...previousFileGroupings.convertableFiles, file],
+          };
+        }
+        return {
+          ...previousFileGroupings,
+          uploadableFiles: [...previousFileGroupings.uploadableFiles, file],
+        };
+      },
+      { convertableFiles: [], uploadableFiles: [] },
+    );
   }
 
   function onFolderClicked(event: CustomEvent<WorkspaceNodeEvent>) {
@@ -65,11 +76,20 @@
 
   function save() {
     if (!saveButtonDisabled) {
+      let filesToConvert: File[] = [];
+      let filesToUpload: File[] = [];
+      if (shouldConvert) {
+        filesToConvert = selectedFileGroupings.convertableFiles;
+        filesToUpload = selectedFileGroupings.uploadableFiles;
+      } else {
+        filesToUpload = [...selectedFileGroupings.convertableFiles, ...selectedFileGroupings.uploadableFiles];
+      }
+
       dispatch('confirm', {
         convertedFileExtension,
-        files: filesToUpload,
-        keepOriginalFiles,
-        shouldConvert,
+        filesToConvert,
+        filesToUpload,
+        shouldKeepOriginalFiles,
         targetDirectory: cleanPath(joinPath([targetDirectory.replace(new RegExp(`^${currentWorkspace.name}`), '')])),
       });
     }
@@ -113,20 +133,22 @@
       <div class="flex flex-col gap-2 py-1">
         <InputInternal layout="stacked">
           <label class="block pb-0.5" for="file">File(s)</label>
-          <input bind:files={filesToUpload} multiple class="w-100" name="file" type="file" aria-label="File(s)" />
+          <input bind:files multiple class="w-100" name="file" type="file" aria-label="File(s)" />
         </InputInternal>
-        {#if numberOfConvertableFiles > 0}
+        {#if selectedFileGroupings.convertableFiles.length > 0}
           <div class="flex gap-8">
             <div class="flex items-center gap-1">
               <input bind:checked={shouldConvert} aria-label="Should translate" id="should-convert" type="checkbox" />
               <label class="select-none" for="should-convert">
-                Translate{numberOfConvertableFiles > 1 ? ` ${numberOfConvertableFiles} files ` : ' '}to {inputLanguageName}
+                Translate{selectedFileGroupings.convertableFiles.length > 1
+                  ? ` ${selectedFileGroupings.convertableFiles.length} files `
+                  : ' '}to {inputLanguageName}
               </label>
             </div>
             {#if shouldConvert}
               <div class="flex items-center gap-1">
                 <input
-                  bind:checked={keepOriginalFiles}
+                  bind:checked={shouldKeepOriginalFiles}
                   aria-label="Keep original files"
                   id="keep-files"
                   type="checkbox"

@@ -339,12 +339,23 @@ export async function showImportWorkspaceFileModal(
         });
         target.resolve = resolve;
 
-        importWorkspaceFileModal.$on('confirm', (e: CustomEvent<{ files: FileList; targetDirectory: string }>) => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: true, value: e.detail });
-          importWorkspaceFileModal.$destroy();
-        });
+        importWorkspaceFileModal.$on(
+          'confirm',
+          (
+            e: CustomEvent<{
+              convertedFileExtension: string;
+              filesToConvert: File[];
+              filesToUpload: File[];
+              shouldKeepOriginalFiles: boolean;
+              targetDirectory: string;
+            }>,
+          ) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: true, value: e.detail });
+            importWorkspaceFileModal.$destroy();
+          },
+        );
 
         importWorkspaceFileModal.$on('close', () => {
           target.replaceChildren();
