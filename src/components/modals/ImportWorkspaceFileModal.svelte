@@ -51,10 +51,10 @@
     saveButtonDisabled = files?.length === 0;
     selectedFileGroupings = Array.from(files ?? []).reduce(
       (previousFileGroupings: { convertableFiles: File[]; uploadableFiles: File[] }, file) => {
-        const extension = file.name.replace(/^(?:[^.]+)(\..+)?$/, '$1');
         if (
-          extension &&
-          outputLanguageExtensions.findIndex(fileExtension => extension === `.${fileExtension.replace(/^\./, '')}`) > -1
+          outputLanguageExtensions.findIndex(fileExtension =>
+            file.name.endsWith(`.${fileExtension.replace(/^\./, '')}`),
+          ) > -1
         ) {
           return {
             ...previousFileGroupings,

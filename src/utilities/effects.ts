@@ -5416,13 +5416,24 @@ const effects = {
 
         const convertedFiles: File[] = await Promise.all(
           filesToConvert.map(async file => {
-            const fileName = file.name.replace(/^([^.]+)(?:\..+)?$/, `$1.${convertedFileExtension.replace(/^\./, '')}`);
-            const lastModified = Date.now();
-            const content = await file.text();
-            const convertedContent = await toInputFormat(content);
-            const fileBlob = new Blob([convertedContent], { type: 'text/plain' });
+            const matchingOutputLanguageExtension = outputLanguageExtensions.find(fileExtension =>
+              file.name.endsWith(`.${fileExtension.replace(/^\./, '')}`),
+            );
 
-            return new File([fileBlob], fileName, { lastModified, type: 'text/plain' });
+            if (matchingOutputLanguageExtension) {
+              const fileName = file.name.replace(
+                matchingOutputLanguageExtension.replace(/^\./, ''),
+                convertedFileExtension.replace(/^\./, ''),
+              );
+              const lastModified = Date.now();
+              const content = await file.text();
+              const convertedContent = await toInputFormat(content);
+              const fileBlob = new Blob([convertedContent], { type: 'text/plain' });
+
+              return new File([fileBlob], fileName, { lastModified, type: 'text/plain' });
+            }
+
+            return file;
           }),
         );
 
