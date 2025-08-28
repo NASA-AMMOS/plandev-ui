@@ -167,7 +167,7 @@ export async function reqHasura<T = any>(
       logout(error?.message);
     }
 
-    throw new Error(errorMessage ?? defaultError, { cause });
+    throw new Error(error?.message ?? defaultError, { cause });
   }
 
   const { data } = json;
