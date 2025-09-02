@@ -14,7 +14,11 @@ describe('generateDefaultView', () => {
     const view = generateDefaultView([
       { description: 'resource1 description', name: 'resource1', schema: { type: 'boolean' } },
       { description: 'resource2 description', name: 'resource2', schema: { type: 'int' } },
-      { description: 'resource3 description', name: 'resource2', schema: { items: { type: 'boolean' }, type: 'series' } },
+      {
+        description: 'resource3 description',
+        name: 'resource2',
+        schema: { items: { type: 'boolean' }, type: 'series' },
+      },
     ]);
     const { valid, errors } = validateViewJSONAgainstSchema(view.definition);
     expect(errors).to.deep.equal([]);
