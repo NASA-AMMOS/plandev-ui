@@ -1673,6 +1673,7 @@ const gql = {
       resource_types: ${Queries.RESOURCE_TYPES}(where: { model_id: { _eq: $model_id } }, order_by: { name: asc }, limit: $limit) {
         name
         schema
+        description
       }
     }
   `,
