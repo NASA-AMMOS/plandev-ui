@@ -5428,9 +5428,8 @@ const effects = {
               const lastModified = Date.now();
               const content = await file.text();
               const convertedContent = await toInputFormat(content);
-              const fileBlob = new Blob([convertedContent], { type: 'text/plain' });
 
-              return new File([fileBlob], fileName, { lastModified, type: 'text/plain' });
+              return new File([convertedContent], fileName, { lastModified, type: 'text/plain' });
             }
 
             return file;
