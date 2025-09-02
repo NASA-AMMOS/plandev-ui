@@ -14,6 +14,7 @@ export type EffectiveArguments = {
 };
 
 export type FormParameter<T = ValueSchema | UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple> = {
+  description?: string;
   errors: string[] | null;
   externalEvent?: boolean;
   file?: File;
@@ -31,7 +32,7 @@ export type Argument = any;
 
 export type ArgumentsMap = Record<ParameterName, Argument>;
 
-export type Parameter = { order: number; schema: ValueSchema; unit?: string };
+export type Parameter = { description?: string; order: number; schema: ValueSchema; unit?: string };
 export type ComputedParameter = { order: number; schema: ValueSchema; units?: Record<ParameterName, string> };
 
 export type ParameterError = { message: string; schema: ValueSchema };

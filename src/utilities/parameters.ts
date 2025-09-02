@@ -90,7 +90,7 @@ export function getFormParameters(
   optionLabel: string = 'option',
   ignoreValueSource?: boolean,
 ): FormParameter[] {
-  const formParameters = Object.entries(parametersMap).map(([name, { order, schema }]) => {
+  const formParameters = Object.entries(parametersMap).map(([name, { description, order, schema }]) => {
     const formParameterSchema: ValueSchema | UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple = schema;
 
     const arg: Argument = argumentsMap[name];
@@ -133,6 +133,7 @@ export function getFormParameters(
     }
 
     const formParameter: FormParameter = {
+      description,
       errors,
       externalEvent: true,
       name,
