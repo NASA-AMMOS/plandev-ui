@@ -7,7 +7,7 @@
   export let draggable: boolean = false;
 
   export let tooltip: Action<HTMLElement, any> | undefined = undefined;
-  export let tooltipContent: any;
+  export let tooltipContent: any = undefined;
   export let tooltipPlacement: string = 'top';
   export let tooltipEnabled: boolean = false;
 
