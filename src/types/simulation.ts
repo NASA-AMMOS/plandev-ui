@@ -55,7 +55,7 @@ export type ResourceRequest = {
 };
 
 export type ResourceType = {
-  description: string;
+  description?: string;
   name: string;
   schema: ValueSchema;
 };
