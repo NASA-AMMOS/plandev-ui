@@ -7,7 +7,6 @@
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
-  import { seqJsonToSeqn } from '@nasa-jpl/aerie-sequence-languages';
   import type { IRowNode } from 'ag-grid-community';
   import { onDestroy, onMount } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
@@ -61,6 +60,7 @@
   import { showConfirmModal } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
   import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
+  import { toInputFormat } from '../../../utilities/sequence-editor/extension-points';
   import { userSequenceToLibrarySequence } from '../../../utilities/sequence-editor/languages/seq-n/seq-n-tree-utils';
   import { parseFunctionSignatures } from '../../../utilities/sequence-editor/languages/vml/vml-adaptation';
   import { isVmlSequence } from '../../../utilities/sequence-editor/sequence-utils';
@@ -341,7 +341,7 @@
         $sequenceAdaptation.inputFormat.name,
         $sequenceAdaptation.outputFormat.map(outputFormat => outputFormat.fileExtension),
         user,
-        $sequenceAdaptation.inputFormat.toInputFormat ?? (async (input: string) => seqJsonToSeqn(JSON.parse(input))),
+        async (input: string) => toInputFormat(input, parameterDictionaries, channelDictionary, $sequenceAdaptation),
       );
       refreshWorkspaceContents();
 
