@@ -155,7 +155,7 @@
             id="activity-description"
             value={activityType.description}
             readonly
-          ></textarea>
+          />
         </Input>
       {/if}
 

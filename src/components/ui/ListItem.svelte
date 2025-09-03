@@ -1,15 +1,12 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { Action } from 'svelte/action';
+  import { tooltip } from '../../utilities/tooltip';
 
   export { className as class };
   export { styleName as style };
   export let draggable: boolean = false;
 
-  export let tooltip: Action<HTMLElement, any> | undefined = undefined;
-  export let tooltipContent: any = undefined;
-  export let tooltipPlacement: string = 'top';
-  export let tooltipEnabled: boolean = false;
+  export let tooltipContent: string | undefined = undefined;
 
   const dispatch = createEventDispatcher<{
     click: MouseEvent;
@@ -23,10 +20,22 @@
 
   const doNothing = () => {};
 
-  $: action = tooltip && tooltipEnabled ? tooltip : doNothing;
-  $: params = tooltipEnabled
-    ? { content: tooltipContent, enabled: tooltipEnabled, placement: tooltipPlacement }
-    : undefined;
+  function handleClick(e: MouseEvent) {
+    dispatch('click', e);
+  }
+
+  function handleDragEnd(e: DragEvent) {
+    dragging = false;
+    dispatch('dragend', e);
+  }
+
+  function handleDragStart(e: DragEvent) {
+    dragging = true;
+    dispatch('dragstart', e);
+  }
+
+  $: action = tooltipContent ? tooltip : doNothing;
+  $: params = tooltipContent ? { content: tooltipContent, enabled: !!tooltipContent, placement: 'top' } : undefined;
 </script>
 
 <div
@@ -35,15 +44,9 @@
   {draggable}
   role="none"
   style={styleName}
-  on:click={e => dispatch('click', e)}
-  on:dragend={e => {
-    dragging = false;
-    dispatch('dragend', e);
-  }}
-  on:dragstart={e => {
-    dragging = true;
-    dispatch('dragstart', e);
-  }}
+  on:click={handleClick}
+  on:dragend={handleDragEnd}
+  on:dragstart={handleDragStart}
   use:action={params}
 >
   <div class="list-item-content">
