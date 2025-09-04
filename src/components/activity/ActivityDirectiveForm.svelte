@@ -543,7 +543,7 @@
 
   <div class="activity-form">
     <fieldset>
-      <Collapse title="Definition" contentClass="px-1">
+      <Collapse title="Definition-Changed" contentClass="px-1">
         {#if showActivityName}
           <Highlight highlight={highlightKeysMap.name}>
             <Input layout="inline">
