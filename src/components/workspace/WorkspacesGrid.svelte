@@ -5,7 +5,7 @@
   import { createEventDispatcher } from 'svelte';
   import { workspaces } from '../../stores/workspaces';
   import type { User } from '../../types/app';
-  import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
+  import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { Workspace } from '../../types/workspace';
   import { featurePermissions } from '../../utilities/permissions';
   import Input from '../form/Input.svelte';
@@ -113,8 +113,16 @@
     }
   }
 
+  function hasEditPermission(user: User | null, workspace: Workspace) {
+    return featurePermissions.workspaces.canUpdate(user, workspace);
+  }
+
   function hasDeletePermission(user: User | null, workspace: Workspace) {
     return featurePermissions.workspaces.canDelete(user, workspace);
+  }
+
+  function editWorkspace(event: CustomEvent<RowId[]>) {
+    dispatch('viewWorkspace', event.detail[0] as number);
   }
 
   async function viewWorkspace(workspace: Workspace | undefined) {
@@ -160,11 +168,13 @@
         loading={$workspaces === null}
         columnDefs={baseColumnDefs}
         hasEdit={true}
-        itemDisplayText="Workspaces"
+        {hasDeletePermission}
+        {hasEditPermission}
+        itemDisplayText="Workspace"
         items={filteredWorkspaces}
         selectedItemId={selectedWorkspaceId}
-        hasDeletePermission={false}
         {user}
+        on:editItem={editWorkspace}
         on:rowSelected={workspaceSelected}
         on:rowDoubleClicked={({ detail }) => viewWorkspace(detail.data)}
       />
