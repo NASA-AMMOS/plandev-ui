@@ -37,8 +37,8 @@
   }>();
 
   let targetDirectory: string = joinPath([currentWorkspace?.name ?? '', startingPath]);
-  let saveButtonDisabled: boolean = false;
-  let files: FileList;
+  let uploadButtonDisabled: boolean = true;
+  let files: FileList | undefined;
   let selectedFileGroupings: { convertableFiles: File[]; uploadableFiles: File[] } = {
     convertableFiles: [],
     uploadableFiles: [],
@@ -48,7 +48,7 @@
   let convertedFileExtension: string = '.seqN.txt';
 
   $: {
-    saveButtonDisabled = files?.length === 0;
+    uploadButtonDisabled = files === undefined || files.length === 0;
     selectedFileGroupings = Array.from(files ?? []).reduce(
       (previousFileGroupings: { convertableFiles: File[]; uploadableFiles: File[] }, file) => {
         if (
@@ -74,8 +74,8 @@
     targetDirectory = event.detail.treeNodePath;
   }
 
-  function save() {
-    if (!saveButtonDisabled) {
+  function upload() {
+    if (!uploadButtonDisabled) {
       let filesToConvert: File[] = [];
       let filesToUpload: File[] = [];
       if (shouldConvert) {
@@ -99,7 +99,7 @@
     const { key } = event;
     if (key === 'Enter') {
       event.preventDefault();
-      save();
+      upload();
     }
   }
 </script>
@@ -177,6 +177,6 @@
 
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" disabled={saveButtonDisabled} on:click={save}> Upload </button>
+    <button class="st-button" disabled={uploadButtonDisabled} on:click={upload}> Upload </button>
   </ModalFooter>
 </Modal>
