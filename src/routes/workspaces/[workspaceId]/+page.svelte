@@ -487,6 +487,10 @@
 
   onDestroy(() => {
     resetSequenceAdaptation();
+
+    if (refreshInterval !== null) {
+      clearInterval(refreshInterval);
+    }
   });
 </script>
 
