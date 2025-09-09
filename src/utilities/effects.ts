@@ -5442,6 +5442,8 @@ const effects = {
 
         const failedConvertedFileUploads: Record<string, boolean> = {};
 
+        const successfullyUploadedFileNames: string[] = [];
+
         for (let i = 0; i < convertedChunkedFiles.length; i++) {
           const fileChunk: File[] = convertedChunkedFiles[i];
 
@@ -5458,6 +5460,7 @@ const effects = {
                   undefined,
                   false,
                 );
+                successfullyUploadedFileNames.push(file.name);
               } catch (error) {
                 failedConvertedFileUploads[file.name] = true;
                 catchError(`${file.name} was unable to be uploaded`, error as Error);
@@ -5498,16 +5501,19 @@ const effects = {
                 undefined,
                 false,
               );
+              successfullyUploadedFileNames.push(file.name);
             }),
           );
         }
 
-        if (fileArray.length) {
-          showSuccessToast(`Workspace File${fileArray.length > 1 ? 's' : ''} Uploaded Successfully`);
+        if (successfullyUploadedFileNames) {
+          showSuccessToast(
+            `Workspace File${successfullyUploadedFileNames.length > 1 ? 's' : ''} Uploaded Successfully`,
+          );
         } else {
           throw new Error('No files were uploaded');
         }
-        return joinPath([cleanedTargetPath, fileArray[0].name]);
+        return joinPath([cleanedTargetPath, successfullyUploadedFileNames[0]]);
       }
     } catch (e) {
       catchError(`Workspace file was unable to be uploaded`, e as Error);
