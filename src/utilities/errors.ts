@@ -26,6 +26,7 @@ export enum ErrorTypes {
   PLAN_SERVICE_EXCEPTION = 'PLAN_SERVICE_EXCEPTION',
   RESULTS_PROTOCOL_FAILURE = 'RESULTS_PROTOCOL_FAILURE',
   SCHEDULING_GOALS_FAILED = 'SCHEDULING_GOALS_FAILED',
+  SIMULATION_EXCEPTION = 'SIMULATION_EXCEPTION',
   SIMULATION_REQUEST_NOT_RELEVANT = 'SIMULATION_REQUEST_NOT_RELEVANT',
   SPECIFICATION_LOAD_EXCEPTION = 'SPECIFICATION_LOAD_EXCEPTION',
   UNEXPECTED_SCHEDULER_EXCEPTION = 'UNEXPECTED_SCHEDULER_EXCEPTION',
@@ -128,6 +129,11 @@ export function getActivityIdsFromError(error: BaseError): number[] {
       return Object.keys(errorWithIds.data.errors)
         .map(id => parseInt(id))
         .filter(id => !isNaN(id));
+    }
+  } else if (error.type === ErrorTypes.SIMULATION_EXCEPTION) {
+    const id = (error as SimulationDatasetError).data.executingDirectiveId;
+    if (typeof id === 'number') {
+      return [id];
     }
   }
   return [];

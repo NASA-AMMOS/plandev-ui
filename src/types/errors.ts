@@ -42,10 +42,13 @@ export interface SchedulingError extends BaseError {
 
 export interface SimulationDatasetError extends BaseError {
   data: {
+    activityStackStrace?: string;
     elapsedTime?: string;
     errors?: {
       [activityId: string]: unknown;
     };
+    executingActivityType?: string;
+    executingDirectiveId?: number;
     success?: boolean;
     utcTimeDoy?: string;
   };
