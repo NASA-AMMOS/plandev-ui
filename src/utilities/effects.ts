@@ -5412,7 +5412,7 @@ const effects = {
             targetDirectory: string;
           };
 
-        let fileArray: File[] = [];
+        const convertedFileMap: Record<string, string> = {};
 
         const convertedFiles: File[] = await Promise.all(
           filesToConvert.map(async file => {
@@ -5429,6 +5429,7 @@ const effects = {
               const content = await file.text();
               const convertedContent = await toInputFormat(content);
 
+              convertedFileMap[file.name] = fileName;
               return new File([convertedContent], fileName, { lastModified, type: 'text/plain' });
             }
 
@@ -5436,13 +5437,51 @@ const effects = {
           }),
         );
 
-        if (shouldKeepOriginalFiles) {
-          fileArray = [...convertedFiles, ...filesToConvert, ...filesToUpload];
-        } else {
-          fileArray = [...convertedFiles, ...filesToUpload];
+        const cleanedTargetPath = cleanPath(targetDirectory);
+        const convertedChunkedFiles = chunk(convertedFiles, 10);
+
+        const failedConvertedFileUploads: Record<string, boolean> = {};
+
+        for (let i = 0; i < convertedChunkedFiles.length; i++) {
+          const fileChunk: File[] = convertedChunkedFiles[i];
+
+          await Promise.all(
+            fileChunk.map(async file => {
+              const body = new FormData();
+              body.append('file', file, file.name);
+              try {
+                await reqWorkspace<Workspace>(
+                  `${joinPath([workspace.id, cleanedTargetPath, file.name])}?type=file`,
+                  'PUT',
+                  body,
+                  user,
+                  undefined,
+                  false,
+                );
+              } catch (error) {
+                failedConvertedFileUploads[file.name] = true;
+                catchError(`${file.name} was unable to be uploaded`, error as Error);
+                showFailureToast(`${file.name} was unable to be uploaded`);
+              }
+            }),
+          );
         }
 
-        const cleanedTargetPath = cleanPath(targetDirectory);
+        let fileArray: File[] = [];
+        if (shouldKeepOriginalFiles) {
+          fileArray = [
+            ...filesToConvert.reduce((previousFilesToConvert: File[], currentFile: File) => {
+              if (failedConvertedFileUploads[convertedFileMap[currentFile.name]]) {
+                return previousFilesToConvert;
+              }
+              return [...previousFilesToConvert, currentFile];
+            }, []),
+            ...filesToUpload,
+          ];
+        } else {
+          fileArray = [...filesToUpload];
+        }
+
         const chunkedFiles = chunk(fileArray, 10);
 
         for (let i = 0; i < chunkedFiles.length; i++) {
@@ -5462,11 +5501,17 @@ const effects = {
             }),
           );
         }
-        showSuccessToast(`Workspace File${fileArray.length > 1 ? 's' : ''} Uploaded Successfully`);
+
+        if (fileArray.length) {
+          showSuccessToast(`Workspace File${fileArray.length > 1 ? 's' : ''} Uploaded Successfully`);
+        } else {
+          throw new Error('No files were uploaded');
+        }
         return joinPath([cleanedTargetPath, fileArray[0].name]);
       }
     } catch (e) {
       catchError(`Workspace file was unable to be uploaded`, e as Error);
+      showFailureToast(`Workspace file was unable to be uploaded`);
     }
 
     return null;
