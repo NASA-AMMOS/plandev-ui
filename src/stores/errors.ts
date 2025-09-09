@@ -7,7 +7,8 @@ import type {
   ActivityValidationErrors,
   AnchorValidationError,
   BaseError,
-  CaughtError,
+  LogLevel,
+  LogMessage,
   SchedulingError,
   SimulationDatasetError,
 } from '../types/errors';
@@ -113,22 +114,44 @@ export const simulationDatasetErrors: Readable<SimulationDatasetError[]> = deriv
 
 export const schedulingErrors: Writable<SchedulingError[]> = writable([]);
 
-const caughtErrors: Writable<CaughtError[]> = writable([]);
+export const allLogs: Writable<LogMessage[]> = writable([]);
 
-export const allErrors: Readable<BaseError[]> = derived(
-  [simulationDatasetErrors, schedulingErrors, anchorValidationErrors, caughtErrors],
-  ([$simulationDatasetErrors, $schedulingErrors, $anchorValidationErrors, $caughtErrors]) =>
-    [
-      ...($simulationDatasetErrors ?? []),
-      ...($schedulingErrors ?? []),
-      ...($anchorValidationErrors ?? []),
-      ...($caughtErrors ?? []),
-    ].sort((errorA: BaseError, errorB: BaseError) =>
-      compare(`${new Date(errorA.timestamp)}`, `${new Date(errorB.timestamp)}`, false),
+export const errorLogs: Readable<LogMessage[]> = derived([allLogs], ([$allLogs]) =>
+  $allLogs.filter(log => log.type === ErrorTypes.CAUGHT_ERROR),
+);
+
+export const allProblems: Readable<BaseError[]> = derived(
+  [simulationDatasetErrors, schedulingErrors, anchorValidationErrors],
+  ([$simulationDatasetErrors, $schedulingErrors, $anchorValidationErrors]) =>
+    [...($simulationDatasetErrors ?? []), ...($schedulingErrors ?? []), ...($anchorValidationErrors ?? [])].sort(
+      (errorA: BaseError, errorB: BaseError) =>
+        compare(`${new Date(errorA.timestamp)}`, `${new Date(errorB.timestamp)}`, false),
     ),
 );
 
 /* Helper Functions. */
+
+export function logMessage(
+  message: string,
+  details?: string,
+  level: LogLevel = 'info',
+  shouldLog: boolean = false,
+): void {
+  allLogs.update(l => {
+    l.push({
+      level,
+      message,
+      timestamp: `${new Date()}`,
+      ...(details ? { trace: details } : {}),
+      type: ErrorTypes.LOG,
+    });
+    return [...l];
+  });
+
+  if (shouldLog) {
+    console.log(details ?? message);
+  }
+}
 
 export function catchError(error: string | Error, details?: string | Error, shouldLog: boolean = true): void {
   // ignore the error if it is an AbortError
@@ -136,14 +159,15 @@ export function catchError(error: string | Error, details?: string | Error, shou
     return;
   }
 
-  caughtErrors.update(errors => {
-    errors.push({
+  allLogs.update(l => {
+    l.push({
+      level: 'error',
       message: `${error}`,
       timestamp: `${new Date()}`,
       ...(details ? { trace: `${details}` } : {}),
       type: ErrorTypes.CAUGHT_ERROR,
     });
-    return [...errors];
+    return [...l];
   });
 
   if (shouldLog) {
@@ -165,7 +189,11 @@ export function clearSchedulingErrors(): void {
   schedulingErrors.set([]);
 }
 
-export function clearAllErrors(): void {
+export function clearLogs(): void {
+  allLogs.set([]);
+}
+
+export function resetErrorStores(): void {
+  clearLogs();
   clearSchedulingErrors();
-  caughtErrors.set([]);
 }

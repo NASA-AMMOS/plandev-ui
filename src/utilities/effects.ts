@@ -25,7 +25,7 @@ import {
   checkConstraintsQueryStatus as checkConstraintsQueryStatusStore,
   resetConstraintStoresForSimulation,
 } from '../stores/constraints';
-import { catchError, catchSchedulingError } from '../stores/errors';
+import { catchError, catchSchedulingError, logMessage } from '../stores/errors';
 import {
   createExpansionRuleError as createExpansionRuleErrorStore,
   creatingExpansionSequence as creatingExpansionSequenceStore,
@@ -833,6 +833,7 @@ const effects = {
           selectedSpanIdStore.set(null);
 
           showSuccessToast('Activity Directive Created Successfully');
+          logMessage(`Created activity directive with type: "${name}"`);
         } else {
           throw Error(`Unable to create activity directive "${name}" on plan with ID ${plan.id}`);
         }
@@ -2460,6 +2461,7 @@ const effects = {
         }
 
         showSuccessToast('Activity Directives Deleted Successfully');
+        logMessage(`Deleted ${ids.length} activity directive${pluralize(ids.length)}`);
         return true;
       }
     } catch (e) {
@@ -7954,7 +7956,7 @@ const effects = {
         throw Error('Unable to validate activity arguments');
       }
     } catch (e) {
-      catchError(e as Error, `Invalid arguments for activity with ID: "${activityId}"`);
+      catchError(e as Error, `Invalid arguments for activity with ID: "${activityId}"`, false);
       const { message } = e as Error;
       return { errors: [{ message } as ParameterValidationError], success: false };
     }
