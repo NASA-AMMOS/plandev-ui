@@ -1,15 +1,20 @@
 import type { ErrorTypes } from '../utilities/errors';
 
+export type LogLevel = 'error' | 'warn' | 'info';
+
 export interface BaseError {
-  data?: unknown;
-  message: string;
-  timestamp: string;
-  trace?: string;
+  code?: string; // very short, semi-human-readable string representing the category/class/type of error, in all caps and underscores, eg. “INVALID_SIMULATION_ID”
+  data?: unknown; // optional unstructured data object with any additional useful error data
+  level?: LogLevel;
+  message: string; // short (1-2 sentences) human-readable string explaining the cause of the error
+  service?: string; // optional string identifying the backend service that threw the error
+  timestamp: string; // ISO 8601 UTC string timestamp at the time the error happened
+  trace?: string; // stack trace of error
   type: ErrorTypes;
 }
 
-export interface CaughtError extends BaseError {
-  type: ErrorTypes.CAUGHT_ERROR;
+export interface LogMessage extends BaseError {
+  type: ErrorTypes.CAUGHT_ERROR | ErrorTypes.LOG;
 }
 
 export interface AnchorValidationError extends BaseError {
