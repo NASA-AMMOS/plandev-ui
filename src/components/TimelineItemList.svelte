@@ -274,7 +274,7 @@
           style="cursor: move;"
           on:dragend={onDragEnd}
           on:dragstart={e => onDragStart(e.detail, [item])}
-          tooltipContent={hasDescription(item) && item.description ? item.description : undefined}
+          tooltipContent={hasDescription(item) ? item.description : undefined}
         >
           {item.name}
           <slot prop={item} />
