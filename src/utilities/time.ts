@@ -525,30 +525,26 @@ export function convertUsToDurationString(durationUs: number, includeZeros: bool
   }
 
   const negativeString = isNegative ? '-' : '';
-  const components: [number, string][] = [
-    [years, 'y'],
-    [days, 'd'],
-    [hours, 'h'],
-    [minutes, 'm'],
-    [seconds, 's'],
-    [milliseconds, 'ms'],
-    [microseconds, 'us'],
-  ];
+  const yearsString = years ? `${years}y` : '';
+  const daysString = days ? `${days}d` : '';
+  const hoursString = hours ? `${hours}h` : '';
+  const minutesString = minutes ? `${minutes}m` : '';
+  const secondsString = seconds ? `${seconds}s` : '';
+  const millisecondsString = milliseconds ? `${milliseconds}ms` : '';
+  const microsecondsString = microseconds ? `${microseconds}us` : '';
 
-  const firstNonZeroIndex = components.findIndex(([value]) => value > 0);
-  const lastNonZeroIndex = components.findLastIndex(([value]) => value > 0);
-
-  if (firstNonZeroIndex === -1) {
-    return '0us';
-  }
-
-  const parts = [];
-  for (let i = firstNonZeroIndex; i <= lastNonZeroIndex; i++) {
-    const [value, unit] = components[i];
-    parts.push(`${value}${unit}`);
-  }
-
-  return [negativeString, ...parts].filter(Boolean).join(' ');
+  return [
+    negativeString,
+    yearsString,
+    daysString,
+    hoursString,
+    minutesString,
+    secondsString,
+    millisecondsString,
+    microsecondsString,
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
 /**
