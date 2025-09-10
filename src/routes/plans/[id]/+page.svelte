@@ -60,7 +60,6 @@
     activityErrorRollups,
     allLogs,
     allProblems,
-    anchorValidationErrors,
     clearLogs,
     clearSchedulingErrors,
     constraintRunErrors,
@@ -166,7 +165,7 @@
 
   export let data: PageData;
 
-  type PlanConsoleTab = 'all' | 'anchor' | 'scheduling' | 'simulation' | 'activity' | 'model' | 'constraints' | 'logs';
+  type PlanConsoleTab = 'all' | 'scheduling' | 'simulation' | 'activity' | 'model' | 'constraints' | 'logs';
 
   let activityErrorCounts: ActivityErrorCounts = {
     all: 0,
@@ -1017,9 +1016,6 @@
                 <ConsoleTab value="all" numberOfErrors={$allProblems.length}>All Problems</ConsoleTab>
               </div>
               <div class="flex items-center py-0.5">
-                <ConsoleTab value="anchor" numberOfErrors={$anchorValidationErrors?.length}>
-                  Anchor Validation
-                </ConsoleTab>
                 <ConsoleTab value="scheduling" numberOfErrors={$schedulingErrors?.length}>Scheduling</ConsoleTab>
                 <ConsoleTab value="simulation" numberOfErrors={$simulationDatasetErrors?.length}>Simulation</ConsoleTab>
                 <ConsoleTab value="constraints" numberOfErrors={$constraintRunErrors?.length}>Constraints</ConsoleTab>
@@ -1044,7 +1040,6 @@
           </svelte:fragment>
 
           <ConsoleLogs value="all" showTimestamp={false} showLevel={false} logs={$allProblems} />
-          <ConsoleLogs value="anchor" showTimestamp={false} logs={$anchorValidationErrors} />
           <ConsoleLogs value="scheduling" showTimestamp={false} logs={$schedulingErrors} />
           <ConsoleLogs value="simulation" showTimestamp={false} logs={$simulationDatasetErrors} />
           <ConsoleLogs value="constraints" showTimestamp={false} logs={$constraintRunErrors} />
