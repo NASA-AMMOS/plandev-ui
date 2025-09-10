@@ -371,6 +371,9 @@ const effects = {
           );
 
           if (data !== null) {
+            logMessage(
+              `Applied sequence filter ${filter.name} (${filter.id}) to simulation dataset ${simulationDatasetId}.`,
+            );
             showSuccessToast('Filter Applied Successfully');
           } else {
             throw Error('Filter could not be applied successfully');
@@ -420,6 +423,7 @@ const effects = {
           user,
         );
         if (data.apply_preset_to_activity != null) {
+          logMessage(`Applied preset ${preset.name} (${preset.id}) to activity directive ${activityId}.`);
           showSuccessToast('Preset Successfully Applied to Activity');
         } else {
           throw Error(`Unable to apply preset with ID: "${preset.id}" to directive with ID: "${activityId}"`);
@@ -460,6 +464,7 @@ const effects = {
         const newSimulation: Simulation = { ...simulation, arguments: template.arguments, template };
 
         await effects.updateSimulation(plan, newSimulation, user);
+        logMessage(`Applied template ${template.id} to simulation ${simulation.id}.`);
         showSuccessToast('Template Successfully Applied to Simulation');
       }
     } catch (e) {
@@ -478,6 +483,7 @@ const effects = {
 
       if (response.success) {
         showSuccessToast(response.message);
+        logMessage(`Executed extension ${extension.label} (${extension.id}).`);
         window.open(response.url, '_blank');
       } else {
         throw new Error(response.message);
@@ -534,6 +540,7 @@ const effects = {
 
       if (confirm) {
         await reqHasura<SeqId>(gql.CANCEL_SCHEDULING_REQUEST, { id: analysisId }, user);
+        logMessage(`Canceled scheduling request ${analysisId}.`);
         showSuccessToast('Scheduling Request Successfully Canceled');
       }
     } catch (e) {
@@ -557,6 +564,7 @@ const effects = {
 
       if (confirm) {
         await reqHasura<SeqId>(gql.CANCEL_SIMULATION, { id: simulationDatasetId }, user);
+        logMessage(`Canceled simulation ${simulationDatasetId}.`);
         showSuccessToast('Simulation Successfully Canceled');
       }
     } catch (e) {
@@ -570,6 +578,7 @@ const effects = {
       checkConstraintsQueryStatusStore.set(Status.Incomplete);
       if (plan !== null) {
         const { id: planId } = plan;
+        const startTime = performance.now();
         const data = await reqHasura<CheckConstraintResponse>(
           gql.CHECK_CONSTRAINTS,
           {
@@ -598,6 +607,7 @@ const effects = {
             showSuccessToast('All Constraints Checked');
             checkConstraintsQueryStatusStore.set(Status.Complete);
           }
+          logMessage(`Ran constraint checking.`, '', performance.now() - startTime);
         } else {
           throw Error(`Unable to check constraints for plan with ID: "${plan.id}"`);
         }
@@ -623,6 +633,7 @@ const effects = {
         user,
       );
       const modelCompatabilityForPlan: ModelCompatabilityForPlan = data.check_model_compatibility_for_plan?.result;
+      logMessage(`Checked plan model migration compatibility for model ${newModelId}.`);
       return modelCompatabilityForPlan;
     } catch (e) {
       catchError('Check Plan Model Migration Compatibility Failed', e as Error);
@@ -682,7 +693,8 @@ const effects = {
           }));
 
         await reqHasura<ActivityDirectiveDB>(gql.UPDATE_ACTIVITY_DIRECTIVES, { updates: anchorUpdates }, user);
-        showSuccessToast(`Pasted ${activities.length} Activity Directive${activities.length === 1 ? '' : 's'}`);
+        logMessage(`Pasted ${activities.length} activity directive${pluralize(activities.length)}`);
+        showSuccessToast(`Pasted ${activities.length} Activity Directive${pluralize(activities.length)}`);
         return clonedActivitiesReferences;
       }
     } catch (e) {
@@ -728,6 +740,7 @@ const effects = {
         );
         const { insert_action_definition_one } = data;
         if (insert_action_definition_one) {
+          logMessage(`Created action ${name} in workspace ${workspaceId}.`);
           showSuccessToast('Action Created Successfully');
           return true;
         } else {
@@ -764,6 +777,7 @@ const effects = {
       const response = await reqHasura<{ id: number }>(gql.CREATE_ACTION_RUN, { actionRunInsertInput }, user);
       const { insert_action_run_one: actionRunId } = response;
       if (actionRunId !== null) {
+        logMessage(`Created action run ${actionRunId}.`);
         return actionRunId.id;
       } else {
         throw Error(`Unable to run action`);
@@ -855,7 +869,10 @@ const effects = {
           throw Error('Some activity directive tags were not successfully created');
         }
 
-        showSuccessToast('Activity Directive Updated Successfully');
+        tags.forEach(tag => {
+          logMessage(`Created activity directive tag ${tag.tag_id} for activity directive ${tag.directive_id}.`);
+        });
+        showSuccessToast('Created Activity Directive Tags');
         return affectedRows;
       } else {
         throw Error('Unable to create activity directive tags');
@@ -891,6 +908,7 @@ const effects = {
       if (data.insert_activity_presets_one != null) {
         const { insert_activity_presets_one: activityPreset } = data;
         showSuccessToast(`Activity Preset ${activityPreset.name} Created Successfully`);
+        logMessage(`Created activity preset ${activityPreset.name} for activity type ${associatedActivityType}.`);
         return activityPreset;
       } else {
         throw Error(`Unable to create activity preset "${name}"`);
@@ -950,6 +968,9 @@ const effects = {
         const { id } = constraint;
 
         showSuccessToast('Constraint Created Successfully');
+        logMessage(
+          `Created ${constraintInsertInput.public ? 'public' : 'private'} ${definitionType} constraint ${constraint.name}.`,
+        );
         return id;
       } else {
         throw Error(`Unable to create constraint "${constraintToCreate.name}"`);
@@ -1000,6 +1021,9 @@ const effects = {
       const { constraintDefinition } = data;
       if (constraintDefinition != null) {
         showSuccessToast('New Constraint Revision Created Successfully');
+        logMessage(
+          `Created new constraint revision ${constraintDefinition.revision} for constraint ${constraintDefinition.metadata.name} (${constraintId}).`,
+        );
         return constraintDefinition;
       } else {
         throw Error(`Unable to create constraint definition for constraint "${constraintId}"`);
@@ -1028,6 +1052,9 @@ const effects = {
       if (createConstraintSpec != null) {
         const { invocation_id: invocationId } = createConstraintSpec;
         showSuccessToast('New Constraint Invocation Created Successfully');
+        logMessage(
+          `Created constraint invocation for constraint ${createConstraintSpec.constraint_metadata?.name} (${createConstraintSpec.constraint_id}).`,
+        );
         return invocationId ?? null;
       } else {
         throw Error('Unable to create a constraint spec invocation');
@@ -4628,7 +4655,7 @@ const effects = {
     try {
       const startTime = performance.now();
       const data = await reqHasura<ResourceType[]>(gql.GET_RESOURCE_TYPES, { limit, model_id: modelId }, user);
-      logMessage(`Loaded resource types for model ${modelId}`, '', performance.now() - startTime);
+      logMessage(`Loaded resource types for model ${modelId}.`, '', performance.now() - startTime);
       const { resource_types: resourceTypes } = data;
       if (resourceTypes != null) {
         return resourceTypes;
