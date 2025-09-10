@@ -543,17 +543,13 @@
 
   <div class="activity-form">
     <fieldset>
-      <!-- <Collapse title="Description" defaultExpanded={false}>
-       TODO: Figure out if we want a description title and how we want the description to be collapsable-->
-      <div class="st-typography-label">
-        {#if activityType && activityType.description}
-          {activityType.description}
-        {:else}
-          <!-- TODO: Do we want to show "No description" such that the user will always know they could set a description? -->
-          No description
-        {/if}
-      </div>
-      <!-- </Collapse> -->
+      {#if activityType && activityType.description}
+        <Collapse title="Description">
+          <div class="st-typography-label">
+            {activityType.description}
+          </div>
+        </Collapse>
+      {/if}
       <Collapse title="Definition" contentClass="px-1">
         {#if showActivityName}
           <Highlight highlight={highlightKeysMap.name}>
