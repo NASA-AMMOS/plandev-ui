@@ -18,8 +18,6 @@
   let styleName: string = '';
   let dragging: boolean = false;
 
-  const doNothing = () => {};
-
   function handleClick(e: MouseEvent) {
     dispatch('click', e);
   }
@@ -33,9 +31,6 @@
     dragging = true;
     dispatch('dragstart', e);
   }
-
-  $: action = tooltipContent ? tooltip : doNothing;
-  $: params = tooltipContent ? { content: tooltipContent, enabled: !!tooltipContent, placement: 'top' } : undefined;
 </script>
 
 <div
@@ -47,7 +42,7 @@
   on:click={handleClick}
   on:dragend={handleDragEnd}
   on:dragstart={handleDragStart}
-  use:action={params}
+  use:tooltip={{ content: tooltipContent, disabled: !tooltipContent, placement: 'top' }}
 >
   <div class="list-item-content">
     <slot />
