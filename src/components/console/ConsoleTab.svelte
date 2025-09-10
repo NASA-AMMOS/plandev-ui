@@ -28,7 +28,7 @@
 
 <Tabs.Trigger
   {value}
-  class={`tab-trigger mx-0.5 h-6 border bg-transparent px-1.5 hover:text-neutral-800 data-[state=inactive]:border-transparent data-[state=active]:shadow-none ${!isExpanded ? 'border-transparent data-[state=active]:bg-transparent data-[state=active]:text-gray-500' : 'data-[state=active]:border'}`}
+  class={`tab-trigger mx-0.5 h-6 border bg-transparent px-0.5 hover:text-neutral-800 data-[state=inactive]:border-transparent data-[state=active]:shadow-none lg:px-1.5 ${!isExpanded ? 'border-transparent data-[state=active]:bg-transparent data-[state=active]:text-gray-500' : 'data-[state=active]:border'}`}
   on:click={onClick}
 >
   <div class="flex h-2 items-center gap-1 text-xs data-[state=active]:text-neutral-800">

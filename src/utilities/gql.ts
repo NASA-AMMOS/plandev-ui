@@ -1517,18 +1517,21 @@ const gql = {
           id
         }
         refresh_activity_type_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
           success
         }
         refresh_resource_type_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
           success
         }
         refresh_model_parameter_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
@@ -2574,18 +2577,21 @@ const gql = {
           id
         }
         refresh_activity_type_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
           success
         }
         refresh_resource_type_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
           success
         }
         refresh_model_parameter_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
@@ -2641,18 +2647,21 @@ const gql = {
         }
         owner
         refresh_activity_type_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
           success
         }
         refresh_resource_type_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
           success
         }
         refresh_model_parameter_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending

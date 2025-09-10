@@ -8,6 +8,7 @@
     expanded: import('svelte/store').Writable<boolean>;
     filter: import('svelte/store').Writable<string>;
     onSelectTab: (value: string) => void;
+    selectedTab: import('svelte/store').Writable<string>;
   }
 </script>
 
@@ -47,11 +48,18 @@
   // Update store when prop changes
   $: filterStore.set(filter);
 
+  // Create a writable store for selectedTab state
+  const selectedTabStore = writable(selectedTab);
+
+  // Update store when prop changes
+  $: selectedTabStore.set(selectedTab);
+
   // Set context to provide expanded status to child components
   setContext<ConsoleContext>(ConsoleContextKey, {
     expanded: expandedStore,
     filter: filterStore,
     onSelectTab,
+    selectedTab: selectedTabStore,
   });
 
   // Public method for external components to open the console
@@ -90,14 +98,14 @@
       <Tabs.List
         class="flex h-[36px] shrink-0 items-center justify-between rounded-none border-b border-border bg-secondary/50 py-0"
       >
-        <div class="flex w-full items-center justify-between">
+        <div class="flex items-center justify-between">
           <div class="flex w-full items-center py-[2px]" class:tabs-inactive={!expanded}>
             <slot name="console-tabs" />
           </div>
         </div>
-        <div class="flex gap-1">
+        <div class="ml-1 flex flex-1 flex-shrink-0 justify-end gap-1">
           {#if isMounted && expanded}
-            <Input class="!w-[200px]">
+            <Input class="!w-full min-w-[100px] max-w-[200px]">
               <Search slot="left" size={14} />
               <InputStellar sizeVariant="xs" placeholder="Search" bind:value={filter} class="w-full" />
               <div slot="right" class="flex h-full items-center">
@@ -114,7 +122,7 @@
             <Button
               variant="ghost"
               size="icon"
-              class="ml-auto flex flex-shrink-0 items-center"
+              class="ml-auto mr-1 flex flex-shrink-0 items-center"
               role="none"
               on:click={onToggle}
             >

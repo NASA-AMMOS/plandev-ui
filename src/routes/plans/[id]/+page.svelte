@@ -63,7 +63,9 @@
     anchorValidationErrors,
     clearLogs,
     clearSchedulingErrors,
+    constraintRunErrors,
     errorLogs,
+    modelErrors,
     resetErrorStores,
     schedulingErrors,
     simulationDatasetErrors,
@@ -135,17 +137,14 @@
     viewTogglePanel,
     viewUpdateGrid,
   } from '../../../stores/views';
-  import type { ActivityErrorCounts, LogLevel, LogMessage } from '../../../types/errors';
+  import type { ActivityErrorCounts, LogLevel } from '../../../types/errors';
   import type { Extension } from '../../../types/extension';
-  import type { ModelLog, ModelStatus } from '../../../types/model';
   import type { PlanSnapshot } from '../../../types/plan-snapshot';
   import type { View, ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
   import { getConstraintStatus } from '../../../utilities/constraint';
   import effects from '../../../utilities/effects';
-  import { ErrorTypes } from '../../../utilities/errors';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { closeActiveModal } from '../../../utilities/modal';
-  import { getModelStatusRollup } from '../../../utilities/model';
   import { featurePermissions } from '../../../utilities/permissions';
   import {
     formatSimulationQueuePosition,
@@ -167,7 +166,7 @@
 
   export let data: PageData;
 
-  type PlanConsoleTab = 'all' | 'anchor' | 'scheduling' | 'simulation' | 'activity' | 'model' | 'logs';
+  type PlanConsoleTab = 'all' | 'anchor' | 'scheduling' | 'simulation' | 'activity' | 'model' | 'constraints' | 'logs';
 
   let activityErrorCounts: ActivityErrorCounts = {
     all: 0,
@@ -180,7 +179,6 @@
     wrongType: 0,
   };
   let compactNavMode = false;
-  let errorConsole: Console;
   let constraintsStatusText: string | undefined;
   let hasCreateViewPermission: boolean = false;
   let hasUpdateViewPermission: boolean = false;
@@ -189,8 +187,6 @@
   let hasSimulatePermission: boolean = false;
   let hasCheckConstraintsPermission: boolean = false;
   let invalidActivityCount: number = 0;
-  let modelErrorCount: number = 0;
-  let modelLogs: LogMessage[] = [];
   let simulationExtent: string | null;
   let selectedSimulationStatus: Status | null;
   let windowWidth = 1600;
@@ -203,6 +199,7 @@
   let selectedConsoleTab: PlanConsoleTab = 'all';
   let logLevels: LogLevel[] = ['error', 'warn', 'info'];
   let logLevelLabel: string = 'Default levels';
+  let logLevelCounts: { error: number; info: number; warn: number } = { error: 0, info: 0, warn: 0 };
 
   $: if (logLevels) {
     if (logLevels.length === 3) {
@@ -214,6 +211,18 @@
     } else {
       logLevelLabel = 'Custom levels';
     }
+  }
+
+  $: if ($allLogs) {
+    logLevelCounts = $allLogs.reduce(
+      (counts, log) => {
+        if (log.level) {
+          counts[log.level]++;
+        }
+        return counts;
+      },
+      { error: 0, info: 0, warn: 0 },
+    );
   }
 
   $: ({ invalidActivityCount, ...activityErrorCounts } = $activityErrorRollups.reduce(
@@ -477,25 +486,7 @@
       $resourceTypesLoading = false;
     });
   }
-  $: if ($plan) {
-    const { activityLog, activityLogStatus, parameterLog, parameterLogStatus, resourceLog, resourceLogStatus } =
-      getModelStatusRollup($plan.model);
-    modelErrorCount = 0;
-    if (activityLogStatus === 'error') {
-      modelErrorCount += 1;
-    }
-    if (parameterLogStatus === 'error') {
-      modelErrorCount += 1;
-    }
-    if (resourceLogStatus === 'error') {
-      modelErrorCount += 1;
-    }
-    modelLogs = [
-      generateLogMessageForModelLog(activityLog, activityLogStatus, 'activity types'),
-      generateLogMessageForModelLog(parameterLog, parameterLogStatus, 'model parameter'),
-      generateLogMessageForModelLog(resourceLog, resourceLogStatus, 'resource types'),
-    ];
-  }
+
   $: lastSimulationDatasetId =
     SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING
       ? $lastTemplatedSimulationDatasetId
@@ -525,30 +516,6 @@
       clearLogs();
     } else if (selectedConsoleTab === 'scheduling') {
       clearSchedulingErrors();
-    }
-  }
-
-  function generateLogMessageForModelLog(modelLog: ModelLog | null, status: ModelStatus, name: string): LogMessage {
-    const log: LogMessage = {
-      code: ErrorTypes.LOG,
-      level: 'info',
-      message: '',
-      timestamp: new Date().toISOString(),
-      type: ErrorTypes.LOG,
-    };
-    if (status === 'none') {
-      return { ...log, message: 'None' };
-    } else if (status === 'extracting') {
-      return { ...log, message: `Extracting ${name}...` };
-    } else if (status === 'error') {
-      return {
-        ...log,
-        level: 'error',
-        message: `${capitalize(name)} extraction has errors${modelLog?.error ? `: ${modelLog.error}` : ''}`,
-        trace: modelLog?.error_message || '',
-      };
-    } else {
-      return { ...log, message: `${capitalize(name)} extraction successful` };
     }
   }
 
@@ -970,10 +937,10 @@
             on:restore={onRestoreSnapshot}
           />
         {/if}
-        {#if modelErrorCount}
+        {#if $modelErrors.length}
           <PlanModelErrorBar
             modelName={$plan?.model.name}
-            hasErrors={modelErrorCount > 0}
+            hasErrors={$modelErrors.length > 0}
             on:close={onCloseSnapshotPreview}
             on:viewModelErrors={() => {
               openConsoleTab('model');
@@ -1005,7 +972,6 @@
     >
       <div class="h-full min-h-6 overflow-hidden">
         <Console
-          bind:this={errorConsole}
           expanded={isConsoleExpanded}
           selectedTab={selectedConsoleTab}
           on:toggle={onConsoleToggle}
@@ -1023,11 +989,17 @@
                   }
                 }}
               >
-                <Select.Trigger size="xs" class="w-[120px]">{logLevelLabel}</Select.Trigger>
-                <Select.Content>
-                  <Select.Item size="xs" value="info" label="Info">Info</Select.Item>
-                  <Select.Item size="xs" value="warn" label="Warning">Warning</Select.Item>
-                  <Select.Item size="xs" value="error" label="Error">Error</Select.Item>
+                <Select.Trigger size="xs" class="w-[120px] flex-shrink-0">{logLevelLabel}</Select.Trigger>
+                <Select.Content size="xs">
+                  <Select.Item size="xs" value="info" label="Info">
+                    Info <div class="ml-1 text-muted-foreground">({logLevelCounts.info})</div>
+                  </Select.Item>
+                  <Select.Item size="xs" value="warn" label="Warning">
+                    Warning <div class="ml-1 text-muted-foreground">({logLevelCounts.warn})</div>
+                  </Select.Item>
+                  <Select.Item size="xs" value="error" label="Error">
+                    Error <div class="ml-1 text-muted-foreground">({logLevelCounts.error})</div>
+                  </Select.Item>
                 </Select.Content>
               </Select.Root>
             {/if}
@@ -1042,7 +1014,7 @@
           <svelte:fragment slot="console-tabs">
             <div class="console-tabs overflow-x-hidden">
               <div>
-                <ConsoleTab value="all" numberOfErrors={$allProblems?.length}>All Problems</ConsoleTab>
+                <ConsoleTab value="all" numberOfErrors={$allProblems.length}>All Problems</ConsoleTab>
               </div>
               <div class="flex items-center py-0.5">
                 <ConsoleTab value="anchor" numberOfErrors={$anchorValidationErrors?.length}>
@@ -1050,8 +1022,9 @@
                 </ConsoleTab>
                 <ConsoleTab value="scheduling" numberOfErrors={$schedulingErrors?.length}>Scheduling</ConsoleTab>
                 <ConsoleTab value="simulation" numberOfErrors={$simulationDatasetErrors?.length}>Simulation</ConsoleTab>
+                <ConsoleTab value="constraints" numberOfErrors={$constraintRunErrors?.length}>Constraints</ConsoleTab>
                 <ConsoleTab value="activity" numberOfErrors={activityErrorCounts.all}>Activity Validation</ConsoleTab>
-                <ConsoleTab value="model" numberOfErrors={modelErrorCount}>Mission Model</ConsoleTab>
+                <ConsoleTab value="model" numberOfErrors={$modelErrors.length}>Mission Model</ConsoleTab>
                 <div
                   class="pointer-events-none mx-2 flex h-4 w-0 items-center justify-center border-r border-black border-opacity-20 px-0"
                 />
@@ -1070,17 +1043,25 @@
             </div>
           </svelte:fragment>
 
-          <ConsoleLogs value="all" showTimestamp={false} logs={$allProblems} />
+          <ConsoleLogs value="all" showTimestamp={false} showLevel={false} logs={$allProblems} />
           <ConsoleLogs value="anchor" showTimestamp={false} logs={$anchorValidationErrors} />
           <ConsoleLogs value="scheduling" showTimestamp={false} logs={$schedulingErrors} />
           <ConsoleLogs value="simulation" showTimestamp={false} logs={$simulationDatasetErrors} />
+          <ConsoleLogs value="constraints" showTimestamp={false} logs={$constraintRunErrors} />
           <ConsoleActivityErrors
             activityValidationErrorTotalRollup={activityErrorCounts}
             activityValidationErrorRollups={$activityErrorRollups}
             on:selectionChanged={onActivityValidationSelected}
           />
-          <ConsoleLogs value="model" showTimestamp={false} showType={false} logs={modelLogs} />
-          <ConsoleLogs value="logs" logs={$allLogs} {logLevels} emptyStateMessage="No logs" showType={false} />
+          <ConsoleLogs value="model" showTimestamp={false} showType={false} logs={$modelErrors} />
+          <ConsoleLogs
+            value="logs"
+            logs={$allLogs}
+            {logLevels}
+            emptyStateMessage="No logs"
+            autoScroll
+            showType={false}
+          />
         </Console>
       </div>
     </Resizable.Pane>

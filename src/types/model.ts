@@ -21,7 +21,7 @@ export type ModelStatusRollup = {
 };
 
 export type ModelLog = {
-  // created_at: string;
+  created_at: string;
   // delivered: boolean;
   error: string | null;
   error_message: string | null;

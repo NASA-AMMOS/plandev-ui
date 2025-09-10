@@ -43,6 +43,7 @@ export const constraintRuns = gqlSubscribable<ConstraintRun[] | null>(
         constraintRequest.constraints_run.flatMap(({ constraint_invocation_id, results }) => ({
           ...results,
           constraint_invocation_id,
+          requested_at: constraintRequest.requested_at,
         })) ?? [],
     );
   },
@@ -130,7 +131,8 @@ export const constraintResponses: Readable<ConstraintResponse[]> = derived(
           constraintId: run.constraint_id,
           constraintInvocationId: run.constraint_invocation_id,
           constraintName: $constraintsMap[run.constraint_id]?.name ?? '',
-          errors: [],
+          errors: run.errors,
+          requestedAt: run.requested_at,
           results: {
             ...run.results,
             violations:
@@ -142,7 +144,6 @@ export const constraintResponses: Readable<ConstraintResponse[]> = derived(
                 })),
               })) ?? null,
           },
-          success: true,
           type: 'plan',
         }) as ConstraintResponse,
     );
@@ -226,7 +227,7 @@ export const cachedConstraintsStatus: Readable<Status | null> = derived(
           return Status.Modified;
         }
 
-        if (constraintRun.results.violations?.length) {
+        if (constraintRun.results.violations?.length || constraintRun.errors.length) {
           return Status.Failed;
         } else if (status !== Status.Failed) {
           return Status.Complete;

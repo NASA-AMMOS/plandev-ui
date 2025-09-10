@@ -588,7 +588,6 @@ const effects = {
             .filter(constraintResponse => constraintResponse.success)
             .map(constraintResponse => constraintResponse.results);
 
-          const failedConstraintResponses = constraintsRun.filter(constraintResponse => !constraintResponse.success);
           if (successfulConstraintResults.length === 0 && constraintsRun.length > 0) {
             showFailureToast('All Constraints Failed');
             checkConstraintsQueryStatusStore.set(Status.Failed);
@@ -598,14 +597,6 @@ const effects = {
           } else {
             showSuccessToast('All Constraints Checked');
             checkConstraintsQueryStatusStore.set(Status.Complete);
-          }
-
-          if (failedConstraintResponses.length > 0) {
-            failedConstraintResponses.forEach(failedConstraint => {
-              failedConstraint.errors.forEach(error => {
-                catchError(`${error.message}`, error.stack);
-              });
-            });
           }
         } else {
           throw Error(`Unable to check constraints for plan with ID: "${plan.id}"`);
@@ -4028,7 +4019,9 @@ const effects = {
     signal: AbortSignal | undefined = undefined,
   ): Promise<SimulationEvent[]> {
     try {
+      const startTime = performance.now();
       const data = await reqHasura<any>(gql.GET_EVENTS, { datasetId }, user, signal);
+      logMessage(`Loaded simulation events for simulation dataset ${datasetId}.`, '', performance.now() - startTime);
       const { topic: topics, event: events } = data;
       if (topics === null || events === null) {
         throw Error('Unable to get events');
@@ -4625,12 +4618,17 @@ const effects = {
     user: User | null,
     signal: AbortSignal | undefined = undefined,
   ): Promise<Record<string, Profile[] | null>> {
-    return reqHasura<Profile[]>(gql.GET_PROFILE, { datasetId, name }, user, signal);
+    const startTime = performance.now();
+    const data = reqHasura<Profile[]>(gql.GET_PROFILE, { datasetId, name }, user, signal);
+    logMessage(`Loaded profile ${name} for dataset ${datasetId}.`, '', performance.now() - startTime);
+    return data;
   },
 
   async getResourceTypes(modelId: number, user: User | null, limit: number | null = null): Promise<ResourceType[]> {
     try {
+      const startTime = performance.now();
       const data = await reqHasura<ResourceType[]>(gql.GET_RESOURCE_TYPES, { limit, model_id: modelId }, user);
+      logMessage(`Loaded resource types for model ${modelId}`, '', performance.now() - startTime);
       const { resource_types: resourceTypes } = data;
       if (resourceTypes != null) {
         return resourceTypes;
@@ -4854,7 +4852,9 @@ const effects = {
     signal: AbortSignal | undefined = undefined,
   ): Promise<Span[]> {
     try {
+      const startTime = performance.now();
       const data = await reqHasura<SpanDB[]>(gql.GET_SPANS, { datasetId }, user, signal);
+      logMessage(`Loaded activities for simulation ${datasetId}.`, '', performance.now() - startTime);
       const { span: spans } = data;
       if (spans != null) {
         return spans.map(span => {
@@ -6620,6 +6620,7 @@ const effects = {
   },
 
   async simulate(plan: Plan | null, force: boolean = false, user: User | null): Promise<void> {
+    let simulateResponse: SimulateResponse | null = null;
     try {
       if (plan !== null) {
         if (!queryPermissions.SIMULATE(user, plan, plan.model)) {
@@ -6631,8 +6632,14 @@ const effects = {
         const data = await reqHasura<SimulateResponse>(gql.SIMULATE, { force, planId: plan.id }, user);
         const { simulate } = data;
         if (simulate != null) {
+          simulateResponse = simulate;
           const { simulationDatasetId: newSimulationDatasetId } = simulate;
           simulationDatasetIdStore.set(newSimulationDatasetId);
+          // React if the simulation immediately fails
+          if (simulate.status === 'failed') {
+            throw Error(`Simulation ${newSimulationDatasetId} failed`);
+          }
+          logMessage(`Running simulation ${newSimulationDatasetId} ${force ? ' (force)' : ''}`);
         } else {
           throw Error('Unable to simulate this plan');
         }
@@ -6640,7 +6647,8 @@ const effects = {
         throw Error('Plan is not defined.');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError(e as Error, simulateResponse ? simulateResponse.reason.message : '');
+      showFailureToast('Simulation failed');
     }
   },
 
@@ -7956,7 +7964,6 @@ const effects = {
         throw Error('Unable to validate activity arguments');
       }
     } catch (e) {
-      catchError(e as Error, `Invalid arguments for activity with ID: "${activityId}"`, false);
       const { message } = e as Error;
       return { errors: [{ message } as ParameterValidationError], success: false };
     }

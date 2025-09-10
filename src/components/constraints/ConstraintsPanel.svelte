@@ -14,6 +14,7 @@
     allowedConstraintPlanSpecs,
     cachedConstraintsStatus,
     constraintPlanSpecs,
+    constraintPlanSpecsMap,
     constraintResponseMap,
     constraintResponses,
     constraintVisibilityMap,
@@ -21,6 +22,7 @@
     constraintsStatus,
     initialConstraintPlanSpecsLoading,
     initialConstraintsLoading,
+    relevantConstraintRuns,
     resetConstraintStores,
     setAllConstraintsVisible,
     setConstraintVisibility,
@@ -72,6 +74,12 @@
   let startTime: string;
   let startTimeField: FieldStore<string>;
 
+  $: console.log(
+    '$cachedConstraintsStatus :>> ',
+    $cachedConstraintsStatus,
+    $relevantConstraintRuns,
+    $constraintPlanSpecsMap,
+  );
   $: if ($plan) {
     startTime = formatDate(new Date($plan.start_time), $plugins.time.primary.format);
     const endTimeYmd = convertDoyToYmd($plan.end_time_doy);
@@ -120,7 +128,6 @@
                 ),
               })) ?? null,
           },
-          success: constraintResponse.success,
           type: constraintResponse.type,
         };
       }

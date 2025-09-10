@@ -1,24 +1,31 @@
 import type { ErrorTypes } from '../utilities/errors';
+import type { ConstraintResult, UserCodeError } from './constraint';
 
 export type LogLevel = 'error' | 'warn' | 'info';
 
 export interface BaseError {
-  code?: string; // very short, semi-human-readable string representing the category/class/type of error, in all caps and underscores, eg. “INVALID_SIMULATION_ID”
   data?: unknown; // optional unstructured data object with any additional useful error data
   level?: LogLevel;
   message: string; // short (1-2 sentences) human-readable string explaining the cause of the error
   service?: string; // optional string identifying the backend service that threw the error
   timestamp: string; // ISO 8601 UTC string timestamp at the time the error happened
   trace?: string; // stack trace of error
-  type: ErrorTypes;
+  type: ErrorTypes; // very short, semi-human-readable string representing the category/class/type of error, in all caps and underscores, eg. “INVALID_SIMULATION_ID”
 }
 
+// TODO: Idea - preprocess incoming errors to move all non-BaseError keys into data object
+// to support incoming backend error changes
+const baseErrorKeys = ['data', 'level', ''];
+
 export interface LogMessage extends BaseError {
+  duration?: number; // optional number
   type: ErrorTypes.CAUGHT_ERROR | ErrorTypes.LOG;
 }
 
 export interface AnchorValidationError extends BaseError {
-  activityId: number;
+  data: {
+    activityId: number;
+  };
   type: ErrorTypes.ANCHOR_VALIDATION_ERROR;
 }
 
@@ -29,6 +36,14 @@ export interface ActivityValidationErrors {
   errors: (ActivityDirectiveValidationFailures | AnchorValidationError)[];
   status: ActivityValidationStatus;
   type: string;
+}
+
+export interface ConstraintRunError extends BaseError {
+  data: {
+    constraintId: number;
+    errors?: UserCodeError[];
+    violations?: Pick<ConstraintResult, 'violations'>;
+  };
 }
 
 export interface SchedulingError extends BaseError {

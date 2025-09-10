@@ -61,7 +61,6 @@
 
   $: revisions = constraint.versions.map(({ revision }) => revision);
   $: violationCount = constraintResponse?.results?.violations?.length;
-  $: success = constraintResponse?.success;
   $: order = constraintPlanSpec.order;
 
   $: {
@@ -233,11 +232,11 @@
               {violationCount}
             {/if}
           </div>
-        {:else if constraintResponse && !success}
+        {:else if Array.isArray(constraintResponse.errors)}
           <div class="violations-error" use:tooltip={{ content: 'Compile Errors', placement: 'top' }}>
             <WarningIcon />
           </div>
-        {:else if constraintResponse && success}
+        {:else if constraintResponse && !constraintResponse.results.violations?.length}
           <div class="no-violations" use:tooltip={{ content: 'No Violations', placement: 'top' }}>
             <CheckmarkIcon />
           </div>
@@ -392,7 +391,7 @@
       {/if}
     </Collapse>
 
-    {#if !success && constraintResponse?.errors}
+    {#if Array.isArray(constraintResponse?.errors)}
       <Collapse title="Errors" defaultExpanded={false}>
         <div class="errors">
           {#each constraintResponse?.errors as error}
