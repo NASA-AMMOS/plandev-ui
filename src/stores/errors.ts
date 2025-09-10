@@ -284,18 +284,28 @@ export function logMessage(
 }
 
 export function catchError(error: string | Error, details?: string | Error, shouldLog: boolean = true): void {
+  let errors: (string | Error)[] = [];
+
   // ignore the error if it is an AbortError
   if ((error as Error).name && (error as Error).name === 'AbortError') {
     return;
   }
 
+  if ((error as Error).name && (error as Error).name === 'AggregateError') {
+    errors = (error as AggregateError).errors;
+  } else {
+    errors = [error];
+  }
+
   allLogs.update(l => {
-    l.push({
-      level: 'error',
-      message: cleanLogMessage(`${error}`),
-      timestamp: `${new Date()}`,
-      ...(details ? { trace: `${details}` } : {}),
-      type: ErrorTypes.CAUGHT_ERROR,
+    errors.forEach(e => {
+      l.push({
+        level: 'error',
+        message: cleanLogMessage(`${e}`),
+        timestamp: `${new Date()}`,
+        ...(details ? { trace: `${details}` } : {}),
+        type: ErrorTypes.CAUGHT_ERROR,
+      });
     });
     return [...l];
   });

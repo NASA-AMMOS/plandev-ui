@@ -188,9 +188,13 @@ export async function reqHasura<T = any>(
       throw new Error(errorMessage, { cause });
     } else if (code === 'parse-failed') {
       if (error?.extensions?.internal?.response?.body?.errors?.length) {
-        const parseFailedErrorMessage = error?.extensions?.internal?.response?.body?.errors[0];
-
-        throw new Error(parseFailedErrorMessage ?? defaultError, { cause });
+        const parseFailedErrorMessages = error?.extensions?.internal?.response?.body?.errors;
+        // Throw aggregate error containing all of the errors if appropriate
+        if (parseFailedErrorMessages && parseFailedErrorMessages.length > 1) {
+          throw new AggregateError(parseFailedErrorMessages ?? [defaultError], 'Multiple errors occurred', { cause });
+        } else {
+          throw new Error(parseFailedErrorMessages ?? [defaultError], { cause });
+        }
       }
     } else if (code === INVALID_JWT) {
       // awaiting here only works if SSR is disabled

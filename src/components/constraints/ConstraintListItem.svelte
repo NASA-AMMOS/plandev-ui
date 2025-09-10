@@ -32,7 +32,7 @@
 
   export let constraint: ConstraintMetadata;
   export let constraintPlanSpec: ConstraintPlanSpecification;
-  export let constraintResponse: ConstraintResponse;
+  export let constraintResponse: ConstraintResponse | undefined;
   export let deletePermissionError: string = 'You do not have permission to delete constraints for this plan.';
   export let editPermissionError: string = 'You do not have permission to edit constraints for this plan.';
   export let modelId: number | undefined;
@@ -232,7 +232,7 @@
               {violationCount}
             {/if}
           </div>
-        {:else if Array.isArray(constraintResponse.errors)}
+        {:else if Array.isArray(constraintResponse?.errors)}
           <div class="violations-error" use:tooltip={{ content: 'Compile Errors', placement: 'top' }}>
             <WarningIcon />
           </div>
