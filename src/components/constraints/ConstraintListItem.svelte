@@ -232,7 +232,7 @@
               {violationCount}
             {/if}
           </div>
-        {:else if Array.isArray(constraintResponse?.errors)}
+        {:else if constraintResponse && Array.isArray(constraintResponse.errors)}
           <div class="violations-error" use:tooltip={{ content: 'Compile Errors', placement: 'top' }}>
             <WarningIcon />
           </div>
