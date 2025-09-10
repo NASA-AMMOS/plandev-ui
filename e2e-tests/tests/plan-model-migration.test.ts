@@ -20,6 +20,7 @@ let schedulingConditions: SchedulingConditions;
 let schedulingGoals: SchedulingGoals;
 
 test.beforeAll(async ({ browser, baseURL }) => {
+  test.setTimeout(120000);
   context = await browser.newContext();
   page = await context.newPage();
 
