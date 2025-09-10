@@ -5506,7 +5506,7 @@ const effects = {
           );
         }
 
-        if (successfullyUploadedFileNames) {
+        if (successfullyUploadedFileNames.length > 0) {
           showSuccessToast(
             `Workspace File${successfullyUploadedFileNames.length > 1 ? 's' : ''} Uploaded Successfully`,
           );
