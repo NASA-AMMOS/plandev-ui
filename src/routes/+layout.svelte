@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { beforeNavigate } from '$app/navigation';
   import { env } from '$env/dynamic/public';
   import { ModeWatcher } from '@nasa-jpl/stellar-svelte';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
@@ -8,6 +9,7 @@
   import { onMount } from 'svelte';
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
+  import { clearLogs } from '../stores/errors';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
   import { loadPluginCode } from '../utilities/plugins';
 
@@ -18,6 +20,11 @@
     if (pluginsEnabled && !$pluginsLoaded) {
       loadPlugins();
     }
+  });
+
+  beforeNavigate(() => {
+    // Clear logs on page change
+    clearLogs();
   });
 
   async function loadPlugins() {
