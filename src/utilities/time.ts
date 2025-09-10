@@ -942,7 +942,7 @@ export function formatDate(date: Date, formatter: PluginTime['format']): string 
  */
 export function formatMS(ms: number | null): string {
   if (typeof ms === 'number') {
-    return `${convertUsToDurationString(ms * 1000).split(' ')[0]}`;
+    return `${convertUsToDurationString(+(ms * 1000).toFixed(3)).split(' ')[0]}`;
   }
   return '–';
 }
