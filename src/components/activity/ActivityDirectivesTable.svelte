@@ -247,9 +247,9 @@
         activities,
         'LEFT',
         0,
-        get(activityDirectivesDB) ?? [],
-        get(spansMap) ?? {},
-        get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
+        $activityDirectivesDB ?? [],
+        $spansMap ?? {},
+        $spanUtilityMaps ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
       );
 
       if (updatedActivities) {

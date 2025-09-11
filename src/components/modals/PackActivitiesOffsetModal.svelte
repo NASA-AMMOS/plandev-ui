@@ -8,7 +8,10 @@
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    cancel: null,
+    pack: { direction: 'Left' | 'Right', gapOffset: string }
+  }>();
 
   let direction: 'Left' | 'Right' = 'Left';
   let gapOffsetString: string = '0d 0h 0m 0s 0ms 0us';
@@ -59,7 +62,7 @@
           <label
             class="label"
             use:tooltip={{ content: 'The gap between directives when packed ', placement: 'top' }}
-            for="start-offset"
+            for="gap-offset"
           >
             Offset:
           </label>
