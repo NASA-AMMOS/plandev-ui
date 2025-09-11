@@ -693,7 +693,10 @@ const effects = {
           }));
 
         await reqHasura<ActivityDirectiveDB>(gql.UPDATE_ACTIVITY_DIRECTIVES, { updates: anchorUpdates }, user);
-        logMessage(`Pasted ${activities.length} activity directive${pluralize(activities.length)}`);
+        logMessage(
+          `Pasted ${activities.length} activity directive${pluralize(activities.length)}.`,
+          `ID${pluralize(activities.length)}: ${activities.map(a => a.id).join(', ')}`,
+        );
         showSuccessToast(`Pasted ${activities.length} Activity Directive${pluralize(activities.length)}`);
         return clonedActivitiesReferences;
       }
@@ -838,7 +841,7 @@ const effects = {
           selectedSpanIdStore.set(null);
 
           showSuccessToast('Activity Directive Created Successfully');
-          logMessage(`Created activity directive with type: "${name}"`);
+          logMessage(`Created activity directive ${name} (${id}).`);
         } else {
           throw Error(`Unable to create activity directive "${name}" on plan with ID ${plan.id}`);
         }
@@ -1080,6 +1083,7 @@ const effects = {
         const { createSequenceAdaptation: newSequenceAdaptation } = data;
 
         if (newSequenceAdaptation != null) {
+          logMessage(`Created custom adaptation ${adaptation.name}.`);
           return { ...newSequenceAdaptation, type: DictionaryTypes.ADAPTATION };
         } else {
           throw Error('Unable to upload sequence adaptation');
@@ -1105,6 +1109,9 @@ const effects = {
       );
       if (created !== null) {
         showSuccessToast('Derivation Group Created Successfully');
+        logMessage(
+          `Created derivation group ${derivationGroup.name} for source type ${derivationGroup.source_type_name}.`,
+        );
         return created as DerivationGroup;
       } else {
         throw Error(`Unable to create derivation group`);
@@ -1131,6 +1138,7 @@ const effects = {
       if (createExpansionRule != null) {
         const { id } = createExpansionRule;
         showSuccessToast('Expansion Rule Created Successfully');
+        logMessage(`Created expansion rule ${rule.name} (${createExpansionRule.id}) for parcel ${rule.parcel_id}.`);
         savingExpansionRuleStore.set(false);
         return id;
       } else {
@@ -1159,7 +1167,9 @@ const effects = {
         if (affectedRows !== tags.length) {
           throw Error('Some expansion rule tags were not successfully created');
         }
-
+        tags.forEach(tag => {
+          logMessage(`Created expansion rule tag ${tag.tag_id} for rule ${tag.rule_id}.`);
+        });
         return affectedRows;
       } else {
         throw Error(`Unable to create expansion rule tags`);
@@ -1186,6 +1196,7 @@ const effects = {
       const data = await reqHasura<SeqId>(gql.CREATE_EXPANSION_SEQUENCE, { sequence }, user);
       if (data.createExpansionSequence != null) {
         showSuccessToast('Expansion Sequence Created Successfully');
+        logMessage(`Created expansion rule sequence ${seqId} for simulation dataset ${simulationDatasetId}.`);
         creatingExpansionSequenceStore.set(false);
         return data.createExpansionSequence.seq_id;
       } else {
@@ -1229,6 +1240,9 @@ const effects = {
       if (createExpansionSet != null) {
         const { id } = createExpansionSet;
         showSuccessToast('Expansion Set Created Successfully');
+        logMessage(
+          `Created expansion set ${createExpansionSet.name ?? 'unnamed'} (${createExpansionSet.id}) for parcel ${parcelId}.`,
+        );
         savingExpansionSetStore.set(false);
         return id;
       } else {
@@ -1264,6 +1278,9 @@ const effects = {
       if (reqResponse?.errors === undefined) {
         const { createExternalSource: newExternalSource } = reqResponse;
         showSuccessToast('External Source Created Successfully');
+        logMessage(
+          `Created external source ${newExternalSource.source_type_name} for derivation group ${derivationGroupName}.`,
+        );
         creatingExternalSourceStore.set(false);
         return newExternalSource;
       } else {
@@ -1305,6 +1322,7 @@ const effects = {
 
       const response = await reqGateway(`/uploadExternalSourceEventTypes`, 'POST', JSON.stringify(body), user, false);
       if (response?.errors === undefined) {
+        logMessage(`Created external source and event type.`);
         showSuccessToast('External Source & Event Type Created Successfully');
         return true;
       } else {
@@ -1338,6 +1356,7 @@ const effects = {
       const file: File = files[0];
       const jarId = await effects.uploadFile(file, user);
       showSuccessToast('Model Uploaded Successfully. Processing model...');
+      logMessage(`Uploaded model file ${name} (v${version}).`);
 
       if (jarId !== null) {
         const modelInsertInput: ModelInsertInput = {
@@ -1353,6 +1372,7 @@ const effects = {
           const { id } = createModel;
 
           showSuccessToast('Model Created Successfully');
+          logMessage(`Created model ${name} (v${version}).`);
           createModelErrorStore.set(null);
           creatingModelStore.set(false);
 
@@ -1385,6 +1405,7 @@ const effects = {
       }
 
       const { id } = createParcel;
+      logMessage(`Created parcel ${parcel.name} (${id}).`);
       showSuccessToast('Parcel Created Successfully');
       return id;
     } catch (e) {
@@ -1410,6 +1431,11 @@ const effects = {
       const { insert_parcel_to_parameter_dictionary: insertParcelToParameterDictionary } = data;
 
       if (insertParcelToParameterDictionary) {
+        insertParcelToParameterDictionary.returning.forEach(entry => {
+          logMessage(
+            `Created parcel to parameter dictionary ${entry.parameter_dictionary_id} for parcel ${entry.parcel_id}.`,
+          );
+        });
         showSuccessToast('Parcel to parameter dictionaries created successfully');
       } else {
         throw Error('Unable to create parcel to parameter dictionaries');
@@ -1481,6 +1507,7 @@ const effects = {
         };
 
         showSuccessToast('Plan Created Successfully');
+        logMessage(`Created plan ${name} (${id}) with model ${modelId}.`);
         createPlanErrorStore.set(null);
         creatingPlanStore.set(false);
 
@@ -1512,6 +1539,7 @@ const effects = {
         const { duplicate_plan: duplicatePlan } = data;
         if (duplicatePlan != null) {
           goto(`${base}/plans/${duplicatePlan.new_plan_id}`);
+          logMessage(`Created plan branch ${name} (${planToBranch.id}) from parent plan ${plan.name} (${plan.id}).`);
           showSuccessToast('Branch Created Successfully');
         } else {
           throw Error('');
@@ -1541,6 +1569,9 @@ const effects = {
             plan.model,
             user,
           );
+          logMessage(
+            `Created plan branch request from source plan ${sourcePlan.name} (${sourcePlan.id}) into target plan ${targetPlan.name} (${targetPlan.id}).`,
+          );
         }
       }
     } catch (e) {
@@ -1563,6 +1594,9 @@ const effects = {
         if (affectedRows !== collaborators.length) {
           throw Error('Some plan collaborators were not successfully added');
         }
+        logMessage(
+          `Added plan collaborator${pluralize(collaborators.length)} ${collaborators.map(c => c.collaborator).join(', ')} to plan ${plan.id}.`,
+        );
         showSuccessToast('Plan Collaborators Updated');
         return affectedRows;
       } else {
@@ -1597,6 +1631,9 @@ const effects = {
       const { create_merge_request: createMergeRequest } = data;
       if (createMergeRequest != null) {
         const { merge_request_id: mergeRequestId } = createMergeRequest;
+        logMessage(
+          `Created plan merge request from source plan ${sourcePlan.name} (${sourcePlan.id}) into target plan ${targetPlan.name} (${targetPlan.id}).`,
+        );
         showSuccessToast('Merge Request Created Successfully');
         return mergeRequestId;
       } else {
@@ -1620,6 +1657,7 @@ const effects = {
       if (confirm && value) {
         const { description, name, plan: planToSnapshot, tags } = value;
         await effects.createPlanSnapshotHelper(planToSnapshot.id, name, description, tags, user);
+        logMessage(`Created plan snapshot ${name}.`);
         showSuccessToast('Snapshot Created Successfully');
       }
     } catch (e) {
@@ -1683,6 +1721,9 @@ const effects = {
         if (notify) {
           showSuccessToast('Plan Snapshot Updated Successfully');
         }
+        tags.forEach(tag => {
+          logMessage(`Created plan snapshot tag ${tag.tag_id} for snapshot ${tag.snapshot_id}.`);
+        });
         return affectedRows;
       } else {
         throw Error('Unable to create plan snapshot tags');
@@ -1716,6 +1757,9 @@ const effects = {
         if (notify) {
           showSuccessToast('Plan Updated Successfully');
         }
+        tags.forEach(tag => {
+          logMessage(`Created plan tag ${tag.tag_id}.`);
+        });
         return affectedRows;
       } else {
         throw Error('Unable to create plan tags');
@@ -1769,6 +1813,9 @@ const effects = {
         const { id } = createSchedulingCondition;
 
         showSuccessToast('Scheduling Condition Created Successfully');
+        logMessage(
+          `Created ${isPublic ? 'public' : 'private'} scheduling condition ${createSchedulingCondition.name} (${id}).`,
+        );
         return id;
       } else {
         throw Error(`Unable to create scheduling condition "${name}"`);
@@ -1806,6 +1853,7 @@ const effects = {
       const { conditionDefinition } = data;
       if (conditionDefinition != null) {
         showSuccessToast('New Scheduling Condition Revision Created Successfully');
+        logMessage(`Created scheduling condition definition for condition ${conditionId}.`);
         return conditionDefinition;
       } else {
         throw Error(`Unable to create condition definition for scheduling condition "${conditionId}"`);
@@ -1869,6 +1917,9 @@ const effects = {
         const { id } = createSchedulingGoal;
 
         showSuccessToast('Scheduling Goal Created Successfully');
+        logMessage(
+          `Created ${isPublic ? 'public' : 'private'} scheduling goal ${createSchedulingGoal.name} (${createSchedulingGoal.id}).`,
+        );
         return id;
       } else {
         throw Error(`Unable to create scheduling goal "${name}"`);
@@ -1918,6 +1969,7 @@ const effects = {
       );
       const { goalDefinition } = data;
       if (goalDefinition != null) {
+        logMessage(`Created ${definitionType} scheduling goal definition for goal ${goalId}.`);
         showSuccessToast('New Scheduling Goal Revision Created Successfully');
         return goalDefinition;
       } else {
@@ -1948,6 +2000,7 @@ const effects = {
       if (createSchedulingSpecGoal != null) {
         const { specification_id: specificationId } = createSchedulingSpecGoal;
         showSuccessToast('New Scheduling Goal Invocation Created Successfully');
+        logMessage(`Created scheduling goal plan specification ${specificationId} for goal ${specGoal.goal_id}.`);
         return specificationId;
       } else {
         throw Error('Unable to create a scheduling spec goal invocation');
@@ -1974,6 +2027,7 @@ const effects = {
         user,
       );
       const { createSchedulingSpec: newSchedulingSpec } = data;
+      logMessage(`Created scheduling plan specification ${newSchedulingSpec?.id}.`);
       return newSchedulingSpec;
     } catch (e) {
       catchError(e as Error);
@@ -2008,6 +2062,7 @@ const effects = {
 
       if (createSequenceFilter != null) {
         showSuccessToast('Sequence Filter Created Successfully');
+        logMessage(`Created sequence filter for sequence ${seqName}.`);
         return result.createSequenceFilter?.id;
       } else {
         throw Error('Create Sequence Filter Failed');
@@ -2048,6 +2103,9 @@ const effects = {
       const { insert_sequence_template_one: insertSequenceTemplateOne } = result;
 
       if (insertSequenceTemplateOne !== null) {
+        logMessage(
+          `Created ${language} sequence template ${name} for activity type ${activityType} for parcel ${parcelId}.`,
+        );
         showSuccessToast('Sequence Template Created Successfully');
       } else {
         throw Error('Create Sequence Template Failed');
@@ -2081,6 +2139,7 @@ const effects = {
       );
 
       if (newTemplate != null) {
+        logMessage(`Created simulation template ${name} (${newTemplate.id}).`);
         showSuccessToast(`Simulation Template ${name} Created Successfully`);
         return newTemplate;
       } else {
@@ -2107,6 +2166,7 @@ const effects = {
         if (notify) {
           showSuccessToast('Tag Created Successfully');
         }
+        logMessage(`Created tag ${tag.name} (${insertedTag.id}).`);
         createTagErrorStore.set(null);
         return insertedTag;
       } else {
@@ -2141,6 +2201,9 @@ const effects = {
         if (notify) {
           showSuccessToast('Tags Created Successfully');
         }
+        returning.forEach(tag => {
+          logMessage(`Created tag ${tag.name} (${tag.id}).`);
+        });
         return returning;
       } else {
         throw Error('Unable to create tags');
@@ -2193,6 +2256,7 @@ const effects = {
           viewStore.update(() => newView);
           setQueryParam(SearchParameters.VIEW_ID, `${newView.id}`);
           showSuccessToast('View Created Successfully');
+          logMessage(`Created view ${name} (${newView.id}).`);
           return true;
         } else {
           throw Error(`Unable to create view "${viewInsertInput.name}"`);
@@ -2231,6 +2295,9 @@ const effects = {
 
       if (newWorkspace != null) {
         showSuccessToast('Workspace Created Successfully');
+        logMessage(
+          `Created ${name ? `workspace ${name}` : 'unnamed workspace'} (${newWorkspace.id}) in ${location} for parcel ${parcelId}.`,
+        );
         return newWorkspace;
       } else {
         throw Error(`Unable to create workspace at "${location}"`);
@@ -2282,6 +2349,7 @@ const effects = {
       );
       if (data.delete_activity_directive_tags_by_pk != null) {
         showSuccessToast('Activity Directive Updated Successfully');
+        logMessage(`Removed tag ${tagId} from activity directive ${directiveId}.`);
         return data.delete_activity_directive_tags_by_pk.tag_id;
       } else {
         throw Error('Unable to delete activity directive tag');
@@ -2479,7 +2547,10 @@ const effects = {
         }
 
         showSuccessToast('Activity Directives Deleted Successfully');
-        logMessage(`Deleted ${ids.length} activity directive${pluralize(ids.length)}`);
+        logMessage(
+          `Deleted ${ids.length} activity directive${pluralize(ids.length)}.`,
+          `ID${pluralize(ids.length)}: ${ids.join(', ')}`,
+        );
         return true;
       }
     } catch (e) {
@@ -2505,6 +2576,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura<{ id: number }>(gql.DELETE_ACTIVITY_PRESET, { id: activityPreset.id }, user);
         if (data.deleteActivityPreset != null) {
+          logMessage(`Deleted activity preset ${activityPreset.name} (${activityPreset.id}).`);
           showSuccessToast('Activity Preset Deleted Successfully');
           return true;
         } else {
@@ -2534,6 +2606,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura<{ id: number }>(gql.DELETE_CHANNEL_DICTIONARY, { id }, user);
         if (data.deleteChannelDictionary != null) {
+          logMessage(`Deleted channel dictionary ${id}.`);
           showSuccessToast('Channel Dictionary Deleted Successfully');
           channelDictionariesStore.filterValueById(id);
         } else {
@@ -2561,6 +2634,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura<{ id: number }>(gql.DELETE_COMMAND_DICTIONARY, { id }, user);
         if (data.deleteCommandDictionary != null) {
+          logMessage(`Deleted command dictionary ${id}.`);
           showSuccessToast('Command Dictionary Deleted Successfully');
           commandDictionariesStore.filterValueById(id);
         } else {
@@ -2588,6 +2662,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura<{ id: number }>(gql.DELETE_CONSTRAINT_METADATA, { id: constraint.id }, user);
         if (data.deleteConstraintMetadata != null) {
+          logMessage(`Deleted constraint ${constraint.name} (${constraint.id}).`);
           showSuccessToast('Constraint Deleted Successfully');
           return true;
         } else {
@@ -2620,6 +2695,7 @@ const effects = {
       );
 
       if (deleteConstraintPlanSpecifications !== null) {
+        logMessage(`Deleted constraint invocations ${constraintInvocationIdsToDelete.join(', ')}.`);
         showSuccessToast(`Constraints Updated Successfully`);
       } else {
         throw Error('Unable to update the constraint specifications for the plan');
@@ -2651,6 +2727,7 @@ const effects = {
           if (data.deleteDerivationGroup === null) {
             throw Error('Unable to delete derivation group');
           } else {
+            logMessage(`Deleted derivation groups ${derivationGroupNames.join(', ')}.`);
             showSuccessToast('Derivation Group Deleted Successfully');
           }
         }
@@ -2694,6 +2771,7 @@ const effects = {
         const sourceDissociation = data.planDerivationGroupLink?.returning[0];
         // If the return was null, do nothing - only act on success or non-null
         if (sourceDissociation) {
+          logMessage(`Deleted derivation group ${derivation_group_name} for plan ${plan.id}.`);
           showSuccessToast('Derivation Group Disassociated Successfully');
         }
       } else {
@@ -2722,6 +2800,7 @@ const effects = {
         const data = await reqHasura(gql.DELETE_EXPANSION_RULE, { id: rule.id }, user);
 
         if (data.deleteExpansionRule != null) {
+          logMessage(`Deleted expansion rule ${rule.name} (${rule.id}).`);
           showSuccessToast('Expansion Rule Deleted Successfully');
           return true;
         } else {
@@ -2750,6 +2829,9 @@ const effects = {
       const { delete_expansion_rule_tags: deleteExpansionRuleTags } = data;
       if (deleteExpansionRuleTags != null) {
         const { affected_rows: affectedRows } = deleteExpansionRuleTags;
+        tagIds.forEach(tagId => {
+          logMessage(`Removed tag ${tagId} from expansion rule ${ruleId}.`);
+        });
         return affectedRows;
       } else {
         throw Error('Unable to delete expansion rule tags');
@@ -2777,6 +2859,7 @@ const effects = {
         const { seq_id: seqId, simulation_dataset_id: simulationDatasetId } = sequence;
         const data = await reqHasura<SeqId>(gql.DELETE_EXPANSION_SEQUENCE, { seqId, simulationDatasetId }, user);
         if (data.deleteExpansionSequence != null) {
+          logMessage(`Deleted expansion sequence ${seqId} from simulation dataset ${simulationDatasetId}.`);
           showSuccessToast('Expansion Sequence Deleted Successfully');
         } else {
           throw Error(`Unable to delete expansion sequence with ID: "${seqId}"`);
@@ -2807,6 +2890,9 @@ const effects = {
         user,
       );
       if (data.expansionSequence != null) {
+        logMessage(
+          `Removed expansion sequence in simulation dataset ${simulationDatasetId} from activity directive ${simulatedActivityId}.`,
+        );
         showSuccessToast('Expansion Sequence Deleted From Activity Successfully');
         return true;
       } else {
@@ -2836,6 +2922,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura<{ id: number }>(gql.DELETE_EXPANSION_SET, { id: set.id }, user);
         if (data.deleteExpansionSet != null) {
+          logMessage(`Deleted expansion set ${set.name} (${set.id}).`);
           showSuccessToast('Expansion Set Deleted Successfully');
           return true;
         } else {
@@ -2878,6 +2965,9 @@ const effects = {
           if (data.deleteDerivationGroup === null) {
             throw Error('Unable to delete external event type');
           }
+          logMessage(
+            `Deleted external event type${pluralize(externalEventTypes.length)} ${externalEventTypes.join(', ')}.`,
+          );
           showSuccessToast('External Event Type Deleted Successfully');
         }
       }
@@ -2949,6 +3039,9 @@ const effects = {
             }
           }
           showSuccessToast('External Source Deleted Successfully');
+          logMessage(
+            `Deleted external source${pluralize(externalSources.length)} ${externalSources.map(s => s.source_type_name).join(', ')}.`,
+          );
           return true;
         }
       }
@@ -2989,6 +3082,9 @@ const effects = {
           if (data.deleteDerivationGroup === null) {
             throw Error('Unable to delete external source type');
           } else {
+            logMessage(
+              `Deleted external source type${pluralize(externalSourceTypes.length)} ${externalSourceTypes.join(', ')}.`,
+            );
             showSuccessToast('External Source Type Deletion Successful');
           }
         }
@@ -3002,6 +3098,7 @@ const effects = {
   async deleteFile(id: number, user: User | null): Promise<boolean> {
     try {
       await reqGateway(`/file/${id}`, 'DELETE', null, user, false);
+      logMessage(`Deleted file ${id}.`);
       return true;
     } catch (e) {
       catchError(e as Error);
@@ -3027,6 +3124,7 @@ const effects = {
         const data = await reqHasura<{ id: number }>(gql.DELETE_MODEL, { id }, user);
         if (data.deleteModel != null) {
           showSuccessToast('Model Deleted Successfully');
+          logMessage(`Deleted model ${model.name} (${model.id}).`);
           modelsStore.filterValueById(id);
         } else {
           throw Error(`Unable to delete model "${model.name}"`);
@@ -3053,6 +3151,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura<{ id: number }>(gql.DELETE_PARAMETER_DICTIONARY, { id }, user);
         if (data.deleteParameterDictionary != null) {
+          logMessage(`Deleted parameter dictionary ${id}.`);
           showSuccessToast('Parameter Dictionary Deleted Successfully');
           parameterDictionariesStore.filterValueById(id);
         } else {
@@ -3084,6 +3183,7 @@ const effects = {
           throw Error(`Unable to delete parcel "${parcel.name}"`);
         }
 
+        logMessage(`Deleted parcel ${parcel.name} (${parcel.id}).`);
         showSuccessToast('Parcel Deleted Successfully');
         return true;
       }
@@ -3123,7 +3223,13 @@ const effects = {
           throw Error('Some parcel to dictionary associations were not successfully deleted');
         }
 
-        showSuccessToast('Parcel to dictionary association deleted Successfully');
+        parcelToParameterDictionariesToDelete.forEach(association => {
+          logMessage(
+            `Deleted association between parcel ${association.parcel_id} and parameter dictionary ${association.parameter_dictionary_id}.`,
+          );
+        });
+
+        showSuccessToast('Parcel to dictionary association deleted successfully');
         return affectedRows;
       } else {
         throw Error('Unable to delete parcel to dictionary associations');
@@ -3151,6 +3257,7 @@ const effects = {
         const data = await reqHasura(gql.DELETE_PLAN, { id: plan.id }, user);
         if (data.deletePlan != null) {
           showSuccessToast('Plan Deleted Successfully');
+          logMessage(`Deleted plan ${plan.name} (${plan.id}).`);
           return true;
         } else {
           throw Error(`Unable to delete the plan with "${plan.name}"`);
@@ -3173,6 +3280,7 @@ const effects = {
 
       const data = await reqHasura(gql.DELETE_PLAN_COLLABORATOR, { collaborator, planId: plan.id }, user);
       if (data.deletePlanCollaborator != null) {
+        logMessage(`Removed collaborator ${collaborator} from plan ${plan.id}.`);
         showSuccessToast('Plan Collaborator Removed Successfully');
         return true;
       } else {
@@ -3200,6 +3308,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura(gql.DELETE_PLAN_SNAPSHOT, { snapshot_id: snapshot.snapshot_id }, user);
         if (data.deletePlanSnapshot != null) {
+          logMessage(`Deleted plan snapshot ${snapshot.snapshot_name} (${snapshot.snapshot_id}).`);
           showSuccessToast('Plan Snapshot Deleted Successfully');
           return true;
         } else {
@@ -3223,6 +3332,7 @@ const effects = {
 
       const data = await reqHasura<{ tag_id: number }>(gql.DELETE_PLAN_TAG, { plan_id: planId, tag_id: tagId }, user);
       if (data.delete_plan_tags_by_pk != null) {
+        logMessage(`Removed tag ${tagId} from plan.`);
         showSuccessToast('Plan Updated Successfully');
         return data.delete_plan_tags_by_pk.tag_id;
       } else {
@@ -3254,6 +3364,7 @@ const effects = {
           user,
         );
         if (data.deleteSchedulingConditionMetadata != null) {
+          logMessage(`Deleted scheduling condition ${condition.name} (${condition.id}).`);
           showSuccessToast('Scheduling Condition Deleted Successfully');
           return true;
         } else {
@@ -3285,6 +3396,7 @@ const effects = {
         const data = await reqHasura<{ id: number }>(gql.DELETE_SCHEDULING_GOAL_METADATA, { id: goal.id }, user);
 
         if (data.deleteSchedulingGoalMetadata) {
+          logMessage(`Deleted scheduling goal ${goal.name} (${goal.id}).`);
           showSuccessToast('Scheduling Goal Deleted Successfully');
           return true;
         } else {
@@ -3320,6 +3432,9 @@ const effects = {
       );
 
       if (deleteConstraintPlanSpecifications !== null) {
+        logMessage(
+          `Deleted ${goalInvocationIdsToDelete.length} scheduling goal invocation${pluralize(goalInvocationIdsToDelete.length)} from scheduling specification ${schedulingSpecificationId}.`,
+        );
         showSuccessToast(`Scheduling Goals Updated Successfully`);
       } else {
         throw Error('Unable to update the scheduling goal specifications for the plan');
@@ -3348,6 +3463,7 @@ const effects = {
           throw Error(`Unable to delete sequence adaptation with ID: "${id}"`);
         }
 
+        logMessage(`Deleted sequence adaptation ${id}.`);
         showSuccessToast('Sequence Adaptation Deleted Successfully');
         sequenceAdaptationsStore.filterValueById(id);
       }
@@ -3376,6 +3492,7 @@ const effects = {
           user,
         );
         if (data.deleteSequenceFilters != null) {
+          logMessage(`Deleted sequence filters ${sequenceFilterIds.join(', ')}.`);
           showSuccessToast('Sequence Filters Deleted Successfully');
         } else {
           throw Error(`Unable to delete sequence filters with IDs: "${sequenceFilterIds}"`);
@@ -3409,6 +3526,7 @@ const effects = {
         const { delete_sequence_template_by_pk: deleteSequenceTemplate } = data;
 
         if (deleteSequenceTemplate !== null) {
+          logMessage(`Deleted sequence template ${sequenceTemplate.name} (${sequenceTemplate.id}).`);
           showSuccessToast('Sequence Template Deleted Successfully');
         } else {
           throw Error(`Unable to delete sequence template with ID: "${sequenceTemplate.id}"`);
@@ -3443,6 +3561,7 @@ const effects = {
           user,
         );
         if (data.deleteSimulationTemplate != null) {
+          logMessage(`Deleted simulation template ${simulationTemplate.id}.`);
           showSuccessToast('Simulation Template Deleted Successfully');
           return true;
         } else {
@@ -3464,6 +3583,7 @@ const effects = {
       }
 
       await reqHasura<{ id: number }>(gql.DELETE_TAG, { id: tag.id }, user);
+      logMessage(`Deleted tag ${tag.name} (${tag.id}).`);
       showSuccessToast('Tag Deleted Successfully');
       return true;
     } catch (e) {
@@ -3607,6 +3727,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura<{ id: number }>(gql.DELETE_VIEW, { id: view.id }, user);
         if (data.deletedView != null) {
+          logMessage(`Deleted view ${view.name} (${view.id}).`);
           showSuccessToast('View Deleted Successfully');
           return true;
         } else {
@@ -3648,6 +3769,9 @@ const effects = {
           if (leftoverViewIds.length > 0) {
             throw new Error(`Some views were not successfully deleted: ${leftoverViewIds.join(', ')}`);
           }
+          views.forEach(view => {
+            logMessage(`Deleted view ${view.name} (${view.id}).`);
+          });
           showSuccessToast('Views Deleted Successfully');
           return true;
         } else {
@@ -3676,6 +3800,7 @@ const effects = {
 
       if (confirm) {
         await reqWorkspace(`${workspace.id}`, 'DELETE', null, user, undefined, false);
+        logMessage(`Deleted workspace ${workspace.name} (${workspace.id}).`);
         showSuccessToast('Workspace Deleted Successfully');
         return true;
       }
@@ -3708,6 +3833,7 @@ const effects = {
       if (confirm) {
         await reqWorkspace(joinPath([workspace.id, originalPath]), 'DELETE', null, user, undefined, false);
 
+        logMessage(`Deleted ${typeString.toLowerCase()} (${originalPath}) in ${workspace.name} (${workspace.id}).`);
         showSuccessToast(`Workspace ${typeString} Deleted Successfully`);
       }
     } catch (e) {
@@ -3747,6 +3873,7 @@ const effects = {
         if (updatedView != null) {
           const { name: updatedName, updated_at } = updatedView;
           applyViewUpdate({ name: updatedName, updated_at });
+          logMessage(`Updated view ${view.name} (${view.id}).`);
           showSuccessToast('View Edited Successfully');
           return true;
         } else {
