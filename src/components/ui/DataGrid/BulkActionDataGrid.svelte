@@ -216,7 +216,7 @@
         </div>
       {/if}
 
-      <slot name="context-menu-alt" />
+      <slot name="context-menu-bottom" />
 
       <ContextMenu.Separator />
     {/if}

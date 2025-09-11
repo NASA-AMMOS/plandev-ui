@@ -337,7 +337,7 @@
     {/if}
   </svelte:fragment>
 
-  <svelte:fragment slot="context-menu-alt">
+  <svelte:fragment slot="context-menu-bottom">
     {#if showPackLeftMenu}
       <ContextMenu.Item size="sm" on:click={bulkPackLeftItems}>
         Pack Left {bulkSelectedActivityDirectiveIds.length}
