@@ -9,8 +9,8 @@
   import ModalHeader from './ModalHeader.svelte';
 
   const dispatch = createEventDispatcher<{
-    cancel: null,
-    pack: { direction: 'Left' | 'Right', gapOffset: string }
+    cancel: null;
+    pack: { direction: 'Left' | 'Right'; gapOffset: string };
   }>();
 
   let direction: 'Left' | 'Right' = 'Left';

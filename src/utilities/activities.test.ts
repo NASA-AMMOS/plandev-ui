@@ -462,11 +462,10 @@ describe('addAbsoluteTimeToRevision', () => {
 
 const arrayOfStartTimeMs = [1152612000000, 1152644400000, 1152604800000];
 
-const activityDirectives: ActivityDirective[] = getTestActivityDirectivesDB()
-  .map((directive, i) => ({
-    ...directive,
-    start_time_ms: arrayOfStartTimeMs[i],
-  }));
+const activityDirectives: ActivityDirective[] = getTestActivityDirectivesDB().map((directive, i) => ({
+  ...directive,
+  start_time_ms: arrayOfStartTimeMs[i],
+}));
 
 describe('updateAnchorStartOffset', () => {
   const spans = [
@@ -529,7 +528,12 @@ describe('updateAnchorStartOffset', () => {
     spanIdToDirectiveIdMap,
   };
 
-  const activityDirectivesMap = computeActivityDirectivesMap(getTestActivityDirectivesDB(), getTestPlan(), spans, spanUtilityMaps);
+  const activityDirectivesMap = computeActivityDirectivesMap(
+    getTestActivityDirectivesDB(),
+    getTestPlan(),
+    spans,
+    spanUtilityMaps,
+  );
 
   const planStartTimeMs = getUnixEpochTime(getTestPlan().start_time_doy);
   console.log('Plan start time', planStartTimeMs);
