@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest';
-import { getArgument, getCleansedStructArguments, getValueSchemaDefaultValue, isRecParameter } from './parameters';
+import {
+  formatParameterValue,
+  getArgument,
+  getCleansedStructArguments,
+  getValueSchemaDefaultValue,
+  isRecParameter,
+} from './parameters';
 
 describe('getArgument', () => {
   test('Should return the preset value', () => {
@@ -217,6 +223,60 @@ describe('isRecParameter', () => {
         valueSource: 'mission',
       }),
     ).toEqual(false);
+  });
+});
+
+describe('formatParameterValue', () => {
+  test('Should return empty string for null and undefined values', () => {
+    expect(formatParameterValue(null, { type: 'string' })).toBe('');
+    expect(formatParameterValue(undefined, { type: 'string' })).toBe('');
+  });
+
+  test('Should format duration values using convertUsToDurationString', () => {
+    expect(formatParameterValue(3600000000, { type: 'duration' })).toBe('0y 0d 1h 0m 0s 0ms 0us');
+    expect(formatParameterValue(0, { type: 'duration' })).toBe('0y 0d 0h 0m 0s 0ms 0us');
+  });
+
+  test('Should handle duration formatting errors', () => {
+    expect(formatParameterValue('invalid', { type: 'duration' })).toBe('NaNy NaNd NaNh NaNm NaNs NaNms NaNus');
+  });
+
+  test('Should format series values as lists', () => {
+    expect(formatParameterValue([], { items: { type: 'string' }, type: 'series' })).toBe('[]');
+    expect(formatParameterValue(['a', 'b', 'c'], { items: { type: 'string' }, type: 'series' })).toBe('a, b, c');
+  });
+
+  test('Should format map structures (arrays of key-value objects) properly', () => {
+    const intMapValue = [
+      { key: 551, value: 56111 },
+      { key: 5311, value: 541 },
+    ];
+    expect(formatParameterValue(intMapValue, { items: { type: 'string' }, type: 'series' })).toBe(
+      '551: 56111, 5311: 541',
+    );
+
+    const stringMapValue = [
+      { key: '699', value: '70' },
+      { key: '711', value: '721' },
+    ];
+    expect(formatParameterValue(stringMapValue, { items: { type: 'string' }, type: 'series' })).toBe(
+      '699: 70, 711: 721',
+    );
+
+    expect(formatParameterValue([], { items: { type: 'string' }, type: 'series' })).toBe('[]');
+  });
+
+  test('Should format struct values with keys and values', () => {
+    expect(formatParameterValue({}, { items: {}, type: 'struct' })).toBe('{}');
+    expect(formatParameterValue({ a: 1, b: 2 }, { items: {}, type: 'struct' })).toBe('a: 1,\nb: 2');
+  });
+
+  test('Should convert values to string for other types', () => {
+    expect(formatParameterValue('hello', { type: 'string' })).toBe('hello');
+    expect(formatParameterValue(42, { type: 'int' })).toBe('42');
+    expect(formatParameterValue(true, { type: 'boolean' })).toBe('true');
+    expect(formatParameterValue(3.14, { type: 'real' })).toBe('3.14');
+    expect(formatParameterValue('/path/to/file', { type: 'path' })).toBe('/path/to/file');
   });
 });
 

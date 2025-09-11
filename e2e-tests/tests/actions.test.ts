@@ -1,20 +1,45 @@
 import test, { type BrowserContext, type Page } from '@playwright/test';
 import { Action } from '../fixtures/Action.js';
-import { Sequence } from '../fixtures/Sequence.js';
+import { Dictionaries } from '../fixtures/Dictionaries.js';
+import { Parcels } from '../fixtures/Parcels.js';
+import { Workspace } from '../fixtures/Workspace.js';
+import { Workspaces } from '../fixtures/Workspaces.js';
 
 let action: Action;
+let dictionaries: Dictionaries;
 let context: BrowserContext;
-let sequence: Sequence;
 let page: Page;
+let parcels: Parcels;
+let workspace: Workspace;
+let workspaces: Workspaces;
+let workspaceId: string;
 let workspaceName: string = '';
 
-test.beforeAll(async ({ browser }) => {
+test.beforeAll(async ({ baseURL, browser }) => {
+  // Increase global timeout to prevent early test termination
+  test.setTimeout(90000); // 90 seconds
+
   context = await browser.newContext();
   page = await context.newPage();
-  action = new Action(page);
-  sequence = new Sequence(page);
 
-  await sequence.goto();
+  dictionaries = new Dictionaries(page);
+  parcels = new Parcels(page);
+  workspaces = new Workspaces(page, parcels, baseURL);
+
+  await dictionaries.goto();
+  await dictionaries.createCommandDictionary();
+  await parcels.goto();
+  await parcels.createParcel(dictionaries.commandDictionaryName, baseURL);
+
+  await workspaces.goto();
+  workspaceId = await workspaces.createWorkspace();
+  workspaceName = workspaces.workspaceName;
+
+  workspace = new Workspace(page, workspaceId, workspaceName, baseURL);
+  action = new Action(page, workspaceId);
+
+  workspace.updatePage(page);
+  await workspace.goto();
 });
 
 test.afterAll(async () => {
@@ -22,20 +47,13 @@ test.afterAll(async () => {
   await context.close();
 });
 
-test.describe.serial('Action', () => {
-  test('Create new workspace', async () => {
-    workspaceName = await sequence.createWorkspace();
-  });
-
-  test('Select workspace', async () => {
-    await page.getByRole('gridcell', { name: workspaceName }).first().click();
-  });
-
-  test('Navigate to workspace actions', async () => {
-    await page.getByRole('button', { name: 'Action' }).first().click();
-    await page.waitForURL('/sequencing/actions?workspaceId=**');
-    await page.waitForTimeout(250);
-    await action.updatePage(page);
+test.describe.serial('Actions', () => {
+  test('Navigate to workspace actions from sidebar', async () => {
+    await page.getByRole('complementary').getByRole('button', { name: 'Actions' }).click();
+    const newTab = await page.waitForEvent('popup');
+    await newTab.getByText('Loading...').first().waitFor({ state: 'hidden' });
+    await newTab.waitForURL(`/workspaces/${workspaceId}/actions`);
+    await action.updatePage(newTab);
   });
 
   test('Create an action', async () => {

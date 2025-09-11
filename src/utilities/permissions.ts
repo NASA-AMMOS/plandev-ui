@@ -26,14 +26,17 @@ import type {
   SchedulingGoalMetadata,
 } from '../types/scheduling';
 import type { SequenceTemplate } from '../types/sequence-template';
-import type { Parcel, UserSequence, Workspace } from '../types/sequencing';
+import type { Parcel, UserSequence } from '../types/sequencing';
 import type { PlanDataset, Simulation, SimulationTemplate } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { View, ViewSlim } from '../types/view';
+import type { Workspace } from '../types/workspace';
+import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
 import gql from './gql';
 import { showFailureToast } from './toast';
 
 export const ADMIN_ROLE = 'aerie_admin';
+export const VIEWER_ROLE = 'viewer';
 
 export const INVALID_JWT = 'invalid-jwt';
 export const EXPIRED_JWT = 'JWTExpired';
@@ -42,8 +45,16 @@ function isAdminRole(userRole?: UserRole) {
   return userRole === ADMIN_ROLE;
 }
 
+function isViewerRole(userRole?: UserRole) {
+  return userRole === VIEWER_ROLE;
+}
+
 function isUserAdmin(user: User | null) {
   return isAdminRole(user?.activeRole);
+}
+
+function isUserViewer(user: User | null) {
+  return isViewerRole(user?.activeRole);
 }
 
 function isUserOwner(user: User | null, thingWithOwner?: AssetWithOwner | null): boolean {
@@ -388,26 +399,6 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     const queries = [Queries.CREATE_EXPANSION_SET];
     return isUserAdmin(user) || (getPermission(queries, user) && getRoleModelPermission(queries, user, plans, model));
   },
-  CREATE_EXTERNAL_EVENT_TYPE: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.INSERT_EXTERNAL_EVENT_TYPE_ONE], user);
-  },
-  CREATE_EXTERNAL_SOURCE: (user: User | null): boolean => {
-    return (
-      isUserAdmin(user) ||
-      getPermission(
-        [
-          Queries.INSERT_EXTERNAL_SOURCE,
-          Queries.INSERT_EXTERNAL_EVENT_TYPE,
-          Queries.INSERT_EXTERNAL_SOURCE_TYPE,
-          Queries.INSERT_DERIVATION_GROUP,
-        ],
-        user,
-      )
-    );
-  },
-  CREATE_EXTERNAL_SOURCE_TYPE: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.INSERT_EXTERNAL_SOURCE_TYPE], user);
-  },
   CREATE_MODEL: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_MISSION_MODEL], user);
   },
@@ -558,11 +549,18 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   DELETE_CONSTRAINT_MODEL_SPECIFICATIONS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_CONSTRAINT_MODEL_SPECIFICATIONS], user);
   },
-  DELETE_DERIVATION_GROUP: (user: User | null, derivationGroup: AssetWithOwner<DerivationGroup>): boolean => {
+  DELETE_CONSTRAINT_PLAN_SPECIFICATIONS: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission([Queries.DELETE_DERIVATION_GROUP, Queries.DELETE_PLAN_DERIVATION_GROUP], user) &&
-        isUserOwner(user, derivationGroup))
+      (getPermission([Queries.DELETE_CONSTRAINT_SPECIFICATIONS], user) &&
+        (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
+    );
+  },
+  DELETE_DERIVATION_GROUPS: (user: User | null, derivationGroups: AssetWithOwner<DerivationGroup>[]): boolean => {
+    return (
+      isUserAdmin(user) ||
+      (getPermission([Queries.DELETE_DERIVATION_GROUP], user) &&
+        derivationGroups.every(derivationGroup => isUserOwner(user, derivationGroup) === true))
     );
   },
   DELETE_EXPANSION_RULE: (user: User | null, expansionRule: AssetWithOwner<ExpansionRule>): boolean => {
@@ -908,6 +906,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     return isUserAdmin(user) || getPermission([Queries.CONSTRAINT_REQUEST], user);
   },
   SUB_DERIVATION_GROUPS: () => true,
+  SUB_EVENT_TYPES_IN_USE: () => true,
   SUB_EXPANDED_TEMPLATES: () => true,
   SUB_EXPANSION_RULES: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.EXPANSION_RULES], user);
@@ -928,9 +927,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SIMS: () => true,
   SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_TEMPS: () => true,
   SUB_PARAMETER_DICTIONARIES: () => true,
-  SUB_PARCELS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.PARCELS], user);
-  },
+  SUB_PARCEL: (): boolean => true,
+  SUB_PARCELS: (): boolean => true,
   SUB_PARCEL_TO_PARAMETER_DICTIONARIES: () => true,
   SUB_PLANS: () => true,
   SUB_PLANS_USER_WRITABLE: () => true,
@@ -983,6 +981,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   SUB_VIEWS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.VIEWS], user);
+  },
+  SUB_WORKSPACE: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.PARCEL], user);
   },
   SUB_WORKSPACES: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.WORKSPACES], user);
@@ -1243,6 +1244,15 @@ const gatewayPermissions = {
       isUserAdmin(user) || (getPermission(queries, user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
+  CREATE_EXTERNAL_EVENT_TYPE: (user: User | null) => {
+    return isUserAdmin(user) || getPermission([getFunctionPermission(Queries.INSERT_EXTERNAL_EVENT_TYPE)], user);
+  },
+  CREATE_EXTERNAL_SOURCE: (user: User | null) => {
+    return isUserAdmin(user) || getPermission([getFunctionPermission(Queries.INSERT_EXTERNAL_SOURCE)], user);
+  },
+  CREATE_EXTERNAL_SOURCE_TYPE: (user: User | null) => {
+    return isUserAdmin(user) || getPermission([getFunctionPermission(Queries.INSERT_EXTERNAL_SOURCE_TYPE)], user);
+  },
   IMPORT_PLAN: (user: User | null) => {
     return (
       isUserAdmin(user) ||
@@ -1389,6 +1399,19 @@ interface AssociationCRUDPermission<M, D> extends CRUDPermission<AssetWithOwner<
   canUpdateDefinition: (user: User | null, definition: AssetWithAuthor<D>) => boolean;
 }
 
+type WorkspaceAssetCreatePermissionCheck = (user: User | null, workspace: Workspace) => boolean;
+type WorkspaceAssetUpdatePermissionCheck<A extends WorkspaceTreeNode> = (
+  user: User | null,
+  workspace: Workspace,
+  asset?: A,
+) => boolean;
+interface WorkspaceAssetCRUDPermission<A extends WorkspaceTreeNode> {
+  canCreate: WorkspaceAssetCreatePermissionCheck;
+  canDelete: WorkspaceAssetUpdatePermissionCheck<A>;
+  canRead: ReadPermissionCheck<A>;
+  canUpdate: WorkspaceAssetUpdatePermissionCheck<A>;
+}
+
 interface FeaturePermissions {
   actionDefinition: CRUDPermission<ActionDefinition>;
   actionRun: CRUDPermission<ActionDefinition>;
@@ -1431,7 +1454,8 @@ interface FeaturePermissions {
   simulationTemplates: PlanSimulationTemplateCRUDPermission;
   tags: CRUDPermission<Tag>;
   view: CRUDPermission<ViewSlim>;
-  workspace: CRUDPermission<AssetWithOwner<Workspace>>;
+  workspace: WorkspaceAssetCRUDPermission<WorkspaceTreeNode>;
+  workspaces: CRUDPermission<AssetWithOwner<Workspace>>;
 }
 
 const featurePermissions: FeaturePermissions = {
@@ -1495,7 +1519,7 @@ const featurePermissions: FeaturePermissions = {
   },
   derivationGroup: {
     canCreate: user => queryPermissions.CREATE_DERIVATION_GROUP(user),
-    canDelete: (user, derivationGroup) => queryPermissions.DELETE_DERIVATION_GROUP(user, derivationGroup),
+    canDelete: (user, derivationGroups) => queryPermissions.DELETE_DERIVATION_GROUPS(user, derivationGroups),
     canRead: user => queryPermissions.SUB_DERIVATION_GROUPS(user),
     canUpdate: () => false, // this is not a feature
   },
@@ -1529,7 +1553,7 @@ const featurePermissions: FeaturePermissions = {
     canUpdate: () => false, // no feature to update expansion sets exists
   },
   externalEventType: {
-    canCreate: user => queryPermissions.CREATE_EXTERNAL_EVENT_TYPE(user),
+    canCreate: user => gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user),
     canDelete: user => queryPermissions.DELETE_EXTERNAL_EVENT_TYPE(user),
     canRead: user => queryPermissions.SUB_EXTERNAL_EVENT_TYPES(user),
     canUpdate: () => false, // no feature to update external event types
@@ -1541,13 +1565,13 @@ const featurePermissions: FeaturePermissions = {
     canUpdate: () => true,
   },
   externalSource: {
-    canCreate: user => queryPermissions.CREATE_EXTERNAL_SOURCE(user),
+    canCreate: user => gatewayPermissions.CREATE_EXTERNAL_SOURCE(user),
     canDelete: (user, externalSources) => queryPermissions.DELETE_EXTERNAL_SOURCES(user, externalSources),
     canRead: user => queryPermissions.SUB_EXTERNAL_SOURCES(user),
     canUpdate: () => false, // no feature to update external sources
   },
   externalSourceType: {
-    canCreate: user => queryPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user),
+    canCreate: user => gatewayPermissions.CREATE_EXTERNAL_SOURCE_TYPE(user),
     canDelete: user => queryPermissions.DELETE_EXTERNAL_SOURCE_TYPE(user),
     canRead: user => queryPermissions.SUB_EXTERNAL_SOURCE_TYPES(user),
     canUpdate: () => false, // no feature to update external source types
@@ -1694,10 +1718,16 @@ const featurePermissions: FeaturePermissions = {
     canUpdate: (user, view) => queryPermissions.UPDATE_VIEW(user, view),
   },
   workspace: {
-    canCreate: user => queryPermissions.CREATE_WORKSPACE(user),
-    canDelete: () => false,
+    canCreate: (user, workspace) => isUserAdmin(user) || (!isUserViewer(user) && isUserOwner(user, workspace)),
+    canDelete: (user, workspace) => isUserAdmin(user) || (!isUserViewer(user) && isUserOwner(user, workspace)),
+    canRead: () => true,
+    canUpdate: (user, workspace) => isUserAdmin(user) || (!isUserViewer(user) && isUserOwner(user, workspace)),
+  },
+  workspaces: {
+    canCreate: user => isUserAdmin(user) || (!isUserViewer(user) && queryPermissions.CREATE_WORKSPACE(user)),
+    canDelete: (user, workspace) => isUserAdmin(user) || (!isUserViewer(user) && isUserOwner(user, workspace)),
     canRead: user => queryPermissions.SUB_WORKSPACES(user),
-    canUpdate: (user, workspace) => queryPermissions.UPDATE_WORKSPACE(user, workspace),
+    canUpdate: (user, workspace) => isUserAdmin(user) || (!isUserViewer(user) && isUserOwner(user, workspace)),
   },
 };
 
@@ -1715,5 +1745,6 @@ export {
   isPlanOwner,
   isUserAdmin,
   isUserOwner,
+  isUserViewer,
   queryPermissions,
 };

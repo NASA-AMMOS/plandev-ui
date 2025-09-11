@@ -1,53 +1,49 @@
 {
     "source": {
         "key": "external-event-derivation-1.json",
-        "source_type": "Derivation Test",
+        "source_type_name": "DerivationTest",
+        "derivation_group_name": "DerivationTest Default",
         "valid_at": "2022-018T00:00:00Z",
         "period": {
             "start_time": "2022-005T00:00:00Z",
             "end_time": "2022-011T00:00:00Z"
         },
-        "metadata": {}
+        "attributes": {
+          "exampleAttribute": "TestString"
+        }
     },
     "events": [
         {
             "key": "2",
-            "event_type": "DerivationD",
+            "event_type_name": "DerivationD",
             "start_time": "2022-005T23:00:00Z",
             "duration": "01:10:00",
-            "properties": {
-                "rules": [
-                    3,
-                    4
-                ],
-                "notes": "subsumed by test 01, even though end lies outside of 01, also replaced by test 01 by key",
-                "should_present": false
+            "attributes": {
+              "rules": "3, 4",
+              "notes": "subsumed by test 01, even though end lies outside of 01, also replaced by test 01 by key",
+              "should_present": false
             }
         },
         {
             "key": "7",
-            "event_type": "DerivationC",
+            "event_type_name": "DerivationC",
             "start_time": "2022-009T23:00:00Z",
             "duration": "02:00:00",
-            "properties": {
-                "rules": [
-                    3
-                ],
-                "notes": "subsumed by test 02, even though end lies outside of 01, because start time during 01",
-                "should_present": false
+            "attributes": {
+              "rules": "3",
+              "notes": "subsumed by test 02, even though end lies outside of 01, because start time during 01",
+              "should_present": false
             }
         },
         {
             "key": "8",
-            "event_type": "DerivationB",
+            "event_type_name": "DerivationB",
             "start_time": "2022-010T11:00:00Z",
             "duration": "01:05:00",
-            "properties": {
-                "rules": [
-                    1
-                ],
-                "notes": "after everything, subsumed by nothing despite being from oldest file",
-                "should_present": true
+            "attributes": {
+              "rules": "1",
+              "notes": "after everything, subsumed by nothing despite being from oldest file",
+              "should_present": true
             }
         }
     ]

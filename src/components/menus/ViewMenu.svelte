@@ -33,6 +33,7 @@
     createView: Pick<View, 'definition' | 'owner'>;
     editView: View;
     resetView: void;
+    resetViewToDefault: void;
     saveView: Pick<View, 'definition' | 'id' | 'name' | 'owner'>;
     toggleView: { state: boolean; type: ViewToggleType };
     uploadView: void;
@@ -69,6 +70,12 @@
   function resetView() {
     if ($view) {
       dispatch('resetView');
+    }
+  }
+
+  function resetViewToDefault() {
+    if ($view) {
+      dispatch('resetViewToDefault');
     }
   }
 
@@ -154,9 +161,10 @@
       >
         Save as
       </MenuItem>
-      <MenuItem disabled={!$viewIsModified} on:click={resetView}>
-        Reset to {$view?.name && $view.name !== defaultViewName ? 'last saved' : 'default'}
-      </MenuItem>
+      {#if $view?.name && $view.name !== defaultViewName}
+        <MenuItem disabled={!$viewIsModified} on:click={resetView}>Reset to last saved</MenuItem>
+      {/if}
+      <MenuItem on:click={resetViewToDefault}>Reset to default</MenuItem>
       <MenuItem
         on:click={uploadView}
         use={[

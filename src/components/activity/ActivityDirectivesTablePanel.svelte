@@ -15,7 +15,7 @@
   import { InvalidDate } from '../../constants/time';
   import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
   import { activityErrorRollupsMap } from '../../stores/errors';
-  import { maxTimeRange, plan, planReadOnly, viewTimeRange } from '../../stores/plan';
+  import { maxTimeRange, plan, planModelActivityTypes, planReadOnly, viewTimeRange } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import { view, viewTogglePanel, viewUpdateActivityDirectivesTable } from '../../stores/views';
   import type { ActivityDirective } from '../../types/activity';
@@ -33,6 +33,7 @@
   import Panel from '../ui/Panel.svelte';
   import ActivityDirectivesTable from './ActivityDirectivesTable.svelte';
   import ActivityTableMenu from './ActivityTableMenu.svelte';
+  import ArgumentsCellRenderer from './ArgumentsCellRenderer.svelte';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -61,6 +62,20 @@
       resizable: true,
       sortable: true,
     },
+    anchor_name: {
+      field: 'anchor_name',
+      filter: 'text',
+      headerName: 'Anchor Name',
+      hide: true,
+      resizable: true,
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<ActivityDirective>) => {
+        if (params?.data?.anchor_id && $activityDirectivesMap) {
+          return $activityDirectivesMap[params.data.anchor_id]?.name ?? '';
+        }
+        return '';
+      },
+    },
     anchored_to_start: {
       field: 'anchored_to_start',
       filter: 'text',
@@ -87,8 +102,20 @@
       hide: true,
       resizable: true,
       sortable: false,
-      valueGetter: (params: ValueGetterParams<ActivityDirective>) => {
-        return JSON.stringify(params?.data?.arguments);
+      autoHeight: true,
+      cellRenderer: (params: ICellRendererParams<ActivityDirective>) => {
+        const div = document.createElement('div');
+        if (!params.data) {
+          return div;
+        }
+        new ArgumentsCellRenderer({
+          target: div,
+          props: {
+            data: params.data,
+            activityTypes: $planModelActivityTypes,
+          },
+        });
+        return div;
       },
     },
     created_at: {
@@ -261,43 +288,6 @@
     }
   }
 
-  function onColumnToggleChange({ detail: { field, isHidden } }: CustomEvent) {
-    const activityColumnStates: ColumnState[] = activityDirectivesTable?.columnStates ?? [];
-    const existingColumnStateIndex: number = activityColumnStates.findIndex(
-      (columnState: ColumnState) => field === columnState.colId,
-    );
-    if (existingColumnStateIndex >= 0) {
-      viewUpdateActivityDirectivesTable({
-        columnStates: [
-          ...activityColumnStates.slice(0, existingColumnStateIndex),
-          {
-            ...activityColumnStates[existingColumnStateIndex],
-            hide: isHidden,
-          },
-          ...activityColumnStates.slice(existingColumnStateIndex + 1),
-        ],
-      });
-    } else {
-      viewUpdateActivityDirectivesTable({
-        columnStates: [
-          ...activityColumnStates,
-          {
-            colId: field,
-            hide: isHidden,
-          },
-        ],
-      });
-    }
-
-    setTimeout(() => {
-      if (autoSizeColumns === 'fit') {
-        autoSizeContent();
-      } else if (autoSizeColumns === 'fill') {
-        autoSizeSpace();
-      }
-    }, 0);
-  }
-
   function onColumnMoved() {
     const columnStates = dataGrid?.getColumnState();
     const updatedColumnStates = (columnStates ?? []).filter(columnState => columnState.colId !== 'actions');
@@ -336,6 +326,31 @@
     viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'ActivityFormPanel' } });
   }
 
+  function onColumnsChanged({
+    detail: { columns },
+  }: CustomEvent<{ columns: { field: any; isHidden: boolean; name: string }[] }>) {
+    const activityColumnStates: ColumnState[] = activityDirectivesTable?.columnStates ?? [];
+    const newActivityColumnStates = activityColumnStates.map(columnState => {
+      return { ...columnState, hide: columns.find(column => columnState.colId === column.field)?.isHidden ?? false };
+    });
+
+    viewUpdateActivityDirectivesTable({
+      columnStates: newActivityColumnStates.filter(filterEmpty),
+    });
+
+    requestAutoSize();
+  }
+
+  function requestAutoSize() {
+    setTimeout(() => {
+      if (autoSizeColumns === 'fit') {
+        autoSizeContent();
+      } else if (autoSizeColumns === 'fill') {
+        autoSizeSpace();
+      }
+    }, 0);
+  }
+
   function onShowHideAllColumns({ detail: { hide } }: CustomEvent<{ hide: boolean }>) {
     viewUpdateActivityDirectivesTable({
       columnStates: derivedColumnDefs
@@ -354,6 +369,7 @@
         })
         .filter(filterEmpty),
     });
+    requestAutoSize();
   }
 
   function toggleAutoSizeContent() {
@@ -415,7 +431,7 @@
         </button>
       </div>
       <ActivityTableMenu
-        on:toggle-column={onColumnToggleChange}
+        on:columns-changed={onColumnsChanged}
         on:show-hide-all-columns={onShowHideAllColumns}
         columnDefs={derivedColumnDefs}
         columnStates={activityDirectivesTable?.columnStates}

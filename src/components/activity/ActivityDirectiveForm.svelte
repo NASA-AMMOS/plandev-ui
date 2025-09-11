@@ -421,7 +421,13 @@
   async function validateArguments(newArguments: ArgumentsMap | null): Promise<void> {
     if (newArguments) {
       const { type } = activityDirective;
-      const { errors, success } = await effects.validateActivityArguments(type, modelId, newArguments, user);
+      const { errors, success } = await effects.validateActivityArguments(
+        type,
+        activityDirective.id,
+        modelId,
+        newArguments,
+        user,
+      );
 
       if (!success && errors) {
         parameterErrorMap = errors.reduce((map: Record<string, string[]>, error) => {
@@ -555,13 +561,6 @@
           </Highlight>
         {/if}
 
-        <Highlight highlight={highlightKeysMap.id}>
-          <Input layout="inline">
-            <label use:tooltip={{ content: 'Activity ID', placement: 'top' }} for="id"> ID</label>
-            <input class="st-input w-full" disabled name="id" id="id" value={activityDirective.id} />
-          </Input>
-        </Highlight>
-
         <Highlight highlight={highlightKeysMap.type}>
           <Input layout="inline">
             <label use:tooltip={{ content: 'Activity Type', placement: 'top' }} for="activity-type">
@@ -613,6 +612,56 @@
           on:updateAnchorEdge={updateAnchorEdge}
           on:updateStartOffset={updateStartOffset}
         />
+
+        <Highlight highlight={highlightKeysMap.source_scheduling_goal_id}>
+          <Input layout="inline">
+            <label
+              use:tooltip={{ content: 'Source Scheduling Goal ID', placement: 'top' }}
+              for="sourceSchedulingGoalId"
+            >
+              Source Scheduling Goal ID
+            </label>
+            <input
+              class="st-input w-full"
+              disabled
+              name="sourceSchedulingGoalId"
+              id="sourceSchedulingGoalId"
+              value={activityDirective.source_scheduling_goal_id ?? 'None'}
+            />
+          </Input>
+        </Highlight>
+
+        <Highlight highlight={highlightKeysMap.tags}>
+          <Input layout="inline">
+            <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="activityDirectiveTags"> Tags </label>
+            <TagsInput
+              name="Directive tags"
+              disabled={!hasUpdatePermission}
+              options={tags}
+              selected={activityDirective.tags.map(({ tag }) => tag)}
+              use={[
+                [
+                  permissionHandler,
+                  {
+                    hasPermission: hasUpdatePermission,
+                    permissionError: updatePermissionError,
+                  },
+                ],
+              ]}
+              on:change={onTagsInputChange}
+            />
+          </Input>
+        </Highlight>
+      </Collapse>
+    </fieldset>
+    <fieldset>
+      <Collapse title="Metadata" contentClass="px-1" defaultExpanded={false}>
+        <Highlight highlight={highlightKeysMap.id}>
+          <Input layout="inline">
+            <label use:tooltip={{ content: 'Activity ID', placement: 'top' }} for="id"> ID</label>
+            <input class="st-input w-full" disabled name="id" id="id" value={activityDirective.id} />
+          </Input>
+        </Highlight>
 
         <Highlight highlight={highlightKeysMap.created_at}>
           <Input layout="inline">
@@ -668,46 +717,6 @@
               name="createdBy"
               value={activityDirective.created_by}
               id="createdBy"
-            />
-          </Input>
-        </Highlight>
-
-        <Highlight highlight={highlightKeysMap.source_scheduling_goal_id}>
-          <Input layout="inline">
-            <label
-              use:tooltip={{ content: 'Source Scheduling Goal ID', placement: 'top' }}
-              for="sourceSchedulingGoalId"
-            >
-              Source Scheduling Goal ID
-            </label>
-            <input
-              class="st-input w-full"
-              disabled
-              name="sourceSchedulingGoalId"
-              id="sourceSchedulingGoalId"
-              value={activityDirective.source_scheduling_goal_id ?? 'None'}
-            />
-          </Input>
-        </Highlight>
-
-        <Highlight highlight={highlightKeysMap.tags}>
-          <Input layout="inline">
-            <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="activityDirectiveTags"> Tags </label>
-            <TagsInput
-              name="Directive tags"
-              disabled={!hasUpdatePermission}
-              options={tags}
-              selected={activityDirective.tags.map(({ tag }) => tag)}
-              use={[
-                [
-                  permissionHandler,
-                  {
-                    hasPermission: hasUpdatePermission,
-                    permissionError: updatePermissionError,
-                  },
-                ],
-              ]}
-              on:change={onTagsInputChange}
             />
           </Input>
         </Highlight>

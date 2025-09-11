@@ -139,18 +139,8 @@
   <fieldset>
     <Collapse title="Definition">
       <Input layout="inline">
-        <label use:tooltip={{ content: 'ID', placement: 'top' }} for="id"> ID </label>
-        <input class="st-input w-full" disabled name="id" value={span.span_id} />
-      </Input>
-
-      <Input layout="inline">
         <label use:tooltip={{ content: 'Activity Type', placement: 'top' }} for="activityType"> Activity Type </label>
         <input class="st-input w-full" disabled name="activityType" value={span.type} />
-      </Input>
-
-      <Input layout="inline">
-        <label use:tooltip={{ content: 'Parent ID', placement: 'top' }} for="parentId">Parent ID</label>
-        <input class="st-input w-full" disabled name="parentId" value={span.parent_id ?? 'None (Root)'} />
       </Input>
 
       <Input layout="inline">
@@ -182,6 +172,20 @@
           End Time ({$plugins.time.primary.label})
         </label>
         <input class="st-input w-full" disabled name="endTime" value={endTime ?? 'None'} />
+      </Input>
+    </Collapse>
+  </fieldset>
+
+  <fieldset>
+    <Collapse title="Metadata" defaultExpanded={false}>
+      <Input layout="inline">
+        <label use:tooltip={{ content: 'ID', placement: 'top' }} for="id"> ID </label>
+        <input class="st-input w-full" disabled name="id" value={span.span_id} />
+      </Input>
+
+      <Input layout="inline">
+        <label use:tooltip={{ content: 'Parent ID', placement: 'top' }} for="parentId">Parent ID</label>
+        <input class="st-input w-full" disabled name="parentId" value={span.parent_id ?? 'None (Root)'} />
       </Input>
     </Collapse>
   </fieldset>

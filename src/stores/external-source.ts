@@ -4,6 +4,8 @@ import {
   type DerivationGroup,
   type ExternalSourceSlim,
   type ExternalSourceType,
+  type ExternalSourceTypeAssociations,
+  type ExternalSourceWithEventTypes,
   type PlanDerivationGroup,
 } from '../types/external-source';
 import gql from '../utilities/gql';
@@ -11,10 +13,9 @@ import { planId } from './plan';
 import { gqlSubscribable } from './subscribable';
 
 /* Writeable. */
-export const parsingError: Writable<string | null> = writable(null);
 export const creatingExternalSource: Writable<boolean> = writable(false);
 export const createExternalSourceError: Writable<string | null> = writable(null);
-export const createExternalSourceTypeError: Writable<string | null> = writable(null);
+export const createExternalSourceEventTypeError: Writable<string | null> = writable(null);
 export const createDerivationGroupError: Writable<string | null> = writable(null);
 export const derivationGroupPlanLinkError: Writable<string | null> = writable(null);
 export const derivationGroupVisibilityMap: Writable<Record<DerivationGroup['name'], boolean>> = writable({});
@@ -37,9 +38,35 @@ export const planDerivationGroupLinks = gqlSubscribable<PlanDerivationGroup[]>(
   [],
   null,
 );
+export const sourcesUsingExternalEventTypes = gqlSubscribable<ExternalSourceWithEventTypes[]>(
+  gql.SUB_EVENT_TYPES_IN_USE,
+  {},
+  [],
+  null,
+  transformSourcesUsingExternalEventTypes,
+);
 
 /* Derived. */
-// reorganization of unacknowledged planDerivationGroupLinks so that it is easy to the derivation groups and when their updates were last acknowledged
+export const externalSourceTypeAssociations: Readable<ExternalSourceTypeAssociations[]> = derived(
+  [externalSourceTypes, externalSources, derivationGroups],
+  ([$externalSourceTypes, $externalSources, $derivationGroups]) => {
+    return $externalSourceTypes.map(sourceType => {
+      const sourceAssociations: number = $externalSources.filter(
+        externalSource => externalSource.source_type_name === sourceType.name,
+      ).length;
+      const derivationGroupAssociations: number = $derivationGroups.filter(
+        derivationGroup => derivationGroup.source_type_name === sourceType.name,
+      ).length;
+      return {
+        ...sourceType,
+        derivation_group_associations: derivationGroupAssociations,
+        source_associations: sourceAssociations,
+      };
+    });
+  },
+);
+
+// Reorganization of unacknowledged planDerivationGroupLinks so that it is easy to the derivation groups and when their updates were last acknowledged
 export const derivationGroupsAcknowledged: Readable<Record<string, { last_acknowledged_at: string }>> = derived(
   planDerivationGroupLinks,
   $planDerivationGroupLinks => {
@@ -62,7 +89,6 @@ export const selectedPlanDerivationGroupNames: Readable<string[]> = derived(
 /* Helper Functions. */
 export function resetExternalSourceStores(): void {
   createExternalSourceError.set(null);
-  createExternalSourceTypeError.set(null);
   createDerivationGroupError.set(null);
   derivationGroupPlanLinkError.set(null);
 }
@@ -112,4 +138,33 @@ function transformDerivationGroups(
     });
   }
   return completeDerivationGroup;
+}
+
+function transformSourcesUsingExternalEventTypes(
+  external_source:
+    | {
+        external_events: {
+          external_event_type: {
+            name: string;
+          };
+        }[];
+        key: string;
+      }[]
+    | undefined
+    | null,
+) {
+  const results: { key: string; types: string[] }[] = [];
+
+  if (external_source !== undefined && external_source !== null) {
+    for (const source of external_source) {
+      const key = source.key;
+      const types: string[] = [];
+      for (const external_event of source.external_events) {
+        types.push(external_event.external_event_type.name);
+      }
+      results.push({ key, types });
+    }
+  }
+
+  return results;
 }

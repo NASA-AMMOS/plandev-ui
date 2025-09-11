@@ -4,7 +4,6 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
-  import { SearchParameters } from '../../../enums/searchParameters';
   import {
     actionDefinitions,
     actionDefinitionsByWorkspace,
@@ -12,22 +11,22 @@
     actionRunsByWorkspace,
     actionsColumns,
   } from '../../../stores/actions';
-  import { userSequences, workspaces } from '../../../stores/sequencing';
   import type { ActionDefinition, ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
-  import type { Workspace } from '../../../types/sequencing';
+  import type { UserSequence } from '../../../types/sequencing';
+  import type { Workspace } from '../../../types/workspace';
   import {
     getActionDefinitionForRun,
-    getUserSequencesInWorkspace,
+    getUserSequenceValueSchemaOptions,
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
-  import { getSearchParameterNumber } from '../../../utilities/generic';
   import { showActionCreationModal } from '../../../utilities/modal';
   import { getArguments, getFormParameters } from '../../../utilities/parameters';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { featurePermissions } from '../../../utilities/permissions';
+  import { getActionsUrl } from '../../../utilities/routes';
   import Input from '../../form/Input.svelte';
   import Loading from '../../Loading.svelte';
   import Parameters from '../../parameters/Parameters.svelte';
@@ -42,12 +41,13 @@
   import ActionRunCard from './ActionRunCard.svelte';
 
   export let user: User | null;
+  export let workspace: Workspace | null;
 
   let actionDefinitionsFilterText: string = '';
   let actionRunsFilterText: string = '';
+  let isLoadingWorkspace: boolean = false;
   let selectedActionDefinitionId: number | null = null;
   let selectedActionDefinition: ActionDefinition | null = null;
-  let workspace: Workspace | undefined;
   let workspaceId: number | null = null;
   let workspaceActionDefinitions: ActionDefinition[] = [];
   let workspaceActionRuns: ActionRunSlim[] = [];
@@ -58,11 +58,12 @@
   let codeAbortController: AbortController;
   let argumentsMap: ArgumentsMap = {};
   let saving: boolean = false;
+  let workspaceSequences: UserSequence[] = [];
 
-  $: workspace = $workspaces.find(workspace => workspace.id === workspaceId);
   $: if (typeof workspaceId === 'number') {
     workspaceActionDefinitions = Object.values($actionDefinitionsByWorkspace[workspaceId] || {});
     workspaceActionRuns = Object.values($actionRunsByWorkspace[workspaceId] || {});
+    getWorkspaceSequences(workspaceId);
   }
 
   $: selectedActionRuns = (workspaceActionRuns || []).filter(actionRun => {
@@ -105,8 +106,18 @@
   $: saveButtonDisabled = !name;
 
   onMount(() => {
-    workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
+    if (workspace) {
+      workspaceId = workspace.id;
+    }
   });
+
+  async function getWorkspaceSequences(idOfWorkspace: number) {
+    isLoadingWorkspace = true;
+
+    workspaceSequences = await effects.getWorkspaceSequences(idOfWorkspace, null, false, user);
+
+    isLoadingWorkspace = false;
+  }
 
   async function getCode(fileId: number, user: User | null) {
     if (selectedActionDefinition) {
@@ -133,10 +144,7 @@
   }
 
   function onActionRunClick(id: number) {
-    const workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
-    goto(
-      `${base}/sequencing/actions/runs/${id}${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`,
-    );
+    goto(getActionsUrl(base, workspaceId, id));
   }
 
   async function onCancelAction(id: number) {
@@ -144,25 +152,23 @@
   }
 
   async function runAction(action: ActionDefinition) {
-    const actionRunId = await effects.runAction(action, user);
+    const actionRunId = await effects.runAction(action, workspaceSequences, user);
     if (typeof actionRunId === 'number') {
-      goto(
-        `${base}/sequencing/actions/runs/${actionRunId}${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`,
-      );
+      goto(getActionsUrl(base, workspaceId, actionRunId));
     }
   }
 
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     if (formParameter.schema.type === 'options-single') {
-      const sequences = $userSequences.find(sequence => sequence.id === parseInt(formParameter.value));
+      const sequences = workspaceSequences.find(sequence => sequence.name === formParameter.value);
       formParameter.value = sequences?.name ?? null;
       argumentsMap = getArguments(argumentsMap, formParameter);
     } else if (formParameter.schema.type === 'options-multiple') {
-      const ids: string[] = formParameter.value;
-      let sequenceNames: string[] = [];
-      ids.forEach(id => {
-        const seq = $userSequences.find(sequence => sequence.id === parseInt(id));
+      const values: string[] = formParameter.value;
+      const sequenceNames: string[] = [];
+      values.forEach(value => {
+        const seq = workspaceSequences.find(sequence => sequence.name === value);
         if (seq !== undefined) {
           sequenceNames.push(seq.name);
         }
@@ -372,12 +378,13 @@
                       [],
                       undefined,
                       undefined,
-                      getUserSequencesInWorkspace($userSequences, workspaceId),
+                      getUserSequenceValueSchemaOptions(workspaceSequences, workspaceId),
                       'sequence',
                     )}
                     parameterType="action"
                     hideRightAdornments
                     hideInfo
+                    disabled={isLoadingWorkspace}
                     on:change={onChangeFormParameters}
                     use={[
                       [

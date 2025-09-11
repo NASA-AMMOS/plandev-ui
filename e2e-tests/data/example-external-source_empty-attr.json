@@ -1,0 +1,22 @@
+{
+    "source": {
+        "key": "ExampleExternalSource:example-external-source_no-attr.json",
+        "source_type_name": "Empty External Source",
+        "derivation_group_name": "Empty External Source Default",
+        "valid_at": "2024-001T00:00:00Z",
+        "period": {
+            "start_time": "2022-001T00:00:00Z",
+            "end_time": "2022-002T00:00:00Z"
+        },
+        "attributes": {}
+    },
+    "events": [
+        {
+            "key": "EmptyEvent:1/sc/sc1:1:X/1",
+            "event_type_name": "EmptyEvent",
+            "start_time": "2022-001T12:00:00Z",
+            "duration": "00:00:00",
+            "attributes": {}
+        }
+    ]
+}

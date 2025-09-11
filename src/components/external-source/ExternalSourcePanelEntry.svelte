@@ -40,7 +40,7 @@
       await effects.deleteDerivationGroupForPlan(derivationGroup.name, $plan, user);
     }
     // Delete the derivation group itself
-    await effects.deleteDerivationGroup(derivationGroup, user);
+    await effects.deleteDerivationGroup([derivationGroup], user);
   }
 </script>
 

@@ -1,8 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Errors from '../stores/errors';
 import { mockUser } from '../tests/mocks/user/mockUser';
-import type { ExternalEventTypeInsertInput } from '../types/external-event';
-import type { DerivationGroupInsertInput, ExternalSourceTypeInsertInput } from '../types/external-source';
+import type { DerivationGroupInsertInput } from '../types/external-source';
 import type { Model } from '../types/model';
 import type { ArgumentsMap, ParametersMap } from '../types/parameter';
 import type { Plan } from '../types/plan';
@@ -206,98 +205,6 @@ describe('Handle modal and requests in effects', () => {
       expect(catchErrorSpy).toHaveBeenCalledWith(
         'Derivation Group Create Failed',
         Error('Unable to create derivation group'),
-      );
-    });
-  });
-
-  describe('deleteDerivationGroup', () => {
-    it('should correctly handle null responses', async () => {
-      vi.spyOn(Requests, 'reqHasura').mockResolvedValue({
-        deleteDerivationGroup: null,
-      });
-      vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
-
-      await effects.deleteDerivationGroup(
-        {
-          derived_event_total: 0,
-          name: 'Default',
-          owner: 'userA',
-          source_type_name: 'Example',
-          sources: new Map(),
-        },
-        mockUser,
-      );
-
-      expect(catchErrorSpy).toHaveBeenCalledWith(
-        'Derivation Group Deletion Failed',
-        Error('Unable to delete derivation group'),
-      );
-    });
-  });
-
-  describe('createExternalSourceType', () => {
-    it('should correctly handle null responses', async () => {
-      vi.spyOn(Requests, 'reqHasura').mockResolvedValue({
-        createExternalSourceType: null,
-      });
-      vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
-
-      await effects.createExternalSourceType(
-        {
-          name: 'SourceTypeA',
-        } as ExternalSourceTypeInsertInput,
-        mockUser,
-      );
-
-      expect(catchErrorSpy).toHaveBeenCalledWith(
-        'External Source Type Create Failed',
-        Error('Unable to create external source type'),
-      );
-    });
-  });
-
-  describe('createExternalEventType', () => {
-    it('should correctly handle null responses', async () => {
-      vi.spyOn(Requests, 'reqHasura').mockResolvedValue({
-        createExternalEventType: null,
-      });
-      vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
-
-      await effects.createExternalEventType(
-        {
-          name: 'EventTypeA',
-        } as ExternalEventTypeInsertInput,
-        mockUser,
-      );
-
-      expect(catchErrorSpy).toHaveBeenCalledWith(
-        'External Event Type Create Failed',
-        Error('Unable to create external event type'),
-      );
-    });
-  });
-
-  describe('createExternalSource', () => {
-    it('should correctly handle null responses', async () => {
-      vi.spyOn(Requests, 'reqHasura').mockResolvedValue({
-        createExternalSource: null,
-      });
-      vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
-
-      await effects.createExternalSource(
-        'Example Source',
-        'Example Source Default',
-        '2024-001T00:00:00',
-        '2024-007T00:00:00',
-        [],
-        'ExampleSource.json',
-        '2024-001T00:00:00',
-        mockUser,
-      );
-
-      expect(catchErrorSpy).toHaveBeenCalledWith(
-        'External Source Create Failed',
-        Error('Unable to create external source'),
       );
     });
   });

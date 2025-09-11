@@ -71,7 +71,7 @@ jobs:
       - name: Setup Node (UI)
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
+          node-version: '22.17.1'
           cache: npm
       - name: Extract Aerie backend docker tag from PR body
         # look in the PR body for eg. the string ___REQUIRES_AERIE_PR___=9999, extract the number & save to env var

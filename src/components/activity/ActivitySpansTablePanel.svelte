@@ -7,13 +7,14 @@
   import { debounce } from 'lodash-es';
   import { InvalidDate } from '../../constants/time';
   import { selectActivity } from '../../stores/activities';
+  import { plan } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import { initialSpansLoading, selectedSpanId, spans } from '../../stores/simulation';
   import { view, viewTogglePanel, viewUpdateActivitySpansTable } from '../../stores/views';
   import type { Span } from '../../types/simulation';
   import type { AutoSizeColumns, ViewGridSection, ViewTable } from '../../types/view';
   import { filterEmpty } from '../../utilities/generic';
-  import { formatDate } from '../../utilities/time';
+  import { formatDate, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -82,6 +83,15 @@
       hide: true,
       resizable: true,
       sortable: true,
+      comparator: (valueA: string, valueB: string) => {
+        if ($plan) {
+          return (
+            getUnixEpochTimeFromInterval($plan.start_time, valueA) -
+            getUnixEpochTimeFromInterval($plan.start_time, valueB)
+          );
+        }
+        return valueA.localeCompare(valueB);
+      },
     },
     derived_start_time: {
       filter: 'text',
@@ -172,34 +182,22 @@
     dataGrid?.sizeColumnsToFit();
   }
 
-  function onColumnToggleChange({ detail: { field, isHidden } }: CustomEvent) {
+  function onColumnsChanged({
+    detail: { columns },
+  }: CustomEvent<{ columns: { field: any; isHidden: boolean; name: string }[] }>) {
     const activityColumnStates: ColumnState[] = activitySpansTable?.columnStates ?? [];
-    const existingColumnStateIndex: number = activityColumnStates.findIndex(
-      (columnState: ColumnState) => field === columnState.colId,
-    );
-    if (existingColumnStateIndex >= 0) {
-      viewUpdateActivitySpansTable({
-        columnStates: [
-          ...activityColumnStates.slice(0, existingColumnStateIndex),
-          {
-            ...activityColumnStates[existingColumnStateIndex],
-            hide: isHidden,
-          },
-          ...activityColumnStates.slice(existingColumnStateIndex + 1),
-        ],
-      });
-    } else {
-      viewUpdateActivitySpansTable({
-        columnStates: [
-          ...activityColumnStates,
-          {
-            colId: field,
-            hide: isHidden,
-          },
-        ],
-      });
-    }
+    const newActivityColumnStates = activityColumnStates.map(columnState => {
+      return { ...columnState, hide: columns.find(column => columnState.colId === column.field)?.isHidden ?? false };
+    });
 
+    viewUpdateActivitySpansTable({
+      columnStates: newActivityColumnStates.filter(filterEmpty),
+    });
+
+    requestAutoSize();
+  }
+
+  function requestAutoSize() {
     setTimeout(() => {
       if (autoSizeColumns === 'fit') {
         autoSizeContent();
@@ -273,6 +271,7 @@
         })
         .filter(filterEmpty),
     });
+    requestAutoSize();
   }
 
   function toggleAutoSizeContent() {
@@ -318,7 +317,7 @@
         </button>
       </div>
       <ActivityTableMenu
-        on:toggle-column={onColumnToggleChange}
+        on:columns-changed={onColumnsChanged}
         on:show-hide-all-columns={onShowHideAllColumns}
         columnDefs={derivedColumnDefs}
         columnStates={activitySpansTable?.columnStates}

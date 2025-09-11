@@ -1,5 +1,10 @@
 import Ajv from 'ajv';
-import { ViewDefaultDiscreteOptions, viewSchemaVersion, viewSchemaVersionName } from '../constants/view';
+import {
+  ViewDefaultDiscreteOptions,
+  viewSchemaVersion,
+  viewSchemaVersionName,
+  ViewTimelineResourceRowsLimit,
+} from '../constants/view';
 import jsonSchema from '../schemas';
 import type { ExternalEventType } from '../types/external-event';
 import type { ResourceType } from '../types/simulation';
@@ -57,8 +62,8 @@ export function generateDefaultView(
     timeline.rows.push(externalEventRow);
   }
 
-  // Generate a row for every resource
-  resourceTypes.map(resourceType => {
+  // Generate a Resource row for up to the limit specified by ViewTimelineResourceRowsLimit
+  resourceTypes.slice(0, ViewTimelineResourceRowsLimit).map(resourceType => {
     const { layer, yAxis } = createTimelineResourceLayer(timelines, resourceType);
     const layers = layer ? [layer] : [];
     const resourceRow = createRow(timelines, {

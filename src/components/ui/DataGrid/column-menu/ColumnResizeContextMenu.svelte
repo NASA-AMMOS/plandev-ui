@@ -20,14 +20,14 @@
 </script>
 
 <ContextMenu.Item on:click={onAutoSizeContent} size="sm">
-  <div class="flex items-center">
-    <AlignHorizontalSpaceAround size={14} class="mr-2" />
+  <div class="flex items-center gap-2">
+    <AlignHorizontalSpaceAround size={14} />
     Fit Columns to Content
   </div>
 </ContextMenu.Item>
 <ContextMenu.Item on:click={onAutoSizeSpace} size="sm">
-  <div class="flex items-center">
-    <Expand size={14} class="mr-2" />
+  <div class="flex items-center gap-2">
+    <Expand size={14} />
     Fit Columns to Available Space
   </div>
 </ContextMenu.Item>

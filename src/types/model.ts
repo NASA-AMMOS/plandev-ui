@@ -48,6 +48,7 @@ export type ModelSchema = {
   refresh_activity_type_logs: ModelLog[]; // query returns the last entry as it is the most relevant
   refresh_model_parameter_logs: ModelLog[]; // query returns the last entry as it is the most relevant
   refresh_resource_type_logs: ModelLog[]; // query returns the last entry as it is the most relevant
+  revision: number;
   scheduling_specification_conditions: SchedulingConditionModelSpecification[];
   scheduling_specification_goals: SchedulingGoalModelSpecification[];
   version: string;

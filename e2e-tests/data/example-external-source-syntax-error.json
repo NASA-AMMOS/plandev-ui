@@ -1,7 +1,8 @@
 {
     "source": {
         "key": "ExampleExternalSource:example-external-source.json",
-        "source_type": "Example External Source",
+        "source_type_name": "Example External Source",
+        "derivation_group_name": "Example External Source Default",
         "valid_at": "2024-021T00:00:00Z",
         "period": {
             "start_time": "2024-021T00:00:00Z",
@@ -15,7 +16,7 @@
     "events": [
         {
             "key": "ExampleEvent:1/sc/sc1:1:X/1",
-            "event_type": "ExampleEvent",
+            "event_type_name": "ExampleEvent",
             "start_time": "2024-022T12:05:00Z",
             "duration": "02:10:00",
             "properties": {
@@ -25,7 +26,7 @@
         },
         {
             "key": "ExampleEvent:2/sc/sc2:1:X/1",
-            "event_type: "ExampleEvent",
+            "event_type_name: "ExampleEvent",
             "start_time": "2024-022T13:15:00Z",
             "duration": "02:40:00",
             "properties": {
@@ -35,7 +36,7 @@
         },
         {
             "key": "ExampleEvent:3/sc/sc3:1:X/1",
-            "event_type": "ExampleEvent",
+            "event_type_name": "ExampleEvent",
             "start_time": "2024-022T19:15:00Z",
             "duration": "01:40:00",
             "properties": {
@@ -45,7 +46,7 @@
         },
         {
             "key": "ExampleEvent:4/sc/sc4:1:X/1",
-            "event_type": "ExampleEvent",
+            "event_type_name": "ExampleEvent",
             "start_time": "2024-022T21:25:00Z",
             "duration": "01:30:00",
             "properties": {
