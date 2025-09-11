@@ -15,7 +15,7 @@
   import { InvalidDate } from '../../constants/time';
   import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
   import { activityErrorRollupsMap } from '../../stores/errors';
-  import { maxTimeRange, plan, planReadOnly, viewTimeRange } from '../../stores/plan';
+  import { maxTimeRange, plan, planModelActivityTypes, planReadOnly, viewTimeRange } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import { view, viewTogglePanel, viewUpdateActivityDirectivesTable } from '../../stores/views';
   import type { ActivityDirective } from '../../types/activity';
@@ -33,6 +33,7 @@
   import Panel from '../ui/Panel.svelte';
   import ActivityDirectivesTable from './ActivityDirectivesTable.svelte';
   import ActivityTableMenu from './ActivityTableMenu.svelte';
+  import ArgumentsCellRenderer from './ArgumentsCellRenderer.svelte';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -101,8 +102,20 @@
       hide: true,
       resizable: true,
       sortable: false,
-      valueGetter: (params: ValueGetterParams<ActivityDirective>) => {
-        return JSON.stringify(params?.data?.arguments);
+      autoHeight: true,
+      cellRenderer: (params: ICellRendererParams<ActivityDirective>) => {
+        const div = document.createElement('div');
+        if (!params.data) {
+          return div;
+        }
+        new ArgumentsCellRenderer({
+          target: div,
+          props: {
+            data: params.data,
+            activityTypes: $planModelActivityTypes,
+          },
+        });
+        return div;
       },
     },
     created_at: {

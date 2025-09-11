@@ -21,6 +21,97 @@ import type {
 } from '../types/schema';
 import { isActionValueSchemaSequence } from './actions';
 import { isEmpty } from './generic';
+import { convertUsToDurationString } from './time';
+
+/**
+ * Formats a parameter value according to its schema type for display purposes.
+ * @param value - The parameter value to format
+ * @param schema - The schema defining the parameter type
+ * @returns A formatted string representation of the value
+ */
+export function formatParameterValue(value: any, schema: ValueSchema): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  switch (schema.type) {
+    case 'duration':
+      try {
+        return convertUsToDurationString(value, true);
+      } catch (error) {
+        return String(value);
+      }
+
+    case 'series':
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          return '[]';
+        } else {
+          const isMapStructure = value.every(
+            item =>
+              typeof item === 'object' &&
+              item !== null &&
+              'key' in item &&
+              'value' in item &&
+              Object.keys(item).length === 2,
+          );
+
+          if (isMapStructure) {
+            const itemSchema = (schema as ValueSchemaSeries).items;
+            const mapEntries = value.map(item => {
+              let keySchema: ValueSchema | undefined;
+              let valueSchema: ValueSchema | undefined;
+
+              if (itemSchema && itemSchema.type === 'struct' && itemSchema.items) {
+                keySchema = itemSchema.items['key'];
+                valueSchema = itemSchema.items['value'];
+              } else {
+                keySchema = itemSchema;
+                valueSchema = itemSchema;
+              }
+
+              const formattedKey = keySchema ? formatParameterValue(item.key, keySchema) : String(item.key);
+              const formattedValue = valueSchema ? formatParameterValue(item.value, valueSchema) : String(item.value);
+              return `${formattedKey}: ${formattedValue}`;
+            });
+            return `${mapEntries.join(', ')}`;
+          }
+          const itemSchema = (schema as ValueSchemaSeries).items;
+          if (itemSchema) {
+            const formattedItems = value.map(item => formatParameterValue(item, itemSchema));
+            return `${formattedItems.join(', ')}`;
+          }
+          return `${value.map(String).join(', ')}`;
+        }
+      }
+      return String(value);
+
+    case 'struct':
+      if (typeof value === 'object' && value !== null) {
+        const keys = Object.keys(value);
+        if (keys.length === 0) {
+          return '{}';
+        } else {
+          const formattedFields = keys.map(key => {
+            const fieldValue = value[key];
+            const fieldSchema = (schema as ValueSchemaStruct).items?.[key];
+
+            if (fieldSchema) {
+              const formattedValue = formatParameterValue(fieldValue, fieldSchema);
+              return `${key}: ${formattedValue}`;
+            }
+
+            return `${key}: ${String(fieldValue)}`;
+          });
+          return `${formattedFields.join(',\n')}`;
+        }
+      }
+      return String(value);
+
+    default:
+      return String(value);
+  }
+}
 
 export function isParameterWithOptions(
   schema: ValueSchema | UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple,
