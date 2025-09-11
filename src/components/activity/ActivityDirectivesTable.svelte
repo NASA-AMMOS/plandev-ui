@@ -335,6 +335,13 @@
       <ContextMenu.Item size="sm" on:click={scrollTimelineToActivityDirective}>Scroll to Activity</ContextMenu.Item>
       <ContextMenu.Separator />
     {/if}
+    <PasteActivitiesContextMenu
+      {hasCreatePermission}
+      {plan}
+      planPermissionErrorText={permissionErrorText}
+      on:createActivityDirectives={createActivityDirectives}
+    />
+    <ContextMenu.Separator />
   </svelte:fragment>
 
   <svelte:fragment slot="context-menu-bottom">
@@ -358,14 +365,6 @@
         {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText} with Offset
       </ContextMenu.Item>
     {/if}
-
-    <PasteActivitiesContextMenu
-      {hasCreatePermission}
-      {plan}
-      planPermissionErrorText={permissionErrorText}
-      on:createActivityDirectives={createActivityDirectives}
-    />
-    <ContextMenu.Separator />
   </svelte:fragment>
 </BulkActionDataGrid>
 
