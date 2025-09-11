@@ -81,7 +81,6 @@ import type {
   ActivityDirectiveInsertInput,
   ActivityDirectiveRevision,
   ActivityDirectiveSetInput,
-  ActivityDirectiveValidationStatus,
   ActivityPreset,
   ActivityPresetId,
   ActivityPresetInsertInput,
@@ -1196,7 +1195,7 @@ const effects = {
       const data = await reqHasura<SeqId>(gql.CREATE_EXPANSION_SEQUENCE, { sequence }, user);
       if (data.createExpansionSequence != null) {
         showSuccessToast('Expansion Sequence Created Successfully');
-        logMessage(`Created expansion rule sequence ${seqId} for simulation dataset ${simulationDatasetId}.`);
+        logMessage(`Created expansion rule sequence ${seqId} for simulation ${simulationDatasetId}.`);
         creatingExpansionSequenceStore.set(false);
         return data.createExpansionSequence.seq_id;
       } else {
@@ -3898,6 +3897,7 @@ const effects = {
       const { updatedWorkspace } = data;
 
       if (updatedWorkspace != null) {
+        logMessage(`Updated workspace ${workspace.name} (${workspace.id}).`);
         showSuccessToast('Workspace Updated Successfully');
         return updatedWorkspace;
       } else {
@@ -3919,10 +3919,16 @@ const effects = {
         throwPermissionError('expand this plan');
       }
 
+      const startTime = performance.now();
       const data = await reqHasura<{ id: number }>(gql.EXPAND, { expansionSetId, simulationDatasetId }, user);
       if (data.expand != null) {
         planExpansionStatusStore.set(Status.Complete);
         showSuccessToast('Plan Expanded Successfully');
+        logMessage(
+          `Expanded plan with expansion set ${expansionSetId} for simulation ${simulationDatasetId}.`,
+          '',
+          performance.now() - startTime,
+        );
       } else {
         throw Error('Unable to expand plan');
       }
@@ -3940,6 +3946,7 @@ const effects = {
         throwPermissionError('expand a sequence template');
       }
 
+      const startTime = performance.now();
       const data = await reqHasura<{ success: boolean }>(
         gql.EXPAND_TEMPLATES,
         {
@@ -3954,7 +3961,12 @@ const effects = {
 
       if (expandTemplates !== null) {
         sequenceTemplateExpansionStatus.set(Status.Complete);
-        showSuccessToast('Sequence Templating Successfully');
+        showSuccessToast('Sequence Templating Succeeded');
+        logMessage(
+          `Expanded sequence templates for sequences ${seqIds.join(', ')} for simulation ${simulationDatasetId}.`,
+          '',
+          performance.now() - startTime,
+        );
       } else {
         throw Error('Sequence Templating Failed');
       }
@@ -3972,6 +3984,7 @@ const effects = {
       const data = await reqHasura<ActionRun>(query, { actionRunId }, user);
       const { actionRun } = data;
       if (actionRun != null) {
+        logMessage(`Retrieved action run ${actionRunId}`);
         return actionRun;
       } else {
         throw Error('Unable to retrieve activity run');
@@ -3984,11 +3997,17 @@ const effects = {
 
   async getActivitiesForPlan(planId: number, user: User | null): Promise<ActivityDirectiveDB[]> {
     try {
+      const startTime = performance.now();
       const query = convertToQuery(gql.SUB_ACTIVITY_DIRECTIVES);
       const data = await reqHasura<ActivityDirectiveDB[]>(query, { planId }, user);
 
       const { activity_directives: activityDirectives } = data;
       if (activityDirectives != null) {
+        logMessage(
+          `Retrieved ${activityDirectives.length} activity directive${pluralize(activityDirectives.length)} for plan ${planId}`,
+          '',
+          performance.now() - startTime,
+        );
         return activityDirectives;
       } else {
         throw Error('Unable to retrieve activities for plan');
@@ -4032,6 +4051,7 @@ const effects = {
           }
           return revision; // fallback if sourcePlan is undefined
         });
+        logMessage(`Retrieved activity directive changelog for activity ${activityId}.`);
         return updatedRevisions;
       } else {
         throw Error('Unable to retrieve activity directive changelog');
@@ -4042,36 +4062,18 @@ const effects = {
     }
   },
 
-  async getActivityDirectiveValidations(
-    planId: number,
-    user: User | null,
-  ): Promise<ActivityDirectiveValidationStatus[]> {
-    try {
-      const data = await reqHasura<ActivityDirectiveValidationStatus[]>(
-        gql.SUB_ACTIVITY_DIRECTIVE_VALIDATIONS,
-        { planId },
-        user,
-      );
-
-      const { activity_directive_validations: activityDirectiveValidations } = data;
-
-      if (activityDirectiveValidations != null) {
-        return activityDirectiveValidations;
-      } else {
-        throw Error('Unable to retrieve activity directive validations');
-      }
-    } catch (e) {
-      catchError(e as Error);
-      return [];
-    }
-  },
-
   async getActivityTypes(modelId: number, user: User | null): Promise<ActivityType[]> {
     try {
+      const startTime = performance.now();
       const query = convertToQuery(gql.SUB_ACTIVITY_TYPES);
       const data = await reqHasura<ActivityType[]>(query, { modelId }, user);
       const { activity_type: activityTypes } = data;
       if (activityTypes != null) {
+        logMessage(
+          `Retrieved ${activityTypes.length} activity type${pluralize(activityTypes.length)} for model ${modelId}.`,
+          '',
+          performance.now() - startTime,
+        );
         return activityTypes;
       } else {
         throw Error('Unable to retrieve activity types');
@@ -4175,7 +4177,7 @@ const effects = {
     try {
       const startTime = performance.now();
       const data = await reqHasura<any>(gql.GET_EVENTS, { datasetId }, user, signal);
-      logMessage(`Loaded simulation events for simulation dataset ${datasetId}.`, '', performance.now() - startTime);
+      logMessage(`Retrieved simulation events for simulation ${datasetId}.`, '', performance.now() - startTime);
       const { topic: topics, event: events } = data;
       if (topics === null || events === null) {
         throw Error('Unable to get events');
@@ -4772,9 +4774,7 @@ const effects = {
     user: User | null,
     signal: AbortSignal | undefined = undefined,
   ): Promise<Record<string, Profile[] | null>> {
-    const startTime = performance.now();
     const data = reqHasura<Profile[]>(gql.GET_PROFILE, { datasetId, name }, user, signal);
-    logMessage(`Loaded profile ${name} for dataset ${datasetId}.`, '', performance.now() - startTime);
     return data;
   },
 
@@ -4782,9 +4782,13 @@ const effects = {
     try {
       const startTime = performance.now();
       const data = await reqHasura<ResourceType[]>(gql.GET_RESOURCE_TYPES, { limit, model_id: modelId }, user);
-      logMessage(`Loaded resource types for model ${modelId}.`, '', performance.now() - startTime);
       const { resource_types: resourceTypes } = data;
       if (resourceTypes != null) {
+        logMessage(
+          `Retrieved ${typeof limit === 'number' ? 'initial set of ' : 'all'} ${resourceTypes.length} resource type${pluralize(resourceTypes.length)} for model ${modelId}.`,
+          '',
+          performance.now() - startTime,
+        );
         return resourceTypes;
       } else {
         throw Error('Unable to retrieve resource types');
@@ -5008,9 +5012,13 @@ const effects = {
     try {
       const startTime = performance.now();
       const data = await reqHasura<SpanDB[]>(gql.GET_SPANS, { datasetId }, user, signal);
-      logMessage(`Loaded activities for simulation ${datasetId}.`, '', performance.now() - startTime);
       const { span: spans } = data;
       if (spans != null) {
+        logMessage(
+          `Retrieved ${spans.length} simulated activit${spans.length === 1 ? 'y' : 'ies'} for simulation ${datasetId}.`,
+          '',
+          performance.now() - startTime,
+        );
         return spans.map(span => {
           const durationMs = getIntervalInMs(span.duration);
           const startMs = getUnixEpochTimeFromInterval(planStartTimeYmd, span.start_offset);

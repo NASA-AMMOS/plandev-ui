@@ -10,7 +10,7 @@
   import { ViewDefaultDiscreteOptions } from '../../constants/view';
   import { Status } from '../../enums/status';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
-  import { catchError } from '../../stores/errors';
+  import { catchError, logMessage } from '../../stores/errors';
   import {
     derivationGroupVisibilityMap,
     externalSources,
@@ -302,10 +302,16 @@
           let error = '';
           let aborted = false;
           try {
+            const startTime = performance.now();
             const response = await effects.getResource(simulationDatasetId, name, user, controller.signal);
             const { profile } = response;
             if (profile && profile.length === 1) {
               resource = sampleProfiles([profile[0]], startTimeYmd)[0];
+              logMessage(
+                `Retrieved profile ${name} (${profile[0].profile_segments.length} segment${pluralize(profile[0].profile_segments.length)}) for simulation ${simulationDatasetId}.`,
+                '',
+                performance.now() - startTime,
+              );
             } else {
               throw new Error('Profile not Found');
             }
