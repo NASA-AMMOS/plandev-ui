@@ -282,67 +282,131 @@ describe('getAllSpanChildrenIds', () => {
   });
 });
 
-const plan: Plan = {
-  child_plans: [],
-  collaborators: [],
-  constraint_specification: [],
-  created_at: '2006-07-11T00:00:00',
-  duration: '1y',
-  end_time_doy: '2006-T194:00:00',
-  id: 1,
-  is_locked: false,
-  model: {
+function getTestPlan(): Plan {
+  return {
+    child_plans: [],
+    collaborators: [],
     constraint_specification: [],
     created_at: '2006-07-11T00:00:00',
-    default_view_id: 0,
+    duration: '1y',
+    end_time_doy: '2006-T194:00:00',
     id: 1,
-    jar_id: 123,
-    mission: 'Test',
-    name: 'Test Model',
+    is_locked: false,
+    model: {
+      constraint_specification: [],
+      created_at: '2006-07-11T00:00:00',
+      default_view_id: 0,
+      id: 1,
+      jar_id: 123,
+      mission: 'Test',
+      name: 'Test Model',
+      owner: 'test',
+      parameters: { parameters: {} },
+      plans: [],
+      refresh_activity_type_logs: [],
+      refresh_model_parameter_logs: [],
+      refresh_resource_type_logs: [],
+      scheduling_specification_conditions: [],
+      scheduling_specification_goals: [],
+      version: '1.0.0',
+      view: null,
+    },
+    model_id: 1,
+    name: 'Foo plan',
     owner: 'test',
-    parameters: { parameters: {} },
-    plans: [],
-    refresh_activity_type_logs: [],
-    refresh_model_parameter_logs: [],
-    refresh_resource_type_logs: [],
-    scheduling_specification_conditions: [],
-    scheduling_specification_goals: [],
-    version: '1.0.0',
-    view: null,
-  },
-  model_id: 1,
-  name: 'Foo plan',
-  owner: 'test',
-  parent_plan: null,
-  revision: 1,
-  scheduling_specification: null,
-  simulations: [
-    {
-      id: 3,
-      simulation_datasets: [
-        {
-          id: 1,
-          plan_revision: 1,
-        },
-      ],
-    },
-  ],
-  start_time: '2006-07-11T00:00:00+00:00',
-  start_time_doy: '2006-192T00:00:00',
-  tags: [
-    {
-      tag: {
-        color: '#fff',
-        created_at: '2024-01-01T00:00:00',
-        id: 0,
-        name: 'test tag',
-        owner: 'test',
+    parent_plan: null,
+    revision: 1,
+    scheduling_specification: null,
+    simulations: [
+      {
+        id: 3,
+        simulation_datasets: [
+          {
+            id: 1,
+            plan_revision: 1,
+          },
+        ],
       },
+    ],
+    start_time: '2006-07-11T00:00:00+00:00',
+    start_time_doy: '2006-192T00:00:00',
+    tags: [
+      {
+        tag: {
+          color: '#fff',
+          created_at: '2024-01-01T00:00:00',
+          id: 0,
+          name: 'test tag',
+          owner: 'test',
+        },
+      },
+    ],
+    updated_at: '2030-01-01T00:00:00',
+    updated_by: 'test',
+  };
+}
+
+function getTestActivityDirectivesDB(): ActivityDirectiveDB[] {
+  return [
+    {
+      anchor_id: null,
+      anchored_to_start: true,
+      applied_preset: null,
+      arguments: {},
+      created_at: '2006-07-11T00:00:00',
+      created_by: 'admin',
+      id: 1,
+      last_modified_arguments_at: '2006-07-11T00:00:00',
+      last_modified_at: '2006-07-11T00:00:00',
+      last_modified_by: 'admin',
+      metadata: {},
+      name: 'Activity 1',
+      plan_id: 1,
+      source_scheduling_goal_id: null,
+      start_offset: '10:00:00',
+      tags: [],
+      type: 'foo',
     },
-  ],
-  updated_at: '2030-01-01T00:00:00',
-  updated_by: 'test',
-};
+    {
+      anchor_id: 1,
+      anchored_to_start: false,
+      applied_preset: null,
+      arguments: {},
+      created_at: '2006-07-11T00:00:00',
+      created_by: 'admin',
+      id: 2,
+      last_modified_arguments_at: '2006-07-11T00:00:00',
+      last_modified_at: '2006-07-11T00:00:00',
+      last_modified_by: 'admin',
+      metadata: {},
+      name: 'Activity 2',
+      plan_id: 1,
+      source_scheduling_goal_id: null,
+      start_offset: '09:00:00',
+      tags: [],
+      type: 'foo',
+    },
+    {
+      anchor_id: null,
+      anchored_to_start: false,
+      applied_preset: null,
+      arguments: {},
+      created_at: '2006-07-11T00:00:00',
+      created_by: 'admin',
+      id: 3,
+      last_modified_arguments_at: '2006-07-11T00:00:00',
+      last_modified_at: '2006-07-11T00:00:00',
+      last_modified_by: 'admin',
+      metadata: {},
+      name: 'Activity 3',
+      plan_id: 1,
+      source_scheduling_goal_id: null,
+      start_offset: '08:00:00',
+      tags: [],
+      type: 'foo',
+    },
+  ];
+}
 
 describe('addAbsoluteTimeToRevision', () => {
   const activityDirectiveDB = {
@@ -386,7 +450,7 @@ describe('addAbsoluteTimeToRevision', () => {
     const newRevision = addAbsoluteTimeToRevision(
       activityDirectiveRevision,
       1,
-      plan,
+      getTestPlan(),
       activitiesDirectivesDB,
       spansMap,
       spanUtilityMaps,
@@ -395,72 +459,13 @@ describe('addAbsoluteTimeToRevision', () => {
   });
 });
 
-const activityDirectivesDB: ActivityDirectiveDB[] = [
-  {
-    anchor_id: null,
-    anchored_to_start: true,
-    applied_preset: null,
-    arguments: {},
-    created_at: '2006-07-11T00:00:00',
-    created_by: 'admin',
-    id: 1,
-    last_modified_arguments_at: '2006-07-11T00:00:00',
-    last_modified_at: '2006-07-11T00:00:00',
-    last_modified_by: 'admin',
-    metadata: {},
-    name: 'Activity 1',
-    plan_id: 1,
-    source_scheduling_goal_id: null,
-    start_offset: '10:00:00',
-    tags: [],
-    type: 'foo',
-  },
-  {
-    anchor_id: 1,
-    anchored_to_start: false,
-    applied_preset: null,
-    arguments: {},
-    created_at: '2006-07-11T00:00:00',
-    created_by: 'admin',
-    id: 2,
-    last_modified_arguments_at: '2006-07-11T00:00:00',
-    last_modified_at: '2006-07-11T00:00:00',
-    last_modified_by: 'admin',
-    metadata: {},
-    name: 'Activity 2',
-    plan_id: 1,
-    source_scheduling_goal_id: null,
-    start_offset: '09:00:00',
-    tags: [],
-    type: 'foo',
-  },
-  {
-    anchor_id: null,
-    anchored_to_start: false,
-    applied_preset: null,
-    arguments: {},
-    created_at: '2006-07-11T00:00:00',
-    created_by: 'admin',
-    id: 3,
-    last_modified_arguments_at: '2006-07-11T00:00:00',
-    last_modified_at: '2006-07-11T00:00:00',
-    last_modified_by: 'admin',
-    metadata: {},
-    name: 'Activity 3',
-    plan_id: 1,
-    source_scheduling_goal_id: null,
-    start_offset: '08:00:00',
-    tags: [],
-    type: 'foo',
-  },
-];
-
 const arrayOfStartTimeMs = [1152612000000, 1152644400000, 1152604800000];
 
-const activityDirectives: ActivityDirective[] = activityDirectivesDB.map((directive, i) => ({
-  ...directive,
-  start_time_ms: arrayOfStartTimeMs[i],
-}));
+const activityDirectives: ActivityDirective[] = getTestActivityDirectivesDB()
+  .map((directive, i) => ({
+    ...directive,
+    start_time_ms: arrayOfStartTimeMs[i],
+  }));
 
 describe('updateAnchorStartOffset', () => {
   const spans = [
@@ -523,9 +528,9 @@ describe('updateAnchorStartOffset', () => {
     spanIdToDirectiveIdMap,
   };
 
-  const activityDirectivesMap = computeActivityDirectivesMap(activityDirectivesDB, plan, spans, spanUtilityMaps);
+  const activityDirectivesMap = computeActivityDirectivesMap(getTestActivityDirectivesDB(), getTestPlan(), spans, spanUtilityMaps);
 
-  const planStartTimeMs = getUnixEpochTime(plan.start_time_doy);
+  const planStartTimeMs = getUnixEpochTime(getTestPlan().start_time_doy);
   console.log('Plan start time', planStartTimeMs);
 
   test('Update start offset', () => {
@@ -604,11 +609,11 @@ describe('packActivityDirectivesInPlan', () => {
 
   test('pack all the activities to the left', () => {
     const leftPacked = packActivityDirectivesInPlan(
-      plan,
+      getTestPlan(),
       activityDirectives,
       'LEFT',
       0,
-      activityDirectivesDB,
+      getTestActivityDirectivesDB(),
       spans,
       spanUtilityMaps,
     );
@@ -626,11 +631,11 @@ describe('packActivityDirectivesInPlan', () => {
 
   test('pack all the activities to the left with offset', () => {
     const leftPacked = packActivityDirectivesInPlan(
-      plan,
+      getTestPlan(),
       activityDirectives,
       'LEFT',
       3600000000, // 1 hour
-      activityDirectivesDB,
+      getTestActivityDirectivesDB(),
       spans,
       spanUtilityMaps,
     );
@@ -648,11 +653,11 @@ describe('packActivityDirectivesInPlan', () => {
 
   test('pack all the activities to the right', () => {
     const rightPacked = packActivityDirectivesInPlan(
-      plan,
+      getTestPlan(),
       activityDirectives,
       'RIGHT',
       0,
-      activityDirectivesDB,
+      getTestActivityDirectivesDB(),
       spans,
       spanUtilityMaps,
     );
