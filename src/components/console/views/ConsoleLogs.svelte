@@ -32,8 +32,20 @@
   $: filteredLogs = !visible
     ? []
     : logs.filter(log => {
-        if (log.message && log.message.toLowerCase().indexOf($filterStore.toLowerCase()) < 0) {
-          return false;
+        if ($filterStore) {
+          const matchesMessage = log.message && log.message.toLowerCase().indexOf($filterStore.toLowerCase()) > -1;
+          const matchesType = log.type.toLowerCase().indexOf($filterStore.toLowerCase()) > -1;
+          const matchesTrace = log.trace && log.trace.toLowerCase().indexOf($filterStore.toLowerCase()) > -1;
+          let stringifiedErrorData = log.data
+            ? typeof log.data === 'object'
+              ? JSON.stringify(log.data)
+              : log.data.toString()
+            : '';
+          const matchesData =
+            stringifiedErrorData && stringifiedErrorData.toLowerCase().indexOf($filterStore.toLowerCase()) > -1;
+          if (!matchesMessage && !matchesType && !matchesTrace && !matchesData) {
+            return false;
+          }
         }
 
         if (logLevels) {
