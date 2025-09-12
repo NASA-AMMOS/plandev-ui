@@ -3,8 +3,7 @@ import type {
   ActivityDirective,
   ActivityDirectiveDB,
   ActivityDirectiveRevision,
-  ActivityDirectivesMap,
-  ActivityType,
+  ActivityDirectivesMap
 } from '../types/activity';
 import type { ActivityMetadata, ActivityMetadataKey, ActivityMetadataValue } from '../types/activity-metadata';
 import type { Plan } from '../types/plan';

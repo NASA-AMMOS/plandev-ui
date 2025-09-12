@@ -543,11 +543,11 @@ describe('updateAnchorStartOffset', () => {
 
     newStartTimes.set(2, 43_200_000_000); //12 hours from the plan
     let startOffset = updateAnchorStartOffset(1, 2, planStartTimeMs, activityDirectivesMap, newStartTimes);
-    expect(startOffset).toBe('02:00:00.0');
+    expect(startOffset).toBe('02:00:00.000000');
 
     newStartTimes.set(1, 43_200_000_000);
     startOffset = updateAnchorStartOffset(1, 2, planStartTimeMs, activityDirectivesMap, newStartTimes);
-    expect(startOffset).toBe('00:00:00.0');
+    expect(startOffset).toBe('00:00:00.000000');
   });
 });
 
@@ -628,9 +628,9 @@ describe('packActivityDirectivesInPlan', () => {
       expect(leftPacked[0].id).toEqual(3);
       expect(leftPacked[1].id).toEqual(1);
       expect(leftPacked[2].id).toEqual(2);
-      expect(leftPacked[0].start_offset).toEqual('08:00:00.0');
-      expect(leftPacked[1].start_offset).toEqual('09:00:00.0');
-      expect(leftPacked[2].start_offset).toEqual('03:00:00.0'); // anchored to previous activity
+      expect(leftPacked[0].start_offset).toEqual('08:00:00.000000');
+      expect(leftPacked[1].start_offset).toEqual('09:00:00.000000');
+      expect(leftPacked[2].start_offset).toEqual('03:00:00.000000'); // anchored to previous activity
     }
   });
 
@@ -650,9 +650,9 @@ describe('packActivityDirectivesInPlan', () => {
       expect(leftPacked[0].id).toEqual(3);
       expect(leftPacked[1].id).toEqual(1);
       expect(leftPacked[2].id).toEqual(2);
-      expect(leftPacked[0].start_offset).toEqual('08:00:00.0');
-      expect(leftPacked[1].start_offset).toEqual('10:00:00.0');
-      expect(leftPacked[2].start_offset).toEqual('04:00:00.0'); // anchored to previous activity
+      expect(leftPacked[0].start_offset).toEqual('08:00:00.000000');
+      expect(leftPacked[1].start_offset).toEqual('10:00:00.000000');
+      expect(leftPacked[2].start_offset).toEqual('04:00:00.000000'); // anchored to previous activity
     }
   });
 
@@ -672,9 +672,9 @@ describe('packActivityDirectivesInPlan', () => {
       expect(rightPacked[0].id).toBe(2);
       expect(rightPacked[1].id).toEqual(1);
       expect(rightPacked[2].id).toEqual(3);
-      expect(rightPacked[0].start_offset).toEqual('03:00:00.0'); //anchored to activity below
-      expect(rightPacked[1].start_offset).toEqual('16:00:00.0');
-      expect(rightPacked[2].start_offset).toEqual('15:00:00.0');
+      expect(rightPacked[0].start_offset).toEqual('03:00:00.000000'); //anchored to activity below
+      expect(rightPacked[1].start_offset).toEqual('16:00:00.000000');
+      expect(rightPacked[2].start_offset).toEqual('15:00:00.000000');
     }
   });
 });
