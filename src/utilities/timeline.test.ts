@@ -514,18 +514,22 @@ test('duplicateRow', () => {
 
 test('filterResourcesByLayer', () => {
   const resourceA: ResourceType = {
-    description: 'This is resource A',
     name: 'resourceA',
     schema: {
       items: { initial: { type: 'real' }, rate: { type: 'real' } },
+      metadata: {
+        description: { value: 'This is resource A' },
+      },
       type: 'struct',
     },
   };
   const resourceB: ResourceType = {
-    description: 'This is resource B',
     name: 'resourceB',
     schema: {
       items: { initial: { type: 'real' }, rate: { type: 'real' } },
+      metadata: {
+        description: { value: 'This is resource B' },
+      },
       type: 'struct',
     },
   };

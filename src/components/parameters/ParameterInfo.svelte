@@ -27,7 +27,7 @@
   $: if (formParameter) {
     source = formParameter.valueSource;
     unit = formParameter.schema?.metadata?.unit?.value;
-    description = formParameter.description;
+    description = formParameter.schema?.metadata?.description?.value;
     externalEvent = formParameter.externalEvent ?? false;
     required = formParameter.required ?? true;
   }

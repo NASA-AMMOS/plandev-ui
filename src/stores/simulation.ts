@@ -106,8 +106,8 @@ export const allResourceTypes: Readable<ResourceType[]> = derived(
   [resourceTypes, externalResources],
   ([$resourceTypes, $externalResources]) => {
     return $resourceTypes
-      .map(({ name, schema, description }) => ({ description, name, schema }))
-      .concat($externalResources.map(({ name, schema }) => ({ description: undefined, name, schema })));
+      .map(({ name, schema }) => ({ name, schema }))
+      .concat($externalResources.map(({ name, schema }) => ({ name, schema })));
   },
 );
 
