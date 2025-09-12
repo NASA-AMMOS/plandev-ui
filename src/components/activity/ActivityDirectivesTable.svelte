@@ -14,11 +14,7 @@
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/errors';
   import type { Plan } from '../../types/plan';
-  import {
-    copyActivityDirectivesToClipboard,
-    findTypes,
-    packActivityDirectivesInPlan,
-  } from '../../utilities/activities';
+  import { copyActivityDirectivesToClipboard, packActivityDirectivesInPlan } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
   import { convertDurationStringToUs } from '../../utilities/time';
@@ -195,7 +191,8 @@
   async function updateActivities(updatedActivities: ActivityDirective[] | null) {
     if (plan != null && Array.isArray(updatedActivities)) {
       for (const activity of updatedActivities) {
-        const activityType = findTypes(activity.type, get(planModelActivityTypes) ?? []);
+        const activityTypes = $planModelActivityTypes ?? [];
+        const activityType = activityTypes.find(type => type.name === activity.type);
         await effects.updateActivityDirective(
           plan,
           activity.id,

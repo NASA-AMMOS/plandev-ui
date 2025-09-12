@@ -4,8 +4,9 @@ import { InvalidDate } from '../constants/time';
 import { TimeTypes } from '../enums/time';
 import type { ActivityDirectiveId, ActivityDirectivesMap } from '../types/activity';
 import type { PluginTime } from '../types/plugin';
-import type { SpanUtilityMaps, SpansMap } from '../types/simulation';
+import type { SpansMap, SpanUtilityMaps } from '../types/simulation';
 import type { DurationTimeComponents, ParsedDoyString, ParsedDurationString, ParsedYmdString } from '../types/time';
+import { padNumber } from './text';
 
 const ABSOLUTE_TIME = /^(\d{4})-(\d{3})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?$/;
 const RELATIVE_TIME =
@@ -946,20 +947,18 @@ export function formatMS(ms: number | null): string {
   return '–';
 }
 
-/*
- * Converts a number to a string and pads it with leading zeroes so that its total length is at least len characters
- */
-export function padNumber(num: number, len: number): string {
-  return num.toString().padStart(len, '0');
-}
-
 /**
  * Converts microseconds to a string of the form "HH:mm:ss.SSSSSS".
  * Example: 5025678901 => "01:23:45.678901"
+ * Rounds to nearest microsecond if not an integer
+ * Returns "INVALID" for non-finite numbers
  */
 export function usToOffset(us: number): string {
+  if (!isFinite(us)) {
+    return 'INVALID';
+  }
   const isNegative = us < 0;
-  us = Math.abs(us);
+  us = Math.round(Math.abs(us));
 
   const hours = Math.floor(us / 3_600_000_000);
   us %= 3_600_000_000;
@@ -967,8 +966,7 @@ export function usToOffset(us: number): string {
   us %= 60_000_000;
   const seconds = Math.floor(us / 1_000_000);
   us %= 1_000_000;
-  const micro = us;
 
-  const result = `${padNumber(hours, 2)}:${padNumber(minutes, 2)}:${padNumber(seconds, 2)}.${micro.toString()}`;
+  const result = `${padNumber(hours, 2)}:${padNumber(minutes, 2)}:${padNumber(seconds, 2)}.${padNumber(us, 6)}`;
   return isNegative ? `-${result}` : result;
 }

@@ -325,15 +325,6 @@ export function addAbsoluteTimeToRevision(
   return activityDirectiveRevision;
 }
 
-export function findTypes(type: string, activityTypes: ActivityType[]): ActivityType | undefined {
-  for (let idx = 0; idx < activityTypes.length; idx++) {
-    if (activityTypes[idx].name === type) {
-      return activityTypes[idx];
-    }
-  }
-  return undefined;
-}
-
 export function updateAnchorStartOffset(
   anchorId: number,
   activityId: number,
