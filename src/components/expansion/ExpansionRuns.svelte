@@ -6,6 +6,7 @@
   import { seqJsonToSeqn } from '@nasa-jpl/aerie-sequence-languages';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { expansionRunsColumns } from '../../stores/expansion';
+  import { sequenceLanguages } from '../../stores/sequence-adaptation';
   import {
     channelDictionaries,
     commandDictionaries,
@@ -35,7 +36,6 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import ExpandedSequencesDownloadButton from './ExpandedSequencesDownloadButton.svelte';
-  import { sequenceAdaptation } from '../../stores/sequence-adaptation';
 
   export let expansionRuns: ExpansionRun[] = [];
   export let user: User | null;
@@ -278,6 +278,6 @@
     {parameterDictionaries}
     userSequenceEditorColumns={$userSequenceEditorColumns}
     userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
-    newSequenceAdaptation={$sequenceAdaptation}
+    sequenceLanguages={$sequenceLanguages}
   />
 </CssGrid>

@@ -6,15 +6,14 @@
   import { lintGutter, openLintPanel } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate, keymap } from '@codemirror/view';
-  import type { SyntaxNode, Tree } from '@lezer/common';
+  import type { SyntaxNode } from '@lezer/common';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type {
     CommandInfoMapper,
-    LibrarySequence,
-    LibrarySequenceMap,
-    NewAdaptationInterface,
-    OutputLanguageAdaptation,
+    LibrarySequenceSignature,
+    OutputLanguage,
     PhoenixContext,
+    PhoenixLanguages,
   } from '@nasa-jpl/aerie-sequence-languages';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
@@ -44,11 +43,11 @@
   export let channelDictionary: ChannelDictionary | null = null;
   export let commandDictionary: CommandDictionary | null = null;
   export let includeActions: boolean = false;
-  export let librarySequences: LibrarySequence[] = [];
+  export let librarySequences: LibrarySequenceSignature[] = [];
   export let parameterDictionaries: ParameterDictionary[] = [];
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
-  export let newSequenceAdaptation: NewAdaptationInterface;
+  export let sequenceLanguages: PhoenixLanguages;
   export let sequenceName: string = '';
   export let sequenceDefinition: string = ''; // TODO what on earth does this do
   export let sequenceOutput: string = '';
@@ -73,20 +72,18 @@
   let editorOutputView: EditorView;
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
-  let librarySequenceMap: LibrarySequenceMap = {};
   let phoenixContext: PhoenixContext;
   let menu: Menu;
   let selectedNode: SyntaxNode | null;
-  let selectedOutputFormat: OutputLanguageAdaptation | undefined;
+  let selectedOutputFormat: OutputLanguage | undefined;
   let showOutputs: boolean = true;
   let previousShowOutputs: boolean = showOutputs;
   let toggleSeqJsonPreview: boolean = false;
   let updatedSequenceDefinition: string = sequenceDefinition;
   let isSequenceDefinitionUpdated: boolean = false;
-  let currentTree: Tree;
   let commandInfoMapper: CommandInfoMapper;
 
-  $: commandInfoMapper = newSequenceAdaptation.input.commandInfoMapper;
+  $: commandInfoMapper = sequenceLanguages.input.commandInfoMapper;
 
   $: if (editorSequenceView) {
     // insert sequence
@@ -99,12 +96,11 @@
     ? userSequenceEditorColumnsWithFormBuilder
     : userSequenceEditorColumns;
 
-  $: librarySequenceMap = Object.fromEntries(librarySequences.map(seq => [seq.name, seq]));
   $: phoenixContext = {
     channelDictionary,
     commandDictionary,
+    librarySequences,
     parameterDictionaries,
-    librarySequenceMap,
   };
   $: {
     if (!commandDictionary) {
@@ -118,7 +114,7 @@
     if (editorSequenceView) {
       editorSequenceView.dispatch({
         effects: [
-          compartmentAdaptation.reconfigure((newSequenceAdaptation.input.editorExtension ?? (_ => []))(phoenixContext)),
+          compartmentAdaptation.reconfigure((sequenceLanguages.input.editorExtension ?? (_ => []))(phoenixContext)),
         ],
       });
     }
@@ -129,7 +125,7 @@
 
   $: {
     previousShowOutputs = showOutputs;
-    showOutputs = newSequenceAdaptation.outputs.length > 0;
+    showOutputs = sequenceLanguages.outputs.length > 0;
   }
   $: if (showOutputs) {
     editorHeights = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
@@ -137,8 +133,8 @@
     editorHeights = '1fr 3px';
   }
 
-  $: if (newSequenceAdaptation.outputs.length > 0) {
-    selectedOutputFormat = newSequenceAdaptation.outputs[0];
+  $: if (sequenceLanguages.outputs.length > 0) {
+    selectedOutputFormat = sequenceLanguages.outputs[0];
   }
 
   $: if (showOutputs && previousShowOutputs !== showOutputs && editorOutputDiv) {
@@ -167,7 +163,7 @@
   async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
     const sequence = viewUpdate.state.doc.toString();
     disableCopyAndExport = sequence === '';
-    const tree = syntaxTree(viewUpdate.state);
+    // const tree = syntaxTree(viewUpdate.state); // Do we need this??
     let output = await selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
 
     editorOutputView.dispatch({ changes: { from: 0, insert: output, to: editorOutputView.state.doc.length } });
@@ -188,12 +184,11 @@
     // minimize triggering selected command view
     if (selectedNode !== updatedSelectionNode) {
       selectedNode = updatedSelectionNode;
-      currentTree = tree;
     }
   }
 
-  function downloadOutputFormat(outputFormat: OutputLanguageAdaptation): void {
-    const fileExtension = sequenceName.replace(newSequenceAdaptation.input.fileExtension, outputFormat.fileExtension);
+  function downloadOutputFormat(outputLanguage: OutputLanguage): void {
+    const fileExtension = sequenceName.replace(sequenceLanguages.input.fileExtension, outputLanguage.fileExtension);
     downloadBlob(new Blob([editorOutputView.state.doc.toString()], { type: 'text/plain' }), fileExtension);
   }
 
@@ -213,9 +208,9 @@
   async function copyInputFormatToClipboard(): Promise<void> {
     try {
       await navigator.clipboard.writeText(editorSequenceView.state.doc.toString());
-      showSuccessToast(`${newSequenceAdaptation.input.name} copied to clipboard`);
+      showSuccessToast(`${sequenceLanguages.input.name} copied to clipboard`);
     } catch {
-      showFailureToast(`Error copying ${newSequenceAdaptation.input.name} to clipboard`);
+      showFailureToast(`Error copying ${sequenceLanguages.input.name} to clipboard`);
     }
   }
 
@@ -228,9 +223,9 @@
   }
 
   function formatDocument() {
-    let format = newSequenceAdaptation.input.format;
+    let format = sequenceLanguages.input.format;
     if (format !== undefined) {
-      format(editorSequenceView);
+      format(editorSequenceView, phoenixContext);
     }
   }
 
@@ -258,7 +253,7 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
-        compartmentAdaptation.of((newSequenceAdaptation.input.editorExtension ?? (_ => []))(phoenixContext)), // TODO improve, probably
+        compartmentAdaptation.of((sequenceLanguages.input.editorExtension ?? (_ => []))(phoenixContext)), // TODO improve, probably
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
@@ -373,7 +368,7 @@
               </button>
 
               <Menu bind:this={menu}>
-                {#each newSequenceAdaptation.outputs as outputFormatItem}
+                {#each sequenceLanguages.outputs as outputFormatItem}
                   <div
                     use:tooltip={{
                       content: `Copy sequence contents as ${outputFormatItem?.name} to clipboard`,
@@ -432,11 +427,11 @@
           <SectionTitle>{selectedOutputFormat?.name} (Read-only)</SectionTitle>
 
           <div class="right">
-            {#if newSequenceAdaptation.outputs.length > 0}
+            {#if sequenceLanguages.outputs.length > 0}
               <div class="output-format">
-                <label class="text-xs text-muted-foreground" for="outputFormat">Output Format</label>
+                <label class="text-muted-foreground text-xs" for="outputFormat">Output Format</label>
                 <select bind:value={selectedOutputFormat} class="st-select w-full" name="outputFormat">
-                  {#each newSequenceAdaptation.outputs as outputFormatItem}
+                  {#each sequenceLanguages.outputs as outputFormatItem}
                     <option value={outputFormatItem}>
                       {outputFormatItem.name}
                     </option>
