@@ -26,9 +26,9 @@ export type ParameterDictionaryMetadata = {
 } & DictionaryMetadata;
 
 export type SequenceAdaptationMetadata = {
+  adaptation: string; // This is the raw adaptation code as a string
   name: string;
   type: DictionaryTypes.ADAPTATION;
-  adaptation: NewAdaptationInterface;
 } & DictionaryMetadata;
 
 export type DictionaryMetadata = {

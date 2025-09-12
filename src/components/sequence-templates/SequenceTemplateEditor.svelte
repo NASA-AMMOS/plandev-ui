@@ -5,15 +5,14 @@
   import { lintGutter, openLintPanel } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate } from '@codemirror/view';
-  import type { SyntaxNode, Tree } from '@lezer/common';
+  import type { SyntaxNode } from '@lezer/common';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type {
     CommandInfoMapper,
-    LibrarySequence,
-    LibrarySequenceMap,
-    NewAdaptationInterface,
-    OutputLanguageAdaptation,
+    LibrarySequenceSignature,
+    OutputLanguage,
     PhoenixContext,
+    PhoenixLanguages,
   } from '@nasa-jpl/aerie-sequence-languages';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
@@ -37,9 +36,9 @@
   export let user: User | null;
   export let channelDictionary: ChannelDictionary | null = null;
   export let commandDictionary: CommandDictionary | null = null;
-  export let librarySequences: LibrarySequence[] = [];
+  export let librarySequences: LibrarySequenceSignature[] = [];
   export let parameterDictionaries: ParameterDictionary[] = [];
-  export let newSequenceAdaptation: NewAdaptationInterface;
+  export let sequenceLanguages: PhoenixLanguages;
 
   let sequenceName: string = '';
   let sequenceDefinition: string = '';
@@ -58,16 +57,14 @@
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
   let selectedNode: SyntaxNode | null;
-  let currentTree: Tree;
   let commandInfoMapper: CommandInfoMapper;
-  let selectedOutputFormat: OutputLanguageAdaptation | undefined;
+  let selectedOutputFormat: OutputLanguage | undefined;
   let editorHeights: string = '1fr 3px';
   let columnsWithFormBuilder: string = '3fr 3px 1.5fr';
   let columnsWithNoFormBuilder: string = '3fr 3px';
   let phoenixContext: PhoenixContext;
-  let librarySequenceMap: LibrarySequenceMap = {};
 
-  $: commandInfoMapper = newSequenceAdaptation.input.commandInfoMapper;
+  $: commandInfoMapper = sequenceLanguages.input.commandInfoMapper;
 
   $: {
     // Since this insertion will move the cursor back to position 0, test if the content actually changed first
@@ -83,12 +80,10 @@
     commandFormBuilderGrid = showCommandFormBuilder ? columnsWithFormBuilder : columnsWithNoFormBuilder;
   }
 
-  $: librarySequenceMap = Object.fromEntries(librarySequences.map(seq => [seq.name, seq]));
-
   $: phoenixContext = {
     channelDictionary,
     commandDictionary,
-    librarySequenceMap,
+    librarySequences,
     parameterDictionaries,
   };
 
@@ -97,7 +92,7 @@
       // Reconfigure sequence editor if adaptation or context change
       editorSequenceView.dispatch({
         effects: [
-          compartmentAdaptation.reconfigure((newSequenceAdaptation.input.editorExtension ?? (_ => []))(phoenixContext)),
+          compartmentAdaptation.reconfigure((sequenceLanguages.input.editorExtension ?? (_ => []))(phoenixContext)),
         ],
       });
     }
@@ -114,7 +109,7 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': `${clientHeightGridRightTop}px` } }),
         lintGutter(),
         // TODO: Compose the template grammar on top of the editor extension here
-        compartmentAdaptation.of((newSequenceAdaptation.input.editorExtension ?? (_ => []))(phoenixContext)),
+        compartmentAdaptation.of((sequenceLanguages.input.editorExtension ?? (_ => []))(phoenixContext)),
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
@@ -127,7 +122,6 @@
   async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
     const sequence = viewUpdate.state.doc.toString();
     sequenceDefinition = sequence;
-    const tree = syntaxTree(viewUpdate.state);
     let output = await selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
 
     if (output !== undefined) {
@@ -145,7 +139,6 @@
     // minimize triggering selected command view
     if (selectedNode !== updatedSelectionNode) {
       selectedNode = updatedSelectionNode;
-      currentTree = tree;
     }
   }
 
@@ -154,9 +147,9 @@
   }
 
   function formatDocument() {
-    let format = newSequenceAdaptation.input.format;
+    let format = sequenceLanguages.input.format;
     if (format !== undefined) {
-      format(editorSequenceView);
+      format(editorSequenceView, phoenixContext);
     }
   }
 
