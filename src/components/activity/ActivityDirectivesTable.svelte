@@ -262,9 +262,9 @@
         activities,
         'RIGHT',
         0,
-        get(activityDirectivesDB) ?? [],
-        get(spansMap) ?? {},
-        get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
+        $activityDirectivesDB ?? [],
+        $spansMap ?? {},
+        $spanUtilityMaps ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
       );
 
       if (updatedActivities) {
@@ -282,9 +282,9 @@
         activities,
         direction.toUpperCase() as 'LEFT' | 'RIGHT',
         offsetUS,
-        get(activityDirectivesDB) ?? [],
-        get(spansMap) ?? {},
-        get(spanUtilityMaps) ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
+        $activityDirectivesDB ?? [],
+        $spansMap ?? {},
+        $spanUtilityMaps ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
       );
 
       if (updatedActivities) {
