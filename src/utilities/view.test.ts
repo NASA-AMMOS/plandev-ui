@@ -12,12 +12,29 @@ import {
 describe('generateDefaultView', () => {
   test('Should generate a valid view', async () => {
     const view = generateDefaultView([
-      { description: 'resource1 description', name: 'resource1', schema: { type: 'boolean' } },
-      { description: 'resource2 description', name: 'resource2', schema: { type: 'int' } },
       {
-        description: 'resource3 description',
+        name: 'resource1',
+        schema: {
+          metadata: { description: { value: 'resource1 description' } },
+          type: 'boolean',
+        },
+      },
+      {
         name: 'resource2',
-        schema: { items: { type: 'boolean' }, type: 'series' },
+        schema: {
+          metadata: { description: { value: 'resource2 description' } },
+          type: 'int',
+        },
+      },
+      {
+        name: 'resource3',
+        schema: {
+          items: {
+            type: 'boolean',
+          },
+          metadata: { description: { value: 'resource3 description' } },
+          type: 'series',
+        },
       },
     ]);
     const { valid, errors } = validateViewJSONAgainstSchema(view.definition);
