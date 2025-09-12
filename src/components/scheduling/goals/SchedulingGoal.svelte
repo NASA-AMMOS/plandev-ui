@@ -61,11 +61,19 @@
     const schema = version?.parameter_schema;
 
     if (schema && schema.type === 'struct') {
-      formParameters = Object.entries(schema.items).map(([name, subschema], i) => {
+      const { items, metadata } = schema;
+      const order = metadata?.item_order;
+
+      const structOrderMap = new Map<string, number>();
+      order?.forEach((structKey, index) => {
+        structOrderMap.set(structKey, index);
+      });
+
+      formParameters = Object.entries(items).map(([name, subschema], i) => {
         return {
           errors: null,
           name,
-          order: i,
+          order: structOrderMap.get(name) ?? i,
           required: true,
           schema: subschema,
           value:
