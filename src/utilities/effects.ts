@@ -4097,9 +4097,10 @@ const effects = {
         );
         const { activity_types: activityTypes } = data;
         if (activityTypes != null) {
+          logMessage(`Retrieved expansion rule activity types for model ${modelId}.`);
           return activityTypes;
         } else {
-          throw Error('Unable to retrieve activity types');
+          throw Error('Unable to retrieve expansion rule activity types');
         }
       } catch (e) {
         catchError(e as Error);
@@ -4114,6 +4115,9 @@ const effects = {
     try {
       const data = await reqHasura<ConstraintMetadata>(convertToQuery(gql.SUB_CONSTRAINT), { id }, user);
       const { constraint } = data;
+      if (constraint) {
+        logMessage(`Retrieved constraint ${constraint.name} (${id}).`);
+      }
       return constraint;
     } catch (e) {
       catchError(e as Error);
@@ -4138,6 +4142,7 @@ const effects = {
       );
       const { effectiveActivityArgumentsBulk } = data;
       if (effectiveActivityArgumentsBulk !== null) {
+        logMessage(`Retrieved default activity arguments for model ${modelId}.`);
         return effectiveActivityArgumentsBulk;
       }
       return [];
@@ -4162,6 +4167,7 @@ const effects = {
         user,
       );
       const { effectiveModelArguments } = data;
+      logMessage(`Retrieved effective model arguments for model ${modelId}.`);
       return effectiveModelArguments;
     } catch (e) {
       catchError(e as Error);
@@ -4209,20 +4215,12 @@ const effects = {
 
   async getExpansionRule(id: number, user: User | null): Promise<ExpansionRule | null> {
     try {
-      const data = await reqHasura(gql.GET_EXPANSION_RULE, { id }, user);
+      const data = await reqHasura<ExpansionRule>(gql.GET_EXPANSION_RULE, { id }, user);
       const { expansionRule } = data;
+      if (expansionRule) {
+        logMessage(`Retrieved expansion rule ${expansionRule.name} (${id}).`);
+      }
       return expansionRule;
-    } catch (e) {
-      catchError(e as Error);
-      return null;
-    }
-  },
-
-  async getExpansionRuleTags(user: User | null): Promise<Tag[] | null> {
-    try {
-      const data = await reqHasura(convertToQuery(gql.SUB_EXPANSION_RULE_TAGS), {}, user);
-      const { expansionRuleTags } = data;
-      return expansionRuleTags;
     } catch (e) {
       catchError(e as Error);
       return null;
@@ -4231,9 +4229,14 @@ const effects = {
 
   async getExpansionRuns(user: User | null): Promise<ExpansionRun[]> {
     try {
-      const data = await reqHasura(gql.GET_EXPANSION_RUNS, {}, user);
+      const data = await reqHasura<ExpansionRun[]>(gql.GET_EXPANSION_RUNS, {}, user);
       const { expansionRuns } = data;
-      return expansionRuns;
+      if (expansionRuns) {
+        logMessage(`Retrieved ${expansionRuns.length} expansion run${pluralize(expansionRuns.length)}.`);
+        return expansionRuns;
+      } else {
+        return [];
+      }
     } catch (e) {
       catchError(e as Error);
       return [];
@@ -4258,6 +4261,9 @@ const effects = {
 
       if (expansionSequence) {
         const { seq_id: seqId } = expansionSequence;
+        logMessage(
+          `Retrieved expansion sequence ${seqId} for simulated activity ${simulatedActivityId} in simulation ${simulationDatasetId}.`,
+        );
         return seqId;
       } else {
         return null;
@@ -4286,6 +4292,7 @@ const effects = {
       const { expanded_sequences } = data;
       if (expanded_sequences != null && expanded_sequences.length === 1) {
         const { expanded_sequence } = expanded_sequences[0];
+        logMessage(`Retrieved expansion sequence SeqJson for sequence ${seqId}.`);
         return JSON.stringify(expanded_sequence, null, 2);
       } else {
         throw Error(`Unable to get expansion sequence seq json for seq ID "${seqId}"`);
@@ -4327,6 +4334,7 @@ const effects = {
         throw Error('Unable to gather all external event types for the source');
       }
 
+      logMessage(`Retrieved ${types.length} external event type${pluralize(types.length)}.`);
       return types;
     } catch (e) {
       catchError(e as Error);
@@ -4366,6 +4374,9 @@ const effects = {
             eventTypes.push(external_event.external_event_type);
           }
         }
+        logMessage(
+          `Retrieved ${eventTypes.length} external event type${pluralize(eventTypes.length)} from external source ${externalSourceKey} in derivation group ${externalSourceDerivationGroup}.`,
+        );
         return eventTypes;
       } else {
         throw Error('Unable to retrieve external event types for source');
@@ -4414,6 +4425,9 @@ const effects = {
           start_time: event.start_time,
         });
       }
+      logMessage(
+        `Retrieved ${externalEvents.length} external event${pluralize(externalEvents.length)} from external source ${externalSourceKey} in derivation group ${externalSourceDerivationGroup}.`,
+      );
       return externalEvents;
     } catch (e) {
       catchError('Failed to retrieve external events.', e as Error);
@@ -4429,6 +4443,7 @@ const effects = {
   ): Promise<{ aborted: boolean; file: string | null }> {
     try {
       const file = await reqGateway(`/file/${fileId}`, 'GET', null, user, true, signal, false);
+      logMessage(`Retrieved file ${fileId}.`);
       return { aborted: false, file };
     } catch (e) {
       if ((e as Error).name === 'AbortError') {
@@ -4450,7 +4465,9 @@ const effects = {
 
       if (data) {
         const { name } = data[0];
-        return name.replace(/(?:-[a-zA-Z0-9]+){2}(\.[a-z]+)?$/, '$1');
+        const cleanedName = name.replace(/(?:-[a-zA-Z0-9]+){2}(\.[a-z]+)?$/, '$1');
+        logMessage(`Retrieved filename ${cleanedName} for file ${fileId}.`);
+        return cleanedName;
       }
       return null;
     } catch (e) {
@@ -4466,6 +4483,7 @@ const effects = {
       const data = await reqHasura<Model>(query, { id: modelId }, user);
       const { model } = data;
       if (model != null) {
+        logMessage(`Retrieved model ${model.name} v${model.version} (${modelId})`);
         return model;
       } else {
         throw Error('Unable to retrieve model');
@@ -4482,6 +4500,7 @@ const effects = {
       const data = await reqHasura<ModelSlim[]>(query, {}, user);
       const { models = [] } = data;
       if (models != null) {
+        logMessage(`Retrieved ${models.length} model${pluralize(models.length)}`);
         return models;
       } else {
         throw Error('Unable to retrieve models');
@@ -4496,6 +4515,9 @@ const effects = {
     try {
       const data = await reqHasura<Parcel>(gql.GET_PARCEL, { id }, user);
       const { parcel } = data;
+      if (parcel) {
+        logMessage(`Retrieved parcel ${parcel.name} (${parcel.id}).`);
+      }
       return parcel;
     } catch (e) {
       catchError(e as Error);
@@ -4524,6 +4546,7 @@ const effects = {
         return null;
       } else {
         const [{ parsed_json: parsedJson }] = channelDictionary;
+        logMessage(`Retrieved channel dictionary ${channelDictionaryId}.`);
         return parsedJson;
       }
     } catch (e) {
@@ -4553,6 +4576,7 @@ const effects = {
         return null;
       } else {
         const [{ parsed_json: parsedJson }] = commandDictionary;
+        logMessage(`Retrieved command dictionary ${commandDictionaryId}.`);
         return parsedJson;
       }
     } catch (e) {
@@ -4582,6 +4606,7 @@ const effects = {
         return null;
       } else {
         const [{ parsed_json: parsedJson }] = parameterDictionary;
+        logMessage(`Retrieved parameter dictionary ${parameterDictionaryId}.`);
         return parsedJson;
       }
     } catch (e) {
@@ -4592,6 +4617,7 @@ const effects = {
 
   async getPlan(id: number, user: User | null): Promise<Plan | null> {
     try {
+      const startTime = performance.now();
       const data = await reqHasura<PlanSchema>(gql.GET_PLAN, { id }, user);
       const { plan: planSchema } = data;
 
@@ -4602,6 +4628,7 @@ const effects = {
           end_time_doy: getDoyTimeFromInterval(start_time, duration),
           start_time_doy: getDoyTime(new Date(start_time)),
         };
+        logMessage(`Retrieved plan ${plan.name} (${id}).`, '', performance.now() - startTime);
         return plan;
       } else {
         return null;
@@ -4619,6 +4646,7 @@ const effects = {
     const { simulation } = data;
 
     if (simulation) {
+      logMessage(`Retrieved latest simulation for plan ${planId}`);
       return simulation[0];
     }
 
@@ -4634,6 +4662,9 @@ const effects = {
       const data = await reqHasura<PlanMergeConflictingActivity[]>(query, { merge_request_id: mergeRequestId }, user);
       const { conflictingActivities } = data;
       if (conflictingActivities != null) {
+        logMessage(
+          `Retrieved ${conflictingActivities.length} conflicting activit${conflictingActivities.length === 1 ? 'y' : 'ies'} for plan merge request ${mergeRequestId}.`,
+        );
         return conflictingActivities;
       } else {
         throw Error('Unable to retrieve conflicting activities');
@@ -4658,6 +4689,9 @@ const effects = {
       );
       const { nonConflictingActivities } = data;
       if (nonConflictingActivities != null) {
+        logMessage(
+          `Retrieved ${nonConflictingActivities.length} non-conflicting activit${nonConflictingActivities.length === 1 ? 'y' : 'ies'} for plan merge request ${mergeRequestId}.`,
+        );
         return nonConflictingActivities;
       } else {
         throw Error('Unable to retrieve non-conflicting activities');
@@ -4675,6 +4709,7 @@ const effects = {
       const { merge_requests: mergeRequests } = data;
       if (mergeRequests != null) {
         const [mergeRequest] = mergeRequests; // Query uses 'limit: 1' so merge_requests.length === 1.
+        logMessage(`Retrieved in-progress plan merge request ${mergeRequest.id}.`);
         return mergeRequest;
       } else {
         throw Error('Unable to get merge requests in progress');
@@ -4692,6 +4727,7 @@ const effects = {
       const { plan } = data;
       if (plan != null) {
         const { revision } = plan;
+        logMessage(`Retrieved latest plan revision ID ${revision}.`);
         return revision;
       } else {
         throw Error('Unable to retrieve plan revision');
@@ -4715,6 +4751,9 @@ const effects = {
       const { plan_snapshot_activity_directives: planSnapshotActivityDirectives } = data;
 
       if (planSnapshotActivityDirectives) {
+        logMessage(
+          `Retrieved ${planSnapshotActivityDirectives.length} plan snapshot activity directive${pluralize(planSnapshotActivityDirectives.length)}.`,
+        );
         return planSnapshotActivityDirectives.map(({ snapshot_id: _snapshotId, ...planSnapshotActivityDirective }) => {
           return {
             plan_id: snapshot.plan_id,
@@ -4737,6 +4776,9 @@ const effects = {
       if (!plan || !plan.tags || !Array.isArray(plan.tags)) {
         return [];
       }
+      if (plan.tags.length) {
+        logMessage(`Retrieved ${plan.tags.length} plan tag${pluralize(plan.tags.length)}.`);
+      }
       return plan.tags.map(({ tag }) => tag);
     } catch (e) {
       catchError(e as Error);
@@ -4746,11 +4788,17 @@ const effects = {
 
   async getPlansAndModels(user: User | null): Promise<{ models: ModelSlim[]; plans: PlanSlim[] }> {
     try {
+      const startTime = performance.now();
       const data = (await reqHasura(gql.GET_PLANS_AND_MODELS, {}, user)) as {
         models: ModelSlim[];
         plans: PlanSlim[];
       };
       const { models, plans } = data;
+      logMessage(
+        `Retrieved ${models.length} model${pluralize(models.length)} and ${plans.length} plan${pluralize(plans.length)}.`,
+        '',
+        performance.now() - startTime,
+      );
 
       return {
         models,
@@ -4846,6 +4894,12 @@ const effects = {
             return false;
           });
 
+          uniqueProfiles.forEach(profile => {
+            logMessage(
+              `Retrieved external profile ${profile.name} (${profile.profile_segments} segment${profile.profile_segments.length}) for simulation ${simulationDatasetId}.`,
+            );
+          });
+
           const sampledResources: Resource[] = sampleProfiles(uniqueProfiles, startTimeYmd, offset_from_plan_start);
           resources = [...resources, ...sampledResources];
         }
@@ -4877,7 +4931,7 @@ const effects = {
           if (permissions !== undefined) {
             const actionPermissions = permissions.action_permissions ?? [];
             const functionPermissions = permissions.function_permissions ?? [];
-
+            logMessage(`Retrieved role permissions for user ${user?.id}.`);
             return {
               ...actionPermissions,
               ...functionPermissions,
@@ -4906,6 +4960,7 @@ const effects = {
       const { condition } = data;
 
       if (condition) {
+        logMessage(`Retrieved scheduling condition ${condition.name} (${condition.id}).`);
         return convertResponseToMetadata(condition, tags);
       }
       return condition;
@@ -4926,6 +4981,7 @@ const effects = {
       const { goal } = data;
 
       if (goal) {
+        logMessage(`Retrieved scheduling goal ${goal.name} (${goal.id}).`);
         return convertResponseToMetadata(goal, tags);
       }
       return goal;
@@ -4949,6 +5005,7 @@ const effects = {
           user,
         );
         const { scheduling_specification_conditions: schedulingSpecificationConditions } = data;
+        logMessage(`Retrieved scheduling conditions specification for condition ${conditionId}.`);
         return schedulingSpecificationConditions;
       } catch (e) {
         catchError(e as Error);
@@ -4971,6 +5028,7 @@ const effects = {
           user,
         );
         const { scheduling_specification_goals: schedulingSpecificationGoals } = data;
+        logMessage(`Retrieved scheduling goals specification for goal ${goalId}.`);
         return schedulingSpecificationGoals;
       } catch (e) {
         catchError(e as Error);
@@ -4994,6 +5052,7 @@ const effects = {
       const { sequence_adaptation: sequenceAdaptation } = data;
 
       if (sequenceAdaptation && sequenceAdaptation.length > 0) {
+        logMessage(`Retrieved sequence adaptation ${sequenceAdaptation[0].name} (${sequenceAdaptationId}).`);
         return sequenceAdaptation[0];
       }
     } catch (e) {
@@ -5044,6 +5103,7 @@ const effects = {
       const data = await reqHasura<Tag[]>(query, {}, user);
       const { tags } = data;
       if (tags != null) {
+        logMessage(`Retrieved ${tags.length} tag${pluralize(tags.length)}.`);
         return tags;
       } else {
         throw Error('Unable to get tags');
@@ -5074,6 +5134,7 @@ const effects = {
           const { reason, status, typescriptFiles } = dslTypeScriptResponse;
 
           if (status === 'success') {
+            logMessage(`Retrieved TypeScript activity type ${activityTypeName}.`);
             return typescriptFiles;
           } else {
             catchError(reason);
@@ -5107,6 +5168,7 @@ const effects = {
           const { reason, status, typescriptFiles } = dslTypeScriptResponse;
 
           if (status === 'success') {
+            logMessage(`Retrieved TypeScript command dictionary ${commandDictionaryId}.`);
             return typescriptFiles;
           } else {
             catchError(reason);
@@ -5137,6 +5199,7 @@ const effects = {
           const { reason, status, typescriptFiles } = dslTypeScriptResponse;
 
           if (status === 'success') {
+            logMessage(`Retrieved TypeScript constraint files for model ${modelId}.`);
             return typescriptFiles;
           } else {
             catchError(reason);
@@ -5163,6 +5226,7 @@ const effects = {
           const { reason, status, typescriptFiles } = dslTypeScriptResponse;
 
           if (status === 'success') {
+            logMessage(`Retrieved TypeScript scheduling files for model ${modelId}.`);
             return typescriptFiles;
           } else {
             catchError(reason);
@@ -5190,6 +5254,7 @@ const effects = {
           const mutationQueries = queries.mutationType?.fields ?? [];
           const viewQueries = queries.queryType?.fields ?? [];
 
+          logMessage(`Retrieved user permissions for ${user?.id ?? 'unknown user'}.`);
           return [...viewQueries, ...mutationQueries].reduce((queriesMap, permissibleQuery) => {
             return {
               ...queriesMap,
@@ -5212,6 +5277,9 @@ const effects = {
     try {
       const data = await reqHasura<UserSequence>(gql.GET_USER_SEQUENCE, { id }, user);
       const { userSequence } = data;
+      if (userSequence) {
+        logMessage(`Retrieved user sequence ${userSequence.name} (${id}).`);
+      }
       return userSequence;
     } catch (e) {
       catchError(e as Error);
@@ -5224,6 +5292,7 @@ const effects = {
       const data = await reqHasura<string>(gql.GET_USER_SEQUENCE_FROM_SEQ_JSON, { seqJson }, user);
       const { sequence } = data;
       if (sequence != null) {
+        logMessage(`Retrieved user sequence ${sequence} from SeqJson ${seqJson.id}.`);
         return sequence;
       } else {
         throw Error('Unable to retrieve user sequence');
@@ -5233,6 +5302,7 @@ const effects = {
     }
   },
 
+  /* TODO deprecated, can we remove this? */
   async getUserSequenceSeqJson(
     commandDictionaryId: number | null,
     sequenceDefinition: string | null,
@@ -5250,6 +5320,7 @@ const effects = {
       if (getUserSequenceSeqJson != null) {
         const { errors, seqJson, status } = getUserSequenceSeqJson;
 
+        logMessage(`Retrieved user sequence JSON.`);
         if (status === 'FAILURE') {
           const [firstError] = errors;
           const { message } = firstError;
@@ -5270,6 +5341,7 @@ const effects = {
       const versionResponse = await fetch(`${base}/version.json`);
       return await versionResponse.json();
     } catch (e) {
+      catchError('Unable to retrieve application version', e as Error);
       return {
         branch: 'unknown',
         commit: 'unknown',
@@ -5302,8 +5374,10 @@ const effects = {
           const data = await reqHasura<View>(gql.GET_VIEW, { id: viewIdAsNumber }, user);
           const { view: fetchedView } = data;
           view = fetchedView;
+          logMessage(`Retrieved view ${view?.name} (${view?.id}).`);
         } else if (defaultView !== null && defaultView !== undefined) {
           view = defaultView;
+          logMessage(`Using default view.`);
         }
 
         if (view) {
@@ -5315,6 +5389,7 @@ const effects = {
           // Otherwise perform any needed migrations
           const { migratedView, error, anyMigrationsApplied } = await applyViewMigrations(view);
           if (migratedView && anyMigrationsApplied) {
+            logMessage(`Applied migrations to view ${view.name}.`);
             await effects.updateView(
               migratedView.id,
               { definition: migratedView.definition },
@@ -5346,6 +5421,7 @@ const effects = {
       const { workspace } = data;
 
       if (workspace) {
+        logMessage(`Retrieved workspace ${workspace.name} (${workspaceId}).`);
         return workspace;
       } else {
         return null;
@@ -5358,9 +5434,11 @@ const effects = {
 
   async getWorkspaceContents(workspaceId: number, user: User | null): Promise<WorkspaceTreeNode[] | null> {
     try {
+      const startTime = performance.now();
       const workspaceContents = await reqWorkspace<WorkspaceTreeNode[]>(`${workspaceId}`, 'GET', null, user);
 
       if (workspaceContents != null) {
+        logMessage(`Retrieved workspace contents for workspace ${workspaceId}.`, '', performance.now() - startTime);
         return workspaceContents;
       } else {
         throw Error(`Unable to retrieve workspace contents`);
@@ -5385,6 +5463,7 @@ const effects = {
       );
 
       if (fileContents != null) {
+        logMessage(`Retrieved workspace file ${filePath} for workspace ${workspaceId}.`);
         return fileContents;
       } else {
         throw Error(`Unable to retrieve workspace file`);
@@ -5484,6 +5563,8 @@ const effects = {
         throwPermissionError('import a plan');
       }
 
+      const requestStartTime = performance.now();
+
       creatingPlanStore.set(true);
 
       const file: File = files[0];
@@ -5505,6 +5586,7 @@ const effects = {
 
       creatingPlanStore.set(false);
       if (createdPlan != null) {
+        logMessage(`Imported plan ${name}.`, '', performance.now() - requestStartTime);
         return { plan: createdPlan };
       } else {
         throw new Error('Plan import failed');
@@ -5547,6 +5629,9 @@ const effects = {
 
       if (createdSequenceTemplate != null) {
         showSuccessToast('Sequence Template Imported Successfully');
+        logMessage(
+          `Imported ${language} sequence template ${name} for activity type ${activityType} for parcel ${parcelId}.`,
+        );
         return createdSequenceTemplate;
       }
 
@@ -5688,6 +5773,9 @@ const effects = {
           showSuccessToast(
             `Workspace File${successfullyUploadedFileNames.length > 1 ? 's' : ''} Uploaded Successfully`,
           );
+          logMessage(
+            `Uploaded ${successfullyUploadedFileNames.length} workspace file${pluralize(successfullyUploadedFileNames.length)}.`,
+          );
         } else {
           throw new Error('No files were uploaded');
         }
@@ -5756,6 +5844,7 @@ const effects = {
         const { planExternalSourceLink: sourceAssociation } = data;
         // If the return was null, do nothing - only act on success or non-null
         if (sourceAssociation !== null) {
+          logMessage(`Linked derivation group ${derivationGroupName} to plan ${plan.name} (${plan.id}).`);
           showSuccessToast('Derivation Group Linked Successfully');
         }
       } else {
@@ -5789,6 +5878,9 @@ const effects = {
 
       if (sequence != null) {
         showSuccessToast('Expansion Sequence Added To Activity Successfully');
+        logMessage(
+          `Added expansion sequence ${seqId} to simulated activity ${simulatedActivityId} for simulation ${simulationDatasetId}.`,
+        );
         const { seq_id: newSeqId } = sequence;
         return newSeqId;
       } else {
@@ -5947,6 +6039,9 @@ const effects = {
             false,
           );
           showSuccessToast(`Workspace ${typeString} ${shouldCopy ? 'Copied' : 'Moved'} Successfully`);
+          logMessage(
+            `${shouldCopy ? 'Copied' : 'Moved'} workspace ${typeString.toLowerCase()} from ${originalPath} to ${cleanedTargetPath}.`,
+          );
 
           return cleanedTargetPath;
         } catch (e) {
@@ -5993,6 +6088,9 @@ const effects = {
           false,
         );
         showSuccessToast(`Workspace ${typeString} ${shouldCopy ? 'Duplicated' : 'Moved'} Successfully`);
+        logMessage(
+          `${shouldCopy ? 'Duplicated' : 'Moved'} workspace ${typeString.toLowerCase()} from ${workspace.name} to ${targetWorkspace.name}.`,
+        );
 
         return cleanedTargetPath;
       } catch (e) {
@@ -6027,6 +6125,7 @@ const effects = {
         );
 
         showSuccessToast('Workspace Folder Created Successfully');
+        logMessage(`Created new workspace folder ${workspace.id}/${folderPath}.`);
         return folderPath;
       } catch (e) {
         catchError('Workspace folder was unable to be created', e as Error);
@@ -6052,6 +6151,7 @@ const effects = {
 
         await reqWorkspace<Workspace>(`${workspace.id}/${filePath}?type=file`, 'PUT', body, user, undefined, false);
         showSuccessToast('Workspace File Created Successfully');
+        logMessage(`Created new workspace file ${workspace.id}/${filePath}.`);
 
         return filePath;
       } catch (e) {
@@ -6171,6 +6271,7 @@ const effects = {
         user,
       );
       if (data.begin_merge != null) {
+        logMessage(`Began plan merge ${mergeRequestId}.`);
         return true;
       } else {
         throw Error('Unable to begin plan merge');
@@ -6199,6 +6300,7 @@ const effects = {
         user,
       );
       if (data.cancel_merge != null) {
+        logMessage(`Canceled plan merge ${mergeRequestId}.`);
         showSuccessToast('Canceled Merge Request');
         return true;
       } else {
@@ -6228,6 +6330,7 @@ const effects = {
         user,
       );
       if (data.commit_merge != null) {
+        logMessage(`Approved changes for merge request ${mergeRequestId}.`);
         showSuccessToast('Approved Merge Request Changes');
         return true;
       } else {
@@ -6257,6 +6360,7 @@ const effects = {
         user,
       );
       if (data.deny_merge != null) {
+        logMessage(`Denied changes for merge request ${mergeRequestId}.`);
         showSuccessToast('Denied Merge Request Changes');
         return true;
       } else {
@@ -6286,6 +6390,7 @@ const effects = {
         user,
       );
       if (data.withdraw_merge_request != null) {
+        logMessage(`Withdrew merge request ${mergeRequestId}.`);
         showSuccessToast('Withdrew Merge Request');
         return true;
       } else {
@@ -6318,6 +6423,7 @@ const effects = {
       if (data.set_resolution_bulk == null) {
         throw Error('Unable to resolve all merge request conflicts');
       }
+      logMessage(`Resolved all conflicts for merge request ${mergeRequestId}.`);
     } catch (e) {
       showFailureToast('Resolve All Merge Request Conflicts Failed');
       catchError('Resolve All Merge Request Conflicts Failed', e as Error);
@@ -6345,6 +6451,7 @@ const effects = {
       if (data.set_resolution == null) {
         throw Error('Unable to resolve merge request conflict');
       }
+      logMessage(`Resolved conflict for activity ${activityId} for merge request ${mergeRequestId}.`);
     } catch (e) {
       showFailureToast('Resolve Merge Request Conflict Failed');
       catchError('Resolve Merge Request Conflict Failed', e as Error);
@@ -6368,6 +6475,7 @@ const effects = {
         user,
       );
       if (data.delete_preset_to_directive_by_pk != null) {
+        logMessage(`Removed preset ${presetId} from activity directive ${activityDirectiveId}.`);
         showSuccessToast('Removed Activity Preset Successfully');
         return true;
       } else {
@@ -6409,6 +6517,7 @@ const effects = {
           false,
         );
         showSuccessToast(`Workspace ${typeString} Renamed Successfully`);
+        logMessage(`Renamed workspace ${typeString.toLowerCase()} from ${originalPath} to ${cleanedTargetPath}.`);
         return cleanedTargetPath;
       }
     } catch (e) {
@@ -6437,6 +6546,7 @@ const effects = {
       );
 
       if (data.restoreActivityFromChangelog != null) {
+        logMessage(`Restored activity ${activityId} to revision ${revision} from changelog.`);
         showSuccessToast('Restored Activity from Changelog');
         return true;
       } else {
@@ -6475,6 +6585,7 @@ const effects = {
         );
         if (data.restore_from_snapshot != null) {
           showSuccessToast('Plan Snapshot Restored Successfully');
+          logMessage(`Restored plan snapshot ${snapshot.snapshot_name} (${snapshot.snapshot_id}).`);
 
           goto(`${base}/plans/${snapshot.plan_id}`);
           return true;
@@ -6522,6 +6633,7 @@ const effects = {
         }
 
         showSuccessToast('Model Extraction Retriggered Successfully');
+        logMessage(`Retriggered model extraction for model ${id}.`);
         return data;
       } else {
         throw Error(`Unable to retrigger model extraction with ID: "${id}"`);
@@ -6543,6 +6655,9 @@ const effects = {
       const { confirm, value } = await showRunActionModal(actionDefinition, user, workspaceSequences, parameters);
       if (confirm && value) {
         const { id } = value;
+        logMessage(
+          `Ran action ${actionDefinition.name} (${actionDefinition.id}) on sequence${pluralize(workspaceSequences.length)} ${workspaceSequences.map(w => w.name).join(', ')} in workspace ${actionDefinition.workspace_id}.`,
+        );
         return id;
       }
       return null;
@@ -6566,6 +6681,7 @@ const effects = {
         false,
       );
       showSuccessToast('Workspace File Saved Successfully');
+      logMessage(`Saved workspace file ${filePath}.`);
     } catch (e) {
       catchError('Workspace file was unable to be saved', e as Error);
       showFailureToast('Workspace File Save Failed');
@@ -6582,6 +6698,7 @@ const effects = {
           throwPermissionError(`run ${analysisOnly ? 'scheduling analysis' : 'scheduling'}`);
         }
 
+        const startTime = performance.now();
         const specificationId = get(selectedSpecIdStore);
         if (plan !== null && specificationId !== null) {
           const planRevision = await effects.getPlanRevision(plan.id, user);
@@ -6632,6 +6749,11 @@ const effects = {
                     }
                   }
                   showSuccessToast(`Scheduling ${analysisOnly ? 'Analysis ' : ''}Complete`);
+                  logMessage(
+                    `Completed scheduling${analysisOnly ? ' analysis' : ''}.`,
+                    '',
+                    performance.now() - startTime,
+                  );
                   unsubscribe();
                 } else if (matchingRequest.status === 'failed') {
                   if (matchingRequest.reason) {
@@ -6801,7 +6923,7 @@ const effects = {
           if (simulate.status === 'failed') {
             throw Error(`Simulation ${newSimulationDatasetId} failed`);
           }
-          logMessage(`Running simulation ${newSimulationDatasetId} ${force ? ' (force)' : ''}`);
+          logMessage(`Running simulation ${newSimulationDatasetId} ${force ? ' (force)' : ''}.`);
         } else {
           throw Error('Unable to simulate this plan');
         }
@@ -6835,6 +6957,7 @@ const effects = {
 
       if (updateActionDefinitionByPk != null) {
         showSuccessToast(`Action Updated Successfully`);
+        logMessage(`Updated definition for action ${id}.`);
       } else {
         throw Error(`Unable to update action with ID: "${id}"`);
       }
@@ -6912,6 +7035,7 @@ const effects = {
           });
         });
         showSuccessToast('Activity Directive Updated Successfully');
+        logMessage(`Updated activity directive ${id}.`);
       } else {
         throw Error(`Unable to update directive with ID: "${id}"`);
       }
@@ -6940,6 +7064,7 @@ const effects = {
       if (updateActivityPresetsByPk != null) {
         const { name: presetName } = updateActivityPresetsByPk;
         showSuccessToast(`Activity Preset ${presetName} Updated Successfully`);
+        logMessage(`Updated activity preset ${presetName}.`);
       } else {
         throw Error(`Unable to update activity preset with ID: "${id}"`);
       }
@@ -6971,6 +7096,7 @@ const effects = {
       if (insertConstraintDefinitionTags != null && deleteConstraintDefinitionTags != null) {
         const { affected_rows: affectedRows } = insertConstraintDefinitionTags;
 
+        logMessage(`Updated constraint tags for constraint ${constraintId}.`);
         showSuccessToast('Constraint Updated Successfully');
 
         return affectedRows;
@@ -7011,6 +7137,7 @@ const effects = {
       }
 
       showSuccessToast('Constraint Updated Successfully');
+      logMessage(`Updated constraint metadata for constraint ${id}.`);
       return true;
     } catch (e) {
       catchError('Constraint Metadata Update Failed', e as Error);
@@ -7038,6 +7165,7 @@ const effects = {
       );
 
       if (updateConstraintModelSpecification !== null) {
+        logMessage(`Updated model specification for constraint invocation ${constraintSpecToUpdate.invocation_id}.`);
         showSuccessToast(`Constraint Model Specification Updated Successfully`);
       } else {
         throw Error('Unable to update the constraint specification for the model');
@@ -7066,6 +7194,7 @@ const effects = {
 
       if (addConstraintModelSpecifications !== null || deleteConstraintModelSpecifications !== null) {
         showSuccessToast(`Constraint Model Specifications Updated Successfully`);
+        logMessage(`Updated constraint model specifications.`);
       } else {
         throw Error('Unable to update the constraint specifications for the model');
       }
@@ -7106,6 +7235,7 @@ const effects = {
 
       if (updateConstraintPlanSpecification !== null) {
         showSuccessToast(`Constraint Plan Specification Updated Successfully`);
+        logMessage(`Updated constraint plan specification.`);
       } else {
         throw Error('Unable to update the constraint specification for the plan');
       }
@@ -7134,6 +7264,7 @@ const effects = {
 
       if (insertConstraintPlanSpecifications !== null || deleteConstraintPlanSpecifications !== null) {
         showSuccessToast(`Constraint Plan Specifications Updated Successfully`);
+        logMessage(`Updated constraint plan specifications.`);
       } else {
         throw Error('Unable to update the constraint specifications for the plan');
       }
@@ -7180,6 +7311,7 @@ const effects = {
       if (updateExpansionRule != null) {
         const { updated_at: updatedAt } = updateExpansionRule;
         showSuccessToast('Expansion Rule Updated Successfully');
+        logMessage(`Updated expansion rule ${rule.name} (${id}).`);
         savingExpansionRuleStore.set(false);
         return updatedAt;
       } else {
@@ -7212,6 +7344,7 @@ const effects = {
 
       if (data != null) {
         showSuccessToast('Model Updated Successfully');
+        logMessage(`Updated model ${id}.`);
         return data.updateModel;
       } else {
         throw Error(`Unable to update model with ID: "${id}"`);
@@ -7242,6 +7375,7 @@ const effects = {
       }
 
       showSuccessToast('Parcel Updated Successfully');
+      logMessage(`Updated parcel ${id}.`);
       return '';
     } catch (e) {
       catchError('Parcel Update Failed', e as Error);
@@ -7261,6 +7395,7 @@ const effects = {
 
       if (updatePlan.id != null) {
         showSuccessToast('Plan Updated Successfully');
+        logMessage(`Updated plan ${plan.name} (${plan.id}).`);
         return;
       } else {
         throw Error(`Unable to update plan with ID: "${plan.id}"`);
@@ -7286,6 +7421,7 @@ const effects = {
         const data = await reqHasura(gql.MIGRATE_PLAN_TO_MODEL, { new_model_id: value.id, plan_id: plan.id }, user);
         if (data.migrate_plan_to_model?.result === 'success') {
           showSuccessToast('Model Migration Success');
+          logMessage(`Migrated plan from model ${plan.model_id} to model ${value.id}.`);
           return true;
         } else {
           throw Error(data.migrate_plan_to_model?.result);
@@ -7309,6 +7445,7 @@ const effects = {
 
       if (updatedPlanSnapshotId != null) {
         showSuccessToast('Plan Snapshot Updated Successfully');
+        logMessage(`Updated plan snapshot ${id}.`);
         return;
       } else {
         throw Error(`Unable to update plan snapshot with ID: "${id}"`);
@@ -7342,6 +7479,7 @@ const effects = {
       if (insertSchedulingConditionDefinitionTags != null && deleteSchedulingConditionDefinitionTags != null) {
         const { affected_rows: affectedRows } = insertSchedulingConditionDefinitionTags;
 
+        logMessage(`Updated tags for scheduling condition ${conditionId}.`);
         showSuccessToast('Scheduling Condition Updated Successfully');
 
         return affectedRows;
@@ -7382,6 +7520,7 @@ const effects = {
       }
 
       showSuccessToast('Scheduling Condition Updated Successfully');
+      logMessage(`Updated metadata for scheduling condition ${id}.`);
       return true;
     } catch (e) {
       catchError('Scheduling Condition Metadata Update Failed', e as Error);
@@ -7415,6 +7554,7 @@ const effects = {
 
       if (updateSchedulingConditionModelSpecifications !== null || deleteConstraintModelSpecifications !== null) {
         showSuccessToast(`Scheduling Conditions Updated Successfully`);
+        logMessage(`Updated scheduling condition model specification for model ${model.name} (${model.id}).`);
       } else {
         throw Error('Unable to update the scheduling condition specifications for the model');
       }
@@ -7444,6 +7584,7 @@ const effects = {
 
       if (updateSchedulingConditionPlanSpecification !== null) {
         showSuccessToast(`Scheduling Condition Plan Specification Updated Successfully`);
+        logMessage(`Updated scheduling condition plan specification for plan ${plan.name} (${plan.id}).`);
       } else {
         throw Error('Unable to update the scheduling condition specification for the plan');
       }
@@ -7476,6 +7617,7 @@ const effects = {
 
       if (updateSchedulingConditionPlanSpecifications !== null || deleteConstraintPlanSpecifications !== null) {
         showSuccessToast(`Scheduling Conditions Updated Successfully`);
+        logMessage(`Updated scheduling condition plan specifications for plan ${plan.name} (${plan.id}).`);
       } else {
         throw Error('Unable to update the scheduling condition specifications for the plan');
       }
@@ -7495,7 +7637,7 @@ const effects = {
   ): Promise<number | null> {
     try {
       if (!queryPermissions.UPDATE_SCHEDULING_GOAL_DEFINITION_TAGS(user, { author: goalAuthor })) {
-        throwPermissionError('create scheduling condition definition tags');
+        throwPermissionError('create scheduling goal definition tags');
       }
 
       const data = await reqHasura<{ affected_rows: number }>(
@@ -7508,10 +7650,10 @@ const effects = {
         const { affected_rows: affectedRows } = insertSchedulingGoalDefinitionTags;
 
         showSuccessToast('Scheduling Goal Updated Successfully');
-
+        logMessage(`Updated tags for scheduling goal ${goalId}.`);
         return affectedRows;
       } else {
-        throw Error('Unable to create scheduling condition definition tags');
+        throw Error('Unable to create scheduling goal definition tags');
       }
     } catch (e) {
       catchError('Create Scheduling Goal Definition Tags Failed', e as Error);
@@ -7547,6 +7689,7 @@ const effects = {
       }
 
       showSuccessToast('Scheduling Goal Updated Successfully');
+      logMessage(`Updated metadata for scheduling goal ${id}.`);
     } catch (e) {
       catchError('Scheduling Goal Metadata Update Failed', e as Error);
       showFailureToast('Scheduling Goal Metadata Update Failed');
@@ -7576,6 +7719,7 @@ const effects = {
 
       if (updateSchedulingGoalModelSpecification !== null) {
         showSuccessToast(`Scheduling Goal Model Specification Updated Successfully`);
+        logMessage(`Updated scheduling goal model specification.`);
       } else {
         throw Error('Unable to update the scheduling goal specification for the model');
       }
@@ -7605,6 +7749,7 @@ const effects = {
 
       if (addSchedulingGoalModelSpecifications !== null || deleteConstraintModelSpecifications !== null) {
         showSuccessToast(`Scheduling Goals Updated Successfully`);
+        logMessage(`Updated scheduling goal model specifications.`);
       } else {
         throw Error('Unable to update the scheduling goal specifications for the model');
       }
@@ -7660,6 +7805,7 @@ const effects = {
 
       if (updateSchedulingGoalPlanSpecification !== null) {
         showSuccessToast(`Scheduling Goal Plan Specification Updated Successfully`);
+        logMessage(`Updated scheduling goal plan specification for plan ${plan.name} (${plan.id}).`);
       } else {
         throw Error('Unable to update the scheduling goal specification for the plan');
       }
@@ -7690,6 +7836,7 @@ const effects = {
 
       if (insertSchedulingGoalPlanSpecifications !== null || deleteConstraintPlanSpecifications !== null) {
         showSuccessToast(`Scheduling Goals Updated Successfully`);
+        logMessage(`Updated scheduling goal plan specifications for plan ${plan.name} (${plan.id}).`);
       } else {
         throw Error('Unable to update the scheduling goal specifications for the plan');
       }
@@ -7714,6 +7861,7 @@ const effects = {
       if (data.updateSchedulingSpec == null) {
         throw Error(`Unable to update scheduling spec with ID: "${id}"`);
       }
+      logMessage(`Updated scheduling specification ${id} for plan ${plan.name} (${plan.id}).`);
     } catch (e) {
       catchError(e as Error);
     }
@@ -7733,6 +7881,7 @@ const effects = {
 
       const data = await reqHasura(gql.UPDATE_SEQUENCE_FILTER, { filter, filterId, filterName }, user);
       if (data.updateSequenceFilter !== null) {
+        logMessage(`Updated sequence filter ${filterName} (${filterId}).`);
         showSuccessToast('Updated Sequence Filter');
       } else {
         throw Error(`Unable to update sequence filter with ID: "${filterId}"`);
@@ -7755,6 +7904,7 @@ const effects = {
 
       const data = await reqHasura(gql.UPDATE_SEQUENCE_TEMPLATE, { definition, id: sequenceTemplate.id }, user);
       if (data.updateSequenceTemplate !== null) {
+        logMessage(`Updated sequence template ${sequenceTemplate.name} (${sequenceTemplate.id}).`);
         showSuccessToast('Updated Sequence Template');
       } else {
         throw Error(`Unable to update sequence template with ID: "${sequenceTemplate.id}"`);
@@ -7793,6 +7943,7 @@ const effects = {
         user,
       );
       if (data.updateSimulation !== null) {
+        logMessage(`Updated simulation ${simulationSetInput.id}.`);
         showSuccessToast('Simulation Updated Successfully');
       } else {
         throw Error(`Unable to update simulation with ID: "${simulationSetInput.id}"`);
@@ -7832,6 +7983,7 @@ const effects = {
       if (updateSimulationTemplateByPk != null) {
         const { description: templateDescription } = updateSimulationTemplateByPk;
         showSuccessToast(`Simulation Template ${templateDescription} Updated Successfully`);
+        logMessage(`Updated simulation template ${templateDescription} (${id}).`);
       } else {
         throw Error(`Unable to update simulation template with ID: "${id}"`);
       }
@@ -7856,6 +8008,9 @@ const effects = {
       const { update_tags_by_pk: updatedTag } = data;
       if (notify) {
         showSuccessToast('Tag Updated Successfully');
+      }
+      if (updatedTag) {
+        logMessage(`Updated tag ${updatedTag.name} (${updatedTag.id}).`);
       }
       createTagErrorStore.set(null);
       return updatedTag;
@@ -7905,8 +8060,9 @@ const effects = {
         throwPermissionError('update this view');
       }
 
-      const data = await reqHasura<Pick<View, 'id'>>(gql.UPDATE_VIEW, { id, view }, user);
+      const data = await reqHasura<View>(gql.UPDATE_VIEW, { id, view }, user);
       if (data.updatedView) {
+        logMessage(`Updated view ${data.updatedView.name} (${data.updatedView.id}).`);
         showSuccessToast(message ?? 'View Updated Successfully');
         return true;
       } else {
@@ -7951,6 +8107,7 @@ const effects = {
         throw Error(`Unable to upload Dictionary`);
       }
 
+      logMessage(`Uploaded dictionary.`);
       return newDictionaries;
     } catch (e) {
       catchError(`Dictionary Upload Failed`, e as Error);
@@ -8015,6 +8172,7 @@ const effects = {
 
       if (uploadedDatasetId != null) {
         showSuccessToast('External Dataset Uploaded Successfully');
+        logMessage(`Uploaded external dataset ${uploadedDatasetId}.`);
         return uploadedDatasetId;
       }
 
@@ -8088,6 +8246,7 @@ const effects = {
         if (newView != null) {
           viewStore.update(() => newView);
           setQueryParam(SearchParameters.VIEW_ID, `${newView.id}`);
+          logMessage(`Uploaded view ${newView.name} (${newView.id}).`);
           return true;
         } else {
           throw Error('Unable to upload view');
@@ -8121,6 +8280,7 @@ const effects = {
 
       const { validateActivityArguments } = data;
       if (validateActivityArguments != null) {
+        logMessage(`Validated activity arguments for ${activityTypeName} (${activityId}).`);
         return validateActivityArguments;
       } else {
         throw Error('Unable to validate activity arguments');
