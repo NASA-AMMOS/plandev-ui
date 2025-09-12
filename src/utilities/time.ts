@@ -249,7 +249,7 @@ export function parseDurationString(
     const number = parseInt(int);
     const decimalNum = decimal ? parseFloat(decimal) : 0;
 
-    //shift everthing based on units
+    //shift everything based on units
     switch (units) {
       case 'microseconds':
         microsecond = number;
@@ -296,7 +296,7 @@ export function parseDurationString(
     day += Math.floor(hour / 24);
     hour = hour % 24;
 
-    // Normlize days and years
+    // Normalize days and years
     year += Math.floor(day / 365);
     day = day % 365;
 
