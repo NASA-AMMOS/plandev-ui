@@ -1,0 +1,19 @@
+import type { CreateTooltip, PhoenixResources } from '@nasa-jpl/aerie-sequence-languages';
+import StringTooltip from '../../components/sequencing/StringTooltip.svelte';
+
+const createTooltip: CreateTooltip = (text: string[], from: number, to?: number) => {
+  return {
+    above: true,
+    create() {
+      const dom = document.createElement('div');
+      new StringTooltip({ props: { messages: text }, target: dom });
+      return { dom };
+    },
+    end: to,
+    pos: from,
+  };
+};
+
+export const phoenixResources: PhoenixResources = {
+  createTooltip,
+};

@@ -7,6 +7,7 @@
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+  import type { LibrarySequenceSignature } from '@nasa-jpl/aerie-sequence-languages';
   import type { IRowNode } from 'ag-grid-community';
   import { onDestroy, onMount } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
@@ -18,9 +19,8 @@
   import WorkspaceSidebar from '../../../components/workspace/WorkspaceSidebar.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { WorkspaceContentType } from '../../../enums/workspace';
-  import type { LibrarySequence } from '@nasa-jpl/aerie-sequence-languages';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
-  import { sequenceAdaptation, setSequenceAdaptation } from '../../../stores/sequence-adaptation';
+  import { sequenceLanguages, setSequenceLanguages } from '../../../stores/sequence-adaptation';
   import {
     channelDictionaries,
     commandDictionaries,
@@ -74,7 +74,7 @@
   let selectedFileName: string | undefined = undefined;
   let selectedSequenceOutput: string | undefined = undefined;
   let updatedSelectedFileContent: string = '';
-  let workspaceLibrarySequences: LibrarySequence[] = [];
+  let workspaceLibrarySequences: LibrarySequenceSignature[] = [];
   let workspaceSequences: UserSequence[] = [];
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
@@ -184,7 +184,7 @@
 
       if (librarySequencesEnabled) {
         workspaceLibrarySequences = workspaceSequences
-          .flatMap(sequence => ($sequenceAdaptation.input.getLibrarySequences ?? (_ => []))(sequence, $workspaceId))
+          .flatMap(sequence => ($sequenceLanguages.input.getLibrarySequences ?? (_ => []))(sequence))
           .filter(({ name }) => name !== '');
       }
 
@@ -226,7 +226,7 @@
 
       if (adaptation) {
         try {
-          setSequenceAdaptation(eval(String(adaptation.adaptation)));
+          setSequenceLanguages(eval(String(adaptation.adaptation))); // TODO replace with a try/catch/finally using blob URLs and dynamic modules
         } catch (e) {
           console.error(e);
           showFailureToast('Invalid sequence adaptation');
@@ -268,7 +268,7 @@
   }
 
   function resetSequenceAdaptation(): void {
-    setSequenceAdaptation(undefined);
+    setSequenceLanguages(undefined);
   }
 
   async function goToSequence(filePath: string | null) {
@@ -506,7 +506,7 @@
           includeActions={true}
           librarySequences={workspaceLibrarySequences}
           readOnly={!hasEditFilePermission}
-          newSequenceAdaptation={$sequenceAdaptation}
+          sequenceLanguages={$sequenceLanguages}
           sequenceDefinition={initialSelectedFileContent}
           sequenceName={selectedFileName}
           sequenceOutput={selectedSequenceOutput}

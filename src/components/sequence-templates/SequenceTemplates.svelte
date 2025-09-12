@@ -3,7 +3,7 @@
 <script lang="ts">
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
-  import { sequenceAdaptation, setSequenceAdaptation } from '../../stores/sequence-adaptation';
+  import { sequenceLanguages, setSequenceLanguages } from '../../stores/sequence-adaptation';
   import { selectedSequenceTemplateId, sequenceTemplates } from '../../stores/sequence-template';
   import {
     channelDictionaries,
@@ -98,7 +98,7 @@
 
       if (adaptation) {
         try {
-          setSequenceAdaptation(eval(String(adaptation.adaptation)));
+          setSequenceLanguages(eval(String(adaptation.adaptation)));
         } catch (e) {
           console.error(e);
           showFailureToast('Invalid sequence adaptation');
@@ -140,7 +140,7 @@
   }
 
   function resetSequenceAdaptation(): void {
-    setSequenceAdaptation(undefined);
+    setSequenceLanguages(undefined);
   }
 
   function onDownloadTemplate(sequenceTemplate: SequenceTemplate) {
@@ -294,7 +294,7 @@
       {channelDictionary}
       {commandDictionary}
       {parameterDictionaries}
-      newSequenceAdaptation={$sequenceAdaptation}
+      sequenceLanguages={$sequenceLanguages}
       showCommandFormBuilder={true}
       template={selectedTemplate}
       on:templateChanged={onTemplateChanged}
