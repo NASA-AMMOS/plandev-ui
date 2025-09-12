@@ -1,5 +1,8 @@
 type ValueSchemaMetadata = {
   metadata?: {
+    description?: {
+      value: string;
+    };
     unit?: {
       value: string;
     };
