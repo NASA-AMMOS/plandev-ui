@@ -132,8 +132,13 @@
     }
   }
 
-  function hasDescription(item: TimelineItemType): item is ResourceType | ActivityType {
+  function hasDescription(item: TimelineItemType): item is TimelineItemType & {description: string} {
     return 'description' in item;
+  }
+
+  function getDescription(item: TimelineItemType): string | undefined {
+    if('description' in item) return item.description;
+    if(item?.schema?.metadata?.description?.value) return item.schema.metadata.description?.value;
   }
 </script>
 
