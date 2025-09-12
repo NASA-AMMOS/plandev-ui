@@ -167,6 +167,8 @@
 
   type PlanConsoleTab = 'all' | 'scheduling' | 'simulation' | 'activity' | 'model' | 'constraints' | 'logs';
 
+  const defaultLogLevels: LogLevel[] = ['error', 'warn', 'info'];
+
   let activityErrorCounts: ActivityErrorCounts = {
     all: 0,
     extra: 0,
@@ -196,12 +198,12 @@
   let consolePaneApi: PaneAPI;
   let isConsoleExpanded: boolean = false;
   let selectedConsoleTab: PlanConsoleTab = 'all';
-  let logLevels: LogLevel[] = ['error', 'warn', 'info'];
+  let logLevels: LogLevel[] = defaultLogLevels;
   let logLevelLabel: string = 'Default levels';
   let logLevelCounts: { error: number; info: number; warn: number } = { error: 0, info: 0, warn: 0 };
 
   $: if (logLevels) {
-    if (logLevels.length === 3) {
+    if (logLevels.sort().toString() === defaultLogLevels.sort().toString()) {
       logLevelLabel = 'Default levels';
     } else if (logLevels.length === 1) {
       logLevelLabel = `${capitalize(logLevels[0])} only`;
@@ -1054,6 +1056,7 @@
             logs={$allLogs}
             {logLevels}
             emptyStateMessage="No logs"
+            noMatchingResultsMessage="No matching logs"
             autoScroll
             showType={false}
           />
