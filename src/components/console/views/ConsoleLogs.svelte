@@ -10,6 +10,7 @@
 
   export let autoScroll: boolean = false;
   export let emptyStateMessage: string = 'No reported problems';
+  export let noMatchingResultsMessage: string = 'No matches';
   export let logs: BaseError[] = [];
   export let logLevels: LogLevel[] | undefined = undefined;
   export let showLevel: boolean = true;
@@ -21,6 +22,7 @@
   const filterStore = consoleContext?.filter;
   const selectedTabStore = consoleContext?.selectedTab;
 
+  let emptyStateTitle: string = '';
   let isScrolledToBottom = true;
   let scrollContainer: HTMLDivElement;
   let logLevelSet: Set<LogLevel> = new Set();
@@ -57,8 +59,25 @@
           return log;
         }
       });
+
   $: if (filteredLogs && scrollContainer) {
     scrollToBottomIfNeeded();
+  }
+
+  $: {
+    if (!logs.length) {
+      emptyStateTitle = emptyStateMessage;
+    } else {
+      if (!filteredLogs.length && $filterStore) {
+        emptyStateTitle = noMatchingResultsMessage;
+      } else {
+        if (filteredLogs.length !== logs.length) {
+          emptyStateTitle = `${noMatchingResultsMessage} (${logs.length - filteredLogs.length} hidden)`;
+        } else {
+          emptyStateTitle = emptyStateMessage;
+        }
+      }
+    }
   }
 
   function scrollToBottomIfNeeded() {
@@ -100,7 +119,7 @@
     </div>
   {:else}
     <div class="flex h-full">
-      <EmptyState title={logs.length && !filteredLogs.length ? 'No matches' : emptyStateMessage} />
+      <EmptyState title={emptyStateTitle} />
     </div>
   {/if}
 </Tabs.Content>
