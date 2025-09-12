@@ -201,7 +201,7 @@
           aria-label="Toggle external event filter builder modal"
           slot="trigger"
           on:click|stopPropagation={toggleExternalEventFilterMenu}
-          class="st-button icon w-100"
+          class="st-button icon w-full"
           style:position="relative"
           use:tooltip={{
             content: `Filter External Events${filterCount > 0 ? ` (${filterCount} applied)` : ''}`,
@@ -221,21 +221,6 @@
           </div></button
         >
       </ExternalEventFilterBuilder>
-
-      <!-- <SearchableDropdown
-        allowMultiple
-        selectedOptionLabel={layer.name}
-        showPlaceholderOption={false}
-        className="w-full"
-        placeholder="Select Event Types"
-        selectTooltip="Select Event Types"
-        searchPlaceholder="Filter event types"
-        selectedOptionValues={layer.filter.externalEvent?.event_types ?? []}
-        options={$externalEventTypes.map(type => ({ display: type.name, value: type.name }))}
-        on:change={({ detail: values }) => dispatch('filterChange', { filter: { event_types: values } })}
-      >
-        <ChevronDownIcon slot="icon" />
-      </SearchableDropdown> -->
     {/if}
   </div>
   <div class="actions">
@@ -249,7 +234,7 @@
         </RadioButton>
       </RadioButtons>
     {/if}
-    {#if !isActivityLayer(layer)}
+    {#if !isActivityLayer(layer) && !isExternalEventLayer(layer)}
       <TimelineEditorLayerSettings
         {layer}
         on:input={event => dispatch('updateLayer', { property: event.detail.name, value: event.detail.value })}

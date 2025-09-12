@@ -395,7 +395,7 @@
   }
 </script>
 
-<div bind:this={rootRef} class="w-100" style:display="grid">
+<div bind:this={rootRef} class="w-full" style:display="grid">
   <slot name="trigger" />
   {#if shown}
     <Draggable
@@ -446,7 +446,7 @@
                       autocomplete="off"
                       bind:this={manualInputRef}
                       name="manual-types-filter-input"
-                      class="st-input w-100 manual-types-filter-input"
+                      class="st-input w-full manual-types-filter-input"
                       placeholder="Select types"
                       bind:value={manualInputValue}
                       on:click={() => {
@@ -597,7 +597,7 @@
             </div>
             <Input>
               <div class="search-icon" slot="left"><SearchIcon /></div>
-              <input class="st-input w-100" placeholder="Filter types" bind:value={resultingTypesInputValue} />
+              <input class="st-input w-full" placeholder="Filter types" bind:value={resultingTypesInputValue} />
             </Input>
             <div class="resulting-types-list">
               {#each filteredMatchingTypes as type}
