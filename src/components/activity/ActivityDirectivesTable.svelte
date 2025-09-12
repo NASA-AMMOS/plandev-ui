@@ -1,10 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import type { ColDef, ColumnState, ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
-  import { get } from 'svelte/store';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { activityDirectivesDB } from '../../stores/activities';
   import { planModelActivityTypes } from '../../stores/plan';
