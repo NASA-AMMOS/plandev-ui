@@ -7,7 +7,12 @@ import {
   type CommandDictionary as AmpcsCommandDictionary,
   type ParameterDictionary as AmpcsParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
-import { parseCdlDictionary, toAmpcsXml } from '@nasa-jpl/aerie-sequence-languages';
+import {
+  parseCdlDictionary,
+  toAmpcsXml,
+  type PhoenixContext,
+  type PhoenixLanguages,
+} from '@nasa-jpl/aerie-sequence-languages';
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import { chunk } from 'lodash-es';
 import { get } from 'svelte/store';
@@ -5652,10 +5657,9 @@ const effects = {
     workspace: Workspace,
     workspaceContents: WorkspaceTreeNode,
     startingPath: string,
-    inputLanguageName: string,
-    outputLanguageExtensions: string[],
+    sequenceLanguages: PhoenixLanguages,
+    phoenixContext: PhoenixContext,
     user: User | null,
-    toInputFormat: (input: string) => Promise<string>,
   ): Promise<string | null> {
     try {
       if (!featurePermissions.workspace.canUpdate(user, workspace)) {
@@ -5664,8 +5668,8 @@ const effects = {
       const { confirm, value } = await showImportWorkspaceFileModal(
         workspace,
         workspaceContents,
-        inputLanguageName,
-        outputLanguageExtensions,
+        sequenceLanguages.input.name,
+        sequenceLanguages.outputs.map(language => language.fileExtension),
         startingPath,
         workspace,
         user,
@@ -5684,18 +5688,18 @@ const effects = {
 
         const convertedFiles: File[] = await Promise.all(
           filesToConvert.map(async file => {
-            const matchingOutputLanguageExtension = outputLanguageExtensions.find(fileExtension =>
-              file.name.endsWith(`.${fileExtension.replace(/^\./, '')}`),
+            const outputLanguage = sequenceLanguages.outputs.find(language =>
+              file.name.endsWith(`.${language.fileExtension.replace(/^\./, '')}`),
             );
 
-            if (matchingOutputLanguageExtension) {
+            if (outputLanguage) {
               const fileName = file.name.replace(
-                matchingOutputLanguageExtension.replace(/^\./, ''),
+                outputLanguage.fileExtension.replace(/^\./, ''),
                 convertedFileExtension.replace(/^\./, ''),
               );
               const lastModified = Date.now();
               const content = await file.text();
-              const convertedContent = await toInputFormat(content);
+              const convertedContent = outputLanguage.toInputFormat(content, phoenixContext, fileName);
 
               convertedFileMap[file.name] = fileName;
               return new File([convertedContent], fileName, { lastModified, type: 'text/plain' });

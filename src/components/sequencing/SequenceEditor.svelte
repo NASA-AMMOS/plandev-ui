@@ -7,13 +7,12 @@
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate, keymap } from '@codemirror/view';
   import type { SyntaxNode } from '@lezer/common';
-  import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type {
     CommandInfoMapper,
-    LibrarySequenceSignature,
     OutputLanguage,
     PhoenixContext,
     PhoenixLanguages,
+    UserSequence,
   } from '@nasa-jpl/aerie-sequence-languages';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
@@ -40,11 +39,8 @@
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
 
   export let actionsWithSequenceParameters: ActionDefinition[] = [];
-  export let channelDictionary: ChannelDictionary | null = null;
-  export let commandDictionary: CommandDictionary | null = null;
+  export let phoenixContext: PhoenixContext;
   export let includeActions: boolean = false;
-  export let librarySequences: LibrarySequenceSignature[] = [];
-  export let parameterDictionaries: ParameterDictionary[] = [];
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let sequenceLanguages: PhoenixLanguages;
@@ -72,7 +68,7 @@
   let editorOutputView: EditorView;
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
-  let phoenixContext: PhoenixContext;
+  // let phoenixContext: PhoenixContext;
   let menu: Menu;
   let selectedNode: SyntaxNode | null;
   let selectedOutputFormat: OutputLanguage | undefined;
@@ -96,25 +92,14 @@
     ? userSequenceEditorColumnsWithFormBuilder
     : userSequenceEditorColumns;
 
-  $: phoenixContext = {
-    channelDictionary,
-    commandDictionary,
-    librarySequences,
-    parameterDictionaries,
-  };
-  $: {
-    if (!commandDictionary) {
-      commandDictionary = null;
-      channelDictionary = null;
-      parameterDictionaries = [];
-    }
-  }
   $: {
     // Configure sequence editor.
     if (editorSequenceView) {
       editorSequenceView.dispatch({
         effects: [
-          compartmentAdaptation.reconfigure((sequenceLanguages.input.editorExtension ?? (_ => []))(phoenixContext)),
+          compartmentAdaptation.reconfigure(
+            (sequenceLanguages.input.editorExtension ?? ((_: UserSequence) => []))(phoenixContext),
+          ),
         ],
       });
     }
@@ -150,7 +135,9 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         EditorView.editable.of(false),
         lintGutter(),
-        compartmentOutputAdaptation.of((selectedOutputFormat?.editorExtension ?? (_ => []))(phoenixContext)),
+        compartmentOutputAdaptation.of(
+          (selectedOutputFormat?.editorExtension ?? ((_: UserSequence) => []))(phoenixContext),
+        ),
         EditorState.readOnly.of(readOnly),
       ],
       parent: editorOutputDiv,
@@ -163,7 +150,6 @@
   async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
     const sequence = viewUpdate.state.doc.toString();
     disableCopyAndExport = sequence === '';
-    // const tree = syntaxTree(viewUpdate.state); // Do we need this??
     let output = await selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
 
     editorOutputView.dispatch({ changes: { from: 0, insert: output, to: editorOutputView.state.doc.length } });
@@ -253,7 +239,9 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
-        compartmentAdaptation.of((sequenceLanguages.input.editorExtension ?? (_ => []))(phoenixContext)), // TODO improve, probably
+        compartmentAdaptation.of(
+          (sequenceLanguages.input.editorExtension ?? ((_: UserSequence) => []))(phoenixContext),
+        ),
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
@@ -270,7 +258,9 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         EditorView.editable.of(false),
         lintGutter(),
-        compartmentOutputAdaptation.of((selectedOutputFormat?.editorExtension ?? (_ => []))(phoenixContext)),
+        compartmentOutputAdaptation.of(
+          (selectedOutputFormat?.editorExtension ?? ((_: UserSequence) => []))(phoenixContext),
+        ),
         EditorState.readOnly.of(readOnly),
       ],
       parent: editorOutputDiv,
@@ -463,7 +453,7 @@
 
   {#if showCommandFormBuilder}
     <CssGridGutter track={1} type="column" />
-    {#if commandDictionary !== null}
+    {#if phoenixContext.commandDictionary !== null}
       <CommandPanel {phoenixContext} {commandInfoMapper} {editorSequenceView} />
     {:else}
       <Panel overflowYBody="hidden" padBody={true}>
