@@ -7,7 +7,7 @@
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
-  import type { LibrarySequenceSignature } from '@nasa-jpl/aerie-sequence-languages';
+  import { type LibrarySequenceSignature, type PhoenixContext } from '@nasa-jpl/aerie-sequence-languages';
   import type { IRowNode } from 'ag-grid-community';
   import { onDestroy, onMount } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
@@ -54,7 +54,6 @@
   import { showConfirmModal } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
   import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
-  import { toInputFormat } from '../../../utilities/sequence-editor/extension-points';
   import { showFailureToast } from '../../../utilities/toast';
   import { mapWorkspaceTreePaths, separateFilenameFromPath } from '../../../utilities/workspaces';
   import type { PageData } from './$types';
@@ -81,6 +80,7 @@
   let workspaceTreeMap: WorkspaceTreeMap = {};
   let hasEditFilePermission: boolean = false;
   let hasEditWorkspacePermission: boolean = false;
+  let phoenixContext: PhoenixContext;
 
   $: if (initialWorkspace) {
     $workspaceId = initialWorkspace.id;
@@ -155,6 +155,21 @@
     }
   }
 
+  $: phoenixContext = {
+    channelDictionary,
+    commandDictionary,
+    parameterDictionaries,
+    workspaceLibrarySequences,
+  };
+
+  $: {
+    if (!commandDictionary) {
+      commandDictionary = null;
+      channelDictionary = null;
+      parameterDictionaries = [];
+    }
+  }
+
   function resetRefreshInterval() {
     if (refreshInterval !== null) {
       clearInterval(refreshInterval);
@@ -185,7 +200,7 @@
 
       if (librarySequencesEnabled) {
         workspaceLibrarySequences = workspaceSequences
-          .flatMap(sequence => ($sequenceLanguages.input.getLibrarySequences ?? (_ => []))(sequence))
+          .flatMap(sequence => ($sequenceLanguages.input.getLibrarySequences ?? ((_: UserSequence) => []))(sequence))
           .filter(({ name }) => name !== '');
       }
 
@@ -323,10 +338,9 @@
         $workspace,
         workspaceTree,
         startingPath,
-        $sequenceAdaptation.inputFormat.name,
-        $sequenceAdaptation.outputFormat.map(outputFormat => outputFormat.fileExtension),
+        $sequenceLanguages,
+        phoenixContext,
         user,
-        async (input: string) => toInputFormat(input, parameterDictionaries, channelDictionary, $sequenceAdaptation),
       );
       refreshWorkspaceContents();
 
@@ -512,12 +526,9 @@
         class:hidden={selectedFileType != null && selectedFileType !== WorkspaceContentType.Sequence}
       >
         <SequenceEditor
-          {channelDictionary}
-          {commandDictionary}
-          {parameterDictionaries}
+          {phoenixContext}
           {actionsWithSequenceParameters}
           includeActions={true}
-          librarySequences={workspaceLibrarySequences}
           readOnly={!hasEditFilePermission}
           sequenceLanguages={$sequenceLanguages}
           sequenceDefinition={initialSelectedFileContent}
