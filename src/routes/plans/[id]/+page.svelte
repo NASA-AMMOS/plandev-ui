@@ -5,15 +5,14 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
-  import ActivityIcon from '@nasa-jpl/stellar/icons/activity.svg?component';
+  import { Button, Resizable } from '@nasa-jpl/stellar-svelte';
   import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
   import VerticalCollapseIcon from '@nasa-jpl/stellar/icons/vertical_collapse_with_center_line.svg?component';
-  import WaterfallIcon from '@nasa-jpl/stellar/icons/waterfall.svg?component';
-  import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
+  import { ListX } from 'lucide-svelte';
+  import type { PaneAPI } from 'paneforge';
   import { onDestroy } from 'svelte';
-  import MissionModelIcon from '../../../assets/mission-model.svg?component';
   import Nav from '../../../components/app/Nav.svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import Console from '../../../components/console/Console.svelte';
@@ -29,7 +28,6 @@
   import PlanModelErrorBar from '../../../components/plan/PlanModelErrorBar.svelte';
   import PlanNavButton from '../../../components/plan/PlanNavButton.svelte';
   import PlanSnapshotBar from '../../../components/plan/PlanSnapshotBar.svelte';
-  import CssGrid from '../../../components/ui/CssGrid.svelte';
   import PlanGrid from '../../../components/ui/PlanGrid.svelte';
   import ProgressLinear from '../../../components/ui/ProgressLinear.svelte';
   import StatusBadge from '../../../components/ui/StatusBadge.svelte';
@@ -71,6 +69,7 @@
     selectedExpansionSetId,
   } from '../../../stores/expansion';
   import { extensions } from '../../../stores/extensions';
+  import { externalEventTypes } from '../../../stores/external-event';
   import {
     initialPlan,
     maxTimeRange,
@@ -136,7 +135,6 @@
   import type { View, ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
   import { getConstraintStatus } from '../../../utilities/constraint';
   import effects from '../../../utilities/effects';
-  import { getSearchParameterNumber, removeQueryParam, setQueryParam } from '../../../utilities/generic';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { closeActiveModal } from '../../../utilities/modal';
   import { getModelStatusRollup } from '../../../utilities/model';
@@ -153,19 +151,15 @@
   import { getHumanReadableStatus, statusColors } from '../../../utilities/status';
   import { pluralize } from '../../../utilities/text';
   import { getUnixEpochTime } from '../../../utilities/time';
+  import { showSuccessToast } from '../../../utilities/toast';
   import { tooltip } from '../../../utilities/tooltip';
+  import { getSearchParameterNumber, removeQueryParam, setQueryParam } from '../../../utilities/url';
+  import { generateDefaultView } from '../../../utilities/view';
   import type { PageData } from './$types';
 
   export let data: PageData;
 
-  enum ConsoleTabs {
-    ALL = 'all',
-    ANCHOR = 'anchor',
-    SCHEDULING = 'scheduling',
-    SIMULATION = 'simulation',
-    ACTIVITY = 'activity',
-    MODEL = 'model',
-  }
+  type PlanConsoleTab = 'all' | 'anchor' | 'scheduling' | 'simulation' | 'activity' | 'model';
 
   let activityErrorCounts: ActivityErrorCounts = {
     all: 0,
@@ -179,7 +173,6 @@
   };
   let compactNavMode = false;
   let errorConsole: Console;
-  let consoleHeightString = '36px';
   let constraintsStatusText: string | undefined;
   let hasCreateViewPermission: boolean = false;
   let hasUpdateViewPermission: boolean = false;
@@ -196,6 +189,9 @@
   let resourcesExternalAbortController: AbortController;
   let schedulingStatusText: string = '';
   let lastSimulationDatasetId: number | null = null;
+  let consolePaneApi: PaneAPI;
+  let isConsoleExpanded: boolean = false;
+  let selectedConsoleTab: PlanConsoleTab = 'all';
 
   $: ({ invalidActivityCount, ...activityErrorCounts } = $activityErrorRollups.reduce(
     (prevCounts, activityErrorRollup) => {
@@ -494,23 +490,18 @@
     $simulationDatasetId = $simulationDatasetLatest?.id ?? -1;
   }
 
-  function onClearAllErrors() {
-    clearAllErrors();
-  }
-
-  function onClearSchedulingErrors() {
-    clearSchedulingErrors();
+  function onClearErrorsClick(selectedConsoleTab: PlanConsoleTab) {
+    if (selectedConsoleTab === 'all') {
+      clearAllErrors();
+    } else if (selectedConsoleTab === 'scheduling') {
+      clearSchedulingErrors();
+    }
   }
 
   function onCloseSnapshotPreview() {
     clearSnapshot();
     removeQueryParam(SearchParameters.SNAPSHOT_ID);
     removeQueryParam(SearchParameters.SIMULATION_DATASET_ID, 'PUSH');
-  }
-
-  function onConsoleResize(event: CustomEvent<string>) {
-    const { detail } = event;
-    consoleHeightString = detail;
   }
 
   function onKeydown(event: KeyboardEvent): void {
@@ -599,6 +590,13 @@
     resetView();
   }
 
+  function onResetViewToDefault() {
+    const defaultView = data.initialPlan.model.view || generateDefaultView($resourceTypes, $externalEventTypes);
+    initializeView(defaultView);
+    removeQueryParam(SearchParameters.VIEW_ID);
+    showSuccessToast('View Reset to Default');
+  }
+
   async function onUploadView() {
     if (hasCreateViewPermission) {
       const success = await effects.uploadView(data.user);
@@ -623,338 +621,404 @@
   function onChangeRightRowSizes(event: CustomEvent<string>) {
     viewUpdateGrid({ rightRowSizes: event.detail });
   }
+
+  function openConsole(tab: PlanConsoleTab) {
+    selectedConsoleTab = tab || 'all';
+    isConsoleExpanded = true;
+
+    if (consolePaneApi) {
+      consolePaneApi.expand();
+    }
+  }
+
+  function onConsoleToggle(event: CustomEvent<boolean>) {
+    isConsoleExpanded = event.detail;
+
+    if (consolePaneApi) {
+      if (isConsoleExpanded) {
+        consolePaneApi.expand();
+      } else {
+        consolePaneApi.collapse();
+      }
+    }
+  }
+
+  function onSelectConsoleTab(event: CustomEvent<{ expand: boolean; tab: string }>) {
+    const { tab } = event.detail;
+    selectedConsoleTab = tab as PlanConsoleTab;
+
+    // Always expand if a tab is selected, regardless of expand flag
+    isConsoleExpanded = true;
+    if (consolePaneApi) {
+      consolePaneApi.expand();
+    }
+  }
+
+  function openConsoleTab(tab: PlanConsoleTab) {
+    openConsole(tab);
+  }
 </script>
 
 <svelte:window on:keydown={onKeydown} bind:innerWidth={windowWidth} />
 
 <PageTitle subTitle={$plan?.name} title="Plans" />
-<CssGrid class="plan-container" rows={`auto ${consoleHeightString}`}>
-  <div class="plan-content">
-    <Nav user={data.user}>
-      <div class="title" slot="title">
-        {#if $plan}
-          <PlanMenu plan={$plan} user={data.user} />
-        {/if}
 
-        {#if $planReadOnlyMergeRequest || data.initialPlan.parent_plan?.is_locked}
-          <button
-            on:click={() =>
-              goto(
-                `${base}/plans/${
-                  data.initialPlan.parent_plan?.id ? data.initialPlan.parent_plan?.id : data.initialPlan.id
-                }/merge`,
-              )}
-            class="st-button secondary"
-          >
-            View Merge Request
-          </button>
-        {/if}
-      </div>
-      <svelte:fragment slot="left">
-        <PlanMergeRequestsStatusButton user={data.user} />
-      </svelte:fragment>
-      <svelte:fragment slot="right">
-        <ActivityStatusMenu
-          activityDirectiveValidationStatuses={$activityDirectiveValidationStatuses}
-          {activityErrorCounts}
-          {compactNavMode}
-          {invalidActivityCount}
-          on:viewActivityValidations={() => {
-            errorConsole.openConsole(ConsoleTabs.ACTIVITY);
-          }}
-        />
-        <PlanNavButton
-          title={!compactNavMode ? 'Expansion' : ''}
-          buttonText="Expand Activities"
-          hasPermission={hasExpandPermission}
-          permissionError={$planReadOnly
-            ? PlanStatusMessages.READ_ONLY
-            : 'You do not have permission to expand activities'}
-          menuTitle={SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT
-            ? 'Command Expansion Status'
-            : 'Template Expansion Status'}
-          disabled={SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT
-            ? $selectedExpansionSetId === null
-            : $selectedSequence === null || $simulationDatasetId === null}
-          status={$planExpansionStatus}
-          on:click={() => onHandleExpansion()}
-        >
-          <PlanIcon />
-          <svelte:fragment slot="metadata">
-            {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
-              <div>Expansion Set ID: {$selectedExpansionSetId || 'None'}</div>
+<div class="plan-container">
+  <Resizable.PaneGroup direction="vertical" autoSaveId="console">
+    <Resizable.Pane>
+      <div class="plan-content">
+        <Nav user={data.user}>
+          <div class="title" slot="title">
+            {#if $plan}
+              <PlanMenu plan={$plan} user={data.user} />
             {/if}
-            {#if !lastSimulationDatasetId}
-              <div>No expansions exist yet.</div>
-            {:else}
-              <div>Last expanded for simulation ID: {lastSimulationDatasetId}</div>
-            {/if}
-          </svelte:fragment>
-        </PlanNavButton>
-        <PlanNavButton
-          title={!compactNavMode ? 'Simulation' : ''}
-          menuTitle="Simulation Status"
-          buttonText="Simulate"
-          buttonTooltipContent={$simulationStatus === Status.Complete || $simulationStatus === Status.Failed
-            ? 'Simulation up-to-date'
-            : ''}
-          hasPermission={hasSimulatePermission}
-          indeterminate={$simulationProgress === 0}
-          permissionError={$planReadOnly
-            ? PlanStatusMessages.READ_ONLY
-            : 'You do not have permission to run a simulation'}
-          status={$simulationStatus}
-          progress={$simulationProgress}
-          disabled={!$enableSimulation}
-          showStatusInMenu={false}
-          on:click={() => effects.simulate($plan, false, data.user)}
-        >
-          <PlayIcon />
-          <svelte:fragment slot="metadata">
-            <div class="st-typography-body">
-              <div class="simulation-header">
-                {#if typeof $simulationDatasetLatest?.id !== 'number'}
-                  <div>Simulation not run</div>
-                {:else}
-                  {getHumanReadableStatus(getSimulationStatus($simulationDatasetLatest))}:
-                  {#if selectedSimulationStatus === Status.Pending && $simulationDatasetLatest}
-                    <div style="color: var(--st-gray-50)">
-                      {formatSimulationQueuePosition(
-                        getSimulationQueuePosition($simulationDatasetLatest, $simulationDatasetsAll || []),
-                      )}
-                    </div>
-                  {:else}
-                    {getSimulationProgress($simulationDatasetLatest).toFixed()}%
-                    {#if simulationExtent && $simulationDatasetLatest}
-                      <div
-                        use:tooltip={{ content: 'Simulation Time', placement: 'top' }}
-                        style={`color: ${
-                          selectedSimulationStatus === Status.Failed ? statusColors.red : 'var(--st-gray-50)'
-                        }`}
-                      >
-                        {getSimulationTimestamp($simulationDatasetLatest)}
-                      </div>
-                    {/if}
-                  {/if}
-                {/if}
-              </div>
-            </div>
-            {#if typeof $simulationDatasetLatest?.id === 'number'}
-              <div style="width: 240px;">
-                <ProgressLinear
-                  color={getSimulationProgressColor($simulationDatasetLatest?.status || null)}
-                  progress={getSimulationProgress($simulationDatasetLatest)}
-                />
-              </div>
-              <div>Simulation Dataset ID: {$simulationDatasetLatest?.id}</div>
-            {/if}
-            {#if selectedSimulationStatus === Status.Pending || selectedSimulationStatus === Status.Incomplete}
+
+            {#if $planReadOnlyMergeRequest || data.initialPlan.parent_plan?.is_locked}
               <button
-                on:click={() => effects.cancelSimulation($simulationDatasetId, data.user)}
-                class="st-button danger"
-                disabled={$planReadOnly}>Cancel</button
+                on:click={() =>
+                  goto(
+                    `${base}/plans/${
+                      data.initialPlan.parent_plan?.id ? data.initialPlan.parent_plan?.id : data.initialPlan.id
+                    }/merge`,
+                  )}
+                class="st-button secondary"
               >
+                View Merge Request
+              </button>
             {/if}
+          </div>
+          <svelte:fragment slot="left">
+            <PlanMergeRequestsStatusButton user={data.user} />
           </svelte:fragment>
-        </PlanNavButton>
-        <PlanNavButton
-          title={!compactNavMode ? 'Constraints' : ''}
-          menuTitle="Constraint Status"
-          buttonText="Check Constraints"
-          hasPermission={hasCheckConstraintsPermission}
-          disabled={$simulationStatus !== Status.Complete}
-          statusBadgeText={constraintsStatusText}
-          buttonTooltipContent={$simulationStatus !== Status.Complete ? 'Completed simulation required' : ''}
-          permissionError={$planReadOnly
-            ? PlanStatusMessages.READ_ONLY
-            : 'You do not have permission to run a constraint check'}
-          status={$constraintsStatus !== Status.Failed ? $cachedConstraintsStatus : $constraintsStatus}
-          showStatusInMenu={false}
-          on:click={() => $plan && effects.checkConstraints($plan, data.user, false)}
-          indeterminate
-        >
-          <VerticalCollapseIcon />
-          <svelte:fragment slot="metadata">
-            <div class="st-typography-body constraints-status">
-              {#if $constraintsStatus}
-                <div class="constraints-status-item">
-                  <StatusBadge status={$cachedConstraintsStatus} indeterminate showTooltip={false} />
-                  Check constraints: {getConstraintStatus($checkConstraintsStatus)}
-                </div>
-                {#if $constraintsStatus === Status.Complete || $constraintsStatus === Status.Failed || $constraintsStatus === Status.PartialSuccess}
-                  <div class="constraints-status-item">
-                    <StatusBadge status={$cachedConstraintsStatus} showTooltip={false} />
-                    {#if numConstraintsViolated > 0}
-                      <div style:color="var(--st-error-red)">
-                        {numConstraintsViolated} constraint{pluralize(numConstraintsViolated)}
-                        {numConstraintsViolated !== 1 ? 'have' : 'has'} violations
-                      </div>
+          <svelte:fragment slot="right">
+            <ActivityStatusMenu
+              activityDirectiveValidationStatuses={$activityDirectiveValidationStatuses}
+              {activityErrorCounts}
+              {compactNavMode}
+              {invalidActivityCount}
+              on:viewActivityValidations={() => {
+                openConsoleTab('activity');
+              }}
+            />
+            <PlanNavButton
+              title={!compactNavMode ? 'Expansion' : ''}
+              buttonText="Expand Activities"
+              hasPermission={hasExpandPermission}
+              permissionError={$planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to expand activities'}
+              menuTitle={SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT
+                ? 'Command Expansion Status'
+                : 'Template Expansion Status'}
+              disabled={SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT
+                ? $selectedExpansionSetId === null
+                : $selectedSequence === null || $simulationDatasetId === null}
+              status={$planExpansionStatus}
+              on:click={() => onHandleExpansion()}
+            >
+              <PlanIcon />
+              <svelte:fragment slot="metadata">
+                {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
+                  <div>Expansion Set ID: {$selectedExpansionSetId || 'None'}</div>
+                {/if}
+                {#if !lastSimulationDatasetId}
+                  <div>No expansions exist yet.</div>
+                {:else}
+                  <div>Last expanded for simulation ID: {lastSimulationDatasetId}</div>
+                {/if}
+              </svelte:fragment>
+            </PlanNavButton>
+            <PlanNavButton
+              title={!compactNavMode ? 'Simulation' : ''}
+              menuTitle="Simulation Status"
+              buttonText="Simulate"
+              buttonTooltipContent={$simulationStatus === Status.Complete || $simulationStatus === Status.Failed
+                ? 'Simulation up-to-date'
+                : ''}
+              hasPermission={hasSimulatePermission}
+              indeterminate={$simulationProgress === 0}
+              permissionError={$planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to run a simulation'}
+              status={$simulationStatus}
+              progress={$simulationProgress}
+              disabled={!$enableSimulation}
+              showStatusInMenu={false}
+              on:click={() => effects.simulate($plan, false, data.user)}
+            >
+              <PlayIcon />
+              <svelte:fragment slot="metadata">
+                <div class="st-typography-body">
+                  <div class="simulation-header">
+                    {#if typeof $simulationDatasetLatest?.id !== 'number'}
+                      <div>Simulation not run</div>
                     {:else}
-                      No constraint violations
+                      {getHumanReadableStatus(getSimulationStatus($simulationDatasetLatest))}:
+                      {#if selectedSimulationStatus === Status.Pending && $simulationDatasetLatest}
+                        <div style="color: var(--st-gray-50)">
+                          {formatSimulationQueuePosition(
+                            getSimulationQueuePosition($simulationDatasetLatest, $simulationDatasetsAll || []),
+                          )}
+                        </div>
+                      {:else}
+                        {getSimulationProgress($simulationDatasetLatest).toFixed()}%
+                        {#if simulationExtent && $simulationDatasetLatest}
+                          <div
+                            use:tooltip={{ content: 'Simulation Time', placement: 'top' }}
+                            style={`color: ${
+                              selectedSimulationStatus === Status.Failed ? statusColors.red : 'var(--st-gray-50)'
+                            }`}
+                          >
+                            {getSimulationTimestamp($simulationDatasetLatest)}
+                          </div>
+                        {/if}
+                      {/if}
                     {/if}
                   </div>
-                  {#if $simulationStatus !== Status.Complete}
-                    <div class="constraints-status-item">
-                      <StatusBadge status={Status.Modified} showTooltip={false} />
-                      Simulation out-of-date
-                    </div>
-                  {/if}
-                  {#if numConstraintsWithErrors > 0}
-                    <div class="constraints-status-item">
-                      <StatusBadge status={Status.Failed} showTooltip={false} />
-                      <div style:color="var(--st-error-red)">
-                        {numConstraintsWithErrors} constraint{pluralize(numConstraintsWithErrors)}
-                        {numConstraintsWithErrors !== 1 ? 'have' : 'has'} compile errors
-                      </div>
-                    </div>
-                  {/if}
-                  {#if $uncheckedConstraintCount > 0}
-                    <div class="constraints-status-item">
-                      <StatusBadge status={Status.Modified} showTooltip={false} />
-                      {$uncheckedConstraintCount} unchecked constraint{pluralize($uncheckedConstraintCount)}
-                    </div>
-                  {/if}
+                </div>
+                {#if typeof $simulationDatasetLatest?.id === 'number'}
+                  <div style="width: 240px;">
+                    <ProgressLinear
+                      color={getSimulationProgressColor($simulationDatasetLatest?.status || null)}
+                      progress={getSimulationProgress($simulationDatasetLatest)}
+                    />
+                  </div>
+                  <div>Simulation Dataset ID: {$simulationDatasetLatest?.id}</div>
                 {/if}
-              {:else}
-                <div>Constraints not checked</div>
-              {/if}
-            </div>
+                {#if selectedSimulationStatus === Status.Pending || selectedSimulationStatus === Status.Incomplete}
+                  <button
+                    on:click={() => effects.cancelSimulation($simulationDatasetId, data.user)}
+                    class="st-button danger"
+                    disabled={$planReadOnly}>Cancel</button
+                  >
+                {/if}
+              </svelte:fragment>
+            </PlanNavButton>
+            <PlanNavButton
+              title={!compactNavMode ? 'Constraints' : ''}
+              menuTitle="Constraint Status"
+              buttonText="Check Constraints"
+              hasPermission={hasCheckConstraintsPermission}
+              disabled={$simulationStatus !== Status.Complete}
+              statusBadgeText={constraintsStatusText}
+              buttonTooltipContent={$simulationStatus !== Status.Complete ? 'Completed simulation required' : ''}
+              permissionError={$planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to run a constraint check'}
+              status={$constraintsStatus !== Status.Failed ? $cachedConstraintsStatus : $constraintsStatus}
+              showStatusInMenu={false}
+              on:click={() => $plan && effects.checkConstraints($plan, data.user, false)}
+              indeterminate
+            >
+              <VerticalCollapseIcon />
+              <svelte:fragment slot="metadata">
+                <div class="st-typography-body constraints-status">
+                  {#if $constraintsStatus}
+                    <div class="constraints-status-item">
+                      <StatusBadge status={$cachedConstraintsStatus} indeterminate showTooltip={false} />
+                      Check constraints: {getConstraintStatus($checkConstraintsStatus)}
+                    </div>
+                    {#if $constraintsStatus === Status.Complete || $constraintsStatus === Status.Failed || $constraintsStatus === Status.PartialSuccess}
+                      <div class="constraints-status-item">
+                        <StatusBadge status={$cachedConstraintsStatus} showTooltip={false} />
+                        {#if numConstraintsViolated > 0}
+                          <div style:color="var(--st-error-red)">
+                            {numConstraintsViolated} constraint{pluralize(numConstraintsViolated)}
+                            {numConstraintsViolated !== 1 ? 'have' : 'has'} violations
+                          </div>
+                        {:else}
+                          No constraint violations
+                        {/if}
+                      </div>
+                      {#if $simulationStatus !== Status.Complete}
+                        <div class="constraints-status-item">
+                          <StatusBadge status={Status.Modified} showTooltip={false} />
+                          Simulation out-of-date
+                        </div>
+                      {/if}
+                      {#if numConstraintsWithErrors > 0}
+                        <div class="constraints-status-item">
+                          <StatusBadge status={Status.Failed} showTooltip={false} />
+                          <div style:color="var(--st-error-red)">
+                            {numConstraintsWithErrors} constraint{pluralize(numConstraintsWithErrors)}
+                            {numConstraintsWithErrors !== 1 ? 'have' : 'has'} compile errors
+                          </div>
+                        </div>
+                      {/if}
+                      {#if $uncheckedConstraintCount > 0}
+                        <div class="constraints-status-item">
+                          <StatusBadge status={Status.Modified} showTooltip={false} />
+                          {$uncheckedConstraintCount} unchecked constraint{pluralize($uncheckedConstraintCount)}
+                        </div>
+                      {/if}
+                    {/if}
+                  {:else}
+                    <div>Constraints not checked</div>
+                  {/if}
+                </div>
+              </svelte:fragment>
+            </PlanNavButton>
+            <PlanNavButton
+              title={!compactNavMode ? 'Scheduling' : ''}
+              menuTitle="Scheduling Analysis Status"
+              buttonText="Analyze Goal Satisfaction"
+              disabled={!$enableScheduling}
+              hasPermission={hasScheduleAnalysisPermission}
+              permissionError={$planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to run a scheduling analysis'}
+              status={$schedulingAnalysisStatus}
+              statusText={schedulingStatusText}
+              on:click={() => effects.schedule(true, $plan, data.user)}
+              indeterminate
+            >
+              <CalendarIcon />
+              <svelte:fragment slot="metadata">
+                <div class="st-typography-body">
+                  {#if !$schedulingAnalysisStatus}
+                    Scheduling analysis not run
+                  {/if}
+                </div>
+                {#if $schedulingAnalysisStatus === Status.Pending || $schedulingAnalysisStatus === Status.Incomplete}
+                  <button
+                    on:click={() => effects.cancelSchedulingRequest($latestSchedulingRequest.analysis_id, data.user)}
+                    class="st-button cancel-button"
+                    disabled={$planReadOnly}>Cancel</button
+                  >
+                {/if}
+              </svelte:fragment>
+            </PlanNavButton>
+            <ExtensionMenu
+              extensions={$extensions}
+              title={!compactNavMode ? 'Extensions' : ''}
+              user={data.user}
+              on:callExtension={onCallExtension}
+            />
+            <ViewMenu
+              hasCreatePermission={hasCreateViewPermission}
+              hasUpdatePermission={hasUpdateViewPermission}
+              user={data.user}
+              on:createView={onCreateView}
+              on:editView={onEditView}
+              on:saveView={onSaveView}
+              on:toggleView={onToggleView}
+              on:resetView={onResetView}
+              on:resetViewToDefault={onResetViewToDefault}
+              on:uploadView={onUploadView}
+            />
           </svelte:fragment>
-        </PlanNavButton>
-        <PlanNavButton
-          title={!compactNavMode ? 'Scheduling' : ''}
-          menuTitle="Scheduling Analysis Status"
-          buttonText="Analyze Goal Satisfaction"
-          disabled={!$enableScheduling}
-          hasPermission={hasScheduleAnalysisPermission}
-          permissionError={$planReadOnly
-            ? PlanStatusMessages.READ_ONLY
-            : 'You do not have permission to run a scheduling analysis'}
-          status={$schedulingAnalysisStatus}
-          statusText={schedulingStatusText}
-          on:click={() => effects.schedule(true, $plan, data.user)}
-          indeterminate
+        </Nav>
+        {#if $planSnapshot}
+          <PlanSnapshotBar
+            numOfDirectives={$planSnapshotActivityDirectives.length}
+            snapshot={$planSnapshot}
+            on:close={onCloseSnapshotPreview}
+            on:restore={onRestoreSnapshot}
+          />
+        {/if}
+        {#if modelErrorCount}
+          <PlanModelErrorBar
+            modelName={$plan?.model.name}
+            hasErrors={modelErrorCount > 0}
+            on:close={onCloseSnapshotPreview}
+            on:viewModelErrors={() => {
+              openConsoleTab('model');
+            }}
+          />
+        {/if}
+        <PlanGrid
+          {...$view?.definition.plan.grid}
+          user={data.user}
+          on:changeColumnSizes={onChangeColumnSizes}
+          on:changeLeftRowSizes={onChangeLeftRowSizes}
+          on:changeMiddleRowSizes={onChangeMiddleRowSizes}
+          on:changeRightRowSizes={onChangeRightRowSizes}
+        />
+      </div>
+    </Resizable.Pane>
+    <Resizable.Handle
+      class="hover:after:bg-neutral-300 hover:after:transition-all hover:after:delay-[400ms] data-[active]:after:bg-neutral-300 data-[active]:after:transition-all"
+    />
+    <Resizable.Pane
+      defaultSize={!isConsoleExpanded ? 0 : 24}
+      minSize={16}
+      collapsible
+      collapsedSize={0}
+      onCollapse={() => (isConsoleExpanded = false)}
+      onExpand={() => (isConsoleExpanded = true)}
+      bind:pane={consolePaneApi}
+      class="min-h-[28px]"
+    >
+      <div class="h-full min-h-6 overflow-hidden">
+        <Console
+          bind:this={errorConsole}
+          expanded={isConsoleExpanded}
+          selectedTab={selectedConsoleTab}
+          on:toggle={onConsoleToggle}
+          on:selectTab={onSelectConsoleTab}
         >
-          <CalendarIcon />
-          <svelte:fragment slot="metadata">
-            <div class="st-typography-body">
-              {#if !$schedulingAnalysisStatus}
-                Scheduling analysis not run
-              {/if}
-            </div>
-            {#if $schedulingAnalysisStatus === Status.Pending || $schedulingAnalysisStatus === Status.Incomplete}
-              <button
-                on:click={() => effects.cancelSchedulingRequest($latestSchedulingRequest.analysis_id, data.user)}
-                class="st-button cancel-button"
-                disabled={$planReadOnly}>Cancel</button
-              >
+          <svelte:fragment slot="console-actions">
+            {#if selectedConsoleTab === 'all' || selectedConsoleTab === 'scheduling'}
+              <div use:tooltip={{ content: 'Clear Errors', placement: 'top' }}>
+                <Button variant="ghost" size="icon" on:click={() => onClearErrorsClick(selectedConsoleTab)}>
+                  <ListX size={16} /></Button
+                >
+              </div>
             {/if}
           </svelte:fragment>
-        </PlanNavButton>
-        <ExtensionMenu
-          extensions={$extensions}
-          title={!compactNavMode ? 'Extensions' : ''}
-          user={data.user}
-          on:callExtension={onCallExtension}
-        />
-        <ViewMenu
-          hasCreatePermission={hasCreateViewPermission}
-          hasUpdatePermission={hasUpdateViewPermission}
-          user={data.user}
-          on:createView={onCreateView}
-          on:editView={onEditView}
-          on:saveView={onSaveView}
-          on:toggleView={onToggleView}
-          on:resetView={onResetView}
-          on:uploadView={onUploadView}
-        />
-      </svelte:fragment>
-    </Nav>
-    {#if $planSnapshot}
-      <PlanSnapshotBar
-        numOfDirectives={$planSnapshotActivityDirectives.length}
-        snapshot={$planSnapshot}
-        on:close={onCloseSnapshotPreview}
-        on:restore={onRestoreSnapshot}
-      />
-    {/if}
-    {#if modelErrorCount}
-      <PlanModelErrorBar
-        modelName={$plan?.model.name}
-        hasErrors={modelErrorCount > 0}
-        on:close={onCloseSnapshotPreview}
-        on:viewModelErrors={() => {
-          errorConsole.openConsole(ConsoleTabs.MODEL);
-        }}
-      />
-    {/if}
-    <PlanGrid
-      {...$view?.definition.plan.grid}
-      user={data.user}
-      on:changeColumnSizes={onChangeColumnSizes}
-      on:changeLeftRowSizes={onChangeLeftRowSizes}
-      on:changeMiddleRowSizes={onChangeMiddleRowSizes}
-      on:changeRightRowSizes={onChangeRightRowSizes}
-    />
-  </div>
-  <Console bind:this={errorConsole} on:resize={onConsoleResize}>
-    <svelte:fragment slot="console-tabs">
-      <div class="console-tabs">
-        <div>
-          <ConsoleTab tabId={ConsoleTabs.ALL} numberOfErrors={$allErrors?.length} title="All Errors">All</ConsoleTab>
-        </div>
-        <div class="separator text-xs">|</div>
-        <div class="grouped-error-tabs">
-          <ConsoleTab
-            tabId={ConsoleTabs.ANCHOR}
-            numberOfErrors={$anchorValidationErrors?.length}
-            title="Anchor Validation Errors"
-          >
-            <ActivityIcon />
-          </ConsoleTab>
-          <ConsoleTab
-            tabId={ConsoleTabs.SCHEDULING}
-            numberOfErrors={$schedulingErrors?.length}
-            title="Scheduling Errors"><CalendarIcon /></ConsoleTab
-          >
-          <ConsoleTab
-            tabId={ConsoleTabs.SIMULATION}
-            numberOfErrors={$simulationDatasetErrors?.length}
-            title="Simulation Errors"
-          >
-            <GearWideConnectedIcon />
-          </ConsoleTab>
-          <ConsoleTab
-            tabId={ConsoleTabs.ACTIVITY}
-            numberOfErrors={activityErrorCounts.all}
-            title="Activity Validation Errors"
-          >
-            <WaterfallIcon />
-          </ConsoleTab>
-          <ConsoleTab tabId={ConsoleTabs.MODEL} numberOfErrors={modelErrorCount} title="Mission Model Errors">
-            <MissionModelIcon />
-          </ConsoleTab>
-        </div>
-      </div>
-    </svelte:fragment>
+          <svelte:fragment slot="console-tabs">
+            <div class="console-tabs overflow-x-hidden">
+              <div>
+                <ConsoleTab value="all" numberOfErrors={$allErrors?.length} title="All Errors">All Errors</ConsoleTab>
+              </div>
+              <div class="pointer-events-none mx-0 flex w-2 justify-center px-0 text-[8px] opacity-50">|</div>
+              <div class="flex py-0.5">
+                <ConsoleTab
+                  value="anchor"
+                  numberOfErrors={$anchorValidationErrors?.length}
+                  title="Anchor Validation Errors"
+                >
+                  Anchor Validation
+                </ConsoleTab>
+                <ConsoleTab value="scheduling" numberOfErrors={$schedulingErrors?.length} title="Scheduling Errors">
+                  Scheduling
+                </ConsoleTab>
+                <ConsoleTab
+                  value="simulation"
+                  numberOfErrors={$simulationDatasetErrors?.length}
+                  title="Simulation Errors"
+                >
+                  Simulation
+                </ConsoleTab>
+                <ConsoleTab
+                  value="activity"
+                  numberOfErrors={activityErrorCounts.all}
+                  title="Activity Validation Errors"
+                >
+                  Activity Validation
+                </ConsoleTab>
+                <ConsoleTab value="model" numberOfErrors={modelErrorCount} title="Mission Model Errors">
+                  Mission Model
+                </ConsoleTab>
+              </div>
+            </div>
+          </svelte:fragment>
 
-    <ConsoleGenericErrors errors={$allErrors} title="All Errors" on:clearMessages={onClearAllErrors} />
-    <ConsoleGenericErrors errors={$anchorValidationErrors} title="Anchor Validation Errors" />
-    <ConsoleGenericErrors
-      errors={$schedulingErrors}
-      title="Scheduling Errors"
-      on:clearMessages={onClearSchedulingErrors}
-    />
-    <ConsoleGenericErrors errors={$simulationDatasetErrors} isClearable={false} title="Simulation Errors" />
-    <ConsoleActivityErrors
-      activityValidationErrorTotalRollup={activityErrorCounts}
-      activityValidationErrorRollups={$activityErrorRollups}
-      title="Activity Validation Errors"
-      on:selectionChanged={onActivityValidationSelected}
-    />
-    <ConsoleModelErrors model={$plan?.model} title="Mission Model Errors" />
-  </Console>
-</CssGrid>
+          <ConsoleGenericErrors value="all" errors={$allErrors} />
+          <ConsoleGenericErrors value="anchor" errors={$anchorValidationErrors} />
+          <ConsoleGenericErrors value="scheduling" errors={$schedulingErrors} />
+          <ConsoleGenericErrors value="simulation" errors={$simulationDatasetErrors} />
+          <ConsoleActivityErrors
+            activityValidationErrorTotalRollup={activityErrorCounts}
+            activityValidationErrorRollups={$activityErrorRollups}
+            on:selectionChanged={onActivityValidationSelected}
+          />
+          <ConsoleModelErrors model={$plan?.model} title="Mission Model Errors" />
+        </Console>
+      </div>
+    </Resizable.Pane>
+  </Resizable.PaneGroup>
+</div>
 
 <style>
   :global(.plan-container) {
@@ -964,6 +1028,7 @@
   .plan-content {
     display: flex;
     flex-flow: column;
+    height: 100%;
     overflow: hidden;
   }
 
@@ -973,17 +1038,8 @@
 
   .console-tabs {
     align-items: center;
-    column-gap: 1rem;
     display: grid;
     grid-template-columns: min-content min-content auto;
-  }
-
-  .grouped-error-tabs {
-    display: flex;
-  }
-
-  .separator {
-    color: var(--st-gray-30);
   }
 
   .simulation-header {

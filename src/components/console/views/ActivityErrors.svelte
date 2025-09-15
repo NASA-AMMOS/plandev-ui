@@ -1,19 +1,20 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Tabs } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, IRowNode } from 'ag-grid-community';
   import type { DataGridColumnDef } from '../../../types/data-grid';
   import type { ActivityErrorCategories, ActivityErrorCounts, ActivityErrorRollup } from '../../../types/errors';
+  import EmptyState from '../../console/EmptyState.svelte';
   import ActivityErrorsRollup from '../../ui/ActivityErrorsRollup.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
-  import TabPanel from '../../ui/Tabs/TabPanel.svelte';
-  import { ConsoleContextKey } from '../Console.svelte';
 
   type ActivityErrorsRollupRendererParams = ICellRendererParams<ActivityErrorRollup>;
 
   export let activityValidationErrorRollups: ActivityErrorRollup[] = [];
   export let activityValidationErrorTotalRollup: ActivityErrorCounts;
-  export let title: string;
+
+  $: hasErrors = activityValidationErrorRollups.length > 0;
 
   function doesExternalFilterPass({ data }: IRowNode<ActivityErrorRollup>) {
     if (data) {
@@ -120,63 +121,35 @@
   let selectedCategory: ActivityErrorCategories = 'all';
 </script>
 
-<TabPanel tabContextKey={ConsoleContextKey}>
-  <div class="activity-errors-container">
-    <div class="console-header">
-      <div>{title}</div>
-    </div>
-    <div class="errors">
-      <div class="rollups">
-        <ActivityErrorsRollup
-          counts={activityValidationErrorTotalRollup}
-          selectable
-          showTotalCount
-          on:selectCategory={onSelectCategory}
-        />
+<Tabs.Content value="activity" class="mt-0 h-full overflow-hidden pb-2 pr-2 pt-2">
+  {#if hasErrors}
+    <div class="flex h-full flex-col overflow-hidden">
+      <div class="grid min-h-0 flex-1 grid-cols-[240px_1fr] overflow-hidden bg-[var(--st-gray-15)]">
+        <div class="overflow-y-auto border-r border-[var(--st-gray-20)] pt-4">
+          <ActivityErrorsRollup
+            counts={activityValidationErrorTotalRollup}
+            selectable
+            showTotalCount
+            on:selectCategory={onSelectCategory}
+          />
+        </div>
+        <div class="h-full min-h-0 overflow-hidden">
+          <DataGrid
+            bind:this={dataGrid}
+            {columnDefs}
+            rowData={activityValidationErrorRollups}
+            rowHeight={34}
+            rowSelection="single"
+            {doesExternalFilterPass}
+            {isExternalFilterPresent}
+            on:selectionChanged
+          />
+        </div>
       </div>
-      <div class="errors-table">
-        <DataGrid
-          bind:this={dataGrid}
-          {columnDefs}
-          rowData={activityValidationErrorRollups}
-          rowHeight={34}
-          rowSelection="single"
-          {doesExternalFilterPass}
-          {isExternalFilterPresent}
-          on:selectionChanged
-        />
-      </div>
     </div>
-  </div>
-</TabPanel>
-
-<style>
-  .activity-errors-container {
-    display: grid;
-    grid-template-rows: min-content auto;
-    height: 100%;
-  }
-
-  .console-header {
-    color: var(--st-gray-60);
-    display: grid;
-    font-size: 11px;
-    font-weight: 700;
-    grid-template-columns: auto min-content;
-    justify-content: space-between;
-    line-height: 1rem;
-    margin: 0.65rem 1rem;
-    text-transform: uppercase;
-  }
-
-  .errors {
-    background-color: var(--st-primary-background-color);
-    display: grid;
-    grid-template-columns: 240px auto;
-  }
-
-  .rollups {
-    border-right: 1px solid var(--st-gray-20, #ebecec);
-    padding-top: 1rem;
-  }
-</style>
+  {:else}
+    <div class="flex h-full overflow-hidden">
+      <EmptyState />
+    </div>
+  {/if}
+</Tabs.Content>

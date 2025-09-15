@@ -50,7 +50,7 @@ export type ActivityDirectiveDB = {
 };
 
 export type ActivityDirective = ActivityDirectiveDB & {
-  start_time_ms: number | null;
+  start_time_ms: number;
 };
 
 export type ActivityDirectiveInsertInput = {

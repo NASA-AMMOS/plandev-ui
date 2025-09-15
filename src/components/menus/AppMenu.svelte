@@ -30,6 +30,7 @@
   import effects from '../../utilities/effects';
   import { logout } from '../../utilities/login';
   import { showAboutModal } from '../../utilities/modal';
+  import { getWorkspacesUrl } from '../../utilities/routes';
   import MenuItem from './MenuItem.svelte';
   import MenuLink from './MenuLink.svelte';
 
@@ -100,7 +101,7 @@
         <!-- Sequencing Column -->
         <div class="flex flex-col gap-0.5">
           <h3 class="px-3 pb-2 pt-2 text-sm font-medium text-muted-foreground">Sequencing</h3>
-          <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/sequencing">
+          <MenuLink on:click={closeMenu} className="text-sm py-1.5" href={getWorkspacesUrl(base)}>
             <FileCode2 size={16} />
             Sequence Editor
           </MenuLink>

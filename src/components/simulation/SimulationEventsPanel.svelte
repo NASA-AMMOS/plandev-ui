@@ -141,34 +141,22 @@
     dataGrid?.sizeColumnsToFit();
   }
 
-  function onColumnToggleChange({ detail: { field, isHidden } }: CustomEvent) {
-    const columnStates: ColumnState[] = simulationEventsTable?.columnStates ?? [];
-    const existingColumnStateIndex: number = columnStates.findIndex(
-      (columnState: ColumnState) => field === columnState.colId,
-    );
-    if (existingColumnStateIndex >= 0) {
-      viewUpdateSimulationEventsTable({
-        columnStates: [
-          ...columnStates.slice(0, existingColumnStateIndex),
-          {
-            ...columnStates[existingColumnStateIndex],
-            hide: isHidden,
-          },
-          ...columnStates.slice(existingColumnStateIndex + 1),
-        ],
-      });
-    } else {
-      viewUpdateSimulationEventsTable({
-        columnStates: [
-          ...columnStates,
-          {
-            colId: field,
-            hide: isHidden,
-          },
-        ],
-      });
-    }
+  function onColumnsChanged({
+    detail: { columns },
+  }: CustomEvent<{ columns: { field: any; isHidden: boolean; name: string }[] }>) {
+    const activityColumnStates: ColumnState[] = simulationEventsTable?.columnStates ?? [];
+    const newActivityColumnStates = activityColumnStates.map(columnState => {
+      return { ...columnState, hide: columns.find(column => columnState.colId === column.field)?.isHidden ?? false };
+    });
 
+    viewUpdateSimulationEventsTable({
+      columnStates: newActivityColumnStates.filter(filterEmpty),
+    });
+
+    requestAutoSize();
+  }
+
+  function requestAutoSize() {
     setTimeout(() => {
       if (autoSizeColumns === 'fit') {
         autoSizeContent();
@@ -242,6 +230,7 @@
         })
         .filter(filterEmpty),
     });
+    requestAutoSize();
   }
 
   function toggleAutoSizeContent() {
@@ -287,7 +276,7 @@
         </button>
       </div>
       <ActivityTableMenu
-        on:toggle-column={onColumnToggleChange}
+        on:columns-changed={onColumnsChanged}
         on:show-hide-all-columns={onShowHideAllColumns}
         columnDefs={derivedColumnDefs}
         columnStates={simulationEventsTable?.columnStates}

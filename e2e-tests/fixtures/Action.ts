@@ -14,7 +14,12 @@ export class Action {
   createModalDeleteButton: Locator;
   runModal: Locator;
 
-  constructor(public page: Page) {}
+  constructor(
+    public page: Page,
+    public workspaceId: string,
+  ) {
+    this.updatePage(page);
+  }
 
   async configureAction(): Promise<void> {
     await this.page.getByRole('tab', { name: 'Configure' }).click();
@@ -33,6 +38,7 @@ export class Action {
     await expect(this.page.getByRole('button', { name: 'Create' })).toBeDisabled();
     await this.actionFormName.fill(this.actionName);
     await this.actionFormDescription.fill(this.actionDescription);
+    await this.page.waitForTimeout(1000);
     await this.actionFormPath.setInputFiles(this.actionPath);
     await this.page.getByRole('button', { name: 'Create' }).click();
     await this.waitForToast('Action Created Successfully');
@@ -56,7 +62,7 @@ export class Action {
     // successfully query the api
     await this.runModal.locator(".parameter-base-string:has-text('repository') input").fill('repos/NASA-AMMOS/aerie');
     await this.runModal.getByRole('button', { name: 'Run' }).click();
-    await this.page.waitForURL('/sequencing/actions/runs/**');
+    await this.page.waitForURL(`/workspaces/${this.workspaceId}/actions/runs/**`);
     await this.page.getByLabel('Complete');
   }
 

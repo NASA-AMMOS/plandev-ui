@@ -22,13 +22,23 @@ npm run test:e2e
 
 ### Troubleshooting
 
+#### First time run:
+
 If this is your first time running the tests you may need to install the Playwright browser drivers:
 
 ```sh
 npx playwright install
 ```
 
-If something fails read the Playwright error carefully as it usually describes a quick fix. You can also look for the error in the [Playwright GitHub Issues](https://github.com/microsoft/playwright/issues) if you need more help.
+#### New backend service:
+
+If a new backend service has been added to Aerie, make sure to update the [docker-compose-test.yml](../docker-compose-test.yml) in order for the CI to be able to spin up the backend correctly.
+
+#### Debug test:
+
+If something fails, read the Playwright error carefully as it usually describes a quick fix. You can also look for the error in the [Playwright GitHub Issues](https://github.com/microsoft/playwright/issues) if you need more help.
+
+#### Reduce test workers:
 
 If you continue to get unexplained failures another thing you can try is [limit the number of workers](https://playwright.dev/docs/test-parallel#limit-workers) in [playwright.config.ts](../playwright.config.ts):
 

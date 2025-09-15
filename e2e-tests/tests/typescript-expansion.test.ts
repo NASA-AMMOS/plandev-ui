@@ -1,7 +1,7 @@
 import test, { expect, type BrowserContext, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { Constraints } from '../fixtures/Constraints.js';
-import { COMMAND_DICTIONARY_PATH, Dictionaries, DictionaryType } from '../fixtures/Dictionaries.js';
+import { COMMAND_DICTIONARY_PATH, Dictionaries } from '../fixtures/Dictionaries.js';
 import { ExpansionRules } from '../fixtures/ExpansionRules.js';
 import { ExpansionRuns } from '../fixtures/ExpansionRuns.js';
 import { ExpansionSets } from '../fixtures/ExpansionSets.js';
@@ -46,7 +46,6 @@ test.beforeAll(async ({ baseURL, browser }) => {
   expansionRuns = new ExpansionRuns(page, plan, sequenceFilterName);
 
   const dictionaryName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
-  const dictionaryBuffer = dictionaries.readDictionary(dictionaryName, COMMAND_DICTIONARY_PATH);
 
   await models.goto();
   await models.createModel(baseURL);
@@ -59,14 +58,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
   await page.waitForTimeout(1000); // wait for sim results
 
   await dictionaries.goto();
-  await dictionaries.updatePage(page, DictionaryType.CommandDictionary, dictionaryName);
-  await dictionaries.createDictionary(
-    dictionaryBuffer,
-    dictionaryName,
-    dictionaries.commandDictionaryTable,
-    dictionaries.commandDictionaryTableRow,
-    DictionaryType.CommandDictionary,
-  );
+  await dictionaries.createCommandDictionary(dictionaryName, COMMAND_DICTIONARY_PATH);
   await parcels.goto();
   await parcels.createParcel(dictionaryName, baseURL);
   await expansionRules.goto();

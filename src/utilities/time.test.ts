@@ -1,5 +1,5 @@
 import { keyBy } from 'lodash-es';
-import { describe, expect, test } from 'vitest';
+import { expect, test } from 'vitest';
 import {
   convertDoyToYmd,
   convertDurationStringToInterval,
@@ -20,16 +20,22 @@ import {
   getUnixEpochTime,
   isTimeBalanced,
   isTimeMax,
-  padNumber,
   parseDoyOrYmdTime,
   parseDurationString,
   removeDateStringMilliseconds,
+  switchISOTimezoneRepresentation,
   usToOffset,
   validateTime,
 } from '../../src/utilities/time';
 import { TimeTypes } from '../enums/time';
 import type { ActivityDirectiveDB } from '../types/activity';
 import { createSpanUtilityMaps } from './activities';
+
+test('switchISOTimezoneRepresentation', () => {
+  expect(switchISOTimezoneRepresentation('2024-001T01:02:03Z')).toEqual('2024-001T01:02:03+00:00');
+  expect(switchISOTimezoneRepresentation('2024-001T01:02:03+00:00')).toEqual('2024-001T01:02:03Z');
+  expect(switchISOTimezoneRepresentation('2024-001T01:02:03')).toEqual('2024-001T01:02:03');
+});
 
 test('convertDurationStringToUs', () => {
   expect(convertDurationStringToUs('2y 318d 6h 16m 19s 200ms 0us')).toEqual(90577779200000);
@@ -153,7 +159,7 @@ test('getActivityDirectiveStartTimeMs', () => {
   const directiveDBMap = keyBy(
     [directive, anchoredDirective1, anchoredDirective2, anchoredDirective3, anchoredDirective4].map(d => ({
       ...d,
-      start_time_ms: null,
+      start_time_ms: -1,
     })),
     'id',
   );
@@ -274,7 +280,7 @@ test('getActivityDirectiveStartTimeMs - no cycles, anchor chain', () => {
   const directiveDBMap = keyBy(
     [baseDirective, anchored1, anchored2, anchored3, anchored4].map(d => ({
       ...d,
-      start_time_ms: null,
+      start_time_ms: -1,
     })),
     'id',
   );
@@ -736,20 +742,17 @@ test('formatMS', () => {
 });
 
 test('usToOffset', () => {
-  expect(usToOffset(5025678901)).toBe('01:23:45.678901');
-  expect(usToOffset(-5025678901)).toBe('-01:23:45.678901');
-  expect(usToOffset(97200000000)).toBe('27:00:00.0');
-  expect(usToOffset(-97200000000)).toBe('-27:00:00.0');
-});
-
-describe('padNumber', () => {
-  test('Should pad the number with leading zeroes', () => {
-    expect(padNumber(5, 2)).toBe('05');
-    expect(padNumber(42, 4)).toBe('0042');
-  });
-
-  test('Should not pad the number with leading zeroes', () => {
-    expect(padNumber(1234, 4)).toBe('1234');
-    expect(padNumber(42, 2)).toBe('42');
-  });
+  expect(usToOffset(0)).toBe('00:00:00.000000');
+  expect(usToOffset(1)).toBe('00:00:00.000001');
+  expect(usToOffset(1000000)).toBe('00:00:01.000000');
+  expect(usToOffset(1000010)).toBe('00:00:01.000010');
+  expect(usToOffset(1000000 * 60 * 3)).toBe('00:03:00.000000');
+  expect(usToOffset(1000000 * 60 * 60 * 4)).toBe('04:00:00.000000');
+  expect(usToOffset(1000000 * 60 * 60 * 48 + 1000000 * 9 + 23)).toBe('48:00:09.000023');
+  expect(usToOffset(-9)).toBe('-00:00:00.000009');
+  expect(usToOffset(-0)).toBe('00:00:00.000000');
+  expect(usToOffset(2.34)).toBe('00:00:00.000002');
+  expect(usToOffset(2.84)).toBe('00:00:00.000003');
+  expect(usToOffset(1 / 0)).toBe('INVALID');
+  expect(usToOffset(NaN)).toBe('INVALID');
 });

@@ -1,0 +1,46 @@
+{
+  "event_types": {
+    "ExampleEvent": {
+      "title": "ExampleEvent",
+      "description": "Schema for the attributes of the ExampleEvent External Event Type.",
+      "type": "object",
+      "properties": {
+        "example1": {
+          "type": "string"
+        },
+        "example2": {
+          "type": "number"
+        },
+        "optional": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "example1",
+        "example2"
+      ]
+    }
+  },
+  "source_types": {
+    "Example External Source": {
+      "title": "Example External Source",
+      "description": "Schema for the attributes of the Example External Source External Source Type.",
+      "type": "object",
+      "properties": {
+        "optional": {
+          "type": "string"
+        },
+        "version": {
+          "type": "number"
+        },
+        "spacecraft": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "spacecraft"
+      ]
+    }
+  }
+}

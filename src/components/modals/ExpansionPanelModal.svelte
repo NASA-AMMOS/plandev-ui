@@ -4,8 +4,10 @@
   import { Label, Select } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import { field } from '../../stores/form';
-  import { parcels, workspaces } from '../../stores/sequencing';
-  import type { Parcel, Workspace } from '../../types/sequencing';
+  import { parcels } from '../../stores/sequencing';
+  import { workspaces } from '../../stores/workspaces';
+  import type { Parcel } from '../../types/sequencing';
+  import type { Workspace } from '../../types/workspace';
   import { min } from '../../utilities/validators';
   import Field from '../form/Field.svelte';
   import Modal from './Modal.svelte';

@@ -1,52 +1,49 @@
 {
     "source": {
         "key": "external-event-derivation-3.json",
-        "source_type": "Derivation Test",
+        "source_type_name": "DerivationTest",
+        "derivation_group_name": "DerivationTest Default",
         "valid_at": "2022-020T00:00:00Z",
         "period": {
             "start_time": "2022-003T00:00:00Z",
             "end_time": "2022-010T00:00:00Z"
         },
-        "metadata": {}
+        "attributes": {
+          "exampleAttribute": "TestString"
+        }
     },
     "events": [
         {
             "key": "5",
-            "event_type": "DerivationC",
+            "event_type_name": "DerivationC",
             "start_time": "2022-005T23:00:00Z",
             "duration": "01:10:00",
-            "properties": {
-                "rules": [
-                    1
-                ],
-                "notes": "not subsumed, optionally change this event to have key 6 and ensure this test fails",
-                "should_present": true
+            "attributes": {
+              "rules": "1",
+              "notes": "not subsumed, optionally change this event to have key 6 and ensure this test fails",
+              "should_present": true
             }
         },
         {
             "key": "6",
-            "event_type": "DerivationC",
+            "event_type_name": "DerivationC",
             "start_time": "2022-006T12:00:00Z",
             "duration": "02:00:00",
-            "properties": {
-                "rules": [
-                    1
-                ],
-                "notes": "not subsumed",
-                "should_present": true
+            "attributes": {
+              "rules": "1",
+              "notes": "not subsumed",
+              "should_present": true
             }
         },
         {
             "key": "2",
-            "event_type": "DerivationB",
+            "event_type_name": "DerivationB",
             "start_time": "2022-009T11:00:00Z",
             "duration": "01:05:00",
-            "properties": {
-                "rules": [
-                    4
-                ],
-                "notes": "replaces 2 in test 01, despite different event type",
-                "should_present": true
+            "attributes": {
+              "rules": "4",
+              "notes": "replaces 2 in test 01, despite different event type",
+              "should_present": true
             }
         }
     ]

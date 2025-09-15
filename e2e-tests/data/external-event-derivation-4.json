@@ -1,28 +1,27 @@
 {
     "source": {
         "key": "external-event-derivation-4.json",
-        "source_type": "Derivation Test",
+        "source_type_name": "DerivationTest",
+        "derivation_group_name": "DerivationTest Default",
         "valid_at": "2022-021T00:00:00Z",
         "period": {
             "start_time": "2022-001T12:00:00Z",
             "end_time": "2022-002T12:00:00Z"
         },
-        "metadata": {
-            "notes": "events in here aren't too significant. The existence of this ingest is to ensure that slots work correctly in the SQL query."
+        "attributes": {
+          "exampleAttribute": "TestString"
         }
     },
     "events": [
         {
             "key": "9",
-            "event_type": "DerivationC",
+            "event_type_name": "DerivationC",
             "start_time": "2022-002T00:00:00Z",
             "duration": "01:00:00",
-            "properties": {
-                "rules": [
-                    1
-                ],
-                "notes": "not subsumed",
-                "should_present": true
+            "attributes": {
+              "rules": "1",
+              "notes": "not subsumed",
+              "should_present": true
             }
         }
     ]

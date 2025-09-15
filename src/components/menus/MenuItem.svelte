@@ -35,13 +35,14 @@
 
 <div
   class={twMerge(
-    'flex cursor-pointer select-none items-center gap-2 rounded-sm px-3 py-3 text-[13px] font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50',
+    'flex cursor-pointer select-none items-center gap-2 rounded-sm px-3 py-3 text-[13px] font-medium hover:bg-muted aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
     className,
   )}
   class:disabled
   class:selected
   class:selectable
   role="menuitem"
+  aria-disabled={disabled}
   use:useActions={use}
   on:click|stopPropagation={() => {
     /* Prevent modal close click listener from firing */

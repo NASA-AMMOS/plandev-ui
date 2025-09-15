@@ -283,6 +283,7 @@ export class Plan {
 
   async fillExternalDatasetFileInput(importFilePath: string) {
     const inputFile = this.page.locator('input[name="file"]');
+    await this.page.waitForTimeout(1000);
     await inputFile.focus();
     await inputFile.setInputFiles(importFilePath);
     await inputFile.evaluate(e => e.blur());
@@ -315,9 +316,9 @@ export class Plan {
    * Re-run the tests and increase the timeout if you get consistent failures.
    */
   async goto(planId = this.plans.planId) {
-    await this.page.goto(`/plans/${planId}`);
-    await this.page.waitForURL(`/plans/${planId}`, { waitUntil: 'networkidle' });
-    await expect(this.page.locator('.nav-button-title:has-text("Activities")')).toBeVisible();
+    await this.page.goto(`/plans/${planId}`, { waitUntil: 'load' });
+    await this.page.waitForURL(`/plans/${planId}`, { waitUntil: 'load' });
+    await this.page.locator('.layer-message.loading').waitFor({ state: 'detached' });
   }
 
   async hoverMenu(menuButton: Locator) {
@@ -543,7 +544,7 @@ export class Plan {
     this.constraintManageButton = page.locator(`button[name="manage-constraints"]`);
     this.constraintModalFilter = page.locator('.modal').getByPlaceholder('Filter constraints');
     this.constraintNewButton = page.locator(`button[name="new-constraint"]`);
-    this.consoleContainer = page.locator(`.console-container`);
+    this.consoleContainer = page.getByTestId('console').filter({ hasText: 'All Errors' });
     this.externalSourceManageButton = page.getByLabel('Select derivation groups to');
     this.gridMenuButton = page.locator('.grid-menu');
     this.gridMenu = this.gridMenuButton.getByRole('menu');

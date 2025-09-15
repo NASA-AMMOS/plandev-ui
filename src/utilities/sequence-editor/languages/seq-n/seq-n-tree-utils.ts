@@ -1,6 +1,6 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
 import type { EnumMap, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
-import { parseVariables, SEQN_NODES } from '@nasa-jpl/aerie-sequence-languages';
+import { parseVariables, SEQN_NODES, unquoteUnescape } from '@nasa-jpl/aerie-sequence-languages';
 import { SequenceTypes } from '../../../../enums/sequencing';
 import { type LibrarySequence, type UserSequence } from '../../../../types/sequencing';
 import { fswCommandArgDefault } from '../../command-dictionary';
@@ -39,14 +39,24 @@ export function getAncestorStepOrRequest(node: SyntaxNode | null) {
   ]);
 }
 
-export function userSequenceToLibrarySequence(sequence: UserSequence): LibrarySequence {
-  const tree = SeqLanguage.parser.parse(sequence.definition);
+export function userSequenceToLibrarySequence(sequence: UserSequence, workspaceId: number): LibrarySequence {
+  const tree: Tree = SeqLanguage.parser.parse(sequence.definition);
+  const idNodes = tree.topNode.getChildren(SEQN_NODES.ID_DECLARATION);
+
+  let sequenceId: string = '';
+  if (idNodes.length) {
+    const idNode = idNodes[0];
+    const idValNode = idNode.firstChild;
+    const { from, to } = getFromAndTo([idValNode]);
+    const idVal = sequence.definition.slice(from, to);
+    sequenceId = unquoteUnescape(idVal);
+  }
   return {
-    name: sequence.name,
+    name: sequenceId,
     parameters: parseVariables(tree.topNode, sequence.definition, SEQN_NODES.PARAMETER_DECLARATION) ?? [],
     tree,
     type: SequenceTypes.LIBRARY,
-    workspace_id: sequence.workspace_id,
+    workspace_id: workspaceId,
   };
 }
 

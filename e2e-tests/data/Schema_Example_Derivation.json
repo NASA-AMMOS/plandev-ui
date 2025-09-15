@@ -1,0 +1,93 @@
+{
+  "event_types": {
+    "DerivationA": {
+      "type": "object",
+      "required": [
+        "rules",
+        "notes",
+        "should_present"
+      ],
+      "properties": {
+        "rules": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "should_present": {
+          "type": "boolean"
+        }
+      }
+    },
+    "DerivationB": {
+      "type": "object",
+      "required": [
+        "rules",
+        "notes",
+        "should_present"
+      ],
+      "properties": {
+        "rules": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "should_present": {
+          "type": "boolean"
+        }
+      }
+    },
+    "DerivationC": {
+      "type": "object",
+      "required": [
+        "rules",
+        "notes",
+        "should_present"
+      ],
+      "properties": {
+        "rules": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "should_present": {
+          "type": "boolean"
+        }
+      }
+    },
+    "DerivationD": {
+      "type": "object",
+      "required": [
+        "rules",
+        "notes",
+        "should_present"
+      ],
+      "properties": {
+        "rules": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "should_present": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "source_types": {
+    "DerivationTest": {
+      "type": "object",
+      "required": [
+        "exampleAttribute"
+      ],
+      "properties": {
+        "exampleAttribute": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

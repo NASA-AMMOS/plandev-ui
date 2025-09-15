@@ -13,7 +13,7 @@
     RowMouseOverEvent,
     TimeRange,
   } from '../../types/timeline';
-  import { filterEmpty } from '../../utilities/generic';
+  import { filterNullish } from '../../utilities/generic';
   import { CANVAS_PADDING_Y, getYScale, minMaxDecimation } from '../../utilities/timeline';
 
   export let contextmenu: MouseEvent | undefined;
@@ -103,7 +103,7 @@
     if (ordinalScale) {
       const domain = Array.from(ordinalScaleDomain);
       return scalePoint()
-        .domain(domain.filter(filterEmpty))
+        .domain(domain.filter(filterNullish))
         .range([drawHeight - CANVAS_PADDING_Y, CANVAS_PADDING_Y]) as ScalePoint<string>;
     }
     return getYScale(yAxis?.scaleDomain || [], drawHeight);

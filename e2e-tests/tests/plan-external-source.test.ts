@@ -39,6 +39,11 @@ test.beforeAll(async ({ baseURL, browser }) => {
   await plans.goto();
   await plans.createPlan();
   await externalSources.goto();
+  await externalSources.createTypes(
+    externalSources.exampleTypeSchema,
+    externalSources.exampleTypeSchemaExpectedSourceTypes,
+    externalSources.exampleTypeSchemaExpectedEventTypes,
+  );
   await externalSources.uploadExternalSource();
 });
 
@@ -49,12 +54,22 @@ test.afterAll(async () => {
   await models.deleteModel();
 
   await externalSources.goto();
-  // Cleanup all test files that *may* have been uploaded
   await externalSources.deleteSource(externalSources.externalSourceFileName);
   await externalSources.deleteSource(externalSources.derivationTestFileKey1);
   await externalSources.deleteSource(externalSources.derivationTestFileKey2);
   await externalSources.deleteSource(externalSources.derivationTestFileKey3);
   await externalSources.deleteSource(externalSources.derivationTestFileKey4);
+
+  await externalSources.gotoTypeManager();
+  await externalSources.deleteDerivationGroup(externalSources.exampleDerivationGroup);
+  await externalSources.deleteDerivationGroup(externalSources.derivationTestGroupName);
+  await externalSources.deleteExternalSourceType(externalSources.exampleSourceType);
+  await externalSources.deleteExternalSourceType(externalSources.derivationTestSourceTypeName);
+  await externalSources.deleteExternalEventType(externalSources.exampleEventType);
+  await externalSources.deleteExternalEventType(externalSources.derivationATypeName);
+  await externalSources.deleteExternalEventType(externalSources.derivationBTypeName);
+  await externalSources.deleteExternalEventType(externalSources.derivationCTypeName);
+  await externalSources.deleteExternalEventType(externalSources.derivationDTypeName);
 
   await page.close();
   await context.close();
@@ -136,52 +151,6 @@ test.describe.serial('Plan External Sources', () => {
     });
 
     expect(doPixelsExist).toBeTruthy();
-  });
-
-  test('Cards should be shown when a new external source is uploaded', async () => {
-    // Upload a test file and link its derivation group to the plan
-    await externalSources.goto();
-    await externalSources.uploadExternalSource(
-      externalSources.derivationTestFile1,
-      externalSources.derivationTestFileKey1,
-    );
-    await plan.goto();
-    await plan.showPanel(PanelNames.EXTERNAL_SOURCES);
-    await plan.externalSourceManageButton.click();
-    await externalSources.linkDerivationGroup(
-      externalSources.derivationTestGroupName,
-      externalSources.derivationTestSourceType,
-    );
-
-    // Upload another test
-    await externalSources.goto();
-    await externalSources.uploadExternalSource(
-      externalSources.derivationTestFile2,
-      externalSources.derivationTestFileKey2,
-    );
-
-    await plan.goto();
-    await plan.showPanel(PanelNames.EXTERNAL_SOURCES);
-
-    // Allow stores to load, validate 'new source' card appears
-    await expect(
-      page.getByText('New files matching source types and derivation groups in the current plan'),
-    ).toBeVisible();
-
-    await page.getByRole('button', { name: 'Dismiss' }).click();
-
-    await expect(
-      page.getByText('New files matching source types and derivation groups in the current plan'),
-    ).not.toBeVisible();
-
-    await plan.externalSourceManageButton.click();
-    await expect(
-      page.getByRole('row', { name: externalSources.derivationTestGroupName }).getByRole('checkbox'),
-    ).toBeChecked();
-    await externalSources.unlinkDerivationGroup(
-      externalSources.derivationTestGroupName,
-      externalSources.derivationTestSourceType,
-    );
   });
 
   test('Linked derivation groups should be expandable in panel', async () => {

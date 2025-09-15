@@ -18,7 +18,7 @@ import type { Axis } from '../types/timeline';
 import { createSpanUtilityMaps } from '../utilities/activities';
 import gql from '../utilities/gql';
 import { getSimulationProgress } from '../utilities/simulation';
-import { planId, planModelId, planRevision } from './plan';
+import { planId, planModelId, planModelRevision, planRevision } from './plan';
 import { gqlSubscribable } from './subscribable';
 
 /* Writeable. */
@@ -118,14 +118,15 @@ export const spanUtilityMaps: Readable<SpanUtilityMaps> = derived(spans, $spans 
 });
 
 export const simulationStatus: Readable<Status | null> = derived(
-  [planRevision, simulationDatasetLatest, simulation],
-  ([$planRevision, $simulationDataset, $simulation]) => {
-    if ($simulationDataset && $simulation) {
+  [planRevision, simulationDatasetLatest, simulation, planModelRevision],
+  ([$planRevision, $simulationDataset, $simulation, $planModelRevision]) => {
+    if ($simulationDataset && $simulation && $planModelRevision > -1) {
       const { status } = $simulationDataset;
 
       if (
         $planRevision !== $simulationDataset.plan_revision ||
-        $simulation.revision !== $simulationDataset.simulation_revision
+        $simulation.revision !== $simulationDataset.simulation_revision ||
+        $planModelRevision !== $simulationDataset.model_revision
       ) {
         return Status.Modified;
       }

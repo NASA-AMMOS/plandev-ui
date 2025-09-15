@@ -2,8 +2,6 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { ExternalEventType } from '../../types/external-event';
-  import type { ExternalSourceType } from '../../types/external-source';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -11,13 +9,9 @@
 
   export let height: number = 200;
   export let width: number = 380;
-  export let itemToDelete: ExternalEventType | ExternalSourceType;
-  export let itemToDeleteTypeName: 'External Event Type' | 'External Source Type';
-  export let associatedItems: string[] = [];
-
-  // Used to display text - event types always are associated to sources in this context, and sources are always associated to derivation groups
-  const associatedItemTypeName: string =
-    itemToDeleteTypeName === 'External Event Type' ? 'External Source' : 'Derivation Group';
+  export let itemsToDelete: string[];
+  export let itemsToDeleteTypeName: 'External Event Type(s)' | 'External Source Type(s)';
+  export let associatedItems: Set<string>;
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -37,18 +31,18 @@
 
 <Modal {height} {width}>
   <ModalHeader on:close>
-    {#if associatedItems.length > 0}
-      {itemToDeleteTypeName} Cannot Be Deleted
+    {#if associatedItems.size > 0}
+      {itemsToDeleteTypeName} Cannot Be Deleted
     {:else}
-      Delete {itemToDeleteTypeName}
+      Delete {itemsToDeleteTypeName}
     {/if}
   </ModalHeader>
   <div class="modal-body">
     <ModalContent>
-      {#if associatedItems.length > 0}
+      {#if associatedItems.size > 0}
         <span class="st-typography-body">
-          This {itemToDeleteTypeName} still contains the following related {associatedItemTypeName} which must be deleted
-          first:
+          All External Sources/Derivation Groups using the {itemsToDeleteTypeName} must be deleted first. The following {itemsToDeleteTypeName}
+          are still in use:
           {#each associatedItems as associatedItem}
             <ul class="modal-content-text">
               <li>
@@ -59,14 +53,21 @@
         </span>
       {:else}
         <span class="st-typography-body modal-content-text">
-          Are you sure you want to delete "{itemToDelete.name}"?
+          Are you sure you want to delete the following {itemsToDeleteTypeName}:
+          <ul class="modal-content-text">
+            {#each itemsToDelete as itemToDelete}
+              <li>
+                {itemToDelete}
+              </li>
+            {/each}
+          </ul>
           <i>This action cannot be undone.</i>
         </span>
       {/if}
     </ModalContent>
   </div>
   <ModalFooter>
-    {#if associatedItems.length > 0}
+    {#if associatedItems.size > 0}
       <button class="st-button" on:click={() => dispatch('close')}> Close </button>
     {:else}
       <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>

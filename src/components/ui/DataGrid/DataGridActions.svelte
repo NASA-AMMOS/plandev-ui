@@ -7,8 +7,8 @@
   import ExpandIcon from '@nasa-jpl/stellar/icons/expand.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
+  import { FileUp } from 'lucide-svelte';
   import type { Placement } from 'tippy.js';
-  import ExportIcon from '../../../assets/export.svg?component';
   import type { TRowData } from '../../../types/data-grid';
   import { tooltip } from '../../../utilities/tooltip';
   import CancellableProgressRadial from '../CancellableProgressRadial.svelte';
@@ -107,7 +107,7 @@
       use:tooltip={downloadTooltip}
     >
       {#if useExportIcon}
-        <ExportIcon />
+        <FileUp size={16} />
       {:else}
         <DownloadIcon />
       {/if}

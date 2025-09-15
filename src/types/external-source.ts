@@ -1,3 +1,4 @@
+import type { SchemaObject } from 'ajv';
 import type { ExternalEventDB, ExternalEventInsertInput, ExternalEventJson } from '../types/external-event';
 import type { UserId } from './app';
 
@@ -7,8 +8,12 @@ export type ExternalSourcePkey = {
   key: string;
 };
 
+export type DerivationGroupId = string;
+export type ExternalSourceTypeId = string;
+
 // This is the type that conforms with the database schema. We don't really use it, as it is pretty heavyweight - instead we derive lighter types from it.
 export type ExternalSourceDB = {
+  attributes: object;
   created_at: string;
   derivation_group_name: string;
   end_time: string;
@@ -24,12 +29,13 @@ export type ExternalSourceDB = {
 export type ExternalSourceJson = {
   events: ExternalEventJson[];
   source: {
+    attributes: object;
     key: string;
     period: {
       end_time: string;
       start_time: string;
     };
-    source_type: string;
+    source_type_name: string;
     valid_at: string;
   };
 };
@@ -47,9 +53,22 @@ export type PlanDerivationGroup = {
   plan_id: number;
 };
 
+export type ExternalSourceEventTypeSchema = {
+  event_types?: SchemaObject;
+  source_types?: SchemaObject;
+};
+
 export type ExternalSourceType = {
+  attribute_schema: SchemaObject;
   name: string;
 };
+
+export type ExternalSourceTypeAssociations = ExternalSourceType & {
+  derivation_group_associations: number;
+  source_associations: number;
+};
+
+export type ExternalSourceWithEventTypes = { key: string; types: string[] };
 
 export type DerivationGroup = {
   derived_event_total: number;
@@ -59,18 +78,12 @@ export type DerivationGroup = {
   sources: Map<string, { event_counts: number }>;
 };
 
-// This is used for the GraphQL mutation.
-export type ExternalSourceInsertInput = Pick<
-  ExternalSourceDB,
-  'source_type_name' | 'start_time' | 'end_time' | 'valid_at'
-> &
-  Pick<ExternalSourcePkey, 'key' | 'derivation_group_name'> & {
-    external_events: {
-      data: ExternalEventInsertInput[] | null;
-    };
+export type ExternalSourceInsertInput = {
+  external_events: ExternalEventInsertInput[]; // updated after this map is created
+  source: Pick<ExternalSourceDB, 'attributes' | 'derivation_group_name' | 'key' | 'source_type_name' | 'valid_at'> & {
+    period: Pick<ExternalSourceDB, 'end_time' | 'start_time'>;
   };
-
-export type ExternalSourceTypeInsertInput = Pick<ExternalSourceType, 'name'>;
+};
 
 export type DerivationGroupInsertInput = Pick<DerivationGroup, 'name' | 'source_type_name'>;
 

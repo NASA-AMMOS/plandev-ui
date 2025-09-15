@@ -70,6 +70,8 @@ export const ViewXRangeLayerSchemePresets: Record<XRangeLayerColorScheme, readon
   schemeTableau10,
 };
 
+export const ViewTimelineResourceRowsLimit = 20;
+
 export const viewSchemaVersion = 2;
 
 export const viewSchemaVersionName = `v${viewSchemaVersion}`;

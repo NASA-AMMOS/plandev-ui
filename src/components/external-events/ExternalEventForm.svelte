@@ -1,19 +1,56 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { externalEventTypes } from '../../stores/external-event';
   import { field } from '../../stores/form';
   import { plugins } from '../../stores/plugins';
-  import type { ExternalEvent } from '../../types/external-event';
+  import type { ExternalEvent, ExternalEventType } from '../../types/external-event';
   import type { FieldStore } from '../../types/form';
+  import type { ArgumentsMap, ParametersMap } from '../../types/parameter';
+  import type { ValueSchema } from '../../types/schema';
+  import {
+    getFormParameters,
+    translateJsonSchemaArgumentsToValueSchema,
+    translateJsonSchemaToValueSchema,
+  } from '../../utilities/parameters';
   import { formatDate } from '../../utilities/time';
   import Collapse from '../Collapse.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
   import Input from '../form/Input.svelte';
+  import Parameters from '../parameters/Parameters.svelte';
 
   export let externalEvent: ExternalEvent;
   export let showHeader: boolean = true;
 
+  let externalEventAttributes: ArgumentsMap = {};
+
+  let externalEventType: ExternalEventType | undefined = undefined;
+  let externalEventTypeParametersMap: ParametersMap = {};
   let startTimeField: FieldStore<string>;
+  let requiredAttributes: string[] = [];
+
+  $: externalEventType = $externalEventTypes.find(eventType => eventType.name === externalEvent.pkey.event_type_name);
+  $: externalEventAttributes = translateJsonSchemaArgumentsToValueSchema(externalEvent.attributes);
+
+  $: if (externalEventType !== undefined) {
+    // Create a ParametersMap for the External Event Type
+    const externalEventTypeAttributesTranslated = translateJsonSchemaToValueSchema(externalEventType?.attribute_schema);
+    externalEventTypeParametersMap = Object.entries(externalEventTypeAttributesTranslated).reduce(
+      (acc: ParametersMap, currentAttribute: [string, ValueSchema], index: number) => {
+        acc[currentAttribute[0]] = {
+          order: index,
+          schema: currentAttribute[1],
+        };
+        return acc;
+      },
+      {} as ParametersMap,
+    );
+
+    // Get the set of required attribute names
+    requiredAttributes =
+      $externalEventTypes.find(eventType => eventType.name === externalEvent?.pkey.event_type_name)?.attribute_schema
+        .required ?? [];
+  }
 
   $: startTimeField = field<string>(`${formatDate(new Date(externalEvent.start_time), $plugins.time.primary.format)}`);
 </script>
@@ -64,6 +101,28 @@
             value={externalEvent.pkey.source_key}
           />
         </Input>
+      </Collapse>
+      <Collapse defaultExpanded={false} title="Attributes" tooltipContent="View External Event Attributes">
+        {#if Object.keys(externalEvent.attributes).length === 0}
+          <div class="st-typography-label">No Attributes Found</div>
+        {:else}
+          <div class="st-typography-body">
+            <Parameters
+              disabled={true}
+              expanded={false}
+              formParameters={getFormParameters(
+                externalEventTypeParametersMap,
+                externalEventAttributes,
+                requiredAttributes,
+                undefined,
+                undefined,
+                [],
+                'option',
+                true,
+              )}
+            />
+          </div>
+        {/if}
       </Collapse>
     </fieldset>
   </div>
