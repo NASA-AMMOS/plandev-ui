@@ -15,8 +15,6 @@
     TimelineItemListFilterOption,
     TimelineItemType,
   } from '../types/timeline';
-  import type { ActivityType } from '../types/activity';
-  import type { ResourceType } from '../types/simulation';
   import { tooltip } from '../utilities/tooltip';
   import Input from './form/Input.svelte';
   import LayerPicker from './LayerPicker.svelte';
