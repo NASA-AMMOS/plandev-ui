@@ -16,7 +16,7 @@
   import {
     bulkShiftActivityDirectivesInPlan,
     copyActivityDirectivesToClipboard,
-    packActivityDirectivesInPlan
+    packActivityDirectivesInPlan,
   } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
@@ -195,9 +195,9 @@
   }
 
   async function updateActivities(updatedActivities: ActivityDirective[] | null) {
-    if (plan != null && Array.isArray(updatedActivities)) {
+    if (plan !== null && Array.isArray(updatedActivities)) {
+      const activityTypes = $planModelActivityTypes ?? [];
       for (const activity of updatedActivities) {
-        const activityTypes = $planModelActivityTypes ?? [];
         const activityType = activityTypes.find(type => type.name === activity.type);
         await effects.updateActivityDirective(
           plan,

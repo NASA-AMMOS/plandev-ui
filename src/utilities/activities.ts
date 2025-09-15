@@ -284,17 +284,6 @@ export async function getActivityDirectivesToPaste(
   return activities;
 }
 
-export function findTypes(type: string, activityTypes: ActivityType[]): ActivityType | undefined {
-  // const activityTypes = await activityTypesPromise;
-  for (let idx = 0; idx < activityTypes.length; idx++) {
-    if (activityTypes[idx].name === type) {
-      return activityTypes[idx];
-    }
-  }
-  console.warn(`Activity type ${type} not found in activity types`);
-  return undefined;
-}
-
 export function bulkShiftActivityDirectivesInPlan(
   activities: ActivityDirective[],
   direction: 'LEFT' | 'RIGHT',

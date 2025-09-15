@@ -66,7 +66,7 @@
           <label
             class="label"
             use:tooltip={{ content: 'The duration of how much the activities should be shifted by', placement: 'top' }}
-            for="shift-offset"
+            for="gap-offset"
           >
             Shift By:
           </label>
