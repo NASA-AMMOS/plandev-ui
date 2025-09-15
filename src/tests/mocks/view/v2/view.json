@@ -404,6 +404,41 @@
             },
             "autoAdjustHeight": false,
             "horizontalGuides": []
+          },
+          {
+            "id": 8,
+            "name": "External Events",
+            "yAxes": [],
+            "height": 160,
+            "layers": [
+              {
+                "id": 0,
+                "name": "",
+                "filter": {
+                  "externalEvent": {
+                    "event_types": ["BananaSale", "RainStorm"]
+                  }
+                },
+                "yAxisId": null,
+                "chartType": "externalEvent",
+                "externalEventColor": "#fcdd8f"
+              }
+            ],
+            "expanded": true,
+            "discreteOptions": {
+              "height": 16,
+              "displayMode": "grouped",
+              "activityOptions": {
+                "composition": "both",
+                "hierarchyMode": "flat"
+              },
+              "labelVisibility": "auto",
+              "externalEventOptions": {
+                "groupBy": "event_type_name"
+              }
+            },
+            "autoAdjustHeight": true,
+            "horizontalGuides": []
           }
         ],
         "marginLeft": 250,

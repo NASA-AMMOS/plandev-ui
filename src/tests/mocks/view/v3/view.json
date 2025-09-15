@@ -38,7 +38,7 @@
                 "name": "",
                 "filter": {
                   "activity": {
-                    "types": [
+                    "static_types": [
                       "BakeBananaBread",
                       "BananaNap",
                       "BiteBanana",
@@ -104,9 +104,7 @@
                 "id": 1,
                 "name": "",
                 "filter": {
-                  "resource": {
-                    "names": ["/data/line_count"]
-                  }
+                  "resource": "/data/line_count"
                 },
                 "yAxisId": 0,
                 "chartType": "line",
@@ -152,9 +150,7 @@
                 "id": 2,
                 "name": "",
                 "filter": {
-                  "resource": {
-                    "names": ["/flag"]
-                  }
+                  "resource": "/flag"
                 },
                 "opacity": 0.8,
                 "yAxisId": 1,
@@ -200,9 +196,7 @@
                 "id": 3,
                 "name": "",
                 "filter": {
-                  "resource": {
-                    "names": ["/flag/conflicted"]
-                  }
+                  "resource": "/flag/conflicted"
                 },
                 "opacity": 0.8,
                 "yAxisId": 2,
@@ -248,9 +242,7 @@
                 "id": 4,
                 "name": "",
                 "filter": {
-                  "resource": {
-                    "names": ["/fruit"]
-                  }
+                  "resource": "/fruit"
                 },
                 "yAxisId": 3,
                 "chartType": "line",
@@ -296,9 +288,7 @@
                 "id": 5,
                 "name": "",
                 "filter": {
-                  "resource": {
-                    "names": ["/peel"]
-                  }
+                  "resource": "/peel"
                 },
                 "yAxisId": 4,
                 "chartType": "line",
@@ -344,9 +334,7 @@
                 "id": 6,
                 "name": "",
                 "filter": {
-                  "resource": {
-                    "names": ["/plant"]
-                  }
+                  "resource": "/plant"
                 },
                 "yAxisId": 5,
                 "chartType": "line",
@@ -392,9 +380,7 @@
                 "id": 7,
                 "name": "",
                 "filter": {
-                  "resource": {
-                    "names": ["/producer"]
-                  }
+                  "resource": "/producer"
                 },
                 "opacity": 0.8,
                 "yAxisId": 6,
@@ -430,7 +416,7 @@
                 "name": "",
                 "filter": {
                   "externalEvent": {
-                    "event_types": ["BananaSale", "RainStorm"]
+                    "static_types": ["BananaSale", "RainStorm"]
                   }
                 },
                 "yAxisId": null,
@@ -971,5 +957,5 @@
       "autoSizeColumns": "fill"
     }
   },
-  "version": 1
+  "version": 3
 }

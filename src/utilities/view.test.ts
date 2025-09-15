@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import viewV0Migrated from '../tests/mocks/view/v0/view-migrated.json';
 import viewV0 from '../tests/mocks/view/v0/view.json';
-import viewV2 from '../tests/mocks/view/v2/view.json';
+import viewV1 from '../tests/mocks/view/v1/view.json';
+import viewV3 from '../tests/mocks/view/v3/view.json';
 import {
   applyViewDefinitionMigrations,
   generateDefaultView,
@@ -80,16 +81,16 @@ describe('applyViewDefinitionMigrations', () => {
 
 describe('migrateViewDefinition', () => {
   test('Should apply view migrations to an old view', async () => {
-    const { anyMigrationsApplied, error, migratedViewDefinition } = applyViewDefinitionMigrations(viewV0 as any);
+    const { anyMigrationsApplied, error, migratedViewDefinition } = applyViewDefinitionMigrations(viewV1 as any);
     expect(anyMigrationsApplied).toBeTruthy();
     expect(error).toBeNull();
-    expect(migratedViewDefinition).to.deep.eq(viewV2);
+    expect(migratedViewDefinition).to.deep.eq(viewV3);
   });
   test('Should apply no view migrations to a migration matching current version', async () => {
-    const { anyMigrationsApplied, error, migratedViewDefinition } = applyViewDefinitionMigrations(viewV2 as any);
+    const { anyMigrationsApplied, error, migratedViewDefinition } = applyViewDefinitionMigrations(viewV3 as any);
     expect(anyMigrationsApplied).toBeFalsy();
     expect(error).toBeNull();
-    expect(migratedViewDefinition).to.deep.eq(viewV2);
+    expect(migratedViewDefinition).to.deep.eq(viewV3);
   });
   test('Should return errors if migration fails', async () => {
     const invalidView = structuredClone(viewV0);
