@@ -1,9 +1,12 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { tooltip } from '../../utilities/tooltip';
 
   export { className as class };
   export { styleName as style };
   export let draggable: boolean = false;
+
+  export let tooltipContent: string | undefined = undefined;
 
   const dispatch = createEventDispatcher<{
     click: MouseEvent;
@@ -14,6 +17,20 @@
   let className: string = '';
   let styleName: string = '';
   let dragging: boolean = false;
+
+  function handleClick(e: MouseEvent) {
+    dispatch('click', e);
+  }
+
+  function handleDragEnd(e: DragEvent) {
+    dragging = false;
+    dispatch('dragend', e);
+  }
+
+  function handleDragStart(e: DragEvent) {
+    dragging = true;
+    dispatch('dragstart', e);
+  }
 </script>
 
 <div
@@ -22,15 +39,10 @@
   {draggable}
   role="none"
   style={styleName}
-  on:click={e => dispatch('click', e)}
-  on:dragend={e => {
-    dragging = false;
-    dispatch('dragend', e);
-  }}
-  on:dragstart={e => {
-    dragging = true;
-    dispatch('dragstart', e);
-  }}
+  on:click={handleClick}
+  on:dragend={handleDragEnd}
+  on:dragstart={handleDragStart}
+  use:tooltip={{ content: tooltipContent, disabled: !tooltipContent, placement: 'top' }}
 >
   <div class="list-item-content">
     <slot />

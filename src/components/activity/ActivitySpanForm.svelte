@@ -143,6 +143,22 @@
         <input class="st-input w-full" disabled name="activityType" value={span.type} />
       </Input>
 
+      {#if activityType && activityType.description}
+        <Input layout="inline">
+          <label use:tooltip={{ content: 'Activity Description', placement: 'top' }} for="activity-description">
+            Description
+          </label>
+          <textarea
+            class="st-input w-full"
+            disabled
+            name="activity-description"
+            id="activity-description"
+            value={activityType.description}
+            readonly
+          />
+        </Input>
+      {/if}
+
       <Input layout="inline">
         <label use:tooltip={{ content: 'Duration', placement: 'top' }} for="duration">Duration</label>
         <input class="st-input w-full" disabled name="duration" value={span.duration ?? 'None'} />

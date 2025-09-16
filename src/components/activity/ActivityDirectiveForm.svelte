@@ -543,6 +543,13 @@
 
   <div class="activity-form">
     <fieldset>
+      {#if activityType && activityType.description}
+        <Collapse title="Description">
+          <div class="st-typography-label">
+            {activityType.description}
+          </div>
+        </Collapse>
+      {/if}
       <Collapse title="Definition" contentClass="px-1">
         {#if showActivityName}
           <Highlight highlight={highlightKeysMap.name}>
@@ -939,5 +946,11 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+  }
+
+  .activity-description {
+    line-height: 1.4;
+    white-space: normal;
+    word-break: break-word;
   }
 </style>

@@ -19,6 +19,7 @@
   let leaveTimeout: NodeJS.Timeout | null = null;
   let source: ValueSource;
   let unit: string | undefined = undefined;
+  let description: string | undefined = undefined;
   let required: boolean = true;
   let externalEvent: boolean = false;
   let ref: HTMLElement;
@@ -26,6 +27,7 @@
   $: if (formParameter) {
     source = formParameter.valueSource;
     unit = formParameter.schema?.metadata?.unit?.value;
+    description = formParameter.schema?.metadata?.description?.value;
     externalEvent = formParameter.externalEvent ?? false;
     required = formParameter.required ?? true;
   }
@@ -105,6 +107,10 @@
             {#if externalEvent}
               <div class="parameter-info-label">Required</div>
               <div class="parameter-info-value"><i>{required}</i></div>
+            {/if}
+            {#if description}
+              <div>Description</div>
+              <div>{description}</div>
             {/if}
           </div>
         </div>

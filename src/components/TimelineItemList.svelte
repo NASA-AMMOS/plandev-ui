@@ -129,6 +129,16 @@
       viewAddFilterToRow([event.detail.item], typeName, {}, event.detail.row?.id, event.detail.layer);
     }
   }
+
+  function getDescription(item: TimelineItemType): string | undefined {
+    if ('description' in item) {
+      return item.description;
+    }
+    if ('schema' in item && item.schema?.metadata?.description?.value) {
+      return item.schema.metadata.description.value;
+    }
+    return undefined;
+  }
 </script>
 
 <div class="timeline-item-list">
@@ -268,6 +278,7 @@
           style="cursor: move;"
           on:dragend={onDragEnd}
           on:dragstart={e => onDragStart(e.detail, [item])}
+          tooltipContent={getDescription(item)}
         >
           {item.name}
           <slot prop={item} />

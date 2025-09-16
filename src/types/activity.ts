@@ -9,6 +9,7 @@ import type { Tag } from './tags';
 
 export type ActivityType = {
   computed_attributes_value_schema: ValueSchema;
+  description?: string;
   name: string;
   parameters: ParametersMap;
   required_parameters: string[];
