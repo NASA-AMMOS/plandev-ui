@@ -59,6 +59,7 @@ import type { Tag } from '../types/tags';
 import type { ViewDefinition } from '../types/view';
 import type { Workspace } from '../types/workspace';
 import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
+import PackActivitiesOffsetModal from '../components/modals/PackActivitiesOffsetModal.svelte';
 
 /**
  * Listens for clicks on the document body and removes the modal children.
@@ -1118,6 +1119,37 @@ export async function showExpansionSequenceModal(
           target.resolve = null;
           resolve({ confirm: true });
           sequenceModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+export async function showPackActivitiesModal(): Promise<
+  ModalElementValue<{ direction: 'Left' | 'Right'; offsetStr: string }>
+> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const packModal = new PackActivitiesOffsetModal({ props: {}, target });
+        target.resolve = resolve;
+
+        packModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          packModal.$destroy();
+        });
+
+        packModal.$on('confirm', e => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          packModal.$destroy();
         });
       }
     } else {

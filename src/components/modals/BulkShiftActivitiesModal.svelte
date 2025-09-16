@@ -9,7 +9,7 @@
   import ModalHeader from '../modals/ModalHeader.svelte';
 
   const dispatch = createEventDispatcher<{
-    cancel: void;
+    close: void;
     shift: {
       direction: 'Left' | 'Right';
       shiftOffset: string;
@@ -23,10 +23,6 @@
 
   function setDirection(dir: 'Left' | 'Right') {
     direction = dir;
-  }
-
-  function cancel() {
-    dispatch('cancel');
   }
 
   function shift() {
@@ -46,7 +42,7 @@
 
 <div class="compact-modal">
   <Modal height={150} width={300}>
-    <ModalHeader on:close={cancel}>Shift Directive(s)</ModalHeader>
+    <ModalHeader on:close>Shift Directive(s)</ModalHeader>
 
     <ModalContent>
       <div class="form-container">
@@ -85,7 +81,7 @@
 
     <ModalFooter>
       <div class="button-container">
-        <button class="st-button secondary" on:click={cancel}>Cancel</button>
+        <button class="st-button secondary" on:click={() => dispatch('close')}>Cancel</button>
         <button class="st-button" on:click={shift} disabled={!!shiftOffsetError}>Shift</button>
       </div>
     </ModalFooter>

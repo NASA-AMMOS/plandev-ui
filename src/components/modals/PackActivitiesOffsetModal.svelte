@@ -9,8 +9,8 @@
   import ModalHeader from './ModalHeader.svelte';
 
   const dispatch = createEventDispatcher<{
-    cancel: null;
-    pack: { direction: 'Left' | 'Right'; gapOffset: string };
+    close: void;
+    confirm: { direction: 'Left' | 'Right'; offsetStr: string };
   }>();
 
   let direction: 'Left' | 'Right' = 'Left';
@@ -22,12 +22,8 @@
     direction = dir;
   }
 
-  function cancel() {
-    dispatch('cancel');
-  }
-
-  function pack() {
-    dispatch('pack', { direction, gapOffset: gapOffsetString });
+  function confirm() {
+    dispatch('confirm', { direction, offsetStr: gapOffsetString });
   }
 
   function onUpdateStartOffset(event: Event) {
@@ -43,7 +39,7 @@
 
 <div class="compact-modal">
   <Modal height={150} width={300}>
-    <ModalHeader on:close={cancel}>Pack Directive(s)</ModalHeader>
+    <ModalHeader on:close>Pack Directive(s)</ModalHeader>
     <ModalContent>
       <div class="form-container">
         <div class="row">
@@ -81,8 +77,8 @@
 
     <ModalFooter>
       <div class="button-container">
-        <button class="st-button secondary" on:click={cancel}>Cancel</button>
-        <button class="st-button" on:click={pack} disabled={!!gapOffsetError}>Pack</button>
+        <button class="st-button secondary" on:click={() => dispatch('close')}>Cancel</button>
+        <button class="st-button" on:click={confirm} disabled={!!gapOffsetError}>Pack</button>
       </div>
     </ModalFooter>
   </Modal>

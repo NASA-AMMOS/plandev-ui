@@ -5,24 +5,17 @@
   import type { ColDef, ColumnState, ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
-  import { activityDirectivesDB } from '../../stores/activities';
   import { planModelActivityTypes } from '../../stores/plan';
-  import { spansMap, spanUtilityMaps } from '../../stores/simulation';
   import type { ActivityDirective, ActivityDirectiveId } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/errors';
   import type { Plan } from '../../types/plan';
-  import {
-    bulkShiftActivityDirectivesInPlan,
-    copyActivityDirectivesToClipboard,
-    packActivityDirectivesInPlan,
-  } from '../../utilities/activities';
+  import { bulkShiftActivityDirectivesInPlan, copyActivityDirectivesToClipboard } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
   import { convertDurationStringToUs } from '../../utilities/time';
   import BulkShiftActivitiesModal from '../modals/BulkShiftActivitiesModal.svelte';
-  import PackActivitiesOffsetModal from '../modals/PackActivitiesOffsetModal.svelte';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -39,7 +32,6 @@
   export let plan: Plan | null;
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let bulkSelectedActivityDirectiveIds: ActivityDirectiveId[] = [];
-  export let showPackOffsetDialog = false;
   export let planReadOnly: boolean = false;
   export let user: User | null;
   export let filterExpression: string = '';
@@ -251,8 +243,8 @@
     const selectedIdSet = new Set(bulkSelectedActivityDirectiveIds);
     const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
 
-    if (selectedActivityDirectives.length) {
-      packLeftActivityDirectives(selectedActivityDirectives);
+    if (selectedActivityDirectives.length && plan !== null) {
+      effects.packActivityDirectives(plan, selectedActivityDirectives, 'LEFT', 0, user);
     }
   }
 
@@ -260,79 +252,17 @@
     const selectedIdSet = new Set(bulkSelectedActivityDirectiveIds);
     const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
 
-    if (selectedActivityDirectives.length) {
-      packRightActivityDirectives(selectedActivityDirectives);
+    if (selectedActivityDirectives.length && plan !== null) {
+      effects.packActivityDirectives(plan, selectedActivityDirectives, 'RIGHT', 0, user);
     }
   }
 
-  function displayPackItemsWithOffset() {
-    showPackOffsetDialog = true;
-  }
-
-  function bulkPackItemsWithOffset(event: CustomEvent<{ direction: string; gapOffset: string }>) {
-    showPackOffsetDialog = false;
+  function bulkPackItemsWithOffset() {
     const selectedIdSet = new Set(bulkSelectedActivityDirectiveIds);
     const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
 
-    const { direction, gapOffset } = event.detail;
-    if (selectedActivityDirectives.length) {
-      packActivityDirectivesOffset(selectedActivityDirectives, gapOffset, direction);
-    }
-  }
-
-  async function packLeftActivityDirectives(activities: ActivityDirective[]) {
-    if (plan !== null) {
-      const updatedActivities = packActivityDirectivesInPlan(
-        plan,
-        activities,
-        'LEFT',
-        0,
-        $activityDirectivesDB ?? [],
-        $spansMap ?? {},
-        $spanUtilityMaps ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
-      );
-
-      if (updatedActivities) {
-        updateActivities(updatedActivities);
-      }
-    }
-  }
-
-  async function packRightActivityDirectives(activities: ActivityDirective[]) {
-    if (plan !== null) {
-      const updatedActivities = packActivityDirectivesInPlan(
-        plan,
-        activities,
-        'RIGHT',
-        0,
-        $activityDirectivesDB ?? [],
-        $spansMap ?? {},
-        $spanUtilityMaps ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
-      );
-
-      if (updatedActivities) {
-        updateActivities(updatedActivities);
-      }
-    }
-  }
-
-  async function packActivityDirectivesOffset(activities: ActivityDirective[], gapOffset: string, direction: string) {
-    if (plan !== null) {
-      const offsetUS = convertDurationStringToUs(gapOffset);
-
-      const updatedActivities = packActivityDirectivesInPlan(
-        plan,
-        activities,
-        direction.toUpperCase() as 'LEFT' | 'RIGHT',
-        offsetUS,
-        $activityDirectivesDB ?? [],
-        $spansMap ?? {},
-        $spanUtilityMaps ?? { directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} },
-      );
-
-      if (updatedActivities) {
-        updateActivities(updatedActivities);
-      }
+    if (selectedActivityDirectives.length && plan !== null) {
+      effects.packActivityDirectivesWithModal(plan, selectedActivityDirectives, user);
     }
   }
 
@@ -391,7 +321,7 @@
         {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
       </ContextMenu.Item>
     {/if}
-    
+
     {#if showPackLeftMenu}
       <ContextMenu.Item size="sm" on:click={bulkPackLeftItems}>
         Pack Left {bulkSelectedActivityDirectiveIds.length}
@@ -407,7 +337,7 @@
     {/if}
 
     {#if showPackOffsetMenu}
-      <ContextMenu.Item size="sm" on:click={displayPackItemsWithOffset}>
+      <ContextMenu.Item size="sm" on:click={bulkPackItemsWithOffset}>
         Pack {bulkSelectedActivityDirectiveIds.length}
         {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText} with Offset
       </ContextMenu.Item>
@@ -416,9 +346,5 @@
 </BulkActionDataGrid>
 
 {#if showBulkShiftDialog}
-  <BulkShiftActivitiesModal on:cancel={() => (showBulkShiftDialog = false)} on:shift={bulkShiftItems} />
-{/if}
-
-{#if showPackOffsetDialog}
-  <PackActivitiesOffsetModal on:cancel={() => (showPackOffsetDialog = false)} on:pack={bulkPackItemsWithOffset} />
+  <BulkShiftActivitiesModal on:close={() => (showBulkShiftDialog = false)} on:shift={bulkShiftItems} />
 {/if}
