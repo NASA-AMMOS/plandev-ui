@@ -241,10 +241,16 @@ import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timelin
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import type { Workspace, WorkspaceInsertInput } from '../types/workspace';
 import type { WorkspaceTreeMap, WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
-import { ActivityDeletionAction, addAbsoluteTimeToRevision, packActivityDirectivesInPlan } from './activities';
+import {
+  ActivityDeletionAction,
+  addAbsoluteTimeToRevision,
+  bulkShiftActivityDirectivesInPlan,
+  packActivityDirectivesInPlan,
+} from './activities';
 import { compare, convertToQuery } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
+  showBulkShiftActivitiesModal,
   showCancelActionRunModal,
   showConfirmModal,
   showCreatePlanBranchModal,
@@ -5935,6 +5941,7 @@ const effects = {
       return false;
     }
   },
+
   async packActivityDirectivesWithModal(
     plan: Plan,
     directives: ActivityDirective[],
@@ -6518,6 +6525,48 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       return { message: 'An unexpected error occurred', success: false };
+    }
+  },
+
+  async shiftActivityDirectives(plan: Plan, directives: ActivityDirective[], user: User | null): Promise<boolean> {
+    // show modal and allow user to specify offset before shifting
+    try {
+      if (!queryPermissions.UPDATE_ACTIVITY_DIRECTIVES(user, plan)) {
+        throwPermissionError('update activity directives');
+      }
+
+      const { confirm, value } = await showBulkShiftActivitiesModal();
+      if (!confirm || !value) {
+        return false;
+      }
+
+      const { direction, shiftOffsetStr } = value;
+      const activitiesToUpdate = bulkShiftActivityDirectivesInPlan(
+        directives,
+        direction.toUpperCase() as 'LEFT' | 'RIGHT',
+        convertDurationStringToUs(shiftOffsetStr),
+      );
+
+      if (plan !== null && activitiesToUpdate && Array.isArray(activitiesToUpdate)) {
+        const activityTypes = get(planModelActivityTypesStore) ?? [];
+        for (const activity of activitiesToUpdate) {
+          const activityType = activityTypes.find(type => type.name === activity.type);
+          await effects.updateActivityDirective(
+            plan,
+            activity.id,
+            { start_offset: activity.start_offset },
+            activityType || null,
+            user && 'activeRole' in user ? (user as User) : null,
+          );
+        }
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      showFailureToast((error as Error)?.message ?? error);
+      catchError('Shift Activities Failed', error as Error);
+      return false;
     }
   },
 

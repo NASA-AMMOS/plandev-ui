@@ -10,9 +10,9 @@
 
   const dispatch = createEventDispatcher<{
     close: void;
-    shift: {
+    confirm: {
       direction: 'Left' | 'Right';
-      shiftOffset: string;
+      shiftOffsetStr: string;
     };
   }>();
 
@@ -25,8 +25,8 @@
     direction = dir;
   }
 
-  function shift() {
-    dispatch('shift', { direction, shiftOffset: shiftDurationString });
+  function confirm() {
+    dispatch('confirm', { direction, shiftOffsetStr: shiftDurationString });
   }
 
   function onUpdateStartOffset(event: Event) {
@@ -82,7 +82,7 @@
     <ModalFooter>
       <div class="button-container">
         <button class="st-button secondary" on:click={() => dispatch('close')}>Cancel</button>
-        <button class="st-button" on:click={shift} disabled={!!shiftOffsetError}>Shift</button>
+        <button class="st-button" on:click={confirm} disabled={!!shiftOffsetError}>Shift</button>
       </div>
     </ModalFooter>
   </Modal>

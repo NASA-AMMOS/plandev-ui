@@ -60,6 +60,7 @@ import type { ViewDefinition } from '../types/view';
 import type { Workspace } from '../types/workspace';
 import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
 import PackActivitiesOffsetModal from '../components/modals/PackActivitiesOffsetModal.svelte';
+import BulkShiftActivitiesModal from '../components/modals/BulkShiftActivitiesModal.svelte';
 
 /**
  * Listens for clicks on the document body and removes the modal children.
@@ -1407,6 +1408,40 @@ export async function showSavedViewsModal(
           target.resolve = null;
           resolve({ confirm: false });
           savedViewsModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a BulkShiftActivitiesModal component.
+ */
+export async function showBulkShiftActivitiesModal(): Promise<
+  ModalElementValue<{ direction: 'Left' | 'Right'; shiftOffsetStr: string }>
+> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const shiftModal = new BulkShiftActivitiesModal({ props: {}, target });
+        target.resolve = resolve;
+
+        shiftModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          shiftModal.$destroy();
+        });
+
+        shiftModal.$on('confirm', e => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          shiftModal.$destroy();
         });
       }
     } else {

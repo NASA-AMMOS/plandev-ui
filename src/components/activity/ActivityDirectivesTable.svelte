@@ -5,17 +5,14 @@
   import type { ColDef, ColumnState, ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
-  import { planModelActivityTypes } from '../../stores/plan';
   import type { ActivityDirective, ActivityDirectiveId } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/errors';
   import type { Plan } from '../../types/plan';
-  import { bulkShiftActivityDirectivesInPlan, copyActivityDirectivesToClipboard } from '../../utilities/activities';
+  import { copyActivityDirectivesToClipboard } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
-  import { convertDurationStringToUs } from '../../utilities/time';
-  import BulkShiftActivitiesModal from '../modals/BulkShiftActivitiesModal.svelte';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -186,56 +183,12 @@
     }
   }
 
-  async function updateActivities(updatedActivities: ActivityDirective[] | null) {
-    if (plan !== null && Array.isArray(updatedActivities)) {
-      const activityTypes = $planModelActivityTypes ?? [];
-      for (const activity of updatedActivities) {
-        const activityType = activityTypes.find(type => type.name === activity.type);
-        await effects.updateActivityDirective(
-          plan,
-          activity.id,
-          { start_offset: activity.start_offset },
-          activityType || null,
-          user && 'activeRole' in user ? (user as User) : null,
-        );
-      }
-    }
-  }
-
-  function displayBulkShift() {
-    showBulkShiftDialog = true;
-  }
-
-  function bulkShiftItems(event: CustomEvent<{ direction: string; shiftOffset: string }>) {
-    showBulkShiftDialog = false;
-
+  function bulkShiftItems() {
     const selectedIdSet = new Set(bulkSelectedActivityDirectiveIds);
     const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
 
-    const { direction, shiftOffset } = event.detail;
-
-    if (selectedActivityDirectives.length) {
-      bulkShiftActivityDirectives(direction, selectedActivityDirectives, shiftOffset);
-    }
-  }
-
-  async function bulkShiftActivityDirectives(
-    direction: string,
-    selectedRows: ActivityDirective[],
-    shiftOffset: string,
-  ) {
-    if (plan !== null) {
-      const shiftOffsetUS = convertDurationStringToUs(shiftOffset);
-
-      const updatedActivities = bulkShiftActivityDirectivesInPlan(
-        selectedRows,
-        direction.toUpperCase() as 'LEFT' | 'RIGHT',
-        shiftOffsetUS,
-      );
-
-      if (updatedActivities) {
-        updateActivities(updatedActivities);
-      }
+    if (selectedActivityDirectives.length && plan !== null) {
+      effects.shiftActivityDirectives(plan, selectedActivityDirectives, user);
     }
   }
 
@@ -316,7 +269,7 @@
 
   <svelte:fragment slot="context-menu-bottom">
     {#if showBulkShiftMenu}
-      <ContextMenu.Item size="sm" on:click={displayBulkShift}>
+      <ContextMenu.Item size="sm" on:click={bulkShiftItems}>
         Shift {bulkSelectedActivityDirectiveIds.length}
         {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
       </ContextMenu.Item>
@@ -344,7 +297,3 @@
     {/if}
   </svelte:fragment>
 </BulkActionDataGrid>
-
-{#if showBulkShiftDialog}
-  <BulkShiftActivitiesModal on:close={() => (showBulkShiftDialog = false)} on:shift={bulkShiftItems} />
-{/if}
