@@ -76,10 +76,8 @@
     </ModalContent>
 
     <ModalFooter>
-      <div class="button-container">
-        <button class="st-button secondary" on:click={() => dispatch('close')}>Cancel</button>
-        <button class="st-button" on:click={confirm} disabled={!!gapOffsetError}>Pack</button>
-      </div>
+      <button class="st-button secondary" on:click={() => dispatch('close')}>Cancel</button>
+      <button class="st-button" on:click={confirm} disabled={!!gapOffsetError}>Pack</button>
     </ModalFooter>
   </Modal>
 </div>
@@ -149,12 +147,6 @@
     max-width: 200px;
     padding: 0.5rem 1rem;
     width: fit-content;
-  }
-
-  .button-container {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
   }
 
   input.error {
