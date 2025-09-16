@@ -21,7 +21,6 @@
 
   export let activityDirectives: ActivityDirective[] | null = null;
   export let activityDirectiveErrorRollupsMap: Record<ActivityDirectiveId, ActivityErrorRollup> | undefined = undefined;
-  export let showBulkShiftDialog = false;
   export let showBulkShiftMenu: boolean = true;
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
@@ -183,39 +182,39 @@
     }
   }
 
-  function bulkShiftItems() {
+  async function bulkShiftItems() {
     const selectedIdSet = new Set(bulkSelectedActivityDirectiveIds);
     const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
 
     if (selectedActivityDirectives.length && plan !== null) {
-      effects.shiftActivityDirectives(plan, selectedActivityDirectives, user);
+      await effects.shiftActivityDirectives(plan, selectedActivityDirectives, user);
     }
   }
 
-  function bulkPackLeftItems() {
+  async function bulkPackLeftItems() {
     const selectedIdSet = new Set(bulkSelectedActivityDirectiveIds);
     const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
 
     if (selectedActivityDirectives.length && plan !== null) {
-      effects.packActivityDirectives(plan, selectedActivityDirectives, 'LEFT', 0, user);
+      await effects.packActivityDirectives(plan, selectedActivityDirectives, 'LEFT', 0, user);
     }
   }
 
-  function bulkPackRightItems() {
+  async function bulkPackRightItems() {
     const selectedIdSet = new Set(bulkSelectedActivityDirectiveIds);
     const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
 
     if (selectedActivityDirectives.length && plan !== null) {
-      effects.packActivityDirectives(plan, selectedActivityDirectives, 'RIGHT', 0, user);
+      await effects.packActivityDirectives(plan, selectedActivityDirectives, 'RIGHT', 0, user);
     }
   }
 
-  function bulkPackItemsWithOffset() {
+  async function bulkPackItemsWithOffset() {
     const selectedIdSet = new Set(bulkSelectedActivityDirectiveIds);
     const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
 
     if (selectedActivityDirectives.length && plan !== null) {
-      effects.packActivityDirectivesWithModal(plan, selectedActivityDirectives, user);
+      await effects.packActivityDirectivesWithModal(plan, selectedActivityDirectives, user);
     }
   }
 
