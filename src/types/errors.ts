@@ -13,10 +13,6 @@ export interface BaseError {
   type: ErrorTypes; // very short, semi-human-readable string representing the category/class/type of error, in all caps and underscores, eg. “INVALID_SIMULATION_ID”
 }
 
-// TODO: Idea - preprocess incoming errors to move all non-BaseError keys into data object
-// to support incoming backend error changes
-const baseErrorKeys = ['data', 'level', ''];
-
 export interface LogMessage extends BaseError {
   duration?: number; // optional number
   type: ErrorTypes.CAUGHT_ERROR | ErrorTypes.LOG;
@@ -32,9 +28,11 @@ export interface AnchorValidationError extends BaseError {
 export type ActivityValidationStatus = 'complete' | 'pending';
 
 export interface ActivityValidationErrors {
-  activityId: number;
-  errors: (ActivityDirectiveValidationFailures | AnchorValidationError)[];
-  status: ActivityValidationStatus;
+  data: {
+    activityId: number;
+    errors: (ActivityDirectiveValidationFailures | AnchorValidationError)[];
+    status: ActivityValidationStatus;
+  };
   type: string;
 }
 

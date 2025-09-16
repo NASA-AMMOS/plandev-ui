@@ -134,7 +134,9 @@
 
     if (activityValidationError) {
       const instantiationFailure: ActivityDirectiveInstantiationFailure | undefined =
-        activityValidationError.errors.find(isInstantiationError) as ActivityDirectiveInstantiationFailure | undefined;
+        activityValidationError.data.errors.find(isInstantiationError) as
+          | ActivityDirectiveInstantiationFailure
+          | undefined;
       if (instantiationFailure) {
         const { extraneousArguments, missingArguments, unconstructableArguments } = instantiationFailure.errors;
         extraArguments = extraneousArguments;

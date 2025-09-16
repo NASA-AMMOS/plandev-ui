@@ -63,7 +63,7 @@ export function isLogMessage(log: BaseError): log is LogMessage {
 export function generateActivityValidationErrorRollups(
   activityValidationErrors: ActivityValidationErrors[],
 ): ActivityErrorRollup[] {
-  return activityValidationErrors.map(({ activityId, errors, status, type }) => {
+  return activityValidationErrors.map(({ data: { activityId, errors, status }, type }) => {
     let extraLocations: string[] = [];
     let invalidAnchorLocations: string[] = [];
     let invalidParameterLocations: string[] = [];

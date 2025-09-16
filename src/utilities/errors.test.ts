@@ -97,78 +97,84 @@ describe('Errors Util', () => {
     expect(
       generateActivityValidationErrorRollups([
         {
-          activityId: 1,
-          errors: [
-            {
-              errors: {
-                noSuchActivityError: {
-                  activity_type: 'foobar',
-                  message: 'wat',
-                },
-              },
-              success: false,
-              type: ErrorTypes.NO_SUCH_ACTIVITY_TYPE,
-            },
-            {
-              errors: {
-                extraneousArguments: ['foo', 'bar', 'bur'],
-                missingArguments: ['baz'],
-                unconstructableArguments: [
-                  {
-                    failure: '',
-                    name: 'buzz',
+          data: {
+            activityId: 1,
+            errors: [
+              {
+                errors: {
+                  noSuchActivityError: {
+                    activity_type: 'foobar',
+                    message: 'wat',
                   },
-                  {
-                    failure: '',
-                    name: 'foo',
-                  },
-                ],
-              },
-              success: false,
-              type: ErrorTypes.INSTANTIATION_ERRORS,
-            },
-            {
-              errors: {
-                noSuchActivityError: {
-                  activity_type: 'foobar',
-                  message: '',
                 },
+                success: false,
+                type: ErrorTypes.NO_SUCH_ACTIVITY_TYPE,
               },
-              success: false,
-              type: ErrorTypes.NO_SUCH_ACTIVITY_TYPE,
-            },
-            {
-              errors: {
-                validationNotices: [
-                  {
+              {
+                errors: {
+                  extraneousArguments: ['foo', 'bar', 'bur'],
+                  missingArguments: ['baz'],
+                  unconstructableArguments: [
+                    {
+                      failure: '',
+                      name: 'buzz',
+                    },
+                    {
+                      failure: '',
+                      name: 'foo',
+                    },
+                  ],
+                },
+                success: false,
+                type: ErrorTypes.INSTANTIATION_ERRORS,
+              },
+              {
+                errors: {
+                  noSuchActivityError: {
+                    activity_type: 'foobar',
                     message: '',
-                    subjects: ['foo', 'fuu', 'bur'],
                   },
-                ],
+                },
+                success: false,
+                type: ErrorTypes.NO_SUCH_ACTIVITY_TYPE,
               },
-              success: false,
-              type: ErrorTypes.VALIDATION_NOTICES,
-            },
-            {
-              activityId: 5,
-              message: 'end-time anchor out of bounds',
-              timestamp: '',
-              type: ErrorTypes.ANCHOR_VALIDATION_ERROR,
-            },
-            {
-              activityId: 4,
-              message: 'anchor comes before plan start',
-              timestamp: '',
-              type: ErrorTypes.ANCHOR_VALIDATION_ERROR,
-            },
-          ],
-          status: 'complete',
+              {
+                errors: {
+                  validationNotices: [
+                    {
+                      message: '',
+                      subjects: ['foo', 'fuu', 'bur'],
+                    },
+                  ],
+                },
+                success: false,
+                type: ErrorTypes.VALIDATION_NOTICES,
+              },
+              {
+                data: {
+                  activityId: 5,
+                },
+                message: 'end-time anchor out of bounds',
+                timestamp: '',
+                type: ErrorTypes.ANCHOR_VALIDATION_ERROR,
+              },
+              {
+                data: { activityId: 4 },
+                message: 'anchor comes before plan start',
+                timestamp: '',
+                type: ErrorTypes.ANCHOR_VALIDATION_ERROR,
+              },
+            ],
+            status: 'complete',
+          },
           type: 'banana',
         },
         {
-          activityId: 2,
-          errors: [],
-          status: 'pending',
+          data: {
+            activityId: 2,
+            errors: [],
+            status: 'pending',
+          },
           type: 'banana',
         },
       ]),
@@ -217,7 +223,9 @@ describe('Errors Util', () => {
   test('getActivityIdsFromError - Should return specified ID for ANCHOR_VALIDATION_ERROR', () => {
     expect(
       getActivityIdsFromError({
-        activityId: 1,
+        data: {
+          activityId: 1,
+        },
         type: ErrorTypes.ANCHOR_VALIDATION_ERROR,
       } as AnchorValidationError),
     ).deep.eq([1]);

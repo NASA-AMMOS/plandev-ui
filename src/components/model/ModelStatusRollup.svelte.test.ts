@@ -16,6 +16,7 @@ describe('Model Status Rollup', () => {
           model: {
             refresh_activity_type_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: testError,
                 pending: false,
@@ -39,6 +40,7 @@ describe('Model Status Rollup', () => {
             refresh_activity_type_logs: [],
             refresh_model_parameter_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: testError,
                 pending: false,
@@ -62,6 +64,7 @@ describe('Model Status Rollup', () => {
             refresh_model_parameter_logs: [],
             refresh_resource_type_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: testError,
                 pending: false,
@@ -83,6 +86,7 @@ describe('Model Status Rollup', () => {
           model: {
             refresh_activity_type_logs: [
               {
+                created_at: '',
                 error: null,
                 error_message: null,
                 pending: true,
@@ -105,6 +109,7 @@ describe('Model Status Rollup', () => {
           model: {
             refresh_activity_type_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: '',
                 pending: false,
@@ -113,6 +118,7 @@ describe('Model Status Rollup', () => {
             ],
             refresh_model_parameter_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: '',
                 pending: false,
@@ -121,6 +127,7 @@ describe('Model Status Rollup', () => {
             ],
             refresh_resource_type_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: '',
                 pending: false,
@@ -141,6 +148,7 @@ describe('Model Status Rollup', () => {
           model: {
             refresh_activity_type_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: '',
                 pending: false,
@@ -149,6 +157,7 @@ describe('Model Status Rollup', () => {
             ],
             refresh_model_parameter_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: 'Test Error',
                 pending: false,
@@ -157,6 +166,7 @@ describe('Model Status Rollup', () => {
             ],
             refresh_resource_type_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: '',
                 pending: false,
@@ -178,6 +188,7 @@ describe('Model Status Rollup', () => {
           model: {
             refresh_activity_type_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: testError,
                 pending: false,
@@ -201,6 +212,7 @@ describe('Model Status Rollup', () => {
             refresh_activity_type_logs: [],
             refresh_model_parameter_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: testError,
                 pending: false,
@@ -224,6 +236,7 @@ describe('Model Status Rollup', () => {
             refresh_model_parameter_logs: [],
             refresh_resource_type_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: testError,
                 pending: false,
@@ -245,6 +258,7 @@ describe('Model Status Rollup', () => {
           model: {
             refresh_activity_type_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: '',
                 pending: true,
@@ -253,6 +267,7 @@ describe('Model Status Rollup', () => {
             ],
             refresh_model_parameter_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: '',
                 pending: true,
@@ -261,6 +276,7 @@ describe('Model Status Rollup', () => {
             ],
             refresh_resource_type_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: '',
                 pending: true,
@@ -281,6 +297,7 @@ describe('Model Status Rollup', () => {
           model: {
             refresh_activity_type_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: '',
                 pending: false,
@@ -289,6 +306,7 @@ describe('Model Status Rollup', () => {
             ],
             refresh_model_parameter_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: '',
                 pending: false,
@@ -297,6 +315,7 @@ describe('Model Status Rollup', () => {
             ],
             refresh_resource_type_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: '',
                 pending: false,
@@ -317,6 +336,7 @@ describe('Model Status Rollup', () => {
           model: {
             refresh_activity_type_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: '',
                 pending: false,
@@ -325,6 +345,7 @@ describe('Model Status Rollup', () => {
             ],
             refresh_model_parameter_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: 'Test Error',
                 pending: false,
@@ -333,6 +354,7 @@ describe('Model Status Rollup', () => {
             ],
             refresh_resource_type_logs: [
               {
+                created_at: '',
                 error: '',
                 error_message: '',
                 pending: false,
