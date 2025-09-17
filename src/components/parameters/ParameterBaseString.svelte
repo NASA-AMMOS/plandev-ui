@@ -48,6 +48,7 @@
     <div class="parameter-right" slot="right">
       <ParameterUnits unit={formParameter.schema?.metadata?.unit?.value} />
       <ParameterBaseRightAdornments
+        canCopy={true}
         {disabled}
         hidden={hideRightAdornments}
         {formParameter}
