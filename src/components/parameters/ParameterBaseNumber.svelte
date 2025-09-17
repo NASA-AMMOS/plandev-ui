@@ -1,9 +1,12 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import CopyIcon from 'bootstrap-icons/icons/copy.svg?component';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ParameterType } from '../../types/parameter';
+  import { setClipboardContent } from '../../utilities/clipboard';
+  import { tooltip } from '../../utilities/tooltip';
   import { useActions, type ActionArray } from '../../utilities/useActions';
   import Input from '../form/Input.svelte';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
@@ -51,8 +54,17 @@
     />
     <div class="parameter-right" slot="right">
       <ParameterUnits unit={formParameter.schema?.metadata?.unit?.value} />
+      <button
+        type="button"
+        class="st-icon copy-parameter-value"
+        use:tooltip={{ content: 'Copy Value' }}
+        on:click={() => {
+          setClipboardContent(formParameter.value);
+        }}
+      >
+        <CopyIcon />
+      </button>
       <ParameterBaseRightAdornments
-        canCopy={true}
         {disabled}
         hidden={hideRightAdornments}
         {formParameter}
@@ -75,5 +87,20 @@
     gap: 2px;
     min-width: min-content;
     width: 100%;
+  }
+
+  .copy-parameter-value {
+    height: 16px;
+    margin: 0 4px;
+    visibility: hidden;
+    width: 16px;
+  }
+
+  .copy-parameter-value:hover {
+    cursor: pointer;
+  }
+
+  .parameter-base-number:hover .copy-parameter-value {
+    visibility: visible;
   }
 </style>
