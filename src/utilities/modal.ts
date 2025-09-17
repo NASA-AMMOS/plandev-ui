@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import AboutModal from '../components/modals/AboutModal.svelte';
 import ActionCreationModal from '../components/modals/ActionCreationModal.svelte';
+import BulkShiftActivitiesModal from '../components/modals/BulkShiftActivitiesModal.svelte';
 import CancelActionRunModal from '../components/modals/CancelActionRunModal.svelte';
 import ConfirmActivityCreationModal from '../components/modals/ConfirmActivityCreationModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
@@ -26,6 +27,7 @@ import MoveWorkspaceItemModal from '../components/modals/MoveWorkspaceItemModal.
 import NewSequenceModal from '../components/modals/NewSequenceModal.svelte';
 import NewWorkspaceFolderModal from '../components/modals/NewWorkspaceFolderModal.svelte';
 import NewWorkspaceSequenceModal from '../components/modals/NewWorkspaceSequenceModal.svelte';
+import PackActivitiesOffsetModal from '../components/modals/PackActivitiesOffsetModal.svelte';
 import PlanBranchesModal from '../components/modals/PlanBranchesModal.svelte';
 import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.svelte';
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
@@ -59,8 +61,6 @@ import type { Tag } from '../types/tags';
 import type { ViewDefinition } from '../types/view';
 import type { Workspace } from '../types/workspace';
 import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
-import PackActivitiesOffsetModal from '../components/modals/PackActivitiesOffsetModal.svelte';
-import BulkShiftActivitiesModal from '../components/modals/BulkShiftActivitiesModal.svelte';
 
 /**
  * Listens for clicks on the document body and removes the modal children.
@@ -1129,7 +1129,7 @@ export async function showExpansionSequenceModal(
 }
 
 export async function showPackActivitiesModal(): Promise<
-  ModalElementValue<{ direction: 'Left' | 'Right'; offsetStr: string }>
+  ModalElementValue<{ direction: 'LEFT' | 'RIGHT'; offsetStr: string }>
 > {
   return new Promise(resolve => {
     if (browser) {
@@ -1420,7 +1420,7 @@ export async function showSavedViewsModal(
  * Shows a BulkShiftActivitiesModal component.
  */
 export async function showBulkShiftActivitiesModal(): Promise<
-  ModalElementValue<{ direction: 'Left' | 'Right'; shiftOffsetStr: string }>
+  ModalElementValue<{ direction: 'LEFT' | 'RIGHT'; shiftOffsetStr: string }>
 > {
   return new Promise(resolve => {
     if (browser) {

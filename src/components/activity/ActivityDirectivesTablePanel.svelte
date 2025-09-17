@@ -17,6 +17,7 @@
   import { activityErrorRollupsMap } from '../../stores/errors';
   import { maxTimeRange, plan, planModelActivityTypes, planReadOnly, viewTimeRange } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
+  import { spansMap, spanUtilityMaps } from '../../stores/simulation';
   import { view, viewTogglePanel, viewUpdateActivityDirectivesTable } from '../../stores/views';
   import type { ActivityDirective } from '../../types/activity';
   import type { User } from '../../types/app';
@@ -444,11 +445,14 @@
       bind:dataGrid
       bind:selectedActivityDirectiveId={$selectedActivityDirectiveId}
       activityDirectives={$activityDirectivesMap ? Object.values($activityDirectivesMap) : null}
+      activityTypes={$planModelActivityTypes}
       activityDirectiveErrorRollupsMap={$activityErrorRollupsMap}
       {filterExpression}
       columnDefs={derivedColumnDefs ?? []}
       columnStates={activityDirectivesTable?.columnStates}
       plan={$plan}
+      spansMap={$spansMap}
+      spanUtilityMaps={$spanUtilityMaps}
       planReadOnly={$planReadOnly}
       {user}
       on:columnMoved={onColumnMoved}

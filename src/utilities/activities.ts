@@ -284,13 +284,13 @@ export async function getActivityDirectivesToPaste(
 }
 
 export function bulkShiftActivityDirectivesInPlan(
-  activities: ActivityDirective[],
+  activitiesToShift: ActivityDirective[],
   direction: 'LEFT' | 'RIGHT',
   offsetUS: number,
 ): ActivityDirective[] {
-  const selectedIds = new Set(activities.map(a => a.id));
+  const selectedIds = new Set(activitiesToShift.map(a => a.id));
 
-  return activities.map(activity => {
+  return activitiesToShift.map(activity => {
     const shouldUpdate = activity.anchor_id === null || !selectedIds.has(activity.anchor_id);
 
     if (!shouldUpdate) {
@@ -371,7 +371,7 @@ export function updateAnchorStartOffset(
 
 export function packActivityDirectivesInPlan(
   sourcePlan: Plan,
-  activities: ActivityDirective[],
+  activitiesToPack: ActivityDirective[],
   direction: 'LEFT' | 'RIGHT',
   offsetUS: number,
   activitiesDirectivesDB: ActivityDirectiveDB[],
@@ -379,12 +379,12 @@ export function packActivityDirectivesInPlan(
   spanUtilityMaps: SpanUtilityMaps,
 ): ActivityDirective[] | void {
   const idToActivitiesMap = new Map<number, ActivityDirective>();
-  for (const activity of activities) {
+  for (const activity of activitiesToPack) {
     idToActivitiesMap.set(activity.id, activity);
   }
 
   const anchorIds = new Map<number, number | null>();
-  for (const activity of activities) {
+  for (const activity of activitiesToPack) {
     anchorIds.set(activity.id, activity.anchor_id);
   }
 
@@ -399,7 +399,7 @@ export function packActivityDirectivesInPlan(
   const planStartTimeMs = getUnixEpochTime(sourcePlan.start_time_doy);
 
   // Sort activities by their absolute start times (create a copy to avoid mutating input)
-  const sortedActivities = [...activities].sort((a, b) => {
+  const sortedActivities = [...activitiesToPack].sort((a, b) => {
     return a.start_time_ms - b.start_time_ms;
   });
 

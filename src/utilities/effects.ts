@@ -218,6 +218,8 @@ import type {
   SimulationTemplateSetInput,
   Span,
   SpanDB,
+  SpansMap,
+  SpanUtilityMaps,
   Topic,
 } from '../types/simulation';
 import type {
@@ -5898,7 +5900,10 @@ const effects = {
 
   async packActivityDirectives(
     plan: Plan,
-    activityDirectives: ActivityDirective[],
+    activityDirectivesToPack: ActivityDirective[],
+    activitiesInPlan: ActivityDirectiveDB[] | null,
+    spansMap: SpansMap | null,
+    spanUtilityMaps: SpanUtilityMaps | null,
     direction: 'LEFT' | 'RIGHT',
     offset: number,
     user: User | null,
@@ -5910,12 +5915,12 @@ const effects = {
       // show modal
       const activitiesToUpdate = packActivityDirectivesInPlan(
         plan,
-        activityDirectives,
+        activityDirectivesToPack,
         direction,
         offset,
-        get(activityDirectivesDBStore) ?? [],
-        get(spansMap) ?? {},
-        get(spanUtilityMaps) ?? {
+        activitiesInPlan ?? [],
+        spansMap ?? {},
+        spanUtilityMaps ?? {
           directiveIdToSpanIdMap: {},
           spanIdToChildIdsMap: {},
           spanIdToDirectiveIdMap: {},
@@ -5946,7 +5951,10 @@ const effects = {
 
   async packActivityDirectivesWithModal(
     plan: Plan,
-    directives: ActivityDirective[],
+    activityDirectivesToPack: ActivityDirective[],
+    activitiesInPlan: ActivityDirectiveDB[] | null,
+    spansMap: SpansMap | null,
+    spanUtilityMaps: SpanUtilityMaps | null,
     user: User | null,
   ): Promise<boolean> {
     // show modal and allow user to specify pack direction/offset before packing
@@ -5962,8 +5970,16 @@ const effects = {
 
       const { direction, offsetStr } = value;
       const offset = convertDurationStringToUs(offsetStr);
-      const directionUpper = direction.toUpperCase() as 'LEFT' | 'RIGHT'; // todo standardize
-      await effects.packActivityDirectives(plan, directives, directionUpper, offset, user);
+      await effects.packActivityDirectives(
+        plan,
+        activityDirectivesToPack,
+        activitiesInPlan,
+        spansMap,
+        spanUtilityMaps,
+        direction,
+        offset,
+        user,
+      );
 
       return true;
     } catch (error) {
@@ -6553,7 +6569,12 @@ const effects = {
     }
   },
 
-  async shiftActivityDirectives(plan: Plan, directives: ActivityDirective[], user: User | null): Promise<boolean> {
+  async shiftActivityDirectives(
+    plan: Plan,
+    directivesToShift: ActivityDirective[],
+    activityTypes: ActivityType[] | null,
+    user: User | null,
+  ): Promise<boolean> {
     // show modal and allow user to specify offset before shifting
     try {
       if (!queryPermissions.UPDATE_ACTIVITY_DIRECTIVES(user, plan)) {
@@ -6567,15 +6588,15 @@ const effects = {
 
       const { direction, shiftOffsetStr } = value;
       const activitiesToUpdate = bulkShiftActivityDirectivesInPlan(
-        directives,
-        direction.toUpperCase() as 'LEFT' | 'RIGHT',
+        directivesToShift,
+        direction,
         convertDurationStringToUs(shiftOffsetStr),
       );
 
       if (plan !== null && activitiesToUpdate && Array.isArray(activitiesToUpdate)) {
-        const activityTypes = get(planModelActivityTypesStore) ?? [];
+        const types = activityTypes ?? [];
         for (const activity of activitiesToUpdate) {
-          const activityType = activityTypes.find(type => type.name === activity.type);
+          const activityType = types.find(type => type.name === activity.type);
           await effects.updateActivityDirective(
             plan,
             activity.id,

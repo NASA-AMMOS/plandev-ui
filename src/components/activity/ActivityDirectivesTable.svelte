@@ -5,11 +5,12 @@
   import type { ColDef, ColumnState, ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
-  import type { ActivityDirective, ActivityDirectiveId } from '../../types/activity';
+  import type { ActivityDirective, ActivityDirectiveId, ActivityType } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/errors';
   import type { Plan } from '../../types/plan';
+  import type { SpansMap, SpanUtilityMaps } from '../../types/simulation';
   import { copyActivityDirectivesToClipboard } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
@@ -20,12 +21,15 @@
   import PasteActivitiesContextMenu from './PasteActivitiesContextMenu.svelte';
 
   export let activityDirectives: ActivityDirective[] | null = null;
+  export let activityTypes: ActivityType[] | null = null;
   export let activityDirectiveErrorRollupsMap: Record<ActivityDirectiveId, ActivityErrorRollup> | undefined = undefined;
   export let showBulkShiftMenu: boolean = true;
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid<ActivityDirective> | undefined = undefined;
   export let plan: Plan | null;
+  export let spansMap: SpansMap | null = null;
+  export let spanUtilityMaps: SpanUtilityMaps | null = null;
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let bulkSelectedActivityDirectiveIds: ActivityDirectiveId[] = [];
   export let planReadOnly: boolean = false;
@@ -187,7 +191,7 @@
     const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
 
     if (selectedActivityDirectives.length && plan !== null) {
-      await effects.shiftActivityDirectives(plan, selectedActivityDirectives, user);
+      await effects.shiftActivityDirectives(plan, selectedActivityDirectives, activityTypes, user);
     }
   }
 
@@ -196,7 +200,16 @@
     const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
 
     if (selectedActivityDirectives.length && plan !== null) {
-      await effects.packActivityDirectives(plan, selectedActivityDirectives, 'LEFT', 0, user);
+      await effects.packActivityDirectives(
+        plan,
+        selectedActivityDirectives,
+        activityDirectives,
+        spansMap,
+        spanUtilityMaps,
+        'LEFT',
+        0,
+        user,
+      );
     }
   }
 
@@ -205,7 +218,16 @@
     const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
 
     if (selectedActivityDirectives.length && plan !== null) {
-      await effects.packActivityDirectives(plan, selectedActivityDirectives, 'RIGHT', 0, user);
+      await effects.packActivityDirectives(
+        plan,
+        selectedActivityDirectives,
+        activityDirectives,
+        spansMap,
+        spanUtilityMaps,
+        'RIGHT',
+        0,
+        user,
+      );
     }
   }
 
@@ -214,7 +236,14 @@
     const selectedActivityDirectives = activityDirectives?.filter(ad => selectedIdSet.has(ad.id)) ?? [];
 
     if (selectedActivityDirectives.length && plan !== null) {
-      await effects.packActivityDirectivesWithModal(plan, selectedActivityDirectives, user);
+      await effects.packActivityDirectivesWithModal(
+        plan,
+        selectedActivityDirectives,
+        activityDirectives,
+        spansMap,
+        spanUtilityMaps,
+        user,
+      );
     }
   }
 
