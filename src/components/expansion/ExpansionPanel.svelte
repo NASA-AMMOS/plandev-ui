@@ -55,7 +55,7 @@
   let hasDeletePermissionSequence: boolean = false;
   let hasDeletePermissionSequenceFilter: boolean = false;
 
-  $: if (user !== null && $plan !== null) {
+  $: if (user !== null && $plan !== null && $plan.model) {
     hasDeletePermissionSequence = featurePermissions.expansionSequences.canDelete(user, $plan);
     hasDeletePermissionSequenceFilter = featurePermissions.sequenceFilter.canDelete(user, $plan.model);
   }
@@ -89,7 +89,7 @@
   }
 
   function onCreateSequenceFilter() {
-    if ($plan !== null) {
+    if ($plan !== null && $plan.model_id !== null) {
       creatingNewSequenceFilter = false;
       effects.createSequenceFilter(
         filterMenuActiveFilter as ActivityLayerFilter,
@@ -113,7 +113,7 @@
   }
 
   function onUpdateSequenceFilter() {
-    if ($plan !== null && activeSequenceFilterId !== null) {
+    if ($plan !== null && activeSequenceFilterId !== null && $plan.model) {
       creatingNewSequenceFilter = false;
       effects.updateSequenceFilter(
         filterMenuActiveFilter as ActivityLayerFilter,

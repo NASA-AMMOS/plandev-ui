@@ -69,7 +69,7 @@
       return 0;
     });
   $: numOfPrivateGoals = ($schedulingGoalSpecifications || []).length - visibleSchedulingGoalSpecs.length;
-  $: if ($plan) {
+  $: if ($plan && $plan.model) {
     hasAnalyzePermission =
       featurePermissions.schedulingGoalsPlanSpec.canAnalyze(user, $plan, $plan.model) && !$planReadOnly;
     hasSpecEditPermission = featurePermissions.schedulingGoalsPlanSpec.canUpdate(user, $plan) && !$planReadOnly;
@@ -252,7 +252,7 @@
               hasReadPermission={featurePermissions.schedulingGoals.canRead(user)}
               goal={$schedulingGoalsMap[specGoal.goal_id]}
               goalPlanSpec={specGoal}
-              modelId={$plan?.model.id}
+              modelId={$plan?.model?.id}
               shouldShowUpButton={(specGoal?.priority ?? 0) > 0}
               shouldShowDownButton={specIndex < filteredSchedulingGoalSpecs.length - 1}
               on:updateGoalPlanSpec={onUpdateGoal}

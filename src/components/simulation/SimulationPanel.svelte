@@ -94,7 +94,7 @@
     return validateStartTime(startTimeDate.getTime(), endTimeDate.getTime(), 'Simulation');
   }
 
-  $: if (user !== null && $plan !== null) {
+  $: if (user !== null && $plan !== null && $plan.model) {
     hasRunPermission = featurePermissions.simulation.canRun(user, $plan, $plan.model) && !$planReadOnly;
     hasUpdatePermission = featurePermissions.simulation.canUpdate(user, $plan) && !$planReadOnly;
   }
@@ -119,7 +119,7 @@
   }, 0);
 
   $: modelParametersMap = $plan?.model?.parameters?.parameters ?? {};
-  $: if ($simulation && $plan) {
+  $: if ($simulation && $plan && $plan.model) {
     // An empty object is provided in order to get only the default argument values to better distinguish overridden arguments
     effects.getEffectiveModelArguments($plan.model.id, {}, user).then(response => {
       loadingArguments = false;
@@ -173,7 +173,7 @@
       $simulationStatus === Status.Failed);
 
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
-    if ($simulation !== null && $plan !== null) {
+    if ($simulation !== null && $plan !== null && $plan.model) {
       const { detail: formParameter } = event;
       const newArgumentsMap = getArguments($simulation?.arguments, formParameter);
       const newFiles: File[] = formParameter.file ? [formParameter.file] : [];
@@ -187,7 +187,7 @@
   }
 
   function onResetFormParameters(event: CustomEvent<FormParameter>) {
-    if ($simulation !== null && $plan !== null) {
+    if ($simulation !== null && $plan !== null && $plan.model) {
       const { detail: formParameter } = event;
       const { arguments: argumentsMap } = $simulation;
       const newArguments = getArguments(argumentsMap, {
@@ -227,14 +227,14 @@
   }
 
   async function onDeleteSimulationTemplate(event: CustomEvent<SimulationTemplate>) {
-    if ($plan) {
+    if ($plan && $plan.model) {
       const { detail: simulationTemplate } = event;
       await effects.deleteSimulationTemplate(simulationTemplate, $plan.model.name, user);
     }
   }
 
   async function onSaveNewSimulationTemplate(event: CustomEvent<Pick<SimulationTemplateInsertInput, 'description'>>) {
-    if ($plan && $simulation !== null) {
+    if ($plan && $simulation !== null && $plan.model) {
       const {
         detail: { description: templateName },
       } = event;
@@ -495,7 +495,7 @@
                 simulationDataset={simDataset}
                 planEndTimeMs={$planEndTimeMs}
                 planStartTimeMs={$planStartTimeMs}
-                planModelId={$plan?.model.id ?? -1}
+                planModelId={$plan?.model?.id ?? -1}
                 selected={simDataset.id === $simulationDatasetId}
                 on:click={() => {
                   simulationDatasetId.set(simDataset.id);

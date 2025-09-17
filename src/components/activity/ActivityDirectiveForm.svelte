@@ -321,7 +321,7 @@
 
   async function onDeletePreset(event: CustomEvent<ActivityPreset>) {
     const { detail: deletedActivityPreset } = event;
-    if ($plan) {
+    if ($plan && $plan.model) {
       await effects.deleteActivityPreset(deletedActivityPreset, $plan.model.name, user);
     }
   }

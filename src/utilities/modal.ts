@@ -1148,20 +1148,12 @@ export async function showPlanBranchRequestModal(
           planModal.$destroy();
         });
 
-        planModal.$on(
-          'create',
-          (
-            e: CustomEvent<{
-              source_plan: PlanForMerging;
-              target_plan: PlanForMerging;
-            }>,
-          ) => {
-            target.replaceChildren();
-            target.resolve = null;
-            resolve({ confirm: true, value: e.detail });
-            planModal.$destroy();
-          },
-        );
+        planModal.$on('create', e => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          planModal.$destroy();
+        });
       }
     } else {
       resolve({ confirm: false });

@@ -6,6 +6,7 @@
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { Button, Resizable, Select } from '@nasa-jpl/stellar-svelte';
+  import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { capitalize } from 'lodash-es';
   import {
     AlertTriangle,
@@ -144,6 +145,7 @@
   import effects from '../../../utilities/effects';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { closeActiveModal } from '../../../utilities/modal';
+  import { getModelStatusRollup } from '../../../utilities/model';
   import { featurePermissions } from '../../../utilities/permissions';
   import {
     formatSimulationQueuePosition,
@@ -188,6 +190,7 @@
   let hasSimulatePermission: boolean = false;
   let hasCheckConstraintsPermission: boolean = false;
   let invalidActivityCount: number = 0;
+  let modelErrorCount: number = 0;
   let simulationExtent: string | null;
   let selectedSimulationStatus: Status | null;
   let windowWidth = 1600;
@@ -272,7 +275,7 @@
   ));
   $: hasCreateViewPermission = featurePermissions.view.canCreate(data.user);
   $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate(data.user, $view) : false;
-  $: if ($initialPlan) {
+  $: if ($initialPlan && $initialPlan.model) {
     hasCheckConstraintsPermission =
       featurePermissions.constraintRuns.canCreate(data.user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasExpandPermission =
@@ -332,7 +335,7 @@
 
     planModelActivityTypes.updateValue(() => data.initialActivityTypes);
     activityArgumentDefaults.set(data.initialActivityArguments);
-    activityArgumentDefaultsModelId.set(data.initialPlan.model_id);
+    activityArgumentDefaultsModelId.set(data.initialPlan.model_id ?? -1);
     planTags.updateValue(() => data.initialPlanTags);
   }
 
@@ -488,6 +491,19 @@
     });
   }
 
+  $: if ($plan && $plan.model) {
+    const { activityLogStatus, parameterLogStatus, resourceLogStatus } = getModelStatusRollup($plan.model);
+    modelErrorCount = 0;
+    if (activityLogStatus === 'error') {
+      modelErrorCount += 1;
+    }
+    if (parameterLogStatus === 'error') {
+      modelErrorCount += 1;
+    }
+    if (resourceLogStatus === 'error') {
+      modelErrorCount += 1;
+    }
+  }
   $: lastSimulationDatasetId =
     SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING
       ? $lastTemplatedSimulationDatasetId
@@ -613,10 +629,12 @@
   }
 
   function onResetViewToDefault() {
-    const defaultView = data.initialPlan.model.view || generateDefaultView($resourceTypes, $externalEventTypes);
-    initializeView(defaultView);
-    removeQueryParam(SearchParameters.VIEW_ID);
-    showSuccessToast('View Reset to Default');
+    if (data.initialPlan.model) {
+      const defaultView = data.initialPlan.model.view || generateDefaultView($resourceTypes, $externalEventTypes);
+      initializeView(defaultView);
+      removeQueryParam(SearchParameters.VIEW_ID);
+      showSuccessToast('View Reset to Default');
+    }
   }
 
   async function onUploadView() {
@@ -678,6 +696,16 @@
 
   function openConsoleTab(tab: PlanConsoleTab) {
     openConsole(tab);
+  }
+
+  async function onSelectModel() {
+    if ($plan) {
+      const success = await effects.updatePlanMissionModel($plan, data.user);
+      if (success) {
+        // Clear active simulation
+        $simulationDatasetId = -1;
+      }
+    }
   }
 </script>
 
@@ -938,15 +966,24 @@
             on:restore={onRestoreSnapshot}
           />
         {/if}
-        {#if $modelErrors.length}
+        {#if modelErrorCount && $plan?.model}
           <PlanModelErrorBar
+            action="View errors in console"
             modelName={$plan?.model.name}
-            hasErrors={$modelErrors.length > 0}
             on:close={onCloseSnapshotPreview}
-            on:viewModelErrors={() => {
+            hasErrors={modelErrorCount > 0}
+            on:action={() => {
               openConsoleTab('model');
             }}
           />
+        {/if}
+        {#if $plan && !$plan.model}
+          <PlanModelErrorBar action="Select model" hasErrors on:action={onSelectModel}>
+            <div class="flex gap-1">
+              <WarningIcon class="red-icon" />Cannot find the model associated with this plan. This plan may not work
+              correctly.
+            </div>
+          </PlanModelErrorBar>
         {/if}
         <PlanGrid
           {...$view?.definition.plan.grid}
