@@ -27,9 +27,9 @@ import {
   directiveInView,
   duplicateRow,
   externalEventInView,
-  filterResourcesByLayer,
   generateDiscreteTreeUtil,
   getMatchingTypesForActivityLayerFilter,
+  getResourceForLayer,
   getTimeRangeAroundTime,
   getUniqueColorForActivityLayer,
   getUniqueColorForLineLayer,
@@ -512,7 +512,7 @@ test('duplicateRow', () => {
   }
 });
 
-test('filterResourcesByLayer', () => {
+test('getResourceForLayer', () => {
   const resourceA: ResourceType = {
     name: 'resourceA',
     schema: {
@@ -534,14 +534,14 @@ test('filterResourcesByLayer', () => {
     },
   };
   const layer = createTimelineLineLayer([], []);
-  expect(filterResourcesByLayer(layer, [resourceA, resourceB])).to.deep.equal([]);
+  expect(getResourceForLayer(layer, [resourceA, resourceB])).to.deep.equal(undefined);
 
   const layer2 = createTimelineLineLayer([], []);
-  expect(filterResourcesByLayer(layer2, [])).to.deep.equal([]);
+  expect(getResourceForLayer(layer2, [])).to.deep.equal(undefined);
 
   const layer3 = createTimelineLineLayer([], []);
   layer3.filter.resource = 'resourceA';
-  expect(filterResourcesByLayer(layer3, [resourceA, resourceB])).to.deep.equal([resourceA]);
+  expect(getResourceForLayer(layer3, [resourceA, resourceB])).to.deep.equal(resourceA);
 });
 
 // TODO - should we make a test case for filtering the sources in an ExternalEventsLayer?

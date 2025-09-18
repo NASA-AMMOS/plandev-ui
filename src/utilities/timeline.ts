@@ -633,6 +633,7 @@ export function createTimelineResourceLayer(timelines: Timeline[], resourceType:
   const isNumericSchema =
     schemaType === 'int' ||
     schemaType === 'real' ||
+    schemaType === 'duration' ||
     (schemaType === 'struct' && schema?.items?.rate?.type === 'real' && schema?.items?.initial?.type === 'real');
 
   const yAxis = createYAxis(timelines, {
@@ -713,72 +714,70 @@ export function getYAxisBounds(
   let minY: number | undefined = undefined;
   let maxY: number | undefined = undefined;
   yAxisLayers.forEach(layer => {
-    const layerResources = filterResourcesByLayer(layer, resources) as Resource[];
-    if (layerResources) {
-      layerResources.forEach(resource => {
-        let leftValue: ResourceValue | undefined;
-        let rightValue: ResourceValue | undefined;
-        resource.values.forEach(value => {
-          const isNumber = typeof value.y === 'number';
-          // Identify the first value to the left of the viewTimeRange
-          if (viewTimeRange && value.x < viewTimeRange.start) {
-            // TODO shouldn't we continue on to next value if this is a gap?
-            if (value.is_gap) {
-              leftValue = undefined;
-            } else {
-              if (isNumber) {
-                if (!leftValue) {
-                  leftValue = value;
-                } else if (value.x >= leftValue.x) {
-                  leftValue = value;
-                }
+    const layerResource = getResourceForLayer(layer, resources) as Resource;
+    if (layerResource) {
+      let leftValue: ResourceValue | undefined;
+      let rightValue: ResourceValue | undefined;
+      layerResource.values.forEach(value => {
+        const isNumber = typeof value.y === 'number';
+        // Identify the first value to the left of the viewTimeRange
+        if (viewTimeRange && value.x < viewTimeRange.start) {
+          // TODO shouldn't we continue on to next value if this is a gap?
+          if (value.is_gap) {
+            leftValue = undefined;
+          } else {
+            if (isNumber) {
+              if (!leftValue) {
+                leftValue = value;
+              } else if (value.x >= leftValue.x) {
+                leftValue = value;
               }
             }
           }
-          // Identify the first value to the right of the viewTimeRange
-          if (viewTimeRange && value.x > viewTimeRange.end) {
-            if (value.is_gap) {
-              rightValue = undefined;
-            } else {
-              if (isNumber) {
-                if (!rightValue) {
-                  rightValue = value;
-                } else if (value.x < rightValue.x) {
-                  rightValue = value;
-                }
+        }
+        // Identify the first value to the right of the viewTimeRange
+        if (viewTimeRange && value.x > viewTimeRange.end) {
+          if (value.is_gap) {
+            rightValue = undefined;
+          } else {
+            if (isNumber) {
+              if (!rightValue) {
+                rightValue = value;
+              } else if (value.x < rightValue.x) {
+                rightValue = value;
               }
             }
           }
-          // Consider a value for min and max if it is a number and it falls within the time range or
-          // no time range is supplied or the domain fit mode is not fitTimeWindow
-          if (
-            typeof value.y === 'number' &&
-            (!viewTimeRange ||
-              yAxis.domainFitMode !== 'fitTimeWindow' ||
-              (value.x >= viewTimeRange.start && value.x <= viewTimeRange.end))
-          ) {
-            if (minY === undefined || value.y < minY) {
-              minY = value.y;
-            }
-            if (maxY === undefined || value.y > maxY) {
-              maxY = value.y;
-            }
+        }
+        // Consider a value for min and max if it is a number and it falls within the time range or
+        // no time range is supplied or the domain fit mode is not fitTimeWindow
+        if (
+          typeof value.y === 'number' &&
+          (!viewTimeRange ||
+            yAxis.domainFitMode !== 'fitTimeWindow' ||
+            (value.x >= viewTimeRange.start && value.x <= viewTimeRange.end))
+        ) {
+          if (minY === undefined || value.y < minY) {
+            minY = value.y;
           }
-        });
-        // Account for the neighboring left and right values as these values are connected to in line drawing
-        if (viewTimeRange) {
-          minY = Math.min(
-            minY ?? Number.MAX_SAFE_INTEGER,
-            leftValue !== undefined && leftValue.y ? (leftValue.y as number) : Number.MAX_SAFE_INTEGER,
-            rightValue !== undefined && rightValue.y ? (rightValue.y as number) : Number.MAX_SAFE_INTEGER,
-          );
-          maxY = Math.max(
-            maxY ?? Number.MIN_SAFE_INTEGER,
-            leftValue !== undefined && leftValue.y ? (leftValue.y as number) : Number.MIN_SAFE_INTEGER,
-            rightValue !== undefined && rightValue.y ? (rightValue.y as number) : Number.MIN_SAFE_INTEGER,
-          );
+          if (maxY === undefined || value.y > maxY) {
+            maxY = value.y;
+          }
         }
       });
+      // Account for the neighboring left and right values as these values are connected to in line drawing
+      if (viewTimeRange) {
+        minY = Math.min(
+          minY ?? Number.MAX_SAFE_INTEGER,
+          leftValue !== undefined && leftValue.y ? (leftValue.y as number) : Number.MAX_SAFE_INTEGER,
+          rightValue !== undefined && rightValue.y ? (rightValue.y as number) : Number.MAX_SAFE_INTEGER,
+        );
+        maxY = Math.max(
+          maxY ?? Number.MIN_SAFE_INTEGER,
+          leftValue !== undefined && leftValue.y ? (leftValue.y as number) : Number.MIN_SAFE_INTEGER,
+          rightValue !== undefined && rightValue.y ? (rightValue.y as number) : Number.MIN_SAFE_INTEGER,
+        );
+      }
     }
   });
 
@@ -949,8 +948,8 @@ export function minMaxDecimation<T>(
 /**
  * Filters list of resources by the layer's resource filter
  */
-export function filterResourcesByLayer(layer: Layer, resources: Resource[] | ResourceType[]) {
-  return resources.filter(resource => layer.filter.resource === resource.name);
+export function getResourceForLayer(layer: Layer, resources: Resource[] | ResourceType[]) {
+  return resources.find(resource => layer.filter.resource === resource.name);
 }
 
 /**
