@@ -7,7 +7,8 @@
   import { createEventDispatcher, tick } from 'svelte';
   import type { Resource } from '../../types/simulation';
   import type { Axis, Layer, LineLayer, XRangeLayer } from '../../types/timeline';
-  import { filterResourcesByLayer, getOrdinalYScale, getYScale } from '../../utilities/timeline';
+  import { convertUsToDurationString } from '../../utilities/time';
+  import { getOrdinalYScale, getResourceForLayer, getYScale } from '../../utilities/timeline';
 
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
@@ -44,15 +45,15 @@
       let i = 0;
 
       for (const layer of xRangeLayers) {
-        const layerResources = filterResourcesByLayer(layer, resources) as Resource[];
+        const layerResource = getResourceForLayer(layer, resources) as Resource;
         const xRangeAxisG = gSelection.append('g').attr('class', axisClass);
         xRangeAxisG.selectAll('*').remove();
 
-        if ((layer as XRangeLayer).showAsLinePlot && layerResources && layerResources.length > 0) {
+        if ((layer as XRangeLayer).showAsLinePlot && layerResource) {
           let domain: string[] = [];
 
           // Get all the unique ordinal values of the chart.
-          for (const value of layerResources[0].values) {
+          for (const value of layerResource.values) {
             if (domain.indexOf(value.y as string) === -1) {
               domain.push(value.y as string);
             }
@@ -100,6 +101,14 @@
           color = (yAxisLayers[0] as LineLayer).lineColor;
         }
 
+        // Detect if this axis contains only duration resources
+        const allResourcesAreDuration = !yAxisLayers.find(layer => {
+          const resource = getResourceForLayer(layer, resources);
+          if (!resource || resource.schema.type !== 'duration') {
+            return true;
+          }
+        });
+
         // TODO deprecate these view properties?
         // const labelColor = axis.label?.color || 'black';
         // const labelFontFace = axis.label?.fontFace || 'sans-serif';
@@ -118,6 +127,11 @@
             .tickSizeOuter(0)
             .ticks(tickCount)
             .tickFormat(n => {
+              if (allResourcesAreDuration) {
+                // Take the largest component of the duration string
+                const durationString = convertUsToDurationString(n.valueOf());
+                return durationString.split(' ')[0];
+              }
               // Format -1 to 1 as normal numbers instead of <number>m (milli) which d3
               // does out of the box to align with various standards but which can be
               // commonly confused for M (million).
