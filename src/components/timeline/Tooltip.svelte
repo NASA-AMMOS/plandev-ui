@@ -13,8 +13,8 @@
   import type { ResourceType, Span } from '../../types/simulation';
   import type { LineLayer, LinePoint, MouseOver, Point, Row, XRangePoint } from '../../types/timeline';
   import { addPageFocusListener } from '../../utilities/generic';
-  import { formatDate, getDoyTime } from '../../utilities/time';
-  import { filterResourcesByLayer } from '../../utilities/timeline';
+  import { convertUsToDurationString, formatDate, getDoyTime } from '../../utilities/time';
+  import { getResourceForLayer } from '../../utilities/timeline';
 
   export let interpolateHoverValue: boolean = false;
   export let hidden: boolean = false;
@@ -432,13 +432,19 @@
     let color = '#FFFFFF';
     let unit = '';
     let name = point.name;
+    let formattedYValue = y;
     if (layer && layer.chartType === 'line') {
       name = layer.name ? layer.name : point.name;
-      const layerResources = filterResourcesByLayer(layer, resourceTypes);
-      if (layerResources.length > 0) {
+      const layerResource = getResourceForLayer(layer, resourceTypes);
+      if (layerResource) {
         // Only consider a single resource since multiple resources on a single layer is
         // supported in config but not valid
-        unit = layerResources[0].schema.metadata?.unit?.value || '';
+        unit = layerResource.schema.metadata?.unit?.value || '';
+
+        // Format if type equals duration
+        if (layerResource?.schema.type === 'duration' && typeof y === 'number' && y > 0) {
+          formattedYValue = convertUsToDurationString(y); // convert from microseconds to milliseconds
+        }
       }
       color = (layer as LineLayer).lineColor;
     }
@@ -478,7 +484,7 @@
         <div class='tooltip-row'>
           <span>${interpolateHoverValue ? 'Interpolated' : 'Nearest'} Value:</span>
           <span class='tooltip-value-highlight st-typography-medium'>
-            ${y}${unit ? ` (${unit})` : ''}
+            ${formattedYValue}${unit ? ` (${unit})` : ''}
           </span>
         </div>
       </div>
