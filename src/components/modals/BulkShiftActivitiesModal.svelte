@@ -1,10 +1,9 @@
 <script lang="ts">
+  import { Input as InputStellar, Label } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { RadioButtonId } from '../../types/radio-buttons';
   import { getTarget } from '../../utilities/generic';
   import { convertDurationStringToInterval } from '../../utilities/time';
-  import { tooltip } from '../../utilities/tooltip';
-  import Input from '../form/Input.svelte';
   import Modal from '../modals/Modal.svelte';
   import ModalContent from '../modals/ModalContent.svelte';
   import ModalFooter from '../modals/ModalFooter.svelte';
@@ -12,24 +11,23 @@
   import RadioButton from '../ui/RadioButtons/RadioButton.svelte';
   import RadioButtons from '../ui/RadioButtons/RadioButtons.svelte';
 
+  type Direction = 'Left' | 'Right';
+
   const dispatch = createEventDispatcher<{
     close: void;
     confirm: {
-      direction: 'LEFT' | 'RIGHT';
+      direction: Direction;
       shiftOffsetStr: string;
     };
   }>();
 
-  let direction: 'LEFT' | 'RIGHT' = 'LEFT';
+  let direction: Direction = 'Left';
   let shiftDurationString: string = '0d 0h 0m 0s 0ms 0us';
   let shiftOffsetError: string | null = '';
   let disabled: boolean = false;
 
-  function onSetDirection(event: CustomEvent<{ id: RadioButtonId }>) {
-    const {
-      detail: { id },
-    } = event;
-    direction = id as 'LEFT' | 'RIGHT';
+  function setDirection(event: CustomEvent<{ id: RadioButtonId }>) {
+    direction = event.detail.id as Direction;
   }
 
   function confirm() {
@@ -47,35 +45,36 @@
   }
 </script>
 
-<Modal height="auto" width={350}>
+<Modal height="min-content" width="min-content">
   <ModalHeader on:close>Shift Directive(s)</ModalHeader>
 
   <ModalContent>
-    <Input layout="inline">
-      <div class="label">Direction</div>
-      <RadioButtons selectedButtonId={direction} on:select-radio-button={onSetDirection}>
-        <RadioButton id="LEFT">Left</RadioButton>
-        <RadioButton id="RIGHT">Right</RadioButton>
-      </RadioButtons>
-    </Input>
+    <div class="flex min-w-min flex-col gap-2">
+      <div class="mb-2 whitespace-nowrap text-muted-foreground">
+        Shift activity directives forwards or backwards in time.
+      </div>
+      <div class="flex items-center justify-between gap-2">
+        <Label size="sm" class=" w-[100px] flex-shrink-0">Direction</Label>
+        <RadioButtons selectedButtonId={direction} on:select-radio-button={setDirection}>
+          <RadioButton id="Left">Left</RadioButton>
+          <RadioButton id="Right">Right</RadioButton>
+        </RadioButtons>
+      </div>
 
-    <Input layout="inline">
-      <label
-        use:tooltip={{ content: 'The duration of how much the activities should be shifted by', placement: 'top' }}
-        for="gap-offset"
-      >
-        Shift By
-      </label>
-      <input
-        class="st-input w-full"
-        class:error={!!shiftOffsetError}
-        {disabled}
-        name="gap-offset"
-        bind:value={shiftDurationString}
-        on:change={onUpdateStartOffset}
-        use:tooltip={{ content: shiftOffsetError, placement: 'top' }}
-      />
-    </Input>
+      <div class="flex items-center justify-between gap-2">
+        <Label size="sm" class="flex w-[100px] flex-shrink-0 items-center gap-1">Shift By</Label>
+        <InputStellar
+          sizeVariant="xs"
+          {disabled}
+          name="gap-offset"
+          bind:value={shiftDurationString}
+          on:change={onUpdateStartOffset}
+        />
+        {#if shiftOffsetError}
+          <div>{shiftOffsetError}</div>
+        {/if}
+      </div>
+    </div>
   </ModalContent>
 
   <ModalFooter>
