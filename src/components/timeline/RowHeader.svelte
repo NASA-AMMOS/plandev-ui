@@ -20,7 +20,7 @@
     LineLayer,
     MouseOver,
   } from '../../types/timeline';
-  import { filterResourcesByLayer } from '../../utilities/timeline';
+  import { getResourceForLayer } from '../../utilities/timeline';
   import { tooltip } from '../../utilities/tooltip';
   import DropTarget from './DropTarget.svelte';
   import RowHeaderDiscreteTree from './RowHeaderDiscreteTree.svelte';
@@ -80,22 +80,20 @@
       );
       // For each layer get the resources and color
       yAxisResourceLayers.forEach(layer => {
-        const layerResources = filterResourcesByLayer(layer, resources) as Resource[];
-        const newResourceLabels = layerResources
-          .map(resource => {
-            const color = (layer as LineLayer).lineColor || 'var(--st-gray-80)';
-            const unit = resource.schema.metadata?.unit?.value || '';
-            return {
-              chartType: layer.chartType,
-              color,
-              label: layer.name || resource.name,
-              resource,
-              unit,
-              yAxisId: yAxis.id,
-            };
-          })
-          .flat();
-        resourceLabels = resourceLabels.concat(newResourceLabels);
+        const layerResource = getResourceForLayer(layer, resources) as Resource;
+        if (layerResource) {
+          const color = (layer as LineLayer).lineColor || 'var(--st-gray-80)';
+          const unit = layerResource.schema.metadata?.unit?.value || '';
+          const resourceLabel = {
+            chartType: layer.chartType,
+            color,
+            label: layer.name || layerResource.name,
+            resource: layerResource,
+            unit,
+            yAxisId: yAxis.id,
+          };
+          resourceLabels = resourceLabels.concat(resourceLabel);
+        }
       });
     });
   }
