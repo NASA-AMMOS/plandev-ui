@@ -548,6 +548,7 @@
       } else if (
         schema.type === 'int' ||
         schema.type === 'real' ||
+        schema.type === 'duration' ||
         (schema.type === 'struct' && schema?.items?.rate?.type === 'real' && schema?.items?.initial?.type === 'real')
       ) {
         for (valueIndex; valueIndex < values.length; ++valueIndex) {
