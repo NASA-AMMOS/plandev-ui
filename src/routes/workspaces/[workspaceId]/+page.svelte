@@ -74,7 +74,7 @@
   let selectedFileName: string | undefined = undefined;
   let selectedSequenceOutput: string | undefined = undefined;
   let updatedSelectedFileContent: string = '';
-  let workspaceLibrarySequences: LibrarySequenceSignature[] = [];
+  let librarySequences: LibrarySequenceSignature[] = [];
   let workspaceSequences: UserSequence[] = [];
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
@@ -158,8 +158,8 @@
   $: phoenixContext = {
     channelDictionary,
     commandDictionary,
+    librarySequences,
     parameterDictionaries,
-    workspaceLibrarySequences,
   };
 
   $: {
@@ -199,7 +199,7 @@
       );
 
       if (librarySequencesEnabled) {
-        workspaceLibrarySequences = workspaceSequences
+        librarySequences = workspaceSequences
           .flatMap(sequence => ($sequenceLanguages.input.getLibrarySequences ?? ((_: UserSequence) => []))(sequence))
           .filter(({ name }) => name !== '');
       }
