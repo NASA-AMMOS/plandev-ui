@@ -12,7 +12,6 @@
     OutputLanguage,
     PhoenixContext,
     PhoenixLanguages,
-    UserSequence,
   } from '@nasa-jpl/aerie-sequence-languages';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
@@ -68,7 +67,6 @@
   let editorOutputView: EditorView;
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
-  // let phoenixContext: PhoenixContext;
   let menu: Menu;
   let selectedNode: SyntaxNode | null;
   let selectedOutputFormat: OutputLanguage | undefined;
@@ -98,7 +96,7 @@
       editorSequenceView.dispatch({
         effects: [
           compartmentAdaptation.reconfigure(
-            (sequenceLanguages.input.editorExtension ?? ((_: UserSequence) => []))(phoenixContext),
+            (sequenceLanguages.input.editorExtension ?? ((_: PhoenixContext) => []))(phoenixContext),
           ),
         ],
       });
@@ -136,7 +134,7 @@
         EditorView.editable.of(false),
         lintGutter(),
         compartmentOutputAdaptation.of(
-          (selectedOutputFormat?.editorExtension ?? ((_: UserSequence) => []))(phoenixContext),
+          (selectedOutputFormat?.editorExtension ?? ((_: PhoenixContext) => []))(phoenixContext),
         ),
         EditorState.readOnly.of(readOnly),
       ],
@@ -240,7 +238,7 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
         compartmentAdaptation.of(
-          (sequenceLanguages.input.editorExtension ?? ((_: UserSequence) => []))(phoenixContext),
+          (sequenceLanguages.input.editorExtension ?? ((_: PhoenixContext) => []))(phoenixContext),
         ),
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
@@ -259,7 +257,7 @@
         EditorView.editable.of(false),
         lintGutter(),
         compartmentOutputAdaptation.of(
-          (selectedOutputFormat?.editorExtension ?? ((_: UserSequence) => []))(phoenixContext),
+          (selectedOutputFormat?.editorExtension ?? ((_: PhoenixContext) => []))(phoenixContext),
         ),
         EditorState.readOnly.of(readOnly),
       ],
@@ -419,7 +417,7 @@
           <div class="right">
             {#if sequenceLanguages.outputs.length > 0}
               <div class="output-format">
-                <label class="text-xs text-muted-foreground" for="outputFormat">Output Format</label>
+                <label class="text-muted-foreground text-xs" for="outputFormat">Output Format</label>
                 <select bind:value={selectedOutputFormat} class="st-select w-full" name="outputFormat">
                   {#each sequenceLanguages.outputs as outputFormatItem}
                     <option value={outputFormatItem}>
