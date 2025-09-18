@@ -1,13 +1,8 @@
-import type { SyntaxNode } from '@lezer/common';
 import type {
-  FswCommandArgument,
-  FswCommandArgumentFixedString,
   FswCommandArgumentFloat,
   FswCommandArgumentInteger,
   FswCommandArgumentNumeric,
-  FswCommandArgumentRepeat,
   FswCommandArgumentUnsigned,
-  FswCommandArgumentVarString,
 } from '@nasa-jpl/aerie-ampcs';
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import type { DictionaryTypes } from '../enums/dictionaryTypes';
@@ -78,42 +73,10 @@ export type GetSeqJsonResponse = {
 };
 
 // TODO: remove
-// export type UserSequence = {
-//   created_at: string;
-//   definition: string;
-//   id: number;
-//   is_locked: boolean;
-//   name: string;
-//   owner: UserId;
-//   parcel_id: number;
-//   seq_json: string;
-//   updated_at: string;
-//   workspace_id: number;
-// };
-export type UserSequence = {
-  // TODO get from aerie-sequence-languages
-  definition: string;
-  name: string;
-};
-
-// TODO: remove
-export type UserSequenceInsertInput = Omit<UserSequence, 'created_at' | 'id' | 'owner' | 'updated_at'>;
-
-export type TimeTagInfo = { node: SyntaxNode; text: string } | null | undefined; // TODO get from aerie-sequence-languages
-
-export type StringArg = FswCommandArgumentVarString | FswCommandArgumentFixedString;
+// Carter note: it's been commented, so...I removed it
 
 export type NumberArg =
   | FswCommandArgumentFloat
   | FswCommandArgumentInteger
   | FswCommandArgumentNumeric
   | FswCommandArgumentUnsigned;
-
-export type ArgTextDef = {
-  // TODO get from aerie-sequence-languages
-  argDef?: FswCommandArgument;
-  children?: ArgTextDef[];
-  node?: SyntaxNode;
-  parentArgDef?: FswCommandArgumentRepeat;
-  text?: string;
-};

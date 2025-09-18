@@ -12,6 +12,7 @@ import {
   toAmpcsXml,
   type PhoenixContext,
   type PhoenixLanguages,
+  type UserSequence,
 } from '@nasa-jpl/aerie-sequence-languages';
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import { chunk } from 'lodash-es';
@@ -207,7 +208,6 @@ import {
   type ParcelInsertInput,
   type ParcelToParameterDictionary,
   type SequenceAdaptationMetadata,
-  type UserSequence,
 } from '../types/sequencing';
 import type {
   PlanDataset,
@@ -2224,28 +2224,8 @@ const effects = {
     }
   },
 
-  // TODO: remove this after expansion runs are made to work in new workspaces
-  // async createUserSequence(sequence: UserSequenceInsertInput, user: User | null): Promise<number | null> {
-  //   try {
-  //     if (!queryPermissions.CREATE_USER_SEQUENCE(user)) {
-  //       throwPermissionError('create a user sequence');
-  //     }
-
-  //     const data = await reqHasura<Pick<UserSequence, 'id'>>(gql.CREATE_USER_SEQUENCE, { sequence }, user);
-  //     const { createUserSequence } = data;
-  //     if (createUserSequence != null) {
-  //       const { id } = createUserSequence;
-  //       showSuccessToast('User Sequence Created Successfully');
-  //       return id;
-  //     } else {
-  //       throw Error(`Unable to create user sequence "${sequence.name}"`);
-  //     }
-  //   } catch (e) {
-  //     catchError('User Sequence Create Failed', e as Error);
-  //     showFailureToast('User Sequence Create Failed');
-  //     return null;
-  //   }
-  // },
+  // TODO: remove this after expansion runs are made to work in new workspaces\
+  // Carter note: I removed it
 
   async createView(definition: ViewDefinition, user: User | null): Promise<boolean> {
     try {
@@ -3691,35 +3671,7 @@ const effects = {
   },
 
   // TODO: remove this after expansion runs are made to work in new workspaces
-  // async deleteUserSequence(sequence: UserSequence, user: User | null): Promise<boolean> {
-  //   try {
-  //     if (!queryPermissions.DELETE_USER_SEQUENCE(user, sequence)) {
-  //       throwPermissionError('delete this user sequence');
-  //     }
-
-  //     const { confirm } = await showConfirmModal(
-  //       'Delete',
-  //       `Are you sure you want to delete "${sequence.name}"?`,
-  //       'Delete User Sequence',
-  //     );
-
-  //     if (confirm) {
-  //       const data = await reqHasura<{ id: number }>(gql.DELETE_USER_SEQUENCE, { id: sequence.id }, user);
-  //       if (data.deleteUserSequence != null) {
-  //         showSuccessToast('User Sequence Deleted Successfully');
-  //         return true;
-  //       } else {
-  //         throw Error(`Unable to delete user sequence "${sequence.name}"`);
-  //       }
-  //     }
-
-  //     return false;
-  //   } catch (e) {
-  //     catchError('User Sequence Delete Failed', e as Error);
-  //     showFailureToast('User Sequence Delete Failed');
-  //     return false;
-  //   }
-  // },
+  // Carter note: I got rid of this
 
   async deleteView(view: ViewSlim, user: User | null): Promise<boolean> {
     try {
@@ -6810,44 +6762,7 @@ const effects = {
   },
 
   // TODO: remove this after expansion runs are made to work in new workspaces
-  // async sendSequenceToWorkspace(
-  //   sequence: ExpansionSequence | null,
-  //   expandedSequence: string | null,
-  //   user: User | null,
-  // ): Promise<void> {
-  //   if (sequence === null) {
-  //     showFailureToast("Sequence Doesn't Exist");
-  //     return;
-  //   }
-
-  //   if (expandedSequence === null) {
-  //     showFailureToast("Expanded Sequence Doesn't Exist");
-  //     return;
-  //   }
-
-  //   const { confirm, value } = await showExpansionPanelModal();
-
-  //   if (!confirm || !value) {
-  //     return;
-  //   }
-
-  //   try {
-  //     const createUserSequenceInsertInput: UserSequenceInsertInput = {
-  //       definition: expandedSequence,
-  //       is_locked: false,
-  //       name: sequence.seq_id,
-  //       parcel_id: value.parcelId,
-  //       seq_json: '',
-  //       workspace_id: value.workspaceId,
-  //     };
-  //     const userSequenceCreated = await this.createUserSequence(createUserSequenceInsertInput, user);
-  //     if (!userSequenceCreated) {
-  //       throw Error('Sequence Import Failed');
-  //     }
-  //   } catch (e) {
-  //     catchError(e as Error);
-  //   }
-  // },
+  // Carter note: soooo it's commented out? Can we get rid of it?
 
   async session(user: BaseUser | null): Promise<ReqSessionResponse> {
     try {
@@ -8032,36 +7947,7 @@ const effects = {
   },
 
   // TODO: remove this after expansion runs are made to work in new workspaces
-  // async updateUserSequence(
-  //   id: number,
-  //   sequence: Partial<UserSequence>,
-  //   sequenceOwner: UserId,
-  //   user: User | null,
-  // ): Promise<string | null> {
-  //   try {
-  //     if (!queryPermissions.UPDATE_USER_SEQUENCE(user, { owner: sequenceOwner })) {
-  //       throwPermissionError('update this user sequence');
-  //     }
-
-  //     const data = await reqHasura<Pick<UserSequence, 'id' | 'updated_at'>>(
-  //       gql.UPDATE_USER_SEQUENCE,
-  //       { id, sequence },
-  //       user,
-  //     );
-  //     const { updateUserSequence } = data;
-  //     if (updateUserSequence != null) {
-  //       const { updated_at: updatedAt } = updateUserSequence;
-  //       showSuccessToast('User Sequence Updated Successfully');
-  //       return updatedAt;
-  //     } else {
-  //       throw Error(`Unable to update user sequence with ID: "${id}"`);
-  //     }
-  //   } catch (e) {
-  //     catchError('User Sequence Update Failed', e as Error);
-  //     showFailureToast('User Sequence Update Failed');
-  //     return null;
-  //   }
-  // },
+  // Carter note: I got rid of it...
 
   async updateView(id: number, view: Partial<View>, message: string | null, user: User | null): Promise<boolean> {
     try {
