@@ -3,7 +3,7 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
-  import { seqJsonToSeqn } from '@nasa-jpl/aerie-sequence-languages';
+  import { seqJsonToSeqn, type PhoenixContext } from '@nasa-jpl/aerie-sequence-languages';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { expansionRunsColumns } from '../../stores/expansion';
   import { sequenceLanguages } from '../../stores/sequence-adaptation';
@@ -48,6 +48,7 @@
   let selectedSequenceIds: number[] = [];
   let selectedExpansionRun: ExpansionRun | null = null;
   let sequenceDefinition: string;
+  let phoenixContext: PhoenixContext;
 
   $: convertOutputToSequence(selectedSequence);
   $: if (parcel) {
@@ -83,6 +84,8 @@
       parameterDictionaries = [];
     }
   }
+
+  $: phoenixContext = { channelDictionary, commandDictionary, librarySequences: [], parameterDictionaries };
 
   async function loadCommandDictionary(unparsedCommandDictionary: CommandDictionaryMetadata) {
     const parsedDictionary = await getParsedCommandDictionary(unparsedCommandDictionary, user);
@@ -273,9 +276,7 @@
     sequenceOutput={selectedSequence ? JSON.stringify(selectedSequence.expanded_sequence, null, 2) : undefined}
     readOnly={true}
     title="Sequence - Definition Editor (Read-only)"
-    {channelDictionary}
-    {commandDictionary}
-    {parameterDictionaries}
+    {phoenixContext}
     userSequenceEditorColumns={$userSequenceEditorColumns}
     userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
     sequenceLanguages={$sequenceLanguages}
