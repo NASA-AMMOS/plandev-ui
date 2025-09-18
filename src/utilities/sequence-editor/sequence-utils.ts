@@ -14,10 +14,10 @@ import type {
   FswCommandArgumentVarString,
   HwCommand,
 } from '@nasa-jpl/aerie-ampcs';
-import type { CommandInfoMapper } from '@nasa-jpl/aerie-sequence-languages';
+import type { ArgTextDef, CommandInfoMapper, StringArg } from '@nasa-jpl/aerie-sequence-languages';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
-import type { ArgTextDef, NumberArg, StringArg } from '../../types/sequencing';
+import type { NumberArg } from '../../types/sequencing';
 import { fswCommandArgDefault } from './command-dictionary';
 
 export function isFswCommand(command: FswCommand | HwCommand): command is FswCommand {

@@ -9,12 +9,11 @@
     FswCommandArgumentVarString,
     HwCommand,
   } from '@nasa-jpl/aerie-ampcs';
-  import type { CommandInfoMapper } from '@nasa-jpl/aerie-sequence-languages';
+  import type { ArgTextDef, CommandInfoMapper, TimeTagInfo } from '@nasa-jpl/aerie-sequence-languages';
   import ArrowUpRightIcon from 'bootstrap-icons/icons/arrow-up-right.svg?component';
   import type { EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
-  import type { ArgTextDef, TimeTagInfo } from '../../../types/sequencing';
   import { addDefaultArgs, getMissingArgDefs } from '../../../utilities/sequence-editor/sequence-utils';
   import { tooltip } from '../../../utilities/tooltip';
   import AddMissingArgsButton from '../form/AddMissingArgsButton.svelte';
