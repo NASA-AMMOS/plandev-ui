@@ -103,5 +103,4 @@ declare global {
     | undefined;
 }
 
-export { };
-
+export {};
