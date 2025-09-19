@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import WaterfallIcon from '@nasa-jpl/stellar/icons/waterfall.svg?component';
+  import { ChartGantt } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { Status } from '../../enums/status';
   import type { ActivityDirectiveValidationStatus } from '../../types/activity';
@@ -36,7 +36,7 @@
   statusBadgeText={`${invalidActivityCount}`}
   status={invalidActivityCount > 0 ? Status.Failed : Status.Complete}
 >
-  <WaterfallIcon />
+  <ChartGantt size={20} />
   <svelte:fragment slot="metadata">
     <div class="activity-status-nav-container">
       <div class="total-count">

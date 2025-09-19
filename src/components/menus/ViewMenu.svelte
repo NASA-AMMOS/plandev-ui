@@ -3,7 +3,6 @@
 <script lang="ts">
   import ViewGridBottomPanelEmpty from '@nasa-jpl/stellar/icons/view_grid_bottom_panel_empty.svg?component';
   import ViewGridBottomPanelFilled from '@nasa-jpl/stellar/icons/view_grid_bottom_panel_filled.svg?component';
-  import ViewGridIcon from '@nasa-jpl/stellar/icons/view_grid_filled.svg?component';
   import ViewGridLeftPanelEmpty from '@nasa-jpl/stellar/icons/view_grid_left_panel_empty.svg?component';
   import ViewGridLeftPanelFilled from '@nasa-jpl/stellar/icons/view_grid_left_panel_filled.svg?component';
   import ViewGridLeftPanelSplitEmpty from '@nasa-jpl/stellar/icons/view_grid_left_panel_split_empty.svg?component';
@@ -12,6 +11,7 @@
   import ViewGridRightPanelFilled from '@nasa-jpl/stellar/icons/view_grid_right_panel_filled.svg?component';
   import ViewGridRightPanelSplitEmpty from '@nasa-jpl/stellar/icons/view_grid_right_panel_split_empty.svg?component';
   import ViewGridRightPanelSplitFilled from '@nasa-jpl/stellar/icons/view_grid_right_panel_split_filled.svg?component';
+  import { LayoutPanelLeftIcon } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { Status } from '../../enums/status';
   import { view, viewIsModified } from '../../stores/views';
@@ -96,7 +96,7 @@
 
 <div class="view-menu-button st-typography-medium">
   <PlanNavButton status={$viewIsModified ? Status.Modified : null} title={$view?.name ?? defaultViewName} menuTitle="">
-    <ViewGridIcon />
+    <LayoutPanelLeftIcon class="fill-current" size={20} />
     <div class="view-menu st-typography-medium" slot="menu">
       <div class="toggles">
         <MenuItem className="p-0" on:click={() => toggleView('left', !leftPanelIsOn)}>

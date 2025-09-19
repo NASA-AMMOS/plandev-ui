@@ -6,11 +6,7 @@
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { Button, Resizable } from '@nasa-jpl/stellar-svelte';
-  import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
-  import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
-  import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
-  import VerticalCollapseIcon from '@nasa-jpl/stellar/icons/vertical_collapse_with_center_line.svg?component';
-  import { ListX } from 'lucide-svelte';
+  import { CalendarRange, ChevronsLeftRight, FlipHorizontal2, ListX, PlaySquareIcon } from 'lucide-svelte';
   import type { PaneAPI } from 'paneforge';
   import { onDestroy } from 'svelte';
   import Nav from '../../../components/app/Nav.svelte';
@@ -716,7 +712,7 @@
               status={$planExpansionStatus}
               on:click={() => onHandleExpansion()}
             >
-              <PlanIcon />
+              <ChevronsLeftRight size={20} />
               <svelte:fragment slot="metadata">
                 {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
                   <div>Expansion Set ID: {$selectedExpansionSetId || 'None'}</div>
@@ -746,7 +742,7 @@
               showStatusInMenu={false}
               on:click={() => effects.simulate($plan, false, data.user)}
             >
-              <PlayIcon />
+              <PlaySquareIcon size={20} />
               <svelte:fragment slot="metadata">
                 <div class="st-typography-body">
                   <div class="simulation-header">
@@ -810,7 +806,7 @@
               on:click={() => $plan && effects.checkConstraints($plan, data.user, false)}
               indeterminate
             >
-              <VerticalCollapseIcon />
+              <FlipHorizontal2 size={20} />
               <svelte:fragment slot="metadata">
                 <div class="st-typography-body constraints-status">
                   {#if $constraintsStatus}
@@ -872,7 +868,7 @@
               on:click={() => effects.schedule(true, $plan, data.user)}
               indeterminate
             >
-              <CalendarIcon />
+              <CalendarRange size={20} />
               <svelte:fragment slot="metadata">
                 <div class="st-typography-body">
                   {#if !$schedulingAnalysisStatus}
