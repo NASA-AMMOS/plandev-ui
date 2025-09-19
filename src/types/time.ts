@@ -39,3 +39,6 @@ export type ParsedYmdString = {
   time: string;
   year: number;
 };
+
+// time transform direction?
+export type ActivityTransformDirection = 'left' | 'right';

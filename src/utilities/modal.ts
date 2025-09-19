@@ -37,6 +37,7 @@ import RunActionModal from '../components/modals/RunActionModal.svelte';
 import RunActionResultsModal from '../components/modals/RunActionResultsModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
 import TimeRangeModal from '../components/modals/TimeRangeModal.svelte';
+import TransformActivitiesModal from '../components/modals/TransformActivitiesModal.svelte';
 import UpdatePlanMissionModelModal from '../components/modals/UpdatePlanMissionModelModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import NewSequenceTemplateModal from '../components/sequence-templates/NewSequenceTemplateModal.svelte';
@@ -1136,7 +1137,10 @@ export async function showPackActivitiesModal(): Promise<
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const packModal = new PackActivitiesOffsetModal({ props: {}, target });
+        const packModal = new TransformActivitiesModal({
+          props: { subtitle: 'Shift activity directives forwards or backwards in time.', title: 'Shift Directives' },
+          target,
+        });
         target.resolve = resolve;
 
         packModal.$on('close', () => {
