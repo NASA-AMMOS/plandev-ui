@@ -1,28 +1,26 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
-  import ActivityIcon from '@nasa-jpl/stellar/icons/activity.svg?component';
-  import BookIcon from '@nasa-jpl/stellar/icons/book.svg?component';
-  import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
-  import ChecklistOnPageIcon from '@nasa-jpl/stellar/icons/checklist_on_page.svg?component';
-  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
-  import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
-  import TableWithHeaderIcon from '@nasa-jpl/stellar/icons/table_with_header.svg?component';
-  import VerticalCollapseIcon from '@nasa-jpl/stellar/icons/vertical_collapse_with_center_line.svg?component';
-  import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
-  import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
-  import WindowFullscreenIcon from 'bootstrap-icons/icons/window-fullscreen.svg?component';
-  import ExternalEventIcon from '../../assets/external-event-box-with-arrow.svg?component';
-  import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
+  import { DropdownMenu } from '@nasa-jpl/stellar-svelte';
+  import {
+    AppWindow,
+    BookOpen,
+    Boxes,
+    CalendarRange,
+    ChevronDown,
+    ChevronsLeftRight,
+    Clipboard,
+    FlipHorizontal2,
+    LucideEdit,
+    PlaySquare,
+    Table2,
+  } from 'lucide-svelte';
+  import DirectiveAndSpanIcon from '../../assets/timeline-directive-and-span.svg?component';
   import { viewUpdateGrid } from '../../stores/views';
   import type { ViewGrid, ViewGridComponent, ViewGridSection } from '../../types/view';
-  import Menu from './Menu.svelte';
-  import MenuItem from './MenuItem.svelte';
 
   export let gridSection: ViewGridSection;
   export let title: string = '';
-
-  let gridMenu: Menu;
 
   function onClickMenuItem(gridComponent: ViewGridComponent): void {
     const update: Partial<ViewGrid> = {};
@@ -40,101 +38,129 @@
     }
 
     viewUpdateGrid(update);
-    gridMenu.hide();
   }
 </script>
 
-<div class="grid-menu st-typography-medium" role="none" on:click|stopPropagation={() => gridMenu.toggle()}>
-  <div class="title">{title}</div>
-  <ChevronDownIcon />
-
-  <Menu bind:this={gridMenu}>
-    <MenuItem on:click={() => onClickMenuItem('ActivityDirectivesTablePanel')}>
-      <TableWithHeaderIcon />
+<DropdownMenu.Root>
+  <DropdownMenu.Trigger>
+    <div class="flex items-center gap-1 whitespace-nowrap rounded border px-2 py-1 text-[13px] font-medium">
+      {title}
+      <ChevronDown size={16} />
+    </div>
+  </DropdownMenu.Trigger>
+  <DropdownMenu.Content avoidCollisions fitViewport aria-label={`layer-picker`} align="start" class="overflow-auto">
+    <DropdownMenu.Label class="mb-0.5 text-[13px] font-medium text-muted-foreground">Select Panel</DropdownMenu.Label>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('ActivityDirectivesTablePanel')}
+    >
+      <Table2 size={16} />
       Activity Directives Table
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('ActivitySpansTablePanel')}>
-      <TableWithHeaderIcon />
+    </DropdownMenu.Item>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('ActivitySpansTablePanel')}
+    >
+      <Table2 size={16} />
       Simulated Activities Table
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('TimelineItemsPanel')}>
-      <BookIcon />
+    </DropdownMenu.Item>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('TimelineItemsPanel')}
+    >
+      <BookOpen size={16} />
       Activity, Resource, Event Types
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('ConstraintsPanel')}>
-      <VerticalCollapseIcon />
+    </DropdownMenu.Item>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('ConstraintsPanel')}
+    >
+      <FlipHorizontal2 size={16} />
       Constraints
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('ExpansionPanel')}>
-      <JournalCodeIcon />
+    </DropdownMenu.Item>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('ExpansionPanel')}
+    >
+      <ChevronsLeftRight size={16} />
       Expansion
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('ExternalSourcesPanel')}>
-      <ExternalSourceIcon />
+    </DropdownMenu.Item>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('ExternalSourcesPanel')}
+    >
+      <Boxes size={16} />
       External Sources
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('ExternalEventsTablePanel')}>
-      <TableWithHeaderIcon />
+    </DropdownMenu.Item>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('ExternalEventsTablePanel')}
+    >
+      <Table2 size={16} />
       External Events Table
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('IFramePanel')}>
-      <WindowFullscreenIcon />
+    </DropdownMenu.Item>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('IFramePanel')}
+    >
+      <AppWindow size={16} />
       External Application
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('PlanMetadataPanel')}>
-      <PlanIcon />
+    </DropdownMenu.Item>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('PlanMetadataPanel')}
+    >
+      <Clipboard size={16} />
       Plan Metadata
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('SchedulingGoalsPanel')}>
-      <CalendarIcon />
+    </DropdownMenu.Item>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('SchedulingGoalsPanel')}
+    >
+      <CalendarRange size={16} />
       Scheduling Goals
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('SchedulingConditionsPanel')}>
-      <CalendarIcon />
+    </DropdownMenu.Item>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('SchedulingConditionsPanel')}
+    >
+      <CalendarRange size={16} />
       Scheduling Conditions
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('ActivityFormPanel')}>
-      <ActivityIcon />
+    </DropdownMenu.Item>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('ActivityFormPanel')}
+    >
+      <DirectiveAndSpanIcon />
       Selected Activity
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('ExternalEventFormPanel')}>
-      <ExternalEventIcon />
+    </DropdownMenu.Item>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('ExternalEventFormPanel')}
+    >
+      <Table2 size={16} />
       Selected External Event
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('SimulationPanel')}>
-      <GearWideConnectedIcon />
+    </DropdownMenu.Item>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('SimulationPanel')}
+    >
+      <PlaySquare size={16} />
       Simulation
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('SimulationEventsPanel')}>
-      <TableWithHeaderIcon />
+    </DropdownMenu.Item>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('SimulationEventsPanel')}
+    >
+      <Table2 size={16} />
       Simulation Events Table
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('TimelineEditorPanel')}>
-      <ChecklistOnPageIcon />
+    </DropdownMenu.Item>
+    <DropdownMenu.Item
+      class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
+      on:click={() => onClickMenuItem('TimelineEditorPanel')}
+    >
+      <LucideEdit size={16} />
       Timeline Editor
-    </MenuItem>
-  </Menu>
-</div>
-
-<style>
-  .grid-menu {
-    align-items: center;
-    border: 1px solid var(--st-gray-30);
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    font-size: 13px;
-    gap: 5px;
-    height: 24px;
-    justify-content: center;
-    padding: 4px 8px;
-    position: relative;
-    user-select: none;
-  }
-
-  .title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-</style>
+    </DropdownMenu.Item>
+  </DropdownMenu.Content>
+</DropdownMenu.Root>
