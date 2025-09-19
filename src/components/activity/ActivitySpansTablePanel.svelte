@@ -7,7 +7,7 @@
   import { debounce } from 'lodash-es';
   import { InvalidDate } from '../../constants/time';
   import { selectActivity } from '../../stores/activities';
-  import { plan } from '../../stores/plan';
+  import { plan, planModelActivityTypes } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import { initialSpansLoading, selectedSpanId, spans } from '../../stores/simulation';
   import { view, viewTogglePanel, viewUpdateActivitySpansTable } from '../../stores/views';
@@ -22,6 +22,7 @@
   import Panel from '../ui/Panel.svelte';
   import ActivitySpansTable from './ActivitySpansTable.svelte';
   import ActivityTableMenu from './ActivityTableMenu.svelte';
+  import ArgumentsCellRenderer from './ArgumentsCellRenderer.svelte';
 
   export let gridSection: ViewGridSection;
 
@@ -66,6 +67,54 @@
       resizable: true,
       sortable: true,
       maxWidth: 80,
+    },
+    arguments: {
+      field: 'arguments',
+      filter: 'text',
+      headerName: 'Arguments',
+      hide: true,
+      resizable: true,
+      sortable: false,
+      autoHeight: true,
+      cellRenderer: (params: ICellRendererParams<Span>) => {
+        const div = document.createElement('div');
+        if (!params.data) {
+          return div;
+        }
+        new ArgumentsCellRenderer({
+          target: div,
+          props: {
+            activityTypeName: params.data.type,
+            activityTypes: $planModelActivityTypes,
+            args: params.data.attributes.arguments,
+          },
+        });
+        return div;
+      },
+    },
+    computedAttributes: {
+      field: 'computedAttributes',
+      filter: 'text',
+      headerName: 'Computed Attributes',
+      hide: true,
+      resizable: true,
+      sortable: false,
+      autoHeight: true,
+      cellRenderer: (params: ICellRendererParams<Span>) => {
+        const div = document.createElement('div');
+        if (!params.data) {
+          return div;
+        }
+        new ArgumentsCellRenderer({
+          target: div,
+          props: {
+            activityTypeName: params.data.type,
+            activityTypes: $planModelActivityTypes,
+            args: params.data.attributes.computedAttributes,
+          },
+        });
+        return div;
+      },
     },
     parent_id: {
       field: 'parent_id',
