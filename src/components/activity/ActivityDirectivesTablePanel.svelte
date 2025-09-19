@@ -112,8 +112,9 @@
         new ArgumentsCellRenderer({
           target: div,
           props: {
-            data: params.data,
+            activityTypeName: params.data.type,
             activityTypes: $planModelActivityTypes,
+            args: params.data.arguments,
           },
         });
         return div;

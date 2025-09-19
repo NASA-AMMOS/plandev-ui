@@ -1,16 +1,15 @@
 <script lang="ts">
-  import type { ActivityDirective, ActivityType } from '../../types/activity';
+  import type { ActivityType } from '../../types/activity';
+  import type { ArgumentsMap } from '../../types/parameter';
   import { formatParameterValue } from '../../utilities/parameters';
 
-  export let data: ActivityDirective;
+  export let activityTypeName: string;
   export let activityTypes: ActivityType[];
+  export let args: ArgumentsMap;
 
   let formattedArguments: { key: string; value: string }[] = [];
 
   $: {
-    const args = data?.arguments;
-    const activityTypeName = data?.type;
-
     if (!args || typeof args !== 'object') {
       formattedArguments = [];
     } else {
