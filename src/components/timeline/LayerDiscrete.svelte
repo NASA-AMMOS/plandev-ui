@@ -76,6 +76,7 @@
   export let focus: FocusEvent | undefined;
   export let labelPaddingLeft: number = 4;
   export let maxPackedItemCount: number = 10000;
+  export let maxCanvasHeight: number = 5000;
   export let mousedown: MouseEvent | undefined;
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
@@ -475,7 +476,6 @@
 
       const newRowHeight = y + 36; // add padding to the bottom to account for buttons in the activity tree
       if (expanded && newRowHeight > 0) {
-        /* TODO a change from manual to auto height does not take effect until you trigger a redraw on this row, could pass in whether or not to update row height but that might be odd? */
         dispatch('updateRowHeight', { newHeight: newRowHeight });
       }
     }
@@ -572,11 +572,11 @@
         }
       });
 
-      const extraSpace = Math.max(0, drawHeight - discreteOptions.height - discreteRowPadding);
+      const extraSpace = Math.max(0, drawHeight - discreteOptions.height - discreteRowPadding * 2);
       const rowCount = Object.keys(rows).length;
       Object.entries(rows).forEach(([_, entry], i) => {
         const { items } = entry;
-        let rowVerticalOffset = i * (extraSpace / (rowCount - 1)) || 0;
+        let rowVerticalOffset = discreteRowPadding + i * (extraSpace / (rowCount - 1)) || 0;
         if (discreteOptions.height >= drawHeight) {
           rowVerticalOffset = 4;
         }
@@ -584,6 +584,17 @@
           drawRow(rowVerticalOffset, items, idToColorMaps);
         }
       });
+
+      // Dispatch optimal row height in case it is needed.
+      // This is computed by multiplying the number of rows by the row height
+      // and adding 3px of spacing in between the rows.
+      if (expanded && discreteOptions.height) {
+        const optimalRowHeight = Math.min(
+          maxCanvasHeight,
+          Math.max(24, rowCount * discreteOptions.height + (rowCount - 1) * 3),
+        );
+        dispatch('updateRowHeight', { newHeight: optimalRowHeight });
+      }
     }
   }
 
