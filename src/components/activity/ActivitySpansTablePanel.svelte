@@ -36,7 +36,7 @@
   let filterExpression: string = '';
   let onGridSizeChangedDebounced = debounce(onGridSizeChanged, 100);
   let viewUpdateActivitySpansTableDebounced = debounce(viewUpdateActivitySpansTable, 100);
-  $: console.log('$spans :>> ', $spans);
+
   $: activitySpansTable = $view?.definition.plan.activitySpansTable;
   $: autoSizeColumns = activitySpansTable?.autoSizeColumns;
   /* eslint-disable sort-keys */
