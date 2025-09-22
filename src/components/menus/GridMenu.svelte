@@ -42,13 +42,13 @@
 </script>
 
 <DropdownMenu.Root>
-  <DropdownMenu.Trigger aria-label="Plan Menu Button">
+  <DropdownMenu.Trigger aria-label="Plan Menu">
     <div class="flex items-center gap-1 whitespace-nowrap rounded border px-2 py-1 text-[13px] font-medium">
       {title}
       <ChevronDown size={16} />
     </div>
   </DropdownMenu.Trigger>
-  <DropdownMenu.Content avoidCollisions fitViewport aria-label="Plan Menu" align="start" class="overflow-auto">
+  <DropdownMenu.Content avoidCollisions fitViewport align="start" class="overflow-auto">
     <DropdownMenu.Label class="mb-0.5 text-[13px] font-medium text-muted-foreground">Select Panel</DropdownMenu.Label>
     <DropdownMenu.Item
       class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
