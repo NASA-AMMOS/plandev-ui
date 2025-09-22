@@ -46,7 +46,7 @@
 </script>
 
 <Modal height="min-content" width="min-content">
-  <ModalHeader on:close>Shift Directive(s)</ModalHeader>
+  <ModalHeader on:close>Shift Directives</ModalHeader>
 
   <ModalContent>
     <div class="flex min-w-min flex-col gap-2">
@@ -67,14 +67,15 @@
           sizeVariant="xs"
           {disabled}
           name="gap-offset"
+          class={shiftOffsetError ? 'border-destructive' : ''}
           bind:value={shiftDurationString}
           on:change={onUpdateStartOffset}
         />
-        {#if shiftOffsetError}
-          <div>{shiftOffsetError}</div>
-        {/if}
       </div>
     </div>
+    {#if shiftOffsetError}
+      <div class="mt-0.5 w-full text-right text-destructive">{shiftOffsetError}</div>
+    {/if}
   </ModalContent>
 
   <ModalFooter>
