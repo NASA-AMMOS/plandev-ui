@@ -617,7 +617,7 @@ describe('packActivityDirectivesInPlan', () => {
     const leftPacked = packActivityDirectivesInPlan(
       getTestPlan(),
       activityDirectives,
-      'LEFT',
+      'left',
       0,
       getTestActivityDirectivesDB(),
       spans,
@@ -639,7 +639,7 @@ describe('packActivityDirectivesInPlan', () => {
     const leftPacked = packActivityDirectivesInPlan(
       getTestPlan(),
       activityDirectives,
-      'LEFT',
+      'left',
       3600000000, // 1 hour
       getTestActivityDirectivesDB(),
       spans,
@@ -661,7 +661,7 @@ describe('packActivityDirectivesInPlan', () => {
     const rightPacked = packActivityDirectivesInPlan(
       getTestPlan(),
       activityDirectives,
-      'RIGHT',
+      'right',
       0,
       getTestActivityDirectivesDB(),
       spans,
@@ -693,7 +693,7 @@ vi.mock('./toast', () => ({
 describe('bulkShiftActivityDirectivesInPlan', () => {
   const shiftedLeft = bulkShiftActivityDirectivesInPlan(
     activityDirectives,
-    'LEFT',
+    'left',
     7200000000, //2 hours
   );
 
@@ -705,7 +705,7 @@ describe('bulkShiftActivityDirectivesInPlan', () => {
 
   const shiftedRight = bulkShiftActivityDirectivesInPlan(
     activityDirectives,
-    'RIGHT',
+    'right',
     7200000000, //2 hours
   );
 

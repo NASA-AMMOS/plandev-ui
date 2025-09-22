@@ -1152,11 +1152,11 @@ export async function showPackActivitiesModal(): Promise<
           transformModal.$destroy();
         });
 
-        packModal.$on('confirm', e => {
+        transformModal.$on('confirm', e => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
-          packModal.$destroy();
+          transformModal.$destroy();
         });
       }
     } else {

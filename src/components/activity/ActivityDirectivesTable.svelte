@@ -206,7 +206,7 @@
         activityDirectives,
         spansMap,
         spanUtilityMaps,
-        'LEFT',
+        'left',
         0,
         user,
       );
@@ -224,7 +224,7 @@
         activityDirectives,
         spansMap,
         spanUtilityMaps,
-        'RIGHT',
+        'right',
         0,
         user,
       );
