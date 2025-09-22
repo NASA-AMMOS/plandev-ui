@@ -154,7 +154,7 @@ test.describe.serial('Plan', () => {
     await page.waitForTimeout(1000);
     // TODO would ideally do this without a timeout
 
-    // Re-select the activity
+    // Add a new activity
     await plan.addActivity('GrowBanana');
 
     const branchPlanUrlRegex = new RegExp(`${baseURL}/plans/(?<planId>\\d+)`);
