@@ -1136,7 +1136,7 @@ export async function showPackActivitiesModal(): Promise<
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const packModal = new TransformActivitiesModal({
+        const transformModal = new TransformActivitiesModal({
           props: {
             subtitle: 'Pack activity directives to the left or the right with a time offset.',
             title: 'Pack Directives',
@@ -1145,11 +1145,11 @@ export async function showPackActivitiesModal(): Promise<
         });
         target.resolve = resolve;
 
-        packModal.$on('close', () => {
+        transformModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: false });
-          packModal.$destroy();
+          transformModal.$destroy();
         });
 
         packModal.$on('confirm', e => {

@@ -40,5 +40,4 @@ export type ParsedYmdString = {
   year: number;
 };
 
-// time transform direction?
 export type ActivityTransformDirection = 'left' | 'right';
