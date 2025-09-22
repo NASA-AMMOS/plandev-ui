@@ -296,17 +296,20 @@ export function catchError(error: string | Error, details?: string | Error, shou
 
   if ((error as Error).name && (error as Error).name === 'AggregateError') {
     errors = (error as AggregateError).errors;
+  } else if (details && (details as Error).name && (details as Error).name === 'AggregateError') {
+    errors = (details as AggregateError).errors;
   } else {
     errors = [error];
   }
 
   allLogs.update(l => {
     errors.forEach(e => {
+      const cause = (e as Error).cause || (details as Error)?.cause;
       l.push({
         level: 'error',
         message: cleanLogMessage(`${e}`),
         timestamp: `${new Date()}`,
-        ...(details ? { trace: `${details}` } : {}),
+        ...(details ? { trace: `Cause: ${cause ? `${cause}\n` : ''}${details}` } : {}),
         type: ErrorTypes.CAUGHT_ERROR,
       });
     });
