@@ -2,6 +2,7 @@
   import { Input as InputStellar, Label } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { RadioButtonId } from '../../types/radio-buttons';
+  import type { ActivityTransformDirection } from '../../types/time';
   import { getTarget } from '../../utilities/generic';
   import { convertDurationStringToInterval } from '../../utilities/time';
   import Modal from '../modals/Modal.svelte';
@@ -11,30 +12,28 @@
   import RadioButton from '../ui/RadioButtons/RadioButton.svelte';
   import RadioButtons from '../ui/RadioButtons/RadioButtons.svelte';
 
-  type Direction = 'Left' | 'Right';
-
   export let title = '';
   export let subtitle = '';
 
   const dispatch = createEventDispatcher<{
     close: void;
     confirm: {
-      direction: Direction;
+      direction: ActivityTransformDirection;
       offsetDuration: string;
     };
   }>();
 
-  let direction: Direction = 'Left';
+  let direction: ActivityTransformDirection = 'left';
   let durationString: string = '0d 0h 0m 0s 0ms 0us';
   let durationError: string | null = '';
   let disabled: boolean = false;
 
   function setDirection(event: CustomEvent<{ id: RadioButtonId }>) {
-    direction = event.detail.id as Direction;
+    direction = event.detail.id as ActivityTransformDirection;
   }
 
   function confirm() {
-    dispatch('confirm', { direction, shiftOffsetStr: durationString });
+    dispatch('confirm', { direction, offsetDuration: durationString });
   }
 
   function onUpdateStartOffset(event: Event) {
@@ -59,8 +58,8 @@
       <div class="flex items-center justify-between gap-2">
         <Label size="sm" class=" w-[100px] flex-shrink-0">Direction</Label>
         <RadioButtons selectedButtonId={direction} on:select-radio-button={setDirection}>
-          <RadioButton id="Left">Left</RadioButton>
-          <RadioButton id="Right">Right</RadioButton>
+          <RadioButton id="left">Left</RadioButton>
+          <RadioButton id="right">Right</RadioButton>
         </RadioButtons>
       </div>
 

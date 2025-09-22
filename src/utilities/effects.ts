@@ -239,6 +239,7 @@ import type {
   TagsInsertInput,
   TagsSetInput,
 } from '../types/tags';
+import type { ActivityTransformDirection } from '../types/time';
 import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import type { Workspace, WorkspaceInsertInput } from '../types/workspace';
@@ -5904,7 +5905,7 @@ const effects = {
     activitiesInPlan: ActivityDirectiveDB[] | null,
     spansMap: SpansMap | null,
     spanUtilityMaps: SpanUtilityMaps | null,
-    direction: 'LEFT' | 'RIGHT',
+    direction: ActivityTransformDirection,
     offset: number,
     user: User | null,
   ): Promise<boolean> {
@@ -5968,8 +5969,8 @@ const effects = {
         return false;
       }
 
-      const { direction, offsetStr } = value;
-      const offset = convertDurationStringToUs(offsetStr);
+      const { direction, offsetDuration } = value;
+      const offset = convertDurationStringToUs(offsetDuration);
       await effects.packActivityDirectives(
         plan,
         activityDirectivesToPack,
@@ -6586,11 +6587,11 @@ const effects = {
         return false;
       }
 
-      const { direction, shiftOffsetStr } = value;
+      const { direction, offsetDuration } = value;
       const activitiesToUpdate = bulkShiftActivityDirectivesInPlan(
         directivesToShift,
         direction,
-        convertDurationStringToUs(shiftOffsetStr),
+        convertDurationStringToUs(offsetDuration),
       );
 
       if (plan !== null && activitiesToUpdate && Array.isArray(activitiesToUpdate)) {

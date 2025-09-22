@@ -8,6 +8,7 @@ import type {
 import type { ActivityMetadata, ActivityMetadataKey, ActivityMetadataValue } from '../types/activity-metadata';
 import type { Plan } from '../types/plan';
 import type { Span, SpanId, SpanUtilityMaps, SpansMap } from '../types/simulation';
+import type { ActivityTransformDirection } from '../types/time';
 import { getClipboardContent, setClipboardContent } from './clipboard';
 import { compare, isEmpty } from './generic';
 import { pluralize } from './text';
@@ -285,7 +286,7 @@ export async function getActivityDirectivesToPaste(
 
 export function bulkShiftActivityDirectivesInPlan(
   activitiesToShift: ActivityDirective[],
-  direction: 'LEFT' | 'RIGHT',
+  direction: ActivityTransformDirection,
   offsetUS: number,
 ): ActivityDirective[] {
   const selectedIds = new Set(activitiesToShift.map(a => a.id));
@@ -298,7 +299,7 @@ export function bulkShiftActivityDirectivesInPlan(
     }
 
     const newOffset = usToOffset(
-      getIntervalInMs(activity.start_offset) * 1000 + (direction === 'RIGHT' ? offsetUS : -offsetUS),
+      getIntervalInMs(activity.start_offset) * 1000 + (direction === 'right' ? offsetUS : -offsetUS),
     );
 
     return {
@@ -372,7 +373,7 @@ export function updateAnchorStartOffset(
 export function packActivityDirectivesInPlan(
   sourcePlan: Plan,
   activitiesToPack: ActivityDirective[],
-  direction: 'LEFT' | 'RIGHT',
+  direction: ActivityTransformDirection,
   offsetUS: number,
   activitiesDirectivesDB: ActivityDirectiveDB[],
   spansMap: SpansMap,
@@ -403,7 +404,7 @@ export function packActivityDirectivesInPlan(
     return a.start_time_ms - b.start_time_ms;
   });
 
-  if (direction === 'RIGHT') {
+  if (direction === 'right') {
     sortedActivities.reverse();
   }
 
@@ -438,10 +439,10 @@ export function packActivityDirectivesInPlan(
   newStartTimes.set(sortedActivities[0].id, postPackingTime);
 
   for (let idx = 1; idx < sortedActivities.length; idx++) {
-    if (direction === 'RIGHT') {
+    if (direction === 'left') {
       postPackingTime -= durations.get(sortedActivities[idx].id)! + offsetUS;
     } else {
-      //Same as direction === 'LEFT
+      //Same as direction === 'left'
       postPackingTime += durations.get(sortedActivities[idx - 1].id)! + offsetUS;
     }
     newStartTimes.set(sortedActivities[idx].id, postPackingTime);
