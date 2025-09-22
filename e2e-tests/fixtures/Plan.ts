@@ -546,8 +546,8 @@ export class Plan {
     this.constraintNewButton = page.locator(`button[name="new-constraint"]`);
     this.consoleContainer = page.getByTestId('console').filter({ hasText: 'All Errors' });
     this.externalSourceManageButton = page.getByLabel('Select derivation groups to');
-    this.gridMenuButton = page.getByLabel('Plan Menu Button', { exact: true });
-    this.gridMenu = page.getByRole('menu', { name: 'Plan Menu' });
+    this.gridMenuButton = page.getByLabel('Plan Menu', { exact: true });
+    this.gridMenu = page.getByRole('menu', { exact: true, name: 'Plan Menu' });
     this.gridMenuItem = (name: string) => this.gridMenu.getByRole('menuitem', { exact: true, name });
     this.navButtonActivityChecking = page.locator(`.nav-button:has-text("Activities")`);
     this.navButtonActivityCheckingMenu = this.navButtonActivityChecking.getByRole('menu');
