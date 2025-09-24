@@ -14,7 +14,7 @@
   import type { ActionDefinition, ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
-  import type { UserSequence } from '../../../types/sequencing';
+  import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
   import type { Workspace } from '../../../types/workspace';
   import {
     getActionDefinitionForRun,

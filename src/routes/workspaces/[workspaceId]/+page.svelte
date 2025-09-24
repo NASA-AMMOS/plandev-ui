@@ -7,7 +7,7 @@
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
-  import { type LibrarySequenceSignature, type PhoenixContext } from '@nasa-jpl/aerie-sequence-languages';
+  import type { LibrarySequenceSignature, PhoenixContext, UserSequence } from '@nasa-jpl/aerie-sequence-languages';
   import type { IRowNode } from 'ag-grid-community';
   import { onDestroy, onMount } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
@@ -39,7 +39,6 @@
     ChannelDictionaryMetadata,
     CommandDictionaryMetadata,
     ParameterDictionaryMetadata,
-    UserSequence,
   } from '../../../types/sequencing';
   import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
   import type {
