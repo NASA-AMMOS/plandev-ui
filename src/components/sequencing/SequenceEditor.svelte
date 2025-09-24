@@ -44,7 +44,7 @@
   export let readOnly: boolean = false;
   export let sequenceLanguages: PhoenixLanguages;
   export let sequenceName: string = '';
-  export let sequenceDefinition: string = ''; // TODO what on earth does this do
+  export let sequenceDefinition: string = '';
   export let sequenceOutput: string = '';
   export let showCommandFormBuilder: boolean = false;
   export let title: string = 'Sequence - Definition Editor';
@@ -417,7 +417,7 @@
           <div class="right">
             {#if sequenceLanguages.outputs.length > 0}
               <div class="output-format">
-                <label class="text-xs text-muted-foreground" for="outputFormat">Output Format</label>
+                <label class="text-muted-foreground text-xs" for="outputFormat">Output Format</label>
                 <select bind:value={selectedOutputFormat} class="st-select w-full" name="outputFormat">
                   {#each sequenceLanguages.outputs as outputFormatItem}
                     <option value={outputFormatItem}>
