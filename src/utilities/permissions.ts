@@ -1718,10 +1718,11 @@ const featurePermissions: FeaturePermissions = {
     canUpdate: (user, view) => queryPermissions.UPDATE_VIEW(user, view),
   },
   workspace: {
-    canCreate: (user, workspace) => isUserAdmin(user) || (!isUserViewer(user) && isUserOwner(user, workspace)),
-    canDelete: (user, workspace) => isUserAdmin(user) || (!isUserViewer(user) && isUserOwner(user, workspace)),
+    // TODO: Use workspace owners when ready to enforce
+    canCreate: (user, _workspace) => isUserAdmin(user) || !isUserViewer(user),
+    canDelete: (user, _workspace) => isUserAdmin(user) || !isUserViewer(user),
     canRead: () => true,
-    canUpdate: (user, workspace) => isUserAdmin(user) || (!isUserViewer(user) && isUserOwner(user, workspace)),
+    canUpdate: (user, _workspace) => isUserAdmin(user) || !isUserViewer(user),
   },
   workspaces: {
     canCreate: user => isUserAdmin(user) || (!isUserViewer(user) && queryPermissions.CREATE_WORKSPACE(user)),
