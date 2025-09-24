@@ -7,7 +7,7 @@ import type {
 } from '@nasa-jpl/aerie-actions';
 import type { ActionDefinition, ActionParametersMap, ActionRunSlim } from '../types/actions';
 import type { ValueSchema, ValueSchemaOption } from '../types/schema';
-import type { UserSequence } from '../types/sequencing';
+import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
 import { getActionsUrl } from './routes';
 
 /**

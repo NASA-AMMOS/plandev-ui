@@ -26,7 +26,8 @@ import type {
   SchedulingGoalMetadata,
 } from '../types/scheduling';
 import type { SequenceTemplate } from '../types/sequence-template';
-import type { Parcel, UserSequence } from '../types/sequencing';
+import type { Parcel } from '../types/sequencing';
+import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
 import type { PlanDataset, Simulation, SimulationTemplate } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { View, ViewSlim } from '../types/view';

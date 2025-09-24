@@ -417,7 +417,7 @@
           <div class="right">
             {#if sequenceLanguages.outputs.length > 0}
               <div class="output-format">
-                <label class="text-muted-foreground text-xs" for="outputFormat">Output Format</label>
+                <label class="text-xs text-muted-foreground" for="outputFormat">Output Format</label>
                 <select bind:value={selectedOutputFormat} class="st-select w-full" name="outputFormat">
                   {#each sequenceLanguages.outputs as outputFormatItem}
                     <option value={outputFormatItem}>
