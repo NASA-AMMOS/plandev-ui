@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
 import AboutModal from '../components/modals/AboutModal.svelte';
 import ActionCreationModal from '../components/modals/ActionCreationModal.svelte';
 import BulkShiftActivitiesModal from '../components/modals/BulkShiftActivitiesModal.svelte';
@@ -56,7 +57,6 @@ import type {
   PlanSlim,
 } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
-import type { UserSequence } from '../types/sequencing';
 import type { Tag } from '../types/tags';
 import type { ViewDefinition } from '../types/view';
 import type { Workspace } from '../types/workspace';
