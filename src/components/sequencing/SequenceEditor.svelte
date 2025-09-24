@@ -4,8 +4,8 @@
   import { standardKeymap } from '@codemirror/commands';
   import { syntaxTree } from '@codemirror/language';
   import { lintGutter, openLintPanel } from '@codemirror/lint';
-  import { Compartment, EditorState } from '@codemirror/state';
-  import { type ViewUpdate, keymap } from '@codemirror/view';
+  import { Compartment, EditorState, type Extension } from '@codemirror/state';
+  import { keymap, type ViewUpdate } from '@codemirror/view';
   import type { SyntaxNode } from '@lezer/common';
   import type {
     CommandInfoMapper,
@@ -76,15 +76,21 @@
   let updatedSequenceDefinition: string = sequenceDefinition;
   let isSequenceDefinitionUpdated: boolean = false;
   let commandInfoMapper: CommandInfoMapper;
+  let inputEditorExtension: Extension = [];
+  let outputEditorExtension: Extension = [];
 
   $: commandInfoMapper = sequenceLanguages.input.commandInfoMapper;
 
-  $: if (editorSequenceView) {
-    // insert sequence
-    editorSequenceView.dispatch({
-      changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
-    });
-  }
+  $: inputEditorExtension = phoenixContext
+    ? (sequenceLanguages.input.editorExtension ?? (_ => []))(phoenixContext)
+    : [];
+
+  $: outputEditorExtension = phoenixContext ? (selectedOutputFormat?.editorExtension ?? (_ => []))(phoenixContext) : [];
+
+  // insert sequence
+  $: editorSequenceView?.dispatch({
+    changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
+  });
 
   $: commandFormBuilderGrid = showCommandFormBuilder
     ? userSequenceEditorColumnsWithFormBuilder
@@ -94,14 +100,11 @@
     // Configure sequence editor.
     if (editorSequenceView) {
       editorSequenceView.dispatch({
-        effects: [
-          compartmentAdaptation.reconfigure(
-            (sequenceLanguages.input.editorExtension ?? ((_: PhoenixContext) => []))(phoenixContext),
-          ),
-        ],
+        effects: [compartmentAdaptation.reconfigure(inputEditorExtension)],
       });
     }
   }
+
   $: editorSequenceView?.dispatch({
     effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly)]),
   });
@@ -133,9 +136,7 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         EditorView.editable.of(false),
         lintGutter(),
-        compartmentOutputAdaptation.of(
-          (selectedOutputFormat?.editorExtension ?? ((_: PhoenixContext) => []))(phoenixContext),
-        ),
+        compartmentOutputAdaptation.of(outputEditorExtension),
         EditorState.readOnly.of(readOnly),
       ],
       parent: editorOutputDiv,
@@ -148,9 +149,9 @@
   async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
     const sequence = viewUpdate.state.doc.toString();
     disableCopyAndExport = sequence === '';
-    let output = await selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
+    let output = selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
 
-    editorOutputView.dispatch({ changes: { from: 0, insert: output, to: editorOutputView.state.doc.length } });
+    editorOutputView.dispatch({ changes: { from: 0, insert: output ?? '', to: editorOutputView.state.doc.length } });
 
     updatedSequenceDefinition = sequence;
     if (output !== undefined) {
@@ -237,12 +238,10 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
-        compartmentAdaptation.of(
-          (sequenceLanguages.input.editorExtension ?? ((_: PhoenixContext) => []))(phoenixContext),
-        ),
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
+        compartmentAdaptation.of(inputEditorExtension),
         compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
       ],
       parent: editorSequenceDiv,
@@ -256,9 +255,7 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         EditorView.editable.of(false),
         lintGutter(),
-        compartmentOutputAdaptation.of(
-          (selectedOutputFormat?.editorExtension ?? ((_: PhoenixContext) => []))(phoenixContext),
-        ),
+        compartmentOutputAdaptation.of(outputEditorExtension),
         EditorState.readOnly.of(readOnly),
       ],
       parent: editorOutputDiv,
@@ -417,7 +414,7 @@
           <div class="right">
             {#if sequenceLanguages.outputs.length > 0}
               <div class="output-format">
-                <label class="text-xs text-muted-foreground" for="outputFormat">Output Format</label>
+                <label class="text-muted-foreground text-xs" for="outputFormat">Output Format</label>
                 <select bind:value={selectedOutputFormat} class="st-select w-full" name="outputFormat">
                   {#each sequenceLanguages.outputs as outputFormatItem}
                     <option value={outputFormatItem}>
