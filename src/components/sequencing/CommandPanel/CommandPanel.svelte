@@ -52,7 +52,7 @@
   );
   $: commandDef = commandInfoMapper.getCommandDef(
     commandDictionary,
-    phoenixContext.librarySequenceMap,
+    phoenixContext.librarySequences,
     commandName ?? '',
   );
 
