@@ -59,7 +59,7 @@
   let selectedNode: SyntaxNode | null = null;
   let currentTree: Tree;
 
-  editorSequenceView.dispatch({
+  editorSequenceView?.dispatch({
     effects: StateEffect.appendConfig.of([
       EditorView.updateListener.of(viewUpdate => {
         // This is broken out into a different listener as debouncing this can cause cursor to move around
