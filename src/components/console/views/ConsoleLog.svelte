@@ -20,7 +20,7 @@
   let expansionPadding: number = 0;
   let level: string = '';
 
-  $: expandable = log.data || log.trace || log.cause ? true : false;
+  $: expandable = log.data || log.trace || log.cause || log.service ? true : false;
   $: level = (log as LogMessage).level || '';
 
   onMount(() => {
@@ -151,6 +151,11 @@
       {#if log.cause}
         <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
           {log.cause}
+        </div>
+      {/if}
+      {#if log.service}
+        <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
+          Service: {log.service}
         </div>
       {/if}
       {#if log.trace}
