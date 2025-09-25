@@ -345,7 +345,6 @@ export async function showImportWorkspaceFileModal(
           'confirm',
           (
             e: CustomEvent<{
-              convertedFileExtension: string;
               filesToConvert: File[];
               filesToUpload: File[];
               shouldKeepOriginalFiles: boolean;
