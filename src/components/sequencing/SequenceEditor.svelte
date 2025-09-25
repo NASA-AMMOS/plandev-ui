@@ -81,11 +81,13 @@
 
   $: commandInfoMapper = sequenceLanguages.input.commandInfoMapper;
 
-  $: inputEditorExtension = phoenixContext
-    ? (sequenceLanguages.input.editorExtension ?? (_ => []))(phoenixContext)
-    : [];
+  $: if (phoenixContext && sequenceLanguages.input.editorExtension) {
+    inputEditorExtension = sequenceLanguages.input.editorExtension(phoenixContext);
+  }
 
-  $: outputEditorExtension = phoenixContext ? (selectedOutputFormat?.editorExtension ?? (_ => []))(phoenixContext) : [];
+  $: if (phoenixContext && selectedOutputFormat?.editorExtension) {
+    outputEditorExtension = selectedOutputFormat.editorExtension(phoenixContext);
+  }
 
   // insert sequence
   $: editorSequenceView?.dispatch({
