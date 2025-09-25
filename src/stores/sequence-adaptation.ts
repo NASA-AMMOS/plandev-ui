@@ -1,4 +1,12 @@
-import { getSeqnLanguage, type PhoenixAdaptation, type PhoenixLanguages } from '@nasa-jpl/aerie-sequence-languages';
+import {
+  getSeqnLanguage,
+  seqJsonLanguage,
+  seqJsonToSeqn,
+  seqnParser,
+  seqnToSeqJson,
+  type PhoenixAdaptation,
+  type PhoenixLanguages,
+} from '@nasa-jpl/aerie-sequence-languages';
 import { derived, writable, type Writable } from 'svelte/store';
 import type { SequenceAdaptationMetadata } from '../types/sequencing';
 import gql from '../utilities/gql';
@@ -9,7 +17,14 @@ import { gqlSubscribable } from './subscribable';
 
 const defaultLanguages: PhoenixLanguages = {
   input: getSeqnLanguage(phoenixResources),
-  outputs: [],
+  outputs: [
+    {
+      ...seqJsonLanguage,
+      toInputFormat: seq => seqJsonToSeqn(JSON.parse(seq)),
+      toOutputFormat: (seq, context, name) =>
+        JSON.stringify(seqnToSeqJson(seqnParser.parse(seq), seq, context.commandDictionary, name), null, 2),
+    },
+  ],
 };
 
 /* Writeable */
