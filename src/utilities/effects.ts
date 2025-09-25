@@ -249,6 +249,7 @@ import {
   bulkShiftActivityDirectivesInPlan,
   packActivityDirectivesInPlan,
 } from './activities';
+import { ErrorTypes } from './errors';
 import { compare, convertToQuery } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
@@ -284,7 +285,7 @@ import {
   showUploadViewModal,
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
-import { reqActionServer, reqExtension, reqGateway, reqHasura, reqWorkspace } from './requests';
+import { CompoundError, reqActionServer, reqExtension, reqGateway, reqHasura, reqWorkspace } from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
 import { parseCdlDictionary, toAmpcsXml } from './sequence-editor/languages/vml/cdl-dictionary';
@@ -380,7 +381,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('Filter Application Failed');
+      catchError('Filter Application Failed', e as Error);
       showFailureToast('Filter Application Failed');
     }
   },
@@ -1062,7 +1063,7 @@ const effects = {
         throw Error('Unable to create a constraint spec invocation');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Constraint invocation creation failed', e as Error);
       showFailureToast('Constraint Invocation Creation Failed');
       return null;
     }
@@ -1333,7 +1334,7 @@ const effects = {
     } catch (e) {
       showFailureToast('External Source & Event Type Create Failed');
       createExternalSourceEventTypeErrorStore.set((e as Error).message);
-      catchError(e as Error);
+      catchError('External Source & Event Type Create Failed', e as Error);
       return false;
     }
   },
@@ -1578,7 +1579,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Create plan branch request failed', e as Error);
     }
   },
 
@@ -2009,7 +2010,7 @@ const effects = {
         throw Error('Unable to create a scheduling spec goal invocation');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Scheduling Goal Invocation Creation Failed', e as Error);
       showFailureToast('Scheduling Goal Invocation Creation Failed');
       return null;
     }
@@ -2033,7 +2034,7 @@ const effects = {
       logMessage(`Created scheduling plan specification ID=${newSchedulingSpec?.id}.`);
       return newSchedulingSpec;
     } catch (e) {
-      catchError(e as Error);
+      catchError('Create scheduling plan specification failed', e as Error);
       return null;
     }
   },
@@ -3104,7 +3105,7 @@ const effects = {
       logMessage(`Deleted file ID=${id}.`);
       return true;
     } catch (e) {
-      catchError(e as Error);
+      catchError(`Delete file ID=${id} failed.`, e as Error);
       return false;
     }
   },
@@ -3739,7 +3740,7 @@ const effects = {
       }
     } catch (e) {
       showFailureToast('View Delete Failed');
-      catchError(e as Error);
+      catchError('View delete failed', e as Error);
     }
 
     return false;
@@ -3783,7 +3784,7 @@ const effects = {
       }
     } catch (e) {
       showFailureToast('View Deletes Failed');
-      catchError(e as Error);
+      catchError('View deletes failed', e as Error);
     }
 
     return false;
@@ -3809,7 +3810,7 @@ const effects = {
       }
     } catch (e) {
       showFailureToast('Workspace Delete Failed');
-      catchError(e as Error);
+      catchError('Workspace delete failed', e as Error);
     }
 
     return false;
@@ -3996,7 +3997,7 @@ const effects = {
         throw Error('Unable to retrieve activity run');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to get action run', e as Error);
       return null;
     }
   },
@@ -4016,10 +4017,10 @@ const effects = {
         );
         return activityDirectives;
       } else {
-        throw Error('Unable to retrieve activities for plan');
+        throw Error('No activities returned');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve activities for plan', e as Error);
       return [];
     }
   },
@@ -4060,10 +4061,10 @@ const effects = {
         logMessage(`Retrieved activity directive changelog for activity ID=${activityId}.`);
         return updatedRevisions;
       } else {
-        throw Error('Unable to retrieve activity directive changelog');
+        throw Error('Activity directive changelog not found');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve activity directive changelog', e as Error);
       return [];
     }
   },
@@ -4082,10 +4083,10 @@ const effects = {
         );
         return activityTypes;
       } else {
-        throw Error('Unable to retrieve activity types');
+        throw Error('No activity types found');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve activity types', e as Error);
       return [];
     }
   },
@@ -4106,10 +4107,10 @@ const effects = {
           logMessage(`Retrieved expansion rule activity types for model ID=${modelId}.`);
           return activityTypes;
         } else {
-          throw Error('Unable to retrieve expansion rule activity types');
+          throw Error('No activity types found');
         }
       } catch (e) {
-        catchError(e as Error);
+        catchError('Failed to retrieve expansion rule activity types', e as Error);
         return [];
       }
     } else {
@@ -4126,7 +4127,7 @@ const effects = {
       }
       return constraint;
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve constraint', e as Error);
       return null;
     }
   },
@@ -4153,7 +4154,7 @@ const effects = {
       }
       return [];
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve default activity argrguments', e as Error);
       return [];
     }
   },
@@ -4176,7 +4177,7 @@ const effects = {
       logMessage(`Retrieved effective model arguments for model ID=${modelId}.`);
       return effectiveModelArguments;
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve effective model arguments', e as Error);
       return null;
     }
   },
@@ -4219,7 +4220,7 @@ const effects = {
       );
       return simulationEvents;
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve simulation events', e as Error);
       return [];
     }
   },
@@ -4233,7 +4234,7 @@ const effects = {
       }
       return expansionRule;
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to get expansion rule', e as Error);
       return null;
     }
   },
@@ -4249,7 +4250,7 @@ const effects = {
         return [];
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to get expansion runs', e as Error);
       return [];
     }
   },
@@ -4280,7 +4281,7 @@ const effects = {
         return null;
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve expansion sequence ID', e as Error);
       return null;
     }
   },
@@ -4309,7 +4310,7 @@ const effects = {
         throw Error(`Unable to get expansion sequence seq json for seq ID "${seqId}"`);
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to get expansion sequence seq json', e as Error);
       return null;
     }
   },
@@ -4348,7 +4349,7 @@ const effects = {
       logMessage(`Retrieved ${types.length} external event type${pluralize(types.length)}.`);
       return types;
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve external event types', e as Error);
       return [];
     }
   },
@@ -4393,7 +4394,7 @@ const effects = {
         throw Error('Unable to retrieve external event types for source');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve external event types for source', e as Error);
       showFailureToast('External Event Type Retrieval Failed');
       return [];
     }
@@ -4460,7 +4461,7 @@ const effects = {
       if ((e as Error).name === 'AbortError') {
         return { aborted: true, file: null };
       } else {
-        catchError(e as Error);
+        catchError(`Failed to get file with id: ${fileId}`, e as Error);
         showFailureToast(`Failed to get file with id: ${fileId}`);
         return { aborted: false, file: null };
       }
@@ -4482,7 +4483,7 @@ const effects = {
       }
       return null;
     } catch (e) {
-      catchError(e as Error);
+      catchError(`Failed to get filename for file id: ${fileId}`, e as Error);
       showFailureToast(`Failed to get filename for file id: ${fileId}`);
       return null;
     }
@@ -4497,10 +4498,10 @@ const effects = {
         logMessage(`Retrieved model "${model.name}" v${model.version} (ID=${modelId})`);
         return model;
       } else {
-        throw Error('Unable to retrieve model');
+        throw Error('No model found');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve model', e as Error);
       return null;
     }
   },
@@ -4514,10 +4515,10 @@ const effects = {
         logMessage(`Retrieved ${models.length} model${pluralize(models.length)}`);
         return models;
       } else {
-        throw Error('Unable to retrieve models');
+        throw Error('Models not found');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve models', e as Error);
       return [];
     }
   },
@@ -4531,7 +4532,7 @@ const effects = {
       }
       return parcel;
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve parcel', e as Error);
       return null;
     }
   },
@@ -4553,15 +4554,14 @@ const effects = {
       const { channel_dictionary: channelDictionary } = data;
 
       if (!Array.isArray(channelDictionary) || !channelDictionary.length) {
-        catchError(`Unable to find channel dictionary with id ${channelDictionaryId}`);
-        return null;
+        throw new Error(`Unable to find channel dictionary with id ${channelDictionaryId}`);
       } else {
         const [{ parsed_json: parsedJson }] = channelDictionary;
         logMessage(`Retrieved channel dictionary ID=${channelDictionaryId}.`);
         return parsedJson;
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve channel dictionary', e as Error);
       return null;
     }
   },
@@ -4583,15 +4583,14 @@ const effects = {
       const { command_dictionary: commandDictionary } = data;
 
       if (!Array.isArray(commandDictionary) || !commandDictionary.length) {
-        catchError(`Unable to find command dictionary with id ${commandDictionaryId}`);
-        return null;
+        throw new Error(`Unable to find command dictionary with id ${commandDictionaryId}`);
       } else {
         const [{ parsed_json: parsedJson }] = commandDictionary;
         logMessage(`Retrieved command dictionary ID=${commandDictionaryId}.`);
         return parsedJson;
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve command dictionary', e as Error);
       return null;
     }
   },
@@ -4613,15 +4612,14 @@ const effects = {
       const { parameter_dictionary: parameterDictionary } = data;
 
       if (!Array.isArray(parameterDictionary) || !parameterDictionary.length) {
-        catchError(`Unable to find parameter dictionary with id ${parameterDictionaryId}`);
-        return null;
+        throw new Error(`Unable to find parameter dictionary with id ${parameterDictionaryId}`);
       } else {
         const [{ parsed_json: parsedJson }] = parameterDictionary;
         logMessage(`Retrieved parameter dictionary ID=${parameterDictionaryId}.`);
         return parsedJson;
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve parameter dictionary', e as Error);
       return null;
     }
   },
@@ -4645,7 +4643,7 @@ const effects = {
         return null;
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve plan', e as Error);
       return null;
     }
   },
@@ -4681,7 +4679,7 @@ const effects = {
         throw Error('Unable to retrieve conflicting activities');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve conflicting activities', e as Error);
       return [];
     }
   },
@@ -4708,7 +4706,7 @@ const effects = {
         throw Error('Unable to retrieve non-conflicting activities');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve non-conflicting activities', e as Error);
       return [];
     }
   },
@@ -4726,7 +4724,7 @@ const effects = {
         throw Error('Unable to get merge requests in progress');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to retrieve in-progress plan merge request', e as Error);
       return null;
     }
   },
@@ -4741,10 +4739,10 @@ const effects = {
         logMessage(`Retrieved latest plan revision ID ${revision}.`);
         return revision;
       } else {
-        throw Error('Unable to retrieve plan revision');
+        throw Error('Plan revision not found');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Failed to get plan revision', e as Error);
       return null;
     }
   },
@@ -4775,7 +4773,7 @@ const effects = {
         return null;
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to retrieve plan snapshot activity directives', e as Error);
       return null;
     }
   },
@@ -4792,7 +4790,7 @@ const effects = {
       }
       return plan.tags.map(({ tag }) => tag);
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to retrieve plan tags', e as Error);
       return [];
     }
   },
@@ -4822,7 +4820,7 @@ const effects = {
         }),
       };
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to retrieve plans and models', e as Error);
       return { models: [], plans: [] };
     }
   },
@@ -4850,10 +4848,10 @@ const effects = {
         );
         return resourceTypes;
       } else {
-        throw Error('Unable to retrieve resource types');
+        throw Error('No resource types found');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to retrieve resource types', e as Error);
       return [];
     }
   },
@@ -4922,8 +4920,8 @@ const effects = {
       let aborted = false;
       const error = e as Error;
       if (error.name !== 'AbortError') {
-        catchError(error);
-        showFailureToast('Failed to fetch external profiles');
+        catchError('Unable to retrieve external profiles ', error);
+        showFailureToast('Failed to retrieve external profiles');
         aborted = true;
       }
       return { aborted, resources: [] };
@@ -4949,13 +4947,13 @@ const effects = {
             };
           }
         } else {
-          throw Error('Unable to retrieve role permissions');
+          throw Error('Role permissions not found');
         }
       }
 
       return {};
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to retrieve role permissions', e as Error);
       return null;
     }
   },
@@ -4976,7 +4974,7 @@ const effects = {
       }
       return condition;
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to retrieve scheduling condition', e as Error);
       return null;
     }
   },
@@ -4997,7 +4995,7 @@ const effects = {
       }
       return goal;
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to retrieve scheduling goal', e as Error);
       return null;
     }
   },
@@ -5019,7 +5017,7 @@ const effects = {
         logMessage(`Retrieved scheduling conditions specification for condition ID=${conditionId}.`);
         return schedulingSpecificationConditions;
       } catch (e) {
-        catchError(e as Error);
+        catchError('Unable to retrieve scheduling conditions specification for condition', e as Error);
         return null;
       }
     } else {
@@ -5042,7 +5040,7 @@ const effects = {
         logMessage(`Retrieved scheduling goals specification for goal ID=${goalId}.`);
         return schedulingSpecificationGoals;
       } catch (e) {
-        catchError(e as Error);
+        catchError('Unable to retrieve scheduling goals specification for goal', e as Error);
         return null;
       }
     } else {
@@ -5067,7 +5065,7 @@ const effects = {
         return sequenceAdaptation[0];
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to retrieve sequence adaptation', e as Error);
     }
 
     return null;
@@ -5100,10 +5098,10 @@ const effects = {
           };
         });
       } else {
-        throw Error('Unable to get spans');
+        throw Error('Spans not found');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to retrieve spans', e as Error);
       return [];
     }
   },
@@ -5117,10 +5115,10 @@ const effects = {
         logMessage(`Retrieved ${tags.length} tag${pluralize(tags.length)}.`);
         return tags;
       } else {
-        throw Error('Unable to get tags');
+        throw Error('Tags not found');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to retrieve tags', e as Error);
       return [];
     }
   },
@@ -5148,14 +5146,13 @@ const effects = {
             logMessage(`Retrieved TypeScript activity type "${activityTypeName}".`);
             return typescriptFiles;
           } else {
-            catchError(reason);
-            return [];
+            throw new Error(reason);
           }
         } else {
           throw Error(`Unable to get TypeScript activity type "${activityTypeName}"`);
         }
       } catch (e) {
-        catchError(e as Error);
+        catchError('Unable to retrieve TypeScript activity type', e as Error);
         return [];
       }
     } else {
@@ -5182,14 +5179,13 @@ const effects = {
             logMessage(`Retrieved TypeScript command dictionary "${commandDictionaryId}".`);
             return typescriptFiles;
           } else {
-            catchError(reason);
-            return [];
+            throw new Error(reason);
           }
         } else {
           throw Error(`Unable to get TypeScript command dictionary with ID: "${commandDictionaryId}"`);
         }
       } catch (e) {
-        catchError(e as Error);
+        catchError('Unable to retrieve TypeScript command dictionary', e as Error);
         return [];
       }
     } else {
@@ -5213,14 +5209,13 @@ const effects = {
             logMessage(`Retrieved TypeScript constraint files for model ID=${modelId}.`);
             return typescriptFiles;
           } else {
-            catchError(reason);
-            return [];
+            throw new Error(reason);
           }
         } else {
           throw Error('Unable to retrieve TypeScript constraint files');
         }
       } catch (e) {
-        catchError(e as Error);
+        catchError('Unable to retrieve TypeScript constraint files', e as Error);
         return [];
       }
     } else {
@@ -5240,14 +5235,13 @@ const effects = {
             logMessage(`Retrieved TypeScript scheduling files for model ID=${modelId}.`);
             return typescriptFiles;
           } else {
-            catchError(reason);
-            return [];
+            throw new Error(reason);
           }
         } else {
           throw Error('Unable to retrieve TypeScript scheduling files');
         }
       } catch (e) {
-        catchError(e as Error);
+        catchError('Unable to retrieve TypeScript scheduling files', e as Error);
         return [];
       }
     } else {
@@ -5273,13 +5267,13 @@ const effects = {
             };
           }, {});
         } else {
-          throw Error('Unable to retrieve user permissions');
+          throw Error('User permissions not found');
         }
       }
 
       return {};
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to retrieve user permissions', e as Error);
       return null;
     }
   },
@@ -5293,7 +5287,7 @@ const effects = {
       }
       return userSequence;
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to retrieve user sequence', e as Error);
       return null;
     }
   },
@@ -5420,7 +5414,7 @@ const effects = {
       }
       return generateDefaultView(resourceTypes, externalEventTypes);
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to retrieve view', e as Error);
       return null;
     }
   },
@@ -5438,7 +5432,7 @@ const effects = {
         return null;
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to retrieve retrieve workspace', e as Error);
       return null;
     }
   },
@@ -5452,10 +5446,10 @@ const effects = {
         logMessage(`Retrieved workspace contents for workspace ID=${workspaceId}.`, '', performance.now() - startTime);
         return workspaceContents;
       } else {
-        throw Error(`Unable to retrieve workspace contents`);
+        throw Error(`Workspace contents not found`);
       }
     } catch (e) {
-      catchError('Workspace Retrieval Failed', e as Error);
+      catchError('Unable to retrieve workspace', e as Error);
       showFailureToast('Workspace Retrieval Failed');
     }
 
@@ -5477,10 +5471,10 @@ const effects = {
         logMessage(`Retrieved workspace file "${filePath}" for workspace ID=${workspaceId}.`);
         return fileContents;
       } else {
-        throw Error(`Unable to retrieve workspace file`);
+        throw Error(`Workspace file contents not found`);
       }
     } catch (e) {
-      catchError('Workspace File Retrieval Failed', e as Error);
+      catchError('Unable to retrieve workspace file', e as Error);
       showFailureToast('Workspace File Retrieval Failed');
     }
 
@@ -5603,7 +5597,7 @@ const effects = {
         throw new Error('Plan import failed');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to import plan', e as Error);
       creatingPlanStore.set(false);
       return { error: e as Error };
     }
@@ -5648,7 +5642,7 @@ const effects = {
 
       return null;
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to import sequence template', e as Error);
       showFailureToast('Failed To Import Sequence Template');
       return null;
     }
@@ -5826,10 +5820,10 @@ const effects = {
       if (data.update_simulation != null) {
         return true;
       } else {
-        throw Error('Unable to update simulation');
+        throw Error('Simulation update not found');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to update simulation', e as Error);
       return false;
     }
   },
@@ -5949,7 +5943,7 @@ const effects = {
         };
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to load view from file', e as Error);
     }
 
     return {
@@ -5969,7 +5963,7 @@ const effects = {
       );
       return data;
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to login', e as Error);
       return {
         message: 'An unexpected error occurred',
         success: false,
@@ -6063,7 +6057,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to move workspace item', e as Error);
       showFailureToast((e as Error).message);
     }
 
@@ -6782,14 +6776,14 @@ const effects = {
               }
             });
           } else {
-            throw Error('Unable to schedule');
+            throw Error('Scheduling data not returned');
           }
         }
       } else {
         throw Error('Plan is not defined.');
       }
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to schedule', e as Error);
       showFailureToast('Scheduling failed');
     }
   },
@@ -6804,13 +6798,7 @@ const effects = {
         action_run_id: actionRunId,
         secrets: secretParameters,
       };
-
-      try {
-        await reqActionServer<any>('/secrets', 'POST', JSON.stringify(body));
-      } catch (e) {
-        catchError(e as Error);
-        throw Error('Action secrets failed being sent to the Actions server');
-      }
+      await reqActionServer<any>('/secrets', 'POST', JSON.stringify(body));
     } catch (e) {
       catchError('Sending Action Secret Parameters Failed', e as Error);
       showFailureToast('Sending Action Secret Parameters Failed');
@@ -6862,7 +6850,7 @@ const effects = {
       const data = await reqGateway<ReqSessionResponse>('/auth/session', 'GET', null, user, false);
       return data;
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to retrieve session data', e as Error);
       return { message: 'An unexpected error occurred', success: false };
     }
   },
@@ -6932,7 +6920,13 @@ const effects = {
           simulationDatasetIdStore.set(newSimulationDatasetId);
           // React if the simulation immediately fails
           if (simulate.status === 'failed') {
-            throw Error(`Simulation ${newSimulationDatasetId} failed`);
+            throw new CompoundError(`Unable to run simulation ID=${newSimulationDatasetId}`, {
+              data: simulateResponse.reason.data,
+              level: 'error',
+              message: `Unable to run simulation ID=${newSimulationDatasetId}. ${simulateResponse.reason.message}.`,
+              timestamp: new Date().toISOString(),
+              type: ErrorTypes.CAUGHT_ERROR,
+            });
           }
           logMessage(`Running simulation ID=${newSimulationDatasetId} ${force ? ' (force)' : ''}.`);
         } else {
@@ -6942,7 +6936,7 @@ const effects = {
         throw Error('Plan is not defined.');
       }
     } catch (e) {
-      catchError(e as Error, simulateResponse ? simulateResponse.reason.message : '');
+      catchError('Simulation failed', e as Error);
       showFailureToast('Simulation failed');
     }
   },
@@ -7870,11 +7864,11 @@ const effects = {
 
       const data = await reqHasura(gql.UPDATE_SCHEDULING_SPECIFICATION, { id, spec }, user);
       if (data.updateSchedulingSpec == null) {
-        throw Error(`Unable to update scheduling spec with ID: "${id}"`);
+        throw Error(`Scheduling spec with ID: "${id}" not found`);
       }
       logMessage(`Updated scheduling specification ID=${id} for plan "${plan.name}" (ID=${plan.id}).`);
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to update scheduling specification', e as Error);
     }
   },
 
@@ -8187,9 +8181,9 @@ const effects = {
         return uploadedDatasetId;
       }
 
-      throw Error('External Dataset Upload Failed');
+      throw Error('Uploaded dataset not found');
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to upload external dataset', e as Error);
       showFailureToast('External Dataset Upload Failed');
       return null;
     }
@@ -8203,7 +8197,7 @@ const effects = {
       const { id } = data;
       return id;
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to upload file', e as Error);
       return null;
     }
   },
@@ -8235,7 +8229,7 @@ const effects = {
 
       return generatedFilenames;
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to upload files', e as Error);
       return {};
     }
   },
@@ -8316,7 +8310,7 @@ const effects = {
         valid,
       };
     } catch (e) {
-      catchError(e as Error);
+      catchError('Unable to validate view JSON', e as Error);
       const { message } = e as Error;
       return { errors: [message], valid: false };
     }

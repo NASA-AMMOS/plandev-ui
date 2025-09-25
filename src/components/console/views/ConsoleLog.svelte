@@ -5,7 +5,7 @@
   import { ChevronDown, ChevronRight } from 'lucide-svelte';
   import { onMount } from 'svelte';
   import { selectActivity } from '../../../stores/activities';
-  import type { BaseError } from '../../../types/errors';
+  import type { BaseError, LogMessage } from '../../../types/errors';
   import { getActivityIdsFromError, isLogMessage } from '../../../utilities/errors';
   import { formatMS } from '../../../utilities/time';
 
@@ -18,8 +18,10 @@
   let leftContents: HTMLDivElement;
   let open: boolean = false;
   let expansionPadding: number = 0;
+  let level: string = '';
 
-  $: expandable = log.data || log.trace ? true : false;
+  $: expandable = log.data || log.trace || log.cause ? true : false;
+  $: level = (log as LogMessage).level || '';
 
   onMount(() => {
     // On mount, calculate the amount of padding needed for the expansion content
@@ -92,19 +94,15 @@
                 {formatLogTimestamp(log.timestamp)}
               </span>
             {/if}
-            {#if showLevel && log.level}
+            {#if showLevel && level}
               <span class="flex">
                 [<span
                   class={cn(
                     'flex flex-shrink-0 uppercase',
-                    log.level === 'error'
-                      ? 'text-destructive'
-                      : log.level === 'warn'
-                        ? 'text-yellow-600'
-                        : 'text-blue-500',
+                    level === 'error' ? 'text-destructive' : level === 'warn' ? 'text-yellow-600' : 'text-blue-500',
                   )}
                 >
-                  {log.level}
+                  {level}
                 </span>]
               </span>
             {/if}
@@ -149,6 +147,11 @@
     <div class="bg-neutral-200/50 px-4 py-2" style={`padding-left: ${expansionPadding}px`}>
       {#if log.data && JSON.stringify(log.data) !== '{}'}
         <pre class="m-0 whitespace-pre-wrap break-words">{JSON.stringify(log.data, undefined, 2)}</pre>
+      {/if}
+      {#if log.cause}
+        <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
+          {log.cause}
+        </div>
       {/if}
       {#if log.trace}
         <pre class="m-0 whitespace-pre-wrap break-words">{log.trace}</pre>

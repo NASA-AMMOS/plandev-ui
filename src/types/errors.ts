@@ -4,8 +4,8 @@ import type { ConstraintResult, UserCodeError } from './constraint';
 export type LogLevel = 'error' | 'warn' | 'info';
 
 export interface BaseError {
-  data?: unknown; // optional unstructured data object with any additional useful error data
-  level?: LogLevel;
+  cause?: string; // longer human-readable string, explaining detailed cause of error & any recommendations to fix
+  data?: Record<string, any>; // optional unstructured data object with any additional useful error data
   message: string; // short (1-2 sentences) human-readable string explaining the cause of the error
   service?: string; // optional string identifying the backend service that threw the error
   timestamp: string; // ISO 8601 UTC string timestamp at the time the error happened
@@ -14,7 +14,8 @@ export interface BaseError {
 }
 
 export interface LogMessage extends BaseError {
-  duration?: number; // optional number
+  duration?: number; // optional ms
+  level?: LogLevel;
   type: ErrorTypes.CAUGHT_ERROR | ErrorTypes.LOG;
 }
 

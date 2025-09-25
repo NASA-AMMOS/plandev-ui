@@ -17,6 +17,7 @@ import type { ModelLog, ModelStatus } from '../types/model';
 import { ErrorTypes, generateActivityValidationErrorRollups } from '../utilities/errors';
 import { compare } from '../utilities/generic';
 import { getModelStatusRollup } from '../utilities/model';
+import type { CompoundError } from '../utilities/requests';
 import { pluralize } from '../utilities/text';
 import { activityDirectiveValidationStatuses, activityDirectivesMap, anchorValidationStatuses } from './activities';
 import { relevantConstraintRuns } from './constraints';
@@ -274,7 +275,7 @@ export function logMessage(
       level,
       message: cleanLogMessage(message),
       timestamp: `${new Date()}`,
-      ...(details ? { trace: details } : {}),
+      ...(details ? { cause: details } : {}),
       ...(typeof duration === 'number' ? { duration } : {}),
       type: ErrorTypes.LOG,
     });
@@ -286,38 +287,35 @@ export function logMessage(
   }
 }
 
-export function catchError(error: string | Error, details?: string | Error, shouldLog: boolean = true): void {
-  let errors: (string | Error)[] = [];
+export function catchError(message: string, error: Error | CompoundError, shouldLog: boolean = true): void {
+  let errors: LogMessage[] = [];
 
   // ignore the error if it is an AbortError
   if ((error as Error).name && (error as Error).name === 'AbortError') {
     return;
   }
 
-  if ((error as Error).name && (error as Error).name === 'AggregateError') {
-    errors = (error as AggregateError).errors;
-  } else if (details && (details as Error).name && (details as Error).name === 'AggregateError') {
-    errors = (details as AggregateError).errors;
+  if ((error as CompoundError).name === 'CompoundError') {
+    errors = (error as CompoundError).errors.map(e => ({ ...e, message: `${message}: ${e.message}` }));
   } else {
-    errors = [error];
+    errors = [
+      {
+        cause: `${error.cause}` || '',
+        level: 'error',
+        message: `${message}: ${cleanLogMessage(`${error}`)}`,
+        timestamp: `${new Date()}`,
+        trace: error.stack,
+        type: ErrorTypes.CAUGHT_ERROR,
+      },
+    ];
   }
 
   allLogs.update(l => {
-    errors.forEach(e => {
-      const cause = (e as Error).cause || (details as Error)?.cause;
-      l.push({
-        level: 'error',
-        message: cleanLogMessage(`${e}`),
-        timestamp: `${new Date()}`,
-        ...(details ? { trace: `Cause: ${cause ? `${cause}\n` : ''}${details}` } : {}),
-        type: ErrorTypes.CAUGHT_ERROR,
-      });
-    });
-    return [...l];
+    return l.concat(errors);
   });
 
   if (shouldLog) {
-    console.log(details ?? error);
+    console.log(error);
   }
 }
 
