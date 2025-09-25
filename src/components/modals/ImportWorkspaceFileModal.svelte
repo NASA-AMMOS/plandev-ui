@@ -27,7 +27,6 @@
   const dispatch = createEventDispatcher<{
     close: void;
     confirm: {
-      convertedFileExtension: string;
       filesToConvert: File[];
       filesToUpload: File[];
       shouldKeepOriginalFiles: boolean;
@@ -44,7 +43,6 @@
   };
   let shouldConvert: boolean = false;
   let shouldKeepOriginalFiles: boolean = false;
-  let convertedFileExtension: string = '.seqN.txt'; // TODO get this default from the adaptation???
 
   $: {
     uploadButtonDisabled = files === undefined || files.length === 0;
@@ -85,7 +83,6 @@
       }
 
       dispatch('confirm', {
-        convertedFileExtension,
         filesToConvert,
         filesToUpload,
         shouldKeepOriginalFiles,

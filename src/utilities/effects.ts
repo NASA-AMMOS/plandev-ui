@@ -5627,14 +5627,12 @@ const effects = {
         user,
       );
       if (confirm) {
-        const { convertedFileExtension, filesToConvert, filesToUpload, shouldKeepOriginalFiles, targetDirectory } =
-          value as {
-            convertedFileExtension: string;
-            filesToConvert: File[];
-            filesToUpload: File[];
-            shouldKeepOriginalFiles: boolean;
-            targetDirectory: string;
-          };
+        const { filesToConvert, filesToUpload, shouldKeepOriginalFiles, targetDirectory } = value as {
+          filesToConvert: File[];
+          filesToUpload: File[];
+          shouldKeepOriginalFiles: boolean;
+          targetDirectory: string;
+        };
 
         const convertedFileMap: Record<string, string> = {};
 
@@ -5647,7 +5645,7 @@ const effects = {
             if (outputLanguage) {
               const fileName = file.name.replace(
                 outputLanguage.fileExtension.replace(/^\./, ''),
-                convertedFileExtension.replace(/^\./, ''),
+                sequenceLanguages.input.fileExtension.replace(/^\./, ''),
               );
               const lastModified = Date.now();
               const content = await file.text();
