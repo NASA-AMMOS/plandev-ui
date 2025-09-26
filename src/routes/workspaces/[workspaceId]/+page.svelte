@@ -199,7 +199,7 @@
 
       if (librarySequencesEnabled) {
         librarySequences = workspaceSequences
-          .flatMap(sequence => ($sequenceLanguages.input.getLibrarySequences ?? ((_: UserSequence) => []))(sequence))
+          .flatMap(sequence => ($sequenceLanguages.input.getLibrarySequences ?? (() => []))(sequence))
           .filter(({ name }) => name !== '');
       }
 
