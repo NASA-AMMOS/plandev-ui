@@ -2224,9 +2224,6 @@ const effects = {
     }
   },
 
-  // TODO: remove this after expansion runs are made to work in new workspaces\
-  // Carter note: I removed it
-
   async createView(definition: ViewDefinition, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.CREATE_VIEW(user)) {
@@ -3669,9 +3666,6 @@ const effects = {
       viewUpdateRow('yAxes', [], timelineId, rowId);
     }
   },
-
-  // TODO: remove this after expansion runs are made to work in new workspaces
-  // Carter note: I got rid of this
 
   async deleteView(view: ViewSlim, user: User | null): Promise<boolean> {
     try {
@@ -6759,9 +6753,6 @@ const effects = {
     }
   },
 
-  // TODO: remove this after expansion runs are made to work in new workspaces
-  // Carter note: soooo it's commented out? Can we get rid of it?
-
   async session(user: BaseUser | null): Promise<ReqSessionResponse> {
     try {
       const data = await reqGateway<ReqSessionResponse>('/auth/session', 'GET', null, user, false);
@@ -7943,9 +7934,6 @@ const effects = {
       return null;
     }
   },
-
-  // TODO: remove this after expansion runs are made to work in new workspaces
-  // Carter note: I got rid of it...
 
   async updateView(id: number, view: Partial<View>, message: string | null, user: User | null): Promise<boolean> {
     try {

@@ -72,9 +72,6 @@ export type GetSeqJsonResponse = {
   status: 'FAILURE' | 'SUCCESS';
 };
 
-// TODO: remove
-// Carter note: it's been commented, so...I removed it
-
 export type NumberArg =
   | FswCommandArgumentFloat
   | FswCommandArgumentInteger
