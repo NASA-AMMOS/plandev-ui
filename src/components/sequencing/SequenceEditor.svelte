@@ -360,7 +360,7 @@
   }
 
   function downloadInputFormat(): void {
-    downloadBlob(new Blob([editorSequenceView.state.doc.toString()], { type: 'text/plain' }), `${sequenceName}.txt`);
+    downloadBlob(new Blob([editorSequenceView.state.doc.toString()], { type: 'text/plain' }), sequenceName);
   }
 
   async function copyOutputFormatToClipboard(): Promise<void> {
