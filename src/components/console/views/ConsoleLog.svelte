@@ -30,7 +30,7 @@
     }
   });
 
-  function formatLogTimestamp(timestamp: string): string {
+  function formatLogShortTimestamp(timestamp: string): string {
     try {
       // Remove any trailing microseconds/nanoseconds after the Z
       // which are present on certain error types and not parseable by native JS Date.
@@ -42,6 +42,21 @@
       return date.toLocaleString('en-US', {
         timeStyle: 'medium',
       });
+    } catch {
+      return timestamp; // Return original if any error occurs
+    }
+  }
+
+  function formatLogLongTimestamp(timestamp: string): string {
+    try {
+      // Remove any trailing microseconds/nanoseconds after the Z
+      // which are present on certain error types and not parseable by native JS Date.
+      const cleanTimestamp = timestamp.replace(/Z\.\d+$/, 'Z');
+      const date = new Date(cleanTimestamp);
+      if (isNaN(date.getTime())) {
+        return timestamp; // Return original if parsing fails
+      }
+      return date.toISOString();
     } catch {
       return timestamp; // Return original if any error occurs
     }
@@ -91,7 +106,7 @@
           <div class="flex gap-2">
             {#if showTimestamp}
               <span class="flex flex-shrink-0 text-muted-foreground">
-                {formatLogTimestamp(log.timestamp)}
+                {formatLogShortTimestamp(log.timestamp)}
               </span>
             {/if}
             {#if showLevel && level}
@@ -145,6 +160,11 @@
   </summary>
   {#if expandable}
     <div class="bg-neutral-200/50 px-4 py-2" style={`padding-left: ${expansionPadding}px`}>
+      {#if log.timestamp}
+        <div class="mb-3 flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
+          Timestamp: {formatLogLongTimestamp(log.timestamp)}
+        </div>
+      {/if}
       {#if log.data && JSON.stringify(log.data) !== '{}'}
         <pre class="m-0 whitespace-pre-wrap break-words">{JSON.stringify(log.data, undefined, 2)}</pre>
       {/if}
