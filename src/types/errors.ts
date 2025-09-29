@@ -29,11 +29,9 @@ export interface AnchorValidationError extends BaseError {
 export type ActivityValidationStatus = 'complete' | 'pending';
 
 export interface ActivityValidationErrors {
-  data: {
-    activityId: number;
-    errors: (ActivityDirectiveValidationFailures | AnchorValidationError)[];
-    status: ActivityValidationStatus;
-  };
+  activityId: number;
+  errors: (ActivityDirectiveValidationFailures | AnchorValidationError)[];
+  status: ActivityValidationStatus;
   type: string;
 }
 

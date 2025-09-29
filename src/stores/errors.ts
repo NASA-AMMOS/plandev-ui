@@ -64,19 +64,16 @@ export const activityValidationErrors: Readable<ActivityValidationErrors[]> = de
   [activityDirectiveValidationFailures, anchorValidationErrors, activityDirectivesMap],
   ([$activityDirectiveValidationFailures, $anchorValidationErrors, $activityDirectivesMap]) => {
     const activityValidationsErrorMap: Record<string, ActivityValidationErrors> = {};
-
     $activityDirectiveValidationFailures.forEach(({ validations, directive_id: directiveId, status }) => {
       if (activityValidationsErrorMap[directiveId] === undefined) {
         activityValidationsErrorMap[directiveId] = {
-          data: {
-            activityId: directiveId,
-            errors: [validations],
-            status,
-          },
+          activityId: directiveId,
+          errors: [validations],
+          status,
           type: ($activityDirectivesMap || {})[directiveId]?.type, // TODO maybe this whole thing should also be a nullable list?
         };
       } else {
-        activityValidationsErrorMap[directiveId].data.errors.push(validations);
+        activityValidationsErrorMap[directiveId].errors.push(validations);
       }
     });
 
@@ -84,15 +81,13 @@ export const activityValidationErrors: Readable<ActivityValidationErrors[]> = de
       const activityId = anchorValidationError.data.activityId;
       if (activityValidationsErrorMap[activityId] === undefined) {
         activityValidationsErrorMap[activityId] = {
-          data: {
-            activityId,
-            errors: [anchorValidationError],
-            status: 'complete',
-          },
+          activityId,
+          errors: [anchorValidationError],
+          status: 'complete',
           type: ($activityDirectivesMap || {})[activityId]?.type,
         };
       } else {
-        activityValidationsErrorMap[activityId].data.errors.push(anchorValidationError);
+        activityValidationsErrorMap[activityId].errors.push(anchorValidationError);
       }
     });
 
@@ -207,21 +202,22 @@ export const allProblems: Readable<BaseError[]> = derived(
       ...($modelErrors ?? []),
       ...($activityValidationErrors
         ? $activityValidationErrors
-            .filter(error => error.data.status === 'complete')
+            .filter(error => error.status === 'complete')
             .map(error => {
-              const errorCount = Object.entries(
-                $activityErrorRollupsMap[error.data.activityId]?.errorCounts || {},
-              ).reduce((count, [key, value]) => {
-                if (key !== 'pending') {
-                  count += value;
-                }
-                return count;
-              }, 0);
+              const errorCount = Object.entries($activityErrorRollupsMap[error.activityId]?.errorCounts || {}).reduce(
+                (count, [key, value]) => {
+                  if (key !== 'pending') {
+                    count += value;
+                  }
+                  return count;
+                },
+                0,
+              );
               const errorMessage: BaseError = {
                 data: {
                   ...error,
                 },
-                message: `Activity Directive ${error.data.activityId} (${error.type}) has ${errorCount} validation error${pluralize(errorCount)}.`,
+                message: `Activity Directive ${error.activityId} (${error.type}) has ${errorCount} validation error${pluralize(errorCount)}.`,
                 timestamp: `${new Date()}`,
                 type: ErrorTypes.ACTIVITY_VALIDATION_ERROR,
               };
