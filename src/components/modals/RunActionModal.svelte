@@ -24,7 +24,6 @@
   let isLoadingWorkspace: boolean = false;
   let running: boolean = false;
   let parametersMap: ActionParametersMap = {};
-  let secretParametersMap: ActionParametersMap = {};
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -41,30 +40,30 @@
 
   async function run() {
     running = true;
+    let secretParametersMap: ActionParametersMap = {};
+    let nonSecretParametersMap: ActionParametersMap = {};
+    let hasSecrets = false;
 
     // Filter out the secret params to send directly to the action server.
     for (const param of Object.keys(parametersMap)) {
       if (parametersMap[param].schema.type === 'secret') {
         secretParametersMap[param] = argumentsMap[param];
+        hasSecrets = true;
+      } else {
+        nonSecretParametersMap[param] = argumentsMap[param];
       }
     }
 
     const actionRunId = await effects.createActionRun(
       actionDefinition.id,
       // Only send non-secret arguments to the db.
-      Object.entries(argumentsMap).reduce((acc: ArgumentsMap, [paramName, argument]: [ParameterName, Argument]) => {
-        if (parametersMap[paramName].schema.type !== 'secret') {
-          acc[paramName] = argument;
-        }
-
-        return acc;
-      }, {}),
+      nonSecretParametersMap,
       actionDefinition.settings,
-      Object.keys(secretParametersMap).length > 0, // The DB only needs to know if there are secrets or not.
+      hasSecrets, // The DB only needs to know if there are secrets or not.
       user,
     );
 
-    if (actionRunId !== null) {
+    if (actionRunId !== null && hasSecrets) {
       await effects.sendActionSecretParameters(secretParametersMap, actionRunId, user);
     }
 
