@@ -18,6 +18,9 @@
   export let commandInfoMapper: CommandInfoMapper;
   export let editorSequenceView: EditorView;
 
+  let selectedNode: SyntaxNode | null = null;
+  let currentTree: Tree;
+
   const emptyCommandDictionary: CommandDictionary = {
     enumMap: {},
     enums: [],
@@ -43,21 +46,17 @@
   $: timeTagNode = commandInfoMapper.getTimeTagInfo(editorSequenceView, commandNode);
   $: argInfoArray = commandInfoMapper.getArgumentInfo(
     commandDef,
-    phoenixContext.channelDictionary,
     editorSequenceView,
     commandInfoMapper.getArgumentNodeContainer(commandNode),
     commandDef?.arguments,
     undefined,
-    phoenixContext.parameterDictionaries,
+    phoenixContext,
   );
   $: commandDef = commandInfoMapper.getCommandDef(
     commandDictionary,
     phoenixContext.librarySequences,
     commandName ?? '',
   );
-
-  let selectedNode: SyntaxNode | null = null;
-  let currentTree: Tree;
 
   editorSequenceView?.dispatch({
     effects: StateEffect.appendConfig.of([
