@@ -4,7 +4,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition, ActionParametersMap } from '../../types/actions';
   import type { User } from '../../types/app';
-  import type { Argument, ArgumentsMap, FormParameter, ParameterName } from '../../types/parameter';
+  import type { ArgumentsMap, FormParameter } from '../../types/parameter';
   import type { UserSequence } from '../../types/sequencing';
   import { getUserSequenceValueSchemaOptions, valueSchemaRecordToParametersMap } from '../../utilities/actions';
   import effects from '../../utilities/effects';
