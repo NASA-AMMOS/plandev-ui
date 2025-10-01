@@ -4154,7 +4154,7 @@ const effects = {
       }
       return [];
     } catch (e) {
-      catchError('Failed to retrieve default activity argrguments', e as Error);
+      catchError('Failed to retrieve default activity arguments', e as Error);
       return [];
     }
   },
