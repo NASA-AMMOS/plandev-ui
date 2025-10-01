@@ -15,7 +15,7 @@ export interface BaseError {
 
 export interface LogMessage extends BaseError {
   duration?: number; // optional ms
-  level?: LogLevel;
+  level: LogLevel;
   type: ErrorTypes.CAUGHT_ERROR | ErrorTypes.LOG;
 }
 

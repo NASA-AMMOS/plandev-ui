@@ -4,6 +4,7 @@
   import { Tabs } from '@nasa-jpl/stellar-svelte';
   import { getContext } from 'svelte';
   import type { BaseError, LogLevel } from '../../../types/errors';
+  import { isLogMessage } from '../../../utilities/errors';
   import { ConsoleContextKey, type ConsoleContext } from '../Console.svelte';
   import EmptyState from '../EmptyState.svelte';
   import ConsoleLog from './ConsoleLog.svelte';
@@ -47,10 +48,11 @@
         }
 
         if (logLevels) {
-          if (!log.level) {
+          if (isLogMessage(log)) {
+            return logLevelSet.has(log.level);
+          } else {
             return false;
           }
-          return logLevelSet.has(log.level);
         } else {
           return log;
         }
