@@ -26,33 +26,23 @@
   let filter: string = '';
   let isMounted: boolean = false;
 
-  onMount(() => {
-    isMounted = true;
-  });
-
   const dispatch = createEventDispatcher<{
     filter: string;
     selectTab: { expand: boolean; tab: string };
     toggle: boolean;
   }>();
 
-  // Create a writable store for expanded state
   const expandedStore = writable(expanded);
-
-  // Update store when prop changes
-  $: expandedStore.set(expanded);
-
-  // Create a writable store for filter state
   const filterStore = writable(filter);
-
-  // Update store when prop changes
-  $: filterStore.set(filter);
-
-  // Create a writable store for selectedTab state
   const selectedTabStore = writable(selectedTab);
 
-  // Update store when prop changes
+  $: expandedStore.set(expanded);
+  $: filterStore.set(filter);
   $: selectedTabStore.set(selectedTab);
+
+  onMount(() => {
+    isMounted = true;
+  });
 
   // Set context to provide expanded status to child components
   setContext<ConsoleContext>(ConsoleContextKey, {
