@@ -88,7 +88,7 @@
         return actionsDiv;
       },
       cellRendererParams: {
-        deleteWorkspace,
+        deleteWorkspace: onDeleteWorkspace,
         viewWorkspace,
       } as CellRendererParams,
       field: 'actions',
@@ -107,9 +107,19 @@
     return includesName;
   });
 
-  async function deleteWorkspace(workspace: Workspace | undefined) {
+  async function deleteWorkspace(workspaceId: number) {
+    dispatch('deleteWorkspace', workspaceId);
+  }
+
+  async function deleteWorkspaceContext(event: CustomEvent<RowId[]>) {
+    const workspaceId = event.detail[0] as number;
+
+    deleteWorkspace(workspaceId);
+  }
+
+  async function onDeleteWorkspace(workspace: Workspace | undefined) {
     if (workspace !== undefined) {
-      dispatch('deleteWorkspace', workspace.id);
+      deleteWorkspace(workspace.id);
     }
   }
 
@@ -174,6 +184,7 @@
         items={filteredWorkspaces}
         selectedItemId={selectedWorkspaceId}
         {user}
+        on:deleteItem={deleteWorkspaceContext}
         on:editItem={editWorkspace}
         on:rowSelected={workspaceSelected}
         on:rowDoubleClicked={({ detail }) => viewWorkspace(detail.data)}
