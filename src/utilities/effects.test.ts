@@ -234,7 +234,10 @@ describe('Handle modal and requests in effects', () => {
 
       await effects.getExternalEventTypesBySource('test', 'test', mockUser);
 
-      expect(catchErrorSpy).toHaveBeenCalledWith(Error('Unable to retrieve external event types for source'));
+      expect(catchErrorSpy).toHaveBeenCalledWith(
+        'Failed to retrieve external event types for source',
+        Error('Unable to retrieve external event types for source'),
+      );
     });
   });
 
@@ -247,7 +250,10 @@ describe('Handle modal and requests in effects', () => {
 
       await effects.getExternalEventTypes(1, mockUser);
 
-      expect(catchErrorSpy).toHaveBeenCalledWith(Error('Unable to gather all external event types for the source'));
+      expect(catchErrorSpy).toHaveBeenCalledWith(
+        'Failed to retrieve external event types',
+        Error('Unable to gather all external event types for the source'),
+      );
     });
   });
 
