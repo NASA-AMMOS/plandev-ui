@@ -128,7 +128,13 @@ test.describe.serial('Plan Activities', () => {
     await expect(plan.navButtonActivityCheckingMenu).toContainText('1 activity has problems');
     await expect(plan.navButtonActivityCheckingMenu).toContainText('2 missing parameters');
     await plan.navButtonActivityCheckingMenu.getByRole('button', { name: 'View in console' }).click();
-    await plan.consoleContainer.getByRole('row', { name: 'BakeBananaBread' }).first().click();
+    await plan.consoleContainer.getByRole('tab', { name: 'Activity Validation' }).first().click();
+    await plan.consoleContainer
+      .getByRole('tabpanel')
+      .first()
+      .getByRole('row', { name: 'BakeBananaBread' })
+      .first()
+      .click();
     const tbSugar = plan.panelActivityForm.locator('.parameter', { hasText: 'tbSugar' }).locator('input');
     await tbSugar.fill('100');
     await tbSugar.evaluate(e => e.blur());
