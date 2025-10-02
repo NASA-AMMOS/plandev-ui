@@ -5,6 +5,7 @@
   import {
     AppWindow,
     BookOpen,
+    Box,
     Boxes,
     CalendarRange,
     ChevronDown,
@@ -138,7 +139,7 @@
       class="flex cursor-pointer select-none items-center gap-2 rounded-sm py-2.5 text-[13px] font-medium"
       on:click={() => onClickMenuItem('ExternalEventFormPanel')}
     >
-      <Table2 size={16} />
+      <Box size={16} />
       Selected External Event
     </DropdownMenu.Item>
     <DropdownMenu.Item
