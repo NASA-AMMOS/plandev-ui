@@ -204,8 +204,11 @@
   let hasActivityLayerFilters: boolean = false;
   let hasExternalEventsLayer: boolean = false;
   let hasResourceLayer: boolean = false;
+  let selectedRowId: number | undefined = undefined;
 
-  $: if ($selectedRow?.id === id && rowRef) {
+  $: selectedRowId = $selectedRow?.id;
+
+  $: if (selectedRowId === id && rowRef) {
     rowRef.scrollIntoView({ block: 'nearest' });
   }
 
