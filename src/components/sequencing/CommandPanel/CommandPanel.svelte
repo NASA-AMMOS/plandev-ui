@@ -7,6 +7,7 @@
   import type { CommandDictionary, FswCommand, HwCommand } from '@nasa-jpl/aerie-ampcs';
   import type { CommandInfoMapper, PhoenixContext } from '@nasa-jpl/aerie-sequence-languages';
   import { EditorView } from 'codemirror';
+  import { onMount } from 'svelte';
   import { unquoteUnescape } from '../../../utilities/sequence-editor/sequence-utils';
   import Tab from '../../ui/Tabs/Tab.svelte';
   import TabPanel from '../../ui/Tabs/TabPanel.svelte';
@@ -18,8 +19,10 @@
   export let commandInfoMapper: CommandInfoMapper;
   export let editorSequenceView: EditorView;
 
-  let selectedNode: SyntaxNode | null = null;
-  let currentTree: Tree;
+  enum CommandPanelTabs {
+    COMMAND = 'command',
+    DEFINITION = 'definition',
+  }
 
   const emptyCommandDictionary: CommandDictionary = {
     enumMap: {},
@@ -37,6 +40,13 @@
     id: '',
     path: null,
   };
+  const tabContextKey: string = 'command-panel';
+
+  let commandPanelTabs: Tabs;
+  let currentTree: Tree;
+  let selectedCommandDefinition: (FswCommand | HwCommand) | null;
+  let selectedNode: SyntaxNode | null = null;
+
   $: commandDictionary = phoenixContext.commandDictionary ?? emptyCommandDictionary;
 
   $: commandNode = commandInfoMapper.getContainingCommand(selectedNode);
@@ -58,35 +68,7 @@
     commandName ?? '',
   );
 
-  editorSequenceView?.dispatch({
-    effects: StateEffect.appendConfig.of([
-      EditorView.updateListener.of(viewUpdate => {
-        // This is broken out into a different listener as debouncing this can cause cursor to move around
-        const tree = syntaxTree(viewUpdate.state);
-        // Command Node includes trailing newline and white space, move to next command
-        const selectionLine = viewUpdate.state.doc.lineAt(viewUpdate.state.selection.asSingle().main.from);
-        const leadingWhiteSpaceLength = selectionLine.text.length - selectionLine.text.trimStart().length;
-        const updatedSelectionNode = tree.resolveInner(selectionLine.from + leadingWhiteSpaceLength, 1);
-        // minimize triggering selected command view
-        if (selectedNode !== updatedSelectionNode) {
-          selectedNode = updatedSelectionNode;
-          currentTree = tree;
-        }
-      }),
-    ]),
-  });
-
   $: variablesInScope = commandInfoMapper.getVariablesInScope(editorSequenceView, currentTree, commandNode?.from);
-
-  enum CommandPanelTabs {
-    COMMAND = 'command',
-    DEFINITION = 'definition',
-  }
-
-  const tabContextKey: string = 'command-panel';
-
-  let commandPanelTabs: Tabs;
-  let selectedCommandDefinition: (FswCommand | HwCommand) | null;
 
   function formatTypeName(s: string) {
     // add spaces to CamelCase names, 'GroundEvent' -> 'Ground Event'
@@ -98,6 +80,26 @@
     selectedCommandDefinition = detail;
     commandPanelTabs.selectTab(CommandPanelTabs.DEFINITION);
   }
+
+  onMount(async () => {
+    editorSequenceView?.dispatch({
+      effects: StateEffect.appendConfig.of([
+        EditorView.updateListener.of(viewUpdate => {
+          // This is broken out into a different listener as debouncing this can cause cursor to move around
+          const tree = syntaxTree(viewUpdate.state);
+          // Command Node includes trailing newline and white space, move to next command
+          const selectionLine = viewUpdate.state.doc.lineAt(viewUpdate.state.selection.asSingle().main.from);
+          const leadingWhiteSpaceLength = selectionLine.text.length - selectionLine.text.trimStart().length;
+          const updatedSelectionNode = tree.resolveInner(selectionLine.from + leadingWhiteSpaceLength, 1);
+          // minimize triggering selected command view
+          if (selectedNode !== updatedSelectionNode) {
+            selectedNode = updatedSelectionNode;
+            currentTree = tree;
+          }
+        }),
+      ]),
+    });
+  });
 </script>
 
 <div class="command-panel">
