@@ -14,6 +14,7 @@
 
   export let title = '';
   export let subtitle = '';
+  export let offsetLabel = 'Offset';
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -64,7 +65,7 @@
       </div>
 
       <div class="flex items-center justify-between gap-2">
-        <Label size="sm" class="flex w-[100px] flex-shrink-0 items-center gap-1">Shift By</Label>
+        <Label size="sm" class="flex w-[100px] flex-shrink-0 items-center gap-1">{offsetLabel}</Label>
         <InputStellar
           sizeVariant="xs"
           {disabled}

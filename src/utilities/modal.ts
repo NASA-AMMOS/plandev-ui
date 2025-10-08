@@ -1138,6 +1138,7 @@ export async function showPackActivitiesModal(): Promise<
       if (target) {
         const transformModal = new TransformActivitiesModal({
           props: {
+            offsetLabel: 'Offset',
             subtitle: 'Pack activity directives to the left or the right with a time offset.',
             title: 'Pack Directives',
           },
@@ -1434,8 +1435,11 @@ export async function showBulkShiftActivitiesModal(): Promise<
 
       if (target) {
         const transformModal = new TransformActivitiesModal({
-          props: { subtitle: 'Shift activity directives forwards or backwards in time.', title: 'Shift Directives' },
-
+          props: {
+            offsetLabel: 'Shift by',
+            subtitle: 'Shift activity directives forwards or backwards in time.',
+            title: 'Shift Directives',
+          },
           target,
         });
         target.resolve = resolve;
