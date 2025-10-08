@@ -62,7 +62,7 @@
 
   $: if (typeof workspaceId === 'number') {
     workspaceActionDefinitions = Object.values($actionDefinitionsByWorkspace[workspaceId] || {});
-    workspaceActionRuns = Object.values($actionRunsByWorkspace[workspaceId] || {});
+    workspaceActionRuns = $actionRunsByWorkspace[workspaceId] || [];
     getWorkspaceSequences(workspaceId);
   }
 
