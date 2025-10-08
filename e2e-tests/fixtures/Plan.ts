@@ -110,7 +110,7 @@ export class Plan {
   async addActivity(name: string = 'GrowBanana') {
     await this.showPanel(PanelNames.TIMELINE_ITEMS);
     // TODO try to avoid using this timeout
-    await this.page.waitForTimeout(150);
+    await this.page.waitForTimeout(350);
     const currentNumOfActivitiesWithName = await this.panelActivityDirectivesTable.getByRole('row', { name }).count();
     const activityListItem = this.page.locator(`.list-item :text-is("${name}")`);
     const activityRow = this.page
