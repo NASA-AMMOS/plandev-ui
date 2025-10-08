@@ -32,18 +32,15 @@ export const actionDefinitionsByWorkspace: Readable<Record<number, Record<number
   },
 );
 
-export const actionRunsByWorkspace: Readable<Record<number, ActionRunSlim[]>> = derived(
-  actionRuns,
-  $actionRuns => {
-    if (!$actionRuns) {
-      return {};
+export const actionRunsByWorkspace: Readable<Record<number, ActionRunSlim[]>> = derived(actionRuns, $actionRuns => {
+  if (!$actionRuns) {
+    return {};
+  }
+  return $actionRuns.reduce((acc: Record<number, ActionRunSlim[]>, actionRun) => {
+    if (!acc[actionRun.action_definition.workspace_id]) {
+      acc[actionRun.action_definition.workspace_id] = [];
     }
-    return $actionRuns.reduce((acc: Record<number, ActionRunSlim[]>, actionRun) => {
-      if (!acc[actionRun.action_definition.workspace_id]) {
-        acc[actionRun.action_definition.workspace_id] = [];
-      }
-      acc[actionRun.action_definition.workspace_id].push(actionRun);
-      return acc;
-    }, {});
-  },
-);
+    acc[actionRun.action_definition.workspace_id].push(actionRun);
+    return acc;
+  }, {});
+});
