@@ -115,6 +115,7 @@ export async function showAboutModal(): Promise<ModalElementValue> {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
+        target.setAttribute('data-dismissible', 'false');
         const aboutModal = new AboutModal({ target });
         target.resolve = resolve;
 
@@ -341,6 +342,9 @@ export async function showImportWorkspaceFileModal(
         });
         target.resolve = resolve;
 
+        // Do not allow users to dismiss this modal
+        target.setAttribute('data-dismissible', 'false');
+
         importWorkspaceFileModal.$on(
           'confirm',
           (
@@ -362,6 +366,7 @@ export async function showImportWorkspaceFileModal(
         importWorkspaceFileModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
+          target.removeAttribute('data-dismissible');
           importWorkspaceFileModal.$destroy();
         });
       }
