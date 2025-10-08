@@ -127,7 +127,7 @@
   }
 </script>
 
-<Modal height={450} width={380}>
+<Modal height={450} width={380} on:close>
   <ModalHeader on:close>
     <div>Move or Duplicate</div>
   </ModalHeader>

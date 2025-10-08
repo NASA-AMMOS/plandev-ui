@@ -129,7 +129,7 @@
   }
 </script>
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>Merge Requests</ModalHeader>
   <ModalContent style="overflow: auto;padding: 0">
     <div class="plan-merge-requests-container">

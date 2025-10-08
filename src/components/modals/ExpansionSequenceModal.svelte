@@ -53,7 +53,7 @@
   }
 </script>
 
-<Modal height={400} width={600}>
+<Modal height={400} width={600} on:close>
   <ModalHeader on:close>Sequence ID: {expansionSequence.seq_id}</ModalHeader>
   <ModalContent>
     <div style:height="300px">

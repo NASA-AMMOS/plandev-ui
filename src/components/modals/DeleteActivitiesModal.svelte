@@ -161,7 +161,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<Modal height="auto" {width}>
+<Modal height="auto" {width} on:close>
   <ModalHeader on:close>Delete Activity {activityIds.length > 1 ? 'Directives' : 'Directive'}</ModalHeader>
   <ModalContent>
     <div class="message">

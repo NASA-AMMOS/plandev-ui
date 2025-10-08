@@ -150,7 +150,7 @@
   }
 </script>
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>Change Mission Model</ModalHeader>
   <div class="flex h-full flex-1 flex-col overflow-hidden p-4">
     {#if $planMergeRequestsIncoming !== null && $planMergeRequestsIncoming.length}

@@ -269,7 +269,7 @@
   }
 </script>
 
-<Modal height={500} width={750}>
+<Modal height={500} width={750} on:close>
   <ModalHeader on:close>Manage Scheduling Conditions</ModalHeader>
   <ModalContent style="padding:0">
     <div class="conditions-modal-container">

@@ -66,7 +66,7 @@
   }
 </script>
 
-<Modal height={400} width={380}>
+<Modal height={400} width={380} on:close>
   <ModalHeader on:close>
     Move/Copy Workspace {typeString}
   </ModalHeader>

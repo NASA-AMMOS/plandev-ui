@@ -26,7 +26,7 @@
   });
 </script>
 
-<Modal height={220} width={640}>
+<Modal height={220} width={640} on:close>
   <ModalHeader on:close>About</ModalHeader>
   <ModalContent>
     <div class="text-sm leading-relaxed">

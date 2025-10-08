@@ -1,11 +1,11 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte';
   import Modal from './Modal.svelte';
-  import ModalHeader from './ModalHeader.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
-  import { createEventDispatcher } from 'svelte';
+  import ModalHeader from './ModalHeader.svelte';
 
   export let actionRunId: number;
 
@@ -23,7 +23,7 @@
   }
 </script>
 
-<Modal height="max-content" width={300}>
+<Modal height="max-content" width={300} on:close>
   <ModalHeader on:close>Action Run Started</ModalHeader>
   <ModalContent style="max-height: 50vh;overflow: auto">
     <div class="st-typography-label pb-2">

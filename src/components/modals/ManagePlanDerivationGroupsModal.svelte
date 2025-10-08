@@ -227,7 +227,7 @@
   }
 </script>
 
-<Modal height={600} width={1000}>
+<Modal height={600} width={1000} on:close>
   <ModalHeader on:close>Manage Derivation Groups</ModalHeader>
   <ModalContent style="overflow: auto; padding: 0;">
     <CssGrid columns={modalColumnSize} minHeight="100%">

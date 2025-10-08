@@ -12,7 +12,7 @@
   export let width: number = 400;
 </script>
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>Branches</ModalHeader>
   <ModalContent style=" overflow: auto;padding: 0">
     <div class="plan-branched-plans">

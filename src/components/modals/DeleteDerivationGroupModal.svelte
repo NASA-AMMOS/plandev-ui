@@ -37,7 +37,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>
     {#if !derivationGroupsAreAllEmpty}
       Derivation Group Cannot Be Deleted

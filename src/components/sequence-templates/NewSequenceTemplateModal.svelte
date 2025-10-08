@@ -14,8 +14,8 @@
   import type { Parcel } from '../../types/sequencing';
   import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
-  import { featurePermissions } from '../../utilities/permissions';
   import { permissionHandler } from '../../utilities/permissionHandler';
+  import { featurePermissions } from '../../utilities/permissions';
   import { min, required } from '../../utilities/validators';
   import Modal from '../modals/Modal.svelte';
   import ModalContent from '../modals/ModalContent.svelte';
@@ -153,7 +153,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>Create Sequence Template</ModalHeader>
 
   <ModalContent>

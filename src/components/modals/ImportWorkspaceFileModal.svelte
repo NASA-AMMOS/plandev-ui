@@ -106,7 +106,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>Upload File(s) To Workspace</ModalHeader>
 
   <ModalContent style="overflow: hidden;">

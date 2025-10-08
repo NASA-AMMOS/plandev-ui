@@ -30,7 +30,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>Warning</ModalHeader>
   <ModalContent>
     <span>This row is not configured to display some of the activities you are trying to create.</span>

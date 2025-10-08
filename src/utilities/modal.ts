@@ -63,36 +63,6 @@ import type { Workspace } from '../types/workspace';
 import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
 
 /**
- * Listens for clicks on the document body and removes the modal children.
- */
-export function modalBodyClickListener(e: MouseEvent): void {
-  // Check that we have browser access and that the click is originating from outside
-  // of the modal element (i.e. the modal's overlay container)
-  if (browser && (e.target as HTMLElement).id === 'modal-container') {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
-    if (target && target.resolve && target.getAttribute('data-dismissible') !== 'false') {
-      target.replaceChildren();
-      target.resolve({ confirm: false });
-      target.resolve = null;
-    }
-  }
-}
-
-/**
- * Listens for escape key presses on the document body and removes the modal children.
- */
-export function modalBodyKeyListener(event: KeyboardEvent): void {
-  if (browser) {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
-    if (target && target.resolve && event.key === 'Escape' && target.getAttribute('data-dismissible') !== 'false') {
-      target.replaceChildren();
-      target.resolve({ confirm: false });
-      target.resolve = null;
-    }
-  }
-}
-
-/**
  * Closes the active modal if found and resolve nothing
  */
 export function closeActiveModal(): void {
@@ -115,7 +85,6 @@ export async function showAboutModal(): Promise<ModalElementValue> {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        target.setAttribute('data-dismissible', 'false');
         const aboutModal = new AboutModal({ target });
         target.resolve = resolve;
 
@@ -342,9 +311,6 @@ export async function showImportWorkspaceFileModal(
         });
         target.resolve = resolve;
 
-        // Do not allow users to dismiss this modal
-        target.setAttribute('data-dismissible', 'false');
-
         importWorkspaceFileModal.$on(
           'confirm',
           (
@@ -366,7 +332,6 @@ export async function showImportWorkspaceFileModal(
         importWorkspaceFileModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
-          target.removeAttribute('data-dismissible');
           importWorkspaceFileModal.$destroy();
         });
       }

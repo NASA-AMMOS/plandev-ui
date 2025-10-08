@@ -88,7 +88,7 @@
   }
 </script>
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>Saved Views</ModalHeader>
   <ModalContent style="padding:0">
     <Tabs class="view-tabs" tabListClassName="view-tabs-list">

@@ -69,7 +69,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>Take Snapshot</ModalHeader>
   <ModalContent style=" display: flex; flex-direction: column; gap: 8px; padding:8px 0 16px;">
     <div class="description">Snapshot will capture activity directives and references to relevant simulations.</div>

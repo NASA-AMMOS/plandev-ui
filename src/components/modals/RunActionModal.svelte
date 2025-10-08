@@ -94,7 +94,7 @@
   }
 </script>
 
-<Modal height="max-content" width={500}>
+<Modal height="max-content" width={500} on:close>
   <ModalHeader on:close>Run Action</ModalHeader>
 
   <ModalContent style="max-height: 50vh;overflow: auto">

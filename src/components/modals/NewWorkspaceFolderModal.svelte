@@ -51,7 +51,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>New Workspace Folder</ModalHeader>
   <ModalContent style="overflow: hidden;">
     <div class="grid h-full grid-rows-[min-content_auto_min-content_min-content] gap-1 overflow-hidden">

@@ -34,7 +34,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>
     {#if linked.length > 0}
       External Source Cannot Be Deleted

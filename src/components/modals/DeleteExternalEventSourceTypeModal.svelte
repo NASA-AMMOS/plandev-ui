@@ -29,7 +29,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>
     {#if associatedItems.size > 0}
       {itemsToDeleteTypeName} Cannot Be Deleted

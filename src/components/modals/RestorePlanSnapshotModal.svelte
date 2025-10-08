@@ -76,7 +76,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>Restore Snapshot</ModalHeader>
   <ModalContent style=" display: flex; flex-direction: column; gap: 8px; padding:8px 0 16px;">
     <div class="message">

@@ -9,7 +9,6 @@
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
-  import { modalBodyClickListener, modalBodyKeyListener } from '../utilities/modal';
   import { loadPluginCode } from '../utilities/plugins';
 
   let pluginsEnabled = env.PUBLIC_TIME_PLUGIN_ENABLED === 'true';
@@ -34,8 +33,6 @@
     }
   }
 </script>
-
-<svelte:body on:click={modalBodyClickListener} on:keydown={modalBodyKeyListener} />
 
 {#if !pluginsEnabled || ($pluginsLoaded && !$pluginsError)}
   <slot />

@@ -22,7 +22,7 @@
   }
 </script>
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>New Sequence</ModalHeader>
   <ModalContent>
     <fieldset>

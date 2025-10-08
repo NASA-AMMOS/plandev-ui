@@ -61,7 +61,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>Upload View JSON</ModalHeader>
   <ModalContent style="overflow: auto; padding: 0">
     <fieldset>

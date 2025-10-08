@@ -35,7 +35,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<Modal height={150} width={380}>
+<Modal height={150} width={380} on:close>
   <ModalHeader showClose={false}>Merge Review Ended</ModalHeader>
   <ModalContent>
     <div>This merge request has been {statusVerb}.</div>

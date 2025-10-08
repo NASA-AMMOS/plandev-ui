@@ -52,7 +52,7 @@
   }
 </script>
 
-<svelte:window on:keydown={onKeydown} />
+<svelte:window on:keydown={onKeydown} on:close />
 <Modal {height} {width}>
   <ModalHeader on:close>New Action</ModalHeader>
 

@@ -47,7 +47,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<Modal height={200} width={380}>
+<Modal height={200} width={380} on:close>
   <ModalHeader on:close>
     Rename Workspace {typeString}
   </ModalHeader>

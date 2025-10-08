@@ -39,7 +39,7 @@
   }
 </script>
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>Create Sequence from Filter</ModalHeader>
   <ModalContent>
     <div class="st-typography-body">Select the time range to apply the sequence filter to.</div>

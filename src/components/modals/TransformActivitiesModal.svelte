@@ -48,7 +48,7 @@
   }
 </script>
 
-<Modal height="min-content" width="min-content">
+<Modal height="min-content" width="min-content" on:close>
   <ModalHeader on:close>{title}</ModalHeader>
 
   <ModalContent>

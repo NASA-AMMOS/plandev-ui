@@ -20,7 +20,7 @@
   }
 </script>
 
-<Modal {height} {width}>
+<Modal {height} {width} on:close>
   <ModalHeader on:close>Cancel Action Run</ModalHeader>
   <ModalContent>
     <div class="st-typography-body">Are you sure you want to cancel this Action run?</div>
