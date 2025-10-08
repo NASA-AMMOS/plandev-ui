@@ -439,10 +439,10 @@ export function packActivityDirectivesInPlan(
   newStartTimes.set(sortedActivities[0].id, postPackingTime);
 
   for (let idx = 1; idx < sortedActivities.length; idx++) {
-    if (direction === 'left') {
+    if (direction === 'right') {
       postPackingTime -= durations.get(sortedActivities[idx].id)! + offsetUS;
     } else {
-      //Same as direction === 'left'
+      // direction === 'left'
       postPackingTime += durations.get(sortedActivities[idx - 1].id)! + offsetUS;
     }
     newStartTimes.set(sortedActivities[idx].id, postPackingTime);
