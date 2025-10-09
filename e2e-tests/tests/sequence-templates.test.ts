@@ -101,7 +101,7 @@ test.describe.serial('Sequence Templates', () => {
     const expansionSequenceItem = page.locator('.sne-items').getByText(`${sequenceFilterName} Sequence`);
     await expansionSequenceItem.hover();
     await page.getByLabel('Expand Sequence').click();
-    await plan.waitForToast('Sequence Templating Successfully');
+    await plan.waitForToast('Sequence Templating Succeeded');
     await page.getByLabel('Show Expanded Sequence').click();
     await plan.sequenceExpansionOutputModal.waitFor({ state: 'attached' });
     await plan.sequenceExpansionOutputModal.waitFor({ state: 'visible' });
