@@ -262,7 +262,7 @@
   }
 </script>
 
-<Modal height={500} width={750} on:close>
+<Modal height={500} width={750} on:close closeOnEscape={false} closeOnOutsideClick={false}>
   <ModalHeader on:close>Manage Constraints</ModalHeader>
   <ModalContent style="padding:0">
     <div class="constraints-modal-container">

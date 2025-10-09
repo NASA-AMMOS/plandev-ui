@@ -69,7 +69,6 @@ export function closeActiveModal(): void {
   if (browser) {
     const target: ModalElement | null = document.querySelector('#svelte-modal');
     if (target && target.resolve) {
-      target.removeAttribute('data-dismissible');
       target.replaceChildren();
       target.resolve = null;
     }
@@ -182,10 +181,6 @@ export async function showDeleteExternalSourceModal(
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        // if we don't do this, on clicking "Delete Unassociated Sources", modalBodyClickListener fires and the modal closes, which in this case is undesired
-        //    NOTE: in any case, ideally speaking, that method *should* only fire if anything _outside_ the target is clicked, right?
-        target.setAttribute('data-dismissible', 'false');
-
         const deleteExternalSourceModal = new DeleteExternalSourceModal({
           props: { linked, sources, unassociatedSources },
           target,
@@ -359,7 +354,6 @@ export async function showManagePlanConstraintsModal(user: User | null): Promise
         managePlanConstraintsModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
-          target.removeAttribute('data-dismissible');
           managePlanConstraintsModal.$destroy();
         });
 
@@ -397,7 +391,6 @@ export async function showManagePlanDerivationGroups(user: User | null): Promise
         managePlanDerivationGroupsModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
-          target.removeAttribute('data-dismissible');
           managePlanDerivationGroupsModal.$destroy();
         });
         managePlanDerivationGroupsModal.$on('add', (e: CustomEvent<{ derivationGroupName: string }[]>) => {
@@ -430,7 +423,6 @@ export async function showManagePlanSchedulingConditionsModal(user: User | null)
         managePlanConditionsModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
-          target.removeAttribute('data-dismissible');
           managePlanConditionsModal.$destroy();
         });
 
@@ -465,7 +457,6 @@ export async function showManagePlanSchedulingGoalsModal(user: User | null): Pro
         managePlanGoalsModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
-          target.removeAttribute('data-dismissible');
           managePlanGoalsModal.$destroy();
         });
 
@@ -500,13 +491,9 @@ export async function showMergeReviewEndedModal(
         });
         target.resolve = resolve;
 
-        // Do not allow users to dismiss this modal
-        target.setAttribute('data-dismissible', 'false');
-
         mergeReviewEndedModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
-          target.removeAttribute('data-dismissible');
           mergeReviewEndedModal.$destroy();
         });
       }
