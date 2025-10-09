@@ -45,7 +45,7 @@ export class AppNav {
     this.appMenuItemPlans = this.appMenu.getByRole('menuitem', { name: 'Plans' });
     this.appMenuItemScheduling = this.appMenu.getByRole('menuitem', { name: 'Scheduling' });
     this.appMenuItemSequenceTemplates = this.appMenu.getByRole('menuitem', { name: 'Sequence Templates' });
-    this.appMenuItemSequenceWorkspace = this.appMenu.getByRole('menuitem', { name: 'Sequence Editor' });
+    this.appMenuItemSequenceWorkspace = this.appMenu.getByRole('menuitem', { name: 'Workspaces' });
     this.page = page;
     this.pageLoadingLocator = page.locator(`.loading`);
     this.pageLoadedLocatorNoData = page.locator(`.body:has-text("No Plans Found")`);

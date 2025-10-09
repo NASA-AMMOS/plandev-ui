@@ -62,7 +62,7 @@ test.describe.serial('App Nav', () => {
     await expect(page).toHaveURL(`${baseURL}/models`);
   });
 
-  test(`Clicking on the app menu 'Sequence Editor' option should route to the workspaces page`, async ({ baseURL }) => {
+  test(`Clicking on the app menu 'Workspaces' option should route to the workspaces page`, async ({ baseURL }) => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
