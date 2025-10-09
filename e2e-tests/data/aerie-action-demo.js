@@ -10,6 +10,8 @@ const parameterDefinitions = {
   repository: { type: "string" },
   series: { items:{ type: "string" }, type: "series",  },
   string: { type: "string" },
+  sequence: { type: "sequence" },
+  sequenceList: { type: "sequenceList" },
   variant: { type: "variant", variants: [{key: "foo", label: "Foo"}, {key: "bar", label: "Bar"}] },
 };
 const settingDefinitions = {
