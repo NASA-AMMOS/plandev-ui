@@ -204,7 +204,7 @@ export function getFormParameters(
         newFormParameterSchema.type = 'options-multiple';
       }
 
-      if (schema.type === 'options-multiple') {
+      if (newFormParameterSchema.type === 'options-multiple') {
         isMultiSelect = true;
       }
 
