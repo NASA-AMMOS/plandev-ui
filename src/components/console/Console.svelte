@@ -94,6 +94,7 @@
           </div>
         </div>
         <div class="ml-1 flex flex-1 flex-shrink-0 justify-end gap-1">
+          <!-- Only show search input after mount to avoid content flash for input icon due to dynamic padding -->
           {#if isMounted && expanded}
             <Input class="!w-full min-w-[100px] max-w-[200px]">
               <Search slot="left" size={14} />
