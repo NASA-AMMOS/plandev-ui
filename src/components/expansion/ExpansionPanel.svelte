@@ -89,12 +89,12 @@
   }
 
   function onCreateSequenceFilter() {
-    if ($plan !== null && $plan.model_id !== null) {
+    if ($plan !== null && $plan.model) {
       creatingNewSequenceFilter = false;
       effects.createSequenceFilter(
         filterMenuActiveFilter as ActivityLayerFilter,
         activeSequenceFilterName,
-        $plan.model_id,
+        $plan.model.id,
         user,
       );
       filterMenu.toggle();
