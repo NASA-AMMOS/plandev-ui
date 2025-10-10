@@ -1,4 +1,6 @@
+import { LRLanguage } from '@codemirror/language';
 import type { CreateTooltip, PhoenixResources } from '@nasa-jpl/aerie-sequence-languages';
+import { EditorView } from 'codemirror';
 import StringTooltip from '../../components/sequencing/StringTooltip.svelte';
 
 const createTooltip: CreateTooltip = (text: string[], from: number, to?: number) => {
@@ -15,5 +17,7 @@ const createTooltip: CreateTooltip = (text: string[], from: number, to?: number)
 };
 
 export const phoenixResources: PhoenixResources = {
+  EditorView,
+  LRLanguage,
   createTooltip,
 };
