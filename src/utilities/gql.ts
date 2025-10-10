@@ -622,18 +622,6 @@ const gql = {
     }
   `,
 
-  CREATE_WORKSPACE: `#graphql
-    mutation CreateWorkspace($workspace: workspace_insert_input!) {
-      createWorkspace: ${Queries.INSERT_WORKSPACE}(object: $workspace) {
-        created_at
-        id
-        name
-        owner
-        updated_at
-      }
-    }
-  `,
-
   DELETE_ACTIVITY_DIRECTIVES: `#graphql
     mutation DeleteActivityDirectives($plan_id: Int!, $activity_ids: [Int!]!) {
       deleteActivityDirectives: ${Queries.DELETE_ACTIVITY_DIRECTIVES}(
@@ -1686,6 +1674,7 @@ const gql = {
         role
         action_permissions
         function_permissions
+        workspace_permissions
       }
     }
   `,

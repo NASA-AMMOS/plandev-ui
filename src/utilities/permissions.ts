@@ -10,6 +10,7 @@ import type { DerivationGroup, ExternalSource, ExternalSourceSlim } from '../typ
 import type { Model } from '../types/model';
 import type {
   AssetWithAuthor,
+  AssetWithCollaborators,
   AssetWithOwner,
   CreatePermissionCheck,
   ModelWithOwner,
@@ -35,6 +36,7 @@ import type { Workspace } from '../types/workspace';
 import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
 import gql from './gql';
 import { showFailureToast } from './toast';
+import type { WorkspaceApi } from './workspaces';
 
 export const ADMIN_ROLE = 'aerie_admin';
 export const VIEWER_ROLE = 'viewer';
@@ -76,15 +78,24 @@ function isUserAuthor(user: User | null, thingWithAuthor?: AssetWithAuthor | nul
   return false;
 }
 
+function isUserCollaborator(
+  user: User | null,
+  thingWithOwners?: AssetWithOwner<AssetWithCollaborators> | null,
+): boolean {
+  if (thingWithOwners !== null) {
+    if (thingWithOwners && user) {
+      return !!thingWithOwners.collaborators?.find(({ collaborator }) => collaborator === user.id);
+    }
+  }
+  return false;
+}
+
 function isPlanOwner(user: User | null, plan: AssetWithOwner<PlanWithOwners> | undefined): boolean {
   return isUserOwner(user, plan);
 }
 
 function isPlanCollaborator(user: User | null, plan: PlanWithOwners): boolean {
-  if (plan && user) {
-    return !!plan.collaborators.find(({ collaborator }) => collaborator === user.id);
-  }
-  return false;
+  return isUserCollaborator(user, plan);
 }
 
 function getPermission(queries: string[], user: User | null): boolean {
@@ -112,12 +123,15 @@ const functionQueryMap: Record<QueryString, FunctionString> = {
   [Queries.CREATE_EXPANSION_SET]: 'create_expansion_set',
   [Queries.CREATE_MERGE_REQUEST]: 'create_merge_rq',
   [Queries.CREATE_SNAPSHOT]: 'create_snapshot',
+  create_workspace: 'create_workspace', // workspace service enum
   delete_activity_by_pk_delete_subtree: 'delete_activity_subtree',
   [Queries.DELETE_ACTIVITY_DELETE_SUBTREE_BULK]: 'delete_activity_subtree_bulk',
   delete_activity_by_pk_reanchor_plan_start: 'delete_activity_reanchor_plan',
   [Queries.DELETE_ACTIVITY_REANCHOR_PLAN_START_BULK]: 'delete_activity_reanchor_plan_bulk',
   delete_activity_by_pk_reanchor_to_anchor: 'delete_activity_reanchor',
   [Queries.DELETE_ACTIVITY_REANCHOR_TO_ANCHOR_BULK]: 'delete_activity_reanchor_bulk',
+  delete_file_directory: 'delete_file_directory', // workspace service enum
+  delete_workspace: 'delete_workspace', // workspace service enum
   [Queries.DENY_MERGE]: 'deny_merge',
   [Queries.DUPLICATE_PLAN]: 'branch_plan',
   [Queries.EXPAND_ALL_ACTIVITIES]: 'expand_all_activities',
@@ -127,7 +141,9 @@ const functionQueryMap: Record<QueryString, FunctionString> = {
   [Queries.GET_CONFLICTING_ACTIVITIES]: 'get_conflicting_activities',
   [Queries.GET_NON_CONFLICTING_ACTIVITIES]: 'get_non_conflicting_activities',
   get_plan_history: 'get_plan_history',
+  list_workspace_contents: 'list_workspace_contents', // workspace service enum
   [Queries.MIGRATE_PLAN_TO_MODEL]: 'migrate_plan_to_model',
+  read_file_directory: 'read_file_directory', // workspace service enum
   resourceSamples: 'resource_samples',
   [Queries.RESTORE_FROM_SNAPSHOT]: 'restore_snapshot',
   [Queries.SCHEDULE]: 'schedule',
@@ -135,6 +151,7 @@ const functionQueryMap: Record<QueryString, FunctionString> = {
   [Queries.SET_RESOLUTIONS]: 'set_resolution_bulk',
   [Queries.SIMULATE]: 'simulate',
   [Queries.WITHDRAW_MERGE_REQUEST]: 'withdraw_merge_rq',
+  write_file_directory: 'write_file_directory', // workspace service enum
 };
 
 function getFunctionPermission(query: string): string {
@@ -277,6 +294,32 @@ function getRolePlanBranchPermission(
             break;
           case 'PLAN_OWNER_COLLABORATOR_TARGET':
             permission = !!targetPlan && (isPlanOwner(user, targetPlan) || isPlanCollaborator(user, targetPlan));
+            break;
+          case 'NO_CHECK':
+          default:
+            permission = true;
+        }
+      }
+      return prevValue && permission;
+    }, true);
+  }
+  return false;
+}
+
+function getRoleWorkspacePermission(queries: string[], user: User | null, workspace?: Workspace): boolean {
+  if (user && user.rolePermissions) {
+    return queries.reduce((prevValue: boolean, queryName) => {
+      let permission = false;
+      if (user.rolePermissions != null) {
+        switch (user.rolePermissions[getFunctionPermission(queryName)]) {
+          case 'OWNER':
+            permission = isUserOwner(user, workspace);
+            break;
+          case 'COLLABORATOR':
+            permission = isUserCollaborator(user, workspace);
+            break;
+          case 'OWNER_COLLABORATOR':
+            permission = isUserOwner(user, workspace) || isUserCollaborator(user, workspace);
             break;
           case 'NO_CHECK':
           default:
@@ -495,9 +538,6 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   CREATE_VIEW: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_VIEW], user);
-  },
-  CREATE_WORKSPACE: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.INSERT_WORKSPACE], user);
   },
   DELETE_ACTIVITY_DIRECTIVES: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
@@ -1276,6 +1316,58 @@ const gatewayPermissions = {
   },
 };
 
+// canDelete: (user, workspace) =>
+//   isUserAdmin(user) ||
+//   (!isUserViewer(user) && getRoleWorkspacePermission(['delete_file_directory'], user, workspace)),
+// canRead: (user, workspace) =>
+//   isUserAdmin(user) ||
+//   (!isUserViewer(user) &&
+//     getRoleWorkspacePermission(['list_workspace_contents', 'read_file_directory'], user, workspace)),
+// canUpdate: (user, workspace) =>
+//   isUserAdmin(user) ||
+//   (!isUserViewer(user) && getRoleWorkspacePermission(['write_file_directory'], user, workspace)),
+
+type WorkspaceKeys = keyof typeof WorkspaceApi;
+const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: any[]) => boolean> = {
+  createFolder: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
+  },
+  createWorkspace: (user: User | null): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['create_permission'], user);
+  },
+  deleteFile: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['create_permission'], user, workspace);
+  },
+  deleteWorkspace: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['delete_workspace'], user, workspace);
+  },
+  getFileContent: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
+  },
+  getWorkspaceContents: (user: User | null, workspace: Workspace): boolean => {
+    return (
+      isUserAdmin(user) ||
+      getRoleWorkspacePermission(['list_workspace_contents', 'read_file_directory'], user, workspace)
+    );
+  },
+  moveFile: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
+  },
+  moveFileToWorkspace: (user: User | null, workspaceSource: Workspace, workspaceTarget: Workspace): boolean => {
+    return (
+      isUserAdmin(user) ||
+      (getRoleWorkspacePermission(['delete_file_directory'], user, workspaceSource) &&
+        getRoleWorkspacePermission(['write_file_directory'], user, workspaceTarget))
+    );
+  },
+  saveFile: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
+  },
+  uploadFile: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
+  },
+};
+
 type PlanAssetCreatePermissionCheck = (user: User | null, plan: PlanWithOwners) => boolean;
 
 type PlanAssetUpdatePermissionCheck<T = AssetWithOwner> = (
@@ -1400,6 +1492,10 @@ interface AssociationCRUDPermission<M, D> extends CRUDPermission<AssetWithOwner<
   canUpdateDefinition: (user: User | null, definition: AssetWithAuthor<D>) => boolean;
 }
 
+interface PlanCRUDPermission extends CRUDPermission<PlanWithOwners> {
+  canImport: CreatePermissionCheck;
+  canUpdateModel: UpdatePermissionCheck;
+}
 type WorkspaceAssetCreatePermissionCheck = (user: User | null, workspace: Workspace) => boolean;
 type WorkspaceAssetUpdatePermissionCheck<A extends WorkspaceTreeNode> = (
   user: User | null,
@@ -1409,7 +1505,7 @@ type WorkspaceAssetUpdatePermissionCheck<A extends WorkspaceTreeNode> = (
 interface WorkspaceAssetCRUDPermission<A extends WorkspaceTreeNode> {
   canCreate: WorkspaceAssetCreatePermissionCheck;
   canDelete: WorkspaceAssetUpdatePermissionCheck<A>;
-  canRead: ReadPermissionCheck<A>;
+  canRead: ReadPermissionCheck<Workspace>;
   canUpdate: WorkspaceAssetUpdatePermissionCheck<A>;
 }
 
@@ -1719,15 +1815,23 @@ const featurePermissions: FeaturePermissions = {
     canUpdate: (user, view) => queryPermissions.UPDATE_VIEW(user, view),
   },
   workspace: {
-    // TODO: Use workspace owners when ready to enforce
-    canCreate: (user, _workspace) => isUserAdmin(user) || !isUserViewer(user),
-    canDelete: (user, _workspace) => isUserAdmin(user) || !isUserViewer(user),
-    canRead: () => true,
-    canUpdate: (user, _workspace) => isUserAdmin(user) || !isUserViewer(user),
+    canCreate: (user, workspace) =>
+      isUserAdmin(user) ||
+      (!isUserViewer(user) && getRoleWorkspacePermission(['write_file_directory'], user, workspace)),
+    canDelete: (user, workspace) =>
+      isUserAdmin(user) ||
+      (!isUserViewer(user) && getRoleWorkspacePermission(['delete_file_directory'], user, workspace)),
+    canRead: (user, workspace) =>
+      isUserAdmin(user) ||
+      (workspacePermissions.getWorkspaceContents(user, workspace) &&
+        workspacePermissions.getFileContent(user, workspace)),
+    canUpdate: (user, workspace) =>
+      isUserAdmin(user) ||
+      (!isUserViewer(user) && getRoleWorkspacePermission(['write_file_directory'], user, workspace)),
   },
   workspaces: {
-    canCreate: user => isUserAdmin(user) || (!isUserViewer(user) && queryPermissions.CREATE_WORKSPACE(user)),
-    canDelete: (user, workspace) => isUserAdmin(user) || (!isUserViewer(user) && isUserOwner(user, workspace)),
+    canCreate: user => isUserAdmin(user) || workspacePermissions.createWorkspace(user),
+    canDelete: (user, workspace) => isUserAdmin(user) || workspacePermissions.deleteWorkspace(user, workspace),
     canRead: user => queryPermissions.SUB_WORKSPACES(user),
     canUpdate: (user, workspace) => isUserAdmin(user) || (!isUserViewer(user) && isUserOwner(user, workspace)),
   },

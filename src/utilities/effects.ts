@@ -17,7 +17,6 @@ import {
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import { chunk } from 'lodash-es';
 import { get } from 'svelte/store';
-import { PATH_DELIMITER } from '../constants/workspaces';
 import { ConstraintDefinitionType } from '../enums/constraint';
 import { DictionaryTypes } from '../enums/dictionaryTypes';
 import { SchedulingDefinitionType } from '../enums/scheduling';
@@ -247,7 +246,7 @@ import type {
 import type { ActivityTransformDirection } from '../types/time';
 import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
-import type { Workspace, WorkspaceInsertInput } from '../types/workspace';
+import type { Workspace } from '../types/workspace';
 import type { WorkspaceTreeMap, WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 import {
   ActivityDeletionAction,
@@ -291,7 +290,7 @@ import {
   showUploadViewModal,
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
-import { CompoundError, reqActionServer, reqExtension, reqGateway, reqHasura, reqWorkspace } from './requests';
+import { CompoundError, reqActionServer, reqExtension, reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
 import { compareEvents } from './simulation';
@@ -314,25 +313,10 @@ import {
   generateDefaultView,
   validateViewJSONAgainstSchema,
 } from './view';
-import { cleanPath, joinPath, mapWorkspaceTreePaths } from './workspaces';
+import { cleanPath, joinPath, mapWorkspaceTreePaths, WorkspaceApi } from './workspaces';
 
 function throwPermissionError(attemptedAction: string): never {
   throw Error(`You do not have permission to: ${attemptedAction}.`);
-}
-
-function createFormDataWithFile(fileName: string, fileContent: string, fileKey: string = 'file'): FormData {
-  const file = new File([fileContent], fileName);
-  const body = new FormData();
-  body.append(fileKey, file, file.name);
-
-  return body;
-}
-
-function createWorkspaceSequenceFileFormData(filePath: string, fileContent: string) {
-  const pathParts = filePath.split(PATH_DELIMITER);
-  const fileName = pathParts[pathParts.length - 1];
-
-  return createFormDataWithFile(fileName, fileContent);
 }
 
 /**
@@ -2263,19 +2247,13 @@ const effects = {
     name?: string | null,
   ): Promise<Workspace | null> {
     try {
-      if (!queryPermissions.CREATE_WORKSPACE(user)) {
+      if (!featurePermissions.workspaces.canCreate(user)) {
         throwPermissionError('create a workspace');
       }
 
       creatingWorkspace.set(true);
 
-      const workspaceInsert: WorkspaceInsertInput | null = {
-        parcelId: parcelId,
-        workspaceLocation: location,
-        ...(name ? { workspaceName: name } : {}),
-      };
-
-      const newWorkspace = await reqWorkspace<Workspace>(`create`, 'POST', JSON.stringify(workspaceInsert), user);
+      const newWorkspace: Workspace = await WorkspaceApi.createWorkspace(location, parcelId, user, name);
 
       creatingWorkspace.set(false);
 
@@ -3754,7 +3732,7 @@ const effects = {
       );
 
       if (confirm) {
-        await reqWorkspace(`${workspace.id}`, 'DELETE', null, user, undefined, false);
+        await WorkspaceApi.deleteWorkspace(workspace.id, user);
         logMessage(`Deleted workspace "${workspace.name}" (ID=${workspace.id}).`);
         showSuccessToast('Workspace Deleted Successfully');
         return true;
@@ -3786,7 +3764,7 @@ const effects = {
       );
 
       if (confirm) {
-        await reqWorkspace(joinPath([workspace.id, originalPath]), 'DELETE', null, user, undefined, false);
+        await WorkspaceApi.deleteFile(workspace.id, originalPath, user);
 
         logMessage(
           `Deleted ${typeString.toLowerCase()} (${originalPath}) in "${workspace.name}" (ID=${workspace.id}).`,
@@ -4891,10 +4869,12 @@ const effects = {
           if (permissions !== undefined) {
             const actionPermissions = permissions.action_permissions ?? [];
             const functionPermissions = permissions.function_permissions ?? [];
+            const workspacePermissions = permissions.workspace_permissions ?? [];
             logMessage(`Retrieved role permissions for user ID=${user?.id}.`);
             return {
               ...actionPermissions,
               ...functionPermissions,
+              ...workspacePermissions,
             };
           }
         } else {
@@ -5391,7 +5371,7 @@ const effects = {
   async getWorkspaceContents(workspaceId: number, user: User | null): Promise<WorkspaceTreeNode[] | null> {
     try {
       const startTime = performance.now();
-      const workspaceContents = await reqWorkspace<WorkspaceTreeNode[]>(`${workspaceId}`, 'GET', null, user);
+      const workspaceContents = await WorkspaceApi.getWorkspaceContents(workspaceId, user);
 
       if (workspaceContents != null) {
         logMessage(`Retrieved workspace contents for workspace ID=${workspaceId}.`, '', performance.now() - startTime);
@@ -5409,14 +5389,7 @@ const effects = {
 
   async getWorkspaceFileContent(workspaceId: number, filePath: string, user: User | null): Promise<string | null> {
     try {
-      const fileContents = await reqWorkspace<string>(
-        joinPath([workspaceId, filePath]),
-        'GET',
-        null,
-        user,
-        undefined,
-        false,
-      );
+      const fileContents = await WorkspaceApi.getFileContent(workspaceId, filePath, user);
 
       if (fileContents != null) {
         logMessage(`Retrieved workspace file "${filePath}" for workspace ID=${workspaceId}.`);
@@ -5665,17 +5638,9 @@ const effects = {
 
           await Promise.all(
             fileChunk.map(async file => {
-              const body = new FormData();
-              body.append('file', file, file.name);
               try {
-                await reqWorkspace<Workspace>(
-                  `${joinPath([workspace.id, cleanedTargetPath, file.name])}?type=file`,
-                  'PUT',
-                  body,
-                  user,
-                  undefined,
-                  false,
-                );
+                await WorkspaceApi.uploadFile(workspace.id, cleanedTargetPath, file.name, file, user);
+
                 successfullyUploadedFileNames.push(file.name);
               } catch (error) {
                 failedConvertedFileUploads[file.name] = true;
@@ -5707,16 +5672,8 @@ const effects = {
           const fileChunk: File[] = chunkedFiles[i];
           await Promise.all(
             fileChunk.map(async file => {
-              const body = new FormData();
-              body.append('file', file, file.name);
-              await reqWorkspace<Workspace>(
-                `${joinPath([workspace.id, cleanedTargetPath, file.name])}?type=file`,
-                'PUT',
-                body,
-                user,
-                undefined,
-                false,
-              );
+              await WorkspaceApi.uploadFile(workspace.id, cleanedTargetPath, file.name, file, user);
+
               successfullyUploadedFileNames.push(file.name);
             }),
           );
@@ -5981,16 +5938,7 @@ const effects = {
         const { shouldCopy, targetPath } = value;
         const cleanedTargetPath = cleanPath(targetPath);
         try {
-          await reqWorkspace<Workspace>(
-            joinPath([workspace.id, originalPath]),
-            'POST',
-            JSON.stringify({
-              [shouldCopy ? 'copyTo' : 'moveTo']: `./${cleanedTargetPath}`,
-            }),
-            user,
-            undefined,
-            false,
-          );
+          await WorkspaceApi.moveFile(workspace.id, originalPath, `./${cleanedTargetPath}`, shouldCopy, user);
           showSuccessToast(`Workspace ${typeString} ${shouldCopy ? 'Copied' : 'Moved'} Successfully`);
           logMessage(
             `${shouldCopy ? 'Copied' : 'Moved'} workspace ${typeString.toLowerCase()} from "${originalPath}" to "${cleanedTargetPath}".`,
@@ -6029,16 +5977,13 @@ const effects = {
         }
         const cleanedTargetPath = cleanPath(targetPath);
 
-        await reqWorkspace<Workspace>(
-          joinPath([workspace.id, originalPath]),
-          'POST',
-          JSON.stringify({
-            [shouldCopy ? 'copyTo' : 'moveTo']: `./${cleanedTargetPath}`,
-            toWorkspace: targetWorkspace.id,
-          }),
+        await WorkspaceApi.moveFileToWorkspace(
+          workspace.id,
+          originalPath,
+          targetWorkspace.id,
+          `./${cleanedTargetPath}`,
+          shouldCopy,
           user,
-          undefined,
-          false,
         );
         showSuccessToast(`Workspace ${typeString} ${shouldCopy ? 'Duplicated' : 'Moved'} Successfully`);
         logMessage(
@@ -6068,14 +6013,7 @@ const effects = {
     if (confirm) {
       const { folderPath } = value;
       try {
-        await reqWorkspace<Workspace>(
-          `${workspace.id}/${folderPath}?type=directory`,
-          'PUT',
-          null,
-          user,
-          undefined,
-          false,
-        );
+        await WorkspaceApi.createFolder(workspace.id, folderPath, user);
 
         showSuccessToast('Workspace Folder Created Successfully');
         logMessage(`Created new workspace folder "${workspace.id}/${folderPath}".`);
@@ -6100,9 +6038,8 @@ const effects = {
     if (confirm) {
       const { filePath } = value;
       try {
-        const body = createWorkspaceSequenceFileFormData(filePath, sequenceDefinition);
+        await WorkspaceApi.saveFile(workspace.id, filePath, sequenceDefinition, false, user);
 
-        await reqWorkspace<Workspace>(`${workspace.id}/${filePath}?type=file`, 'PUT', body, user, undefined, false);
         showSuccessToast('Workspace File Created Successfully');
         logMessage(`Created new workspace file "${workspace.id}/${filePath}".`);
 
@@ -6459,16 +6396,8 @@ const effects = {
       if (confirm) {
         const { targetPath } = value;
         const cleanedTargetPath = cleanPath(targetPath);
-        await reqWorkspace<Workspace>(
-          joinPath([workspace.id, originalPath]),
-          'POST',
-          JSON.stringify({
-            moveTo: `./${cleanedTargetPath}`,
-          }),
-          user,
-          undefined,
-          false,
-        );
+        await WorkspaceApi.moveFile(workspace.id, originalPath, `./${cleanedTargetPath}`, false, user);
+
         showSuccessToast(`Workspace ${typeString} Renamed Successfully`);
         logMessage(`Renamed workspace ${typeString.toLowerCase()} from "${originalPath}" to "${cleanedTargetPath}".`);
         return cleanedTargetPath;
@@ -6623,16 +6552,8 @@ const effects = {
 
   async saveWorkspaceFile(workspaceId: number, filePath: string, fileContent: string, user: User | null = null) {
     try {
-      const body = createWorkspaceSequenceFileFormData(filePath, fileContent);
+      await WorkspaceApi.saveFile(workspaceId, filePath, fileContent, true, user);
 
-      await reqWorkspace<Workspace>(
-        `${workspaceId}/${filePath}?type=file&overwrite=true`,
-        'PUT',
-        body,
-        user,
-        undefined,
-        false,
-      );
       showSuccessToast('Workspace File Saved Successfully');
       logMessage(`Saved workspace file "${filePath}".`);
     } catch (e) {

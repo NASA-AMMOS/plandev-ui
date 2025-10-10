@@ -130,7 +130,6 @@
   };
 
   const CURRENT_SELECTED_ROW_CLASS = 'ag-current-row-selected';
-  let className: string = '';
   const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
   // This is used so that the current instance of ag-grid always has a pointer to the latest current selected row id
@@ -139,6 +138,7 @@
   const onColumnStateChangeDebounced = debounce(onColumnStateChange, 500);
   const onWindowResizedDebounced = debounce(sizeColumnsToFit, 50);
 
+  let className: string = '';
   let contextMenu: ContextMenuInternal;
   let gridOptions: GridOptions<RowData>;
   let gridApi: GridApi<RowData> | undefined;

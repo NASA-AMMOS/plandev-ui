@@ -171,7 +171,6 @@ export enum Queries {
   INSERT_TAGS = 'insert_tags',
   INSERT_USER_SEQUENCE = 'insert_user_sequence_one',
   INSERT_VIEW = 'insert_view_one',
-  INSERT_WORKSPACE = 'insert_workspace_one',
   MERGE_REQUEST = 'merge_request_by_pk',
   MERGE_REQUESTS = 'merge_request',
   MIGRATE_PLAN_TO_MODEL = 'migrate_plan_to_model',
@@ -262,4 +261,8 @@ export enum Queries {
   WORKSPACE = 'workspace_by_pk',
   WORKSPACES = 'workspace',
   WITHDRAW_MERGE_REQUEST = 'withdraw_merge_request',
+}
+
+export enum WorkspaceActions {
+  CREATE_WORKSPACE = 'create_workspace',
 }
