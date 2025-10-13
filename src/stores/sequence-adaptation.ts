@@ -19,7 +19,7 @@ const defaultLanguages: PhoenixLanguages = {
   input: getSeqnLanguage(phoenixResources),
   outputs: [
     {
-      ...seqJsonLanguage,
+      ...seqJsonLanguage(phoenixResources),
       toInputFormat: seq => seqJsonToSeqn(JSON.parse(seq)),
       toOutputFormat: (seq, context, name) =>
         JSON.stringify(seqnToSeqJson(seqnParser.parse(seq), seq, context.commandDictionary, name), null, 2),
@@ -48,5 +48,7 @@ export const inputFormat = derived([sequenceLanguages], ([$sequenceLanguages]) =
 
 export function setSequenceLanguages(adaptation: PhoenixAdaptation | undefined): void {
   // Set the adaptation wholesale, not as a partial update like we did before.
-  sequenceLanguages.set(adaptation ? adaptation.getLanguages(phoenixResources) : defaultLanguages);
+  if (adaptation) {
+    sequenceLanguages.set(adaptation.getLanguages(phoenixResources));
+  }
 }

@@ -92,7 +92,7 @@
       // Reconfigure sequence editor if adaptation or context change
       editorSequenceView.dispatch({
         effects: [
-          compartmentAdaptation.reconfigure((sequenceLanguages.input.editorExtension ?? (_ => []))(phoenixContext)),
+          compartmentAdaptation.reconfigure((sequenceLanguages.input.editorExtension ?? (() => []))(phoenixContext)),
         ],
       });
     }
@@ -109,7 +109,7 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': `${clientHeightGridRightTop}px` } }),
         lintGutter(),
         // TODO: Compose the template grammar on top of the editor extension here
-        compartmentAdaptation.of((sequenceLanguages.input.editorExtension ?? (_ => []))(phoenixContext)),
+        compartmentAdaptation.of((sequenceLanguages.input.editorExtension ?? (() => []))(phoenixContext)),
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
