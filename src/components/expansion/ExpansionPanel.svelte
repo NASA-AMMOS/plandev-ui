@@ -169,8 +169,7 @@
     }
 
     if (expandedResult !== null) {
-      // TODO: remove this after expansion runs are made to work in new workspaces
-      // await effects.sendSequenceToWorkspace(sequence, expandedResult, user);
+      await effects.sendSequenceToWorkspace(sequence, expandedResult, user);
     }
   }
 

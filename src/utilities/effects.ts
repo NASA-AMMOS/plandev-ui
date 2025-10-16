@@ -270,6 +270,7 @@ import {
   showDeleteExternalEventSourceTypeModal,
   showDeleteExternalSourceModal,
   showEditViewModal,
+  showExpansionPanelModal,
   showImportWorkspaceFileModal,
   showLibrarySequenceModel,
   showManagePlanConstraintsModal,
@@ -7120,6 +7121,61 @@ const effects = {
       catchError('Sending Action Secret Parameters Failed', e as Error);
       showFailureToast('Sending Action Secret Parameters Failed');
     }
+  },
+
+  async sendSequenceToWorkspace(
+    sequence: ExpansionSequence | null,
+    expandedSequence: string | null,
+    user: User | null,
+  ): Promise<string | null> {
+    try {
+      if (sequence === null) {
+        throw new Error("Sequence Doesn't Exist");
+      }
+      if (expandedSequence === null) {
+        throw new Error("Expanded Sequence Doesn't Exist");
+      }
+
+      const { confirm: confirmWorkspace, value: valueWorkspace } = await showExpansionPanelModal();
+
+      if (!confirmWorkspace || !valueWorkspace) {
+        throw new Error('Unable To Find The Specified Workspace');
+      }
+
+      const { workspaceId, workspaceName } = valueWorkspace;
+
+      const workspaceContents = await effects.getWorkspaceContents(workspaceId, user);
+      if (!workspaceContents) {
+        throw new Error('Unable To Find The Specified Workspace');
+      }
+
+      const workspaceTree: WorkspaceTreeNode = {
+        contents: workspaceContents,
+        name: workspaceName,
+        type: WorkspaceContentType.Workspace,
+      };
+      workspaceTree;
+
+      const { confirm: confirmNewFile, value: confirmNewFileValue } = await showNewWorkspaceSequenceModal(
+        workspaceId,
+        workspaceTree,
+        '',
+        user,
+      );
+
+      if (confirmNewFile && confirmNewFileValue) {
+        const { filePath: newFilePath } = confirmNewFileValue;
+        const body = createWorkspaceSequenceFileFormData(newFilePath, expandedSequence);
+        await reqWorkspace<Workspace>(`${workspaceId}/${newFilePath}?type=file`, 'PUT', body, user, undefined, false);
+        showSuccessToast('Workspace File Created Successfully');
+      } else {
+        throw new Error('Workspace File Creation Failed');
+      }
+    } catch (e) {
+      catchError('Workspace file was unable to be created', e as Error);
+      showFailureToast('Workspace File Creation Failed');
+    }
+    return null;
   },
 
   async session(user: BaseUser | null): Promise<ReqSessionResponse> {
