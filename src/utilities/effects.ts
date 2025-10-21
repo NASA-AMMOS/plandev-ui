@@ -6798,7 +6798,7 @@ const effects = {
         action_run_id: actionRunId,
         secrets: secretParameters,
       };
-      await reqActionServer<any>('/secrets', 'POST', JSON.stringify(body));
+      await reqActionServer<any>('/secrets', 'POST', JSON.stringify(body), user);
     } catch (e) {
       catchError('Sending Action Secret Parameters Failed', e as Error);
       showFailureToast('Sending Action Secret Parameters Failed');

@@ -52,13 +52,17 @@ export async function reqActionServer<T = any>(
   url: string,
   method: string,
   body: any | null,
+  user: BaseUser | User | null,
   signal?: AbortSignal,
 ): Promise<T> {
   const ACTION_SERVER_URL = env.PUBLIC_ACTION_CLIENT_URL;
 
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    Authorization: `Bearer ${user?.token ?? ''}`,
+    'x-hasura-role': (user as User)?.activeRole ?? '',
+    ...{ 'Content-Type': 'application/json' },
   };
+
   const options: RequestInit = {
     headers,
     method,
