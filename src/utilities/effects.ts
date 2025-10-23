@@ -10,8 +10,8 @@ import {
 import {
   parseCdlDictionary,
   toAmpcsXml,
+  type PhoenixAdaptation,
   type PhoenixContext,
-  type PhoenixLanguages,
   type UserSequence,
 } from '@nasa-jpl/aerie-sequence-languages';
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
@@ -5603,7 +5603,7 @@ const effects = {
     workspace: Workspace,
     workspaceContents: WorkspaceTreeNode,
     startingPath: string,
-    sequenceLanguages: PhoenixLanguages,
+    sequenceAdaptation: PhoenixAdaptation,
     phoenixContext: PhoenixContext,
     user: User | null,
   ): Promise<string | null> {
@@ -5614,8 +5614,8 @@ const effects = {
       const { confirm, value } = await showImportWorkspaceFileModal(
         workspace,
         workspaceContents,
-        sequenceLanguages.input.name,
-        sequenceLanguages.outputs.map(language => language.fileExtension),
+        sequenceAdaptation.input.name,
+        sequenceAdaptation.outputs.map(language => language.fileExtension),
         startingPath,
         workspace,
         user,
@@ -5632,14 +5632,14 @@ const effects = {
 
         const convertedFiles: File[] = await Promise.all(
           filesToConvert.map(async file => {
-            const outputLanguage = sequenceLanguages.outputs.find(language =>
+            const outputLanguage = sequenceAdaptation.outputs.find(language =>
               file.name.endsWith(`.${language.fileExtension.replace(/^\./, '')}`),
             );
 
             if (outputLanguage) {
               const fileName = file.name.replace(
                 outputLanguage.fileExtension.replace(/^\./, ''),
-                sequenceLanguages.input.fileExtension.replace(/^\./, ''),
+                sequenceAdaptation.input.fileExtension.replace(/^\./, ''),
               );
               const lastModified = Date.now();
               const content = await file.text();

@@ -3,7 +3,7 @@
 <script lang="ts">
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
-  import { sequenceLanguages, setSequenceLanguages } from '../../stores/sequence-adaptation';
+  import { sequenceAdaptation, setSequenceLanguages } from '../../stores/sequence-adaptation';
   import { selectedSequenceTemplateId, sequenceTemplates } from '../../stores/sequence-template';
   import {
     channelDictionaries,
@@ -294,7 +294,7 @@
       {channelDictionary}
       {commandDictionary}
       {parameterDictionaries}
-      sequenceLanguages={$sequenceLanguages}
+      sequenceAdaptation={$sequenceAdaptation}
       showCommandFormBuilder={true}
       template={selectedTemplate}
       on:templateChanged={onTemplateChanged}

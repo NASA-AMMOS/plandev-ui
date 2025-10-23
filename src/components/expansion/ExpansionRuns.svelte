@@ -6,7 +6,7 @@
   import { seqJsonToSeqn, type PhoenixContext } from '@nasa-jpl/aerie-sequence-languages';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { expansionRunsColumns } from '../../stores/expansion';
-  import { sequenceLanguages } from '../../stores/sequence-adaptation';
+  import { sequenceAdaptation } from '../../stores/sequence-adaptation';
   import {
     channelDictionaries,
     commandDictionaries,
@@ -279,6 +279,6 @@
     {phoenixContext}
     userSequenceEditorColumns={$userSequenceEditorColumns}
     userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
-    sequenceLanguages={$sequenceLanguages}
+    sequenceAdaptation={$sequenceAdaptation}
   />
 </CssGrid>

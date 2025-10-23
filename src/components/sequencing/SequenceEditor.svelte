@@ -10,8 +10,8 @@
   import type {
     CommandInfoMapper,
     OutputLanguage,
+    PhoenixAdaptation,
     PhoenixContext,
-    PhoenixLanguages,
   } from '@nasa-jpl/aerie-sequence-languages';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
@@ -26,6 +26,7 @@
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { downloadBlob } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
+  import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
   import { pluralize } from '../../utilities/text';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
@@ -42,7 +43,7 @@
   export let includeActions: boolean = false;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
-  export let sequenceLanguages: PhoenixLanguages;
+  export let sequenceAdaptation: PhoenixAdaptation;
   export let sequenceName: string = '';
   export let sequenceDefinition: string = '';
   export let sequenceOutput: string = '';
@@ -79,14 +80,14 @@
   let inputEditorExtension: Extension = [];
   let outputEditorExtension: Extension = [];
 
-  $: commandInfoMapper = sequenceLanguages.input.commandInfoMapper;
+  $: commandInfoMapper = sequenceAdaptation.input.commandInfoMapper;
 
-  $: if (phoenixContext && sequenceLanguages.input.editorExtension) {
-    inputEditorExtension = sequenceLanguages.input.editorExtension(phoenixContext);
+  $: if (phoenixContext && sequenceAdaptation.input.getEditorExtension) {
+    inputEditorExtension = sequenceAdaptation.input.getEditorExtension(phoenixContext, phoenixResources);
   }
 
-  $: if (phoenixContext && selectedOutputFormat?.editorExtension) {
-    outputEditorExtension = selectedOutputFormat.editorExtension(phoenixContext);
+  $: if (phoenixContext && selectedOutputFormat?.getEditorExtension) {
+    outputEditorExtension = selectedOutputFormat.getEditorExtension(phoenixContext, phoenixResources);
   }
 
   // insert sequence
@@ -113,7 +114,7 @@
 
   $: {
     previousShowOutputs = showOutputs;
-    showOutputs = sequenceLanguages.outputs.length > 0;
+    showOutputs = sequenceAdaptation.outputs.length > 0;
   }
   $: if (showOutputs) {
     editorHeights = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
@@ -121,8 +122,8 @@
     editorHeights = '1fr 3px';
   }
 
-  $: if (sequenceLanguages.outputs.length > 0) {
-    selectedOutputFormat = sequenceLanguages.outputs[0];
+  $: if (sequenceAdaptation.outputs.length > 0) {
+    selectedOutputFormat = sequenceAdaptation.outputs[0];
   }
 
   $: if (showOutputs && previousShowOutputs !== showOutputs && editorOutputDiv) {
@@ -175,7 +176,7 @@
   }
 
   function downloadOutputFormat(outputLanguage: OutputLanguage): void {
-    const fileExtension = sequenceName.replace(sequenceLanguages.input.fileExtension, outputLanguage.fileExtension);
+    const fileExtension = sequenceName.replace(sequenceAdaptation.input.fileExtension, outputLanguage.fileExtension);
     downloadBlob(new Blob([editorOutputView.state.doc.toString()], { type: 'text/plain' }), fileExtension);
   }
 
@@ -195,9 +196,9 @@
   async function copyInputFormatToClipboard(): Promise<void> {
     try {
       await navigator.clipboard.writeText(editorSequenceView.state.doc.toString());
-      showSuccessToast(`${sequenceLanguages.input.name} copied to clipboard`);
+      showSuccessToast(`${sequenceAdaptation.input.name} copied to clipboard`);
     } catch {
-      showFailureToast(`Error copying ${sequenceLanguages.input.name} to clipboard`);
+      showFailureToast(`Error copying ${sequenceAdaptation.input.name} to clipboard`);
     }
   }
 
@@ -210,7 +211,7 @@
   }
 
   function formatDocument() {
-    let format = sequenceLanguages.input.format;
+    let format = sequenceAdaptation.input.format;
     if (format !== undefined) {
       format(editorSequenceView, phoenixContext);
     }
@@ -355,7 +356,7 @@
               </button>
 
               <Menu bind:this={menu}>
-                {#each sequenceLanguages.outputs as outputFormatItem}
+                {#each sequenceAdaptation.outputs as outputFormatItem}
                   <div
                     use:tooltip={{
                       content: `Copy sequence contents as ${outputFormatItem?.name} to clipboard`,
@@ -414,11 +415,11 @@
           <SectionTitle>{selectedOutputFormat?.name} (Read-only)</SectionTitle>
 
           <div class="right">
-            {#if sequenceLanguages.outputs.length > 0}
+            {#if sequenceAdaptation.outputs.length > 0}
               <div class="output-format">
                 <label class="text-xs text-muted-foreground" for="outputFormat">Output Format</label>
                 <select bind:value={selectedOutputFormat} class="st-select w-full" name="outputFormat">
-                  {#each sequenceLanguages.outputs as outputFormatItem}
+                  {#each sequenceAdaptation.outputs as outputFormatItem}
                     <option value={outputFormatItem}>
                       {outputFormatItem.name}
                     </option>

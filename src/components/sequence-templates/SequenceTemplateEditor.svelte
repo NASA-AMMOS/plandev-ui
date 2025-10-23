@@ -11,8 +11,8 @@
     CommandInfoMapper,
     LibrarySequenceSignature,
     OutputLanguage,
+    PhoenixAdaptation,
     PhoenixContext,
-    PhoenixLanguages,
   } from '@nasa-jpl/aerie-sequence-languages';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
@@ -22,6 +22,7 @@
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
+  import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
   import { tooltip } from '../../utilities/tooltip';
   import CommandPanel from '../sequencing/CommandPanel/CommandPanel.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -38,7 +39,7 @@
   export let commandDictionary: CommandDictionary | null = null;
   export let librarySequences: LibrarySequenceSignature[] = [];
   export let parameterDictionaries: ParameterDictionary[] = [];
-  export let sequenceLanguages: PhoenixLanguages;
+  export let sequenceAdaptation: PhoenixAdaptation;
 
   let sequenceName: string = '';
   let sequenceDefinition: string = '';
@@ -64,7 +65,7 @@
   let columnsWithNoFormBuilder: string = '3fr 3px';
   let phoenixContext: PhoenixContext;
 
-  $: commandInfoMapper = sequenceLanguages.input.commandInfoMapper;
+  $: commandInfoMapper = sequenceAdaptation.input.commandInfoMapper;
 
   $: {
     // Since this insertion will move the cursor back to position 0, test if the content actually changed first
@@ -92,7 +93,9 @@
       // Reconfigure sequence editor if adaptation or context change
       editorSequenceView.dispatch({
         effects: [
-          compartmentAdaptation.reconfigure((sequenceLanguages.input.editorExtension ?? (() => []))(phoenixContext)),
+          compartmentAdaptation.reconfigure(
+            (sequenceAdaptation.input.getEditorExtension ?? (() => []))(phoenixContext, phoenixResources),
+          ),
         ],
       });
     }
@@ -109,7 +112,9 @@
         EditorView.theme({ '.cm-gutter': { 'min-height': `${clientHeightGridRightTop}px` } }),
         lintGutter(),
         // TODO: Compose the template grammar on top of the editor extension here
-        compartmentAdaptation.of((sequenceLanguages.input.editorExtension ?? (() => []))(phoenixContext)),
+        compartmentAdaptation.of(
+          (sequenceAdaptation.input.getEditorExtension ?? (() => []))(phoenixContext, phoenixResources),
+        ),
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
@@ -147,7 +152,7 @@
   }
 
   function formatDocument() {
-    let format = sequenceLanguages.input.format;
+    let format = sequenceAdaptation.input.format;
     if (format !== undefined) {
       format(editorSequenceView, phoenixContext);
     }

@@ -20,7 +20,7 @@
   import { SearchParameters } from '../../../enums/searchParameters';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
-  import { sequenceLanguages, setSequenceLanguages } from '../../../stores/sequence-adaptation';
+  import { sequenceAdaptation, setSequenceLanguages } from '../../../stores/sequence-adaptation';
   import {
     channelDictionaries,
     commandDictionaries,
@@ -199,7 +199,7 @@
 
       if (librarySequencesEnabled) {
         librarySequences = workspaceSequences
-          .flatMap(sequence => ($sequenceLanguages.input.getLibrarySequences ?? (() => []))(sequence))
+          .flatMap(sequence => ($sequenceAdaptation.input.getLibrarySequences ?? (() => []))(sequence))
           .filter(({ name }) => name !== '');
       }
 
@@ -337,7 +337,7 @@
         $workspace,
         workspaceTree,
         startingPath,
-        $sequenceLanguages,
+        $sequenceAdaptation,
         phoenixContext,
         user,
       );
@@ -529,7 +529,7 @@
           {actionsWithSequenceParameters}
           includeActions={true}
           readOnly={!hasEditFilePermission}
-          sequenceLanguages={$sequenceLanguages}
+          sequenceAdaptation={$sequenceAdaptation}
           sequenceDefinition={initialSelectedFileContent}
           sequenceName={selectedFileName}
           sequenceOutput={selectedSequenceOutput}
