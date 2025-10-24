@@ -46,5 +46,7 @@ export function setSequenceLanguages(adaptation: PhoenixAdaptation | undefined):
   // Set the adaptation wholesale, not as a partial update like we did before.
   if (adaptation) {
     sequenceAdaptation.set(adaptation);
+  } else {
+    sequenceAdaptation.set(defaultAdaptation);
   }
 }
