@@ -761,30 +761,51 @@ const effects = {
 
   async createActionRun(
     actionDefinitionId: number,
-    parameters: any,
+    parameterDefs: ActionParametersMap,
+    parameterValues: ArgumentsMap,
     settings: any,
-    hasSecrets: boolean,
     user: User | null,
   ): Promise<number | null> {
     try {
+      const secretParameters: ActionParametersMap = {};
+      const nonSecretParameters: ActionParametersMap = {};
+
+      // Filter out the secret params to send directly to the action server.
+      for (const paramName of Object.keys(parameterDefs)) {
+        if (parameterDefs[paramName].schema.type === 'secret') {
+          secretParameters[paramName] = parameterValues[paramName];
+        } else {
+          nonSecretParameters[paramName] = parameterValues[paramName];
+        }
+      }
+
       if (!queryPermissions.CREATE_ACTION_RUN(user)) {
         throwPermissionError('create action run');
       }
 
       const actionRunInsertInput = {
         action_definition_id: actionDefinitionId,
-        has_secrets: hasSecrets,
-        parameters,
+        // we are now sending secrets on every run, to provide JWT token to actions
+        // todo: future refactor - use hasura actions to run aerie actions & avoid need for secrets call
+        has_secrets: true,
+        parameters: nonSecretParameters,
         settings,
       };
+      // send initial hasura request to insert the action run in the DB
       const response = await reqHasura<{ id: number }>(gql.CREATE_ACTION_RUN, { actionRunInsertInput }, user);
-      const { insert_action_run_one: actionRunId } = response;
-      if (actionRunId !== null) {
+      const { insert_action_run_one: actionRunResult } = response;
+
+      if (actionRunResult !== null) {
+        const actionRunId = actionRunResult.id;
         logMessage(`Created action run ID=${actionRunId}.`);
-        return actionRunId.id;
+        // send follow-up secrets request directly to action server, containing transient secrets + JWT (in header)
+        await effects.sendActionSecretParameters(secretParameters, actionRunId, user);
+        logMessage(`Sent secrets for action run ID=${actionRunId}.`);
+        return actionRunResult.id;
       } else {
         throw Error(`Unable to run action`);
       }
+
     } catch (e) {
       catchError('Action Run Creation Failed', e as Error);
       showFailureToast('Action Run Creation Failed');

@@ -40,32 +40,15 @@
 
   async function run() {
     running = true;
-    let secretParametersMap: ActionParametersMap = {};
-    let nonSecretParametersMap: ActionParametersMap = {};
-    let hasSecrets = false;
-
-    // Filter out the secret params to send directly to the action server.
-    for (const param of Object.keys(parametersMap)) {
-      if (parametersMap[param].schema.type === 'secret') {
-        secretParametersMap[param] = argumentsMap[param];
-        hasSecrets = true;
-      } else {
-        nonSecretParametersMap[param] = argumentsMap[param];
-      }
-    }
 
     const actionRunId = await effects.createActionRun(
       actionDefinition.id,
       // Only send non-secret arguments to the db.
-      nonSecretParametersMap,
+      parametersMap,
+      argumentsMap,
       actionDefinition.settings,
-      hasSecrets, // The DB only needs to know if there are secrets or not.
       user,
     );
-
-    if (actionRunId !== null && hasSecrets) {
-      await effects.sendActionSecretParameters(secretParametersMap, actionRunId, user);
-    }
 
     running = false;
     dispatch('complete', { actionRunId });
