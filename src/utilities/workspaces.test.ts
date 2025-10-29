@@ -6,6 +6,11 @@ const mockNavigator = {
 };
 
 vi.stubGlobal('navigator', mockNavigator);
+vi.mock('$env/dynamic/public', () => {
+  return {
+    env: {},
+  };
+}); // https://github.com/sveltejs/kit/issues/8180
 
 describe('Workspace utility function tests', () => {
   afterAll(() => {

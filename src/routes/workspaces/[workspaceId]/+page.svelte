@@ -32,7 +32,8 @@
     userSequenceEditorColumns,
     userSequenceEditorColumnsWithFormBuilder,
   } from '../../../stores/sequencing';
-  import { parcel, workspace, workspaceColumns, workspaceId } from '../../../stores/workspaces';
+  import { initialUsersLoading, users } from '../../../stores/user';
+  import { parcel, parcels, workspace, workspaceColumns, workspaceId, workspaces } from '../../../stores/workspaces';
   import type { ActionDefinition } from '../../../types/actions';
   import type { ArgumentsMap } from '../../../types/parameter';
   import type {
@@ -40,7 +41,12 @@
     CommandDictionaryMetadata,
     ParameterDictionaryMetadata,
   } from '../../../types/sequencing';
-  import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
+  import type {
+    Workspace,
+    WorkspaceCollaborator,
+    WorkspaceMetadata,
+    WorkspaceNodeEvent,
+  } from '../../../types/workspace';
   import type {
     WorkspaceTreeMap,
     WorkspaceTreeNode,
@@ -84,6 +90,7 @@
   let workspaceTreeMap: WorkspaceTreeMap = {};
   let hasEditFilePermission: boolean = false;
   let hasEditWorkspacePermission: boolean = false;
+  let hasEditWorkspaceCollaboratorsPermission: boolean = false;
   let phoenixContext: PhoenixContext;
 
   $: if (initialWorkspace) {
@@ -110,14 +117,13 @@
     selectedFileType = null;
   }
 
-  $: if (initialWorkspace) {
-    hasEditWorkspacePermission = featurePermissions.workspace.canUpdate(user, initialWorkspace);
+  $: if (initialWorkspace || $workspace) {
+    const ws: Workspace = $workspace ?? (initialWorkspace as Workspace);
+
+    hasEditWorkspacePermission = featurePermissions.workspaces.canUpdate(user, ws);
+    hasEditWorkspaceCollaboratorsPermission = featurePermissions.workspaceCollaborators.canCreate(user, ws);
     if (selectedFilePath) {
-      hasEditFilePermission = featurePermissions.workspace.canUpdate(
-        user,
-        initialWorkspace,
-        workspaceTreeMap[selectedFilePath],
-      );
+      hasEditFilePermission = featurePermissions.workspace.canUpdate(user, ws, workspaceTreeMap[selectedFilePath]);
     } else {
       hasEditFilePermission = true;
     }
@@ -342,6 +348,24 @@
     return true;
   }
 
+  async function onAddCollaborator(event: CustomEvent<WorkspaceCollaborator[]>) {
+    if ($workspace) {
+      effects.createWorkspaceCollaborators($workspace, event.detail, user);
+    }
+  }
+
+  async function onDeleteCollaborator(event: CustomEvent<string>) {
+    if ($workspace) {
+      effects.deleteWorkspaceCollaborator($workspace, event.detail, user);
+    }
+  }
+
+  async function onUpdateWorkspaceMetadata(event: CustomEvent<Partial<WorkspaceMetadata>>) {
+    if ($workspace) {
+      effects.updateWorkspace($workspace, event.detail, user);
+    }
+  }
+
   async function onNewFolder(event: CustomEvent<string>) {
     if ($workspace && workspaceTree && user) {
       const { detail: startingPath } = event;
@@ -538,10 +562,17 @@
       {workspaceTree}
       {isWorkspaceLoading}
       {hasEditWorkspacePermission}
+      {hasEditWorkspaceCollaboratorsPermission}
+      parcels={$parcels ?? []}
       {user}
+      users={$users ?? []}
+      usersLoading={$initialUsersLoading}
       workspace={$workspace}
+      workspaces={$workspaces}
       {isRowSelectable}
       on:actionsClick={onActionsClicked}
+      on:addCollaborator={onAddCollaborator}
+      on:deleteCollaborator={onDeleteCollaborator}
       on:nodeClicked={onNodeClicked}
       on:nodeDelete={onNodeDelete}
       on:nodeMove={onNodeMove}
@@ -552,6 +583,7 @@
       on:copyFileLocation={onCopyFileLocation}
       on:moveToWorkspace={onMoveToWorkspace}
       on:refreshWorkspace={refreshWorkspaceContents}
+      on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
     />
   </Sidebar.Provider>
   <CssGridGutter track={1} type="column" />

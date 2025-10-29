@@ -539,6 +539,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   CREATE_VIEW: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_VIEW], user);
   },
+  CREATE_WORKSPACE_COLLABORATORS: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.INSERT_WORKSPACE_COLLABORATORS], user);
+  },
   DELETE_ACTIVITY_DIRECTIVES: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
@@ -739,6 +742,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   DELETE_VIEWS: (user: User | null, view: ViewSlim): boolean => {
     return isUserAdmin(user) || (getPermission([Queries.DELETE_VIEWS], user) && isUserOwner(user, view));
+  },
+  DELETE_WORKSPACE_COLLABORATOR: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.DELETE_WORKSPACE_COLLABORATOR], user);
   },
   DUPLICATE_PLAN: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
     const queries = [Queries.DUPLICATE_PLAN];
@@ -1316,17 +1322,6 @@ const gatewayPermissions = {
   },
 };
 
-// canDelete: (user, workspace) =>
-//   isUserAdmin(user) ||
-//   (!isUserViewer(user) && getRoleWorkspacePermission(['delete_file_directory'], user, workspace)),
-// canRead: (user, workspace) =>
-//   isUserAdmin(user) ||
-//   (!isUserViewer(user) &&
-//     getRoleWorkspacePermission(['list_workspace_contents', 'read_file_directory'], user, workspace)),
-// canUpdate: (user, workspace) =>
-//   isUserAdmin(user) ||
-//   (!isUserViewer(user) && getRoleWorkspacePermission(['write_file_directory'], user, workspace)),
-
 type WorkspaceKeys = keyof typeof WorkspaceApi;
 const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: any[]) => boolean> = {
   createFolder: (user: User | null, workspace: Workspace): boolean => {
@@ -1509,6 +1504,11 @@ interface WorkspaceAssetCRUDPermission<A extends WorkspaceTreeNode> {
   canUpdate: WorkspaceAssetUpdatePermissionCheck<A>;
 }
 
+interface WorkspaceCollaboratorsCRUDPermission {
+  canCreate: WorkspaceAssetCreatePermissionCheck;
+  canDelete: WorkspaceAssetCreatePermissionCheck;
+}
+
 interface FeaturePermissions {
   actionDefinition: CRUDPermission<ActionDefinition>;
   actionRun: CRUDPermission<ActionDefinition>;
@@ -1552,6 +1552,7 @@ interface FeaturePermissions {
   tags: CRUDPermission<Tag>;
   view: CRUDPermission<ViewSlim>;
   workspace: WorkspaceAssetCRUDPermission<WorkspaceTreeNode>;
+  workspaceCollaborators: WorkspaceCollaboratorsCRUDPermission;
   workspaces: CRUDPermission<AssetWithOwner<Workspace>>;
 }
 
@@ -1828,6 +1829,18 @@ const featurePermissions: FeaturePermissions = {
     canUpdate: (user, workspace) =>
       isUserAdmin(user) ||
       (!isUserViewer(user) && getRoleWorkspacePermission(['write_file_directory'], user, workspace)),
+  },
+  workspaceCollaborators: {
+    canCreate: (user, workspace) =>
+      isUserAdmin(user) ||
+      (queryPermissions.CREATE_WORKSPACE_COLLABORATORS(user, workspace) &&
+        !isUserViewer(user) &&
+        (isUserOwner(user, workspace) || isUserCollaborator(user, workspace))),
+    canDelete: (user, workspace) =>
+      isUserAdmin(user) ||
+      (queryPermissions.DELETE_WORKSPACE_COLLABORATOR(user, workspace) &&
+        !isUserViewer(user) &&
+        (isUserOwner(user, workspace) || isUserCollaborator(user, workspace))),
   },
   workspaces: {
     canCreate: user => isUserAdmin(user) || workspacePermissions.createWorkspace(user),

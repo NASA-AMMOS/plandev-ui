@@ -622,6 +622,14 @@ const gql = {
     }
   `,
 
+  CREATE_WORKSPACE_COLLABORATORS: `#graphql
+    mutation CreateWorkspaceCollaborators($collaborators: [workspace_collaborators_insert_input!]!) {
+      ${Queries.INSERT_WORKSPACE_COLLABORATORS}(objects: $collaborators){
+        affected_rows
+      }
+    }
+  `,
+
   DELETE_ACTIVITY_DIRECTIVES: `#graphql
     mutation DeleteActivityDirectives($plan_id: Int!, $activity_ids: [Int!]!) {
       deleteActivityDirectives: ${Queries.DELETE_ACTIVITY_DIRECTIVES}(
@@ -1089,6 +1097,14 @@ const gql = {
         returning {
           id
         }
+      }
+    }
+  `,
+
+  DELETE_WORKSPACE_COLLABORATOR: `#graphql
+    mutation DeleteWorkspaceCollaborator($collaborator: String!, $workspaceId: Int!) {
+      deleteWorkspaceCollaborator: ${Queries.DELETE_WORKSPACE_COLLABORATOR}(collaborator: $collaborator, workspace_id: $workspaceId) {
+        collaborator
       }
     }
   `,
@@ -3541,6 +3557,9 @@ const gql = {
   SUB_WORKSPACE: `#graphql
     subscription SubWorkspace($workspaceId: Int!) {
       workspace: ${Queries.WORKSPACE}(id: $workspaceId) {
+        collaborators {
+          collaborator
+        }
         created_at
         disk_location
         id
@@ -3555,6 +3574,9 @@ const gql = {
   SUB_WORKSPACES: `#graphql
     subscription SubWorkspaces {
       ${Queries.WORKSPACES}(order_by: { id: desc }) {
+        collaborators {
+          collaborator
+        }
         created_at
         disk_location
         id

@@ -246,7 +246,7 @@ import type {
 import type { ActivityTransformDirection } from '../types/time';
 import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
-import type { Workspace } from '../types/workspace';
+import type { Workspace, WorkspaceCollaborator } from '../types/workspace';
 import type { WorkspaceTreeMap, WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 import {
   ActivityDeletionAction,
@@ -2274,6 +2274,40 @@ const effects = {
     return null;
   },
 
+  async createWorkspaceCollaborators(
+    workspace: Workspace,
+    collaborators: WorkspaceCollaborator[],
+    user: User | null,
+  ): Promise<void> {
+    try {
+      if (!queryPermissions.CREATE_WORKSPACE_COLLABORATORS(user, workspace)) {
+        throwPermissionError('update this workspace');
+      }
+
+      const data = await reqHasura(gql.CREATE_WORKSPACE_COLLABORATORS, { collaborators }, user);
+      const { insert_workspace_collaborators: insertWorkspaceCollaborators } = data;
+
+      if (insertWorkspaceCollaborators != null) {
+        const { affected_rows: affectedRows } = insertWorkspaceCollaborators;
+
+        if (affectedRows !== collaborators.length) {
+          throw Error('Some workspace collaborators were not successfully added');
+        }
+        logMessage(
+          `Added workspace collaborator${pluralize(collaborators.length)} "${collaborators.map(c => c.collaborator).join(', ')}" to workspace ID=${workspace.id}.`,
+        );
+        showSuccessToast('Workspace Collaborators Updated');
+        return affectedRows;
+      } else {
+        throw Error('Unable to create workspace collaborators');
+      }
+    } catch (e) {
+      catchError('Workspace Collaborator Create Failed', e as Error);
+      showFailureToast('Workspace Collaborator Create Failed');
+      return;
+    }
+  },
+
   async deleteActivityDirective(id: ActivityDirectiveId, plan: Plan, user: User | null): Promise<boolean> {
     try {
       if (
@@ -3239,7 +3273,7 @@ const effects = {
   async deletePlanCollaborator(plan: Plan, collaborator: string, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.DELETE_PLAN_COLLABORATOR(user, plan)) {
-        throwPermissionError('delete plan snapshot');
+        throwPermissionError('delete plan collaborator');
       }
 
       const data = await reqHasura(gql.DELETE_PLAN_COLLABORATOR, { collaborator, planId: plan.id }, user);
@@ -3745,6 +3779,31 @@ const effects = {
     return false;
   },
 
+  async deleteWorkspaceCollaborator(workspace: Workspace, collaborator: string, user: User | null): Promise<boolean> {
+    try {
+      if (!queryPermissions.DELETE_WORKSPACE_COLLABORATOR(user, workspace)) {
+        throwPermissionError('delete workspace collaborator');
+      }
+
+      const data = await reqHasura(
+        gql.DELETE_WORKSPACE_COLLABORATOR,
+        { collaborator, workspaceId: workspace.id },
+        user,
+      );
+      if (data.deleteWorkspaceCollaborator != null) {
+        logMessage(`Removed collaborator "${collaborator}" from workspace ID=${workspace.id}.`);
+        showSuccessToast('Workspace Collaborator Removed Successfully');
+        return true;
+      } else {
+        throw Error('Unable to remove workspace collaborator');
+      }
+    } catch (e) {
+      catchError('Remove Workspace Collaborator Failed', e as Error);
+      showFailureToast('Remove Workspace Collaborator Failed');
+      return false;
+    }
+  },
+
   async deleteWorkspaceItem(
     workspace: Workspace,
     originalNode: WorkspaceTreeNode,
@@ -3821,30 +3880,6 @@ const effects = {
     }
 
     return false;
-  },
-
-  async editWorkspace(workspace: Workspace, user: User | null): Promise<Workspace | null> {
-    try {
-      if (!queryPermissions.UPDATE_WORKSPACE(user, workspace)) {
-        throwPermissionError('update a workspace');
-      }
-
-      const data = await reqHasura<Workspace>(gql.UPDATE_WORKSPACE, { workspace }, user);
-      const { updatedWorkspace } = data;
-
-      if (updatedWorkspace != null) {
-        logMessage(`Updated workspace "${workspace.name}" (ID=${workspace.id}).`);
-        showSuccessToast('Workspace Updated Successfully');
-        return updatedWorkspace;
-      } else {
-        throw Error(`Unable to update workspace "${workspace.name}"`);
-      }
-    } catch (e) {
-      catchError('Workspace Update Failed', e as Error);
-      showFailureToast('Workspace Update Failed');
-    }
-
-    return null;
   },
 
   async expand(expansionSetId: number, simulationDatasetId: number, plan: Plan, user: User | null): Promise<void> {
@@ -7875,6 +7910,38 @@ const effects = {
       showFailureToast('View Update Failed');
       return false;
     }
+  },
+
+  async updateWorkspace(
+    workspace: Workspace,
+    workspaceMetadata: Partial<Workspace>,
+    user: User | null,
+  ): Promise<Workspace | null> {
+    try {
+      if (!queryPermissions.UPDATE_WORKSPACE(user, workspace)) {
+        throwPermissionError('update a workspace');
+      }
+
+      const data = await reqHasura<Workspace>(
+        gql.UPDATE_WORKSPACE,
+        { id: workspace.id, workspace: workspaceMetadata },
+        user,
+      );
+      const { updatedWorkspace } = data;
+
+      if (updatedWorkspace != null) {
+        logMessage(`Updated workspace "${workspace.name}" (ID=${workspace.id}).`);
+        showSuccessToast('Workspace Updated Successfully');
+        return updatedWorkspace;
+      } else {
+        throw Error(`Unable to update workspace "${workspace.name}"`);
+      }
+    } catch (e) {
+      catchError('Workspace Update Failed', e as Error);
+      showFailureToast('Workspace Update Failed');
+    }
+
+    return null;
   },
 
   async uploadDictionary(
