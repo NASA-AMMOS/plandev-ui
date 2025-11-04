@@ -164,7 +164,7 @@
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
             <Tabs.Trigger value="settings" class="flex h-10 w-10 items-center justify-center rounded-none shadow-none">
-              <Button builders={[builder]} variant="ghost">
+              <Button builders={[builder]} variant="ghost" name="Settings">
                 <Settings size={16} />
               </Button>
             </Tabs.Trigger>

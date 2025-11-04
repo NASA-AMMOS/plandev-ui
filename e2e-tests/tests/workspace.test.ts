@@ -2,18 +2,22 @@ import test, { expect, type BrowserContext, type Page } from '@playwright/test';
 import { getWorkspacesUrl } from '../../src/utilities/routes.js';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
 import { Parcels } from '../fixtures/Parcels.js';
+import { User } from '../fixtures/User.js';
 import { Workspace } from '../fixtures/Workspace.js';
 import { Workspaces } from '../fixtures/Workspaces.js';
 
 let context: BrowserContext;
 let dictionaries: Dictionaries;
-let parcels: Parcels;
 let page: Page;
+let parcels: Parcels;
+let sequence: { sequenceName: string; sequencePath: string };
+let userAuthorized: User;
+let userUnauthorized: User;
+let testUser: User;
 let workspace: Workspace;
 let workspaces: Workspaces;
 let workspaceId: string;
 let workspaceName: string;
-let sequence: { sequenceName: string; sequencePath: string };
 
 test.beforeAll(async ({ baseURL, browser }) => {
   // Increase global timeout to prevent early test termination
@@ -25,6 +29,10 @@ test.beforeAll(async ({ baseURL, browser }) => {
   dictionaries = new Dictionaries(page);
   parcels = new Parcels(page);
   workspaces = new Workspaces(page, parcels, baseURL);
+
+  testUser = new User(page, 'test');
+  userAuthorized = new User(page, 'userAuthorized');
+  userUnauthorized = new User(page, 'userUnauthorized');
 
   // Setup dependencies: dictionary and parcel
   await dictionaries.goto();
@@ -117,5 +125,32 @@ test.describe.serial('Workspace', () => {
 
   test('Delete sequence', async () => {
     await workspace.deleteSequence(sequence.sequenceName);
+  });
+
+  test('Add collaborator to workspace', async ({ baseURL }) => {
+    await testUser.logout(baseURL);
+    await userAuthorized.login(baseURL);
+    await workspace.goto();
+    await workspace.workspaceSettingsButton.click();
+
+    await workspace.workspaceCollaboratorInput.fill(userAuthorized.username);
+    await page.getByRole('option', { name: userAuthorized.username }).click();
+
+    await workspace.waitForToast('Workspace Collaborators Updated');
+  });
+
+  test('Users not authorized to modify the workspace should not be able to', async ({ baseURL }) => {
+    await userAuthorized.logout(baseURL);
+    await userUnauthorized.login(baseURL);
+
+    await userUnauthorized.switchRole('user');
+
+    await workspace.goto();
+    await workspace.openWorkspaceContextMenu();
+    await workspace.workspaceContextMenu.getByRole('menuitem', { name: 'New File' }).click();
+    await expect(workspace.page.locator('#modal-container')).not.toBeVisible();
+
+    await userUnauthorized.logout(baseURL);
+    await testUser.login(baseURL);
   });
 });

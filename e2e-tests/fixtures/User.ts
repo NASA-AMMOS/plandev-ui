@@ -2,13 +2,13 @@ import { expect, type Page } from '@playwright/test';
 import { adjectives, names, uniqueNamesGenerator } from 'unique-names-generator';
 import { AppNav } from './AppNav.js';
 
-export async function performLogin(page, baseURL, username = 'test') {
-  await page.goto(`${baseURL}/login`, { waitUntil: 'networkidle' });
+export async function performLogin(page: Page, baseURL?: string, username: string = 'test') {
+  await page.goto(`${baseURL ?? ''}/login`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(1000);
   await page.locator('input[name="username"]').fill(username);
   await page.locator('input[name="password"]').fill('test');
   await page.getByRole('button', { name: 'Login' }).click();
-  await page.waitForURL(`${baseURL}/plans`);
+  await page.waitForURL(`${baseURL ?? ''}/plans`);
 }
 
 export class User {

@@ -17,8 +17,10 @@ export class Workspace {
   sequenceEditor: Locator;
   sequenceNameInput: Locator;
   textEditor: Locator;
+  workspaceCollaboratorInput: Locator;
   workspaceContextMenu: Locator;
   workspaceContextMenuButton: Locator;
+  workspaceSettingsButton: Locator;
   workspaceSidebar: Locator;
 
   constructor(
@@ -152,6 +154,8 @@ export class Workspace {
         name: 'New Workspace Item',
       })
       .first();
+    this.workspaceSettingsButton = page.locator('button[name="Settings"]');
+    this.workspaceCollaboratorInput = page.getByPlaceholder('Search collaborators or workspaces');
   }
 
   async waitForToast(message: string): Promise<void> {
