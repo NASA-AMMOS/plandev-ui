@@ -8,7 +8,7 @@
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type { IRowNode } from 'ag-grid-community';
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy, onMount, tick } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
@@ -67,6 +67,7 @@
   import { showFailureToast } from '../../../utilities/toast';
   import { mapWorkspaceTreePaths, separateFilenameFromPath } from '../../../utilities/workspaces';
   import type { PageData } from './$types';
+  import WorkspaceGridView from "../../../components/workspace/WorkspaceGridView/WorkspaceGridView.svelte";
 
   export let data: PageData;
 
@@ -75,6 +76,7 @@
   let actionsWithSequenceParameters: ActionDefinition[] = [];
   let channelDictionary: ChannelDictionary | null = null;
   let commandDictionary: CommandDictionary | null = null;
+  let fileGridView: WorkspaceGridView<WorkspaceTreeNodeWithFullPath> | undefined;
   let parameterDictionaries: ParameterDictionary[] = [];
   let initialSelectedFileContent: string = '';
   let isWorkspaceLoading: boolean = false;
@@ -358,13 +360,19 @@
     if (isTextFile(treeNode.type) && toggleState === true) {
       if (treeNodePath !== selectedFilePath) {
         const didNavigate = await goToSequence(treeNodePath);
+
         if (didNavigate) {
           selectedFilePath = treeNodePath;
+        } else {
+          // selectedFilePath didn't change, but ag-grid's internal selection did.
+          // restore the grid's visual state to match the current file.
+          fileGridView?.resyncSelection();
         }
       }
     }
   }
 
+  // todo: onNodesDelete, onNodesMove, onNodesMoveToWorkspace?, onNodesRunAction
   async function onNodeDelete({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
     if ($workspace) {
       let shouldUpdateSelectedSequencePath = treeNodePath === selectedFilePath;
@@ -390,6 +398,8 @@
         const didNavigate = await goToSequence(targetPath);
         if (didNavigate) {
           selectedFilePath = targetPath;
+        } else {
+          fileGridView?.resyncSelection();
         }
       }
     }
@@ -406,6 +416,8 @@
         const didNavigate = await goToSequence(targetPath);
         if (didNavigate) {
           selectedFilePath = targetPath;
+        } else {
+          fileGridView?.resyncSelection();
         }
       }
     }
@@ -435,6 +447,8 @@
       const didNavigate = await goToSequence(newSequencePath);
       if (didNavigate) {
         selectedFilePath = newSequencePath;
+      } else {
+        fileGridView?.resyncSelection();
       }
       refreshWorkspaceContents();
     }
@@ -499,6 +513,7 @@
 <CssGrid bind:columns={$workspaceColumns}>
   <Sidebar.Provider style="--sidebar-width: auto" className="min-h-0">
     <WorkspaceSidebar
+      bind:fileGridView
       {selectedFilePath}
       {workspaceTree}
       {isWorkspaceLoading}

@@ -22,3 +22,10 @@ export type WorkspaceNodeEvent = {
   treeNode: WorkspaceTreeNode;
   treeNodePath: string;
 };
+
+export type WorkspaceNodesEvent = {
+  // like WorkspaceNodeEvent, but for multiple nodes
+  toggleState?: boolean;
+  treeNode: WorkspaceTreeNode[];
+  treeNodePaths: string[];
+}

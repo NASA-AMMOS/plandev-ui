@@ -1,6 +1,7 @@
 import { PATH_DELIMITER } from '../constants/workspaces';
 import type { WorkspaceTreeMap, WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 import { filterEmpty } from './generic';
+import type {ActionDefinition} from "../types/actions";
 
 export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
   let treeMap: WorkspaceTreeMap = {};
@@ -80,4 +81,13 @@ export function flattenWorkspaceTreeWithPaths(
   });
 
   return flattenedArray;
+}
+
+// todo.. write & document...
+export function getAvailableActionsForNodes(
+  actions: ActionDefinition[],
+  nodes: (WorkspaceTreeNodeWithFullPath | WorkspaceTreeNode)[]
+): ActionDefinition[] {
+  console.log(nodes, actions);
+  return actions;
 }

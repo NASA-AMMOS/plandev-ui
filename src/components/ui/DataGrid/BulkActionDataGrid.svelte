@@ -198,13 +198,15 @@
   on:focus={onFocus}
   on:gridSizeChanged
   on:rowClicked
+  on:primaryRowClicked
+  on:primaryRowChanged
   on:rowDoubleClicked
   on:rowSelected
   on:selectionChanged
 >
   <svelte:fragment slot="context-menu">
     {#if showContextMenu}
-      <slot name="context-menu" />
+      <slot name="context-menu" {selectedItemIds} />
 
       <ContextMenu.Item size="sm" on:click={selectAllItems}>
         Select All {isFiltered ? 'Visible ' : ''}{pluralItemDisplayText}

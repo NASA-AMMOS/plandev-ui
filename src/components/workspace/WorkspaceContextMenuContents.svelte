@@ -40,6 +40,7 @@
 </script>
 
 <ContextMenu.Group>
+  <div>{nodes.map(n => n.name).join(', ')}</div>
   <!-- Single node actions -->
   {#if nodes.length === 1}
     <div

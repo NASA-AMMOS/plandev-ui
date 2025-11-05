@@ -19,6 +19,8 @@
     columnVisible: CustomEvent<ColumnVisibleEvent<RowData>>;
     filterChanged: CustomEvent<{ [key: string]: any } | undefined>;
     gridSizeChanged: CustomEvent<GridSizeChangedEvent<RowData>>;
+    primaryRowChanged: CustomEvent<{ id: RowId | null }>;
+    primaryRowClicked: CustomEvent<DataGridRowSelection<RowData>>;
     rowClicked: CustomEvent<DataGridRowSelection<RowData>>;
     rowDoubleClicked: CustomEvent<DataGridRowDoubleClick<RowData>>;
     rowSelected: CustomEvent<DataGridRowSelection<RowData>>;
@@ -75,6 +77,9 @@
   export function getColumnState() {
     return gridApi?.getColumnState();
   }
+  export function getGridApi() {
+    return gridApi;
+  }
   // expose ag-grid function to select all visible rows
   export function selectAllVisible() {
     gridApi?.selectAllFiltered();
@@ -118,6 +123,8 @@
   export let suppressCellFocus: boolean = true;
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
+  export let shouldMultiSelectUpdatePrimarySelection: boolean = false;
+  export let shouldContextMenuUpdatePrimarySelection: boolean = true;
   export let useCustomContextMenu: boolean | undefined = undefined;
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): number => {
@@ -215,9 +222,13 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   $: gridApi?.applyColumnState({ applyOrder: true, state: columnStates });
 
   $: if (!selectedRowIds.length) {
-    currentSelectedRowId = null;
+    // currentSelectedRowId = null;
+    // dispatch('primaryRowChanged', { id: null });
+    setPrimaryRowId(null);
   } else if (selectedRowIds.length === 1) {
-    currentSelectedRowId = selectedRowIds[0];
+    // currentSelectedRowId = selectedRowIds[0];
+    // dispatch('primaryRowChanged', { id: currentSelectedRowId });
+    setPrimaryRowId(selectedRowIds[0]);
   }
 
   $: currentSelectedRowIdRef.value = currentSelectedRowId;
@@ -270,6 +281,16 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     return loading;
   }
 
+  function setPrimaryRowId(newId: RowId | null) {
+    if (newId === currentSelectedRowId) { return; }
+    currentSelectedRowId = newId;
+
+    // optional: keep ref synced too
+    // currentSelectedRowIdRef.value = currentSelectedRowId;
+
+    dispatch('primaryRowChanged', { id: currentSelectedRowId });
+  }
+
   function onAutoSizeContent() {
     gridApi?.autoSizeAllColumns();
   }
@@ -282,23 +303,79 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     dispatch('columnStateChange', gridApi?.getColumnState());
   }
 
-  function onCellContextMenu(event: CellContextMenuEvent<RowData>) {
-    if (useCustomContextMenu) {
-      const { data: clickedRow } = event;
-      if (
-        clickedRow &&
-        selectedRowIds.length <= 1 &&
-        (!isRowSelectable || isRowSelectable(event.node)) &&
-        !suppressRowClickSelection
-      ) {
-        currentSelectedRowId = getRowId(clickedRow);
-        selectedRowIds = [currentSelectedRowId];
-      }
+  // function onCellContextMenu(event: CellContextMenuEvent<RowData>) {
+  //   console.log('onCellContextMenu', event, currentSelectedRowId);
+  //
+  //   if (!useCustomContextMenu) {
+  //     dispatch('cellContextMenu', event);
+  //     return;
+  //   }
+  //
+  //   const { data: clickedRow } = event;
+  //   const newId = clickedRow ? getRowId(clickedRow) : null;
+  //   const prevId = currentSelectedRowId;
+  //
+  //   if (
+  //     clickedRow &&
+  //     selectedRowIds.length <= 1 &&
+  //     (!isRowSelectable || isRowSelectable(event.node)) &&
+  //     !suppressRowClickSelection &&
+  //     shouldContextMenuUpdatePrimarySelection
+  //   ) {
+  //     // const newId = getRowId(clickedRow);
+  //     // currentSelectedRowId = newId;
+  //     selectedRowIds = [newId as RowId];
+  //     // dispatch('primaryRowChanged', { id: currentSelectedRowId });
+  //     setPrimaryRowId(newId);
+  //   }
+  //
+  //   // show the menu first
+  //   contextMenu.show(event.event as MouseEvent);
+  //
+  //   // then attach a one-time listener for when it closes (if your menu emits such an event)
+  //   const off = contextMenu.$on?.('hide', () => {
+  //     if (
+  //       shouldContextMenuUpdatePrimarySelection &&
+  //       prevId &&
+  //       prevId !== currentSelectedRowId
+  //     ) {
+  //       selectedRowIds = [prevId];
+  //       setPrimaryRowId(prevId);
+  //     }
+  //     off?.(); // remove listener
+  //   });
+  //
+  //   contextMenu.show(event.event as MouseEvent);
+  //
+  //   dispatch('cellContextMenu', event);
+  // }
 
+  function onCellContextMenu(event: CellContextMenuEvent<RowData>) {
+    console.log('onCellContextMenu', event, currentSelectedRowId);
+
+    // if we're not using a custom menu, just forward
+    if (!useCustomContextMenu) {
+      dispatch('cellContextMenu', event);
+      return;
+    }
+
+    const { data: clickedRow, node } = event;
+
+    // don't mess with selection at all on right click
+    if (
+      clickedRow &&
+      (!isRowSelectable || isRowSelectable(node)) &&
+      !suppressRowClickSelection
+    ) {
+      // skip any setPrimaryRowId / selectedRowIds updates here entirely
+      // we’ll just open the menu for whichever row was clicked
       contextMenu.show(event.event as MouseEvent);
     }
+
     dispatch('cellContextMenu', event);
   }
+
+
 
   function onCellContextMenuHide() {
     dispatch('cellContextMenuHide');
@@ -363,20 +440,32 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       onGridSizeChanged(event: GridSizeChangedEvent<RowData>) {
         dispatch('gridSizeChanged', event);
       },
-      onRowClicked({ data, node }: RowClickedEvent<RowData>) {
+      onRowClicked(event: RowClickedEvent<RowData>) {
+        const {data, node} = event;
         const isSelected = node.isSelected();
+
         dispatch('rowClicked', {
           data,
+          event,
           isSelected,
         } as DataGridRowSelection<RowData>);
 
         if (data && !suppressRowClickSelection && isSelected) {
-          currentSelectedRowId = getRowId(data);
+          const mouseEvent = event.event as MouseEvent;
+          const isMultiGrid = rowSelection === 'multiple'; // todo update, deprecated api
+          const usedMultiKey = mouseEvent.metaKey || mouseEvent.ctrlKey || mouseEvent.shiftKey;
+          const isMulti = isMultiGrid && usedMultiKey;
+          const isPrimarySelect = !isMulti || (isMulti && shouldMultiSelectUpdatePrimarySelection);
 
-          dispatch('rowSelected', {
-            data,
-            isSelected,
-          } as DataGridRowSelection<RowData>);
+          if (isPrimarySelect) {
+            // currentSelectedRowId = getRowId(data);
+            // dispatch('primaryRowChanged', { id: currentSelectedRowId });
+            setPrimaryRowId(getRowId(data));
+
+            // custom event for explicitly clicking the *primary* selected row
+            dispatch('primaryRowClicked', { data, isSelected });
+            dispatch('rowSelected', { data, isSelected });
+          }
         }
       },
       onRowDoubleClicked(event: RowDoubleClickedEvent<RowData>) {
@@ -384,8 +473,10 @@ This has been seen to result in unintended and often glitchy behavior, which oft
           dispatch('rowDoubleClicked', { data: event.data });
         }
       },
-      onRowSelected({ data, node }: RowSelectedEvent<RowData>) {
+      onRowSelected({ data, node, source }: RowSelectedEvent<RowData>) {
+        if (source?.startsWith('api'))  { return; } // ignore resync events
         const selectedNodes = gridApi?.getSelectedNodes() ?? [];
+        console.log('onRowSelected', source, selectedNodes);
 
         // only dispatch `rowSelected` or enforce visibility for single row selections
         if (selectedNodes.length <= 1 || suppressRowClickSelection) {
@@ -400,17 +491,26 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         }
       },
       onSelectionChanged(event: SelectionChangedEvent) {
+        // ignore selection updates triggered by our own API calls (resyncSelection etc)
+        if (event.source?.startsWith('api')) { return; }
+
         const selectedRows = gridApi?.getSelectedRows() ?? [];
+        console.log('onSelectionChanged', event.source, selectedRows);
         selectedRowIds = selectedRows.map((selectedRow: RowData) => getRowId(selectedRow));
 
         if (selectedRows.length === 1) {
-          currentSelectedRowId = getRowId(selectedRows[0]);
+          // currentSelectedRowId = getRowId(selectedRows[0]);
+          // dispatch('primaryRowChanged', { id: currentSelectedRowId });
+          setPrimaryRowId(getRowId(selectedRows[0]));
         } else if (currentSelectedRowId != null && !selectedRowIds.includes(currentSelectedRowId)) {
           // select the first displayed selected row in the table if the current selected row is deselected
           let wasCurrentSelectedRowUpdated: boolean = false;
           gridApi?.forEachNodeAfterFilterAndSort((rowNode: IRowNode<RowData>) => {
             if (!wasCurrentSelectedRowUpdated && rowNode.data && rowNode.isSelected()) {
-              currentSelectedRowId = getRowId(rowNode.data);
+              // currentSelectedRowId = getRowId(rowNode.data);
+              // dispatch('primaryRowChanged', { id: currentSelectedRowId });
+              setPrimaryRowId(getRowId(rowNode.data));
+
               wasCurrentSelectedRowUpdated = true;
 
               dispatch('rowSelected', {

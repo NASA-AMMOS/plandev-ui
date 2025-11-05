@@ -1,9 +1,10 @@
-import type { ColDef } from 'ag-grid-community';
+import type {ColDef, RowEvent} from 'ag-grid-community';
 
 export type DataGridColumnDef<TRowData = any> = ColDef<TRowData>;
 
 export interface DataGridRowSelection<TRowData> {
   data: TRowData;
+  event?: RowEvent<any>;
   isSelected: boolean;
 }
 export interface DataGridRowDoubleClick<TRowData> {

@@ -33,6 +33,7 @@
   ) => {
     return true;
   };
+  export let fileGridView: WorkspaceGridView<WorkspaceTreeNodeWithFullPath> | undefined = undefined;
 
   let didWorkspaceUpdate: boolean = false;
   let lastRefreshTime: Date = new Date();
@@ -192,6 +193,7 @@
                 <Sidebar.Menu className="h-full">
                   {#if workspaceTree}
                     <WorkspaceGridView
+                      bind:this={fileGridView}
                       selectedTreeNodePath={selectedFilePath}
                       treeNode={workspaceTree}
                       {workspace}

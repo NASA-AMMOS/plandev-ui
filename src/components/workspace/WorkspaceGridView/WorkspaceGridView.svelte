@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { Button, ContextMenu, DropdownMenu } from '@nasa-jpl/stellar-svelte';
-  import type { CellContextMenuEvent, ICellRendererParams, IRowNode } from 'ag-grid-community';
+  import type {CellContextMenuEvent, GridApi, ICellRendererParams, IRowNode} from 'ag-grid-community';
   import {
     ArrowUpFromLine,
     ChevronDown,
@@ -24,7 +24,7 @@
     DataGridColumnDef,
     DataGridRowDoubleClick,
     DataGridRowSelection,
-    RowId,
+    RowId, TRowData,
   } from '../../../types/data-grid';
   import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
   import type {
@@ -39,6 +39,9 @@
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
   import WorkspaceTreeViewIcon from '../WorkspaceTreeView/WorkspaceTreeViewIcon.svelte';
+  import WorkspaceContextMenuContents from '../WorkspaceContextMenuContents.svelte'
+  import BulkActionDataGrid from "../../ui/DataGrid/BulkActionDataGrid.svelte";
+  import {PlanStatusMessages} from "../../../enums/planStatusMessages";
 
   export let isRowSelectable: (node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>) => boolean = (
     _node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>,
@@ -55,6 +58,7 @@
     viewNode: (node: WorkspaceTreeNodeWithFullPath) => void;
   };
   type WorkspaceTreeNodeCellRendererParams = ICellRendererParams<WorkspaceTreeNodeWithFullPath> & CellRendererParams;
+  type RowData = $$Generic<TRowData>;
 
   const dispatch = createEventDispatcher<{
     copyFileLocation: string;
@@ -109,6 +113,8 @@
   let columnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [];
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
   let dataGrid: DataGrid<WorkspaceTreeNodeWithFullPath> | undefined = undefined;
+  let gridApi: GridApi<WorkspaceTreeNodeWithFullPath> | undefined = undefined;
+  let isResyncing: boolean = false;
   let treeNodeBreadcrumbs: WorkspaceTreeNodeWithFullPath[] = [];
   let treeNodeBreadcrumbDisplay: WorkspaceTreeNodeWithFullPath[] = [];
   let treeNodeBreadcrumbMenuNodes: WorkspaceTreeNodeWithFullPath[] = [];
@@ -181,6 +187,53 @@
     treeNodeBreadcrumbDisplay = treeNodeBreadcrumbs;
   }
 
+  $: gridApi = dataGrid?.getGridApi?.();
+
+  $: if (selectedTreeNodePath && gridApi) {
+    // open file changed from page side — reflect that in grid
+    resyncSelection();
+  }
+
+  export function resyncSelection() {
+    // ag-grid (via DataGrid) owns most selection state internally.
+    // page.svelte, however, may need to restore its own "primary" selection
+    // (e.g. when navigation is cancelled) to keep visuals in sync with editor state.
+
+    if (!gridApi || !selectedTreeNodePath) { return; }
+    // const node = gridApi.getRowNode(selectedTreeNodePath);
+
+    // bail early if already selected exclusively
+    const selectedNodes = gridApi.getSelectedNodes();
+    const alreadyCorrect =
+      selectedNodes.length === 1 && selectedNodes[0].id === selectedTreeNodePath;
+    if (alreadyCorrect) { return; }
+
+    // clear any stale multi-selections, then reselect the active node exclusively
+    console.log('explicit resync', gridApi, selectedTreeNodePath);
+    isResyncing = true;
+    gridApi.deselectAll('api');
+    const node = gridApi.getRowNode(selectedTreeNodePath);
+    if (node) { node.setSelected(true, true, 'api'); }
+    setTimeout(() => (isResyncing = false), 0);
+  }
+
+  // export function resyncSelection() {
+  //   if (!gridApi || !selectedTreeNodePath) return;
+  //
+  //   const node = gridApi.getRowNode(selectedTreeNodePath);
+  //
+  //   // bail early if already selected exclusively
+  //   const selectedNodes = gridApi.getSelectedNodes();
+  //   const onlyThisSelected =
+  //     selectedNodes.length === 1 && selectedNodes[0].id === selectedTreeNodePath;
+  //   if (onlyThisSelected) return;
+  //
+  //   console.log('explicit resync', gridApi, selectedTreeNodePath);
+  //   gridApi.deselectAll();
+  //   node?.setSelected(true, true, 'api');
+  // }
+
+
   function hasDeletePermission(user: User | null, node: WorkspaceTreeNodeWithFullPath) {
     if (workspace) {
       return featurePermissions.workspace.canDelete(user, workspace, node);
@@ -195,6 +248,24 @@
     }
 
     return false;
+  }
+  function hasUpdatePermissionForNodes(user: User | null, nodes: WorkspaceTreeNode[]): boolean {
+    if (!workspace) { return false; }
+    for (const node of nodes) {
+      if(!featurePermissions.workspace.canUpdate(user, workspace, node)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  function hasDeletePermissionForNodes(user: User | null, nodes: WorkspaceTreeNode[]): boolean {
+    if (!workspace) { return false; }
+    for (const node of nodes) {
+      if(!featurePermissions.workspace.canDelete(user, workspace, node)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   function getNodeContentsOnPath(rootNodes: WorkspaceTreeNode[], path: string): WorkspaceTreeNodeWithFullPath[] {
@@ -256,6 +327,7 @@
   }
 
   function onContextMenu(event: CustomEvent<CellContextMenuEvent<WorkspaceTreeNodeWithFullPath, any>>) {
+    console.log('onContextMenu', event);
     contextMenuNode = event.detail.data ?? null;
   }
 
@@ -263,7 +335,8 @@
     contextMenuNode = null;
   }
 
-  function onNodeClicked(event: CustomEvent<DataGridRowSelection<WorkspaceTreeNodeWithFullPath>>) {
+  function onPrimaryRowClicked(event: CustomEvent<DataGridRowSelection<WorkspaceTreeNodeWithFullPath>>) {
+    console.log(`WGV onPrimaryRowClicked`, event);
     const row = event.detail;
 
     if (isRowSelectable(row)) {
@@ -274,6 +347,45 @@
       });
     }
   }
+  function onPrimaryRowChanged(e: CustomEvent<{ id: RowId | null }>): void {
+    if (isResyncing) { return; } // ignore echoes we caused
+    console.log(`WGV onPrimaryRowChanged`, e);
+    const gridId = e.detail.id;
+    // bail if grid is in the middle of a normal transition we actually expect
+    if (gridId == null) return; // ignore deselection flashes
+    if (gridId === selectedTreeNodePath) return; // already in sync
+    resyncSelection();
+
+    // if (gridId !== selectedTreeNodePath) { resyncSelection(); }
+  }
+  //
+  // function onRowClicked(event: CustomEvent<DataGridRowSelection<WorkspaceTreeNodeWithFullPath>>) {
+  //   console.log(`WGV onRowClicked`, event);
+  //   if(Math.random()) return;
+  //   const row = event.detail;
+  //   const mouseEvent = row?.event?.event as MouseEvent | undefined;
+  //   const isMultiSelect = mouseEvent?.metaKey || mouseEvent?.ctrlKey || mouseEvent?.shiftKey;
+  //
+  //   if(!isRowSelectable(row)) { return; }
+  //
+  //   console.log('is multiselect', isMultiSelect);
+  //   if(!isMultiSelect) {
+  //     dispatch('nodeClicked', {
+  //       toggleState: true,
+  //       treeNode: row.data,
+  //       treeNodePath: row.data.fullPath
+  //     });
+  //   }
+  // }
+
+  // function onSelectionChanged(event: CustomEvent<RowData[]>) {
+  //   console.log('WGV onSelectionChanged', event);
+  //   const gridApi = dataGrid?.getGridApi();
+  //   if(gridApi && selectedTreeNodePath) {
+  //     console.log('gridApi OK');
+  //     console.log('selected from api', gridApi.getRowNode(selectedTreeNodePath));
+  //   }
+  // }
 
   function onRowDoubleClicked(event: CustomEvent<DataGridRowDoubleClick<WorkspaceTreeNodeWithFullPath>>) {
     const row = event.detail;
@@ -392,7 +504,26 @@
     }
   }
 </script>
-
+<!--
+    bind:selectedItemId={selectedTreeNodePath}
+      or selectedItemId={selectedTreeNodePath} ?
+    bind:selectedItemIds={bulkSelectedActivityDirectiveIds}
+    {columnStates} ?
+    loading={!activityDirectives} ?
+    hasDeletePermissionError={planReadOnly ? PlanStatusMessages.READ_ONLY : undefined}
+    scrollToSelection={true} ?
+    showCopyMenu={true} ?
+    suppressDragLeaveHidesColumns={false} ?
+    on:bulkDeleteItems={deleteActivityDirectives}
+    on:bulkCopyItems={copyActivityDirectives}
+    on:columnMoved
+    on:columnPinned
+    on:columnResized
+    on:columnVisible
+    on:gridSizeChanged
+    on:selectionChanged
+    on:rowDoubleClicked
+-->
 <div class="grid h-full grid-rows-[min-content_auto]">
   <div class="flex items-center gap-1">
     {#if treeNodeBreadcrumbDisplay.length === 0}
@@ -577,25 +708,52 @@
       {/if}
     {/each}
   </div>
-  <SingleActionDataGrid
+  <BulkActionDataGrid
     bind:dataGrid
     class="workspace-grid-view"
-    {hasDeletePermission}
-    getRowId={node => node.fullPath}
     {columnDefs}
-    itemDisplayText="File"
+    getRowId={node => node.fullPath}
+    {hasDeletePermission}
+    singleItemDisplayText="File"
+    pluralItemDisplayText="Files"
     items={flattenedTree}
     {user}
-    selectedItemId={selectedTreeNodePath}
+    suppressRowClickSelection={false}
     isExternalFilterPresent={() => true}
-    suppressRowClickSelection={true}
     {doesExternalFilterPass}
-    on:rowClicked={onNodeClicked}
+    on:primaryRowClicked={onPrimaryRowClicked}
+    on:primaryRowChanged={onPrimaryRowChanged}
     on:rowDoubleClicked={onRowDoubleClicked}
     on:cellContextMenu={onContextMenu}
     on:cellContextMenuHide={onContextMenuHide}
   >
-    <svelte:fragment slot="context-menu" let:selectedItemId>
+    <svelte:fragment slot="context-menu" let:selectedItemIds let:selectedItemId>
+      <!--      todo pass real props -->
+      <!--
+      hasEditPermission={hasUpdatePermissionForNodes(user, selectedItemId ? [workspaceTreeMap[selectedItemId]] : [])}
+      hasDeletePermission={hasDeletePermissionForNodes(user, selectedItemId ? [workspaceTreeMap[selectedItemId]] : [])}
+      fit columns to content / fit columns to available space??
+      select all files?
+      -->
+      <WorkspaceContextMenuContents
+        actions={[ /* todo */ ]}
+        hasEditPermission={true}
+        hasDeletePermission={true}
+        nodes={selectedItemIds ? selectedItemIds.map(id => workspaceTreeMap[id]) : []}
+        user={user}
+        on:rename={onTableMenuRenameNode}
+        on:move={() => { /* todo */ }}
+        on:delete={() => { /* todo */ }}
+        on:copyFileLocation={onTableCopyFileLocation}
+        on:moveToWorkspace={() => { /* todo */ }}
+        on:runAction={(a) => { /* todo */ console.log(a); }}
+        on:newFile={onTableNewSequence}
+        on:newFolder={onTableNewFolder}
+        on:importFile={onTableImportFile}
+      />
+      <ContextMenu.Separator />
+      <ContextMenu.Separator />
+      <!--   todo remove old context menu below   -->
       <ContextMenu.Group>
         <ContextMenu.Item size="sm" on:click={onTableMenuRenameNode} aria-label="Rename">
           <div
@@ -674,7 +832,8 @@
       </ContextMenu.Group>
       <ContextMenu.Separator />
     </svelte:fragment>
-  </SingleActionDataGrid>
+<!--  </SingleActionDataGrid>-->
+  </BulkActionDataGrid>
 </div>
 
 <style>
