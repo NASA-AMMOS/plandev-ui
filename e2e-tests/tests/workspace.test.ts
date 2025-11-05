@@ -129,14 +129,26 @@ test.describe.serial('Workspace', () => {
 
   test('Add collaborator to workspace', async ({ baseURL }) => {
     await testUser.logout(baseURL);
+
+    // Log in as the desired user to add to the workspace as collaborator.
+    // Ideally this test would then log back into the original user that is the owner of this workspace
+    // to better showcase the process of adding a collaborator, but we'll be using the new user's admin rights to add
+    // themselves as collaborator
     await userAuthorized.login(baseURL);
+
     await workspace.goto();
     await workspace.workspaceSettingsButton.click();
-
     await workspace.workspaceCollaboratorInput.fill(userAuthorized.username);
     await page.getByRole('option', { name: userAuthorized.username }).click();
 
     await workspace.waitForToast('Workspace Collaborators Updated');
+
+    await userAuthorized.switchRole('user');
+
+    await workspace.openWorkspaceContextMenu();
+    await workspace.workspaceContextMenu.getByRole('menuitem', { name: 'New File' }).click();
+    await expect(workspace.page.locator('#modal-container')).toBeVisible();
+    await page.getByRole('button', { name: 'Cancel' }).click();
   });
 
   test('Users not authorized to modify the workspace should not be able to', async ({ baseURL }) => {

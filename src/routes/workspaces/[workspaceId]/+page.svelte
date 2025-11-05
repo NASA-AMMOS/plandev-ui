@@ -120,7 +120,7 @@
   $: if (initialWorkspace || $workspace) {
     const ws: Workspace = $workspace ?? (initialWorkspace as Workspace);
 
-    hasEditWorkspacePermission = featurePermissions.workspaces.canUpdate(user, ws);
+    hasEditWorkspacePermission = featurePermissions.workspace.canUpdate(user, ws);
     hasEditWorkspaceCollaboratorsPermission = featurePermissions.workspaceCollaborators.canCreate(user, ws);
     if (selectedFilePath) {
       hasEditFilePermission = featurePermissions.workspace.canUpdate(user, ws, workspaceTreeMap[selectedFilePath]);
