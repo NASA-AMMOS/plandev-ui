@@ -57,6 +57,11 @@
   import { mapWorkspaceTreePaths, separateFilenameFromPath } from '../../../utilities/workspaces';
   import type { PageData } from './$types';
 
+  // codemirror dependencies to be injected into the adaptation
+  import * as cmCommands from "@codemirror/commands";
+  import * as cmLanguage from "@codemirror/language";
+  import * as cmView from "@codemirror/view";
+
   export let data: PageData;
 
   const { initialWorkspace, user } = data;
@@ -241,7 +246,22 @@
 
       if (adaptation) {
         try {
-          setSequenceLanguages(eval(String(adaptation.adaptation))); // TODO replace with a try/catch/finally using blob URLs and dynamic modules
+          // the adaptation code is expected to be a commonjs module which calls `require(...)`
+          // to load its codemirror dependencies, because the adaptation *must* use the same Codemirror
+          // instance/globals as the outer page context, rather than bundling its own, due to CM internal state.
+          // This pattern creates a function wrapping the adaptation code, which provides our own custom `require`
+          // to correctly resolve CM deps.
+          const adaptationCode = adaptation.adaptation;
+          const run = new Function("require", "exports", adaptationCode);
+          const exports: Record<string, unknown> = {};
+          const customRequire = (id: string) => {
+            return {
+              "@codemirror/commands": cmCommands,
+              "@codemirror/language": cmLanguage,
+              "@codemirror/view": cmView,
+            }[id];
+          };
+          setSequenceLanguages(run(customRequire, exports));
         } catch (e) {
           console.error(e);
           showFailureToast('Invalid sequence adaptation');
