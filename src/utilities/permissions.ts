@@ -1,6 +1,7 @@
 import { base } from '$app/paths';
+import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
 import { Queries } from '../enums/gql';
-import type { ActionDefinition } from '../types/actions';
+import type { ActionDefinition, ActionRun } from '../types/actions';
 import type { ActivityDirective, ActivityPreset } from '../types/activity';
 import type { User, UserRole } from '../types/app';
 import type { ReqAuthResponse } from '../types/auth';
@@ -28,7 +29,6 @@ import type {
 } from '../types/scheduling';
 import type { SequenceTemplate } from '../types/sequence-template';
 import type { Parcel } from '../types/sequencing';
-import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
 import type { PlanDataset, Simulation, SimulationTemplate } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { View, ViewSlim } from '../types/view';
@@ -385,11 +385,16 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   CREATE_ACTION_DEFINITION: (user: User | null): boolean => {
     const queries = [Queries.INSERT_ACTION_DEFINITION];
-    return isUserAdmin(user) || getPermission(queries, user);
+    return isUserAdmin(user) && getPermission(queries, user);
   },
-  CREATE_ACTION_RUN: (user: User | null): boolean => {
+  CREATE_ACTION_RUN: (user: User | null, workspace: Workspace): boolean => {
     const queries = [Queries.INSERT_ACTION_RUN];
-    return isUserAdmin(user) || getPermission(queries, user);
+    return (
+      isUserAdmin(user) ||
+      (getPermission(queries, user) &&
+        getRoleWorkspacePermission(['write_file_directory'], user, workspace) &&
+        getRoleWorkspacePermission(['delete_file_directory'], user, workspace))
+    );
   },
   CREATE_ACTIVITY_DIRECTIVE: (user: User | null, plan: PlanWithOwners): boolean => {
     const queries = [Queries.INSERT_ACTIVITY_DIRECTIVE];
@@ -539,8 +544,13 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   CREATE_VIEW: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_VIEW], user);
   },
-  CREATE_WORKSPACE_COLLABORATORS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.INSERT_WORKSPACE_COLLABORATORS], user);
+  CREATE_WORKSPACE_COLLABORATORS: (user: User | null, workspace: Workspace): boolean => {
+    return (
+      isUserAdmin(user) ||
+      (getPermission([Queries.INSERT_WORKSPACE_COLLABORATORS], user) &&
+        !isUserViewer(user) &&
+        (isUserOwner(user, workspace) || isUserCollaborator(user, workspace)))
+    );
   },
   DELETE_ACTIVITY_DIRECTIVES: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
@@ -743,8 +753,13 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   DELETE_VIEWS: (user: User | null, view: ViewSlim): boolean => {
     return isUserAdmin(user) || (getPermission([Queries.DELETE_VIEWS], user) && isUserOwner(user, view));
   },
-  DELETE_WORKSPACE_COLLABORATOR: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.DELETE_WORKSPACE_COLLABORATOR], user);
+  DELETE_WORKSPACE_COLLABORATOR: (user: User | null, workspace: Workspace): boolean => {
+    return (
+      isUserAdmin(user) ||
+      (getPermission([Queries.DELETE_WORKSPACE_COLLABORATOR], user) &&
+        !isUserViewer(user) &&
+        (isUserOwner(user, workspace) || isUserCollaborator(user, workspace)))
+    );
   },
   DUPLICATE_PLAN: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
     const queries = [Queries.DUPLICATE_PLAN];
@@ -1036,7 +1051,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     return isUserAdmin(user) || getPermission([Queries.WORKSPACES], user);
   },
   UPDATE_ACTION_DEFINITION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.UPDATE_ACTION_DEFINITION], user);
+    return isUserAdmin(user) && getPermission([Queries.UPDATE_ACTION_DEFINITION], user);
   },
   UPDATE_ACTIVITY_DIRECTIVE: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
@@ -1489,12 +1504,12 @@ interface PlanCRUDPermission extends CRUDPermission<PlanWithOwners> {
   canUpdateModel: UpdatePermissionCheck;
 }
 type WorkspaceAssetCreatePermissionCheck = (user: User | null, workspace: Workspace) => boolean;
-type WorkspaceAssetUpdatePermissionCheck<A extends WorkspaceTreeNode> = (
+type WorkspaceAssetUpdatePermissionCheck<A extends WorkspaceTreeNode | ActionRun> = (
   user: User | null,
   workspace: Workspace,
   asset?: A,
 ) => boolean;
-interface WorkspaceAssetCRUDPermission<A extends WorkspaceTreeNode> {
+interface WorkspaceAssetCRUDPermission<A extends WorkspaceTreeNode | ActionRun> {
   canCreate: WorkspaceAssetCreatePermissionCheck;
   canDelete: WorkspaceAssetUpdatePermissionCheck<A>;
   canRead: ReadPermissionCheck<Workspace>;
@@ -1508,7 +1523,7 @@ interface WorkspaceCollaboratorsCRUDPermission {
 
 interface FeaturePermissions {
   actionDefinition: CRUDPermission<ActionDefinition>;
-  actionRun: CRUDPermission<ActionDefinition>;
+  actionRun: WorkspaceAssetCRUDPermission<ActionRun>;
   activityDirective: PlanAssetCRUDPermission<ActivityDirective>;
   activityPresets: PlanActivityPresetsCRUDPermission;
   channelDictionary: CRUDPermission<void>;
@@ -1561,7 +1576,7 @@ const featurePermissions: FeaturePermissions = {
     canUpdate: (user, actionDefinition) => queryPermissions.UPDATE_ACTION_DEFINITION(user, actionDefinition),
   },
   actionRun: {
-    canCreate: user => queryPermissions.CREATE_ACTION_RUN(user),
+    canCreate: (user, workspace) => queryPermissions.CREATE_ACTION_RUN(user, workspace),
     canDelete: () => false,
     canRead: user => queryPermissions.SUB_ACTION_RUN(user),
     canUpdate: () => false,
@@ -1829,15 +1844,9 @@ const featurePermissions: FeaturePermissions = {
   },
   workspaceCollaborators: {
     canCreate: (user, workspace) =>
-      isUserAdmin(user) ||
-      (queryPermissions.CREATE_WORKSPACE_COLLABORATORS(user, workspace) &&
-        !isUserViewer(user) &&
-        (isUserOwner(user, workspace) || isUserCollaborator(user, workspace))),
+      isUserAdmin(user) || queryPermissions.CREATE_WORKSPACE_COLLABORATORS(user, workspace),
     canDelete: (user, workspace) =>
-      isUserAdmin(user) ||
-      (queryPermissions.DELETE_WORKSPACE_COLLABORATOR(user, workspace) &&
-        !isUserViewer(user) &&
-        (isUserOwner(user, workspace) || isUserCollaborator(user, workspace))),
+      isUserAdmin(user) || queryPermissions.DELETE_WORKSPACE_COLLABORATOR(user, workspace),
   },
   workspaces: {
     canCreate: user => isUserAdmin(user) || workspacePermissions.createWorkspace(user),

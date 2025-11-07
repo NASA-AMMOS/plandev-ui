@@ -142,9 +142,15 @@
   {#if enableContextMenu}
     <ContextMenuInternal bind:this={contextMenu} on:hide={onContextMenuHide}>
       <ContextMenu.Group>
-        <ContextMenu.Item size="sm" on:click={onRenameNode} aria-label="Rename">
+        <ContextMenu.Item size="sm" aria-label="Rename">
           <div
             class="flex items-center gap-2"
+            role="button"
+            tabindex={0}
+            on:keypress
+            on:keydown
+            on:keyup
+            on:click={onRenameNode}
             use:permissionHandler={{
               hasPermission: hasEditPermission,
               permissionError: 'You do not have permission to edit this workspace',
@@ -154,9 +160,15 @@
             Rename
           </div>
         </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onMoveNode} aria-label="Move/Copy">
+        <ContextMenu.Item size="sm" aria-label="Move/Copy">
           <div
             class="flex items-center gap-2"
+            role="button"
+            tabindex={0}
+            on:keypress
+            on:keydown
+            on:keyup
+            on:click={onMoveNode}
             use:permissionHandler={{
               hasPermission: hasEditPermission,
               permissionError: 'You do not have permission to edit this workspace',
@@ -166,9 +178,15 @@
             Move/Copy
           </div>
         </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onDeleteNode} aria-label="Delete">
+        <ContextMenu.Item size="sm" aria-label="Delete">
           <div
             class="flex items-center gap-2"
+            role="button"
+            tabindex={0}
+            on:keypress
+            on:keydown
+            on:keyup
+            on:click={onDeleteNode}
             use:permissionHandler={{
               hasPermission: hasDeletePermission,
               permissionError: 'You do not have permission to delete this workspace',
@@ -180,9 +198,15 @@
         </ContextMenu.Item>
       </ContextMenu.Group>
       <ContextMenu.Separator />
-      <ContextMenu.Item size="sm" on:click={onCopyFileLocation} aria-label="Copy Link to">
+      <ContextMenu.Item size="sm" aria-label="Copy Link to">
         <div
           class="flex items-center gap-2"
+          role="button"
+          tabindex={0}
+          on:keypress
+          on:keydown
+          on:keyup
+          on:click={onCopyFileLocation}
           use:permissionHandler={{
             hasPermission: hasEditPermission,
             permissionError: 'You do not have permission to edit this workspace',
@@ -201,9 +225,15 @@
       </ContextMenu.Item>
       <ContextMenu.Separator />
       <ContextMenu.Group>
-        <ContextMenu.Item size="sm" on:click={onNewSequence} aria-label="New File">
+        <ContextMenu.Item size="sm" aria-label="New File">
           <div
             class="flex items-center gap-2"
+            role="button"
+            tabindex={0}
+            on:keypress
+            on:keydown
+            on:keyup
+            on:click={onNewSequence}
             use:permissionHandler={{
               hasPermission: hasEditPermission,
               permissionError: 'You do not have permission to edit this workspace',
@@ -212,9 +242,15 @@
             <FilePlus size={14} /> New File
           </div>
         </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onNewFolder} aria-label="New Folder">
+        <ContextMenu.Item size="sm" aria-label="New Folder">
           <div
             class="flex items-center gap-2"
+            role="button"
+            tabindex={0}
+            on:keypress
+            on:keydown
+            on:keyup
+            on:click={onNewFolder}
             use:permissionHandler={{
               hasPermission: hasEditPermission,
               permissionError: 'You do not have permission to edit this workspace',
@@ -223,9 +259,15 @@
             <FolderPlus size={14} /> New Folder
           </div>
         </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onImportFile} aria-label="Upload File">
+        <ContextMenu.Item size="sm" aria-label="Upload File">
           <div
             class="flex items-center gap-2"
+            role="button"
+            tabindex={0}
+            on:keypress
+            on:keydown
+            on:keyup
+            on:click={onImportFile}
             use:permissionHandler={{
               hasPermission: hasEditPermission,
               permissionError: 'You do not have permission to edit this workspace',
