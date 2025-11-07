@@ -125,7 +125,7 @@
     if (selectedFilePath) {
       hasEditFilePermission = featurePermissions.workspace.canUpdate(user, ws, workspaceTreeMap[selectedFilePath]);
     } else {
-      hasEditFilePermission = true;
+      hasEditFilePermission = featurePermissions.workspace.canUpdate(user, ws);
     }
   }
 
