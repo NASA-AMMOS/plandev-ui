@@ -597,7 +597,7 @@
           {phoenixContext}
           {actionsWithSequenceParameters}
           includeActions={true}
-          readOnly={!hasEditFilePermission}
+          previewOnly={!hasEditFilePermission}
           sequenceAdaptation={$sequenceAdaptation}
           sequenceDefinition={initialSelectedFileContent}
           sequenceName={selectedFileName}
