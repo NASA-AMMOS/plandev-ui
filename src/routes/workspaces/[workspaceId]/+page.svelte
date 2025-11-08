@@ -58,9 +58,9 @@
   import type { PageData } from './$types';
 
   // codemirror dependencies to be injected into the adaptation
-  import * as cmCommands from "@codemirror/commands";
-  import * as cmLanguage from "@codemirror/language";
-  import * as cmView from "@codemirror/view";
+  import * as cmCommands from '@codemirror/commands';
+  import * as cmLanguage from '@codemirror/language';
+  import * as cmView from '@codemirror/view';
 
   export let data: PageData;
 
@@ -252,13 +252,13 @@
           // This pattern creates a function wrapping the adaptation code, which provides our own custom `require`
           // to correctly resolve CM deps.
           const adaptationCode = adaptation.adaptation;
-          const run = new Function("require", "exports", adaptationCode);
+          const run = new Function('require', 'exports', adaptationCode);
           const exports: Record<string, unknown> = {};
           const customRequire = (id: string) => {
             return {
-              "@codemirror/commands": cmCommands,
-              "@codemirror/language": cmLanguage,
-              "@codemirror/view": cmView,
+              '@codemirror/commands': cmCommands,
+              '@codemirror/language': cmLanguage,
+              '@codemirror/view': cmView,
             }[id];
           };
           setSequenceLanguages(run(customRequire, exports));
