@@ -3,8 +3,7 @@
 <script lang="ts">
   import type { SyntaxNode } from '@lezer/common';
   import type { CommandDictionary, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
-  import type { ArgTextDef } from '../../../types/sequencing';
-  import type { CommandInfoMapper } from '../../../utilities/sequence-editor/command-info-mapper';
+  import type { ArgTextDef, CommandInfoMapper } from '@nasa-jpl/aerie-sequence-languages';
   import {
     getMissingArgDefs,
     isFswCommandArgumentBoolean,

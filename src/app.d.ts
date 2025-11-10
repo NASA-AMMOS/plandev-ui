@@ -1,10 +1,6 @@
 /* eslint-disable no-var */
 /* eslint @typescript-eslint/no-unused-vars: 0 */
 
-import type { Diagnostic } from '@codemirror/lint';
-import type { CommandDictionary } from '@nasa-jpl/aerie-ampcs';
-import type { EditorView } from 'codemirror';
-
 declare global {
   namespace App {
     interface Locals {
@@ -48,58 +44,6 @@ declare global {
     const content: string;
     export default content;
   }
-
-  var SequenceAdaptation:
-    | {
-        argDelegator?: ArgDelegator;
-        conditionalKeywords?: { else?: string; elseIf?: string[]; endIf?: string; if: string[] };
-        globals?: GlobalType[];
-        inputFormat?: {
-          linter?: (
-            diagnostics: Diagnostic[],
-            commandDictionary: CommandDictionary,
-            view: EditorView,
-            node: SyntaxNode,
-          ) => Diagnostic[];
-          name: string;
-          toInputFormat?: (input: string) => Promise<string>;
-        };
-        loopKeywords?: {
-          break: string;
-          continue: string;
-          endWhileLoop: string;
-          whileLoop: string[];
-        };
-        modifyOutput?: (
-          output: SeqJson | any,
-          parameterDictionaries: ParameterDictionary[],
-          channelDictionary: ChannelDictionary | null,
-        ) => any;
-        modifyOutputParse?: (
-          output: SeqJson | any,
-          parameterDictionaries: ParameterDictionary[],
-          channelDictionary: ChannelDictionary | null,
-        ) => any;
-        outputFormat?: [
-          {
-            fileExtension: string;
-            linter?: (
-              diagnostics: Diagnostic[],
-              commandDictionary: CommandDictionary,
-              view: EditorView,
-              node: SyntaxNode,
-            ) => Diagnostic[];
-            name: string;
-            toOutputFormat?: (
-              tree: Tree | any,
-              sequence: string,
-              commandDictionary: CommandDictionary | null,
-              sequenceName: string,
-            ) => Promise<string>;
-          },
-        ];
-      }
-    | undefined;
 }
 
 export {};

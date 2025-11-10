@@ -3,6 +3,7 @@ import type {
   CommandDictionary as AmpcsCommandDictionary,
   ParameterDictionary as AmpcsParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
+import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 import type { User } from '../types/app';
 import type { SequenceFilter } from '../types/expansion';
@@ -13,7 +14,6 @@ import {
   type Parcel,
   type ParcelBundle,
   type ParcelToParameterDictionary,
-  type UserSequence,
 } from '../types/sequencing';
 import effects from '../utilities/effects';
 import gql from '../utilities/gql';

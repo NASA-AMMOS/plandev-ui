@@ -1,17 +1,34 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
+  import { sequenceAdaptation, setSequenceLanguages } from '../../stores/sequence-adaptation';
   import { selectedSequenceTemplateId, sequenceTemplates } from '../../stores/sequence-template';
-  import { parcels } from '../../stores/sequencing';
+  import {
+    channelDictionaries,
+    commandDictionaries,
+    getParsedChannelDictionary,
+    getParsedCommandDictionary,
+    getParsedParameterDictionary,
+    parameterDictionaries as parameterDictionariesStore,
+    parcels,
+    parcelToParameterDictionaries,
+  } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import type { SequenceTemplate } from '../../types/sequence-template';
-  import type { Parcel } from '../../types/sequencing';
+  import type {
+    ChannelDictionaryMetadata,
+    CommandDictionaryMetadata,
+    ParameterDictionaryMetadata,
+    Parcel,
+  } from '../../types/sequencing';
   import effects from '../../utilities/effects';
-  import { downloadBlob } from '../../utilities/generic';
+  import { downloadBlob, filterEmpty } from '../../utilities/generic';
   import { showTemplateModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import { showFailureToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -24,18 +41,107 @@
   export let user: User | null;
 
   let filterText: string = '';
-  let parcel: Parcel | null;
   let selectedTemplate: SequenceTemplate | undefined = undefined;
   let sequenceTemplateColumns: string;
   let sequenceTemplateRows: string;
+  let channelDictionary: ChannelDictionary | null = null;
+  let commandDictionary: CommandDictionary | null = null;
+  let parameterDictionaries: ParameterDictionary[] = [];
+  let parcel: Parcel | undefined = undefined;
 
   $: sequenceTemplateColumns = selectedTemplate !== undefined ? '0.75fr 3px 1.5fr' : '1fr 3px 1fr';
   $: sequenceTemplateRows = selectedTemplate !== undefined ? '1fr 3px 1fr' : 'none';
   $: selectedTemplate = $selectedSequenceTemplateId
     ? $sequenceTemplates.find(sequenceTemplate => sequenceTemplate.id === $selectedSequenceTemplateId)
     : undefined;
+  $: parcel = $parcels.find(p => p.id === selectedTemplate?.parcel_id) ?? undefined;
 
-  $: parcel = $parcels.find(p => p.id === selectedTemplate?.parcel_id) ?? null;
+  $: if (parcel) {
+    loadSequenceAdaptation(parcel.sequence_adaptation_id);
+
+    const unparsedChannelDictionary = $channelDictionaries.find(
+      channelDictionaryMetadata => channelDictionaryMetadata.id === parcel.channel_dictionary_id,
+    );
+    const unparsedCommandDictionary = $commandDictionaries.find(
+      commandDictionaryMetadata => commandDictionaryMetadata.id === parcel.command_dictionary_id,
+    );
+    const unparsedParameterDictionaries = $parameterDictionariesStore.filter(parameterDictionaryMetadata => {
+      const parameterDictionary = $parcelToParameterDictionaries.find(
+        parcelToParameterDictionary =>
+          parcelToParameterDictionary.parameter_dictionary_id === parameterDictionaryMetadata.id &&
+          parcelToParameterDictionary.parcel_id === parcel.id,
+      );
+
+      return parameterDictionary != null;
+    });
+
+    if (unparsedCommandDictionary) {
+      loadCommandDictionary(unparsedCommandDictionary);
+    } else {
+      commandDictionary = null;
+    }
+    if (unparsedChannelDictionary) {
+      loadChannelDictionary(unparsedChannelDictionary);
+    } else {
+      channelDictionary = null;
+    }
+    if (unparsedParameterDictionaries.length > 0) {
+      loadParameterDictionaries(unparsedParameterDictionaries);
+    } else {
+      parameterDictionaries = [];
+    }
+  }
+
+  async function loadSequenceAdaptation(id: number | null | undefined) {
+    if (id) {
+      const adaptation = await effects.getSequenceAdaptation(id, user);
+
+      if (adaptation) {
+        try {
+          setSequenceLanguages(eval(String(adaptation.adaptation)));
+        } catch (e) {
+          console.error(e);
+          showFailureToast('Invalid sequence adaptation');
+        }
+      }
+    } else {
+      resetSequenceAdaptation();
+    }
+  }
+
+  async function loadCommandDictionary(unparsedCommandDictionary: CommandDictionaryMetadata) {
+    const parsedDictionary = await getParsedCommandDictionary(unparsedCommandDictionary, user);
+    if (parsedDictionary) {
+      commandDictionary = parsedDictionary;
+    } else {
+      commandDictionary = null;
+    }
+  }
+
+  async function loadChannelDictionary(unparsedChannelDictionary?: ChannelDictionaryMetadata) {
+    if (unparsedChannelDictionary) {
+      const parsedDictionary = await getParsedChannelDictionary(unparsedChannelDictionary, user);
+      if (parsedDictionary) {
+        channelDictionary = parsedDictionary;
+      }
+    } else {
+      channelDictionary = null;
+    }
+  }
+
+  async function loadParameterDictionaries(unparsedParameterDictionaries: ParameterDictionaryMetadata[] = []) {
+    parameterDictionaries = (
+      await Promise.all(
+        unparsedParameterDictionaries.map(unparsedParameterDictionary => {
+          return getParsedParameterDictionary(unparsedParameterDictionary, user);
+        }),
+      )
+    ).filter(filterEmpty);
+  }
+
+  function resetSequenceAdaptation(): void {
+    setSequenceLanguages(undefined);
+  }
 
   function onDownloadTemplate(sequenceTemplate: SequenceTemplate) {
     downloadBlob(
@@ -185,7 +291,10 @@
 
   {#if selectedTemplate}
     <SequenceTemplateEditor
-      {parcel}
+      {channelDictionary}
+      {commandDictionary}
+      {parameterDictionaries}
+      sequenceAdaptation={$sequenceAdaptation}
       showCommandFormBuilder={true}
       template={selectedTemplate}
       on:templateChanged={onTemplateChanged}

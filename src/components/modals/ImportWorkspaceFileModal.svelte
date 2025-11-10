@@ -1,7 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Input } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import * as Sidebar from '../../components/ui/Sidebar/index.js';
   import type { User } from '../../types/app';
@@ -17,8 +16,8 @@
 
   export let currentWorkspace: Workspace;
   export let currentWorkspaceContents: WorkspaceTreeNode | null;
-  export let inputLanguageName: string = 'SeqN';
-  export let outputLanguageExtensions: string[] = ['.seq.json'];
+  export let inputLanguageName: string;
+  export let outputLanguageExtensions: string[];
   export let height: number = 400;
   export let width: number = 380;
   export let startingPath: string = '';
@@ -28,7 +27,6 @@
   const dispatch = createEventDispatcher<{
     close: void;
     confirm: {
-      convertedFileExtension: string;
       filesToConvert: File[];
       filesToUpload: File[];
       shouldKeepOriginalFiles: boolean;
@@ -45,7 +43,6 @@
   };
   let shouldConvert: boolean = false;
   let shouldKeepOriginalFiles: boolean = false;
-  let convertedFileExtension: string = '.seqN.txt';
 
   $: {
     uploadButtonDisabled = files === undefined || files.length === 0;
@@ -86,7 +83,6 @@
       }
 
       dispatch('confirm', {
-        convertedFileExtension,
         filesToConvert,
         filesToUpload,
         shouldKeepOriginalFiles,
@@ -157,19 +153,6 @@
               </div>
             {/if}
           </div>
-          {#if shouldConvert}
-            <InputInternal layout="stacked">
-              <label class="block pb-0.5" for="file-extension">Translated file extension</label>
-              <Input
-                class="mx-1"
-                sizeVariant="xs"
-                bind:value={convertedFileExtension}
-                aria-label="Translated file extension"
-                id="file-extension"
-                type="text"
-              />
-            </InputInternal>
-          {/if}
         {/if}
       </div>
     </div>

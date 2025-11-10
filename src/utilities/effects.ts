@@ -7,6 +7,13 @@ import {
   type CommandDictionary as AmpcsCommandDictionary,
   type ParameterDictionary as AmpcsParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
+import {
+  parseCdlDictionary,
+  toAmpcsXml,
+  type PhoenixAdaptation,
+  type PhoenixContext,
+  type UserSequence,
+} from '@nasa-jpl/aerie-sequence-languages';
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import { chunk } from 'lodash-es';
 import { get } from 'svelte/store';
@@ -201,7 +208,6 @@ import {
   type ParcelInsertInput,
   type ParcelToParameterDictionary,
   type SequenceAdaptationMetadata,
-  type UserSequence,
 } from '../types/sequencing';
 import type {
   PlanDataset,
@@ -288,7 +294,6 @@ import { featurePermissions, gatewayPermissions, queryPermissions } from './perm
 import { CompoundError, reqActionServer, reqExtension, reqGateway, reqHasura, reqWorkspace } from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
-import { parseCdlDictionary, toAmpcsXml } from './sequence-editor/languages/vml/cdl-dictionary';
 import { compareEvents } from './simulation';
 import { pluralize } from './text';
 import {
@@ -2240,29 +2245,6 @@ const effects = {
     }
   },
 
-  // TODO: remove this after expansion runs are made to work in new workspaces
-  // async createUserSequence(sequence: UserSequenceInsertInput, user: User | null): Promise<number | null> {
-  //   try {
-  //     if (!queryPermissions.CREATE_USER_SEQUENCE(user)) {
-  //       throwPermissionError('create a user sequence');
-  //     }
-
-  //     const data = await reqHasura<Pick<UserSequence, 'id'>>(gql.CREATE_USER_SEQUENCE, { sequence }, user);
-  //     const { createUserSequence } = data;
-  //     if (createUserSequence != null) {
-  //       const { id } = createUserSequence;
-  //       showSuccessToast('User Sequence Created Successfully');
-  //       return id;
-  //     } else {
-  //       throw Error(`Unable to create user sequence "${sequence.name}"`);
-  //     }
-  //   } catch (e) {
-  //     catchError('User Sequence Create Failed', e as Error);
-  //     showFailureToast('User Sequence Create Failed');
-  //     return null;
-  //   }
-  // },
-
   async createView(definition: ViewDefinition, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.CREATE_VIEW(user)) {
@@ -3705,37 +3687,6 @@ const effects = {
       viewUpdateRow('yAxes', [], timelineId, rowId);
     }
   },
-
-  // TODO: remove this after expansion runs are made to work in new workspaces
-  // async deleteUserSequence(sequence: UserSequence, user: User | null): Promise<boolean> {
-  //   try {
-  //     if (!queryPermissions.DELETE_USER_SEQUENCE(user, sequence)) {
-  //       throwPermissionError('delete this user sequence');
-  //     }
-
-  //     const { confirm } = await showConfirmModal(
-  //       'Delete',
-  //       `Are you sure you want to delete "${sequence.name}"?`,
-  //       'Delete User Sequence',
-  //     );
-
-  //     if (confirm) {
-  //       const data = await reqHasura<{ id: number }>(gql.DELETE_USER_SEQUENCE, { id: sequence.id }, user);
-  //       if (data.deleteUserSequence != null) {
-  //         showSuccessToast('User Sequence Deleted Successfully');
-  //         return true;
-  //       } else {
-  //         throw Error(`Unable to delete user sequence "${sequence.name}"`);
-  //       }
-  //     }
-
-  //     return false;
-  //   } catch (e) {
-  //     catchError('User Sequence Delete Failed', e as Error);
-  //     showFailureToast('User Sequence Delete Failed');
-  //     return false;
-  //   }
-  // },
 
   async deleteView(view: ViewSlim, user: User | null): Promise<boolean> {
     try {
@@ -5673,10 +5624,9 @@ const effects = {
     workspace: Workspace,
     workspaceContents: WorkspaceTreeNode,
     startingPath: string,
-    inputLanguageName: string,
-    outputLanguageExtensions: string[],
+    sequenceAdaptation: PhoenixAdaptation,
+    phoenixContext: PhoenixContext,
     user: User | null,
-    toInputFormat: (input: string) => Promise<string>,
   ): Promise<string | null> {
     try {
       if (!featurePermissions.workspace.canUpdate(user, workspace)) {
@@ -5685,38 +5635,36 @@ const effects = {
       const { confirm, value } = await showImportWorkspaceFileModal(
         workspace,
         workspaceContents,
-        inputLanguageName,
-        outputLanguageExtensions,
+        sequenceAdaptation.input.name,
+        sequenceAdaptation.outputs.map(language => language.fileExtension),
         startingPath,
         workspace,
         user,
       );
       if (confirm) {
-        const { convertedFileExtension, filesToConvert, filesToUpload, shouldKeepOriginalFiles, targetDirectory } =
-          value as {
-            convertedFileExtension: string;
-            filesToConvert: File[];
-            filesToUpload: File[];
-            shouldKeepOriginalFiles: boolean;
-            targetDirectory: string;
-          };
+        const { filesToConvert, filesToUpload, shouldKeepOriginalFiles, targetDirectory } = value as {
+          filesToConvert: File[];
+          filesToUpload: File[];
+          shouldKeepOriginalFiles: boolean;
+          targetDirectory: string;
+        };
 
         const convertedFileMap: Record<string, string> = {};
 
         const convertedFiles: File[] = await Promise.all(
           filesToConvert.map(async file => {
-            const matchingOutputLanguageExtension = outputLanguageExtensions.find(fileExtension =>
-              file.name.endsWith(`.${fileExtension.replace(/^\./, '')}`),
+            const outputLanguage = sequenceAdaptation.outputs.find(language =>
+              file.name.endsWith(`.${language.fileExtension.replace(/^\./, '')}`),
             );
 
-            if (matchingOutputLanguageExtension) {
+            if (outputLanguage) {
               const fileName = file.name.replace(
-                matchingOutputLanguageExtension.replace(/^\./, ''),
-                convertedFileExtension.replace(/^\./, ''),
+                outputLanguage.fileExtension.replace(/^\./, ''),
+                sequenceAdaptation.input.fileExtension.replace(/^\./, ''),
               );
               const lastModified = Date.now();
               const content = await file.text();
-              const convertedContent = await toInputFormat(content);
+              const convertedContent = outputLanguage.toInputFormat(content, phoenixContext, fileName);
 
               convertedFileMap[file.name] = fileName;
               return new File([convertedContent], fileName, { lastModified, type: 'text/plain' });
@@ -6825,46 +6773,6 @@ const effects = {
       showFailureToast('Sending Action Secret Parameters Failed');
     }
   },
-
-  // TODO: remove this after expansion runs are made to work in new workspaces
-  // async sendSequenceToWorkspace(
-  //   sequence: ExpansionSequence | null,
-  //   expandedSequence: string | null,
-  //   user: User | null,
-  // ): Promise<void> {
-  //   if (sequence === null) {
-  //     showFailureToast("Sequence Doesn't Exist");
-  //     return;
-  //   }
-
-  //   if (expandedSequence === null) {
-  //     showFailureToast("Expanded Sequence Doesn't Exist");
-  //     return;
-  //   }
-
-  //   const { confirm, value } = await showExpansionPanelModal();
-
-  //   if (!confirm || !value) {
-  //     return;
-  //   }
-
-  //   try {
-  //     const createUserSequenceInsertInput: UserSequenceInsertInput = {
-  //       definition: expandedSequence,
-  //       is_locked: false,
-  //       name: sequence.seq_id,
-  //       parcel_id: value.parcelId,
-  //       seq_json: '',
-  //       workspace_id: value.workspaceId,
-  //     };
-  //     const userSequenceCreated = await this.createUserSequence(createUserSequenceInsertInput, user);
-  //     if (!userSequenceCreated) {
-  //       throw Error('Sequence Import Failed');
-  //     }
-  //   } catch (e) {
-  //     catchError(e as Error);
-  //   }
-  // },
 
   async session(user: BaseUser | null): Promise<ReqSessionResponse> {
     try {
@@ -8047,38 +7955,6 @@ const effects = {
       return null;
     }
   },
-
-  // TODO: remove this after expansion runs are made to work in new workspaces
-  // async updateUserSequence(
-  //   id: number,
-  //   sequence: Partial<UserSequence>,
-  //   sequenceOwner: UserId,
-  //   user: User | null,
-  // ): Promise<string | null> {
-  //   try {
-  //     if (!queryPermissions.UPDATE_USER_SEQUENCE(user, { owner: sequenceOwner })) {
-  //       throwPermissionError('update this user sequence');
-  //     }
-
-  //     const data = await reqHasura<Pick<UserSequence, 'id' | 'updated_at'>>(
-  //       gql.UPDATE_USER_SEQUENCE,
-  //       { id, sequence },
-  //       user,
-  //     );
-  //     const { updateUserSequence } = data;
-  //     if (updateUserSequence != null) {
-  //       const { updated_at: updatedAt } = updateUserSequence;
-  //       showSuccessToast('User Sequence Updated Successfully');
-  //       return updatedAt;
-  //     } else {
-  //       throw Error(`Unable to update user sequence with ID: "${id}"`);
-  //     }
-  //   } catch (e) {
-  //     catchError('User Sequence Update Failed', e as Error);
-  //     showFailureToast('User Sequence Update Failed');
-  //     return null;
-  //   }
-  // },
 
   async updateView(id: number, view: Partial<View>, message: string | null, user: User | null): Promise<boolean> {
     try {

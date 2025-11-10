@@ -5,7 +5,7 @@
   import type { ActionDefinition, ActionParametersMap } from '../../types/actions';
   import type { User } from '../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../types/parameter';
-  import type { UserSequence } from '../../types/sequencing';
+  import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
   import { getUserSequenceValueSchemaOptions, valueSchemaRecordToParametersMap } from '../../utilities/actions';
   import effects from '../../utilities/effects';
   import { getArguments, getFormParameters } from '../../utilities/parameters';

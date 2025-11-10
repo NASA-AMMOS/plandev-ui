@@ -7,6 +7,7 @@
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+  import type { LibrarySequenceSignature, PhoenixContext, UserSequence } from '@nasa-jpl/aerie-sequence-languages';
   import type { IRowNode } from 'ag-grid-community';
   import { onDestroy, onMount } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
@@ -19,13 +20,7 @@
   import { SearchParameters } from '../../../enums/searchParameters';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
-  import {
-    adaptationGlobals,
-    inputFormat,
-    outputFormat,
-    sequenceAdaptation,
-    setSequenceAdaptation,
-  } from '../../../stores/sequence-adaptation';
+  import { sequenceAdaptation, setSequenceLanguages } from '../../../stores/sequence-adaptation';
   import {
     channelDictionaries,
     commandDictionaries,
@@ -43,9 +38,7 @@
   import type {
     ChannelDictionaryMetadata,
     CommandDictionaryMetadata,
-    LibrarySequence,
     ParameterDictionaryMetadata,
-    UserSequence,
   } from '../../../types/sequencing';
   import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
   import type {
@@ -60,13 +53,14 @@
   import { showConfirmModal } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
   import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
-  import { toInputFormat } from '../../../utilities/sequence-editor/extension-points';
-  import { userSequenceToLibrarySequence } from '../../../utilities/sequence-editor/languages/seq-n/seq-n-tree-utils';
-  import { parseFunctionSignatures } from '../../../utilities/sequence-editor/languages/vml/vml-adaptation';
-  import { isVmlSequence } from '../../../utilities/sequence-editor/sequence-utils';
   import { showFailureToast } from '../../../utilities/toast';
   import { mapWorkspaceTreePaths, separateFilenameFromPath } from '../../../utilities/workspaces';
   import type { PageData } from './$types';
+
+  // codemirror dependencies to be injected into the adaptation
+  import * as cmCommands from '@codemirror/commands';
+  import * as cmLanguage from '@codemirror/language';
+  import * as cmView from '@codemirror/view';
 
   export let data: PageData;
 
@@ -84,12 +78,13 @@
   let selectedFileName: string | undefined = undefined;
   let selectedSequenceOutput: string | undefined = undefined;
   let updatedSelectedFileContent: string = '';
-  let workspaceLibrarySequences: LibrarySequence[] = [];
+  let librarySequences: LibrarySequenceSignature[] = [];
   let workspaceSequences: UserSequence[] = [];
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
   let hasEditFilePermission: boolean = false;
   let hasEditWorkspacePermission: boolean = false;
+  let phoenixContext: PhoenixContext;
 
   $: if (initialWorkspace) {
     $workspaceId = initialWorkspace.id;
@@ -164,6 +159,21 @@
     }
   }
 
+  $: phoenixContext = {
+    channelDictionary,
+    commandDictionary,
+    librarySequences,
+    parameterDictionaries,
+  };
+
+  $: {
+    if (!commandDictionary) {
+      commandDictionary = null;
+      channelDictionary = null;
+      parameterDictionaries = [];
+    }
+  }
+
   function resetRefreshInterval() {
     if (refreshInterval !== null) {
       clearInterval(refreshInterval);
@@ -193,14 +203,8 @@
       );
 
       if (librarySequencesEnabled) {
-        workspaceLibrarySequences = workspaceSequences
-          .flatMap(sequence => {
-            if (isVmlSequence(sequence.name)) {
-              return parseFunctionSignatures(sequence.definition, $workspaceId);
-            } else {
-              return userSequenceToLibrarySequence(sequence, $workspaceId);
-            }
-          })
+        librarySequences = workspaceSequences
+          .flatMap(sequence => ($sequenceAdaptation.input.getLibrarySequences ?? (() => []))(sequence))
           .filter(({ name }) => name !== '');
       }
 
@@ -242,7 +246,22 @@
 
       if (adaptation) {
         try {
-          setSequenceAdaptation(eval(String(adaptation.adaptation)));
+          // the adaptation code is expected to be a commonjs module which calls `require(...)`
+          // to load its codemirror dependencies, because the adaptation *must* use the same Codemirror
+          // instance/globals as the outer page context, rather than bundling its own, due to CM internal state.
+          // This pattern creates a function wrapping the adaptation code, which provides our own custom `require`
+          // to correctly resolve CM deps.
+          const adaptationCode = adaptation.adaptation;
+          const run = new Function('require', 'exports', adaptationCode);
+          const exports: Record<string, unknown> = {};
+          const customRequire = (id: string) => {
+            return {
+              '@codemirror/commands': cmCommands,
+              '@codemirror/language': cmLanguage,
+              '@codemirror/view': cmView,
+            }[id];
+          };
+          setSequenceLanguages(run(customRequire, exports));
         } catch (e) {
           console.error(e);
           showFailureToast('Invalid sequence adaptation');
@@ -284,7 +303,7 @@
   }
 
   function resetSequenceAdaptation(): void {
-    setSequenceAdaptation(undefined);
+    setSequenceLanguages(undefined);
   }
 
   async function goToSequence(filePath: string | null) {
@@ -338,10 +357,9 @@
         $workspace,
         workspaceTree,
         startingPath,
-        $sequenceAdaptation.inputFormat.name,
-        $sequenceAdaptation.outputFormat.map(outputFormat => outputFormat.fileExtension),
+        $sequenceAdaptation,
+        phoenixContext,
         user,
-        async (input: string) => toInputFormat(input, parameterDictionaries, channelDictionary, $sequenceAdaptation),
       );
       refreshWorkspaceContents();
 
@@ -527,15 +545,9 @@
         class:hidden={selectedFileType != null && selectedFileType !== WorkspaceContentType.Sequence}
       >
         <SequenceEditor
-          {channelDictionary}
-          {commandDictionary}
-          {parameterDictionaries}
+          {phoenixContext}
           {actionsWithSequenceParameters}
-          adaptationGlobals={$adaptationGlobals}
           includeActions={true}
-          inputFormat={$inputFormat}
-          librarySequences={workspaceLibrarySequences}
-          outputFormats={$outputFormat}
           readOnly={!hasEditFilePermission}
           sequenceAdaptation={$sequenceAdaptation}
           sequenceDefinition={initialSelectedFileContent}
