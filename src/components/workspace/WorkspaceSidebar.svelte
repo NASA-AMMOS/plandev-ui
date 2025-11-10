@@ -237,7 +237,7 @@
             <Sidebar.Group className="p-0 h-full">
               <Sidebar.GroupContent className="h-full">
                 <Sidebar.Menu className="h-full">
-                  {#if workspaceTree}
+                  {#if workspaceTree && workspace}
                     <WorkspaceGridView
                       selectedTreeNodePath={selectedFilePath}
                       treeNode={workspaceTree}
