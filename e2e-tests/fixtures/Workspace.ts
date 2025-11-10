@@ -68,7 +68,7 @@ export class Workspace {
   async deleteSequence(sequenceName: string): Promise<void> {
     await this.page.getByRole('menuitem', { name: sequenceName }).click({ button: 'right' });
     await this.page.getByRole('menuitem', { name: 'Delete' }).click();
-    await this.page.getByRole('button', { name: 'Delete' }).click();
+    await this.page.locator('#modal-container').getByRole('button', { name: 'Delete' }).click();
 
     await this.waitForToast('Workspace File Deleted Successfully');
   }
