@@ -83,7 +83,7 @@
           }}
         >
           <DropdownMenu.Item size="sm">
-            <div class="flex cursor-pointer gap-2">
+            <div class="flex gap-2">
               <FilePlus size={14} /> New File
             </div>
           </DropdownMenu.Item>
@@ -101,7 +101,7 @@
           }}
         >
           <DropdownMenu.Item size="sm">
-            <div class="flex cursor-pointer gap-2">
+            <div class="flex gap-2">
               <FolderPlus size={14} /> New Folder
             </div>
           </DropdownMenu.Item>
@@ -120,7 +120,7 @@
           }}
         >
           <DropdownMenu.Item size="sm">
-            <div class="flex cursor-pointer gap-2">
+            <div class="flex gap-2">
               <ArrowUpFromLine size={14} />Upload File
             </div>
           </DropdownMenu.Item>
