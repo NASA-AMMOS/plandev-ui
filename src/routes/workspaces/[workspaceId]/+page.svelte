@@ -253,7 +253,7 @@
     try {
       const adaptationRow = await effects.getSequenceAdaptation(id, user);
       if (!adaptationRow) {
-        throw new Error(`Got empty adaptation row from DB for adaptation id ${id}`)
+        throw new Error(`Got empty adaptation row from DB for adaptation id ${id}`);
       }
 
       const adaptationCode: string = adaptationRow.adaptation;
@@ -278,7 +278,7 @@
       const adaptation = moduleExports.adaptation;
 
       if (!adaptation || typeof adaptation !== 'object') {
-        console.error("Missing adaptation", adaptation);
+        console.error('Missing adaptation', adaptation);
         throw new Error('No adaptation export found - ensure that your adaptation sets `exports.adaptation`');
       }
 
