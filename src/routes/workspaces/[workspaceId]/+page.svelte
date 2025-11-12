@@ -273,7 +273,7 @@
       };
       // adaptation code will set `exports.adaptation = adaptation;`
       const moduleExports = {} as any; // todo better typing
-      // run the adaptation code & get the exported result
+      // run the adaptation code & get the exported result - moduleExports gets mutated by the function
       runAdaptation(moduleRequire, moduleExports);
       const adaptation = moduleExports.adaptation;
 
