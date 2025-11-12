@@ -62,7 +62,6 @@
   import { showFailureToast } from '../../../utilities/toast';
   import { mapWorkspaceTreePaths, separateFilenameFromPath } from '../../../utilities/workspaces';
   import type { PageData } from './$types';
-
   // codemirror dependencies to be injected into the adaptation
   import * as cmCommands from '@codemirror/commands';
   import * as cmLanguage from '@codemirror/language';
@@ -526,11 +525,13 @@
       parameters[primarySequenceParameter] = selectedFilePath;
     }
 
-    const actionRunId = await effects.runAction(action, workspaceSequences, user, parameters);
-    if (actionRunId !== null) {
-      const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
-      if (goToRun === true) {
-        openActionRun($workspaceId, actionRunId, true);
+    if ($workspace) {
+      const actionRunId = await effects.runAction(action, $workspace, workspaceSequences, user, parameters);
+      if (actionRunId !== null) {
+        const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
+        if (goToRun === true) {
+          openActionRun($workspaceId, actionRunId, true);
+        }
       }
     }
   }

@@ -157,9 +157,11 @@
   }
 
   async function runAction(action: ActionDefinition) {
-    const actionRunId = await effects.runAction(action, workspaceSequences, user);
-    if (typeof actionRunId === 'number') {
-      goto(getActionsUrl(base, workspaceId, actionRunId));
+    if (workspace) {
+      const actionRunId = await effects.runAction(action, workspace, workspaceSequences, user);
+      if (typeof actionRunId === 'number') {
+        goto(getActionsUrl(base, workspaceId, actionRunId));
+      }
     }
   }
 

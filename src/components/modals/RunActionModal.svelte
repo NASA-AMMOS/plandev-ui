@@ -1,11 +1,12 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition, ActionParametersMap } from '../../types/actions';
   import type { User } from '../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../types/parameter';
-  import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
+  import type { Workspace } from '../../types/workspace';
   import { getUserSequenceValueSchemaOptions, valueSchemaRecordToParametersMap } from '../../utilities/actions';
   import effects from '../../utilities/effects';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
@@ -18,6 +19,7 @@
   export let actionDefinition: ActionDefinition;
   export let parameters: ArgumentsMap | undefined;
   export let user: User | null;
+  export let workspace: Workspace;
   export let workspaceSequences: UserSequence[] = [];
 
   let argumentsMap: ArgumentsMap = {};
@@ -55,6 +57,7 @@
     }
 
     const actionRunId = await effects.createActionRun(
+      workspace,
       actionDefinition.id,
       // Only send non-secret arguments to the db.
       nonSecretParametersMap,
@@ -64,7 +67,7 @@
     );
 
     if (actionRunId !== null && hasSecrets) {
-      await effects.sendActionSecretParameters(secretParametersMap, actionRunId, user);
+      await effects.sendActionSecretParameters(workspace, secretParametersMap, actionRunId, user);
     }
 
     running = false;

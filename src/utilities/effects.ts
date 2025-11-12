@@ -749,6 +749,7 @@ const effects = {
   },
 
   async createActionRun(
+    workspace: Workspace,
     actionDefinitionId: number,
     parameters: any,
     settings: any,
@@ -756,7 +757,7 @@ const effects = {
     user: User | null,
   ): Promise<number | null> {
     try {
-      if (!queryPermissions.CREATE_ACTION_RUN(user)) {
+      if (!queryPermissions.CREATE_ACTION_RUN(user, workspace)) {
         throwPermissionError('create action run');
       }
 
@@ -6564,12 +6565,19 @@ const effects = {
 
   async runAction(
     actionDefinition: ActionDefinition,
+    workspace: Workspace,
     workspaceSequences: UserSequence[],
     user: User | null,
     parameters?: ArgumentsMap,
   ): Promise<number | null> {
     try {
-      const { confirm, value } = await showRunActionModal(actionDefinition, user, workspaceSequences, parameters);
+      const { confirm, value } = await showRunActionModal(
+        actionDefinition,
+        user,
+        workspace,
+        workspaceSequences,
+        parameters,
+      );
       if (confirm && value) {
         const { id } = value;
         logMessage(
@@ -6692,9 +6700,14 @@ const effects = {
     }
   },
 
-  async sendActionSecretParameters(secretParameters: any, actionRunId: number, user: User | null): Promise<void> {
+  async sendActionSecretParameters(
+    workspace: Workspace,
+    secretParameters: any,
+    actionRunId: number,
+    user: User | null,
+  ): Promise<void> {
     try {
-      if (!queryPermissions.CREATE_ACTION_RUN(user)) {
+      if (!queryPermissions.CREATE_ACTION_RUN(user, workspace)) {
         throwPermissionError('send action secret parameters');
       }
 
