@@ -252,8 +252,7 @@
           // This pattern creates a function wrapping the adaptation code, which provides our own custom `require`
           // to correctly resolve CM deps.
           const adaptationCode = adaptation.adaptation;
-          const run = new Function('require', 'exports', adaptationCode);
-          const exports: Record<string, unknown> = {};
+
           const customRequire = (id: string) => {
             return {
               '@codemirror/commands': cmCommands,
@@ -261,7 +260,29 @@
               '@codemirror/view': cmView,
             }[id];
           };
-          setSequenceLanguages(run(customRequire, exports));
+
+          const module = { exports: {} };
+          const exports = module.exports;
+          // @ts-ignore
+          const require = customRequire;
+
+          // this function provides a scope for eval
+          const adaptationResult = (function() {
+            let result;
+            try {
+              // run the code and try to capture its return if it's an IIFE
+              result = eval(adaptationCode);
+            } catch (e) {
+              console.error('adaptation eval failed', e);
+            }
+            // try to resolve whatever pattern it used to export
+            return result ?? module.exports ?? exports;
+          })();
+
+          // const adaptationResult = run(customRequire, exports);
+          console.log('adaptationResult', adaptationResult);
+          setSequenceLanguages(adaptationResult);
+          // setSequenceLanguages(run(customRequire, exports));
         } catch (e) {
           console.error(e);
           showFailureToast('Invalid sequence adaptation');
