@@ -28,6 +28,7 @@
   import { showTemplateModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import * as adaptationUtils from '../../utilities/sequence-editor/adaptation-utils';
   import { showFailureToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
@@ -93,19 +94,21 @@
   }
 
   async function loadSequenceAdaptation(id: number | null | undefined) {
-    if (id) {
-      const adaptation = await effects.getSequenceAdaptation(id, user);
+    // load a user sequencing adaptation from the DB, and execute it in the page's JS context.
+    // adaptation is a user-provided JS module w/ functions that hook into editor functionality to provide linting, etc.
 
-      if (adaptation) {
-        try {
-          setSequenceLanguages(eval(String(adaptation.adaptation)));
-        } catch (e) {
-          console.error(e);
-          showFailureToast('Invalid sequence adaptation');
-        }
-      }
-    } else {
+    if (!id) {
+      // not passing an ID means we want to intentionally reset to the default adaptation
       resetSequenceAdaptation();
+      return;
+    }
+
+    try {
+      const adaptation = await adaptationUtils.loadSequenceAdaptation(id, user);
+      setSequenceLanguages(adaptation);
+    } catch (e) {
+      console.error(e);
+      showFailureToast('Invalid sequence adaptation');
     }
   }
 
