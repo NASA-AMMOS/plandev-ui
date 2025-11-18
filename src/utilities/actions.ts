@@ -2,6 +2,8 @@ import { goto } from '$app/navigation';
 import { base } from '$app/paths';
 import type {
   ActionValueSchema,
+  ActionValueSchemaFile,
+  ActionValueSchemaFileList,
   ActionValueSchemaSequence,
   ActionValueSchemaSequenceList,
 } from '@nasa-jpl/aerie-actions';
@@ -16,12 +18,13 @@ import { getActionsUrl } from './routes';
 export function isActionValueSchemaSequence(
   schema: ValueSchema | ActionValueSchema,
 ): schema is ActionValueSchemaSequence | ActionValueSchemaSequenceList {
-  return (
-    (schema as ActionValueSchema).type === 'sequence' ||
-    (schema as ActionValueSchema).type === 'file' ||
-    (schema as ActionValueSchema).type === 'sequenceList' ||
-    (schema as ActionValueSchema).type === 'fileList'
-  );
+  return (schema as ActionValueSchema).type === 'sequence' || (schema as ActionValueSchema).type === 'sequenceList';
+}
+
+export function isActionValueSchemaFile(
+  schema: ValueSchema | ActionValueSchema,
+): schema is ActionValueSchemaFile | ActionValueSchemaFileList {
+  return (schema as ActionValueSchema).type === 'file' || (schema as ActionValueSchema).type === 'fileList';
 }
 
 /**

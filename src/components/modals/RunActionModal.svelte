@@ -77,19 +77,19 @@
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     if (formParameter.schema.type === 'options-single') {
-      const sequences = workspaceFiles.find(sequence => sequence.fullPath === formParameter.value);
-      formParameter.value = sequences?.fullPath ?? null;
+      const files = workspaceFiles.find(sequence => sequence.fullPath === formParameter.value);
+      formParameter.value = files?.fullPath ?? null;
       argumentsMap = getArguments(argumentsMap, formParameter);
     } else if (formParameter.schema.type === 'options-multiple') {
       const values: string[] = formParameter.value;
-      const sequenceNames: string[] = [];
+      const fileNames: string[] = [];
       values.forEach(value => {
         const seq = workspaceFiles.find(sequence => sequence.fullPath === value);
         if (seq !== undefined && seq.fullPath !== undefined) {
-          sequenceNames.push(seq.fullPath);
+          fileNames.push(seq.fullPath);
         }
       });
-      formParameter.value = sequenceNames;
+      formParameter.value = fileNames;
       argumentsMap = getArguments(argumentsMap, formParameter);
     } else {
       argumentsMap = getArguments(argumentsMap, formParameter);

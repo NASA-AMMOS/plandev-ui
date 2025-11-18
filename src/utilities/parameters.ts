@@ -19,7 +19,7 @@ import type {
   ValueSchemaSeries,
   ValueSchemaStruct,
 } from '../types/schema';
-import { isActionValueSchemaSequence } from './actions';
+import { isActionValueSchemaFile, isActionValueSchemaSequence } from './actions';
 import { isEmpty } from './generic';
 import { convertUsToDurationString } from './time';
 
@@ -217,7 +217,12 @@ export function getFormParameters(
     const newFormParameterSchema: ValueSchema | UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple = {
       ...formParameterSchema,
     };
-    if (isActionValueSchemaSequence(schema) || schema.type === 'options-single' || schema.type === 'options-multiple') {
+    if (
+      isActionValueSchemaSequence(schema) ||
+      isActionValueSchemaFile(schema) ||
+      schema.type === 'options-single' ||
+      schema.type === 'options-multiple'
+    ) {
       if (schema.type === 'sequence' || schema.type === 'file') {
         newFormParameterSchema.type = 'options-single';
       } else if (schema.type === 'sequenceList' || schema.type === 'fileList') {
@@ -252,8 +257,6 @@ export function getFormParameters(
           const option = options.find(dropdownOption => dropdownOption.value === optionValue);
           return option === undefined;
         });
-
-        console.log('missingOptions :>> ', missingOptions);
 
         if (options.length > 0 && missingOptions.length > 0) {
           // format missing options like: 'option 1', 'option 2' not found
