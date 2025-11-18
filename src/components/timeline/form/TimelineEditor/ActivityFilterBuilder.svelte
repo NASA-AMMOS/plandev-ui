@@ -9,7 +9,7 @@
   import SpanIcon from '../../../../assets/timeline-span.svg?component';
   import { activityArgumentDefaultsMap, activityDirectivesMap } from '../../../../stores/activities';
   import { planModelActivityTypes, subsystemTags } from '../../../../stores/plan';
-  import { spans, spanUtilityMaps } from '../../../../stores/simulation';
+  import { spansMap, spanUtilityMaps } from '../../../../stores/simulation';
   import { tags } from '../../../../stores/tags';
   import type { ValueSchemaVariant } from '../../../../types/schema';
   import type { ActivityLayerFilter, ActivityLayerFilterSubfieldSchema } from '../../../../types/timeline';
@@ -205,7 +205,7 @@
   $: appliedFilter = applyActivityLayerFilter(
     dirtyFilter,
     activityDirectives,
-    $spans || [],
+    $spansMap ? Object.values($spansMap) : [],
     $planModelActivityTypes,
     $activityArgumentDefaultsMap,
   );

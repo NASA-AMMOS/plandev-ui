@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { browser } from '$app/environment';
   import type { ScaleTime } from 'd3-scale';
   import { select, type Selection } from 'd3-selection';
   import { zoom as d3Zoom, zoomIdentity, type D3ZoomEvent, type ZoomBehavior, type ZoomTransform } from 'd3-zoom';
@@ -20,6 +21,7 @@
   import {
     externalResources,
     fetchingResourcesExternal,
+    getResource,
     resourceTypes,
     resourceTypesLoading,
   } from '../../stores/simulation';
@@ -248,8 +250,9 @@
 
     // Only update if simulation is complete
     if (
-      getSimulationStatus(simulationDataset) === Status.Complete ||
-      getSimulationStatus(simulationDataset) === Status.Canceled
+      browser &&
+      (getSimulationStatus(simulationDataset) === Status.Complete ||
+        getSimulationStatus(simulationDataset) === Status.Canceled)
     ) {
       const startTimeYmd = simulationDataset?.simulation_start_time ?? plan.start_time;
       resourceNames.forEach(async name => {
@@ -303,7 +306,7 @@
           let aborted = false;
           try {
             const startTime = performance.now();
-            const response = await effects.getResource(simulationDatasetId, name, user, controller.signal);
+            const response = await getResource(simulationDatasetId, name, user, controller.signal);
             const { profile } = response;
             if (profile && profile.length === 1) {
               resource = sampleProfiles([profile[0]], startTimeYmd)[0];

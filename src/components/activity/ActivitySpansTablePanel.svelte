@@ -9,7 +9,7 @@
   import { selectActivity } from '../../stores/activities';
   import { plan, planModelActivityTypes } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
-  import { initialSpansLoading, selectedSpanId, spans } from '../../stores/simulation';
+  import { initialSpansLoading, selectedSpanId, spansMap } from '../../stores/simulation';
   import { view, viewTogglePanel, viewUpdateActivitySpansTable } from '../../stores/views';
   import type { Span } from '../../types/simulation';
   import type { AutoSizeColumns, ViewGridSection, ViewTable } from '../../types/view';
@@ -382,7 +382,7 @@
       columnStates={activitySpansTable?.columnStates}
       {filterExpression}
       loading={$initialSpansLoading}
-      spans={$spans}
+      spans={$spansMap ? Object.values($spansMap) : []}
       on:columnMoved={onColumnMoved}
       on:columnPinned={onColumnPinned}
       on:columnResized={onColumnResized}

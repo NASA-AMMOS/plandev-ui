@@ -4790,15 +4790,15 @@ const effects = {
     }
   },
 
-  getResource(
-    datasetId: number,
-    name: string,
-    user: User | null,
-    signal: AbortSignal | undefined = undefined,
-  ): Promise<Record<string, Profile[] | null>> {
-    const data = reqHasura<Profile[]>(gql.GET_PROFILE, { datasetId, name }, user, signal);
-    return data;
-  },
+  // getResource(
+  //   datasetId: number,
+  //   name: string,
+  //   user: User | null,
+  //   signal: AbortSignal | undefined = undefined,
+  // ): Promise<Record<string, Profile[] | null>> {
+  //   const data = reqHasura<Profile[]>(gql.GET_PROFILE, { datasetId, name }, user, signal);
+  //   return data;
+  // },
 
   async getResourceTypes(modelId: number, user: User | null, limit: number | null = null): Promise<ResourceType[]> {
     try {

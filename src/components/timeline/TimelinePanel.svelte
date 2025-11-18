@@ -21,7 +21,6 @@
     simulation,
     simulationDataset,
     spanUtilityMaps,
-    spans,
     spansMap,
     yAxesWithScaleDomainsCache,
   } from '../../stores/simulation';
@@ -245,7 +244,6 @@
       simulationDataset={$simulationDataset}
       spanUtilityMaps={$spanUtilityMaps}
       spansMap={$spansMap}
-      spans={$spans}
       timelineLockStatus={$timelineLockStatus}
       {user}
       viewTimeRange={$viewTimeRange}

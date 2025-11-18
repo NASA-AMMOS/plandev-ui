@@ -19,7 +19,6 @@
     ResourceType,
     Simulation,
     SimulationDataset,
-    Span,
     SpanId,
     SpanUtilityMaps,
     SpansMap,
@@ -66,7 +65,7 @@
   export let simulationDataset: SimulationDataset | null = null;
   export let spanUtilityMaps: SpanUtilityMaps;
   export let spansMap: SpansMap | null = {};
-  export let spans: Span[] | null = [];
+  // export let spans: Span[] | null = [];
   export let timeline: Timeline | null = null;
   export let timelineInteractionMode: TimelineInteractionMode;
   export let timelineLockStatus: TimelineLockStatus;
@@ -407,7 +406,7 @@
         {mouseOver}
         {planStartTimeYmd}
         {simulationDataset}
-        spans={spans || []}
+        spans={spansMap ? Object.values(spansMap) : []}
         {timelineZoomTransform}
         {viewTimeRange}
         {xScaleView}

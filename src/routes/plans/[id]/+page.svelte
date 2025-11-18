@@ -123,10 +123,9 @@
     simulationDatasetId,
     simulationDatasetLatest,
     simulationDatasetsAll,
-    simulationEvents,
     simulationProgress,
     simulationStatus,
-    spans,
+    subscribeToSimulation,
   } from '../../../stores/simulation';
   import {
     initializeView,
@@ -419,30 +418,40 @@
     selectActivity(null, null);
   }
 
-  $: if ($initialPlan && $simulationDataset !== null && getSimulationStatus($simulationDataset) === Status.Complete) {
-    const datasetId = $simulationDataset.dataset_id;
+  $: if (browser && $initialPlan && $simulationDataset !== null && $simulationDatasetId >= 0) {
     simulationDataAbortController?.abort();
     simulationDataAbortController = new AbortController();
-    $initialSpansLoading = true;
-    effects
-      .getSpans(
-        datasetId,
-        $simulationDataset.simulation_start_time ?? $initialPlan.start_time,
-        data.user,
-        simulationDataAbortController.signal,
-      )
-      .then(newSpans => {
-        $spans = newSpans;
-        $initialSpansLoading = false;
-      });
-    effects
-      .getEvents(datasetId, data.user, simulationDataAbortController.signal)
-      .then(newEvents => ($simulationEvents = newEvents));
-  } else {
-    simulationDataAbortController?.abort();
-    $spans = null;
-    $simulationEvents = null;
+    subscribeToSimulation(
+      $simulationDatasetId,
+      $simulationDataset.simulation_start_time ?? $initialPlan.start_time,
+      simulationDataAbortController.signal,
+    );
   }
+
+  // $: if ($initialPlan && $simulationDataset !== null && getSimulationStatus($simulationDataset) === Status.Complete) {
+  //   const datasetId = $simulationDataset.dataset_id;
+  //   simulationDataAbortController?.abort();
+  //   simulationDataAbortController = new AbortController();
+  //   $initialSpansLoading = true;
+  //   effects
+  //     .getSpans(
+  //       datasetId,
+  //       $simulationDataset.simulation_start_time ?? $initialPlan.start_time,
+  //       data.user,
+  //       simulationDataAbortController.signal,
+  //     )
+  //     .then(newSpans => {
+  //       $spans = newSpans;
+  //       $initialSpansLoading = false;
+  //     });
+  //   effects
+  //     .getEvents(datasetId, data.user, simulationDataAbortController.signal)
+  //     .then(newEvents => ($simulationEvents = newEvents));
+  // } else {
+  //   simulationDataAbortController?.abort();
+  //   $spans = null;
+  //   $simulationEvents = null;
+  // }
 
   $: compactNavMode = windowWidth < 1200;
 
