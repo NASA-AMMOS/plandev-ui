@@ -232,7 +232,7 @@ export function getFormParameters(
       let options: ValueSchemaOption[] = [];
       if (schema.type === 'sequence' || schema.type === 'sequenceList') {
         options = dropdownOptions.filter(({ type }) => type === 'SEQUENCE');
-      } else if (schema.pattern != null) {
+      } else if (schema.pattern) {
         options = filterByExtensionPattern(dropdownOptions, schema.pattern);
       } else {
         options = dropdownOptions.filter(({ type }) => type !== 'DIRECTORY');
