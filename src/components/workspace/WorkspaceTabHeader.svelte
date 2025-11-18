@@ -70,40 +70,61 @@
         </Tooltip.Root>
       </DropdownMenu.Trigger>
       <DropdownMenu.Content>
-        <DropdownMenu.Item size="sm" on:click={onNewSequence}>
-          <div
-            class="flex cursor-pointer gap-2"
-            use:permissionHandler={{
-              hasPermission: hasEditWorkspacePermission,
-              permissionError: 'You do not have permission to edit this workspace',
-            }}
-          >
-            <FilePlus size={14} /> New File
-          </div>
-        </DropdownMenu.Item>
-        <DropdownMenu.Item size="sm" on:click={onNewFolder}>
-          <div
-            class="flex cursor-pointer gap-2"
-            use:permissionHandler={{
-              hasPermission: hasEditWorkspacePermission,
-              permissionError: 'You do not have permission to edit this workspace',
-            }}
-          >
-            <FolderPlus size={14} /> New Folder
-          </div>
-        </DropdownMenu.Item>
+        <div
+          role="button"
+          tabindex={0}
+          on:keypress
+          on:keydown
+          on:keyup
+          on:click={onNewSequence}
+          use:permissionHandler={{
+            hasPermission: hasEditWorkspacePermission,
+            permissionError: 'You do not have permission to edit this workspace',
+          }}
+        >
+          <DropdownMenu.Item size="sm">
+            <div class="flex gap-2">
+              <FilePlus size={14} /> New File
+            </div>
+          </DropdownMenu.Item>
+        </div>
+        <div
+          role="button"
+          tabindex={0}
+          on:keypress
+          on:keydown
+          on:keyup
+          on:click={onNewFolder}
+          use:permissionHandler={{
+            hasPermission: hasEditWorkspacePermission,
+            permissionError: 'You do not have permission to edit this workspace',
+          }}
+        >
+          <DropdownMenu.Item size="sm">
+            <div class="flex gap-2">
+              <FolderPlus size={14} /> New Folder
+            </div>
+          </DropdownMenu.Item>
+        </div>
         <DropdownMenu.Separator />
-        <DropdownMenu.Item size="sm" on:click={onImportFile}>
-          <div
-            class="flex cursor-pointer gap-2"
-            use:permissionHandler={{
-              hasPermission: hasEditWorkspacePermission,
-              permissionError: 'You do not have permission to edit this workspace',
-            }}
-          >
-            <ArrowUpFromLine size={14} />Upload File
-          </div>
-        </DropdownMenu.Item>
+        <div
+          role="button"
+          tabindex={0}
+          on:keypress
+          on:keydown
+          on:keyup
+          on:click={onImportFile}
+          use:permissionHandler={{
+            hasPermission: hasEditWorkspacePermission,
+            permissionError: 'You do not have permission to edit this workspace',
+          }}
+        >
+          <DropdownMenu.Item size="sm">
+            <div class="flex gap-2">
+              <ArrowUpFromLine size={14} />Upload File
+            </div>
+          </DropdownMenu.Item>
+        </div>
       </DropdownMenu.Content>
     </DropdownMenu.Root>
   </div>

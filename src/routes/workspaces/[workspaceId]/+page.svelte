@@ -32,7 +32,8 @@
     userSequenceEditorColumns,
     userSequenceEditorColumnsWithFormBuilder,
   } from '../../../stores/sequencing';
-  import { parcel, workspace, workspaceColumns, workspaceId } from '../../../stores/workspaces';
+  import { initialUsersLoading, users } from '../../../stores/user';
+  import { parcel, parcels, workspace, workspaceColumns, workspaceId, workspaces } from '../../../stores/workspaces';
   import type { ActionDefinition } from '../../../types/actions';
   import type { ArgumentsMap } from '../../../types/parameter';
   import type {
@@ -40,7 +41,12 @@
     CommandDictionaryMetadata,
     ParameterDictionaryMetadata,
   } from '../../../types/sequencing';
-  import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
+  import type {
+    Workspace,
+    WorkspaceCollaborator,
+    WorkspaceMetadata,
+    WorkspaceNodeEvent,
+  } from '../../../types/workspace';
   import type {
     WorkspaceTreeMap,
     WorkspaceTreeNode,
@@ -88,6 +94,7 @@
   let workspaceFileList: WorkspaceTreeNodeWithFullPath[] = [];
   let hasEditFilePermission: boolean = false;
   let hasEditWorkspacePermission: boolean = false;
+  let hasEditWorkspaceCollaboratorsPermission: boolean = false;
   let phoenixContext: PhoenixContext;
 
   $: if (initialWorkspace) {
@@ -114,16 +121,15 @@
     selectedFileType = null;
   }
 
-  $: if (initialWorkspace) {
-    hasEditWorkspacePermission = featurePermissions.workspace.canUpdate(user, initialWorkspace);
+  $: if (initialWorkspace || $workspace) {
+    const ws: Workspace = $workspace ?? (initialWorkspace as Workspace);
+
+    hasEditWorkspacePermission = featurePermissions.workspace.canUpdate(user, ws);
+    hasEditWorkspaceCollaboratorsPermission = featurePermissions.workspaceCollaborators.canCreate(user, ws);
     if (selectedFilePath) {
-      hasEditFilePermission = featurePermissions.workspace.canUpdate(
-        user,
-        initialWorkspace,
-        workspaceTreeMap[selectedFilePath],
-      );
+      hasEditFilePermission = featurePermissions.workspace.canUpdate(user, ws, workspaceTreeMap[selectedFilePath]);
     } else {
-      hasEditFilePermission = true;
+      hasEditFilePermission = featurePermissions.workspace.canUpdate(user, ws);
     }
   }
 
@@ -246,34 +252,51 @@
   }
 
   async function loadSequenceAdaptation(id: number | null | undefined) {
-    if (id) {
-      const adaptation = await effects.getSequenceAdaptation(id, user);
+    // load a user sequencing adaptation from the DB, and execute it in the page's JS context.
+    // adaptation is a user-provided JS module w/ functions that hook into editor functionality to provide linting, etc.
 
-      if (adaptation) {
-        try {
-          // the adaptation code is expected to be a commonjs module which calls `require(...)`
-          // to load its codemirror dependencies, because the adaptation *must* use the same Codemirror
-          // instance/globals as the outer page context, rather than bundling its own, due to CM internal state.
-          // This pattern creates a function wrapping the adaptation code, which provides our own custom `require`
-          // to correctly resolve CM deps.
-          const adaptationCode = adaptation.adaptation;
-          const run = new Function('require', 'exports', adaptationCode);
-          const exports: Record<string, unknown> = {};
-          const customRequire = (id: string) => {
-            return {
-              '@codemirror/commands': cmCommands,
-              '@codemirror/language': cmLanguage,
-              '@codemirror/view': cmView,
-            }[id];
-          };
-          setSequenceLanguages(run(customRequire, exports));
-        } catch (e) {
-          console.error(e);
-          showFailureToast('Invalid sequence adaptation');
-        }
-      }
-    } else {
+    if (!id) {
+      // not passing an ID means we want to intentionally reset to the default adaptation
       resetSequenceAdaptation();
+      return;
+    }
+
+    try {
+      const adaptationRow = await effects.getSequenceAdaptation(id, user);
+      if (!adaptationRow) {
+        throw new Error(`Got empty adaptation row from DB for adaptation id ${id}`);
+      }
+
+      const adaptationCode: string = adaptationRow.adaptation;
+      // create a function wrapping the adaptation which takes `require` and `exports` args
+      const runAdaptation = new Function('require', 'exports', adaptationCode);
+      // the adaptation code is expected to be a commonjs module which calls `require(...)`
+      // to load its Codemirror dependencies. It *must* use the same Codemirror instance/globals as the
+      // outer page context, rather than bundling its own, due to the way CM uses shared internal state fields.
+      // To ensure this, pass a custom `require` function to the module which injects the page's CM dependencies.
+      // (any other dependencies are expected to be bundled into the adaptation code)
+      const moduleRequire = (id: string) => {
+        return {
+          '@codemirror/commands': cmCommands,
+          '@codemirror/language': cmLanguage,
+          '@codemirror/view': cmView,
+        }[id];
+      };
+      // adaptation code will set `exports.adaptation = adaptation;`
+      const moduleExports = {} as any; // todo better typing
+      // run the adaptation code & get the exported result - moduleExports gets mutated by the function
+      runAdaptation(moduleRequire, moduleExports);
+      const adaptation = moduleExports.adaptation;
+
+      if (!adaptation || typeof adaptation !== 'object') {
+        console.error('Missing adaptation', adaptation);
+        throw new Error('No adaptation export found - ensure that your adaptation sets `exports.adaptation`');
+      }
+
+      setSequenceLanguages(adaptation);
+    } catch (e) {
+      console.error(e);
+      showFailureToast('Invalid sequence adaptation');
     }
   }
 
@@ -328,6 +351,24 @@
     goto(getWorkspacesUrl(base, $workspaceId, filePath));
 
     return true;
+  }
+
+  async function onAddCollaborator(event: CustomEvent<WorkspaceCollaborator[]>) {
+    if ($workspace) {
+      effects.createWorkspaceCollaborators($workspace, event.detail, user);
+    }
+  }
+
+  async function onDeleteCollaborator(event: CustomEvent<string>) {
+    if ($workspace) {
+      effects.deleteWorkspaceCollaborator($workspace, event.detail, user);
+    }
+  }
+
+  async function onUpdateWorkspaceMetadata(event: CustomEvent<Partial<WorkspaceMetadata>>) {
+    if ($workspace) {
+      effects.updateWorkspace($workspace, event.detail, user);
+    }
   }
 
   async function onNewFolder(event: CustomEvent<string>) {
@@ -490,11 +531,13 @@
       parameters[primarySequenceParameter] = selectedFilePath;
     }
 
-    const actionRunId = await effects.runAction(action, workspaceFileList, user, parameters);
-    if (actionRunId !== null) {
-      const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
-      if (goToRun === true) {
-        openActionRun($workspaceId, actionRunId, true);
+    if ($workspace) {
+      const actionRunId = await effects.runAction(action, $workspace, workspaceFileList, user, parameters);
+      if (actionRunId !== null) {
+        const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
+        if (goToRun === true) {
+          openActionRun($workspaceId, actionRunId, true);
+        }
       }
     }
   }
@@ -526,10 +569,17 @@
       {workspaceTree}
       {isWorkspaceLoading}
       {hasEditWorkspacePermission}
+      {hasEditWorkspaceCollaboratorsPermission}
+      parcels={$parcels ?? []}
       {user}
+      users={$users ?? []}
+      usersLoading={$initialUsersLoading}
       workspace={$workspace}
+      workspaces={$workspaces}
       {isRowSelectable}
       on:actionsClick={onActionsClicked}
+      on:addCollaborator={onAddCollaborator}
+      on:deleteCollaborator={onDeleteCollaborator}
       on:nodeClicked={onNodeClicked}
       on:nodeDelete={onNodeDelete}
       on:nodeMove={onNodeMove}
@@ -540,6 +590,7 @@
       on:copyFileLocation={onCopyFileLocation}
       on:moveToWorkspace={onMoveToWorkspace}
       on:refreshWorkspace={refreshWorkspaceContents}
+      on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
     />
   </Sidebar.Provider>
   <CssGridGutter track={1} type="column" />
@@ -553,7 +604,7 @@
           {phoenixContext}
           {actionsWithSequenceParameters}
           includeActions={true}
-          readOnly={!hasEditFilePermission}
+          previewOnly={!hasEditFilePermission}
           sequenceAdaptation={$sequenceAdaptation}
           sequenceDefinition={initialSelectedFileContent}
           sequenceName={selectedFileName}

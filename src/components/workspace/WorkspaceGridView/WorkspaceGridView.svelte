@@ -597,30 +597,27 @@
   >
     <svelte:fragment slot="context-menu" let:selectedItemId>
       <ContextMenu.Group>
-        <ContextMenu.Item size="sm" on:click={onTableMenuRenameNode} aria-label="Rename">
-          <div
-            class="flex items-center gap-2"
-            use:permissionHandler={{
-              hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
-              permissionError: `You do not have permission to rename this ${getPathType(selectedItemId) === 'File' ? 'file' : 'folder'}.`,
-            }}
-          >
-            <PencilLine size={14} />
-            Rename
-          </div>
-        </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onTableMenuMoveNode} aria-label="Move/Copy">
-          <div
-            class="flex items-center gap-2"
-            use:permissionHandler={{
-              hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
-              permissionError: `You do not have permission to move this ${getPathType(selectedItemId) === 'File' ? 'file' : 'folder'}.`,
-            }}
-          >
-            <FolderOutput size={14} />
-            Move/Copy
-          </div>
-        </ContextMenu.Item>
+        <div
+          use:permissionHandler={{
+            hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
+            permissionError: `You do not have permission to rename this ${getPathType(selectedItemId) === 'File' ? 'file' : 'folder'}.`,
+          }}
+        >
+          <ContextMenu.Item size="sm" on:click={onTableMenuRenameNode} aria-label="Rename">
+            <div class="flex items-center gap-2">
+              <PencilLine size={14} />
+              Rename
+            </div>
+          </ContextMenu.Item>
+        </div>
+        <div>
+          <ContextMenu.Item size="sm" on:click={onTableMenuMoveNode} aria-label="Move/Copy">
+            <div class="flex items-center gap-2">
+              <FolderOutput size={14} />
+              Move/Copy
+            </div>
+          </ContextMenu.Item>
+        </div>
       </ContextMenu.Group>
       <ContextMenu.Separator />
       <ContextMenu.Item size="sm" on:click={onTableCopyFileLocation} aria-label="Copy Link to">
@@ -638,39 +635,42 @@
       </ContextMenu.Item>
       <ContextMenu.Separator />
       <ContextMenu.Group>
-        <ContextMenu.Item size="sm" on:click={onTableNewSequence} aria-label="New File">
-          <div
-            class="flex items-center gap-2"
-            use:permissionHandler={{
-              hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
-              permissionError: 'You do not have permission to create a new file in this folder.',
-            }}
-          >
-            <FilePlus size={14} /> New File
-          </div>
-        </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onTableNewFolder} aria-label="New Folder">
-          <div
-            class="flex items-center gap-2"
-            use:permissionHandler={{
-              hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
-              permissionError: 'You do not have permission to create a new folder in this folder.',
-            }}
-          >
-            <FolderPlus size={14} /> New Folder
-          </div>
-        </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onTableImportFile} aria-label="Upload File">
-          <div
-            class="flex items-center gap-2"
-            use:permissionHandler={{
-              hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
-              permissionError: 'You do not have permission to upload a file into this folder.',
-            }}
-          >
-            <ArrowUpFromLine size={14} /> Upload File
-          </div>
-        </ContextMenu.Item>
+        <div
+          use:permissionHandler={{
+            hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
+            permissionError: 'You do not have permission to create a new file in this folder.',
+          }}
+        >
+          <ContextMenu.Item size="sm" on:click={onTableNewSequence} aria-label="New File">
+            <div class="flex items-center gap-2">
+              <FilePlus size={14} /> New File
+            </div>
+          </ContextMenu.Item>
+        </div>
+        <div
+          use:permissionHandler={{
+            hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
+            permissionError: 'You do not have permission to create a new folder in this folder.',
+          }}
+        >
+          <ContextMenu.Item size="sm" on:click={onTableNewFolder} aria-label="New Folder">
+            <div class="flex items-center gap-2">
+              <FolderPlus size={14} /> New Folder
+            </div>
+          </ContextMenu.Item>
+        </div>
+        <div
+          use:permissionHandler={{
+            hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
+            permissionError: 'You do not have permission to upload a file into this folder.',
+          }}
+        >
+          <ContextMenu.Item size="sm" on:click={onTableImportFile} aria-label="Upload File">
+            <div class="flex items-center gap-2">
+              <ArrowUpFromLine size={14} /> Upload File
+            </div>
+          </ContextMenu.Item>
+        </div>
       </ContextMenu.Group>
       <ContextMenu.Separator />
     </svelte:fragment>

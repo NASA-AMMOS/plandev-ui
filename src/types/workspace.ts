@@ -1,7 +1,13 @@
 import type { UserId } from './app';
 import type { WorkspaceTreeNode } from './workspace-tree-view';
 
+export type WorkspaceCollaborator = {
+  collaborator: UserId;
+  workspace_id: number;
+};
+
 export type Workspace = {
+  collaborators: WorkspaceCollaborator[];
   created_at: string;
   disk_location: string;
   id: number;
@@ -10,6 +16,8 @@ export type Workspace = {
   parcel_id: number;
   updated_at: string;
 };
+
+export type WorkspaceMetadata = Pick<Workspace, 'name' | 'owner' | 'parcel_id'>;
 
 export type WorkspaceInsertInput = {
   parcelId: number;

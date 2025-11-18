@@ -45,6 +45,7 @@
 
   let actionDefinitionsFilterText: string = '';
   let actionRunsFilterText: string = '';
+  let hasRunActionPermission: boolean = false;
   let isLoadingWorkspace: boolean = false;
   let selectedActionDefinitionId: number | null = null;
   let selectedActionDefinition: ActionDefinition | null = null;
@@ -152,9 +153,11 @@
   }
 
   async function runAction(action: ActionDefinition) {
-    const actionRunId = await effects.runAction(action, workspaceFiles, user);
-    if (typeof actionRunId === 'number') {
-      goto(getActionsUrl(base, workspaceId, actionRunId));
+    if (workspace) {
+      const actionRunId = await effects.runAction(action, workspace, workspaceFiles, user);
+      if (typeof actionRunId === 'number') {
+        goto(getActionsUrl(base, workspaceId, actionRunId));
+      }
     }
   }
 
@@ -244,7 +247,7 @@
                 class="st-button secondary"
                 on:click|stopPropagation={() => runAction(actionDefinition)}
                 use:permissionHandler={{
-                  hasPermission: featurePermissions.actionRun.canCreate(user),
+                  hasPermission: hasRunActionPermission,
                   permissionError: 'You do not have permission to run an action',
                 }}
               >
@@ -287,7 +290,7 @@
               <button
                 class="st-button primary"
                 use:permissionHandler={{
-                  hasPermission: featurePermissions.actionRun.canCreate(user),
+                  hasPermission: hasRunActionPermission,
                   permissionError: 'You do not have permission to run an action',
                 }}
                 on:click|stopPropagation={() => {

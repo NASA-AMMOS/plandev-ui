@@ -5,6 +5,7 @@
   import type { ActionDefinition, ActionParametersMap } from '../../types/actions';
   import type { User } from '../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../types/parameter';
+  import type { Workspace } from '../../types/workspace';
   import type { WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import { getUserSequenceValueSchemaOptions, valueSchemaRecordToParametersMap } from '../../utilities/actions';
   import effects from '../../utilities/effects';
@@ -18,6 +19,7 @@
   export let actionDefinition: ActionDefinition;
   export let parameters: ArgumentsMap | undefined;
   export let user: User | null;
+  export let workspace: Workspace;
   export let workspaceFiles: WorkspaceTreeNodeWithFullPath[] = [];
 
   let argumentsMap: ArgumentsMap = {};
@@ -40,8 +42,22 @@
 
   async function run() {
     running = true;
+    let secretParametersMap: ActionParametersMap = {};
+    let nonSecretParametersMap: ActionParametersMap = {};
+    let hasSecrets = false;
+
+    // Filter out the secret params to send directly to the action server.
+    for (const param of Object.keys(parametersMap)) {
+      if (parametersMap[param].schema.type === 'secret') {
+        secretParametersMap[param] = argumentsMap[param];
+        hasSecrets = true;
+      } else {
+        nonSecretParametersMap[param] = argumentsMap[param];
+      }
+    }
 
     const actionRunId = await effects.createActionRun(
+      workspace,
       actionDefinition.id,
       // Only send non-secret arguments to the db.
       parametersMap,
@@ -49,6 +65,10 @@
       actionDefinition.settings,
       user,
     );
+
+    if (actionRunId !== null && hasSecrets) {
+      await effects.sendActionSecretParameters(workspace, secretParametersMap, actionRunId, user);
+    }
 
     running = false;
     dispatch('complete', { actionRunId });

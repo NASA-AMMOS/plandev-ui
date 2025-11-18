@@ -270,7 +270,7 @@
   <CssGrid rows={editorHeights} minHeight={'0'}>
     <Panel>
       <svelte:fragment slot="header">
-        <SectionTitle>{title}</SectionTitle>
+        <SectionTitle>{title}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}</SectionTitle>
 
         <div class="right">
           {#if includeActions}
@@ -384,7 +384,7 @@
               </Menu>
             </div>
           {/if}
-          {#if !readOnly}
+          {#if !(readOnly || previewOnly)}
             <button
               class="st-button icon-button"
               class:secondary={!isSequenceDefinitionUpdated}

@@ -1286,6 +1286,7 @@ export async function showRestorePlanSnapshotModal(
 export async function showRunActionModal(
   actionDefinition: ActionDefinition,
   user: User | null,
+  workspace: Workspace,
   workspaceFiles: WorkspaceTreeNodeWithFullPath[],
   parameters: ArgumentsMap | undefined,
 ): Promise<ModalElementValue<{ id: number | null }>> {
@@ -1295,7 +1296,7 @@ export async function showRunActionModal(
 
       if (target) {
         const runActionModal = new RunActionModal({
-          props: { actionDefinition, parameters, user, workspaceFiles },
+          props: { actionDefinition, parameters, user, workspace, workspaceFiles },
           target,
         });
         target.resolve = resolve;
