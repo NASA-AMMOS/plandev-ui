@@ -5,7 +5,7 @@
   import type { ActionDefinition, ActionParametersMap } from '../../types/actions';
   import type { User } from '../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../types/parameter';
-  import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
+  import type { WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import { getUserSequenceValueSchemaOptions, valueSchemaRecordToParametersMap } from '../../utilities/actions';
   import effects from '../../utilities/effects';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
@@ -18,7 +18,7 @@
   export let actionDefinition: ActionDefinition;
   export let parameters: ArgumentsMap | undefined;
   export let user: User | null;
-  export let workspaceSequences: UserSequence[] = [];
+  export let workspaceFiles: WorkspaceTreeNodeWithFullPath[] = [];
 
   let argumentsMap: ArgumentsMap = {};
   let isLoadingWorkspace: boolean = false;
@@ -57,16 +57,16 @@
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     if (formParameter.schema.type === 'options-single') {
-      const sequences = workspaceSequences.find(sequence => sequence.name === formParameter.value);
-      formParameter.value = sequences?.name ?? null;
+      const sequences = workspaceFiles.find(sequence => sequence.fullPath === formParameter.value);
+      formParameter.value = sequences?.fullPath ?? null;
       argumentsMap = getArguments(argumentsMap, formParameter);
     } else if (formParameter.schema.type === 'options-multiple') {
       const values: string[] = formParameter.value;
       const sequenceNames: string[] = [];
       values.forEach(value => {
-        const seq = workspaceSequences.find(sequence => sequence.name === value);
-        if (seq !== undefined) {
-          sequenceNames.push(seq.name);
+        const seq = workspaceFiles.find(sequence => sequence.fullPath === value);
+        if (seq !== undefined && seq.fullPath !== undefined) {
+          sequenceNames.push(seq.fullPath);
         }
       });
       formParameter.value = sequenceNames;
@@ -89,8 +89,10 @@
         [],
         undefined,
         undefined,
-        getUserSequenceValueSchemaOptions(workspaceSequences, actionDefinition.workspace_id),
+        getUserSequenceValueSchemaOptions(workspaceFiles, actionDefinition.workspace_id),
         'sequence',
+        false,
+        false,
       )}
       parameterType="action"
       hideRightAdornments

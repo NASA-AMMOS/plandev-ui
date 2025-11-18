@@ -1,5 +1,4 @@
 import { browser } from '$app/environment';
-import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
 import AboutModal from '../components/modals/AboutModal.svelte';
 import ActionCreationModal from '../components/modals/ActionCreationModal.svelte';
 import CancelActionRunModal from '../components/modals/CancelActionRunModal.svelte';
@@ -60,7 +59,7 @@ import type { Tag } from '../types/tags';
 import type { ActivityTransformDirection } from '../types/time';
 import type { ViewDefinition } from '../types/view';
 import type { Workspace } from '../types/workspace';
-import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
+import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 
 /**
  * Closes the active modal if found and resolve nothing
@@ -1287,7 +1286,7 @@ export async function showRestorePlanSnapshotModal(
 export async function showRunActionModal(
   actionDefinition: ActionDefinition,
   user: User | null,
-  workspaceSequences: UserSequence[],
+  workspaceFiles: WorkspaceTreeNodeWithFullPath[],
   parameters: ArgumentsMap | undefined,
 ): Promise<ModalElementValue<{ id: number | null }>> {
   return new Promise(resolve => {
@@ -1296,7 +1295,7 @@ export async function showRunActionModal(
 
       if (target) {
         const runActionModal = new RunActionModal({
-          props: { actionDefinition, parameters, user, workspaceSequences },
+          props: { actionDefinition, parameters, user, workspaceFiles },
           target,
         });
         target.resolve = resolve;

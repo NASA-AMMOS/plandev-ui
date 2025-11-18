@@ -314,7 +314,7 @@ import {
   generateDefaultView,
   validateViewJSONAgainstSchema,
 } from './view';
-import { cleanPath, joinPath, mapWorkspaceTreePaths } from './workspaces';
+import { cleanPath, flattenWorkspaceTreeWithPaths, joinPath, mapWorkspaceTreePaths } from './workspaces';
 
 function throwPermissionError(attemptedAction: string): never {
   throw Error(`You do not have permission to: ${attemptedAction}.`);
@@ -810,7 +810,6 @@ const effects = {
       } else {
         throw Error(`Unable to run action`);
       }
-
     } catch (e) {
       catchError('Action Run Creation Failed', e as Error);
       showFailureToast('Action Run Creation Failed');
@@ -5453,6 +5452,11 @@ const effects = {
     return null;
   },
 
+  async getWorkspaceFilesList(workspaceId: number, user: User | null): Promise<WorkspaceTreeNodeWithFullPath[]> {
+    const workspaceContents = await effects.getWorkspaceContents(workspaceId, user);
+    return flattenWorkspaceTreeWithPaths(workspaceContents ?? []);
+  },
+
   async getWorkspaceSequences(
     workspaceId: number,
     workspaceTreeMap: WorkspaceTreeMap | null,
@@ -6621,7 +6625,7 @@ const effects = {
 
   async runAction(
     actionDefinition: ActionDefinition,
-    workspaceSequences: UserSequence[],
+    workspaceSequences: WorkspaceTreeNodeWithFullPath[],
     user: User | null,
     parameters?: ArgumentsMap,
   ): Promise<number | null> {

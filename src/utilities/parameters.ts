@@ -171,6 +171,27 @@ export function getArguments(argumentsMap: ArgumentsMap, formParameter: FormPara
   return omitBy({ ...argumentsMap, ...newArgument }, isEmpty);
 }
 
+function filterByExtensionPattern(options: ValueSchemaOption[], pattern: string): ValueSchemaOption[] {
+  // Handle the "match all" wildcard
+  if (pattern === '*') {
+    return [...options]; // Return a shallow copy of all options
+  }
+
+  const match = pattern.match(/\*?\.?(?<extension>.*)$/);
+  // Check if the pattern is in the expected "*.ext" format
+  if (match) {
+    // Extract the extension part, e.g., ".sh" from "*.sh"
+    const { groups } = match;
+
+    if (groups?.extension) {
+      // Filter the array, returning only filenames that end with the required extension
+      return options.filter(option => option.value.endsWith(groups.extension));
+    }
+  }
+
+  return [];
+}
+
 export function getFormParameters(
   parametersMap: ParametersMap | ActionParametersMap,
   argumentsMap: ArgumentsMap,
@@ -180,6 +201,8 @@ export function getFormParameters(
   dropdownOptions: ValueSchemaOption[] = [],
   optionLabel: string = 'option',
   ignoreValueSource?: boolean,
+  isExternalEvent: boolean = true,
+  showSource: boolean = true,
 ): FormParameter[] {
   const formParameters = Object.entries(parametersMap).map(([name, { order, schema }]) => {
     const formParameterSchema: ValueSchema | UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple = schema;
@@ -195,16 +218,30 @@ export function getFormParameters(
       ...formParameterSchema,
     };
     if (isActionValueSchemaSequence(schema) || schema.type === 'options-single' || schema.type === 'options-multiple') {
-      (newFormParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).options =
-        dropdownOptions;
-      (newFormParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).label = optionLabel;
-      if (schema.type === 'sequence') {
+      if (schema.type === 'sequence' || schema.type === 'file') {
         newFormParameterSchema.type = 'options-single';
-      } else if (schema.type === 'sequenceList') {
+      } else if (schema.type === 'sequenceList' || schema.type === 'fileList') {
         newFormParameterSchema.type = 'options-multiple';
       }
 
-      if (schema.type === 'options-multiple') {
+      let options: ValueSchemaOption[] = [];
+      if (schema.type === 'sequence' || schema.type === 'sequenceList') {
+        options = dropdownOptions.filter(({ type }) => type === 'SEQUENCE');
+      } else if (schema.pattern != null) {
+        options = filterByExtensionPattern(dropdownOptions, schema.pattern);
+      } else {
+        options = dropdownOptions.filter(({ type }) => type !== 'DIRECTORY');
+      }
+
+      (newFormParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).options = options;
+      if (schema.type === 'file' || schema.type === 'fileList') {
+        (newFormParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).label = 'file';
+      } else {
+        (newFormParameterSchema as UIValueSchemaWithOptionsSingle | UIValueSchemaWithOptionsMultiple).label =
+          optionLabel;
+      }
+
+      if (newFormParameterSchema.type === 'options-multiple') {
         isMultiSelect = true;
       }
 
@@ -212,26 +249,35 @@ export function getFormParameters(
         const optionValues: string[] = isMultiSelect ? value : [value];
         // Determine if there are selected options in the value that are no longer present in the list of options
         const missingOptions = optionValues.filter(optionValue => {
-          const option = dropdownOptions.find(dropdownOption => dropdownOption.display === optionValue);
+          const option = options.find(dropdownOption => dropdownOption.value === optionValue);
           return option === undefined;
         });
 
-        if (dropdownOptions.length > 0 && missingOptions.length > 0) {
+        console.log('missingOptions :>> ', missingOptions);
+
+        if (options.length > 0 && missingOptions.length > 0) {
           // format missing options like: 'option 1', 'option 2' not found
           errors = [`'${missingOptions.join("', '")}' not found`];
         }
       }
     }
 
+    if (formParameterSchema.description) {
+      if (!newFormParameterSchema.metadata) {
+        newFormParameterSchema.metadata = {};
+      }
+      newFormParameterSchema.metadata.description = { value: formParameterSchema.description };
+    }
+
     const formParameter: FormParameter = {
       errors,
-      externalEvent: true,
+      externalEvent: isExternalEvent,
       name,
       order,
       required,
       schema: newFormParameterSchema,
       value,
-      valueSource,
+      valueSource: showSource ? valueSource : 'none',
     };
 
     return formParameter;

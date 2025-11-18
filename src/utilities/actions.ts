@@ -7,7 +7,7 @@ import type {
 } from '@nasa-jpl/aerie-actions';
 import type { ActionDefinition, ActionParametersMap, ActionRunSlim } from '../types/actions';
 import type { ValueSchema, ValueSchemaOption } from '../types/schema';
-import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
+import type { WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 import { getActionsUrl } from './routes';
 
 /**
@@ -16,7 +16,12 @@ import { getActionsUrl } from './routes';
 export function isActionValueSchemaSequence(
   schema: ValueSchema | ActionValueSchema,
 ): schema is ActionValueSchemaSequence | ActionValueSchemaSequenceList {
-  return (schema as ActionValueSchema).type === 'sequence' || (schema as ActionValueSchema).type === 'sequenceList';
+  return (
+    (schema as ActionValueSchema).type === 'sequence' ||
+    (schema as ActionValueSchema).type === 'file' ||
+    (schema as ActionValueSchema).type === 'sequenceList' ||
+    (schema as ActionValueSchema).type === 'fileList'
+  );
 }
 
 /**
@@ -32,15 +37,16 @@ export function valueSchemaRecordToParametersMap(
 }
 
 export function getUserSequenceValueSchemaOptions(
-  workspaceSequences: UserSequence[],
+  workspaceFiles: WorkspaceTreeNodeWithFullPath[],
   workspaceId: number | null,
 ): ValueSchemaOption[] {
   if (workspaceId === null) {
     return [];
   }
-  return workspaceSequences.map(({ name }) => ({
-    display: name,
-    value: name,
+  return workspaceFiles.map(({ fullPath, type }) => ({
+    display: fullPath,
+    type: `${type}`,
+    value: fullPath,
   }));
 }
 
