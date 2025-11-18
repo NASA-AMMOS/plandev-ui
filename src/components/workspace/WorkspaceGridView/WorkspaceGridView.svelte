@@ -16,7 +16,7 @@
     PencilLine,
     Trash2,
   } from 'lucide-svelte';
-  import { createEventDispatcher } from 'svelte';
+  import {createEventDispatcher, onMount} from 'svelte';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import type { User } from '../../../types/app';
@@ -39,6 +39,11 @@
   import BulkActionDataGrid from '../../ui/DataGrid/BulkActionDataGrid.svelte';
   import WorkspaceTreeViewIcon from '../WorkspaceTreeView/WorkspaceTreeViewIcon.svelte';
 
+  export let isRowSelectable: (node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>) => boolean = (
+    _node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>,
+  ) => {
+    return true;
+  };
   export let selectedTreeNodePath: string | null | undefined = undefined;
   export let treeNode: WorkspaceTreeNode | null | undefined = undefined;
   export let workspace: Workspace | null | undefined = null;
@@ -150,9 +155,7 @@
       width: 80,
     },
   ];
-  $: if (selectedTreeNodePath) {
-    treeNodeBreadcrumbPath = selectedTreeNodePath.split(PATH_DELIMITER).slice(0, -1).join(PATH_DELIMITER);
-  }
+
   $: if (treeNode) {
     flattenedTree = flattenWorkspaceTreeWithPaths(treeNode?.contents ?? [], []);
     treeNodeBreadcrumbs = getNodeContentsOnPath(treeNode.contents ?? [], treeNodeBreadcrumbPath);
@@ -223,14 +226,16 @@
   }
 
   function doesExternalFilterPass(node: IRowNode<WorkspaceTreeNodeWithFullPath>) {
-    const fullPath = node.data?.fullPath ?? '';
-    const pathRegex = new RegExp(`^${treeNodeBreadcrumbPath}/?`);
-    const isOnPath = pathRegex.test(fullPath);
-    if (isOnPath) {
-      return (fullPath.replace(pathRegex, '').split(PATH_DELIMITER).filter(Boolean).length ?? 0) === 1;
+    const fullFilePath = node.data?.fullPath ?? '';
+    if (!treeNodeBreadcrumbPath) {
+      // root — only show top-level files
+      return fullFilePath.split(PATH_DELIMITER).filter(Boolean).length === 1;
     }
-
-    return false;
+    // filter out files that aren't in this path at all
+    if (!fullFilePath.startsWith(`${treeNodeBreadcrumbPath}/`)) { return false; }
+    // only show files that are direct children of treeNodeBreadcrumbPath
+    const remainder = fullFilePath.slice(treeNodeBreadcrumbPath.length + 1);
+    return remainder.split(PATH_DELIMITER).filter(Boolean).length === 1;
   }
 
   function closeBreadcrumbMenu() {
@@ -372,6 +377,13 @@
       onMoveToWorkspace(contextMenuNode);
     }
   }
+
+  onMount(() => {
+    // initialize treeNodeBreadcrumbPath to the folder path of the currently selected file
+    treeNodeBreadcrumbPath = selectedTreeNodePath
+      ? selectedTreeNodePath.split(PATH_DELIMITER).slice(0, -1).join(PATH_DELIMITER)
+      : '';
+  });
 </script>
 
 <div class="grid h-full grid-rows-[min-content_auto]">
@@ -571,6 +583,7 @@
     {user}
     suppressRowClickSelection={false}
     isExternalFilterPresent={() => true}
+    {isRowSelectable}
     {doesExternalFilterPass}
     on:rowDoubleClicked={onRowDoubleClicked}
     on:cellContextMenu={onContextMenu}
