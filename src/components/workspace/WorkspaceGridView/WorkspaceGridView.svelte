@@ -23,7 +23,6 @@
   import type {
     DataGridColumnDef,
     DataGridRowDoubleClick,
-    DataGridRowSelection,
     RowId,
   } from '../../../types/data-grid';
   import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
@@ -37,14 +36,9 @@
   import { flattenWorkspaceTreeWithPaths, mapWorkspaceTreePaths } from '../../../utilities/workspaces';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
-  import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
+  import BulkActionDataGrid from '../../ui/DataGrid/BulkActionDataGrid.svelte';
   import WorkspaceTreeViewIcon from '../WorkspaceTreeView/WorkspaceTreeViewIcon.svelte';
 
-  export let isRowSelectable: (node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>) => boolean = (
-    _node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>,
-  ) => {
-    return true;
-  };
   export let selectedTreeNodePath: string | null | undefined = undefined;
   export let treeNode: WorkspaceTreeNode | null | undefined = undefined;
   export let workspace: Workspace | null | undefined = null;
@@ -62,7 +56,6 @@
     moveToWorkspace: string;
     newFolder: string;
     newSequence: string;
-    nodeClicked: WorkspaceNodeEvent;
     nodeDelete: WorkspaceNodeEvent;
     nodeMove: WorkspaceNodeEvent;
     nodeRename: WorkspaceNodeEvent;
@@ -261,18 +254,6 @@
 
   function onContextMenuHide() {
     contextMenuNode = null;
-  }
-
-  function onNodeClicked(event: CustomEvent<DataGridRowSelection<WorkspaceTreeNodeWithFullPath>>) {
-    const row = event.detail;
-
-    if (isRowSelectable(row)) {
-      dispatch('nodeClicked', {
-        toggleState: true,
-        treeNode: row.data,
-        treeNodePath: row.data.fullPath,
-      });
-    }
   }
 
   function onRowDoubleClicked(event: CustomEvent<DataGridRowDoubleClick<WorkspaceTreeNodeWithFullPath>>) {
@@ -577,20 +558,20 @@
       {/if}
     {/each}
   </div>
-  <SingleActionDataGrid
+  <BulkActionDataGrid
     bind:dataGrid
+    bind:selectedItemId={selectedTreeNodePath}
     class="workspace-grid-view"
-    {hasDeletePermission}
-    getRowId={node => node.fullPath}
     {columnDefs}
-    itemDisplayText="File"
+    getRowId={node => node.fullPath}
+    {hasDeletePermission}
+    singleItemDisplayText="File"
+    pluralItemDisplayText="Files"
     items={flattenedTree}
     {user}
-    selectedItemId={selectedTreeNodePath}
+    suppressRowClickSelection={false}
     isExternalFilterPresent={() => true}
-    suppressRowClickSelection={true}
     {doesExternalFilterPass}
-    on:rowClicked={onNodeClicked}
     on:rowDoubleClicked={onRowDoubleClicked}
     on:cellContextMenu={onContextMenu}
     on:cellContextMenuHide={onContextMenuHide}
@@ -674,7 +655,7 @@
       </ContextMenu.Group>
       <ContextMenu.Separator />
     </svelte:fragment>
-  </SingleActionDataGrid>
+  </BulkActionDataGrid>
 </div>
 
 <style>

@@ -204,7 +204,7 @@
 >
   <svelte:fragment slot="context-menu">
     {#if showContextMenu}
-      <slot name="context-menu" />
+      <slot name="context-menu" {selectedItemIds} {selectedItemId} />
 
       <ContextMenu.Item size="sm" on:click={selectAllItems}>
         Select All {isFiltered ? 'Visible ' : ''}{pluralItemDisplayText}

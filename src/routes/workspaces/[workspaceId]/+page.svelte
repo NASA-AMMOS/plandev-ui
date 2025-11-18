@@ -9,7 +9,7 @@
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type { LibrarySequenceSignature, PhoenixContext, UserSequence } from '@nasa-jpl/aerie-sequence-languages';
   import type { IRowNode } from 'ag-grid-community';
-  import { onDestroy, onMount } from 'svelte';
+  import {onDestroy, onMount, tick} from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
@@ -72,6 +72,7 @@
   const { initialWorkspace, user } = data;
 
   let actionsWithSequenceParameters: ActionDefinition[] = [];
+  let activeFilePath: string | null = null;
   let channelDictionary: ChannelDictionary | null = null;
   let commandDictionary: CommandDictionary | null = null;
   let parameterDictionaries: ParameterDictionary[] = [];
@@ -100,20 +101,46 @@
       return seqParameter.length > 0;
     });
   }
-  $: if (selectedFilePath) {
-    const { filename } = separateFilenameFromPath(selectedFilePath);
-    getSelectedFileContent(selectedFilePath);
 
-    if (filename) {
-      selectedFileName = filename;
-      selectedFileType = workspaceTreeMap[selectedFilePath]?.type ?? null;
+  $: if (!isWorkspaceLoading && selectedFilePath !== activeFilePath) {
+    console.log(`reactive nav! active: ${activeFilePath}, selected: ${selectedFilePath}`);
+    // the UI's selected file doesn't match our actively loaded file, try to navigate to selected
+    maybeNavigate(selectedFilePath);
+  }
+
+  async function maybeNavigate(nextPath: string | null) {
+    // don't navigate if the selected path is a text file and not a folder or binary
+    const isNavigableFile = nextPath && isTextFile(workspaceTreeMap[nextPath]?.type);
+    if(!isNavigableFile) {
+      // wait a tick then revert selected UI to the existing active path
+      await tick();
+      selectedFilePath = activeFilePath;
+      return;
+    }
+
+    const didNavigate = await goToSequence(nextPath);
+    if (!didNavigate) {
+      // user decided not to navigate away due to unsaved changes, set selected UI back to active file
+      selectedFilePath = activeFilePath;
+      return;
+    }
+    // successfully navigated, update activeFilePath & get the file contents
+    activeFilePath = nextPath;
+    if (activeFilePath) {
+      const { filename } = separateFilenameFromPath(activeFilePath);
+      getSelectedFileContent(activeFilePath);
+
+      if (filename) {
+        selectedFileName = filename;
+        selectedFileType = workspaceTreeMap[activeFilePath]?.type ?? null;
+      } else {
+        selectedFileName = undefined;
+        selectedFileType = null;
+      }
     } else {
       selectedFileName = undefined;
       selectedFileType = null;
     }
-  } else {
-    selectedFileName = undefined;
-    selectedFileType = null;
   }
 
   $: if (initialWorkspace || $workspace) {
@@ -121,8 +148,8 @@
 
     hasEditWorkspacePermission = featurePermissions.workspace.canUpdate(user, ws);
     hasEditWorkspaceCollaboratorsPermission = featurePermissions.workspaceCollaborators.canCreate(user, ws);
-    if (selectedFilePath) {
-      hasEditFilePermission = featurePermissions.workspace.canUpdate(user, ws, workspaceTreeMap[selectedFilePath]);
+    if (activeFilePath) {
+      hasEditFilePermission = featurePermissions.workspace.canUpdate(user, ws, workspaceTreeMap[activeFilePath]);
     } else {
       hasEditFilePermission = featurePermissions.workspace.canUpdate(user, ws);
     }
@@ -329,7 +356,7 @@
   }
 
   async function goToSequence(filePath: string | null) {
-    if (updatedSelectedFileContent !== initialSelectedFileContent && selectedFilePath !== null) {
+    if (updatedSelectedFileContent !== initialSelectedFileContent && activeFilePath !== null) {
       const { confirm } = await showConfirmModal(
         'Navigate Away',
         `There are unsaved changes. Are you sure you want navigate away from the current sequence?`,
@@ -381,10 +408,8 @@
       const newSequencePath = await effects.newWorkspaceSequence($workspace, workspaceTree, startingPath, '', user);
 
       if (newSequencePath !== null) {
-        const didNavigate = await goToSequence(newSequencePath);
-        if (didNavigate) {
-          selectedFilePath = newSequencePath;
-        }
+        // select & navigate to the new file
+        selectedFilePath = newSequencePath;
         refreshWorkspaceContents();
       }
     }
@@ -404,67 +429,56 @@
       refreshWorkspaceContents();
 
       if (targetPath) {
-        const didNavigate = await goToSequence(targetPath);
-        if (didNavigate) {
-          selectedFilePath = targetPath;
-        }
+        selectedFilePath = targetPath;
+        refreshWorkspaceContents();
       }
     }
   }
 
   async function onNodeClicked({ detail: { toggleState, treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
-    if (isTextFile(treeNode.type) && toggleState === true) {
-      if (treeNodePath !== selectedFilePath) {
-        const didNavigate = await goToSequence(treeNodePath);
-        if (didNavigate) {
-          selectedFilePath = treeNodePath;
-        }
-      }
-    }
+    // Used by WorkspaceTreeView only, grid view uses two-way binding to selectedFilePath
+    // (todo: use two-way binding with TreeView?)
+    if (!isTextFile(treeNode.type) || toggleState !== true) { return; }
+    selectedFilePath = treeNodePath;
   }
 
   async function onNodeDelete({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
     if ($workspace) {
-      let shouldUpdateSelectedSequencePath = treeNodePath === selectedFilePath;
+      let shouldUpdateSelectedSequencePath = treeNodePath === activeFilePath;
 
       await effects.deleteWorkspaceItem($workspace, treeNode, treeNodePath, user);
       refreshWorkspaceContents();
 
       if (shouldUpdateSelectedSequencePath) {
         selectedFilePath = null;
-        goToSequence(selectedFilePath);
       }
     }
   }
 
   async function onNodeMove({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
     if ($workspace && workspaceTree) {
-      let shouldUpdateSelectedSequencePath = treeNodePath === selectedFilePath;
+      let shouldUpdateSelectedSequencePath = treeNodePath === activeFilePath;
 
       const targetPath = await effects.moveWorkspaceItem($workspace, workspaceTree, treeNode, treeNodePath, user);
       refreshWorkspaceContents();
 
       if (shouldUpdateSelectedSequencePath) {
-        const didNavigate = await goToSequence(targetPath);
-        if (didNavigate) {
-          selectedFilePath = targetPath;
-        }
+        // try to select & navigate to moved file
+        selectedFilePath = targetPath;
       }
     }
   }
 
   async function onNodeRename({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
     if ($workspace) {
-      let shouldUpdateSelectedSequencePath = treeNodePath === selectedFilePath;
+      let shouldUpdateSelectedSequencePath = treeNodePath === activeFilePath;
 
       const targetPath = await effects.renameWorkspaceItem($workspace, treeNode, treeNodePath, user);
       refreshWorkspaceContents();
 
       if (shouldUpdateSelectedSequencePath) {
-        const didNavigate = await goToSequence(targetPath);
-        if (didNavigate) {
-          selectedFilePath = targetPath;
-        }
+        // select newly renamed file
+        selectedFilePath = targetPath;
       }
     }
   }
@@ -478,8 +492,8 @@
 
   async function onSaveWorkspaceFile(event: CustomEvent<string>) {
     const { detail: updatedSequenceDefinition } = event;
-    if (selectedFilePath) {
-      effects.saveWorkspaceFile($workspaceId, selectedFilePath, updatedSequenceDefinition, user);
+    if (activeFilePath) {
+      effects.saveWorkspaceFile($workspaceId, activeFilePath, updatedSequenceDefinition, user);
       initialSelectedFileContent = updatedSequenceDefinition;
     } else if ($workspace && workspaceTree) {
       const newSequencePath = await effects.newWorkspaceSequence(
@@ -490,10 +504,7 @@
         user,
       );
 
-      const didNavigate = await goToSequence(newSequencePath);
-      if (didNavigate) {
-        selectedFilePath = newSequencePath;
-      }
+      selectedFilePath = newSequencePath;
       refreshWorkspaceContents();
     }
   }
@@ -522,7 +533,7 @@
     let parameters: ArgumentsMap = {};
     if (sequenceParameters.length > 0) {
       const primarySequenceParameter = sequenceParameters[0];
-      parameters[primarySequenceParameter] = selectedFilePath;
+      parameters[primarySequenceParameter] = activeFilePath;
     }
 
     if ($workspace) {
@@ -559,7 +570,7 @@
 <CssGrid bind:columns={$workspaceColumns}>
   <Sidebar.Provider style="--sidebar-width: auto" className="min-h-0">
     <WorkspaceSidebar
-      {selectedFilePath}
+      bind:selectedFilePath
       {workspaceTree}
       {isWorkspaceLoading}
       {hasEditWorkspacePermission}

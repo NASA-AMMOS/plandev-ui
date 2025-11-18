@@ -115,10 +115,12 @@
   function onRefreshWorkspace() {
     dispatch('refreshWorkspace');
   }
+
+  let activeTab = "files";
 </script>
 
 <Sidebar.Root className="h-full inset-x-0 border-none flex">
-  <Tabs.Root value="files" orientation="vertical" class="flex h-full">
+  <Tabs.Root bind:value={activeTab} orientation="vertical" class="flex h-full">
     <div class="flex h-full w-10 border-r border-border bg-muted">
       <Tabs.List class="flex h-auto w-full flex-col items-center justify-start gap-0">
         <Tooltip.Root>
@@ -177,6 +179,7 @@
     </div>
     <div class="flex h-full w-full flex-col">
       <Tabs.Content value="files" class="mt-0 h-full">
+        {#if activeTab === "files"}
         <div class="grid h-full grid-rows-[min-content_auto]">
           <Sidebar.Header className="p-0">
             <WorkspaceTabHeader
@@ -218,8 +221,10 @@
             </Sidebar.Group>
           </Sidebar.Content>
         </div>
+        {/if}
       </Tabs.Content>
       <Tabs.Content value="grid" class="mt-0 h-full" style="min-height: 300px;">
+        {#if activeTab === "grid"}
         <div class="grid h-full grid-rows-[min-content_auto]">
           <Sidebar.Header className="p-0">
             <WorkspaceTabHeader
@@ -239,12 +244,11 @@
                 <Sidebar.Menu className="h-full">
                   {#if workspaceTree && workspace}
                     <WorkspaceGridView
-                      selectedTreeNodePath={selectedFilePath}
+                      bind:selectedTreeNodePath={selectedFilePath}
                       treeNode={workspaceTree}
                       {workspace}
                       {user}
                       {isRowSelectable}
-                      on:nodeClicked
                       on:nodeDelete
                       on:nodeMove
                       on:nodeRename
@@ -262,6 +266,7 @@
             </Sidebar.Group>
           </Sidebar.Content>
         </div>
+        {/if}
       </Tabs.Content>
       <Tabs.Content value="settings" class="mt-0 h-full" style="min-height: 300px;">
         <div class="grid h-full grid-rows-[min-content_auto]">
