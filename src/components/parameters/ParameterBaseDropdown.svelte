@@ -110,7 +110,6 @@
 <style>
   .parameter-base-dropdown {
     align-items: center;
-    column-gap: 5px;
     display: grid;
   }
 
