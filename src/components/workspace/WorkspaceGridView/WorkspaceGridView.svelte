@@ -38,6 +38,7 @@
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
   import BulkActionDataGrid from '../../ui/DataGrid/BulkActionDataGrid.svelte';
   import WorkspaceTreeViewIcon from '../WorkspaceTreeView/WorkspaceTreeViewIcon.svelte';
+  import WorkspaceContextMenuContents from "../WorkspaceContextMenuContents.svelte";
 
   export let isRowSelectable: (node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>) => boolean = (
     _node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>,
@@ -589,7 +590,26 @@
     on:cellContextMenu={onContextMenu}
     on:cellContextMenuHide={onContextMenuHide}
   >
-    <svelte:fragment slot="context-menu" let:selectedItemId>
+    <svelte:fragment slot="context-menu" let:selectedItemId let:selectedItemIds>
+      <WorkspaceContextMenuContents
+        actions={[ /* todo */ ]}
+        hasEditPermission={true}
+        hasDeletePermission={true}
+        nodes={selectedItemIds ? selectedItemIds.map(id => workspaceTreeMap[id]) : []}
+        user={user}
+        on:rename={onTableMenuRenameNode}
+        on:move={() => { /* todo */ }}
+        on:delete={() => { /* todo */ }}
+        on:copyFileLocation={onTableCopyFileLocation}
+        on:moveToWorkspace={() => { /* todo */ }}
+        on:runAction={(a) => { /* todo */ console.log(a); }}
+        on:newFile={onTableNewSequence}
+        on:newFolder={onTableNewFolder}
+        on:importFile={onTableImportFile}
+      />
+      <ContextMenu.Separator />
+      <ContextMenu.Separator />
+      <!-- todo remove old context menu below -->
       <ContextMenu.Group>
         <div
           use:permissionHandler={{
