@@ -16,15 +16,11 @@
     PencilLine,
     Trash2,
   } from 'lucide-svelte';
-  import {createEventDispatcher, onMount} from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import type { User } from '../../../types/app';
-  import type {
-    DataGridColumnDef,
-    DataGridRowDoubleClick,
-    RowId,
-  } from '../../../types/data-grid';
+  import type { DataGridColumnDef, DataGridRowDoubleClick, RowId } from '../../../types/data-grid';
   import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
   import type {
     WorkspaceTreeMap,
@@ -38,7 +34,7 @@
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
   import BulkActionDataGrid from '../../ui/DataGrid/BulkActionDataGrid.svelte';
   import WorkspaceTreeViewIcon from '../WorkspaceTreeView/WorkspaceTreeViewIcon.svelte';
-  import WorkspaceContextMenuContents from "../WorkspaceContextMenuContents.svelte";
+  import WorkspaceContextMenuContents from '../WorkspaceContextMenuContents.svelte';
 
   export let isRowSelectable: (node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>) => boolean = (
     _node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>,
@@ -233,7 +229,9 @@
       return fullFilePath.split(PATH_DELIMITER).filter(Boolean).length === 1;
     }
     // filter out files that aren't in this path at all
-    if (!fullFilePath.startsWith(`${treeNodeBreadcrumbPath}/`)) { return false; }
+    if (!fullFilePath.startsWith(`${treeNodeBreadcrumbPath}/`)) {
+      return false;
+    }
     // only show files that are direct children of treeNodeBreadcrumbPath
     const remainder = fullFilePath.slice(treeNodeBreadcrumbPath.length + 1);
     return remainder.split(PATH_DELIMITER).filter(Boolean).length === 1;
@@ -592,17 +590,27 @@
   >
     <svelte:fragment slot="context-menu" let:selectedItemId let:selectedItemIds>
       <WorkspaceContextMenuContents
-        actions={[ /* todo */ ]}
+        actions={[
+          /* todo */
+        ]}
         hasEditPermission={true}
         hasDeletePermission={true}
         nodes={selectedItemIds ? selectedItemIds.map(id => workspaceTreeMap[id]) : []}
-        user={user}
+        {user}
         on:rename={onTableMenuRenameNode}
-        on:move={() => { /* todo */ }}
-        on:delete={() => { /* todo */ }}
+        on:move={() => {
+          /* todo */
+        }}
+        on:delete={() => {
+          /* todo */
+        }}
         on:copyFileLocation={onTableCopyFileLocation}
-        on:moveToWorkspace={() => { /* todo */ }}
-        on:runAction={(a) => { /* todo */ console.log(a); }}
+        on:moveToWorkspace={() => {
+          /* todo */
+        }}
+        on:runAction={a => {
+          /* todo */ console.log(a);
+        }}
         on:newFile={onTableNewSequence}
         on:newFolder={onTableNewFolder}
         on:importFile={onTableImportFile}

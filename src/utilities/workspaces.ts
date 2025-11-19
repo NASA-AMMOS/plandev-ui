@@ -4,8 +4,8 @@ import type { Workspace, WorkspaceInsertInput } from '../types/workspace';
 import type { WorkspaceTreeMap, WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 import { filterEmpty } from './generic';
 import { reqWorkspace } from './requests';
-import type {ActionDefinition} from "../types/actions";
-import {WorkspaceContentType} from "../enums/workspace";
+import type { ActionDefinition } from '../types/actions';
+import { WorkspaceContentType } from '../enums/workspace';
 
 export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
   let treeMap: WorkspaceTreeMap = {};
@@ -96,8 +96,8 @@ export function flattenWorkspaceTreeWithPaths(
  */
 export function getAvailableActionsForNodes(
   actions: ActionDefinition[],
-  nodes: (WorkspaceTreeNodeWithFullPath | WorkspaceTreeNode)[]
-): ({ action: ActionDefinition, parameter: string })[] {
+  nodes: (WorkspaceTreeNodeWithFullPath | WorkspaceTreeNode)[],
+): { action: ActionDefinition; parameter: string }[] {
   console.log(nodes, actions);
 
   const areAllNodesSequences = nodes.every(node => node.type === WorkspaceContentType.Sequence);
@@ -105,29 +105,36 @@ export function getAvailableActionsForNodes(
   // any # of any type of files can be passed to a 'fileList' type param
   let allowedParamTypes = ['fileList'];
   // if they are ALL sequences, they can safely be passed to a 'sequenceList' param
-  if (areAllNodesSequences) { allowedParamTypes.push('sequenceList'); }
+  if (areAllNodesSequences) {
+    allowedParamTypes.push('sequenceList');
+  }
   // if only one file is selected, it can be passed to single file/sequence params
-  if (nodes.length === 1) { allowedParamTypes.push('file'); }
-  if (nodes.length === 1 && areAllNodesSequences) { allowedParamTypes.push('sequence'); }
+  if (nodes.length === 1) {
+    allowedParamTypes.push('file');
+  }
+  if (nodes.length === 1 && areAllNodesSequences) {
+    allowedParamTypes.push('sequence');
+  }
   // when we pick a primary param, prefer more-specific types over less-specific ones (reversed)
   allowedParamTypes = allowedParamTypes.reverse();
 
-  const availableActions: ({ action: ActionDefinition, parameter: string })[] = [];
+  const availableActions: { action: ActionDefinition; parameter: string }[] = [];
 
   for (const action of actions) {
     // params where the user has set a "primary: true" flag to be used as primary input for files/sequences
     const userPrimaryParams = Object.entries(action.parameter_schema)
       // @ts-expect-error only some types in the schema tagged union have `primary` :-/
-      .filter(([_k, schema]) => schema.primary === true)
+      .filter(([_k, schema]) => schema.primary === true);
 
-    if(userPrimaryParams.length) {
+    if (userPrimaryParams.length) {
       // action specifies a "primary" param to use (should be only one but check to be safe)
       // pick the first param with `primary: true` and a valid parameter type for our nodes
       const primaryParam = userPrimaryParams.find(([_key, schema]) => {
         return allowedParamTypes.includes(schema.type);
       });
-      if(primaryParam) { availableActions.push({action, parameter: primaryParam[0]}); }
-
+      if (primaryParam) {
+        availableActions.push({ action, parameter: primaryParam[0] });
+      }
     } else {
       // no user-specified primary, pick the best one if possible
       const allowedParams = allowedParamTypes
@@ -135,8 +142,10 @@ export function getAvailableActionsForNodes(
           return Object.entries(action.parameter_schema).find(([_k, schema]) => schema.type === allowedType);
         })
         .filter(v => v !== undefined)
-        .map(([paramKey]) => ({action, parameter: paramKey}));
-      if (allowedParams.length) { availableActions.push(allowedParams[0]); }
+        .map(([paramKey]) => ({ action, parameter: paramKey }));
+      if (allowedParams.length) {
+        availableActions.push(allowedParams[0]);
+      }
     }
   }
 

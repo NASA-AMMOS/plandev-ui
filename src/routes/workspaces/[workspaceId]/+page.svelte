@@ -9,7 +9,7 @@
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type { LibrarySequenceSignature, PhoenixContext, UserSequence } from '@nasa-jpl/aerie-sequence-languages';
   import type { IRowNode } from 'ag-grid-community';
-  import {onDestroy, onMount, tick} from 'svelte';
+  import { onDestroy, onMount, tick } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
@@ -116,7 +116,7 @@
   async function maybeNavigate(nextPath: string | null) {
     // don't navigate if the selected path is a text file and not a folder or binary
     const isNavigableFile = nextPath && isTextFile(workspaceTreeMap[nextPath]?.type);
-    if(!isNavigableFile) {
+    if (!isNavigableFile) {
       // wait a tick then revert selected UI to the existing active path
       await tick();
       selectedFilePath = activeFilePath;
@@ -444,7 +444,9 @@
   async function onNodeClicked({ detail: { toggleState, treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
     // Used by WorkspaceTreeView only, grid view uses two-way binding to selectedFilePath
     // (todo: use two-way binding with TreeView?)
-    if (!isTextFile(treeNode.type) || toggleState !== true) { return; }
+    if (!isTextFile(treeNode.type) || toggleState !== true) {
+      return;
+    }
     selectedFilePath = treeNodePath;
   }
 
