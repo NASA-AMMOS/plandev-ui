@@ -61,7 +61,7 @@
   import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
   import { showFailureToast } from '../../../utilities/toast';
   import {
-    flattenWorkspaceTreeWithPaths,
+    flattenWorkspaceTreeWithPaths, getAvailableActionsForNodes,
     mapWorkspaceTreePaths,
     separateFilenameFromPath,
   } from '../../../utilities/workspaces';
@@ -75,8 +75,10 @@
 
   const { initialWorkspace, user } = data;
 
+  let availableActionsForActiveFile: { action: ActionDefinition; parameter: string }[] = [];
   let actionsWithSequenceParameters: ActionDefinition[] = [];
   let activeFilePath: string | null = null;
+  let allActionsForWorkspace: ActionDefinition[] = [];
   let channelDictionary: ChannelDictionary | null = null;
   let commandDictionary: CommandDictionary | null = null;
   let parameterDictionaries: ParameterDictionary[] = [];
@@ -100,8 +102,8 @@
 
   $: if (initialWorkspace) {
     $workspaceId = initialWorkspace.id;
-
-    actionsWithSequenceParameters = Object.values($actionDefinitionsByWorkspace[$workspaceId] || {}).filter(action => {
+    allActionsForWorkspace = Object.values($actionDefinitionsByWorkspace[$workspaceId] || {});
+    actionsWithSequenceParameters = allActionsForWorkspace.filter(action => {
       const seqParameter = getActionParametersOfType(action, 'sequence');
       return seqParameter.length > 0;
     });
@@ -135,6 +137,7 @@
     if (activeFilePath) {
       const { filename } = separateFilenameFromPath(activeFilePath);
       getSelectedFileContent(activeFilePath);
+      availableActionsForActiveFile = getAvailableActionsForNodes(allActionsForWorkspace, [workspaceTreeMap[activeFilePath]]);
 
       if (filename) {
         selectedFileName = filename;
@@ -625,6 +628,7 @@
         <SequenceEditor
           {phoenixContext}
           {actionsWithSequenceParameters}
+          availableActions={availableActionsForActiveFile}
           includeActions={true}
           previewOnly={!hasEditFilePermission}
           sequenceAdaptation={$sequenceAdaptation}

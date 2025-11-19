@@ -38,6 +38,7 @@
   import SectionTitle from '../ui/SectionTitle.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
 
+  export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
   export let actionsWithSequenceParameters: ActionDefinition[] = [];
   export let phoenixContext: PhoenixContext;
   export let includeActions: boolean = false;
@@ -275,6 +276,43 @@
         <SectionTitle>{title}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}</SectionTitle>
 
         <div class="right">
+          {#if includeActions}
+            <div class="app-menu" role="none" on:click|stopPropagation={() => actionMenu.toggle()}>
+              <button
+                disabled={sequenceName === '' || availableActions.length === 0}
+                class="st-button icon-button secondary"
+              >
+                {#if availableActions.length > 0}
+                  <div class="actions-chip">{availableActions.length}</div>
+                {/if}
+                Action{pluralize(availableActions.length)}
+                <ChevronDownIcon />
+              </button>
+              <Menu bind:this={actionMenu}>
+                {#each availableActions as actionInfo}
+                  <MenuItem
+                    use={[
+                      [
+                        permissionHandler,
+                        {
+                          hasPermission: !readOnly,
+                          permissionError: 'You do not have permission to run this action.',
+                        },
+                      ],
+                    ]}
+                    on:click={() => {
+                      onRunAction(actionInfo?.action);
+                      actionMenu.toggle();
+                    }}
+                  >
+                    <SquareCode size={16} />
+                    {actionInfo?.action?.name}
+                  </MenuItem>
+                {/each}
+              </Menu>
+            </div>
+          {/if}
+
           {#if includeActions}
             <div class="app-menu" role="none" on:click|stopPropagation={() => actionMenu.toggle()}>
               <button
