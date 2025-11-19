@@ -3,7 +3,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
   import { onMount } from 'svelte';
   import {
     actionDefinitions,
@@ -16,6 +15,7 @@
   import type { User } from '../../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
   import type { Workspace } from '../../../types/workspace';
+  import type { WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
   import {
     getActionDefinitionForRun,
     getUserSequenceValueSchemaOptions,
@@ -59,12 +59,12 @@
   let codeAbortController: AbortController;
   let argumentsMap: ArgumentsMap = {};
   let saving: boolean = false;
-  let workspaceSequences: UserSequence[] = [];
+  let workspaceFiles: WorkspaceTreeNodeWithFullPath[] = [];
 
   $: if (typeof workspaceId === 'number') {
     workspaceActionDefinitions = Object.values($actionDefinitionsByWorkspace[workspaceId] || {});
     workspaceActionRuns = $actionRunsByWorkspace[workspaceId] || [];
-    getWorkspaceSequences(workspaceId);
+    getWorkspaceFiles(workspaceId);
   }
 
   $: if (workspace) {
@@ -116,10 +116,10 @@
     }
   });
 
-  async function getWorkspaceSequences(idOfWorkspace: number) {
+  async function getWorkspaceFiles(idOfWorkspace: number) {
     isLoadingWorkspace = true;
 
-    workspaceSequences = await effects.getWorkspaceSequences(idOfWorkspace, null, false, user);
+    workspaceFiles = await effects.getWorkspaceFilesList(idOfWorkspace, user);
 
     isLoadingWorkspace = false;
   }
@@ -158,7 +158,7 @@
 
   async function runAction(action: ActionDefinition) {
     if (workspace) {
-      const actionRunId = await effects.runAction(action, workspace, workspaceSequences, user);
+      const actionRunId = await effects.runAction(action, workspace, workspaceFiles, user);
       if (typeof actionRunId === 'number') {
         goto(getActionsUrl(base, workspaceId, actionRunId));
       }
@@ -168,19 +168,19 @@
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     if (formParameter.schema.type === 'options-single') {
-      const sequences = workspaceSequences.find(sequence => sequence.name === formParameter.value);
-      formParameter.value = sequences?.name ?? null;
+      const files = workspaceFiles.find(sequence => sequence.fullPath === formParameter.value);
+      formParameter.value = files?.fullPath ?? null;
       argumentsMap = getArguments(argumentsMap, formParameter);
     } else if (formParameter.schema.type === 'options-multiple') {
       const values: string[] = formParameter.value;
-      const sequenceNames: string[] = [];
+      const fileNames: string[] = [];
       values.forEach(value => {
-        const seq = workspaceSequences.find(sequence => sequence.name === value);
-        if (seq !== undefined) {
-          sequenceNames.push(seq.name);
+        const seq = workspaceFiles.find(sequence => sequence.fullPath === value);
+        if (seq !== undefined && seq.fullPath !== undefined) {
+          fileNames.push(seq.fullPath);
         }
       });
-      formParameter.value = sequenceNames;
+      formParameter.value = fileNames;
       argumentsMap = getArguments(argumentsMap, formParameter);
     } else {
       argumentsMap = getArguments(argumentsMap, formParameter);
@@ -385,12 +385,15 @@
                       [],
                       undefined,
                       undefined,
-                      getUserSequenceValueSchemaOptions(workspaceSequences, workspaceId),
+                      getUserSequenceValueSchemaOptions(workspaceFiles, workspaceId),
                       'sequence',
+                      undefined,
+                      false,
+                      false,
                     )}
                     parameterType="action"
+                    hideInfo={false}
                     hideRightAdornments
-                    hideInfo
                     disabled={isLoadingWorkspace}
                     on:change={onChangeFormParameters}
                     use={[

@@ -75,7 +75,7 @@
   }
 </script>
 
-{#if externalEvent || unit || source !== 'none'}
+{#if externalEvent || unit || description}
   <div
     bind:this={ref}
     class="parameter-info-container"

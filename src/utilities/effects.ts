@@ -313,7 +313,7 @@ import {
   generateDefaultView,
   validateViewJSONAgainstSchema,
 } from './view';
-import { cleanPath, joinPath, mapWorkspaceTreePaths, WorkspaceApi } from './workspaces';
+import { cleanPath, flattenWorkspaceTreeWithPaths, joinPath, mapWorkspaceTreePaths, WorkspaceApi } from './workspaces';
 
 function throwPermissionError(attemptedAction: string): never {
   throw Error(`You do not have permission to: ${attemptedAction}.`);
@@ -751,27 +751,47 @@ const effects = {
   async createActionRun(
     workspace: Workspace,
     actionDefinitionId: number,
-    parameters: any,
+    parameterDefs: ActionParametersMap,
+    parameterValues: ArgumentsMap,
     settings: any,
-    hasSecrets: boolean,
     user: User | null,
   ): Promise<number | null> {
     try {
+      const secretParameters: ActionParametersMap = {};
+      const nonSecretParameters: ActionParametersMap = {};
+
+      // Filter out the secret params to send directly to the action server.
+      for (const paramName of Object.keys(parameterDefs)) {
+        if (parameterDefs[paramName].schema.type === 'secret') {
+          secretParameters[paramName] = parameterValues[paramName];
+        } else {
+          nonSecretParameters[paramName] = parameterValues[paramName];
+        }
+      }
+
       if (!queryPermissions.CREATE_ACTION_RUN(user, workspace)) {
         throwPermissionError('create action run');
       }
 
       const actionRunInsertInput = {
         action_definition_id: actionDefinitionId,
-        has_secrets: hasSecrets,
-        parameters,
+        // we are now sending secrets on every run, to provide JWT token to actions
+        // todo: future refactor - use hasura actions to run aerie actions & avoid need for secrets call
+        has_secrets: true,
+        parameters: nonSecretParameters,
         settings,
       };
+      // send initial hasura request to insert the action run in the DB
       const response = await reqHasura<{ id: number }>(gql.CREATE_ACTION_RUN, { actionRunInsertInput }, user);
-      const { insert_action_run_one: actionRunId } = response;
-      if (actionRunId !== null) {
+      const { insert_action_run_one: actionRunResult } = response;
+
+      if (actionRunResult !== null) {
+        const actionRunId = actionRunResult.id;
         logMessage(`Created action run ID=${actionRunId}.`);
-        return actionRunId.id;
+        // send follow-up secrets request directly to action server, containing transient secrets + JWT (in header)
+        await effects.sendActionSecretParameters(workspace, secretParameters, actionRunId, user);
+        logMessage(`Sent secrets for action run ID=${actionRunId}.`);
+        return actionRunResult.id;
       } else {
         throw Error(`Unable to run action`);
       }
@@ -5441,6 +5461,11 @@ const effects = {
     return null;
   },
 
+  async getWorkspaceFilesList(workspaceId: number, user: User | null): Promise<WorkspaceTreeNodeWithFullPath[]> {
+    const workspaceContents = await effects.getWorkspaceContents(workspaceId, user);
+    return flattenWorkspaceTreeWithPaths(workspaceContents ?? []);
+  },
+
   async getWorkspaceSequences(
     workspaceId: number,
     workspaceTreeMap: WorkspaceTreeMap | null,
@@ -6566,7 +6591,7 @@ const effects = {
   async runAction(
     actionDefinition: ActionDefinition,
     workspace: Workspace,
-    workspaceSequences: UserSequence[],
+    workspaceSequences: WorkspaceTreeNodeWithFullPath[],
     user: User | null,
     parameters?: ArgumentsMap,
   ): Promise<number | null> {
@@ -6715,7 +6740,7 @@ const effects = {
         action_run_id: actionRunId,
         secrets: secretParameters,
       };
-      await reqActionServer<any>('/secrets', 'POST', JSON.stringify(body));
+      await reqActionServer<any>('/secrets', 'POST', JSON.stringify(body), user);
     } catch (e) {
       catchError('Sending Action Secret Parameters Failed', e as Error);
       showFailureToast('Sending Action Secret Parameters Failed');
