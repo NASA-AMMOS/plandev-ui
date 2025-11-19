@@ -624,7 +624,7 @@
   <CssGridGutter track={1} type="column" />
   <Sidebar.Inset className="min-h-0">
     <div class="grid h-full grid-cols-1 grid-rows-1">
-      {#if activeFilePath && isTextFile(workspaceTreeMap[activeFilePath]?.type)}
+      {#if activeFilePath === null || isTextFile(workspaceTreeMap[activeFilePath]?.type)}
       <div
         class="flex h-full"
         class:hidden={selectedFileType != null && selectedFileType !== WorkspaceContentType.Sequence}
