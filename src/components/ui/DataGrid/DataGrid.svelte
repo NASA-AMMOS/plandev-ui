@@ -114,6 +114,7 @@
   export let scrollToSelection: boolean = false;
   export let selectedRowIds: RowId[] = [];
   export let shouldAutoGenerateId: boolean = false;
+  export let shouldMultiSelectUpdatePrimarySelection: boolean = false;
   export let showLoadingSkeleton: boolean = false;
   export let suppressCellFocus: boolean = true;
   export let suppressDragLeaveHidesColumns: boolean = true;
@@ -363,7 +364,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       onGridSizeChanged(event: GridSizeChangedEvent<RowData>) {
         dispatch('gridSizeChanged', event);
       },
-      onRowClicked({ data, node }: RowClickedEvent<RowData>) {
+      onRowClicked({ data, node, event }: RowClickedEvent<RowData>) {
         const isSelected = node.isSelected();
         dispatch('rowClicked', {
           data,
@@ -371,12 +372,21 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         } as DataGridRowSelection<RowData>);
 
         if (data && !suppressRowClickSelection && isSelected) {
-          currentSelectedRowId = getRowId(data);
+          const mouseEvent = event as MouseEvent;
+          const isMultiGrid = rowSelection === 'multiple'; // todo update, deprecated api
+          const usedMultiKey = mouseEvent.metaKey || mouseEvent.ctrlKey || mouseEvent.shiftKey;
+          const isMulti = isMultiGrid && usedMultiKey;
+          // only change the primary selection if we're not in the middle of a multi-select operation
+          // (or if shouldMultiSelectUpdatePrimarySelection is true)
+          const isPrimarySelect = !isMulti || (isMulti && shouldMultiSelectUpdatePrimarySelection);
 
-          dispatch('rowSelected', {
-            data,
-            isSelected,
-          } as DataGridRowSelection<RowData>);
+          if (isPrimarySelect) {
+            currentSelectedRowId = getRowId(data);
+            dispatch('rowSelected', {
+              data,
+              isSelected,
+            } as DataGridRowSelection<RowData>);
+          }
         }
       },
       onRowDoubleClicked(event: RowDoubleClickedEvent<RowData>) {
