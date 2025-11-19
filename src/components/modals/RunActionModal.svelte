@@ -116,7 +116,7 @@
       )}
       parameterType="action"
       hideRightAdornments
-      hideInfo
+      hideInfo={false}
       disabled={isLoadingWorkspace}
       on:change={onChangeFormParameters}
     />
