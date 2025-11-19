@@ -152,7 +152,9 @@
   async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
     const sequence = viewUpdate.state.doc.toString();
     disableCopyAndExport = sequence === '';
-    let output = selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
+    let output = (sequenceName === undefined) ?
+      undefined :
+      selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
 
     editorOutputView.dispatch({ changes: { from: 0, insert: output ?? '', to: editorOutputView.state.doc.length } });
 

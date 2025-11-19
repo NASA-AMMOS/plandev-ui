@@ -115,8 +115,9 @@
 
   async function maybeNavigate(nextPath: string | null) {
     // don't navigate if the selected path is a text file and not a folder or binary
-    const isNavigableFile = nextPath && isTextFile(workspaceTreeMap[nextPath]?.type);
-    if (!isNavigableFile) {
+    // treat `null` as a navigable path so we can intentionally unload the editor file rather than skipping
+    const isNavigableFileOrNull = (nextPath && isTextFile(workspaceTreeMap[nextPath]?.type)) || nextPath === null;
+    if (!isNavigableFileOrNull) {
       // wait a tick then revert selected UI to the existing active path
       await tick();
       selectedFilePath = activeFilePath;
@@ -143,6 +144,9 @@
         selectedFileType = null;
       }
     } else {
+      // navigated to a null/empty file, reset the editor contents
+      initialSelectedFileContent = '';
+      updatedSelectedFileContent = initialSelectedFileContent;
       selectedFileName = undefined;
       selectedFileType = null;
     }
