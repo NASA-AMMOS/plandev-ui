@@ -67,6 +67,10 @@
     getWorkspaceFiles(workspaceId);
   }
 
+  $: if (workspace) {
+    hasRunActionPermission = featurePermissions.actionRun.canCreate(user, workspace);
+  }
+
   $: selectedActionRuns = (workspaceActionRuns || []).filter(actionRun => {
     return actionRun.action_definition_id === selectedActionDefinition?.id;
   });
