@@ -54,7 +54,7 @@
   export let userSequenceEditorColumnsWithFormBuilder: string;
 
   const dispatch = createEventDispatcher<{
-    runAction: ActionDefinition;
+    runAction: { action: ActionDefinition; parameter: string };
     save: string;
     sequence: { input: string; output?: string };
   }>();
@@ -220,8 +220,8 @@
     }
   }
 
-  function onRunAction(action: ActionDefinition) {
-    dispatch('runAction', action);
+  function onRunAction(action: ActionDefinition, parameter: string) {
+    dispatch('runAction', {action, parameter});
   }
 
   function onSave(): boolean {
@@ -301,49 +301,12 @@
                       ],
                     ]}
                     on:click={() => {
-                      onRunAction(actionInfo?.action);
+                      onRunAction(actionInfo?.action, actionInfo?.parameter);
                       actionMenu.toggle();
                     }}
                   >
                     <SquareCode size={16} />
                     {actionInfo?.action?.name}
-                  </MenuItem>
-                {/each}
-              </Menu>
-            </div>
-          {/if}
-
-          {#if includeActions}
-            <div class="app-menu" role="none" on:click|stopPropagation={() => actionMenu.toggle()}>
-              <button
-                disabled={sequenceName === '' || actionsWithSequenceParameters.length === 0}
-                class="st-button icon-button secondary"
-              >
-                {#if actionsWithSequenceParameters.length > 0}
-                  <div class="actions-chip">{actionsWithSequenceParameters.length}</div>
-                {/if}
-                Action{pluralize(actionsWithSequenceParameters.length)}
-                <ChevronDownIcon />
-              </button>
-              <Menu bind:this={actionMenu}>
-                {#each actionsWithSequenceParameters as action}
-                  <MenuItem
-                    use={[
-                      [
-                        permissionHandler,
-                        {
-                          hasPermission: !readOnly,
-                          permissionError: 'You do not have permission to run this action.',
-                        },
-                      ],
-                    ]}
-                    on:click={() => {
-                      onRunAction(action);
-                      actionMenu.toggle();
-                    }}
-                  >
-                    <SquareCode size={16} />
-                    {action?.name}
                   </MenuItem>
                 {/each}
               </Menu>

@@ -544,15 +544,19 @@
     window.open(getActionsUrl(base, $workspaceId), '_blank');
   }
 
-  async function onRunActionOnSequence(event: CustomEvent<ActionDefinition>) {
-    const { detail: action } = event;
-    //get parameters of type sequence...
-    const sequenceParameters = getActionParametersOfType(action, 'sequence');
-    //set this sequence to the first one... FOR NOW.  TODO how do we determine the primary one?
+  async function onRunActionOnSequence(event: CustomEvent<{ action: ActionDefinition, parameter: string }>) {
+    const { detail: {action, parameter: primaryParameter} } = event;
+
     let parameters: ArgumentsMap = {};
-    if (sequenceParameters.length > 0) {
-      const primarySequenceParameter = sequenceParameters[0];
-      parameters[primarySequenceParameter] = activeFilePath;
+    // the event will tell us which of the action's parameter is the primary, to be pre-filled with the file's path
+    if(primaryParameter in action.parameter_schema) {
+      const paramDefinition = action.parameter_schema[primaryParameter];
+      const paramValue = paramDefinition.type === 'fileList' || paramDefinition.type === 'sequenceList' ?
+        [activeFilePath] : activeFilePath;
+      parameters[primaryParameter] = paramValue;
+    } else {
+      // no primary paramter - show modal anyway, just don't pre-fill parameter
+      console.warn(`Invalid parameter ${primaryParameter} in onRunActionOnSequence`);
     }
 
     if ($workspace) {
