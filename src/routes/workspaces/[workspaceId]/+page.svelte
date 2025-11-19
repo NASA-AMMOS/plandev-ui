@@ -116,7 +116,7 @@
   async function maybeNavigate(nextPath: string | null) {
     // don't navigate if the selected path is a text file and not a folder or binary
     // treat `null` as a navigable path so we can intentionally unload the editor file rather than skipping
-    const isNavigableFileOrNull = (nextPath && isTextFile(workspaceTreeMap[nextPath]?.type)) || nextPath === null;
+    const isNavigableFileOrNull = (nextPath && isNavigableFile(workspaceTreeMap[nextPath]?.type)) || nextPath === null;
     if (!isNavigableFileOrNull) {
       // wait a tick then revert selected UI to the existing active path
       await tick();
@@ -268,9 +268,13 @@
       fileType === WorkspaceContentType.Unknown
     );
   }
+  function isNavigableFile(fileType: WorkspaceContentType) {
+    // user is allowed to navigate to any file types, just not directories
+    return fileType !== WorkspaceContentType.Directory;
+  }
 
   function isRowSelectable(node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>): boolean {
-    return isTextFile(node.data?.type ?? WorkspaceContentType.Unknown);
+    return isNavigableFile(node.data?.type ?? WorkspaceContentType.Unknown);
   }
 
   async function getSelectedFileContent(filePath: string | null) {
@@ -448,7 +452,7 @@
   async function onNodeClicked({ detail: { toggleState, treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
     // Used by WorkspaceTreeView only, grid view uses two-way binding to selectedFilePath
     // (todo: use two-way binding with TreeView?)
-    if (!isTextFile(treeNode.type) || toggleState !== true) {
+    if (!isNavigableFile(treeNode.type) || toggleState !== true) {
       return;
     }
     selectedFilePath = treeNodePath;
@@ -613,6 +617,7 @@
   <CssGridGutter track={1} type="column" />
   <Sidebar.Inset className="min-h-0">
     <div class="grid h-full grid-cols-1 grid-rows-1">
+      {#if activeFilePath && isTextFile(workspaceTreeMap[activeFilePath]?.type)}
       <div
         class="flex h-full"
         class:hidden={selectedFileType != null && selectedFileType !== WorkspaceContentType.Sequence}
@@ -649,6 +654,17 @@
           on:textContentUpdated={onWorkspaceFileUpdated}
         />
       </div>
+      {:else}
+        <div class="flex w-full justify-center pt-6">
+          <p class="st-typography-body text-center max-w-prose text-lg">
+            The selected file
+            <code class="font-bold">
+              {activeFilePath}
+            </code>
+            is a binary or other format not supported by sequence editor
+          </p>
+        </div>
+      {/if}
     </div>
   </Sidebar.Inset>
 </CssGrid>
