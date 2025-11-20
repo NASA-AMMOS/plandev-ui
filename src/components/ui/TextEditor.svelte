@@ -20,9 +20,9 @@
   import { tooltip } from '../../utilities/tooltip';
   import Panel from './Panel.svelte';
   import SectionTitle from './SectionTitle.svelte';
-  import type {ActionDefinition} from "../../types/actions";
-  import {pluralize} from "../../utilities/text";
-  import Menu from "../menus/Menu.svelte";
+  import type { ActionDefinition } from '../../types/actions';
+  import { pluralize } from '../../utilities/text';
+  import Menu from '../menus/Menu.svelte';
   import MenuItem from '../menus/MenuItem.svelte';
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
@@ -126,7 +126,7 @@
   }
 
   function onRunAction(action: ActionDefinition, parameter: string) {
-    dispatch('runAction', {action, parameter});
+    dispatch('runAction', { action, parameter });
   }
 
   onMount(() => {
@@ -170,18 +170,18 @@
             {#each availableActions as actionInfo}
               <MenuItem
                 use={[
-                      [
-                        permissionHandler,
-                        {
-                          hasPermission: !readOnly,
-                          permissionError: 'You do not have permission to run this action.',
-                        },
-                      ],
-                    ]}
+                  [
+                    permissionHandler,
+                    {
+                      hasPermission: !readOnly,
+                      permissionError: 'You do not have permission to run this action.',
+                    },
+                  ],
+                ]}
                 on:click={() => {
-                      onRunAction(actionInfo?.action, actionInfo?.parameter);
-                      actionMenu.toggle();
-                    }}
+                  onRunAction(actionInfo?.action, actionInfo?.parameter);
+                  actionMenu.toggle();
+                }}
               >
                 <SquareCode size={16} />
                 {actionInfo?.action?.name}
