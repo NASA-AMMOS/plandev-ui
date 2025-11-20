@@ -171,25 +171,28 @@ export function getArguments(argumentsMap: ArgumentsMap, formParameter: FormPara
   return omitBy({ ...argumentsMap, ...newArgument }, isEmpty);
 }
 
+const extensionRegExp = /\*?\.?(?<extension>.*)$/;
+
+export function pathMatchesExtensionPattern(path: string, pattern: string): boolean {
+  if (!pattern.length || pattern === '*') {
+    return true;
+  }
+
+  const match = pattern.match(extensionRegExp);
+  // Check if the pattern is in the expected "*.ext" format
+  if (match && match.groups?.extension) {
+    // Extract the extension part from path, e.g., ".sh" from "*.sh"
+    return path.endsWith(match.groups.extension);
+  }
+  return false;
+}
+
 function filterByExtensionPattern(options: ValueSchemaOption[], pattern: string): ValueSchemaOption[] {
   // Handle the "match all" wildcard
-  if (pattern === '*') {
+  if (!pattern.length || pattern === '*') {
     return [...options]; // Return a shallow copy of all options
   }
-
-  const match = pattern.match(/\*?\.?(?<extension>.*)$/);
-  // Check if the pattern is in the expected "*.ext" format
-  if (match) {
-    // Extract the extension part, e.g., ".sh" from "*.sh"
-    const { groups } = match;
-
-    if (groups?.extension) {
-      // Filter the array, returning only filenames that end with the required extension
-      return options.filter(option => option.value.endsWith(groups.extension));
-    }
-  }
-
-  return [];
+  return options.filter(option => pathMatchesExtensionPattern(option.value, pattern));
 }
 
 export function getFormParameters(
