@@ -1,28 +1,25 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
-  import {
-    ArrowUpFromLine,
-    Copy,
-    FileOutput,
-    FilePlus,
-    FolderOutput,
-    FolderPlus,
-    PencilLine,
-    Trash2,
-  } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { WorkspaceContentType } from '../../../enums/workspace';
+  import type { ActionDefinition } from '../../../types/actions';
   import type { User } from '../../../types/app';
-  import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
+  import type {
+    ActionParameterPair,
+    Workspace,
+    WorkspaceNodeEvent,
+    WorkspaceNodeRunActionEvent,
+  } from '../../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
-  import { permissionHandler } from '../../../utilities/permissionHandler';
   import { featurePermissions } from '../../../utilities/permissions';
+  import { getAvailableActionsForNodes } from '../../../utilities/workspaces';
   import ContextMenuInternal from '../../context-menu/ContextMenu.svelte';
+  import WorkspaceContextMenuContents from '../WorkspaceContextMenuContents.svelte';
   import WorkspaceTreeViewNode from './WorkspaceTreeViewNode.svelte';
 
+  export let actions: ActionDefinition[] = [];
   export let enableContextMenu: boolean = true;
   export let selectedTreeNodePath: string | null | undefined = undefined;
   export let showFiles: boolean = true;
@@ -41,12 +38,19 @@
     nodeDelete: WorkspaceNodeEvent;
     nodeMove: WorkspaceNodeEvent;
     nodeRename: WorkspaceNodeEvent;
+    runAction: WorkspaceNodeRunActionEvent;
   }>();
 
+  let actionsForSelection: ActionParameterPair[] = [];
   let contextMenu: ContextMenuInternal;
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
   let hasEditPermission: boolean = false;
   let hasDeletePermission: boolean = false;
+  let hasCreateActionPermission: boolean = false;
+
+  $: if (contextMenuNode) {
+    actionsForSelection = getAvailableActionsForNodes(actions, [contextMenuNode]);
+  }
 
   function onNodeRightClicked({
     detail,
@@ -64,6 +68,7 @@
       if (workspace) {
         hasEditPermission = featurePermissions.workspace.canUpdate(user, workspace, contextMenuNode);
         hasDeletePermission = featurePermissions.workspace.canDelete(user, workspace, contextMenuNode);
+        hasCreateActionPermission = featurePermissions.actionRun.canCreate(user, workspace);
       }
       contextMenu.show(event);
     }
@@ -136,157 +141,34 @@
     let targetPath = contextMenuNode?.fullPath ?? '';
     dispatch('moveToWorkspace', targetPath);
   }
+
+  function onRunAction(event: CustomEvent<ActionParameterPair>) {
+    if (contextMenuNode) {
+      const actionParameterPair = event.detail;
+      dispatch('runAction', { actionParameterPair, treeNodes: [contextMenuNode] });
+    }
+  }
 </script>
 
 <div class="h-auto pt-1">
   {#if enableContextMenu}
     <ContextMenuInternal bind:this={contextMenu} on:hide={onContextMenuHide}>
-      <ContextMenu.Group>
-        <div
-          role="button"
-          tabindex={0}
-          on:keypress
-          on:keydown
-          on:keyup
-          on:click={onRenameNode}
-          use:permissionHandler={{
-            hasPermission: hasEditPermission,
-            permissionError: 'You do not have permission to edit this workspace',
-          }}
-        >
-          <ContextMenu.Item size="sm" aria-label="Rename">
-            <div class="flex items-center gap-2">
-              <PencilLine size={14} />
-              Rename
-            </div>
-          </ContextMenu.Item>
-        </div>
-        <div
-          role="button"
-          tabindex={0}
-          on:keypress
-          on:keydown
-          on:keyup
-          on:click={onMoveNode}
-          use:permissionHandler={{
-            hasPermission: hasEditPermission,
-            permissionError: 'You do not have permission to edit this workspace',
-          }}
-        >
-          <ContextMenu.Item size="sm" aria-label="Move/Copy">
-            <div class="flex items-center gap-2">
-              <FolderOutput size={14} />
-              Move/Copy
-            </div>
-          </ContextMenu.Item>
-        </div>
-        <div
-          role="button"
-          tabindex={0}
-          on:keypress
-          on:keydown
-          on:keyup
-          on:click={onDeleteNode}
-          use:permissionHandler={{
-            hasPermission: hasDeletePermission,
-            permissionError: 'You do not have permission to delete this workspace',
-          }}
-        >
-          <ContextMenu.Item size="sm" aria-label="Delete" on:click>
-            <div class="flex items-center gap-2">
-              <Trash2 size={14} />
-              Delete
-            </div>
-          </ContextMenu.Item>
-        </div>
-      </ContextMenu.Group>
-      <ContextMenu.Separator />
-      <div
-        class="flex items-center gap-2"
-        role="button"
-        tabindex={0}
-        on:keypress
-        on:keydown
-        on:keyup
-        on:click={onCopyFileLocation}
-        use:permissionHandler={{
-          hasPermission: hasEditPermission,
-          permissionError: 'You do not have permission to edit this workspace',
-        }}
-      >
-        <ContextMenu.Item size="sm" aria-label="Copy Link to">
-          <div class="flex items-center gap-2">
-            <Copy size={14} /> Copy {contextMenuNode?.type === WorkspaceContentType.Directory
-              ? 'Link to Directory'
-              : 'Download Link to File'}
-          </div>
-        </ContextMenu.Item>
-      </div>
-      <ContextMenu.Separator />
-      <ContextMenu.Item size="sm" on:click={onMoveToWorkspace} aria-label="Move to Workspace">
-        <div class="flex items-center gap-2">
-          <FileOutput size={14} /> Move to Workspace
-        </div>
-      </ContextMenu.Item>
-      <ContextMenu.Separator />
-      <ContextMenu.Group>
-        <div
-          class="flex items-center gap-2"
-          role="button"
-          tabindex={0}
-          on:keypress
-          on:keydown
-          on:keyup
-          on:click={onNewSequence}
-          use:permissionHandler={{
-            hasPermission: hasEditPermission,
-            permissionError: 'You do not have permission to edit this workspace',
-          }}
-        >
-          <ContextMenu.Item size="sm" aria-label="New File">
-            <div class="flex items-center gap-2">
-              <FilePlus size={14} /> New File
-            </div>
-          </ContextMenu.Item>
-        </div>
-        <div
-          role="button"
-          tabindex={0}
-          on:keypress
-          on:keydown
-          on:keyup
-          on:click={onNewFolder}
-          use:permissionHandler={{
-            hasPermission: hasEditPermission,
-            permissionError: 'You do not have permission to edit this workspace',
-          }}
-        >
-          <ContextMenu.Item size="sm" aria-label="New Folder">
-            <div class="flex items-center gap-2">
-              <FolderPlus size={14} /> New Folder
-            </div>
-          </ContextMenu.Item>
-        </div>
-        <div
-          class="flex items-center gap-2"
-          role="button"
-          tabindex={0}
-          on:keypress
-          on:keydown
-          on:keyup
-          on:click={onImportFile}
-          use:permissionHandler={{
-            hasPermission: hasEditPermission,
-            permissionError: 'You do not have permission to edit this workspace',
-          }}
-        >
-          <ContextMenu.Item size="sm" aria-label="Upload File">
-            <div class="flex items-center gap-2">
-              <ArrowUpFromLine size={14} /> Upload File
-            </div>
-          </ContextMenu.Item>
-        </div>
-      </ContextMenu.Group>
+      <WorkspaceContextMenuContents
+        {actionsForSelection}
+        {hasEditPermission}
+        {hasDeletePermission}
+        {hasCreateActionPermission}
+        selectedWorkspaceNodes={contextMenuNode ? [contextMenuNode] : []}
+        on:rename={onRenameNode}
+        on:move={onMoveNode}
+        on:delete={onDeleteNode}
+        on:copyFileLocation={onCopyFileLocation}
+        on:moveToWorkspace={onMoveToWorkspace}
+        on:runAction={onRunAction}
+        on:newFile={onNewSequence}
+        on:newFolder={onNewFolder}
+        on:importFile={onImportFile}
+      />
     </ContextMenuInternal>
   {/if}
   {#if showRootNode && treeNode}

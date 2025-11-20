@@ -1,5 +1,6 @@
+import type { ActionDefinition } from './actions';
 import type { UserId } from './app';
-import type { WorkspaceTreeNode } from './workspace-tree-view';
+import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from './workspace-tree-view';
 
 export type WorkspaceCollaborator = {
   collaborator: UserId;
@@ -29,4 +30,11 @@ export type WorkspaceNodeEvent = {
   toggleState?: boolean;
   treeNode: WorkspaceTreeNode;
   treeNodePath: string;
+};
+
+export type ActionParameterPair = { action: ActionDefinition; parameter: string };
+
+export type WorkspaceNodeRunActionEvent = {
+  actionParameterPair: ActionParameterPair;
+  treeNodes: WorkspaceTreeNodeWithFullPath[];
 };

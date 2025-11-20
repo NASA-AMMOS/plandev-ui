@@ -8,6 +8,8 @@
   import { type ViewUpdate, keymap } from '@codemirror/view';
   import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
   import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
+  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
+  import { SquareCode } from 'lucide-svelte';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onMount } from 'svelte';
@@ -18,7 +20,13 @@
   import { tooltip } from '../../utilities/tooltip';
   import Panel from './Panel.svelte';
   import SectionTitle from './SectionTitle.svelte';
+  import type { ActionDefinition } from '../../types/actions';
+  import { pluralize } from '../../utilities/text';
+  import Menu from '../menus/Menu.svelte';
+  import MenuItem from '../menus/MenuItem.svelte';
 
+  export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
+  export let includeActions: boolean = false;
   export let isJSON: boolean = false;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
@@ -27,11 +35,13 @@
   export let title: string = 'Text Editor';
 
   const dispatch = createEventDispatcher<{
+    runAction: { action: ActionDefinition; parameter: string };
     save: string;
     textContentUpdated: { input: string };
   }>();
   const jsonLinter = linter(jsonParseLinter());
 
+  let actionMenu: Menu;
   let compartmentReadonly: Compartment;
   let disableCopyAndExport: boolean = true;
   let editorDiv: HTMLDivElement;
@@ -115,6 +125,10 @@
     return true;
   }
 
+  function onRunAction(action: ActionDefinition, parameter: string) {
+    dispatch('runAction', { action, parameter });
+  }
+
   onMount(() => {
     compartmentReadonly = new Compartment();
 
@@ -137,9 +151,46 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <SectionTitle>{title}</SectionTitle>
+    <SectionTitle>{title}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}</SectionTitle>
 
     <div class="right">
+      {#if includeActions}
+        <div class="app-menu" role="none" on:click|stopPropagation={() => actionMenu.toggle()}>
+          <button
+            disabled={textFileName === '' || availableActions.length === 0}
+            class="st-button icon-button secondary"
+          >
+            {#if availableActions.length > 0}
+              <div class="actions-chip">{availableActions.length}</div>
+            {/if}
+            Action{pluralize(availableActions.length)}
+            <ChevronDownIcon />
+          </button>
+          <Menu bind:this={actionMenu}>
+            {#each availableActions as actionInfo}
+              <MenuItem
+                use={[
+                  [
+                    permissionHandler,
+                    {
+                      hasPermission: !readOnly,
+                      permissionError: 'You do not have permission to run this action.',
+                    },
+                  ],
+                ]}
+                on:click={() => {
+                  onRunAction(actionInfo?.action, actionInfo?.parameter);
+                  actionMenu.toggle();
+                }}
+              >
+                <SquareCode size={16} />
+                {actionInfo?.action?.name}
+              </MenuItem>
+            {/each}
+          </Menu>
+        </div>
+      {/if}
+
       <button
         use:tooltip={{ content: `Copy sequence contents`, placement: 'top' }}
         class="st-button icon-button secondary"
@@ -161,7 +212,7 @@
         <DownloadIcon />
         Download
       </button>
-      {#if !readOnly}
+      {#if !(readOnly || previewOnly)}
         <button
           class="st-button icon-button"
           class:secondary={!isTextContentUpdated}
@@ -186,6 +237,22 @@
 </Panel>
 
 <style>
+  .app-menu {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    position: relative;
+  }
+  .actions-chip {
+    background-color: var(--st-gray-15);
+    border-radius: 40px;
+    color: black;
+    min-width: 16px;
+    padding: 0px 4px;
+  }
+
   .right {
     align-items: center;
     display: flex;

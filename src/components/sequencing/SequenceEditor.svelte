@@ -38,7 +38,7 @@
   import SectionTitle from '../ui/SectionTitle.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
 
-  export let actionsWithSequenceParameters: ActionDefinition[] = [];
+  export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
   export let phoenixContext: PhoenixContext;
   export let includeActions: boolean = false;
   export let previewOnly: boolean = false;
@@ -53,7 +53,7 @@
   export let userSequenceEditorColumnsWithFormBuilder: string;
 
   const dispatch = createEventDispatcher<{
-    runAction: ActionDefinition;
+    runAction: { action: ActionDefinition; parameter: string };
     save: string;
     sequence: { input: string; output?: string };
   }>();
@@ -152,7 +152,10 @@
   async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
     const sequence = viewUpdate.state.doc.toString();
     disableCopyAndExport = sequence === '';
-    let output = selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
+    let output =
+      sequenceName === undefined
+        ? undefined
+        : selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
 
     editorOutputView.dispatch({ changes: { from: 0, insert: output ?? '', to: editorOutputView.state.doc.length } });
 
@@ -217,8 +220,8 @@
     }
   }
 
-  function onRunAction(action: ActionDefinition) {
-    dispatch('runAction', action);
+  function onRunAction(action: ActionDefinition, parameter: string) {
+    dispatch('runAction', { action, parameter });
   }
 
   function onSave(): boolean {
@@ -276,17 +279,17 @@
           {#if includeActions}
             <div class="app-menu" role="none" on:click|stopPropagation={() => actionMenu.toggle()}>
               <button
-                disabled={sequenceName === '' || actionsWithSequenceParameters.length === 0}
+                disabled={sequenceName === '' || availableActions.length === 0}
                 class="st-button icon-button secondary"
               >
-                {#if actionsWithSequenceParameters.length > 0}
-                  <div class="actions-chip">{actionsWithSequenceParameters.length}</div>
+                {#if availableActions.length > 0}
+                  <div class="actions-chip">{availableActions.length}</div>
                 {/if}
-                Action{pluralize(actionsWithSequenceParameters.length)}
+                Action{pluralize(availableActions.length)}
                 <ChevronDownIcon />
               </button>
               <Menu bind:this={actionMenu}>
-                {#each actionsWithSequenceParameters as action}
+                {#each availableActions as actionInfo}
                   <MenuItem
                     use={[
                       [
@@ -298,12 +301,12 @@
                       ],
                     ]}
                     on:click={() => {
-                      onRunAction(action);
+                      onRunAction(actionInfo?.action, actionInfo?.parameter);
                       actionMenu.toggle();
                     }}
                   >
                     <SquareCode size={16} />
-                    {action?.name}
+                    {actionInfo?.action?.name}
                   </MenuItem>
                 {/each}
               </Menu>

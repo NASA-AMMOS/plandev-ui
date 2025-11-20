@@ -3,9 +3,15 @@
   import type { IRowNode } from 'ag-grid-community';
   import { Clapperboard, Files, FolderTree, Settings } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
+  import type { ActionDefinition } from '../../types/actions';
   import type { User, UserId } from '../../types/app';
   import type { Parcel } from '../../types/sequencing';
-  import type { Workspace, WorkspaceCollaborator, WorkspaceMetadata } from '../../types/workspace';
+  import type {
+    Workspace,
+    WorkspaceCollaborator,
+    WorkspaceMetadata,
+    WorkspaceNodeRunActionEvent,
+  } from '../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import { getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -28,10 +34,12 @@
     newFolder: string;
     newSequence: string;
     refreshWorkspace: void;
+    runAction: WorkspaceNodeRunActionEvent;
     saveSequence: void;
     updateWorkspaceMetadata: Partial<WorkspaceMetadata>;
   }>();
 
+  export let actions: ActionDefinition[] = [];
   export let isWorkspaceLoading: boolean = false;
   export let selectedFilePath: string | null = null;
   export let user: User | null;
@@ -115,10 +123,12 @@
   function onRefreshWorkspace() {
     dispatch('refreshWorkspace');
   }
+
+  let activeTab = 'files';
 </script>
 
 <Sidebar.Root className="h-full inset-x-0 border-none flex">
-  <Tabs.Root value="files" orientation="vertical" class="flex h-full">
+  <Tabs.Root bind:value={activeTab} orientation="vertical" class="flex h-full">
     <div class="flex h-full w-10 border-r border-border bg-muted">
       <Tabs.List class="flex h-auto w-full flex-col items-center justify-start gap-0">
         <Tooltip.Root>
@@ -177,91 +187,98 @@
     </div>
     <div class="flex h-full w-full flex-col">
       <Tabs.Content value="files" class="mt-0 h-full">
-        <div class="grid h-full grid-rows-[min-content_auto]">
-          <Sidebar.Header className="p-0">
-            <WorkspaceTabHeader
-              title="Workspace Tree View"
-              {didWorkspaceUpdate}
-              {lastRefreshTime}
-              {hasEditWorkspacePermission}
-              on:newSequence={onNewSequence}
-              on:newFolder={onNewFolder}
-              on:importFile={onImportFile}
-              on:refreshWorkspace={onRefreshWorkspace}
-            />
-          </Sidebar.Header>
-          <Sidebar.Content>
-            <Sidebar.Group className="p-0 h-full">
-              <Sidebar.GroupContent className="h-full">
-                <Sidebar.Menu className="h-full">
-                  {#if workspaceTree}
-                    <WorkspaceTreeView
-                      selectedTreeNodePath={selectedFilePath}
-                      treeNode={workspaceTree}
-                      {workspace}
-                      {user}
-                      on:nodeClicked
-                      on:nodeDelete
-                      on:nodeMove
-                      on:nodeRename
-                      on:newFolder
-                      on:newSequence
-                      on:importFile
-                      on:copyFileLocation
-                      on:moveToWorkspace
-                    />
-                  {:else}
-                    <div class="p-2 text-sm text-muted-foreground">No workspace loaded</div>
-                  {/if}
-                </Sidebar.Menu>
-              </Sidebar.GroupContent>
-            </Sidebar.Group>
-          </Sidebar.Content>
-        </div>
+        {#if activeTab === 'files'}
+          <div class="grid h-full grid-rows-[min-content_auto]">
+            <Sidebar.Header className="p-0">
+              <WorkspaceTabHeader
+                title="Workspace Tree View"
+                {didWorkspaceUpdate}
+                {lastRefreshTime}
+                {hasEditWorkspacePermission}
+                on:newSequence={onNewSequence}
+                on:newFolder={onNewFolder}
+                on:importFile={onImportFile}
+                on:refreshWorkspace={onRefreshWorkspace}
+              />
+            </Sidebar.Header>
+            <Sidebar.Content>
+              <Sidebar.Group className="p-0 h-full">
+                <Sidebar.GroupContent className="h-full">
+                  <Sidebar.Menu className="h-full">
+                    {#if workspaceTree}
+                      <WorkspaceTreeView
+                        {actions}
+                        selectedTreeNodePath={selectedFilePath}
+                        treeNode={workspaceTree}
+                        {workspace}
+                        {user}
+                        on:nodeClicked
+                        on:nodeDelete
+                        on:nodeMove
+                        on:nodeRename
+                        on:newFolder
+                        on:newSequence
+                        on:importFile
+                        on:copyFileLocation
+                        on:moveToWorkspace
+                        on:runAction
+                      />
+                    {:else}
+                      <div class="p-2 text-sm text-muted-foreground">No workspace loaded</div>
+                    {/if}
+                  </Sidebar.Menu>
+                </Sidebar.GroupContent>
+              </Sidebar.Group>
+            </Sidebar.Content>
+          </div>
+        {/if}
       </Tabs.Content>
       <Tabs.Content value="grid" class="mt-0 h-full" style="min-height: 300px;">
-        <div class="grid h-full grid-rows-[min-content_auto]">
-          <Sidebar.Header className="p-0">
-            <WorkspaceTabHeader
-              title="Workspace Table View"
-              {didWorkspaceUpdate}
-              {lastRefreshTime}
-              {hasEditWorkspacePermission}
-              on:newSequence={onNewSequence}
-              on:newFolder={onNewFolder}
-              on:importFile={onImportFile}
-              on:refreshWorkspace={onRefreshWorkspace}
-            />
-          </Sidebar.Header>
-          <Sidebar.Content className="h-full">
-            <Sidebar.Group className="p-0 h-full">
-              <Sidebar.GroupContent className="h-full">
-                <Sidebar.Menu className="h-full">
-                  {#if workspaceTree && workspace}
-                    <WorkspaceGridView
-                      selectedTreeNodePath={selectedFilePath}
-                      treeNode={workspaceTree}
-                      {workspace}
-                      {user}
-                      {isRowSelectable}
-                      on:nodeClicked
-                      on:nodeDelete
-                      on:nodeMove
-                      on:nodeRename
-                      on:newSequence
-                      on:newFolder
-                      on:importFile
-                      on:copyFileLocation
-                      on:moveToWorkspace
-                    />
-                  {:else}
-                    <div class="p-2 text-sm text-muted-foreground">No workspace loaded</div>
-                  {/if}
-                </Sidebar.Menu>
-              </Sidebar.GroupContent>
-            </Sidebar.Group>
-          </Sidebar.Content>
-        </div>
+        {#if activeTab === 'grid'}
+          <div class="grid h-full grid-rows-[min-content_auto]">
+            <Sidebar.Header className="p-0">
+              <WorkspaceTabHeader
+                title="Workspace Table View"
+                {didWorkspaceUpdate}
+                {lastRefreshTime}
+                {hasEditWorkspacePermission}
+                on:newSequence={onNewSequence}
+                on:newFolder={onNewFolder}
+                on:importFile={onImportFile}
+                on:refreshWorkspace={onRefreshWorkspace}
+              />
+            </Sidebar.Header>
+            <Sidebar.Content className="h-full">
+              <Sidebar.Group className="p-0 h-full">
+                <Sidebar.GroupContent className="h-full">
+                  <Sidebar.Menu className="h-full">
+                    {#if workspaceTree && workspace}
+                      <WorkspaceGridView
+                        bind:selectedTreeNodePath={selectedFilePath}
+                        {actions}
+                        treeNode={workspaceTree}
+                        {workspace}
+                        {user}
+                        {isRowSelectable}
+                        on:nodeDelete
+                        on:nodeMove
+                        on:nodeRename
+                        on:newSequence
+                        on:newFolder
+                        on:importFile
+                        on:copyFileLocation
+                        on:moveToWorkspace
+                        on:runAction
+                      />
+                    {:else}
+                      <div class="p-2 text-sm text-muted-foreground">No workspace loaded</div>
+                    {/if}
+                  </Sidebar.Menu>
+                </Sidebar.GroupContent>
+              </Sidebar.Group>
+            </Sidebar.Content>
+          </div>
+        {/if}
       </Tabs.Content>
       <Tabs.Content value="settings" class="mt-0 h-full" style="min-height: 300px;">
         <div class="grid h-full grid-rows-[min-content_auto]">

@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Button, ContextMenu, DropdownMenu } from '@nasa-jpl/stellar-svelte';
+  import { Button, DropdownMenu } from '@nasa-jpl/stellar-svelte';
   import type { CellContextMenuEvent, ICellRendererParams, IRowNode } from 'ag-grid-community';
   import {
     ArrowUpFromLine,
@@ -16,17 +16,18 @@
     PencilLine,
     Trash2,
   } from 'lucide-svelte';
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { WorkspaceContentType } from '../../../enums/workspace';
+  import type { ActionDefinition } from '../../../types/actions';
   import type { User } from '../../../types/app';
+  import type { DataGridColumnDef, DataGridRowDoubleClick, RowId } from '../../../types/data-grid';
   import type {
-    DataGridColumnDef,
-    DataGridRowDoubleClick,
-    DataGridRowSelection,
-    RowId,
-  } from '../../../types/data-grid';
-  import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
+    ActionParameterPair,
+    Workspace,
+    WorkspaceNodeEvent,
+    WorkspaceNodeRunActionEvent,
+  } from '../../../types/workspace';
   import type {
     WorkspaceTreeMap,
     WorkspaceTreeNode,
@@ -34,10 +35,15 @@
   } from '../../../types/workspace-tree-view';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { featurePermissions } from '../../../utilities/permissions';
-  import { flattenWorkspaceTreeWithPaths, mapWorkspaceTreePaths } from '../../../utilities/workspaces';
+  import {
+    flattenWorkspaceTreeWithPaths,
+    getAvailableActionsForNodes,
+    mapWorkspaceTreePaths,
+  } from '../../../utilities/workspaces';
+  import BulkActionDataGrid from '../../ui/DataGrid/BulkActionDataGrid.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
-  import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
+  import WorkspaceContextMenuContents from '../WorkspaceContextMenuContents.svelte';
   import WorkspaceTreeViewIcon from '../WorkspaceTreeView/WorkspaceTreeViewIcon.svelte';
 
   export let isRowSelectable: (node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>) => boolean = (
@@ -45,6 +51,7 @@
   ) => {
     return true;
   };
+  export let actions: ActionDefinition[] = [];
   export let selectedTreeNodePath: string | null | undefined = undefined;
   export let treeNode: WorkspaceTreeNode | null | undefined = undefined;
   export let workspace: Workspace | null | undefined = null;
@@ -62,10 +69,10 @@
     moveToWorkspace: string;
     newFolder: string;
     newSequence: string;
-    nodeClicked: WorkspaceNodeEvent;
     nodeDelete: WorkspaceNodeEvent;
     nodeMove: WorkspaceNodeEvent;
     nodeRename: WorkspaceNodeEvent;
+    runAction: WorkspaceNodeRunActionEvent;
   }>();
 
   const baseColumnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [
@@ -109,6 +116,9 @@
   let columnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [];
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
   let dataGrid: DataGrid<WorkspaceTreeNodeWithFullPath> | undefined = undefined;
+  let hasEditPermission: boolean = false;
+  let hasDeletePermission: boolean = false;
+  let hasCreateActionPermission: boolean = false;
   let treeNodeBreadcrumbs: WorkspaceTreeNodeWithFullPath[] = [];
   let treeNodeBreadcrumbDisplay: WorkspaceTreeNodeWithFullPath[] = [];
   let treeNodeBreadcrumbMenuNodes: WorkspaceTreeNodeWithFullPath[] = [];
@@ -117,6 +127,12 @@
   let workspaceTreeMap: WorkspaceTreeMap = {};
   let isBreadcrumbMenuOpen: boolean = false;
   let isBreadcrumbNavMenuOpen: boolean = false;
+
+  $: if (workspace) {
+    hasEditPermission = featurePermissions.workspace.canUpdate(user, workspace);
+    hasDeletePermission = featurePermissions.workspace.canDelete(user, workspace);
+    hasCreateActionPermission = featurePermissions.actionRun.canCreate(user, workspace);
+  }
 
   $: columnDefs = [
     ...baseColumnDefs,
@@ -132,7 +148,7 @@
               content: 'Delete',
               placement: 'bottom',
             },
-            hasDeletePermission: params.data && user ? hasDeletePermission(user, params.data) : false,
+            hasDeletePermission,
             rowData: params.data,
             viewCallback: data => user && params.viewNode(data),
             viewTooltip: {
@@ -157,9 +173,7 @@
       width: 80,
     },
   ];
-  $: if (selectedTreeNodePath) {
-    treeNodeBreadcrumbPath = selectedTreeNodePath.split(PATH_DELIMITER).slice(0, -1).join(PATH_DELIMITER);
-  }
+
   $: if (treeNode) {
     flattenedTree = flattenWorkspaceTreeWithPaths(treeNode?.contents ?? [], []);
     treeNodeBreadcrumbs = getNodeContentsOnPath(treeNode.contents ?? [], treeNodeBreadcrumbPath);
@@ -179,13 +193,6 @@
     treeNodeBreadcrumbMenuNodes = treeNodeBreadcrumbs.slice(0, treeNodeBreadcrumbs.length - 2);
   } else {
     treeNodeBreadcrumbDisplay = treeNodeBreadcrumbs;
-  }
-
-  function hasDeletePermission(user: User | null, node: WorkspaceTreeNodeWithFullPath) {
-    if (workspace) {
-      return featurePermissions.workspace.canDelete(user, workspace, node);
-    }
-    return false;
   }
 
   function hasContextMenuUpdatePermission(user: User | null, selectedId: RowId | null) {
@@ -222,22 +229,19 @@
     }, []);
   }
 
-  function getPathType(path: RowId | null) {
-    const nodeAtPath = path ? workspaceTreeMap[path] : null;
-    if (nodeAtPath) {
-      return nodeAtPath.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
-    }
-  }
-
   function doesExternalFilterPass(node: IRowNode<WorkspaceTreeNodeWithFullPath>) {
-    const fullPath = node.data?.fullPath ?? '';
-    const pathRegex = new RegExp(`^${treeNodeBreadcrumbPath}/?`);
-    const isOnPath = pathRegex.test(fullPath);
-    if (isOnPath) {
-      return (fullPath.replace(pathRegex, '').split(PATH_DELIMITER).filter(Boolean).length ?? 0) === 1;
+    const fullFilePath = node.data?.fullPath ?? '';
+    if (!treeNodeBreadcrumbPath) {
+      // root — only show top-level files
+      return fullFilePath.split(PATH_DELIMITER).filter(Boolean).length === 1;
     }
-
-    return false;
+    // filter out files that aren't in this path at all
+    if (!fullFilePath.startsWith(`${treeNodeBreadcrumbPath}/`)) {
+      return false;
+    }
+    // only show files that are direct children of treeNodeBreadcrumbPath
+    const remainder = fullFilePath.slice(treeNodeBreadcrumbPath.length + 1);
+    return remainder.split(PATH_DELIMITER).filter(Boolean).length === 1;
   }
 
   function closeBreadcrumbMenu() {
@@ -261,18 +265,6 @@
 
   function onContextMenuHide() {
     contextMenuNode = null;
-  }
-
-  function onNodeClicked(event: CustomEvent<DataGridRowSelection<WorkspaceTreeNodeWithFullPath>>) {
-    const row = event.detail;
-
-    if (isRowSelectable(row)) {
-      dispatch('nodeClicked', {
-        toggleState: true,
-        treeNode: row.data,
-        treeNodePath: row.data.fullPath,
-      });
-    }
   }
 
   function onRowDoubleClicked(event: CustomEvent<DataGridRowDoubleClick<WorkspaceTreeNodeWithFullPath>>) {
@@ -391,6 +383,27 @@
       onMoveToWorkspace(contextMenuNode);
     }
   }
+
+  function onTableDeleteNode() {
+    if (contextMenuNode) {
+      onDeleteNode(contextMenuNode);
+    }
+  }
+
+  function onTableRunAction(event: CustomEvent<ActionParameterPair>, filePaths: RowId[]) {
+    const actionParameterPair = event.detail;
+    const selectedTreeNodes: WorkspaceTreeNodeWithFullPath[] = flattenedTree.filter(({ fullPath }) =>
+      filePaths.includes(fullPath),
+    );
+    dispatch('runAction', { actionParameterPair, treeNodes: selectedTreeNodes });
+  }
+
+  onMount(() => {
+    // initialize treeNodeBreadcrumbPath to the folder path of the currently selected file
+    treeNodeBreadcrumbPath = selectedTreeNodePath
+      ? selectedTreeNodePath.split(PATH_DELIMITER).slice(0, -1).join(PATH_DELIMITER)
+      : '';
+  });
 </script>
 
 <div class="grid h-full grid-rows-[min-content_auto]">
@@ -577,104 +590,47 @@
       {/if}
     {/each}
   </div>
-  <SingleActionDataGrid
+  <BulkActionDataGrid
     bind:dataGrid
+    bind:selectedItemId={selectedTreeNodePath}
     class="workspace-grid-view"
-    {hasDeletePermission}
-    getRowId={node => node.fullPath}
     {columnDefs}
-    itemDisplayText="File"
+    getRowId={node => node.fullPath}
+    {hasDeletePermission}
+    singleItemDisplayText="File"
+    pluralItemDisplayText="Files"
     items={flattenedTree}
     {user}
-    selectedItemId={selectedTreeNodePath}
+    suppressRowClickSelection={false}
     isExternalFilterPresent={() => true}
-    suppressRowClickSelection={true}
+    showDeleteMenu={false}
+    {isRowSelectable}
     {doesExternalFilterPass}
-    on:rowClicked={onNodeClicked}
     on:rowDoubleClicked={onRowDoubleClicked}
     on:cellContextMenu={onContextMenu}
     on:cellContextMenuHide={onContextMenuHide}
   >
-    <svelte:fragment slot="context-menu" let:selectedItemId>
-      <ContextMenu.Group>
-        <div
-          use:permissionHandler={{
-            hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
-            permissionError: `You do not have permission to rename this ${getPathType(selectedItemId) === 'File' ? 'file' : 'folder'}.`,
-          }}
-        >
-          <ContextMenu.Item size="sm" on:click={onTableMenuRenameNode} aria-label="Rename">
-            <div class="flex items-center gap-2">
-              <PencilLine size={14} />
-              Rename
-            </div>
-          </ContextMenu.Item>
-        </div>
-        <div>
-          <ContextMenu.Item size="sm" on:click={onTableMenuMoveNode} aria-label="Move/Copy">
-            <div class="flex items-center gap-2">
-              <FolderOutput size={14} />
-              Move/Copy
-            </div>
-          </ContextMenu.Item>
-        </div>
-      </ContextMenu.Group>
-      <ContextMenu.Separator />
-      <ContextMenu.Item size="sm" on:click={onTableCopyFileLocation} aria-label="Copy Link to">
-        <div class="flex items-center gap-2">
-          <Copy size={14} /> Copy {getPathType(contextMenuNode?.fullPath ?? null) === 'File'
-            ? 'Download Link to File'
-            : 'Link to Directory'}
-        </div>
-      </ContextMenu.Item>
-      <ContextMenu.Separator />
-      <ContextMenu.Item size="sm" on:click={onTableMoveToWorkspace} aria-label="Move to Workspace">
-        <div class="flex items-center gap-2">
-          <FileOutput size={14} /> Move to Workspace
-        </div>
-      </ContextMenu.Item>
-      <ContextMenu.Separator />
-      <ContextMenu.Group>
-        <div
-          use:permissionHandler={{
-            hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
-            permissionError: 'You do not have permission to create a new file in this folder.',
-          }}
-        >
-          <ContextMenu.Item size="sm" on:click={onTableNewSequence} aria-label="New File">
-            <div class="flex items-center gap-2">
-              <FilePlus size={14} /> New File
-            </div>
-          </ContextMenu.Item>
-        </div>
-        <div
-          use:permissionHandler={{
-            hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
-            permissionError: 'You do not have permission to create a new folder in this folder.',
-          }}
-        >
-          <ContextMenu.Item size="sm" on:click={onTableNewFolder} aria-label="New Folder">
-            <div class="flex items-center gap-2">
-              <FolderPlus size={14} /> New Folder
-            </div>
-          </ContextMenu.Item>
-        </div>
-        <div
-          use:permissionHandler={{
-            hasPermission: hasContextMenuUpdatePermission(user, selectedItemId),
-            permissionError: 'You do not have permission to upload a file into this folder.',
-          }}
-        >
-          <ContextMenu.Item size="sm" on:click={onTableImportFile} aria-label="Upload File">
-            <div class="flex items-center gap-2">
-              <ArrowUpFromLine size={14} /> Upload File
-            </div>
-          </ContextMenu.Item>
-        </div>
-      </ContextMenu.Group>
-      <ContextMenu.Separator />
+    <svelte:fragment slot="context-menu" let:selectedItemIds>
+      {@const selectedWorkspaceNodes = selectedItemIds ? selectedItemIds.map(id => workspaceTreeMap[id]) : []}
+      {@const actionsForSelection = getAvailableActionsForNodes(actions, selectedWorkspaceNodes)}
+      <WorkspaceContextMenuContents
+        {actionsForSelection}
+        {selectedWorkspaceNodes}
+        {hasEditPermission}
+        {hasDeletePermission}
+        {hasCreateActionPermission}
+        on:rename={onTableMenuRenameNode}
+        on:move={onTableMenuMoveNode}
+        on:delete={onTableDeleteNode}
+        on:copyFileLocation={onTableCopyFileLocation}
+        on:moveToWorkspace={onTableMoveToWorkspace}
+        on:runAction={event => onTableRunAction(event, selectedItemIds)}
+        on:newFile={onTableNewSequence}
+        on:newFolder={onTableNewFolder}
+        on:importFile={onTableImportFile}
+      />
     </svelte:fragment>
-  </SingleActionDataGrid>
+  </BulkActionDataGrid>
 </div>
 
 <style>

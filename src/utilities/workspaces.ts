@@ -1,9 +1,13 @@
 import { PATH_DELIMITER } from '../constants/workspaces';
+import { WorkspaceContentType } from '../enums/workspace';
+import type { ActionDefinition } from '../types/actions';
 import type { User } from '../types/app';
-import type { Workspace, WorkspaceInsertInput } from '../types/workspace';
+import type { ActionParameterPair, Workspace, WorkspaceInsertInput } from '../types/workspace';
 import type { WorkspaceTreeMap, WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 import { filterEmpty } from './generic';
 import { reqWorkspace } from './requests';
+import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
+import { pathMatchesExtensionPattern } from './parameters';
 
 export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
   let treeMap: WorkspaceTreeMap = {};
@@ -83,6 +87,88 @@ export function flattenWorkspaceTreeWithPaths(
   });
 
   return flattenedArray;
+}
+
+/**
+ * Given the list of all actions, and a list of selected nodes (files) in the workspace,
+ * find all actions which can be run on the selected nodes (by passing them in as a primary file/sequence/list param),
+ * and return pairs of the action definitions + the key of their primary param to pass the nodes to.
+ * @param actions
+ * @param nodes
+ */
+export function getAvailableActionsForNodes(
+  actions: ActionDefinition[],
+  nodes: (WorkspaceTreeNodeWithFullPath | WorkspaceTreeNode)[],
+): ActionParameterPair[] {
+  const areAllNodesSequences = nodes.every(node => node.type === WorkspaceContentType.Sequence);
+
+  // any # of any type of files can be passed to a 'fileList' type param
+  let allowedParamTypes = ['fileList'];
+  // if they are ALL sequences, they can safely be passed to a 'sequenceList' param
+  if (areAllNodesSequences) {
+    allowedParamTypes.push('sequenceList');
+  }
+  // if only one file is selected, it can be passed to single file/sequence params
+  if (nodes.length === 1) {
+    allowedParamTypes.push('file');
+  }
+  if (nodes.length === 1 && areAllNodesSequences) {
+    allowedParamTypes.push('sequence');
+  }
+  // when we pick a primary param, prefer more-specific types over less-specific ones (reversed)
+  allowedParamTypes = allowedParamTypes.reverse();
+
+  const availableActions: ActionParameterPair[] = [];
+
+  for (const action of actions) {
+    // params where the user has set a "primary: true" flag to be used as primary input for files/sequences
+    const userPrimaryParams = Object.entries(action.parameter_schema)
+      // @ts-expect-error only some types in the schema tagged union have `primary` :-/
+      .filter(([_k, schema]) => schema.primary === true);
+
+    if (userPrimaryParams.length) {
+      // action specifies a "primary" param to use (should be only one but check to be safe)
+      // pick the first param with `primary: true` and a valid parameter type for our nodes
+      const primaryParam = userPrimaryParams.find(([_key, schema]) => {
+        return allowedParamTypes.includes(schema.type) && nodesMatchParamSchema(nodes, schema);
+      });
+      if (primaryParam) {
+        availableActions.push({ action, parameter: primaryParam[0] });
+      }
+    } else {
+      // no user-specified primary, pick the best one if possible
+      const allowedParams = allowedParamTypes
+        .map(allowedType => {
+          return Object.entries(action.parameter_schema).find(([_k, schema]) => {
+            return schema.type === allowedType && nodesMatchParamSchema(nodes, schema);
+          });
+        })
+        .filter(v => v !== undefined)
+        .map(([paramKey]) => ({ action, parameter: paramKey }));
+      if (allowedParams.length) {
+        availableActions.push(allowedParams[0]);
+      }
+    }
+  }
+
+  return availableActions;
+}
+
+/**
+ * Given a list of selected nodes (files) in the workspace, and an action parameter schema,
+ * validate that all nodes match whatever restrictions (eg. file patterns) are present in the parameter schema,
+ * return true if so, else false
+ */
+function nodesMatchParamSchema(
+  nodes: (WorkspaceTreeNodeWithFullPath | WorkspaceTreeNode)[],
+  schema: ActionValueSchema,
+): boolean {
+  if ((schema.type === 'file' || schema.type === 'fileList') && schema.pattern) {
+    return nodes.every(node => {
+      return pathMatchesExtensionPattern(node.name || '', schema.pattern || '');
+    });
+  }
+  return true;
 }
 
 function createFormDataWithFile(filePath: string, fileContent: string, fileKey: string = 'file'): FormData {
