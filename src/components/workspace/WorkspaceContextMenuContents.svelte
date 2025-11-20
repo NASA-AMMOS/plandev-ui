@@ -7,6 +7,7 @@
   import type { ActionParameterPair } from '../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import { permissionHandler } from '../../utilities/permissionHandler';
+  import { pluralize } from '../../utilities/text';
 
   export let actionsForSelection: ActionParameterPair[] = [];
   export let hasEditPermission: boolean = false;
@@ -38,11 +39,9 @@
 
   $: {
     areMultipleFilesSelected = selectedWorkspaceNodes.length > 1;
-    // TODO: re-enable this logic when we support batch file operations
-    // fileCountPhrase = areMultipleFilesSelected
-    //   ? `${selectedWorkspaceNodes.length} File${pluralize(selectedWorkspaceNodes.length)}`
-    //   : '';
-    fileCountPhrase = 'File';
+    fileCountPhrase = areMultipleFilesSelected
+      ? `${selectedWorkspaceNodes.length} File${pluralize(selectedWorkspaceNodes.length)}`
+      : '';
   }
 </script>
 

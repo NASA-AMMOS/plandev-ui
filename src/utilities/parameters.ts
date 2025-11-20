@@ -182,7 +182,7 @@ export function pathMatchesExtensionPattern(path: string, pattern: string): bool
   // Check if the pattern is in the expected "*.ext" format
   if (match && match.groups?.extension) {
     // Extract the extension part from path, e.g., ".sh" from "*.sh"
-    return path.endsWith(match.groups.extension);
+    return path.toLowerCase().endsWith(match.groups.extension.toLowerCase());
   }
   return false;
 }
