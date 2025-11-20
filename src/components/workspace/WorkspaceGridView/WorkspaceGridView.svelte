@@ -603,6 +603,7 @@
     {user}
     suppressRowClickSelection={false}
     isExternalFilterPresent={() => true}
+    showDeleteMenu={false}
     {isRowSelectable}
     {doesExternalFilterPass}
     on:rowDoubleClicked={onRowDoubleClicked}

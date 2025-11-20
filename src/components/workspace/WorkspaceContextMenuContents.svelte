@@ -7,20 +7,12 @@
   import type { ActionParameterPair } from '../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import { pluralize } from '../../utilities/text';
 
   export let actionsForSelection: ActionParameterPair[] = [];
   export let hasEditPermission: boolean = false;
   export let hasDeletePermission: boolean = false;
   export let hasCreateActionPermission: boolean = false;
   export let selectedWorkspaceNodes: (WorkspaceTreeNodeWithFullPath | WorkspaceTreeNode)[] = [];
-
-  let fileCountPhrase: string = '';
-
-  $: fileCountPhrase =
-    selectedWorkspaceNodes.length > 1
-      ? `${selectedWorkspaceNodes.length} File${pluralize(selectedWorkspaceNodes.length)}`
-      : '';
 
   const dispatch = createEventDispatcher<{
     copyFileLocation: void;
@@ -35,6 +27,23 @@
     runAction: ActionParameterPair;
     saveSequence: void;
   }>();
+
+  const editPermissionError = 'You do not have permission to edit this workspace';
+  const deletePermissionError = 'You do not have permission to delete files in this workspace';
+
+  const multiFileOperationError = 'Currently only supports single file operations';
+
+  let areMultipleFilesSelected: boolean = false;
+  let fileCountPhrase: string = '';
+
+  $: {
+    areMultipleFilesSelected = selectedWorkspaceNodes.length > 1;
+    // TODO: re-enable this logic when we support batch file operations
+    // fileCountPhrase = areMultipleFilesSelected
+    //   ? `${selectedWorkspaceNodes.length} File${pluralize(selectedWorkspaceNodes.length)}`
+    //   : '';
+    fileCountPhrase = 'File';
+  }
 </script>
 
 <ContextMenu.Group>
@@ -43,7 +52,7 @@
     <div
       use:permissionHandler={{
         hasPermission: hasEditPermission,
-        permissionError: 'You do not have permission to edit this workspace',
+        permissionError: editPermissionError,
       }}
     >
       <ContextMenu.Item disabled={!hasEditPermission} size="sm" on:click={() => dispatch('rename')} aria-label="Rename">
@@ -53,21 +62,31 @@
   {/if}
   <div
     use:permissionHandler={{
-      hasPermission: hasEditPermission,
-      permissionError: 'You do not have permission to edit this workspace',
+      hasPermission: hasEditPermission && !areMultipleFilesSelected,
+      permissionError: areMultipleFilesSelected ? multiFileOperationError : editPermissionError,
     }}
   >
-    <ContextMenu.Item disabled={!hasEditPermission} size="sm" on:click={() => dispatch('move')} aria-label="Move/Copy">
+    <ContextMenu.Item
+      disabled={!(hasEditPermission && !areMultipleFilesSelected)}
+      size="sm"
+      on:click={() => dispatch('move')}
+      aria-label="Move/Copy"
+    >
       Move/Copy {fileCountPhrase}
     </ContextMenu.Item>
   </div>
   <div
     use:permissionHandler={{
-      hasPermission: hasDeletePermission,
-      permissionError: 'You do not have permission to delete this workspace',
+      hasPermission: hasDeletePermission && !areMultipleFilesSelected,
+      permissionError: areMultipleFilesSelected ? multiFileOperationError : deletePermissionError,
     }}
   >
-    <ContextMenu.Item disabled={!hasDeletePermission} size="sm" on:click={() => dispatch('delete')} aria-label="Delete">
+    <ContextMenu.Item
+      disabled={!(hasDeletePermission && !areMultipleFilesSelected)}
+      size="sm"
+      on:click={() => dispatch('delete')}
+      aria-label="Delete"
+    >
       Delete {fileCountPhrase}
     </ContextMenu.Item>
   </div>
@@ -83,9 +102,16 @@
   </div>
   <ContextMenu.Separator />
 {/if}
-<ContextMenu.Item size="sm" on:click={() => dispatch('moveToWorkspace')} aria-label="Move to Workspace">
-  Move {fileCountPhrase} to Workspace
-</ContextMenu.Item>
+<div
+  use:permissionHandler={{
+    hasPermission: !areMultipleFilesSelected,
+    permissionError: multiFileOperationError,
+  }}
+>
+  <ContextMenu.Item size="sm" on:click={() => dispatch('moveToWorkspace')} aria-label="Move to Workspace">
+    Move {fileCountPhrase} to Workspace
+  </ContextMenu.Item>
+</div>
 <ContextMenu.Separator />
 <ContextMenu.Sub>
   <ContextMenu.SubTrigger size="sm">Run Action{fileCountPhrase ? ` on ${fileCountPhrase}` : ''}</ContextMenu.SubTrigger>
@@ -112,7 +138,7 @@
   <div
     use:permissionHandler={{
       hasPermission: hasEditPermission,
-      permissionError: 'You do not have permission to edit this workspace',
+      permissionError: editPermissionError,
     }}
   >
     <ContextMenu.Item size="sm" on:click={() => dispatch('newFile')} aria-label="New File">New File</ContextMenu.Item>
@@ -120,7 +146,7 @@
   <div
     use:permissionHandler={{
       hasPermission: hasEditPermission,
-      permissionError: 'You do not have permission to edit this workspace',
+      permissionError: editPermissionError,
     }}
   >
     <ContextMenu.Item size="sm" on:click={() => dispatch('newFolder')} aria-label="New Folder">
@@ -130,7 +156,7 @@
   <div
     use:permissionHandler={{
       hasPermission: hasEditPermission,
-      permissionError: 'You do not have permission to edit this workspace',
+      permissionError: editPermissionError,
     }}
   >
     <ContextMenu.Item size="sm" on:click={() => dispatch('importFile')} aria-label="Upload File">
