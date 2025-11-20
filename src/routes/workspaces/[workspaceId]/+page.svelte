@@ -544,7 +544,7 @@
     window.open(getActionsUrl(base, $workspaceId), '_blank');
   }
 
-  async function onRunActionOnSequence(event: CustomEvent<{ action: ActionDefinition, parameter: string }>) {
+  async function onRunActionOnActiveFile(event: CustomEvent<{ action: ActionDefinition, parameter: string }>) {
     const { detail: {action, parameter: primaryParameter} } = event;
 
     let parameters: ArgumentsMap = {};
@@ -555,8 +555,8 @@
         [activeFilePath] : activeFilePath;
       parameters[primaryParameter] = paramValue;
     } else {
-      // no primary paramter - show modal anyway, just don't pre-fill parameter
-      console.warn(`Invalid parameter ${primaryParameter} in onRunActionOnSequence`);
+      // no primary parameter - show modal anyway, just don't pre-fill parameter
+      console.warn(`Invalid parameter ${primaryParameter} in onRunActionOnActiveFile`);
     }
 
     if ($workspace) {
@@ -631,7 +631,6 @@
       >
         <SequenceEditor
           {phoenixContext}
-          {actionsWithSequenceParameters}
           availableActions={availableActionsForActiveFile}
           includeActions={true}
           previewOnly={!hasEditFilePermission}
@@ -643,7 +642,7 @@
           title="Sequence - Definition Editor"
           userSequenceEditorColumns={$userSequenceEditorColumns}
           userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
-          on:runAction={onRunActionOnSequence}
+          on:runAction={onRunActionOnActiveFile}
           on:save={onSaveWorkspaceFile}
           on:sequence={onWorkspaceFileUpdated}
         />
@@ -653,11 +652,14 @@
         class:hidden={selectedFileType == null || selectedFileType === WorkspaceContentType.Sequence}
       >
         <TextEditor
+          availableActions={availableActionsForActiveFile}
+          includeActions={true}
           isJSON={selectedFileType === WorkspaceContentType.Json}
           readOnly={!hasEditFilePermission}
           textFileName={selectedFileName}
           textFileContent={initialSelectedFileContent}
           title={selectedFileType === WorkspaceContentType.Json ? 'JSON Editor' : 'Text Editor'}
+          on:runAction={onRunActionOnActiveFile}
           on:save={onSaveWorkspaceFile}
           on:textContentUpdated={onWorkspaceFileUpdated}
         />

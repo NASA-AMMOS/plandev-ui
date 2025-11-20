@@ -39,7 +39,6 @@
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
-  export let actionsWithSequenceParameters: ActionDefinition[] = [];
   export let phoenixContext: PhoenixContext;
   export let includeActions: boolean = false;
   export let previewOnly: boolean = false;
