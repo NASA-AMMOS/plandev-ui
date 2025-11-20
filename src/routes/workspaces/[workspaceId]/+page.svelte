@@ -694,7 +694,7 @@
             availableActions={availableActionsForActiveFile}
             includeActions={true}
             isJSON={selectedFileType === WorkspaceContentType.Json}
-            readOnly={!hasEditFilePermission}
+            previewOnly={!hasEditFilePermission}
             textFileName={selectedFileName}
             textFileContent={initialSelectedFileContent}
             title={selectedFileType === WorkspaceContentType.Json ? 'JSON Editor' : 'Text Editor'}
