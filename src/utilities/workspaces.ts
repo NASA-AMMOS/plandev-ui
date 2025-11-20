@@ -2,7 +2,7 @@ import { PATH_DELIMITER } from '../constants/workspaces';
 import { WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
 import type { User } from '../types/app';
-import type { Workspace, WorkspaceActionsForNodes, WorkspaceInsertInput } from '../types/workspace';
+import type { ActionParameterPair, Workspace, WorkspaceInsertInput } from '../types/workspace';
 import type { WorkspaceTreeMap, WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 import { filterEmpty } from './generic';
 import { reqWorkspace } from './requests';
@@ -97,7 +97,7 @@ export function flattenWorkspaceTreeWithPaths(
 export function getAvailableActionsForNodes(
   actions: ActionDefinition[],
   nodes: (WorkspaceTreeNodeWithFullPath | WorkspaceTreeNode)[],
-): WorkspaceActionsForNodes[] {
+): ActionParameterPair[] {
   const areAllNodesSequences = nodes.every(node => node.type === WorkspaceContentType.Sequence);
 
   // any # of any type of files can be passed to a 'fileList' type param
@@ -116,7 +116,7 @@ export function getAvailableActionsForNodes(
   // when we pick a primary param, prefer more-specific types over less-specific ones (reversed)
   allowedParamTypes = allowedParamTypes.reverse();
 
-  const availableActions: WorkspaceActionsForNodes[] = [];
+  const availableActions: ActionParameterPair[] = [];
 
   for (const action of actions) {
     // params where the user has set a "primary: true" flag to be used as primary input for files/sequences

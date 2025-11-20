@@ -42,11 +42,12 @@
     ParameterDictionaryMetadata,
   } from '../../../types/sequencing';
   import type {
+    ActionParameterPair,
     Workspace,
-    WorkspaceActionsForNodes,
     WorkspaceCollaborator,
     WorkspaceMetadata,
     WorkspaceNodeEvent,
+    WorkspaceNodeRunActionEvent,
   } from '../../../types/workspace';
   import type {
     WorkspaceTreeMap,
@@ -77,7 +78,7 @@
 
   const { initialWorkspace, user } = data;
 
-  let availableActionsForActiveFile: WorkspaceActionsForNodes[] = [];
+  let availableActionsForActiveFile: ActionParameterPair[] = [];
   let activeFilePath: string | null = null;
   let allActionsForWorkspace: ActionDefinition[] = [];
   let channelDictionary: ChannelDictionary | null = null;
@@ -573,6 +574,39 @@
     }
   }
 
+  async function onRunActionOnFileSelection(event: CustomEvent<WorkspaceNodeRunActionEvent>) {
+    const {
+      detail: { actionParameterPair, treeNodes },
+    } = event;
+
+    const treeNodePaths: string[] = treeNodes.map(({ fullPath }) => fullPath);
+    const { action, parameter: primaryParameter } = actionParameterPair;
+
+    let parameters: ArgumentsMap = {};
+    // the event will tell us which of the action's parameter is the primary, to be pre-filled with the file's path
+    if (primaryParameter in action.parameter_schema) {
+      const paramDefinition = action.parameter_schema[primaryParameter];
+      const paramValue =
+        paramDefinition.type === 'fileList' || paramDefinition.type === 'sequenceList'
+          ? treeNodePaths
+          : treeNodePaths[0];
+      parameters[primaryParameter] = paramValue;
+    } else {
+      // no primary parameter - show modal anyway, just don't pre-fill parameter
+      console.warn(`Invalid parameter ${primaryParameter} in onRunActionOnActiveFile`);
+    }
+
+    if ($workspace) {
+      const actionRunId = await effects.runAction(action, $workspace, workspaceFileList, user, parameters);
+      if (actionRunId !== null) {
+        const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
+        if (goToRun === true) {
+          openActionRun($workspaceId, actionRunId, true);
+        }
+      }
+    }
+  }
+
   onMount(() => {
     if (initialWorkspace) {
       $workspaceId = initialWorkspace.id;
@@ -623,6 +657,7 @@
       on:moveToWorkspace={onMoveToWorkspace}
       on:refreshWorkspace={refreshWorkspaceContents}
       on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
+      on:runAction={onRunActionOnFileSelection}
     />
   </Sidebar.Provider>
   <CssGridGutter track={1} type="column" />

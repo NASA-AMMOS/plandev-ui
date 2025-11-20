@@ -4,13 +4,12 @@
   import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import { WorkspaceContentType } from '../../enums/workspace';
-  import type { ActionDefinition } from '../../types/actions';
-  import type { WorkspaceActionsForNodes } from '../../types/workspace';
+  import type { ActionParameterPair } from '../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { pluralize } from '../../utilities/text';
 
-  export let actionsForSelection: WorkspaceActionsForNodes[] = [];
+  export let actionsForSelection: ActionParameterPair[] = [];
   export let hasEditPermission: boolean = false;
   export let hasDeletePermission: boolean = false;
   export let hasCreateActionPermission: boolean = false;
@@ -33,7 +32,7 @@
     newFile: void;
     newFolder: void;
     rename: void;
-    runAction: ActionDefinition;
+    runAction: ActionParameterPair;
     saveSequence: void;
   }>();
 </script>
@@ -91,15 +90,15 @@
 <ContextMenu.Sub>
   <ContextMenu.SubTrigger size="sm">Run Action{fileCountPhrase ? ` on ${fileCountPhrase}` : ''}</ContextMenu.SubTrigger>
   <ContextMenu.SubContent class="w-min min-w-[200px]">
-    {#each actionsForSelection as { action }}
+    {#each actionsForSelection as workspaceActionsForNodes}
       <div
         use:permissionHandler={{
           hasPermission: hasCreateActionPermission,
           permissionError: 'You do not have permission to run an action',
         }}
       >
-        <ContextMenu.Item size="sm" on:click={() => dispatch('runAction', action)}>
-          {action.name}
+        <ContextMenu.Item size="sm" on:click={() => dispatch('runAction', workspaceActionsForNodes)}>
+          {workspaceActionsForNodes.action.name}
         </ContextMenu.Item>
       </div>
     {/each}

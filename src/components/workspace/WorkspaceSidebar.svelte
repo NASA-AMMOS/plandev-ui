@@ -6,7 +6,12 @@
   import type { ActionDefinition } from '../../types/actions';
   import type { User, UserId } from '../../types/app';
   import type { Parcel } from '../../types/sequencing';
-  import type { Workspace, WorkspaceCollaborator, WorkspaceMetadata } from '../../types/workspace';
+  import type {
+    Workspace,
+    WorkspaceCollaborator,
+    WorkspaceMetadata,
+    WorkspaceNodeRunActionEvent,
+  } from '../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import { getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -29,6 +34,7 @@
     newFolder: string;
     newSequence: string;
     refreshWorkspace: void;
+    runAction: WorkspaceNodeRunActionEvent;
     saveSequence: void;
     updateWorkspaceMetadata: Partial<WorkspaceMetadata>;
   }>();
@@ -215,6 +221,7 @@
                         on:importFile
                         on:copyFileLocation
                         on:moveToWorkspace
+                        on:runAction
                       />
                     {:else}
                       <div class="p-2 text-sm text-muted-foreground">No workspace loaded</div>
@@ -261,6 +268,7 @@
                         on:importFile
                         on:copyFileLocation
                         on:moveToWorkspace
+                        on:runAction
                       />
                     {:else}
                       <div class="p-2 text-sm text-muted-foreground">No workspace loaded</div>

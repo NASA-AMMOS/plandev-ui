@@ -7,8 +7,8 @@
   import type { ActionDefinition } from '../../../types/actions';
   import type { User } from '../../../types/app';
   import type {
+    ActionParameterPair,
     Workspace,
-    WorkspaceActionsForNodes,
     WorkspaceNodeEvent,
     WorkspaceNodeRunActionEvent,
   } from '../../../types/workspace';
@@ -41,7 +41,7 @@
     runAction: WorkspaceNodeRunActionEvent;
   }>();
 
-  let actionsForSelection: WorkspaceActionsForNodes[] = [];
+  let actionsForSelection: ActionParameterPair[] = [];
   let contextMenu: ContextMenuInternal;
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
   let hasEditPermission: boolean = false;
@@ -142,11 +142,10 @@
     dispatch('moveToWorkspace', targetPath);
   }
 
-  function onRunAction(event: CustomEvent<ActionDefinition>) {
+  function onRunAction(event: CustomEvent<ActionParameterPair>) {
     if (contextMenuNode) {
-      const action = event.detail;
-      let targetPath = contextMenuNode.fullPath;
-      dispatch('runAction', { action, files: [targetPath] });
+      const actionParameterPair = event.detail;
+      dispatch('runAction', { actionParameterPair, treeNodes: [contextMenuNode] });
     }
   }
 </script>

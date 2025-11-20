@@ -22,7 +22,12 @@
   import type { ActionDefinition } from '../../../types/actions';
   import type { User } from '../../../types/app';
   import type { DataGridColumnDef, DataGridRowDoubleClick, RowId } from '../../../types/data-grid';
-  import type { Workspace, WorkspaceNodeEvent, WorkspaceNodeRunActionEvent } from '../../../types/workspace';
+  import type {
+    ActionParameterPair,
+    Workspace,
+    WorkspaceNodeEvent,
+    WorkspaceNodeRunActionEvent,
+  } from '../../../types/workspace';
   import type {
     WorkspaceTreeMap,
     WorkspaceTreeNode,
@@ -385,9 +390,12 @@
     }
   }
 
-  function onTableRunAction(event: CustomEvent<ActionDefinition>, filePaths: RowId[]) {
-    const action = event.detail;
-    dispatch('runAction', { action, files: filePaths as string[] });
+  function onTableRunAction(event: CustomEvent<ActionParameterPair>, filePaths: RowId[]) {
+    const actionParameterPair = event.detail;
+    const selectedTreeNodes: WorkspaceTreeNodeWithFullPath[] = flattenedTree.filter(({ fullPath }) =>
+      filePaths.includes(fullPath),
+    );
+    dispatch('runAction', { actionParameterPair, treeNodes: selectedTreeNodes });
   }
 
   onMount(() => {
