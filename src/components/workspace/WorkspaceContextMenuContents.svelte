@@ -5,24 +5,23 @@
   import { createEventDispatcher } from 'svelte';
   import { WorkspaceContentType } from '../../enums/workspace';
   import type { ActionDefinition } from '../../types/actions';
-  import type { User } from '../../types/app';
+  import type { WorkspaceActionsForNodes } from '../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import { featurePermissions } from '../../utilities/permissions';
   import { pluralize } from '../../utilities/text';
-  import { getAvailableActionsForNodes } from '../../utilities/workspaces';
 
-  export let actions: ActionDefinition[] = [];
+  export let actionsForSelection: WorkspaceActionsForNodes[] = [];
   export let hasEditPermission: boolean = false;
   export let hasDeletePermission: boolean = false;
-  export let nodes: (WorkspaceTreeNodeWithFullPath | WorkspaceTreeNode)[] = [];
-  export let user: User | null;
+  export let hasCreateActionPermission: boolean = false;
+  export let selectedWorkspaceNodes: (WorkspaceTreeNodeWithFullPath | WorkspaceTreeNode)[] = [];
 
   let fileCountPhrase: string = '';
-  let actionsForSelection: ActionDefinition[] = [];
 
-  $: fileCountPhrase = nodes.length > 1 ? `${nodes.length} File${pluralize(nodes.length)}` : '';
-  $: actionsForSelection = getAvailableActionsForNodes(actions, nodes);
+  $: fileCountPhrase =
+    selectedWorkspaceNodes.length > 1
+      ? `${selectedWorkspaceNodes.length} File${pluralize(selectedWorkspaceNodes.length)}`
+      : '';
 
   const dispatch = createEventDispatcher<{
     copyFileLocation: void;
@@ -41,7 +40,7 @@
 
 <ContextMenu.Group>
   <!-- Single node actions -->
-  {#if nodes.length === 1}
+  {#if selectedWorkspaceNodes.length === 1}
     <div
       use:permissionHandler={{
         hasPermission: hasEditPermission,
@@ -75,15 +74,12 @@
   </div>
 </ContextMenu.Group>
 <ContextMenu.Separator />
-{#if nodes.length === 1}
-  <div
-    use:permissionHandler={{
-      hasPermission: hasEditPermission,
-      permissionError: 'You do not have permission to edit this workspace',
-    }}
-  >
+{#if selectedWorkspaceNodes.length === 1}
+  <div>
     <ContextMenu.Item size="sm" on:click={() => dispatch('copyFileLocation')} aria-label="Copy Link to">
-      Copy {nodes[0].type === WorkspaceContentType.Directory ? 'Link to Directory' : 'Download Link to File'}
+      Copy {selectedWorkspaceNodes[0].type === WorkspaceContentType.Directory
+        ? 'Link to Directory'
+        : 'Download Link to File'}
     </ContextMenu.Item>
   </div>
   <ContextMenu.Separator />
@@ -95,10 +91,10 @@
 <ContextMenu.Sub>
   <ContextMenu.SubTrigger size="sm">Run Action{fileCountPhrase ? ` on ${fileCountPhrase}` : ''}</ContextMenu.SubTrigger>
   <ContextMenu.SubContent class="w-min min-w-[200px]">
-    {#each actionsForSelection as action}
+    {#each actionsForSelection as { action }}
       <div
         use:permissionHandler={{
-          hasPermission: featurePermissions.actionRun.canCreate(user),
+          hasPermission: hasCreateActionPermission,
           permissionError: 'You do not have permission to run an action',
         }}
       >

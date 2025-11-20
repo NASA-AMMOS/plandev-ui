@@ -43,6 +43,7 @@
   } from '../../../types/sequencing';
   import type {
     Workspace,
+    WorkspaceActionsForNodes,
     WorkspaceCollaborator,
     WorkspaceMetadata,
     WorkspaceNodeEvent,
@@ -52,7 +53,7 @@
     WorkspaceTreeNode,
     WorkspaceTreeNodeWithFullPath,
   } from '../../../types/workspace-tree-view';
-  import { getActionParametersOfType, openActionRun } from '../../../utilities/actions';
+  import { openActionRun } from '../../../utilities/actions';
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
   import { filterEmpty } from '../../../utilities/generic';
@@ -61,7 +62,8 @@
   import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
   import { showFailureToast } from '../../../utilities/toast';
   import {
-    flattenWorkspaceTreeWithPaths, getAvailableActionsForNodes,
+    flattenWorkspaceTreeWithPaths,
+    getAvailableActionsForNodes,
     mapWorkspaceTreePaths,
     separateFilenameFromPath,
   } from '../../../utilities/workspaces';
@@ -75,8 +77,7 @@
 
   const { initialWorkspace, user } = data;
 
-  let availableActionsForActiveFile: { action: ActionDefinition; parameter: string }[] = [];
-  let actionsWithSequenceParameters: ActionDefinition[] = [];
+  let availableActionsForActiveFile: WorkspaceActionsForNodes[] = [];
   let activeFilePath: string | null = null;
   let allActionsForWorkspace: ActionDefinition[] = [];
   let channelDictionary: ChannelDictionary | null = null;
@@ -103,10 +104,6 @@
   $: if (initialWorkspace) {
     $workspaceId = initialWorkspace.id;
     allActionsForWorkspace = Object.values($actionDefinitionsByWorkspace[$workspaceId] || {});
-    actionsWithSequenceParameters = allActionsForWorkspace.filter(action => {
-      const seqParameter = getActionParametersOfType(action, 'sequence');
-      return seqParameter.length > 0;
-    });
   }
 
   $: if (!isWorkspaceLoading && selectedFilePath !== activeFilePath) {
@@ -137,7 +134,9 @@
     if (activeFilePath) {
       const { filename } = separateFilenameFromPath(activeFilePath);
       getSelectedFileContent(activeFilePath);
-      availableActionsForActiveFile = getAvailableActionsForNodes(allActionsForWorkspace, [workspaceTreeMap[activeFilePath]]);
+      availableActionsForActiveFile = getAvailableActionsForNodes(allActionsForWorkspace, [
+        workspaceTreeMap[activeFilePath],
+      ]);
 
       if (filename) {
         selectedFileName = filename;
@@ -544,15 +543,19 @@
     window.open(getActionsUrl(base, $workspaceId), '_blank');
   }
 
-  async function onRunActionOnActiveFile(event: CustomEvent<{ action: ActionDefinition, parameter: string }>) {
-    const { detail: {action, parameter: primaryParameter} } = event;
+  async function onRunActionOnActiveFile(event: CustomEvent<{ action: ActionDefinition; parameter: string }>) {
+    const {
+      detail: { action, parameter: primaryParameter },
+    } = event;
 
     let parameters: ArgumentsMap = {};
     // the event will tell us which of the action's parameter is the primary, to be pre-filled with the file's path
-    if(primaryParameter in action.parameter_schema) {
+    if (primaryParameter in action.parameter_schema) {
       const paramDefinition = action.parameter_schema[primaryParameter];
-      const paramValue = paramDefinition.type === 'fileList' || paramDefinition.type === 'sequenceList' ?
-        [activeFilePath] : activeFilePath;
+      const paramValue =
+        paramDefinition.type === 'fileList' || paramDefinition.type === 'sequenceList'
+          ? [activeFilePath]
+          : activeFilePath;
       parameters[primaryParameter] = paramValue;
     } else {
       // no primary parameter - show modal anyway, just don't pre-fill parameter
@@ -594,6 +597,7 @@
   <Sidebar.Provider style="--sidebar-width: auto" className="min-h-0">
     <WorkspaceSidebar
       bind:selectedFilePath
+      actions={allActionsForWorkspace}
       {workspaceTree}
       {isWorkspaceLoading}
       {hasEditWorkspacePermission}
@@ -625,48 +629,48 @@
   <Sidebar.Inset className="min-h-0">
     <div class="grid h-full grid-cols-1 grid-rows-1">
       {#if activeFilePath === null || isTextFile(workspaceTreeMap[activeFilePath]?.type)}
-      <div
-        class="flex h-full"
-        class:hidden={selectedFileType != null && selectedFileType !== WorkspaceContentType.Sequence}
-      >
-        <SequenceEditor
-          {phoenixContext}
-          availableActions={availableActionsForActiveFile}
-          includeActions={true}
-          previewOnly={!hasEditFilePermission}
-          sequenceAdaptation={$sequenceAdaptation}
-          sequenceDefinition={initialSelectedFileContent}
-          sequenceName={selectedFileName}
-          sequenceOutput={selectedSequenceOutput}
-          showCommandFormBuilder={true}
-          title="Sequence - Definition Editor"
-          userSequenceEditorColumns={$userSequenceEditorColumns}
-          userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
-          on:runAction={onRunActionOnActiveFile}
-          on:save={onSaveWorkspaceFile}
-          on:sequence={onWorkspaceFileUpdated}
-        />
-      </div>
-      <div
-        class="flex h-full"
-        class:hidden={selectedFileType == null || selectedFileType === WorkspaceContentType.Sequence}
-      >
-        <TextEditor
-          availableActions={availableActionsForActiveFile}
-          includeActions={true}
-          isJSON={selectedFileType === WorkspaceContentType.Json}
-          readOnly={!hasEditFilePermission}
-          textFileName={selectedFileName}
-          textFileContent={initialSelectedFileContent}
-          title={selectedFileType === WorkspaceContentType.Json ? 'JSON Editor' : 'Text Editor'}
-          on:runAction={onRunActionOnActiveFile}
-          on:save={onSaveWorkspaceFile}
-          on:textContentUpdated={onWorkspaceFileUpdated}
-        />
-      </div>
+        <div
+          class="flex h-full"
+          class:hidden={selectedFileType != null && selectedFileType !== WorkspaceContentType.Sequence}
+        >
+          <SequenceEditor
+            {phoenixContext}
+            availableActions={availableActionsForActiveFile}
+            includeActions={true}
+            previewOnly={!hasEditFilePermission}
+            sequenceAdaptation={$sequenceAdaptation}
+            sequenceDefinition={initialSelectedFileContent}
+            sequenceName={selectedFileName}
+            sequenceOutput={selectedSequenceOutput}
+            showCommandFormBuilder={true}
+            title="Sequence - Definition Editor"
+            userSequenceEditorColumns={$userSequenceEditorColumns}
+            userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
+            on:runAction={onRunActionOnActiveFile}
+            on:save={onSaveWorkspaceFile}
+            on:sequence={onWorkspaceFileUpdated}
+          />
+        </div>
+        <div
+          class="flex h-full"
+          class:hidden={selectedFileType == null || selectedFileType === WorkspaceContentType.Sequence}
+        >
+          <TextEditor
+            availableActions={availableActionsForActiveFile}
+            includeActions={true}
+            isJSON={selectedFileType === WorkspaceContentType.Json}
+            readOnly={!hasEditFilePermission}
+            textFileName={selectedFileName}
+            textFileContent={initialSelectedFileContent}
+            title={selectedFileType === WorkspaceContentType.Json ? 'JSON Editor' : 'Text Editor'}
+            on:runAction={onRunActionOnActiveFile}
+            on:save={onSaveWorkspaceFile}
+            on:textContentUpdated={onWorkspaceFileUpdated}
+          />
+        </div>
       {:else}
         <div class="flex w-full justify-center pt-6">
-          <p class="st-typography-body text-center max-w-prose text-lg">
+          <p class="st-typography-body max-w-prose text-center text-lg">
             The selected file
             <code class="font-bold">
               {activeFilePath}

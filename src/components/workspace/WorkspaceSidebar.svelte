@@ -3,6 +3,7 @@
   import type { IRowNode } from 'ag-grid-community';
   import { Clapperboard, Files, FolderTree, Settings } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
+  import type { ActionDefinition } from '../../types/actions';
   import type { User, UserId } from '../../types/app';
   import type { Parcel } from '../../types/sequencing';
   import type { Workspace, WorkspaceCollaborator, WorkspaceMetadata } from '../../types/workspace';
@@ -32,6 +33,7 @@
     updateWorkspaceMetadata: Partial<WorkspaceMetadata>;
   }>();
 
+  export let actions: ActionDefinition[] = [];
   export let isWorkspaceLoading: boolean = false;
   export let selectedFilePath: string | null = null;
   export let user: User | null;
@@ -199,6 +201,7 @@
                   <Sidebar.Menu className="h-full">
                     {#if workspaceTree}
                       <WorkspaceTreeView
+                        {actions}
                         selectedTreeNodePath={selectedFilePath}
                         treeNode={workspaceTree}
                         {workspace}
@@ -245,6 +248,7 @@
                     {#if workspaceTree && workspace}
                       <WorkspaceGridView
                         bind:selectedTreeNodePath={selectedFilePath}
+                        {actions}
                         treeNode={workspaceTree}
                         {workspace}
                         {user}

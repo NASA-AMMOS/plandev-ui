@@ -1,3 +1,4 @@
+import type { ActionDefinition } from './actions';
 import type { UserId } from './app';
 import type { WorkspaceTreeNode } from './workspace-tree-view';
 
@@ -30,3 +31,7 @@ export type WorkspaceNodeEvent = {
   treeNode: WorkspaceTreeNode;
   treeNodePath: string;
 };
+
+export type WorkspaceNodeRunActionEvent = { action: ActionDefinition; files: string[] };
+
+export type WorkspaceActionsForNodes = { action: ActionDefinition; parameter: string };
