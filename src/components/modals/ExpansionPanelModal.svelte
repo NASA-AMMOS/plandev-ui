@@ -32,8 +32,8 @@
   let saveButtonDisabled: boolean = true;
 
   $: if (selectedWorkspace !== undefined) {
-    hasUpdatePermission = featurePermissions.workspace.canUpdate(user, selectedWorkspace)
-  };
+    hasUpdatePermission = featurePermissions.workspace.canUpdate(user, selectedWorkspace);
+  }
   $: saveButtonDisabled = $workspaceIdField.value === -1 || !hasUpdatePermission;
   $: selectedWorkspace = $workspaces.find(({ id }) => $workspaceIdField.value === id);
   $: if ($workspaceIdField.value) {
