@@ -7136,13 +7136,17 @@ const effects = {
         throw new Error("Expanded Sequence Doesn't Exist");
       }
 
-      const { confirm: confirmWorkspace, value: valueWorkspace } = await showExpansionPanelModal();
+      const { confirm: confirmWorkspace, value: valueWorkspace } = await showExpansionPanelModal(user);
 
       if (!confirmWorkspace || !valueWorkspace) {
         throw new Error('Unable To Find The Specified Workspace');
       }
 
       const { workspaceId, workspaceName } = valueWorkspace;
+
+      if (!featurePermissions.workspace.canUpdate(user, workspaceId)) {
+        throwPermissionError('upload to the selected workspace');
+      }
 
       const workspaceContents = await effects.getWorkspaceContents(workspaceId, user);
       if (!workspaceContents) {

@@ -5,7 +5,9 @@
   import { createEventDispatcher } from 'svelte';
   import { field } from '../../stores/form';
   import { workspaces } from '../../stores/workspaces';
+  import type { User } from '../../types/app';
   import type { Workspace } from '../../types/workspace';
+  import { featurePermissions } from '../../utilities/permissions';
   import { min } from '../../utilities/validators';
   import Field from '../form/Field.svelte';
   import Modal from './Modal.svelte';
@@ -13,6 +15,7 @@
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
+  export let user: User | null;
   export let height: number = 200;
   export let width: number = 380;
 
@@ -24,10 +27,14 @@
   let workspaceIdField = field<number>(-1, [min(1, 'Field is required')]);
   let workspaceIdFieldName: string;
   let selectedWorkspace: Workspace | undefined;
+  let hasUpdatePermission: boolean = false;
 
   let saveButtonDisabled: boolean = true;
 
-  $: saveButtonDisabled = $workspaceIdField.value === -1;
+  $: if (selectedWorkspace !== undefined) {
+    hasUpdatePermission = featurePermissions.workspace.canUpdate(user, selectedWorkspace)
+  };
+  $: saveButtonDisabled = $workspaceIdField.value === -1 || !hasUpdatePermission;
   $: selectedWorkspace = $workspaces.find(({ id }) => $workspaceIdField.value === id);
   $: if ($workspaceIdField.value) {
     workspaceIdFieldName = $workspaces.find(workspace => workspace.id === $workspaceIdField.value)?.name ?? '';

@@ -1604,13 +1604,13 @@ export async function showUpdatePlanMissionModelModal(plan: PlanSlim, user: User
 /**
  * Shows an ExpansionPanelModal.
  */
-export async function showExpansionPanelModal(): Promise<ModalElementValue> {
+export async function showExpansionPanelModal(user: User | null): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const expansionPanelModal = new ExpansionPanelModal({ props: {}, target });
+        const expansionPanelModal = new ExpansionPanelModal({ props: { user }, target });
         target.resolve = resolve;
 
         expansionPanelModal.$on('close', () => {
