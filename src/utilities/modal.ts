@@ -1620,7 +1620,7 @@ export async function showExpansionPanelModal(user: User | null): Promise<ModalE
           expansionPanelModal.$destroy();
         });
 
-        expansionPanelModal.$on('save', (e: CustomEvent<{ workspaceId: number }>) => {
+        expansionPanelModal.$on('save', (e: CustomEvent<{ workspaceId: number; workspaceName: string }>) => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
