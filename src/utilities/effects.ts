@@ -7169,8 +7169,8 @@ const effects = {
 
       if (confirmNewFile && confirmNewFileValue) {
         const { filePath: newFilePath } = confirmNewFileValue;
-        const body = createWorkspaceSequenceFileFormData(newFilePath, expandedSequence);
-        await reqWorkspace<Workspace>(`${workspaceId}/${newFilePath}?type=file`, 'PUT', body, user, undefined, false);
+        await WorkspaceApi.saveFile(workspaceId, newFilePath, expandedSequence, false, user);
+
         showSuccessToast('Workspace File Created Successfully');
       } else {
         throw new Error('Workspace File Creation Failed');
