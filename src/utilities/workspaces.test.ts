@@ -1,6 +1,13 @@
 import { afterAll, describe, expect, test, vi } from 'vitest';
+import { WorkspaceContentType } from '../enums/workspace';
 import * as requests from './requests';
-import { cleanPath, joinPath, separateFilenameFromPath, WorkspaceApi } from './workspaces';
+import {
+  cleanPath,
+  getWorkspaceFileFolderDisplay,
+  joinPath,
+  separateFilenameFromPath,
+  WorkspaceApi,
+} from './workspaces';
 const mockNavigator = {
   platform: 'MacIntel',
 };
@@ -60,6 +67,39 @@ describe('Workspace utility function tests', () => {
     });
   });
 
+  describe('getWorkspaceFileFolderDisplay', () => {
+    test('Should correctly output a string that reflects the contents of the node list', () => {
+      expect(
+        getWorkspaceFileFolderDisplay([{ fullPath: 'foo1', name: 'foo1', type: WorkspaceContentType.Binary }]),
+      ).toEqual('File');
+      expect(
+        getWorkspaceFileFolderDisplay([
+          { fullPath: 'foo1', name: 'foo1', type: WorkspaceContentType.Binary },
+          { fullPath: 'foo2.txt', name: 'foo2.txt', type: WorkspaceContentType.Text },
+          { fullPath: 'foo3.seqN.txt', name: 'foo3.seqN.txt', type: WorkspaceContentType.Text },
+        ]),
+      ).toEqual('Files');
+      expect(
+        getWorkspaceFileFolderDisplay([{ fullPath: 'foo1', name: 'foo1', type: WorkspaceContentType.Directory }]),
+      ).toEqual('Folder');
+      expect(
+        getWorkspaceFileFolderDisplay([
+          { fullPath: 'foo1', name: 'foo1', type: WorkspaceContentType.Directory },
+          { fullPath: 'foo2', name: 'foo2', type: WorkspaceContentType.Directory },
+        ]),
+      ).toEqual('Folders');
+      expect(
+        getWorkspaceFileFolderDisplay([
+          { fullPath: 'foo1', name: 'foo1', type: WorkspaceContentType.Binary },
+          { fullPath: 'foo2.txt', name: 'foo2.txt', type: WorkspaceContentType.Text },
+          { fullPath: 'foo3.seqN.txt', name: 'foo3.seqN.txt', type: WorkspaceContentType.Text },
+          { fullPath: 'foo1', name: 'foo1', type: WorkspaceContentType.Directory },
+          { fullPath: 'foo2', name: 'foo2', type: WorkspaceContentType.Directory },
+        ]),
+      ).toEqual('Files/Folders');
+    });
+  });
+
   describe('WorkspaceApi', () => {
     test('createWorkspace', async () => {
       await WorkspaceApi.createWorkspace('foo_bar', 1, null, 'Foo Bar');
@@ -114,7 +154,7 @@ describe('Workspace utility function tests', () => {
       const body = new FormData();
       body.append('file', file, file.name);
 
-      await WorkspaceApi.saveFile(1, 'foo/bar/bazz.seq', 'sequence contents', true, null);
+      await WorkspaceApi.saveFile(1, 'foo/bar/bazz.seq', 'sequence contents', true, false, null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
         '1/foo/bar/bazz.seq?type=file&overwrite=true',
         'PUT',
@@ -126,7 +166,7 @@ describe('Workspace utility function tests', () => {
     });
 
     test('moveFile - move', async () => {
-      await WorkspaceApi.moveFile(1, 'foo/bar/bazz.seq', 'foo/buzz/bazz.seq', false, null);
+      await WorkspaceApi.moveFile(1, 'foo/bar/bazz.seq', 'foo/buzz/bazz.seq', false, false, null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
         '1/foo/bar/bazz.seq',
         'POST',

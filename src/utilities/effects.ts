@@ -288,6 +288,7 @@ import {
   showTimeRangeModal,
   showUpdatePlanMissionModelModal,
   showUploadViewModal,
+  showWorkspaceBulkOperationConflictModal,
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
 import { CompoundError, reqActionServer, reqExtension, reqGateway, reqHasura } from './requests';
@@ -313,7 +314,17 @@ import {
   generateDefaultView,
   validateViewJSONAgainstSchema,
 } from './view';
-import { cleanPath, flattenWorkspaceTreeWithPaths, joinPath, mapWorkspaceTreePaths, WorkspaceApi } from './workspaces';
+import {
+  cleanPath,
+  flattenWorkspaceTreeWithPaths,
+  getWorkspaceFileFolderDisplay,
+  isBulkOperationSuccess,
+  joinPath,
+  mapWorkspaceTreePaths,
+  separateFilenameFromPath,
+  WorkspaceApi,
+  type BulkOperationResponses,
+} from './workspaces';
 
 function throwPermissionError(attemptedAction: string): never {
   throw Error(`You do not have permission to: ${attemptedAction}.`);
@@ -3857,6 +3868,41 @@ const effects = {
     }
   },
 
+  async deleteWorkspaceItems(
+    workspace: Workspace,
+    originalNodes: WorkspaceTreeNodeWithFullPath[],
+    user: User | null,
+  ): Promise<void> {
+    const typeDisplayString = getWorkspaceFileFolderDisplay(originalNodes);
+    try {
+      if (!featurePermissions.workspace.canDelete(user, workspace)) {
+        throwPermissionError(`delete ${typeDisplayString.toLowerCase()} from this workspace`);
+      }
+
+      const { confirm } = await showConfirmModal(
+        'Delete',
+        `This will permanently delete the selected ${typeDisplayString.toLowerCase()} from the workspace: ${workspace.name}`,
+        'Delete Permanently',
+      );
+
+      if (confirm) {
+        await WorkspaceApi.deleteFiles(
+          workspace.id,
+          originalNodes.map(({ fullPath }) => fullPath),
+          user,
+        );
+
+        logMessage(
+          `Deleted ${originalNodes.length} ${typeDisplayString.toLowerCase()} in "${workspace.name}" (ID=${workspace.id}).`,
+        );
+        showSuccessToast(`Workspace ${typeDisplayString} Deleted Successfully`);
+      }
+    } catch (e) {
+      catchError(`Workspace ${typeDisplayString} was unable to be deleted`, e as Error);
+      showFailureToast(`Workspace ${typeDisplayString} Deletion Failed`);
+    }
+  },
+
   duplicateTimelineRow(row: Row, timeline: Timeline, timelines: Timeline[]): Row | null {
     const newRow = duplicateRow(row, timelines, timeline.id);
     if (newRow) {
@@ -5688,28 +5734,31 @@ const effects = {
         );
 
         const cleanedTargetPath = cleanPath(targetDirectory);
-        const convertedChunkedFiles = chunk(convertedFiles, 10);
 
         const failedConvertedFileUploads: Record<string, boolean> = {};
 
         const successfullyUploadedFileNames: string[] = [];
 
-        for (let i = 0; i < convertedChunkedFiles.length; i++) {
-          const fileChunk: File[] = convertedChunkedFiles[i];
+        if (convertedFiles.length) {
+          try {
+            const responses = await WorkspaceApi.uploadFiles(workspace.id, cleanedTargetPath, convertedFiles, user);
 
-          await Promise.all(
-            fileChunk.map(async file => {
-              try {
-                await WorkspaceApi.uploadFile(workspace.id, cleanedTargetPath, file.name, file, user);
-
-                successfullyUploadedFileNames.push(file.name);
-              } catch (error) {
-                failedConvertedFileUploads[file.name] = true;
-                catchError(`${file.name} was unable to be uploaded`, error as Error);
-                showFailureToast(`${file.name} was unable to be uploaded`);
+            responses.forEach(response => {
+              const { filename } = separateFilenameFromPath(response.item);
+              if (isBulkOperationSuccess(response)) {
+                successfullyUploadedFileNames.push(filename);
+              } else {
+                failedConvertedFileUploads[filename] = true;
               }
-            }),
-          );
+            });
+          } catch (error) {
+            convertedFiles.forEach(file => {
+              failedConvertedFileUploads[file.name] = true;
+            });
+
+            catchError(`unable to upload files`, error as Error);
+            showFailureToast(`unable to upload files`);
+          }
         }
 
         let fileArray: File[] = [];
@@ -5727,18 +5776,14 @@ const effects = {
           fileArray = [...filesToUpload];
         }
 
-        const chunkedFiles = chunk(fileArray, 10);
+        const responses = await WorkspaceApi.uploadFiles(workspace.id, cleanedTargetPath, fileArray, user);
 
-        for (let i = 0; i < chunkedFiles.length; i++) {
-          const fileChunk: File[] = chunkedFiles[i];
-          await Promise.all(
-            fileChunk.map(async file => {
-              await WorkspaceApi.uploadFile(workspace.id, cleanedTargetPath, file.name, file, user);
-
-              successfullyUploadedFileNames.push(file.name);
-            }),
-          );
-        }
+        responses.forEach(response => {
+          const { filename } = separateFilenameFromPath(response.item);
+          if (isBulkOperationSuccess(response)) {
+            successfullyUploadedFileNames.push(filename);
+          }
+        });
 
         if (successfullyUploadedFileNames.length > 0) {
           showSuccessToast(
@@ -5974,41 +6019,85 @@ const effects = {
     }
   },
 
-  async moveWorkspaceItem(
+  async moveWorkspaceItems(
     workspace: Workspace,
     workspaceContents: WorkspaceTreeNode,
-    originalNode: WorkspaceTreeNode,
-    originalPath: string,
+    originalNodes: WorkspaceTreeNodeWithFullPath[],
     user: User | null,
   ): Promise<string | null> {
-    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
+    const displayString: string = getWorkspaceFileFolderDisplay(originalNodes);
     try {
-      if (!featurePermissions.workspace.canUpdate(user, workspace, originalNode)) {
-        throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);
+      if (!featurePermissions.workspace.canUpdate(user, workspace)) {
+        throwPermissionError(`update this workspace's ${displayString.toLowerCase()}`);
       }
 
-      const { confirm, value } = await showMoveWorkspaceItemModal(
-        workspace,
-        workspaceContents,
-        originalNode,
-        originalPath,
-        workspace,
-        user,
-      );
+      const { confirm, value } = await showMoveWorkspaceItemModal(workspace, workspaceContents, originalNodes, user);
       if (confirm) {
-        const { shouldCopy, targetPath } = value;
+        const { shouldCopy, shouldOverwrite, targetPath } = value;
         const cleanedTargetPath = cleanPath(targetPath);
         try {
-          await WorkspaceApi.moveFile(workspace.id, originalPath, `./${cleanedTargetPath}`, shouldCopy, user);
-          showSuccessToast(`Workspace ${typeString} ${shouldCopy ? 'Copied' : 'Moved'} Successfully`);
+          const responses = await WorkspaceApi.moveFiles(
+            workspace.id,
+            originalNodes.map(({ fullPath }) => fullPath),
+            `./${cleanedTargetPath}`,
+            shouldCopy,
+            shouldOverwrite,
+            user,
+          );
+
+          while (responses.length > 0) {
+            const response = responses.shift();
+
+            if (response) {
+              if (!isBulkOperationSuccess(response) && response.status === 409) {
+                const { confirm: conflictConfirm, value: conflictValue } =
+                  await showWorkspaceBulkOperationConflictModal(response.item);
+
+                if (conflictConfirm && conflictValue) {
+                  const { allFiles, shouldOverwrite, shouldSkip } = conflictValue;
+
+                  const retryResponses: BulkOperationResponses = [response];
+                  if (allFiles) {
+                    while (responses.length > 0) {
+                      const responseToRetry = responses.shift();
+                      if (responseToRetry) {
+                        retryResponses.push(responseToRetry);
+                      }
+                    }
+                  }
+                  if (shouldOverwrite) {
+                    const overwriteResponses = await WorkspaceApi.moveFiles(
+                      workspace.id,
+                      retryResponses.map(({ item }) => item),
+                      `./${cleanedTargetPath}`,
+                      shouldCopy,
+                      true,
+                      user,
+                    );
+
+                    overwriteResponses.forEach(overwriteResponse => {
+                      if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
+                        responses.unshift(overwriteResponse);
+                      }
+                    });
+                  }
+
+                  if (shouldSkip) {
+                    continue;
+                  }
+                }
+              }
+            }
+          }
+          showSuccessToast(`Workspace ${displayString} ${shouldCopy ? 'Copied' : 'Moved'} Successfully`);
           logMessage(
-            `${shouldCopy ? 'Copied' : 'Moved'} workspace ${typeString.toLowerCase()} from "${originalPath}" to "${cleanedTargetPath}".`,
+            `${shouldCopy ? 'Copied' : 'Moved'} workspace ${displayString.toLowerCase()} to "${cleanedTargetPath}".`,
           );
 
           return cleanedTargetPath;
         } catch (e) {
           throw Error(
-            `Workspace ${typeString.toLowerCase()} was unable to be ${shouldCopy ? 'copied' : 'moved'}`,
+            `Workspace ${displayString.toLowerCase()} unable to be ${shouldCopy ? 'copied' : 'moved'}`,
             e as Error,
           );
         }
@@ -6021,43 +6110,43 @@ const effects = {
     return null;
   },
 
-  async moveWorkspaceItemToWorkspace(
+  async moveWorkspaceItemsToWorkspace(
     workspace: Workspace,
-    originalNode: WorkspaceTreeNode,
-    originalPath: string,
+    originalNodes: WorkspaceTreeNodeWithFullPath[],
     user: User | null,
   ): Promise<string | null> {
-    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
-    const { confirm, value } = await showMoveItemToWorkspaceModal(workspace, originalNode, originalPath, user);
+    const displayString: string = getWorkspaceFileFolderDisplay(originalNodes);
+    const { confirm, value } = await showMoveItemToWorkspaceModal(workspace, originalNodes, user);
 
     if (confirm) {
-      const { shouldCopy, targetPath, targetWorkspace } = value;
+      const { shouldCopy, shouldOverwrite, targetPath, targetWorkspace } = value;
       try {
         if (!featurePermissions.workspace.canUpdate(user, targetWorkspace)) {
-          throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);
+          throwPermissionError(`update this workspace ${displayString.toLowerCase()}`);
         }
         const cleanedTargetPath = cleanPath(targetPath);
 
-        await WorkspaceApi.moveFileToWorkspace(
+        await WorkspaceApi.moveFilesToWorkspace(
           workspace.id,
-          originalPath,
+          originalNodes.map(({ fullPath }) => fullPath),
           targetWorkspace.id,
           `./${cleanedTargetPath}`,
           shouldCopy,
+          shouldOverwrite,
           user,
         );
-        showSuccessToast(`Workspace ${typeString} ${shouldCopy ? 'Duplicated' : 'Moved'} Successfully`);
+        showSuccessToast(`Workspace ${displayString} ${shouldCopy ? 'Duplicated' : 'Moved'} Successfully`);
         logMessage(
-          `${shouldCopy ? 'Duplicated' : 'Moved'} workspace ${typeString.toLowerCase()} from "${workspace.name}" to "${targetWorkspace.name}".`,
+          `${shouldCopy ? 'Duplicated' : 'Moved'} workspace ${displayString.toLowerCase()} from "${workspace.name}" to "${targetWorkspace.name}".`,
         );
 
         return cleanedTargetPath;
       } catch (e) {
         catchError(
-          `Workspace ${typeString.toLowerCase()} was unable to be ${shouldCopy ? 'duplicated' : 'moved'}`,
+          `Workspace ${displayString.toLowerCase()} was unable to be ${shouldCopy ? 'duplicated' : 'moved'}`,
           e as Error,
         );
-        showFailureToast(`Workspace ${typeString} ${shouldCopy ? 'Duplication' : 'Move'} Failed`);
+        showFailureToast(`Workspace ${displayString} ${shouldCopy ? 'Duplication' : 'Move'} Failed`);
       }
     }
 
@@ -6457,7 +6546,7 @@ const effects = {
       if (confirm) {
         const { targetPath } = value;
         const cleanedTargetPath = cleanPath(targetPath);
-        await WorkspaceApi.moveFile(workspace.id, originalPath, `./${cleanedTargetPath}`, false, user);
+        await WorkspaceApi.moveFile(workspace.id, originalPath, `./${cleanedTargetPath}`, false, false, user);
 
         showSuccessToast(`Workspace ${typeString} Renamed Successfully`);
         logMessage(`Renamed workspace ${typeString.toLowerCase()} from "${originalPath}" to "${cleanedTargetPath}".`);

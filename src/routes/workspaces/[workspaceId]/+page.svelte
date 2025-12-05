@@ -48,6 +48,7 @@
     WorkspaceMetadata,
     WorkspaceNodeEvent,
     WorkspaceNodeRunActionEvent,
+    WorkspaceNodesEvent,
   } from '../../../types/workspace';
   import type {
     WorkspaceTreeMap,
@@ -429,11 +430,11 @@
     selectedFilePath = treeNodePath;
   }
 
-  async function onNodeDelete({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
+  async function onDeleteNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if ($workspace) {
-      let shouldUpdateSelectedSequencePath = treeNodePath === activeFilePath;
+      let shouldUpdateSelectedSequencePath = treeNodes.find(({ fullPath }) => fullPath === activeFilePath);
 
-      await effects.deleteWorkspaceItem($workspace, treeNode, treeNodePath, user);
+      await effects.deleteWorkspaceItems($workspace, treeNodes, user);
       refreshWorkspaceContents();
 
       if (shouldUpdateSelectedSequencePath) {
@@ -442,11 +443,11 @@
     }
   }
 
-  async function onNodeMove({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
+  async function onMoveNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if ($workspace && workspaceTree) {
-      let shouldUpdateSelectedSequencePath = treeNodePath === activeFilePath;
+      let shouldUpdateSelectedSequencePath = treeNodes.find(({ fullPath }) => fullPath === activeFilePath);
 
-      const targetPath = await effects.moveWorkspaceItem($workspace, workspaceTree, treeNode, treeNodePath, user);
+      const targetPath = await effects.moveWorkspaceItems($workspace, workspaceTree, treeNodes, user);
       refreshWorkspaceContents();
 
       if (shouldUpdateSelectedSequencePath) {
@@ -456,7 +457,7 @@
     }
   }
 
-  async function onNodeRename({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
+  async function onRenameNode({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
     if ($workspace) {
       let shouldUpdateSelectedSequencePath = treeNodePath === activeFilePath;
 
@@ -501,9 +502,9 @@
     setClipboardContent(`${WORKSPACE_URL}/ws/${$workspaceId}/${copyPath}`);
   }
 
-  async function onMoveToWorkspace({ detail: sourcePath }: CustomEvent<string>) {
+  async function onMoveNodesToWorkspace({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if (initialWorkspace) {
-      await effects.moveWorkspaceItemToWorkspace(initialWorkspace, workspaceTreeMap[sourcePath], sourcePath, user);
+      await effects.moveWorkspaceItemsToWorkspace(initialWorkspace, treeNodes, user);
       refreshWorkspaceContents();
     }
   }
@@ -615,14 +616,14 @@
       on:addCollaborator={onAddCollaborator}
       on:deleteCollaborator={onDeleteCollaborator}
       on:nodeClicked={onNodeClicked}
-      on:nodeDelete={onNodeDelete}
-      on:nodeMove={onNodeMove}
-      on:nodeRename={onNodeRename}
+      on:deleteNodes={onDeleteNodes}
+      on:moveNodes={onMoveNodes}
+      on:renameNode={onRenameNode}
       on:newFolder={onNewFolder}
       on:newSequence={onNewSequence}
       on:importFile={onImportFile}
       on:copyFileLocation={onCopyFileLocation}
-      on:moveToWorkspace={onMoveToWorkspace}
+      on:moveNodesToWorkspace={onMoveNodesToWorkspace}
       on:refreshWorkspace={refreshWorkspaceContents}
       on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
       on:runAction={onRunActionOnFileSelection}

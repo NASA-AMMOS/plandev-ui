@@ -38,6 +38,7 @@ import TimeRangeModal from '../components/modals/TimeRangeModal.svelte';
 import TransformActivitiesModal from '../components/modals/TransformActivitiesModal.svelte';
 import UpdatePlanMissionModelModal from '../components/modals/UpdatePlanMissionModelModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
+import WorkspaceBulkOperationConflictModal from '../components/modals/WorkspaceBulkOperationConflictModal.svelte';
 import NewSequenceTemplateModal from '../components/sequence-templates/NewSequenceTemplateModal.svelte';
 import { type ActionDefinition } from '../types/actions';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
@@ -506,8 +507,7 @@ export async function showMergeReviewEndedModal(
  */
 export async function showMoveItemToWorkspaceModal(
   currentWorkspace: Workspace,
-  originalNode: WorkspaceTreeNode,
-  originalPath: string,
+  originalNodes: WorkspaceTreeNodeWithFullPath[],
   user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
@@ -516,7 +516,7 @@ export async function showMoveItemToWorkspaceModal(
 
       if (target) {
         const moveWorkspaceFileToWorkspaceModal = new MoveItemToWorkspaceModal({
-          props: { currentWorkspace, originalNode, originalPath, user },
+          props: { currentWorkspace, originalNodes, user },
           target,
         });
         target.resolve = resolve;
@@ -550,9 +550,7 @@ export async function showMoveItemToWorkspaceModal(
 export async function showMoveWorkspaceItemModal(
   currentWorkspace: Workspace,
   currentWorkspaceContents: WorkspaceTreeNode,
-  originalNode: WorkspaceTreeNode,
-  originalPath: string,
-  workspace: Workspace | null | undefined,
+  originalNodes: WorkspaceTreeNodeWithFullPath[],
   user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
@@ -564,10 +562,8 @@ export async function showMoveWorkspaceItemModal(
           props: {
             currentWorkspace,
             currentWorkspaceContents,
-            originalNode,
-            originalPath,
+            originalNodes,
             user,
-            workspace,
           },
           target,
         });
@@ -575,7 +571,7 @@ export async function showMoveWorkspaceItemModal(
 
         moveWorkspaceItemModal.$on(
           'confirm',
-          (e: CustomEvent<{ originalNode: WorkspaceTreeNode; targetPath: string }>) => {
+          (e: CustomEvent<{ shouldCopy: boolean; shouldOverwrite: boolean; targetPath: string }>) => {
             target.replaceChildren();
             target.resolve = null;
             resolve({ confirm: true, value: e.detail });
@@ -720,6 +716,56 @@ export async function showRenameWorkspaceItemModal(
           resolve({ confirm: false });
           renameWorkspaceItemModal.$destroy();
         });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a modal to handle file/folder name collisions in workspaces
+ */
+export async function showWorkspaceBulkOperationConflictModal(targetPath: string): Promise<
+  ModalElementValue<{
+    allFiles?: boolean;
+    shouldOverwrite?: boolean;
+    shouldSkip?: boolean;
+  }>
+> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const workspaceBulkOperationConflictModal = new WorkspaceBulkOperationConflictModal({
+          props: { targetPath },
+          target,
+        });
+        target.resolve = resolve;
+
+        workspaceBulkOperationConflictModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          workspaceBulkOperationConflictModal.$destroy();
+        });
+
+        workspaceBulkOperationConflictModal.$on(
+          'confirm',
+          (
+            e: CustomEvent<{
+              allFiles?: boolean;
+              shouldOverwrite?: boolean;
+              shouldSkip?: boolean;
+            }>,
+          ) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: true, value: e.detail });
+            workspaceBulkOperationConflictModal.$destroy();
+          },
+        );
       }
     } else {
       resolve({ confirm: false });

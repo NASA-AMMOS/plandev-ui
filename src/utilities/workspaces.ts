@@ -1,3 +1,4 @@
+import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
 import { PATH_DELIMITER } from '../constants/workspaces';
 import { WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
@@ -5,9 +6,9 @@ import type { User } from '../types/app';
 import type { ActionParameterPair, Workspace, WorkspaceInsertInput } from '../types/workspace';
 import type { WorkspaceTreeMap, WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 import { filterEmpty } from './generic';
-import { reqWorkspace } from './requests';
-import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
 import { pathMatchesExtensionPattern } from './parameters';
+import { reqWorkspace } from './requests';
+import { pluralize } from './text';
 
 export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
   let treeMap: WorkspaceTreeMap = {};
@@ -52,6 +53,35 @@ export function cleanPath(path: string | null = '') {
 
 export function joinPath(pathParts: (string | number | boolean)[]) {
   return pathParts.filter(filterEmpty).join(PATH_DELIMITER);
+}
+
+export function getWorkspaceFileFolderDisplay(nodes: WorkspaceTreeNodeWithFullPath[]) {
+  const breakdown = nodes.reduce(
+    (previousBreakdown: { files: WorkspaceTreeNodeWithFullPath[]; folders: WorkspaceTreeNodeWithFullPath[] }, node) => {
+      if (node.type === WorkspaceContentType.Directory) {
+        return {
+          ...previousBreakdown,
+          folders: [...previousBreakdown.folders, node],
+        };
+      }
+
+      return {
+        ...previousBreakdown,
+        files: [...previousBreakdown.files, node],
+      };
+    },
+    {
+      files: [],
+      folders: [],
+    },
+  );
+
+  return [
+    `${breakdown.files.length ? `File${pluralize(breakdown.files.length)}` : ''}`,
+    `${breakdown.folders.length ? `Folder${pluralize(breakdown.folders.length)}` : ''}`,
+  ]
+    .filter(Boolean)
+    .join('/');
 }
 
 /**
@@ -182,6 +212,18 @@ function createFormDataWithFile(filePath: string, fileContent: string, fileKey: 
   return body;
 }
 
+type BulkOperationResponse = {
+  item: string;
+  response: string;
+  status: number;
+};
+export type BulkOperationResponses = BulkOperationResponse[];
+
+export function isBulkOperationSuccess(response: BulkOperationResponse) {
+  // Check if status is between 200 and 299 (inclusive)
+  return response.status >= 200 && response.status <= 299;
+}
+
 export const WorkspaceApi = {
   async createFolder(workspaceId: number, folderPath: string, user: User | null) {
     return reqWorkspace<Workspace>(`${workspaceId}/${folderPath}?type=directory`, 'PUT', null, user, undefined, false);
@@ -203,6 +245,9 @@ export const WorkspaceApi = {
   async deleteFile(workspaceId: number, filePath: string, user: User | null): Promise<void> {
     return reqWorkspace(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, false);
   },
+  async deleteFiles(workspaceId: number, filePaths: string[], user: User | null): Promise<BulkOperationResponses> {
+    return reqWorkspace(joinPath(['bulk', workspaceId]), 'DELETE', JSON.stringify(filePaths), user, undefined, false);
+  },
   async deleteWorkspace(workspaceId: number, user: User | null): Promise<void> {
     return reqWorkspace(`${workspaceId}`, 'DELETE', null, user, undefined, false);
   },
@@ -217,12 +262,14 @@ export const WorkspaceApi = {
     originalPath: string,
     targetPath: string,
     shouldCopy: boolean,
+    shouldOverwrite: boolean,
     user: User | null,
   ): Promise<void> {
     return reqWorkspace<void>(
       joinPath([workspaceId, originalPath]),
       'POST',
       JSON.stringify({
+        overwrite: shouldOverwrite,
         [shouldCopy ? 'copyTo' : 'moveTo']: targetPath,
       }),
       user,
@@ -250,6 +297,50 @@ export const WorkspaceApi = {
       false,
     );
   },
+  async moveFiles(
+    workspaceId: number,
+    originalPaths: string[],
+    targetDirectory: string,
+    shouldCopy: boolean,
+    shouldOverwrite: boolean,
+    user: User | null,
+  ): Promise<BulkOperationResponses> {
+    return reqWorkspace<BulkOperationResponses>(
+      joinPath(['bulk', workspaceId]),
+      'POST',
+      JSON.stringify({
+        overwrite: shouldOverwrite,
+        paths: originalPaths,
+        [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
+      }),
+      user,
+      undefined,
+      true,
+    );
+  },
+  async moveFilesToWorkspace(
+    workspaceId: number,
+    originalPaths: string[],
+    targetWorkspaceId: number,
+    targetDirectory: string,
+    shouldCopy: boolean,
+    shouldOverwrite: boolean,
+    user: User | null,
+  ): Promise<BulkOperationResponses> {
+    return reqWorkspace<BulkOperationResponses>(
+      joinPath(['bulk', workspaceId]),
+      'POST',
+      JSON.stringify({
+        overwrite: shouldOverwrite,
+        paths: originalPaths,
+        [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
+        toWorkspace: targetWorkspaceId,
+      }),
+      user,
+      undefined,
+      true,
+    );
+  },
   async saveFile(
     workspaceId: number,
     filePath: string,
@@ -261,7 +352,7 @@ export const WorkspaceApi = {
     return reqWorkspace<Workspace>(
       `${workspaceId}/${filePath}?type=file${shouldOverwrite ? '&overwrite=true' : ''}`,
       'PUT',
-      body,
+      JSON.stringify(body),
       user,
       undefined,
       false,
@@ -283,6 +374,32 @@ export const WorkspaceApi = {
       user,
       undefined,
       false,
+    );
+  },
+  async uploadFiles(
+    workspaceId: number,
+    targetDirectory: string,
+    files: File[],
+    user: User | null,
+  ): Promise<BulkOperationResponses> {
+    const body = JSON.stringify(
+      files.map(file => ({
+        path: `${joinPath([targetDirectory, file.name])}`,
+        type: 'file',
+      })),
+    );
+    const form = new FormData();
+    form.append('body', body);
+    files.forEach(file => {
+      form.append('files', file);
+    });
+    return reqWorkspace<BulkOperationResponses>(
+      `${joinPath(['bulk', workspaceId])}`,
+      'PUT',
+      form,
+      user,
+      undefined,
+      true,
     );
   },
 };

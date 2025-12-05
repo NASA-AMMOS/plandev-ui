@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Input, Label } from '@nasa-jpl/stellar-svelte';
+  import { Checkbox, Input, Label } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import InputInternal from '../../components/form/Input.svelte';
   import * as Sidebar from '../../components/ui/Sidebar/index.js';
@@ -10,12 +10,12 @@
   import { workspaces } from '../../stores/workspaces';
   import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
-  import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
+  import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import effects from '../../utilities/effects';
   import { filterEmpty } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler.js';
   import { featurePermissions } from '../../utilities/permissions.js';
-  import { separateFilenameFromPath } from '../../utilities/workspaces.js';
+  import { getWorkspaceFileFolderDisplay } from '../../utilities/workspaces.js';
   import WorkspaceTreeView from '../workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
@@ -23,28 +23,23 @@
   import ModalHeader from './ModalHeader.svelte';
 
   export let currentWorkspace: Workspace;
-  export let originalNode: WorkspaceTreeNode;
-  export let originalPath: string;
+  export let originalNodes: WorkspaceTreeNodeWithFullPath[];
   export let user: User | null;
 
   const dispatch = createEventDispatcher<{
     close: void;
-    confirm: { shouldCopy: boolean; targetPath: string; targetWorkspace: Workspace };
+    confirm: { shouldCopy: boolean; shouldOverwrite: boolean; targetPath: string; targetWorkspace: Workspace };
   }>();
 
+  let displayString: string = getWorkspaceFileFolderDisplay(originalNodes);
+  let hasSourceDeletePermission: boolean = false;
+  let hasTargetEditPermission: boolean = false;
+  let shouldOverwrite: boolean = false;
   let targetDirectory: string = '';
-  let targetFilename: string = '';
-  let typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
   let workspacesContents: WorkspaceTreeNode[] = [];
   let workspacesMap: Record<string, Workspace> = {};
   let workspacePermissionsMap: Record<string, { hasDeletePermission: boolean; hasEditPermission: boolean }> = {};
-  let hasSourceDeletePermission: boolean = false;
-  let hasTargetEditPermission: boolean = false;
 
-  $: {
-    const { filename } = separateFilenameFromPath(originalPath);
-    targetFilename = filename;
-  }
   $: getWorkspacesContents($workspaces);
   $: {
     workspacesMap = $workspaces.reduce((currentWorkspacesMap, workspace) => {
@@ -108,7 +103,8 @@
     if (targetWorkspace) {
       dispatch('confirm', {
         shouldCopy: false,
-        targetPath: `${actualTargetDirectory.join(PATH_DELIMITER)}/${targetFilename}`,
+        shouldOverwrite,
+        targetPath: actualTargetDirectory.join(PATH_DELIMITER),
         targetWorkspace: targetWorkspace,
       });
     }
@@ -120,7 +116,8 @@
     if (targetWorkspace) {
       dispatch('confirm', {
         shouldCopy: true,
-        targetPath: `${actualTargetDirectory.join(PATH_DELIMITER)}/${targetFilename}`,
+        shouldOverwrite,
+        targetPath: actualTargetDirectory.join(PATH_DELIMITER),
         targetWorkspace: targetWorkspace,
       });
     }
@@ -132,10 +129,12 @@
     <div>Move or Duplicate</div>
   </ModalHeader>
   <ModalContent style="overflow: hidden;">
-    <div class="grid h-full grid-rows-[min-content_auto_min-content] gap-1 overflow-hidden">
+    <div class="grid h-full grid-rows-[min-content_auto_min-content_min-content] gap-1 overflow-hidden">
       <div>
-        <div>Current Location:</div>
-        <div class="py-1"><span class="font-semibold">{currentWorkspace.name}/{originalPath}</span></div>
+        <div>Selected {displayString}:</div>
+        <div class="py-1">
+          <span class="font-semibold">{originalNodes.map(({ fullPath }) => fullPath).join(', ')}</span>
+        </div>
       </div>
       <Sidebar.Provider
         style="--sidebar-width: auto"
@@ -168,6 +167,10 @@
         <Label size="sm" for="target-path">Target Directory</Label>
         <Input sizeVariant="xs" id="target-path" name="target-path" autocomplete="off" bind:value={targetDirectory} />
       </InputInternal>
+      <div class="grid grid-cols-[min-content_auto] items-center gap-x-2">
+        <Checkbox name="shouldOverwrite" id="shouldOverwrite" bind:checked={shouldOverwrite} />
+        <label class="select-none" for="shouldOverwrite">Overwrite Existing {displayString}</label>
+      </div>
     </div>
   </ModalContent>
   <ModalFooter>
@@ -178,10 +181,10 @@
       on:click={onMove}
       use:permissionHandler={{
         hasPermission: hasSourceDeletePermission && hasTargetEditPermission,
-        permissionError: 'You do not have permission to move this item from the original workspace.',
+        permissionError: `You do not have permission to move ${originalNodes.length === 1 ? 'this' : 'these'} ${displayString.toLowerCase()} from the original workspace.`,
       }}
     >
-      Move {typeString}
+      Move {displayString}
     </button>
     <button
       class="st-button"
@@ -189,10 +192,10 @@
       on:click={onDuplicate}
       use:permissionHandler={{
         hasPermission: hasTargetEditPermission,
-        permissionError: 'You do not have permission to copy this item into the target workspace.',
+        permissionError: `You do not have permission to copy ${originalNodes.length === 1 ? 'this' : 'these'} ${displayString.toLowerCase()} into the target workspace.`,
       }}
     >
-      Duplicate {typeString}
+      Duplicate {displayString}
     </button>
   </ModalFooter>
 </Modal>
