@@ -352,7 +352,7 @@ export const WorkspaceApi = {
     return reqWorkspace<Workspace>(
       `${workspaceId}/${filePath}?type=file${shouldOverwrite ? '&overwrite=true' : ''}`,
       'PUT',
-      JSON.stringify(body),
+      body,
       user,
       undefined,
       false,
