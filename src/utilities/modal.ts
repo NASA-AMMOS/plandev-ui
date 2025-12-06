@@ -313,6 +313,7 @@ export async function showImportWorkspaceFileModal(
               filesToConvert: File[];
               filesToUpload: File[];
               shouldKeepOriginalFiles: boolean;
+              shouldOverwrite: boolean;
               targetDirectory: string;
             }>,
           ) => {
@@ -730,7 +731,6 @@ export async function showWorkspaceBulkOperationConflictModal(targetPath: string
   ModalElementValue<{
     allFiles?: boolean;
     shouldOverwrite?: boolean;
-    shouldSkip?: boolean;
   }>
 > {
   return new Promise(resolve => {
@@ -744,12 +744,19 @@ export async function showWorkspaceBulkOperationConflictModal(targetPath: string
         });
         target.resolve = resolve;
 
-        workspaceBulkOperationConflictModal.$on('close', () => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: false });
-          workspaceBulkOperationConflictModal.$destroy();
-        });
+        workspaceBulkOperationConflictModal.$on(
+          'skip',
+          (
+            e: CustomEvent<{
+              allFiles?: boolean;
+            }>,
+          ) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: false, value: e.detail });
+            workspaceBulkOperationConflictModal.$destroy();
+          },
+        );
 
         workspaceBulkOperationConflictModal.$on(
           'confirm',
@@ -757,7 +764,6 @@ export async function showWorkspaceBulkOperationConflictModal(targetPath: string
             e: CustomEvent<{
               allFiles?: boolean;
               shouldOverwrite?: boolean;
-              shouldSkip?: boolean;
             }>,
           ) => {
             target.replaceChildren();

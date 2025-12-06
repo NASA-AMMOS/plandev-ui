@@ -11,11 +11,12 @@
   export let targetPath: string;
 
   const dispatch = createEventDispatcher<{
-    close: void;
     confirm: {
       allFiles?: boolean;
       shouldOverwrite?: boolean;
-      shouldSkip?: boolean;
+    };
+    skip: {
+      allFiles?: boolean;
     };
   }>();
 
@@ -28,10 +29,16 @@
     });
   }
 
-  function onShouldSkip() {
+  function onShouldKeep() {
     dispatch('confirm', {
       allFiles: shouldApplyToAllFiles,
-      shouldSkip: true,
+      shouldOverwrite: false,
+    });
+  }
+
+  function onShouldSkip() {
+    dispatch('skip', {
+      allFiles: shouldApplyToAllFiles,
     });
   }
 </script>
@@ -48,8 +55,8 @@
     </div>
   </ModalContent>
   <ModalFooter>
-    <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" on:click={onShouldOverwrite}> Overwrite File </button>
     <button class="st-button" on:click={onShouldSkip}> Skip File </button>
+    <button class="st-button" on:click={onShouldOverwrite}> Overwrite File </button>
+    <button class="st-button" on:click={onShouldKeep}> Keep Both Files </button>
   </ModalFooter>
 </Modal>

@@ -85,6 +85,45 @@ export function getWorkspaceFileFolderDisplay(nodes: WorkspaceTreeNodeWithFullPa
 }
 
 /**
+ * Increments the trailing number in a filename (before the extension).
+ *
+ * @param filename - The full filename (e.g., "image.png" or "data(1).json")
+ * @returns The new filename with the incremented number
+ */
+export function incrementFilename(filename: string): string {
+  // 1. Identify the position of the last dot to separate name and extension.
+  // We use lastIndexOf because filenames can have multiple dots (e.g. .min.js)
+  const lastDotIndex = filename.indexOf('.');
+
+  let baseName = filename;
+  let extension = '';
+
+  // We only split if a dot exists AND it isn't the first character
+  // (to handle hidden files like .gitignore correctly as having no extension)
+  if (lastDotIndex > 0) {
+    baseName = filename.substring(0, lastDotIndex);
+    extension = filename.substring(lastDotIndex);
+  }
+
+  // 2. Regex checks the END of the baseName for (number)
+  const regex = /\((\d+)\)$/;
+  const match = baseName.match(regex);
+
+  if (match) {
+    // Increment existing number
+    const currentNumber = parseInt(match[1], 10);
+    const nextNumber = currentNumber + 1;
+    baseName = baseName.replace(regex, `(${nextNumber})`);
+  } else {
+    // Append (1) if no number exists
+    baseName = `${baseName}(1)`;
+  }
+
+  // 3. Rejoin base and extension
+  return baseName + extension;
+}
+
+/**
  * Recursively traverses a WorkspaceTreeNode tree structure, flattens it into an array,
  * includes the full path to each node, and uses memoization to cache results
  * based on both the input 'nodes' array and the 'currentPath'.
@@ -212,6 +251,11 @@ function createFormDataWithFile(filePath: string, fileContent: string, fileKey: 
   return body;
 }
 
+type MoveFileOperation = {
+  newFilename?: string;
+  originalPath: string;
+};
+
 type BulkOperationResponse = {
   item: string;
   response: string;
@@ -269,8 +313,8 @@ export const WorkspaceApi = {
       joinPath([workspaceId, originalPath]),
       'POST',
       JSON.stringify({
-        overwrite: shouldOverwrite,
         [shouldCopy ? 'copyTo' : 'moveTo']: targetPath,
+        overwrite: shouldOverwrite,
       }),
       user,
       undefined,
@@ -283,6 +327,7 @@ export const WorkspaceApi = {
     targetWorkspaceId: number,
     targetDirectory: string,
     shouldCopy: boolean,
+    shouldOverwrite: boolean,
     user: User | null,
   ): Promise<void> {
     return reqWorkspace<void>(
@@ -290,6 +335,7 @@ export const WorkspaceApi = {
       'POST',
       JSON.stringify({
         [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
+        overwrite: shouldOverwrite,
         toWorkspace: targetWorkspaceId,
       }),
       user,
@@ -299,7 +345,7 @@ export const WorkspaceApi = {
   },
   async moveFiles(
     workspaceId: number,
-    originalPaths: string[],
+    originalPaths: MoveFileOperation[],
     targetDirectory: string,
     shouldCopy: boolean,
     shouldOverwrite: boolean,
@@ -309,9 +355,9 @@ export const WorkspaceApi = {
       joinPath(['bulk', workspaceId]),
       'POST',
       JSON.stringify({
+        [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
         overwrite: shouldOverwrite,
         paths: originalPaths,
-        [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
       }),
       user,
       undefined,
@@ -320,7 +366,7 @@ export const WorkspaceApi = {
   },
   async moveFilesToWorkspace(
     workspaceId: number,
-    originalPaths: string[],
+    originalPaths: MoveFileOperation[],
     targetWorkspaceId: number,
     targetDirectory: string,
     shouldCopy: boolean,
@@ -331,9 +377,9 @@ export const WorkspaceApi = {
       joinPath(['bulk', workspaceId]),
       'POST',
       JSON.stringify({
+        [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
         overwrite: shouldOverwrite,
         paths: originalPaths,
-        [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
         toWorkspace: targetWorkspaceId,
       }),
       user,
@@ -363,12 +409,13 @@ export const WorkspaceApi = {
     targetDirectory: string,
     filename: string,
     file: File,
+    shouldOverwrite: boolean,
     user: User | null,
   ): Promise<void> {
     const body = new FormData();
     body.append('file', file, file.name);
     return reqWorkspace<void>(
-      `${joinPath([workspaceId, targetDirectory, filename])}?type=file`,
+      `${joinPath([workspaceId, targetDirectory, filename])}?type=file&overwrite=${shouldOverwrite}`,
       'PUT',
       body,
       user,
@@ -380,10 +427,12 @@ export const WorkspaceApi = {
     workspaceId: number,
     targetDirectory: string,
     files: File[],
+    shouldOverwrite: boolean,
     user: User | null,
   ): Promise<BulkOperationResponses> {
     const body = JSON.stringify(
       files.map(file => ({
+        overwrite: shouldOverwrite,
         path: `${joinPath([targetDirectory, file.name])}`,
         type: 'file',
       })),

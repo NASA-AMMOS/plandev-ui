@@ -84,9 +84,9 @@
           </Sidebar.Menu>
         </Sidebar.Content>
       </Sidebar.Provider>
-      <div class="grid grid-cols-[min-content_auto] items-center gap-x-2">
+      <div class="flex flex-row-reverse items-center gap-x-2 pt-1">
         <Checkbox name="shouldOverwrite" id="shouldOverwrite" bind:checked={shouldOverwrite} />
-        <label class="select-none" for="shouldOverwrite">Overwrite Existing Files</label>
+        <label class="select-none" for="shouldOverwrite">Overwrite Existing {displayString}</label>
       </div>
     </div>
   </ModalContent>

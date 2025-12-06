@@ -318,6 +318,7 @@ import {
   cleanPath,
   flattenWorkspaceTreeWithPaths,
   getWorkspaceFileFolderDisplay,
+  incrementFilename,
   isBulkOperationSuccess,
   joinPath,
   mapWorkspaceTreePaths,
@@ -5701,10 +5702,17 @@ const effects = {
         user,
       );
       if (confirm) {
-        const { filesToConvert, filesToUpload, shouldKeepOriginalFiles, targetDirectory } = value as {
+        const {
+          filesToConvert,
+          filesToUpload,
+          shouldKeepOriginalFiles,
+          shouldOverwrite: shouldOverwriteExistingFiles,
+          targetDirectory,
+        } = value as {
           filesToConvert: File[];
           filesToUpload: File[];
           shouldKeepOriginalFiles: boolean;
+          shouldOverwrite: boolean;
           targetDirectory: string;
         };
 
@@ -5741,16 +5749,103 @@ const effects = {
 
         if (convertedFiles.length) {
           try {
-            const responses = await WorkspaceApi.uploadFiles(workspace.id, cleanedTargetPath, convertedFiles, user);
+            const responses = await WorkspaceApi.uploadFiles(
+              workspace.id,
+              cleanedTargetPath,
+              convertedFiles,
+              shouldOverwriteExistingFiles,
+              user,
+            );
 
-            responses.forEach(response => {
-              const { filename } = separateFilenameFromPath(response.item);
-              if (isBulkOperationSuccess(response)) {
-                successfullyUploadedFileNames.push(filename);
-              } else {
-                failedConvertedFileUploads[filename] = true;
+            const convertedFilesMap: Record<string, File> = convertedFiles.reduce((prevMap, file) => {
+              return {
+                ...prevMap,
+                [file.name]: file,
+              };
+            }, {});
+
+            while (responses.length > 0) {
+              const response = responses.shift();
+
+              if (response) {
+                const { filename } = separateFilenameFromPath(response.item);
+                if (!isBulkOperationSuccess(response) && response.status === 409) {
+                  const { confirm: conflictConfirm, value: conflictValue } =
+                    await showWorkspaceBulkOperationConflictModal(filename);
+
+                  if (conflictValue) {
+                    const { allFiles } = conflictValue;
+
+                    const retryResponses: BulkOperationResponses = [response];
+                    if (allFiles) {
+                      while (responses.length > 0) {
+                        const responseToRetry = responses.shift();
+                        if (responseToRetry) {
+                          retryResponses.push(responseToRetry);
+                        }
+                      }
+                    }
+
+                    if (conflictConfirm) {
+                      const { shouldOverwrite } = conflictValue;
+
+                      // Overwrite existing file
+                      if (shouldOverwrite) {
+                        const filesToRetry: File[] = retryResponses.map(({ item }) => {
+                          const { filename: retryFilename } = separateFilenameFromPath(item);
+                          return convertedFilesMap[retryFilename];
+                        });
+                        const overwriteResponses = await WorkspaceApi.uploadFiles(
+                          workspace.id,
+                          cleanedTargetPath,
+                          filesToRetry,
+                          true,
+                          user,
+                        );
+
+                        overwriteResponses.forEach(overwriteResponse => {
+                          if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
+                            responses.unshift(overwriteResponse);
+                          } else if (isBulkOperationSuccess(overwriteResponse)) {
+                            successfullyUploadedFileNames.push(overwriteResponse.item);
+                          }
+                        });
+                      } else {
+                        // Rename file
+                        const filesToRetry: File[] = retryResponses.map(({ item }) => {
+                          const { filename: retryFilename } = separateFilenameFromPath(item);
+                          const convertedFile = convertedFilesMap[retryFilename];
+                          const newFilename = incrementFilename(retryFilename);
+                          convertedFilesMap[newFilename] = convertedFile;
+                          return new File([convertedFile], newFilename);
+                        });
+                        const overwriteResponses = await WorkspaceApi.uploadFiles(
+                          workspace.id,
+                          cleanedTargetPath,
+                          filesToRetry,
+                          false,
+                          user,
+                        );
+
+                        overwriteResponses.forEach(overwriteResponse => {
+                          if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
+                            responses.unshift(overwriteResponse);
+                          } else if (isBulkOperationSuccess(overwriteResponse)) {
+                            successfullyUploadedFileNames.push(overwriteResponse.item);
+                          }
+                        });
+                      }
+                    } else {
+                      continue;
+                    }
+                  }
+                } else if (isBulkOperationSuccess(response)) {
+                  successfullyUploadedFileNames.push(filename);
+                } else {
+                  failedConvertedFileUploads[filename] = true;
+                }
               }
-            });
+            }
           } catch (error) {
             convertedFiles.forEach(file => {
               failedConvertedFileUploads[file.name] = true;
@@ -5776,14 +5871,101 @@ const effects = {
           fileArray = [...filesToUpload];
         }
 
-        const responses = await WorkspaceApi.uploadFiles(workspace.id, cleanedTargetPath, fileArray, user);
+        const responses = await WorkspaceApi.uploadFiles(
+          workspace.id,
+          cleanedTargetPath,
+          fileArray,
+          shouldOverwriteExistingFiles,
+          user,
+        );
 
-        responses.forEach(response => {
-          const { filename } = separateFilenameFromPath(response.item);
-          if (isBulkOperationSuccess(response)) {
-            successfullyUploadedFileNames.push(filename);
+        const fileArrayMap: Record<string, File> = fileArray.reduce((prevMap, file) => {
+          return {
+            ...prevMap,
+            [file.name]: file,
+          };
+        }, {});
+
+        while (responses.length > 0) {
+          const response = responses.shift();
+
+          if (response) {
+            const { filename } = separateFilenameFromPath(response.item);
+            if (!isBulkOperationSuccess(response) && response.status === 409) {
+              const { confirm: conflictConfirm, value: conflictValue } =
+                await showWorkspaceBulkOperationConflictModal(filename);
+
+              if (conflictValue) {
+                const { allFiles } = conflictValue;
+
+                const retryResponses: BulkOperationResponses = [response];
+                if (allFiles) {
+                  while (responses.length > 0) {
+                    const responseToRetry = responses.shift();
+                    if (responseToRetry) {
+                      retryResponses.push(responseToRetry);
+                    }
+                  }
+                }
+
+                if (conflictConfirm) {
+                  const { shouldOverwrite } = conflictValue;
+
+                  // Overwrite existing file
+                  if (shouldOverwrite) {
+                    const filesToRetry: File[] = retryResponses.map(({ item }) => {
+                      const { filename: retryFilename } = separateFilenameFromPath(item);
+                      return fileArrayMap[retryFilename];
+                    });
+                    const overwriteResponses = await WorkspaceApi.uploadFiles(
+                      workspace.id,
+                      cleanedTargetPath,
+                      filesToRetry,
+                      shouldOverwrite,
+                      user,
+                    );
+
+                    overwriteResponses.forEach(overwriteResponse => {
+                      if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
+                        responses.unshift(overwriteResponse);
+                      } else if (isBulkOperationSuccess(overwriteResponse)) {
+                        successfullyUploadedFileNames.push(overwriteResponse.item);
+                      }
+                    });
+                  } else {
+                    // Rename file
+                    const filesToRetry: File[] = retryResponses.map(({ item }) => {
+                      const { filename: retryFilename } = separateFilenameFromPath(item);
+                      const retryFile = fileArrayMap[retryFilename];
+                      const newFilename = incrementFilename(retryFilename);
+                      fileArrayMap[newFilename] = retryFile;
+                      return new File([retryFile], newFilename);
+                    });
+                    const overwriteResponses = await WorkspaceApi.uploadFiles(
+                      workspace.id,
+                      cleanedTargetPath,
+                      filesToRetry,
+                      false,
+                      user,
+                    );
+
+                    overwriteResponses.forEach(overwriteResponse => {
+                      if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
+                        responses.unshift(overwriteResponse);
+                      } else if (isBulkOperationSuccess(overwriteResponse)) {
+                        successfullyUploadedFileNames.push(overwriteResponse.item);
+                      }
+                    });
+                  }
+                } else {
+                  continue;
+                }
+              }
+            } else if (isBulkOperationSuccess(response)) {
+              successfullyUploadedFileNames.push(filename);
+            }
           }
-        });
+        }
 
         if (successfullyUploadedFileNames.length > 0) {
           showSuccessToast(
@@ -5846,26 +6028,6 @@ const effects = {
       }
 
       derivationGroupPlanLinkErrorStore.set(null);
-      if (plan !== null) {
-        const data = await reqHasura<PlanDerivationGroup>(
-          gql.CREATE_PLAN_DERIVATION_GROUP,
-          {
-            source: {
-              derivation_group_name: derivationGroupName,
-              plan_id: plan.id,
-            },
-          },
-          user,
-        );
-        const { planExternalSourceLink: sourceAssociation } = data;
-        // If the return was null, do nothing - only act on success or non-null
-        if (sourceAssociation !== null) {
-          logMessage(`Linked derivation group "${derivationGroupName}" to plan "${plan.name}" (ID=${plan.id}).`);
-          showSuccessToast('Derivation Group Linked Successfully');
-        }
-      } else {
-        throw Error('Plan is not defined.');
-      }
     } catch (e) {
       catchError('Derivation Group Linking Failed', e as Error);
       showFailureToast('Derivation Group Linking Failed');
@@ -6038,7 +6200,7 @@ const effects = {
         try {
           const responses = await WorkspaceApi.moveFiles(
             workspace.id,
-            originalNodes.map(({ fullPath }) => fullPath),
+            originalNodes.map(({ fullPath }) => ({ originalPath: fullPath })),
             `./${cleanedTargetPath}`,
             shouldCopy,
             shouldOverwrite,
@@ -6053,8 +6215,8 @@ const effects = {
                 const { confirm: conflictConfirm, value: conflictValue } =
                   await showWorkspaceBulkOperationConflictModal(response.item);
 
-                if (conflictConfirm && conflictValue) {
-                  const { allFiles, shouldOverwrite, shouldSkip } = conflictValue;
+                if (conflictValue) {
+                  const { allFiles } = conflictValue;
 
                   const retryResponses: BulkOperationResponses = [response];
                   if (allFiles) {
@@ -6065,24 +6227,47 @@ const effects = {
                       }
                     }
                   }
-                  if (shouldOverwrite) {
-                    const overwriteResponses = await WorkspaceApi.moveFiles(
-                      workspace.id,
-                      retryResponses.map(({ item }) => item),
-                      `./${cleanedTargetPath}`,
-                      shouldCopy,
-                      true,
-                      user,
-                    );
 
-                    overwriteResponses.forEach(overwriteResponse => {
-                      if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
-                        responses.unshift(overwriteResponse);
-                      }
-                    });
-                  }
+                  if (conflictConfirm) {
+                    const { shouldOverwrite } = conflictValue;
 
-                  if (shouldSkip) {
+                    // Overwrite existing file
+                    if (shouldOverwrite) {
+                      const overwriteResponses = await WorkspaceApi.moveFiles(
+                        workspace.id,
+                        retryResponses.map(({ item }) => ({ originalPath: item })),
+                        `./${cleanedTargetPath}`,
+                        shouldCopy,
+                        true,
+                        user,
+                      );
+
+                      overwriteResponses.forEach(overwriteResponse => {
+                        if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
+                          responses.unshift(overwriteResponse);
+                        }
+                      });
+                    } else {
+                      // Rename file
+                      const overwriteResponses = await WorkspaceApi.moveFiles(
+                        workspace.id,
+                        retryResponses.map(({ item }) => ({
+                          newFilename: incrementFilename(item),
+                          originalPath: item,
+                        })),
+                        `./${cleanedTargetPath}`,
+                        shouldCopy,
+                        false,
+                        user,
+                      );
+
+                      overwriteResponses.forEach(overwriteResponse => {
+                        if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
+                          responses.unshift(overwriteResponse);
+                        }
+                      });
+                    }
+                  } else {
                     continue;
                   }
                 }
@@ -6128,7 +6313,7 @@ const effects = {
 
         await WorkspaceApi.moveFilesToWorkspace(
           workspace.id,
-          originalNodes.map(({ fullPath }) => fullPath),
+          originalNodes.map(({ fullPath }) => ({ originalPath: fullPath })),
           targetWorkspace.id,
           `./${cleanedTargetPath}`,
           shouldCopy,

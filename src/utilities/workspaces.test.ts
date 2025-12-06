@@ -101,26 +101,6 @@ describe('Workspace utility function tests', () => {
   });
 
   describe('WorkspaceApi', () => {
-    test('createWorkspace', async () => {
-      await WorkspaceApi.createWorkspace('foo_bar', 1, null, 'Foo Bar');
-      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
-        'create',
-        'POST',
-        JSON.stringify({ parcelId: 1, workspaceLocation: 'foo_bar', workspaceName: 'Foo Bar' }),
-        null,
-      );
-    });
-
-    test('getWorkspaceContents', async () => {
-      await WorkspaceApi.getWorkspaceContents(1, null);
-      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1', 'GET', null, null);
-    });
-
-    test('deleteWorkspace', async () => {
-      await WorkspaceApi.deleteWorkspace(1, null);
-      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1', 'DELETE', null, null, undefined, false);
-    });
-
     test('createFolder', async () => {
       await WorkspaceApi.createFolder(1, 'foo/bar', null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
@@ -133,19 +113,271 @@ describe('Workspace utility function tests', () => {
       );
     });
 
-    test('uploadFile', async () => {
-      const file: File = new File(['foo'], 'bazz.seq');
-      const body = new FormData();
-      body.append('file', file, file.name);
-
-      await WorkspaceApi.uploadFile(1, 'foo/bar', 'bazz.seq', file, null);
+    test('createWorkspace', async () => {
+      await WorkspaceApi.createWorkspace('foo_bar', 1, null, 'Foo Bar');
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
-        '1/foo/bar/bazz.seq?type=file',
-        'PUT',
-        body,
+        'create',
+        'POST',
+        JSON.stringify({ parcelId: 1, workspaceLocation: 'foo_bar', workspaceName: 'Foo Bar' }),
+        null,
+      );
+    });
+
+    test('deleteFile', async () => {
+      await WorkspaceApi.deleteFile(1, 'foo/bar/bazz.seq', null);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo/bar/bazz.seq', 'DELETE', null, null, undefined, false);
+    });
+
+    test('deleteFiles', async () => {
+      await WorkspaceApi.deleteFiles(1, ['foo_bar', 'baz', 'buzz'], null);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
+        'bulk/1',
+        'DELETE',
+        JSON.stringify(['foo_bar', 'baz', 'buzz']),
         null,
         undefined,
         false,
+      );
+    });
+
+    test('deleteWorkspace', async () => {
+      await WorkspaceApi.deleteWorkspace(1, null);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1', 'DELETE', null, null, undefined, false);
+    });
+
+    test('getFileContent', async () => {
+      await WorkspaceApi.getFileContent(1, 'foo/bar/bazz.seq', null);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo/bar/bazz.seq', 'GET', null, null, undefined, false);
+    });
+
+    test('getWorkspaceContents', async () => {
+      await WorkspaceApi.getWorkspaceContents(1, null);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1', 'GET', null, null);
+    });
+
+    test('moveFile - move', async () => {
+      await WorkspaceApi.moveFile(1, 'foo/bar/bazz.seq', 'foo/buzz/bazz.seq', false, false, null);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
+        '1/foo/bar/bazz.seq',
+        'POST',
+        JSON.stringify({
+          moveTo: 'foo/buzz/bazz.seq',
+          overwrite: false,
+        }),
+        null,
+        undefined,
+        false,
+      );
+    });
+
+    test('moveFile - copy', async () => {
+      await WorkspaceApi.moveFile(1, 'foo/bar/bazz.seq', 'foo/buzz/bazz.seq', true, false, null);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
+        '1/foo/bar/bazz.seq',
+        'POST',
+        JSON.stringify({
+          copyTo: 'foo/buzz/bazz.seq',
+          overwrite: false,
+        }),
+        null,
+        undefined,
+        false,
+      );
+    });
+
+    test('moveFileToWorkspace - move', async () => {
+      await WorkspaceApi.moveFileToWorkspace(1, 'foo/bar/bazz.seq', 2, 'foo/buzz/bazz.seq', false, false, null);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
+        '1/foo/bar/bazz.seq',
+        'POST',
+        JSON.stringify({
+          moveTo: 'foo/buzz/bazz.seq',
+          overwrite: false,
+          toWorkspace: 2,
+        }),
+        null,
+        undefined,
+        false,
+      );
+    });
+
+    test('moveFileToWorkspace - copy', async () => {
+      await WorkspaceApi.moveFileToWorkspace(1, 'foo/bar/bazz.seq', 2, 'foo/buzz/bazz.seq', true, false, null);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
+        '1/foo/bar/bazz.seq',
+        'POST',
+        JSON.stringify({
+          copyTo: 'foo/buzz/bazz.seq',
+          overwrite: false,
+          toWorkspace: 2,
+        }),
+        null,
+        undefined,
+        false,
+      );
+    });
+
+    test('moveFiles - move', async () => {
+      await WorkspaceApi.moveFiles(1, [{ originalPath: 'foo/bar/bazz.seq' }], 'foo/buzz', false, false, null);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
+        'bulk/1',
+        'POST',
+        JSON.stringify({
+          moveTo: 'foo/buzz',
+          overwrite: false,
+          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
+        }),
+        null,
+        undefined,
+        true,
+      );
+    });
+
+    test('moveFiles - move + overwrite', async () => {
+      await WorkspaceApi.moveFiles(1, [{ originalPath: 'foo/bar/bazz.seq' }], 'foo/buzz', false, true, null);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
+        'bulk/1',
+        'POST',
+        JSON.stringify({
+          moveTo: 'foo/buzz',
+          overwrite: true,
+          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
+        }),
+        null,
+        undefined,
+        true,
+      );
+    });
+
+    test('moveFiles - copy', async () => {
+      await WorkspaceApi.moveFiles(1, [{ originalPath: 'foo/bar/bazz.seq' }], 'foo/buzz', true, false, null);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
+        'bulk/1',
+        'POST',
+        JSON.stringify({
+          copyTo: 'foo/buzz',
+          overwrite: false,
+          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
+        }),
+        null,
+        undefined,
+        true,
+      );
+    });
+
+    test('moveFiles - copy + overwrite', async () => {
+      await WorkspaceApi.moveFiles(1, [{ originalPath: 'foo/bar/bazz.seq' }], 'foo/buzz', true, true, null);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
+        'bulk/1',
+        'POST',
+        JSON.stringify({
+          copyTo: 'foo/buzz',
+          overwrite: true,
+          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
+        }),
+        null,
+        undefined,
+        true,
+      );
+    });
+
+    test('moveFilesToWorkspace - move', async () => {
+      await WorkspaceApi.moveFilesToWorkspace(
+        1,
+        [{ originalPath: 'foo/bar/bazz.seq' }],
+        2,
+        'foo/buzz',
+        false,
+        false,
+        null,
+      );
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
+        'bulk/1',
+        'POST',
+        JSON.stringify({
+          moveTo: 'foo/buzz',
+          overwrite: false,
+          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
+          toWorkspace: 2,
+        }),
+        null,
+        undefined,
+        true,
+      );
+    });
+
+    test('moveFilesToWorkspace - move + overwrite', async () => {
+      await WorkspaceApi.moveFilesToWorkspace(
+        1,
+        [{ originalPath: 'foo/bar/bazz.seq' }],
+        2,
+        'foo/buzz',
+        false,
+        true,
+        null,
+      );
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
+        'bulk/1',
+        'POST',
+        JSON.stringify({
+          moveTo: 'foo/buzz',
+          overwrite: true,
+          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
+          toWorkspace: 2,
+        }),
+        null,
+        undefined,
+        true,
+      );
+    });
+
+    test('moveFilesToWorkspace - copy', async () => {
+      await WorkspaceApi.moveFilesToWorkspace(
+        1,
+        [{ originalPath: 'foo/bar/bazz.seq' }],
+        2,
+        'foo/buzz',
+        true,
+        false,
+        null,
+      );
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
+        'bulk/1',
+        'POST',
+        JSON.stringify({
+          copyTo: 'foo/buzz',
+          overwrite: false,
+          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
+          toWorkspace: 2,
+        }),
+        null,
+        undefined,
+        true,
+      );
+    });
+
+    test('moveFilesToWorkspace - copy + overwrite', async () => {
+      await WorkspaceApi.moveFilesToWorkspace(
+        1,
+        [{ originalPath: 'foo/bar/bazz.seq' }],
+        2,
+        'foo/buzz',
+        true,
+        true,
+        null,
+      );
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
+        'bulk/1',
+        'POST',
+        JSON.stringify({
+          copyTo: 'foo/buzz',
+          overwrite: true,
+          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
+          toWorkspace: 2,
+        }),
+        null,
+        undefined,
+        true,
       );
     });
 
@@ -154,7 +386,7 @@ describe('Workspace utility function tests', () => {
       const body = new FormData();
       body.append('file', file, file.name);
 
-      await WorkspaceApi.saveFile(1, 'foo/bar/bazz.seq', 'sequence contents', true, false, null);
+      await WorkspaceApi.saveFile(1, 'foo/bar/bazz.seq', 'sequence contents', true, null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
         '1/foo/bar/bazz.seq?type=file&overwrite=true',
         'PUT',
@@ -165,72 +397,102 @@ describe('Workspace utility function tests', () => {
       );
     });
 
-    test('moveFile - move', async () => {
-      await WorkspaceApi.moveFile(1, 'foo/bar/bazz.seq', 'foo/buzz/bazz.seq', false, false, null);
+    test('uploadFile', async () => {
+      const file: File = new File(['foo'], 'bazz.seq');
+      const body = new FormData();
+      body.append('file', file, file.name);
+
+      await WorkspaceApi.uploadFile(1, 'foo/bar', 'bazz.seq', file, false, null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
-        '1/foo/bar/bazz.seq',
-        'POST',
-        JSON.stringify({
-          moveTo: 'foo/buzz/bazz.seq',
-        }),
+        '1/foo/bar/bazz.seq?type=file&overwrite=false',
+        'PUT',
+        body,
         null,
         undefined,
         false,
       );
     });
 
-    test('moveFile - copy', async () => {
-      await WorkspaceApi.moveFile(1, 'foo/bar/bazz.seq', 'foo/buzz/bazz.seq', true, null);
+    test('uploadFile - overwrite', async () => {
+      const file: File = new File(['foo'], 'bazz.seq');
+      const body = new FormData();
+      body.append('file', file, file.name);
+
+      await WorkspaceApi.uploadFile(1, 'foo/bar', 'bazz.seq', file, true, null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
-        '1/foo/bar/bazz.seq',
-        'POST',
-        JSON.stringify({
-          copyTo: 'foo/buzz/bazz.seq',
-        }),
+        '1/foo/bar/bazz.seq?type=file&overwrite=true',
+        'PUT',
+        body,
         null,
         undefined,
         false,
       );
     });
 
-    test('moveFileToWorkspace - move', async () => {
-      await WorkspaceApi.moveFileToWorkspace(1, 'foo/bar/bazz.seq', 2, 'foo/buzz/bazz.seq', false, null);
+    test('uploadFiles', async () => {
+      const file1: File = new File(['foo'], 'bazz.seq');
+      const file2: File = new File(['bar'], 'buzz.seq');
+      const form = new FormData();
+      form.append('files', file1, file1.name);
+      form.append('files', file2, file2.name);
+      form.append(
+        'body',
+        JSON.stringify([
+          {
+            overwrite: false,
+            path: `foo/bar/${file1.name}`,
+            type: 'file',
+          },
+          {
+            overwrite: false,
+            path: `foo/bar/${file2.name}`,
+            type: 'file',
+          },
+        ]),
+      );
+
+      await WorkspaceApi.uploadFiles(1, 'foo/bar', [file1, file2], false, null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
-        '1/foo/bar/bazz.seq',
-        'POST',
-        JSON.stringify({
-          moveTo: 'foo/buzz/bazz.seq',
-          toWorkspace: 2,
-        }),
+        'bulk/1',
+        'PUT',
+        expect.objectContaining(form),
         null,
         undefined,
-        false,
+        true,
       );
     });
 
-    test('moveFileToWorkspace - copy', async () => {
-      await WorkspaceApi.moveFileToWorkspace(1, 'foo/bar/bazz.seq', 2, 'foo/buzz/bazz.seq', true, null);
+    test('uploadFiles - overwrite', async () => {
+      const file1: File = new File(['foo'], 'bazz.seq');
+      const file2: File = new File(['bar'], 'buzz.seq');
+      const form = new FormData();
+      form.append('files', file1, file1.name);
+      form.append('files', file2, file2.name);
+      form.append(
+        'body',
+        JSON.stringify([
+          {
+            overwrite: true,
+            path: `foo/bar/${file1.name}`,
+            type: 'file',
+          },
+          {
+            overwrite: true,
+            path: `foo/bar/${file2.name}`,
+            type: 'file',
+          },
+        ]),
+      );
+
+      await WorkspaceApi.uploadFiles(1, 'foo/bar', [file1, file2], true, null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
-        '1/foo/bar/bazz.seq',
-        'POST',
-        JSON.stringify({
-          copyTo: 'foo/buzz/bazz.seq',
-          toWorkspace: 2,
-        }),
+        'bulk/1',
+        'PUT',
+        expect.objectContaining(form),
         null,
         undefined,
-        false,
+        true,
       );
-    });
-
-    test('getFileContent', async () => {
-      await WorkspaceApi.getFileContent(1, 'foo/bar/bazz.seq', null);
-      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo/bar/bazz.seq', 'GET', null, null, undefined, false);
-    });
-
-    test('deleteFile', async () => {
-      await WorkspaceApi.deleteFile(1, 'foo/bar/bazz.seq', null);
-      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo/bar/bazz.seq', 'DELETE', null, null, undefined, false);
     });
   });
 });

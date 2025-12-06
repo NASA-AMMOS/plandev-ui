@@ -163,11 +163,11 @@
           </Sidebar.Menu>
         </Sidebar.Content>
       </Sidebar.Provider>
-      <InputInternal layout="stacked" class="px-0.5 py-1">
+      <InputInternal layout="stacked" class="py-1">
         <Label size="sm" for="target-path">Target Directory</Label>
         <Input sizeVariant="xs" id="target-path" name="target-path" autocomplete="off" bind:value={targetDirectory} />
       </InputInternal>
-      <div class="grid grid-cols-[min-content_auto] items-center gap-x-2">
+      <div class="flex flex-row-reverse items-center gap-x-2">
         <Checkbox name="shouldOverwrite" id="shouldOverwrite" bind:checked={shouldOverwrite} />
         <label class="select-none" for="shouldOverwrite">Overwrite Existing {displayString}</label>
       </div>
