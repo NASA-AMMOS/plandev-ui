@@ -3,10 +3,19 @@ import * as env from '$env/static/private';
 import type { HasuraToken, MaybeToken, Rule } from '$lib/types/oidc';
 import { type Cookies, type RequestEvent } from '@sveltejs/kit';
 import * as arctic from 'arctic';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { JwksClient } from 'jwks-rsa';
 import type { User } from '../../types/app';
 import { reqHasura } from '../../utilities/requests';
+
+/**
+ * Generate a cryptographically secure nonce for OIDC.
+ * The nonce prevents replay attacks by binding the ID token to a specific authentication request.
+ */
+export function generateNonce(): string {
+  return crypto.randomBytes(16).toString('base64url');
+}
 
 const DEFAULT_JWKS_CLIENT = (() => {
   if (env.OIDC_JWKS_URL) {
@@ -100,6 +109,27 @@ export async function verify(
 }
 
 /**
+ * Verify that the nonce in an ID token matches the expected nonce.
+ * This prevents replay attacks where an attacker reuses a previously issued ID token.
+ *
+ * @param idToken - The raw ID token string
+ * @param expectedNonce - The nonce that was sent in the authorization request
+ * @throws {Error} If the nonce doesn't match or is missing
+ */
+export function verifyNonce(idToken: string, expectedNonce: string): void {
+  const decoded = jwt.decode(idToken) as { nonce?: string } | null;
+  if (!decoded) {
+    throw new Error('Failed to decode ID token for nonce verification');
+  }
+  if (!decoded.nonce) {
+    throw new Error('ID token is missing nonce claim');
+  }
+  if (decoded.nonce !== expectedNonce) {
+    throw new Error('ID token nonce does not match expected nonce (possible replay attack)');
+  }
+}
+
+/**
  * Client is a singleton that manages OAuth2/OIDC interactions.
  *
  * It avoids re-fetching OIDC configuration by caching values on first use.
@@ -168,9 +198,10 @@ export class Client {
     return this._initPromise;
   }
 
-  createAuthorizationURLWithPKCE(): { authorizationUrl: URL; state: string; verifier: string } {
+  createAuthorizationURLWithPKCE(): { authorizationUrl: URL; nonce: string; state: string; verifier: string } {
     const verifier: string = arctic.generateCodeVerifier();
     const state: string = arctic.generateState();
+    const nonce: string = generateNonce();
     const authorizationUrl: URL = this.client.createAuthorizationURLWithPKCE(
       this.authorizationEndpoint,
       state,
@@ -178,7 +209,9 @@ export class Client {
       verifier,
       this.scopes,
     );
-    return { authorizationUrl, state, verifier };
+    // Add nonce parameter for OIDC replay attack protection
+    authorizationUrl.searchParams.set('nonce', nonce);
+    return { authorizationUrl, nonce, state, verifier };
   }
 
   /**

@@ -26,8 +26,9 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
   });
 
   const client = await auth.Client.instance;
-  const { verifier, state, authorizationUrl } = client.createAuthorizationURLWithPKCE();
+  const { verifier, state, nonce, authorizationUrl } = client.createAuthorizationURLWithPKCE();
   cookies.set('verifier', verifier, shortLivedCookieOptions);
   cookies.set('oidc_state', state, shortLivedCookieOptions);
+  cookies.set('oidc_nonce', nonce, shortLivedCookieOptions);
   redirect(302, authorizationUrl.toString());
 };

@@ -9,8 +9,9 @@ import type { PageServerLoad } from './$types';
  *
  * 1. **State Parameter**: The state parameter is used to prevent CSRF attacks
  * 2. **PKCE**: The Proof Key for Code Exchange (PKCE) is used to enhance security in public clients.
- * 3. **Secure Cookies**: Cookies should be set with `httpOnly`, `secure`, and `sameSite` attributes to prevent XSS and CSRF attacks.
- * 4. **Validate iss, aud, and exp claims** to ensure it is issued by the expected identity provider and is not expired.
+ * 3. **Nonce**: The nonce parameter prevents replay attacks by binding the ID token to this specific request.
+ * 4. **Secure Cookies**: Cookies should be set with `httpOnly`, `secure`, and `sameSite` attributes to prevent XSS and CSRF attacks.
+ * 5. **Validate iss, aud, and exp claims** to ensure it is issued by the expected identity provider and is not expired.
  *
  */
 
@@ -21,6 +22,7 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
   const verifier = cookies.get('verifier');
   const code = url.searchParams.get('code');
   const expectedState = cookies.get('oidc_state');
+  const expectedNonce = cookies.get('oidc_nonce');
   const returnedState = url.searchParams.get('state');
   const back = cookies.get('back') || '/';
 
@@ -29,6 +31,7 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
   cookies.delete('verifier', { path: '/' });
   cookies.delete('back', { path: '/' });
   cookies.delete('oidc_state', { path: '/' });
+  cookies.delete('oidc_nonce', { path: '/' });
 
   if (!code) {
     const errorMsg = url.searchParams.get('error_description') || 'No code provided';
@@ -37,7 +40,7 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
   }
 
   try {
-    const problems = check(verifier, code, expectedState, returnedState);
+    const problems = check(verifier, code, expectedState, expectedNonce, returnedState);
     if (problems.size > 0) {
       throw new Error(`Encountered the following problems with the callback state: \n${[...problems].join('\n')}`);
     }
@@ -46,6 +49,9 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
     if (!tokens) {
       throw new Error(`Could not exchange authorization code for tokens.`);
     }
+
+    // Verify the nonce in the ID token matches what we sent
+    auth.verifyNonce(tokens.idToken(), expectedNonce as string);
 
     const success = await auth.updateWithNewTokens(cookies, tokens);
     if (!success) {
@@ -64,12 +70,14 @@ function check(
   verifier: string | undefined,
   code: string | null,
   expectedState: string | undefined,
+  expectedNonce: string | undefined,
   returnedState: string | null,
 ) {
   const problems = new Set<string>();
   void (expectedState || problems.add('Missing expected state'));
   void (returnedState || problems.add('Missing returned state'));
   void (expectedState === returnedState || problems.add('State parameter mismatch'));
+  void (expectedNonce || problems.add('Missing expected nonce'));
   void (verifier || problems.add('Missing verifier'));
   void (code || problems.add('Missing code'));
   return problems;
