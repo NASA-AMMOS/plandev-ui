@@ -1,4 +1,3 @@
-import { base } from '$app/paths';
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import type { CookieSerializeOptions } from 'cookie';
