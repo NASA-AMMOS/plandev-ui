@@ -4,7 +4,6 @@ import type { BaseUser, User } from '../types/app';
 import type { BaseError, LogMessage } from '../types/errors';
 import type { ExtensionPayload, ExtensionResponse } from '../types/extension';
 import type { QueryVariables } from '../types/subscribable';
-import { logout } from '../utilities/login';
 import { INVALID_JWT } from '../utilities/permissions';
 import { ErrorTypes } from './errors';
 
