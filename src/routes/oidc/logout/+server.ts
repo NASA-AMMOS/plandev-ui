@@ -12,7 +12,7 @@ import { redirect } from '@sveltejs/kit';
 export const GET = async ({ cookies }) => {
   console.debug('/oidc/logout (GET)');
 
-  const client = auth.Client.instance;
+  const client = await auth.Client.instance;
   const idToken = cookies.get('idToken') ?? '';
 
   // delete cookies here

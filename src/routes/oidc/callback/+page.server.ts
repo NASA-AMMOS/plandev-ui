@@ -17,7 +17,7 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ cookies, url }) => {
   console.debug('/oidc/callback load');
 
-  const client = auth.Client.instance;
+  const client = await auth.Client.instance;
   const verifier = cookies.get('verifier');
   const code = url.searchParams.get('code');
   const expectedState = cookies.get('oidc_state');

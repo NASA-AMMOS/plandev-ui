@@ -18,7 +18,7 @@ export const POST = async ({ cookies }) => {
     throw new Error(`Error refreshing token - user is unauthenticated.`);
   }
 
-  const client = auth.Client.instance;
+  const client = await auth.Client.instance;
   const tokens = await client.refresh(refreshToken);
 
   if (!tokens) {

@@ -62,7 +62,8 @@ async function refresh(evt: RequestEvent) {
     if (refreshToken) {
       // unconditionally clear refreshToken. if it was invalid, we don't want it, and if it's valid, it will be replaced!
       evt.cookies.delete('refreshToken', { path: '/' });
-      const tokens = await Client.instance.refresh(refreshToken);
+      const client = await Client.instance;
+      const tokens = await client.refresh(refreshToken);
       await updateWithNewTokens(evt.cookies, tokens);
     }
   }
@@ -106,38 +107,43 @@ export async function verify(
  */
 export class Client {
   private static _instance: Client;
+  private static _initPromise: Promise<Client>;
 
-  private authorizationEndpoint: string;
-  private client: arctic.OAuth2Client;
-  private clientId: string;
-  private clientSecret: string | null;
-  private logoutEndpoint: string;
-  private redirectEndpoint: string;
-  private scopes: string[];
-  private tokenEndpoint: string;
+  private authorizationEndpoint!: string;
+  private client!: arctic.OAuth2Client;
+  private clientId!: string;
+  private clientSecret!: string | null;
+  private logoutEndpoint!: string;
+  private redirectEndpoint!: string;
+  private scopes!: string[];
+  private tokenEndpoint!: string;
 
   private constructor() {
+    // Use init() for async initialization
+  }
+
+  private async init(): Promise<void> {
+    // Fetch well-known configuration first if URL is provided
     if (env.OIDC_WELL_KNOWN_URL) {
-      fetch(env.OIDC_WELL_KNOWN_URL)
-        .then(res => res.json())
-        .then(data => {
-          this.authorizationEndpoint ??= data.authorizationEndpoint ?? data.authorization_endpoint;
-          this.tokenEndpoint ??= data.tokenEndpoint ?? data.token_endpoint;
-          this.logoutEndpoint ??= data.endSessionEndpoint ?? data.end_session_endpoint;
-        })
-        .catch(err => {
-          console.error('Error fetching OIDC configuration:', err);
-        });
+      try {
+        const res = await fetch(env.OIDC_WELL_KNOWN_URL);
+        const data = await res.json();
+        this.authorizationEndpoint = data.authorization_endpoint ?? data.authorizationEndpoint;
+        this.tokenEndpoint = data.token_endpoint ?? data.tokenEndpoint;
+        this.logoutEndpoint = data.end_session_endpoint ?? data.endSessionEndpoint;
+      } catch (err) {
+        console.error('Error fetching OIDC configuration:', err);
+      }
     }
 
-    // ??= is used to preserve any values set from the well-known URL.
+    // Fall back to explicit env vars if not set from well-known
     this.authorizationEndpoint ??= env.OIDC_AUTHORIZATION_URL;
     this.tokenEndpoint ??= env.OIDC_TOKEN_URL;
-    this.redirectEndpoint ??= env.OIDC_REDIRECT_URI;
+    this.redirectEndpoint = env.OIDC_REDIRECT_URI;
     this.logoutEndpoint ??= env.OIDC_LOGOUT_URL;
-    this.clientId ??= env.OIDC_CLIENT_ID;
-    this.clientSecret ??= env.OIDC_CLIENT_SECRET || null;
-    this.scopes ??= env.OIDC_SCOPES ? env.OIDC_SCOPES.split(' ') : ['openid', 'profile', 'email'];
+    this.clientId = env.OIDC_CLIENT_ID;
+    this.clientSecret = env.OIDC_CLIENT_SECRET || null;
+    this.scopes = env.OIDC_SCOPES ? env.OIDC_SCOPES.split(' ') : ['openid', 'profile', 'email'];
 
     // The entire client configuration is validated here, this should help
     // people understand everything they need to set without having to fix
@@ -151,9 +157,15 @@ export class Client {
     }
   }
 
-  static get instance() {
-    this._instance ??= new Client();
-    return this._instance;
+  static get instance(): Promise<Client> {
+    if (!this._initPromise) {
+      const client = new Client();
+      this._initPromise = client.init().then(() => {
+        this._instance = client;
+        return client;
+      });
+    }
+    return this._initPromise;
   }
 
   createAuthorizationURLWithPKCE(): { authorizationUrl: URL; state: string; verifier: string } {

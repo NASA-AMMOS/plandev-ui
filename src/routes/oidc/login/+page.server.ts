@@ -25,7 +25,7 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
     path: '/',
   });
 
-  const client = auth.Client.instance;
+  const client = await auth.Client.instance;
   const { verifier, state, authorizationUrl } = client.createAuthorizationURLWithPKCE();
   cookies.set('verifier', verifier, shortLivedCookieOptions);
   cookies.set('oidc_state', state, shortLivedCookieOptions);
