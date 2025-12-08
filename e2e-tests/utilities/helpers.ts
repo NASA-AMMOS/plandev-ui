@@ -2,6 +2,9 @@ import { Cookie, Locator, Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
 export function getUserCookieValue(cookies: Cookie[]): string | undefined {
+  if (process.env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
+    return cookies.find(cookie => cookie.name === 'accessToken')?.value;
+  }
   for (const cookie of cookies) {
     if (cookie.name === 'user') {
       return JSON.parse(atob(cookie.value)).token;

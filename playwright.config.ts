@@ -41,10 +41,18 @@ const config: PlaywrightTestConfig = {
       name: 'e2e tests',
       teardown: 'teardown',
       testDir: './e2e-tests',
-      testIgnore: /.*\/sequence-templates\.test\.ts/,
+      testIgnore: /.*\/(sequence-templates)|(oidc)\.test\.ts/, // TODO: make this also skip over the oidc stuff
       use: {
         baseURL: MAIN_TEST_SUITE_BASE_URL,
         storageState: STORAGE_STATE,
+      },
+    },
+    {
+      name: 'oidc tests',
+      testDir: './e2e-tests',
+      testMatch: /.*\/oidc\.test\.ts/,
+      use: {
+        baseURL: MAIN_TEST_SUITE_BASE_URL,
       },
     },
     {
