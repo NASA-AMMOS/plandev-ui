@@ -25,6 +25,7 @@ const DEFAULT_JWKS_CLIENT = (() => {
 
 const DEFAULT_VERIFY_OPTS: jwt.VerifyOptions = {
   algorithms: ['RS256'],
+  audience: env.OIDC_AUDIENCE || undefined,
   ignoreExpiration: false,
   issuer: env.OIDC_ISSUER,
 };
