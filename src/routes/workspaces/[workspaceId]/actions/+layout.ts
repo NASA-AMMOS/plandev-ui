@@ -10,6 +10,5 @@ export const load: LayoutLoad = async ({ parent, params }) => {
 
   return {
     initialWorkspace,
-    user,
   };
 };

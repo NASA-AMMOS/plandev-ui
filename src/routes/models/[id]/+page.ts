@@ -15,7 +15,6 @@ export const load: PageLoad = async ({ parent, params }) => {
     if (initialModel) {
       return {
         initialModel,
-        user,
       };
     }
   }

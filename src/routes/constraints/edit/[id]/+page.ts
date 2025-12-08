@@ -17,7 +17,6 @@ export const load: PageLoad = async ({ parent, params }) => {
       if (initialConstraint !== null) {
         return {
           initialConstraint,
-          user,
         };
       }
     }

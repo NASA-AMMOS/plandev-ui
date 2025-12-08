@@ -3,6 +3,7 @@
 <script lang="ts">
   import { beforeNavigate } from '$app/navigation';
   import { env } from '$env/dynamic/public';
+  import { cookieStoreListener } from '$lib/stores/oidc';
   import { ModeWatcher } from '@nasa-jpl/stellar-svelte';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { mergeWith } from 'lodash-es';
@@ -12,7 +13,7 @@
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
   import { clearLogs } from '../stores/errors';
-  import { restartSharedClient } from '../stores/gqlClient';
+  import { disposeSharedClient, restartSharedClient } from '../stores/gqlClient';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
   import type { UserStore } from '../types/app';
   import { loadPluginCode } from '../utilities/plugins';
@@ -42,9 +43,21 @@
   }
 
   onMount(() => {
+    let unsubscribe = () => {};
+    if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
+      unsubscribe = cookieStoreListener();
+    }
+
     if (pluginsEnabled && !$pluginsLoaded) {
       loadPlugins();
     }
+
+    return () => {
+      unsubscribe();
+      console.log('Unsubscribed from cookie store changes.');
+
+      disposeSharedClient();
+    };
   });
 
   beforeNavigate(() => {

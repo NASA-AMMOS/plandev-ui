@@ -14,13 +14,11 @@ export const load: LayoutLoad = async ({ parent, params }) => {
     return {
       initialActionRun,
       initialWorkspace,
-      user,
     };
   }
 
   return {
     initialActionRun: null,
     initialWorkspace,
-    user,
   };
 };

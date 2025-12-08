@@ -6,5 +6,5 @@ export const load: PageLoad = async ({ parent }) => {
 
   const { plans: initialPlans } = await effects.getPlansAndModels(user);
 
-  return { initialPlans, user };
+  return { initialPlans };
 };

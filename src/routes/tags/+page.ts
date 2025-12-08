@@ -8,6 +8,5 @@ export const load: PageLoad = async ({ parent }) => {
 
   return {
     initialTags,
-    user,
   };
 };
