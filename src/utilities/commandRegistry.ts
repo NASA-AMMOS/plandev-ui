@@ -21,10 +21,12 @@ import { get } from 'svelte/store';
 import { Status } from '../enums/status';
 import { constraintsStatus } from '../stores/constraints';
 import { planReadOnly, plan as planStore } from '../stores/plan';
-import { simulationStatus } from '../stores/simulation';
+import { enableScheduling } from '../stores/scheduling';
+import { enableSimulation, simulationStatus } from '../stores/simulation';
 import type { Command, CommandContext, ProcessedCommand } from '../types/command-palette';
 import type { Plan } from '../types/plan';
 import effects from './effects';
+import { isMacOs } from './generic';
 import { featurePermissions } from './permissions';
 
 // Route patterns for context detection
@@ -64,9 +66,9 @@ export const commands: Command[] = [
     execute: async () => {
       await goto(`${base}/plans`);
     },
+    getDisabledReason: () => null,
     id: 'nav.plans',
     isAvailable: () => true,
-    isEnabled: () => true,
     keywords: ['navigate', 'list', 'open'],
     label: 'Go to Plans',
   },
@@ -75,9 +77,9 @@ export const commands: Command[] = [
     execute: async () => {
       await goto(`${base}/models`);
     },
+    getDisabledReason: () => null,
     id: 'nav.models',
     isAvailable: () => true,
-    isEnabled: () => true,
     keywords: ['navigate', 'mission', 'open'],
     label: 'Go to Models',
   },
@@ -86,9 +88,9 @@ export const commands: Command[] = [
     execute: async () => {
       await goto(`${base}/constraints`);
     },
+    getDisabledReason: () => null,
     id: 'nav.constraints',
     isAvailable: () => true,
-    isEnabled: () => true,
     keywords: ['navigate', 'open'],
     label: 'Go to Constraints',
   },
@@ -97,9 +99,9 @@ export const commands: Command[] = [
     execute: async () => {
       await goto(`${base}/scheduling`);
     },
+    getDisabledReason: () => null,
     id: 'nav.scheduling',
     isAvailable: () => true,
-    isEnabled: () => true,
     keywords: ['navigate', 'goals', 'conditions', 'open'],
     label: 'Go to Scheduling',
   },
@@ -108,9 +110,9 @@ export const commands: Command[] = [
     execute: async () => {
       await goto(`${base}/expansion/rules`);
     },
+    getDisabledReason: () => null,
     id: 'nav.expansion',
     isAvailable: () => true,
-    isEnabled: () => true,
     keywords: ['navigate', 'rules', 'sets', 'open'],
     label: 'Go to Expansion',
   },
@@ -119,9 +121,9 @@ export const commands: Command[] = [
     execute: async () => {
       await goto(`${base}/workspaces`);
     },
+    getDisabledReason: () => null,
     id: 'nav.workspaces',
     isAvailable: () => true,
-    isEnabled: () => true,
     keywords: ['navigate', 'open'],
     label: 'Go to Workspaces',
   },
@@ -130,9 +132,9 @@ export const commands: Command[] = [
     execute: async () => {
       await goto(`${base}/external-sources/sources`);
     },
+    getDisabledReason: () => null,
     id: 'nav.externalSources',
     isAvailable: () => true,
-    isEnabled: () => true,
     keywords: ['navigate', 'events', 'open'],
     label: 'Go to External Sources',
   },
@@ -141,9 +143,9 @@ export const commands: Command[] = [
     execute: async () => {
       await goto(`${base}/dictionaries`);
     },
+    getDisabledReason: () => null,
     id: 'nav.dictionaries',
     isAvailable: () => true,
-    isEnabled: () => true,
     keywords: ['navigate', 'command', 'channel', 'open'],
     label: 'Go to Dictionaries',
   },
@@ -166,16 +168,15 @@ export const commands: Command[] = [
       if (!model) {
         return 'No model available';
       }
-      return featurePermissions.planBranch.canCreateBranch(user, plan, model)
-        ? null
-        : 'You do not have permission to duplicate this plan';
+      if (!featurePermissions.planBranch.canCreateBranch(user, plan, model)) {
+        return 'You do not have permission to create a plan branch';
+      }
+      return null;
     },
-    id: 'plan.duplicate',
+    id: 'plan.createBranch',
     isAvailable: ({ route }) => matchesRoute(route, PLAN_ROUTES),
-    isEnabled: ({ model, plan, user }) =>
-      plan != null && model != null && featurePermissions.planBranch.canCreateBranch(user, plan, model),
     keywords: ['copy', 'branch', 'clone'],
-    label: 'Duplicate Current Plan',
+    label: 'Create Plan Branch',
   },
   {
     category: 'Plan',
@@ -192,14 +193,13 @@ export const commands: Command[] = [
       if (!model) {
         return 'No model available';
       }
-      return featurePermissions.planSnapshot.canCreate(user, plan, model)
-        ? null
-        : 'You do not have permission to create snapshots';
+      if (!featurePermissions.planSnapshot.canCreate(user, plan, model)) {
+        return 'You do not have permission to create snapshots';
+      }
+      return null;
     },
     id: 'plan.createSnapshot',
     isAvailable: ({ route }) => matchesRoute(route, PLAN_ROUTES),
-    isEnabled: ({ model, plan, user }) =>
-      plan != null && model != null && featurePermissions.planSnapshot.canCreate(user, plan, model),
     keywords: ['save', 'backup', 'version'],
     label: 'Create Plan Snapshot',
   },
@@ -225,24 +225,19 @@ export const commands: Command[] = [
       if (isPlanReadOnly()) {
         return 'Plan is read-only';
       }
-      return featurePermissions.simulation.canRun(user, plan, model)
-        ? null
-        : 'You do not have permission to run simulations';
+      if (!featurePermissions.simulation.canRun(user, plan, model)) {
+        return 'You do not have permission to run simulations';
+      }
+      if (!get(enableSimulation)) {
+        return 'Simulation up-to-date';
+      }
+      return null;
     },
     id: 'simulation.run',
     isAvailable: ({ route }) => matchesRoute(route, PLAN_ROUTES),
-    isEnabled: ({ model, plan, user }) => {
-      if (!plan || !model) {
-        return false;
-      }
-      if (isPlanReadOnly()) {
-        return false;
-      }
-      return featurePermissions.simulation.canRun(user, plan, model);
-    },
     keywords: ['simulate', 'execute', 'start'],
     label: 'Run Simulation',
-    shortcut: 'Ctrl+Shift+S',
+    shortcut: () => `${isMacOs() ? '⌘' : 'CTRL'}S`,
   },
 
   // ============================================
@@ -266,28 +261,54 @@ export const commands: Command[] = [
       if (isPlanReadOnly()) {
         return 'Plan is read-only';
       }
-      return featurePermissions.schedulingGoalsPlanSpec.canRun(user, plan, model)
-        ? null
-        : 'You do not have permission to run scheduling';
+      if (!featurePermissions.schedulingGoalsPlanSpec.canRun(user, plan, model)) {
+        return 'You do not have permission to run scheduling';
+      }
+      if (!get(enableScheduling)) {
+        return 'No scheduling goals enabled';
+      }
+      return null;
     },
     id: 'scheduling.run',
     isAvailable: ({ route }) => matchesRoute(route, PLAN_ROUTES),
-    isEnabled: ({ model, plan, user }) => {
-      if (!plan || !model) {
-        return false;
-      }
-      if (isPlanReadOnly()) {
-        return false;
-      }
-      return featurePermissions.schedulingGoalsPlanSpec.canRun(user, plan, model);
-    },
     keywords: ['schedule', 'goals', 'execute'],
     label: 'Run Scheduling',
   },
   {
     category: 'Scheduling',
+    execute: async ({ user }) => {
+      const fullPlan = getFullPlan();
+      if (fullPlan) {
+        await effects.schedule(true, fullPlan, user);
+      }
+    },
+    getDisabledReason: ({ model, plan, user }) => {
+      if (!plan) {
+        return 'No plan selected';
+      }
+      if (!model) {
+        return 'No model available';
+      }
+      if (isPlanReadOnly()) {
+        return 'Plan is read-only';
+      }
+      if (!featurePermissions.schedulingGoalsPlanSpec.canRun(user, plan, model)) {
+        return 'You do not have permission to run scheduling';
+      }
+      if (!get(enableScheduling)) {
+        return 'No scheduling goals enabled';
+      }
+      return null;
+    },
+    id: 'scheduling.analyze',
+    isAvailable: ({ route }) => matchesRoute(route, PLAN_ROUTES),
+    keywords: ['schedule', 'goals', 'analyze'],
+    label: 'Run Scheduling Analysis',
+  },
+  {
+    category: 'Scheduling',
     execute: async () => {
-      await goto(`${base}/scheduling/goals/new`);
+      window.open(`${base}/scheduling/goals/new`, '_blank');
     },
     getDisabledReason: ({ user }) =>
       featurePermissions.schedulingGoals.canCreate(user)
@@ -295,14 +316,13 @@ export const commands: Command[] = [
         : 'You do not have permission to create scheduling goals',
     id: 'scheduling.newGoal',
     isAvailable: () => true,
-    isEnabled: ({ user }) => featurePermissions.schedulingGoals.canCreate(user),
     keywords: ['create', 'add', 'goal'],
     label: 'New Scheduling Goal',
   },
   {
     category: 'Scheduling',
     execute: async () => {
-      await goto(`${base}/scheduling/conditions/new`);
+      window.open(`${base}/scheduling/conditions/new`, '_blank');
     },
     getDisabledReason: ({ user }) =>
       featurePermissions.schedulingConditions.canCreate(user)
@@ -310,7 +330,6 @@ export const commands: Command[] = [
         : 'You do not have permission to create scheduling conditions',
     id: 'scheduling.newCondition',
     isAvailable: () => true,
-    isEnabled: ({ user }) => featurePermissions.schedulingConditions.canCreate(user),
     keywords: ['create', 'add', 'condition'],
     label: 'New Scheduling Condition',
   },
@@ -351,42 +370,18 @@ export const commands: Command[] = [
     },
     id: 'constraint.check',
     isAvailable: ({ route }) => matchesRoute(route, PLAN_ROUTES),
-    isEnabled: ({ model, plan, user }) => {
-      if (!plan || !model) {
-        return false;
-      }
-      if (!featurePermissions.constraintRuns.canCreate(user, plan, model)) {
-        return false;
-      }
-
-      const simStatus = get(simulationStatus);
-      const constStatus = get(constraintsStatus);
-
-      // Disable if simulation is not complete
-      if (simStatus !== Status.Complete) {
-        return false;
-      }
-
-      // Disable if constraints are already complete (no need to re-run)
-      if (constStatus === Status.Complete) {
-        return false;
-      }
-
-      return true;
-    },
     keywords: ['validate', 'run', 'verify'],
     label: 'Check Constraints',
   },
   {
     category: 'Constraint',
     execute: async () => {
-      await goto(`${base}/constraints/new`);
+      window.open(`${base}/constraints/new`, '_blank');
     },
     getDisabledReason: ({ user }) =>
       featurePermissions.constraints.canCreate(user) ? null : 'You do not have permission to create constraints',
     id: 'constraint.new',
     isAvailable: () => true,
-    isEnabled: ({ user }) => featurePermissions.constraints.canCreate(user),
     keywords: ['create', 'add'],
     label: 'New Constraint',
   },
@@ -397,26 +392,24 @@ export const commands: Command[] = [
   {
     category: 'Expansion',
     execute: async () => {
-      await goto(`${base}/expansion/rules/new`);
+      window.open(`${base}/expansion/rules/new`, '_blank');
     },
     getDisabledReason: ({ user }) =>
       featurePermissions.expansionRules.canCreate(user) ? null : 'You do not have permission to create expansion rules',
     id: 'expansion.newRule',
     isAvailable: () => true,
-    isEnabled: ({ user }) => featurePermissions.expansionRules.canCreate(user),
     keywords: ['create', 'add'],
     label: 'New Expansion Rule',
   },
   {
     category: 'Expansion',
     execute: async () => {
-      await goto(`${base}/expansion/sets/new`);
+      window.open(`${base}/expansion/sets/new`, '_blank');
     },
     getDisabledReason: ({ user }) =>
       featurePermissions.expansionRules.canCreate(user) ? null : 'You do not have permission to create expansion sets',
     id: 'expansion.newSet',
     isAvailable: () => true,
-    isEnabled: ({ user }) => featurePermissions.expansionRules.canCreate(user),
     keywords: ['create', 'add'],
     label: 'New Expansion Set',
   },
@@ -424,15 +417,19 @@ export const commands: Command[] = [
 
 /**
  * Get all commands filtered by availability and processed with enabled state.
+ * The enabled state is derived from getDisabledReason - if null, the command is enabled.
  */
 export function getAvailableCommands(context: CommandContext): ProcessedCommand[] {
   return commands
     .filter(cmd => cmd.isAvailable(context))
-    .map(cmd => ({
-      ...cmd,
-      disabledReason: cmd.getDisabledReason?.(context) ?? null,
-      enabled: cmd.isEnabled(context),
-    }));
+    .map(cmd => {
+      const disabledReason = cmd.getDisabledReason(context);
+      return {
+        ...cmd,
+        disabledReason,
+        enabled: disabledReason === null,
+      };
+    });
 }
 
 /**

@@ -3,7 +3,6 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { Command } from '@nasa-jpl/stellar-svelte';
-  import { onDestroy, onMount } from 'svelte';
   import {
     closeCommandPalette,
     commandPaletteContext,
@@ -15,11 +14,7 @@
   import type { CommandContext, ProcessedCommand } from '../../types/command-palette';
   import type { Model } from '../../types/model';
   import type { Workspace } from '../../types/workspace';
-  import {
-    filterCommands,
-    getAvailableCommands,
-    groupCommandsByCategory,
-  } from '../../utilities/commandRegistry';
+  import { filterCommands, getAvailableCommands, groupCommandsByCategory } from '../../utilities/commandRegistry';
 
   /** Current authenticated user */
   export let user: User | null = null;
@@ -83,14 +78,18 @@
     }
   }
 
-  async function handleSelect(command: ProcessedCommand) {
+  function handleSelect(command: ProcessedCommand) {
     if (!command.enabled) {
       return;
     }
 
     closeCommandPalette();
     try {
-      await command.execute(context);
+      // Allow palette to close before potentially opening modals that are
+      // listening for enter key events
+      requestAnimationFrame(() => {
+        command.execute(context);
+      });
     } catch (error) {
       console.error(`Command "${command.id}" failed:`, error);
     }
@@ -102,31 +101,25 @@
       searchValue = '';
     }
   }
-
-  onMount(() => {
-    document.addEventListener('keydown', handleKeydown);
-  });
-
-  onDestroy(() => {
-    document.removeEventListener('keydown', handleKeydown);
-  });
 </script>
 
-<Command.Dialog open={$commandPaletteOpen} onOpenChange={handleOpenChange}>
+<svelte:document on:keydown={handleKeydown} />
+
+<Command.Dialog open={$commandPaletteOpen} onOpenChange={handleOpenChange} shouldFilter={false}>
   <Command.Input placeholder="Type a command or search..." bind:value={searchValue} />
   <Command.List>
     <Command.Empty>No commands found.</Command.Empty>
     {#each [...groupedCommands] as [category, commands]}
       <Command.Group heading={category}>
         {#each commands as command}
-          <Command.Item
-            value={command.label}
-            onSelect={() => handleSelect(command)}
-            disabled={!command.enabled}
-          >
+          <Command.Item value={command.label} onSelect={() => handleSelect(command)} disabled={!command.enabled}>
             <span>{command.label}</span>
-            {#if command.shortcut}
-              <Command.Shortcut>{command.shortcut}</Command.Shortcut>
+            {#if command.disabledReason}
+              <div class="ml-auto text-xs text-muted-foreground">{command.disabledReason}</div>
+            {:else if command.shortcut}
+              <Command.Shortcut>
+                {command.shortcut()}
+              </Command.Shortcut>
             {/if}
           </Command.Item>
         {/each}
@@ -134,3 +127,13 @@
     {/each}
   </Command.List>
 </Command.Dialog>
+
+<style>
+  /* Target the dialog content that contains the command palette */
+  :global([data-dialog-content]:has([data-cmdk-root])) {
+    max-width: 680px;
+    /* Position from top instead of center to prevent jump on close */
+    top: 20%;
+    transform: translateX(-50%);
+  }
+</style>

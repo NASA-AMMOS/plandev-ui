@@ -49,10 +49,12 @@ export interface Command {
   execute: (context: CommandContext) => Promise<void>;
 
   /**
-   * Optional reason why the command is disabled.
-   * Shown as a tooltip when the command is visible but disabled.
+   * Returns the reason why the command is disabled, or null if enabled.
+   * This is the single source of truth for enabled state - if this returns null,
+   * the command is enabled. If it returns a string, the command is disabled
+   * and the string explains why.
    */
-  getDisabledReason?: (context: CommandContext) => string | null;
+  getDisabledReason: (context: CommandContext) => string | null;
 
   /** Unique identifier for the command */
   id: string;
@@ -64,12 +66,6 @@ export interface Command {
    */
   isAvailable: (context: CommandContext) => boolean;
 
-  /**
-   * Whether the user has permission to execute this command.
-   * Returns true if the command can be executed.
-   */
-  isEnabled: (context: CommandContext) => boolean;
-
   /** Optional keywords for fuzzy search (beyond the label) */
   keywords?: string[];
 
@@ -77,7 +73,7 @@ export interface Command {
   label: string;
 
   /** Optional keyboard shortcut hint to display */
-  shortcut?: string;
+  shortcut?: () => string;
 }
 
 /**
