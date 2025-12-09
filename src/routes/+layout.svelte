@@ -10,6 +10,7 @@
   import CommandPalette from '../components/app/CommandPalette.svelte';
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
+  import { closeCommandPalette } from '../stores/commandPalette';
   import { clearLogs } from '../stores/errors';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
   import { loadPluginCode } from '../utilities/plugins';
@@ -29,6 +30,7 @@
   beforeNavigate(() => {
     // Clear logs on page change
     clearLogs();
+    closeCommandPalette();
   });
 
   async function loadPlugins() {
