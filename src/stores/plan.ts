@@ -113,7 +113,7 @@ export const planRevision = gqlSubscribable<number>(
   { planId },
   -1,
   null,
-  ({ revision }: Pick<Plan, 'revision'>) => revision,
+  plan => plan?.revision ?? -1,
 );
 
 /* Helper Functions. */

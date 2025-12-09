@@ -19,10 +19,7 @@ import { goto } from '$app/navigation';
 import { base } from '$app/paths';
 import { get } from 'svelte/store';
 import { Status } from '../enums/status';
-import { constraintsStatus } from '../stores/constraints';
-import { planReadOnly, plan as planStore } from '../stores/plan';
-import { enableScheduling } from '../stores/scheduling';
-import { enableSimulation, simulationStatus } from '../stores/simulation';
+import { plan as planStore } from '../stores/plan';
 import type { Command, CommandContext, ProcessedCommand } from '../types/command-palette';
 import type { Plan } from '../types/plan';
 import effects from './effects';
@@ -31,13 +28,6 @@ import { featurePermissions } from './permissions';
 
 // Route patterns for context detection
 const PLAN_ROUTES = /\/plans\/\d+/;
-
-/**
- * Helper to check if the current plan is read-only
- */
-function isPlanReadOnly(): boolean {
-  return get(planReadOnly);
-}
 
 /**
  * Helper to check if route matches a pattern
@@ -215,20 +205,20 @@ export const commands: Command[] = [
         await effects.simulate(fullPlan, false, user);
       }
     },
-    getDisabledReason: ({ model, plan, user }) => {
+    getDisabledReason: ({ enableSimulation, model, plan, planReadOnly, user }) => {
       if (!plan) {
         return 'No plan selected';
       }
       if (!model) {
         return 'No model available';
       }
-      if (isPlanReadOnly()) {
+      if (planReadOnly) {
         return 'Plan is read-only';
       }
       if (!featurePermissions.simulation.canRun(user, plan, model)) {
         return 'You do not have permission to run simulations';
       }
-      if (!get(enableSimulation)) {
+      if (!enableSimulation) {
         return 'Simulation up-to-date';
       }
       return null;
@@ -251,20 +241,20 @@ export const commands: Command[] = [
         await effects.schedule(false, fullPlan, user);
       }
     },
-    getDisabledReason: ({ model, plan, user }) => {
+    getDisabledReason: ({ enableScheduling, model, plan, planReadOnly, user }) => {
       if (!plan) {
         return 'No plan selected';
       }
       if (!model) {
         return 'No model available';
       }
-      if (isPlanReadOnly()) {
+      if (planReadOnly) {
         return 'Plan is read-only';
       }
       if (!featurePermissions.schedulingGoalsPlanSpec.canRun(user, plan, model)) {
         return 'You do not have permission to run scheduling';
       }
-      if (!get(enableScheduling)) {
+      if (!enableScheduling) {
         return 'No scheduling goals enabled';
       }
       return null;
@@ -282,20 +272,20 @@ export const commands: Command[] = [
         await effects.schedule(true, fullPlan, user);
       }
     },
-    getDisabledReason: ({ model, plan, user }) => {
+    getDisabledReason: ({ enableScheduling, model, plan, planReadOnly, user }) => {
       if (!plan) {
         return 'No plan selected';
       }
       if (!model) {
         return 'No model available';
       }
-      if (isPlanReadOnly()) {
+      if (planReadOnly) {
         return 'Plan is read-only';
       }
       if (!featurePermissions.schedulingGoalsPlanSpec.canRun(user, plan, model)) {
         return 'You do not have permission to run scheduling';
       }
-      if (!get(enableScheduling)) {
+      if (!enableScheduling) {
         return 'No scheduling goals enabled';
       }
       return null;
@@ -345,7 +335,7 @@ export const commands: Command[] = [
         await effects.checkConstraints(fullPlan, user, false);
       }
     },
-    getDisabledReason: ({ model, plan, user }) => {
+    getDisabledReason: ({ constraintsStatus, model, plan, simulationStatus, user }) => {
       if (!plan) {
         return 'No plan selected';
       }
@@ -355,17 +345,12 @@ export const commands: Command[] = [
       if (!featurePermissions.constraintRuns.canCreate(user, plan, model)) {
         return 'You do not have permission to check constraints';
       }
-
-      const simStatus = get(simulationStatus);
-      const constStatus = get(constraintsStatus);
-
-      if (simStatus !== Status.Complete) {
+      if (simulationStatus !== Status.Complete) {
         return 'Completed simulation required';
       }
-      if (constStatus === Status.Complete) {
+      if (constraintsStatus === Status.Complete) {
         return 'Constraints already checked';
       }
-
       return null;
     },
     id: 'constraint.check',

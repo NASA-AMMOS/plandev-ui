@@ -3,13 +3,17 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { Command } from '@nasa-jpl/stellar-svelte';
+  import { Status } from '../../enums/status';
   import {
     closeCommandPalette,
     commandPaletteContext,
     commandPaletteOpen,
     toggleCommandPalette,
   } from '../../stores/commandPalette';
-  import { plan } from '../../stores/plan';
+  import { constraintsStatus } from '../../stores/constraints';
+  import { plan, planReadOnly } from '../../stores/plan';
+  import { enableScheduling } from '../../stores/scheduling';
+  import { enableSimulation, simulationStatus } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { CommandContext, ProcessedCommand } from '../../types/command-palette';
   import type { Model } from '../../types/model';
@@ -28,7 +32,19 @@
   let searchValue = '';
 
   // Build context reactively from props and stores
-  $: context = buildContext(user, $plan, model, workspace, $page.url.pathname);
+  // All store values that affect command enabled state must be included here
+  $: context = buildContext(
+    user,
+    $plan,
+    model,
+    workspace,
+    $page.url.pathname,
+    $planReadOnly,
+    $simulationStatus,
+    $constraintsStatus,
+    $enableSimulation,
+    $enableScheduling,
+  );
 
   // Update the global context store whenever local context changes
   $: $commandPaletteContext = context;
@@ -44,11 +60,19 @@
     model: Model | null,
     workspace: Workspace | null,
     route: string,
+    planReadOnlyValue: boolean,
+    simulationStatusValue: Status | null,
+    constraintsStatusValue: Status | null,
+    enableSimulationValue: boolean,
+    enableSchedulingValue: boolean,
   ): CommandContext {
     // Derive model from plan if not provided
     const derivedModel = model ?? (currentPlan ? { id: currentPlan.model.id, owner: currentPlan.model.owner } : null);
 
     return {
+      constraintsStatus: constraintsStatusValue,
+      enableScheduling: enableSchedulingValue,
+      enableSimulation: enableSimulationValue,
       model: derivedModel,
       plan: currentPlan
         ? {
@@ -58,7 +82,9 @@
             owner: currentPlan.owner,
           }
         : null,
+      planReadOnly: planReadOnlyValue,
       route,
+      simulationStatus: simulationStatusValue,
       user,
       workspace,
     };
