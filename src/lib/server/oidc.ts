@@ -131,6 +131,17 @@ export async function verify(
 }
 
 /**
+ * Verify an ID token with full OIDC-compliant validation (signature, issuer, expiration, audience).
+ *
+ * @param idToken - The raw ID token string to verify
+ * @returns The decoded JWT payload if verification is successful
+ * @throws {Error} If the token is invalid, expired, or fails audience validation
+ */
+export async function verifyIdToken(idToken: string): Promise<MaybeToken> {
+  return verify(idToken, DEFAULT_JWKS_CLIENT, ID_TOKEN_VERIFY_OPTS);
+}
+
+/**
  * Verify that the nonce in an ID token matches the expected nonce.
  * This prevents replay attacks where an attacker reuses a previously issued ID token.
  *

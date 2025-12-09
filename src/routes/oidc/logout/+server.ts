@@ -13,7 +13,20 @@ export const GET = async ({ cookies }) => {
   console.debug('/oidc/logout (GET)');
 
   const client = await auth.Client.instance;
-  const idToken = cookies.get('idToken') ?? '';
+  const idToken = cookies.get('idToken');
+
+  // Verify the ID token before using it as a hint to the IdP.
+  // If verification fails, we still proceed with logout but without the hint.
+  let verifiedIdToken: string | undefined;
+  if (idToken) {
+    try {
+      await auth.verifyIdToken(idToken);
+      verifiedIdToken = idToken;
+    } catch {
+      // Token invalid or expired - proceed without hint
+      console.debug('ID token verification failed during logout, proceeding without id_token_hint');
+    }
+  }
 
   // delete cookies here
   cookies.delete('accessToken', { path: '/' });
@@ -26,7 +39,9 @@ export const GET = async ({ cookies }) => {
   const logoutUrl = new URL(client.getLogoutEndpoint());
 
   logoutUrl.searchParams.set('post_logout_redirect_uri', `${ORIGIN}`);
-  logoutUrl.searchParams.set('id_token_hint', idToken);
+  if (verifiedIdToken) {
+    logoutUrl.searchParams.set('id_token_hint', verifiedIdToken);
+  }
 
   // redirect to the logout endpoint
   redirect(302, logoutUrl.toString());
