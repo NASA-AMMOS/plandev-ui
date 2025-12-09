@@ -1,6 +1,7 @@
 import { browser, dev } from '$app/environment';
+import { env as dynamicEnv } from '$env/dynamic/private';
 import * as env from '$env/static/private';
-import type { HasuraToken, MaybeToken, Rule } from '$lib/types/oidc';
+import type { MaybeToken, Rule } from '$lib/types/oidc';
 import { type Cookies, type RequestEvent } from '@sveltejs/kit';
 import * as arctic from 'arctic';
 import crypto from 'crypto';
@@ -26,6 +27,68 @@ const DEFAULT_JWKS_CLIENT = (() => {
 // Supported JWT signing algorithms. RS256 is the most common for OIDC.
 // Can be overridden via OIDC_ALGORITHMS env var (space-separated, e.g., "RS256 RS384 RS512")
 const SUPPORTED_ALGORITHMS = (env.OIDC_ALGORITHMS?.split(' ') || ['RS256']) as jwt.Algorithm[];
+
+/**
+ * JWT claim path configuration.
+ * These paths specify where to find user identity and role information in the JWT.
+ *
+ * Default paths follow Hasura's JWT claims namespace convention:
+ *   https://hasura.io/jwt/claims -> x-hasura-user-id, x-hasura-allowed-roles, x-hasura-default-role
+ *
+ * For custom IdP configurations, override with environment variables:
+ *   OIDC_CLAIMS_NAMESPACE: The top-level claim key (default: "https://hasura.io/jwt/claims")
+ *   OIDC_CLAIMS_USER_ID: The user ID claim within the namespace (default: "x-hasura-user-id")
+ *   OIDC_CLAIMS_ALLOWED_ROLES: The allowed roles claim (default: "x-hasura-allowed-roles")
+ *   OIDC_CLAIMS_DEFAULT_ROLE: The default role claim (default: "x-hasura-default-role")
+ *
+ * IMPORTANT: These must match the JWT configuration in:
+ *   - Hasura's HASURA_GRAPHQL_JWT_SECRET claims_map
+ *   - Aerie Gateway's JWT parsing logic
+ *   - Your IdP's token mapper configuration
+ */
+export const CLAIMS_CONFIG = {
+  namespace: dynamicEnv.OIDC_CLAIMS_NAMESPACE || 'https://hasura.io/jwt/claims',
+  userId: dynamicEnv.OIDC_CLAIMS_USER_ID || 'x-hasura-user-id',
+  allowedRoles: dynamicEnv.OIDC_CLAIMS_ALLOWED_ROLES || 'x-hasura-allowed-roles',
+  defaultRole: dynamicEnv.OIDC_CLAIMS_DEFAULT_ROLE || 'x-hasura-default-role',
+};
+
+/**
+ * Extract claims from a decoded JWT token using the configured claim paths.
+ * Supports nested claims via the namespace configuration.
+ *
+ * @param token - The decoded JWT payload
+ * @returns Object with userId, allowedRoles, and defaultRole
+ * @throws Error if required claims are missing
+ */
+export function extractClaims(token: jwt.JwtPayload): {
+  userId: string;
+  allowedRoles: string[];
+  defaultRole: string;
+} {
+  const namespace = token[CLAIMS_CONFIG.namespace];
+  if (!namespace || typeof namespace !== 'object') {
+    throw new Error(`JWT missing claims namespace: ${CLAIMS_CONFIG.namespace}`);
+  }
+
+  const userId = namespace[CLAIMS_CONFIG.userId];
+  const allowedRoles = namespace[CLAIMS_CONFIG.allowedRoles];
+  const defaultRole = namespace[CLAIMS_CONFIG.defaultRole];
+
+  if (!userId || typeof userId !== 'string') {
+    throw new Error(`JWT missing or invalid user ID claim: ${CLAIMS_CONFIG.namespace}.${CLAIMS_CONFIG.userId}`);
+  }
+  if (!Array.isArray(allowedRoles)) {
+    throw new Error(
+      `JWT missing or invalid allowed roles claim: ${CLAIMS_CONFIG.namespace}.${CLAIMS_CONFIG.allowedRoles}`,
+    );
+  }
+  if (!defaultRole || typeof defaultRole !== 'string') {
+    throw new Error(`JWT missing or invalid default role claim: ${CLAIMS_CONFIG.namespace}.${CLAIMS_CONFIG.defaultRole}`);
+  }
+
+  return { userId, allowedRoles, defaultRole };
+}
 
 /**
  * Base verification options for all tokens (signature, issuer, expiration).
@@ -320,30 +383,25 @@ const mutation = `mutation InsertUser($input: users_insert_input!) {
   }
 }`; // TODO: update other user tables in permissions schema?
 
-async function upsertUser(decodedAccessToken: HasuraToken, accessToken: string): Promise<void> {
-  const username = decodedAccessToken['https://hasura.io/jwt/claims']['x-hasura-user-id'];
-  // const defaultRole = decodedAccessToken['https://hasura.io/jwt/claims']['x-hasura-default-role'];
-  const allowedRoles = decodedAccessToken['https://hasura.io/jwt/claims']['x-hasura-allowed-roles'];
+async function upsertUser(decodedAccessToken: jwt.JwtPayload, accessToken: string): Promise<void> {
+  const claims = extractClaims(decodedAccessToken);
+  const username = claims.userId;
+  const allowedRoles = claims.allowedRoles;
 
-  // set the active and default role manually:
+  // Set the active and default role based on priority (aerie_admin > user > viewer)
   let defaultRole = 'viewer';
-  switch (true) {
-    case allowedRoles.includes('aerie_admin'):
-      defaultRole = 'aerie_admin';
-      break;
-    case allowedRoles.includes('user'):
-      defaultRole = 'user';
-      break;
-    default:
-      defaultRole = 'viewer';
+  if (allowedRoles.includes('aerie_admin')) {
+    defaultRole = 'aerie_admin';
+  } else if (allowedRoles.includes('user')) {
+    defaultRole = 'user';
   }
 
   const input = { default_role: defaultRole, username };
   const user: User = {
-    activeRole: defaultRole, // TODO: check allowed roles and pick highest. forget about default role.
+    activeRole: defaultRole,
     allowedRoles,
     defaultRole,
-    id: username, // TODO: not exactly. I think this is supposed to be decodedAccessToken.sub. but we don't even use it.
+    id: username,
     permissibleQueries: null,
     rolePermissions: null,
     token: accessToken,
@@ -375,7 +433,7 @@ export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth
 
     // sort of an edge case, but if default role does change at the idp, it wouldn't hurt to update the local entry
     // TODO: should this be here? Where else could it go?
-    await upsertUser(accessJwt as HasuraToken, tokens.accessToken());
+    await upsertUser(accessJwt as jwt.JwtPayload, tokens.accessToken());
     return true;
   }
 

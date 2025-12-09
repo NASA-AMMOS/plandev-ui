@@ -1,7 +1,53 @@
 import { env } from '$env/dynamic/public';
 import { jwtDecode } from 'jwt-decode';
-import type { BaseUser, ParsedUserToken, User } from '../types/app';
+import type { BaseUser, User } from '../types/app';
 import effects from './effects';
+
+/**
+ * JWT claim path configuration (client-side).
+ * Must match the server-side CLAIMS_CONFIG in oidc.ts.
+ *
+ * Uses PUBLIC_ prefixed env vars for client accessibility.
+ * Falls back to Hasura's standard claim namespace.
+ */
+const CLAIMS_CONFIG = {
+  namespace: env.PUBLIC_OIDC_CLAIMS_NAMESPACE || 'https://hasura.io/jwt/claims',
+  userId: env.PUBLIC_OIDC_CLAIMS_USER_ID || 'x-hasura-user-id',
+  allowedRoles: env.PUBLIC_OIDC_CLAIMS_ALLOWED_ROLES || 'x-hasura-allowed-roles',
+  defaultRole: env.PUBLIC_OIDC_CLAIMS_DEFAULT_ROLE || 'x-hasura-default-role',
+};
+
+/**
+ * Extract claims from a decoded JWT token using the configured claim paths.
+ */
+function extractClaims(token: Record<string, unknown>): {
+  userId: string;
+  allowedRoles: string[];
+  defaultRole: string;
+} {
+  const namespace = token[CLAIMS_CONFIG.namespace] as Record<string, unknown> | undefined;
+  if (!namespace || typeof namespace !== 'object') {
+    throw new Error(`JWT missing claims namespace: ${CLAIMS_CONFIG.namespace}`);
+  }
+
+  const userId = namespace[CLAIMS_CONFIG.userId] as string;
+  const allowedRoles = namespace[CLAIMS_CONFIG.allowedRoles] as string[];
+  const defaultRole = namespace[CLAIMS_CONFIG.defaultRole] as string;
+
+  if (!userId || typeof userId !== 'string') {
+    throw new Error(`JWT missing or invalid user ID claim: ${CLAIMS_CONFIG.namespace}.${CLAIMS_CONFIG.userId}`);
+  }
+  if (!Array.isArray(allowedRoles)) {
+    throw new Error(
+      `JWT missing or invalid allowed roles claim: ${CLAIMS_CONFIG.namespace}.${CLAIMS_CONFIG.allowedRoles}`,
+    );
+  }
+  if (!defaultRole || typeof defaultRole !== 'string') {
+    throw new Error(`JWT missing or invalid default role claim: ${CLAIMS_CONFIG.namespace}.${CLAIMS_CONFIG.defaultRole}`);
+  }
+
+  return { userId, allowedRoles, defaultRole };
+}
 
 export async function computeRolesFromCookies(
   userCookie: string | null,
@@ -37,20 +83,19 @@ export async function computeRolesFromJWT(baseUser: BaseUser, activeRole: string
     return null; // expect to return in non-oidc case
   }
 
-  const decodedToken: ParsedUserToken = jwtDecode(baseUser.token);
+  const decodedToken = jwtDecode(baseUser.token) as Record<string, unknown>;
+  const claims = extractClaims(decodedToken);
 
   if (baseUser.id === null && env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
-    // since our scope is always one that includes email, and that's also a unique id, we can use that
-    //    BUT sub is the one that matches hasura's expected x-hasura-user-id, which is important.
-    baseUser.id = decodedToken.sub;
+    // Use the configured user ID claim, which should match Hasura's expected x-hasura-user-id
+    baseUser.id = claims.userId;
   }
 
-  const allowedRoles = decodedToken['https://hasura.io/jwt/claims']['x-hasura-allowed-roles'];
-  const defaultRole = decodedToken['https://hasura.io/jwt/claims']['x-hasura-default-role'];
+  const { allowedRoles, defaultRole } = claims;
 
   const user: User = {
     ...baseUser,
-    activeRole: activeRole && allowedRoles.includes(activeRole) ? activeRole : defaultRole, // check to make sure whatever was passed in as activeRole if not null is still in allowedRoles
+    activeRole: activeRole && allowedRoles.includes(activeRole) ? activeRole : defaultRole,
     allowedRoles,
     defaultRole,
     permissibleQueries: null,
