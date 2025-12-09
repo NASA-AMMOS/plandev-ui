@@ -73,6 +73,7 @@
       constraintsStatus: constraintsStatusValue,
       enableScheduling: enableSchedulingValue,
       enableSimulation: enableSimulationValue,
+      fullPlan: currentPlan,
       model: derivedModel,
       plan: currentPlan
         ? {

@@ -1,6 +1,7 @@
 import type { Status } from '../enums/status';
 import type { User } from './app';
 import type { ModelWithOwner, PlanWithOwners } from './permissions';
+import type { Plan } from './plan';
 import type { Workspace } from './workspace';
 
 /**
@@ -18,9 +19,11 @@ export interface CommandContext {
   enableScheduling: boolean;
   /** Whether simulation can be run (plan has changes) */
   enableSimulation: boolean;
+  /** Full plan object for effects that need it (e.g., simulation, scheduling) */
+  fullPlan: Plan | null;
   /** Current model (if on a model-specific page) */
   model?: ModelWithOwner | null;
-  /** Current plan (if viewing a plan) */
+  /** Current plan (minimal info for permission checks) */
   plan?: PlanWithOwners | null;
   /** Whether the current plan is read-only */
   planReadOnly: boolean;

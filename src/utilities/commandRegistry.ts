@@ -17,11 +17,8 @@
 
 import { goto } from '$app/navigation';
 import { base } from '$app/paths';
-import { get } from 'svelte/store';
 import { Status } from '../enums/status';
-import { plan as planStore } from '../stores/plan';
 import type { Command, CommandContext, ProcessedCommand } from '../types/command-palette';
-import type { Plan } from '../types/plan';
 import effects from './effects';
 import { isMacOs } from './generic';
 import { featurePermissions } from './permissions';
@@ -34,13 +31,6 @@ const PLAN_ROUTES = /\/plans\/\d+/;
  */
 function matchesRoute(route: string, pattern: RegExp): boolean {
   return pattern.test(route);
-}
-
-/**
- * Get the full plan from the store (needed for effects that require Plan type)
- */
-function getFullPlan(): Plan | null {
-  return get(planStore);
 }
 
 /**
@@ -145,8 +135,7 @@ export const commands: Command[] = [
   // ============================================
   {
     category: 'Plan',
-    execute: async ({ user }) => {
-      const fullPlan = getFullPlan();
+    execute: async ({ fullPlan, user }) => {
       if (fullPlan) {
         await effects.createPlanBranch(fullPlan, user);
       }
@@ -170,8 +159,7 @@ export const commands: Command[] = [
   },
   {
     category: 'Plan',
-    execute: async ({ user }) => {
-      const fullPlan = getFullPlan();
+    execute: async ({ fullPlan, user }) => {
       if (fullPlan) {
         await effects.createPlanSnapshot(fullPlan, user);
       }
@@ -199,8 +187,7 @@ export const commands: Command[] = [
   // ============================================
   {
     category: 'Simulation',
-    execute: async ({ user }) => {
-      const fullPlan = getFullPlan();
+    execute: async ({ fullPlan, user }) => {
       if (fullPlan) {
         await effects.simulate(fullPlan, false, user);
       }
@@ -235,8 +222,7 @@ export const commands: Command[] = [
   // ============================================
   {
     category: 'Scheduling',
-    execute: async ({ user }) => {
-      const fullPlan = getFullPlan();
+    execute: async ({ fullPlan, user }) => {
       if (fullPlan) {
         await effects.schedule(false, fullPlan, user);
       }
@@ -266,8 +252,7 @@ export const commands: Command[] = [
   },
   {
     category: 'Scheduling',
-    execute: async ({ user }) => {
-      const fullPlan = getFullPlan();
+    execute: async ({ fullPlan, user }) => {
       if (fullPlan) {
         await effects.schedule(true, fullPlan, user);
       }
@@ -329,8 +314,7 @@ export const commands: Command[] = [
   // ============================================
   {
     category: 'Constraint',
-    execute: async ({ user }) => {
-      const fullPlan = getFullPlan();
+    execute: async ({ fullPlan, user }) => {
       if (fullPlan) {
         await effects.checkConstraints(fullPlan, user, false);
       }
