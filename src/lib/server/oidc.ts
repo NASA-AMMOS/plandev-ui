@@ -23,13 +23,17 @@ const DEFAULT_JWKS_CLIENT = (() => {
   }
 })();
 
+// Supported JWT signing algorithms. RS256 is the most common for OIDC.
+// Can be overridden via OIDC_ALGORITHMS env var (space-separated, e.g., "RS256 RS384 RS512")
+const SUPPORTED_ALGORITHMS = (env.OIDC_ALGORITHMS?.split(' ') || ['RS256']) as jwt.Algorithm[];
+
 /**
  * Base verification options for all tokens (signature, issuer, expiration).
  * Access tokens are treated as opaque by OIDC clients - audience validation
  * is only required for ID tokens per the OIDC spec.
  */
 const BASE_VERIFY_OPTS: jwt.VerifyOptions = {
-  algorithms: ['RS256'],
+  algorithms: SUPPORTED_ALGORITHMS,
   ignoreExpiration: false,
   issuer: env.OIDC_ISSUER,
 };
