@@ -23,11 +23,24 @@ const DEFAULT_JWKS_CLIENT = (() => {
   }
 })();
 
-const DEFAULT_VERIFY_OPTS: jwt.VerifyOptions = {
+/**
+ * Base verification options for all tokens (signature, issuer, expiration).
+ * Access tokens are treated as opaque by OIDC clients - audience validation
+ * is only required for ID tokens per the OIDC spec.
+ */
+const BASE_VERIFY_OPTS: jwt.VerifyOptions = {
   algorithms: ['RS256'],
-  audience: env.OIDC_AUDIENCE || undefined,
   ignoreExpiration: false,
   issuer: env.OIDC_ISSUER,
+};
+
+/**
+ * ID token verification includes audience validation per OIDC spec.
+ * The audience must match the client ID that requested the token.
+ */
+const ID_TOKEN_VERIFY_OPTS: jwt.VerifyOptions = {
+  ...BASE_VERIFY_OPTS,
+  audience: env.OIDC_AUDIENCE || undefined,
 };
 
 /**
@@ -52,8 +65,12 @@ export async function handler(event: RequestEvent): Promise<RequestEvent> {
  * @returns RequestEvent
  */
 async function sanitize(evt: RequestEvent) {
+  // Access tokens use base verification (no audience check - treated as opaque per OIDC spec)
   await verify(evt.cookies.get('accessToken')).catch(_ => evt.cookies.delete('accessToken', { path: '/' }));
-  await verify(evt.cookies.get('idToken')).catch(_ => evt.cookies.delete('idToken', { path: '/' }));
+  // ID tokens require audience validation per OIDC spec
+  await verify(evt.cookies.get('idToken'), DEFAULT_JWKS_CLIENT, ID_TOKEN_VERIFY_OPTS).catch(_ =>
+    evt.cookies.delete('idToken', { path: '/' }),
+  );
   return evt;
 }
 
@@ -91,7 +108,7 @@ async function refresh(evt: RequestEvent) {
 export async function verify(
   token: string | undefined,
   client = DEFAULT_JWKS_CLIENT,
-  opts: jwt.VerifyOptions = DEFAULT_VERIFY_OPTS,
+  opts: jwt.VerifyOptions = BASE_VERIFY_OPTS,
 ): Promise<MaybeToken> {
   if (!token) {
     return undefined;
@@ -325,8 +342,10 @@ export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth
   console.log('Persisting tokens following a refresh...', browser);
 
   // Check token validity.
+  // Access tokens use base verification (no audience check - treated as opaque per OIDC spec)
   const accessJwt = await verify(tokens.accessToken());
-  const idJwt = await verify(tokens.idToken());
+  // ID tokens require audience validation per OIDC spec
+  const idJwt = await verify(tokens.idToken(), DEFAULT_JWKS_CLIENT, ID_TOKEN_VERIFY_OPTS);
 
   if (accessJwt && idJwt) {
     cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path: '/' });

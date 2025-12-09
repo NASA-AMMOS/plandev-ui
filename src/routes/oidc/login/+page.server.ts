@@ -1,3 +1,4 @@
+import { dev } from '$app/environment';
 import * as auth from '$lib/server/oidc';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
@@ -7,7 +8,7 @@ const shortLivedCookieOptions = {
   maxAge: 300,
   path: '/',
   sameSite: 'lax',
-  secure: true,
+  secure: !dev, // Only require secure in production (HTTPS)
 } as const;
 
 /**
