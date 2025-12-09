@@ -9,6 +9,59 @@ import type { ReqValidateSSOResponse } from './types/auth';
 import { computeRolesFromCookies, computeRolesFromJWT } from './utilities/auth';
 import { reqGatewayForwardCookies } from './utilities/requests';
 
+/**
+ * Build Content Security Policy directives.
+ * CSP helps prevent XSS attacks by restricting where scripts/resources can be loaded from.
+ */
+function buildCSPDirectives(): string {
+  // Extract hostnames from URLs for connect-src
+  const connectSources = [
+    "'self'",
+    env.PUBLIC_HASURA_CLIENT_URL,
+    env.PUBLIC_HASURA_WEB_SOCKET_URL,
+    env.PUBLIC_GATEWAY_CLIENT_URL,
+    env.PUBLIC_ACTION_CLIENT_URL,
+    env.PUBLIC_WORKSPACE_CLIENT_URL,
+  ].filter(Boolean);
+
+  return [
+    "default-src 'self'",
+    // 'unsafe-inline' needed for Svelte's scoped styles and Monaco editor
+    // 'unsafe-eval' needed for Monaco editor's syntax highlighting
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    // Workers needed for Monaco editor
+    "worker-src 'self' blob:",
+    `connect-src ${connectSources.join(' ')}`,
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+  ].join('; ');
+}
+
+/**
+ * Add security headers to response.
+ * Uses Report-Only mode initially to gather violations without breaking functionality.
+ * Change to 'Content-Security-Policy' to enforce after testing.
+ */
+function addSecurityHeaders(response: Response): Response {
+  const csp = buildCSPDirectives();
+
+  // Use Report-Only mode to monitor violations without blocking
+  // Change to 'Content-Security-Policy' to enforce after testing
+  response.headers.set('Content-Security-Policy-Report-Only', csp);
+
+  // Additional security headers
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  return response;
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
   // Ignore Chrome DevTools requests to prevent noisy 404 logs
   // See https://svelte.dev/docs/cli/devtools-json#Alternatives
@@ -17,7 +70,8 @@ export const handle: Handle = async ({ event, resolve }) => {
   }
   if (event.url.pathname.includes('error') || event.url.pathname.includes('oidc')) {
     // don't want hooks running on an error page
-    return await resolve(event);
+    const response = await resolve(event);
+    return addSecurityHeaders(response);
   }
   if (
     env.PUBLIC_AUTH_OIDC_ENABLED === 'true' &&
@@ -32,17 +86,17 @@ export const handle: Handle = async ({ event, resolve }) => {
 
   try {
     if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
-      return await handleOIDCAuth({ event, resolve });
+      return addSecurityHeaders(await handleOIDCAuth({ event, resolve }));
     } else if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
-      return await handleSSOAuth({ event, resolve });
+      return addSecurityHeaders(await handleSSOAuth({ event, resolve }));
     } else {
-      return await handleJWTAuth({ event, resolve });
+      return addSecurityHeaders(await handleJWTAuth({ event, resolve }));
     }
   } catch (e) {
     event.locals.user = null;
   }
 
-  return await resolve(event);
+  return addSecurityHeaders(await resolve(event));
 };
 
 /**
