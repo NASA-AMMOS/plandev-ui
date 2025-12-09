@@ -5749,7 +5749,6 @@ const effects = {
           fileArray = [...fileArray, ...filesToConvert];
         }
 
-        console.log('fileArray :>> ', fileArray);
         if (fileArray.length) {
           const responses = await WorkspaceApi.uploadFiles(
             workspace.id,
