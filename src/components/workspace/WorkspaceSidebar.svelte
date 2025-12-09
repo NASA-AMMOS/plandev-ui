@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button, Tabs, Tooltip } from '@nasa-jpl/stellar-svelte';
   import type { IRowNode } from 'ag-grid-community';
-  import { Clapperboard, Files, FolderTree, Settings } from 'lucide-svelte';
+  import { Clapperboard, Files, Settings, Table } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import type { User, UserId } from '../../types/app';
@@ -145,14 +145,14 @@
         </Tooltip.Root>
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
-            <Tabs.Trigger value="grid" class="flex h-10 w-10 items-center justify-center rounded-none shadow-none">
-              <Button class="hover:bg-transparent" builders={[builder]} variant="ghost" aria-label="Grid">
-                <FolderTree size={16} />
+            <Tabs.Trigger value="table" class="flex h-10 w-10 items-center justify-center rounded-none shadow-none">
+              <Button class="hover:bg-transparent" builders={[builder]} variant="ghost" aria-label="Table">
+                <Table size={16} />
               </Button>
             </Tabs.Trigger>
           </Tooltip.Trigger>
           <Tooltip.Content sideOffset={8}>
-            <div>Grid</div>
+            <div>Table</div>
           </Tooltip.Content>
         </Tooltip.Root>
         <Tooltip.Root>
@@ -233,8 +233,8 @@
           </div>
         {/if}
       </Tabs.Content>
-      <Tabs.Content value="grid" class="mt-0 h-full" style="min-height: 300px;">
-        {#if activeTab === 'grid'}
+      <Tabs.Content value="table" class="mt-0 h-full" style="min-height: 300px;">
+        {#if activeTab === 'table'}
           <div class="grid h-full grid-rows-[min-content_auto]">
             <Sidebar.Header className="p-0">
               <WorkspaceTabHeader
