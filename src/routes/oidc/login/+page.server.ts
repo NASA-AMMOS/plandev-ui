@@ -20,7 +20,12 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
   // Other pages in this app may redirect to the login page with a `back` query parameter.
   // This allows the login page to redirect back to the original page after a successful login.
   // If no `back` parameter is provided, it defaults to the root path.
-  const back = url.searchParams.get('back') || '/';
+  //
+  // SECURITY: Validate the back parameter to prevent open redirect attacks.
+  // Only allow relative paths that start with '/' but not '//' (protocol-relative URLs).
+  // Examples of rejected values: 'https://evil.com', '//evil.com', 'javascript:alert(1)'
+  const rawBack = url.searchParams.get('back') || '/';
+  const back = rawBack.startsWith('/') && !rawBack.startsWith('//') ? rawBack : '/';
   cookies.set('back', back, {
     httpOnly: true,
     path: '/',
