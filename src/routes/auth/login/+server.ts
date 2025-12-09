@@ -21,8 +21,8 @@ export const POST: RequestHandler = async event => {
       const parsedUserToken: ParsedUserToken = jwtDecode(user.token);
       const defaultRole = parsedUserToken['https://hasura.io/jwt/claims']['x-hasura-default-role'];
 
-      event.cookies.set('activeRole', defaultRole, { httpOnly: false, path: '/', secure: !dev });
-      event.cookies.set('user', userCookie, { httpOnly: false, path: '/', secure: !dev });
+      event.cookies.set('activeRole', defaultRole, { httpOnly: false, path: '/', sameSite: 'lax', secure: !dev });
+      event.cookies.set('user', userCookie, { httpOnly: false, path: '/', sameSite: 'lax', secure: !dev });
       return json({ success: true, user });
     } else {
       return json({ message, success: false });

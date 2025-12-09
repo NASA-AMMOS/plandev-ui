@@ -68,6 +68,7 @@ const handleOIDCAuth: Handle = async ({ event, resolve }) => {
       event.cookies.set('activeRole', event.locals.user.defaultRole, {
         httpOnly: false,
         path: `${base}/`,
+        sameSite: 'lax',
         secure: !dev,
       });
     }
