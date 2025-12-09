@@ -1,8 +1,11 @@
+/* eslint-disable sort-keys */
 import { afterAll, describe, expect, test, vi } from 'vitest';
 import { WorkspaceContentType } from '../enums/workspace';
 import * as requests from './requests';
 import {
   cleanPath,
+  findNodeInDirectory,
+  getSelectedFilesDisplay,
   getWorkspaceFileFolderDisplay,
   joinPath,
   separateFilenameFromPath,
@@ -97,6 +100,58 @@ describe('Workspace utility function tests', () => {
           { fullPath: 'foo2', name: 'foo2', type: WorkspaceContentType.Directory },
         ]),
       ).toEqual('Files/Folders');
+    });
+
+    describe('findNodeInDirectory', () => {
+      test('should find the node with the correct filename', () => {
+        expect(
+          findNodeInDirectory('foo1.txt', [
+            {
+              name: 'foo2.txt',
+              type: WorkspaceContentType.Text,
+            },
+            {
+              name: 'foo1.txt',
+              type: WorkspaceContentType.Text,
+            },
+          ]),
+        ).toEqual({
+          name: 'foo1.txt',
+          type: WorkspaceContentType.Text,
+        });
+      });
+
+      test('should find the node with the correct filename regardless of the requested path', () => {
+        expect(
+          findNodeInDirectory('/workspace1/foo1.txt', [
+            {
+              name: 'foo2.txt',
+              type: WorkspaceContentType.Text,
+            },
+            {
+              name: 'foo1.txt',
+              type: WorkspaceContentType.Text,
+            },
+          ]),
+        ).toEqual({
+          name: 'foo1.txt',
+          type: WorkspaceContentType.Text,
+        });
+      });
+    });
+
+    describe('getSelectedFilesDisplay', () => {
+      test('should correctly truncate the display string', () => {
+        expect(getSelectedFilesDisplay(['foo1.txt', 'foo2.txt', 'foo3.txt', 'foo4.txt', 'foo5.txt'], 3)).toEqual(
+          'foo1.txt, foo2.txt, foo3.txt... and 2 more files',
+        );
+        expect(getSelectedFilesDisplay(['foo1.txt', 'foo2.txt', 'foo3.txt', 'foo4.txt', 'foo5.txt'], 4)).toEqual(
+          'foo1.txt, foo2.txt, foo3.txt, foo4.txt... and 1 more file',
+        );
+        expect(getSelectedFilesDisplay(['foo1.txt', 'foo2.txt', 'foo3.txt', 'foo4.txt', 'foo5.txt'], 5)).toEqual(
+          'foo1.txt, foo2.txt, foo3.txt, foo4.txt, foo5.txt',
+        );
+      });
     });
   });
 
@@ -218,14 +273,14 @@ describe('Workspace utility function tests', () => {
     });
 
     test('moveFiles - move', async () => {
-      await WorkspaceApi.moveFiles(1, [{ originalPath: 'foo/bar/bazz.seq' }], 'foo/buzz', false, false, null);
+      await WorkspaceApi.moveFiles(1, [{ path: 'foo/bar/bazz.seq' }], 'foo/buzz', false, false, null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
         'bulk/1',
         'POST',
         JSON.stringify({
           moveTo: 'foo/buzz',
+          items: [{ path: 'foo/bar/bazz.seq' }],
           overwrite: false,
-          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
         }),
         null,
         undefined,
@@ -234,14 +289,14 @@ describe('Workspace utility function tests', () => {
     });
 
     test('moveFiles - move + overwrite', async () => {
-      await WorkspaceApi.moveFiles(1, [{ originalPath: 'foo/bar/bazz.seq' }], 'foo/buzz', false, true, null);
+      await WorkspaceApi.moveFiles(1, [{ path: 'foo/bar/bazz.seq' }], 'foo/buzz', false, true, null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
         'bulk/1',
         'POST',
         JSON.stringify({
           moveTo: 'foo/buzz',
+          items: [{ path: 'foo/bar/bazz.seq' }],
           overwrite: true,
-          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
         }),
         null,
         undefined,
@@ -250,14 +305,14 @@ describe('Workspace utility function tests', () => {
     });
 
     test('moveFiles - copy', async () => {
-      await WorkspaceApi.moveFiles(1, [{ originalPath: 'foo/bar/bazz.seq' }], 'foo/buzz', true, false, null);
+      await WorkspaceApi.moveFiles(1, [{ path: 'foo/bar/bazz.seq' }], 'foo/buzz', true, false, null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
         'bulk/1',
         'POST',
         JSON.stringify({
           copyTo: 'foo/buzz',
+          items: [{ path: 'foo/bar/bazz.seq' }],
           overwrite: false,
-          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
         }),
         null,
         undefined,
@@ -266,14 +321,14 @@ describe('Workspace utility function tests', () => {
     });
 
     test('moveFiles - copy + overwrite', async () => {
-      await WorkspaceApi.moveFiles(1, [{ originalPath: 'foo/bar/bazz.seq' }], 'foo/buzz', true, true, null);
+      await WorkspaceApi.moveFiles(1, [{ path: 'foo/bar/bazz.seq' }], 'foo/buzz', true, true, null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
         'bulk/1',
         'POST',
         JSON.stringify({
           copyTo: 'foo/buzz',
+          items: [{ path: 'foo/bar/bazz.seq' }],
           overwrite: true,
-          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
         }),
         null,
         undefined,
@@ -282,22 +337,14 @@ describe('Workspace utility function tests', () => {
     });
 
     test('moveFilesToWorkspace - move', async () => {
-      await WorkspaceApi.moveFilesToWorkspace(
-        1,
-        [{ originalPath: 'foo/bar/bazz.seq' }],
-        2,
-        'foo/buzz',
-        false,
-        false,
-        null,
-      );
+      await WorkspaceApi.moveFilesToWorkspace(1, [{ path: 'foo/bar/bazz.seq' }], 2, 'foo/buzz', false, false, null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
         'bulk/1',
         'POST',
         JSON.stringify({
           moveTo: 'foo/buzz',
+          items: [{ path: 'foo/bar/bazz.seq' }],
           overwrite: false,
-          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
           toWorkspace: 2,
         }),
         null,
@@ -307,22 +354,14 @@ describe('Workspace utility function tests', () => {
     });
 
     test('moveFilesToWorkspace - move + overwrite', async () => {
-      await WorkspaceApi.moveFilesToWorkspace(
-        1,
-        [{ originalPath: 'foo/bar/bazz.seq' }],
-        2,
-        'foo/buzz',
-        false,
-        true,
-        null,
-      );
+      await WorkspaceApi.moveFilesToWorkspace(1, [{ path: 'foo/bar/bazz.seq' }], 2, 'foo/buzz', false, true, null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
         'bulk/1',
         'POST',
         JSON.stringify({
           moveTo: 'foo/buzz',
+          items: [{ path: 'foo/bar/bazz.seq' }],
           overwrite: true,
-          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
           toWorkspace: 2,
         }),
         null,
@@ -332,22 +371,14 @@ describe('Workspace utility function tests', () => {
     });
 
     test('moveFilesToWorkspace - copy', async () => {
-      await WorkspaceApi.moveFilesToWorkspace(
-        1,
-        [{ originalPath: 'foo/bar/bazz.seq' }],
-        2,
-        'foo/buzz',
-        true,
-        false,
-        null,
-      );
+      await WorkspaceApi.moveFilesToWorkspace(1, [{ path: 'foo/bar/bazz.seq' }], 2, 'foo/buzz', true, false, null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
         'bulk/1',
         'POST',
         JSON.stringify({
           copyTo: 'foo/buzz',
+          items: [{ path: 'foo/bar/bazz.seq' }],
           overwrite: false,
-          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
           toWorkspace: 2,
         }),
         null,
@@ -357,22 +388,14 @@ describe('Workspace utility function tests', () => {
     });
 
     test('moveFilesToWorkspace - copy + overwrite', async () => {
-      await WorkspaceApi.moveFilesToWorkspace(
-        1,
-        [{ originalPath: 'foo/bar/bazz.seq' }],
-        2,
-        'foo/buzz',
-        true,
-        true,
-        null,
-      );
+      await WorkspaceApi.moveFilesToWorkspace(1, [{ path: 'foo/bar/bazz.seq' }], 2, 'foo/buzz', true, true, null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
         'bulk/1',
         'POST',
         JSON.stringify({
           copyTo: 'foo/buzz',
+          items: [{ path: 'foo/bar/bazz.seq' }],
           overwrite: true,
-          paths: [{ originalPath: 'foo/bar/bazz.seq' }],
           toWorkspace: 2,
         }),
         null,

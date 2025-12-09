@@ -44,7 +44,7 @@
 </script>
 
 <Modal height={'auto'} width={380} on:close>
-  <ModalHeader on:close>File already exists</ModalHeader>
+  <ModalHeader showClose={false} on:close>File already exists</ModalHeader>
   <ModalContent style="overflow: hidden;">
     <div class="flex flex-col gap-y-8">
       <div class="pb-0.5 text-sm"><b>{targetPath}</b> already exists in the target directory.</div>

@@ -84,6 +84,18 @@ export function getWorkspaceFileFolderDisplay(nodes: WorkspaceTreeNodeWithFullPa
     .join('/');
 }
 
+export function getSelectedFilesDisplay(filenames: string[], maxLength: number = 8) {
+  const displayedNames = filenames.slice(0, maxLength);
+  const remainingFiles = filenames.slice(maxLength);
+
+  const mainText = displayedNames.join(', ');
+  if (remainingFiles.length > 0) {
+    return `${mainText}... and ${remainingFiles.length} more file${pluralize(remainingFiles.length)}`;
+  }
+
+  return mainText;
+}
+
 /**
  * Increments the trailing number in a filename (before the extension).
  *
@@ -156,6 +168,13 @@ export function flattenWorkspaceTreeWithPaths(
   });
 
   return flattenedArray;
+}
+
+export function findNodeInDirectory(nodeName: string, workspaceTreeNode: WorkspaceTreeNode[] = []) {
+  const { filename } = separateFilenameFromPath(nodeName);
+  return workspaceTreeNode.find(node => {
+    return filename === node.name;
+  });
 }
 
 /**
@@ -252,8 +271,8 @@ function createFormDataWithFile(filePath: string, fileContent: string, fileKey: 
 }
 
 type MoveFileOperation = {
-  newFilename?: string;
-  originalPath: string;
+  path: string;
+  renameTo?: string;
 };
 
 type BulkOperationResponse = {
@@ -345,7 +364,7 @@ export const WorkspaceApi = {
   },
   async moveFiles(
     workspaceId: number,
-    originalPaths: MoveFileOperation[],
+    items: MoveFileOperation[],
     targetDirectory: string,
     shouldCopy: boolean,
     shouldOverwrite: boolean,
@@ -356,8 +375,8 @@ export const WorkspaceApi = {
       'POST',
       JSON.stringify({
         [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
+        items,
         overwrite: shouldOverwrite,
-        paths: originalPaths,
       }),
       user,
       undefined,
@@ -366,7 +385,7 @@ export const WorkspaceApi = {
   },
   async moveFilesToWorkspace(
     workspaceId: number,
-    originalPaths: MoveFileOperation[],
+    items: MoveFileOperation[],
     targetWorkspaceId: number,
     targetDirectory: string,
     shouldCopy: boolean,
@@ -378,8 +397,8 @@ export const WorkspaceApi = {
       'POST',
       JSON.stringify({
         [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
+        items,
         overwrite: shouldOverwrite,
-        paths: originalPaths,
         toWorkspace: targetWorkspaceId,
       }),
       user,

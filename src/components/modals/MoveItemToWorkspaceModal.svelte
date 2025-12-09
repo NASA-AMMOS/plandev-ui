@@ -15,7 +15,7 @@
   import { filterEmpty } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler.js';
   import { featurePermissions } from '../../utilities/permissions.js';
-  import { getWorkspaceFileFolderDisplay } from '../../utilities/workspaces.js';
+  import { getSelectedFilesDisplay, getWorkspaceFileFolderDisplay } from '../../utilities/workspaces.js';
   import WorkspaceTreeView from '../workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
@@ -28,7 +28,12 @@
 
   const dispatch = createEventDispatcher<{
     close: void;
-    confirm: { shouldCopy: boolean; shouldOverwrite: boolean; targetPath: string; targetWorkspace: Workspace };
+    confirm: {
+      shouldCopy: boolean;
+      shouldOverwrite: boolean;
+      targetPath: string;
+      targetWorkspace: Workspace;
+    };
   }>();
 
   let displayString: string = getWorkspaceFileFolderDisplay(originalNodes);
@@ -101,12 +106,15 @@
     const { workspaceName, actualTargetDirectory } = getWorkspaceNameFromPath(targetDirectory);
     const targetWorkspace = workspacesMap[workspaceName];
     if (targetWorkspace) {
-      dispatch('confirm', {
-        shouldCopy: false,
-        shouldOverwrite,
-        targetPath: actualTargetDirectory.join(PATH_DELIMITER),
-        targetWorkspace: targetWorkspace,
-      });
+      const targetWorkspaceContents = workspacesContents.find(({ name }) => workspaceName === name);
+      if (targetWorkspaceContents) {
+        dispatch('confirm', {
+          shouldCopy: false,
+          shouldOverwrite,
+          targetPath: actualTargetDirectory.join(PATH_DELIMITER),
+          targetWorkspace: targetWorkspace,
+        });
+      }
     }
   }
 
@@ -114,12 +122,15 @@
     const { workspaceName, actualTargetDirectory } = getWorkspaceNameFromPath(targetDirectory);
     const targetWorkspace = workspacesMap[workspaceName];
     if (targetWorkspace) {
-      dispatch('confirm', {
-        shouldCopy: true,
-        shouldOverwrite,
-        targetPath: actualTargetDirectory.join(PATH_DELIMITER),
-        targetWorkspace: targetWorkspace,
-      });
+      const targetWorkspaceContents = workspacesContents.find(({ name }) => workspaceName === name);
+      if (targetWorkspaceContents) {
+        dispatch('confirm', {
+          shouldCopy: true,
+          shouldOverwrite,
+          targetPath: actualTargetDirectory.join(PATH_DELIMITER),
+          targetWorkspace: targetWorkspace,
+        });
+      }
     }
   }
 </script>
@@ -133,7 +144,7 @@
       <div>
         <div>Selected {displayString}:</div>
         <div class="py-1">
-          <span class="font-semibold">{originalNodes.map(({ fullPath }) => fullPath).join(', ')}</span>
+          <span class="font-semibold">{getSelectedFilesDisplay(originalNodes.map(({ fullPath }) => fullPath))}</span>
         </div>
       </div>
       <Sidebar.Provider

@@ -7,7 +7,7 @@
   import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
-  import { getWorkspaceFileFolderDisplay } from '../../utilities/workspaces';
+  import { getSelectedFilesDisplay, getWorkspaceFileFolderDisplay } from '../../utilities/workspaces';
   import WorkspaceTreeView from '../workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
@@ -62,7 +62,7 @@
       <div>
         <div class="pb-0.5 text-xs">Selected {displayString}:</div>
         <div class="py-1">
-          <span class="font-semibold">{originalNodes.map(({ fullPath }) => fullPath).join(', ')}</span>
+          <span class="font-semibold">{getSelectedFilesDisplay(originalNodes.map(({ fullPath }) => fullPath))}</span>
         </div>
       </div>
       <Sidebar.Provider

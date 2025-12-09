@@ -450,7 +450,7 @@
       const targetPath = await effects.moveWorkspaceItems($workspace, workspaceTree, treeNodes, user);
       refreshWorkspaceContents();
 
-      if (shouldUpdateSelectedSequencePath) {
+      if (targetPath && shouldUpdateSelectedSequencePath) {
         // try to select & navigate to moved file
         selectedFilePath = targetPath;
       }

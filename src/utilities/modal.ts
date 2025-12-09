@@ -524,7 +524,14 @@ export async function showMoveItemToWorkspaceModal(
 
         moveWorkspaceFileToWorkspaceModal.$on(
           'confirm',
-          (e: CustomEvent<{ shouldCopy: boolean; targetPath: string; targetWorkspace: Workspace }>) => {
+          (
+            e: CustomEvent<{
+              shouldCopy: boolean;
+              shouldOverwrite: boolean;
+              targetPath: string;
+              targetWorkspace: Workspace;
+            }>,
+          ) => {
             target.replaceChildren();
             target.resolve = null;
             resolve({ confirm: true, value: e.detail });
