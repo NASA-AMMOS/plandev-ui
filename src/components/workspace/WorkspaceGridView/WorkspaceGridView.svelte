@@ -1,10 +1,10 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Input } from '@nasa-jpl/stellar-svelte';
+  import { Breadcrumb, Input } from '@nasa-jpl/stellar-svelte';
   import type { CellContextMenuEvent, ICellRendererParams, IRowNode, SortChangedEvent } from 'ag-grid-community';
   import { ChevronDown, ChevronRight, Search } from 'lucide-svelte';
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher, onMount, tick } from 'svelte';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import type { ActionDefinition } from '../../../types/actions';
@@ -81,10 +81,16 @@
   type ColumnSort = { colId: string; direction: 'asc' | 'desc' };
   let sortState: ColumnSort[] = [{ colId: 'name', direction: 'asc' }];
 
+  // Navigation state - current folder being viewed as root
+  let currentRootPath: string = '';
+
   // Filter state for search bar - works alongside AG Grid's column filter
   let filterText: string = '';
   let matchingPaths: Set<string> = new Set();
   let ancestorPaths: Set<string> = new Set();
+
+  // Breadcrumb segments derived from currentRootPath
+  $: breadcrumbSegments = currentRootPath ? currentRootPath.split(PATH_DELIMITER) : [];
 
   $: if (workspace) {
     hasEditPermission = featurePermissions.workspace.canUpdate(user, workspace);
@@ -261,10 +267,50 @@
     };
   }
 
-  // Compute flattened tree with sorting
-  $: sortedTree = treeNode?.contents ? sortWorkspaceTree(treeNode.contents, createSortComparator(sortState)) : [];
+  // Find a node in the tree by its path
+  function findNodeByPath(nodes: WorkspaceTreeNode[], targetPath: string): WorkspaceTreeNode | null {
+    const pathParts = targetPath.split(PATH_DELIMITER);
 
-  $: flattenedTree = flattenWorkspaceTreeWithPaths(sortedTree, []);
+    let currentNodes = nodes;
+    let currentNode: WorkspaceTreeNode | null = null;
+
+    for (const part of pathParts) {
+      currentNode = currentNodes.find(n => n.name === part) ?? null;
+      if (!currentNode) {
+        return null;
+      }
+      currentNodes = currentNode.contents ?? [];
+    }
+
+    return currentNode;
+  }
+
+  // Get the contents to display based on current root path
+  $: currentRootContents = (() => {
+    if (!treeNode?.contents) {
+      return [];
+    }
+    if (!currentRootPath) {
+      return treeNode.contents;
+    }
+
+    const rootNode = findNodeByPath(treeNode.contents, currentRootPath);
+    return rootNode?.contents ?? [];
+  })();
+
+  // Compute flattened tree with sorting from current root
+  $: sortedTree = sortWorkspaceTree(currentRootContents, createSortComparator(sortState));
+
+  $: flattenedTree = flattenWorkspaceTreeWithPaths(
+    sortedTree,
+    currentRootPath ? currentRootPath.split(PATH_DELIMITER) : [],
+  );
+
+  // When flattenedTree updates (e.g., after navigation), redraw rows to update cell rendering (indentation)
+  $: if (dataGrid && flattenedTree) {
+    // Use tick to ensure AG Grid has received the new data before redrawing
+    tick().then(() => dataGrid?.redrawRows());
+  }
 
   $: if (treeNode?.contents) {
     workspaceTreeMap = mapWorkspaceTreePaths(treeNode.contents);
@@ -356,14 +402,18 @@
       }
     }
 
-    // Root level items are always visible (if they pass filter)
+    // Root level items (depth 0) are always visible (if they pass filter)
     if (depth === 0) {
       return true;
     }
 
-    // Check that all ancestor folders are expanded
+    // Check that all ancestor folders (within current view) are expanded
+    // Skip checking ancestors that are part of currentRootPath since they're above the current view
+    const currentRootDepth = currentRootPath ? currentRootPath.split(PATH_DELIMITER).length : 0;
     const pathParts = fullFilePath.split(PATH_DELIMITER);
-    for (let i = 1; i < pathParts.length; i++) {
+
+    // Start checking from the first folder after currentRootPath
+    for (let i = currentRootDepth + 1; i < pathParts.length; i++) {
       const ancestorPath = pathParts.slice(0, i).join(PATH_DELIMITER);
       if (!expandedPaths.has(ancestorPath)) {
         return false;
@@ -412,8 +462,27 @@
     const node = row.data;
 
     if (node.type === WorkspaceContentType.Directory) {
-      toggleExpand(node.fullPath);
+      // Navigate into the folder (set as new root)
+      navigateToFolder(node.fullPath);
     }
+  }
+
+  function navigateToFolder(path: string) {
+    currentRootPath = path;
+    // Reset expanded paths when navigating to a new root
+    expandedPaths = new Set();
+  }
+
+  function navigateToBreadcrumb(index: number) {
+    if (index < 0) {
+      // Navigate to workspace root
+      currentRootPath = '';
+    } else {
+      // Navigate to the folder at the given breadcrumb index
+      const newPath = breadcrumbSegments.slice(0, index + 1).join(PATH_DELIMITER);
+      currentRootPath = newPath;
+    }
+    expandedPaths = new Set();
   }
 
   function onDeleteNode(node: WorkspaceTreeNodeWithFullPath) {
@@ -539,6 +608,41 @@
 </script>
 
 <div class="workspace-grid-container">
+  <Breadcrumb.Root>
+    <Breadcrumb.List class="breadcrumbs text-xs">
+      <Breadcrumb.Item>
+        {#if currentRootPath === ''}
+          <Breadcrumb.Page>
+            <div class="px-1 py-0.5">
+              {workspace ? workspace.name : 'Loading...'}
+            </div>
+          </Breadcrumb.Page>
+        {:else}
+          <Breadcrumb.Link asChild let:attrs>
+            <button {...attrs} on:click={() => navigateToBreadcrumb(-1)} title="Workspace root">
+              {workspace ? workspace.name : 'Loading...'}
+            </button>
+          </Breadcrumb.Link>
+        {/if}
+      </Breadcrumb.Item>
+      {#each breadcrumbSegments as segment, index}
+        <Breadcrumb.Separator />
+        <Breadcrumb.Item>
+          {#if index === breadcrumbSegments.length - 1}
+            <Breadcrumb.Page>
+              <div class="px-1">{segment}</div>
+            </Breadcrumb.Page>
+          {:else}
+            <Breadcrumb.Link asChild let:attrs>
+              <button {...attrs} on:click={() => navigateToBreadcrumb(index)}>
+                {segment}
+              </button>
+            </Breadcrumb.Link>
+          {/if}
+        </Breadcrumb.Item>
+      {/each}
+    </Breadcrumb.List>
+  </Breadcrumb.Root>
   <div class="search-bar">
     <Search size={14} />
     <Input
@@ -597,8 +701,32 @@
 <style>
   .workspace-grid-container {
     display: grid;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto auto 1fr;
     height: 100%;
+  }
+
+  :global(.breadcrumbs) {
+    background: var(--st-gray-10, #f5f5f5);
+    border-bottom: 1px solid var(--st-gray-20, #e0e0e0);
+    padding: 6px 8px;
+  }
+
+  :global(.breadcrumbs button) {
+    align-items: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    padding: 2px 4px;
+  }
+
+  :global(.breadcrumbs button:hover) {
+    background: var(--st-gray-20, #e0e0e0);
+  }
+
+  :global(.breadcrumb-home) {
+    display: inline-flex;
   }
 
   .search-bar {
