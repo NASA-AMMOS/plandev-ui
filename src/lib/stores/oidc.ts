@@ -38,7 +38,7 @@ declare global {
 export function cookieStoreListener() {
   if (window && 'cookieStore' in window) {
     window.cookieStore.addEventListener('change', handleCookieStoreChange);
-    console.log('Added cookie store change listener.');
+    console.debug('Added cookie store change listener.');
   } else {
     console.error('Cookie store is not available in this environment. It is *required* for automatic refresh of JWT.');
   }
@@ -51,7 +51,7 @@ export function cookieStoreListener() {
   // when the component is unmounted.
   const unsubscribe = delay.subscribe(value => {
     if (value) {
-      console.log(`Delay changed to ${value}ms`);
+      console.debug(`Scheduling token refresh in ${value}ms`);
       prior = reschedule(refresh, value, prior);
     }
   });
@@ -59,7 +59,7 @@ export function cookieStoreListener() {
   // Return a cleanup function to remove the cookie store change listener
   // and unsubscribe from the delay store.
   return () => {
-    console.log('Removing cookie store change listener.');
+    console.debug('Removing cookie store change listener.');
     window.cookieStore.removeEventListener('change', handleCookieStoreChange);
     unsubscribe();
   };
@@ -100,30 +100,29 @@ let prior: number | null = null;
 /// Private Helpers.
 
 export async function refresh(): Promise<void> {
-  console.log('Refreshing tokens...');
+  console.debug('Refreshing tokens...');
   const res = await fetch('/oidc/refresh', { credentials: 'include', method: 'POST' });
   if (res.ok) {
-    console.info('Access token refresh succeeded.');
+    console.debug('Access token refresh succeeded.');
   } else {
-    const errorMessage = await res.json();
+    // Don't log or include response body - it may contain sensitive error details
     console.error('Access token refresh failed, refresh token is probably expired.');
-    throw new Error(`Refresh failed, with the following message: ${JSON.stringify(errorMessage)}`);
+    throw new Error('Token refresh failed');
   }
 }
 
 function reschedule(fn: () => Promise<void>, delay: number, prior: number | null): any {
   if (prior) {
-    console.log(`Clearing previous timeout. ${prior}`);
+    console.debug(`Clearing previous timeout.`);
     clearTimeout(prior);
   }
-  console.log(`Scheduling ${fn.name} in ${delay}ms`);
+  console.debug(`Scheduling ${fn.name} in ${delay}ms`);
   return setTimeout(async () => {
     try {
       await fn();
     } catch (err) {
-      console.error('Error in rescheduled function:', err);
-
-      // TODO: show a modal?
+      // Only log error message, not full object (may contain sensitive data)
+      console.error('Error in scheduled refresh:', err instanceof Error ? err.message : 'Unknown error');
       showFailureToast('Failed to refresh your credentials, please login again.');
     }
   }, delay);

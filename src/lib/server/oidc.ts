@@ -337,9 +337,9 @@ async function upsertUser(decodedAccessToken: HasuraToken, accessToken: string):
     rolePermissions: null,
     token: accessToken,
   };
-  console.log('Registering user:', username);
+  console.debug('Registering user:', username);
   const result = await reqHasura(mutation, { input }, user);
-  console.log('Registered user:', username);
+  console.debug('Registered user:', username);
 }
 
 export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth2Tokens): Promise<boolean> {
