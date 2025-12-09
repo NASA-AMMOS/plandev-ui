@@ -202,6 +202,7 @@
   on:rowDoubleClicked
   on:rowSelected
   on:selectionChanged
+  on:sortChanged
 >
   <svelte:fragment slot="context-menu">
     {#if showContextMenu}

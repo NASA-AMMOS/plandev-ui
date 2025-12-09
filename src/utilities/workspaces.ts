@@ -54,6 +54,49 @@ export function joinPath(pathParts: (string | number | boolean)[]) {
   return pathParts.filter(filterEmpty).join(PATH_DELIMITER);
 }
 
+export type TreeSortComparator = (a: WorkspaceTreeNode, b: WorkspaceTreeNode) => number;
+
+/**
+ * Default comparator that sorts directories first, then by name alphabetically.
+ */
+export const defaultTreeSortComparator: TreeSortComparator = (a, b) => {
+  // Directories first
+  const aIsDir = a.type === WorkspaceContentType.Directory;
+  const bIsDir = b.type === WorkspaceContentType.Directory;
+  if (aIsDir && !bIsDir) return -1;
+  if (!aIsDir && bIsDir) return 1;
+
+  // Then alphabetically by name
+  const aName = a.name?.toLowerCase() ?? '';
+  const bName = b.name?.toLowerCase() ?? '';
+  return aName.localeCompare(bName);
+};
+
+/**
+ * Recursively sorts a workspace tree at each level using the provided comparator.
+ * This preserves the tree hierarchy while sorting siblings together.
+ *
+ * @param nodes Array of WorkspaceTreeNode objects to sort
+ * @param comparator Sort comparator function (defaults to directories first, then alphabetical)
+ * @returns A new sorted array with sorted children (does not mutate original)
+ */
+export function sortWorkspaceTree(
+  nodes: WorkspaceTreeNode[],
+  comparator: TreeSortComparator = defaultTreeSortComparator,
+): WorkspaceTreeNode[] {
+  return [...nodes]
+    .sort(comparator)
+    .map(node => {
+      if (node.contents && node.contents.length > 0) {
+        return {
+          ...node,
+          contents: sortWorkspaceTree(node.contents, comparator),
+        };
+      }
+      return node;
+    });
+}
+
 /**
  * Recursively traverses a WorkspaceTreeNode tree structure, flattens it into an array,
  * includes the full path to each node, and uses memoization to cache results
@@ -62,27 +105,31 @@ export function joinPath(pathParts: (string | number | boolean)[]) {
  * @param nodes An array of WorkspaceTreeNode objects to start the traversal from.
  * @param currentPath (Internal) The path segments leading to the current 'nodes' array.
  * Defaults to an empty array for the initial top-level call.
- * @param cache (Internal) The memoization cache. Should typically be initialized by the wrapper.
- * @returns An array containing all nodes from the tree, each with its 'fullPath'.
+ * @param depth (Internal) The current depth level in the tree. Defaults to 0 for root level.
+ * @returns An array containing all nodes from the tree, each with its 'fullPath', 'depth', and 'hasChildren'.
  */
 export function flattenWorkspaceTreeWithPaths(
   nodes: WorkspaceTreeNode[],
   currentPath: string[] = [],
+  depth: number = 0,
 ): WorkspaceTreeNodeWithFullPath[] {
   const flattenedArray: WorkspaceTreeNodeWithFullPath[] = [];
 
   nodes.forEach(node => {
     const nodeName = node.name || `[Unnamed ${node.type || 'Unknown'}]`;
     const nodeFullPath = [...currentPath, nodeName];
+    const hasChildren = !!(node.contents && Array.isArray(node.contents) && node.contents.length > 0);
 
     flattenedArray.push({
       ...node,
+      depth,
       fullPath: nodeFullPath.join(PATH_DELIMITER),
+      hasChildren,
     });
 
-    if (node.contents && Array.isArray(node.contents) && node.contents.length > 0) {
-      // Recursively call, passing the updated currentPath and the shared cache
-      flattenedArray.push(...flattenWorkspaceTreeWithPaths(node.contents, nodeFullPath));
+    if (hasChildren) {
+      // Recursively call, passing the updated currentPath and incremented depth
+      flattenedArray.push(...flattenWorkspaceTreeWithPaths(node.contents!, nodeFullPath, depth + 1));
     }
   });
 

@@ -66,8 +66,8 @@
         fullPath: data.treeNodePath,
       };
       if (workspace) {
-        hasEditPermission = featurePermissions.workspace.canUpdate(user, workspace, contextMenuNode);
-        hasDeletePermission = featurePermissions.workspace.canDelete(user, workspace, contextMenuNode);
+        hasEditPermission = featurePermissions.workspace.canUpdate(user, workspace, contextMenuNode ?? undefined);
+        hasDeletePermission = featurePermissions.workspace.canDelete(user, workspace, contextMenuNode ?? undefined);
         hasCreateActionPermission = featurePermissions.actionRun.canCreate(user, workspace);
       }
       contextMenu.show(event);

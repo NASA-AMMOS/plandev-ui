@@ -1,21 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Button, DropdownMenu } from '@nasa-jpl/stellar-svelte';
-  import type { CellContextMenuEvent, ICellRendererParams, IRowNode } from 'ag-grid-community';
-  import {
-    ArrowUpFromLine,
-    ChevronDown,
-    ChevronRight,
-    Copy,
-    Ellipsis,
-    FileOutput,
-    FilePlus,
-    FolderOutput,
-    FolderPlus,
-    PencilLine,
-    Trash2,
-  } from 'lucide-svelte';
+  import { Input } from '@nasa-jpl/stellar-svelte';
+  import type { CellContextMenuEvent, ICellRendererParams, IRowNode, SortChangedEvent } from 'ag-grid-community';
+  import { ChevronDown, ChevronRight, Search } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { WorkspaceContentType } from '../../../enums/workspace';
@@ -33,12 +21,13 @@
     WorkspaceTreeNode,
     WorkspaceTreeNodeWithFullPath,
   } from '../../../types/workspace-tree-view';
-  import { permissionHandler } from '../../../utilities/permissionHandler';
   import { featurePermissions } from '../../../utilities/permissions';
   import {
     flattenWorkspaceTreeWithPaths,
     getAvailableActionsForNodes,
     mapWorkspaceTreePaths,
+    sortWorkspaceTree,
+    type TreeSortComparator,
   } from '../../../utilities/workspaces';
   import BulkActionDataGrid from '../../ui/DataGrid/BulkActionDataGrid.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
@@ -75,43 +64,7 @@
     runAction: WorkspaceNodeRunActionEvent;
   }>();
 
-  const baseColumnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [
-    {
-      cellClass: 'node-cell-container',
-      cellRenderer: (params: ICellRendererParams<WorkspaceTreeNodeWithFullPath>) => {
-        const iconDiv = document.createElement('div');
-        iconDiv.className = 'node-icon-cell';
-        new WorkspaceTreeViewIcon({
-          props: {
-            size: 14,
-            toggleState: (params.data?.contents || []).length > 0,
-            treeNode: params.data,
-          },
-          target: iconDiv,
-        });
-
-        return iconDiv;
-      },
-      field: 'type',
-      headerName: '',
-      lockPosition: 'left',
-      resizable: false,
-      sortable: false,
-      suppressAutoSize: true,
-      suppressMovable: true,
-      suppressSizeToFit: true,
-      width: 25,
-    },
-    {
-      field: 'name',
-      filter: 'text',
-      headerName: 'Name',
-      resizable: true,
-      sortable: true,
-      suppressAutoSize: false,
-      suppressSizeToFit: false,
-    },
-  ];
+  const INDENT_SIZE = 20; // pixels per depth level
 
   let columnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [];
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
@@ -119,14 +72,19 @@
   let hasEditPermission: boolean = false;
   let hasDeletePermission: boolean = false;
   let hasCreateActionPermission: boolean = false;
-  let treeNodeBreadcrumbs: WorkspaceTreeNodeWithFullPath[] = [];
-  let treeNodeBreadcrumbDisplay: WorkspaceTreeNodeWithFullPath[] = [];
-  let treeNodeBreadcrumbMenuNodes: WorkspaceTreeNodeWithFullPath[] = [];
-  let treeNodeBreadcrumbPath: string = '';
   let flattenedTree: WorkspaceTreeNodeWithFullPath[] = [];
   let workspaceTreeMap: WorkspaceTreeMap = {};
-  let isBreadcrumbMenuOpen: boolean = false;
-  let isBreadcrumbNavMenuOpen: boolean = false;
+  let expandedPaths: Set<string> = new Set();
+
+  // Sort state - captured from AG Grid's sort UI, used to pre-sort data hierarchically
+  // Supports multi-column sorting (Shift+click headers in AG Grid)
+  type ColumnSort = { colId: string; direction: 'asc' | 'desc' };
+  let sortState: ColumnSort[] = [{ colId: 'name', direction: 'asc' }];
+
+  // Filter state for search bar - works alongside AG Grid's column filter
+  let filterText: string = '';
+  let matchingPaths: Set<string> = new Set();
+  let ancestorPaths: Set<string> = new Set();
 
   $: if (workspace) {
     hasEditPermission = featurePermissions.workspace.canUpdate(user, workspace);
@@ -135,7 +93,97 @@
   }
 
   $: columnDefs = [
-    ...baseColumnDefs,
+    {
+      cellClass: 'tree-cell-container',
+      cellRenderer: (params: ICellRendererParams<WorkspaceTreeNodeWithFullPath>) => {
+        const container = document.createElement('div');
+        container.className = 'tree-cell';
+        container.style.paddingLeft = `${(params.data?.depth ?? 0) * INDENT_SIZE}px`;
+
+        // Add expand/collapse chevron for folders with children
+        const chevronContainer = document.createElement('span');
+        chevronContainer.className = 'tree-chevron';
+
+        if (params.data?.hasChildren) {
+          const isExpanded = expandedPaths.has(params.data.fullPath);
+          chevronContainer.style.cursor = 'pointer';
+
+          // Create Svelte chevron component
+          const ChevronComponent = isExpanded ? ChevronDown : ChevronRight;
+          new ChevronComponent({
+            props: { size: 14 },
+            target: chevronContainer,
+          });
+
+          chevronContainer.onclick = (e: MouseEvent) => {
+            e.stopPropagation();
+            if (params.data) {
+              toggleExpand(params.data.fullPath);
+            }
+          };
+        }
+        container.appendChild(chevronContainer);
+
+        // Add icon
+        const iconContainer = document.createElement('div');
+        iconContainer.className = 'tree-icon';
+        new WorkspaceTreeViewIcon({
+          props: {
+            size: 14,
+            toggleState: params.data?.hasChildren && expandedPaths.has(params.data?.fullPath ?? ''),
+            treeNode: params.data,
+          },
+          target: iconContainer,
+        });
+        container.appendChild(iconContainer);
+
+        // Add name
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'tree-name';
+        nameSpan.textContent = params.data?.name ?? '';
+        container.appendChild(nameSpan);
+
+        return container;
+      },
+      // Use comparator that returns 0 to prevent AG Grid from reordering rows.
+      // We handle sorting ourselves via sortWorkspaceTree to preserve hierarchy.
+      comparator: () => 0,
+      field: 'name',
+      filter: true,
+      headerName: 'Name',
+      resizable: true,
+      sort: 'asc',
+      sortable: true,
+      sortingOrder: ['asc', 'desc'],
+      suppressAutoSize: false,
+      suppressSizeToFit: false,
+    },
+    {
+      // Use comparator that returns 0 to prevent AG Grid from reordering rows.
+      // We handle sorting ourselves via sortWorkspaceTree to preserve hierarchy.
+      comparator: () => 0,
+      field: 'type',
+      filter: 'number',
+      headerName: 'Type',
+      resizable: true,
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 100,
+    },
+    {
+      // Use comparator that returns 0 to prevent AG Grid from reordering rows.
+      // We handle sorting ourselves via sortWorkspaceTree to preserve hierarchy.
+      comparator: () => 0,
+      field: 'fullPath',
+      filter: 'number',
+      headerName: 'Full Path',
+      resizable: true,
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 160,
+    },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: WorkspaceTreeNodeCellRendererParams) => {
@@ -174,89 +222,181 @@
     },
   ];
 
-  $: if (treeNode) {
-    flattenedTree = flattenWorkspaceTreeWithPaths(treeNode?.contents ?? [], []);
-    treeNodeBreadcrumbs = getNodeContentsOnPath(treeNode.contents ?? [], treeNodeBreadcrumbPath);
-    workspaceTreeMap = mapWorkspaceTreePaths(treeNode.contents ?? []);
-  }
+  // Create hierarchy-preserving sort comparator based on current sort state
+  function createSortComparator(sorts: ColumnSort[]): TreeSortComparator {
+    return (a: WorkspaceTreeNode, b: WorkspaceTreeNode) => {
+      // Always sort directories first
+      const aIsDir = a.type === WorkspaceContentType.Directory;
+      const bIsDir = b.type === WorkspaceContentType.Directory;
+      if (aIsDir && !bIsDir) {
+        return -1;
+      }
+      if (!aIsDir && bIsDir) {
+        return 1;
+      }
 
-  $: if (treeNodeBreadcrumbs.length > 2) {
-    treeNodeBreadcrumbDisplay = [
-      {
-        contents: [],
-        fullPath: '',
-        name: '...',
-        type: WorkspaceContentType.Directory,
-      },
-      ...treeNodeBreadcrumbs.slice(-2),
-    ];
-    treeNodeBreadcrumbMenuNodes = treeNodeBreadcrumbs.slice(0, treeNodeBreadcrumbs.length - 2);
-  } else {
-    treeNodeBreadcrumbDisplay = treeNodeBreadcrumbs;
-  }
+      // Apply each sort criterion in order
+      for (const { colId, direction } of sorts) {
+        const multiplier = direction === 'desc' ? -1 : 1;
+        let comparison = 0;
 
-  function hasContextMenuUpdatePermission(user: User | null, selectedId: RowId | null) {
-    const selectedTreeNode = selectedId ? workspaceTreeMap[selectedId] : undefined;
-    if (workspace) {
-      return featurePermissions.workspace.canUpdate(user, workspace, selectedTreeNode);
-    }
-
-    return false;
-  }
-
-  function getNodeContentsOnPath(rootNodes: WorkspaceTreeNode[], path: string): WorkspaceTreeNodeWithFullPath[] {
-    const pathSegments = path.split(PATH_DELIMITER).filter(Boolean);
-
-    let currentNodes: WorkspaceTreeNode[] = rootNodes;
-    let currentPath: string[] = [];
-    return pathSegments.reduce((previousSegments: WorkspaceTreeNodeWithFullPath[], segment) => {
-      currentPath.push(segment);
-      for (const node of currentNodes) {
-        if (node.name === segment) {
-          currentNodes = node.contents || [];
-
-          return [
-            ...previousSegments,
-            {
-              ...node,
-              fullPath: currentPath.join(PATH_DELIMITER),
-            },
-          ];
+        if (colId === 'name') {
+          const aName = a.name?.toLowerCase() ?? '';
+          const bName = b.name?.toLowerCase() ?? '';
+          comparison = aName.localeCompare(bName);
+        } else if (colId === 'fullPath') {
+          // For siblings (same parent), fullPath differs only by name, so compare by name
+          const aPath = a.name?.toLowerCase() ?? '';
+          const bPath = b.name?.toLowerCase() ?? '';
+          comparison = aPath.localeCompare(bPath);
+        } else if (colId === 'type') {
+          comparison = (a.type ?? '').localeCompare(b.type ?? '');
+        }
+        if (comparison !== 0) {
+          return multiplier * comparison;
         }
       }
 
-      return previousSegments;
-    }, []);
+      return 0;
+    };
+  }
+
+  // Compute flattened tree with sorting
+  $: sortedTree = treeNode?.contents ? sortWorkspaceTree(treeNode.contents, createSortComparator(sortState)) : [];
+
+  $: flattenedTree = flattenWorkspaceTreeWithPaths(sortedTree, []);
+
+  $: if (treeNode?.contents) {
+    workspaceTreeMap = mapWorkspaceTreePaths(treeNode.contents);
+  }
+
+  // Update filter matching when filter text or tree changes
+  $: {
+    if (filterText && flattenedTree.length > 0) {
+      const lowerFilter = filterText.toLowerCase();
+      const newMatchingPaths = new Set<string>();
+      const newAncestorPaths = new Set<string>();
+
+      for (const node of flattenedTree) {
+        const name = node.name?.toLowerCase() ?? '';
+        if (name.includes(lowerFilter)) {
+          newMatchingPaths.add(node.fullPath);
+
+          // Add all ancestors to keep them visible
+          const pathParts = node.fullPath.split(PATH_DELIMITER);
+          for (let i = 1; i < pathParts.length; i++) {
+            const ancestorPath = pathParts.slice(0, i).join(PATH_DELIMITER);
+            newAncestorPaths.add(ancestorPath);
+          }
+        }
+      }
+
+      matchingPaths = newMatchingPaths;
+      ancestorPaths = newAncestorPaths;
+
+      // Auto-expand ancestors of matching nodes so they're visible
+      if (newAncestorPaths.size > 0) {
+        expandedPaths = new Set([...expandedPaths, ...newAncestorPaths]);
+      }
+    } else {
+      matchingPaths = new Set();
+      ancestorPaths = new Set();
+    }
+  }
+
+  // Trigger AG Grid filter update when filter-related state changes
+  $: if (dataGrid && (filterText !== undefined || matchingPaths || ancestorPaths || expandedPaths)) {
+    dataGrid.onFilterChanged();
+  }
+
+  function toggleExpand(path: string) {
+    if (expandedPaths.has(path)) {
+      // Collapse: remove this path and all descendant paths
+      const newExpanded = new Set<string>();
+      for (const p of expandedPaths) {
+        if (p !== path && !p.startsWith(path + PATH_DELIMITER)) {
+          newExpanded.add(p);
+        }
+      }
+      expandedPaths = newExpanded;
+    } else {
+      // Expand: add this path
+      expandedPaths = new Set([...expandedPaths, path]);
+    }
+    // Trigger redraw to update chevron icons
+    dataGrid?.redrawRows();
+  }
+
+  function expandToPath(targetPath: string) {
+    // Expand all ancestor folders to make the target visible
+    const pathParts = targetPath.split(PATH_DELIMITER);
+    const newExpanded = new Set(expandedPaths);
+
+    for (let i = 1; i < pathParts.length; i++) {
+      const ancestorPath = pathParts.slice(0, i).join(PATH_DELIMITER);
+      newExpanded.add(ancestorPath);
+    }
+
+    expandedPaths = newExpanded;
+    dataGrid?.redrawRows();
   }
 
   function doesExternalFilterPass(node: IRowNode<WorkspaceTreeNodeWithFullPath>) {
     const fullFilePath = node.data?.fullPath ?? '';
-    if (!treeNodeBreadcrumbPath) {
-      // root — only show top-level files
-      return fullFilePath.split(PATH_DELIMITER).filter(Boolean).length === 1;
+    const depth = node.data?.depth ?? 0;
+
+    // If filtering is active, check if this node should be visible
+    if (filterText) {
+      const isMatch = matchingPaths.has(fullFilePath);
+      const isAncestorOfMatch = ancestorPaths.has(fullFilePath);
+
+      // Show only if: directly matches OR is an ancestor of a match
+      if (!isMatch && !isAncestorOfMatch) {
+        return false;
+      }
     }
-    // filter out files that aren't in this path at all
-    if (!fullFilePath.startsWith(`${treeNodeBreadcrumbPath}/`)) {
-      return false;
+
+    // Root level items are always visible (if they pass filter)
+    if (depth === 0) {
+      return true;
     }
-    // only show files that are direct children of treeNodeBreadcrumbPath
-    const remainder = fullFilePath.slice(treeNodeBreadcrumbPath.length + 1);
-    return remainder.split(PATH_DELIMITER).filter(Boolean).length === 1;
+
+    // Check that all ancestor folders are expanded
+    const pathParts = fullFilePath.split(PATH_DELIMITER);
+    for (let i = 1; i < pathParts.length; i++) {
+      const ancestorPath = pathParts.slice(0, i).join(PATH_DELIMITER);
+      if (!expandedPaths.has(ancestorPath)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
-  function closeBreadcrumbMenu() {
-    isBreadcrumbMenuOpen = false;
+  function onSortChanged(event: CustomEvent<SortChangedEvent<WorkspaceTreeNodeWithFullPath>>) {
+    const columnState = event.detail.api.getColumnState();
+
+    // Get all sorted columns, ordered by sortIndex
+    const sortedColumns = columnState
+      .filter(col => col.sort != null)
+      .sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0))
+      .map(col => ({ colId: col.colId, direction: col.sort as 'asc' | 'desc' }));
+
+    if (sortedColumns.length > 0) {
+      sortState = sortedColumns;
+    }
+  }
+
+  function onSearchInput(event: Event) {
+    const target = event.target as HTMLInputElement;
+    filterText = target.value;
   }
 
   function onViewNode(node: WorkspaceTreeNodeWithFullPath) {
     if (node.type === WorkspaceContentType.Directory || node.type === WorkspaceContentType.Workspace) {
-      treeNodeBreadcrumbPath = node.fullPath;
-      dataGrid?.onFilterChanged();
+      // Toggle folder expansion on view
+      toggleExpand(node.fullPath);
     }
-  }
-
-  function onBreadcrumbClick(node: WorkspaceTreeNodeWithFullPath) {
-    onViewNode(node);
   }
 
   function onContextMenu(event: CustomEvent<CellContextMenuEvent<WorkspaceTreeNodeWithFullPath, any>>) {
@@ -272,7 +412,7 @@
     const node = row.data;
 
     if (node.type === WorkspaceContentType.Directory) {
-      onViewNode(row.data);
+      toggleExpand(node.fullPath);
     }
   }
 
@@ -282,7 +422,6 @@
       treeNode: node,
       treeNodePath: node.fullPath,
     });
-    closeBreadcrumbMenu();
   }
 
   function onMoveNode(node: WorkspaceTreeNodeWithFullPath) {
@@ -291,7 +430,6 @@
       treeNode: node,
       treeNodePath: node.fullPath,
     });
-    closeBreadcrumbMenu();
   }
 
   function onRenameNode(node: WorkspaceTreeNodeWithFullPath) {
@@ -300,46 +438,40 @@
       treeNode: node,
       treeNodePath: node.fullPath,
     });
-    closeBreadcrumbMenu();
   }
 
   function onNewFolder(node?: WorkspaceTreeNode | WorkspaceTreeNodeWithFullPath | null) {
-    let targetPath = (node as WorkspaceTreeNodeWithFullPath).fullPath ?? '';
+    let targetPath = (node as WorkspaceTreeNodeWithFullPath)?.fullPath ?? '';
     if (node?.type !== WorkspaceContentType.Directory) {
       targetPath = targetPath.split(PATH_DELIMITER).slice(0, -1).join(PATH_DELIMITER);
     }
     dispatch('newFolder', targetPath);
-    closeBreadcrumbMenu();
   }
 
   function onNewSequence(node?: WorkspaceTreeNode | WorkspaceTreeNodeWithFullPath | null) {
-    let targetPath = (node as WorkspaceTreeNodeWithFullPath).fullPath ?? '';
+    let targetPath = (node as WorkspaceTreeNodeWithFullPath)?.fullPath ?? '';
     if (node?.type !== WorkspaceContentType.Directory) {
       targetPath = targetPath.split(PATH_DELIMITER).slice(0, -1).join(PATH_DELIMITER);
     }
     dispatch('newSequence', targetPath);
-    closeBreadcrumbMenu();
   }
 
   function onImportFile(node?: WorkspaceTreeNode | WorkspaceTreeNodeWithFullPath | null) {
-    let targetPath = (node as WorkspaceTreeNodeWithFullPath).fullPath ?? '';
+    let targetPath = (node as WorkspaceTreeNodeWithFullPath)?.fullPath ?? '';
     if (node?.type !== WorkspaceContentType.Directory) {
       targetPath = targetPath.split(PATH_DELIMITER).slice(0, -1).join(PATH_DELIMITER);
     }
     dispatch('importFile', targetPath);
-    closeBreadcrumbMenu();
   }
 
   function onCopyFileLocation(node: WorkspaceTreeNodeWithFullPath) {
     let targetPath = node?.fullPath ?? '';
     dispatch('copyFileLocation', targetPath);
-    closeBreadcrumbMenu();
   }
 
   function onMoveToWorkspace(node: WorkspaceTreeNodeWithFullPath) {
     let targetPath = node?.fullPath ?? '';
     dispatch('moveToWorkspace', targetPath);
-    closeBreadcrumbMenu();
   }
 
   function onTableMenuRenameNode() {
@@ -399,196 +531,24 @@
   }
 
   onMount(() => {
-    // initialize treeNodeBreadcrumbPath to the folder path of the currently selected file
-    treeNodeBreadcrumbPath = selectedTreeNodePath
-      ? selectedTreeNodePath.split(PATH_DELIMITER).slice(0, -1).join(PATH_DELIMITER)
-      : '';
+    // If a file is selected, expand to show it
+    if (selectedTreeNodePath) {
+      expandToPath(selectedTreeNodePath);
+    }
   });
 </script>
 
-<div class="grid h-full grid-rows-[min-content_auto]">
-  <div class="flex items-center gap-1">
-    {#if treeNodeBreadcrumbDisplay.length === 0}
-      <DropdownMenu.Root bind:open={isBreadcrumbMenuOpen}>
-        <DropdownMenu.Trigger asChild let:builder>
-          <Button builders={[builder]} variant="ghost" class="flex items-center gap-1 rounded-none font-bold">
-            {treeNode?.name}
-            <ChevronDown size={14} />
-          </Button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Content align="start" role="menu" aria-label="Breadcrumb Menu">
-          <DropdownMenu.Item size="sm" on:click={() => onNewSequence(treeNode)}>
-            <div
-              class="flex items-center gap-2"
-              use:permissionHandler={{
-                hasPermission: hasContextMenuUpdatePermission(user, null),
-                permissionError: 'You do not have permission to create a new file in this folder.',
-              }}
-              aria-label="New File"
-            >
-              <FilePlus size={14} /> New File
-            </div>
-          </DropdownMenu.Item>
-          <DropdownMenu.Item size="sm" on:click={() => onNewFolder(treeNode)}>
-            <div
-              class="flex items-center gap-2"
-              use:permissionHandler={{
-                hasPermission: hasContextMenuUpdatePermission(user, null),
-                permissionError: 'You do not have permission to create a new folder in this folder.',
-              }}
-              aria-label="New Folder"
-            >
-              <FolderPlus size={14} /> New Folder
-            </div>
-          </DropdownMenu.Item>
-          <DropdownMenu.Item size="sm" on:click={() => onImportFile(treeNode)}>
-            <div
-              class="flex items-center gap-2"
-              use:permissionHandler={{
-                hasPermission: hasContextMenuUpdatePermission(user, null),
-                permissionError: 'You do not have permission to upload a file into this folder.',
-              }}
-              aria-label="Upload File"
-            >
-              <ArrowUpFromLine size={14} /> Upload File
-            </div>
-          </DropdownMenu.Item>
-        </DropdownMenu.Content>
-      </DropdownMenu.Root>
-    {:else}
-      <Button
-        variant="ghost"
-        on:click={() => treeNode && onBreadcrumbClick({ ...treeNode, fullPath: '' })}
-        class="rounded-none"
-      >
-        {treeNode?.name}
-      </Button>
-      <ChevronRight size={14} />
-    {/if}
-    {#each treeNodeBreadcrumbDisplay as breadcrumb, index}
-      {#if index === treeNodeBreadcrumbDisplay.length - 1}
-        <DropdownMenu.Root bind:open={isBreadcrumbMenuOpen}>
-          <DropdownMenu.Trigger asChild let:builder>
-            <Button builders={[builder]} variant="ghost" class="flex items-center gap-1 rounded-none font-bold">
-              {breadcrumb.name}
-              <ChevronDown size={14} />
-            </Button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content align="start" role="menu" aria-label="Breadcrumb Menu">
-            <DropdownMenu.Item size="sm" on:click={() => onRenameNode(breadcrumb)}>
-              <div
-                class="flex items-center gap-2"
-                use:permissionHandler={{
-                  hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
-                  permissionError: 'You do not have permission to rename this folder.',
-                }}
-                aria-label="Rename"
-              >
-                <PencilLine size={14} />
-                Rename Folder
-              </div>
-            </DropdownMenu.Item>
-            <DropdownMenu.Item size="sm" on:click={() => onMoveNode(breadcrumb)}>
-              <div
-                class="flex items-center gap-2"
-                use:permissionHandler={{
-                  hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
-                  permissionError: 'You do not have permission to move this folder.',
-                }}
-                aria-label="Move Folder"
-              >
-                <FolderOutput size={14} />
-                Move Folder
-              </div>
-            </DropdownMenu.Item>
-            <DropdownMenu.Item size="sm" on:click={() => onDeleteNode(breadcrumb)}>
-              <div
-                class="flex items-center gap-2"
-                use:permissionHandler={{
-                  hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
-                  permissionError: 'You do not have permission to delete this folder.',
-                }}
-                aria-label="Delete Folder"
-              >
-                <Trash2 size={14} />
-                Delete Folder
-              </div>
-            </DropdownMenu.Item>
-            <DropdownMenu.Separator />
-            <DropdownMenu.Item size="sm" on:click={() => onCopyFileLocation(breadcrumb)}>
-              <div class="flex items-center gap-2" aria-label="Copy Link to">
-                <Copy size={14} /> Copy {breadcrumb.type === WorkspaceContentType.Directory
-                  ? 'Link to Directory'
-                  : 'Download Link to File'}
-              </div>
-            </DropdownMenu.Item>
-            <DropdownMenu.Separator />
-            <DropdownMenu.Item size="sm" on:click={() => onMoveToWorkspace(breadcrumb)}>
-              <div class="flex items-center gap-2" aria-label="Move to Workspace">
-                <FileOutput size={14} /> Move to Workspace
-              </div>
-            </DropdownMenu.Item>
-            <DropdownMenu.Separator />
-            <DropdownMenu.Item size="sm" on:click={() => onNewSequence(breadcrumb)}>
-              <div
-                class="flex items-center gap-2"
-                use:permissionHandler={{
-                  hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
-                  permissionError: 'You do not have permission to create a new file in this folder.',
-                }}
-                aria-label="New File"
-              >
-                <FilePlus size={14} /> New File
-              </div>
-            </DropdownMenu.Item>
-            <DropdownMenu.Item size="sm" on:click={() => onNewFolder(breadcrumb)}>
-              <div
-                class="flex items-center gap-2"
-                use:permissionHandler={{
-                  hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
-                  permissionError: 'You do not have permission to create a new folder in this folder.',
-                }}
-              >
-                <FolderPlus size={14} /> New Folder
-              </div>
-            </DropdownMenu.Item>
-            <DropdownMenu.Item size="sm" on:click={() => onImportFile(breadcrumb)}>
-              <div
-                class="flex items-center gap-2"
-                use:permissionHandler={{
-                  hasPermission: hasContextMenuUpdatePermission(user, breadcrumb.fullPath),
-                  permissionError: 'You do not have permission to upload a file into this folder.',
-                }}
-                aria-label="Upload File"
-              >
-                <ArrowUpFromLine size={14} /> Upload File
-              </div>
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
-      {:else if breadcrumb.name === '...'}
-        <DropdownMenu.Root bind:open={isBreadcrumbNavMenuOpen}>
-          <DropdownMenu.Trigger asChild let:builder>
-            <Button builders={[builder]} variant="ghost"><Ellipsis size={14} /></Button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content align="start" role="menu" aria-label="Breadcrumb Nav Menu">
-            {#each treeNodeBreadcrumbMenuNodes as breadcrumbMenuNode}
-              <DropdownMenu.Item size="sm" on:click={() => onBreadcrumbClick(breadcrumbMenuNode)}>
-                <WorkspaceTreeViewIcon treeNode={breadcrumbMenuNode} toggleState={true} />
-                {breadcrumbMenuNode.name}
-              </DropdownMenu.Item>
-            {/each}
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
-      {:else}
-        <Button variant="ghost" on:click={() => onBreadcrumbClick(breadcrumb)}>
-          {breadcrumb.name}
-        </Button>
-        {#if index !== treeNodeBreadcrumbDisplay.length - 1}
-          <ChevronRight size={14} />
-        {/if}
-      {/if}
-    {/each}
+<div class="workspace-grid-container">
+  <div class="search-bar">
+    <Search size={14} />
+    <Input
+      type="text"
+      placeholder="Search files..."
+      value={filterText}
+      on:input={onSearchInput}
+      sizeVariant="xs"
+      class="search-input"
+    />
   </div>
   <BulkActionDataGrid
     bind:dataGrid
@@ -609,6 +569,7 @@
     on:rowDoubleClicked={onRowDoubleClicked}
     on:cellContextMenu={onContextMenu}
     on:cellContextMenuHide={onContextMenuHide}
+    on:sortChanged={onSortChanged}
   >
     <svelte:fragment slot="context-menu" let:selectedItemIds>
       {@const selectedWorkspaceNodes = selectedItemIds ? selectedItemIds.map(id => workspaceTreeMap[id]) : []}
@@ -634,16 +595,54 @@
 </div>
 
 <style>
-  :global(.node-icon-cell) {
+  .workspace-grid-container {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 100%;
+  }
+
+  .search-bar {
+    align-items: center;
+    border-bottom: 1px solid var(--st-gray-20, #e0e0e0);
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .search-bar :global(.search-input) {
+    flex: 1;
+  }
+
+  :global(.tree-cell) {
     align-items: center;
     display: flex;
+    gap: 4px;
     height: 100%;
+  }
+
+  :global(.tree-chevron) {
+    align-items: center;
+    display: flex;
+    height: 14px;
+    justify-content: center;
     width: 14px;
+  }
+
+  :global(.tree-icon) {
+    align-items: center;
+    display: flex;
+    height: 14px;
+    width: 14px;
+  }
+
+  :global(.tree-name) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   :global(.workspace-grid-view .ag-root-wrapper) {
     --ag-borders: none;
     --ag-wrapper-border-radius: 0;
-    border-top: 1px solid var(--ag-border-color);
   }
 </style>
