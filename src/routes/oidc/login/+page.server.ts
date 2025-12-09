@@ -29,6 +29,7 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
   cookies.set('back', back, {
     httpOnly: true,
     path: '/',
+    secure: !dev,
   });
 
   const client = await auth.Client.instance;

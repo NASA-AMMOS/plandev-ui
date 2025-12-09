@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser, dev } from '$app/environment';
 import * as env from '$env/static/private';
 import type { HasuraToken, MaybeToken, Rule } from '$lib/types/oidc';
 import { type Cookies, type RequestEvent } from '@sveltejs/kit';
@@ -348,9 +348,12 @@ export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth
   const idJwt = await verify(tokens.idToken(), DEFAULT_JWKS_CLIENT, ID_TOKEN_VERIFY_OPTS);
 
   if (accessJwt && idJwt) {
-    cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path: '/' });
-    cookies.set('idToken', tokens.idToken(), { httpOnly: false, path: '/' });
-    cookies.set('refreshToken', tokens.refreshToken(), { httpOnly: true, path: '/' });
+    // SECURITY: secure flag ensures cookies are only sent over HTTPS in production
+    // httpOnly: false for accessToken/idToken because client JS needs them for Hasura requests
+    // httpOnly: true for refreshToken to protect it from XSS
+    cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path: '/', secure: !dev });
+    cookies.set('idToken', tokens.idToken(), { httpOnly: false, path: '/', secure: !dev });
+    cookies.set('refreshToken', tokens.refreshToken(), { httpOnly: true, path: '/', secure: !dev });
 
     // sort of an edge case, but if default role does change at the idp, it wouldn't hurt to update the local entry
     // TODO: should this be here? Where else could it go?

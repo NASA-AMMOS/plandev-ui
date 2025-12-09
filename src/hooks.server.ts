@@ -1,3 +1,4 @@
+import { dev } from '$app/environment';
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
 import * as auth from '$lib/server/oidc';
@@ -67,6 +68,7 @@ const handleOIDCAuth: Handle = async ({ event, resolve }) => {
       event.cookies.set('activeRole', event.locals.user.defaultRole, {
         httpOnly: false,
         path: `${base}/`,
+        secure: !dev,
       });
     }
   } else {
@@ -148,6 +150,7 @@ const handleSSOAuth: Handle = async ({ event, resolve }) => {
       httpOnly: false,
       path: `${base}/`,
       sameSite: 'none',
+      secure: !dev,
     };
 
     // don't overwrite existing activeRole, unless it doesn't exist anymore
