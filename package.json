@@ -62,7 +62,6 @@
     "@tanstack/svelte-virtual": "^3.11.2",
     "ag-grid-community": "32.2.0",
     "ajv": "^8.12.0",
-    "bootstrap-icons": "^1.11.0",
     "codemirror": "^6.0.1",
     "cookie": "^0.6.0",
     "d3-array": "^3.2.4",

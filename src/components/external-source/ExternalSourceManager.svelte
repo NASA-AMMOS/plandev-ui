@@ -3,7 +3,7 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
-  import XIcon from 'bootstrap-icons/icons/x.svg?component';
+  import { X } from 'lucide-svelte';
   import ExternalEventIcon from '../../assets/external-event-box-with-arrow.svg?component';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
   import {
@@ -414,7 +414,7 @@
           on:click={deselectEvent}
           use:tooltip={{ content: 'Deselect event', placement: 'top' }}
         >
-          <XIcon />
+          <X size={16} />
         </button>
       {:else if selectedSource}
         <button
@@ -422,7 +422,7 @@
           on:click={deselectSource}
           use:tooltip={{ content: 'Deselect source', placement: 'top' }}
         >
-          <XIcon />
+          <X size={16} />
         </button>
       {/if}
     </svelte:fragment>

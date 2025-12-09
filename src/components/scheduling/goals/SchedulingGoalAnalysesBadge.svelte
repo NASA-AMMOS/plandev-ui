@@ -1,9 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import CheckCircleFillIcon from 'bootstrap-icons/icons/check-circle-fill.svg?component';
-  import XCircleFillIcon from 'bootstrap-icons/icons/x-circle-fill.svg?component';
   import { difference } from 'lodash-es';
+  import { CheckCircle2, XCircle } from 'lucide-svelte';
   import type { SchedulingGoalAnalysis } from '../../../types/scheduling';
   import { tooltip } from '../../../utilities/tooltip';
 
@@ -49,7 +48,7 @@
         class:disabled={!enabled}
         use:tooltip={{ content: 'Scheduling Goal Satisfied', maxWidth: 'none', placement: 'top' }}
       >
-        <CheckCircleFillIcon />
+        <CheckCircle2 size={16} />
       </span>
     {:else}
       <span
@@ -57,7 +56,7 @@
         class:disabled={!enabled}
         use:tooltip={{ content: 'Scheduling Goal Unsatisfied', maxWidth: 'none', placement: 'top' }}
       >
-        <XCircleFillIcon />
+        <XCircle size={16} />
       </span>
     {/if}
   </div>

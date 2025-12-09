@@ -5,8 +5,7 @@
   import { base } from '$app/paths';
   import RefreshIcon from '@nasa-jpl/stellar/icons/refresh.svg?component';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
-  import BarChartIcon from 'bootstrap-icons/icons/bar-chart.svg?component';
-  import XIcon from 'bootstrap-icons/icons/x.svg?component';
+  import { X } from 'lucide-svelte';
   import { onDestroy } from 'svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
@@ -274,7 +273,7 @@
           on:click={deselectModel}
           use:tooltip={{ content: 'Deselect model', placement: 'top' }}
         >
-          <XIcon />
+          <X size={16} />
         </button>
       {/if}
     </svelte:fragment>
@@ -469,10 +468,7 @@
 
   <Panel>
     <svelte:fragment slot="header">
-      <SectionTitle>
-        <BarChartIcon slot="icon" />
-        Models
-      </SectionTitle>
+      <SectionTitle>Models</SectionTitle>
     </svelte:fragment>
 
     <svelte:fragment slot="body">

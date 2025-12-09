@@ -5,8 +5,7 @@
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import LayersIcon from '@nasa-jpl/stellar/icons/layers.svg?component';
-  import CardListIcon from 'bootstrap-icons/icons/card-list.svg?component';
-  import CodeSquareIcon from 'bootstrap-icons/icons/code-square.svg?component';
+  import { List, SquareCode } from 'lucide-svelte';
   import Nav from '../../components/app/Nav.svelte';
   import NavButton from '../../components/app/NavButton.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
@@ -25,7 +24,7 @@
         title="Rules"
         on:click={() => goto(`${base}/expansion/rules`)}
       >
-        <CodeSquareIcon />
+        <SquareCode size={16} />
       </NavButton>
       <NavButton
         selected={$page.url.pathname.includes('sets')}
@@ -39,7 +38,7 @@
         title="Runs"
         on:click={() => goto(`${base}/expansion/runs`)}
       >
-        <CardListIcon />
+        <List size={16} />
       </NavButton>
     </svelte:fragment>
   </Nav>

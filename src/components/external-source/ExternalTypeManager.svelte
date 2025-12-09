@@ -4,7 +4,7 @@
   import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import type { ICellRendererParams } from 'ag-grid-community';
-  import XIcon from 'bootstrap-icons/icons/x.svg?component';
+  import { X } from 'lucide-svelte';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
   import { externalEventTypeAssociations } from '../../stores/external-event';
   import {
@@ -512,7 +512,7 @@
             selectedDerivationGroupId = null;
           }}
         >
-          <XIcon />
+          <X size={16} />
         </button>
       {:else if selectedExternalSourceType !== undefined}
         <SectionTitle overflow="hidden">
@@ -526,7 +526,7 @@
             selectedExternalSourceTypeId = null;
           }}
         >
-          <XIcon />
+          <X size={16} />
         </button>
       {:else if selectedExternalEventType !== undefined}
         <SectionTitle overflow="hidden">
@@ -540,7 +540,7 @@
             selectedExternalEventTypeId = null;
           }}
         >
-          <XIcon />
+          <X size={16} />
         </button>
       {/if}
     </svelte:fragment>

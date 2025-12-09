@@ -6,9 +6,8 @@
   import { page } from '$app/stores';
   import { Button, cn, Input as InputStellar, Label, Select } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
-  import XIcon from 'bootstrap-icons/icons/x.svg?component';
   import { flatten } from 'lodash-es';
-  import { ArrowLeftRight, Clipboard, FileUp, Import, X } from 'lucide-svelte';
+  import { ArrowLeftRight, FileUp, Import, X } from 'lucide-svelte';
   import { onDestroy, onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
@@ -809,7 +808,7 @@
                 aria-label="Hide import plan"
                 on:click={hideImportPlan}
               >
-                <XIcon size={12} />
+                <X size={12} />
               </Button>
               <Label class="pb-0.5" size="sm" for="plan-file">Plan File (JSON)</Label>
               <!-- TODO consider porting the input files fix to stellar https://github.com/huntabyte/shadcn-svelte/pull/1700/files -->
@@ -1040,10 +1039,7 @@
     <Panel>
       <svelte:fragment slot="header">
         <div class="flex items-center gap-2">
-          <SectionTitle>
-            <Clipboard size={16} slot="icon" />
-            Plans
-          </SectionTitle>
+          <SectionTitle>Plans</SectionTitle>
           <InputStellar
             bind:value={filterText}
             placeholder="Filter plans"

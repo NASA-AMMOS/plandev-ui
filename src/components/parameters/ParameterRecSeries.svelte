@@ -1,8 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import DashIcon from 'bootstrap-icons/icons/dash.svg?component';
-  import PlusIcon from 'bootstrap-icons/icons/plus.svg?component';
+  import { Minus, Plus } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ParameterType } from '../../types/parameter';
   import type { ValueSchemaSeries } from '../../types/schema';
@@ -97,7 +96,7 @@
           on:click|stopPropagation={valueRemove}
           use:tooltip={{ content: 'Remove Value', placement: 'left' }}
         >
-          <DashIcon />
+          <Minus size={16} />
         </button>
         <button
           {disabled}
@@ -105,7 +104,7 @@
           on:click|stopPropagation={valueAdd}
           use:tooltip={{ content: 'Add Value', placement: 'left' }}
         >
-          <PlusIcon />
+          <Plus size={16} />
         </button>
         <ParameterBaseRightAdornments
           {disabled}

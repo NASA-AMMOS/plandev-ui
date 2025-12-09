@@ -16,7 +16,7 @@ test.describe.serial('View', () => {
   test(`Clicking on 'Browse Saved Views' in the view menu should pop up a SavedViewsModal`, async () => {
     await setup.view.openViewMenu();
     await setup.view.openSavedViews();
-    await setup.page.locator('.modal .st-button .bi-x').click();
+    await setup.page.locator('.modal .st-button .lucide-x').click();
   });
 
   test(`Clicking on 'Upload view file' in the view menu should pop up a UploadViewModal`, async () => {

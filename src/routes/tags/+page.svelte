@@ -5,7 +5,6 @@
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import RefreshIcon from '@nasa-jpl/stellar/icons/refresh.svg?component';
-  import TagsIcon from '@nasa-jpl/stellar/icons/tag.svg?component';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
@@ -443,10 +442,7 @@
     <Panel>
       <svelte:fragment slot="header">
         <div class="flex w-full max-w-sm items-center gap-1">
-          <SectionTitle>
-            <TagsIcon slot="icon" />
-            Tags
-          </SectionTitle>
+          <SectionTitle>Tags</SectionTitle>
           <Input bind:value={filterText} placeholder="Filter tags" aria-label="Filter tags" sizeVariant="xs" />
         </div>
       </svelte:fragment>

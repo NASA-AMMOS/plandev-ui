@@ -1,8 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import Eye from 'bootstrap-icons/icons/eye-fill.svg?component';
-  import EyeSlash from 'bootstrap-icons/icons/eye-slash.svg?component';
+  import { Eye, EyeOff } from 'lucide-svelte';
   import { get } from 'svelte/store';
   import { derivationGroupVisibilityMap, externalSources } from '../../stores/external-source';
   import { plan } from '../../stores/plan';
@@ -61,7 +60,7 @@
             on:click|stopPropagation={onChange}
             use:tooltip={{ content: 'Show in timeline', placement: 'top' }}
           >
-            <Eye />
+            <Eye size={16} />
           </button>
         {:else}
           <button
@@ -69,7 +68,7 @@
             on:click|stopPropagation={onChange}
             use:tooltip={{ content: 'Hide in timeline', placement: 'top' }}
           >
-            <EyeSlash />
+            <EyeOff size={16} />
           </button>
         {/if}
       </div>

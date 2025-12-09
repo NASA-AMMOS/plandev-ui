@@ -5,7 +5,7 @@
   import ChevronRightIcon from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
-  import CopyIcon from 'bootstrap-icons/icons/copy.svg?component';
+  import { Copy } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { getTarget } from '../../../utilities/generic';
   import { isFswCommand, isFswCommandArgumentEnum } from '../../../utilities/sequence-editor/sequence-utils';
@@ -109,7 +109,7 @@
     <div class="breadcrumbs-icons">
       {#if selectedCommandDefinition !== null}
         <button on:click={onCopy} use:tooltip={{ content: 'Copy command stem to clipboard', placement: 'top' }}>
-          <CopyIcon />
+          <Copy size={16} />
         </button>
         <button on:click={onClear} use:tooltip={{ content: 'Deselect command', placement: 'top' }}>
           <CloseIcon />

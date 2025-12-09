@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import HourglassIcon from 'bootstrap-icons/icons/hourglass-top.svg?component';
+  import { Hourglass } from 'lucide-svelte';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
   import DictionaryTable from '../../components/parcels/DictionaryTable.svelte';
@@ -156,7 +156,7 @@
             >
               {#if creatingDictionary}
                 Creating...
-                <HourglassIcon />
+                <Hourglass size={16} />
               {:else}
                 Create
               {/if}

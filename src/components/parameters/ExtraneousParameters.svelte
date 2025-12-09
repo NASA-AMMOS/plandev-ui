@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import WarningExtraIcon from '@nasa-jpl/stellar/icons/warning_extra.svg?component';
-  import CopyIcon from 'bootstrap-icons/icons/copy.svg?component';
+  import { Copy } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { ActivityErrorCategories } from '../../types/errors';
   import type { ArgumentsMap } from '../../types/parameter';
@@ -91,7 +91,7 @@
               use:tooltip={{ content: 'Copy value to clipboard', placement: 'top' }}
               on:click={onCopy}
             >
-              <CopyIcon />
+              <Copy size={16} />
             </button>
           </div>
         </Input>

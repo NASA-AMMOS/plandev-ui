@@ -10,7 +10,7 @@
     HwCommand,
   } from '@nasa-jpl/aerie-ampcs';
   import type { ArgTextDef, CommandInfoMapper, TimeTagInfo } from '@nasa-jpl/aerie-sequence-languages';
-  import ArrowUpRightIcon from 'bootstrap-icons/icons/arrow-up-right.svg?component';
+  import { ArrowUpRight } from 'lucide-svelte';
   import type { EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
@@ -103,7 +103,7 @@
       <button
         class="open-dictionary"
         on:click={onSelectCommandDefinition}
-        use:tooltip={{ content: `View dictionary entry for ${commandDef?.stem}` }}><ArrowUpRightIcon /></button
+        use:tooltip={{ content: `View dictionary entry for ${commandDef?.stem}` }}><ArrowUpRight size={16} /></button
       >
     </div>
   {/if}

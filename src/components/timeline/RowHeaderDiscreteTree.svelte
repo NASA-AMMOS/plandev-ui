@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import CaretRightIcon from 'bootstrap-icons/icons/caret-right.svg?component';
+  import { Play } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import FolderIcon from '../../assets/folder.svg?component';
   import SelectIcon from '../../assets/select.svg?component';
@@ -137,7 +137,7 @@
         >
           <div style=" align-items: center;color: var(--st-button-tertiary-color);display: flex; gap: 4px;">
             <div title="External Event" class="icon-group">
-              <CaretRightIcon style="width:13px" />
+              <Play size={13} />
             </div>
           </div>
           {node.label}
