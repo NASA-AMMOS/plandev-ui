@@ -137,9 +137,15 @@ function reschedule(fn: () => Promise<void>, delay: number, prior: number | null
 const handleCookieStoreChange = async (ev: Event) => {
   const event = ev as CookieChangeEvent;
 
-  console.log(`Cookie store change detected.`, event);
+  // Only log cookie names, never values (which may contain tokens)
+  console.debug(
+    'Cookie store change detected:',
+    'changed:',
+    event.changed.map(c => c.name),
+    'deleted:',
+    event.deleted.map(c => c.name),
+  );
   event.changed.forEach(async ({ name, value }) => {
-    console.log(`Cookie changed: ${name}`);
     if (name === 'accessToken') {
       // set user store
       const baseUser: BaseUser = { id: null, token: value }; // id can be null because any time this function is used, its in the context of oidc, and we specifically catch id being null for oidc in computeRolesFromJWT
@@ -168,8 +174,5 @@ const handleCookieStoreChange = async (ev: Event) => {
         return user;
       });
     }
-  });
-  event.deleted.forEach(({ name }) => {
-    console.log(`Cookie deleted: ${name}`);
   });
 };

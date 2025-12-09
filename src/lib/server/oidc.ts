@@ -337,13 +337,13 @@ async function upsertUser(decodedAccessToken: HasuraToken, accessToken: string):
     rolePermissions: null,
     token: accessToken,
   };
-  console.log('Registering user:', user);
+  console.log('Registering user:', username);
   const result = await reqHasura(mutation, { input }, user);
-  console.log('Registered user: ', result);
+  console.log('Registered user:', username);
 }
 
 export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth2Tokens): Promise<boolean> {
-  console.log('Persisting tokens following a refresh...', browser);
+  console.debug('Persisting tokens following a refresh...');
 
   // Check token validity.
   // Access tokens use base verification (no audience check - treated as opaque per OIDC spec)

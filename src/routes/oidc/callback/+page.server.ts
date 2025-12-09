@@ -55,11 +55,12 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
 
     const success = await auth.updateWithNewTokens(cookies, tokens);
     if (!success) {
-      throw new Error(`Failed to validate token ${tokens.accessToken()}`);
+      throw new Error(`Failed to validate tokens.`);
     }
   } catch (err) {
-    console.error(err);
-    const message = `Failed to handle OIDC callback: ${err}`;
+    // Log error message only - avoid logging full error object which may contain tokens
+    console.error('OIDC callback error:', err instanceof Error ? err.message : 'Unknown error');
+    const message = `Failed to handle OIDC callback: ${err instanceof Error ? err.message : 'Unknown error'}`;
     error(401, message);
   }
 
