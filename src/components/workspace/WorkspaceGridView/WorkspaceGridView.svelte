@@ -1,9 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Breadcrumb, Input } from '@nasa-jpl/stellar-svelte';
+  import { Breadcrumb, DropdownMenu, Input } from '@nasa-jpl/stellar-svelte';
   import type { CellContextMenuEvent, ICellRendererParams, IRowNode, SortChangedEvent } from 'ag-grid-community';
-  import { ChevronDown, ChevronRight, Search } from 'lucide-svelte';
+  import { ChevronDown, ChevronRight, Ellipsis, Search } from 'lucide-svelte';
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { WorkspaceContentType } from '../../../enums/workspace';
@@ -54,6 +54,7 @@
 
   const dispatch = createEventDispatcher<{
     copyFileLocation: string;
+    copyFullPath: string;
     importFile: string;
     moveToWorkspace: string;
     newFolder: string;
@@ -91,6 +92,86 @@
 
   // Breadcrumb segments derived from currentRootPath
   $: breadcrumbSegments = currentRootPath ? currentRootPath.split(PATH_DELIMITER) : [];
+
+  // Responsive breadcrumb state
+  let breadcrumbContainer: HTMLOListElement | undefined = undefined;
+  let breadcrumbWrapper: HTMLDivElement | undefined = undefined;
+  let maxVisibleSegments: number = Infinity;
+  let resizeObserver: ResizeObserver | null = null;
+
+  // Compute which segments to show vs collapse
+  // When maxVisibleSegments is finite and less than total segments, we need to collapse some
+  $: needsCollapsing = maxVisibleSegments !== Infinity && breadcrumbSegments.length > maxVisibleSegments;
+  $: collapsedSegments = needsCollapsing ? breadcrumbSegments.slice(0, -maxVisibleSegments) : [];
+  $: visibleSegments = needsCollapsing ? breadcrumbSegments.slice(-maxVisibleSegments) : breadcrumbSegments;
+  $: visibleStartIndex = breadcrumbSegments.length - visibleSegments.length;
+
+  function measureBreadcrumbs() {
+    if (!breadcrumbWrapper) {
+      return;
+    }
+
+    const containerWidth = breadcrumbWrapper.clientWidth - 16; // account for padding
+    const items = breadcrumbWrapper.querySelectorAll('.breadcrumb-item-measure');
+
+    if (items.length === 0) {
+      return;
+    }
+
+    // Measure actual separator width from the DOM if available, or use default
+    const separatorWidth = 22; // approximate: ">" character + gaps
+
+    // Calculate total width needed for all items
+    const itemWidths: number[] = [];
+    items.forEach(item => {
+      itemWidths.push((item as HTMLElement).offsetWidth);
+    });
+
+    // Total width = sum of items + separators between them
+    const totalWidth = itemWidths.reduce((sum, w) => sum + w, 0) + (itemWidths.length - 1) * separatorWidth;
+
+    // If everything fits, show all
+    if (totalWidth <= containerWidth) {
+      maxVisibleSegments = Infinity;
+      return;
+    }
+
+    // We need to collapse some segments. Calculate how many we can show from the end.
+    // Layout will be: [root] / [...] / [visible segments]
+    const rootWidth = itemWidths[0];
+    const ellipsisWidth = 30; // ellipsis button width
+
+    // Available space after root + ellipsis + their separators
+    const reservedWidth = rootWidth + separatorWidth + ellipsisWidth + separatorWidth;
+    let availableWidth = containerWidth - reservedWidth;
+
+    // Count how many segments from the end can fit
+    let count = 0;
+    for (let i = itemWidths.length - 1; i > 0; i--) {
+      // Each segment needs its width + separator (except we already counted one separator in reserved)
+      const segmentWidth = itemWidths[i] + (count > 0 ? separatorWidth : 0);
+      if (availableWidth >= segmentWidth) {
+        availableWidth -= segmentWidth;
+        count++;
+      } else {
+        break;
+      }
+    }
+
+    // Always show at least the last segment, even if it overflows (CSS will truncate with ellipsis)
+    maxVisibleSegments = Math.max(1, count);
+  }
+
+  function setupResizeObserver() {
+    if (breadcrumbWrapper && !resizeObserver) {
+      resizeObserver = new ResizeObserver(() => {
+        // Reset to measure all, then recalculate
+        maxVisibleSegments = Infinity;
+        tick().then(measureBreadcrumbs);
+      });
+      resizeObserver.observe(breadcrumbWrapper);
+    }
+  }
 
   $: if (workspace) {
     hasEditPermission = featurePermissions.workspace.canUpdate(user, workspace);
@@ -537,6 +618,11 @@
     dispatch('copyFileLocation', targetPath);
   }
 
+  function onCopyFullPath(node: WorkspaceTreeNodeWithFullPath) {
+    let targetPath = node?.fullPath ?? '';
+    dispatch('copyFullPath', targetPath);
+  }
+
   function onMoveToWorkspace(node: WorkspaceTreeNodeWithFullPath) {
     let targetPath = node?.fullPath ?? '';
     dispatch('moveToWorkspace', targetPath);
@@ -578,6 +664,12 @@
     }
   }
 
+  function onTableCopyFullPath() {
+    if (contextMenuNode) {
+      onCopyFullPath(contextMenuNode);
+    }
+  }
+
   function onTableMoveToWorkspace() {
     if (contextMenuNode) {
       onMoveToWorkspace(contextMenuNode);
@@ -603,45 +695,96 @@
     if (selectedTreeNodePath) {
       expandToPath(selectedTreeNodePath);
     }
+
+    // Set up breadcrumb resize observer
+    setupResizeObserver();
+
+    return () => {
+      // Clean up resize observer on unmount
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+        resizeObserver = null;
+      }
+    };
   });
+
+  // Re-measure breadcrumbs when segments change
+  $: if (breadcrumbWrapper && breadcrumbSegments) {
+    tick().then(measureBreadcrumbs);
+  }
 </script>
 
 <div class="workspace-grid-container">
-  <Breadcrumb.Root>
-    <Breadcrumb.List class="breadcrumbs text-xs">
-      <Breadcrumb.Item>
-        {#if currentRootPath === ''}
-          <Breadcrumb.Page>
-            <div class="px-1 py-0.5">
-              {workspace ? workspace.name : 'Loading...'}
-            </div>
-          </Breadcrumb.Page>
-        {:else}
-          <Breadcrumb.Link asChild let:attrs>
-            <button {...attrs} on:click={() => navigateToBreadcrumb(-1)} title="Workspace root">
-              {workspace ? workspace.name : 'Loading...'}
-            </button>
-          </Breadcrumb.Link>
-        {/if}
-      </Breadcrumb.Item>
-      {#each breadcrumbSegments as segment, index}
-        <Breadcrumb.Separator />
+  <div class="breadcrumb-wrapper" bind:this={breadcrumbWrapper}>
+    <!-- Hidden measurement container - renders all items to measure their widths -->
+    <div class="breadcrumb-measure-container text-xs" aria-hidden="true">
+      <span class="breadcrumb-item-measure px-1">{workspace ? workspace.name : 'Loading...'}</span>
+      {#each breadcrumbSegments as segment}
+        <span class="breadcrumb-item-measure px-1">{segment}</span>
+      {/each}
+    </div>
+
+    <Breadcrumb.Root>
+      <Breadcrumb.List class="breadcrumbs text-xs" bind:el={breadcrumbContainer}>
+        <!-- Root workspace item - always visible -->
         <Breadcrumb.Item>
-          {#if index === breadcrumbSegments.length - 1}
+          {#if currentRootPath === ''}
             <Breadcrumb.Page>
-              <div class="px-1">{segment}</div>
+              <div class="px-1 py-0.5">
+                {workspace ? workspace.name : 'Loading...'}
+              </div>
             </Breadcrumb.Page>
           {:else}
             <Breadcrumb.Link asChild let:attrs>
-              <button {...attrs} on:click={() => navigateToBreadcrumb(index)}>
-                {segment}
+              <button {...attrs} on:click={() => navigateToBreadcrumb(-1)} title="Workspace root">
+                {workspace ? workspace.name : 'Loading...'}
               </button>
             </Breadcrumb.Link>
           {/if}
         </Breadcrumb.Item>
-      {/each}
-    </Breadcrumb.List>
-  </Breadcrumb.Root>
+
+        <!-- Ellipsis with dropdown for collapsed segments -->
+        {#if needsCollapsing}
+          <Breadcrumb.Separator />
+          <Breadcrumb.Item>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild let:builder>
+                <button use:builder.action {...builder} class="breadcrumb-ellipsis-btn" title="Show hidden folders">
+                  <Ellipsis size={14} />
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Content align="start">
+                {#each collapsedSegments as segment, index}
+                  <DropdownMenu.Item size="sm" on:click={() => navigateToBreadcrumb(index)}>
+                    {segment}
+                  </DropdownMenu.Item>
+                {/each}
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
+          </Breadcrumb.Item>
+        {/if}
+
+        <!-- Visible segments -->
+        {#each visibleSegments as segment, index}
+          {@const actualIndex = visibleStartIndex + index}
+          <Breadcrumb.Separator />
+          <Breadcrumb.Item class="overflow-hidden">
+            {#if actualIndex === breadcrumbSegments.length - 1}
+              <Breadcrumb.Page class="overflow-hidden">
+                <div class="overflow-hidden overflow-ellipsis whitespace-nowrap px-1">{segment}</div>
+              </Breadcrumb.Page>
+            {:else}
+              <Breadcrumb.Link asChild let:attrs>
+                <button {...attrs} on:click={() => navigateToBreadcrumb(actualIndex)}>
+                  {segment}
+                </button>
+              </Breadcrumb.Link>
+            {/if}
+          </Breadcrumb.Item>
+        {/each}
+      </Breadcrumb.List>
+    </Breadcrumb.Root>
+  </div>
   <div class="search-bar">
     <Search size={14} />
     <Input
@@ -687,6 +830,7 @@
         on:move={onTableMenuMoveNode}
         on:delete={onTableDeleteNode}
         on:copyFileLocation={onTableCopyFileLocation}
+        on:copyFullPath={onTableCopyFullPath}
         on:moveToWorkspace={onTableMoveToWorkspace}
         on:runAction={event => onTableRunAction(event, selectedItemIds)}
         on:newFile={onTableNewSequence}
@@ -704,10 +848,32 @@
     height: 100%;
   }
 
+  .breadcrumb-wrapper {
+    overflow: hidden;
+    position: relative;
+  }
+
   :global(.breadcrumbs) {
     background: var(--st-gray-10, #f5f5f5);
     border-bottom: 1px solid var(--st-gray-20, #e0e0e0);
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    overflow: hidden;
     padding: 6px 8px;
+    position: relative;
+  }
+
+  /* Allow breadcrumb items to shrink */
+  :global(.breadcrumbs li) {
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  /* Last breadcrumb item can shrink and truncate */
+  :global(.breadcrumbs li:last-child) {
+    flex-shrink: 1;
+    min-width: 40px;
   }
 
   :global(.breadcrumbs button) {
@@ -717,7 +883,24 @@
     border-radius: 4px;
     cursor: pointer;
     display: inline-flex;
+    max-width: 100%;
+    overflow: hidden;
     padding: 2px 4px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Breadcrumb page content (non-clickable current page) */
+  :global(.breadcrumbs [data-slot='breadcrumb-page']) {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :global(.breadcrumbs [data-slot='breadcrumb-page'] > div) {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   :global(.breadcrumbs button:hover) {
@@ -726,6 +909,37 @@
 
   :global(.breadcrumb-home) {
     display: inline-flex;
+  }
+
+  /* Hidden container for measuring breadcrumb item widths */
+  .breadcrumb-measure-container {
+    height: 0;
+    left: 0;
+    overflow: hidden;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    visibility: hidden;
+    white-space: nowrap;
+  }
+
+  .breadcrumb-item-measure {
+    display: inline-block;
+  }
+
+  :global(.breadcrumb-ellipsis-btn) {
+    align-items: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    justify-content: center;
+    padding: 2px 4px;
+  }
+
+  :global(.breadcrumb-ellipsis-btn:hover) {
+    background: var(--st-gray-20, #e0e0e0);
   }
 
   .search-bar {
