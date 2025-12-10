@@ -3,11 +3,8 @@
 <script lang="ts">
   import { permissionHandler } from '../../../utilities/permissionHandler';
 
-  import DownloadIcon from '@nasa-jpl/stellar/icons/download.svg?component';
-  import ExpandIcon from '@nasa-jpl/stellar/icons/expand.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
-  import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
-  import { FileUp } from 'lucide-svelte';
+  import { Download, EllipsisVertical, FileUp, FolderInput, Trash2 } from 'lucide-svelte';
   import type { Placement } from 'tippy.js';
   import type { TRowData } from '../../../types/data-grid';
   import { tooltip } from '../../../utilities/tooltip';
@@ -43,6 +40,8 @@
     | ((data: RowData, progressCallback?: (progress: number) => void, signal?: AbortSignal) => void)
     | undefined = undefined;
   export let viewCallback: ((data: RowData) => void) | undefined = undefined;
+  export let menuCallback: ((data: RowData, event: MouseEvent) => void) | undefined = undefined;
+  export let menuTooltip: Tooltip | undefined = undefined;
 
   let downloadAbortController: AbortController | null = null;
   let downloadProgress: number | null = null;
@@ -79,6 +78,12 @@
   function progressCallback(progress: number) {
     downloadProgress = progress;
   }
+
+  function onMenuClick(event: MouseEvent) {
+    if (rowData) {
+      menuCallback?.(rowData, event);
+    }
+  }
 </script>
 
 {#if viewCallback}
@@ -93,7 +98,7 @@
     }}
     use:tooltip={viewTooltip}
   >
-    <ExpandIcon />
+    <FolderInput size={16} />
   </button>
 {/if}
 {#if downloadCallback}
@@ -109,7 +114,7 @@
       {#if useExportIcon}
         <FileUp size={16} />
       {:else}
-        <DownloadIcon />
+        <Download size={16} />
       {/if}
     </button>
   {:else}
@@ -166,7 +171,12 @@
         hasDeletePermissionError || `You do not have permission to ${deleteTooltip?.content ?? 'delete'}.`,
     }}
   >
-    <TrashIcon />
+    <Trash2 size={16} />
+  </button>
+{/if}
+{#if menuCallback}
+  <button class:st-button={true} class:icon={true} on:click|stopPropagation={onMenuClick} use:tooltip={menuTooltip}>
+    <EllipsisVertical size={16} />
   </button>
 {/if}
 

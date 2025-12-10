@@ -93,6 +93,12 @@
     gridApi?.onFilterChanged();
   }
 
+  export function showContextMenu(event: MouseEvent) {
+    if (useCustomContextMenu) {
+      contextMenu.show(event);
+    }
+  }
+
   export let autoSizeColumnsToFit: boolean = true;
   export { className as class };
   export let columnDefs: ColDef[];

@@ -50,6 +50,7 @@
   export let singleItemDisplayText: string = '';
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
+  export let rowHeight: number = 33;
   export let user: User | null;
   export let filterExpression: string = '';
 
@@ -171,6 +172,7 @@
   {columnStates}
   {columnsToForceRefreshOnDataUpdate}
   {idKey}
+  {rowHeight}
   {getRowId}
   {isRowSelectable}
   {isExternalFilterPresent}

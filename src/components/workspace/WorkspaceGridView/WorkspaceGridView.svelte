@@ -48,6 +48,7 @@
 
   type CellRendererParams = {
     deleteNode: (node: WorkspaceTreeNodeWithFullPath) => void;
+    showMenu: (node: WorkspaceTreeNodeWithFullPath, event: MouseEvent) => void;
     viewNode: (node: WorkspaceTreeNodeWithFullPath) => void;
   };
   type WorkspaceTreeNodeCellRendererParams = ICellRendererParams<WorkspaceTreeNodeWithFullPath> & CellRendererParams;
@@ -65,7 +66,7 @@
     runAction: WorkspaceNodeRunActionEvent;
   }>();
 
-  const INDENT_SIZE = 20; // pixels per depth level
+  const INDENT_SIZE = 12; // pixels per depth level
 
   let columnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [];
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
@@ -280,14 +281,23 @@
             deleteCallback: params.deleteNode,
             deleteTooltip: {
               content: 'Delete',
-              placement: 'bottom',
+              placement: 'top',
             },
             hasDeletePermission,
+            menuCallback: params.showMenu,
+            menuTooltip: {
+              content: 'More actions',
+              placement: 'top',
+            },
             rowData: params.data,
-            viewCallback: data => user && params.viewNode(data),
+            viewCallback:
+              params.data?.type === WorkspaceContentType.Directory ||
+              params.data?.type === WorkspaceContentType.Workspace
+                ? data => user && params.viewNode(data)
+                : undefined,
             viewTooltip: {
               content: 'Open',
-              placement: 'bottom',
+              placement: 'top',
             },
           },
           target: actionsDiv,
@@ -297,6 +307,7 @@
       },
       cellRendererParams: {
         deleteNode: onDeleteNode,
+        showMenu: onShowMenu,
         viewNode: onViewNode,
       } as CellRendererParams,
       headerName: '',
@@ -524,9 +535,22 @@
 
   function onViewNode(node: WorkspaceTreeNodeWithFullPath) {
     if (node.type === WorkspaceContentType.Directory || node.type === WorkspaceContentType.Workspace) {
-      // Toggle folder expansion on view
-      toggleExpand(node.fullPath);
+      navigateToFolder(node.fullPath);
     }
+  }
+
+  function onShowMenu(node: WorkspaceTreeNodeWithFullPath, event: MouseEvent) {
+    contextMenuNode = node;
+    selectedTreeNodePath = node.fullPath;
+    // Position the context menu below the button
+    const button = event.currentTarget as HTMLElement;
+    const rect = button.getBoundingClientRect();
+    const syntheticEvent = new MouseEvent('contextmenu', {
+      bubbles: true,
+      clientX: rect.right,
+      clientY: rect.top,
+    });
+    dataGrid?.showContextMenu(syntheticEvent);
   }
 
   function onContextMenu(event: CustomEvent<CellContextMenuEvent<WorkspaceTreeNodeWithFullPath, any>>) {
@@ -799,6 +823,7 @@
   <BulkActionDataGrid
     bind:dataGrid
     bind:selectedItemId={selectedTreeNodePath}
+    rowHeight={26}
     class="workspace-grid-view"
     {columnDefs}
     getRowId={node => node.fullPath}
@@ -856,24 +881,32 @@
   :global(.breadcrumbs) {
     background: var(--st-gray-10, #f5f5f5);
     border-bottom: 1px solid var(--st-gray-20, #e0e0e0);
-    display: flex;
-    flex-wrap: nowrap;
+    display: flex !important;
+    flex-wrap: nowrap !important;
     gap: 4px;
     overflow: hidden;
     padding: 6px 8px;
     position: relative;
   }
 
-  /* Allow breadcrumb items to shrink */
+  /* Ensure all breadcrumb items stay on one line */
   :global(.breadcrumbs li) {
+    display: inline-flex;
     flex-shrink: 0;
     min-width: 0;
+    white-space: nowrap;
   }
 
   /* Last breadcrumb item can shrink and truncate */
   :global(.breadcrumbs li:last-child) {
     flex-shrink: 1;
     min-width: 40px;
+    overflow: hidden;
+  }
+
+  /* Ensure separators don't wrap */
+  :global(.breadcrumbs [data-slot='breadcrumb-separator']) {
+    flex-shrink: 0;
   }
 
   :global(.breadcrumbs button) {
