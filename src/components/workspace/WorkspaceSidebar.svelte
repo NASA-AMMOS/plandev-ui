@@ -62,6 +62,7 @@
 
   let didWorkspaceUpdate: boolean = false;
   let lastRefreshTime: Date = new Date();
+  let currentRootPath: string = ''; // Navigation state - current folder being viewed as root
 
   $: workspaceTree && didUpdate(isWorkspaceLoading);
 
@@ -80,11 +81,11 @@
   }
 
   function onNewFolder() {
-    dispatch('newFolder', '');
+    dispatch('newFolder', currentRootPath);
   }
 
   function onNewSequence() {
-    dispatch('newSequence', '');
+    dispatch('newSequence', currentRootPath);
   }
 
   function onImportFile() {
@@ -256,6 +257,7 @@
                   <Sidebar.Menu className="h-full">
                     {#if workspaceTree && workspace}
                       <WorkspaceGridView
+                        bind:currentRootPath
                         bind:selectedTreeNodePath={selectedFilePath}
                         {actions}
                         treeNode={workspaceTree}
@@ -267,6 +269,7 @@
                         on:nodeRename
                         on:newSequence
                         on:newFolder
+                        on:openInNewTab
                         on:importFile
                         on:copyFileLocation
                         on:copyFullPath

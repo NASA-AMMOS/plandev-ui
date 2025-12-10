@@ -107,6 +107,7 @@
   export let columnStates: ColumnState[] = [];
   export let currentSelectedRowId: RowId | null = null;
   export let filterExpression: string = '';
+  export let headerHeight: number = 32;
   export let highlightOnSelection: boolean = true;
   export let doesExternalFilterPass: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
   export let idKey: keyof RowData = 'id';
@@ -318,6 +319,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       animateRows: false,
       columnDefs,
       doesExternalFilterPass,
+      headerHeight,
       includeHiddenColumnsInQuickFilter: true,
       ...(shouldAutoGenerateId ? {} : { getRowId: (params: { data: RowData }) => `${getRowId(params.data)}` }),
       isExternalFilterPresent,

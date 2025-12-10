@@ -23,6 +23,7 @@
   } from '../../../types/workspace-tree-view';
   import { featurePermissions } from '../../../utilities/permissions';
   import {
+    findNodeByPath,
     flattenWorkspaceTreeWithPaths,
     getAvailableActionsForNodes,
     mapWorkspaceTreePaths,
@@ -41,6 +42,7 @@
     return true;
   };
   export let actions: ActionDefinition[] = [];
+  export let currentRootPath: string = '';
   export let selectedTreeNodePath: string | null | undefined = undefined;
   export let treeNode: WorkspaceTreeNode | null | undefined = undefined;
   export let workspace: Workspace | null | undefined = null;
@@ -63,6 +65,7 @@
     nodeDelete: WorkspaceNodeEvent;
     nodeMove: WorkspaceNodeEvent;
     nodeRename: WorkspaceNodeEvent;
+    openInNewTab: string;
     runAction: WorkspaceNodeRunActionEvent;
   }>();
 
@@ -82,9 +85,6 @@
   // Supports multi-column sorting (Shift+click headers in AG Grid)
   type ColumnSort = { colId: string; direction: 'asc' | 'desc' };
   let sortState: ColumnSort[] = [{ colId: 'name', direction: 'asc' }];
-
-  // Navigation state - current folder being viewed as root
-  let currentRootPath: string = '';
 
   // Filter state for search bar - works alongside AG Grid's column filter
   let filterText: string = '';
@@ -358,24 +358,6 @@
     };
   }
 
-  // Find a node in the tree by its path
-  function findNodeByPath(nodes: WorkspaceTreeNode[], targetPath: string): WorkspaceTreeNode | null {
-    const pathParts = targetPath.split(PATH_DELIMITER);
-
-    let currentNodes = nodes;
-    let currentNode: WorkspaceTreeNode | null = null;
-
-    for (const part of pathParts) {
-      currentNode = currentNodes.find(n => n.name === part) ?? null;
-      if (!currentNode) {
-        return null;
-      }
-      currentNodes = currentNode.contents ?? [];
-    }
-
-    return currentNode;
-  }
-
   // Get the contents to display based on current root path
   $: currentRootContents = (() => {
     if (!treeNode?.contents) {
@@ -637,6 +619,11 @@
     dispatch('importFile', targetPath);
   }
 
+  function onOpenInNewTab(node: WorkspaceTreeNodeWithFullPath) {
+    let targetPath = node?.fullPath ?? '';
+    dispatch('openInNewTab', targetPath);
+  }
+
   function onCopyFileLocation(node: WorkspaceTreeNodeWithFullPath) {
     let targetPath = node?.fullPath ?? '';
     dispatch('copyFileLocation', targetPath);
@@ -679,6 +666,12 @@
   function onTableImportFile() {
     if (contextMenuNode) {
       onImportFile(contextMenuNode);
+    }
+  }
+
+  function onTableOpenInNewTab() {
+    if (contextMenuNode) {
+      onOpenInNewTab(contextMenuNode);
     }
   }
 
@@ -823,6 +816,7 @@
   <BulkActionDataGrid
     bind:dataGrid
     bind:selectedItemId={selectedTreeNodePath}
+    headerHeight={26}
     rowHeight={26}
     class="workspace-grid-view"
     {columnDefs}
@@ -861,6 +855,7 @@
         on:newFile={onTableNewSequence}
         on:newFolder={onTableNewFolder}
         on:importFile={onTableImportFile}
+        on:openInNewTab={onTableOpenInNewTab}
       />
     </svelte:fragment>
   </BulkActionDataGrid>
@@ -990,7 +985,7 @@
   :global(.tree-cell) {
     align-items: center;
     display: flex;
-    gap: 4px;
+    gap: 1px;
     height: 100%;
   }
 
@@ -1006,6 +1001,7 @@
     align-items: center;
     display: flex;
     height: 14px;
+    margin-right: 3px;
     width: 14px;
   }
 

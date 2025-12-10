@@ -6,24 +6,24 @@
   import { linter, lintGutter } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate, keymap } from '@codemirror/view';
+  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
   import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
-  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
-  import { SquareCode } from 'lucide-svelte';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
+  import { File, SquareCode } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
+  import type { ActionDefinition } from '../../types/actions';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { downloadBlob } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
+  import { pluralize } from '../../utilities/text';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
-  import Panel from './Panel.svelte';
-  import SectionTitle from './SectionTitle.svelte';
-  import type { ActionDefinition } from '../../types/actions';
-  import { pluralize } from '../../utilities/text';
   import Menu from '../menus/Menu.svelte';
   import MenuItem from '../menus/MenuItem.svelte';
+  import Panel from './Panel.svelte';
+  import SectionTitle from './SectionTitle.svelte';
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
   export let includeActions: boolean = false;
@@ -31,6 +31,7 @@
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let textFileContent: string = '';
+  export let textFilePath: string = '';
   export let textFileName: string = '';
   export let title: string = 'Text Editor';
 
@@ -151,7 +152,10 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <SectionTitle>{title}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}</SectionTitle>
+    <SectionTitle alt={textFilePath}>
+      <File size={16} slot="icon" />
+      {title}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}
+    </SectionTitle>
 
     <div class="right">
       {#if includeActions}

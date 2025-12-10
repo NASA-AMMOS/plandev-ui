@@ -1,3 +1,4 @@
+import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
 import { PATH_DELIMITER } from '../constants/workspaces';
 import { WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
@@ -5,9 +6,8 @@ import type { User } from '../types/app';
 import type { ActionParameterPair, Workspace, WorkspaceInsertInput } from '../types/workspace';
 import type { WorkspaceTreeMap, WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 import { filterEmpty } from './generic';
-import { reqWorkspace } from './requests';
-import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
 import { pathMatchesExtensionPattern } from './parameters';
+import { reqWorkspace } from './requests';
 
 export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
   let treeMap: WorkspaceTreeMap = {};
@@ -88,17 +88,15 @@ export function sortWorkspaceTree(
   nodes: WorkspaceTreeNode[],
   comparator: TreeSortComparator = defaultTreeSortComparator,
 ): WorkspaceTreeNode[] {
-  return [...nodes]
-    .sort(comparator)
-    .map(node => {
-      if (node.contents && node.contents.length > 0) {
-        return {
-          ...node,
-          contents: sortWorkspaceTree(node.contents, comparator),
-        };
-      }
-      return node;
-    });
+  return [...nodes].sort(comparator).map(node => {
+    if (node.contents && node.contents.length > 0) {
+      return {
+        ...node,
+        contents: sortWorkspaceTree(node.contents, comparator),
+      };
+    }
+    return node;
+  });
 }
 
 /**
@@ -337,3 +335,21 @@ export const WorkspaceApi = {
     );
   },
 };
+
+// Find a node in the tree by its path
+export function findNodeByPath(nodes: WorkspaceTreeNode[], targetPath: string): WorkspaceTreeNode | null {
+  const pathParts = targetPath.split(PATH_DELIMITER);
+
+  let currentNodes = nodes;
+  let currentNode: WorkspaceTreeNode | null = null;
+
+  for (const part of pathParts) {
+    currentNode = currentNodes.find(n => n.name === part) ?? null;
+    if (!currentNode) {
+      return null;
+    }
+    currentNodes = currentNode.contents ?? [];
+  }
+
+  return currentNode;
+}

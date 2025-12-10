@@ -9,6 +9,7 @@
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type { LibrarySequenceSignature, PhoenixContext, UserSequence } from '@nasa-jpl/aerie-sequence-languages';
   import type { IRowNode } from 'ag-grid-community';
+  import { TriangleAlert } from 'lucide-svelte';
   import { onDestroy, onMount, tick } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
@@ -265,8 +266,7 @@
       fileType === WorkspaceContentType.Sequence ||
       fileType === WorkspaceContentType.Json ||
       fileType === WorkspaceContentType.Text ||
-      fileType === WorkspaceContentType.Metadata ||
-      fileType === WorkspaceContentType.Unknown
+      fileType === WorkspaceContentType.Metadata
     );
   }
   function isNavigableFile(fileType: WorkspaceContentType) {
@@ -579,6 +579,10 @@
     }
   }
 
+  function onOpenInNewTab({ detail: treeNodePath }: CustomEvent<string>) {
+    window.open(`${base}/workspaces/${$workspaceId}?sequenceId=${encodeURIComponent(treeNodePath)}`, '_blank');
+  }
+
   onMount(() => {
     if (initialWorkspace) {
       $workspaceId = initialWorkspace.id;
@@ -631,6 +635,7 @@
       on:refreshWorkspace={refreshWorkspaceContents}
       on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
       on:runAction={onRunActionOnFileSelection}
+      on:openInNewTab={onOpenInNewTab}
     />
   </Sidebar.Provider>
   <CssGridGutter track={1} type="column" />
@@ -649,6 +654,7 @@
             sequenceAdaptation={$sequenceAdaptation}
             sequenceDefinition={initialSelectedFileContent}
             sequenceName={selectedFileName}
+            sequenceFilePath={selectedFilePath ?? ''}
             sequenceOutput={selectedSequenceOutput}
             showCommandFormBuilder={true}
             title="Sequence - Definition Editor"
@@ -669,21 +675,23 @@
             isJSON={selectedFileType === WorkspaceContentType.Json}
             previewOnly={!hasEditFilePermission}
             textFileName={selectedFileName}
+            textFilePath={selectedFilePath ?? ''}
             textFileContent={initialSelectedFileContent}
-            title={selectedFileType === WorkspaceContentType.Json ? 'JSON Editor' : 'Text Editor'}
+            title={selectedFileName}
             on:runAction={onRunActionOnActiveFile}
             on:save={onSaveWorkspaceFile}
             on:textContentUpdated={onWorkspaceFileUpdated}
           />
         </div>
       {:else}
-        <div class="flex w-full justify-center pt-6">
-          <p class="st-typography-body max-w-prose text-center text-lg">
+        <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
+          <TriangleAlert size={70} class="text-muted-foreground" />
+          <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
             The selected file
             <code class="font-bold">
               {activeFilePath}
             </code>
-            is a binary or other format not supported by sequence editor
+            is not displayed in the editor because is either binary or an unsupported text encoding.
           </p>
         </div>
       {/if}

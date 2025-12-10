@@ -25,6 +25,7 @@
     moveToWorkspace: void;
     newFile: void;
     newFolder: void;
+    openInNewTab: void;
     rename: void;
     runAction: ActionParameterPair;
     saveSequence: void;
@@ -49,6 +50,10 @@
 <ContextMenu.Group>
   <!-- Single node actions -->
   {#if selectedWorkspaceNodes.length === 1}
+    <ContextMenu.Item size="sm" on:click={() => dispatch('openInNewTab')} aria-label="Open in new tab">
+      Open in New Tab
+    </ContextMenu.Item>
+    <ContextMenu.Separator />
     <div
       use:permissionHandler={{
         hasPermission: hasEditPermission,

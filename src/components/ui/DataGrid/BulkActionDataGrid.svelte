@@ -36,6 +36,7 @@
   export let dataGrid: DataGrid<RowData> | undefined = undefined;
   export let hasDeletePermission: PermissionCheck<RowData> | boolean = true;
   export let hasDeletePermissionError: string = 'You do not have permission to delete.';
+  export let headerHeight: number = 32;
   export let idKey: keyof RowData = 'id';
   export let items: RowData[];
   export let loading: boolean = false;
@@ -171,6 +172,7 @@
   {columnDefs}
   {columnStates}
   {columnsToForceRefreshOnDataUpdate}
+  {headerHeight}
   {idKey}
   {rowHeight}
   {getRowId}

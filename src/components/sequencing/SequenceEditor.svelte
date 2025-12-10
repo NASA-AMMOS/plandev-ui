@@ -20,7 +20,7 @@
   import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
-  import { SquareCode } from 'lucide-svelte';
+  import { FileJson2, SquareCode } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
@@ -45,6 +45,7 @@
   export let readOnly: boolean = false;
   export let sequenceAdaptation: PhoenixAdaptation;
   export let sequenceName: string = '';
+  export let sequenceFilePath: string = '';
   export let sequenceDefinition: string = '';
   export let sequenceOutput: string = '';
   export let showCommandFormBuilder: boolean = false;
@@ -273,7 +274,10 @@
   <CssGrid rows={editorHeights} minHeight={'0'}>
     <Panel>
       <svelte:fragment slot="header">
-        <SectionTitle>{title}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}</SectionTitle>
+        <SectionTitle alt={sequenceFilePath}>
+          <FileJson2 size={16} slot="icon" />
+          {sequenceName}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}
+        </SectionTitle>
 
         <div class="right">
           {#if includeActions}
