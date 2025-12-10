@@ -4,7 +4,7 @@
   import { permissionHandler } from '../../../utilities/permissionHandler';
 
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
-  import { Download, EllipsisVertical, FileUp, FolderInput, Trash2 } from 'lucide-svelte';
+  import { Download, EllipsisVertical, ExpandIcon, FileUp, Trash2 } from 'lucide-svelte';
   import type { Placement } from 'tippy.js';
   import type { TRowData } from '../../../types/data-grid';
   import { tooltip } from '../../../utilities/tooltip';
@@ -98,7 +98,7 @@
     }}
     use:tooltip={viewTooltip}
   >
-    <FolderInput size={16} />
+    <ExpandIcon size={16} />
   </button>
 {/if}
 {#if downloadCallback}
