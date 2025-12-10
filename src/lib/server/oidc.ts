@@ -1,6 +1,5 @@
 import { browser, dev } from '$app/environment';
-import { env as dynamicEnv } from '$env/dynamic/private';
-import * as env from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import type { MaybeToken, Rule } from '$lib/types/oidc';
 import { type Cookies, type RequestEvent } from '@sveltejs/kit';
 import * as arctic from 'arctic';
@@ -18,15 +17,20 @@ export function generateNonce(): string {
   return crypto.randomBytes(16).toString('base64url');
 }
 
-const DEFAULT_JWKS_CLIENT = (() => {
-  if (env.OIDC_JWKS_URL) {
-    return new JwksClient({ jwksUri: env.OIDC_JWKS_URL });
+// Lazily initialized JWKS client - created on first use to allow runtime env var configuration
+let _jwksClient: JwksClient | undefined;
+function getJwksClient(): JwksClient | undefined {
+  if (!_jwksClient && env.OIDC_JWKS_URL) {
+    _jwksClient = new JwksClient({ jwksUri: env.OIDC_JWKS_URL });
   }
-})();
+  return _jwksClient;
+}
 
 // Supported JWT signing algorithms. RS256 is the most common for OIDC.
 // Can be overridden via OIDC_ALGORITHMS env var (space-separated, e.g., "RS256 RS384 RS512")
-const SUPPORTED_ALGORITHMS = (env.OIDC_ALGORITHMS?.split(' ') || ['RS256']) as jwt.Algorithm[];
+function getSupportedAlgorithms(): jwt.Algorithm[] {
+  return (env.OIDC_ALGORITHMS?.split(' ') || ['RS256']) as jwt.Algorithm[];
+}
 
 /**
  * JWT claim path configuration.
@@ -47,10 +51,10 @@ const SUPPORTED_ALGORITHMS = (env.OIDC_ALGORITHMS?.split(' ') || ['RS256']) as j
  *   - Your IdP's token mapper configuration
  */
 export const CLAIMS_CONFIG = {
-  namespace: dynamicEnv.OIDC_CLAIMS_NAMESPACE || 'https://hasura.io/jwt/claims',
-  userId: dynamicEnv.OIDC_CLAIMS_USER_ID || 'x-hasura-user-id',
-  allowedRoles: dynamicEnv.OIDC_CLAIMS_ALLOWED_ROLES || 'x-hasura-allowed-roles',
-  defaultRole: dynamicEnv.OIDC_CLAIMS_DEFAULT_ROLE || 'x-hasura-default-role',
+  get namespace() { return env.OIDC_CLAIMS_NAMESPACE || 'https://hasura.io/jwt/claims'; },
+  get userId() { return env.OIDC_CLAIMS_USER_ID || 'x-hasura-user-id'; },
+  get allowedRoles() { return env.OIDC_CLAIMS_ALLOWED_ROLES || 'x-hasura-allowed-roles'; },
+  get defaultRole() { return env.OIDC_CLAIMS_DEFAULT_ROLE || 'x-hasura-default-role'; },
 };
 
 /**
@@ -95,20 +99,24 @@ export function extractClaims(token: jwt.JwtPayload): {
  * Access tokens are treated as opaque by OIDC clients - audience validation
  * is only required for ID tokens per the OIDC spec.
  */
-const BASE_VERIFY_OPTS: jwt.VerifyOptions = {
-  algorithms: SUPPORTED_ALGORITHMS,
-  ignoreExpiration: false,
-  issuer: env.OIDC_ISSUER,
-};
+function getBaseVerifyOpts(): jwt.VerifyOptions {
+  return {
+    algorithms: getSupportedAlgorithms(),
+    ignoreExpiration: false,
+    issuer: env.OIDC_ISSUER,
+  };
+}
 
 /**
  * ID token verification includes audience validation per OIDC spec.
  * The audience must match the client ID that requested the token.
  */
-const ID_TOKEN_VERIFY_OPTS: jwt.VerifyOptions = {
-  ...BASE_VERIFY_OPTS,
-  audience: env.OIDC_AUDIENCE || undefined,
-};
+function getIdTokenVerifyOpts(): jwt.VerifyOptions {
+  return {
+    ...getBaseVerifyOpts(),
+    audience: env.OIDC_AUDIENCE || undefined,
+  };
+}
 
 /**
  * Remove invalid tokens, refresh if appropriate, and set locals for tokens and roles.
@@ -135,7 +143,7 @@ async function sanitize(evt: RequestEvent) {
   // Access tokens use base verification (no audience check - treated as opaque per OIDC spec)
   await verify(evt.cookies.get('accessToken')).catch(_ => evt.cookies.delete('accessToken', { path: '/' }));
   // ID tokens require audience validation per OIDC spec
-  await verify(evt.cookies.get('idToken'), DEFAULT_JWKS_CLIENT, ID_TOKEN_VERIFY_OPTS).catch(_ =>
+  await verify(evt.cookies.get('idToken'), getJwksClient(), getIdTokenVerifyOpts()).catch(_ =>
     evt.cookies.delete('idToken', { path: '/' }),
   );
   return evt;
@@ -174,8 +182,8 @@ async function refresh(evt: RequestEvent) {
  */
 export async function verify(
   token: string | undefined,
-  client = DEFAULT_JWKS_CLIENT,
-  opts: jwt.VerifyOptions = BASE_VERIFY_OPTS,
+  client = getJwksClient(),
+  opts: jwt.VerifyOptions = getBaseVerifyOpts(),
 ): Promise<MaybeToken> {
   if (!token) {
     return undefined;
@@ -201,7 +209,7 @@ export async function verify(
  * @throws {Error} If the token is invalid, expired, or fails audience validation
  */
 export async function verifyIdToken(idToken: string): Promise<MaybeToken> {
-  return verify(idToken, DEFAULT_JWKS_CLIENT, ID_TOKEN_VERIFY_OPTS);
+  return verify(idToken, getJwksClient(), getIdTokenVerifyOpts());
 }
 
 /**
@@ -418,7 +426,7 @@ export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth
   // Access tokens use base verification (no audience check - treated as opaque per OIDC spec)
   const accessJwt = await verify(tokens.accessToken());
   // ID tokens require audience validation per OIDC spec
-  const idJwt = await verify(tokens.idToken(), DEFAULT_JWKS_CLIENT, ID_TOKEN_VERIFY_OPTS);
+  const idJwt = await verify(tokens.idToken(), getJwksClient(), getIdTokenVerifyOpts());
 
   if (accessJwt && idJwt) {
     // SECURITY: Cookie settings explained:
