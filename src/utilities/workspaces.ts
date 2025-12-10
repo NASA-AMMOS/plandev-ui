@@ -63,8 +63,12 @@ export const defaultTreeSortComparator: TreeSortComparator = (a, b) => {
   // Directories first
   const aIsDir = a.type === WorkspaceContentType.Directory;
   const bIsDir = b.type === WorkspaceContentType.Directory;
-  if (aIsDir && !bIsDir) return -1;
-  if (!aIsDir && bIsDir) return 1;
+  if (aIsDir && !bIsDir) {
+    return -1;
+  }
+  if (!aIsDir && bIsDir) {
+    return 1;
+  }
 
   // Then alphabetically by name
   const aName = a.name?.toLowerCase() ?? '';
