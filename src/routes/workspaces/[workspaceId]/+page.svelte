@@ -501,6 +501,10 @@
     setClipboardContent(`${WORKSPACE_URL}/ws/${$workspaceId}/${copyPath}`);
   }
 
+  function onCopyFullPath({ detail: copyPath }: CustomEvent<string>) {
+    setClipboardContent(copyPath);
+  }
+
   async function onMoveToWorkspace({ detail: sourcePath }: CustomEvent<string>) {
     if (initialWorkspace) {
       await effects.moveWorkspaceItemToWorkspace(initialWorkspace, workspaceTreeMap[sourcePath], sourcePath, user);
@@ -622,6 +626,7 @@
       on:newSequence={onNewSequence}
       on:importFile={onImportFile}
       on:copyFileLocation={onCopyFileLocation}
+      on:copyFullPath={onCopyFullPath}
       on:moveToWorkspace={onMoveToWorkspace}
       on:refreshWorkspace={refreshWorkspaceContents}
       on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
