@@ -17,6 +17,7 @@
 
   const dispatch = createEventDispatcher<{
     copyFileLocation: void;
+    copyFullPath: void;
     delete: void;
     hide: void;
     importFile: void;
@@ -97,6 +98,9 @@
       Copy {selectedWorkspaceNodes[0].type === WorkspaceContentType.Directory
         ? 'Link to Directory'
         : 'Download Link to File'}
+    </ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={() => dispatch('copyFullPath')} aria-label="Copy Full Path">
+      Copy Full Path
     </ContextMenu.Item>
   </div>
   <ContextMenu.Separator />

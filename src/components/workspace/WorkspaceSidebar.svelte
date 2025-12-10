@@ -28,6 +28,7 @@
     actionsClick: void;
     addCollaborator: WorkspaceCollaborator[];
     copyFileLocation: string;
+    copyFullPath: string;
     deleteCollaborator: string;
     importFile: string;
     moveToWorkspace: string;
@@ -220,6 +221,7 @@
                         on:newSequence
                         on:importFile
                         on:copyFileLocation
+                        on:copyFullPath
                         on:moveToWorkspace
                         on:runAction
                       />
@@ -267,6 +269,7 @@
                         on:newFolder
                         on:importFile
                         on:copyFileLocation
+                        on:copyFullPath
                         on:moveToWorkspace
                         on:runAction
                       />

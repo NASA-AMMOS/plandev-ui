@@ -1,4 +1,10 @@
-export function setClipboardContent(content: any, success?: () => void, fail?: () => void) {
+import { showFailureToast, showSuccessToast } from './toast';
+
+export function setClipboardContent(
+  content: any,
+  successMessage: string = 'Copied to clipboard',
+  failureMessage: string = 'Failed to copy to clipboard',
+): void {
   let contentString = '';
 
   if (typeof content === 'object') {
@@ -7,16 +13,8 @@ export function setClipboardContent(content: any, success?: () => void, fail?: (
     contentString = content;
   }
   navigator.clipboard.writeText(contentString).then(
-    () => {
-      if (success !== undefined) {
-        success(); //optional success callback
-      }
-    },
-    () => {
-      if (fail !== undefined) {
-        fail(); //optional fail callback
-      }
-    },
+    () => showSuccessToast(successMessage),
+    () => showFailureToast(failureMessage),
   );
 }
 

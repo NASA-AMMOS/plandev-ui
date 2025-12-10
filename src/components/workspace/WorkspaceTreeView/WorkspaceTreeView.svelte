@@ -30,6 +30,7 @@
 
   const dispatch = createEventDispatcher<{
     copyFileLocation: string;
+    copyFullPath: string;
     importFile: string;
     moveToWorkspace: string;
     newFolder: string;
@@ -137,6 +138,11 @@
     dispatch('copyFileLocation', targetPath);
   }
 
+  function onCopyFullPath() {
+    let targetPath = contextMenuNode?.fullPath ?? '';
+    dispatch('copyFullPath', targetPath);
+  }
+
   function onMoveToWorkspace() {
     let targetPath = contextMenuNode?.fullPath ?? '';
     dispatch('moveToWorkspace', targetPath);
@@ -163,6 +169,7 @@
         on:move={onMoveNode}
         on:delete={onDeleteNode}
         on:copyFileLocation={onCopyFileLocation}
+        on:copyFullPath={onCopyFullPath}
         on:moveToWorkspace={onMoveToWorkspace}
         on:runAction={onRunAction}
         on:newFile={onNewSequence}
