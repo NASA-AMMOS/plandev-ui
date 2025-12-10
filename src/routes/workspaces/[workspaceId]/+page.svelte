@@ -111,6 +111,48 @@
     maybeNavigate(selectedFilePath);
   }
 
+  async function maybeNavigate(nextPath: string | null) {
+    // don't navigate if the selected path is a text file and not a folder or binary
+    // treat `null` as a navigable path so we can intentionally unload the editor file rather than skipping
+    const isNavigableFileOrNull = (nextPath && isNavigableFile(workspaceTreeMap[nextPath]?.type)) || nextPath === null;
+    if (!isNavigableFileOrNull) {
+      // wait a tick then revert selected UI to the existing active path
+      await tick();
+      selectedFilePath = activeFilePath;
+      return;
+    }
+
+    const didNavigate = await goToSequence(nextPath);
+    if (!didNavigate) {
+      // user decided not to navigate away due to unsaved changes, set selected UI back to active file
+      selectedFilePath = activeFilePath;
+      return;
+    }
+    // successfully navigated, update activeFilePath & get the file contents
+    activeFilePath = nextPath;
+    if (activeFilePath) {
+      const { filename } = separateFilenameFromPath(activeFilePath);
+      await getSelectedFileContent(activeFilePath);
+      availableActionsForActiveFile = getAvailableActionsForNodes(allActionsForWorkspace, [
+        workspaceTreeMap[activeFilePath],
+      ]);
+
+      if (filename) {
+        selectedFileName = filename;
+        selectedFileType = workspaceTreeMap[activeFilePath]?.type ?? null;
+      } else {
+        selectedFileName = undefined;
+        selectedFileType = null;
+      }
+    } else {
+      // navigated to a null/empty file, reset the editor contents
+      initialSelectedFileContent = '';
+      updatedSelectedFileContent = initialSelectedFileContent;
+      selectedFileName = undefined;
+      selectedFileType = null;
+    }
+  }
+
   $: if (initialWorkspace || $workspace) {
     const ws: Workspace = $workspace ?? (initialWorkspace as Workspace);
 
@@ -175,45 +217,6 @@
       commandDictionary = null;
       channelDictionary = null;
       parameterDictionaries = [];
-    }
-  }
-
-  async function maybeNavigate(nextPath: string | null) {
-    // don't navigate if the selected path is a text file and not a folder or binary
-    // treat `null` as a navigable path so we can intentionally unload the editor file rather than skipping
-    const isNavigableFileOrNull = (nextPath && isNavigableFile(workspaceTreeMap[nextPath]?.type)) || nextPath === null;
-    if (!isNavigableFileOrNull) {
-      // wait a tick then revert selected UI to the existing active path
-      await tick();
-      selectedFilePath = activeFilePath;
-      return;
-    }
-
-    const didNavigate = await goToSequence(nextPath);
-    if (!didNavigate) {
-      // user decided not to navigate away due to unsaved changes, set selected UI back to active file
-      selectedFilePath = activeFilePath;
-      return;
-    }
-    // successfully navigated, update activeFilePath & get the file contents
-    activeFilePath = nextPath;
-    if (activeFilePath) {
-      const { filename } = separateFilenameFromPath(activeFilePath);
-      getSelectedFileContent(activeFilePath);
-
-      if (filename) {
-        selectedFileName = filename;
-        selectedFileType = workspaceTreeMap[activeFilePath]?.type ?? null;
-      } else {
-        selectedFileName = undefined;
-        selectedFileType = null;
-      }
-    } else {
-      // navigated to a null/empty file, reset the editor contents
-      initialSelectedFileContent = '';
-      updatedSelectedFileContent = initialSelectedFileContent;
-      selectedFileName = undefined;
-      selectedFileType = null;
     }
   }
 
@@ -470,7 +473,14 @@
     }
   }
 
-  function onWorkspaceFileUpdated({ detail: { input, output } }: CustomEvent<{ input: string; output?: string }>) {
+  function onWorkspaceFileUpdated({
+    detail: { filePath, input, output },
+  }: CustomEvent<{ filePath: string; input: string; output?: string }>) {
+    // Ignore stale events from a file that is no longer active
+    if (filePath !== activeFilePath) {
+      return;
+    }
+
     updatedSelectedFileContent = input;
     if (output) {
       selectedSequenceOutput = output;
@@ -691,7 +701,7 @@
             <code class="font-bold">
               {activeFilePath}
             </code>
-            is not displayed in the editor because is either binary or an unsupported text encoding.
+            is not displayed in the editor because is either binary or an unsupported extension.
           </p>
         </div>
       {/if}

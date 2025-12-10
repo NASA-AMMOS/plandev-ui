@@ -112,7 +112,7 @@
       return;
     }
 
-    const containerWidth = breadcrumbWrapper.clientWidth - 16; // account for padding
+    const containerWidth = breadcrumbWrapper.clientWidth - 12; // account for padding
     const items = breadcrumbWrapper.querySelectorAll('.breadcrumb-item-measure');
 
     if (items.length === 0) {
@@ -742,7 +742,7 @@
     </div>
 
     <Breadcrumb.Root>
-      <Breadcrumb.List class="breadcrumbs text-xs" bind:el={breadcrumbContainer}>
+      <Breadcrumb.List class="breadcrumbs gap-1 text-xs sm:gap-1" bind:el={breadcrumbContainer}>
         <!-- Root workspace item - always visible -->
         <Breadcrumb.Item>
           {#if currentRootPath === ''}
@@ -880,7 +880,7 @@
     flex-wrap: nowrap !important;
     gap: 4px;
     overflow: hidden;
-    padding: 6px 8px;
+    padding: 3px 4px;
     position: relative;
   }
 

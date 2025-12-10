@@ -56,7 +56,7 @@
   const dispatch = createEventDispatcher<{
     runAction: { action: ActionDefinition; parameter: string };
     save: string;
-    sequence: { input: string; output?: string };
+    sequence: { filePath: string; input: string; output?: string };
   }>();
 
   let actionMenu: Menu;
@@ -162,7 +162,7 @@
 
     updatedSequenceDefinition = sequence;
     if (output !== undefined) {
-      dispatch('sequence', { input: sequence, output });
+      dispatch('sequence', { filePath: sequenceFilePath, input: sequence, output });
     }
   }
 

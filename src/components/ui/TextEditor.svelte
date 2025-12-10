@@ -38,7 +38,7 @@
   const dispatch = createEventDispatcher<{
     runAction: { action: ActionDefinition; parameter: string };
     save: string;
-    textContentUpdated: { input: string };
+    textContentUpdated: { filePath: string; input: string };
   }>();
   const jsonLinter = linter(jsonParseLinter());
 
@@ -103,7 +103,7 @@
     disableCopyAndExport = updatedText === '';
 
     updatedTextContent = updatedText;
-    dispatch('textContentUpdated', { input: updatedText });
+    dispatch('textContentUpdated', { filePath: textFilePath, input: updatedText });
   }
 
   function downloadInputFormat(): void {
