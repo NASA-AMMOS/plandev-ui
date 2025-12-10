@@ -206,8 +206,11 @@ describe('Workspace utility function tests', () => {
     });
 
     test('getWorkspaceContents', async () => {
-      await WorkspaceApi.getWorkspaceContents(1, null);
+      await WorkspaceApi.getWorkspaceContents(1, '', null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1', 'GET', null, null);
+
+      await WorkspaceApi.getWorkspaceContents(1, 'foo', null);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo', 'GET', null, null);
     });
 
     test('moveFile - move', async () => {

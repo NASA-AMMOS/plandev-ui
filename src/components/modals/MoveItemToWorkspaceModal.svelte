@@ -85,7 +85,7 @@
       workspaces
         .filter(workspace => workspace.id !== currentWorkspace.id)
         .map(async (workspace): Promise<WorkspaceTreeNode | null> => {
-          const workspaceContents = await effects.getWorkspaceContents(workspace.id, user);
+          const workspaceContents = await effects.getWorkspaceContents(workspace.id, '', user);
 
           return {
             contents: workspaceContents ?? [],

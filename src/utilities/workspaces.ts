@@ -270,7 +270,7 @@ function createFormDataWithFile(filePath: string, fileContent: string, fileKey: 
   return body;
 }
 
-type MoveFileOperation = {
+export type MoveFileOperation = {
   path: string;
   renameTo?: string;
 };
@@ -317,8 +317,12 @@ export const WorkspaceApi = {
   async getFileContent(workspaceId: number, filePath: string, user: User | null): Promise<string | null> {
     return reqWorkspace<string>(joinPath([workspaceId, filePath]), 'GET', null, user, undefined, false);
   },
-  async getWorkspaceContents(workspaceId: number, user: User | null): Promise<WorkspaceTreeNode[] | null> {
-    return reqWorkspace<WorkspaceTreeNode[]>(`${workspaceId}`, 'GET', null, user);
+  async getWorkspaceContents(
+    workspaceId: number,
+    path: string = '',
+    user: User | null,
+  ): Promise<WorkspaceTreeNode[] | null> {
+    return reqWorkspace<WorkspaceTreeNode[]>(`${joinPath([workspaceId, path])}`, 'GET', null, user);
   },
   async moveFile(
     workspaceId: number,

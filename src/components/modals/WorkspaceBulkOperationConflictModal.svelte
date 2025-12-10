@@ -3,12 +3,20 @@
 <script lang="ts">
   import { Checkbox } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
+  import { separateFilenameFromPath } from '../../utilities/workspaces';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
   export let targetPath: string;
+
+  let targetFilename: string = targetPath;
+
+  $: {
+    const decomposedFilepath = separateFilenameFromPath(targetPath);
+    targetFilename = decomposedFilepath.filename;
+  }
 
   const dispatch = createEventDispatcher<{
     confirm: {
@@ -47,7 +55,7 @@
   <ModalHeader showClose={false} on:close>File already exists</ModalHeader>
   <ModalContent style="overflow: hidden;">
     <div class="flex flex-col gap-y-8">
-      <div class="pb-0.5 text-sm"><b>{targetPath}</b> already exists in the target directory.</div>
+      <div class="pb-0.5 text-sm"><b>{targetFilename}</b> already exists in the target directory.</div>
       <div class="flex flex-row-reverse items-center gap-x-2">
         <Checkbox name="allFiles" id="allFiles" bind:checked={shouldApplyToAllFiles} />
         <label class="select-none" for="allFiles">Apply to all conflicting files?</label>

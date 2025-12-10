@@ -326,10 +326,163 @@ import {
   separateFilenameFromPath,
   WorkspaceApi,
   type BulkOperationResponses,
+  type MoveFileOperation,
 } from './workspaces';
 
 function throwPermissionError(attemptedAction: string): never {
   throw Error(`You do not have permission to: ${attemptedAction}.`);
+}
+
+async function bulkMoveWorkspaceItems(
+  workspace: Workspace,
+  paths: string[],
+  shouldCopy: boolean,
+  shouldOverwrite: boolean,
+  targetPath: string,
+  user: User | null,
+  targetWorkspace?: Workspace,
+) {
+  const cleanedTargetPath = cleanPath(targetPath);
+  const finalTargetPath = `./${cleanedTargetPath}`;
+
+  let responses: BulkOperationResponses = [];
+
+  if (targetWorkspace != null) {
+    responses = await WorkspaceApi.moveFilesToWorkspace(
+      workspace.id,
+      paths.map(path => ({ path })),
+      targetWorkspace.id,
+      finalTargetPath,
+      shouldCopy,
+      shouldOverwrite,
+      user,
+    );
+  } else {
+    responses = await WorkspaceApi.moveFiles(
+      workspace.id,
+      paths.map(path => ({ path })),
+      finalTargetPath,
+      shouldCopy,
+      shouldOverwrite,
+      user,
+    );
+  }
+  while (responses.length > 0) {
+    const response = responses.shift();
+
+    if (response) {
+      if (!isBulkOperationSuccess(response) && response.status === 409) {
+        const { confirm: conflictConfirm, value: conflictValue } = await showWorkspaceBulkOperationConflictModal(
+          response.item,
+        );
+
+        if (conflictValue) {
+          const { allFiles } = conflictValue;
+
+          const retryResponses: BulkOperationResponses = [response];
+          if (allFiles) {
+            while (responses.length > 0) {
+              const responseToRetry = responses.shift();
+              if (responseToRetry) {
+                retryResponses.push(responseToRetry);
+              }
+            }
+          }
+
+          if (conflictConfirm) {
+            const { shouldOverwrite } = conflictValue;
+
+            // Overwrite existing file
+            if (shouldOverwrite) {
+              const newItems: MoveFileOperation[] = retryResponses.map(({ item }) => ({ path: item }));
+
+              let overwriteResponses: BulkOperationResponses = [];
+              if (targetWorkspace != null) {
+                overwriteResponses = await WorkspaceApi.moveFilesToWorkspace(
+                  workspace.id,
+                  newItems,
+                  targetWorkspace.id,
+                  finalTargetPath,
+                  shouldCopy,
+                  true,
+                  user,
+                );
+              } else {
+                overwriteResponses = await WorkspaceApi.moveFiles(
+                  workspace.id,
+                  newItems,
+                  finalTargetPath,
+                  shouldCopy,
+                  true,
+                  user,
+                );
+              }
+
+              overwriteResponses.forEach(overwriteResponse => {
+                if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
+                  responses.unshift(overwriteResponse);
+                }
+              });
+            } else {
+              // Rename file
+
+              // Get the latest contents of the target workspace directory in order to best dedupe the filename
+              const intendedWorkspace = targetWorkspace ?? workspace;
+              const contents =
+                (await effects.getWorkspaceContents(intendedWorkspace.id, cleanedTargetPath, user)) ?? [];
+
+              const targetDirectoryNodeContents = [...contents];
+
+              const newItems: MoveFileOperation[] = retryResponses.map(({ item }) => {
+                let newFilename = item;
+                while (findNodeInDirectory(newFilename, targetDirectoryNodeContents)) {
+                  newFilename = incrementFilename(newFilename);
+                }
+                targetDirectoryNodeContents.push({
+                  name: newFilename,
+                  type: WorkspaceContentType.Unknown,
+                });
+                return {
+                  path: item,
+                  ...(newFilename ? { renameTo: newFilename } : {}),
+                };
+              });
+
+              let overwriteResponses: BulkOperationResponses = [];
+              if (targetWorkspace != null) {
+                overwriteResponses = await WorkspaceApi.moveFilesToWorkspace(
+                  workspace.id,
+                  newItems,
+                  targetWorkspace.id,
+                  finalTargetPath,
+                  shouldCopy,
+                  false,
+                  user,
+                );
+              } else {
+                overwriteResponses = await WorkspaceApi.moveFiles(
+                  workspace.id,
+                  newItems,
+                  finalTargetPath,
+                  shouldCopy,
+                  false,
+                  user,
+                );
+              }
+
+              overwriteResponses.forEach(overwriteResponse => {
+                if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
+                  responses.unshift(overwriteResponse);
+                }
+              });
+            }
+          } else {
+            continue;
+          }
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -5472,10 +5625,14 @@ const effects = {
     }
   },
 
-  async getWorkspaceContents(workspaceId: number, user: User | null): Promise<WorkspaceTreeNode[] | null> {
+  async getWorkspaceContents(
+    workspaceId: number,
+    path: string = '',
+    user: User | null,
+  ): Promise<WorkspaceTreeNode[] | null> {
     try {
       const startTime = performance.now();
-      const workspaceContents = await WorkspaceApi.getWorkspaceContents(workspaceId, user);
+      const workspaceContents = await WorkspaceApi.getWorkspaceContents(workspaceId, path, user);
 
       if (workspaceContents != null) {
         logMessage(`Retrieved workspace contents for workspace ID=${workspaceId}.`, '', performance.now() - startTime);
@@ -5510,7 +5667,7 @@ const effects = {
   },
 
   async getWorkspaceFilesList(workspaceId: number, user: User | null): Promise<WorkspaceTreeNodeWithFullPath[]> {
-    const workspaceContents = await effects.getWorkspaceContents(workspaceId, user);
+    const workspaceContents = await effects.getWorkspaceContents(workspaceId, '', user);
     return flattenWorkspaceTreeWithPaths(workspaceContents ?? []);
   },
 
@@ -5523,7 +5680,7 @@ const effects = {
     let workspaceSequenceFileContents: UserSequence[] = [];
     let treeMap: WorkspaceTreeMap = workspaceTreeMap ?? {};
     if (!workspaceTreeMap) {
-      const workspaceContents = await effects.getWorkspaceContents(workspaceId, user);
+      const workspaceContents = await effects.getWorkspaceContents(workspaceId, '', user);
 
       if (workspaceContents) {
         treeMap = mapWorkspaceTreePaths(workspaceContents);
@@ -5769,10 +5926,9 @@ const effects = {
             const response = responses.shift();
 
             if (response) {
-              const { filename } = separateFilenameFromPath(response.item);
               if (!isBulkOperationSuccess(response) && response.status === 409) {
                 const { confirm: conflictConfirm, value: conflictValue } =
-                  await showWorkspaceBulkOperationConflictModal(filename);
+                  await showWorkspaceBulkOperationConflictModal(response.item);
 
                 if (conflictValue) {
                   const { allFiles } = conflictValue;
@@ -5815,7 +5971,7 @@ const effects = {
                         name: workspace.name,
                         type: WorkspaceContentType.Workspace,
                       };
-                      const contents = await effects.getWorkspaceContents(workspace.id, user);
+                      const contents = await effects.getWorkspaceContents(workspace.id, cleanedTargetPath, user);
                       if (contents) {
                         updatedWorkspaceTree = {
                           contents,
@@ -6091,117 +6247,18 @@ const effects = {
       const { confirm, value } = await showMoveWorkspaceItemModal(workspace, workspaceContents, originalNodes, user);
       if (confirm) {
         const { shouldCopy, shouldOverwrite, targetPath } = value;
+
         const cleanedTargetPath = cleanPath(targetPath);
         try {
-          const responses = await WorkspaceApi.moveFiles(
-            workspace.id,
-            originalNodes.map(({ fullPath }) => ({ path: fullPath })),
-            `./${cleanedTargetPath}`,
+          await bulkMoveWorkspaceItems(
+            workspace,
+            originalNodes.map(({ fullPath }) => fullPath),
             shouldCopy,
             shouldOverwrite,
+            targetPath,
             user,
           );
 
-          while (responses.length > 0) {
-            const response = responses.shift();
-
-            if (response) {
-              if (!isBulkOperationSuccess(response) && response.status === 409) {
-                const { confirm: conflictConfirm, value: conflictValue } =
-                  await showWorkspaceBulkOperationConflictModal(response.item);
-
-                if (conflictValue) {
-                  const { allFiles } = conflictValue;
-
-                  const retryResponses: BulkOperationResponses = [response];
-                  if (allFiles) {
-                    while (responses.length > 0) {
-                      const responseToRetry = responses.shift();
-                      if (responseToRetry) {
-                        retryResponses.push(responseToRetry);
-                      }
-                    }
-                  }
-
-                  if (conflictConfirm) {
-                    const { shouldOverwrite } = conflictValue;
-
-                    // Overwrite existing file
-                    if (shouldOverwrite) {
-                      const overwriteResponses = await WorkspaceApi.moveFiles(
-                        workspace.id,
-                        retryResponses.map(({ item }) => ({ path: item })),
-                        `./${cleanedTargetPath}`,
-                        shouldCopy,
-                        true,
-                        user,
-                      );
-
-                      overwriteResponses.forEach(overwriteResponse => {
-                        if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
-                          responses.unshift(overwriteResponse);
-                        }
-                      });
-                    } else {
-                      // Rename file
-                      let updatedWorkspaceTree: WorkspaceTreeNode = {
-                        name: workspace.name,
-                        type: WorkspaceContentType.Workspace,
-                      };
-                      const contents = await effects.getWorkspaceContents(workspace.id, user);
-                      if (contents) {
-                        updatedWorkspaceTree = {
-                          contents,
-                          ...updatedWorkspaceTree,
-                        };
-                      }
-                      const workspaceTreeMap: WorkspaceTreeMap = flattenWorkspaceTreeWithPaths([
-                        updatedWorkspaceTree,
-                      ]).reduce((previousMap, node) => {
-                        return {
-                          ...previousMap,
-                          [node.fullPath]: node,
-                        };
-                      }, {});
-
-                      const targetDirectoryNodeContents = [
-                        ...(workspaceTreeMap[joinPath([workspace.name, cleanedTargetPath])].contents ?? []),
-                      ];
-                      const overwriteResponses = await WorkspaceApi.moveFiles(
-                        workspace.id,
-                        retryResponses.map(({ item }) => {
-                          let newFilename = item;
-                          while (findNodeInDirectory(newFilename, targetDirectoryNodeContents)) {
-                            newFilename = incrementFilename(newFilename);
-                          }
-                          targetDirectoryNodeContents.push({
-                            name: newFilename,
-                            type: WorkspaceContentType.Unknown,
-                          });
-                          return {
-                            path: item,
-                            ...(newFilename ? { renameTo: newFilename } : {}),
-                          };
-                        }),
-                        `./${cleanedTargetPath}`,
-                        shouldCopy,
-                        false,
-                        user,
-                      );
-
-                      overwriteResponses.forEach(overwriteResponse => {
-                        if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
-                          responses.unshift(overwriteResponse);
-                        }
-                      });
-                    }
-                  } else {
-                    continue;
-                  }
-                }
-              }
-            }
-          }
           showSuccessToast(`Workspace ${displayString} ${shouldCopy ? 'Copied' : 'Moved'} Successfully`);
           logMessage(
             `${shouldCopy ? 'Copied' : 'Moved'} workspace ${displayString.toLowerCase()} to "${cleanedTargetPath}".`,
@@ -6239,120 +6296,15 @@ const effects = {
         }
         const cleanedTargetPath = cleanPath(targetPath);
 
-        const responses = await WorkspaceApi.moveFilesToWorkspace(
-          workspace.id,
-          originalNodes.map(({ fullPath }) => ({ path: fullPath })),
-          targetWorkspace.id,
-          `./${cleanedTargetPath}`,
+        await bulkMoveWorkspaceItems(
+          workspace,
+          originalNodes.map(({ fullPath }) => fullPath),
           shouldCopy,
           shouldOverwrite,
+          targetPath,
           user,
+          targetWorkspace,
         );
-
-        while (responses.length > 0) {
-          const response = responses.shift();
-
-          if (response) {
-            if (!isBulkOperationSuccess(response) && response.status === 409) {
-              const { confirm: conflictConfirm, value: conflictValue } = await showWorkspaceBulkOperationConflictModal(
-                response.item,
-              );
-
-              if (conflictValue) {
-                const { allFiles } = conflictValue;
-
-                const retryResponses: BulkOperationResponses = [response];
-                if (allFiles) {
-                  while (responses.length > 0) {
-                    const responseToRetry = responses.shift();
-                    if (responseToRetry) {
-                      retryResponses.push(responseToRetry);
-                    }
-                  }
-                }
-
-                if (conflictConfirm) {
-                  const { shouldOverwrite } = conflictValue;
-
-                  // Overwrite existing file
-                  if (shouldOverwrite) {
-                    const overwriteResponses = await WorkspaceApi.moveFilesToWorkspace(
-                      workspace.id,
-                      retryResponses.map(({ item }) => ({ path: item })),
-                      targetWorkspace.id,
-                      `./${cleanedTargetPath}`,
-                      shouldCopy,
-                      true,
-                      user,
-                    );
-
-                    overwriteResponses.forEach(overwriteResponse => {
-                      if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
-                        responses.unshift(overwriteResponse);
-                      }
-                    });
-                  } else {
-                    // Rename file
-                    let updatedWorkspaceTree: WorkspaceTreeNode = {
-                      name: targetWorkspace.name,
-                      type: WorkspaceContentType.Workspace,
-                    };
-                    const contents = await effects.getWorkspaceContents(targetWorkspace.id, user);
-                    if (contents) {
-                      updatedWorkspaceTree = {
-                        contents,
-                        ...updatedWorkspaceTree,
-                      };
-                    }
-                    const workspaceTreeMap: WorkspaceTreeMap = flattenWorkspaceTreeWithPaths([
-                      updatedWorkspaceTree,
-                    ]).reduce((previousMap, node) => {
-                      return {
-                        ...previousMap,
-                        [node.fullPath]: node,
-                      };
-                    }, {});
-
-                    const targetDirectoryNodeContents = [
-                      ...(workspaceTreeMap[joinPath([targetWorkspace.name, cleanedTargetPath])].contents ?? []),
-                    ];
-
-                    const overwriteResponses = await WorkspaceApi.moveFilesToWorkspace(
-                      workspace.id,
-                      retryResponses.map(({ item }) => {
-                        let newFilename = item;
-                        while (findNodeInDirectory(newFilename, targetDirectoryNodeContents)) {
-                          newFilename = incrementFilename(newFilename);
-                        }
-                        targetDirectoryNodeContents.push({
-                          name: newFilename,
-                          type: WorkspaceContentType.Unknown,
-                        });
-                        return {
-                          path: item,
-                          ...(newFilename ? { renameTo: newFilename } : {}),
-                        };
-                      }),
-                      targetWorkspace.id,
-                      `./${cleanedTargetPath}`,
-                      shouldCopy,
-                      false,
-                      user,
-                    );
-
-                    overwriteResponses.forEach(overwriteResponse => {
-                      if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
-                        responses.unshift(overwriteResponse);
-                      }
-                    });
-                  }
-                } else {
-                  continue;
-                }
-              }
-            }
-          }
-        }
 
         showSuccessToast(`Workspace ${displayString} ${shouldCopy ? 'Duplicated' : 'Moved'} Successfully`);
         logMessage(
