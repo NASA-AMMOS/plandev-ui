@@ -1,6 +1,5 @@
 <script lang="ts">
   import { Button, Input as InputStellar, Tabs, Tooltip } from '@nasa-jpl/stellar-svelte';
-  import type { IRowNode } from 'ag-grid-community';
   import { Clapperboard, Files, Settings } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
@@ -12,7 +11,7 @@
     WorkspaceMetadata,
     WorkspaceNodeRunActionEvent,
   } from '../../types/workspace';
-  import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
+  import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
   import { getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { tooltip } from '../../utilities/tooltip';
@@ -51,11 +50,6 @@
   export let parcels: Parcel[] = [];
   export let hasEditWorkspacePermission: boolean = false;
   export let hasEditWorkspaceCollaboratorsPermission: boolean = false;
-  export let isRowSelectable: (node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>) => boolean = (
-    _node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>,
-  ) => {
-    return true;
-  };
 
   const permissionError = 'You do not have permission to edit this workspace';
 
@@ -201,7 +195,6 @@
                         treeNode={workspaceTree}
                         {workspace}
                         {user}
-                        {isRowSelectable}
                         on:nodeDelete
                         on:nodeMove
                         on:nodeRename

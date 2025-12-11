@@ -8,9 +8,8 @@
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type { LibrarySequenceSignature, PhoenixContext, UserSequence } from '@nasa-jpl/aerie-sequence-languages';
-  import type { IRowNode } from 'ag-grid-community';
-  import { TriangleAlert } from 'lucide-svelte';
-  import { onDestroy, onMount, tick } from 'svelte';
+  import { Folder, TriangleAlert } from 'lucide-svelte';
+  import { onDestroy, onMount } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
@@ -63,6 +62,7 @@
   import { featurePermissions } from '../../../utilities/permissions';
   import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
   import * as adaptationUtils from '../../../utilities/sequence-editor/adaptation-utils';
+  import { pluralize } from '../../../utilities/text';
   import { showFailureToast } from '../../../utilities/toast';
   import {
     flattenWorkspaceTreeWithPaths,
@@ -155,16 +155,6 @@
   }
 
   async function maybeNavigate(nextPath: string | null) {
-    // don't navigate if the selected path is a text file and not a folder or binary
-    // treat `null` as a navigable path so we can intentionally unload the editor file rather than skipping
-    const isNavigableFileOrNull = (nextPath && isNavigableFile(workspaceTreeMap[nextPath]?.type)) || nextPath === null;
-    if (!isNavigableFileOrNull) {
-      // wait a tick then revert selected UI to the existing active path
-      await tick();
-      selectedFilePath = activeFilePath;
-      return;
-    }
-
     const didNavigate = await goToSequence(nextPath);
     if (!didNavigate) {
       // user decided not to navigate away due to unsaved changes, set selected UI back to active file
@@ -320,14 +310,6 @@
       fileType === WorkspaceContentType.Unknown
     );
   }
-  function isNavigableFile(fileType: WorkspaceContentType) {
-    // user is allowed to navigate to any file types, just not directories
-    return fileType !== WorkspaceContentType.Directory;
-  }
-
-  function isRowSelectable(node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>): boolean {
-    return isNavigableFile(node.data?.type ?? WorkspaceContentType.Unknown);
-  }
 
   async function getSelectedFileContent(filePath: string | null) {
     if (filePath !== null && user) {
@@ -469,15 +451,6 @@
         refreshWorkspaceContents();
       }
     }
-  }
-
-  async function onNodeClicked({ detail: { toggleState, treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
-    // Used by WorkspaceTreeView only, grid view uses two-way binding to selectedFilePath
-    // (todo: use two-way binding with TreeView?)
-    if (!isNavigableFile(treeNode.type) || toggleState !== true) {
-      return;
-    }
-    selectedFilePath = treeNodePath;
   }
 
   async function onNodeDelete({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
@@ -676,11 +649,9 @@
       usersLoading={$initialUsersLoading}
       workspace={$workspace}
       workspaces={$workspaces}
-      {isRowSelectable}
       on:actionsClick={onActionsClicked}
       on:addCollaborator={onAddCollaborator}
       on:deleteCollaborator={onDeleteCollaborator}
-      on:nodeClicked={onNodeClicked}
       on:nodeDelete={onNodeDelete}
       on:nodeMove={onNodeMove}
       on:nodeRename={onNodeRename}
@@ -740,6 +711,30 @@
             on:save={onSaveWorkspaceFile}
             on:textContentUpdated={onWorkspaceFileUpdated}
           />
+        </div>
+      {:else if selectedFileType === WorkspaceContentType.Directory}
+        {@const folderNode = workspaceTreeMap[activeFilePath]}
+        {@const folderFiles =
+          (folderNode?.contents || []).filter(node => node.type !== WorkspaceContentType.Directory) ?? []}
+        {@const folderSubfolders =
+          (folderNode?.contents || []).filter(node => node.type === WorkspaceContentType.Directory) ?? []}
+        <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
+          <Folder size={70} class="text-muted-foreground" />
+          <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
+            The selected folder
+            <code class="font-bold">
+              {activeFilePath}
+            </code>
+            {#if folderFiles.length === 0 && folderSubfolders.length === 0}
+              is empty.
+            {:else}
+              contains{folderFiles.length ? ` ${folderFiles.length} file${pluralize(folderFiles.length)}` : ''}
+              {`${folderFiles.length && folderSubfolders.length ? ' and' : ''}`}
+              {folderSubfolders.length
+                ? ` ${folderSubfolders.length} subfolder${pluralize(folderSubfolders.length)}`
+                : ''}.
+            {/if}
+          </p>
         </div>
       {:else}
         <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">

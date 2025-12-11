@@ -31,11 +31,6 @@
   import WorkspaceContextMenuContents from '../WorkspaceContextMenuContents.svelte';
   import WorkspaceTreeViewIcon from '../WorkspaceTreeView/WorkspaceTreeViewIcon.svelte';
 
-  export let isRowSelectable: (node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>) => boolean = (
-    _node: Pick<IRowNode<WorkspaceTreeNodeWithFullPath>, 'data'>,
-  ) => {
-    return true;
-  };
   export let actions: ActionDefinition[] = [];
   export let currentRootPath: string = '';
   export let selectedTreeNodePath: string | null | undefined = undefined;
@@ -820,7 +815,6 @@
     suppressRowClickSelection={false}
     isExternalFilterPresent={() => true}
     showDeleteMenu={false}
-    {isRowSelectable}
     {doesExternalFilterPass}
     on:rowDoubleClicked={onRowDoubleClicked}
     on:cellContextMenu={onContextMenu}
