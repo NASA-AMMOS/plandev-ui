@@ -269,7 +269,8 @@
       fileType === WorkspaceContentType.Sequence ||
       fileType === WorkspaceContentType.Json ||
       fileType === WorkspaceContentType.Text ||
-      fileType === WorkspaceContentType.Metadata
+      fileType === WorkspaceContentType.Metadata ||
+      fileType === WorkspaceContentType.Unknown
     );
   }
   function isNavigableFile(fileType: WorkspaceContentType) {
