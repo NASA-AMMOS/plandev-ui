@@ -9,6 +9,7 @@
   import UserInputRow from './UserInputRow.svelte';
 
   export let allowMultiple: boolean = true;
+  export let className: string = '';
   export let disabled: boolean = false;
   export let name: string = '';
   export let placeholder: string = 'Search users';
@@ -136,6 +137,7 @@
   {addTag}
   {allowMultiple}
   {disabled}
+  {className}
   showPlaceholderIfDisabled
   ignoreCase={false}
   {placeholder}
