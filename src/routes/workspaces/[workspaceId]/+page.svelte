@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { browser } from '$app/environment';
-  import { goto } from '$app/navigation';
+  import { beforeNavigate, goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
@@ -105,6 +105,49 @@
     $workspaceId = initialWorkspace.id;
     allActionsForWorkspace = Object.values($actionDefinitionsByWorkspace[$workspaceId] || {});
   }
+
+  const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+    // Check source variables directly since reactive $: statements don't update in closures
+    if (updatedSelectedFileContent !== initialSelectedFileContent && activeFilePath !== null) {
+      event.preventDefault(); // Triggers the native browser confirmation
+      event.returnValue = ''; // Required for some older browser compatibility
+    }
+  };
+
+  // Prevent in-app navigation to other routes when there are unsaved changes
+  beforeNavigate(({ cancel, to }) => {
+    const hasUnsavedChanges = updatedSelectedFileContent !== initialSelectedFileContent && activeFilePath !== null;
+    if (!hasUnsavedChanges) {
+      return;
+    }
+    // Allow navigation within the same workspace page (file selection is handled by goToSequence)
+    if (to?.route.id === $page.route.id) {
+      return;
+    }
+    // Cancel navigation first, then show async modal and navigate if confirmed
+    cancel();
+    showConfirmModal(
+      'Leave Page',
+      'There are unsaved changes. Are you sure you want to leave this page?',
+      'Leave Page',
+      true,
+      'Stay on Page',
+    ).then(({ confirm }) => {
+      if (confirm && to?.url) {
+        // Reset content to allow navigation without re-triggering the modal
+        initialSelectedFileContent = updatedSelectedFileContent;
+        goto(to.url);
+      }
+    });
+  });
+
+  onMount(() => {
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  });
 
   $: if (!isWorkspaceLoading && selectedFilePath !== activeFilePath) {
     // the UI's selected file doesn't match our actively loaded file, try to navigate to selected
