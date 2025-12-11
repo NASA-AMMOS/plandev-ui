@@ -257,12 +257,9 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   }
 
   // Redraw rows when context menu state changes to apply rowClassRules
-  $: if (contextMenuOpen || contextMenuTargetRowId) {
-    gridApi?.redrawRows();
-  }
+  $: contextMenuOpen, contextMenuTargetRowId, gridApi?.redrawRows();
 
   $: {
-    // TODO verify
     gridApi?.setGridOption('quickFilterText', filterExpression);
   }
 
