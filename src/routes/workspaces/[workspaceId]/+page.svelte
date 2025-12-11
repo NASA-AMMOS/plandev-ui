@@ -173,7 +173,7 @@
     }
     // successfully navigated, update activeFilePath & get the file contents
     activeFilePath = nextPath;
-    if (activeFilePath) {
+    if (activeFilePath && workspaceTreeMap[activeFilePath]) {
       const { filename } = separateFilenameFromPath(activeFilePath);
       await getSelectedFileContent(activeFilePath);
       availableActionsForActiveFile = getAvailableActionsForNodes(allActionsForWorkspace, [
@@ -193,6 +193,10 @@
       updatedSelectedFileContent = initialSelectedFileContent;
       selectedFileName = undefined;
       selectedFileType = null;
+
+      if (activeFilePath && !workspaceTreeMap[activeFilePath]) {
+        showFailureToast('The selected file does not exist in the workspace.');
+      }
     }
   }
 
