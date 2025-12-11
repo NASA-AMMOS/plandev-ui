@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { Button, Tabs, Tooltip } from '@nasa-jpl/stellar-svelte';
+  import { Button, Input as InputStellar, Tabs, Tooltip } from '@nasa-jpl/stellar-svelte';
   import type { IRowNode } from 'ag-grid-community';
-  import { Clapperboard, Files, Settings, Table } from 'lucide-svelte';
+  import { Clapperboard, Files, Settings } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import type { User, UserId } from '../../types/app';
@@ -22,7 +22,6 @@
   import WorkspaceCollaboratorInput from '../ui/Tags/WorkspaceCollaboratorInput.svelte';
   import WorkspaceGridView from './WorkspaceGridView/WorkspaceGridView.svelte';
   import WorkspaceTabHeader from './WorkspaceTabHeader.svelte';
-  import WorkspaceTreeView from './WorkspaceTreeView/WorkspaceTreeView.svelte';
 
   const dispatch = createEventDispatcher<{
     actionsClick: void;
@@ -60,6 +59,7 @@
 
   const permissionError = 'You do not have permission to edit this workspace';
 
+  let activeTab: string = 'files';
   let didWorkspaceUpdate: boolean = false;
   let lastRefreshTime: Date = new Date();
   let currentRootPath: string = ''; // Navigation state - current folder being viewed as root
@@ -125,8 +125,6 @@
   function onRefreshWorkspace() {
     dispatch('refreshWorkspace');
   }
-
-  let activeTab = 'files';
 </script>
 
 <Sidebar.Root className="h-full inset-x-0 border-none flex">
@@ -143,18 +141,6 @@
           </Tooltip.Trigger>
           <Tooltip.Content sideOffset={8}>
             <div>Files</div>
-          </Tooltip.Content>
-        </Tooltip.Root>
-        <Tooltip.Root>
-          <Tooltip.Trigger asChild let:builder>
-            <Tabs.Trigger value="table" class="flex h-10 w-10 items-center justify-center rounded-none shadow-none">
-              <Button class="hover:bg-transparent" builders={[builder]} variant="ghost" aria-label="Table">
-                <Table size={16} />
-              </Button>
-            </Tabs.Trigger>
-          </Tooltip.Trigger>
-          <Tooltip.Content sideOffset={8}>
-            <div>Table</div>
           </Tooltip.Content>
         </Tooltip.Root>
         <Tooltip.Root>
@@ -176,7 +162,7 @@
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
             <Tabs.Trigger value="settings" class="flex h-10 w-10 items-center justify-center rounded-none shadow-none">
-              <Button builders={[builder]} variant="ghost" name="Settings">
+              <Button class="hover:bg-transparent" builders={[builder]} variant="ghost" name="Settings">
                 <Settings size={16} />
               </Button>
             </Tabs.Trigger>
@@ -188,60 +174,12 @@
       </Tabs.List>
     </div>
     <div class="flex h-full w-full flex-col">
-      <Tabs.Content value="files" class="mt-0 h-full">
+      <Tabs.Content value="files" class="mt-0 h-full" style="min-height: 300px;">
         {#if activeTab === 'files'}
           <div class="grid h-full grid-rows-[min-content_auto]">
             <Sidebar.Header className="p-0">
               <WorkspaceTabHeader
-                title="Workspace Tree View"
-                {didWorkspaceUpdate}
-                {lastRefreshTime}
-                {hasEditWorkspacePermission}
-                on:newSequence={onNewSequence}
-                on:newFolder={onNewFolder}
-                on:importFile={onImportFile}
-                on:refreshWorkspace={onRefreshWorkspace}
-              />
-            </Sidebar.Header>
-            <Sidebar.Content>
-              <Sidebar.Group className="p-0 h-full">
-                <Sidebar.GroupContent className="h-full">
-                  <Sidebar.Menu className="h-full">
-                    {#if workspaceTree}
-                      <WorkspaceTreeView
-                        {actions}
-                        selectedTreeNodePath={selectedFilePath}
-                        treeNode={workspaceTree}
-                        {workspace}
-                        {user}
-                        on:nodeClicked
-                        on:nodeDelete
-                        on:nodeMove
-                        on:nodeRename
-                        on:newFolder
-                        on:newSequence
-                        on:importFile
-                        on:copyFileLocation
-                        on:copyFullPath
-                        on:moveToWorkspace
-                        on:runAction
-                      />
-                    {:else}
-                      <div class="p-2 text-sm text-muted-foreground">No workspace loaded</div>
-                    {/if}
-                  </Sidebar.Menu>
-                </Sidebar.GroupContent>
-              </Sidebar.Group>
-            </Sidebar.Content>
-          </div>
-        {/if}
-      </Tabs.Content>
-      <Tabs.Content value="table" class="mt-0 h-full" style="min-height: 300px;">
-        {#if activeTab === 'table'}
-          <div class="grid h-full grid-rows-[min-content_auto]">
-            <Sidebar.Header className="p-0">
-              <WorkspaceTabHeader
-                title="Workspace Table View"
+                title="Workspace Files"
                 {didWorkspaceUpdate}
                 {lastRefreshTime}
                 {hasEditWorkspacePermission}
@@ -302,8 +240,10 @@
                       <label use:tooltip={{ content: 'Workspace Name', placement: 'top' }} for="name">
                         Workspace Name
                       </label>
-                      <input
-                        class="st-input w-full"
+                      <InputStellar
+                        autocomplete="off"
+                        sizeVariant="xs"
+                        class="w-full"
                         name="name"
                         id="name"
                         aria-label="name"
