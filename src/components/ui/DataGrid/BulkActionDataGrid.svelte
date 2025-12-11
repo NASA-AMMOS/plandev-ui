@@ -49,6 +49,7 @@
   export let showDeleteMenu: boolean = true;
   export let showLoadingSkeleton: boolean = false;
   export let singleItemDisplayText: string = '';
+  export let suppressContextMenuSelection: boolean = false;
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
   export let rowHeight: number = 33;
@@ -184,6 +185,7 @@
   rowSelection="multiple"
   {scrollToSelection}
   {showLoadingSkeleton}
+  {suppressContextMenuSelection}
   {suppressDragLeaveHidesColumns}
   {suppressRowClickSelection}
   {filterExpression}

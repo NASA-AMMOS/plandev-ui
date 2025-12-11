@@ -16,17 +16,12 @@
     WorkspaceNodeEvent,
     WorkspaceNodeRunActionEvent,
   } from '../../../types/workspace';
-  import type {
-    WorkspaceTreeMap,
-    WorkspaceTreeNode,
-    WorkspaceTreeNodeWithFullPath,
-  } from '../../../types/workspace-tree-view';
+  import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
   import { featurePermissions } from '../../../utilities/permissions';
   import {
     findNodeByPath,
     flattenWorkspaceTreeWithPaths,
     getAvailableActionsForNodes,
-    mapWorkspaceTreePaths,
     sortWorkspaceTree,
     type TreeSortComparator,
   } from '../../../utilities/workspaces';
@@ -78,7 +73,6 @@
   let hasDeletePermission: boolean = false;
   let hasCreateActionPermission: boolean = false;
   let flattenedTree: WorkspaceTreeNodeWithFullPath[] = [];
-  let workspaceTreeMap: WorkspaceTreeMap = {};
   let expandedPaths: Set<string> = new Set();
 
   // Sort state - captured from AG Grid's sort UI, used to pre-sort data hierarchically
@@ -383,10 +377,6 @@
   $: if (dataGrid && flattenedTree) {
     // Use tick to ensure AG Grid has received the new data before redrawing
     tick().then(() => dataGrid?.redrawRows());
-  }
-
-  $: if (treeNode?.contents) {
-    workspaceTreeMap = mapWorkspaceTreePaths(treeNode.contents);
   }
 
   // Update filter matching when filter text or tree changes
@@ -818,7 +808,7 @@
     bind:selectedItemId={selectedTreeNodePath}
     headerHeight={26}
     rowHeight={26}
-    class="workspace-grid-view"
+    class="workspace-file-browser"
     {columnDefs}
     getRowId={node => node.fullPath}
     {hasDeletePermission}
@@ -826,6 +816,7 @@
     pluralItemDisplayText="Files"
     items={flattenedTree}
     {user}
+    suppressContextMenuSelection={true}
     suppressRowClickSelection={false}
     isExternalFilterPresent={() => true}
     showDeleteMenu={false}
@@ -837,11 +828,17 @@
     on:sortChanged={onSortChanged}
   >
     <svelte:fragment slot="context-menu" let:selectedItemIds>
-      {@const selectedWorkspaceNodes = selectedItemIds ? selectedItemIds.map(id => workspaceTreeMap[id]) : []}
-      {@const actionsForSelection = getAvailableActionsForNodes(actions, selectedWorkspaceNodes)}
+      {@const isContextNodeInSelection = contextMenuNode && selectedItemIds?.includes(contextMenuNode.fullPath)}
+      {@const effectiveNodes = isContextNodeInSelection
+        ? flattenedTree.filter(node => selectedItemIds.includes(node.fullPath))
+        : contextMenuNode
+          ? [contextMenuNode]
+          : []}
+      {@const actionsForSelection = getAvailableActionsForNodes(actions, effectiveNodes)}
+      {@const effectiveFilePaths = effectiveNodes.map(n => n.fullPath)}
       <WorkspaceContextMenuContents
         {actionsForSelection}
-        {selectedWorkspaceNodes}
+        selectedWorkspaceNodes={effectiveNodes}
         {hasEditPermission}
         {hasDeletePermission}
         {hasCreateActionPermission}
@@ -851,7 +848,7 @@
         on:copyFileLocation={onTableCopyFileLocation}
         on:copyFullPath={onTableCopyFullPath}
         on:moveToWorkspace={onTableMoveToWorkspace}
-        on:runAction={event => onTableRunAction(event, selectedItemIds)}
+        on:runAction={event => onTableRunAction(event, effectiveFilePaths)}
         on:newFile={onTableNewSequence}
         on:newFolder={onTableNewFolder}
         on:importFile={onTableImportFile}
@@ -1011,7 +1008,7 @@
     white-space: nowrap;
   }
 
-  :global(.workspace-grid-view .ag-root-wrapper) {
+  :global(.workspace-file-browser .ag-root-wrapper) {
     --ag-borders: none;
     --ag-wrapper-border-radius: 0;
   }

@@ -20,7 +20,7 @@
   import SectionTitle from '../ui/SectionTitle.svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
   import WorkspaceCollaboratorInput from '../ui/Tags/WorkspaceCollaboratorInput.svelte';
-  import WorkspaceGridView from './WorkspaceGridView/WorkspaceGridView.svelte';
+  import WorkspaceFileBrowser from './WorkspaceFileBrowser/WorkspaceFileBrowser.svelte';
   import WorkspaceTabHeader from './WorkspaceTabHeader.svelte';
 
   const dispatch = createEventDispatcher<{
@@ -194,7 +194,7 @@
                 <Sidebar.GroupContent className="h-full">
                   <Sidebar.Menu className="h-full">
                     {#if workspaceTree && workspace}
-                      <WorkspaceGridView
+                      <WorkspaceFileBrowser
                         bind:currentRootPath
                         bind:selectedTreeNodePath={selectedFilePath}
                         {actions}

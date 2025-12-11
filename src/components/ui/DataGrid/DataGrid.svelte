@@ -124,6 +124,7 @@
   export let shouldMultiSelectUpdatePrimarySelection: boolean = false;
   export let showLoadingSkeleton: boolean = false;
   export let suppressCellFocus: boolean = true;
+  export let suppressContextMenuSelection: boolean = false;
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
   export let useCustomContextMenu: boolean | undefined = undefined;
@@ -133,21 +134,24 @@
   };
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
 
-  type RowIdRef = {
-    value: RowId | null;
-  };
+  // Ref type for values that AG Grid's rowClassRules need to access without triggering re-renders
+  type Ref<T> = { value: T };
 
   const CURRENT_SELECTED_ROW_CLASS = 'ag-current-row-selected';
   const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
-  // This is used so that the current instance of ag-grid always has a pointer to the latest current selected row id
-  // without having to call anything on the ag-grid instance that results in a full rerender
-  const currentSelectedRowIdRef: RowIdRef = { value: null };
+  // These refs allow AG Grid's rowClassRules to access current values without triggering full re-renders
+  const contextMenuOpenRef: Ref<boolean> = { value: false };
+  const contextMenuTargetRowIdRef: Ref<RowId | null> = { value: null };
+  const currentSelectedRowIdRef: Ref<RowId | null> = { value: null };
+  const selectedRowIdsRef: Ref<RowId[]> = { value: [] };
   const onColumnStateChangeDebounced = debounce(onColumnStateChange, 500);
   const onWindowResizedDebounced = debounce(sizeColumnsToFit, 50);
 
   let className: string = '';
   let contextMenu: ContextMenuInternal;
+  let contextMenuOpen: boolean = false;
+  let contextMenuTargetRowId: RowId | null = null;
   let gridOptions: GridOptions<RowData>;
   let gridApi: GridApi<RowData> | undefined;
   let gridDiv: HTMLDivElement;
@@ -228,7 +232,10 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     currentSelectedRowId = selectedRowIds[0];
   }
 
+  $: contextMenuOpenRef.value = contextMenuOpen;
+  $: contextMenuTargetRowIdRef.value = contextMenuTargetRowId;
   $: currentSelectedRowIdRef.value = currentSelectedRowId;
+  $: selectedRowIdsRef.value = selectedRowIds;
 
   /**
    * Manually manipulate the old and newly selected row classes instead of invoking `redrawRows`
@@ -247,6 +254,11 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     }
 
     previousSelectedRowId = currentSelectedRowId;
+  }
+
+  // Redraw rows when context menu state changes to apply rowClassRules
+  $: if (contextMenuOpen || contextMenuTargetRowId) {
+    gridApi?.redrawRows();
   }
 
   $: {
@@ -293,7 +305,13 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   function onCellContextMenu(event: CellContextMenuEvent<RowData>) {
     if (useCustomContextMenu) {
       const { data: clickedRow } = event;
-      if (
+
+      if (suppressContextMenuSelection) {
+        // Track the context menu target without changing selection
+        if (clickedRow) {
+          contextMenuTargetRowId = getRowId(clickedRow);
+        }
+      } else if (
         clickedRow &&
         selectedRowIds.length <= 1 &&
         (!isRowSelectable || isRowSelectable(event.node)) &&
@@ -303,12 +321,15 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         selectedRowIds = [currentSelectedRowId];
       }
 
+      contextMenuOpen = true;
       contextMenu.show(event.event as MouseEvent);
     }
     dispatch('cellContextMenu', event);
   }
 
   function onCellContextMenuHide() {
+    contextMenuOpen = false;
+    contextMenuTargetRowId = null;
     dispatch('cellContextMenuHide');
   }
 
@@ -451,6 +472,19 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       rowClassRules: {
         CURRENT_SELECTED_ROW_CLASS: (params: RowClassParams<RowData>) => {
           return !!params.data && currentSelectedRowIdRef.value === getRowId(params.data);
+        },
+        'ag-context-menu-target': (params: RowClassParams<RowData>) => {
+          if (!params.data || !contextMenuOpenRef.value) {
+            return false;
+          }
+          const rowId = getRowId(params.data);
+          const targetId = contextMenuTargetRowIdRef.value;
+          // If target is in selection, highlight all selected rows; otherwise just the target
+          const targetInSelection = targetId !== null && selectedRowIdsRef.value.includes(targetId);
+          if (targetInSelection) {
+            return selectedRowIdsRef.value.includes(rowId);
+          }
+          return rowId === targetId;
         },
         'ag-selectable-row': (params: RowClassParams<RowData>) => {
           if (isRowSelectable) {

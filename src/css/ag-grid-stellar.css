@@ -572,3 +572,24 @@
   letter-spacing: var(--st-typography-body-letter-spacing);
   line-height: var(--st-typography-body-line-height);
 }
+
+.ag-theme-stellar .ag-row:has(+ .ag-row.ag-context-menu-target),
+.ag-theme-stellar .ag-row.ag-context-menu-target {
+  border-bottom: 1px solid var(--ag-stellar-active-color);
+}
+
+.ag-theme-stellar .ag-row.ag-context-menu-target,
+.ag-theme-stellar .ag-row.ag-context-menu-target:hover::before,
+.ag-theme-stellar .ag-row.ag-context-menu-target::before {
+  box-shadow:
+    inset 1px 0 0 0 var(--ag-stellar-active-color),
+    inset -1px 0 0 0 var(--ag-stellar-active-color);
+}
+.ag-theme-stellar .ag-row.ag-row-first.ag-context-menu-target,
+.ag-theme-stellar .ag-row.ag-row-first.ag-context-menu-target:hover::before,
+.ag-theme-stellar .ag-row.ag-row-first.ag-context-menu-target::before {
+  box-shadow:
+    inset 1px 0 0 0 var(--ag-stellar-active-color),
+    inset -1px 0 0 0 var(--ag-stellar-active-color),
+    inset 0 1px 0 0 var(--ag-stellar-active-color);
+}
