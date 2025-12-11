@@ -3996,7 +3996,7 @@ const effects = {
     originalNode: WorkspaceTreeNode,
     originalPath: string,
     user: User | null,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
     try {
       if (!featurePermissions.workspace.canDelete(user, workspace, originalNode)) {
@@ -4017,17 +4017,21 @@ const effects = {
         );
         showSuccessToast(`Workspace ${typeString} Deleted Successfully`);
       }
+
+      return confirm;
     } catch (e) {
       catchError(`Workspace ${typeString.toLowerCase()} was unable to be deleted`, e as Error);
       showFailureToast(`Workspace ${typeString} Delete Failed`);
     }
+
+    return false;
   },
 
   async deleteWorkspaceItems(
     workspace: Workspace,
     originalNodes: WorkspaceTreeNodeWithFullPath[],
     user: User | null,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const typeDisplayString = getWorkspaceFileFolderDisplay(originalNodes);
     try {
       if (!featurePermissions.workspace.canDelete(user, workspace)) {
@@ -4052,10 +4056,13 @@ const effects = {
         );
         showSuccessToast(`Workspace ${typeDisplayString} Deleted Successfully`);
       }
+      return confirm;
     } catch (e) {
       catchError(`Workspace ${typeDisplayString} was unable to be deleted`, e as Error);
       showFailureToast(`Workspace ${typeDisplayString} Deletion Failed`);
     }
+
+    return false;
   },
 
   duplicateTimelineRow(row: Row, timeline: Timeline, timelines: Timeline[]): Row | null {

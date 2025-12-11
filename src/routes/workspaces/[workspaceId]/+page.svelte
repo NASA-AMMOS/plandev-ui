@@ -434,10 +434,10 @@
     if ($workspace) {
       let shouldUpdateSelectedSequencePath = treeNodes.find(({ fullPath }) => fullPath === activeFilePath);
 
-      await effects.deleteWorkspaceItems($workspace, treeNodes, user);
+      const didDelete = await effects.deleteWorkspaceItems($workspace, treeNodes, user);
       refreshWorkspaceContents();
 
-      if (shouldUpdateSelectedSequencePath) {
+      if (didDelete && shouldUpdateSelectedSequencePath) {
         selectedFilePath = null;
       }
     }
