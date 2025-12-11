@@ -294,10 +294,9 @@
           [
             permissionHandler,
             {
-              hasPermission:
-                $plan && $plan.model
-                  ? featurePermissions.constraintRuns.canCreate(user, $plan, $plan.model) && !$planReadOnly
-                  : false,
+              hasPermission: $plan
+                ? featurePermissions.constraintRuns.canCreate(user, $plan, $plan.model) && !$planReadOnly
+                : false,
               permissionError: $planReadOnly
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to run constraint checks',
@@ -317,10 +316,9 @@
           [
             permissionHandler,
             {
-              hasPermission:
-                $plan && $plan.model
-                  ? featurePermissions.constraintRuns.canCreate(user, $plan, $plan.model) && !$planReadOnly
-                  : false,
+              hasPermission: $plan
+                ? featurePermissions.constraintRuns.canCreate(user, $plan, $plan.model) && !$planReadOnly
+                : false,
               permissionError: $planReadOnly
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to run constraint checks',

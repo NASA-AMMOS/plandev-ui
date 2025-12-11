@@ -69,7 +69,7 @@
       return 0;
     });
   $: numOfPrivateGoals = ($schedulingGoalSpecifications || []).length - visibleSchedulingGoalSpecs.length;
-  $: if ($plan && $plan.model) {
+  $: if ($plan) {
     hasAnalyzePermission =
       featurePermissions.schedulingGoalsPlanSpec.canAnalyze(user, $plan, $plan.model) && !$planReadOnly;
     hasSpecEditPermission = featurePermissions.schedulingGoalsPlanSpec.canUpdate(user, $plan) && !$planReadOnly;
