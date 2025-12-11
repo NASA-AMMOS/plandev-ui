@@ -500,7 +500,10 @@
 
   .action.selected :global(.st-button.permission-disabled),
   .action:hover :global(.st-button.permission-disabled),
-  .action:focus-within :global(.st-button.permission-disabled) {
+  .action:focus-within :global(.st-button.permission-disabled),
+  .action.selected :global(.st-button[data-permission-disabled='true']),
+  .action:hover :global(.st-button[data-permission-disabled='true']),
+  .action:focus-within :global(.st-button[data-permission-disabled='true']) {
     opacity: 0.5;
   }
 

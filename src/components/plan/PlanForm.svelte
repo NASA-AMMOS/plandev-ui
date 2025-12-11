@@ -33,6 +33,7 @@
   import Loading from '../Loading.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
+  import ReadOnlyField from '../form/ReadOnlyField.svelte';
   import CardList from '../ui/CardList.svelte';
   import FilterToggleButton from '../ui/FilterToggleButton.svelte';
   import ProgressRadial from '../ui/ProgressRadial.svelte';
@@ -259,48 +260,46 @@
             use:tooltip={{ content: `Start Time (${$plugins.time.primary.label})`, placement: 'top' }}
             for="startTime"
           >
-            Start Time ({$plugins.time.primary.label})
-          </label>
-          <input class="st-input w-full" disabled name="startTime" value={planStartTime} id="startTime" />
-        </Input>
-        <Input layout="inline">
-          <label use:tooltip={{ content: `End Time (${$plugins.time.primary.label})`, placement: 'top' }} for="endTime">
-            End Time ({$plugins.time.primary.label})
-          </label>
-          <input class="st-input w-full" disabled name="endTime" value={planEndTime} id="endTime" />
-        </Input>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Owner', placement: 'top' }} for="owner">Owner</label>
-          <input class="st-input w-full" disabled name="owner" value={plan.owner} id="owner" />
-        </Input>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Date Created', placement: 'top' }} for="createdAt">Date Created</label>
-          <input
-            class="st-input w-full"
-            disabled
-            name="createdAt"
-            id="createdAt"
-            value={getShortISOForDate(new Date(plan.created_at))}
-          />
-        </Input>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Updated At', placement: 'top' }} for="updatedAt">Updated At</label>
-          <input
-            class="st-input w-full"
-            disabled
-            name="updatedAt"
-            id="updatedAt"
-            value={getShortISOForDate(new Date(plan.updated_at))}
-          />
-        </Input>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Updated By', placement: 'top' }} for="updatedBy">Updated By</label>
-          <input class="st-input w-full" disabled name="updatedBy" value={plan.updated_by} id="updatedBy" />
-        </Input>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Revision', placement: 'top' }} for="revision">Revision</label>
-          <input class="st-input w-full" disabled name="revision" value={plan.revision} id="revision" />
-        </Input>
+            <Button
+              class="shrink-0"
+              variant="outline"
+              size="icon"
+              on:click={openChangePlanMissionModelModal}
+              aria-label="Change mission model"
+            >
+              <ArrowLeftRight size={16} />
+            </Button>
+          </label></Input
+        >
+        <ReadOnlyField label="Model ID" value={plan.model_id} tooltipContent="Model ID" />
+        <ReadOnlyField
+          label="Model Version"
+          value={plan.model?.version ?? 'Model not found'}
+          tooltipContent="Model Version"
+        />
+        <ReadOnlyField
+          label="Start Time ({$plugins.time.primary.label})"
+          value={planStartTime}
+          tooltipContent="Start Time ({$plugins.time.primary.label})"
+        />
+        <ReadOnlyField
+          label="End Time ({$plugins.time.primary.label})"
+          value={planEndTime}
+          tooltipContent="End Time ({$plugins.time.primary.label})"
+        />
+        <ReadOnlyField label="Owner" value={plan.owner} tooltipContent="Owner" />
+        <ReadOnlyField
+          label="Date Created"
+          value={getShortISOForDate(new Date(plan.created_at))}
+          tooltipContent="Date Created"
+        />
+        <ReadOnlyField
+          label="Updated At"
+          value={getShortISOForDate(new Date(plan.updated_at))}
+          tooltipContent="Updated At"
+        />
+        <ReadOnlyField label="Updated By" value={plan.updated_by} tooltipContent="Updated By" />
+        <ReadOnlyField label="Revision" value={plan.revision} tooltipContent="Revision" />
         <Input layout="inline">
           <label use:tooltip={{ content: 'Collaborators', placement: 'top' }} for="collaborators">Collaborators</label>
           {#if usersLoading || userWriteablePlans === null}

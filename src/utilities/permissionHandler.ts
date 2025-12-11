@@ -8,13 +8,6 @@ interface PermissionHandlerProps extends Partial<Omit<Props, 'content'>> {
   permissionError?: string;
 }
 
-function removeDisabledClass(classList: string, disabledClassName: string) {
-  return classList
-    .split(' ')
-    .filter(className => className !== disabledClassName)
-    .join(' ');
-}
-
 /**
  * Action for disabling/enabling an element based on permission and adding a tooltip
  * to allow for an explanation/description.
@@ -66,40 +59,86 @@ export const permissionHandler: Action<HTMLElement, PermissionHandlerProps> = (
     }
   };
 
+  const preventKeyboardToggle = (event: Event) => {
+    const keyEvent = event as KeyboardEvent;
+    if (keyEvent.key === ' ' || keyEvent.key === 'Enter') {
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      event.preventDefault();
+    }
+  };
+
   const handlePermission = (permission: boolean = true, error?: string) => {
-    const classList = removeDisabledClass(node.className, disabledClassName);
+    const tagName = node.tagName.toLowerCase();
+    const inputType = tagName === 'input' ? (node as HTMLInputElement).type.toLowerCase() : '';
+    const isClickableInput = inputType === 'checkbox' || inputType === 'radio';
+    const isTextInput = (tagName === 'input' && !isClickableInput) || tagName === 'textarea';
+    const isSelect = tagName === 'select';
+
     if (permission === false) {
-      node.setAttribute('tabindex', '-1');
-      node.setAttribute('readonly', 'readonly');
-      node.setAttribute('class', `${classList} ${disabledClassName}`);
+      // Use data attribute for styling - more resilient to Svelte's class management
+      node.setAttribute('data-permission-disabled', 'true');
+      node.classList.add(disabledClassName);
+
       // Let's make sure the "aria-errormessage" attribute
       // is set so our element is accessible:
       // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-errormessage
       if (error) {
         node.setAttribute('aria-errormessage', error);
       }
-      node.addEventListener('mousedown', preventClick, true);
-      node.addEventListener('mouseup', preventClick, true);
-      node.addEventListener('click', preventClick, true);
-      node.addEventListener('focus', preventFocus, true);
-    } else {
-      if (tabIndex !== null) {
-        node.setAttribute('tabindex', tabIndex);
+
+      if (isTextInput) {
+        // Text inputs: readonly allows copy but prevents editing, show lock icon instead of graying out
+        node.setAttribute('readonly', 'readonly');
+        node.setAttribute('data-permission-text-input', 'true');
+      } else if (isSelect || isClickableInput) {
+        // Select and checkbox/radio: readonly doesn't work - disable pointer events and keyboard
+        (node as HTMLElement).style.pointerEvents = 'none';
+        node.setAttribute('tabindex', '-1');
+        node.addEventListener('keydown', preventKeyboardToggle, true);
       } else {
-        node.removeAttribute('tabindex');
+        // Buttons and custom components: prevent clicks and focus via event listeners
+        // (not using native disabled for buttons to allow tooltip to show)
+        node.setAttribute('tabindex', '-1');
+        node.addEventListener('mousedown', preventClick, true);
+        node.addEventListener('mouseup', preventClick, true);
+        node.addEventListener('click', preventClick, true);
+        node.addEventListener('focus', preventFocus, true);
       }
+    } else {
+      // Restore permissions
+      node.removeAttribute('data-permission-disabled');
+      node.classList.remove(disabledClassName);
 
       if (existingError) {
         node.setAttribute('aria-errormessage', existingError);
       } else {
         node.removeAttribute('aria-errormessage');
       }
-      node.removeAttribute('readonly');
-      node.setAttribute('class', classList);
-      node.removeEventListener('mousedown', preventClick, true);
-      node.removeEventListener('mouseup', preventClick, true);
-      node.removeEventListener('click', preventClick, true);
-      node.removeEventListener('focus', preventFocus, true);
+
+      if (isTextInput) {
+        node.removeAttribute('readonly');
+        node.removeAttribute('data-permission-text-input');
+      } else if (isSelect || isClickableInput) {
+        (node as HTMLElement).style.pointerEvents = '';
+        if (tabIndex !== null) {
+          node.setAttribute('tabindex', tabIndex);
+        } else {
+          node.removeAttribute('tabindex');
+        }
+        node.removeEventListener('keydown', preventKeyboardToggle, true);
+      } else {
+        // Buttons and custom components
+        if (tabIndex !== null) {
+          node.setAttribute('tabindex', tabIndex);
+        } else {
+          node.removeAttribute('tabindex');
+        }
+        node.removeEventListener('mousedown', preventClick, true);
+        node.removeEventListener('mouseup', preventClick, true);
+        node.removeEventListener('click', preventClick, true);
+        node.removeEventListener('focus', preventFocus, true);
+      }
     }
   };
 
@@ -112,6 +151,7 @@ export const permissionHandler: Action<HTMLElement, PermissionHandlerProps> = (
       node.removeEventListener('mouseup', preventClick, true);
       node.removeEventListener('click', preventClick, true);
       node.removeEventListener('focus', preventFocus, true);
+      node.removeEventListener('keydown', preventKeyboardToggle, true);
 
       tip.destroy();
     },

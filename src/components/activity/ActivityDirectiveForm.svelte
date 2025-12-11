@@ -47,6 +47,7 @@
   import DatePickerField from '../form/DatePickerField.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
+  import ReadOnlyField from '../form/ReadOnlyField.svelte';
   import ExtraneousParameters from '../parameters/ExtraneousParameters.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
@@ -664,68 +665,35 @@
     <fieldset>
       <Collapse title="Metadata" contentClass="px-1" defaultExpanded={false}>
         <Highlight highlight={highlightKeysMap.id}>
-          <Input layout="inline">
-            <label use:tooltip={{ content: 'Activity ID', placement: 'top' }} for="id"> ID</label>
-            <input class="st-input w-full" disabled name="id" id="id" value={activityDirective.id} />
-          </Input>
+          <ReadOnlyField label="ID" value={activityDirective.id} tooltipContent="Activity ID" />
         </Highlight>
 
         <Highlight highlight={highlightKeysMap.created_at}>
-          <Input layout="inline">
-            <label use:tooltip={{ content: 'Creation Time (UTC)', placement: 'top' }} for="creationTime">
-              Creation Time (UTC)
-            </label>
-            <input
-              class="st-input w-full"
-              disabled
-              name="creationTime"
-              value={activityDirective.created_at}
-              id="creationTime"
-            />
-          </Input>
+          <ReadOnlyField
+            label="Creation Time (UTC)"
+            value={activityDirective.created_at}
+            tooltipContent="Creation Time (UTC)"
+          />
         </Highlight>
 
         <Highlight highlight={highlightKeysMap.last_modified_at}>
-          <Input layout="inline">
-            <label use:tooltip={{ content: 'Last Modified Time (UTC)', placement: 'top' }} for="lastModifiedTime">
-              Last Modified Time (UTC)
-            </label>
-            <input
-              class="st-input w-full"
-              disabled
-              name="lastModifiedTime"
-              id="lastModifiedTime"
-              value={activityDirective.last_modified_at}
-            />
-          </Input>
+          <ReadOnlyField
+            label="Last Modified Time (UTC)"
+            value={activityDirective.last_modified_at}
+            tooltipContent="Last Modified Time (UTC)"
+          />
         </Highlight>
 
         <Highlight highlight={highlightKeysMap.last_modified_by}>
-          <Input layout="inline">
-            <label use:tooltip={{ content: 'Last Modified By', placement: 'top' }} for="modifiedBy">
-              Last Modified By
-            </label>
-            <input
-              class="st-input w-full"
-              disabled
-              name="modifiedBy"
-              value={activityDirective.last_modified_by}
-              id="modifiedBy"
-            />
-          </Input>
+          <ReadOnlyField
+            label="Last Modified By"
+            value={activityDirective.last_modified_by}
+            tooltipContent="Last Modified By"
+          />
         </Highlight>
 
-        <Highlight highlight={highlightKeysMap.last_modified_by}>
-          <Input layout="inline">
-            <label use:tooltip={{ content: 'Created By', placement: 'top' }} for="createdBy"> Created By </label>
-            <input
-              class="st-input w-full"
-              disabled
-              name="createdBy"
-              value={activityDirective.created_by}
-              id="createdBy"
-            />
-          </Input>
+        <Highlight highlight={highlightKeysMap.created_by}>
+          <ReadOnlyField label="Created By" value={activityDirective.created_by} tooltipContent="Created By" />
         </Highlight>
       </Collapse>
     </fieldset>

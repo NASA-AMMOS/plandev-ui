@@ -13,9 +13,17 @@
   export let hideValueSource: boolean = false;
   export let hideError: boolean = false;
   export let parameterType: ParameterType = 'activity';
+
+  // New permission prop (preferred)
+  export let readonly: boolean = false;
+
+  // Legacy support
   export let use: ActionArray = [];
 
   let errors: string[] = [];
+
+  // Combine disabled and readonly for child components
+  $: effectiveDisabled = disabled || readonly;
 
   $: if (formParameter.errors || additionalErrors) {
     errors = additionalErrors.concat(
@@ -29,7 +37,7 @@
     <InputErrorBadge {errors} />
   {/if}
   {#if !hideValueSource}
-    <ValueSourceBadge {disabled} source={formParameter.valueSource} {parameterType} {use} on:reset />
+    <ValueSourceBadge disabled={effectiveDisabled} source={formParameter.valueSource} {parameterType} {use} on:reset />
   {/if}
 </div>
 

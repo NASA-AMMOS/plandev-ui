@@ -192,22 +192,47 @@ fieldset {
   color: var(--st-white);
 }
 
-.permission-disabled {
+.permission-disabled,
+[data-permission-disabled='true'] {
   /* using !important so that components do not need to know of permissions */
   cursor: not-allowed !important;
   opacity: 0.5;
 }
 
-.permission-disabled:hover {
+/* Text inputs with permission disabled: show lock icon instead of graying out */
+[data-permission-text-input='true'][data-permission-disabled='true'] {
+  cursor: default !important;
+  opacity: 1;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23888888' viewBox='0 0 16 16'%3E%3Cpath d='M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px 14px;
+}
+
+.permission-disabled:hover,
+[data-permission-disabled='true']:hover {
   cursor: not-allowed;
 }
 
-.permission-disabled * {
+/* Text inputs should allow text selection */
+[data-permission-text-input='true'][data-permission-disabled='true']:hover {
+  cursor: text;
+}
+
+.permission-disabled *,
+[data-permission-disabled='true'] * {
   opacity: 1 !important;
   pointer-events: none;
 }
 
-.st-button.permission-disabled {
+/* Text inputs should allow pointer events for text selection */
+[data-permission-text-input='true'][data-permission-disabled='true'] * {
+  pointer-events: auto;
+}
+
+.st-button.permission-disabled,
+.st-button[data-permission-disabled='true'] {
   opacity: var(--st-button-disabled-opacity);
 }
 
