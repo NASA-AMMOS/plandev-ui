@@ -197,6 +197,25 @@
     treeNodeBreadcrumbDisplay = treeNodeBreadcrumbs;
   }
 
+  function getSelectionOrContext(
+    contextNode: WorkspaceTreeNodeWithFullPath | null,
+    selectedNodes: WorkspaceTreeNodeWithFullPath[],
+  ): WorkspaceTreeNodeWithFullPath[] {
+    if (selectedNodes.length) {
+      if (contextNode) {
+        if (selectedNodes.find(({ fullPath }) => contextNode.fullPath === fullPath) != null) {
+          return selectedNodes;
+        } else {
+          return [contextNode];
+        }
+      } else {
+        return selectedNodes;
+      }
+    }
+
+    return contextNode ? [contextNode] : [];
+  }
+
   function hasContextMenuUpdatePermission(user: User | null, selectedId: RowId | null) {
     const selectedTreeNode = selectedId ? workspaceTreeMap[selectedId] : undefined;
     if (workspace) {
@@ -365,9 +384,7 @@
   }
 
   function onTableMenuMoveNode({ detail: selectedNodes }: CustomEvent<WorkspaceTreeNodeWithFullPath[]>) {
-    if (selectedNodes.length) {
-      onMoveNodes(selectedNodes);
-    }
+    onMoveNodes(getSelectionOrContext(contextMenuNode, selectedNodes));
   }
 
   function onTableNewFolder() {
@@ -395,15 +412,11 @@
   }
 
   function onTableMoveNodesToWorkspace({ detail: selectedNodes }: CustomEvent<WorkspaceTreeNodeWithFullPath[]>) {
-    if (selectedNodes.length) {
-      onMoveNodesToWorkspace(selectedNodes);
-    }
+    onMoveNodesToWorkspace(getSelectionOrContext(contextMenuNode, selectedNodes));
   }
 
   function onTableDeleteNodes({ detail: selectedNodes }: CustomEvent<WorkspaceTreeNodeWithFullPath[]>) {
-    if (selectedNodes.length) {
-      onDeleteNodes(selectedNodes);
-    }
+    onDeleteNodes(getSelectionOrContext(contextMenuNode, selectedNodes));
   }
 
   function onTableRunAction(event: CustomEvent<ActionParameterPair>, filePaths: RowId[]) {

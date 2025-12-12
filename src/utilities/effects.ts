@@ -321,6 +321,7 @@ import {
   getWorkspaceFileFolderDisplay,
   incrementFilename,
   isBulkOperationSuccess,
+  isFileConflictResponse,
   joinPath,
   mapWorkspaceTreePaths,
   separateFilenameFromPath,
@@ -367,11 +368,14 @@ async function bulkMoveWorkspaceItems(
       user,
     );
   }
+
+  const failedFileOperations: BulkOperationResponses = [];
+
   while (responses.length > 0) {
     const response = responses.shift();
 
     if (response) {
-      if (!isBulkOperationSuccess(response) && response.status === 409) {
+      if (isFileConflictResponse(response)) {
         const { confirm: conflictConfirm, value: conflictValue } = await showWorkspaceBulkOperationConflictModal(
           response.item,
         );
@@ -419,7 +423,7 @@ async function bulkMoveWorkspaceItems(
               }
 
               overwriteResponses.forEach(overwriteResponse => {
-                if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
+                if (isFileConflictResponse(overwriteResponse)) {
                   responses.unshift(overwriteResponse);
                 }
               });
@@ -471,7 +475,7 @@ async function bulkMoveWorkspaceItems(
               }
 
               overwriteResponses.forEach(overwriteResponse => {
-                if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
+                if (isFileConflictResponse(overwriteResponse)) {
                   responses.unshift(overwriteResponse);
                 }
               });
@@ -480,8 +484,15 @@ async function bulkMoveWorkspaceItems(
             continue;
           }
         }
+      } else if (!isBulkOperationSuccess(response)) {
+        failedFileOperations.push(response);
       }
     }
+  }
+  if (failedFileOperations.length) {
+    throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to transfer`, {
+      cause: failedFileOperations,
+    });
   }
 }
 
@@ -5929,11 +5940,13 @@ const effects = {
             };
           }, {});
 
+          const failedFileOperations: BulkOperationResponses = [];
+
           while (responses.length > 0) {
             const response = responses.shift();
 
             if (response) {
-              if (!isBulkOperationSuccess(response) && response.status === 409) {
+              if (isFileConflictResponse(response)) {
                 const { confirm: conflictConfirm, value: conflictValue } =
                   await showWorkspaceBulkOperationConflictModal(response.item);
 
@@ -5968,7 +5981,7 @@ const effects = {
                       );
 
                       overwriteResponses.forEach(overwriteResponse => {
-                        if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
+                        if (isFileConflictResponse(overwriteResponse)) {
                           responses.unshift(overwriteResponse);
                         }
                       });
@@ -6019,7 +6032,7 @@ const effects = {
                       );
 
                       overwriteResponses.forEach(overwriteResponse => {
-                        if (!isBulkOperationSuccess(overwriteResponse) && overwriteResponse.status === 409) {
+                        if (isFileConflictResponse(overwriteResponse)) {
                           responses.unshift(overwriteResponse);
                         }
                       });
@@ -6028,8 +6041,16 @@ const effects = {
                     continue;
                   }
                 }
+              } else if (!isBulkOperationSuccess(response)) {
+                failedFileOperations.push(response);
               }
             }
+          }
+
+          if (failedFileOperations.length) {
+            throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to upload`, {
+              cause: failedFileOperations,
+            });
           }
 
           showSuccessToast(`Workspace File${fileArray.length > 1 ? 's' : ''} Uploaded Successfully`);
@@ -6038,8 +6059,8 @@ const effects = {
         return joinPath([cleanedTargetPath, fileArray[0].name]);
       }
     } catch (e) {
-      catchError(`Workspace file was unable to be uploaded`, e as Error);
-      showFailureToast(`Workspace file was unable to be uploaded`);
+      catchError(`Workspace file upload failed`, e as Error);
+      showFailureToast(`Workspace file upload failed`);
     }
 
     return null;
@@ -6321,7 +6342,7 @@ const effects = {
         return cleanedTargetPath;
       } catch (e) {
         catchError(
-          `Workspace ${displayString.toLowerCase()} was unable to be ${shouldCopy ? 'duplicated' : 'moved'}`,
+          `Workspace ${displayString.toLowerCase()} unable to be ${shouldCopy ? 'duplicated' : 'moved'}`,
           e as Error,
         );
         showFailureToast(`Workspace ${displayString} ${shouldCopy ? 'Duplication' : 'Move'} Failed`);

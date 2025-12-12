@@ -287,6 +287,11 @@ export function isBulkOperationSuccess(response: BulkOperationResponse) {
   return response.status >= 200 && response.status <= 299;
 }
 
+export function isFileConflictResponse(response: BulkOperationResponse) {
+  // Check if status is between 200 and 299 (inclusive)
+  return response.status === 409;
+}
+
 export const WorkspaceApi = {
   async createFolder(workspaceId: number, folderPath: string, user: User | null) {
     return reqWorkspace<Workspace>(`${workspaceId}/${folderPath}?type=directory`, 'PUT', null, user, undefined, false);
@@ -309,7 +314,9 @@ export const WorkspaceApi = {
     return reqWorkspace(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, false);
   },
   async deleteFiles(workspaceId: number, filePaths: string[], user: User | null): Promise<BulkOperationResponses> {
-    return reqWorkspace(joinPath(['bulk', workspaceId]), 'DELETE', JSON.stringify(filePaths), user, undefined, false);
+    return reqWorkspace(joinPath(['bulk', workspaceId]), 'DELETE', JSON.stringify(filePaths), user, undefined, false, {
+      'Content-Type': 'application/json',
+    });
   },
   async deleteWorkspace(workspaceId: number, user: User | null): Promise<void> {
     return reqWorkspace(`${workspaceId}`, 'DELETE', null, user, undefined, false);
@@ -342,6 +349,7 @@ export const WorkspaceApi = {
       user,
       undefined,
       false,
+      { 'Content-Type': 'application/json' },
     );
   },
   async moveFileToWorkspace(
@@ -364,6 +372,7 @@ export const WorkspaceApi = {
       user,
       undefined,
       false,
+      { 'Content-Type': 'application/json' },
     );
   },
   async moveFiles(
@@ -408,6 +417,7 @@ export const WorkspaceApi = {
       user,
       undefined,
       true,
+      { 'Content-Type': 'application/json' },
     );
   },
   async saveFile(
