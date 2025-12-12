@@ -700,7 +700,7 @@
             userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
             on:runAction={onRunActionOnActiveFile}
             on:save={onSaveWorkspaceFile}
-            on:sequence={onWorkspaceFileUpdated}
+            on:sequence={isSequenceFile ? onWorkspaceFileUpdated : undefined}
           />
         </div>
         <div class="flex h-full" class:hidden={isSequenceFile}>
@@ -714,7 +714,7 @@
             textFileContent={!isSequenceFile ? initialSelectedFileContent : ''}
             on:runAction={onRunActionOnActiveFile}
             on:save={onSaveWorkspaceFile}
-            on:textContentUpdated={onWorkspaceFileUpdated}
+            on:textContentUpdated={!isSequenceFile ? onWorkspaceFileUpdated : undefined}
           />
         </div>
       {:else if selectedFileType === WorkspaceContentType.Directory}
