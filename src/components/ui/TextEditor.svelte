@@ -33,7 +33,6 @@
   export let textFileContent: string = '';
   export let textFilePath: string = '';
   export let textFileName: string = '';
-  export let title: string = 'Text Editor';
 
   const dispatch = createEventDispatcher<{
     runAction: { action: ActionDefinition; parameter: string };
@@ -50,6 +49,10 @@
   let updatedTextContent: string = textFileContent;
   let isTextContentUpdated: boolean = false;
   let previousIsJSON: boolean = isJSON;
+  let previousTextFilePath: string = textFilePath;
+
+  // Create debounced listener at component level so we can cancel it when file changes
+  const debouncedTextContentUpdateListener = debounce(textContentUpdateListener, 250);
 
   $: if (editorView) {
     editorView.dispatch({
@@ -61,6 +64,14 @@
   });
   $: updatedTextContent = textFileContent;
   $: isTextContentUpdated = updatedTextContent !== textFileContent;
+
+  // Cancel pending debounced events when file path changes to prevent stale events
+  // from being dispatched with the wrong file path
+  $: if (textFilePath !== previousTextFilePath) {
+    debouncedTextContentUpdateListener.cancel();
+    previousTextFilePath = textFilePath;
+  }
+
   $: if (previousIsJSON !== isJSON && editorDiv) {
     if (editorView) {
       editorView.destroy();
@@ -76,7 +87,7 @@
           lintGutter(),
           json(),
           jsonLinter,
-          EditorView.updateListener.of(debounce(textContentUpdateListener, 250)),
+          EditorView.updateListener.of(debouncedTextContentUpdateListener),
           compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
         ],
         parent: editorDiv,
@@ -90,7 +101,7 @@
           EditorView.lineWrapping,
           EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
           lintGutter(),
-          EditorView.updateListener.of(debounce(textContentUpdateListener, 250)),
+          EditorView.updateListener.of(debouncedTextContentUpdateListener),
           compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
         ],
         parent: editorDiv,
@@ -103,7 +114,7 @@
     disableCopyAndExport = updatedText === '';
 
     updatedTextContent = updatedText;
-    dispatch('textContentUpdated', { filePath: textFilePath, input: updatedText });
+    dispatch('textContentUpdated', { filePath: textFilePath, input: updatedText, output: 'FOO' });
   }
 
   function downloadInputFormat(): void {
@@ -141,7 +152,7 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
-        EditorView.updateListener.of(debounce(textContentUpdateListener, 250)),
+        EditorView.updateListener.of(debouncedTextContentUpdateListener),
         blockTheme,
         compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
       ],
@@ -154,7 +165,7 @@
   <svelte:fragment slot="header">
     <SectionTitle alt={textFilePath}>
       <File size={16} slot="icon" />
-      {title}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}
+      {textFileName}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}
     </SectionTitle>
 
     <div class="right">

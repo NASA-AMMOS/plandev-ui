@@ -49,7 +49,6 @@
   export let sequenceDefinition: string = '';
   export let sequenceOutput: string = '';
   export let showCommandFormBuilder: boolean = false;
-  export let title: string = 'Sequence - Definition Editor';
   export let userSequenceEditorColumns: string;
   export let userSequenceEditorColumnsWithFormBuilder: string;
 
@@ -80,6 +79,10 @@
   let commandInfoMapper: CommandInfoMapper;
   let inputEditorExtension: Extension = [];
   let outputEditorExtension: Extension = [];
+  let previousSequenceFilePath: string = sequenceFilePath;
+
+  // Create debounced listener at component level so we can cancel it when file changes
+  const debouncedSequenceUpdateListener = debounce(sequenceUpdateListener, 250);
 
   $: commandInfoMapper = sequenceAdaptation.input.commandInfoMapper;
 
@@ -149,6 +152,13 @@
 
   $: updatedSequenceDefinition = sequenceDefinition;
   $: isSequenceDefinitionUpdated = updatedSequenceDefinition !== sequenceDefinition;
+
+  // Cancel pending debounced events when file path changes to prevent stale events
+  // from being dispatched with the wrong file path
+  $: if (sequenceFilePath !== previousSequenceFilePath) {
+    debouncedSequenceUpdateListener.cancel();
+    previousSequenceFilePath = sequenceFilePath;
+  }
 
   async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
     const sequence = viewUpdate.state.doc.toString();
@@ -245,7 +255,7 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
-        EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
+        EditorView.updateListener.of(debouncedSequenceUpdateListener),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
         compartmentAdaptation.of(inputEditorExtension),

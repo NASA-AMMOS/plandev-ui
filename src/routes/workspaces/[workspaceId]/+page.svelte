@@ -165,11 +165,6 @@
     activeFilePath = nextPath;
     if (activeFilePath && workspaceTreeMap[activeFilePath]) {
       const { filename } = separateFilenameFromPath(activeFilePath);
-      await getSelectedFileContent(activeFilePath);
-      availableActionsForActiveFile = getAvailableActionsForNodes(allActionsForWorkspace, [
-        workspaceTreeMap[activeFilePath],
-      ]);
-
       if (filename) {
         selectedFileName = filename;
         selectedFileType = workspaceTreeMap[activeFilePath]?.type ?? null;
@@ -177,6 +172,10 @@
         selectedFileName = undefined;
         selectedFileType = null;
       }
+      availableActionsForActiveFile = getAvailableActionsForNodes(allActionsForWorkspace, [
+        workspaceTreeMap[activeFilePath],
+      ]);
+      await getSelectedFileContent(activeFilePath);
     } else {
       // navigated to a null/empty file, reset the editor contents
       initialSelectedFileContent = '';
@@ -312,11 +311,24 @@
   }
 
   async function getSelectedFileContent(filePath: string | null) {
+    initialSelectedFileContent = '';
+    updatedSelectedFileContent = initialSelectedFileContent;
+    let content = '';
+
     if (filePath !== null && user) {
-      initialSelectedFileContent = (await effects.getWorkspaceFileContent($workspaceId, filePath, user)) ?? '';
-    } else {
-      initialSelectedFileContent = '';
+      const node = workspaceTreeMap[filePath];
+      if (node?.type !== WorkspaceContentType.Directory) {
+        content = (await effects.getWorkspaceFileContent($workspaceId, filePath, user)) ?? '';
+      }
     }
+
+    // Check for stale response: if user navigated to a different file while we were
+    // fetching, discard this result to avoid overwriting newer content
+    if (filePath !== activeFilePath) {
+      return;
+    }
+
+    initialSelectedFileContent = content;
     updatedSelectedFileContent = initialSelectedFileContent;
   }
 
@@ -671,22 +683,19 @@
   <Sidebar.Inset className="min-h-0">
     <div class="grid h-full grid-cols-1 grid-rows-1">
       {#if activeFilePath === null || isTextFile(workspaceTreeMap[activeFilePath]?.type)}
-        <div
-          class="flex h-full"
-          class:hidden={selectedFileType != null && selectedFileType !== WorkspaceContentType.Sequence}
-        >
+        {@const isSequenceFile = selectedFileType !== null && selectedFileType === WorkspaceContentType.Sequence}
+        <div class="flex h-full" class:hidden={!isSequenceFile}>
           <SequenceEditor
             {phoenixContext}
             availableActions={availableActionsForActiveFile}
             includeActions={true}
             previewOnly={!hasEditFilePermission}
             sequenceAdaptation={$sequenceAdaptation}
-            sequenceDefinition={initialSelectedFileContent}
+            sequenceDefinition={isSequenceFile ? initialSelectedFileContent : ''}
             sequenceName={selectedFileName}
             sequenceFilePath={selectedFilePath ?? ''}
             sequenceOutput={selectedSequenceOutput}
             showCommandFormBuilder={true}
-            title="Sequence - Definition Editor"
             userSequenceEditorColumns={$userSequenceEditorColumns}
             userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
             on:runAction={onRunActionOnActiveFile}
@@ -694,10 +703,7 @@
             on:sequence={onWorkspaceFileUpdated}
           />
         </div>
-        <div
-          class="flex h-full"
-          class:hidden={selectedFileType == null || selectedFileType === WorkspaceContentType.Sequence}
-        >
+        <div class="flex h-full" class:hidden={isSequenceFile}>
           <TextEditor
             availableActions={availableActionsForActiveFile}
             includeActions={true}
@@ -705,8 +711,7 @@
             previewOnly={!hasEditFilePermission}
             textFileName={selectedFileName}
             textFilePath={selectedFilePath ?? ''}
-            textFileContent={initialSelectedFileContent}
-            title={selectedFileName}
+            textFileContent={!isSequenceFile ? initialSelectedFileContent : ''}
             on:runAction={onRunActionOnActiveFile}
             on:save={onSaveWorkspaceFile}
             on:textContentUpdated={onWorkspaceFileUpdated}
