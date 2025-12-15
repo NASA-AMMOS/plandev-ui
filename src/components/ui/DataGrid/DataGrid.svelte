@@ -467,7 +467,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       },
       preventDefaultOnContextMenu: useCustomContextMenu,
       rowClassRules: {
-        CURRENT_SELECTED_ROW_CLASS: (params: RowClassParams<RowData>) => {
+        [CURRENT_SELECTED_ROW_CLASS]: (params: RowClassParams<RowData>) => {
           return !!params.data && currentSelectedRowIdRef.value === getRowId(params.data);
         },
         'ag-context-menu-target': (params: RowClassParams<RowData>) => {
