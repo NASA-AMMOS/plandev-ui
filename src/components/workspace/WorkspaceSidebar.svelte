@@ -59,7 +59,6 @@
   let lastRefreshTime: Date = new Date();
   let currentRootPath: string = ''; // Navigation state - current folder being viewed as root
 
-  $: console.log(isWorkspaceLoading, '??');
   $: workspaceTree && didUpdate(isWorkspaceLoading);
 
   async function didUpdate(loading: boolean) {
@@ -85,7 +84,7 @@
   }
 
   function onImportFile() {
-    dispatch('importFile', '');
+    dispatch('importFile', currentRootPath);
   }
 
   function onWorkspaceCollaboratorsCreate(event: CustomEvent<WorkspaceCollaborator[]>) {
