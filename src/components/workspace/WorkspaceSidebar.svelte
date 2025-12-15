@@ -16,6 +16,7 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
+  import Loading from '../Loading.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
   import WorkspaceCollaboratorInput from '../ui/Tags/WorkspaceCollaboratorInput.svelte';
@@ -58,6 +59,7 @@
   let lastRefreshTime: Date = new Date();
   let currentRootPath: string = ''; // Navigation state - current folder being viewed as root
 
+  $: console.log(isWorkspaceLoading, '??');
   $: workspaceTree && didUpdate(isWorkspaceLoading);
 
   async function didUpdate(loading: boolean) {
@@ -214,7 +216,9 @@
                         on:runAction
                       />
                     {:else}
-                      <div class="p-2 text-sm text-muted-foreground">No workspace loaded</div>
+                      <div class="p-2">
+                        <Loading>Loading workspace...</Loading>
+                      </div>
                     {/if}
                   </Sidebar.Menu>
                 </Sidebar.GroupContent>
