@@ -394,6 +394,7 @@ export const WorkspaceApi = {
       user,
       undefined,
       true,
+      { 'Content-Type': 'application/json' },
     );
   },
   async moveFilesToWorkspace(
