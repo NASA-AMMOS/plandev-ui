@@ -457,6 +457,10 @@
   visibility: hidden;
 }
 
+.ag-row .action-cell-container.action-cell-container-compact .actions-cell {
+  gap: 0;
+}
+
 .ag-row .actions-cell .downloading {
   visibility: visible;
 }

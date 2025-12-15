@@ -227,6 +227,7 @@
       comparator: () => 0,
       field: 'name',
       headerName: 'Name',
+      minWidth: 200,
       resizable: true,
       sort: 'asc',
       sortable: true,
@@ -261,7 +262,7 @@
     //   width: 160,
     // },
     {
-      cellClass: 'action-cell-container',
+      cellClass: 'action-cell-container action-cell-container-compact',
       cellRenderer: (params: WorkspaceTreeNodeCellRendererParams) => {
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'actions-cell';
@@ -304,7 +305,7 @@
       sortable: false,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 80,
+      width: 74,
     },
   ];
 
@@ -983,6 +984,7 @@
   :global(.tree-chevron) {
     align-items: center;
     display: flex;
+    flex-shrink: 0;
     height: 14px;
     justify-content: center;
     width: 14px;

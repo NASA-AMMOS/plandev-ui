@@ -123,11 +123,14 @@
 
 <Sidebar.Root className="h-full inset-x-0 border-none flex">
   <Tabs.Root bind:value={activeTab} orientation="vertical" class="flex h-full">
-    <div class="flex h-full w-10 border-r border-border bg-muted">
-      <Tabs.List class="flex h-auto w-full flex-col items-center justify-start gap-0">
+    <div class="flex h-full w-[45px] border-r border-border bg-muted">
+      <Tabs.List class="flex h-auto w-full flex-col items-center justify-start gap-0 p-0">
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
-            <Tabs.Trigger value="files" class="flex h-10 w-10 items-center justify-center rounded-none shadow-none">
+            <Tabs.Trigger
+              value="files"
+              class="flex h-[47px] w-[43px] items-center justify-center rounded-none shadow-none"
+            >
               <Button class="hover:bg-transparent" builders={[builder]} variant="ghost" aria-label="Files">
                 <Files size={16} />
               </Button>
@@ -140,7 +143,7 @@
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
             <Button
-              class="h-10 hover:bg-transparent"
+              class="h-[47px] hover:bg-transparent"
               builders={[builder]}
               variant="ghost"
               aria-label="Actions"
@@ -155,7 +158,10 @@
         </Tooltip.Root>
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
-            <Tabs.Trigger value="settings" class="flex h-10 w-10 items-center justify-center rounded-none shadow-none">
+            <Tabs.Trigger
+              value="settings"
+              class="flex h-[47px] w-[43px] items-center justify-center rounded-none shadow-none"
+            >
               <Button class="hover:bg-transparent" builders={[builder]} variant="ghost" name="Settings">
                 <Settings size={16} />
               </Button>
@@ -220,7 +226,7 @@
       <Tabs.Content value="settings" class="mt-0 h-full" style="min-height: 300px;">
         <div class="grid h-full grid-rows-[min-content_auto]">
           <Sidebar.Header className="p-0">
-            <div class="flex items-center justify-between gap-0 border-b border-border bg-background p-[6px]">
+            <div class="flex h-[48px] items-center justify-between gap-0 border-b border-border bg-background p-[6px]">
               <SectionTitle>Workspace Settings</SectionTitle>
             </div>
           </Sidebar.Header>
