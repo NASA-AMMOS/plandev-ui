@@ -207,6 +207,9 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         false,
+        {
+          'Content-Type': 'application/json',
+        },
       );
     });
 
@@ -240,6 +243,9 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         false,
+        {
+          'Content-Type': 'application/json',
+        },
       );
     });
 
@@ -255,6 +261,9 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         false,
+        {
+          'Content-Type': 'application/json',
+        },
       );
     });
 
@@ -271,6 +280,9 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         false,
+        {
+          'Content-Type': 'application/json',
+        },
       );
     });
 
@@ -287,6 +299,9 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         false,
+        {
+          'Content-Type': 'application/json',
+        },
       );
     });
 
@@ -303,6 +318,9 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        {
+          'Content-Type': 'application/json',
+        },
       );
     });
 
@@ -319,6 +337,9 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        {
+          'Content-Type': 'application/json',
+        },
       );
     });
 
@@ -335,6 +356,9 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        {
+          'Content-Type': 'application/json',
+        },
       );
     });
 
@@ -351,6 +375,9 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        {
+          'Content-Type': 'application/json',
+        },
       );
     });
 
@@ -368,6 +395,9 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        {
+          'Content-Type': 'application/json',
+        },
       );
     });
 
@@ -385,6 +415,9 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        {
+          'Content-Type': 'application/json',
+        },
       );
     });
 
@@ -402,6 +435,9 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        {
+          'Content-Type': 'application/json',
+        },
       );
     });
 
@@ -419,6 +455,9 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        {
+          'Content-Type': 'application/json',
+        },
       );
     });
 
