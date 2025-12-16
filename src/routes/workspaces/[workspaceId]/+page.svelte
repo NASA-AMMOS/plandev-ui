@@ -109,9 +109,8 @@
 
   // TODO check with Dan about why this was potentially moved from a reactive statement to the maybeNavigate function
   $: if (workspaceTreeMap && typeof activeFilePath === 'string') {
-    availableActionsForActiveFile = getAvailableActionsForNodes(allActionsForWorkspace, [
-      workspaceTreeMap[activeFilePath],
-    ]);
+    const nodeList = workspaceTreeMap[activeFilePath] ? [workspaceTreeMap[activeFilePath]] : [];
+    availableActionsForActiveFile = getAvailableActionsForNodes(allActionsForWorkspace, nodeList);
   }
 
   const handleBeforeUnload = (event: BeforeUnloadEvent) => {
