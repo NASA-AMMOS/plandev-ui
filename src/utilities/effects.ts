@@ -1593,6 +1593,7 @@ const effects = {
       }
     } catch (e) {
       catchError('Create plan branch request failed', e as Error);
+      showFailureToast('Plan Branch Create Failed');
     }
   },
 
