@@ -42,7 +42,7 @@
   $: {
     areMultipleFilesSelected = selectedWorkspaceNodes.length > 1;
     fileCountPhrase = areMultipleFilesSelected
-      ? `${selectedWorkspaceNodes.length} File${pluralize(selectedWorkspaceNodes.length)}`
+      ? `${selectedWorkspaceNodes.length} Item${pluralize(selectedWorkspaceNodes.length)}`
       : '';
   }
 </script>
