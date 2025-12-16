@@ -101,7 +101,7 @@
   <div>
     <ContextMenu.Item size="sm" on:click={() => dispatch('copyFileLocation')} aria-label="Copy Link to">
       Copy {selectedWorkspaceNodes[0].type === WorkspaceContentType.Directory
-        ? 'Link to Directory'
+        ? 'Link to Folder'
         : 'Download Link to File'}
     </ContextMenu.Item>
     <ContextMenu.Item size="sm" on:click={() => dispatch('copyFullPath')} aria-label="Copy Full Path">
