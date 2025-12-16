@@ -329,13 +329,9 @@
                   Output
                 </Button>
               </DropdownMenu.Trigger>
-              <DropdownMenu.Content align="start">
+              <DropdownMenu.Content align="start" class="flex flex-col">
                 {#each sequenceAdaptation.outputs as outputFormatItem}
-                  <Tooltip
-                    side="left"
-                    class="flex"
-                    content={`Copy sequence contents as ${outputFormatItem?.name} to clipboard`}
-                  >
+                  <Tooltip side="left" content={`Copy sequence contents as ${outputFormatItem?.name} to clipboard`}>
                     <DropdownMenu.Item
                       size="sm"
                       on:click={copyOutputFormatToClipboard}
