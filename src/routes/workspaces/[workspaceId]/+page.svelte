@@ -58,6 +58,7 @@
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
   import { filterEmpty } from '../../../utilities/generic';
+  import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { showConfirmModal } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
   import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
@@ -524,23 +525,19 @@
     }
   }
 
-  async function onSaveWorkspaceFile(event: CustomEvent<string>) {
-    const { detail: updatedSequenceDefinition } = event;
+  async function saveCurrentFile(content: string) {
     if (activeFilePath) {
-      effects.saveWorkspaceFile($workspaceId, activeFilePath, updatedSequenceDefinition, user);
-      initialSelectedFileContent = updatedSequenceDefinition;
-    } else if ($workspace && workspaceTree) {
-      const newSequencePath = await effects.newWorkspaceSequence(
-        $workspace,
-        workspaceTree,
-        '',
-        updatedSequenceDefinition,
-        user,
-      );
-
+      effects.saveWorkspaceFile($workspaceId, activeFilePath, content, user);
+      initialSelectedFileContent = content;
+    } else if ($workspace && workspaceTree && content) {
+      const newSequencePath = await effects.newWorkspaceSequence($workspace, workspaceTree, '', content, user);
       selectedFilePath = newSequencePath;
       refreshWorkspaceContents();
     }
+  }
+
+  function onSaveWorkspaceFile(event: CustomEvent<string>) {
+    saveCurrentFile(event.detail);
   }
 
   function onCopyFileLocation({ detail: copyPath }: CustomEvent<string>) {
@@ -630,6 +627,16 @@
     window.open(`${base}/workspaces/${$workspaceId}?sequenceId=${encodeURIComponent(treeNodePath)}`, '_blank');
   }
 
+  function onGlobalKeydown(event: KeyboardEvent) {
+    const hasUnsavedChanges = updatedSelectedFileContent !== initialSelectedFileContent;
+    if (isSaveEvent(event)) {
+      event.preventDefault();
+      if (hasEditFilePermission && hasUnsavedChanges) {
+        saveCurrentFile(updatedSelectedFileContent);
+      }
+    }
+  }
+
   onMount(() => {
     if (initialWorkspace) {
       $workspaceId = initialWorkspace.id;
@@ -647,6 +654,8 @@
     }
   });
 </script>
+
+<svelte:window on:keydown={onGlobalKeydown} />
 
 <PageTitle title="Workspace: {$workspace?.name}" />
 
