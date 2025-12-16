@@ -102,6 +102,10 @@
   let hasEditWorkspaceCollaboratorsPermission: boolean = false;
   let phoenixContext: PhoenixContext;
 
+  function hasUnsavedChanges(): boolean {
+    return updatedSelectedFileContent !== initialSelectedFileContent;
+  }
+
   $: if (initialWorkspace) {
     $workspaceId = initialWorkspace.id;
     allActionsForWorkspace = Object.values($actionDefinitionsByWorkspace[$workspaceId] || {});
@@ -114,8 +118,7 @@
   }
 
   const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-    // Check source variables directly since reactive $: statements don't update in closures
-    if (updatedSelectedFileContent !== initialSelectedFileContent && activeFilePath !== null) {
+    if (hasUnsavedChanges()) {
       event.preventDefault(); // Triggers the native browser confirmation
       event.returnValue = ''; // Required for some older browser compatibility
     }
@@ -123,8 +126,7 @@
 
   // Prevent in-app navigation to other routes when there are unsaved changes
   beforeNavigate(({ cancel, to }) => {
-    const hasUnsavedChanges = updatedSelectedFileContent !== initialSelectedFileContent && activeFilePath !== null;
-    if (!hasUnsavedChanges) {
+    if (!hasUnsavedChanges()) {
       return;
     }
     // Allow navigation within the same workspace page (file selection is handled by goToSequence)
@@ -393,7 +395,7 @@
   }
 
   async function goToSequence(filePath: string | null) {
-    if (updatedSelectedFileContent !== initialSelectedFileContent && activeFilePath !== null) {
+    if (hasUnsavedChanges()) {
       const { confirm } = await showConfirmModal(
         'Navigate Away',
         `There are unsaved changes. Are you sure you want navigate away from the current sequence?`,
@@ -434,6 +436,8 @@
       const { detail: startingPath } = event;
       const newFolderPath = await effects.newWorkspaceFolder($workspace, workspaceTree, startingPath, user);
       if (newFolderPath !== null) {
+        // select & navigate to the new file
+        selectedFilePath = newFolderPath;
         refreshWorkspaceContents();
       }
     }
@@ -527,7 +531,8 @@
     detail: { filePath, input, output },
   }: CustomEvent<{ filePath: string; input: string; output?: string }>) {
     // Ignore stale events from a file that is no longer active
-    if (filePath !== activeFilePath) {
+    // Note: editors receive (activeFilePath ?? '') so we normalize the comparison
+    if (filePath !== (activeFilePath ?? '')) {
       return;
     }
 
@@ -544,6 +549,7 @@
     } else if ($workspace && workspaceTree && content) {
       const newSequencePath = await effects.newWorkspaceSequence($workspace, workspaceTree, '', content, user);
       selectedFilePath = newSequencePath;
+      initialSelectedFileContent = content;
       refreshWorkspaceContents();
     }
   }
@@ -640,10 +646,9 @@
   }
 
   function onGlobalKeydown(event: KeyboardEvent) {
-    const hasUnsavedChanges = updatedSelectedFileContent !== initialSelectedFileContent;
     if (isSaveEvent(event)) {
       event.preventDefault();
-      if (hasEditFilePermission && hasUnsavedChanges) {
+      if (hasEditFilePermission && hasUnsavedChanges()) {
         saveCurrentFile(updatedSelectedFileContent);
       }
     }
@@ -654,7 +659,6 @@
       $workspaceId = initialWorkspace.id;
       selectedFilePath = $page.url.searchParams.get(SearchParameters.SEQUENCE_ID);
       getWorkspaceContents(initialWorkspace);
-      resetRefreshInterval();
     }
   });
 
