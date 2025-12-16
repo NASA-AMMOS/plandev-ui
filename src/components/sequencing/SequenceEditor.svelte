@@ -86,10 +86,14 @@
     outputEditorExtension = selectedOutputFormat.getEditorExtension(phoenixContext, phoenixResources);
   }
 
-  // insert sequence
-  $: editorSequenceView?.dispatch({
-    changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
-  });
+  // insert sequence - use sequenceFilePath as dependency to ensure editor updates when switching files
+  // This handles the case where both old and new files have the same content (e.g., both empty)
+  $: {
+    void sequenceFilePath;
+    editorSequenceView?.dispatch({
+      changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
+    });
+  }
 
   $: commandFormBuilderGrid = showCommandFormBuilder
     ? userSequenceEditorColumnsWithFormBuilder

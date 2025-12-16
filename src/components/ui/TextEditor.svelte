@@ -47,7 +47,10 @@
   // Create debounced listener at component level so we can cancel it when file changes
   const debouncedTextContentUpdateListener = debounce(textContentUpdateListener, 250);
 
+  // Insert text content - use textFilePath as dependency to ensure editor updates when switching files
+  // This handles the case where both old and new files have the same content (e.g., both empty)
   $: if (editorView) {
+    void textFilePath;
     editorView.dispatch({
       changes: { from: 0, insert: textFileContent, to: editorView.state.doc.length },
     });
