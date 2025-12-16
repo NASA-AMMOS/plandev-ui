@@ -158,7 +158,7 @@
   <svelte:fragment slot="header">
     <SectionTitle alt={textFilePath}>
       <File size={16} slot="icon" />
-      {textFileName}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}
+      {textFileName || 'Untitled'}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}
     </SectionTitle>
 
     <EditorToolbar

@@ -279,7 +279,7 @@
       <svelte:fragment slot="header">
         <SectionTitle alt={sequenceFilePath} overflow="hidden">
           <FileBracesCorner size={16} slot="icon" />
-          {sequenceName}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}
+          {sequenceName || 'Untitled'}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}
         </SectionTitle>
 
         <EditorToolbar
