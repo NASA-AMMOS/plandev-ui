@@ -236,32 +236,6 @@
       suppressAutoSize: false,
       suppressSizeToFit: false,
     },
-    // {
-    //   // Use comparator that returns 0 to prevent AG Grid from reordering rows.
-    //   // We handle sorting ourselves via sortWorkspaceTree to preserve hierarchy.
-    //   comparator: () => 0,
-    //   field: 'type',
-    //   filter: 'number',
-    //   headerName: 'Type',
-    //   resizable: true,
-    //   sortable: true,
-    //   suppressAutoSize: true,
-    //   suppressSizeToFit: true,
-    //   width: 100,
-    // },
-    // {
-    //   // Use comparator that returns 0 to prevent AG Grid from reordering rows.
-    //   // We handle sorting ourselves via sortWorkspaceTree to preserve hierarchy.
-    //   comparator: () => 0,
-    //   field: 'fullPath',
-    //   filter: 'number',
-    //   headerName: 'Full Path',
-    //   resizable: true,
-    //   sortable: true,
-    //   suppressAutoSize: true,
-    //   suppressSizeToFit: true,
-    //   width: 160,
-    // },
     {
       cellClass: 'action-cell-container action-cell-container-compact',
       cellRenderer: (params: WorkspaceTreeNodeCellRendererParams) => {

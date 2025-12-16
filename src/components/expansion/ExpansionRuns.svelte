@@ -274,8 +274,7 @@
     {sequenceDefinition}
     sequenceName={selectedSequence?.seq_id}
     sequenceOutput={selectedSequence ? JSON.stringify(selectedSequence.expanded_sequence, null, 2) : undefined}
-    readOnly={true}
-    title="Sequence - Definition Editor (Read-only)"
+    readOnly
     {phoenixContext}
     userSequenceEditorColumns={$userSequenceEditorColumns}
     userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}

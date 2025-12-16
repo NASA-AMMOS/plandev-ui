@@ -43,7 +43,7 @@
   import TimelineHistogram from './TimelineHistogram.svelte';
   import TimelineSimulationRange from './TimelineSimulationRange.svelte';
   import TimelineTimeDisplay from './TimelineTimeDisplay.svelte';
-  import Tooltip from './Tooltip.svelte';
+  import Tooltip from './TimelineTooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
 
   export let activityDirectivesMap: ActivityDirectivesMap | null = null;
