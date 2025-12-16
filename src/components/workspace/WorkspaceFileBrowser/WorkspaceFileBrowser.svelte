@@ -792,7 +792,7 @@
     <Search size={14} />
     <Input
       type="text"
-      placeholder="Search files..."
+      placeholder="Search files and folders..."
       value={filterText}
       on:input={onSearchInput}
       sizeVariant="xs"
