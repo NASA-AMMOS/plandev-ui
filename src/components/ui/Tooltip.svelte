@@ -64,7 +64,7 @@
         {content}
         {#if shortcut}
           &nbsp;<kbd
-            class="rounded border bg-gray-200 px-1.5 py-0.5 font-sans font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+            class="rounded border bg-gray-200 px-1 font-sans font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200"
           >
             {shortcut}
           </kbd>
