@@ -7,7 +7,6 @@
   import type { CommandDictionary, FswCommand, HwCommand } from '@nasa-jpl/aerie-ampcs';
   import type { CommandInfoMapper, PhoenixContext } from '@nasa-jpl/aerie-sequence-languages';
   import { EditorView } from 'codemirror';
-  import { onMount } from 'svelte';
   import { unquoteUnescape } from '../../../utilities/sequence-editor/sequence-utils';
   import Tab from '../../ui/Tabs/Tab.svelte';
   import TabPanel from '../../ui/Tabs/TabPanel.svelte';
@@ -44,6 +43,7 @@
 
   let commandPanelTabs: Tabs;
   let currentTree: Tree;
+  let listenerAttached: boolean = false;
   let selectedCommandDefinition: (FswCommand | HwCommand) | null;
   let selectedNode: SyntaxNode | null = null;
 
@@ -81,8 +81,9 @@
     commandPanelTabs.selectTab(CommandPanelTabs.DEFINITION);
   }
 
-  onMount(async () => {
-    editorSequenceView?.dispatch({
+  $: if (editorSequenceView && !listenerAttached) {
+    listenerAttached = true;
+    editorSequenceView.dispatch({
       effects: StateEffect.appendConfig.of([
         EditorView.updateListener.of(viewUpdate => {
           // This is broken out into a different listener as debouncing this can cause cursor to move around
@@ -99,7 +100,7 @@
         }),
       ]),
     });
-  });
+  }
 </script>
 
 <div class="command-panel">
