@@ -128,7 +128,7 @@ export function incrementFilename(filename: string): string {
     baseName = baseName.replace(regex, `(${nextNumber})`);
   } else {
     // Append (1) if no number exists
-    baseName = `${baseName}(1)`;
+    baseName = `${baseName} (1)`;
   }
 
   // 3. Rejoin base and extension

@@ -55,15 +55,15 @@ describe('Workspace utility function tests', () => {
 
   describe('incrementFilename', () => {
     test('Should add a number to filename that does not yet have one', () => {
-      expect(incrementFilename('file.txt')).toEqual('file(1).txt');
-      expect(incrementFilename('foo.txt')).toEqual('foo(1).txt');
-      expect(incrementFilename('bar.txt')).toEqual('bar(1).txt');
-      expect(incrementFilename('bar(1)(2).txt')).toEqual('bar(1)(3).txt');
+      expect(incrementFilename('file.txt')).toEqual('file (1).txt');
+      expect(incrementFilename('foo.txt')).toEqual('foo (1).txt');
+      expect(incrementFilename('bar.txt')).toEqual('bar (1).txt');
     });
 
     test('Should increment the number in a filename', () => {
-      expect(incrementFilename('file(1).txt')).toEqual('file(2).txt');
+      expect(incrementFilename('file (1).txt')).toEqual('file (2).txt');
       expect(incrementFilename('foo (2).txt')).toEqual('foo (3).txt');
+      expect(incrementFilename('bar(1) (2).txt')).toEqual('bar(1) (3).txt');
     });
   });
 
