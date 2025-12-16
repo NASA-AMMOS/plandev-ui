@@ -6,22 +6,16 @@
   import { linter, lintGutter } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate, keymap } from '@codemirror/view';
-  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
-  import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
-  import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
-  import { File, SquareCode } from 'lucide-svelte';
+  import { File } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { downloadBlob } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import { pluralize } from '../../utilities/text';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
-  import { tooltip } from '../../utilities/tooltip';
-  import Menu from '../menus/Menu.svelte';
-  import MenuItem from '../menus/MenuItem.svelte';
+  import EditorToolbar from '../sequencing/EditorToolbar.svelte';
   import Panel from './Panel.svelte';
   import SectionTitle from './SectionTitle.svelte';
 
@@ -41,7 +35,6 @@
   }>();
   const jsonLinter = linter(jsonParseLinter());
 
-  let actionMenu: Menu;
   let compartmentReadonly: Compartment;
   let disableCopyAndExport: boolean = true;
   let editorDiv: HTMLDivElement;
@@ -114,7 +107,7 @@
     disableCopyAndExport = updatedText === '';
 
     updatedTextContent = updatedText;
-    dispatch('textContentUpdated', { filePath: textFilePath, input: updatedText, output: 'FOO' });
+    dispatch('textContentUpdated', { filePath: textFilePath, input: updatedText });
   }
 
   function downloadInputFormat(): void {
@@ -168,76 +161,22 @@
       {textFileName}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}
     </SectionTitle>
 
-    <div class="right">
-      {#if includeActions}
-        <div class="app-menu" role="none" on:click|stopPropagation={() => actionMenu.toggle()}>
-          <button
-            disabled={textFileName === '' || availableActions.length === 0}
-            class="st-button icon-button secondary"
-          >
-            {#if availableActions.length > 0}
-              <div class="actions-chip">{availableActions.length}</div>
-            {/if}
-            Action{pluralize(availableActions.length)}
-            <ChevronDownIcon />
-          </button>
-          <Menu bind:this={actionMenu}>
-            {#each availableActions as actionInfo}
-              <MenuItem
-                use={[
-                  [
-                    permissionHandler,
-                    {
-                      hasPermission: !readOnly,
-                      permissionError: 'You do not have permission to run this action.',
-                    },
-                  ],
-                ]}
-                on:click={() => {
-                  onRunAction(actionInfo?.action, actionInfo?.parameter);
-                  actionMenu.toggle();
-                }}
-              >
-                <SquareCode size={16} />
-                {actionInfo?.action?.name}
-              </MenuItem>
-            {/each}
-          </Menu>
-        </div>
-      {/if}
-
-      <button
-        use:tooltip={{ content: `Copy sequence contents`, placement: 'top' }}
-        class="st-button icon-button secondary"
-        on:click={copyInputFormatToClipboard}
-        disabled={disableCopyAndExport}
-      >
-        <ClipboardIcon />
-        Copy
-      </button>
-      <button
-        use:tooltip={{
-          content: `Download sequence contents`,
-          placement: 'top',
-        }}
-        class="st-button icon-button secondary"
-        on:click|stopPropagation={downloadInputFormat}
-        disabled={disableCopyAndExport}
-      >
-        <DownloadIcon />
-        Download
-      </button>
-      {#if !(readOnly || previewOnly)}
-        <button
-          class="st-button icon-button"
-          class:secondary={!isTextContentUpdated}
-          disabled={!isTextContentUpdated}
-          on:click={onSave}
-        >
-          Save
-        </button>
-      {/if}
-    </div>
+    <EditorToolbar
+      actions={availableActions}
+      actionsDisabled={textFileName === '' || availableActions.length === 0}
+      showActions={includeActions}
+      showCopyButton
+      copyDisabled={disableCopyAndExport}
+      onCopy={copyInputFormatToClipboard}
+      showDownloadButton
+      downloadDisabled={disableCopyAndExport}
+      onDownload={downloadInputFormat}
+      showSaveButton={!(readOnly || previewOnly)}
+      saveDisabled={!isTextContentUpdated}
+      saveHighlighted={isTextContentUpdated}
+      {onSave}
+      on:runAction={e => onRunAction(e.detail.action, e.detail.parameter)}
+    />
   </svelte:fragment>
 
   <svelte:fragment slot="body">
@@ -250,34 +189,3 @@
     />
   </svelte:fragment>
 </Panel>
-
-<style>
-  .app-menu {
-    align-items: center;
-    cursor: pointer;
-    display: flex;
-    gap: 5px;
-    justify-content: center;
-    position: relative;
-  }
-  .actions-chip {
-    background-color: var(--st-gray-15);
-    border-radius: 40px;
-    color: black;
-    min-width: 16px;
-    padding: 0px 4px;
-  }
-
-  .right {
-    align-items: center;
-    display: flex;
-    justify-content: space-around;
-  }
-
-  .icon-button {
-    align-items: center;
-    column-gap: 5px;
-    display: flex;
-    margin: 2px;
-  }
-</style>

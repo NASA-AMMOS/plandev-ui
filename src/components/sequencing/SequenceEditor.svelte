@@ -13,24 +13,14 @@
     PhoenixAdaptation,
     PhoenixContext,
   } from '@nasa-jpl/aerie-sequence-languages';
-  import { Button, DropdownMenu, Label } from '@nasa-jpl/stellar-svelte';
+  import { Button, Label } from '@nasa-jpl/stellar-svelte';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
-  import {
-    Braces,
-    Bug,
-    Clipboard,
-    Download,
-    FileBracesCorner,
-    FileOutput,
-    PanelBottomClose,
-    PanelBottomOpen,
-    Save,
-  } from 'lucide-svelte';
+  import { FileBracesCorner, PanelBottomClose, PanelBottomOpen } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
-  import { downloadBlob, isMacOs } from '../../utilities/generic';
+  import { downloadBlob } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
@@ -40,7 +30,7 @@
   import SectionTitle from '../ui/SectionTitle.svelte';
   import Tooltip from '../ui/Tooltip.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
-  import SequenceActionCombobox from './SequenceActionCombobox.svelte';
+  import EditorToolbar from './EditorToolbar.svelte';
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
   export let phoenixContext: PhoenixContext;
@@ -196,8 +186,7 @@
     downloadBlob(new Blob([editorOutputView.state.doc.toString()], { type: 'text/plain' }), fileExtension);
   }
 
-  function downloadInputFormat(event: MouseEvent): void {
-    event.stopPropagation();
+  function downloadInputFormat(): void {
     downloadBlob(new Blob([editorSequenceView.state.doc.toString()], { type: 'text/plain' }), sequenceName); // TODO configure file extension to be customizable
   }
 
@@ -293,96 +282,32 @@
           {sequenceName}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}
         </SectionTitle>
 
-        <div class="right gap-1.5">
-          {#if includeActions}
-            <SequenceActionCombobox
-              actions={availableActions}
-              on:runAction={onRunAction}
-              disabled={sequenceName === '' || availableActions.length === 0}
-            />
-          {/if}
-          <Tooltip content="Show error panel" side="top" align="center">
-            <Button variant="outline" size="icon" on:click={showErrorPanel}>
-              <Bug size={16} />
-            </Button>
-          </Tooltip>
-          <Tooltip content="Format sequence whitespace">
-            <Button variant="outline" size="icon" on:click={formatDocument}>
-              <Braces size={16} />
-            </Button>
-          </Tooltip>
-          <Tooltip content="Copy sequence contents">
-            <Button variant="outline" size="icon" on:click={copyInputFormatToClipboard} disabled={disableCopyAndExport}>
-              <Clipboard size={16} />
-            </Button>
-          </Tooltip>
-          <Tooltip content="Download sequence contents">
-            <Button variant="outline" size="icon" on:click={downloadInputFormat} disabled={disableCopyAndExport}>
-              <Download size={16} />
-            </Button>
-          </Tooltip>
-          {#if showOutputs}
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger asChild let:builder>
-                <Button builders={[builder]} variant="outline" class="gap-1">
-                  <FileOutput size={14} />
-                  Output
-                </Button>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Content align="start" class="flex flex-col">
-                {#each sequenceAdaptation.outputs as outputFormatItem}
-                  <Tooltip side="left" content={`Copy sequence contents as ${outputFormatItem?.name} to clipboard`}>
-                    <DropdownMenu.Item
-                      size="sm"
-                      on:click={copyOutputFormatToClipboard}
-                      disabled={disableCopyAndExport}
-                      class="w-full"
-                    >
-                      <div class="flex gap-2">
-                        <Clipboard size={16} />
-                        {outputFormatItem?.name}
-                      </div>
-                    </DropdownMenu.Item>
-                  </Tooltip>
-                  <Tooltip side="left" class="flex" content={`Download sequence contents as ${outputFormatItem?.name}`}>
-                    <DropdownMenu.Item
-                      size="sm"
-                      on:click={() => downloadOutputFormat(outputFormatItem)}
-                      disabled={disableCopyAndExport}
-                      class="w-full"
-                    >
-                      <div class="flex gap-2">
-                        <Download size={16} />
-                        {outputFormatItem?.name}
-                      </div>
-                    </DropdownMenu.Item>
-                  </Tooltip>
-                {/each}
-              </DropdownMenu.Content>
-            </DropdownMenu.Root>
-          {/if}
-          {#if !(readOnly || previewOnly)}
-            <Tooltip content="Save" shortcut={`${isMacOs() ? '⌘' : 'CTRL'}S`}>
-              <Button
-                class="transition-none"
-                variant={isSequenceDefinitionUpdated ? 'default' : 'outline'}
-                size="icon"
-                disabled={!isSequenceDefinitionUpdated}
-                on:click={onSave}
-              >
-                <Save size={16} />
-              </Button>
-            </Tooltip>
-            <!-- <button
-              class="st-button icon-button"
-              class:secondary={!isSequenceDefinitionUpdated}
-              disabled={!isSequenceDefinitionUpdated}
-              on:click={onSave}
-            >
-              Save
-            </button> -->
-          {/if}
-        </div>
+        <EditorToolbar
+          actions={availableActions}
+          actionsDisabled={sequenceName === '' || availableActions.length === 0}
+          showActions={includeActions}
+          showErrorPanelButton
+          onShowErrorPanel={showErrorPanel}
+          showFormatButton
+          onFormat={formatDocument}
+          showCopyButton
+          copyDisabled={disableCopyAndExport}
+          copyTooltip="Copy sequence contents"
+          onCopy={copyInputFormatToClipboard}
+          showDownloadButton
+          downloadDisabled={disableCopyAndExport}
+          downloadTooltip="Download sequence contents"
+          onDownload={downloadInputFormat}
+          outputFormats={showOutputs ? sequenceAdaptation.outputs : []}
+          outputDisabled={disableCopyAndExport}
+          onCopyOutput={copyOutputFormatToClipboard}
+          onDownloadOutput={downloadOutputFormat}
+          showSaveButton={!(readOnly || previewOnly)}
+          saveDisabled={!isSequenceDefinitionUpdated}
+          saveHighlighted={isSequenceDefinitionUpdated}
+          {onSave}
+          on:runAction={onRunAction}
+        />
       </svelte:fragment>
 
       <svelte:fragment slot="body">
@@ -442,31 +367,15 @@
     {#if phoenixContext.commandDictionary !== null}
       <CommandPanel {phoenixContext} {commandInfoMapper} {editorSequenceView} />
     {:else}
-      <Panel overflowYBody="hidden" padBody={true}>
+      <Panel overflowYBody="hidden" padBody>
         <svelte:fragment slot="header">
-          <SectionTitle><span class="command-title">Selected Command</span></SectionTitle>
+          <SectionTitle><span class="p-2">Selected Command</span></SectionTitle>
         </svelte:fragment>
 
         <svelte:fragment slot="body">
-          <div class="st-typography-body no-selected-parcel">Select a parcel to enable the Selected Command panel.</div>
+          <div class="p-2 text-muted-foreground">Select a parcel to enable the Selected Command panel.</div>
         </svelte:fragment>
       </Panel>
     {/if}
   {/if}
 </CssGrid>
-
-<style>
-  .no-selected-parcel {
-    padding: 8px;
-  }
-
-  .right {
-    align-items: center;
-    display: flex;
-    justify-content: space-around;
-  }
-
-  .command-title {
-    padding: 8px;
-  }
-</style>
