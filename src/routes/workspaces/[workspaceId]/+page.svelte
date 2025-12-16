@@ -106,6 +106,13 @@
     allActionsForWorkspace = Object.values($actionDefinitionsByWorkspace[$workspaceId] || {});
   }
 
+  // TODO check with Dan about why this was potentially moved from a reactive statement to the maybeNavigate function
+  $: if (workspaceTreeMap && typeof activeFilePath === 'string') {
+    availableActionsForActiveFile = getAvailableActionsForNodes(allActionsForWorkspace, [
+      workspaceTreeMap[activeFilePath],
+    ]);
+  }
+
   const handleBeforeUnload = (event: BeforeUnloadEvent) => {
     // Check source variables directly since reactive $: statements don't update in closures
     if (updatedSelectedFileContent !== initialSelectedFileContent && activeFilePath !== null) {
@@ -172,9 +179,6 @@
         selectedFileName = undefined;
         selectedFileType = null;
       }
-      availableActionsForActiveFile = getAvailableActionsForNodes(allActionsForWorkspace, [
-        workspaceTreeMap[activeFilePath],
-      ]);
       await getSelectedFileContent(activeFilePath);
     } else {
       // navigated to a null/empty file, reset the editor contents
@@ -688,14 +692,14 @@
           <SequenceEditor
             {phoenixContext}
             availableActions={availableActionsForActiveFile}
-            includeActions={true}
+            includeActions
             previewOnly={!hasEditFilePermission}
             sequenceAdaptation={$sequenceAdaptation}
             sequenceDefinition={isSequenceFile ? initialSelectedFileContent : ''}
             sequenceName={selectedFileName}
             sequenceFilePath={selectedFilePath ?? ''}
             sequenceOutput={selectedSequenceOutput}
-            showCommandFormBuilder={true}
+            showCommandFormBuilder
             userSequenceEditorColumns={$userSequenceEditorColumns}
             userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
             on:runAction={onRunActionOnActiveFile}
