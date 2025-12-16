@@ -116,6 +116,7 @@
       {#if plan.parent_plan !== null}
         <MenuDivider />
         <MenuItem
+          disabled={!plan.model}
           on:click={createMergePlanBranchRequest}
           use={[
             [
