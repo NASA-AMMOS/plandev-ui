@@ -133,6 +133,10 @@
     if (to?.route.id === $page.route.id) {
       return;
     }
+    // Skip for external navigation (tab close, refresh) - handled by beforeunload
+    if (to === null) {
+      return;
+    }
     // Cancel navigation first, then show async modal and navigate if confirmed
     cancel();
     showConfirmModal(
