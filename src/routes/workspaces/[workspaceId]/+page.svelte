@@ -9,7 +9,7 @@
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type { LibrarySequenceSignature, PhoenixContext, UserSequence } from '@nasa-jpl/aerie-sequence-languages';
   import { Folder, TriangleAlert } from 'lucide-svelte';
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy, onMount, tick } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
@@ -162,6 +162,13 @@
   }
 
   async function maybeNavigate(nextPath: string | null) {
+    // treat `null` as a navigable path so we can intentionally unload the editor file rather than skipping
+    if (nextPath === null) {
+      // wait a tick then revert selected UI to the existing active path
+      await tick();
+      selectedFilePath = activeFilePath;
+      return;
+    }
     const didNavigate = await goToSequence(nextPath);
     if (!didNavigate) {
       // user decided not to navigate away due to unsaved changes, set selected UI back to active file
@@ -170,6 +177,7 @@
     }
     // successfully navigated, update activeFilePath & get the file contents
     activeFilePath = nextPath;
+    setEditorContents();
     if (activeFilePath && workspaceTreeMap[activeFilePath]) {
       const { filename } = separateFilenameFromPath(activeFilePath);
       if (filename) {
@@ -182,8 +190,6 @@
       await getSelectedFileContent(activeFilePath);
     } else {
       // navigated to a null/empty file, reset the editor contents
-      initialSelectedFileContent = '';
-      updatedSelectedFileContent = initialSelectedFileContent;
       selectedFileName = undefined;
       selectedFileType = null;
 
@@ -315,8 +321,6 @@
   }
 
   async function getSelectedFileContent(filePath: string | null) {
-    initialSelectedFileContent = '';
-    updatedSelectedFileContent = initialSelectedFileContent;
     let content = '';
 
     if (filePath !== null && user) {
@@ -332,8 +336,7 @@
       return;
     }
 
-    initialSelectedFileContent = content;
-    updatedSelectedFileContent = initialSelectedFileContent;
+    setEditorContents(content);
   }
 
   async function loadSequenceAdaptation(id: number | null | undefined) {
@@ -468,6 +471,10 @@
       }
     }
   }
+  function setEditorContents(contents: string = '') {
+    initialSelectedFileContent = contents;
+    updatedSelectedFileContent = initialSelectedFileContent;
+  }
 
   async function onNodeDelete({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
     if ($workspace) {
@@ -477,7 +484,13 @@
       refreshWorkspaceContents();
 
       if (shouldUpdateSelectedSequencePath) {
+        // navigated to a null/empty file, reset the editor contents
+        setEditorContents();
+        selectedFileName = undefined;
         selectedFilePath = null;
+        selectedFileType = null;
+        activeFilePath = null;
+        goToSequence(null);
       }
     }
   }
@@ -705,7 +718,7 @@
             sequenceAdaptation={$sequenceAdaptation}
             sequenceDefinition={isSequenceFile ? initialSelectedFileContent : ''}
             sequenceName={selectedFileName}
-            sequenceFilePath={selectedFilePath ?? ''}
+            sequenceFilePath={activeFilePath ?? ''}
             sequenceOutput={selectedSequenceOutput}
             showCommandFormBuilder
             userSequenceEditorColumns={$userSequenceEditorColumns}
@@ -722,7 +735,7 @@
             isJSON={selectedFileType === WorkspaceContentType.Json}
             previewOnly={!hasEditFilePermission}
             textFileName={selectedFileName}
-            textFilePath={selectedFilePath ?? ''}
+            textFilePath={activeFilePath ?? ''}
             textFileContent={!isSequenceFile ? initialSelectedFileContent : ''}
             on:runAction={onRunActionOnActiveFile}
             on:save={onSaveWorkspaceFile}
