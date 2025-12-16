@@ -218,6 +218,7 @@
         const nameSpan = document.createElement('span');
         nameSpan.className = 'tree-name';
         nameSpan.textContent = params.data?.name ?? '';
+        nameSpan.title = params.data?.fullPath ?? '';
         container.appendChild(nameSpan);
 
         return container;
