@@ -597,3 +597,7 @@
     inset -1px 0 0 0 var(--ag-stellar-active-color),
     inset 0 1px 0 0 var(--ag-stellar-active-color);
 }
+
+.ag-theme-stellar .tree-cell-container {
+  padding-left: 2px;
+}
