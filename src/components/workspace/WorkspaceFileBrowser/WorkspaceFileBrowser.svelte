@@ -32,7 +32,7 @@
   import WorkspaceTreeViewIcon from '../WorkspaceTreeView/WorkspaceTreeViewIcon.svelte';
 
   export let actions: ActionDefinition[] = [];
-  export let currentRootPath: string = '';
+  export let currentBreadcrumbPath: string = '';
   export let selectedTreeNodePath: string | null | undefined = undefined;
   export let treeNode: WorkspaceTreeNode | null | undefined = undefined;
   export let workspace: Workspace | null | undefined = null;
@@ -82,8 +82,8 @@
   let matchingPaths: Set<string> = new Set();
   let ancestorPaths: Set<string> = new Set();
 
-  // Breadcrumb segments derived from currentRootPath
-  $: breadcrumbSegments = currentRootPath ? currentRootPath.split(PATH_DELIMITER) : [];
+  // Breadcrumb segments derived from currentBreadcrumbPath
+  $: breadcrumbSegments = currentBreadcrumbPath ? currentBreadcrumbPath.split(PATH_DELIMITER) : [];
 
   // Responsive breadcrumb state
   let breadcrumbContainer: HTMLOListElement | undefined = undefined;
@@ -330,11 +330,11 @@
     if (!treeNode?.contents) {
       return [];
     }
-    if (!currentRootPath) {
+    if (!currentBreadcrumbPath) {
       return treeNode.contents;
     }
 
-    const rootNode = findNodeByPath(treeNode.contents, currentRootPath);
+    const rootNode = findNodeByPath(treeNode.contents, currentBreadcrumbPath);
     return rootNode?.contents ?? [];
   })();
 
@@ -343,7 +343,7 @@
 
   $: flattenedTree = flattenWorkspaceTreeWithPaths(
     sortedTree,
-    currentRootPath ? currentRootPath.split(PATH_DELIMITER) : [],
+    currentBreadcrumbPath ? currentBreadcrumbPath.split(PATH_DELIMITER) : [],
   );
 
   // When flattenedTree updates (e.g., after navigation), redraw rows to update cell rendering (indentation)
@@ -470,11 +470,11 @@
     }
 
     // Check that all ancestor folders (within current view) are expanded
-    // Skip checking ancestors that are part of currentRootPath since they're above the current view
-    const currentRootDepth = currentRootPath ? currentRootPath.split(PATH_DELIMITER).length : 0;
+    // Skip checking ancestors that are part of currentBreadcrumbPath since they're above the current view
+    const currentRootDepth = currentBreadcrumbPath ? currentBreadcrumbPath.split(PATH_DELIMITER).length : 0;
     const pathParts = fullFilePath.split(PATH_DELIMITER);
 
-    // Start checking from the first folder after currentRootPath
+    // Start checking from the first folder after currentBreadcrumbPath
     for (let i = currentRootDepth + 1; i < pathParts.length; i++) {
       const ancestorPath = pathParts.slice(0, i).join(PATH_DELIMITER);
       if (!expandedPaths.has(ancestorPath)) {
@@ -543,7 +543,7 @@
   }
 
   function navigateToFolder(path: string) {
-    currentRootPath = path;
+    currentBreadcrumbPath = path;
     // Reset expanded paths when navigating to a new root
     expandedPaths = new Set();
   }
@@ -551,11 +551,11 @@
   function navigateToBreadcrumb(index: number) {
     if (index < 0) {
       // Navigate to workspace root
-      currentRootPath = '';
+      currentBreadcrumbPath = '';
     } else {
       // Navigate to the folder at the given breadcrumb index
       const newPath = breadcrumbSegments.slice(0, index + 1).join(PATH_DELIMITER);
-      currentRootPath = newPath;
+      currentBreadcrumbPath = newPath;
     }
     expandedPaths = new Set();
   }
@@ -733,7 +733,7 @@
       <Breadcrumb.List class="breadcrumbs gap-1 text-xs sm:gap-1" bind:el={breadcrumbContainer}>
         <!-- Root workspace item - always visible -->
         <Breadcrumb.Item>
-          {#if currentRootPath === ''}
+          {#if currentBreadcrumbPath === ''}
             <Breadcrumb.Page>
               <div class="px-1 py-0.5">
                 {workspace ? workspace.name : 'Loading...'}
