@@ -35,6 +35,7 @@
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
   export let phoenixContext: PhoenixContext;
   export let includeActions: boolean = false;
+  export let isLoading: boolean = false;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let sequenceAdaptation: PhoenixAdaptation;
@@ -109,7 +110,7 @@
   }
 
   $: editorSequenceView?.dispatch({
-    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly)]),
+    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
   });
 
   $: {
@@ -256,7 +257,7 @@
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
         compartmentAdaptation.of(inputEditorExtension),
-        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
+        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
       ],
       parent: editorSequenceDiv,
     });
@@ -283,7 +284,9 @@
       <svelte:fragment slot="header">
         <SectionTitle alt={sequenceFilePath} overflow="hidden">
           <FileBracesCorner size={16} slot="icon" />
-          {sequenceName || 'Untitled'}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}
+          {sequenceName || 'Untitled'}{readOnly ? ' (Read-only)' : ''}{previewOnly && !isLoading
+            ? ' (Preview-only)'
+            : ''}
         </SectionTitle>
 
         <EditorToolbar
@@ -306,7 +309,7 @@
           outputDisabled={disableCopyAndExport}
           onCopyOutput={copyOutputFormatToClipboard}
           onDownloadOutput={downloadOutputFormat}
-          showSaveButton={!(readOnly || previewOnly)}
+          showSaveButton={!(readOnly || previewOnly || isLoading)}
           saveDisabled={!isSequenceDefinitionUpdated}
           saveHighlighted={isSequenceDefinitionUpdated}
           {onSave}
@@ -334,9 +337,9 @@
           <div class="right">
             <div class="flex items-center gap-2">
               {#if sequenceAdaptation.outputs.length > 0}
-                <Label size="sm" class="mr-1 whitespace-nowrap  text-muted-foreground" for="outputFormat"
-                  >Output Format</Label
-                >
+                <Label size="sm" class="mr-1 whitespace-nowrap  text-muted-foreground" for="outputFormat">
+                  Output Format
+                </Label>
                 <select bind:value={selectedOutputFormat} class="st-select w-full" name="outputFormat">
                   {#each sequenceAdaptation.outputs as outputFormatItem}
                     <option value={outputFormatItem}>

@@ -22,6 +22,7 @@
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
   export let includeActions: boolean = false;
   export let isJSON: boolean = false;
+  export let isLoading: boolean = false;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let textFileContent: string = '';
@@ -56,7 +57,7 @@
     });
   }
   $: editorView?.dispatch({
-    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly)]),
+    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
   });
   $: updatedTextContent = textFileContent;
   $: isTextContentUpdated = updatedTextContent !== textFileContent;
@@ -84,7 +85,7 @@
           json(),
           jsonLinter,
           EditorView.updateListener.of(debouncedTextContentUpdateListener),
-          compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
+          compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
         ],
         parent: editorDiv,
       });
@@ -98,7 +99,7 @@
           EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
           lintGutter(),
           EditorView.updateListener.of(debouncedTextContentUpdateListener),
-          compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
+          compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
         ],
         parent: editorDiv,
       });
@@ -150,7 +151,7 @@
         lintGutter(),
         EditorView.updateListener.of(debouncedTextContentUpdateListener),
         blockTheme,
-        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
+        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
       ],
       parent: editorDiv,
     });
@@ -161,7 +162,7 @@
   <svelte:fragment slot="header">
     <SectionTitle alt={textFilePath}>
       <File size={16} slot="icon" />
-      {textFileName || 'Untitled'}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}
+      {textFileName || 'Untitled'}{readOnly ? ' (Read-only)' : ''}{previewOnly && !isLoading ? ' (Preview-only)' : ''}
     </SectionTitle>
 
     <EditorToolbar
@@ -174,7 +175,7 @@
       showDownloadButton
       downloadDisabled={disableCopyAndExport}
       onDownload={downloadInputFormat}
-      showSaveButton={!(readOnly || previewOnly)}
+      showSaveButton={!(readOnly || previewOnly || isLoading)}
       saveDisabled={!isTextContentUpdated}
       saveHighlighted={isTextContentUpdated}
       {onSave}
