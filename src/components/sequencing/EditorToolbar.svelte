@@ -1,8 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts" generics="OutputFormat extends { name: string }">
-  import { Button, DropdownMenu } from '@nasa-jpl/stellar-svelte';
-  import { Braces, Bug, Clipboard, Download, FileOutput, Save } from 'lucide-svelte';
+  import { Button, cn, DropdownMenu } from '@nasa-jpl/stellar-svelte';
+  import { Braces, Bug, Clipboard, Download, FileOutput } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import { isMacOs } from '../../utilities/generic';
@@ -138,15 +138,14 @@
   <slot name="end" />
 
   {#if showSaveButton && onSave}
-    <Tooltip content="Save" shortcut={`${isMacOs() ? '⌘' : 'CTRL'}S`}>
+    <Tooltip content="Save changes" shortcut={`${isMacOs() ? '⌘' : 'CTRL'}S`}>
       <Button
-        class="transition-none"
+        class={cn('transition-none', saveHighlighted ? 'border border-primary ring-offset-1' : '')}
         variant={saveHighlighted ? 'default' : 'outline'}
-        size="icon"
         disabled={saveDisabled}
         on:click={onSave}
       >
-        <Save size={16} />
+        Save
       </Button>
     </Tooltip>
   {/if}
