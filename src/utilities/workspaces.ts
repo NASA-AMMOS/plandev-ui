@@ -149,6 +149,9 @@ export function getAvailableActionsForNodes(
   actions: ActionDefinition[],
   nodes: (WorkspaceTreeNodeWithFullPath | WorkspaceTreeNode)[],
 ): ActionParameterPair[] {
+  const allNodes = flattenWorkspaceTreeWithPaths(nodes);
+  // const
+  console.log('allNodes :>> ', allNodes);
   const areAllNodesSequences = nodes.every(node => node.type === WorkspaceContentType.Sequence);
 
   // any # of any type of files can be passed to a 'fileList' type param

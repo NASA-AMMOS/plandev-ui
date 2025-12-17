@@ -37,13 +37,30 @@
   const multiFileOperationError = 'Currently only supports single file operations';
 
   let areMultipleFilesSelected: boolean = false;
+  let actionPhrase: string = '';
+  let selectedFolderCount: number = 0;
+  let selectedFileCount: number = 0;
   let fileCountPhrase: string = '';
 
   $: {
+    selectedFolderCount = 0;
+    selectedFileCount = 0;
+    selectedWorkspaceNodes.forEach(node => {
+      if (node.type === WorkspaceContentType.Directory) {
+        selectedFolderCount++;
+      } else {
+        selectedFileCount++;
+      }
+    });
+
     areMultipleFilesSelected = selectedWorkspaceNodes.length > 1;
     fileCountPhrase = areMultipleFilesSelected
       ? `${selectedWorkspaceNodes.length} Item${pluralize(selectedWorkspaceNodes.length)}`
       : '';
+    actionPhrase =
+      selectedFileCount > 0 && selectedFolderCount < 1
+        ? `${selectedFileCount} File${pluralize(selectedFileCount)}`
+        : 'All Files within Selection';
   }
 </script>
 
@@ -122,7 +139,7 @@
 </div>
 <ContextMenu.Separator />
 <ContextMenu.Sub>
-  <ContextMenu.SubTrigger size="sm">Run Action{fileCountPhrase ? ` on ${fileCountPhrase}` : ''}</ContextMenu.SubTrigger>
+  <ContextMenu.SubTrigger size="sm">Run Action{actionPhrase ? ` on ${actionPhrase}` : ''}</ContextMenu.SubTrigger>
   <ContextMenu.SubContent class="w-min min-w-[200px]">
     {#each actionsForSelection as workspaceActionsForNodes}
       <div
