@@ -601,3 +601,9 @@
 .ag-theme-stellar .tree-cell-container {
   padding-left: 2px;
 }
+
+.ag-theme-stellar .ag-tertiary-highlight:hover::before,
+.ag-theme-stellar .ag-tertiary-highlight::before,
+.ag-theme-stellar .ag-tertiary-highlight {
+  background-color: var(--ag-selected-row-background-color);
+}

@@ -8,6 +8,7 @@
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { pluralize } from '../../utilities/text';
+  import ActionMenuItem from '../ui/ActionMenuItem.svelte';
 
   export let actionsForSelection: ActionParameterPair[] = [];
   export let hasEditPermission: boolean = false;
@@ -16,6 +17,7 @@
   export let selectedWorkspaceNodes: (WorkspaceTreeNodeWithFullPath | WorkspaceTreeNode)[] = [];
 
   const dispatch = createEventDispatcher<{
+    actionsMenuFocused: boolean;
     copyFileLocation: void;
     copyFullPath: void;
     delete: void;
@@ -138,9 +140,11 @@
   </ContextMenu.Item>
 </div>
 <ContextMenu.Separator />
-<ContextMenu.Sub>
-  <ContextMenu.SubTrigger size="sm">Run Action{actionPhrase ? ` on ${actionPhrase}` : ''}</ContextMenu.SubTrigger>
-  <ContextMenu.SubContent class="w-min min-w-[200px]">
+<ContextMenu.Sub onOpenChange={open => dispatch('actionsMenuFocused', open)}>
+  <ContextMenu.SubTrigger size="sm">
+    Run Action{actionPhrase ? ` on ${actionPhrase}` : ''}
+  </ContextMenu.SubTrigger>
+  <ContextMenu.SubContent class="max-h-[500px] w-min min-w-[240px] max-w-[300px] overflow-y-auto">
     {#each actionsForSelection as workspaceActionsForNodes}
       <div
         use:permissionHandler={{
@@ -149,7 +153,10 @@
         }}
       >
         <ContextMenu.Item size="sm" on:click={() => dispatch('runAction', workspaceActionsForNodes)}>
-          {workspaceActionsForNodes.action.name}
+          <ActionMenuItem
+            name={workspaceActionsForNodes.action.name}
+            description={workspaceActionsForNodes.action.description}
+          />
         </ContextMenu.Item>
       </div>
     {/each}

@@ -10,6 +10,7 @@
   import type { LibrarySequenceSignature, PhoenixContext, UserSequence } from '@nasa-jpl/aerie-sequence-languages';
   import { Folder, LoaderCircle, TriangleAlert } from 'lucide-svelte';
   import { onDestroy, onMount, tick } from 'svelte';
+  import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
@@ -76,6 +77,7 @@
     getAvailableActionsForNodes,
     mapWorkspaceTreePaths,
     separateFilenameFromPath,
+    WorkspaceApi,
   } from '../../../utilities/workspaces';
   import type { PageData } from './$types';
   // codemirror dependencies to be injected into the adaptation
@@ -441,6 +443,27 @@
       }
     }
   }
+
+  async function foo() {
+    if ($workspace != null && workspaceTree && user) {
+      await WorkspaceApi.saveFile(
+        $workspace.id,
+        'f1/' + uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] }) + '.seq',
+        'some contents',
+        false,
+        user,
+      );
+      refreshWorkspaceContents();
+
+      // if (newSequencePath !== null) {
+      //   // select & navigate to the new file
+      //   selectedFilePath = newSequencePath;
+      //   refreshWorkspaceContents();
+      // }
+    }
+  }
+
+  $: console.log('foo :>> ', foo);
 
   async function onNewSequence(event: CustomEvent<string>) {
     if ($workspace != null && workspaceTree && user) {

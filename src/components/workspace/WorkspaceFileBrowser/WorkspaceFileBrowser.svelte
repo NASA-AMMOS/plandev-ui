@@ -61,6 +61,7 @@
 
   const INDENT_SIZE = 12; // pixels per depth level
 
+  let actionsMenuFocused: boolean = false;
   let columnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [];
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
   let dataGrid: DataGrid<WorkspaceTreeNodeWithFullPath> | undefined = undefined;
@@ -69,6 +70,7 @@
   let hasCreateActionPermission: boolean = false;
   let flattenedTree: WorkspaceTreeNodeWithFullPath[] = [];
   let expandedPaths: Set<string> = new Set();
+  let selectedItemIds: RowId[] = [];
 
   // Sort state - captured from AG Grid's sort UI, used to pre-sort data hierarchically
   // Supports multi-column sorting (Shift+click headers in AG Grid)
@@ -389,6 +391,32 @@
     dataGrid.onFilterChanged();
   }
 
+  // Re-measure breadcrumbs when segments change
+  $: if (breadcrumbWrapper && breadcrumbSegments) {
+    tick().then(measureBreadcrumbs);
+  }
+
+  // Context menu computed values
+  $: isContextNodeInSelection = contextMenuNode && selectedItemIds?.includes(contextMenuNode.fullPath);
+  $: effectiveSelectedNodes = isContextNodeInSelection
+    ? flattenedTree.filter(node => selectedItemIds.includes(node.fullPath))
+    : contextMenuNode
+      ? [contextMenuNode]
+      : [];
+  $: actionsForSelection = getAvailableActionsForNodes(actions, effectiveSelectedNodes);
+  // Get all non-directory nodes that are either directly selected or descendants of selected directories
+  $: nonDirectorySelectedNodes = flattenedTree.filter(node => {
+    if (node.type === WorkspaceContentType.Directory) {
+      return false;
+    }
+    // Check if this node is a descendant of any selected node (or is the selected node itself)
+    return effectiveSelectedNodes.some(
+      selected => node.fullPath === selected.fullPath || node.fullPath.startsWith(selected.fullPath + PATH_DELIMITER),
+    );
+  });
+  $: effectiveActionFilePaths = nonDirectorySelectedNodes.map(n => n.fullPath);
+  $: tertiaryHighlightPaths = actionsForSelection.length > 0 ? nonDirectorySelectedNodes.map(n => n.fullPath) : [];
+
   function toggleExpand(path: string) {
     if (expandedPaths.has(path)) {
       // Collapse: remove this path and all descendant paths
@@ -668,6 +696,10 @@
     dispatch('runAction', { actionParameterPair, treeNodes: selectedTreeNodes });
   }
 
+  function onActionsMenuFocused(event: CustomEvent<boolean>) {
+    actionsMenuFocused = event.detail;
+  }
+
   onMount(() => {
     // If a file is selected, expand to show it
     if (selectedTreeNodePath) {
@@ -685,11 +717,6 @@
       }
     };
   });
-
-  // Re-measure breadcrumbs when segments change
-  $: if (breadcrumbWrapper && breadcrumbSegments) {
-    tick().then(measureBreadcrumbs);
-  }
 </script>
 
 <div class="workspace-grid-container">
@@ -777,6 +804,8 @@
   <BulkActionDataGrid
     bind:dataGrid
     bind:selectedItemId={selectedTreeNodePath}
+    bind:selectedItemIds
+    tertiaryHighlightIds={actionsMenuFocused ? tertiaryHighlightPaths : null}
     headerHeight={26}
     rowHeight={26}
     class="workspace-file-browser"
@@ -797,28 +826,21 @@
     on:cellContextMenuHide={onContextMenuHide}
     on:sortChanged={onSortChanged}
   >
-    <svelte:fragment slot="context-menu" let:selectedItemIds>
-      {@const isContextNodeInSelection = contextMenuNode && selectedItemIds?.includes(contextMenuNode.fullPath)}
-      {@const effectiveNodes = isContextNodeInSelection
-        ? flattenedTree.filter(node => selectedItemIds.includes(node.fullPath))
-        : contextMenuNode
-          ? [contextMenuNode]
-          : []}
-      {@const actionsForSelection = getAvailableActionsForNodes(actions, effectiveNodes)}
-      {@const effectiveFilePaths = effectiveNodes.map(n => n.fullPath)}
+    <svelte:fragment slot="context-menu">
       <WorkspaceContextMenuContents
         {actionsForSelection}
-        selectedWorkspaceNodes={effectiveNodes}
+        selectedWorkspaceNodes={effectiveSelectedNodes}
         {hasEditPermission}
         {hasDeletePermission}
         {hasCreateActionPermission}
+        on:actionsMenuFocused={onActionsMenuFocused}
         on:rename={onTableMenuRenameNode}
         on:move={onTableMenuMoveNode}
         on:delete={onTableDeleteNode}
         on:copyFileLocation={onTableCopyFileLocation}
         on:copyFullPath={onTableCopyFullPath}
         on:moveToWorkspace={onTableMoveToWorkspace}
-        on:runAction={event => onTableRunAction(event, effectiveFilePaths)}
+        on:runAction={event => onTableRunAction(event, effectiveActionFilePaths)}
         on:newFile={onTableNewSequence}
         on:newFolder={onTableNewFolder}
         on:importFile={onTableImportFile}

@@ -150,9 +150,9 @@ export function getAvailableActionsForNodes(
   nodes: (WorkspaceTreeNodeWithFullPath | WorkspaceTreeNode)[],
 ): ActionParameterPair[] {
   const allNodes = flattenWorkspaceTreeWithPaths(nodes);
-  // const
-  console.log('allNodes :>> ', allNodes);
-  const areAllNodesSequences = nodes.every(node => node.type === WorkspaceContentType.Sequence);
+  const nonDirectoryNodes = allNodes.filter(node => node.type !== WorkspaceContentType.Directory);
+
+  const areAllNodesSequences = nonDirectoryNodes.every(node => node.type === WorkspaceContentType.Sequence);
 
   // any # of any type of files can be passed to a 'fileList' type param
   let allowedParamTypes = ['fileList'];
@@ -161,10 +161,10 @@ export function getAvailableActionsForNodes(
     allowedParamTypes.push('sequenceList');
   }
   // if only one file is selected, it can be passed to single file/sequence params
-  if (nodes.length === 1) {
+  if (nonDirectoryNodes.length === 1) {
     allowedParamTypes.push('file');
   }
-  if (nodes.length === 1 && areAllNodesSequences) {
+  if (nonDirectoryNodes.length === 1 && areAllNodesSequences) {
     allowedParamTypes.push('sequence');
   }
   // when we pick a primary param, prefer more-specific types over less-specific ones (reversed)
@@ -192,7 +192,7 @@ export function getAvailableActionsForNodes(
       const allowedParams = allowedParamTypes
         .map(allowedType => {
           return Object.entries(action.parameter_schema).find(([_k, schema]) => {
-            return schema.type === allowedType && nodesMatchParamSchema(nodes, schema);
+            return schema.type === allowedType && nodesMatchParamSchema(nonDirectoryNodes, schema);
           });
         })
         .filter(v => v !== undefined)

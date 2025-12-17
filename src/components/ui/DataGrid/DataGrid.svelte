@@ -127,6 +127,7 @@
   export let suppressContextMenuSelection: boolean = false;
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
+  export let tertiaryHighlightIds: RowId[] | null = null;
   export let useCustomContextMenu: boolean | undefined = undefined;
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): number => {
@@ -257,7 +258,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   }
 
   // Redraw rows when context menu state changes to apply rowClassRules
-  $: contextMenuOpen, contextMenuTargetRowId, gridApi?.redrawRows();
+  $: contextMenuOpen, contextMenuTargetRowId, tertiaryHighlightIds, gridApi?.redrawRows();
 
   $: {
     gridApi?.setGridOption('quickFilterText', filterExpression);
@@ -492,6 +493,14 @@ This has been seen to result in unintended and often glitchy behavior, which oft
             return true;
           }
           return false;
+        },
+        'ag-tertiary-highlight': (params: RowClassParams<RowData>) => {
+          if (!params.data || !tertiaryHighlightIds) {
+            return false;
+          }
+          const rowId = getRowId(params.data);
+          console.log(params.data, rowId);
+          return tertiaryHighlightIds.includes(rowId);
         },
       },
       rowData,

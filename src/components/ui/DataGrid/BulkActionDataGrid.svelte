@@ -53,6 +53,7 @@
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
   export let rowHeight: number = 33;
+  export let tertiaryHighlightIds: RowId[] | null = null;
   export let user: User | null;
   export let filterExpression: string = '';
 
@@ -188,6 +189,7 @@
   {suppressContextMenuSelection}
   {suppressDragLeaveHidesColumns}
   {suppressRowClickSelection}
+  {tertiaryHighlightIds}
   {filterExpression}
   {loading}
   on:blur={onBlur}

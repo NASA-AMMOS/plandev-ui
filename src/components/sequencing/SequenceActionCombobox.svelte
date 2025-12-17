@@ -5,6 +5,7 @@
   import { Clapperboard } from 'lucide-svelte';
   import { createEventDispatcher, tick } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
+  import ActionMenuItem from '../ui/ActionMenuItem.svelte';
   import Tooltip from '../ui/Tooltip.svelte';
 
   export let actions: { action: ActionDefinition; parameter: string }[] = [];
@@ -39,7 +40,7 @@
       <Command.Root size="xs">
         <Command.Input placeholder="Search actions..." />
         <Command.Empty>No action found.</Command.Empty>
-        <Command.Group class="max-h-[300px] overflow-y-auto whitespace-nowrap">
+        <Command.Group class="max-h-[300px] overflow-y-auto">
           {#each actions as action}
             <Command.Item
               value={`${action.action.name} ${action.action.description ?? ''}`}
@@ -48,14 +49,7 @@
                 closeAndFocusTrigger(ids.trigger);
               }}
             >
-              <div class="overflow-hidden text-ellipsis">
-                {action.action.name}
-              </div>
-              {#if action.action.description}
-                <div class="overflow-hidden text-ellipsis pl-2 text-muted-foreground">
-                  {action.action.description}
-                </div>
-              {/if}
+              <ActionMenuItem name={action.action.name} description={action.action.description} className="" />
             </Command.Item>
           {/each}
         </Command.Group>
