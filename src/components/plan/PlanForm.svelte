@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Button } from '@nasa-jpl/stellar-svelte';
+  import { Button, cn } from '@nasa-jpl/stellar-svelte';
   import { ArrowLeftRight, FileUp } from 'lucide-svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
@@ -225,7 +225,7 @@
           <label use:tooltip={{ content: 'Model Name', placement: 'top' }} for="modelName">Model Name</label>
           <div class="flex gap-1">
             <input
-              class="st-input w-full"
+              class={cn('st-input w-full', !plan.model?.name ? 'border-destructive' : '')}
               disabled
               name="modelName"
               value={plan.model?.name ?? 'Model not found'}

@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
-  import { Button, Input as InputStellar, Label, Select } from '@nasa-jpl/stellar-svelte';
+  import { Button, cn, Input as InputStellar, Label, Select } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
   import { flatten } from 'lodash-es';
@@ -723,9 +723,9 @@
                       <InputStellar
                         sizeVariant="xs"
                         disabled
-                        class="w-full"
+                        class={cn('w-full', !selectedPlanModelName ? 'border-destructive' : '')}
                         name="name"
-                        value={selectedPlanModelName}
+                        value={selectedPlanModelName ?? 'Model not found'}
                       />
                     </div>
                     <div
