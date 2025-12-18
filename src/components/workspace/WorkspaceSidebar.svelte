@@ -57,7 +57,7 @@
   let activeTab: string = 'files';
   let didWorkspaceUpdate: boolean = false;
   let lastRefreshTime: Date = new Date();
-  let currentRootPath: string = ''; // Navigation state - current folder being viewed as root
+  let currentBreadcrumbPath: string = ''; // Navigation state - current folder being viewed as root
 
   $: workspaceTree && didUpdate(isWorkspaceLoading);
 
@@ -76,15 +76,15 @@
   }
 
   function onNewFolder() {
-    dispatch('newFolder', currentRootPath);
+    dispatch('newFolder', currentBreadcrumbPath);
   }
 
   function onNewSequence() {
-    dispatch('newSequence', currentRootPath);
+    dispatch('newSequence', currentBreadcrumbPath);
   }
 
   function onImportFile() {
-    dispatch('importFile', currentRootPath);
+    dispatch('importFile', currentBreadcrumbPath);
   }
 
   function onWorkspaceCollaboratorsCreate(event: CustomEvent<WorkspaceCollaborator[]>) {
@@ -196,7 +196,7 @@
                   <Sidebar.Menu className="h-full">
                     {#if workspaceTree && workspace}
                       <WorkspaceFileBrowser
-                        bind:currentRootPath
+                        bind:currentBreadcrumbPath
                         bind:selectedTreeNodePath={selectedFilePath}
                         {actions}
                         treeNode={workspaceTree}
