@@ -356,3 +356,86 @@ export function findNodeByPath(nodes: WorkspaceTreeNode[], targetPath: string): 
 
   return currentNode;
 }
+
+export interface TreeFilterResult {
+  /** Paths of ancestors that should remain visible to show matching descendants */
+  ancestorPaths: Set<string>;
+  /** Paths that directly match the filter text */
+  matchingPaths: Set<string>;
+}
+
+/**
+ * Computes which tree nodes match a filter and which ancestors should be visible.
+ */
+export function computeTreeFilter(nodes: WorkspaceTreeNodeWithFullPath[], filterText: string): TreeFilterResult {
+  if (!filterText) {
+    return {
+      ancestorPaths: new Set(),
+      matchingPaths: new Set(),
+    };
+  }
+
+  const lowerFilter = filterText.toLowerCase();
+  const matchingPaths = new Set<string>();
+  const ancestorPaths = new Set<string>();
+
+  for (const node of nodes) {
+    const name = node.name?.toLowerCase() ?? '';
+    if (name.includes(lowerFilter)) {
+      matchingPaths.add(node.fullPath);
+
+      // Add all ancestors to keep them visible
+      const pathParts = node.fullPath.split(PATH_DELIMITER);
+      for (let i = 1; i < pathParts.length; i++) {
+        const ancestorPath = pathParts.slice(0, i).join(PATH_DELIMITER);
+        ancestorPaths.add(ancestorPath);
+      }
+    }
+  }
+
+  return { ancestorPaths, matchingPaths };
+}
+
+/**
+ * Determines if a tree node should be visible based on filter and expansion state.
+ */
+export function shouldNodeBeVisible(
+  fullPath: string,
+  depth: number,
+  filterText: string,
+  matchingPaths: Set<string>,
+  ancestorPaths: Set<string>,
+  expandedPaths: Set<string>,
+  currentRootPath: string,
+): boolean {
+  // If filtering is active, check if this node should be visible
+  if (filterText) {
+    const isMatch = matchingPaths.has(fullPath);
+    const isAncestorOfMatch = ancestorPaths.has(fullPath);
+
+    // Show only if: directly matches OR is an ancestor of a match
+    if (!isMatch && !isAncestorOfMatch) {
+      return false;
+    }
+  }
+
+  // Root level items (depth 0) are always visible (if they pass filter)
+  if (depth === 0) {
+    return true;
+  }
+
+  // Check that all ancestor folders (within current view) are expanded
+  // Skip checking ancestors that are part of currentRootPath since they're above the current view
+  const currentRootDepth = currentRootPath ? currentRootPath.split(PATH_DELIMITER).length : 0;
+  const pathParts = fullPath.split(PATH_DELIMITER);
+
+  // Start checking from the first folder after currentRootPath
+  for (let i = currentRootDepth + 1; i < pathParts.length; i++) {
+    const ancestorPath = pathParts.slice(0, i).join(PATH_DELIMITER);
+    if (!expandedPaths.has(ancestorPath)) {
+      return false;
+    }
+  }
+
+  return true;
+}

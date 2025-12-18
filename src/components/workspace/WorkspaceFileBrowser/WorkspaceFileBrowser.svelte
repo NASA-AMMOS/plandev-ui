@@ -1,9 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Breadcrumb, DropdownMenu, Input } from '@nasa-jpl/stellar-svelte';
+  import { Input } from '@nasa-jpl/stellar-svelte';
   import type { CellContextMenuEvent, ICellRendererParams, IRowNode, SortChangedEvent } from 'ag-grid-community';
-  import { ChevronDown, ChevronRight, Ellipsis, Search } from 'lucide-svelte';
+  import { Search } from 'lucide-svelte';
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { WorkspaceContentType } from '../../../enums/workspace';
@@ -19,9 +19,11 @@
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
   import { featurePermissions } from '../../../utilities/permissions';
   import {
+    computeTreeFilter,
     findNodeByPath,
     flattenWorkspaceTreeWithPaths,
     getAvailableActionsForNodes,
+    shouldNodeBeVisible,
     sortWorkspaceTree,
     type TreeSortComparator,
   } from '../../../utilities/workspaces';
@@ -29,13 +31,15 @@
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
   import WorkspaceContextMenuContents from '../WorkspaceContextMenuContents.svelte';
-  import WorkspaceTreeViewIcon from '../WorkspaceTreeView/WorkspaceTreeViewIcon.svelte';
+  import ResponsiveBreadcrumb from './ResponsiveBreadcrumb.svelte';
+  import TreeCell from './TreeCell.svelte';
 
   export let actions: ActionDefinition[] = [];
   export let currentBreadcrumbPath: string = '';
-  export let selectedTreeNodePath: string | null | undefined = undefined;
-  export let treeNode: WorkspaceTreeNode | null | undefined = undefined;
-  export let workspace: Workspace | null | undefined = null;
+  /** The currently selected tree node path. Use `null` to indicate no selection. */
+  export let selectedTreeNodePath: string | null = null;
+  export let treeNode: WorkspaceTreeNode | null = null;
+  export let workspace: Workspace | null = null;
   export let user: User | null;
 
   type CellRendererParams = {
@@ -59,8 +63,6 @@
     runAction: WorkspaceNodeRunActionEvent;
   }>();
 
-  const INDENT_SIZE = 12; // pixels per depth level
-
   let actionsMenuFocused: boolean = false;
   let columnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [];
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
@@ -73,97 +75,16 @@
   let selectedItemIds: RowId[] = [];
 
   // Sort state - captured from AG Grid's sort UI, used to pre-sort data hierarchically
-  // Supports multi-column sorting (Shift+click headers in AG Grid)
   type ColumnSort = { colId: string; direction: 'asc' | 'desc' };
   let sortState: ColumnSort[] = [{ colId: 'name', direction: 'asc' }];
 
-  // Filter state for search bar - works alongside AG Grid's column filter
+  // Filter state for search bar
   let filterText: string = '';
   let matchingPaths: Set<string> = new Set();
   let ancestorPaths: Set<string> = new Set();
 
   // Breadcrumb segments derived from currentBreadcrumbPath
   $: breadcrumbSegments = currentBreadcrumbPath ? currentBreadcrumbPath.split(PATH_DELIMITER) : [];
-
-  // Responsive breadcrumb state
-  let breadcrumbContainer: HTMLOListElement | undefined = undefined;
-  let breadcrumbWrapper: HTMLDivElement | undefined = undefined;
-  let maxVisibleSegments: number = Infinity;
-  let resizeObserver: ResizeObserver | null = null;
-
-  // Compute which segments to show vs collapse
-  // When maxVisibleSegments is finite and less than total segments, we need to collapse some
-  $: needsCollapsing = maxVisibleSegments !== Infinity && breadcrumbSegments.length > maxVisibleSegments;
-  $: collapsedSegments = needsCollapsing ? breadcrumbSegments.slice(0, -maxVisibleSegments) : [];
-  $: visibleSegments = needsCollapsing ? breadcrumbSegments.slice(-maxVisibleSegments) : breadcrumbSegments;
-  $: visibleStartIndex = breadcrumbSegments.length - visibleSegments.length;
-
-  function measureBreadcrumbs() {
-    if (!breadcrumbWrapper) {
-      return;
-    }
-
-    const containerWidth = breadcrumbWrapper.clientWidth - 12; // account for padding
-    const items = breadcrumbWrapper.querySelectorAll('.breadcrumb-item-measure');
-
-    if (items.length === 0) {
-      return;
-    }
-
-    // Measure actual separator width from the DOM if available, or use default
-    const separatorWidth = 22; // approximate: ">" character + gaps
-
-    // Calculate total width needed for all items
-    const itemWidths: number[] = [];
-    items.forEach(item => {
-      itemWidths.push((item as HTMLElement).offsetWidth);
-    });
-
-    // Total width = sum of items + separators between them
-    const totalWidth = itemWidths.reduce((sum, w) => sum + w, 0) + (itemWidths.length - 1) * separatorWidth;
-
-    // If everything fits, show all
-    if (totalWidth <= containerWidth) {
-      maxVisibleSegments = Infinity;
-      return;
-    }
-
-    // We need to collapse some segments. Calculate how many we can show from the end.
-    // Layout will be: [root] / [...] / [visible segments]
-    const rootWidth = itemWidths[0];
-    const ellipsisWidth = 30; // ellipsis button width
-
-    // Available space after root + ellipsis + their separators
-    const reservedWidth = rootWidth + separatorWidth + ellipsisWidth + separatorWidth;
-    let availableWidth = containerWidth - reservedWidth;
-
-    // Count how many segments from the end can fit
-    let count = 0;
-    for (let i = itemWidths.length - 1; i > 0; i--) {
-      // Each segment needs its width + separator (except we already counted one separator in reserved)
-      const segmentWidth = itemWidths[i] + (count > 0 ? separatorWidth : 0);
-      if (availableWidth >= segmentWidth) {
-        availableWidth -= segmentWidth;
-        count++;
-      } else {
-        break;
-      }
-    }
-
-    // Always show at least the last segment, even if it overflows (CSS will truncate with ellipsis)
-    maxVisibleSegments = Math.max(1, count);
-  }
-
-  function setupResizeObserver() {
-    if (breadcrumbWrapper && !resizeObserver) {
-      resizeObserver = new ResizeObserver(() => {
-        // Reset to measure all, then recalculate
-        maxVisibleSegments = Infinity;
-        tick().then(measureBreadcrumbs);
-      });
-      resizeObserver.observe(breadcrumbWrapper);
-    }
-  }
 
   $: if (workspace) {
     hasEditPermission = featurePermissions.workspace.canUpdate(user, workspace);
@@ -176,53 +97,14 @@
       cellClass: 'tree-cell-container',
       cellRenderer: (params: ICellRendererParams<WorkspaceTreeNodeWithFullPath>) => {
         const container = document.createElement('div');
-        container.className = 'tree-cell';
-        container.style.paddingLeft = `${(params.data?.depth ?? 0) * INDENT_SIZE}px`;
-
-        // Add expand/collapse chevron for folders with children
-        const chevronContainer = document.createElement('span');
-        chevronContainer.className = 'tree-chevron';
-
-        if (params.data?.hasChildren) {
-          const isExpanded = expandedPaths.has(params.data.fullPath);
-          chevronContainer.style.cursor = 'pointer';
-
-          // Create Svelte chevron component
-          const ChevronComponent = isExpanded ? ChevronDown : ChevronRight;
-          new ChevronComponent({
-            props: { size: 14 },
-            target: chevronContainer,
-          });
-
-          chevronContainer.onclick = (e: MouseEvent) => {
-            e.stopPropagation();
-            if (params.data) {
-              toggleExpand(params.data.fullPath);
-            }
-          };
-        }
-        container.appendChild(chevronContainer);
-
-        // Add icon
-        const iconContainer = document.createElement('div');
-        iconContainer.className = 'tree-icon';
-        new WorkspaceTreeViewIcon({
+        new TreeCell({
           props: {
-            size: 14,
-            toggleState: params.data?.hasChildren && expandedPaths.has(params.data?.fullPath ?? ''),
-            treeNode: params.data,
+            data: params.data,
+            isExpanded: expandedPaths.has(params.data?.fullPath ?? ''),
+            onToggleExpand: toggleExpand,
           },
-          target: iconContainer,
+          target: container,
         });
-        container.appendChild(iconContainer);
-
-        // Add name
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'tree-name';
-        nameSpan.textContent = params.data?.name ?? '';
-        nameSpan.title = params.data?.fullPath ?? '';
-        container.appendChild(nameSpan);
-
         return container;
       },
       // Use comparator that returns 0 to prevent AG Grid from reordering rows.
@@ -309,7 +191,6 @@
           const bName = b.name?.toLowerCase() ?? '';
           comparison = aName.localeCompare(bName);
         } else if (colId === 'fullPath') {
-          // For siblings (same parent), fullPath differs only by name, so compare by name
           const aPath = a.name?.toLowerCase() ?? '';
           const bPath = b.name?.toLowerCase() ?? '';
           comparison = aPath.localeCompare(bPath);
@@ -346,54 +227,26 @@
     currentBreadcrumbPath ? currentBreadcrumbPath.split(PATH_DELIMITER) : [],
   );
 
-  // When flattenedTree updates (e.g., after navigation), redraw rows to update cell rendering (indentation)
+  // When flattenedTree updates, redraw rows to update cell rendering
   $: if (dataGrid && flattenedTree) {
-    // Use tick to ensure AG Grid has received the new data before redrawing
-    tick().then(() => dataGrid?.redrawRows());
+    scheduleRedraw();
   }
 
   // Update filter matching when filter text or tree changes
   $: {
-    if (filterText && flattenedTree.length > 0) {
-      const lowerFilter = filterText.toLowerCase();
-      const newMatchingPaths = new Set<string>();
-      const newAncestorPaths = new Set<string>();
+    const result = computeTreeFilter(flattenedTree, filterText);
+    matchingPaths = result.matchingPaths;
+    ancestorPaths = result.ancestorPaths;
 
-      for (const node of flattenedTree) {
-        const name = node.name?.toLowerCase() ?? '';
-        if (name.includes(lowerFilter)) {
-          newMatchingPaths.add(node.fullPath);
-
-          // Add all ancestors to keep them visible
-          const pathParts = node.fullPath.split(PATH_DELIMITER);
-          for (let i = 1; i < pathParts.length; i++) {
-            const ancestorPath = pathParts.slice(0, i).join(PATH_DELIMITER);
-            newAncestorPaths.add(ancestorPath);
-          }
-        }
-      }
-
-      matchingPaths = newMatchingPaths;
-      ancestorPaths = newAncestorPaths;
-
-      // Auto-expand ancestors of matching nodes so they're visible
-      if (newAncestorPaths.size > 0) {
-        expandedPaths = new Set([...expandedPaths, ...newAncestorPaths]);
-      }
-    } else {
-      matchingPaths = new Set();
-      ancestorPaths = new Set();
+    // Auto-expand ancestors of matching nodes so they're visible
+    if (result.ancestorPaths.size > 0) {
+      expandedPaths = new Set([...expandedPaths, ...result.ancestorPaths]);
     }
   }
 
   // Trigger AG Grid filter update when filter-related state changes
   $: if (dataGrid && (filterText !== undefined || matchingPaths || ancestorPaths || expandedPaths)) {
     dataGrid.onFilterChanged();
-  }
-
-  // Re-measure breadcrumbs when segments change
-  $: if (breadcrumbWrapper && breadcrumbSegments) {
-    tick().then(measureBreadcrumbs);
   }
 
   // Context menu computed values
@@ -409,13 +262,24 @@
     if (node.type === WorkspaceContentType.Directory) {
       return false;
     }
-    // Check if this node is a descendant of any selected node (or is the selected node itself)
     return effectiveSelectedNodes.some(
       selected => node.fullPath === selected.fullPath || node.fullPath.startsWith(selected.fullPath + PATH_DELIMITER),
     );
   });
   $: effectiveActionFilePaths = nonDirectorySelectedNodes.map(n => n.fullPath);
   $: tertiaryHighlightPaths = actionsForSelection.length > 0 ? nonDirectorySelectedNodes.map(n => n.fullPath) : [];
+
+  // Debounced redraw to avoid multiple redraws in same tick
+  let redrawScheduled = false;
+  async function scheduleRedraw() {
+    if (redrawScheduled) {
+      return;
+    }
+    redrawScheduled = true;
+    await tick();
+    dataGrid?.redrawRows();
+    redrawScheduled = false;
+  }
 
   function toggleExpand(path: string) {
     if (expandedPaths.has(path)) {
@@ -436,7 +300,6 @@
   }
 
   function expandToPath(targetPath: string) {
-    // Expand all ancestor folders to make the target visible
     const pathParts = targetPath.split(PATH_DELIMITER);
     const newExpanded = new Set(expandedPaths);
 
@@ -453,42 +316,20 @@
     const fullFilePath = node.data?.fullPath ?? '';
     const depth = node.data?.depth ?? 0;
 
-    // If filtering is active, check if this node should be visible
-    if (filterText) {
-      const isMatch = matchingPaths.has(fullFilePath);
-      const isAncestorOfMatch = ancestorPaths.has(fullFilePath);
-
-      // Show only if: directly matches OR is an ancestor of a match
-      if (!isMatch && !isAncestorOfMatch) {
-        return false;
-      }
-    }
-
-    // Root level items (depth 0) are always visible (if they pass filter)
-    if (depth === 0) {
-      return true;
-    }
-
-    // Check that all ancestor folders (within current view) are expanded
-    // Skip checking ancestors that are part of currentBreadcrumbPath since they're above the current view
-    const currentRootDepth = currentBreadcrumbPath ? currentBreadcrumbPath.split(PATH_DELIMITER).length : 0;
-    const pathParts = fullFilePath.split(PATH_DELIMITER);
-
-    // Start checking from the first folder after currentBreadcrumbPath
-    for (let i = currentRootDepth + 1; i < pathParts.length; i++) {
-      const ancestorPath = pathParts.slice(0, i).join(PATH_DELIMITER);
-      if (!expandedPaths.has(ancestorPath)) {
-        return false;
-      }
-    }
-
-    return true;
+    return shouldNodeBeVisible(
+      fullFilePath,
+      depth,
+      filterText,
+      matchingPaths,
+      ancestorPaths,
+      expandedPaths,
+      currentBreadcrumbPath,
+    );
   }
 
   function onSortChanged(event: CustomEvent<SortChangedEvent<WorkspaceTreeNodeWithFullPath>>) {
     const columnState = event.detail.api.getColumnState();
 
-    // Get all sorted columns, ordered by sortIndex
     const sortedColumns = columnState
       .filter(col => col.sort != null)
       .sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0))
@@ -513,7 +354,6 @@
   function onShowMenu(node: WorkspaceTreeNodeWithFullPath, event: MouseEvent) {
     contextMenuNode = node;
     selectedTreeNodePath = node.fullPath;
-    // Position the context menu below the button
     const button = event.currentTarget as HTMLElement;
     const rect = button.getBoundingClientRect();
     const syntheticEvent = new MouseEvent('contextmenu', {
@@ -524,7 +364,7 @@
     dataGrid?.showContextMenu(syntheticEvent);
   }
 
-  function onContextMenu(event: CustomEvent<CellContextMenuEvent<WorkspaceTreeNodeWithFullPath, any>>) {
+  function onContextMenu(event: CustomEvent<CellContextMenuEvent<WorkspaceTreeNodeWithFullPath, unknown>>) {
     contextMenuNode = event.detail.data ?? null;
   }
 
@@ -537,27 +377,27 @@
     const node = row.data;
 
     if (node.type === WorkspaceContentType.Directory) {
-      // Navigate into the folder (set as new root)
       navigateToFolder(node.fullPath);
     }
   }
 
   function navigateToFolder(path: string) {
     currentBreadcrumbPath = path;
-    // Reset expanded paths when navigating to a new root
     expandedPaths = new Set();
   }
 
   function navigateToBreadcrumb(index: number) {
     if (index < 0) {
-      // Navigate to workspace root
       currentBreadcrumbPath = '';
     } else {
-      // Navigate to the folder at the given breadcrumb index
       const newPath = breadcrumbSegments.slice(0, index + 1).join(PATH_DELIMITER);
       currentBreadcrumbPath = newPath;
     }
     expandedPaths = new Set();
+  }
+
+  function handleNavigateToRoot() {
+    navigateToBreadcrumb(-1);
   }
 
   function onDeleteNode(node: WorkspaceTreeNodeWithFullPath) {
@@ -609,25 +449,22 @@
   }
 
   function onOpenInNewTab(node: WorkspaceTreeNodeWithFullPath) {
-    let targetPath = node?.fullPath ?? '';
-    dispatch('openInNewTab', targetPath);
+    dispatch('openInNewTab', node?.fullPath ?? '');
   }
 
   function onCopyFileLocation(node: WorkspaceTreeNodeWithFullPath) {
-    let targetPath = node?.fullPath ?? '';
-    dispatch('copyFileLocation', targetPath);
+    dispatch('copyFileLocation', node?.fullPath ?? '');
   }
 
   function onCopyFullPath(node: WorkspaceTreeNodeWithFullPath) {
-    let targetPath = node?.fullPath ?? '';
-    dispatch('copyFullPath', targetPath);
+    dispatch('copyFullPath', node?.fullPath ?? '');
   }
 
   function onMoveToWorkspace(node: WorkspaceTreeNodeWithFullPath) {
-    let targetPath = node?.fullPath ?? '';
-    dispatch('moveToWorkspace', targetPath);
+    dispatch('moveToWorkspace', node?.fullPath ?? '');
   }
 
+  // Context menu handlers that delegate to the appropriate action
   function onTableMenuRenameNode() {
     if (contextMenuNode) {
       onRenameNode(contextMenuNode);
@@ -701,95 +538,20 @@
   }
 
   onMount(() => {
-    // If a file is selected, expand to show it
     if (selectedTreeNodePath) {
       expandToPath(selectedTreeNodePath);
     }
-
-    // Set up breadcrumb resize observer
-    setupResizeObserver();
-
-    return () => {
-      // Clean up resize observer on unmount
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-        resizeObserver = null;
-      }
-    };
   });
 </script>
 
 <div class="workspace-grid-container">
-  <div class="breadcrumb-wrapper" bind:this={breadcrumbWrapper}>
-    <!-- Hidden measurement container - renders all items to measure their widths -->
-    <div class="breadcrumb-measure-container text-xs" aria-hidden="true">
-      <span class="breadcrumb-item-measure px-1">{workspace ? workspace.name : 'Loading...'}</span>
-      {#each breadcrumbSegments as segment}
-        <span class="breadcrumb-item-measure px-1">{segment}</span>
-      {/each}
-    </div>
-
-    <Breadcrumb.Root>
-      <Breadcrumb.List class="breadcrumbs gap-1 text-xs sm:gap-1" bind:el={breadcrumbContainer}>
-        <!-- Root workspace item - always visible -->
-        <Breadcrumb.Item>
-          {#if currentBreadcrumbPath === ''}
-            <Breadcrumb.Page>
-              <div class="px-1 py-0.5">
-                {workspace ? workspace.name : 'Loading...'}
-              </div>
-            </Breadcrumb.Page>
-          {:else}
-            <Breadcrumb.Link asChild let:attrs>
-              <button {...attrs} on:click={() => navigateToBreadcrumb(-1)} title="Workspace root">
-                {workspace ? workspace.name : 'Loading...'}
-              </button>
-            </Breadcrumb.Link>
-          {/if}
-        </Breadcrumb.Item>
-
-        <!-- Ellipsis with dropdown for collapsed segments -->
-        {#if needsCollapsing}
-          <Breadcrumb.Separator />
-          <Breadcrumb.Item>
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger asChild let:builder>
-                <button use:builder.action {...builder} class="breadcrumb-ellipsis-btn" title="Show hidden folders">
-                  <Ellipsis size={14} />
-                </button>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Content align="start">
-                {#each collapsedSegments as segment, index}
-                  <DropdownMenu.Item size="sm" on:click={() => navigateToBreadcrumb(index)}>
-                    {segment}
-                  </DropdownMenu.Item>
-                {/each}
-              </DropdownMenu.Content>
-            </DropdownMenu.Root>
-          </Breadcrumb.Item>
-        {/if}
-
-        <!-- Visible segments -->
-        {#each visibleSegments as segment, index}
-          {@const actualIndex = visibleStartIndex + index}
-          <Breadcrumb.Separator />
-          <Breadcrumb.Item class="overflow-hidden">
-            {#if actualIndex === breadcrumbSegments.length - 1}
-              <Breadcrumb.Page class="overflow-hidden">
-                <div class="overflow-hidden overflow-ellipsis whitespace-nowrap px-1">{segment}</div>
-              </Breadcrumb.Page>
-            {:else}
-              <Breadcrumb.Link asChild let:attrs>
-                <button {...attrs} on:click={() => navigateToBreadcrumb(actualIndex)}>
-                  {segment}
-                </button>
-              </Breadcrumb.Link>
-            {/if}
-          </Breadcrumb.Item>
-        {/each}
-      </Breadcrumb.List>
-    </Breadcrumb.Root>
-  </div>
+  <ResponsiveBreadcrumb
+    rootLabel={workspace ? workspace.name : 'Loading...'}
+    currentPath={currentBreadcrumbPath}
+    isAtRoot={currentBreadcrumbPath === ''}
+    onNavigateToRoot={handleNavigateToRoot}
+    onNavigateToSegment={navigateToBreadcrumb}
+  />
   <div class="search-bar">
     <Search size={14} />
     <Input
@@ -857,108 +619,6 @@
     height: 100%;
   }
 
-  .breadcrumb-wrapper {
-    overflow: hidden;
-    position: relative;
-  }
-
-  :global(.breadcrumbs) {
-    background: var(--st-gray-10, #f5f5f5);
-    border-bottom: 1px solid var(--st-gray-20, #e0e0e0);
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    gap: 4px;
-    overflow: hidden;
-    padding: 3px 4px;
-    position: relative;
-  }
-
-  /* Ensure all breadcrumb items stay on one line */
-  :global(.breadcrumbs li) {
-    display: inline-flex;
-    flex-shrink: 0;
-    min-width: 0;
-    white-space: nowrap;
-  }
-
-  /* Last breadcrumb item can shrink and truncate */
-  :global(.breadcrumbs li:last-child) {
-    flex-shrink: 1;
-    min-width: 40px;
-    overflow: hidden;
-  }
-
-  /* Ensure separators don't wrap */
-  :global(.breadcrumbs [data-slot='breadcrumb-separator']) {
-    flex-shrink: 0;
-  }
-
-  :global(.breadcrumbs button) {
-    align-items: center;
-    background: transparent;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    display: inline-flex;
-    max-width: 100%;
-    overflow: hidden;
-    padding: 2px 4px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  /* Breadcrumb page content (non-clickable current page) */
-  :global(.breadcrumbs [data-slot='breadcrumb-page']) {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  :global(.breadcrumbs [data-slot='breadcrumb-page'] > div) {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  :global(.breadcrumbs button:hover) {
-    background: var(--st-gray-20, #e0e0e0);
-  }
-
-  :global(.breadcrumb-home) {
-    display: inline-flex;
-  }
-
-  /* Hidden container for measuring breadcrumb item widths */
-  .breadcrumb-measure-container {
-    height: 0;
-    left: 0;
-    overflow: hidden;
-    pointer-events: none;
-    position: absolute;
-    top: 0;
-    visibility: hidden;
-    white-space: nowrap;
-  }
-
-  .breadcrumb-item-measure {
-    display: inline-block;
-  }
-
-  :global(.breadcrumb-ellipsis-btn) {
-    align-items: center;
-    background: transparent;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    display: inline-flex;
-    justify-content: center;
-    padding: 2px 4px;
-  }
-
-  :global(.breadcrumb-ellipsis-btn:hover) {
-    background: var(--st-gray-20, #e0e0e0);
-  }
-
   .search-bar {
     align-items: center;
     border-bottom: 1px solid var(--st-gray-20, #e0e0e0);
@@ -969,36 +629,6 @@
 
   .search-bar :global(.search-input) {
     flex: 1;
-  }
-
-  :global(.tree-cell) {
-    align-items: center;
-    display: flex;
-    gap: 1px;
-    height: 100%;
-  }
-
-  :global(.tree-chevron) {
-    align-items: center;
-    display: flex;
-    flex-shrink: 0;
-    height: 14px;
-    justify-content: center;
-    width: 14px;
-  }
-
-  :global(.tree-icon) {
-    align-items: center;
-    display: flex;
-    height: 14px;
-    margin-right: 3px;
-    width: 14px;
-  }
-
-  :global(.tree-name) {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   :global(.workspace-file-browser .ag-root-wrapper) {

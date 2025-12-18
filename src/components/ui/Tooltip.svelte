@@ -1,3 +1,28 @@
+<!--
+  @component Tooltip
+
+  A wrapper component for tooltips using the Stellar design system.
+
+  **When to use this component vs Stellar's primitive Tooltip:**
+
+  - Use this wrapper component (`<Tooltip>`) for:
+    - Simple single-element triggers (buttons, icons)
+    - When you need keyboard shortcut display
+    - Quick, consistent tooltip behavior with sensible defaults
+
+  - Use Stellar's primitive Tooltip components (`Tooltip.Root`, `Tooltip.Trigger`, etc.) for:
+    - Complex trigger situations (multiple elements, custom positioning)
+    - When you need fine-grained control over open/close behavior
+    - When the trigger can't be wrapped in a span (asChild pattern needed)
+    - When you need to compose with other Stellar components
+
+  Example usage:
+  ```svelte
+  <Tooltip content="Save file" shortcut="⌘S">
+    <Button>Save</Button>
+  </Tooltip>
+  ```
+-->
 <script lang="ts">
   import { cn, Tooltip } from '@nasa-jpl/stellar-svelte';
   import type { TooltipContentProps, TooltipProps } from 'bits-ui';
