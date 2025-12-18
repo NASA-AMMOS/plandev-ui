@@ -1,6 +1,10 @@
 import { describe, expect, test, vi } from 'vitest';
 import { isDeleteEvent, isMetaOrCtrlPressed, isSaveEvent } from './keyboardEvents';
 
+vi.mock('$app/environment', () => ({
+  browser: true,
+}));
+
 describe('isDeleteEvent', () => {
   test('Should correctly determine if the current key presses equate to a "Delete" event or not', () => {
     expect(isDeleteEvent(new KeyboardEvent('keydown', { key: 'Delete' }))).toEqual(true);
