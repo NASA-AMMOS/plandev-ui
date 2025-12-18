@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Button } from '@nasa-jpl/stellar-svelte';
+  import { Button, cn } from '@nasa-jpl/stellar-svelte';
   import { ArrowLeftRight, FileUp } from 'lucide-svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
@@ -67,7 +67,7 @@
   let planEndTime: string = '';
 
   $: permissionError = $planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit this plan.';
-  $: if (plan) {
+  $: if (plan && plan.model) {
     hasCreateSnapshotPermission = featurePermissions.planSnapshot.canCreate(user, plan, plan.model) && !$planReadOnly;
     planStartTime = formatDate(new Date(plan.start_time), $plugins.time.primary.format);
     const endTime = convertDoyToYmd(plan.end_time_doy);
@@ -224,7 +224,13 @@
         <Input layout="inline">
           <label use:tooltip={{ content: 'Model Name', placement: 'top' }} for="modelName">Model Name</label>
           <div class="flex gap-1">
-            <input class="st-input w-full" disabled name="modelName" value={plan.model.name} id="modelName" />
+            <input
+              class={cn('st-input w-full', !plan.model?.name ? 'border-destructive' : '')}
+              disabled
+              name="modelName"
+              value={plan.model?.name ?? 'Model not found'}
+              id="modelName"
+            />
             <div
               use:permissionHandler={{
                 hasPermission: hasChangePlanModelPermission && !$planReadOnly,
@@ -252,7 +258,13 @@
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Model Version', placement: 'top' }} for="modelVersion">Model Version</label>
-          <input class="st-input w-full" disabled name="modelVersion" value={plan.model.version} id="modelVersion" />
+          <input
+            class="st-input w-full"
+            disabled
+            name="modelVersion"
+            value={plan.model?.version ?? 'Model not found'}
+            id="modelVersion"
+          />
         </Input>
         <Input layout="inline">
           <label
@@ -382,7 +394,7 @@
             {#each filteredPlanSnapshots as planSnapshot (planSnapshot.snapshot_id)}
               <PlanSnapshot
                 activePlanSnapshotId={$planSnapshotId}
-                planModelId={plan.model.id}
+                planModelId={plan.model?.id}
                 {planSnapshot}
                 on:click={() => {
                   setQueryParam(SearchParameters.SNAPSHOT_ID, `${planSnapshot.snapshot_id}`, 'PUSH');

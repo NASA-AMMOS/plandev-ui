@@ -189,7 +189,7 @@
   function viewGoal({ id }: Pick<SchedulingGoalMetadata, 'id'>) {
     const goal = $schedulingGoals.find(c => c.id === id);
     window.open(
-      `${base}/scheduling/goals/edit/${goal?.id}?${SearchParameters.REVISION}=${goal?.versions[0].revision}&${SearchParameters.MODEL_ID}=${$plan?.model.id}`,
+      `${base}/scheduling/goals/edit/${goal?.id}?${SearchParameters.REVISION}=${goal?.versions[0].revision}&${SearchParameters.MODEL_ID}=${$plan?.model?.id}`,
     );
   }
 

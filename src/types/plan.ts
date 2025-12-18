@@ -79,8 +79,8 @@ export type PlanSchema = {
   duration: string;
   id: number;
   is_locked: boolean;
-  model: Model;
-  model_id: number;
+  model: Model | null;
+  model_id: number | null;
   name: string;
   owner: UserId;
   parent_plan:

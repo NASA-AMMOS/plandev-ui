@@ -252,7 +252,7 @@
               hasReadPermission={featurePermissions.schedulingGoals.canRead(user)}
               goal={$schedulingGoalsMap[specGoal.goal_id]}
               goalPlanSpec={specGoal}
-              modelId={$plan?.model.id}
+              modelId={$plan?.model?.id}
               shouldShowUpButton={(specGoal?.priority ?? 0) > 0}
               shouldShowDownButton={specIndex < filteredSchedulingGoalSpecs.length - 1}
               on:updateGoalPlanSpec={onUpdateGoal}

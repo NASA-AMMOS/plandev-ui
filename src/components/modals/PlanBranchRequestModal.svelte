@@ -20,12 +20,12 @@
     close: void;
     create:
       | {
-          source_plan: Plan;
+          source_plan: PlanForMerging;
           target_plan: PlanForMerging;
         }
       | {
           source_plan: PlanForMerging;
-          target_plan: Plan;
+          target_plan: PlanForMerging;
         };
   }>();
 
@@ -50,7 +50,7 @@
     actionHeader = 'Pull changes from';
     actionButtonText = 'Review Changes';
   }
-  $: if (selectedPlan && plan.parent_plan) {
+  $: if (selectedPlan && plan.parent_plan && plan.model) {
     planModelsCompatible = plan.model.id === plan.parent_plan.model.id;
   } else {
     planModelsCompatible = true;
@@ -60,9 +60,9 @@
   function create() {
     if (!createButtonDisabled && selectedPlan !== null) {
       if (action === 'merge') {
-        dispatch('create', { source_plan: plan, target_plan: selectedPlan });
+        dispatch('create', { source_plan: plan as PlanForMerging, target_plan: selectedPlan });
       } else {
-        dispatch('create', { source_plan: selectedPlan, target_plan: plan });
+        dispatch('create', { source_plan: selectedPlan, target_plan: plan as PlanForMerging });
       }
     }
   }
