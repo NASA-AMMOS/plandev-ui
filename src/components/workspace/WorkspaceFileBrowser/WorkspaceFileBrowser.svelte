@@ -544,7 +544,7 @@
   });
 </script>
 
-<div class="workspace-grid-container">
+<div class="grid h-full grid-rows-[auto_auto_1fr]">
   <ResponsiveBreadcrumb
     rootLabel={workspace ? workspace.name : 'Loading...'}
     currentPath={currentBreadcrumbPath}
@@ -552,7 +552,7 @@
     onNavigateToRoot={handleNavigateToRoot}
     onNavigateToSegment={navigateToBreadcrumb}
   />
-  <div class="search-bar">
+  <div class="flex items-center gap-2 border-b border-[color:var(--st-gray-20,#e0e0e0)] p-2">
     <Search size={14} />
     <Input
       type="text"
@@ -560,7 +560,7 @@
       value={filterText}
       on:input={onSearchInput}
       sizeVariant="xs"
-      class="search-input"
+      class="flex-1"
     />
   </div>
   <BulkActionDataGrid
@@ -613,24 +613,6 @@
 </div>
 
 <style>
-  .workspace-grid-container {
-    display: grid;
-    grid-template-rows: auto auto 1fr;
-    height: 100%;
-  }
-
-  .search-bar {
-    align-items: center;
-    border-bottom: 1px solid var(--st-gray-20, #e0e0e0);
-    display: flex;
-    gap: 8px;
-    padding: 8px;
-  }
-
-  .search-bar :global(.search-input) {
-    flex: 1;
-  }
-
   :global(.workspace-file-browser .ag-root-wrapper) {
     --ag-borders: none;
     --ag-wrapper-border-radius: 0;

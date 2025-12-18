@@ -55,7 +55,7 @@
   }
 </script>
 
-<div class="editor-toolbar">
+<div class="flex items-center justify-end gap-1.5">
   <slot name="start" />
 
   {#if showActions}
@@ -151,11 +151,3 @@
   {/if}
 </div>
 
-<style>
-  .editor-toolbar {
-    align-items: center;
-    display: flex;
-    gap: 6px;
-    justify-content: flex-end;
-  }
-</style>

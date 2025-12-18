@@ -74,7 +74,7 @@
   <Tooltip.Root {group} {openDelay} {closeDelay} bind:open>
     <Tooltip.Trigger asChild let:builder>
       <span
-        class="tooltip-trigger"
+        class="inline-flex has-[[aria-disabled=true]]:pointer-events-none has-[[disabled]]:pointer-events-none"
         {...builder}
         use:builder.action
         on:focusin={handleFocusIn}
@@ -99,13 +99,3 @@
   </Tooltip.Root>
 {/if}
 
-<style>
-  .tooltip-trigger {
-    display: inline-flex;
-  }
-
-  /* Disable tooltip interaction when child element is disabled */
-  .tooltip-trigger:has([disabled], [aria-disabled='true']) {
-    pointer-events: none;
-  }
-</style>

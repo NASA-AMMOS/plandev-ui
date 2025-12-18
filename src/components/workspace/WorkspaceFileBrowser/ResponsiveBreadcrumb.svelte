@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Breadcrumb, DropdownMenu } from '@nasa-jpl/stellar-svelte';
+  import { Breadcrumb, Button, DropdownMenu } from '@nasa-jpl/stellar-svelte';
   import { Ellipsis } from 'lucide-svelte';
   import { onMount, tick } from 'svelte';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
@@ -45,7 +45,7 @@
     }
 
     const containerWidth = breadcrumbWrapper.clientWidth - CONTAINER_PADDING_PX;
-    const items = breadcrumbWrapper.querySelectorAll('.breadcrumb-item-measure');
+    const items = breadcrumbWrapper.querySelectorAll('[data-measure]');
 
     if (items.length === 0) {
       return;
@@ -122,43 +122,56 @@
   });
 </script>
 
-<div class="breadcrumb-wrapper" bind:this={breadcrumbWrapper}>
+<div class="relative overflow-hidden" bind:this={breadcrumbWrapper}>
   <!-- Hidden measurement container - renders all items to measure their widths -->
-  <div class="breadcrumb-measure-container text-xs" aria-hidden="true">
-    <span class="breadcrumb-item-measure px-1">{rootLabel}</span>
+  <div class="invisible absolute left-0 top-0 h-0 overflow-hidden whitespace-nowrap text-xs" aria-hidden="true">
+    <span class="inline-block px-1" data-measure>{rootLabel}</span>
     {#each segments as segment}
-      <span class="breadcrumb-item-measure px-1">{segment}</span>
+      <span class="inline-block px-1" data-measure>{segment}</span>
     {/each}
   </div>
 
   <Breadcrumb.Root>
-    <Breadcrumb.List class="breadcrumbs gap-1 text-xs sm:gap-1">
+    <Breadcrumb.List
+      class="breadcrumbs relative flex-nowrap gap-0.5 overflow-hidden border-b px-1 py-[3px] text-xs sm:gap-0.5 [&_li:last-child]:min-w-10 [&_li:last-child]:flex-shrink [&_li:last-child]:overflow-hidden"
+    >
       <!-- Root item - always visible -->
-      <Breadcrumb.Item>
+      <Breadcrumb.Item class="inline-flex min-w-0 flex-shrink-0 whitespace-nowrap">
         {#if isAtRoot}
-          <Breadcrumb.Page>
-            <div class="px-1 py-0.5">
+          <Breadcrumb.Page class="max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
+            <div class="flex min-h-6 items-center overflow-hidden overflow-ellipsis whitespace-nowrap px-1 py-0.5">
               {rootLabel}
             </div>
           </Breadcrumb.Page>
         {:else}
           <Breadcrumb.Link asChild let:attrs>
-            <button {...attrs} on:click={onNavigateToRoot} title="Go to root">
+            <Button
+              variant="ghost"
+              {...attrs}
+              class="inline-flex max-w-full text-ellipsis whitespace-nowrap px-1 py-0.5 font-normal"
+              on:click={onNavigateToRoot}
+              title="Go to root"
+            >
               {rootLabel}
-            </button>
+            </Button>
           </Breadcrumb.Link>
         {/if}
       </Breadcrumb.Item>
 
       <!-- Ellipsis with dropdown for collapsed segments -->
       {#if needsCollapsing}
-        <Breadcrumb.Separator />
-        <Breadcrumb.Item>
+        <Breadcrumb.Separator class="flex-shrink-0" />
+        <Breadcrumb.Item class="inline-flex min-w-0 flex-shrink-0 whitespace-nowrap">
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild let:builder>
-              <button use:builder.action {...builder} title="Show hidden folders">
+              <Button
+                variant="ghost"
+                builders={[builder]}
+                class="inline-flex max-w-full text-ellipsis whitespace-nowrap px-1 py-0.5 font-normal"
+                title="Show hidden folders"
+              >
                 <Ellipsis size={14} />
-              </button>
+              </Button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Content align="start">
               {#each collapsedSegments as segment, index}
@@ -177,14 +190,19 @@
         <Breadcrumb.Separator />
         <Breadcrumb.Item class="overflow-hidden">
           {#if actualIndex === segments.length - 1}
-            <Breadcrumb.Page class="overflow-hidden">
+            <Breadcrumb.Page class="max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
               <div class="overflow-hidden overflow-ellipsis whitespace-nowrap px-1">{segment}</div>
             </Breadcrumb.Page>
           {:else}
             <Breadcrumb.Link asChild let:attrs>
-              <button {...attrs} on:click={() => onNavigateToSegment(actualIndex)}>
+              <Button
+                variant="ghost"
+                {...attrs}
+                class="inline-flex max-w-full text-ellipsis whitespace-nowrap px-1 py-0.5 font-normal"
+                on:click={() => onNavigateToSegment(actualIndex)}
+              >
                 {segment}
-              </button>
+              </Button>
             </Breadcrumb.Link>
           {/if}
         </Breadcrumb.Item>
@@ -192,88 +210,3 @@
     </Breadcrumb.List>
   </Breadcrumb.Root>
 </div>
-
-<style>
-  .breadcrumb-wrapper {
-    overflow: hidden;
-    position: relative;
-  }
-
-  :global(.breadcrumbs) {
-    background: var(--st-gray-10, #f5f5f5);
-    border-bottom: 1px solid var(--st-gray-20, #e0e0e0);
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    gap: 4px;
-    overflow: hidden;
-    padding: 3px 4px;
-    position: relative;
-  }
-
-  /* Ensure all breadcrumb items stay on one line */
-  :global(.breadcrumbs li) {
-    display: inline-flex;
-    flex-shrink: 0;
-    min-width: 0;
-    white-space: nowrap;
-  }
-
-  /* Last breadcrumb item can shrink and truncate */
-  :global(.breadcrumbs li:last-child) {
-    flex-shrink: 1;
-    min-width: 40px;
-    overflow: hidden;
-  }
-
-  /* Ensure separators don't wrap */
-  :global(.breadcrumbs [data-slot='breadcrumb-separator']) {
-    flex-shrink: 0;
-  }
-
-  :global(.breadcrumbs button) {
-    align-items: center;
-    background: transparent;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    display: inline-flex;
-    max-width: 100%;
-    overflow: hidden;
-    padding: 2px 4px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  /* Breadcrumb page content (non-clickable current page) */
-  :global(.breadcrumbs [data-slot='breadcrumb-page']) {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  :global(.breadcrumbs [data-slot='breadcrumb-page'] > div) {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  :global(.breadcrumbs button:hover) {
-    background: var(--st-gray-20, #e0e0e0);
-  }
-
-  /* Hidden container for measuring breadcrumb item widths */
-  .breadcrumb-measure-container {
-    height: 0;
-    left: 0;
-    overflow: hidden;
-    pointer-events: none;
-    position: absolute;
-    top: 0;
-    visibility: hidden;
-    white-space: nowrap;
-  }
-
-  .breadcrumb-item-measure {
-    display: inline-block;
-  }
-</style>
