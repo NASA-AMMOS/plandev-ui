@@ -203,6 +203,7 @@
                         {workspace}
                         {user}
                         on:nodeDelete
+                        on:nodeDownload
                         on:nodeMove
                         on:nodeRename
                         on:newSequence

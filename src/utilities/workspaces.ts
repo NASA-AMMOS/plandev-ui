@@ -261,6 +261,9 @@ export const WorkspaceApi = {
   async getFileContent(workspaceId: number, filePath: string, user: User | null): Promise<string | null> {
     return reqWorkspace<string>(joinPath([workspaceId, filePath]), 'GET', null, user, undefined, false);
   },
+  async getFileContentBlob(workspaceId: number, filePath: string, user: User | null): Promise<Blob | null> {
+    return reqWorkspace<Blob>(joinPath([workspaceId, filePath]), 'GET', null, user, undefined, false, true);
+  },
   async getWorkspaceContents(workspaceId: number, user: User | null): Promise<WorkspaceTreeNode[] | null> {
     return reqWorkspace<WorkspaceTreeNode[]>(`${workspaceId}`, 'GET', null, user);
   },

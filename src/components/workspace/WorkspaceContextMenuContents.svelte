@@ -21,6 +21,7 @@
     copyFileLocation: void;
     copyFullPath: void;
     delete: void;
+    download: void;
     hide: void;
     importFile: void;
     move: void;
@@ -118,11 +119,11 @@
 <ContextMenu.Separator />
 {#if selectedWorkspaceNodes.length === 1}
   <div>
-    <ContextMenu.Item size="sm" on:click={() => dispatch('copyFileLocation')} aria-label="Copy Link to">
-      Copy {selectedWorkspaceNodes[0].type === WorkspaceContentType.Directory
-        ? 'Link to Folder'
-        : 'Download Link to File'}
-    </ContextMenu.Item>
+    {#if selectedWorkspaceNodes[0].type !== WorkspaceContentType.Directory}
+      <ContextMenu.Item size="sm" on:click={() => dispatch('download')} aria-label="Download File">
+        Download File
+      </ContextMenu.Item>
+    {/if}
     <ContextMenu.Item size="sm" on:click={() => dispatch('copyFullPath')} aria-label="Copy Full Path">
       Copy Full Path
     </ContextMenu.Item>
@@ -135,8 +136,8 @@
     permissionError: multiFileOperationError,
   }}
 >
-  <ContextMenu.Item size="sm" on:click={() => dispatch('moveToWorkspace')} aria-label="Move to Workspace">
-    Move {fileCountPhrase} to Workspace
+  <ContextMenu.Item size="sm" on:click={() => dispatch('moveToWorkspace')} aria-label="Move/Copy to Workspace">
+    Move/Copy {fileCountPhrase} to Workspace
   </ContextMenu.Item>
 </div>
 <ContextMenu.Separator />

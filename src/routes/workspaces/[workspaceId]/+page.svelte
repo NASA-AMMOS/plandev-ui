@@ -8,6 +8,7 @@
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type { LibrarySequenceSignature, PhoenixContext, UserSequence } from '@nasa-jpl/aerie-sequence-languages';
+  import { Button } from '@nasa-jpl/stellar-svelte';
   import { Folder, LoaderCircle, TriangleAlert } from 'lucide-svelte';
   import { onDestroy, onMount, tick } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
@@ -455,6 +456,22 @@
     }
   }
 
+  async function onDownload(filePath: string) {
+    if ($workspace && user) {
+      const blob = await effects.getWorkspaceFileContentBlob($workspaceId, filePath, user);
+      if (blob !== null) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filePath.split('/').pop() || 'download';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    }
+  }
+
   async function onImportFile(event: CustomEvent<string>) {
     if ($workspace != null && workspaceTree && user) {
       const { detail: startingPath } = event;
@@ -487,6 +504,10 @@
         confirmAndNavigate(null);
       }
     }
+  }
+
+  async function onNodeDownload({ detail: { treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
+    onDownload(treeNodePath);
   }
 
   async function onNodeMove({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
@@ -694,6 +715,7 @@
       on:deleteCollaborator={onDeleteCollaborator}
       on:nodeDelete={onNodeDelete}
       on:nodeMove={onNodeMove}
+      on:nodeDownload={onNodeDownload}
       on:nodeRename={onNodeRename}
       on:newFolder={onNewFolder}
       on:newSequence={onNewSequence}
@@ -787,6 +809,9 @@
             </code>
             is not displayed in the editor because is either binary or an unsupported extension.
           </p>
+          <div>
+            <Button variant="secondary" on:click={() => onDownload($activeDocumentPath)}>Download</Button>
+          </div>
         </div>
       {/if}
     </div>

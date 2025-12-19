@@ -5469,6 +5469,24 @@ const effects = {
     return null;
   },
 
+  async getWorkspaceFileContentBlob(workspaceId: number, filePath: string, user: User | null): Promise<Blob | null> {
+    try {
+      const fileContents = await WorkspaceApi.getFileContentBlob(workspaceId, filePath, user);
+
+      if (fileContents != null) {
+        logMessage(`Retrieved workspace file "${filePath}" for workspace ID=${workspaceId}.`);
+        return fileContents;
+      } else {
+        throw Error(`Workspace file contents not found`);
+      }
+    } catch (e) {
+      catchError('Unable to retrieve workspace file', e as Error);
+      showFailureToast('Workspace File Retrieval Failed');
+    }
+
+    return null;
+  },
+
   async getWorkspaceFilesList(workspaceId: number, user: User | null): Promise<WorkspaceTreeNodeWithFullPath[]> {
     const workspaceContents = await effects.getWorkspaceContents(workspaceId, user);
     return flattenWorkspaceTreeWithPaths(workspaceContents ?? []);

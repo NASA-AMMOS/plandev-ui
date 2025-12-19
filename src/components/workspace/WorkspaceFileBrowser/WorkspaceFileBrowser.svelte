@@ -57,6 +57,7 @@
     newFolder: string;
     newSequence: string;
     nodeDelete: WorkspaceNodeEvent;
+    nodeDownload: WorkspaceNodeEvent;
     nodeMove: WorkspaceNodeEvent;
     nodeRename: WorkspaceNodeEvent;
     openInNewTab: string;
@@ -408,6 +409,13 @@
     });
   }
 
+  function onDownloadNode(node: WorkspaceTreeNodeWithFullPath) {
+    dispatch('nodeDownload', {
+      treeNode: node,
+      treeNodePath: node.fullPath,
+    });
+  }
+
   function onMoveNode(node: WorkspaceTreeNodeWithFullPath) {
     dispatch('nodeMove', {
       toggleState: true,
@@ -464,68 +472,7 @@
     dispatch('moveToWorkspace', node?.fullPath ?? '');
   }
 
-  // Context menu handlers that delegate to the appropriate action
-  function onTableMenuRenameNode() {
-    if (contextMenuNode) {
-      onRenameNode(contextMenuNode);
-    }
-  }
-
-  function onTableMenuMoveNode() {
-    if (contextMenuNode) {
-      onMoveNode(contextMenuNode);
-    }
-  }
-
-  function onTableNewFolder() {
-    if (contextMenuNode) {
-      onNewFolder(contextMenuNode);
-    }
-  }
-
-  function onTableNewSequence() {
-    if (contextMenuNode) {
-      onNewSequence(contextMenuNode);
-    }
-  }
-
-  function onTableImportFile() {
-    if (contextMenuNode) {
-      onImportFile(contextMenuNode);
-    }
-  }
-
-  function onTableOpenInNewTab() {
-    if (contextMenuNode) {
-      onOpenInNewTab(contextMenuNode);
-    }
-  }
-
-  function onTableCopyFileLocation() {
-    if (contextMenuNode) {
-      onCopyFileLocation(contextMenuNode);
-    }
-  }
-
-  function onTableCopyFullPath() {
-    if (contextMenuNode) {
-      onCopyFullPath(contextMenuNode);
-    }
-  }
-
-  function onTableMoveToWorkspace() {
-    if (contextMenuNode) {
-      onMoveToWorkspace(contextMenuNode);
-    }
-  }
-
-  function onTableDeleteNode() {
-    if (contextMenuNode) {
-      onDeleteNode(contextMenuNode);
-    }
-  }
-
-  function onTableRunAction(event: CustomEvent<ActionParameterPair>, filePaths: RowId[]) {
+  function onContextMenuRunAction(event: CustomEvent<ActionParameterPair>, filePaths: RowId[]) {
     const actionParameterPair = event.detail;
     const selectedTreeNodes: WorkspaceTreeNodeWithFullPath[] = flattenedTree.filter(({ fullPath }) =>
       filePaths.includes(fullPath),
@@ -597,17 +544,18 @@
         {hasDeletePermission}
         {hasCreateActionPermission}
         on:actionsMenuFocused={onActionsMenuFocused}
-        on:rename={onTableMenuRenameNode}
-        on:move={onTableMenuMoveNode}
-        on:delete={onTableDeleteNode}
-        on:copyFileLocation={onTableCopyFileLocation}
-        on:copyFullPath={onTableCopyFullPath}
-        on:moveToWorkspace={onTableMoveToWorkspace}
-        on:runAction={event => onTableRunAction(event, effectiveActionFilePaths)}
-        on:newFile={onTableNewSequence}
-        on:newFolder={onTableNewFolder}
-        on:importFile={onTableImportFile}
-        on:openInNewTab={onTableOpenInNewTab}
+        on:rename={() => contextMenuNode && onRenameNode(contextMenuNode)}
+        on:move={() => contextMenuNode && onMoveNode(contextMenuNode)}
+        on:delete={() => contextMenuNode && onDeleteNode(contextMenuNode)}
+        on:download={() => contextMenuNode && onDownloadNode(contextMenuNode)}
+        on:copyFileLocation={() => contextMenuNode && onCopyFileLocation(contextMenuNode)}
+        on:copyFullPath={() => contextMenuNode && onCopyFullPath(contextMenuNode)}
+        on:moveToWorkspace={() => contextMenuNode && onMoveToWorkspace(contextMenuNode)}
+        on:runAction={event => onContextMenuRunAction(event, effectiveActionFilePaths)}
+        on:newFile={() => contextMenuNode && onNewSequence(contextMenuNode)}
+        on:newFolder={() => contextMenuNode && onNewFolder(contextMenuNode)}
+        on:importFile={() => contextMenuNode && onImportFile(contextMenuNode)}
+        on:openInNewTab={() => contextMenuNode && onOpenInNewTab(contextMenuNode)}
       />
     </svelte:fragment>
   </BulkActionDataGrid>
