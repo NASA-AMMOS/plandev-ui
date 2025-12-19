@@ -510,7 +510,6 @@ This has been seen to result in unintended and often glitchy behavior, which oft
             return false;
           }
           const rowId = getRowId(params.data);
-          console.log(params.data, rowId);
           return tertiaryHighlightIds.includes(rowId);
         },
       },
