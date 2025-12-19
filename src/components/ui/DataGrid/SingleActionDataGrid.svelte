@@ -47,6 +47,7 @@
   export let items: RowData[];
   export let itemDisplayText: string;
   export let loading: boolean = false;
+  export let noRowsOverlayText: string = 'No Rows To Show';
   export let selectedItemId: RowId | null = null;
   export let scrollToSelection: boolean = false;
   export let showLoadingSkeleton: boolean = false;
@@ -155,6 +156,7 @@
   {isRowSelectable}
   {isExternalFilterPresent}
   {doesExternalFilterPass}
+  {noRowsOverlayText}
   useCustomContextMenu
   rowData={items}
   rowSelection="single"

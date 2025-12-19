@@ -40,6 +40,7 @@
   export let idKey: keyof RowData = 'id';
   export let items: RowData[];
   export let loading: boolean = false;
+  export let noRowsOverlayText: string = 'No Rows To Show';
   export let pluralItemDisplayText: string = '';
   export let scrollToSelection: boolean = false;
   export let selectedItemId: RowId | null = null;
@@ -181,6 +182,7 @@
   {isRowSelectable}
   {isExternalFilterPresent}
   {doesExternalFilterPass}
+  {noRowsOverlayText}
   useCustomContextMenu={showContextMenu}
   rowData={items}
   rowSelection="multiple"

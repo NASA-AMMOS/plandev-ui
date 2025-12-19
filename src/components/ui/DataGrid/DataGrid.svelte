@@ -129,6 +129,7 @@
   export let suppressRowClickSelection: boolean = false;
   export let tertiaryHighlightIds: RowId[] | null = null;
   export let useCustomContextMenu: boolean | undefined = undefined;
+  export let noRowsOverlayText: string = 'No Rows To Show';
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): number => {
     return parseInt(data[idKey]);
@@ -376,12 +377,21 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       },
       onFilterChanged() {
         const selectedRows: RowData[] = [];
+        let visibleRowCount = 0;
 
         gridApi?.forEachNodeAfterFilter((rowNode: IRowNode<RowData>) => {
+          visibleRowCount++;
           if (rowNode.data && rowNode.isSelected()) {
             selectedRows.push(rowNode.data);
           }
         });
+
+        // Show/hide the no rows overlay based on visible row count after filtering
+        if (visibleRowCount === 0 && rowData.length > 0 && !isLoading()) {
+          gridApi?.showNoRowsOverlay();
+        } else if (visibleRowCount > 0) {
+          gridApi?.hideOverlay();
+        }
 
         dispatch('filterChanged', gridApi?.getFilterModel());
 
@@ -466,6 +476,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         dispatch('sortChanged', event);
         onColumnStateChangeDebounced();
       },
+      overlayNoRowsTemplate: `<span class="ag-overlay-no-rows-center">${noRowsOverlayText}</span>`,
       preventDefaultOnContextMenu: useCustomContextMenu,
       rowClassRules: {
         [CURRENT_SELECTED_ROW_CLASS]: (params: RowClassParams<RowData>) => {
