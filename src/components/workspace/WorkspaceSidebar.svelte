@@ -154,7 +154,7 @@
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
             <Button
-              class="h-[48px] w-full rounded-none ring-inset hover:bg-transparent"
+              class="h-[48px] w-full rounded-none ring-inset hover:bg-[var(--sidebar-accent)]"
               builders={[builder]}
               variant="ghost"
               aria-label="Actions"
