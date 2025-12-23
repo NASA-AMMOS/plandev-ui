@@ -19,6 +19,7 @@ export class Workspace {
   textEditor: Locator;
   workspaceCollaboratorInput: Locator;
   workspaceContextMenu: Locator;
+  workspaceFileGrid: Locator;
   workspaceContextMenuButton: Locator;
   workspaceSettingsButton: Locator;
   workspaceSidebar: Locator;
@@ -36,8 +37,15 @@ export class Workspace {
     const path = folderPath || uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
     await this.openWorkspaceContextMenu();
-    await this.workspaceContextMenu.getByRole('menuitem', { name: 'New Folder' }).click();
-    await this.page.locator('#modal-container').getByRole('menuitem', { name: this.workspaceName }).click();
+    const workspaceMenuItem = await this.workspaceContextMenu.getByRole('menuitem', { name: 'New Folder' });
+    await workspaceMenuItem.waitFor({ state: 'visible' });
+    await this.page.waitForTimeout(500); // Wait for dropdown menu animation to complete
+    await workspaceMenuItem.click();
+    const workspaceModalMenuItem = this.page
+      .locator('#modal-container')
+      .getByRole('menuitem', { name: this.workspaceName });
+    await workspaceModalMenuItem.waitFor({ state: 'visible' });
+    await workspaceModalMenuItem.click();
     await this.fillFolderPath(path);
     await this.page.getByRole('button', { name: 'Confirm' }).click();
 
@@ -66,8 +74,9 @@ export class Workspace {
   }
 
   async deleteSequence(sequenceName: string): Promise<void> {
-    await this.page.getByRole('menuitem', { name: sequenceName }).click({ button: 'right' });
-    await this.page.getByRole('menuitem', { name: 'Delete' }).click();
+    const row = await this.workspaceFileGrid.getByRole('row', { name: sequenceName });
+    await row.hover();
+    await row.getByRole('button', { name: 'Delete' }).click();
     await this.page.locator('#modal-container').getByRole('button', { name: 'Delete' }).click();
 
     await this.waitForToast('Workspace File Deleted Successfully');
@@ -148,6 +157,7 @@ export class Workspace {
     this.sequenceNameInput = page.locator('#modal-container').getByRole('textbox', { name: 'File Name' });
     this.textEditor = page.locator('.cm-activeLine').nth(2);
     this.workspaceContextMenu = page.getByRole('menu');
+    this.workspaceFileGrid = page.getByRole('treegrid');
     this.workspaceSidebar = page.getByRole('complementary');
     this.workspaceContextMenuButton = this.workspaceSidebar
       .getByRole('button', {

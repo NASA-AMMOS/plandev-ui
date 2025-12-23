@@ -95,11 +95,11 @@ test.describe.serial('Workspace', () => {
     sequence = await workspace.createSequence();
 
     expect(sequence.sequenceName).toBeTruthy();
-    expect(sequence.sequenceName).toBeTruthy();
   });
 
   test('Navigate to sequence', async () => {
-    await page.getByRole('menuitem', { name: sequence.sequenceName }).click();
+    await page.getByPlaceholder('Search files and folders').fill(sequence.sequenceName);
+    await workspace.workspaceFileGrid.getByRole('row', { name: sequence.sequenceName }).click();
 
     await expect(page).toHaveURL(
       getWorkspacesUrl(
