@@ -19,8 +19,8 @@ export class Workspace {
   textEditor: Locator;
   workspaceCollaboratorInput: Locator;
   workspaceContextMenu: Locator;
-  workspaceFileGrid: Locator;
   workspaceContextMenuButton: Locator;
+  workspaceFileGrid: Locator;
   workspaceSettingsButton: Locator;
   workspaceSidebar: Locator;
 
