@@ -37,4 +37,3 @@
     {data?.name ?? ''}
   </span>
 </div>
-
