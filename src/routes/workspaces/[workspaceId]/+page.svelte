@@ -331,7 +331,7 @@
   }
 
   function refreshWorkspaceContents() {
-    getWorkspaceContents(initialWorkspace);
+    return getWorkspaceContents(initialWorkspace);
   }
 
   function isTextFile(fileType: WorkspaceContentType) {
@@ -533,11 +533,12 @@
       const shouldUpdateSelectedSequencePath = treeNodePath === $activeDocumentPath;
 
       const targetPath = await effects.moveWorkspaceItem($workspace, workspaceTree, treeNode, treeNodePath, user);
-      refreshWorkspaceContents();
+      await refreshWorkspaceContents();
 
       if (shouldUpdateSelectedSequencePath && targetPath) {
         const { filename } = separateFilenameFromPath(targetPath);
-        activeDocument.updatePath(targetPath, filename ?? undefined);
+        const newType = workspaceTreeMap[targetPath]?.type ?? null;
+        activeDocument.updatePath(targetPath, filename ?? undefined, newType);
         selectedFilePath = targetPath;
       }
     }
@@ -548,11 +549,12 @@
       const shouldUpdateSelectedSequencePath = treeNodePath === $activeDocumentPath;
 
       const targetPath = await effects.renameWorkspaceItem($workspace, treeNode, treeNodePath, user);
-      refreshWorkspaceContents();
+      await refreshWorkspaceContents();
 
       if (shouldUpdateSelectedSequencePath && targetPath) {
         const { filename } = separateFilenameFromPath(targetPath);
-        activeDocument.updatePath(targetPath, filename ?? undefined);
+        const newType = workspaceTreeMap[targetPath]?.type ?? null;
+        activeDocument.updatePath(targetPath, filename ?? undefined, newType);
         selectedFilePath = targetPath;
       }
     }

@@ -45,8 +45,8 @@ export interface ActiveDocumentStore {
   /** Update the current content (called on editor changes). */
   updateContent: (content: string) => void;
 
-  /** Update the document path (after rename/move). */
-  updatePath: (newPath: string, newFileName?: string) => void;
+  /** Update the document path and optionally type (after rename/move). */
+  updatePath: (newPath: string, newFileName?: string, newType?: WorkspaceContentType | null) => void;
 }
 
 /* Constants */
@@ -134,11 +134,12 @@ function createActiveDocumentStore(): ActiveDocumentStore {
       }));
     },
 
-    updatePath(newPath: string, newFileName?: string): void {
+    updatePath(newPath: string, newFileName?: string, newType?: WorkspaceContentType | null): void {
       update(state => ({
         ...state,
         fileName: newFileName ?? state.fileName,
         path: newPath,
+        type: newType !== undefined ? newType : state.type,
       }));
     },
   };
