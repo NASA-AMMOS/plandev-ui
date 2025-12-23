@@ -278,7 +278,7 @@
   });
 </script>
 
-<CssGrid class="z-0 w-full" bind:columns={commandFormBuilderGrid} minHeight={'0'}>
+<CssGrid class="z-0 w-full" bind:columns={commandFormBuilderGrid} minHeight={'0'} columnMinSizes={{ 0: 400, 2: 292 }}>
   <CssGrid rows={editorHeights} minHeight={'0'}>
     <Panel>
       <svelte:fragment slot="header">

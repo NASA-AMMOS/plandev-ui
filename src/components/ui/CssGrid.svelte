@@ -16,6 +16,8 @@
   const dispatch = createEventDispatcher<{
     changeColumnSizes: string;
     changeRowSizes: string;
+    dragColumnSizes: string;
+    dragRowSizes: string;
   }>();
 
   let className: string = '';
@@ -31,6 +33,18 @@
       setSplit();
     }
   });
+
+  function onDrag(): void {
+    if (div) {
+      if (columns !== 'none') {
+        const newSizes = div.style['grid-template-columns' as keyof CSSStyleDeclaration];
+        dispatch('dragColumnSizes', `${newSizes}`);
+      } else if (rows !== 'none') {
+        const newSizes = div.style['grid-template-rows' as keyof CSSStyleDeclaration];
+        dispatch('dragRowSizes', `${newSizes}`);
+      }
+    }
+  }
 
   function onDragEnd(): void {
     if (div) {
@@ -52,7 +66,7 @@
     if (split) {
       split.destroy();
     }
-    split = Split({ columnMinSizes, onDragEnd, rowMinSizes, snapOffset: 10 });
+    split = Split({ columnMinSizes, onDrag, onDragEnd, rowMinSizes, snapOffset: 10 });
 
     if (div) {
       const columnGutters = div.querySelectorAll<HTMLDivElement>(':scope > .css-grid-gutter.column');

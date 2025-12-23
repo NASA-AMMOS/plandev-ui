@@ -105,6 +105,24 @@
   let phoenixContext: PhoenixContext;
   let showLoadingSpinner: boolean = false;
   let loadingSpinnerTimeout: ReturnType<typeof setTimeout> | null = null;
+  let sidebarPanelOpen: boolean = true;
+  let previousSidebarPanelOpen: boolean = true;
+  let previousWorkspaceColumns: string = '1fr 3px 3fr';
+
+  const CONTENT_MIN_WIDTH = 700;
+  const SIDEBAR_MIN_WIDTH = 100;
+
+  $: if (sidebarPanelOpen !== previousSidebarPanelOpen) {
+    if (sidebarPanelOpen) {
+      // Panel is opening - restore previous columns
+      $workspaceColumns = previousWorkspaceColumns;
+    } else {
+      // Panel is closing - save current columns and collapse (no gutter space)
+      previousWorkspaceColumns = $workspaceColumns;
+      $workspaceColumns = '45px 1fr';
+    }
+    previousSidebarPanelOpen = sidebarPanelOpen;
+  }
 
   // Show loading spinner after a delay to avoid flashing for fast loads
   $: {
@@ -695,10 +713,11 @@
 
 <PageTitle title="Workspace: {$workspace?.name}" />
 
-<CssGrid bind:columns={$workspaceColumns}>
-  <Sidebar.Provider style="--sidebar-width: auto" className="min-h-0">
+<CssGrid bind:columns={$workspaceColumns} columnMinSizes={{ 0: SIDEBAR_MIN_WIDTH, 2: CONTENT_MIN_WIDTH }}>
+  <Sidebar.Provider bind:open={sidebarPanelOpen} style="--sidebar-width: auto" className="min-h-0">
     <WorkspaceSidebar
       bind:selectedFilePath
+      bind:panelOpen={sidebarPanelOpen}
       actions={allActionsForWorkspace}
       {workspaceTree}
       {isWorkspaceLoading}
@@ -729,7 +748,9 @@
       on:openInNewTab={onOpenInNewTab}
     />
   </Sidebar.Provider>
-  <CssGridGutter track={1} type="column" />
+  {#if sidebarPanelOpen}
+    <CssGridGutter track={1} type="column" />
+  {/if}
   <Sidebar.Inset className="min-h-0">
     <div class="relative grid h-full grid-cols-1 grid-rows-1">
       {#if $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}

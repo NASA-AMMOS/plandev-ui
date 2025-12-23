@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Button, Input as InputStellar, Tabs, Tooltip } from '@nasa-jpl/stellar-svelte';
-  import { Clapperboard, Files, Settings } from 'lucide-svelte';
+  import { Button, Input as InputStellar, Tooltip } from '@nasa-jpl/stellar-svelte';
+  import { Clapperboard, Files, PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import type { User, UserId } from '../../types/app';
@@ -54,10 +54,27 @@
 
   const permissionError = 'You do not have permission to edit this workspace';
 
+  export let panelOpen: boolean = true;
+
   let activeTab: string = 'files';
   let didWorkspaceUpdate: boolean = false;
   let lastRefreshTime: Date = new Date();
   let currentBreadcrumbPath: string = ''; // Navigation state - current folder being viewed as root
+
+  function handleTabClick(tab: string, wasActive: boolean) {
+    if (wasActive) {
+      // Clicking active tab toggles the panel
+      panelOpen = !panelOpen;
+    } else {
+      // Switching tabs or opening closed panel
+      activeTab = tab;
+      panelOpen = true;
+    }
+  }
+
+  function togglePanel() {
+    panelOpen = !panelOpen;
+  }
 
   $: workspaceTree && didUpdate(isWorkspaceLoading);
 
@@ -123,28 +140,21 @@
 </script>
 
 <Sidebar.Root className="h-full inset-x-0 border-none flex">
-  <Tabs.Root bind:value={activeTab} orientation="vertical" class="flex h-full">
-    <div class="flex h-full w-[45px] border-r border-border bg-muted">
-      <Tabs.List class="flex h-auto w-full flex-col items-center justify-start gap-0 p-0">
-        <Tooltip.Root>
-          <Tooltip.Trigger asChild let:builder>
-            <Tabs.Trigger
-              value="files"
-              class="flex h-[47px] w-[43px] items-center justify-center rounded-none shadow-none"
-            >
-              <Button class="hover:bg-transparent" builders={[builder]} variant="ghost" aria-label="Files">
-                <Files size={16} />
-              </Button>
-            </Tabs.Trigger>
-          </Tooltip.Trigger>
-          <Tooltip.Content sideOffset={8}>
-            <div>Files</div>
-          </Tooltip.Content>
-        </Tooltip.Root>
+  <div class="flex h-full">
+    <div class="flex h-full w-[45px] flex-shrink-0 flex-col justify-between border-r border-border bg-muted">
+      <div class="flex h-auto w-full flex-col items-center justify-start gap-0 p-0" role="tablist">
+        <Sidebar.MenuButton
+          className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
+          isActive={activeTab === 'files' && panelOpen}
+          tooltipContent="Files"
+          on:click={e => handleTabClick('files', e.detail.wasActive)}
+        >
+          <Files size={16} />
+        </Sidebar.MenuButton>
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
             <Button
-              class="h-[47px] hover:bg-transparent"
+              class="h-[48px] w-full rounded-none ring-inset hover:bg-transparent"
               builders={[builder]}
               variant="ghost"
               aria-label="Actions"
@@ -157,25 +167,40 @@
             <div>Actions</div>
           </Tooltip.Content>
         </Tooltip.Root>
+        <Sidebar.MenuButton
+          className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
+          isActive={activeTab === 'settings' && panelOpen}
+          tooltipContent="Settings"
+          on:click={e => handleTabClick('settings', e.detail.wasActive)}
+        >
+          <Settings size={16} />
+        </Sidebar.MenuButton>
+      </div>
+      <div class="flex w-full flex-col items-center pb-2">
         <Tooltip.Root>
           <Tooltip.Trigger asChild let:builder>
-            <Tabs.Trigger
-              value="settings"
-              class="flex h-[47px] w-[43px] items-center justify-center rounded-none shadow-none"
+            <Button
+              class="h-[32px] w-[32px] rounded-md p-0 ring-inset hover:bg-[var(--sidebar-accent)]"
+              builders={[builder]}
+              variant="ghost"
+              aria-label={panelOpen ? 'Collapse panel' : 'Expand panel'}
+              on:click={togglePanel}
             >
-              <Button class="hover:bg-transparent" builders={[builder]} variant="ghost" name="Settings">
-                <Settings size={16} />
-              </Button>
-            </Tabs.Trigger>
+              {#if panelOpen}
+                <PanelLeftClose size={16} />
+              {:else}
+                <PanelLeftOpen size={16} />
+              {/if}
+            </Button>
           </Tooltip.Trigger>
           <Tooltip.Content sideOffset={8}>
-            <div>Settings</div>
+            <div>{panelOpen ? 'Collapse panel' : 'Expand panel'}</div>
           </Tooltip.Content>
         </Tooltip.Root>
-      </Tabs.List>
+      </div>
     </div>
-    <div class="flex h-full w-full flex-col">
-      <Tabs.Content value="files" class="mt-0 h-full" style="min-height: 300px;">
+    <div class="flex h-full w-full flex-col" class:hidden={!panelOpen}>
+      <div class="mt-0 h-full" style="min-height: 300px;" role="tabpanel">
         {#if activeTab === 'files'}
           <div class="grid h-full grid-rows-[min-content_auto]">
             <Sidebar.Header className="p-0">
@@ -225,95 +250,96 @@
               </Sidebar.Group>
             </Sidebar.Content>
           </div>
+        {:else if activeTab === 'settings'}
+          <div class="grid h-full grid-rows-[min-content_auto]">
+            <Sidebar.Header className="p-0">
+              <div
+                class="flex h-[48px] items-center justify-between gap-0 border-b border-border bg-background p-[6px]"
+              >
+                <SectionTitle>Workspace Settings</SectionTitle>
+              </div>
+            </Sidebar.Header>
+            <Sidebar.Content className="h-full">
+              <Sidebar.Group className="p-0 h-full">
+                <Sidebar.GroupContent className="h-full">
+                  <Sidebar.Menu className="h-full text-xs">
+                    <fieldset>
+                      <Input layout="stacked">
+                        <label use:tooltip={{ content: 'Workspace Name', placement: 'top' }} for="name">
+                          Workspace Name
+                        </label>
+                        <InputStellar
+                          autocomplete="off"
+                          sizeVariant="xs"
+                          class="w-full"
+                          name="name"
+                          id="name"
+                          aria-label="name"
+                          value={workspace?.name}
+                          on:change={onWorkspaceNameChange}
+                        />
+                      </Input>
+                    </fieldset>
+                    <fieldset>
+                      <Input layout="stacked">
+                        <label for="parcel">Parcel</label>
+                        <select
+                          class="st-select w-full"
+                          name="parcel"
+                          id="parcel"
+                          aria-label="Parcel"
+                          value={workspace?.parcel_id}
+                          use:permissionHandler={{
+                            hasPermission: hasEditWorkspacePermission,
+                            permissionError,
+                          }}
+                          on:change={onWorkspaceParcelChange}
+                        >
+                          <option value={null} />
+                          {#each parcels as parcel}
+                            <option value={parcel.id} selected={parcel.id === workspace?.parcel_id}>
+                              {parcel.name}
+                            </option>
+                          {/each}
+                        </select>
+                      </Input>
+                    </fieldset>
+                    <fieldset>
+                      <Input layout="stacked">
+                        <label use:tooltip={{ content: 'Collaborators', placement: 'top' }} for="collaborators">
+                          Collaborators
+                        </label>
+                        <WorkspaceCollaboratorInput
+                          name="collaborators"
+                          collaborators={workspace?.collaborators ?? []}
+                          disabled={usersLoading}
+                          {workspaces}
+                          {workspace}
+                          {user}
+                          {users}
+                          on:create={onWorkspaceCollaboratorsCreate}
+                          on:delete={onWorkspaceCollaboratorsDelete}
+                          use={[
+                            [
+                              permissionHandler,
+                              {
+                                hasPermission: hasEditWorkspaceCollaboratorsPermission,
+                                permissionError: 'You do not have permission to modify collaborators',
+                              },
+                            ],
+                          ]}
+                        />
+                      </Input>
+                    </fieldset>
+                  </Sidebar.Menu>
+                </Sidebar.GroupContent>
+              </Sidebar.Group>
+            </Sidebar.Content>
+          </div>
         {/if}
-      </Tabs.Content>
-      <Tabs.Content value="settings" class="mt-0 h-full" style="min-height: 300px;">
-        <div class="grid h-full grid-rows-[min-content_auto]">
-          <Sidebar.Header className="p-0">
-            <div class="flex h-[48px] items-center justify-between gap-0 border-b border-border bg-background p-[6px]">
-              <SectionTitle>Workspace Settings</SectionTitle>
-            </div>
-          </Sidebar.Header>
-          <Sidebar.Content className="h-full">
-            <Sidebar.Group className="p-0 h-full">
-              <Sidebar.GroupContent className="h-full">
-                <Sidebar.Menu className="h-full text-xs">
-                  <fieldset>
-                    <Input layout="stacked">
-                      <label use:tooltip={{ content: 'Workspace Name', placement: 'top' }} for="name">
-                        Workspace Name
-                      </label>
-                      <InputStellar
-                        autocomplete="off"
-                        sizeVariant="xs"
-                        class="w-full"
-                        name="name"
-                        id="name"
-                        aria-label="name"
-                        value={workspace?.name}
-                        on:change={onWorkspaceNameChange}
-                      />
-                    </Input>
-                  </fieldset>
-                  <fieldset>
-                    <Input layout="stacked">
-                      <label for="parcel">Parcel</label>
-                      <select
-                        class="st-select w-full"
-                        name="parcel"
-                        id="parcel"
-                        aria-label="Parcel"
-                        value={workspace?.parcel_id}
-                        use:permissionHandler={{
-                          hasPermission: hasEditWorkspacePermission,
-                          permissionError,
-                        }}
-                        on:change={onWorkspaceParcelChange}
-                      >
-                        <option value={null} />
-                        {#each parcels as parcel}
-                          <option value={parcel.id} selected={parcel.id === workspace?.parcel_id}>
-                            {parcel.name}
-                          </option>
-                        {/each}
-                      </select>
-                    </Input>
-                  </fieldset>
-                  <fieldset>
-                    <Input layout="stacked">
-                      <label use:tooltip={{ content: 'Collaborators', placement: 'top' }} for="collaborators">
-                        Collaborators
-                      </label>
-                      <WorkspaceCollaboratorInput
-                        name="collaborators"
-                        collaborators={workspace?.collaborators ?? []}
-                        disabled={usersLoading}
-                        {workspaces}
-                        {workspace}
-                        {user}
-                        {users}
-                        on:create={onWorkspaceCollaboratorsCreate}
-                        on:delete={onWorkspaceCollaboratorsDelete}
-                        use={[
-                          [
-                            permissionHandler,
-                            {
-                              hasPermission: hasEditWorkspaceCollaboratorsPermission,
-                              permissionError: 'You do not have permission to modify collaborators',
-                            },
-                          ],
-                        ]}
-                      />
-                    </Input>
-                  </fieldset>
-                </Sidebar.Menu>
-              </Sidebar.GroupContent>
-            </Sidebar.Group>
-          </Sidebar.Content>
-        </div>
-      </Tabs.Content>
+      </div>
     </div>
-  </Tabs.Root>
+  </div>
 </Sidebar.Root>
 
 <style>
