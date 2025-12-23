@@ -132,40 +132,52 @@
 {/if}
 <div
   use:permissionHandler={{
-    hasPermission: !areMultipleFilesSelected,
-    permissionError: multiFileOperationError,
+    hasPermission: hasEditPermission && !areMultipleFilesSelected,
+    permissionError: areMultipleFilesSelected ? multiFileOperationError : editPermissionError,
   }}
 >
-  <ContextMenu.Item size="sm" on:click={() => dispatch('moveToWorkspace')} aria-label="Move/Copy to Workspace">
+  <ContextMenu.Item
+    size="sm"
+    disabled={!(hasEditPermission && !areMultipleFilesSelected)}
+    on:click={() => dispatch('moveToWorkspace')}
+    aria-label="Move/Copy to Workspace"
+  >
     Move/Copy {fileCountPhrase} to Workspace
   </ContextMenu.Item>
 </div>
 <ContextMenu.Separator />
-<ContextMenu.Sub onOpenChange={open => dispatch('actionsMenuFocused', open)}>
-  <ContextMenu.SubTrigger size="sm">
-    Run Action{actionPhrase ? ` on ${actionPhrase}` : ''}
-  </ContextMenu.SubTrigger>
-  <ContextMenu.SubContent class="max-h-[500px] w-min min-w-[240px] max-w-[300px] overflow-y-auto">
-    {#each actionsForSelection as workspaceActionsForNodes}
-      <div
-        use:permissionHandler={{
-          hasPermission: hasCreateActionPermission,
-          permissionError: 'You do not have permission to run an action',
-        }}
-      >
-        <ContextMenu.Item size="sm" on:click={() => dispatch('runAction', workspaceActionsForNodes)}>
-          <ActionMenuItem
-            name={workspaceActionsForNodes.action.name}
-            description={workspaceActionsForNodes.action.description}
-          />
-        </ContextMenu.Item>
-      </div>
-    {/each}
-    {#if actionsForSelection.length === 0}
-      <div class="whitespace-nowrap p-1 text-xs text-muted-foreground">No actions available for selection</div>
-    {/if}
-  </ContextMenu.SubContent>
-</ContextMenu.Sub>
+<div
+  use:permissionHandler={{
+    hasPermission: hasCreateActionPermission,
+    permissionError: 'You do not have permission to run an action',
+  }}
+>
+  <ContextMenu.Sub onOpenChange={open => dispatch('actionsMenuFocused', open)}>
+    <ContextMenu.SubTrigger size="sm">
+      Run Action{actionPhrase ? ` on ${actionPhrase}` : ''}
+    </ContextMenu.SubTrigger>
+    <ContextMenu.SubContent class="max-h-[500px] w-min min-w-[240px] max-w-[300px] overflow-y-auto">
+      {#each actionsForSelection as workspaceActionsForNodes}
+        <div
+          use:permissionHandler={{
+            hasPermission: hasCreateActionPermission,
+            permissionError: 'You do not have permission to run an action',
+          }}
+        >
+          <ContextMenu.Item size="sm" on:click={() => dispatch('runAction', workspaceActionsForNodes)}>
+            <ActionMenuItem
+              name={workspaceActionsForNodes.action.name}
+              description={workspaceActionsForNodes.action.description}
+            />
+          </ContextMenu.Item>
+        </div>
+      {/each}
+      {#if actionsForSelection.length === 0}
+        <div class="whitespace-nowrap p-1 text-xs text-muted-foreground">No actions available for selection</div>
+      {/if}
+    </ContextMenu.SubContent>
+  </ContextMenu.Sub>
+</div>
 <ContextMenu.Separator />
 <ContextMenu.Group>
   <div
