@@ -113,10 +113,10 @@ test.describe.serial('Workspace', () => {
   });
 
   test('Update the selected sequence content', async () => {
-    expect(workspace.saveSequenceButton).toBeDisabled();
+    await expect(workspace.saveSequenceButton).toBeDisabled();
     const newContent = '// Updated content\ncommand3();';
     await workspace.fillSequenceContent(newContent);
-    expect(workspace.saveSequenceButton).toBeEnabled();
+    await expect(workspace.saveSequenceButton).toBeEnabled();
 
     await workspace.saveSequence();
   });
@@ -315,7 +315,7 @@ test.describe.serial('Workspace', () => {
     // Search and open context menu for the file
     await workspace.searchForFileAndWait(sequenceName);
     await workspace.openFileContextMenu(sequenceName);
-    await workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Move/Copy' }).click();
+    await workspace.workspaceFileContextMenu.getByRole('menuitem', { exact: true, name: 'Move/Copy' }).click();
 
     // Select destination folder
     await page.locator('#modal-container').getByRole('menuitem', { name: folderName }).click();
@@ -373,22 +373,28 @@ test.describe.serial('Workspace', () => {
     // Double-click on the child folder to navigate into it
     await workspace.searchForFileAndWait(childFolder);
     await workspace.getFileRow(childFolder).dblclick();
-
     // Click on the file to trigger URL change
+    await workspace.clearSearch();
     await workspace.clickFile(testFile);
 
-    // Verify URL contains the full path
-    await expect(page).toHaveURL(new RegExp(`${parentFolder}/${childFolder}/${testFile}`));
+    // Verify URL contains the full path (slashes are URL-encoded as %2F)
+    await expect(page).toHaveURL(new RegExp(`${parentFolder}%2F${childFolder}%2F${testFile}`));
 
     // Click the parent breadcrumb to navigate back
-    const breadcrumb = page.locator('.workspace-breadcrumb').getByText(parentFolder);
-    await breadcrumb.click();
+    // Given the generated names, this means clicking on the ellipses (...) breadcrumb in order
+    // to select the parent folder
+    await page.getByRole('button', { name: 'Show hidden folders' }).click();
+    await page.getByRole('menuitem', { name: parentFolder }).click();
+
+    // Select the folder to change the url
+    await workspace.searchForFileAndWait(childFolder);
+    await workspace.clickFile(childFolder);
 
     // Verify breadcrumb navigation worked - URL should now point to parent folder level
-    // Select a different item to confirm we're at parent level
-    await expect(page).toHaveURL(new RegExp(`${parentFolder}(?!/${childFolder}/${testFile})`));
+    await expect(page).toHaveURL(new RegExp(`${parentFolder}(?!%2F${childFolder}%2F${testFile})`));
 
-    // Cleanup
+    // Navigate back to root to delete the parent folder
+    await page.getByRole('button', { name: workspaceName }).click();
     await workspace.searchForFileAndWait(parentFolder);
     await workspace.deleteFolder(parentFolder);
   });
@@ -419,20 +425,19 @@ test.describe.serial('Workspace', () => {
   });
 
   test('Workspace panel toggling', async () => {
-    // Get the sidebar and panel elements
-    const sidebar = page.locator('[data-sidebar="sidebar"]');
-    const expandButton = sidebar.getByRole('button', { name: 'Toggle Sidebar' });
+    // Get the sidebar wrapper (has data-state) and the inner sidebar (has the button)
+    const sidebarWrapper = page.locator('[data-slot="sidebar"]');
 
     // Verify sidebar is initially expanded
-    await expect(sidebar).toHaveAttribute('data-state', 'expanded');
+    await expect(sidebarWrapper).toHaveAttribute('data-state', 'expanded');
 
     // Click expand/collapse button to collapse
-    await expandButton.click();
-    await expect(sidebar).toHaveAttribute('data-state', 'collapsed');
+    await sidebarWrapper.getByRole('button', { name: 'Collapse panel' }).click();
+    await expect(sidebarWrapper).toHaveAttribute('data-state', 'collapsed');
 
     // Click again to expand
-    await expandButton.click();
-    await expect(sidebar).toHaveAttribute('data-state', 'expanded');
+    await sidebarWrapper.getByRole('button', { name: 'Expand panel' }).click();
+    await expect(sidebarWrapper).toHaveAttribute('data-state', 'expanded');
 
     // Test active tab toggling - clicking settings should open it
     await workspace.workspaceSettingsButton.click();
@@ -441,10 +446,13 @@ test.describe.serial('Workspace', () => {
     // Clicking settings again should close it (toggle off)
     await workspace.workspaceSettingsButton.click();
     await expect(workspace.workspaceCollaboratorInput).not.toBeVisible();
+
+    // Reopen the sidebar
+    await workspace.workspaceSettingsButton.click();
+    await expect(workspace.workspaceCollaboratorInput).toBeVisible();
   });
 
   test('Add collaborator to workspace', async () => {
-    await workspace.workspaceSettingsButton.click();
     await workspace.workspaceCollaboratorInput.click();
     await workspace.workspaceCollaboratorInput.fill(userAuthorized.username);
     await page.getByRole('option', { exact: true, name: userAuthorized.username }).click();
