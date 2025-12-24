@@ -1,4 +1,5 @@
 import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import { readFileSync } from 'fs';
 import { getWorkspacesUrl } from '../../src/utilities/routes.js';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
 import { Parcels } from '../fixtures/Parcels.js';
@@ -125,6 +126,32 @@ test.describe.serial('Workspace', () => {
 
   test('Delete sequence', async () => {
     await workspace.deleteSequence(sequence.sequenceName);
+  });
+
+  test('Upload, download, verify, and delete file', async () => {
+    const testFilePath = 'e2e-tests/data/ban00001.json';
+    const testFileName = 'test-upload.json';
+    const originalContent = readFileSync(testFilePath);
+
+    // Upload the file
+    await workspace.uploadFile(testFilePath, testFileName);
+
+    // Search for the file to make it visible in the grid
+    await page.getByPlaceholder('Search files and folders').fill(testFileName);
+
+    // Verify the file exists in the workspace
+    await expect(workspace.workspaceFileGrid.getByRole('row', { name: testFileName })).toBeVisible();
+
+    // Download the file and compare contents
+    const downloadedContent = await workspace.downloadFile(testFileName);
+    expect(downloadedContent.equals(originalContent)).toBe(true);
+
+    // Delete the file
+    await workspace.deleteFile(testFileName);
+
+    // Clear search and verify the file no longer exists
+    await page.getByPlaceholder('Search files and folders').clear();
+    await expect(workspace.workspaceFileGrid.getByRole('row', { name: testFileName })).not.toBeVisible();
   });
 
   test('Add collaborator to workspace', async () => {

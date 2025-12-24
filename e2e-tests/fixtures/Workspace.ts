@@ -73,6 +73,14 @@ export class Workspace {
     return { sequenceName: seqName, sequencePath: seqPath };
   }
 
+  async deleteFile(fileName: string): Promise<void> {
+    const row = this.workspaceFileGrid.getByRole('row', { name: fileName });
+    await row.hover();
+    await row.getByRole('button', { name: 'Delete' }).click();
+    await this.page.locator('#modal-container').getByRole('button', { name: 'Delete' }).click();
+    await this.waitForToast('Workspace File Deleted Successfully');
+  }
+
   async deleteSequence(sequenceName: string): Promise<void> {
     const row = await this.workspaceFileGrid.getByRole('row', { name: sequenceName });
     await row.hover();
@@ -80,6 +88,23 @@ export class Workspace {
     await this.page.locator('#modal-container').getByRole('button', { name: 'Delete' }).click();
 
     await this.waitForToast('Workspace File Deleted Successfully');
+  }
+
+  async downloadFile(fileName: string): Promise<Buffer> {
+    const row = this.workspaceFileGrid.getByRole('row', { name: fileName });
+    await row.click({ button: 'right' });
+    await this.page.getByRole('menuitem', { name: 'Download File' }).click();
+
+    const downloadPromise = this.page.waitForEvent('download');
+    const download = await downloadPromise;
+    const stream = await download.createReadStream();
+
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      stream?.on('data', (chunk: Buffer) => chunks.push(chunk));
+      stream?.on('end', () => resolve(Buffer.concat(chunks)));
+      stream?.on('error', reject);
+    });
   }
 
   private async fillFolderPath(folderPath: string): Promise<void> {
@@ -166,6 +191,27 @@ export class Workspace {
       .first();
     this.workspaceSettingsButton = page.getByRole('button', { name: 'Settings' });
     this.workspaceCollaboratorInput = page.getByPlaceholder('Search collaborators or workspaces');
+  }
+
+  async uploadFile(filePath: string, fileName: string): Promise<void> {
+    await this.openWorkspaceContextMenu();
+    await this.workspaceContextMenu.getByRole('menuitem', { name: 'Upload File' }).click();
+    await this.page.locator('#modal-container').getByRole('menuitem', { name: this.workspaceName }).click();
+
+    const file = readFileSync(filePath);
+    const fileBuffer = Buffer.from(file);
+
+    await this.page.waitForTimeout(1000);
+    await this.fileInput.focus();
+    await this.fileInput.setInputFiles({
+      buffer: fileBuffer,
+      mimeType: 'application/json',
+      name: fileName,
+    });
+    await this.fileInput.evaluate(e => e.blur());
+
+    await this.page.getByRole('button', { name: 'Upload' }).click();
+    await this.waitForToast('Workspace File Uploaded Successfully');
   }
 
   async waitForToast(message: string): Promise<void> {
