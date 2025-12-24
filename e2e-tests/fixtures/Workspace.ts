@@ -114,11 +114,16 @@ export class Workspace {
   async downloadFile(fileName: string): Promise<Buffer> {
     await this.openFileContextMenu(fileName);
 
-    // Set up download listener BEFORE clicking to avoid race condition
-    const downloadPromise = this.page.waitForEvent('download');
-    await this.workspaceFileContextMenu.getByRole('menuitem', { name: 'Download File' }).click();
+    // Wait for menu item to be ready before clicking
+    const downloadMenuItem = this.workspaceFileContextMenu.getByRole('menuitem', { name: 'Download File' });
+    await downloadMenuItem.waitFor({ state: 'visible' });
 
-    const download = await downloadPromise;
+    // Use Promise.all to coordinate the download event with the click action
+    const [download] = await Promise.all([
+      this.page.waitForEvent('download', { timeout: 30000 }),
+      downloadMenuItem.click(),
+    ]);
+
     const stream = await download.createReadStream();
 
     if (!stream) {
