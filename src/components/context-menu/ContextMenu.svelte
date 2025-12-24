@@ -37,6 +37,10 @@
 
   export function show(e: MouseEvent): void {
     hideAllMenus();
+    // Dispatch pointerdown + pointerup to close any open stellar-svelte dropdowns/popovers
+    // melt-ui's useInteractOutside requires both events to trigger close behavior
+    document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    document.body.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
     e.preventDefault();
     x = e.clientX;
     y = e.clientY;
