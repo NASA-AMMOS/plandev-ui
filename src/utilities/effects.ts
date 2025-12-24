@@ -3835,7 +3835,7 @@ const effects = {
     originalPath: string,
     user: User | null,
   ): Promise<void> {
-    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
+    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Folder' : 'File';
     try {
       if (!featurePermissions.workspace.canDelete(user, workspace, originalNode)) {
         throwPermissionError(`delete this workspace ${typeString.toLowerCase()}`);
@@ -6007,7 +6007,7 @@ const effects = {
     originalPath: string,
     user: User | null,
   ): Promise<string | null> {
-    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
+    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Folder' : 'File';
     try {
       if (!featurePermissions.workspace.canUpdate(user, workspace, originalNode)) {
         throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);
@@ -6053,7 +6053,7 @@ const effects = {
     originalPath: string,
     user: User | null,
   ): Promise<string | null> {
-    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
+    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Folder' : 'File';
     const { confirm, value } = await showMoveItemToWorkspaceModal(workspace, originalNode, originalPath, user);
 
     if (confirm) {
@@ -6473,7 +6473,7 @@ const effects = {
     originalPath: string,
     user: User | null,
   ): Promise<string | null> {
-    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
+    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Folder' : 'File';
     try {
       if (!featurePermissions.workspace.canUpdate(user, workspace, originalNode)) {
         throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);

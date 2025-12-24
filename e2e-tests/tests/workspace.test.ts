@@ -1,5 +1,6 @@
 import test, { expect, type BrowserContext, type Page } from '@playwright/test';
 import { readFileSync } from 'fs';
+import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { getWorkspacesUrl } from '../../src/utilities/routes.js';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
 import { Parcels } from '../fixtures/Parcels.js';
@@ -73,17 +74,17 @@ test.describe.serial('Workspace', () => {
     await workspace.pageLoadingLocatorWithData.waitFor({ state: 'detached' });
   });
 
-  test('Workspace context menu should be accessible', async () => {
+  test('Workspace header menu should be accessible', async () => {
     await expect(workspace.workspaceContextMenuButton).toBeVisible();
     await workspace.openWorkspaceContextMenu();
-    await expect(workspace.workspaceContextMenu).toBeVisible();
+    await expect(workspace.workspaceHeaderMenu).toBeVisible();
 
     // Check for expected menu items
-    await expect(workspace.workspaceContextMenu.getByRole('menuitem', { name: 'New File' })).toBeVisible();
+    await expect(workspace.workspaceHeaderMenu.getByRole('menuitem', { name: 'New File' })).toBeVisible();
 
     // Close menu by pressing Escape
     await page.keyboard.press('Escape');
-    await expect(workspace.workspaceContextMenu).not.toBeVisible();
+    await expect(workspace.workspaceHeaderMenu).not.toBeVisible();
   });
 
   test('Create workspace folder', async () => {
@@ -99,8 +100,8 @@ test.describe.serial('Workspace', () => {
   });
 
   test('Navigate to sequence', async () => {
-    await page.getByPlaceholder('Search files and folders').fill(sequence.sequenceName);
-    await workspace.workspaceFileGrid.getByRole('row', { name: sequence.sequenceName }).click();
+    await workspace.searchForFileAndWait(sequence.sequenceName);
+    await workspace.clickFile(sequence.sequenceName);
 
     await expect(page).toHaveURL(
       getWorkspacesUrl(
@@ -136,11 +137,8 @@ test.describe.serial('Workspace', () => {
     // Upload the file
     await workspace.uploadFile(testFilePath, testFileName);
 
-    // Search for the file to make it visible in the grid
-    await page.getByPlaceholder('Search files and folders').fill(testFileName);
-
-    // Verify the file exists in the workspace
-    await expect(workspace.workspaceFileGrid.getByRole('row', { name: testFileName })).toBeVisible();
+    // Search for the file and wait for it to appear in the grid
+    await workspace.searchForFileAndWait(testFileName);
 
     // Download the file and compare contents
     const downloadedContent = await workspace.downloadFile(testFileName);
@@ -150,8 +148,299 @@ test.describe.serial('Workspace', () => {
     await workspace.deleteFile(testFileName);
 
     // Clear search and verify the file no longer exists
-    await page.getByPlaceholder('Search files and folders').clear();
-    await expect(workspace.workspaceFileGrid.getByRole('row', { name: testFileName })).not.toBeVisible();
+    await workspace.clearSearch();
+    await expect(workspace.getFileRow(testFileName)).not.toBeVisible();
+  });
+
+  test('Rename file', async () => {
+    // Create a file to rename
+    const { sequenceName } = await workspace.createSequence(
+      undefined,
+      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
+    );
+    await workspace.searchForFileAndWait(sequenceName);
+
+    // Rename the file
+    const newName = 'renamed-file.seq';
+    await workspace.renameWorkspaceItem(sequenceName, newName, false);
+
+    // Verify rename succeeded and cleanup
+    await workspace.searchForFileAndWait(newName);
+    await workspace.deleteFile(newName);
+  });
+
+  test('Rename folder', async () => {
+    const folderName = await workspace.createFolder(
+      uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] }),
+    );
+    await workspace.searchForFileAndWait(folderName);
+
+    const newFolderName = 'renamed-folder';
+    await workspace.renameWorkspaceItem(folderName, newFolderName, true);
+
+    // Verify rename succeeded and cleanup
+    await workspace.searchForFileAndWait(newFolderName);
+    await workspace.deleteFolder(newFolderName);
+  });
+
+  test('Delete folder with contents', async () => {
+    // Create folder with a file inside
+    const folderName = await workspace.createFolder(
+      uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] }),
+    );
+    const fileName = `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`;
+    await workspace.createSequence(folderName, fileName);
+
+    // Search and delete the folder
+    await workspace.searchForFileAndWait(folderName);
+    await workspace.deleteFolder(folderName);
+
+    // Verify folder is deleted (use searchForFile for negative assertion)
+    await workspace.searchForFile(folderName);
+    await expect(workspace.getFileRow(folderName)).not.toBeVisible();
+
+    // Verify file is deleted (use searchForFile for negative assertion)
+    await workspace.searchForFile(fileName);
+    await expect(workspace.getFileRow(fileName)).not.toBeVisible();
+  });
+
+  test('Context menu shows appropriate actions for files vs folders', async () => {
+    // Create a file and folder for testing
+    const { sequenceName } = await workspace.createSequence(
+      undefined,
+      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
+    );
+    const folderName = await workspace.createFolder(
+      uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] }),
+    );
+
+    // Test file context menu - should have Download File
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.openFileContextMenu(sequenceName);
+    await expect(workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Download File' })).toBeVisible();
+    await expect(workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Copy Full Path' })).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    // Test folder context menu - should NOT have Download File
+    await workspace.searchForFileAndWait(folderName);
+    await workspace.openFileContextMenu(folderName);
+    await expect(workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Download File' })).not.toBeVisible();
+    await expect(workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Copy Full Path' })).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    // Cleanup
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.deleteFile(sequenceName);
+    await workspace.searchForFileAndWait(folderName);
+    await workspace.deleteFolder(folderName);
+  });
+
+  test('Save file and detect unsaved changes', async () => {
+    // Create a sequence to edit
+    const { sequenceName } = await workspace.createSequence(
+      undefined,
+      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
+    );
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.clickFile(sequenceName);
+
+    // Verify save button is disabled initially
+    await expect(workspace.saveSequenceButton).toBeDisabled();
+
+    // Make changes
+    await workspace.fillSequenceContent('// New content');
+
+    // Verify save button is now enabled (unsaved changes detected)
+    await expect(workspace.saveSequenceButton).toBeEnabled();
+
+    // Save and verify button is disabled again
+    await workspace.saveSequence();
+    await expect(workspace.saveSequenceButton).toBeDisabled();
+
+    // Cleanup
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.deleteFile(sequenceName);
+  });
+
+  test('Unsaved changes warning when navigating away', async () => {
+    // Create two sequences
+    const { sequenceName: file1 } = await workspace.createSequence(
+      undefined,
+      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
+    );
+    const { sequenceName: file2 } = await workspace.createSequence(
+      undefined,
+      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
+    );
+
+    // Open first file and make changes
+    await workspace.searchForFileAndWait(file1);
+    await workspace.clickFile(file1);
+    await workspace.fillSequenceContent('// Unsaved changes');
+    await expect(workspace.saveSequenceButton).toBeEnabled();
+
+    // Try to navigate to second file
+    await workspace.searchForFileAndWait(file2);
+    await workspace.clickFile(file2);
+
+    // Should show confirmation modal
+    const modal = page.locator('#modal-container');
+    await modal.waitFor({ state: 'attached' });
+    await expect(modal).toContainText('unsaved changes');
+
+    // Cancel navigation
+    await page.getByRole('button', { name: 'Keep Editing' }).click();
+
+    // Should still be on first file with unsaved changes
+    await expect(workspace.saveSequenceButton).toBeEnabled();
+
+    // Cleanup - save first, then delete both
+    await workspace.saveSequence();
+    await workspace.searchForFileAndWait(file1);
+    await workspace.deleteFile(file1);
+    await workspace.searchForFileAndWait(file2);
+    await workspace.deleteFile(file2);
+  });
+
+  test('Move file to folder', async () => {
+    // Create a file and folder
+    const { sequenceName } = await workspace.createSequence(
+      undefined,
+      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
+    );
+    const folderName = await workspace.createFolder(
+      uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] }),
+    );
+
+    // Search and open context menu for the file
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.openFileContextMenu(sequenceName);
+    await workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Move/Copy' }).click();
+
+    // Select destination folder
+    await page.locator('#modal-container').getByRole('menuitem', { name: folderName }).click();
+    await page.getByRole('button', { name: 'Move' }).click();
+
+    await workspace.waitForToast('Workspace File Moved Successfully');
+
+    // Verify file is now in folder by searching for full path
+    await workspace.searchForFileAndWait(sequenceName);
+
+    // Cleanup
+    await workspace.searchForFileAndWait(folderName);
+    await workspace.deleteFolder(folderName);
+  });
+
+  test('Open file in new tab', async () => {
+    // Create a file
+    const { sequenceName, sequencePath } = await workspace.createSequence(
+      undefined,
+      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
+    );
+    await workspace.searchForFileAndWait(sequenceName);
+
+    // Open context menu and click Open in New Tab
+    await workspace.openFileContextMenu(sequenceName);
+    const [newPage] = await Promise.all([
+      page.context().waitForEvent('page'),
+      workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Open in New Tab' }).click(),
+    ]);
+
+    // Verify new tab has correct URL
+    await newPage.waitForLoadState();
+    await expect(newPage).toHaveURL(
+      getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId), `${sequencePath}/${sequenceName}`),
+    );
+
+    // Close new tab
+    await newPage.close();
+
+    // Cleanup
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.deleteFile(sequenceName);
+  });
+
+  test('Breadcrumb navigation', async () => {
+    // Create nested folder structure: parent/child with a file inside
+    const parentFolder = await workspace.createFolder(
+      uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] }),
+    );
+    const childFolder = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+    const testFile = `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`;
+    await workspace.createFolder(`${parentFolder}/${childFolder}`);
+    await workspace.createSequence(`${parentFolder}/${childFolder}`, testFile);
+
+    // Double-click on the child folder to navigate into it
+    await workspace.searchForFileAndWait(childFolder);
+    await workspace.getFileRow(childFolder).dblclick();
+
+    // Click on the file to trigger URL change
+    await workspace.clickFile(testFile);
+
+    // Verify URL contains the full path
+    await expect(page).toHaveURL(new RegExp(`${parentFolder}/${childFolder}/${testFile}`));
+
+    // Click the parent breadcrumb to navigate back
+    const breadcrumb = page.locator('.workspace-breadcrumb').getByText(parentFolder);
+    await breadcrumb.click();
+
+    // Verify breadcrumb navigation worked - URL should now point to parent folder level
+    // Select a different item to confirm we're at parent level
+    await expect(page).toHaveURL(new RegExp(`${parentFolder}(?!/${childFolder}/${testFile})`));
+
+    // Cleanup
+    await workspace.searchForFileAndWait(parentFolder);
+    await workspace.deleteFolder(parentFolder);
+  });
+
+  test('Copy full path to clipboard', async () => {
+    // Grant clipboard permissions for this test
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
+    // Create a file
+    const { sequenceName, sequencePath } = await workspace.createSequence(
+      undefined,
+      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
+    );
+    await workspace.searchForFileAndWait(sequenceName);
+
+    // Open context menu and click Copy Full Path
+    await workspace.openFileContextMenu(sequenceName);
+    await workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Copy Full Path' }).click();
+
+    // Read from clipboard and verify
+    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboardText).toContain(sequencePath);
+    expect(clipboardText).toContain(sequenceName);
+
+    // Cleanup
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.deleteFile(sequenceName);
+  });
+
+  test('Workspace panel toggling', async () => {
+    // Get the sidebar and panel elements
+    const sidebar = page.locator('[data-sidebar="sidebar"]');
+    const expandButton = sidebar.getByRole('button', { name: 'Toggle Sidebar' });
+
+    // Verify sidebar is initially expanded
+    await expect(sidebar).toHaveAttribute('data-state', 'expanded');
+
+    // Click expand/collapse button to collapse
+    await expandButton.click();
+    await expect(sidebar).toHaveAttribute('data-state', 'collapsed');
+
+    // Click again to expand
+    await expandButton.click();
+    await expect(sidebar).toHaveAttribute('data-state', 'expanded');
+
+    // Test active tab toggling - clicking settings should open it
+    await workspace.workspaceSettingsButton.click();
+    await expect(workspace.workspaceCollaboratorInput).toBeVisible();
+
+    // Clicking settings again should close it (toggle off)
+    await workspace.workspaceSettingsButton.click();
+    await expect(workspace.workspaceCollaboratorInput).not.toBeVisible();
   });
 
   test('Add collaborator to workspace', async () => {
@@ -173,7 +462,7 @@ test.describe.serial('Workspace', () => {
 
     await workspace.goto();
     await workspace.openWorkspaceContextMenu();
-    await workspace.workspaceContextMenu.getByRole('menuitem', { name: 'New File' }).click();
+    await workspace.workspaceHeaderMenu.getByRole('menuitem', { name: 'New File' }).click();
     await expect(workspace.page.locator('#modal-container')).not.toBeVisible();
 
     await userUnauthorized.logout(baseURL);

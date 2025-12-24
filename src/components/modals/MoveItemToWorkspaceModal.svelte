@@ -34,7 +34,7 @@
 
   let targetDirectory: string = '';
   let targetFilename: string = '';
-  let typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
+  let typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Folder' : 'File';
   let workspacesContents: WorkspaceTreeNode[] = [];
   let workspacesMap: Record<string, Workspace> = {};
   let workspacePermissionsMap: Record<string, { hasDeletePermission: boolean; hasEditPermission: boolean }> = {};

@@ -14,13 +14,15 @@ export class Workspace {
   navButtonSequencesMenu: Locator;
   pageLoadingLocatorWithData: Locator;
   saveSequenceButton: Locator;
+  searchInput: Locator;
   sequenceEditor: Locator;
   sequenceNameInput: Locator;
   textEditor: Locator;
   workspaceCollaboratorInput: Locator;
-  workspaceContextMenu: Locator;
   workspaceContextMenuButton: Locator;
+  workspaceFileContextMenu: Locator;
   workspaceFileGrid: Locator;
+  workspaceHeaderMenu: Locator;
   workspaceSettingsButton: Locator;
   workspaceSidebar: Locator;
 
@@ -33,11 +35,19 @@ export class Workspace {
     this.updatePage(page);
   }
 
+  async clearSearch(): Promise<void> {
+    await this.searchInput.clear();
+  }
+
+  async clickFile(name: string): Promise<void> {
+    await this.workspaceFileGrid.getByRole('row', { name }).click();
+  }
+
   async createFolder(folderPath?: string): Promise<string> {
     const path = folderPath || uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
     await this.openWorkspaceContextMenu();
-    const workspaceMenuItem = await this.workspaceContextMenu.getByRole('menuitem', { name: 'New Folder' });
+    const workspaceMenuItem = await this.workspaceHeaderMenu.getByRole('menuitem', { name: 'New Folder' });
     await workspaceMenuItem.waitFor({ state: 'visible' });
     await this.page.waitForTimeout(500); // Wait for dropdown menu animation to complete
     await workspaceMenuItem.click();
@@ -62,7 +72,7 @@ export class Workspace {
     const seqName = sequenceFileName || `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`;
 
     await this.openWorkspaceContextMenu();
-    await this.workspaceContextMenu.getByRole('menuitem', { name: 'New File' }).click();
+    await this.workspaceHeaderMenu.getByRole('menuitem', { name: 'New File' }).click();
     await this.page.locator('#modal-container').getByRole('menuitem', { name: this.workspaceName }).click();
 
     await this.fillSequenceName(seqName, seqPath);
@@ -75,35 +85,51 @@ export class Workspace {
 
   async deleteFile(fileName: string): Promise<void> {
     const row = this.workspaceFileGrid.getByRole('row', { name: fileName });
-    await row.hover();
-    await row.getByRole('button', { name: 'Delete' }).click();
+    const deleteButton = row.getByRole('button', { name: 'Delete' });
+    await this.hoverRowAndWaitForButton(row, deleteButton);
+    await deleteButton.click();
     await this.page.locator('#modal-container').getByRole('button', { name: 'Delete' }).click();
     await this.waitForToast('Workspace File Deleted Successfully');
   }
 
+  async deleteFolder(folderName: string): Promise<void> {
+    const row = this.workspaceFileGrid.getByRole('row', { name: folderName });
+    const deleteButton = row.getByRole('button', { name: 'Delete' });
+    await this.hoverRowAndWaitForButton(row, deleteButton);
+    await deleteButton.click();
+    await this.page.locator('#modal-container').getByRole('button', { name: 'Delete' }).click();
+    await this.waitForToast('Workspace Folder Deleted Successfully');
+  }
+
   async deleteSequence(sequenceName: string): Promise<void> {
-    const row = await this.workspaceFileGrid.getByRole('row', { name: sequenceName });
-    await row.hover();
-    await row.getByRole('button', { name: 'Delete' }).click();
+    const row = this.workspaceFileGrid.getByRole('row', { name: sequenceName });
+    const deleteButton = row.getByRole('button', { name: 'Delete' });
+    await this.hoverRowAndWaitForButton(row, deleteButton);
+    await deleteButton.click();
     await this.page.locator('#modal-container').getByRole('button', { name: 'Delete' }).click();
 
     await this.waitForToast('Workspace File Deleted Successfully');
   }
 
   async downloadFile(fileName: string): Promise<Buffer> {
-    const row = this.workspaceFileGrid.getByRole('row', { name: fileName });
-    await row.click({ button: 'right' });
-    await this.page.getByRole('menuitem', { name: 'Download File' }).click();
+    await this.openFileContextMenu(fileName);
 
+    // Set up download listener BEFORE clicking to avoid race condition
     const downloadPromise = this.page.waitForEvent('download');
+    await this.workspaceFileContextMenu.getByRole('menuitem', { name: 'Download File' }).click();
+
     const download = await downloadPromise;
     const stream = await download.createReadStream();
 
+    if (!stream) {
+      throw new Error('Failed to create download stream');
+    }
+
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
-      stream?.on('data', (chunk: Buffer) => chunks.push(chunk));
-      stream?.on('end', () => resolve(Buffer.concat(chunks)));
-      stream?.on('error', reject);
+      stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+      stream.on('end', () => resolve(Buffer.concat(chunks)));
+      stream.on('error', reject);
     });
   }
 
@@ -126,6 +152,10 @@ export class Workspace {
     await this.sequenceNameInput.blur();
   }
 
+  getFileRow(name: string): Locator {
+    return this.workspaceFileGrid.getByRole('row', { name });
+  }
+
   /**
    * Navigate to this specific workspace
    */
@@ -136,15 +166,47 @@ export class Workspace {
     await expect(this.page.locator('.workspace-title')).toBeVisible();
   }
 
+  /**
+   * Hover over a row and wait for a specific action button to appear.
+   * AG Grid requires real mouse movement to trigger hover states for action buttons.
+   * This method retries the hover if the button doesn't appear, which handles
+   * timing issues in headless mode.
+   */
+  private async hoverRowAndWaitForButton(row: Locator, buttonLocator: Locator): Promise<void> {
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const box = await row.boundingBox();
+      if (!box) {
+        throw new Error('Could not get row bounding box for hover');
+      }
+      // Move mouse to center of row
+      await this.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+
+      // Wait for button to become visible
+      try {
+        await buttonLocator.waitFor({ state: 'visible', timeout: 2000 });
+        return; // Success - button is visible
+      } catch {
+        if (attempt === maxAttempts) {
+          throw new Error(`Action button not visible after ${maxAttempts} hover attempts`);
+        }
+        // Move mouse away and try again
+        await this.page.mouse.move(0, 0);
+        await this.page.waitForTimeout(100);
+      }
+    }
+  }
+
   async importSeqJson(filePath: string = this.jsonPath): Promise<void> {
     await this.openWorkspaceContextMenu();
-    await this.workspaceContextMenu.getByRole('menuitem', { name: 'Upload File' }).click();
+    await this.workspaceHeaderMenu.getByRole('menuitem', { name: 'Upload File' }).click();
     await this.page.locator('#modal-container').getByRole('menuitem', { name: this.workspaceName }).click();
 
     const file = readFileSync(filePath);
     const fileBuffer = Buffer.from(file);
 
-    await this.page.waitForTimeout(1000);
+    // Wait for file input to be ready instead of fixed timeout
+    await this.fileInput.waitFor({ state: 'visible' });
     await this.fileInput.focus();
     await this.fileInput.setInputFiles({
       buffer: fileBuffer,
@@ -153,20 +215,54 @@ export class Workspace {
     });
     await this.fileInput.evaluate(e => e.blur());
 
-    await this.page.getByRole('button', { name: 'Upload' }).click();
+    // Wait for upload button to be enabled (not just visible) - file must be processed first
+    const uploadButton = this.page.locator('#modal-container').getByRole('button', { exact: true, name: 'Upload' });
+    await expect(uploadButton).toBeEnabled({ timeout: 10000 });
+    await uploadButton.click();
 
     await this.waitForToast('Workspace File Uploaded Successfully');
   }
 
+  async openFileContextMenu(fileName: string): Promise<void> {
+    const row = this.workspaceFileGrid.getByRole('row', { name: fileName });
+    const moreActionsButton = row.getByLabel('More actions');
+    await this.hoverRowAndWaitForButton(row, moreActionsButton);
+    await moreActionsButton.click();
+    await this.workspaceFileContextMenu.waitFor({ state: 'visible' });
+  }
+
   async openWorkspaceContextMenu(): Promise<void> {
     await this.workspaceContextMenuButton.click();
-    await this.workspaceContextMenu.waitFor({ state: 'attached' });
-    await this.workspaceContextMenu.waitFor({ state: 'visible' });
+    await this.workspaceHeaderMenu.waitFor({ state: 'attached' });
+    await this.workspaceHeaderMenu.waitFor({ state: 'visible' });
+  }
+
+  async renameWorkspaceItem(oldName: string, newName: string, isFolder: boolean = false): Promise<void> {
+    await this.openFileContextMenu(oldName);
+    await this.workspaceFileContextMenu.getByRole('menuitem', { name: 'Rename' }).click();
+    const renameInput = this.page.locator('#modal-container').getByLabel('New Name');
+    await renameInput.clear();
+    await renameInput.fill(newName);
+    await renameInput.evaluate(e => e.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })));
+    await renameInput.evaluate(e => e.dispatchEvent(new Event('change')));
+    const waitForToastPromise = this.waitForToast(`Workspace ${isFolder ? 'Folder' : 'File'} Renamed Successfully`);
+    await this.page.getByRole('button', { name: isFolder ? 'Rename Folder' : 'Rename File' }).click();
+    await waitForToastPromise;
   }
 
   async saveSequence(): Promise<void> {
     await this.saveSequenceButton.click();
     await this.waitForToast('Workspace File Saved Successfully');
+  }
+
+  async searchForFile(name: string): Promise<void> {
+    await this.searchInput.fill(name);
+  }
+
+  async searchForFileAndWait(name: string): Promise<void> {
+    await this.searchInput.fill(name);
+    // Wait for search results to update and file to be visible
+    await this.getFileRow(name).waitFor({ state: 'visible', timeout: 5000 });
   }
 
   updatePage(page: Page): void {
@@ -178,11 +274,13 @@ export class Workspace {
     this.page = page;
     this.pageLoadingLocatorWithData = page.getByRole('complementary').getByText('No workspace loaded').first();
     this.saveSequenceButton = page.getByRole('button', { name: 'Save' });
+    this.searchInput = page.getByPlaceholder('Search files and folders');
     this.sequenceEditor = page.locator('.cm-activeLine').first();
     this.sequenceNameInput = page.locator('#modal-container').getByRole('textbox', { name: 'File Name' });
     this.textEditor = page.locator('.cm-activeLine').nth(2);
-    this.workspaceContextMenu = page.getByRole('menu');
+    this.workspaceFileContextMenu = page.getByTestId('context-menu');
     this.workspaceFileGrid = page.getByRole('treegrid');
+    this.workspaceHeaderMenu = page.getByTestId('workspace-header-menu');
     this.workspaceSidebar = page.getByRole('complementary');
     this.workspaceContextMenuButton = this.workspaceSidebar
       .getByRole('button', {
@@ -195,13 +293,14 @@ export class Workspace {
 
   async uploadFile(filePath: string, fileName: string): Promise<void> {
     await this.openWorkspaceContextMenu();
-    await this.workspaceContextMenu.getByRole('menuitem', { name: 'Upload File' }).click();
+    await this.workspaceHeaderMenu.getByRole('menuitem', { name: 'Upload File' }).click();
     await this.page.locator('#modal-container').getByRole('menuitem', { name: this.workspaceName }).click();
 
     const file = readFileSync(filePath);
     const fileBuffer = Buffer.from(file);
 
-    await this.page.waitForTimeout(1000);
+    // Wait for file input to be ready instead of fixed timeout
+    await this.fileInput.waitFor({ state: 'visible' });
     await this.fileInput.focus();
     await this.fileInput.setInputFiles({
       buffer: fileBuffer,
@@ -210,7 +309,10 @@ export class Workspace {
     });
     await this.fileInput.evaluate(e => e.blur());
 
-    await this.page.getByRole('button', { name: 'Upload' }).click();
+    // Wait for upload button to be enabled (not just visible) - file must be processed first
+    const uploadButton = this.page.locator('#modal-container').getByRole('button', { exact: true, name: 'Upload' });
+    await expect(uploadButton).toBeEnabled({ timeout: 10000 });
+    await uploadButton.click();
     await this.waitForToast('Workspace File Uploaded Successfully');
   }
 

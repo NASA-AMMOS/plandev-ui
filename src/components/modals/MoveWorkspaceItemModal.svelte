@@ -30,7 +30,7 @@
   let originalDirectory: string = '';
   let targetDirectory: string = '';
   let targetFilename: string = '';
-  let typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
+  let typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Folder' : 'File';
 
   $: {
     const { filename, path } = separateFilenameFromPath(targetPath);

@@ -79,7 +79,7 @@
       aria-label="Context Menu"
     />
   </ContextMenu.Trigger>
-  <ContextMenu.Content>
+  <ContextMenu.Content data-testid="context-menu">
     <slot />
   </ContextMenu.Content>
 </ContextMenu.Root>

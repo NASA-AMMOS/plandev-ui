@@ -60,7 +60,7 @@
           </Button>
         </DropdownMenu.Trigger>
       </Tooltip>
-      <DropdownMenu.Content>
+      <DropdownMenu.Content data-testid="workspace-header-menu">
         <div
           role="button"
           tabindex={0}
