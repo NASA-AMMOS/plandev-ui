@@ -55,6 +55,7 @@
         builders={[builder]}
         variant="ghost"
         bind:this={ref}
+        aria-label={tooltipContent}
         data-slot="sidebar-menu-button"
         data-sidebar="menu-button"
         data-size={size}

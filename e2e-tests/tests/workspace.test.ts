@@ -129,6 +129,7 @@ test.describe.serial('Workspace', () => {
 
   test('Add collaborator to workspace', async () => {
     await workspace.workspaceSettingsButton.click();
+    await workspace.workspaceCollaboratorInput.click();
     await workspace.workspaceCollaboratorInput.fill(userAuthorized.username);
     await page.getByRole('option', { exact: true, name: userAuthorized.username }).click();
 

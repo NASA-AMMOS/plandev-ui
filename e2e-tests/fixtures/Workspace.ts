@@ -164,7 +164,7 @@ export class Workspace {
         name: 'New Workspace Item',
       })
       .first();
-    this.workspaceSettingsButton = page.locator('button[name="Settings"]');
+    this.workspaceSettingsButton = page.getByRole('button', { name: 'Settings' });
     this.workspaceCollaboratorInput = page.getByPlaceholder('Search collaborators or workspaces');
   }
 
