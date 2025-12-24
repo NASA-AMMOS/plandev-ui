@@ -1,9 +1,9 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
 import { readFileSync } from 'fs';
 import { getWorkspacesUrl } from '../../src/utilities/routes';
+import { generateRandomName, hoverRowAndWaitForButton } from '../utilities/helpers';
 
 export class Workspace {
   editSequenceButton: Locator;
@@ -44,7 +44,7 @@ export class Workspace {
   }
 
   async createFolder(folderPath?: string): Promise<string> {
-    const path = folderPath || uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+    const path = folderPath || generateRandomName();
 
     await this.openWorkspaceContextMenu();
     const workspaceMenuItem = await this.workspaceHeaderMenu.getByRole('menuitem', { name: 'New Folder' });
@@ -68,8 +68,8 @@ export class Workspace {
     sequencePath?: string,
     sequenceFileName?: string,
   ): Promise<{ sequenceName: string; sequencePath: string }> {
-    const seqPath = sequencePath || uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
-    const seqName = sequenceFileName || `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`;
+    const seqPath = sequencePath || generateRandomName();
+    const seqName = sequenceFileName || `${generateRandomName()}.seq`;
 
     await this.openWorkspaceContextMenu();
     await this.workspaceHeaderMenu.getByRole('menuitem', { name: 'New File' }).click();
@@ -86,7 +86,7 @@ export class Workspace {
   async deleteFile(fileName: string): Promise<void> {
     const row = this.workspaceFileGrid.getByRole('row', { name: fileName });
     const deleteButton = row.getByRole('button', { name: 'Delete' });
-    await this.hoverRowAndWaitForButton(row, deleteButton);
+    await hoverRowAndWaitForButton(this.page, row, deleteButton);
     await deleteButton.click();
     await this.page.locator('#modal-container').getByRole('button', { name: 'Delete' }).click();
     await this.waitForToast('Workspace File Deleted Successfully');
@@ -95,7 +95,7 @@ export class Workspace {
   async deleteFolder(folderName: string): Promise<void> {
     const row = this.workspaceFileGrid.getByRole('row', { name: folderName });
     const deleteButton = row.getByRole('button', { name: 'Delete' });
-    await this.hoverRowAndWaitForButton(row, deleteButton);
+    await hoverRowAndWaitForButton(this.page, row, deleteButton);
     await deleteButton.click();
     await this.page.locator('#modal-container').getByRole('button', { name: 'Delete' }).click();
     await this.waitForToast('Workspace Folder Deleted Successfully');
@@ -104,7 +104,7 @@ export class Workspace {
   async deleteSequence(sequenceName: string): Promise<void> {
     const row = this.workspaceFileGrid.getByRole('row', { name: sequenceName });
     const deleteButton = row.getByRole('button', { name: 'Delete' });
-    await this.hoverRowAndWaitForButton(row, deleteButton);
+    await hoverRowAndWaitForButton(this.page, row, deleteButton);
     await deleteButton.click();
     await this.page.locator('#modal-container').getByRole('button', { name: 'Delete' }).click();
 
@@ -166,37 +166,6 @@ export class Workspace {
     await expect(this.page.locator('.workspace-title')).toBeVisible();
   }
 
-  /**
-   * Hover over a row and wait for a specific action button to appear.
-   * AG Grid requires real mouse movement to trigger hover states for action buttons.
-   * This method retries the hover if the button doesn't appear, which handles
-   * timing issues in headless mode.
-   */
-  private async hoverRowAndWaitForButton(row: Locator, buttonLocator: Locator): Promise<void> {
-    const maxAttempts = 3;
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const box = await row.boundingBox();
-      if (!box) {
-        throw new Error('Could not get row bounding box for hover');
-      }
-      // Move mouse to center of row
-      await this.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-
-      // Wait for button to become visible
-      try {
-        await buttonLocator.waitFor({ state: 'visible', timeout: 2000 });
-        return; // Success - button is visible
-      } catch {
-        if (attempt === maxAttempts) {
-          throw new Error(`Action button not visible after ${maxAttempts} hover attempts`);
-        }
-        // Move mouse away and try again
-        await this.page.mouse.move(0, 0);
-        await this.page.waitForTimeout(100);
-      }
-    }
-  }
-
   async importSeqJson(filePath: string = this.jsonPath): Promise<void> {
     await this.openWorkspaceContextMenu();
     await this.workspaceHeaderMenu.getByRole('menuitem', { name: 'Upload File' }).click();
@@ -226,7 +195,7 @@ export class Workspace {
   async openFileContextMenu(fileName: string): Promise<void> {
     const row = this.workspaceFileGrid.getByRole('row', { name: fileName });
     const moreActionsButton = row.getByLabel('More actions');
-    await this.hoverRowAndWaitForButton(row, moreActionsButton);
+    await hoverRowAndWaitForButton(this.page, row, moreActionsButton);
     await moreActionsButton.click();
     await this.workspaceFileContextMenu.waitFor({ state: 'visible' });
   }

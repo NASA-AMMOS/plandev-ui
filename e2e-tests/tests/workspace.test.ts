@@ -1,21 +1,21 @@
 import test, { expect, type BrowserContext, type Page } from '@playwright/test';
 import { readFileSync } from 'fs';
-import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { getWorkspacesUrl } from '../../src/utilities/routes.js';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
 import { Parcels } from '../fixtures/Parcels.js';
 import { User } from '../fixtures/User.js';
 import { Workspace } from '../fixtures/Workspace.js';
 import { Workspaces } from '../fixtures/Workspaces.js';
+import { generateRandomName } from '../utilities/helpers.js';
 
 let context: BrowserContext;
 let dictionaries: Dictionaries;
 let page: Page;
 let parcels: Parcels;
 let sequence: { sequenceName: string; sequencePath: string };
+let testUser: User;
 let userAuthorized: User;
 let userUnauthorized: User;
-let testUser: User;
 let workspace: Workspace;
 let workspaces: Workspaces;
 let workspaceId: string;
@@ -87,10 +87,13 @@ test.describe.serial('Workspace', () => {
     await expect(workspace.workspaceHeaderMenu).not.toBeVisible();
   });
 
-  test('Create workspace folder', async () => {
+  test('Create and delete workspace folder', async () => {
     const folderPath = await workspace.createFolder();
-
     expect(folderPath).toBeTruthy();
+
+    // Cleanup
+    await workspace.searchForFileAndWait(folderPath);
+    await workspace.deleteFolder(folderPath);
   });
 
   test('Create workspace sequence', async () => {
@@ -123,9 +126,14 @@ test.describe.serial('Workspace', () => {
 
   test('Import sequence from file', async () => {
     await workspace.importSeqJson();
+
+    // Cleanup - the imported file is named 'json'
+    await workspace.searchForFileAndWait('json');
+    await workspace.deleteFile('json');
   });
 
   test('Delete sequence', async () => {
+    await workspace.searchForFileAndWait(sequence.sequenceName);
     await workspace.deleteSequence(sequence.sequenceName);
   });
 
@@ -154,10 +162,7 @@ test.describe.serial('Workspace', () => {
 
   test('Rename file', async () => {
     // Create a file to rename
-    const { sequenceName } = await workspace.createSequence(
-      undefined,
-      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
-    );
+    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
     await workspace.searchForFileAndWait(sequenceName);
 
     // Rename the file
@@ -170,9 +175,7 @@ test.describe.serial('Workspace', () => {
   });
 
   test('Rename folder', async () => {
-    const folderName = await workspace.createFolder(
-      uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] }),
-    );
+    const folderName = await workspace.createFolder(generateRandomName());
     await workspace.searchForFileAndWait(folderName);
 
     const newFolderName = 'renamed-folder';
@@ -185,10 +188,8 @@ test.describe.serial('Workspace', () => {
 
   test('Delete folder with contents', async () => {
     // Create folder with a file inside
-    const folderName = await workspace.createFolder(
-      uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] }),
-    );
-    const fileName = `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`;
+    const folderName = await workspace.createFolder(generateRandomName());
+    const fileName = `${generateRandomName()}.seq`;
     await workspace.createSequence(folderName, fileName);
 
     // Search and delete the folder
@@ -204,15 +205,10 @@ test.describe.serial('Workspace', () => {
     await expect(workspace.getFileRow(fileName)).not.toBeVisible();
   });
 
-  test('Context menu shows appropriate actions for files vs folders', async () => {
+  test('Context menu shows appropriate menu items for files vs folders', async () => {
     // Create a file and folder for testing
-    const { sequenceName } = await workspace.createSequence(
-      undefined,
-      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
-    );
-    const folderName = await workspace.createFolder(
-      uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] }),
-    );
+    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+    const folderName = await workspace.createFolder(generateRandomName());
 
     // Test file context menu - should have Download File
     await workspace.searchForFileAndWait(sequenceName);
@@ -237,10 +233,7 @@ test.describe.serial('Workspace', () => {
 
   test('Save file and detect unsaved changes', async () => {
     // Create a sequence to edit
-    const { sequenceName } = await workspace.createSequence(
-      undefined,
-      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
-    );
+    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
     await workspace.searchForFileAndWait(sequenceName);
     await workspace.clickFile(sequenceName);
 
@@ -264,14 +257,8 @@ test.describe.serial('Workspace', () => {
 
   test('Unsaved changes warning when navigating away', async () => {
     // Create two sequences
-    const { sequenceName: file1 } = await workspace.createSequence(
-      undefined,
-      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
-    );
-    const { sequenceName: file2 } = await workspace.createSequence(
-      undefined,
-      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
-    );
+    const { sequenceName: file1 } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+    const { sequenceName: file2 } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
 
     // Open first file and make changes
     await workspace.searchForFileAndWait(file1);
@@ -304,13 +291,8 @@ test.describe.serial('Workspace', () => {
 
   test('Move file to folder', async () => {
     // Create a file and folder
-    const { sequenceName } = await workspace.createSequence(
-      undefined,
-      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
-    );
-    const folderName = await workspace.createFolder(
-      uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] }),
-    );
+    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+    const folderName = await workspace.createFolder(generateRandomName());
 
     // Search and open context menu for the file
     await workspace.searchForFileAndWait(sequenceName);
@@ -333,10 +315,7 @@ test.describe.serial('Workspace', () => {
 
   test('Open file in new tab', async () => {
     // Create a file
-    const { sequenceName, sequencePath } = await workspace.createSequence(
-      undefined,
-      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
-    );
+    const { sequenceName, sequencePath } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
     await workspace.searchForFileAndWait(sequenceName);
 
     // Open context menu and click Open in New Tab
@@ -362,11 +341,9 @@ test.describe.serial('Workspace', () => {
 
   test('Breadcrumb navigation', async () => {
     // Create nested folder structure: parent/child with a file inside
-    const parentFolder = await workspace.createFolder(
-      uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] }),
-    );
-    const childFolder = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
-    const testFile = `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`;
+    const parentFolder = await workspace.createFolder(generateRandomName());
+    const childFolder = generateRandomName();
+    const testFile = `${generateRandomName()}.seq`;
     await workspace.createFolder(`${parentFolder}/${childFolder}`);
     await workspace.createSequence(`${parentFolder}/${childFolder}`, testFile);
 
@@ -404,10 +381,7 @@ test.describe.serial('Workspace', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
     // Create a file
-    const { sequenceName, sequencePath } = await workspace.createSequence(
-      undefined,
-      `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`,
-    );
+    const { sequenceName, sequencePath } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
     await workspace.searchForFileAndWait(sequenceName);
 
     // Open context menu and click Copy Full Path
