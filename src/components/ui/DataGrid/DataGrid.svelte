@@ -265,6 +265,19 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     gridApi?.setGridOption('quickFilterText', filterExpression);
   }
 
+  // Update overlay text when noRowsOverlayText prop changes
+  $: if (gridApi && noRowsOverlayText) {
+    gridApi.setGridOption('overlayNoRowsTemplate', `<span class="ag-overlay-no-rows-center">${noRowsOverlayText}</span>`);
+    // Re-show overlay if no visible rows, to reflect the updated text
+    let visibleRowCount = 0;
+    gridApi.forEachNodeAfterFilter(() => {
+      visibleRowCount++;
+    });
+    if (visibleRowCount === 0 && !loading) {
+      gridApi.showNoRowsOverlay();
+    }
+  }
+
   $: if (loading) {
     if (loadingMessageTimeout) {
       clearTimeout(loadingMessageTimeout);
@@ -387,7 +400,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         });
 
         // Show/hide the no rows overlay based on visible row count after filtering
-        if (visibleRowCount === 0 && rowData.length > 0 && !isLoading()) {
+        if (visibleRowCount === 0 && !isLoading()) {
           gridApi?.showNoRowsOverlay();
         } else if (visibleRowCount > 0) {
           gridApi?.hideOverlay();

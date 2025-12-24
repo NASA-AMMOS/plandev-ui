@@ -515,7 +515,11 @@
     bind:selectedItemId={selectedTreeNodePath}
     bind:selectedItemIds
     tertiaryHighlightIds={actionsMenuFocused ? tertiaryHighlightPaths : null}
-    noRowsOverlayText={flattenedTree.length < 1 ? 'Workspace is Empty' : 'No Matching Files or Folders'}
+    noRowsOverlayText={(treeNode?.contents || []).length < 1 && !currentBreadcrumbPath
+      ? 'Workspace is Empty'
+      : currentRootContents.length < 1
+        ? 'Folder is Empty'
+        : 'No Matching Files or Folders'}
     headerHeight={26}
     rowHeight={26}
     class="workspace-file-browser"
