@@ -476,7 +476,7 @@
 
   async function onDownload(filePath: string) {
     if ($workspace && user) {
-      const blob = await effects.getWorkspaceFileContentBlob($workspaceId, filePath, user);
+      const blob = await effects.getWorkspaceFileContentBlob($workspace, filePath, user);
       if (blob !== null) {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');

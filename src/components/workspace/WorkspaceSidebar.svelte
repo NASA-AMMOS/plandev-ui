@@ -200,7 +200,7 @@
       </div>
     </div>
     <div class="flex h-full w-full flex-col" class:hidden={!panelOpen}>
-      <div class="mt-0 h-full" style="min-height: 300px;" role="tabpanel">
+      <div class="mt-0 h-full min-h-[300px]" role="tabpanel">
         {#if activeTab === 'files'}
           <div class="grid h-full grid-rows-[min-content_auto]">
             <Sidebar.Header className="p-0">

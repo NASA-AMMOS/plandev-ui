@@ -5469,12 +5469,20 @@ const effects = {
     return null;
   },
 
-  async getWorkspaceFileContentBlob(workspaceId: number, filePath: string, user: User | null): Promise<Blob | null> {
+  async getWorkspaceFileContentBlob(
+    workspace: Workspace,
+    filePath: string,
+    user: User | null,
+  ): Promise<Blob | null> {
     try {
-      const fileContents = await WorkspaceApi.getFileContentBlob(workspaceId, filePath, user);
+      if (!featurePermissions.workspace.canRead(user, workspace)) {
+        throwPermissionError('download this file');
+      }
+
+      const fileContents = await WorkspaceApi.getFileContentBlob(workspace.id, filePath, user);
 
       if (fileContents != null) {
-        logMessage(`Retrieved workspace file "${filePath}" for workspace ID=${workspaceId}.`);
+        logMessage(`Retrieved workspace file "${filePath}" for workspace ID=${workspace.id}.`);
         return fileContents;
       } else {
         throw Error(`Workspace file contents not found`);

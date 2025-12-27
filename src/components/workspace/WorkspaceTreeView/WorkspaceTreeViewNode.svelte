@@ -109,7 +109,7 @@
           <div class=" grid grid-cols-[auto_min-content] items-center justify-between">
             <span class="truncate">{treeNode.name}</span>
             {#if showKebabMenu}
-              <Button size="icon-sm" class="mr-1" variant="ghost" on:click={onKebabClick}>
+              <Button size="icon-sm" class="mr-1" variant="ghost" on:click={onKebabClick} aria-label="More actions">
                 <EllipsisVertical class="invisible group-hover/item:visible" size={16} />
               </Button>
             {/if}
@@ -153,7 +153,7 @@
         <div class="grid grid-cols-[auto_min-content] items-center justify-between">
           <span class="truncate">{treeNode.name}</span>
           {#if showKebabMenu}
-            <Button size="icon-sm" class="mr-1" variant="ghost" on:click={onKebabClick}>
+            <Button size="icon-sm" class="mr-1" variant="ghost" on:click={onKebabClick} aria-label="More actions">
               <EllipsisVertical class="invisible group-hover/item:visible" size={16} />
             </Button>
           {/if}
