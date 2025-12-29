@@ -1,46 +1,16 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
-import { Constraints } from '../fixtures/Constraints.js';
-import { Models } from '../fixtures/Models.js';
-import { Plan } from '../fixtures/Plan.js';
-import { Plans } from '../fixtures/Plans.js';
-import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
-import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
+import { setupTest, teardownTest, type FullSetupResult } from '../utilities/api.js';
 
-let constraints: Constraints;
-let context: BrowserContext;
-let models: Models;
-let page: Page;
-let plan: Plan;
-let plans: Plans;
-let schedulingConditions: SchedulingConditions;
-let schedulingGoals: SchedulingGoals;
+let setup: FullSetupResult;
 
-test.beforeAll(async ({ baseURL, browser }) => {
-  context = await browser.newContext();
-  page = await context.newPage();
-
-  models = new Models(page);
-  plans = new Plans(page, models);
-  constraints = new Constraints(page);
-  schedulingConditions = new SchedulingConditions(page);
-  schedulingGoals = new SchedulingGoals(page);
-  plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
-
-  await models.goto();
-  await models.createModel(baseURL);
-  await plans.goto();
-  await plans.createPlan();
-  await plan.goto();
+test.beforeAll(async ({ browser }) => {
+  setup = await setupTest(browser);
+  await setup.plan.goto();
 });
 
 test.afterAll(async () => {
-  await plans.goto();
-  await plans.deletePlan();
-  await models.goto();
-  await models.deleteModel();
-  await page.close();
-  await context.close();
+  await teardownTest(setup);
 });
 
 test.describe.serial('Plan Merge', () => {
@@ -48,54 +18,54 @@ test.describe.serial('Plan Merge', () => {
   const planBranchName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
   test('Add an activity to the parent plan', async () => {
-    await plan.addActivity('BiteBanana');
+    await setup.plan.addActivity('BiteBanana');
   });
 
   test('Create a branch', async ({ baseURL }) => {
-    await plan.createBranch(baseURL, planBranchName);
+    await setup.plan.createBranch(baseURL, planBranchName);
   });
 
   test('Change the start time of the activity on the branch', async () => {
-    await page.waitForTimeout(2000);
-    const row = await page.getByRole('row', { name: 'BiteBanana' });
+    await setup.page.waitForTimeout(2000);
+    const row = await setup.page.getByRole('row', { name: 'BiteBanana' });
     await row.waitFor({ state: 'visible' });
     await row.first().click();
-    await page.waitForSelector('.activity-header-title-edit-button:has-text("BiteBanana")', {
+    await setup.page.waitForSelector('.activity-header-title-edit-button:has-text("BiteBanana")', {
       state: 'visible',
     });
-    await page.locator('input[name="start-time"]').click({ position: { x: 2, y: 2 } });
-    await page.locator('input[name="start-time"]').fill(newActivityStartTime);
-    await page.locator('input[name="start-time"]').press('Enter');
-    await plan.waitForToast('Activity Directive Updated Successfully');
+    await setup.page.locator('input[name="start-time"]').click({ position: { x: 2, y: 2 } });
+    await setup.page.locator('input[name="start-time"]').fill(newActivityStartTime);
+    await setup.page.locator('input[name="start-time"]').press('Enter');
+    await setup.plan.waitForToast('Activity Directive Updated Successfully');
   });
 
   test('Create a merge request from branch to parent plan', async () => {
-    await page.getByText(planBranchName).first().click();
-    await page.getByText('Create merge request').click();
-    await page.getByRole('button', { name: 'Create Merge Request' }).click();
-    await plan.waitForToast('Merge Request Created Successfully');
+    await setup.page.getByText(planBranchName).first().click();
+    await setup.page.getByText('Create merge request').click();
+    await setup.page.getByRole('button', { name: 'Create Merge Request' }).click();
+    await setup.plan.waitForToast('Merge Request Created Successfully');
   });
 
   test('Switch to parent plan', async () => {
-    await page.getByRole('link', { name: plans.planName }).click();
+    await setup.page.getByRole('link', { name: setup.plans.planName }).click();
   });
 
   test('Start a merge review', async ({ baseURL }) => {
-    await page.getByRole('button', { name: '1 incoming, 0 outgoing' }).click();
-    await page.getByRole('button', { name: 'Review' }).click();
-    await page.waitForURL(`${baseURL}/plans/*/merge`);
-    await page.waitForTimeout(250);
+    await setup.page.getByRole('button', { name: '1 incoming, 0 outgoing' }).click();
+    await setup.page.getByRole('button', { name: 'Review' }).click();
+    await setup.page.waitForURL(`${baseURL}/plans/*/merge`);
+    await setup.page.waitForTimeout(250);
   });
 
   test('Complete the merge review', async ({ baseURL }) => {
-    await page.getByRole('button', { name: 'Approve Changes' }).click();
-    await page.waitForURL(`${baseURL}/plans/${plans.planId}/merge`);
-    await page.waitForTimeout(250);
+    await setup.page.getByRole('button', { name: 'Approve Changes' }).click();
+    await setup.page.waitForURL(`${baseURL}/plans/${setup.plans.planId}/merge`);
+    await setup.page.waitForTimeout(250);
   });
 
   test('Make sure the start time of the activity in the parent plan now equals the start time of the activity in branch', async () => {
-    await page.getByRole('gridcell', { name: 'BiteBanana' }).first().click();
-    await expect(page.locator('input[name="start-time"]')).toHaveValue(newActivityStartTime);
+    await setup.page.getByRole('gridcell', { name: 'BiteBanana' }).first().click();
+    await expect(setup.page.locator('input[name="start-time"]')).toHaveValue(newActivityStartTime);
   });
 });
 
@@ -104,58 +74,58 @@ test.describe.serial('Plan Merge with Deleted Source Plan', () => {
   const planBranchName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
   test('Add an activity to the parent plan', async () => {
-    await plan.addActivity('GrowBanana');
+    await setup.plan.addActivity('GrowBanana');
   });
 
   test('Create a branch', async ({ baseURL }) => {
-    await plan.createBranch(baseURL, planBranchName);
+    await setup.plan.createBranch(baseURL, planBranchName);
   });
 
   test('Change the start time of the activity on the branch', async () => {
-    await page.waitForTimeout(2000);
-    const row = await page.getByRole('row', { name: 'GrowBanana' });
+    await setup.page.waitForTimeout(2000);
+    const row = await setup.page.getByRole('row', { name: 'GrowBanana' });
     await row.waitFor({ state: 'visible' });
     await row.first().click();
-    await page.waitForSelector('.activity-header-title-edit-button:has-text("GrowBanana")', {
+    await setup.page.waitForSelector('.activity-header-title-edit-button:has-text("GrowBanana")', {
       state: 'visible',
     });
-    await page.locator('input[name="start-time"]').click({ position: { x: 2, y: 2 } });
-    await page.locator('input[name="start-time"]').fill(newActivityStartTime);
-    await page.locator('input[name="start-time"]').press('Enter');
-    await plan.waitForToast('Activity Directive Updated Successfully');
+    await setup.page.locator('input[name="start-time"]').click({ position: { x: 2, y: 2 } });
+    await setup.page.locator('input[name="start-time"]').fill(newActivityStartTime);
+    await setup.page.locator('input[name="start-time"]').press('Enter');
+    await setup.plan.waitForToast('Activity Directive Updated Successfully');
   });
 
   test('Create a merge request from branch to parent plan', async () => {
-    await page.getByText(planBranchName).first().click();
-    await page.getByText('Create merge request').click();
-    await page.getByRole('button', { name: 'Create Merge Request' }).click();
-    await plan.waitForToast('Merge Request Created Successfully');
+    await setup.page.getByText(planBranchName).first().click();
+    await setup.page.getByText('Create merge request').click();
+    await setup.page.getByRole('button', { name: 'Create Merge Request' }).click();
+    await setup.plan.waitForToast('Merge Request Created Successfully');
   });
 
   test('Delete source plan', async () => {
-    await plans.goto();
-    await plans.deletePlan(planBranchName);
+    await setup.plans.goto();
+    await setup.plans.deletePlan(planBranchName);
   });
 
   test('Switch to parent plan', async () => {
-    await plan.goto();
+    await setup.plan.goto();
   });
 
   test('Start a merge review', async ({ baseURL }) => {
-    await page.getByRole('button', { name: '1 incoming, 0 outgoing' }).click();
-    await page.getByRole('button', { name: 'Review' }).click();
-    await page.waitForURL(`${baseURL}/plans/*/merge`);
-    await page.waitForTimeout(250);
+    await setup.page.getByRole('button', { name: '1 incoming, 0 outgoing' }).click();
+    await setup.page.getByRole('button', { name: 'Review' }).click();
+    await setup.page.waitForURL(`${baseURL}/plans/*/merge`);
+    await setup.page.waitForTimeout(250);
   });
 
   test('Complete the merge review', async ({ baseURL }) => {
-    await page.getByRole('button', { name: 'Approve Changes' }).click();
-    await page.waitForURL(`${baseURL}/plans/${plans.planId}/merge`);
-    await page.waitForTimeout(250);
+    await setup.page.getByRole('button', { name: 'Approve Changes' }).click();
+    await setup.page.waitForURL(`${baseURL}/plans/${setup.plans.planId}/merge`);
+    await setup.page.waitForTimeout(250);
   });
 
   test('Make sure the start time of the activity in the parent plan now equals the start time of the activity in branch', async () => {
-    await page.getByRole('gridcell', { name: 'GrowBanana' }).first().click();
-    await expect(page.locator('input[name="start-time"]')).toHaveValue(newActivityStartTime);
+    await setup.page.getByRole('gridcell', { name: 'GrowBanana' }).first().click();
+    await expect(setup.page.locator('input[name="start-time"]')).toHaveValue(newActivityStartTime);
   });
 });

@@ -1,120 +1,86 @@
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
-import { Constraints } from '../fixtures/Constraints.js';
-import { Models } from '../fixtures/Models.js';
-import { Plan } from '../fixtures/Plan.js';
-import { Plans } from '../fixtures/Plans.js';
+import { expect, test } from '@playwright/test';
+import { setupTest, teardownTest, type FullSetupResult } from '../utilities/api.js';
 
-import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
-import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
-import { View } from '../fixtures/View.js';
+let setup: FullSetupResult;
 
-let context: BrowserContext;
-let models: Models;
-let page: Page;
-let plan: Plan;
-let plans: Plans;
-let view: View;
-let constraints: Constraints;
-let schedulingConditions: SchedulingConditions;
-let schedulingGoals: SchedulingGoals;
-
-test.beforeAll(async ({ baseURL, browser }) => {
-  context = await browser.newContext();
-  page = await context.newPage();
-
-  models = new Models(page);
-  plans = new Plans(page, models);
-  constraints = new Constraints(page);
-  schedulingConditions = new SchedulingConditions(page);
-  schedulingGoals = new SchedulingGoals(page);
-  plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
-  view = new View(page);
-
-  await models.goto();
-  await models.createModel(baseURL);
-  await plans.goto();
-  await plans.createPlan();
-  await plan.goto();
+test.beforeAll(async ({ browser }) => {
+  setup = await setupTest(browser);
+  await setup.plan.goto();
 });
 
 test.afterAll(async () => {
-  await plans.goto();
-  await plans.deletePlan();
-  await models.goto();
-  await models.deleteModel();
-  await page.close();
-  await context.close();
+  await teardownTest(setup);
 });
 
 test.describe.serial('View', () => {
   test(`Clicking on 'Browse Saved Views' in the view menu should pop up a SavedViewsModal`, async () => {
-    await view.openViewMenu();
-    await view.openSavedViews();
-    await page.locator('.modal .st-button .bi-x').click();
+    await setup.view.openViewMenu();
+    await setup.view.openSavedViews();
+    await setup.page.locator('.modal .st-button .bi-x').click();
   });
 
   test(`Clicking on 'Upload view file' in the view menu should pop up a UploadViewModal`, async () => {
-    await view.openViewMenu();
-    await expect(view.navButtonViewUploadViewMenuButton).toBeVisible();
-    await view.navButtonViewUploadViewMenuButton.click();
-    await expect(page.locator('.modal .modal-header:has-text("Upload View JSON")')).toBeVisible();
-    await page.locator('.modal .st-button:has-text("Cancel")').click();
+    await setup.view.openViewMenu();
+    await expect(setup.view.navButtonViewUploadViewMenuButton).toBeVisible();
+    await setup.view.navButtonViewUploadViewMenuButton.click();
+    await expect(setup.page.locator('.modal .modal-header:has-text("Upload View JSON")')).toBeVisible();
+    await setup.page.locator('.modal .st-button:has-text("Cancel")').click();
   });
 
   test(`Clicking on 'Rename View' in the view menu should pop up an EditViewModal`, async () => {
-    await view.openViewMenu();
+    await setup.view.openViewMenu();
     // Since no view is loaded the rename menu button should not be visible
-    await expect(view.navButtonViewRenameViewMenuButton).not.toBeVisible();
-    const viewName = view.createViewName();
-    const viewName2 = view.createViewName();
-    await view.createView(viewName);
-    await page.waitForTimeout(250);
-    await expect(view.navButtonViewMenuTitle).toHaveText(viewName);
-    await view.renameView(viewName2);
-    await page.waitForTimeout(250);
-    await expect(view.navButtonViewMenuTitle).toHaveText(viewName2);
-    await view.deleteView(viewName2);
+    await expect(setup.view.navButtonViewRenameViewMenuButton).not.toBeVisible();
+    const viewName = setup.view.createViewName();
+    const viewName2 = setup.view.createViewName();
+    await setup.view.createView(viewName);
+    await setup.page.waitForTimeout(250);
+    await expect(setup.view.navButtonViewMenuTitle).toHaveText(viewName);
+    await setup.view.renameView(viewName2);
+    await setup.page.waitForTimeout(250);
+    await expect(setup.view.navButtonViewMenuTitle).toHaveText(viewName2);
+    await setup.view.deleteView(viewName2);
   });
 
   test(`Clicking on 'Save As' in the view menu should pop up a CreateViewModal`, async () => {
-    await view.openSaveAs();
-    await expect(page.locator('.modal .modal-header:has-text("Save new view")')).toBeVisible();
-    await page.locator('.modal .st-button:has-text("Cancel")').click();
+    await setup.view.openSaveAs();
+    await expect(setup.page.locator('.modal .modal-header:has-text("Save new view")')).toBeVisible();
+    await setup.page.locator('.modal .st-button:has-text("Cancel")').click();
   });
 
   test(`Selecting an invalid view file should display an error and prevent the file from being uploaded`, async () => {
-    await view.openViewMenu();
-    await expect(view.navButtonViewUploadViewMenuButton).toBeVisible();
-    await view.navButtonViewUploadViewMenuButton.click();
-    await view.fillViewInputName();
-    await view.fillViewInputFile(view.invalidViewFilePath);
-    await expect(page.locator('.modal-content .error')).toBeVisible();
-    await expect(page.locator('.modal .st-button:has-text("Upload View")')).toBeDisabled();
-    await expect(page.locator('.modal')).toBeVisible();
+    await setup.view.openViewMenu();
+    await expect(setup.view.navButtonViewUploadViewMenuButton).toBeVisible();
+    await setup.view.navButtonViewUploadViewMenuButton.click();
+    await setup.view.fillViewInputName();
+    await setup.view.fillViewInputFile(setup.view.invalidViewFilePath);
+    await expect(setup.page.locator('.modal-content .error')).toBeVisible();
+    await expect(setup.page.locator('.modal .st-button:has-text("Upload View")')).toBeDisabled();
+    await expect(setup.page.locator('.modal')).toBeVisible();
     // Expect validation error collapse to be visible
-    await expect(page.locator('.modal-content .collapse-root')).toBeVisible();
-    await page.locator('.modal .st-button:has-text("Cancel")').click();
+    await expect(setup.page.locator('.modal-content .collapse-root')).toBeVisible();
+    await setup.page.locator('.modal .st-button:has-text("Cancel")').click();
   });
 
   test(`Selecting an valid view file should not display an error and not prevent the file from being uploaded`, async () => {
-    await view.openViewMenu();
-    await expect(view.navButtonViewUploadViewMenuButton).toBeVisible();
-    await view.navButtonViewUploadViewMenuButton.click();
-    await view.fillViewInputName();
-    await view.fillViewInputFile();
-    await expect(page.locator('.modal-content .error')).not.toBeVisible();
-    await page.locator('.modal .st-button:has-text("Upload View")').click();
-    await expect(page.locator('.modal')).not.toBeVisible();
+    await setup.view.openViewMenu();
+    await expect(setup.view.navButtonViewUploadViewMenuButton).toBeVisible();
+    await setup.view.navButtonViewUploadViewMenuButton.click();
+    await setup.view.fillViewInputName();
+    await setup.view.fillViewInputFile();
+    await expect(setup.page.locator('.modal-content .error')).not.toBeVisible();
+    await setup.page.locator('.modal .st-button:has-text("Upload View")').click();
+    await expect(setup.page.locator('.modal')).not.toBeVisible();
   });
 
   test(`Selecting an out of date view file should not display an error and not prevent the file from being uploaded`, async () => {
-    await view.openViewMenu();
-    await expect(view.navButtonViewUploadViewMenuButton).toBeVisible();
-    await view.navButtonViewUploadViewMenuButton.click();
-    await view.fillViewInputName();
-    await view.fillViewInputFile(view.outOfDateViewFilePath);
-    await expect(page.locator('.modal-content .error')).not.toBeVisible();
-    await page.locator('.modal .st-button:has-text("Upload View")').click();
-    await expect(page.locator('.modal')).not.toBeVisible();
+    await setup.view.openViewMenu();
+    await expect(setup.view.navButtonViewUploadViewMenuButton).toBeVisible();
+    await setup.view.navButtonViewUploadViewMenuButton.click();
+    await setup.view.fillViewInputName();
+    await setup.view.fillViewInputFile(setup.view.outOfDateViewFilePath);
+    await expect(setup.page.locator('.modal-content .error')).not.toBeVisible();
+    await setup.page.locator('.modal .st-button:has-text("Upload View")').click();
+    await expect(setup.page.locator('.modal')).not.toBeVisible();
   });
 });

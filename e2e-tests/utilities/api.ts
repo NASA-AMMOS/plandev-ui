@@ -10,8 +10,9 @@
 import type { Browser, BrowserContext, Page } from '@playwright/test';
 import fs from 'fs';
 import nodePath from 'path';
-import url from 'url';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import url from 'url';
+import { STORAGE_STATE } from '../../playwright.config.js';
 import { SchedulingDefinitionType } from '../../src/enums/scheduling.js';
 import { ActivityDirectiveInsertInput } from '../../src/types/activity.js';
 import type { ReqAuthResponse } from '../../src/types/auth';
@@ -21,13 +22,14 @@ import { PlanInsertInput } from '../../src/types/plan.js';
 import { SchedulingGoalDefinitionInsertInput, SchedulingGoalInsertInput } from '../../src/types/scheduling.js';
 import { convertToQuery } from '../../src/utilities/generic.js';
 import gql from '../../src/utilities/gql.js';
-import { STORAGE_STATE } from '../../playwright.config.js';
+import { getIntervalFromDoyRange } from '../../src/utilities/time.js';
 import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
 import { Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
+import { View } from '../fixtures/View.js';
 
 // Default URLs from environment variables, with fallbacks for local development
 const DEFAULT_HASURA_URL = process.env.PUBLIC_HASURA_CLIENT_URL ?? 'http://localhost:8080/v1/graphql';
@@ -348,44 +350,82 @@ export function getSharedTestData(): SharedTestData {
 }
 
 /**
- * Result of setting up a test with model and plan via API.
- */
-export interface TestSetupResult {
-  api: AerieApi;
-  constraints: Constraints;
-  context: BrowserContext;
-  modelId: number;
-  modelName: string;
-  models: Models;
-  page: Page;
-  plan: Plan;
-  planId: number;
-  planName: string;
-  plans: Plans;
-  schedulingConditions: SchedulingConditions;
-  schedulingGoals: SchedulingGoals;
-}
-
-/**
  * Options for setting up a test.
  */
-export interface TestSetupOptions {
+export interface SetupOptions {
+  /** Create a model via API (default: true) */
+  model?: boolean;
   modelName?: string;
-  planDuration?: string;
+  /** Create a plan via API (default: true, requires model) */
+  plan?: boolean;
+  planEndTime?: string;
   planName?: string;
   planStartTime?: string;
 }
 
 /**
- * Set up a complete test environment with model, plan, and UI fixtures.
- * This is a convenience function that handles the common boilerplate for API-based tests.
+ * Base result with browser context (always present).
+ */
+export interface BrowserSetupResult {
+  context: BrowserContext;
+  page: Page;
+}
+
+/**
+ * Result when model is created (extends browser).
+ */
+export interface ModelSetupResult extends BrowserSetupResult {
+  api: AerieApi;
+  modelId: number;
+  modelName: string;
+  models: Models;
+  plans: Plans;
+}
+
+/**
+ * Result when model + plan are created (extends model).
+ */
+export interface FullSetupResult extends ModelSetupResult {
+  constraints: Constraints;
+  plan: Plan;
+  planId: number;
+  planName: string;
+  schedulingConditions: SchedulingConditions;
+  schedulingGoals: SchedulingGoals;
+  view: View;
+}
+
+/**
+ * Union of all setup result types for teardown compatibility.
+ */
+export type SetupResult = BrowserSetupResult | ModelSetupResult | FullSetupResult;
+
+/**
+ * Set up a test environment with configurable model and plan creation.
  *
- * Usage in test.beforeAll:
+ * By default creates model + plan. Use options to customize:
+ * - `{ model: false }` - browser only (for tags, dictionaries tests)
+ * - `{ plan: false }` - model only (for plans.test.ts)
+ * - `{}` or no options - full setup with model + plan
+ *
+ * Usage:
  * ```typescript
- * let setup: TestSetupResult;
- *
+ * // Full setup (default) - returns FullSetupResult
+ * let setup: FullSetupResult;
  * test.beforeAll(async ({ browser }) => {
  *   setup = await setupTest(browser);
+ * });
+ *
+ * // Model only - returns ModelSetupResult
+ * let setup: ModelSetupResult;
+ * test.beforeAll(async ({ browser }) => {
+ *   setup = await setupTest(browser, { plan: false });
+ * });
+ *
+ * // Browser only - returns BrowserSetupResult
+ * let setup: BrowserSetupResult;
+ * test.beforeAll(async ({ browser }) => {
+ *   setup = await setupTest(browser, { model: false });
  * });
  *
  * test.afterAll(async () => {
@@ -393,11 +433,24 @@ export interface TestSetupOptions {
  * });
  * ```
  */
-export async function setupTest(browser: Browser, options: TestSetupOptions = {}): Promise<TestSetupResult> {
-  const modelName = options.modelName ?? uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
-  const planName = options.planName ?? uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
-  const planDuration = options.planDuration ?? '432000000000'; // 5 days in microseconds
-  const planStartTime = options.planStartTime ?? '2022-001T00:00:00';
+// Overloads for type-safe returns based on options
+export function setupTest(browser: Browser): Promise<FullSetupResult>;
+export function setupTest(browser: Browser, options: { model: false }): Promise<BrowserSetupResult>;
+export function setupTest(browser: Browser, options: { model?: true; plan: false }): Promise<ModelSetupResult>;
+export function setupTest(browser: Browser, options: SetupOptions): Promise<SetupResult>;
+
+// Implementation
+export async function setupTest(browser: Browser, options: SetupOptions = {}): Promise<SetupResult> {
+  const createModel = options.model !== false;
+  const createPlan = createModel && options.plan !== false;
+
+  // Set up browser context WITH auth state
+  const context = await browser.newContext({ storageState: STORAGE_STATE });
+  const page = await context.newPage();
+
+  if (!createModel) {
+    return { context, page } as BrowserSetupResult;
+  }
 
   // Initialize API client and login
   const api = new AerieApi();
@@ -407,79 +460,115 @@ export async function setupTest(browser: Browser, options: TestSetupOptions = {}
   const { jarId } = getSharedTestData();
 
   // Create model via API
+  const modelName = options.modelName ?? uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
   const model = await api.createModel({
     jar_id: jarId,
     mission: 'test',
     name: modelName,
     version: '1.0.0',
   });
-  const modelId = model.id;
+
+  // Initialize model fixture
+  const models = new Models(page);
+  models.modelId = String(model.id);
+  models.modelName = modelName;
+
+  // Initialize plans fixture (always available when model exists)
+  const plans = new Plans(page, models);
+
+  if (!createPlan) {
+    return {
+      api,
+      context,
+      modelId: model.id,
+      modelName,
+      models,
+      page,
+      plans,
+    } as ModelSetupResult;
+  }
 
   // Create plan via API
+  const planName = options.planName ?? uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+  const planStartTime = options.planStartTime ?? '2022-001T00:00:00';
+  const planEndTime = options.planEndTime ?? '2022-006T00:00:00';
   const planResult = await api.createPlan({
-    duration: planDuration,
-    model_id: modelId,
+    duration: getIntervalFromDoyRange(planStartTime, planEndTime),
+    model_id: model.id,
     name: planName,
     start_time: planStartTime,
   });
-  const planId = planResult.id;
 
-  // Set up browser context WITH auth state
-  const context = await browser.newContext({ storageState: STORAGE_STATE });
-  const page = await context.newPage();
-
-  // Initialize fixture classes for UI interactions
-  const models = new Models(page);
-  models.modelId = String(modelId);
-  models.modelName = modelName;
-
-  const plans = new Plans(page, models);
-  plans.planId = String(planId);
+  // Update plans fixture with created plan
+  plans.planId = String(planResult.id);
   plans.planName = planName;
 
+  // Initialize plan-related fixtures
   const constraints = new Constraints(page);
   const schedulingConditions = new SchedulingConditions(page);
   const schedulingGoals = new SchedulingGoals(page);
   const plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
+  const view = new View(page);
 
   return {
     api,
     constraints,
     context,
-    modelId,
+    modelId: model.id,
     modelName,
     models,
     page,
     plan,
-    planId,
+    planId: planResult.id,
     planName,
     plans,
     schedulingConditions,
     schedulingGoals,
-  };
+    view,
+  } as FullSetupResult;
 }
 
 /**
- * Clean up test resources created by setupTest.
- * Deletes the plan and model via API, then closes the browser context.
+ * Clean up API resources (plan, model) without closing browser.
+ * Use this when you need to perform additional cleanup after plan deletion
+ * but before closing the browser (e.g., deleting external source artifacts).
  */
-export async function teardownTest(setup: TestSetupResult): Promise<void> {
+export async function cleanupApiResources(setup: SetupResult): Promise<void> {
   // Clean up via API - much faster than UI navigation
-  if (setup.planId) {
+  // Use 'in' checks to narrow union type
+  if ('planId' in setup && 'api' in setup) {
     try {
       await setup.api.deletePlan(setup.planId);
     } catch {
       // Ignore cleanup errors
     }
   }
-  if (setup.modelId) {
+  if ('modelId' in setup && 'api' in setup) {
     try {
       await setup.api.deleteModel(setup.modelId);
     } catch {
       // Ignore cleanup errors
     }
   }
+}
 
+/**
+ * Close browser resources (page and context).
+ * Use after cleanupApiResources when you need split cleanup.
+ */
+export async function closeBrowserResources(setup: BrowserSetupResult): Promise<void> {
   await setup.page.close();
   await setup.context.close();
 }
+
+/**
+ * Clean up test resources created by setupTest.
+ * Automatically cleans up whatever was created based on what exists in the result.
+ */
+export async function teardownTest(setup: SetupResult): Promise<void> {
+  await cleanupApiResources(setup);
+  await closeBrowserResources(setup);
+}
+
+// Legacy export for backwards compatibility (most tests use full setup)
+export type TestSetupResult = FullSetupResult;

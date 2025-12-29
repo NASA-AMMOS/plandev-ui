@@ -1,37 +1,16 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
-import { Constraints } from '../fixtures/Constraints.js';
 import { ExternalSources } from '../fixtures/ExternalSources.js';
-import { Models } from '../fixtures/Models.js';
-import { PanelNames, Plan } from '../fixtures/Plan.js';
-import { Plans } from '../fixtures/Plans.js';
-import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
-import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
+import { PanelNames } from '../fixtures/Plan.js';
+import { cleanupApiResources, closeBrowserResources, setupTest, type FullSetupResult } from '../utilities/api.js';
 
-let constraints: Constraints;
-let context: BrowserContext;
+let setup: FullSetupResult;
 let externalSources: ExternalSources;
-let models: Models;
-let page: Page;
-let plan: Plan;
-let plans: Plans;
-let schedulingConditions: SchedulingConditions;
-let schedulingGoals: SchedulingGoals;
 
-test.beforeAll(async ({ baseURL, browser }) => {
-  context = await browser.newContext();
-  page = await context.newPage();
+test.beforeAll(async ({ browser }) => {
+  setup = await setupTest(browser);
+  externalSources = new ExternalSources(setup.page);
 
-  models = new Models(page);
-  externalSources = new ExternalSources(page);
-  plans = new Plans(page, models);
-  constraints = new Constraints(page);
-  schedulingConditions = new SchedulingConditions(page);
-  schedulingGoals = new SchedulingGoals(page);
-  plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
-
-  await models.goto();
-  await models.createModel(baseURL);
   await externalSources.goto();
   await externalSources.createTypes(
     externalSources.exampleTypeSchema,
@@ -39,29 +18,23 @@ test.beforeAll(async ({ baseURL, browser }) => {
     externalSources.exampleTypeSchemaExpectedEventTypes,
   );
   await externalSources.uploadExternalSource();
-  await plans.goto();
-  await plans.createPlan();
-  await plan.goto();
-  await plan.showPanel(PanelNames.EXTERNAL_SOURCES);
-  await plan.externalSourceManageButton.click();
-  await page.getByText('No Derivation Groups Found').waitFor({ state: 'hidden' });
+  await setup.plan.goto();
+  await setup.plan.showPanel(PanelNames.EXTERNAL_SOURCES);
+  await setup.plan.externalSourceManageButton.click();
+  await setup.page.getByText('No Derivation Groups Found').waitFor({ state: 'hidden' });
   await externalSources.linkDerivationGroup(externalSources.exampleDerivationGroup, externalSources.exampleSourceType);
-  await plan.goto();
+  await setup.plan.goto();
 });
 
 test.afterAll(async () => {
-  await plans.goto();
-  await plans.deletePlan();
-  await models.goto();
-  await models.deleteModel();
+  await cleanupApiResources(setup);
   await externalSources.goto();
   await externalSources.deleteSource(externalSources.externalSourceFileName);
   await externalSources.gotoTypeManager();
   await externalSources.deleteDerivationGroup(externalSources.exampleDerivationGroup);
   await externalSources.deleteExternalSourceType(externalSources.exampleSourceType);
   await externalSources.deleteExternalEventType(externalSources.exampleEventType);
-  await page.close();
-  await context.close();
+  await closeBrowserResources(setup);
 });
 
 test.describe.serial('Timeline View Editing', () => {
@@ -69,71 +42,71 @@ test.describe.serial('Timeline View Editing', () => {
   const rowName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
   test('Add an activity to the parent plan', async () => {
-    await plan.showPanel(PanelNames.TIMELINE_ITEMS);
-    await plan.addActivity('PickBanana');
-    await plan.addActivity('PeelBanana');
+    await setup.plan.showPanel(PanelNames.TIMELINE_ITEMS);
+    await setup.plan.addActivity('PickBanana');
+    await setup.plan.addActivity('PeelBanana');
   });
 
   test('Change the start time of the activity', async () => {
-    await page.getByRole('gridcell', { name: 'PickBanana' }).first().click();
-    await plan.showPanel(PanelNames.SELECTED_ACTIVITY);
-    await page.locator('input[name="start-time"]').first().click();
-    await page.locator('input[name="start-time"]').first().fill(newActivityStartTime);
-    await page.locator('input[name="start-time"]').first().press('Enter');
+    await setup.page.getByRole('gridcell', { name: 'PickBanana' }).first().click();
+    await setup.plan.showPanel(PanelNames.SELECTED_ACTIVITY);
+    await setup.page.locator('input[name="start-time"]').first().click();
+    await setup.page.locator('input[name="start-time"]').first().fill(newActivityStartTime);
+    await setup.page.locator('input[name="start-time"]').first().press('Enter');
   });
 
   test('Add a vertical guide', async () => {
-    await plan.showPanel(PanelNames.TIMELINE_EDITOR);
-    const existingGuideCount = await page.locator('.guide').count();
-    await page.getByRole('button', { name: 'New Vertical Guide' }).click();
-    const newGuideCount = await page.locator('.guide').count();
+    await setup.plan.showPanel(PanelNames.TIMELINE_EDITOR);
+    const existingGuideCount = await setup.page.locator('.guide').count();
+    await setup.page.getByRole('button', { name: 'New Vertical Guide' }).click();
+    const newGuideCount = await setup.page.locator('.guide').count();
     expect(newGuideCount - existingGuideCount).toEqual(1);
   });
 
   test('Remove a vertical guide', async () => {
-    const existingGuideCount = await page.locator('.guide').count();
-    await page.getByRole('button', { name: 'Delete Guide' }).last().click();
-    const newGuideCount = await page.locator('.guide').count();
+    const existingGuideCount = await setup.page.locator('.guide').count();
+    await setup.page.getByRole('button', { name: 'Delete Guide' }).last().click();
+    const newGuideCount = await setup.page.locator('.guide').count();
     expect(newGuideCount - existingGuideCount).toEqual(-1);
   });
 
   test('Add a row', async () => {
-    const existingRowCount = await page.locator('.timeline-row').count();
-    await page.getByRole('button', { exact: true, name: 'New Row' }).click();
-    const newRowCount = await page.locator('.timeline-row').count();
+    const existingRowCount = await setup.page.locator('.timeline-row').count();
+    await setup.page.getByRole('button', { exact: true, name: 'New Row' }).click();
+    const newRowCount = await setup.page.locator('.timeline-row').count();
     expect(newRowCount - existingRowCount).toEqual(1);
   });
 
   test('Delete a row', async () => {
-    const existingRowCount = await page.locator('.timeline-row').count();
+    const existingRowCount = await setup.page.locator('.timeline-row').count();
 
     // Click on delete button of last row
-    await page.locator('.timeline-row').last().locator("button[aria-label='Delete Row']").click();
+    await setup.page.locator('.timeline-row').last().locator("button[aria-label='Delete Row']").click();
 
     // Confirm deletion of row in modal
-    await page.locator('#svelte-modal').getByRole('button', { name: 'Delete' }).click();
+    await setup.page.locator('#svelte-modal').getByRole('button', { name: 'Delete' }).click();
 
-    const newRowCount = await page.locator('.timeline-row').count();
+    const newRowCount = await setup.page.locator('.timeline-row').count();
     expect(newRowCount - existingRowCount).toEqual(-1);
   });
 
   test('Edit a row', async () => {
     // Create a new row
-    await page.getByRole('button', { exact: true, name: 'New Row' }).click();
+    await setup.page.getByRole('button', { exact: true, name: 'New Row' }).click();
 
     // Click on edit button of last row
-    await page.locator('.timeline-row').last().locator("button[aria-label='Edit Row']").click();
+    await setup.page.locator('.timeline-row').last().locator("button[aria-label='Edit Row']").click();
 
     // Look for back button indicating that the row editor is active
-    expect(page.locator('.section-back-button ').first()).toBeDefined();
+    expect(setup.page.locator('.section-back-button ').first()).toBeDefined();
 
     // Give the row a name
-    await page.locator('input[name="name"]').first().fill(rowName);
-    await page.locator('input[name="name"]').first().blur();
+    await setup.page.locator('input[name="name"]').first().fill(rowName);
+    await setup.page.locator('input[name="name"]').first().blur();
   });
 
   test('Add an activity layer', async () => {
-    const activityLayerEditor = page.getByLabel('Activity Layer-editor');
+    const activityLayerEditor = setup.page.getByLabel('Activity Layer-editor');
     const existingLayerCount = await activityLayerEditor.locator('.timeline-layer-editor').count();
 
     // Add an activity layer
@@ -146,7 +119,7 @@ test.describe.serial('Timeline View Editing', () => {
   });
 
   test('Edit an activity layer', async () => {
-    const activityLayerEditor = page.getByLabel('Activity Layer-editor');
+    const activityLayerEditor = setup.page.getByLabel('Activity Layer-editor');
 
     // Open the activity filter builder
     await activityLayerEditor
@@ -172,7 +145,7 @@ test.describe.serial('Timeline View Editing', () => {
     expect(await modal.locator('.manual-types-menu').first()).toBeDefined();
     await modal.getByRole('menuitem', { name: 'ChangeProducer' }).click();
     await modal.getByRole('menuitem', { name: 'ControllableDurationActivity' }).click();
-    await page.keyboard.press('Escape');
+    await setup.page.keyboard.press('Escape');
 
     expect(await resultingTypesList.getByText('ChangeProducer')).toBeDefined();
     expect(await resultingTypesList.getByText('ControllableDurationActivity')).toBeDefined();
@@ -226,7 +199,7 @@ test.describe.serial('Timeline View Editing', () => {
     // Expect that manual types can be cleared
     await modal.locator("input[name='manual-types-filter-input']").click();
     await modal.getByRole('menuitem', { name: 'ChangeProducer' }).click();
-    await page.keyboard.press('Escape');
+    await setup.page.keyboard.press('Escape');
     await modal.getByRole('button', { name: 'Remove Types' }).click();
     expect(await resultingTypesList.locator('.filter-type-result').count()).toEqual(allActivityTypesCount);
 
@@ -241,17 +214,19 @@ test.describe.serial('Timeline View Editing', () => {
   });
 
   test('Change activity layer settings', async () => {
-    const activityLayerEditor = await page.getByLabel('Activity Layer-editor');
+    const activityLayerEditor = await setup.page.getByLabel('Activity Layer-editor');
 
     // Expect to not see an activity tree group in this row
-    expect(await page.locator('.timeline-row-wrapper', { hasText: rowName }).locator('.activity-tree').count()).toBe(0);
+    expect(
+      await setup.page.locator('.timeline-row-wrapper', { hasText: rowName }).locator('.activity-tree').count(),
+    ).toBe(0);
 
     // Switch to grouped display mode
-    await page.locator('button', { hasText: 'Grouped' }).click();
+    await setup.page.locator('button', { hasText: 'Grouped' }).click();
 
     // Expect to see an activity tree group for this activity in this row
     expect(
-      await page
+      await setup.page
         .locator('.timeline-row-wrapper', { hasText: rowName })
         .locator('.collapse-root', { hasText: 'PickBanana' })
         .count(),
@@ -263,14 +238,17 @@ test.describe.serial('Timeline View Editing', () => {
   });
 
   test('Add a resource layer', async () => {
-    const resourceLayerEditor = await page.getByLabel('Resource Layer-editor');
-    const yAxisEditor = await page.getByLabel('Y Axis-editor');
+    const resourceLayerEditor = await setup.page.getByLabel('Resource Layer-editor');
+    const yAxisEditor = await setup.page.getByLabel('Y Axis-editor');
     const existingLayerCount = await resourceLayerEditor.locator('.timeline-layer-editor').count();
     const existingYAxesCount = await yAxisEditor.locator('.timeline-y-axis').count();
 
     // Expect no y-axis label to exist for the row in the timeline
     expect(
-      await page.locator('.timeline-row-wrapper', { hasText: rowName }).locator('.row-header-y-axis-label').count(),
+      await setup.page
+        .locator('.timeline-row-wrapper', { hasText: rowName })
+        .locator('.row-header-y-axis-label')
+        .count(),
     ).toBe(0);
 
     // Add a resource layer
@@ -289,16 +267,19 @@ test.describe.serial('Timeline View Editing', () => {
     await resourceLayerEditor.getByRole('menuitem', { name: '/peel' }).waitFor({ state: 'detached' });
 
     // Run simulation
-    await plan.showPanel(PanelNames.SIMULATION, true);
-    await plan.runSimulation();
+    await setup.plan.showPanel(PanelNames.SIMULATION, true);
+    await setup.plan.runSimulation();
 
     // Expect the resource to have a y-axis label in the timline
-    await page
+    await setup.page
       .locator('.timeline-row-wrapper', { hasText: rowName })
       .locator('.row-header-y-axis-label')
       .waitFor({ state: 'attached' });
     expect(
-      await page.locator('.timeline-row-wrapper', { hasText: rowName }).locator('.row-header-y-axis-label').count(),
+      await setup.page
+        .locator('.timeline-row-wrapper', { hasText: rowName })
+        .locator('.row-header-y-axis-label')
+        .count(),
     ).toBe(1);
 
     // Duplicate a resource layer
@@ -315,7 +296,7 @@ test.describe.serial('Timeline View Editing', () => {
   });
 
   test('Add an external event layer', async () => {
-    const externalEventLayerEditor = page.getByLabel('Event Layer-editor');
+    const externalEventLayerEditor = setup.page.getByLabel('Event Layer-editor');
     const existingLayerCount = await externalEventLayerEditor.locator('.timeline-layer-editor').count();
 
     // Add an external event layer
@@ -327,7 +308,7 @@ test.describe.serial('Timeline View Editing', () => {
   });
 
   test('Edit an external event layer', async () => {
-    const externalEventLayerEditor = page.getByLabel('Event Layer-editor');
+    const externalEventLayerEditor = setup.page.getByLabel('Event Layer-editor');
 
     // Open the external event filter builder
     await externalEventLayerEditor
@@ -349,7 +330,7 @@ test.describe.serial('Timeline View Editing', () => {
     await modal.locator("input[name='manual-types-filter-input']").click();
     expect(await modal.locator('.manual-types-menu').first()).toBeDefined();
     await modal.getByRole('menuitem', { name: 'ExampleEvent' }).click();
-    await page.keyboard.press('Escape');
+    await setup.page.keyboard.press('Escape');
 
     expect(await resultingTypesList.getByText('ExampleEvent')).toBeDefined();
 
@@ -374,17 +355,19 @@ test.describe.serial('Timeline View Editing', () => {
   });
 
   test('Change external event layer settings', async () => {
-    const externalEventLayerEditor = await page.getByLabel('Event Layer-editor');
+    const externalEventLayerEditor = await setup.page.getByLabel('Event Layer-editor');
 
     // Expect to not see an external event tree group in this row
-    expect(await page.locator('.timeline-row-wrapper', { hasText: rowName }).locator('.event-tree').count()).toBe(0);
+    expect(await setup.page.locator('.timeline-row-wrapper', { hasText: rowName }).locator('.event-tree').count()).toBe(
+      0,
+    );
 
     // Switch to grouped display mode
-    await page.locator('button', { hasText: 'Grouped' }).click();
+    await setup.page.locator('button', { hasText: 'Grouped' }).click();
 
     // Expect to see an external event tree group for this event in this row
     expect(
-      await page
+      await setup.page
         .locator('.timeline-row-wrapper', { hasText: rowName })
         .locator('.collapse-root', { hasText: 'ExampleEvent' })
         .count(),
@@ -400,13 +383,13 @@ test.describe.serial('Timeline View Editing', () => {
   });
 
   test('Open and close the row header context menu', async () => {
-    const rowHeaderMenuButton = await page
+    const rowHeaderMenuButton = await setup.page
       .getByRole('banner')
       .filter({ hasText: 'Activities by Type' })
       .getByLabel('Row Settings');
     await rowHeaderMenuButton.click();
-    expect(await page.getByRole('menu', { name: 'Context Menu' })).toBeVisible();
-    await page.getByRole('listitem').filter({ hasText: 'Activities by Type' }).click();
-    expect(await page.getByRole('menu', { name: 'Context Menu' })).not.toBeVisible();
+    expect(await setup.page.getByRole('menu', { name: 'Context Menu' })).toBeVisible();
+    await setup.page.getByRole('listitem').filter({ hasText: 'Activities by Type' }).click();
+    expect(await setup.page.getByRole('menu', { name: 'Context Menu' })).not.toBeVisible();
   });
 });

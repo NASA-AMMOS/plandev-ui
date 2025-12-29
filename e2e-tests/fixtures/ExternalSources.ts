@@ -60,7 +60,6 @@ export class ExternalSources {
   panelExternalEventsTable: Locator;
   saveButton: Locator;
   selectEventTableView: Locator;
-  toastTimeout: number = 5500; // How long to wait for a toast to disappear - they should take 5000ms, 500 extra for buffer
   uploadButton: Locator;
   viewContainedEventTypes: Locator;
   viewEventSourceMetadata: Locator;
@@ -79,10 +78,11 @@ export class ExternalSources {
     const externalSourceTypeTable = await this.page.locator('.external-source-type-table');
     const externalEventTypeTable = await this.page.locator('.external-event-type-table');
 
-    await this.page.getByRole('textbox').isVisible();
-    await this.page.getByRole('textbox').focus();
-    await this.page.getByRole('textbox').setInputFiles(typeSchema);
-    await this.page.getByRole('textbox').evaluate(e => e.blur());
+    const schemaFileInput = this.page.getByLabel('Type JSON Schema File');
+    await schemaFileInput.isVisible();
+    await schemaFileInput.focus();
+    await schemaFileInput.setInputFiles(typeSchema);
+    await schemaFileInput.evaluate(e => e.blur());
 
     await this.page.getByText('Source & Event Type Attribute Schema Parsed').isVisible();
 

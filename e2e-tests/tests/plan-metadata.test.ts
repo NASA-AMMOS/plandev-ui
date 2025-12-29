@@ -1,4 +1,4 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
 import { PanelNames, Plan } from '../fixtures/Plan.js';
@@ -6,11 +6,11 @@ import { Plans } from '../fixtures/Plans.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
 import { User, performLogin } from '../fixtures/User.js';
+import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
 
+let setup: BrowserSetupResult;
 let constraints: Constraints;
-let context: BrowserContext;
 let models: Models;
-let page: Page;
 let planA: Plan;
 let planB: Plan;
 let plans: Plans;
@@ -20,18 +20,17 @@ let userA: User;
 let userB: User;
 
 test.beforeAll(async ({ browser, baseURL }) => {
-  context = await browser.newContext();
-  page = await context.newPage();
+  setup = await setupTest(browser, { model: false });
 
-  userA = new User(page, 'userA');
-  userB = new User(page, 'userB');
-  models = new Models(page);
-  plans = new Plans(page, models);
-  constraints = new Constraints(page);
-  schedulingConditions = new SchedulingConditions(page);
-  schedulingGoals = new SchedulingGoals(page);
-  planA = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions, plans.createPlanName());
-  planB = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions, plans.createPlanName());
+  userA = new User(setup.page, 'userA');
+  userB = new User(setup.page, 'userB');
+  models = new Models(setup.page);
+  plans = new Plans(setup.page, models);
+  constraints = new Constraints(setup.page);
+  schedulingConditions = new SchedulingConditions(setup.page);
+  schedulingGoals = new SchedulingGoals(setup.page);
+  planA = new Plan(setup.page, plans, constraints, schedulingGoals, schedulingConditions, plans.createPlanName());
+  planB = new Plan(setup.page, plans, constraints, schedulingGoals, schedulingConditions, plans.createPlanName());
 
   await models.goto();
   await models.createModel(baseURL);
@@ -57,9 +56,8 @@ test.afterAll(async ({ baseURL }) => {
   await models.goto();
   await models.deleteModel();
   await userA.logout(baseURL);
-  await performLogin(page, baseURL);
-  await page.close();
-  await context.close();
+  await performLogin(setup.page, baseURL);
+  await teardownTest(setup);
 });
 
 test.describe.serial('Plan Metadata', () => {
@@ -75,7 +73,7 @@ test.describe.serial('Plan Metadata', () => {
   test('Plan name uniqueness validation enforced', async () => {
     await planA.showPanel(PanelNames.PLAN_METADATA, true);
     await planA.fillPlanName(planB.planName);
-    await expect(page.locator('.error:has-text("Plan name already exists")')).toBeDefined();
+    await expect(setup.page.locator('.error:has-text("Plan name already exists")')).toBeDefined();
   });
 
   test('Plan owner should be userA', async () => {
@@ -140,7 +138,7 @@ test.describe.serial('Plan Metadata', () => {
     await planB.showPanel(PanelNames.PLAN_METADATA, true);
 
     // Wait for plan to be an option in the input (via socket update which can take at least half a second)
-    await page.waitForTimeout(1000);
+    await setup.page.waitForTimeout(1000);
     await planB.addPlanCollaborator(planA.planName, false);
     await expect(
       planB.planCollaboratorInputContainer

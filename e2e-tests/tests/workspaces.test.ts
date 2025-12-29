@@ -1,24 +1,23 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
 import { Parcels } from '../fixtures/Parcels.js';
 import { Workspaces } from '../fixtures/Workspaces.js';
+import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
 
-let context: BrowserContext;
+let setup: BrowserSetupResult;
 let dictionaries: Dictionaries;
 let parcels: Parcels;
-let page: Page;
 let workspaces: Workspaces;
 
 test.beforeAll(async ({ baseURL, browser }) => {
   // Increase global timeout to prevent early test termination
   test.setTimeout(90000); // 90 seconds
 
-  context = await browser.newContext();
-  page = await context.newPage();
+  setup = await setupTest(browser, { model: false });
 
-  dictionaries = new Dictionaries(page);
-  parcels = new Parcels(page);
-  workspaces = new Workspaces(page, parcels, baseURL);
+  dictionaries = new Dictionaries(setup.page);
+  parcels = new Parcels(setup.page);
+  workspaces = new Workspaces(setup.page, parcels, baseURL);
 
   await dictionaries.goto();
   await dictionaries.createCommandDictionary();
@@ -31,8 +30,7 @@ test.afterAll(async () => {
   await parcels.deleteParcel();
   await dictionaries.goto();
   await dictionaries.deleteCommandDictionary();
-  await page.close();
-  await context.close();
+  await teardownTest(setup);
 });
 
 test.describe.serial('Workspaces', () => {

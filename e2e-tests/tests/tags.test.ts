@@ -1,19 +1,18 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { Tags } from '../fixtures/Tags.js';
-let context: BrowserContext;
+import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
+
+let setup: BrowserSetupResult;
 let tags: Tags;
-let page: Page;
 
 test.beforeAll(async ({ browser }) => {
-  context = await browser.newContext();
-  page = await context.newPage();
-  tags = new Tags(page);
+  setup = await setupTest(browser, { model: false });
+  tags = new Tags(setup.page);
   await tags.goto();
 });
 
 test.afterAll(async () => {
-  await page.close();
-  await context.close();
+  await teardownTest(setup);
 });
 
 test.describe.serial('Tags', () => {

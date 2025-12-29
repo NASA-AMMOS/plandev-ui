@@ -1,4 +1,4 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import { getWorkspacesUrl } from '../../src/utilities/routes.js';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
@@ -6,11 +6,11 @@ import { Parcels } from '../fixtures/Parcels.js';
 import { User } from '../fixtures/User.js';
 import { Workspace } from '../fixtures/Workspace.js';
 import { Workspaces } from '../fixtures/Workspaces.js';
+import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
 import { generateRandomName } from '../utilities/helpers.js';
 
-let context: BrowserContext;
+let setup: BrowserSetupResult;
 let dictionaries: Dictionaries;
-let page: Page;
 let parcels: Parcels;
 let sequence: { sequenceName: string; sequencePath: string };
 let testUser: User;
@@ -25,16 +25,16 @@ test.beforeAll(async ({ baseURL, browser }) => {
   // Increase global timeout to prevent early test termination
   test.setTimeout(90000); // 90 seconds
 
-  context = await browser.newContext({ acceptDownloads: true });
-  page = await context.newPage();
+  // TODO need to accept downloads in context, used to be await browser.newContext({ acceptDownloads: true });
+  setup = await setupTest(browser, { model: false });
 
-  dictionaries = new Dictionaries(page);
-  parcels = new Parcels(page);
-  workspaces = new Workspaces(page, parcels, baseURL);
+  dictionaries = new Dictionaries(setup.page);
+  parcels = new Parcels(setup.page);
+  workspaces = new Workspaces(setup.page, parcels, baseURL);
 
-  testUser = new User(page, 'test');
-  userAuthorized = new User(page, 'userA');
-  userUnauthorized = new User(page, 'userB');
+  testUser = new User(setup.page, 'test');
+  userAuthorized = new User(setup.page, 'userA');
+  userUnauthorized = new User(setup.page, 'userB');
 
   // Setup dependencies: dictionary and parcel
   await dictionaries.goto();
@@ -48,8 +48,8 @@ test.beforeAll(async ({ baseURL, browser }) => {
   workspaceName = workspaces.workspaceName;
 
   // Initialize workspace fixture
-  workspace = new Workspace(page, workspaceId, workspaceName, baseURL);
-  workspace.updatePage(page);
+  workspace = new Workspace(setup.page, workspaceId, workspaceName, baseURL);
+  workspace.updatePage(setup.page);
 
   await workspace.goto();
 });
@@ -63,14 +63,13 @@ test.afterAll(async () => {
   await dictionaries.goto();
   await dictionaries.deleteCommandDictionary();
 
-  await page.close();
-  await context.close();
+  await teardownTest(setup);
 });
 
 test.describe.serial('Workspace', () => {
   test('Navigate to workspace should display workspace correctly', async () => {
-    await expect(page.locator('.workspace-title')).toBeVisible();
-    await expect(page).toHaveURL(getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId)));
+    await expect(setup.page.locator('.workspace-title')).toBeVisible();
+    await expect(setup.page).toHaveURL(getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId)));
     await workspace.pageLoadingLocatorWithData.waitFor({ state: 'detached' });
   });
 
@@ -83,7 +82,7 @@ test.describe.serial('Workspace', () => {
     await expect(workspace.workspaceHeaderMenu.getByRole('menuitem', { name: 'New File' })).toBeVisible();
 
     // Close menu by pressing Escape
-    await page.keyboard.press('Escape');
+    await setup.page.keyboard.press('Escape');
     await expect(workspace.workspaceHeaderMenu).not.toBeVisible();
   });
 
@@ -106,7 +105,7 @@ test.describe.serial('Workspace', () => {
     await workspace.searchForFileAndWait(sequence.sequenceName);
     await workspace.clickFile(sequence.sequenceName);
 
-    await expect(page).toHaveURL(
+    await expect(setup.page).toHaveURL(
       getWorkspacesUrl(
         workspace.baseURL,
         parseInt(workspace.workspaceId),
@@ -431,7 +430,7 @@ test.describe.serial('Workspace', () => {
   test('Add collaborator to workspace', async () => {
     await workspace.workspaceCollaboratorInput.click();
     await workspace.workspaceCollaboratorInput.fill(userAuthorized.username);
-    await page.getByRole('option', { exact: true, name: userAuthorized.username }).click();
+    await setup.page.getByRole('option', { exact: true, name: userAuthorized.username }).click();
 
     await workspace.waitForToast('Workspace Collaborators Updated');
   });

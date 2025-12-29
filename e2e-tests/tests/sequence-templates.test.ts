@@ -1,4 +1,4 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { AppNav } from '../fixtures/AppNav.js';
 import { Constraints } from '../fixtures/Constraints.js';
@@ -10,6 +10,7 @@ import { Plans } from '../fixtures/Plans.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
 import { SequenceTemplates } from '../fixtures/SequenceTemplates.js';
+import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
 
 const sequenceFilterName: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 const sequenceTemplateName: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
@@ -17,52 +18,50 @@ const sequenceTemplateContent: string = '/C Example_Command "ARG1"';
 const sequenceTemplateOutputContent: string = 'C Example_Command "ARG1"';
 const sequenceTemplateLanguage: string = 'SeqN';
 
+let setup: BrowserSetupResult;
 let appNav: AppNav;
-let context: BrowserContext;
 let constraints: Constraints;
 let sequenceTemplates: SequenceTemplates;
 let dictionaries: Dictionaries;
 let dictionaryName: string;
 let models: Models;
 let parcels: Parcels;
-let page: Page;
 let plan: Plan;
 let plans: Plans;
 let schedulingConditions: SchedulingConditions;
 let schedulingGoals: SchedulingGoals;
 
 test.beforeAll(async ({ baseURL, browser }) => {
-  context = await browser.newContext();
-  page = await context.newPage();
-  appNav = new AppNav(page);
+  setup = await setupTest(browser, { model: false });
+  appNav = new AppNav(setup.page);
 
-  models = new Models(page);
+  models = new Models(setup.page);
   await models.goto();
   await models.createModel(baseURL);
 
-  plans = new Plans(page, models);
-  constraints = new Constraints(page);
-  schedulingConditions = new SchedulingConditions(page);
-  schedulingGoals = new SchedulingGoals(page);
-  plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
+  plans = new Plans(setup.page, models);
+  constraints = new Constraints(setup.page);
+  schedulingConditions = new SchedulingConditions(setup.page);
+  schedulingGoals = new SchedulingGoals(setup.page);
+  plan = new Plan(setup.page, plans, constraints, schedulingGoals, schedulingConditions);
   await plans.goto();
   await plans.createPlan();
   await plan.goto();
   await plan.addActivity('PeelBanana');
   await plan.showPanel(PanelNames.SIMULATION, true);
   await plan.runSimulation();
-  await page.waitForTimeout(1000); // wait for sim results
+  await setup.page.waitForTimeout(1000); // wait for sim results
 
-  dictionaries = new Dictionaries(page);
+  dictionaries = new Dictionaries(setup.page);
   await dictionaries.goto();
   await dictionaries.createCommandDictionary();
   dictionaryName = dictionaries.commandDictionaryName;
 
-  parcels = new Parcels(page);
+  parcels = new Parcels(setup.page);
   await parcels.goto();
   await parcels.createParcel(dictionaryName, baseURL);
 
-  sequenceTemplates = new SequenceTemplates(page, parcels, models);
+  sequenceTemplates = new SequenceTemplates(setup.page, parcels, models);
 });
 
 test.afterAll(async () => {
@@ -71,8 +70,7 @@ test.afterAll(async () => {
   await models.goto();
   await models.deleteModel();
   await parcels.goto();
-  await page.close();
-  await context.close();
+  await teardownTest(setup);
 });
 
 test.describe.serial('Sequence Templates', () => {
@@ -83,7 +81,7 @@ test.describe.serial('Sequence Templates', () => {
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
     await appNav.appMenuItemSequenceTemplates.click();
-    await expect(page).toHaveURL(`${baseURL}/sequence-templates`);
+    await expect(setup.page).toHaveURL(`${baseURL}/sequence-templates`);
   });
   test('Create new sequence template', async () => {
     await sequenceTemplates.goto();
@@ -98,14 +96,14 @@ test.describe.serial('Sequence Templates', () => {
     await plan.showPanel(PanelNames.EXPANSION);
     await plan.createSequenceFilter(sequenceFilterName);
     await plan.applySequenceFilter(sequenceFilterName, plans.planId);
-    const expansionSequenceItem = page.locator('.sne-items').getByText(`${sequenceFilterName} Sequence`);
+    const expansionSequenceItem = setup.page.locator('.sne-items').getByText(`${sequenceFilterName} Sequence`);
     await expansionSequenceItem.hover();
-    await page.getByLabel('Expand Sequence').click();
+    await setup.page.getByLabel('Expand Sequence').click();
     await plan.waitForToast('Sequence Templating Succeeded');
-    await page.getByLabel('Show Expanded Sequence').click();
+    await setup.page.getByLabel('Show Expanded Sequence').click();
     await plan.sequenceExpansionOutputModal.waitFor({ state: 'attached' });
     await plan.sequenceExpansionOutputModal.waitFor({ state: 'visible' });
-    await page.getByText('Loading Editor...').waitFor({ state: 'detached' });
+    await setup.page.getByText('Loading Editor...').waitFor({ state: 'detached' });
     await expect(plan.sequenceExpansionOutputModal.getByText(sequenceTemplateOutputContent)).toBeVisible();
   });
   test('Delete a sequence template', async () => {

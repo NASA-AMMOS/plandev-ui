@@ -132,13 +132,16 @@ export class Plan {
     // Click input first to trigger focus and open dropdown
     await this.planCollaboratorInput.click();
     await this.planCollaboratorInput.fill(name);
-    await this.page.getByRole('option', { name }).click();
+    // Wait for suggestions dropdown to appear and find option within it
+    const suggestionsDropdown = this.page.locator('#tags-input');
+    await expect(suggestionsDropdown).toBeVisible();
+    await suggestionsDropdown.getByRole('option', { name }).click();
     // If the name is a username then check for the existence of the username in selected items
     // Otherwise it is a plan option and will add an unspecified amount of users
     if (isUsername) {
       await expect(
         this.planCollaboratorInputContainer.getByTestId('tags-input-selected-items').getByRole('option', { name }),
-      ).not.toBeUndefined();
+      ).toBeVisible();
     }
     await this.waitForToast('Plan Collaborators Updated');
   }
@@ -632,6 +635,7 @@ export class Plan {
   }
 
   async waitForPlanCollaboratorLoad() {
+    await expect(this.planCollaboratorInputContainer).toBeVisible({ timeout: 10000 });
     await expect(this.planCollaboratorLoadingInput).not.toBeVisible({ timeout: 10000 });
   }
 

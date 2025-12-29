@@ -548,12 +548,13 @@
       {#if selectedDerivationGroup === undefined && selectedExternalSourceType === undefined && selectedExternalEventType === undefined}
         <div>
           <div class="type-creation-input">
-            <label for="file">Type JSON Schema File</label>
+            <label for="jsonSchemaFile">Type JSON Schema File</label>
             <input
               bind:this={fileInput}
               class="upload w-full"
               class:error={!!uploadResponseErrors.length}
-              name="file"
+              name="JSON Schema File"
+              id="jsonSchemaFile"
               required
               type="file"
               accept="application/json"
