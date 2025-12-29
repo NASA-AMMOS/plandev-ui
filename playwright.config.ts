@@ -46,9 +46,6 @@ const config: PlaywrightTestConfig = {
     {
       name: 'teardown',
       testMatch: /global\.teardown\.ts/,
-      use: {
-        storageState: STORAGE_STATE,
-      },
     },
   ],
   reportSlowTests: {

@@ -7,9 +7,11 @@
  * Reuses existing GQL queries from src/utilities/gql.ts to avoid duplication.
  */
 
+import type { Browser, BrowserContext, Page } from '@playwright/test';
 import fs from 'fs';
 import nodePath from 'path';
 import url from 'url';
+import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { SchedulingDefinitionType } from '../../src/enums/scheduling.js';
 import { ActivityDirectiveInsertInput } from '../../src/types/activity.js';
 import type { ReqAuthResponse } from '../../src/types/auth';
@@ -19,6 +21,13 @@ import { PlanInsertInput } from '../../src/types/plan.js';
 import { SchedulingGoalDefinitionInsertInput, SchedulingGoalInsertInput } from '../../src/types/scheduling.js';
 import { convertToQuery } from '../../src/utilities/generic.js';
 import gql from '../../src/utilities/gql.js';
+import { STORAGE_STATE } from '../../playwright.config.js';
+import { Constraints } from '../fixtures/Constraints.js';
+import { Models } from '../fixtures/Models.js';
+import { Plan } from '../fixtures/Plan.js';
+import { Plans } from '../fixtures/Plans.js';
+import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
+import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
 
 // Default URLs from environment variables, with fallbacks for local development
 const DEFAULT_HASURA_URL = process.env.PUBLIC_HASURA_CLIENT_URL ?? 'http://localhost:8080/v1/graphql';
@@ -41,12 +50,14 @@ export interface SharedTestData {
  * Bypasses the UI for faster test setup and teardown.
  */
 export class AerieApi {
+  private gatewayUrl: string;
+  private hasuraUrl: string;
   private user: ApiUser | null = null;
 
-  constructor(
-    private hasuraUrl: string = DEFAULT_HASURA_URL,
-    private gatewayUrl: string = DEFAULT_GATEWAY_URL,
-  ) {}
+  constructor(hasuraUrl: string = DEFAULT_HASURA_URL, gatewayUrl: string = DEFAULT_GATEWAY_URL) {
+    this.hasuraUrl = hasuraUrl;
+    this.gatewayUrl = gatewayUrl;
+  }
 
   async createActivityDirective(activityDirective: ActivityDirectiveInsertInput): Promise<{ id: number }> {
     const data = await this.gqlQuery<{ createActivityDirective: { id: number } }>(gql.CREATE_ACTIVITY_DIRECTIVE, {
@@ -334,4 +345,141 @@ export function getSharedTestData(): SharedTestData {
 
   const data = fs.readFileSync(sharedDataPath, 'utf-8');
   return JSON.parse(data) as SharedTestData;
+}
+
+/**
+ * Result of setting up a test with model and plan via API.
+ */
+export interface TestSetupResult {
+  api: AerieApi;
+  constraints: Constraints;
+  context: BrowserContext;
+  modelId: number;
+  modelName: string;
+  models: Models;
+  page: Page;
+  plan: Plan;
+  planId: number;
+  planName: string;
+  plans: Plans;
+  schedulingConditions: SchedulingConditions;
+  schedulingGoals: SchedulingGoals;
+}
+
+/**
+ * Options for setting up a test.
+ */
+export interface TestSetupOptions {
+  modelName?: string;
+  planDuration?: string;
+  planName?: string;
+  planStartTime?: string;
+}
+
+/**
+ * Set up a complete test environment with model, plan, and UI fixtures.
+ * This is a convenience function that handles the common boilerplate for API-based tests.
+ *
+ * Usage in test.beforeAll:
+ * ```typescript
+ * let setup: TestSetupResult;
+ *
+ * test.beforeAll(async ({ browser }) => {
+ *   setup = await setupTest(browser);
+ * });
+ *
+ * test.afterAll(async () => {
+ *   await teardownTest(setup);
+ * });
+ * ```
+ */
+export async function setupTest(browser: Browser, options: TestSetupOptions = {}): Promise<TestSetupResult> {
+  const modelName = options.modelName ?? uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+  const planName = options.planName ?? uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+  const planDuration = options.planDuration ?? '432000000000'; // 5 days in microseconds
+  const planStartTime = options.planStartTime ?? '2022-001T00:00:00';
+
+  // Initialize API client and login
+  const api = new AerieApi();
+  await api.login('test', 'test');
+
+  // Use pre-uploaded JAR from global setup
+  const { jarId } = getSharedTestData();
+
+  // Create model via API
+  const model = await api.createModel({
+    jar_id: jarId,
+    mission: 'test',
+    name: modelName,
+    version: '1.0.0',
+  });
+  const modelId = model.id;
+
+  // Create plan via API
+  const planResult = await api.createPlan({
+    duration: planDuration,
+    model_id: modelId,
+    name: planName,
+    start_time: planStartTime,
+  });
+  const planId = planResult.id;
+
+  // Set up browser context WITH auth state
+  const context = await browser.newContext({ storageState: STORAGE_STATE });
+  const page = await context.newPage();
+
+  // Initialize fixture classes for UI interactions
+  const models = new Models(page);
+  models.modelId = String(modelId);
+  models.modelName = modelName;
+
+  const plans = new Plans(page, models);
+  plans.planId = String(planId);
+  plans.planName = planName;
+
+  const constraints = new Constraints(page);
+  const schedulingConditions = new SchedulingConditions(page);
+  const schedulingGoals = new SchedulingGoals(page);
+  const plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
+
+  return {
+    api,
+    constraints,
+    context,
+    modelId,
+    modelName,
+    models,
+    page,
+    plan,
+    planId,
+    planName,
+    plans,
+    schedulingConditions,
+    schedulingGoals,
+  };
+}
+
+/**
+ * Clean up test resources created by setupTest.
+ * Deletes the plan and model via API, then closes the browser context.
+ */
+export async function teardownTest(setup: TestSetupResult): Promise<void> {
+  // Clean up via API - much faster than UI navigation
+  if (setup.planId) {
+    try {
+      await setup.api.deletePlan(setup.planId);
+    } catch {
+      // Ignore cleanup errors
+    }
+  }
+  if (setup.modelId) {
+    try {
+      await setup.api.deleteModel(setup.modelId);
+    } catch {
+      // Ignore cleanup errors
+    }
+  }
+
+  await setup.page.close();
+  await setup.context.close();
 }

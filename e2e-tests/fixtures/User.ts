@@ -4,8 +4,10 @@ import { AppNav } from './AppNav.js';
 
 export async function performLogin(page: Page, baseURL?: string, username: string = 'test') {
   await page.goto(`${baseURL ?? ''}/login`, { waitUntil: 'networkidle' });
-  await page.waitForTimeout(1000);
-  await page.locator('input[name="username"]').fill(username);
+  // Wait for the login form to be ready
+  const usernameInput = page.locator('input[name="username"]');
+  await usernameInput.waitFor({ state: 'visible' });
+  await usernameInput.fill(username);
   await page.locator('input[name="password"]').fill('test');
   await page.getByRole('button', { name: 'Login' }).click();
   await page.waitForURL(`${baseURL ?? ''}/plans`);
