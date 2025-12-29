@@ -1,5 +1,8 @@
+import fs from 'fs';
+import path from 'path';
 import { test as setup } from '@playwright/test';
-import { STORAGE_STATE } from '../../playwright.config.js';
+import { SHARED_TEST_DATA, STORAGE_STATE } from '../../playwright.config.js';
+import { AerieApi, type SharedTestData } from '../utilities/api.js';
 import { User } from './User.js';
 
 /**
@@ -9,7 +12,7 @@ import { User } from './User.js';
  * @see https://dev.to/playwright/a-better-global-setup-in-playwright-reusing-login-with-project-dependencies-14
  */
 
-setup('set up users and log in', async ({ page }, testInfo) => {
+setup('create test users and save auth state', async ({ page }, testInfo) => {
   const baseURL = testInfo.project.use.baseURL ?? '';
 
   const testUser = new User(page, 'test');
@@ -17,9 +20,6 @@ setup('set up users and log in', async ({ page }, testInfo) => {
   const userB = new User(page, 'userB');
 
   // Add a couple of other test users to the database by logging in as them for use in certain tests
-  // TODO: find a way to delete these test users. Cannot import the reqHasura into playwright due
-  // to svelte runtime libraries that there is no solution or mock for as of 4/3/24.
-  // see https://github.com/microsoft/playwright/issues/18825#issuecomment-1421523694
   await userA.login(baseURL);
   await userA.logout(baseURL);
 
@@ -30,4 +30,22 @@ setup('set up users and log in', async ({ page }, testInfo) => {
   await testUser.login(baseURL);
 
   await page.context().storageState({ path: STORAGE_STATE });
+});
+
+setup('upload test JAR and save shared test data', async () => {
+  const api = new AerieApi();
+  await api.login('test', 'test');
+  const jarId = await api.uploadFile('e2e-tests/data/banananation-develop.jar');
+
+  const sharedData: SharedTestData = {
+    jarId,
+  };
+
+  // Ensure the directory exists
+  const sharedDir = path.dirname(SHARED_TEST_DATA);
+  if (!fs.existsSync(sharedDir)) {
+    fs.mkdirSync(sharedDir, { recursive: true });
+  }
+
+  fs.writeFileSync(SHARED_TEST_DATA, JSON.stringify(sharedData, null, 2));
 });

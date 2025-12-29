@@ -6,6 +6,7 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const STORAGE_STATE = path.join(__dirname, 'e2e-test-results/.auth/user.json');
+export const SHARED_TEST_DATA = path.join(__dirname, 'e2e-test-results/.shared/test-data.json');
 
 const MAIN_TEST_SUITE_BASE_URL = 'http://localhost:3000';
 const SEQUENCE_TEMPLATE_TEST_SUITE_BASE_URL = 'http://localhost:3001';
