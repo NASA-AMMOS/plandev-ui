@@ -1,4 +1,4 @@
-import test, { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { Status } from '../../src/enums/status.js';
 import { PanelNames } from '../fixtures/Plan.js';
@@ -52,7 +52,9 @@ test.describe.serial('Scheduling', () => {
     await expect(
       setup.plan.schedulingConditionEnabledCheckboxSelector(setup.plan.schedulingConditions.conditionName),
     ).toBeChecked();
-    await setup.plan.schedulingConditionEnabledCheckboxSelector(setup.plan.schedulingConditions.conditionName).uncheck();
+    await setup.plan
+      .schedulingConditionEnabledCheckboxSelector(setup.plan.schedulingConditions.conditionName)
+      .uncheck();
     await expect(
       setup.plan.schedulingConditionEnabledCheckboxSelector(setup.plan.schedulingConditions.conditionName),
     ).not.toBeChecked();
