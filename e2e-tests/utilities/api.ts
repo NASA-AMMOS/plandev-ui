@@ -12,7 +12,7 @@ import fs from 'fs';
 import nodePath from 'path';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import url from 'url';
-import { STORAGE_STATE } from '../../playwright.config.js';
+import { STORAGE_STATE, USER_STORAGE_STATES } from '../../playwright.config.js';
 import { SchedulingDefinitionType } from '../../src/enums/scheduling.js';
 import { ActivityDirectiveInsertInput } from '../../src/types/activity.js';
 import type { ReqAuthResponse } from '../../src/types/auth';
@@ -350,6 +350,12 @@ export function getSharedTestData(): SharedTestData {
 }
 
 /**
+ * Available test users with pre-authenticated storage states.
+ * Storage states are created during global setup.
+ */
+export type TestUser = 'test' | 'userA' | 'userB';
+
+/**
  * Options for setting up a test.
  */
 export interface SetupOptions {
@@ -361,6 +367,12 @@ export interface SetupOptions {
   planEndTime?: string;
   planName?: string;
   planStartTime?: string;
+  /**
+   * User to authenticate as (default: 'test').
+   * Each user has a pre-authenticated storage state created during global setup.
+   * Use different users to test permission scenarios without login/logout.
+   */
+  user?: TestUser;
 }
 
 /**
@@ -435,17 +447,24 @@ export type SetupResult = BrowserSetupResult | ModelSetupResult | FullSetupResul
  */
 // Overloads for type-safe returns based on options
 export function setupTest(browser: Browser): Promise<FullSetupResult>;
-export function setupTest(browser: Browser, options: { model: false }): Promise<BrowserSetupResult>;
-export function setupTest(browser: Browser, options: { model?: true; plan: false }): Promise<ModelSetupResult>;
+export function setupTest(browser: Browser, options: { model: false; user?: TestUser }): Promise<BrowserSetupResult>;
+export function setupTest(
+  browser: Browser,
+  options: { model?: true; plan: false; user?: TestUser },
+): Promise<ModelSetupResult>;
 export function setupTest(browser: Browser, options: SetupOptions): Promise<SetupResult>;
 
 // Implementation
 export async function setupTest(browser: Browser, options: SetupOptions = {}): Promise<SetupResult> {
   const createModel = options.model !== false;
   const createPlan = createModel && options.plan !== false;
+  const user = options.user ?? 'test';
 
-  // Set up browser context WITH auth state
-  const context = await browser.newContext({ storageState: STORAGE_STATE });
+  // Get storage state for the specified user
+  const storageState = USER_STORAGE_STATES[user] ?? STORAGE_STATE;
+
+  // Set up browser context WITH auth state for the specified user
+  const context = await browser.newContext({ storageState });
   const page = await context.newPage();
 
   if (!createModel) {

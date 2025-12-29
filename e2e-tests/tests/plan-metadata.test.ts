@@ -5,59 +5,84 @@ import { PanelNames, Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
-import { User, performLogin } from '../fixtures/User.js';
+import { User } from '../fixtures/User.js';
 import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
 
-let setup: BrowserSetupResult;
-let constraints: Constraints;
-let models: Models;
+// Separate browser contexts for each user
+let setupA: BrowserSetupResult; // userA's browser context
+let setupB: BrowserSetupResult; // userB's browser context
+
+// Fixtures for userA's context
+let constraintsA: Constraints;
+let modelsA: Models;
 let planA: Plan;
 let planB: Plan;
-let plans: Plans;
-let schedulingConditions: SchedulingConditions;
-let schedulingGoals: SchedulingGoals;
-let userA: User;
-let userB: User;
+let plansA: Plans;
+let schedulingConditionsA: SchedulingConditions;
+let schedulingGoalsA: SchedulingGoals;
+
+// Fixtures for userB's context (only what we need)
+let planAForUserB: Plan;
+let plansB: Plans;
 
 test.beforeAll(async ({ browser, baseURL }) => {
-  setup = await setupTest(browser, { model: false });
+  // Create separate browser contexts for each user using pre-authenticated storage states
+  // This eliminates the need for login/logout and avoids race conditions
+  setupA = await setupTest(browser, { model: false, user: 'userA' });
+  setupB = await setupTest(browser, { model: false, user: 'userB' });
 
-  userA = new User(setup.page, 'userA');
-  userB = new User(setup.page, 'userB');
-  models = new Models(setup.page);
-  plans = new Plans(setup.page, models);
-  constraints = new Constraints(setup.page);
-  schedulingConditions = new SchedulingConditions(setup.page);
-  schedulingGoals = new SchedulingGoals(setup.page);
-  planA = new Plan(setup.page, plans, constraints, schedulingGoals, schedulingConditions, plans.createPlanName());
-  planB = new Plan(setup.page, plans, constraints, schedulingGoals, schedulingConditions, plans.createPlanName());
+  // Initialize fixtures for userA's context
+  modelsA = new Models(setupA.page);
+  plansA = new Plans(setupA.page, modelsA);
+  constraintsA = new Constraints(setupA.page);
+  schedulingConditionsA = new SchedulingConditions(setupA.page);
+  schedulingGoalsA = new SchedulingGoals(setupA.page);
+  planA = new Plan(setupA.page, plansA, constraintsA, schedulingGoalsA, schedulingConditionsA, plansA.createPlanName());
+  planB = new Plan(setupA.page, plansA, constraintsA, schedulingGoalsA, schedulingConditionsA, plansA.createPlanName());
 
-  await models.goto();
-  await models.createModel(baseURL);
+  // Initialize fixtures for userB's context (shares the same plan names)
+  const modelsB = new Models(setupB.page);
+  plansB = new Plans(setupB.page, modelsB);
+  const constraintsB = new Constraints(setupB.page);
+  const schedulingConditionsB = new SchedulingConditions(setupB.page);
+  const schedulingGoalsB = new SchedulingGoals(setupB.page);
+  planAForUserB = new Plan(
+    setupB.page,
+    plansB,
+    constraintsB,
+    schedulingGoalsB,
+    schedulingConditionsB,
+    planA.planName, // Same plan name as planA
+  );
 
-  await userA.logout(baseURL);
-  await userA.login(baseURL);
+  // Create model as userA (who has admin role by default)
+  await modelsA.goto();
+  await modelsA.createModel(baseURL);
 
-  await plans.goto();
+  // Create plans as userA
+  await plansA.goto();
 
-  const planAId = await plans.createPlan(planA.planName);
-  await plans.filterTable(planA.planName);
-  await expect(plans.table.getByRole('row', { name: planA.planName })).toBeVisible();
+  const planAId = await plansA.createPlan(planA.planName);
+  await plansA.filterTable(planA.planName);
+  await expect(plansA.table.getByRole('row', { name: planA.planName })).toBeVisible();
 
-  await plans.createPlan(planB.planName);
+  await plansA.createPlan(planB.planName);
   await planA.goto(planAId);
 });
 
-test.afterAll(async ({ baseURL }) => {
-  await plans.goto();
+test.afterAll(async () => {
+  // Clean up as userA (admin)
+  await plansA.goto();
+  const userA = new User(setupA.page, 'userA');
   await userA.switchRole('aerie_admin');
-  await plans.deletePlan(planA.planName);
-  await plans.deletePlan(planB.planName);
-  await models.goto();
-  await models.deleteModel();
-  await userA.logout(baseURL);
-  await performLogin(setup.page, baseURL);
-  await teardownTest(setup);
+  await plansA.deletePlan(planA.planName);
+  await plansA.deletePlan(planB.planName);
+  await modelsA.goto();
+  await modelsA.deleteModel();
+
+  // Close both browser contexts
+  await teardownTest(setupA);
+  await teardownTest(setupB);
 });
 
 test.describe.serial('Plan Metadata', () => {
@@ -73,82 +98,76 @@ test.describe.serial('Plan Metadata', () => {
   test('Plan name uniqueness validation enforced', async () => {
     await planA.showPanel(PanelNames.PLAN_METADATA, true);
     await planA.fillPlanName(planB.planName);
-    await expect(setup.page.locator('.error:has-text("Plan name already exists")')).toBeDefined();
+    await expect(setupA.page.locator('.error:has-text("Plan name already exists")')).toBeDefined();
   });
 
   test('Plan owner should be userA', async () => {
     await planA.showPanel(PanelNames.PLAN_METADATA, true);
-    await expect(planA.panelPlanMetadata.locator('input[name="owner"]')).toHaveValue(userA.username);
+    await expect(planA.panelPlanMetadata.locator('input[name="owner"]')).toHaveValue('userA');
   });
 
   test('userA can be added as a plan collaborator to their own plan', async () => {
-    await planA.addPlanCollaborator(userA.username);
+    await planA.addPlanCollaborator('userA');
   });
 
   test('userA can be removed as a plan collaborator', async () => {
-    await planA.removePlanCollaborator(userA.username);
+    await planA.removePlanCollaborator('userA');
   });
 
-  test(`Non-collaborator userB as role user should not be able to edit userA's plan collaborators`, async ({
-    baseURL,
-  }) => {
-    await userA.logout(baseURL);
-    await userB.login(baseURL);
-
-    await plans.goto();
-    const planAId = await plans.getPlanId(planA.planName);
-    await planA.goto(planAId);
+  test(`Non-collaborator userB as role user should not be able to edit userA's plan collaborators`, async () => {
+    // Use userB's separate browser context - no login/logout needed!
+    await plansB.goto();
+    const userB = new User(setupB.page, 'userB');
     await userB.switchRole('user');
-    await planA.showPanel(PanelNames.PLAN_METADATA, true);
-    await expect(planA.planCollaboratorInputContainer).toHaveAttribute('readonly');
+
+    const planAId = await plansB.getPlanId(planA.planName);
+    await planAForUserB.goto(planAId);
+    await planAForUserB.showPanel(PanelNames.PLAN_METADATA, true);
+    await expect(planAForUserB.planCollaboratorInputContainer).toHaveAttribute('readonly');
   });
 
-  test(`userB can be added as a plan collaborator to userA's plan`, async ({ baseURL }) => {
-    await userB.logout(baseURL);
-    await userA.login(baseURL);
-
-    await plans.goto();
-    const planAId = await plans.getPlanId(planA.planName);
+  test(`userB can be added as a plan collaborator to userA's plan`, async () => {
+    // Switch back to userA's context for this test
+    await plansA.goto();
+    const planAId = await plansA.getPlanId(planA.planName);
     await planA.goto(planAId);
 
-    await planA.addPlanCollaborator(userB.username);
+    await planA.addPlanCollaborator('userB');
   });
 
-  test(`Collaborator userB in "user" role should be able to edit userA's plan collaborators`, async ({ baseURL }) => {
-    await userA.logout(baseURL);
-    await userB.login(baseURL);
-
-    await plans.goto();
-    const planAId = await plans.getPlanId(planA.planName);
-    await planA.goto(planAId);
-
+  test(`Collaborator userB in "user" role should be able to edit userA's plan collaborators`, async () => {
+    // Use userB's separate browser context - no login/logout needed!
+    const userB = new User(setupB.page, 'userB');
     await userB.switchRole('user');
-    await planA.showPanel(PanelNames.PLAN_METADATA, true);
-    await planA.addPlanCollaborator(userA.username);
+
+    await plansB.goto();
+    const planAId = await plansB.getPlanId(planA.planName);
+    await planAForUserB.goto(planAId);
+
+    await planAForUserB.showPanel(PanelNames.PLAN_METADATA, true);
+    await planAForUserB.addPlanCollaborator('userA');
   });
 
-  test(`Sets of collaborators can be added from other plans`, async ({ baseURL }) => {
-    await userB.logout(baseURL);
-    await userA.login(baseURL);
-
-    await plans.goto();
-    const planBId = await plans.getPlanId(planB.planName);
+  test(`Sets of collaborators can be added from other plans`, async () => {
+    // Use userA's context
+    await plansA.goto();
+    const planBId = await plansA.getPlanId(planB.planName);
     await planB.goto(planBId);
 
     await planB.showPanel(PanelNames.PLAN_METADATA, true);
 
     // Wait for plan to be an option in the input (via socket update which can take at least half a second)
-    await setup.page.waitForTimeout(1000);
+    await setupA.page.waitForTimeout(1000);
     await planB.addPlanCollaborator(planA.planName, false);
     await expect(
       planB.planCollaboratorInputContainer
         .getByTestId('tags-input-selected-items')
-        .getByRole('option', { name: userA.username }),
+        .getByRole('option', { name: 'userA' }),
     ).toBeDefined();
     await expect(
       planB.planCollaboratorInputContainer
         .getByTestId('tags-input-selected-items')
-        .getByRole('option', { name: userB.username }),
+        .getByRole('option', { name: 'userB' }),
     ).toBeDefined();
   });
 });

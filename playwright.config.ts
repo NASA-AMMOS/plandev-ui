@@ -5,8 +5,18 @@ import url from 'url';
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const STORAGE_STATE = path.join(__dirname, 'e2e-test-results/.auth/user.json');
+// Storage state paths for different test users
+export const STORAGE_STATE = path.join(__dirname, 'e2e-test-results/.auth/test.json');
+export const STORAGE_STATE_USER_A = path.join(__dirname, 'e2e-test-results/.auth/userA.json');
+export const STORAGE_STATE_USER_B = path.join(__dirname, 'e2e-test-results/.auth/userB.json');
 export const SHARED_TEST_DATA = path.join(__dirname, 'e2e-test-results/.shared/test-data.json');
+
+// Map of user names to their storage state paths
+export const USER_STORAGE_STATES: Record<string, string> = {
+  test: STORAGE_STATE,
+  userA: STORAGE_STATE_USER_A,
+  userB: STORAGE_STATE_USER_B,
+};
 
 const MAIN_TEST_SUITE_BASE_URL = 'http://localhost:3000';
 const SEQUENCE_TEMPLATE_TEST_SUITE_BASE_URL = 'http://localhost:3001';

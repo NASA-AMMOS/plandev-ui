@@ -1,7 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import { test as setup } from '@playwright/test';
-import { SHARED_TEST_DATA, STORAGE_STATE } from '../../playwright.config.js';
+import {
+  SHARED_TEST_DATA,
+  STORAGE_STATE,
+  STORAGE_STATE_USER_A,
+  STORAGE_STATE_USER_B,
+} from '../../playwright.config.js';
 import { AerieApi, type SharedTestData } from '../utilities/api.js';
 import { User } from './User.js';
 
@@ -12,23 +17,36 @@ import { User } from './User.js';
  * @see https://dev.to/playwright/a-better-global-setup-in-playwright-reusing-login-with-project-dependencies-14
  */
 
-setup('create test users and save auth state', async ({ page }, testInfo) => {
+setup('create test users and save auth state', async ({ page, browser }, testInfo) => {
   const baseURL = testInfo.project.use.baseURL ?? '';
 
-  const testUser = new User(page, 'test');
-  const userA = new User(page, 'userA');
-  const userB = new User(page, 'userB');
+  // Ensure the auth directory exists
+  const authDir = path.dirname(STORAGE_STATE);
+  if (!fs.existsSync(authDir)) {
+    fs.mkdirSync(authDir, { recursive: true });
+  }
 
-  // Add a couple of other test users to the database by logging in as them for use in certain tests
+  // Create and save auth state for userA
+  const contextA = await browser.newContext();
+  const pageA = await contextA.newPage();
+  const userA = new User(pageA, 'userA');
   await userA.login(baseURL);
-  await userA.logout(baseURL);
+  await contextA.storageState({ path: STORAGE_STATE_USER_A });
+  await pageA.close();
+  await contextA.close();
 
+  // Create and save auth state for userB
+  const contextB = await browser.newContext();
+  const pageB = await contextB.newPage();
+  const userB = new User(pageB, 'userB');
   await userB.login(baseURL);
-  await userB.logout(baseURL);
+  await contextB.storageState({ path: STORAGE_STATE_USER_B });
+  await pageB.close();
+  await contextB.close();
 
-  // Log in as the main test user for most of the tests
+  // Log in as the main test user and save auth state (default for most tests)
+  const testUser = new User(page, 'test');
   await testUser.login(baseURL);
-
   await page.context().storageState({ path: STORAGE_STATE });
 });
 

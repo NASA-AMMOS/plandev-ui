@@ -1,19 +1,41 @@
 import test, { expect } from '@playwright/test';
 import { ExternalSources } from '../fixtures/ExternalSources.js';
-import { PanelNames } from '../fixtures/Plan.js';
-import { User } from '../fixtures/User.js';
-import { cleanupApiResources, closeBrowserResources, setupTest, type FullSetupResult } from '../utilities/api.js';
+import { PanelNames, Plan } from '../fixtures/Plan.js';
+import {
+  cleanupApiResources,
+  closeBrowserResources,
+  setupTest,
+  teardownTest,
+  type BrowserSetupResult,
+  type FullSetupResult,
+} from '../utilities/api.js';
 
+// Main setup with model/plan (uses 'test' user for API operations)
 let setup: FullSetupResult;
 let externalSources: ExternalSources;
-let userA: User;
-let userB: User;
+
+// Separate browser contexts for userA and userB
+let setupA: BrowserSetupResult;
+let setupB: BrowserSetupResult;
+
+// Plan fixtures for each user context
+let planForUserA: Plan;
+let planForUserB: Plan;
+
 const extendedTimeout = 5000;
 
 test.beforeAll(async ({ browser }) => {
   setup = await setupTest(browser);
   setup.plans.endTime = '2022-011T00:00:00'; // Extend to cover the whole derivation group example
   externalSources = new ExternalSources(setup.page);
+
+  // Create separate browser contexts for userA and userB (pre-authenticated)
+  setupA = await setupTest(browser, { model: false, user: 'userA' });
+  setupB = await setupTest(browser, { model: false, user: 'userB' });
+
+  // Create Plan fixtures for each user context (they'll access the same plan by ID)
+  planForUserA = new Plan(setupA.page, setup.plans, setup.constraints, setup.schedulingGoals, setup.schedulingConditions);
+  planForUserB = new Plan(setupB.page, setup.plans, setup.constraints, setup.schedulingGoals, setup.schedulingConditions);
 
   await externalSources.goto();
   await externalSources.createTypes(
@@ -44,6 +66,10 @@ test.afterAll(async () => {
   await externalSources.deleteExternalEventType(externalSources.derivationCTypeName);
   await externalSources.deleteExternalEventType(externalSources.derivationDTypeName);
   await closeBrowserResources(setup);
+
+  // Close additional user browser contexts
+  await teardownTest(setupA);
+  await teardownTest(setupB);
 });
 
 test.beforeEach(async () => {
@@ -76,32 +102,24 @@ test.describe.serial('Plan External Sources', () => {
     );
   });
 
-  test('External event types can be added to the timeline', async ({ baseURL }) => {
-    /// Setup test users
-    await setup.models.goto();
-    userA = new User(setup.page, 'userA');
-    userB = new User(setup.page, 'userB');
-
-    await userB.logout(baseURL);
-    await userA.login(baseURL);
-
-    await setup.plan.goto();
-    await setup.plan.showPanel(PanelNames.TIMELINE_ITEMS);
-    await setup.page.getByRole('tab', { exact: true, name: 'Events' }).click();
-    await expect(setup.page.locator('.list-item').getByText(externalSources.exampleEventType)).toBeVisible();
-    await setup.page.locator('.list-item').getByText(externalSources.exampleEventType).first().hover();
-    await setup.page.getByLabel(`AddExternalevent-${externalSources.exampleEventType}`).click();
-    await setup.page.getByRole('menuitem', { name: 'New Row +' }).click();
+  test('External event types can be added to the timeline', async () => {
+    // Use userA's separate browser context - no login/logout needed!
+    await planForUserA.goto();
+    await planForUserA.showPanel(PanelNames.TIMELINE_ITEMS);
+    await setupA.page.getByRole('tab', { exact: true, name: 'Events' }).click();
+    await expect(setupA.page.locator('.list-item').getByText(externalSources.exampleEventType)).toBeVisible();
+    await setupA.page.locator('.list-item').getByText(externalSources.exampleEventType).first().hover();
+    await setupA.page.getByLabel(`AddExternalevent-${externalSources.exampleEventType}`).click();
+    await setupA.page.getByRole('menuitem', { name: 'New Row +' }).click();
     await expect(
-      setup.page.locator('#timeline-0').getByRole('button', { name: externalSources.exampleEventType }),
+      setupA.page.locator('#timeline-0').getByRole('button', { name: externalSources.exampleEventType }),
     ).toBeVisible();
 
-    // Logout and switch to userB, assert the row does NOT exist anymore
-    await userA.logout(baseURL);
-    await userB.login(baseURL);
-    await setup.plan.goto();
+    // Use userB's separate browser context - no login/logout needed!
+    // Assert the timeline row does NOT exist for userB (user-specific settings)
+    await planForUserB.goto();
     await expect(
-      setup.page.locator('#timeline-0').getByRole('button', { name: externalSources.exampleEventType }),
+      setupB.page.locator('#timeline-0').getByRole('button', { name: externalSources.exampleEventType }),
     ).not.toBeVisible();
   });
 
