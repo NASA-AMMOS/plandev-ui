@@ -166,7 +166,7 @@ test.describe.serial('Workspace', () => {
     await workspace.searchForFileAndWait(sequenceName);
 
     // Rename the file
-    const newName = 'renamed-file.seq';
+    const newName = `${generateRandomName()}.seq`;
     await workspace.renameWorkspaceItem(sequenceName, newName, false);
 
     // Verify rename succeeded and cleanup
