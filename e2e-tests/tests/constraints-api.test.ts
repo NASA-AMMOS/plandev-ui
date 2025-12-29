@@ -5,9 +5,9 @@
  * Model and plan are created via API and automatically cleaned up after tests.
  */
 import test from '@playwright/test';
-import { setupTest, teardownTest, type TestSetupResult } from '../utilities/api.js';
+import { FullSetupResult, setupTest, teardownTest } from '../utilities/api.js';
 
-let setup: TestSetupResult;
+let setup: FullSetupResult;
 
 test.beforeAll(async ({ browser }) => {
   setup = await setupTest(browser);

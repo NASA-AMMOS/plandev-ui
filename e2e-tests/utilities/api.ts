@@ -569,6 +569,3 @@ export async function teardownTest(setup: SetupResult): Promise<void> {
   await cleanupApiResources(setup);
   await closeBrowserResources(setup);
 }
-
-// Legacy export for backwards compatibility (most tests use full setup)
-export type TestSetupResult = FullSetupResult;

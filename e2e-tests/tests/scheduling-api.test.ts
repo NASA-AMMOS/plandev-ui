@@ -8,9 +8,9 @@ import { expect, test } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { Status } from '../../src/enums/status.js';
 import { PanelNames } from '../fixtures/Plan.js';
-import { setupTest, teardownTest, type TestSetupResult } from '../utilities/api.js';
+import { setupTest, teardownTest, type FullSetupResult } from '../utilities/api.js';
 
-let setup: TestSetupResult;
+let setup: FullSetupResult;
 
 const goalName1: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 const goalName2: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
@@ -59,7 +59,9 @@ test.describe.serial('Scheduling (API Setup)', () => {
     await expect(
       setup.plan.schedulingConditionEnabledCheckboxSelector(setup.plan.schedulingConditions.conditionName),
     ).toBeChecked();
-    await setup.plan.schedulingConditionEnabledCheckboxSelector(setup.plan.schedulingConditions.conditionName).uncheck();
+    await setup.plan
+      .schedulingConditionEnabledCheckboxSelector(setup.plan.schedulingConditions.conditionName)
+      .uncheck();
     await expect(
       setup.plan.schedulingConditionEnabledCheckboxSelector(setup.plan.schedulingConditions.conditionName),
     ).not.toBeChecked();
