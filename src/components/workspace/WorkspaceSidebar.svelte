@@ -214,6 +214,7 @@
                         {user}
                         on:nodeClicked
                         on:nodeDelete
+                        on:nodeDownload
                         on:nodeMove
                         on:nodeRename
                         on:newFolder
@@ -261,6 +262,7 @@
                         {user}
                         {isRowSelectable}
                         on:nodeDelete
+                        on:nodeDownload
                         on:nodeMove
                         on:nodeRename
                         on:newSequence

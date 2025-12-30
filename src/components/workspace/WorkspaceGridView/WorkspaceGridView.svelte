@@ -70,6 +70,7 @@
     newFolder: string;
     newSequence: string;
     nodeDelete: WorkspaceNodeEvent;
+    nodeDownload: WorkspaceNodeEvent;
     nodeMove: WorkspaceNodeEvent;
     nodeRename: WorkspaceNodeEvent;
     runAction: WorkspaceNodeRunActionEvent;
@@ -285,6 +286,15 @@
     closeBreadcrumbMenu();
   }
 
+  function onDownloadNode(node: WorkspaceTreeNodeWithFullPath) {
+    dispatch('nodeDownload', {
+      toggleState: true,
+      treeNode: node,
+      treeNodePath: node.fullPath,
+    });
+    closeBreadcrumbMenu();
+  }
+
   function onMoveNode(node: WorkspaceTreeNodeWithFullPath) {
     dispatch('nodeMove', {
       toggleState: true,
@@ -387,6 +397,12 @@
   function onTableDeleteNode() {
     if (contextMenuNode) {
       onDeleteNode(contextMenuNode);
+    }
+  }
+
+  function onTableDownloadNode() {
+    if (contextMenuNode) {
+      onDownloadNode(contextMenuNode);
     }
   }
 
@@ -622,6 +638,7 @@
         on:rename={onTableMenuRenameNode}
         on:move={onTableMenuMoveNode}
         on:delete={onTableDeleteNode}
+        on:download={onTableDownloadNode}
         on:copyFileLocation={onTableCopyFileLocation}
         on:moveToWorkspace={onTableMoveToWorkspace}
         on:runAction={event => onTableRunAction(event, selectedItemIds)}

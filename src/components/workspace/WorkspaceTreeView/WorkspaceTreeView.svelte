@@ -36,6 +36,7 @@
     newSequence: string;
     nodeClicked: WorkspaceNodeEvent;
     nodeDelete: WorkspaceNodeEvent;
+    nodeDownload: WorkspaceNodeEvent;
     nodeMove: WorkspaceNodeEvent;
     nodeRename: WorkspaceNodeEvent;
     runAction: WorkspaceNodeRunActionEvent;
@@ -81,6 +82,16 @@
   function onDeleteNode() {
     if (contextMenuNode) {
       dispatch('nodeDelete', {
+        toggleState: true,
+        treeNode: contextMenuNode,
+        treeNodePath: contextMenuNode.fullPath,
+      });
+    }
+  }
+
+  function onDownloadNode() {
+    if (contextMenuNode) {
+      dispatch('nodeDownload', {
         toggleState: true,
         treeNode: contextMenuNode,
         treeNodePath: contextMenuNode.fullPath,
@@ -162,6 +173,7 @@
         on:rename={onRenameNode}
         on:move={onMoveNode}
         on:delete={onDeleteNode}
+        on:download={onDownloadNode}
         on:copyFileLocation={onCopyFileLocation}
         on:moveToWorkspace={onMoveToWorkspace}
         on:runAction={onRunAction}

@@ -3,7 +3,6 @@
 <script lang="ts">
   import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
-  import { WorkspaceContentType } from '../../enums/workspace';
   import type { ActionParameterPair } from '../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -18,6 +17,7 @@
   const dispatch = createEventDispatcher<{
     copyFileLocation: void;
     delete: void;
+    download: void;
     hide: void;
     importFile: void;
     move: void;
@@ -93,11 +93,7 @@
 <ContextMenu.Separator />
 {#if selectedWorkspaceNodes.length === 1}
   <div>
-    <ContextMenu.Item size="sm" on:click={() => dispatch('copyFileLocation')} aria-label="Copy Link to">
-      Copy {selectedWorkspaceNodes[0].type === WorkspaceContentType.Directory
-        ? 'Link to Directory'
-        : 'Download Link to File'}
-    </ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={() => dispatch('download')} aria-label="Download">Download</ContextMenu.Item>
   </div>
   <ContextMenu.Separator />
 {/if}

@@ -57,7 +57,7 @@
   import { openActionRun } from '../../../utilities/actions';
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
-  import { filterEmpty } from '../../../utilities/generic';
+  import { downloadBlob, filterEmpty } from '../../../utilities/generic';
   import { showConfirmModal } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
   import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
@@ -442,6 +442,18 @@
     }
   }
 
+  async function onNodeDownload({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
+    if ($workspaceId) {
+      const filename = treeNode.name;
+      if (filename) {
+        const fileContent = await effects.getWorkspaceFileContent($workspaceId, treeNodePath, user);
+        if (fileContent) {
+          downloadBlob(new Blob([fileContent]), filename);
+        }
+      }
+    }
+  }
+
   async function onNodeMove({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
     if ($workspace && workspaceTree) {
       let shouldUpdateSelectedSequencePath = treeNodePath === activeFilePath;
@@ -616,6 +628,7 @@
       on:deleteCollaborator={onDeleteCollaborator}
       on:nodeClicked={onNodeClicked}
       on:nodeDelete={onNodeDelete}
+      on:nodeDownload={onNodeDownload}
       on:nodeMove={onNodeMove}
       on:nodeRename={onNodeRename}
       on:newFolder={onNewFolder}
