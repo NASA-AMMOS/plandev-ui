@@ -14,7 +14,7 @@ test.afterAll(async () => {
   await teardownTest(setup);
 });
 
-test.describe.serial('App Nav', () => {
+test.describe('App Nav', () => {
   test.beforeEach(async () => {
     await appNav.goto();
   });
@@ -139,8 +139,12 @@ test.describe.serial('App Nav', () => {
     await appNav.aboutModal.waitFor({ state: 'hidden' });
     await expect(appNav.aboutModal).not.toBeVisible();
   });
+});
 
+// Logout test in separate serial block - must run last as it invalidates the session
+test.describe.serial('App Nav - Logout', () => {
   test(`Clicking on the app menu 'Logout' option should route to the login page`, async ({ baseURL }) => {
+    await appNav.goto();
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });

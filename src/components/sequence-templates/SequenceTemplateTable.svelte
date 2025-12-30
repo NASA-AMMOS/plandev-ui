@@ -184,25 +184,21 @@
   }
 </script>
 
-{#if $sequenceTemplates.length}
-  <div id="sequence-templates-table">
-    <SingleActionDataGrid
-      {columnDefs}
-      filterExpression={filterText}
-      hasEdit={true}
-      {hasEditPermission}
-      {hasDeletePermission}
-      itemDisplayText="Template"
-      items={$sequenceTemplates}
-      {user}
-      on:deleteItem={deleteTemplateContext}
-      on:editItem={editTemplateContext}
-      on:rowSelected={toggleTemplate}
-    />
-  </div>
-{:else}
-  <div class="st-typography-label">No Templates Found</div>
-{/if}
+<div id="sequence-templates-table">
+  <SingleActionDataGrid
+    {columnDefs}
+    filterExpression={filterText}
+    hasEdit={true}
+    {hasEditPermission}
+    {hasDeletePermission}
+    itemDisplayText="Template"
+    items={$sequenceTemplates}
+    {user}
+    on:deleteItem={deleteTemplateContext}
+    on:editItem={editTemplateContext}
+    on:rowSelected={toggleTemplate}
+  />
+</div>
 
 <style>
   #sequence-templates-table {

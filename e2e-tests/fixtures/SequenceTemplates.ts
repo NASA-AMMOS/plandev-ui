@@ -60,7 +60,7 @@ export class SequenceTemplates {
     await this.page.getByRole('option', { name: this.sequenceTemplateActivityType }).click();
   }
 
-  async selectLanguage(language) {
+  async selectLanguage(language: string) {
     await this.newSequenceTemplateLanguageInput.click();
     await expect(this.page.getByRole('option', { name: language })).toBeVisible();
     await this.page.getByRole('option', { name: language }).click();

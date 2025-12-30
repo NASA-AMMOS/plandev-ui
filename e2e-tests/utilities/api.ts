@@ -133,6 +133,26 @@ export class AerieApi {
     await this.gqlQuery(gql.DELETE_CONSTRAINT_METADATA, { id });
   }
 
+  async deleteDerivationGroups(derivationGroupNames: string[]): Promise<void> {
+    await this.gqlQuery(gql.DELETE_DERIVATION_GROUPS, { derivationGroupNames });
+  }
+
+  async deleteExpansionSequence(seqId: string, simulationDatasetId: number): Promise<void> {
+    await this.gqlQuery(gql.DELETE_EXPANSION_SEQUENCE, { seqId, simulationDatasetId });
+  }
+
+  async deleteExternalEventTypes(names: string[]): Promise<void> {
+    await this.gqlQuery(gql.DELETE_EXTERNAL_EVENT_TYPE, { names });
+  }
+
+  async deleteExternalSourceTypes(names: string[]): Promise<void> {
+    await this.gqlQuery(gql.DELETE_EXTERNAL_SOURCE_TYPE, { names });
+  }
+
+  async deleteExternalSources(derivationGroupName: string, sourceKeys: string[]): Promise<void> {
+    await this.gqlQuery(gql.DELETE_EXTERNAL_SOURCES, { derivationGroupName, sourceKeys });
+  }
+
   async deleteModel(id: number): Promise<void> {
     await this.gqlQuery(gql.DELETE_MODEL, { id });
   }
@@ -143,6 +163,10 @@ export class AerieApi {
 
   async deleteSchedulingGoal(id: number): Promise<void> {
     await this.gqlQuery(gql.DELETE_SCHEDULING_GOAL_METADATA, { id });
+  }
+
+  async deleteSequenceTemplate(sequenceTemplateId: number): Promise<void> {
+    await this.gqlQuery(gql.DELETE_SEQUENCE_TEMPLATE, { sequenceTemplateId });
   }
 
   async deleteTag(id: number): Promise<void> {

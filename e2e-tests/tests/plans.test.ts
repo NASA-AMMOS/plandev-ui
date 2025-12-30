@@ -11,7 +11,8 @@ test.afterAll(async () => {
   await teardownTest(setup);
 });
 
-test.describe.serial('Plans', () => {
+// Form validation tests - independent, can run in parallel
+test.describe('Plans - Form Validation', () => {
   test.beforeEach(async () => {
     await setup.plans.goto();
   });
@@ -104,8 +105,12 @@ test.describe.serial('Plans', () => {
     await setup.plans.fillInputEndTime();
     await expect(setup.plans.createButton).not.toBeDisabled();
   });
+});
 
+// CRUD operations - dependent, must run serially
+test.describe.serial('Plans - CRUD Operations', () => {
   test('Create plan', async () => {
+    await setup.plans.goto();
     await setup.plans.createPlan();
   });
 
@@ -114,6 +119,7 @@ test.describe.serial('Plans', () => {
   });
 
   test('Import plan', async () => {
+    await setup.plans.goto();
     await setup.plans.importPlan();
     await setup.plans.deletePlan();
   });

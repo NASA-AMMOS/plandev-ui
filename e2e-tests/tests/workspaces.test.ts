@@ -33,7 +33,8 @@ test.afterAll(async () => {
   await teardownTest(setup);
 });
 
-test.describe.serial('Workspaces', () => {
+// Form validation tests - independent, can run in parallel
+test.describe('Workspaces - Form Validation', () => {
   test.beforeEach(async () => {
     await workspaces.goto();
   });
@@ -58,31 +59,39 @@ test.describe.serial('Workspaces', () => {
     await workspaces.fillInputLocation();
     await expect(workspaces.createButton).not.toBeDisabled();
   });
+});
 
+// CRUD operations - dependent, must run serially
+test.describe.serial('Workspaces - CRUD Operations', () => {
   test('Create workspace', async () => {
+    await workspaces.goto();
     const workspaceId = await workspaces.createWorkspace();
     expect(workspaceId).toBeTruthy();
     expect(workspaces.workspaceId).toEqual(workspaceId);
   });
 
   test('Get workspace ID should return the correct ID', async () => {
+    await workspaces.goto();
     const workspaceId = await workspaces.getWorkspaceId();
     expect(workspaceId).toBeTruthy();
     expect(workspaceId).toEqual(workspaces.workspaceId);
   });
 
   test('Filter table should show only the filtered workspace', async () => {
+    await workspaces.goto();
     await workspaces.filterTable(workspaces.workspaceName);
     await expect(workspaces.tableRow(workspaces.workspaceName)).toBeVisible();
   });
 
   test('Table row should display workspace name correctly', async () => {
+    await workspaces.goto();
     await workspaces.filterTable(workspaces.workspaceName);
     const tableRow = workspaces.tableRow(workspaces.workspaceName);
     await expect(tableRow).toContainText(workspaces.workspaceName);
   });
 
   test('Delete workspace', async () => {
+    await workspaces.goto();
     await workspaces.deleteWorkspace();
     await expect(workspaces.tableRow(workspaces.workspaceName)).not.toBeVisible();
   });
