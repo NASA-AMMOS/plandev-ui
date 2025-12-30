@@ -28,12 +28,17 @@ test.beforeAll(async ({ browser }) => {
 
 test.afterAll(async () => {
   await cleanupApiResources(setup);
-  await externalSources.goto();
-  await externalSources.deleteSource(externalSources.externalSourceFileName);
-  await externalSources.gotoTypeManager();
-  await externalSources.deleteDerivationGroup(externalSources.exampleDerivationGroup);
-  await externalSources.deleteExternalSourceType(externalSources.exampleSourceType);
-  await externalSources.deleteExternalEventType(externalSources.exampleEventType);
+
+  // Use API for faster cleanup of external sources artifacts
+  try {
+    await setup.api.deleteExternalSources(externalSources.exampleDerivationGroup, [externalSources.externalSourceKey]);
+    await setup.api.deleteDerivationGroups([externalSources.exampleDerivationGroup]);
+    await setup.api.deleteExternalSourceTypes([externalSources.exampleSourceType]);
+    await setup.api.deleteExternalEventTypes([externalSources.exampleEventType]);
+  } catch {
+    // Ignore cleanup errors - resources may not exist or have dependencies
+  }
+
   await closeBrowserResources(setup);
 });
 
@@ -388,8 +393,11 @@ test.describe.serial('Timeline View Editing', () => {
       .filter({ hasText: 'Activities by Type' })
       .getByLabel('Row Settings');
     await rowHeaderMenuButton.click();
-    expect(await setup.page.getByRole('menu', { name: 'Context Menu' })).toBeVisible();
+    await expect(setup.page.getByRole('menu', { name: 'Context Menu' })).toBeVisible();
+    await expect(setup.page.getByRole('listitem').filter({ hasText: 'Activities by Type' })).toBeVisible();
+    // Wait for the context menu to not ignore clicks outside
+    await setup.page.waitForTimeout(500);
     await setup.page.getByRole('listitem').filter({ hasText: 'Activities by Type' }).click();
-    expect(await setup.page.getByRole('menu', { name: 'Context Menu' })).not.toBeVisible();
+    await expect(setup.page.getByRole('menu', { name: 'Context Menu' })).not.toBeVisible();
   });
 });

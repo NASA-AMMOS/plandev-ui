@@ -1,21 +1,33 @@
+import { test as setup } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { test as setup } from '@playwright/test';
-import {
-  SHARED_TEST_DATA,
-  STORAGE_STATE,
-  STORAGE_STATE_USER_A,
-  STORAGE_STATE_USER_B,
-} from '../../playwright.config.js';
-import { AerieApi, type SharedTestData } from '../utilities/api.js';
+import { STORAGE_STATE, STORAGE_STATE_USER_A, STORAGE_STATE_USER_B } from '../../playwright.config.js';
 import { User } from './User.js';
 
 /**
- * Global setup
+ * Auth Setup - Creates and caches authentication state for test users
  *
  * @see https://playwright.dev/docs/test-global-setup-teardown
  * @see https://dev.to/playwright/a-better-global-setup-in-playwright-reusing-login-with-project-dependencies-14
  */
+
+// ANSI color codes to match Playwright's output style
+const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
+const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
+
+// Check if all auth state files already exist BEFORE requesting browser fixtures
+const allAuthFilesExist = () => {
+  const exists = [STORAGE_STATE, STORAGE_STATE_USER_A, STORAGE_STATE_USER_B].every(filePath => fs.existsSync(filePath));
+  if (exists) {
+    console.log(
+      `  ${cyan('ℹ')}    [setup-auth]   Using cached auth state ${dim('(run npm run test:e2e:clear-cache to force fresh login)')}\n`,
+    );
+  }
+  return exists;
+};
+
+// Skip auth setup entirely if cache exists - prevents browser windows from opening in debug mode
+setup.skip(allAuthFilesExist, 'cached auth state exists');
 
 setup('create test users and save auth state', async ({ page, browser }, testInfo) => {
   const baseURL = testInfo.project.use.baseURL ?? '';
@@ -27,11 +39,7 @@ setup('create test users and save auth state', async ({ page, browser }, testInf
   }
 
   // Helper to create and save auth state for a user
-  async function createUserAuthState(
-    username: string,
-    storagePath: string,
-    existingPage?: typeof page,
-  ): Promise<void> {
+  async function createUserAuthState(username: string, storagePath: string, existingPage?: typeof page): Promise<void> {
     if (existingPage) {
       // Use existing page/context (for the main test user)
       const user = new User(existingPage, username);
@@ -55,22 +63,4 @@ setup('create test users and save auth state', async ({ page, browser }, testInf
     createUserAuthState('userA', STORAGE_STATE_USER_A),
     createUserAuthState('userB', STORAGE_STATE_USER_B),
   ]);
-});
-
-setup('upload test JAR and save shared test data', async () => {
-  const api = new AerieApi();
-  await api.login('test', 'test');
-  const jarId = await api.uploadFile('e2e-tests/data/banananation-develop.jar');
-
-  const sharedData: SharedTestData = {
-    jarId,
-  };
-
-  // Ensure the directory exists
-  const sharedDir = path.dirname(SHARED_TEST_DATA);
-  if (!fs.existsSync(sharedDir)) {
-    fs.mkdirSync(sharedDir, { recursive: true });
-  }
-
-  fs.writeFileSync(SHARED_TEST_DATA, JSON.stringify(sharedData, null, 2));
 });

@@ -53,20 +53,20 @@ test.afterAll(async () => {
 test.describe.serial('Extensions', () => {
   test(`Hovering on 'Extensions' in the top navigation bar should show the extension menu`, async () => {
     await expect(plan.navButtonExtensionMenu).not.toBeVisible();
-    plan.navButtonExtension.hover();
+    await plan.navButtonExtension.hover();
     await expect(plan.navButtonExtensionMenu).toBeVisible();
-    plan.planTitle.hover();
+    await plan.planTitle.hover();
     await expect(plan.navButtonExtensionMenu).not.toBeVisible();
   });
 
   test(`The extension that we created before the tests should be in the extension menu`, async () => {
-    plan.navButtonExtension.hover();
+    await plan.navButtonExtension.hover();
     await expect(plan.navButtonExtensionMenu).toBeVisible();
     await expect(plan.navButtonExtensionMenu.getByRole('menuitem', { name: extensionName })).toBeVisible();
   });
 
   test(`Clicking the extension should invoke the http call`, async () => {
-    plan.navButtonExtension.hover();
+    await plan.navButtonExtension.hover();
     const extensionRequest = setup.page.waitForRequest('http://localhost:3000/extensions');
     plan.navButtonExtensionMenu.getByRole('menuitem', { name: extensionName }).click();
     expect((await (await extensionRequest).response())?.ok).toBeTruthy();

@@ -6,10 +6,11 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Storage state paths for different test users
-export const STORAGE_STATE = path.join(__dirname, 'e2e-test-results/.auth/test.json');
-export const STORAGE_STATE_USER_A = path.join(__dirname, 'e2e-test-results/.auth/userA.json');
-export const STORAGE_STATE_USER_B = path.join(__dirname, 'e2e-test-results/.auth/userB.json');
-export const SHARED_TEST_DATA = path.join(__dirname, 'e2e-test-results/.shared/test-data.json');
+// These are stored outside e2e-test-results to avoid being wiped by the HTML reporter
+export const STORAGE_STATE = path.join(__dirname, '.playwright/.auth/test.json');
+export const STORAGE_STATE_USER_A = path.join(__dirname, '.playwright/.auth/userA.json');
+export const STORAGE_STATE_USER_B = path.join(__dirname, '.playwright/.auth/userB.json');
+export const SHARED_TEST_DATA = path.join(__dirname, '.playwright/.shared/test-data.json');
 
 // Map of user names to their storage state paths
 export const USER_STORAGE_STATES: Record<string, string> = {
@@ -25,14 +26,18 @@ const config: PlaywrightTestConfig = {
   forbidOnly: !!process.env.CI,
   projects: [
     {
-      name: 'setup',
-      testMatch: /global\.setup\.ts/,
+      name: 'setup-auth',
+      testMatch: /global\.setup\.auth\.ts/,
       use: {
         baseURL: MAIN_TEST_SUITE_BASE_URL,
       },
     },
     {
-      dependencies: ['setup'],
+      name: 'setup-jar',
+      testMatch: /global\.setup\.jar\.ts/,
+    },
+    {
+      dependencies: ['setup-auth', 'setup-jar'],
       name: 'e2e tests',
       teardown: 'teardown',
       testDir: './e2e-tests',
@@ -43,7 +48,7 @@ const config: PlaywrightTestConfig = {
       },
     },
     {
-      dependencies: ['setup'],
+      dependencies: ['setup-auth', 'setup-jar'],
       name: 'e2e sequence template tests',
       teardown: 'teardown',
       testDir: './e2e-tests',

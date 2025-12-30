@@ -360,7 +360,7 @@ export async function createAuthenticatedApi(
 export function getSharedTestData(): SharedTestData {
   const __filename = url.fileURLToPath(import.meta.url);
   const __dirname = nodePath.dirname(__filename);
-  const sharedDataPath = nodePath.join(__dirname, '../../e2e-test-results/.shared/test-data.json');
+  const sharedDataPath = nodePath.join(__dirname, '../../.playwright/.shared/test-data.json');
 
   if (!fs.existsSync(sharedDataPath)) {
     throw new Error(

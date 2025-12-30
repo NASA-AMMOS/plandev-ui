@@ -35,7 +35,7 @@ test.beforeAll(async ({ browser }) => {
 
   await setup.plan.selectSimulationTemplateByName('None');
 
-  expect(setup.page.getByRole('combobox', { name: 'None' })).toBeVisible();
+  await expect(setup.page.getByRole('combobox', { name: 'None' })).toBeVisible();
 });
 
 test.afterAll(async () => {
@@ -46,13 +46,13 @@ test.describe.serial('Plan Simulation Templates', async () => {
   test(`Setting a simulation template to a simulation should update the parameter values`, async () => {
     await setup.plan.selectSimulationTemplateByName('Template 1');
 
-    expect(setup.plan.panelSimulation.getByRole('combobox', { name: 'Template 1' })).toBeVisible();
+    await expect(setup.plan.panelSimulation.getByRole('combobox', { name: 'Template 1' })).toBeVisible();
   });
 
   test(`Removing an simulation template from a simulation should reflect that it is no longer present`, async () => {
     await setup.plan.selectSimulationTemplateByName('None');
 
-    expect(setup.page.getByRole('combobox', { name: 'None' })).toBeVisible();
+    await expect(setup.page.getByRole('combobox', { name: 'None' })).toBeVisible();
   });
 
   test('Deleting an simulation template should remove it from the list of templates', async () => {
@@ -69,6 +69,6 @@ test.describe.serial('Plan Simulation Templates', async () => {
 
     await setup.page.waitForFunction(() => document.querySelector('.selected-display-value')?.innerHTML === 'None');
 
-    expect(setup.page.getByRole('combobox', { name: 'None' })).toBeVisible();
+    await expect(setup.page.getByRole('combobox', { name: 'None' })).toBeVisible();
   });
 });

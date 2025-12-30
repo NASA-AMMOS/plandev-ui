@@ -1,24 +1,55 @@
 import test, { expect } from '@playwright/test';
 import { ExternalSources } from '../fixtures/ExternalSources';
-import { cleanupApiResources, closeBrowserResources, setupTest, type BrowserSetupResult } from '../utilities/api.js';
+import { cleanupApiResources, closeBrowserResources, setupTest, type ModelSetupResult } from '../utilities/api.js';
 
-let setup: BrowserSetupResult;
+let setup: ModelSetupResult;
 let externalSources: ExternalSources;
 
 test.beforeAll(async ({ browser }) => {
-  setup = await setupTest(browser, { model: false });
+  setup = await setupTest(browser, { plan: false });
   externalSources = new ExternalSources(setup.page);
   await externalSources.goto();
 });
 
 test.afterAll(async () => {
   await cleanupApiResources(setup);
-  await externalSources.goto();
-  await externalSources.deleteSource(externalSources.externalSourceFileName);
-  await externalSources.gotoTypeManager();
-  await externalSources.deleteDerivationGroup(externalSources.exampleDerivationGroup);
-  await externalSources.deleteExternalSourceType(externalSources.exampleSourceType);
-  await externalSources.deleteExternalEventType(externalSources.exampleEventType);
+
+  // Use API for faster cleanup of external sources artifacts
+  // Order matters: sources -> derivation groups -> source types -> event types
+  try {
+    // Delete sources (grouped by derivation group)
+    await setup.api.deleteExternalSources(externalSources.exampleDerivationGroup, [externalSources.externalSourceKey]);
+    await setup.api.deleteExternalSources(externalSources.exampleEmptyDerivationGroup, [
+      externalSources.externalSourceEmptyAttributeKey,
+    ]);
+    await setup.api.deleteExternalSources(externalSources.noAttrDerivationGroup, [
+      externalSources.externalSourceNoAttributeKey,
+    ]);
+
+    // Delete derivation groups
+    await setup.api.deleteDerivationGroups([
+      externalSources.exampleDerivationGroup,
+      externalSources.exampleEmptyDerivationGroup,
+      externalSources.noAttrDerivationGroup,
+    ]);
+
+    // Delete source types
+    await setup.api.deleteExternalSourceTypes([
+      externalSources.exampleSourceType,
+      externalSources.exampleEmptySourceType,
+      externalSources.noAttrSourceType,
+    ]);
+
+    // Delete event types
+    await setup.api.deleteExternalEventTypes([
+      externalSources.exampleEventType,
+      externalSources.exampleEmptyEventType,
+      externalSources.noAttrEventType,
+    ]);
+  } catch {
+    // Ignore cleanup errors - resources may not exist or have dependencies
+  }
+
   await closeBrowserResources(setup);
 });
 
@@ -45,7 +76,7 @@ test.describe.serial('External Sources', () => {
     await externalSources.selectEvent('ExampleEvent:1/sc/sc1:1');
     await setup.page.click('text="Attributes"');
     const parameter = setup.page.locator('.parameter').filter({ hasText: 'optional' }).first();
-    parameter.hover();
+    await parameter.hover();
     const parameterInfo = parameter.getByRole('contentinfo');
     await parameterInfo.hover();
     await expect(

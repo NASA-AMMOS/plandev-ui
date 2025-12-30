@@ -47,24 +47,47 @@ test.beforeAll(async ({ browser }) => {
 });
 
 test.afterAll(async () => {
+  // Clean up plan and model first
   await cleanupApiResources(setup);
-  await externalSources.goto();
-  await externalSources.deleteSource(externalSources.externalSourceFileName);
-  await externalSources.deleteSource(externalSources.derivationTestFileKey1);
-  await externalSources.deleteSource(externalSources.derivationTestFileKey2);
-  await externalSources.deleteSource(externalSources.derivationTestFileKey3);
-  await externalSources.deleteSource(externalSources.derivationTestFileKey4);
 
-  await externalSources.gotoTypeManager();
-  await externalSources.deleteDerivationGroup(externalSources.exampleDerivationGroup);
-  await externalSources.deleteDerivationGroup(externalSources.derivationTestGroupName);
-  await externalSources.deleteExternalSourceType(externalSources.exampleSourceType);
-  await externalSources.deleteExternalSourceType(externalSources.derivationTestSourceTypeName);
-  await externalSources.deleteExternalEventType(externalSources.exampleEventType);
-  await externalSources.deleteExternalEventType(externalSources.derivationATypeName);
-  await externalSources.deleteExternalEventType(externalSources.derivationBTypeName);
-  await externalSources.deleteExternalEventType(externalSources.derivationCTypeName);
-  await externalSources.deleteExternalEventType(externalSources.derivationDTypeName);
+  // Use API for faster cleanup of external sources artifacts
+  // Order matters: sources -> derivation groups -> source types -> event types
+  try {
+    // Delete sources (grouped by derivation group)
+    await setup.api.deleteExternalSources(externalSources.exampleDerivationGroup, [
+      externalSources.externalSourceKey,
+    ]);
+    await setup.api.deleteExternalSources(externalSources.derivationTestGroupName, [
+      externalSources.derivationTestFileKey1,
+      externalSources.derivationTestFileKey2,
+      externalSources.derivationTestFileKey3,
+      externalSources.derivationTestFileKey4,
+    ]);
+
+    // Delete derivation groups
+    await setup.api.deleteDerivationGroups([
+      externalSources.exampleDerivationGroup,
+      externalSources.derivationTestGroupName,
+    ]);
+
+    // Delete source types
+    await setup.api.deleteExternalSourceTypes([
+      externalSources.exampleSourceType,
+      externalSources.derivationTestSourceTypeName,
+    ]);
+
+    // Delete event types
+    await setup.api.deleteExternalEventTypes([
+      externalSources.exampleEventType,
+      externalSources.derivationATypeName,
+      externalSources.derivationBTypeName,
+      externalSources.derivationCTypeName,
+      externalSources.derivationDTypeName,
+    ]);
+  } catch {
+    // Ignore cleanup errors - resources may not exist or have dependencies
+  }
+
   await closeBrowserResources(setup);
 
   // Close additional user browser contexts

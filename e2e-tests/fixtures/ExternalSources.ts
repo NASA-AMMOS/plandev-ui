@@ -18,9 +18,6 @@ export class ExternalSources {
   derivationTestGroupName: string = 'DerivationTest Default';
   derivationTestSourceType: string = 'DerivationTest';
   derivationTestSourceTypeName: string = 'DerivationTest';
-  derivationTestTypeSchema: string = 'e2e-tests/data/Schema_Example_Derivation.json';
-  derivationTestTypeSchemaExpectedEventTypes: string[] = ['DerivationA', 'DerivationB', 'DerivationC', 'DerivationD'];
-  derivationTestTypeSchemaExpectedSourceTypes: string[] = ['DerivationTest'];
   exampleDerivationGroup: string = 'Example External Source Default';
   exampleEmptyDerivationGroup: string = 'Empty External Source Default';
   exampleEmptyEventType: string = 'EmptyEvent';
@@ -33,23 +30,23 @@ export class ExternalSources {
   externalEventSelectedForm: Locator;
   externalEventTableHeaderDuration: Locator;
   externalEventTableHeaderEventType: Locator;
-  externalEventTypeName: string = 'ExampleEvent';
   externalSourceEmptyAttributeFilePath: string = 'e2e-tests/data/example-external-source_empty-attr.json';
-  externalSourceEmptyAttributeKey: string = 'ExampleExternalSource:example-external-source_no-attr.json';
+  externalSourceEmptyAttributeKey: string = 'EmptyExternalSource:example-external-source_empty-attr.json';
   externalSourceFileName: string = 'example-external-source.json';
   externalSourceFilePath: string = 'e2e-tests/data/example-external-source.json';
   externalSourceFilePathMissingField: string = 'e2e-tests/data/example-external-source-missing-field.json';
   externalSourceFilePathSyntaxError: string = 'e2e-tests/data/example-external-source-syntax-error.json';
+  externalSourceKey: string = 'ExampleExternalSource:example-external-source.json';
   externalSourceNoAttributeFilePath: string = 'e2e-tests/data/example-external-source_no-attr.json';
   externalSourceNoAttributeKey: string = 'NoAttrSource:example-external-source_no-attr.json';
   externalSourceSelectedForm: Locator;
-  externalSourceTypeName: string = 'Example External Source';
   externalSourcesTable: Locator;
   inputFile: Locator;
-  panelExternalEventsTable: Locator;
+  noAttrDerivationGroup: string = 'NoAttrSource Default';
+  noAttrEventType: string = 'NoAttrEvent';
+  noAttrSourceType: string = 'NoAttrSource';
   uploadButton: Locator;
   viewContainedEventTypes: Locator;
-  viewEventSourceMetadata: Locator;
 
   constructor(public page: Page) {
     this.updatePage(page);
@@ -305,10 +302,8 @@ export class ExternalSources {
     this.externalSourceSelectedForm = page.locator('.selected-source-forms');
     this.externalSourcesTable = page.locator('#external-sources-table');
     this.inputFile = page.locator('input[name="file"]');
-    this.panelExternalEventsTable = page.locator('[data-component-name="ExternalEventsTablePanel"]');
     this.uploadButton = page.getByRole('button', { name: 'Upload' });
     this.viewContainedEventTypes = page.getByRole('button', { name: 'View Contained Event Types' });
-    this.viewEventSourceMetadata = page.getByRole('button', { name: 'View Event Source Metadata' });
   }
 
   async uploadExternalSource(

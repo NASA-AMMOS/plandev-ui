@@ -70,41 +70,41 @@ test.describe.serial('Plan', () => {
 
   test(`Hovering on 'Activities' in the top navigation bar should show the activity checking menu`, async () => {
     await expect(setup.plan.navButtonActivityCheckingMenu).not.toBeVisible();
-    setup.plan.navButtonActivityChecking.hover();
+    await setup.plan.navButtonActivityChecking.hover();
     await expect(setup.plan.navButtonActivityCheckingMenu).toBeVisible();
-    setup.plan.planTitle.hover();
+    await setup.plan.planTitle.hover();
     await expect(setup.plan.navButtonActivityCheckingMenu).not.toBeVisible();
   });
 
   test(`Hovering on 'Constraints' in the top navigation bar should show the constraints menu`, async () => {
     await expect(setup.plan.navButtonConstraintsMenu).not.toBeVisible();
-    setup.plan.navButtonConstraints.hover();
+    await setup.plan.navButtonConstraints.hover();
     await expect(setup.plan.navButtonConstraintsMenu).toBeVisible();
-    setup.plan.planTitle.hover();
+    await setup.plan.planTitle.hover();
     await expect(setup.plan.navButtonConstraintsMenu).not.toBeVisible();
   });
 
   test(`Hovering on 'Simulation' in the top navigation bar should show the simulation menu`, async () => {
     await expect(setup.plan.navButtonSimulationMenu).not.toBeVisible();
-    setup.plan.navButtonSimulation.hover();
+    await setup.plan.navButtonSimulation.hover();
     await expect(setup.plan.navButtonSimulationMenu).toBeVisible();
-    setup.plan.planTitle.hover();
+    await setup.plan.planTitle.hover();
     await expect(setup.plan.navButtonSimulationMenu).not.toBeVisible();
   });
 
   test(`Hovering on 'Expansion' in the top navigation bar should show the expansion menu`, async () => {
     await expect(setup.plan.navButtonExpansionMenu).not.toBeVisible();
-    setup.plan.navButtonExpansion.hover();
+    await setup.plan.navButtonExpansion.hover();
     await expect(setup.plan.navButtonExpansionMenu).toBeVisible();
-    setup.plan.planTitle.hover();
+    await setup.plan.planTitle.hover();
     await expect(setup.plan.navButtonExpansionMenu).not.toBeVisible();
   });
 
   test(`Hovering on 'Scheduling' in the top navigation bar should show the scheduling menu`, async () => {
     await expect(setup.plan.navButtonSchedulingMenu).not.toBeVisible();
-    setup.plan.navButtonScheduling.hover();
+    await setup.plan.navButtonScheduling.hover();
     await expect(setup.plan.navButtonSchedulingMenu).toBeVisible();
-    setup.plan.planTitle.hover();
+    await setup.plan.planTitle.hover();
     await expect(setup.plan.navButtonSchedulingMenu).not.toBeVisible();
   });
 
