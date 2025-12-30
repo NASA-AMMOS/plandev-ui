@@ -75,7 +75,7 @@
     class="flex w-[320px] flex-col gap-2 rounded-md border bg-background px-3 py-6 shadow-sm"
     autocomplete="off"
   >
-    <div class="flex items-center justify-center text-base tracking-tight">Log in to Aerie</div>
+    <div class="flex items-center justify-center text-base tracking-tight">Log in to PlanDev</div>
 
     <AlertError class="m-2" {error} {fullError} />
 

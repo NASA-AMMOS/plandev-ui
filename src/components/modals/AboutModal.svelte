@@ -18,7 +18,7 @@
     commit: 'unknown',
     commitUrl: '',
     date: new Date().toLocaleString(),
-    name: 'aerie-ui',
+    name: 'plandev-ui',
   };
 
   onMount(async () => {
@@ -31,9 +31,9 @@
   <ModalContent>
     <div class="text-sm leading-relaxed">
       <div>
-        Aerie is an open source, extensible software system for planning, scheduling, and commanding space missions.
-        Learn more about Aerie by visiting our <a
-          href="https://nasa-ammos.github.io/aerie-docs/introduction/"
+        PlanDev (formerly Aerie) is open source, extensible software for planning, scheduling, and commanding space missions. SeqDev provides the sequencing tools within this platform.
+        Learn more by visiting our <a
+          href="https://nasa-ammos.github.io/plandev-docs/"
           target="_blank"
           rel="noreferrer"
           class="text-blue-600 underline hover:text-blue-800"
