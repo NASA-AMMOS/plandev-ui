@@ -14,15 +14,21 @@ import { AerieApi, type SharedTestData } from '../utilities/api.js';
 const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
 const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
 
-setup('upload test JAR and save shared test data', async () => {
-  // Check if shared test data already exists (useful for debug mode to skip JAR upload)
-  if (fs.existsSync(SHARED_TEST_DATA)) {
+// Check if shared test data already exists
+const jarDataExists = () => {
+  const exists = fs.existsSync(SHARED_TEST_DATA);
+  if (exists) {
     console.log(
-      `  ${cyan('ℹ')}    [setup-jar]   Using cached JAR data ${dim('(run npm run test:e2e:clear-cache to force fresh upload)\n')}`,
+      `  ${cyan('ℹ')}    [setup-jar]   Using cached JAR data ${dim('(run npm run test:e2e:clear-cache to force fresh upload)')}\n`,
     );
-    return;
   }
+  return exists;
+};
 
+// Skip JAR upload if cache exists
+setup.skip(jarDataExists, 'cached JAR data exists');
+
+setup('upload test JAR and save shared test data', async () => {
   const api = new AerieApi();
   await api.login('test', 'test');
   const jarId = await api.uploadFile('e2e-tests/data/banananation-develop.jar');
