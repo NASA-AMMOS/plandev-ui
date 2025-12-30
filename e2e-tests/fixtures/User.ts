@@ -28,6 +28,31 @@ export class User {
     return uniqueNamesGenerator({ dictionaries: [names, adjectives] });
   }
 
+  /**
+   * Navigate to a URL with retry logic for ERR_ABORTED errors.
+   * Use this after switchRole() since role changes can cause navigation instability.
+   */
+  async gotoWithRetry(
+    url: string,
+    options?: { maxRetries?: number; waitUntil?: 'load' | 'domcontentloaded' | 'networkidle' | 'commit' },
+  ) {
+    const maxRetries = options?.maxRetries ?? 3;
+    const waitUntil = options?.waitUntil ?? 'networkidle';
+
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        await this.page.goto(url, { waitUntil });
+        return;
+      } catch (e) {
+        const isLastAttempt = i === maxRetries - 1;
+        const isAbortError = e instanceof Error && e.message.includes('ERR_ABORTED');
+        if (isLastAttempt || !isAbortError) {
+          throw e;
+        }
+      }
+    }
+  }
+
   async login(baseURL: string | undefined, username = this.username) {
     await performLogin(this.page, baseURL, username);
   }

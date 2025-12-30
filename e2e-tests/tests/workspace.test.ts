@@ -531,22 +531,13 @@ test.describe.serial('Workspace', () => {
     // userB is NOT a collaborator on this workspace
 
     // Switch to 'user' role which has limited permissions
-    await setupUnauthorized.page.goto('/plans', { waitUntil: 'networkidle' });
     const userB = new User(setupUnauthorized.page, 'userB');
+    await userB.gotoWithRetry('/plans');
     await userB.switchRole('user');
 
-    // Navigate to workspace - retry on ERR_ABORTED which can occur after role switch
+    // Navigate to workspace using retry helper (role switch can cause ERR_ABORTED)
     const workspaceUrl = getWorkspacesUrl(workspaceForUnauthorized.baseURL, parseInt(workspaceId));
-    for (let i = 0; i < 3; i++) {
-      try {
-        await setupUnauthorized.page.goto(workspaceUrl, { waitUntil: 'networkidle' });
-        break;
-      } catch (e) {
-        if (i === 2 || !(e instanceof Error) || !e.message.includes('ERR_ABORTED')) {
-          throw e;
-        }
-      }
-    }
+    await userB.gotoWithRetry(workspaceUrl);
     await workspaceForUnauthorized.pageLoadingLocatorWithData.waitFor({ state: 'detached' });
 
     await workspaceForUnauthorized.openWorkspaceContextMenu();

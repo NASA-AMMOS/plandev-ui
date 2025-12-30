@@ -116,12 +116,14 @@ test.describe.serial('Plan Metadata', () => {
 
   test(`Non-collaborator userB as role user should not be able to edit userA's plan collaborators`, async () => {
     // Use userB's separate browser context - no login/logout needed!
-    await plansB.goto();
     const userB = new User(setupB.page, 'userB');
+    await userB.gotoWithRetry('/plans');
     await userB.switchRole('user');
 
+    // Use retry helper after role switch (can cause ERR_ABORTED)
+    await userB.gotoWithRetry('/plans');
     const planAId = await plansB.getPlanId(planA.planName);
-    await planAForUserB.goto(planAId);
+    await userB.gotoWithRetry(`/plans/${planAId}`);
     await planAForUserB.showPanel(PanelNames.PLAN_METADATA, true);
     await expect(planAForUserB.planCollaboratorInputContainer).toHaveAttribute('readonly');
   });
@@ -138,11 +140,13 @@ test.describe.serial('Plan Metadata', () => {
   test(`Collaborator userB in "user" role should be able to edit userA's plan collaborators`, async () => {
     // Use userB's separate browser context - no login/logout needed!
     const userB = new User(setupB.page, 'userB');
+    await userB.gotoWithRetry('/plans');
     await userB.switchRole('user');
 
-    await plansB.goto();
+    // Use retry helper after role switch (can cause ERR_ABORTED)
+    await userB.gotoWithRetry('/plans');
     const planAId = await plansB.getPlanId(planA.planName);
-    await planAForUserB.goto(planAId);
+    await userB.gotoWithRetry(`/plans/${planAId}`);
 
     await planAForUserB.showPanel(PanelNames.PLAN_METADATA, true);
     await planAForUserB.addPlanCollaborator('userA');
