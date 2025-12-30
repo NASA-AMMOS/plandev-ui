@@ -76,8 +76,9 @@ export class SequenceTemplates {
   async selectParcel() {
     const { parcelName } = this.parcels;
     await this.newSequenceTemplateParcelIdInput.click();
-    await expect(this.page.getByRole('option', { name: parcelName })).toBeVisible();
-    await this.page.getByRole('option', { name: parcelName }).click();
+    const option = this.page.getByRole('option', { name: parcelName });
+    await option.scrollIntoViewIfNeeded();
+    await option.click();
   }
 
   async updatePage(page: Page) {

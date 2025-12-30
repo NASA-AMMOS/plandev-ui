@@ -202,6 +202,6 @@ test.describe.serial('External Source Error Handling', () => {
     await externalSources.waitForToast('External Source Create Failed');
     await expect(setup.page.getByRole('gridcell', { name: externalSources.externalSourceFileName })).toHaveCount(1);
     await externalSources.deleteSource(externalSources.externalSourceFileName);
-    await expect(setup.page.getByText('External Source Deleted Successfully')).toBeVisible();
+    await externalSources.waitForToast('External Source Deleted Successfully');
   });
 });
