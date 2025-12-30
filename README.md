@@ -4,6 +4,17 @@
 
 The client application for [Aerie](https://github.com/NASA-AMMOS/aerie).
 
+## Rebranding Notice
+
+**Aerie has been rebranded to PlanDev and SeqDev.**
+
+- **PlanDev**: The planning, scheduling, and constraint-checking components
+- **SeqDev**: The sequencing, command dictionary, and workspace components
+
+This repository contains the UI for both PlanDev and SeqDev. The name of this repository, code, and internal documentation will remain branded as Aerie for the time being.
+
+For the latest documentation, visit: [PlanDev Documentation](https://nasa-ammos.github.io/plandev-docs/)
+
 <span style="display:block;text-align:center">![Example](/docs/images/Full_Example.png)</span>
 
 ## Need Help?
