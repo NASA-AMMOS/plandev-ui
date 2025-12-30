@@ -145,7 +145,10 @@ export class Plan {
     // Wait for suggestions dropdown to appear and find option within it
     const suggestionsDropdown = this.page.locator('#tags-input');
     await expect(suggestionsDropdown).toBeVisible();
-    await suggestionsDropdown.getByRole('option', { name }).click();
+    // Wait for the option to appear (API search may take time)
+    const option = suggestionsDropdown.getByRole('option', { name });
+    await expect(option).toBeVisible({ timeout: 10000 });
+    await option.click();
     // If the name is a username then check for the existence of the username in selected items
     // Otherwise it is a plan option and will add an unspecified amount of users
     if (isUsername) {
@@ -416,16 +419,15 @@ export class Plan {
     await this.panelActivityForm.getByRole('menuitem', { name: presetName }).waitFor({ state: 'detached' });
 
     try {
-      const applyPresetButton = await this.page.getByRole('button', { name: 'Apply Preset' });
+      const applyPresetButton = this.page.getByRole('button', { name: 'Apply Preset' });
 
       // allow time for modal to apply the preset to show up if applicable
       await applyPresetButton.waitFor({ state: 'attached', timeout: 1000 });
-      // await new Promise(resolve => setTimeout(resolve, 1000));
       if (await applyPresetButton.isVisible()) {
         await applyPresetButton.click();
       }
     } catch (e) {
-      if (e.name !== 'TimeoutError') {
+      if ((e as Error).name !== 'TimeoutError') {
         console.error(e);
       }
     }
@@ -446,7 +448,7 @@ export class Plan {
     await this.panelSimulation.getByRole('menuitem', { name: templateName }).waitFor({ state: 'detached' });
 
     try {
-      const applyTemplateButton = await this.page.getByRole('button', { name: 'Apply Simulation Template' });
+      const applyTemplateButton = this.page.getByRole('button', { name: 'Apply Simulation Template' });
 
       // allow time for modal to apply the preset to show up if applicable
       await applyTemplateButton.waitFor({ state: 'attached', timeout: 1000 });
@@ -455,7 +457,7 @@ export class Plan {
         await applyTemplateButton.click();
       }
     } catch (e) {
-      if (e.name !== 'TimeoutError') {
+      if ((e as Error).name !== 'TimeoutError') {
         console.error(e);
       }
     }
@@ -493,9 +495,9 @@ export class Plan {
     await expect(this.gridMenu).not.toBeVisible();
     let gridMenuButton: Locator;
     if (pickLastMenu) {
-      gridMenuButton = await this.gridMenuButton.last();
+      gridMenuButton = this.gridMenuButton.last();
     } else {
-      gridMenuButton = await this.gridMenuButton.first();
+      gridMenuButton = this.gridMenuButton.first();
     }
 
     await expect(gridMenuButton).toBeVisible();

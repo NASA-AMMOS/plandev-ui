@@ -440,7 +440,11 @@ test.describe.serial('Workspace', () => {
   test('Add collaborator to workspace', async () => {
     await workspace.workspaceCollaboratorInput.click();
     await workspace.workspaceCollaboratorInput.fill('userA');
-    await setup.page.getByRole('option', { exact: true, name: 'userA' }).click();
+
+    // Wait for suggestions dropdown to appear and find option within it
+    const suggestionsDropdown = setup.page.locator('#tags-input');
+    await expect(suggestionsDropdown).toBeVisible();
+    await suggestionsDropdown.getByRole('option', { exact: true, name: 'userA' }).click();
 
     await workspace.waitForToast('Workspace Collaborators Updated');
   });

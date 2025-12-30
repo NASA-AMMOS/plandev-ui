@@ -38,7 +38,7 @@ export class Models {
     await this.fillInputFile(jarPath);
     await this.createButton.click();
     const editModelUrlRegex = new RegExp(`${baseURL}/models/(?<modelId>\\d+)`);
-    await this.page.waitForURL(editModelUrlRegex);
+    await this.page.waitForURL(editModelUrlRegex, { timeout: 60000 });
     const matches = this.page.url().match(editModelUrlRegex);
 
     expect(matches).not.toBeNull();
