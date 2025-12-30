@@ -271,9 +271,13 @@ export class ExternalSources {
 
   async selectSource(sourceName: string = 'example-external-source.json') {
     await this.goto();
-    // Wait for table to be visible before clicking
+    // Wait for table to be visible and the specific source row to be ready
     await this.externalSourcesTable.waitFor({ state: 'visible', timeout: 10000 });
-    await this.page.getByRole('gridcell', { name: sourceName }).click();
+    const sourceRow = this.page.getByRole('gridcell', { name: sourceName });
+    await sourceRow.waitFor({ state: 'visible', timeout: 10000 });
+    // Small delay to ensure table rendering is complete (prevents click during re-render)
+    await this.page.waitForLoadState('networkidle');
+    await sourceRow.click();
     // Use exact match to avoid matching "No external sources matching the selected external..."
     await expect(this.page.getByText('Selected External Source', { exact: true })).toBeVisible({ timeout: 10000 });
   }
