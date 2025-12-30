@@ -79,7 +79,7 @@
           <Select.Trigger class="min-w-[124px]" value={selectedWorkspace?.id} size="xs" aria-labelledby={null}>
             <Select.Value aria-label="Select a sequencing workspace" placeholder="Select a sequencing workspace" />
           </Select.Trigger>
-          <Select.Content class="z-[10000]">
+          <Select.Content size="xs" class="z-[10000] max-h-60 overflow-y-auto" fitViewport>
             {#each $workspaces as workspace}
               <Select.Item
                 size="xs"
