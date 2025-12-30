@@ -26,7 +26,7 @@ let setupUnauthorized: BrowserSetupResult; // userB - not a collaborator
 
 test.beforeAll(async ({ baseURL, browser }) => {
   // Increase global timeout to prevent early test termination
-  test.setTimeout(90000); // 90 seconds
+  test.setTimeout(60000); // 60 seconds
 
   // TODO need to accept downloads in context, used to be await browser.newContext({ acceptDownloads: true });
   setup = await setupTest(browser, { model: false });
@@ -530,15 +530,27 @@ test.describe.serial('Workspace', () => {
     // Use userB's separate browser context - no login/logout needed!
     // userB is NOT a collaborator on this workspace
 
-    // First navigate to any page to get the nav bar, then switch role
-    await setupUnauthorized.page.goto('/plans');
-    await setupUnauthorized.page.waitForLoadState('networkidle');
+    // Switch to 'user' role which has limited permissions
+    await setupUnauthorized.page.goto('/plans', { waitUntil: 'networkidle' });
     const userB = new User(setupUnauthorized.page, 'userB');
     await userB.switchRole('user');
 
-    await workspace.goto();
-    await workspace.openWorkspaceContextMenu();
-    await workspace.workspaceHeaderMenu.getByRole('menuitem', { name: 'New File' }).click();
-    await expect(workspace.page.locator('#modal-container')).not.toBeVisible();
+    // Navigate to workspace - retry on ERR_ABORTED which can occur after role switch
+    const workspaceUrl = getWorkspacesUrl(workspaceForUnauthorized.baseURL, parseInt(workspaceId));
+    for (let i = 0; i < 3; i++) {
+      try {
+        await setupUnauthorized.page.goto(workspaceUrl, { waitUntil: 'networkidle' });
+        break;
+      } catch (e) {
+        if (i === 2 || !(e instanceof Error) || !e.message.includes('ERR_ABORTED')) {
+          throw e;
+        }
+      }
+    }
+    await workspaceForUnauthorized.pageLoadingLocatorWithData.waitFor({ state: 'detached' });
+
+    await workspaceForUnauthorized.openWorkspaceContextMenu();
+    await workspaceForUnauthorized.workspaceHeaderMenu.getByRole('menuitem', { name: 'New File' }).click();
+    await expect(setupUnauthorized.page.locator('#modal-container')).not.toBeVisible();
   });
 });

@@ -121,9 +121,8 @@ test.describe.serial('Plan', () => {
     await setup.plan.createBranch(baseURL);
     await expect(setup.plan.panelActivityForm.getByText('No Activity Selected')).toBeVisible();
 
-    // Wait for new activities to swap in
-    await setup.page.waitForTimeout(1000);
-    // TODO would ideally do this without a timeout
+    // Wait for new activities to load by ensuring the activity table is visible
+    await expect(setup.plan.panelActivityDirectivesTable).toBeVisible();
 
     // Add a new activity
     await setup.plan.addActivity('GrowBanana');

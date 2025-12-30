@@ -92,21 +92,21 @@ test.describe.serial('External Sources', () => {
     await externalSources.uploadExternalSource(externalSources.externalSourceEmptyAttributeFilePath, false);
     await externalSources.gotoTypeManager();
 
-    const externalSourceTypeTable = await externalSources.page.locator('.external-source-type-table');
-    const externalEventTypeTable = await externalSources.page.locator('.external-event-type-table');
+    const externalSourceTypeTable = externalSources.page.locator('.external-source-type-table');
+    const externalEventTypeTable = externalSources.page.locator('.external-event-type-table');
 
-    const sourceType = await externalSourceTypeTable.getByRole('gridcell').filter({ hasText: 'Empty External Source' });
+    const sourceType = externalSourceTypeTable.getByRole('gridcell').filter({ hasText: 'Empty External Source' });
     await sourceType.click();
-    await expect(setup.page.locator('text="Attribute Schema - Properties"')).toBeVisible();
-    const sourceTypeAttributes = await setup.page.locator('text="Attribute Schema - Properties"');
+    await expect(externalSources.page.locator('text="Attribute Schema - Properties"')).toBeVisible();
+    const sourceTypeAttributes = externalSources.page.locator('text="Attribute Schema - Properties"');
     await sourceTypeAttributes.click();
-    await expect(setup.page.locator('.parameter')).toHaveCount(0);
-    const eventType = await externalEventTypeTable.getByRole('gridcell').filter({ hasText: 'EmptyEvent' });
+    await expect(externalSources.page.locator('.parameter')).toHaveCount(0);
+    const eventType = externalEventTypeTable.getByRole('gridcell').filter({ hasText: 'EmptyEvent' });
     await eventType.click();
-    await expect(setup.page.locator('text="Attribute Schema - Properties"')).toBeVisible();
-    const eventTypeAttributes = await setup.page.locator('text="Attribute Schema - Properties"');
+    await expect(externalSources.page.locator('text="Attribute Schema - Properties"')).toBeVisible();
+    const eventTypeAttributes = externalSources.page.locator('text="Attribute Schema - Properties"');
     await eventTypeAttributes.click();
-    await expect(setup.page.locator('.parameter')).toHaveCount(0);
+    await expect(externalSources.page.locator('.parameter')).toHaveCount(0);
 
     await externalSources.goto();
   });
@@ -116,21 +116,21 @@ test.describe.serial('External Sources', () => {
 
     await externalSources.gotoTypeManager();
 
-    const externalSourceTypeTable = await externalSources.page.locator('.external-source-type-table');
-    const externalEventTypeTable = await externalSources.page.locator('.external-event-type-table');
+    const externalSourceTypeTable = externalSources.page.locator('.external-source-type-table');
+    const externalEventTypeTable = externalSources.page.locator('.external-event-type-table');
 
-    const sourceType = await externalSourceTypeTable.getByRole('gridcell').filter({ hasText: 'NoAttrSource' });
+    const sourceType = externalSourceTypeTable.getByRole('gridcell').filter({ hasText: 'NoAttrSource' });
     await sourceType.click();
-    await expect(setup.page.locator('text="Attribute Schema - Properties"')).toBeVisible();
-    const sourceTypeAttributes = await setup.page.locator('text="Attribute Schema - Properties"');
+    await expect(externalSources.page.locator('text="Attribute Schema - Properties"')).toBeVisible();
+    const sourceTypeAttributes = externalSources.page.locator('text="Attribute Schema - Properties"');
     await sourceTypeAttributes.click();
-    await expect(setup.page.locator('.parameter')).toHaveCount(0);
-    const eventType = await externalEventTypeTable.getByRole('gridcell').filter({ hasText: 'NoAttrEvent' });
+    await expect(externalSources.page.locator('.parameter')).toHaveCount(0);
+    const eventType = externalEventTypeTable.getByRole('gridcell').filter({ hasText: 'NoAttrEvent' });
     await eventType.click();
-    await expect(setup.page.locator('text="Attribute Schema - Properties"')).toBeVisible();
-    const eventTypeAttributes = await setup.page.locator('text="Attribute Schema - Properties"');
+    await expect(externalSources.page.locator('text="Attribute Schema - Properties"')).toBeVisible();
+    const eventTypeAttributes = externalSources.page.locator('text="Attribute Schema - Properties"');
     await eventTypeAttributes.click();
-    await expect(setup.page.locator('.parameter')).toHaveCount(0);
+    await expect(externalSources.page.locator('.parameter')).toHaveCount(0);
 
     await externalSources.goto();
   });
@@ -166,8 +166,8 @@ test.describe.serial('External Source Error Handling', () => {
     await expect(
       externalSources.externalSourcesTable.getByRole('gridcell', { name: externalSources.externalSourceFileName }),
     ).toBeVisible();
-    await externalSources.uploadExternalSource(externalSources.externalSourceFilePath, false);
-    await expect(setup.page.getByLabel('Uniqueness violation.')).toBeVisible();
+    await externalSources.uploadExternalSource(externalSources.externalSourceFilePath, false, false);
+    await expect(setup.page.getByLabel('Uniqueness violation.')).toBeVisible({ timeout: 10000 });
     await externalSources.waitForToast('External Source Create Failed');
     await expect(setup.page.getByRole('gridcell', { name: externalSources.externalSourceFileName })).toHaveCount(1);
     await externalSources.deleteSource(externalSources.externalSourceFileName);

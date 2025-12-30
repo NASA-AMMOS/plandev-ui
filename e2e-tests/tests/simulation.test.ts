@@ -33,11 +33,9 @@ test.describe.serial('Simulation', async () => {
   test(`Plans with no activities should simulate`, async () => {
     const simHistoryLength = await setup.plan.getSimulationHistoryListLength();
     await setup.plan.runSimulation();
-    await setup.page.waitForTimeout(1000); // wait for sim dataset to appear
 
     // Expect a new dataset to be added to simulation history
-    const newSimHistoryLength = await setup.plan.getSimulationHistoryListLength();
-    await expect(newSimHistoryLength).toEqual(simHistoryLength + 1);
+    await expect.poll(() => setup.plan.getSimulationHistoryListLength()).toEqual(simHistoryLength + 1);
 
     // Expect re-simulate button to be enabled and simulation button disabled
     await expect(setup.plan.reSimulateButton).toBeEnabled();
@@ -47,9 +45,7 @@ test.describe.serial('Simulation', async () => {
   test(`Re-simulating should re-run simulation`, async () => {
     const simHistoryLength = await setup.plan.getSimulationHistoryListLength();
     await setup.plan.reRunSimulation();
-    await setup.page.waitForTimeout(1000); // wait for sim dataset to appear
-    const newSimHistoryLength = await setup.plan.getSimulationHistoryListLength();
-    await expect(newSimHistoryLength).toEqual(simHistoryLength + 1);
+    await expect.poll(() => setup.plan.getSimulationHistoryListLength()).toEqual(simHistoryLength + 1);
   });
 
   test(`Plans with activities should simulate and result in simulated activities`, async () => {
@@ -58,7 +54,6 @@ test.describe.serial('Simulation', async () => {
     await setup.plan.showPanel(PanelNames.SIMULATION, true);
     await setup.plan.addActivity('GrowBanana');
     await setup.plan.runSimulation();
-    await setup.page.waitForTimeout(1000); // wait for sim results
     await setup.plan.showPanel(PanelNames.SIMULATED_ACTIVITIES_TABLE, true);
     await expect(setup.plan.panelSimulatedActivitiesTable.getByRole('gridcell', { name: 'GrowBanana' })).toBeVisible();
     await setup.plan.showPanel(PanelNames.SIMULATION, true);

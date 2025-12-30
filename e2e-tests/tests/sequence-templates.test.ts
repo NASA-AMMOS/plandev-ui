@@ -50,7 +50,6 @@ test.beforeAll(async ({ baseURL, browser }) => {
   await plan.addActivity('PeelBanana');
   await plan.showPanel(PanelNames.SIMULATION, true);
   await plan.runSimulation();
-  await setup.page.waitForTimeout(1000); // wait for sim results
 
   dictionaries = new Dictionaries(setup.page);
   await dictionaries.goto();

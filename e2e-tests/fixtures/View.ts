@@ -109,9 +109,8 @@ export class View {
   }
 
   async openViewMenu() {
-    this.navButtonView.hover();
+    await this.navButtonView.hover();
     await expect(this.navButtonViewMenu).toBeVisible();
-    await this.page.waitForTimeout(100);
   }
 
   async renameView(viewName: string) {

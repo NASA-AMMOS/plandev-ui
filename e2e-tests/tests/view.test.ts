@@ -34,10 +34,8 @@ test.describe.serial('View', () => {
     const viewName = setup.view.createViewName();
     const viewName2 = setup.view.createViewName();
     await setup.view.createView(viewName);
-    await setup.page.waitForTimeout(250);
     await expect(setup.view.navButtonViewMenuTitle).toHaveText(viewName);
     await setup.view.renameView(viewName2);
-    await setup.page.waitForTimeout(250);
     await expect(setup.view.navButtonViewMenuTitle).toHaveText(viewName2);
     await setup.view.deleteView(viewName2);
   });

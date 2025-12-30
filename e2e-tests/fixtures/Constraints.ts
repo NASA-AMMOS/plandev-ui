@@ -99,7 +99,7 @@ export class Constraints {
 
   async goto() {
     await this.page.goto('/constraints', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(250);
+    await expect(this.table).toBeVisible();
   }
 
   async gotoNew() {

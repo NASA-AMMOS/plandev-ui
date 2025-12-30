@@ -91,7 +91,7 @@ export class Plans {
   }
 
   async fillInputFile(importFilePath: string = this.importFilePath) {
-    await this.page.waitForTimeout(1000);
+    await this.inputFile.waitFor({ state: 'attached' });
     await this.inputFile.focus();
     await this.inputFile.setInputFiles(importFilePath);
     await this.inputFile.evaluate(e => e.blur());

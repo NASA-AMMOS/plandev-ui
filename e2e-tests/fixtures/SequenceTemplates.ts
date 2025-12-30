@@ -51,7 +51,7 @@ export class SequenceTemplates {
 
   async goto() {
     await this.page.goto('/sequence-templates', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(250);
+    await expect(this.sequenceTemplateTable).toBeVisible();
   }
 
   async selectActivityType() {

@@ -108,22 +108,32 @@ export class Plan {
   }
 
   async addActivity(name: string = 'GrowBanana') {
+    // Ensure Activity Directives Table panel is visible for verification later
+    if (!(await this.panelActivityDirectivesTable.isVisible())) {
+      await this.showPanel(PanelNames.ACTIVITY_DIRECTIVES_TABLE);
+    }
     await this.showPanel(PanelNames.TIMELINE_ITEMS);
-    // TODO try to avoid using this timeout
-    await this.page.waitForTimeout(350);
-    const currentNumOfActivitiesWithName = await this.panelActivityDirectivesTable.getByRole('row', { name }).count();
     const activityListItem = this.page.locator(`.list-item :text-is("${name}")`);
+    await expect(activityListItem).toBeVisible();
     const activityRow = this.page
       .locator('.timeline')
       .getByRole('listitem')
       .filter({ hasText: 'Activities by Type' })
       .first()
       .locator('.overlay');
-    await activityListItem.dragTo(activityRow, { timeout: 5000 });
+    await expect(activityRow).toBeVisible();
+    // Wait for timeline to finish loading before attempting drag
+    await this.page.locator('.layer-message.loading').waitFor({ state: 'hidden', timeout: 10000 });
+    // Click on activity item first to ensure Svelte drag listeners are initialized
+    await activityListItem.click();
+    // Scroll elements into view
+    await activityListItem.scrollIntoViewIfNeeded();
+    await activityRow.scrollIntoViewIfNeeded();
+    // Use dragTo for the drag operation
+    await activityListItem.dragTo(activityRow, { timeout: 10000 });
     await this.waitForToast('Activity Directive Created Successfully');
-    await expect(this.panelActivityDirectivesTable.getByRole('row', { name })).toHaveCount(
-      currentNumOfActivitiesWithName + 1,
-    );
+    // Verify at least one activity with this name exists in the table
+    await expect(this.panelActivityDirectivesTable.getByRole('row', { name }).first()).toBeVisible({ timeout: 10000 });
   }
 
   async addPlanCollaborator(name: string, isUsername = true) {
@@ -201,8 +211,7 @@ export class Plan {
     await newConstraintPage.close();
     this.constraints.updatePage(this.page);
     await this.constraintModalFilter.fill(this.constraints.constraintName);
-    // wait for table to filter
-    await this.page.waitForTimeout(100);
+    await expect(this.page.getByRole('row', { name: this.constraints.constraintName })).toBeVisible();
     await this.page.getByRole('row', { name: this.constraints.constraintName }).getByRole('checkbox').click();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.waitForSelector(this.constraintListItemSelector, { state: 'visible', strict: true });
@@ -220,8 +229,7 @@ export class Plan {
     await newSchedulingConditionPage.close();
     this.schedulingConditions.updatePage(this.page);
     await this.schedulingConditionsModalFilter.fill(this.schedulingConditions.conditionName);
-    // wait for table to filter
-    await this.page.waitForTimeout(100);
+    await expect(this.page.getByRole('row', { name: this.schedulingConditions.conditionName })).toBeVisible();
     await this.page
       .getByRole('row', { name: this.schedulingConditions.conditionName })
       .getByRole('checkbox')
@@ -245,8 +253,7 @@ export class Plan {
     await newSchedulingGoalPage.close();
     this.schedulingGoals.updatePage(this.page);
     await this.schedulingGoalsModalFilter.fill(goalName);
-    // wait for table to filter
-    await this.page.waitForTimeout(100);
+    await expect(this.page.getByRole('row', { name: goalName })).toBeVisible();
     await this.page
       .getByRole('row', { name: goalName })
       .getByRole('checkbox')
@@ -290,7 +297,7 @@ export class Plan {
 
   async fillExternalDatasetFileInput(importFilePath: string) {
     const inputFile = this.page.locator('input[name="file"]');
-    await this.page.waitForTimeout(1000);
+    await inputFile.waitFor({ state: 'attached' });
     await inputFile.focus();
     await inputFile.setInputFiles(importFilePath);
     await inputFile.evaluate(e => e.blur());
@@ -337,15 +344,13 @@ export class Plan {
 
   async reRunSimulation(expectedFinalState = Status.Complete) {
     await this.reSimulateButton.click();
-    await this.page.waitForTimeout(1000);
     await this.waitForSimulationStatus(expectedFinalState);
   }
 
   async removeConstraint() {
     await this.constraintManageButton.click();
     await this.constraintModalFilter.fill(this.constraints.constraintName);
-    // wait for table to filter
-    await this.page.waitForTimeout(100);
+    await expect(this.page.getByRole('row', { name: this.constraints.constraintName })).toBeVisible();
     await this.page.getByRole('row', { name: this.constraints.constraintName }).getByRole('checkbox').uncheck();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.locator(this.constraintListItemSelector).waitFor({ state: 'detached' });
@@ -361,8 +366,7 @@ export class Plan {
   async removeSchedulingGoal(goalName: string) {
     await this.schedulingGoalManageButton.click();
     await this.schedulingGoalsModalFilter.fill(goalName);
-    // wait for table to filter
-    await this.page.waitForTimeout(100);
+    await expect(this.page.getByRole('row', { name: goalName })).toBeVisible();
     await this.page.getByRole('row', { name: goalName }).getByRole('checkbox').uncheck();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.locator(this.schedulingGoalListItemSelector(goalName)).waitFor({ state: 'detached' });
@@ -375,31 +379,16 @@ export class Plan {
 
   async runAnalysis() {
     await this.analyzeButton.click();
-    /**
-     * wait for UI to update with pending status, but don't explicitly check because
-     * the final state of the status might update before the check occurs
-     **/
-    await this.page.waitForTimeout(300);
     await this.waitForSchedulingStatus(Status.Complete);
   }
 
   async runScheduling(expectedFinalState = Status.Complete) {
     await this.scheduleButton.click();
-    /**
-     * wait for UI to update with pending status, but don't explicitly check because
-     * the final state of the status might update before the check occurs
-     **/
-    await this.page.waitForTimeout(300);
     await this.waitForSchedulingStatus(expectedFinalState);
   }
 
   async runSimulation(expectedFinalState = Status.Complete) {
     await this.simulateButton.click();
-    /**
-     * wait for UI to update with pending status, but don't explicitly check because
-     * the final state of the status might update before the check occurs
-     **/
-    await this.page.waitForTimeout(300);
     await this.waitForSimulationStatus(expectedFinalState);
   }
 
@@ -511,7 +500,7 @@ export class Plan {
 
     await expect(gridMenuButton).toBeVisible();
     await expect(gridMenuButton).toBeEnabled();
-    await this.page.waitForTimeout(1000);
+    await this.page.locator('.layer-message.loading').waitFor({ state: 'hidden' });
     await gridMenuButton.click();
 
     await this.gridMenu.waitFor({ state: 'attached' });

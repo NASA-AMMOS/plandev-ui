@@ -56,7 +56,6 @@ export class ExpansionSets {
 
   async goto() {
     await this.page.goto('/expansion/sets', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(250);
     await expect(this.setsNavButton).toHaveClass(/selected/);
   }
 

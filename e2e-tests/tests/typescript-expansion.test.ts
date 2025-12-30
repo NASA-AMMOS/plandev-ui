@@ -54,7 +54,6 @@ test.beforeAll(async ({ baseURL, browser }) => {
   await plan.addActivity('PeelBanana');
   await plan.showPanel(PanelNames.SIMULATION, true);
   await plan.runSimulation();
-  await setup.page.waitForTimeout(1000); // wait for sim results
 
   await dictionaries.goto();
   await dictionaries.createCommandDictionary(dictionaryName, COMMAND_DICTIONARY_PATH);
@@ -94,7 +93,6 @@ test.describe.serial('Expansion', () => {
     const expansionSequenceItem = setup.page.locator('.sne-items').getByText(`${sequenceFilterName} Sequence`);
     await expansionSequenceItem.hover();
     await setup.page.getByLabel('Expand Sequence').waitFor({ state: 'visible' });
-    await setup.page.waitForTimeout(1000); // wait for expansion results
     await setup.page.getByLabel('Expand Sequence').click();
     await plan.waitForToast('Plan Expanded Successfully');
     await setup.page.getByLabel('Show Expanded Sequence').click();

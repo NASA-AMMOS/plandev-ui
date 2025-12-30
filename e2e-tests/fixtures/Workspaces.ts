@@ -42,7 +42,7 @@ export class Workspaces {
     await this.fillInputName(workspaceName);
     await this.createButton.waitFor({ state: 'attached' });
     await this.createButton.waitFor({ state: 'visible' });
-    await this.createButton.isEnabled({ timeout: 500 });
+    await expect(this.createButton).toBeEnabled();
     await this.createButton.click();
     await this.filterTable(workspaceName);
     await this.tableRow(workspaceName).waitFor({ state: 'attached' });
@@ -108,6 +108,7 @@ export class Workspaces {
     await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(workspaceName);
     await expect(this.table.getByRole('row', { name: workspaceName })).toBeVisible();
     await this.page.keyboard.press('Escape');
+    await this.page.locator('.ag-popup').waitFor({ state: 'hidden' });
   }
 
   async getWorkspaceId(workspaceName = this.workspaceName) {

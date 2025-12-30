@@ -38,7 +38,6 @@ test.describe.serial('Plan Expansion', () => {
   test('Expansion Sequence can be created', async () => {
     await setup.plan.showPanel(PanelNames.SIMULATION, true);
     await setup.plan.runSimulation();
-    await setup.page.waitForTimeout(1000); // wait for sim results
     await setup.plan.showPanel(PanelNames.EXPANSION);
     await setup.plan.sequenceExpansionNewButton.click();
     await setup.plan.sequenceExpansionNewSequenceButton.click();
@@ -49,7 +48,6 @@ test.describe.serial('Plan Expansion', () => {
   });
   test('Sequence Filter can be created', async () => {
     await setup.plan.showPanel(PanelNames.SIMULATION, true);
-    await setup.page.waitForTimeout(1000); // wait for sim results
     await setup.plan.showPanel(PanelNames.EXPANSION);
     await setup.plan.createSequenceFilter(sequenceFilterName);
   });
@@ -57,7 +55,6 @@ test.describe.serial('Plan Expansion', () => {
     await setup.plan.addActivity('PeelBanana');
     await setup.plan.showPanel(PanelNames.SIMULATION, true);
     await setup.plan.runSimulation();
-    await setup.page.waitForTimeout(1000); // wait for sim results
     await setup.plan.showPanel(PanelNames.EXPANSION);
     await setup.plan.applySequenceFilter(sequenceFilterName, setup.plans.planId);
   });

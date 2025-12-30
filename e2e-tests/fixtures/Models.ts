@@ -80,7 +80,7 @@ export class Models {
   }
 
   async fillInputFile(jarPath: string = this.jarPath) {
-    await this.page.waitForTimeout(1000);
+    await this.inputFile.waitFor({ state: 'attached' });
     await this.inputFile.focus();
     await this.inputFile.setInputFiles(jarPath);
     await this.inputFile.evaluate(e => e.blur());

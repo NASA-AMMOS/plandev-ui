@@ -106,6 +106,15 @@ export class Dictionaries {
       await this.sequenceAdaptationNameInputField.fill(this.sequenceAdaptationName);
     }
 
+    // Check for any error alerts that might explain why button stays disabled
+    const errorAlert = this.page.locator('.alert-error');
+    const hasError = await errorAlert.isVisible().catch(() => false);
+    if (hasError) {
+      const errorText = await errorAlert.textContent();
+      throw new Error(`Dictionary creation form has error: ${errorText}`);
+    }
+
+    await expect(this.createButton).toBeEnabled({ timeout: 15000 });
     await this.createButton.click();
     await this.filterTable(table, dictionaryName, type);
     await tableRow.waitFor({ state: 'attached' });
@@ -228,14 +237,34 @@ export class Dictionaries {
       name = dictionaryName + '.xml';
     }
 
-    await this.page.waitForTimeout(1000);
-    await this.inputFile.focus();
-    await this.inputFile.setInputFiles({
-      buffer: dictionaryBuffer,
-      mimeType,
-      name,
-    });
-    await this.inputFile.blur();
+    // Retry mechanism for file upload - sometimes Svelte's reactivity doesn't trigger on first attempt
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      await this.inputFile.waitFor({ state: 'attached' });
+      await this.inputFile.focus();
+      await this.inputFile.setInputFiles({
+        buffer: dictionaryBuffer,
+        mimeType: mimeType,
+        name: name,
+      });
+      await this.inputFile.evaluate(e => e.blur());
+
+      // Verify the file was set by checking if the button becomes enabled
+      // For sequence adaptations, also need to wait for the name field
+      if (type !== DictionaryType.SequenceAdaptation) {
+        const isEnabled = await this.createButton.isEnabled().catch(() => false);
+        if (isEnabled) {
+          return;
+        }
+        // Wait a bit before retry
+        if (attempt < maxAttempts) {
+          await this.page.waitForTimeout(500);
+        }
+      } else {
+        // For sequence adaptations, just return - we'll fill in the name field and then check
+        return;
+      }
+    }
   }
 
   private async filterTable(table: Locator, dictionaryName: string, type: DictionaryType) {
@@ -257,12 +286,12 @@ export class Dictionaries {
     await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(dictionaryName);
     await expect(table.getByRole('row', { name: dictionaryName })).toBeVisible();
     await this.page.keyboard.press('Escape');
-    await this.page.waitForTimeout(250);
+    await this.page.locator('.ag-popup').waitFor({ state: 'hidden' });
   }
 
   async goto() {
     await this.page.goto('/dictionaries', { waitUntil: 'load' });
-    await this.page.waitForTimeout(250);
+    await expect(this.createButton).toBeVisible();
   }
 
   async readDictionary(dictionaryName: string, dictionaryPath: string): Promise<Buffer> {

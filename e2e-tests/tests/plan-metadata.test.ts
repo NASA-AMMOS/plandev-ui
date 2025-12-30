@@ -156,8 +156,11 @@ test.describe.serial('Plan Metadata', () => {
 
     await planB.showPanel(PanelNames.PLAN_METADATA, true);
 
-    // Wait for plan to be an option in the input (via socket update which can take at least half a second)
-    await setupA.page.waitForTimeout(1000);
+    // Wait for plan to be an option in the input (via socket update)
+    await planB.waitForPlanCollaboratorLoad();
+    await planB.planCollaboratorInput.click();
+    await expect(setupA.page.getByRole('option', { name: planA.planName })).toBeVisible({ timeout: 5000 });
+    await setupA.page.keyboard.press('Escape');
     await planB.addPlanCollaborator(planA.planName, false);
     await expect(
       planB.planCollaboratorInputContainer

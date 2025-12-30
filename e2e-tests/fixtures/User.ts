@@ -44,7 +44,6 @@ export class User {
     await this.page.getByRole('navigation').getByRole('combobox').click();
     await this.page.getByRole('listbox').getByRole('option', { name: role }).click();
     await this.page.waitForLoadState('networkidle');
-    await this.page.waitForTimeout(1000);
     await expect(this.page.getByRole('navigation').getByRole('combobox')).toHaveText(role);
   }
 }
