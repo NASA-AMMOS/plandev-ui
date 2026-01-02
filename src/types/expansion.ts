@@ -94,10 +94,14 @@ export type ExpandedSequence = {
   };
 };
 
-export type ExpansionRun = {
+export type ExpansionRunSlim = {
   created_at: string;
-  expanded_sequences: ExpandedSequence[];
-  expansion_set: ExpansionSet;
+  expansion_set: {
+    created_at: string;
+    id: number;
+    name: string;
+    parcel_id: number;
+  };
   id: number;
   simulation_dataset: {
     dataset_id: number;
@@ -108,4 +112,8 @@ export type ExpansionRun = {
       };
     };
   };
+};
+
+export type ExpansionRun = ExpansionRunSlim & {
+  expanded_sequences: ExpandedSequence[];
 };

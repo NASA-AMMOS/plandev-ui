@@ -1245,9 +1245,9 @@ const gql = {
     }
   `,
 
-  GET_EXPANSION_RUNS: `#graphql
-    query GetExpansionRuns {
-      expansionRuns: ${Queries.EXPANSION_RUNS}(order_by: { id: desc }) {
+  GET_EXPANSION_RUN: `#graphql
+    query GetExpansionRun($id: Int!) {
+      expansionRun: ${Queries.EXPANSION_RUNS}_by_pk(id: $id) {
         created_at
         expansion_set {
           created_at
@@ -1267,6 +1267,30 @@ const gql = {
               }
             }
           }
+        }
+        simulation_dataset {
+          dataset_id
+          simulation {
+            plan {
+              id
+              name
+            }
+          }
+        }
+        id
+      }
+    }
+  `,
+
+  GET_EXPANSION_RUNS: `#graphql
+    query GetExpansionRuns {
+      expansionRuns: ${Queries.EXPANSION_RUNS}(order_by: { id: desc }) {
+        created_at
+        expansion_set {
+          created_at
+          id
+          name
+          parcel_id
         }
         simulation_dataset {
           dataset_id
