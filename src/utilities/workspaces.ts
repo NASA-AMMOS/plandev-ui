@@ -349,19 +349,14 @@ export const WorkspaceApi = {
   async createFolder(workspaceId: number, folderPath: string, user: User | null) {
     return reqWorkspace<Workspace>(`${workspaceId}/${folderPath}?type=directory`, 'PUT', null, user, undefined, false);
   },
-  async createWorkspace(
-    location: string,
-    parcelId: number,
-    user: User | null,
-    name?: string | null,
-  ): Promise<Workspace> {
+  async createWorkspace(location: string, parcelId: number, user: User | null, name?: string | null): Promise<number> {
     const workspaceInsert: WorkspaceInsertInput | null = {
       parcelId: parcelId,
       workspaceLocation: location,
       ...(name ? { workspaceName: name } : {}),
     };
 
-    return reqWorkspace<Workspace>(`create`, 'POST', JSON.stringify(workspaceInsert), user);
+    return reqWorkspace<number>(`create`, 'POST', JSON.stringify(workspaceInsert), user);
   },
   async deleteFile(workspaceId: number, filePath: string, user: User | null): Promise<void> {
     return reqWorkspace(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, false);
