@@ -5,6 +5,7 @@ import type { PlanDataset } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { TimeRange } from '../types/timeline';
 import gql from '../utilities/gql';
+import { getDoyTime, getDoyTimeFromInterval, getUnixEpochTime } from '../utilities/time';
 import { gqlSubscribable } from './subscribable';
 
 /* Writeable. */
@@ -25,12 +26,6 @@ export const createPlanError: Writable<string | null> = writable(null);
 
 export const creatingPlan: Writable<boolean> = writable(false);
 
-export const planEndTimeMs: Writable<number> = writable(0);
-
-export const planStartTimeMs: Writable<number> = writable(0);
-
-export const maxTimeRange: Writable<TimeRange> = writable({ end: 0, start: 0 });
-
 export const viewTimeRange: Writable<TimeRange> = writable({ end: 0, start: 0 });
 
 /* "plan" store dependencies */
@@ -46,15 +41,42 @@ export const plan: Readable<Plan | null> = derived([initialPlan, planMetadata], 
   if (!$initialPlan) {
     return null;
   }
-  return {
+
+  const newPlan: Plan = {
     ...$initialPlan,
     ...($planMetadata || {}),
   };
+
+  // Recompute start_time and start_time_doy since these may have changed in planMetadata update
+  newPlan.start_time_doy = getDoyTime(new Date(newPlan.start_time));
+  newPlan.end_time_doy = getDoyTimeFromInterval(newPlan.start_time, newPlan.duration);
+
+  return newPlan;
 });
 
 export const planModelId: Readable<number> = derived(plan, $plan => $plan?.model?.id ?? -1);
 
 export const planModelRevision: Readable<number> = derived(plan, $plan => $plan?.model?.revision ?? -1);
+
+export const planStartTimeYmd: Readable<string> = derived(plan, $plan => $plan?.start_time ?? '');
+
+export const planEndTimeDoy: Readable<string> = derived(plan, $plan => $plan?.end_time_doy ?? '');
+
+export const planStartTimeMs: Readable<number> = derived(plan, $plan =>
+  $plan?.start_time_doy ? getUnixEpochTime($plan?.start_time_doy) : 0,
+);
+
+export const planEndTimeMs: Readable<number> = derived(plan, $plan =>
+  $plan?.end_time_doy ? getUnixEpochTime($plan?.end_time_doy) : 0,
+);
+
+export const maxTimeRange: Readable<TimeRange> = derived(
+  [planStartTimeMs, planEndTimeMs],
+  ([$planStartTimeMs, $planEndTimeMs]) => ({
+    end: $planEndTimeMs,
+    start: $planStartTimeMs,
+  }),
+);
 
 /* Other Subscriptions. */
 
@@ -118,9 +140,6 @@ export function resetPlanStores() {
   createPlanError.set(null);
   creatingPlan.set(false);
   initialPlan.set(null);
-  planEndTimeMs.set(0);
-  planStartTimeMs.set(0);
-  maxTimeRange.set({ end: 0, start: 0 });
   viewTimeRange.set({ end: 0, start: 0 });
 }
 

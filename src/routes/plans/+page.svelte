@@ -44,7 +44,7 @@
   import { parseJSONStream } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { exportPlan, isDeprecatedPlanTransfer } from '../../utilities/plan';
+  import { computeDurationString, exportPlan, isDeprecatedPlanTransfer } from '../../utilities/plan';
   import {
     convertDoyToYmd,
     convertUsToDurationString,
@@ -537,21 +537,9 @@
   }
 
   function updateDurationString() {
-    if ($startTimeField.valid && $endTimeField.valid) {
-      let startTimeMs = $plugins.time.primary.parse($startTimeField.value)?.getTime();
-      let endTimeMs = $plugins.time.primary.parse($endTimeField.value)?.getTime();
-      if (typeof startTimeMs === 'number' && typeof endTimeMs === 'number') {
-        durationString = convertUsToDurationString((endTimeMs - startTimeMs) * 1000);
-
-        if (!durationString) {
-          durationString = 'None';
-        }
-      } else {
-        durationString = 'Invalid';
-      }
-    } else {
-      durationString = 'None';
-    }
+    const startTimeMs = $plugins.time.primary.parse($startTimeField.value)?.getTime();
+    const endTimeMs = $plugins.time.primary.parse($endTimeField.value)?.getTime();
+    durationString = computeDurationString(startTimeMs, endTimeMs, $startTimeField.valid && $endTimeField.valid);
   }
 
   async function parsePlanFileStream(stream: ReadableStream) {

@@ -3205,6 +3205,8 @@ const gql = {
     subscription SubPlanMetadata($planId: Int!) {
       plan_metadata: ${Queries.PLAN}(id: $planId) {
         id
+        start_time
+        duration
         model: mission_model {
           id
           jar_id

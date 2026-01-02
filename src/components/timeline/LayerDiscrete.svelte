@@ -33,9 +33,7 @@
   import { isDeleteEvent } from '../../utilities/keyboardEvents';
   import {
     getActivityDirectiveStartTimeMs,
-    getDoyTime,
     getIntervalUnixEpochTime,
-    getUnixEpochTime,
     getUnixEpochTimeFromInterval,
   } from '../../utilities/time';
   import {
@@ -118,7 +116,6 @@
   let dragActivityDirectiveActive: ActivityDirective | null = null;
   let dragStartX: number | null = null;
   let minRectSize: number = 4;
-  let planStartTimeMs: number;
   let quadtreeActivityDirectives: Quadtree<QuadtreeRect>;
   let quadtreeSpans: Quadtree<QuadtreeRect>;
   let quadtreeExternalEvents: Quadtree<QuadtreeRect>;
@@ -145,8 +142,8 @@
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
   $: rowHeight = discreteOptions.height;
+  $: planStartTimeMs = planStartTimeYmd ? new Date(planStartTimeYmd).getTime() : 0;
   $: timelineLocked = timelineLockStatus === TimelineLockStatus.Locked;
-  $: planStartTimeMs = getUnixEpochTime(getDoyTime(new Date(planStartTimeYmd)));
 
   // the following are NOT mutually exclusive.
   $: canDrawActivities =

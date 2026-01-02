@@ -86,14 +86,13 @@
     maxTimeRange,
     plan,
     planDatasets,
-    planEndTimeMs,
     planId,
     planModelActivityTypes,
     planModelId,
     planReadOnly,
     planReadOnlyMergeRequest,
     planReadOnlySnapshot,
-    planStartTimeMs,
+    planStartTimeYmd,
     planTags,
     resetPlanStores,
     viewTimeRange,
@@ -162,7 +161,6 @@
   } from '../../../utilities/simulation';
   import { getHumanReadableStatus, statusColors } from '../../../utilities/status';
   import { pluralize } from '../../../utilities/text';
-  import { getUnixEpochTime } from '../../../utilities/time';
   import { showSuccessToast } from '../../../utilities/toast';
   import { tooltip } from '../../../utilities/tooltip';
   import { getSearchParameterNumber, removeQueryParam, setQueryParam } from '../../../utilities/url';
@@ -292,9 +290,6 @@
   }
   $: if (data.initialPlan) {
     $initialPlan = data.initialPlan;
-    $planEndTimeMs = getUnixEpochTime(data.initialPlan.end_time_doy);
-    $planStartTimeMs = getUnixEpochTime(data.initialPlan.start_time_doy);
-    $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
     $simulationDatasetId = -1;
 
     const querySimulationDatasetId = $page.url.searchParams.get(SearchParameters.SIMULATION_DATASET_ID);
@@ -395,7 +390,7 @@
   // before the view loads would read `$view === null` and stay false until the next view change.
   $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate($user, $view) : false;
 
-  $: if ($initialPlan && $planDatasets) {
+  $: if ($planId > -1 && $planStartTimeYmd && $planDatasets) {
     const datasetNames = [];
 
     for (const dataset of $planDatasets) {
@@ -412,9 +407,9 @@
     $externalResources = [];
     effects
       .getResourcesExternal(
-        $initialPlan.id,
+        $planId,
         $simulationDatasetId > -1 ? $simulationDatasetId : null,
-        $initialPlan.start_time,
+        $planStartTimeYmd,
         get(user),
         resourcesExternalAbortController.signal,
       )
@@ -431,7 +426,11 @@
     selectActivity(null, null);
   }
 
-  $: if ($initialPlan && $simulationDataset !== null && getSimulationStatus($simulationDataset) === Status.Complete) {
+  $: if (
+    $planStartTimeYmd &&
+    $simulationDataset !== null &&
+    getSimulationStatus($simulationDataset) === Status.Complete
+  ) {
     const datasetId = $simulationDataset.dataset_id;
     simulationDataAbortController?.abort();
     simulationDataAbortController = new AbortController();
@@ -439,7 +438,7 @@
     effects
       .getSpans(
         datasetId,
-        $simulationDataset.simulation_start_time ?? $initialPlan.start_time,
+        $simulationDataset.simulation_start_time ?? $planStartTimeYmd,
         get(user),
         simulationDataAbortController.signal,
       )

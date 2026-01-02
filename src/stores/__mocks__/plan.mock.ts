@@ -73,9 +73,6 @@ export function resetPlanStores() {
   createPlanError.set(null);
   creatingPlan.set(false);
   initialPlan.set(null);
-  planEndTimeMs.set(0);
-  planStartTimeMs.set(0);
-  maxTimeRange.set({ end: 0, start: 0 });
   viewTimeRange.set({ end: 0, start: 0 });
 }
 
