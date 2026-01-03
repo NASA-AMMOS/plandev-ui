@@ -319,6 +319,10 @@ This has been seen to result in unintended and often glitchy behavior, which oft
 
   function onCellContextMenu(event: CellContextMenuEvent<RowData>) {
     if (useCustomContextMenu) {
+      // Call show() first - this triggers hideAllMenus() which may dispatch 'hide' event
+      // and reset our state variables. We set them after to ensure they persist.
+      contextMenu.show(event.event as MouseEvent);
+
       const { data: clickedRow } = event;
 
       if (suppressContextMenuSelection) {
@@ -337,7 +341,6 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       }
 
       contextMenuOpen = true;
-      contextMenu.show(event.event as MouseEvent);
     }
     dispatch('cellContextMenu', event);
   }
