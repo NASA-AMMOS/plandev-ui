@@ -502,8 +502,9 @@ export async function downloadWorkspaceNodesAsZip(options: {
   onError?: (message: string) => void;
   user: User | null;
   workspaceId: number;
+  workspaceName?: string;
 }): Promise<void> {
-  const { allFiles, nodes, onError, user, workspaceId } = options;
+  const { allFiles, nodes, onError, user, workspaceId, workspaceName } = options;
 
   // Compute the minimal set of nodes to zip
   const minimalNodes = removeRedundantNodes(nodes);
@@ -571,8 +572,21 @@ export async function downloadWorkspaceNodesAsZip(options: {
 
   // Generate and download the zip
   const zippedContent = await zip.generateAsync({ type: 'blob' });
-  // Use the common prefix folder name, or the first selected node's name, or 'download'
-  const zipName = commonPrefix.split('/').pop() || minimalNodes[0]?.fullPath.split('/')[0] || 'download';
+
+  // Determine zip file name
+  let zipName: string;
+  if (minimalNodes.length === 1) {
+    // Single item: use the item's name (without extension for files)
+    const nodeName = minimalNodes[0].fullPath.split('/').pop() || 'download';
+    zipName =
+      minimalNodes[0].type === WorkspaceContentType.Directory ? nodeName : nodeName.replace(/\.[^.]+$/, '') || nodeName;
+  } else if (commonPrefix) {
+    // Multiple items with common parent: use the common parent folder name
+    zipName = commonPrefix.split('/').pop() || 'download';
+  } else {
+    // Multiple items with no common parent: use workspace name + selected_files
+    zipName = workspaceName ? `${workspaceName}_selected_files` : 'selected_files';
+  }
 
   const link = document.createElement('a');
   link.href = URL.createObjectURL(zippedContent);

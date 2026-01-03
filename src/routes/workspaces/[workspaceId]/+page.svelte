@@ -539,6 +539,7 @@
       onError: showFailureToast,
       user,
       workspaceId: $workspaceId,
+      workspaceName: $workspace?.name,
     });
   }
 
