@@ -117,19 +117,17 @@
   </div>
 </ContextMenu.Group>
 <ContextMenu.Separator />
-{#if selectedWorkspaceNodes.length === 1}
-  <div>
-    {#if selectedWorkspaceNodes[0].type !== WorkspaceContentType.Directory}
-      <ContextMenu.Item size="sm" on:click={() => dispatch('download')} aria-label="Download File">
-        Download File
-      </ContextMenu.Item>
-    {/if}
+<div>
+  <ContextMenu.Item size="sm" on:click={() => dispatch('download')} aria-label="Download File">
+    Download
+  </ContextMenu.Item>
+  {#if selectedWorkspaceNodes.length === 1}
     <ContextMenu.Item size="sm" on:click={() => dispatch('copyFullPath')} aria-label="Copy Full Path">
       Copy Full Path
     </ContextMenu.Item>
-  </div>
-  <ContextMenu.Separator />
-{/if}
+  {/if}
+</div>
+<ContextMenu.Separator />
 <div
   use:permissionHandler={{
     hasPermission: hasEditPermission && !areMultipleFilesSelected,

@@ -10,8 +10,10 @@ import {
   findNodeByPath,
   flattenWorkspaceTreeWithPaths,
   getAvailableActionsForNodes,
+  getCommonPathPrefix,
   joinPath,
   mapWorkspaceTreePaths,
+  removeRedundantNodes,
   separateFilenameFromPath,
   shouldNodeBeVisible,
   sortWorkspaceTree,
@@ -730,6 +732,164 @@ describe('Workspace utility function tests', () => {
       const result = getAvailableActionsForNodes(actions, nodes);
 
       expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('removeRedundantNodes', () => {
+    test('Should return empty array for empty input', () => {
+      const result = removeRedundantNodes([]);
+      expect(result).toEqual([]);
+    });
+
+    test('Should return single node unchanged', () => {
+      const nodes: WorkspaceTreeNodeWithFullPath[] = [
+        { depth: 0, fullPath: 'folder', hasChildren: true, name: 'folder', type: WorkspaceContentType.Directory },
+      ];
+
+      const result = removeRedundantNodes(nodes);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].fullPath).toBe('folder');
+    });
+
+    test('Should remove child when parent directory is selected', () => {
+      const nodes: WorkspaceTreeNodeWithFullPath[] = [
+        { depth: 0, fullPath: 'folder', hasChildren: true, name: 'folder', type: WorkspaceContentType.Directory },
+        { depth: 1, fullPath: 'folder/file.txt', hasChildren: false, name: 'file.txt', type: WorkspaceContentType.Text },
+      ];
+
+      const result = removeRedundantNodes(nodes);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].fullPath).toBe('folder');
+    });
+
+    test('Should remove deeply nested children when ancestor is selected', () => {
+      const nodes: WorkspaceTreeNodeWithFullPath[] = [
+        { depth: 0, fullPath: 'a', hasChildren: true, name: 'a', type: WorkspaceContentType.Directory },
+        { depth: 1, fullPath: 'a/b', hasChildren: true, name: 'b', type: WorkspaceContentType.Directory },
+        { depth: 2, fullPath: 'a/b/c.txt', hasChildren: false, name: 'c.txt', type: WorkspaceContentType.Text },
+      ];
+
+      const result = removeRedundantNodes(nodes);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].fullPath).toBe('a');
+    });
+
+    test('Should keep sibling nodes', () => {
+      const nodes: WorkspaceTreeNodeWithFullPath[] = [
+        { depth: 1, fullPath: 'folder/file1.txt', hasChildren: false, name: 'file1.txt', type: WorkspaceContentType.Text },
+        { depth: 1, fullPath: 'folder/file2.txt', hasChildren: false, name: 'file2.txt', type: WorkspaceContentType.Text },
+      ];
+
+      const result = removeRedundantNodes(nodes);
+
+      expect(result).toHaveLength(2);
+    });
+
+    test('Should keep nodes from different parent directories', () => {
+      const nodes: WorkspaceTreeNodeWithFullPath[] = [
+        { depth: 0, fullPath: 'folder1', hasChildren: true, name: 'folder1', type: WorkspaceContentType.Directory },
+        { depth: 0, fullPath: 'folder2', hasChildren: true, name: 'folder2', type: WorkspaceContentType.Directory },
+      ];
+
+      const result = removeRedundantNodes(nodes);
+
+      expect(result).toHaveLength(2);
+    });
+
+    test('Should not treat similar path prefixes as parent-child', () => {
+      const nodes: WorkspaceTreeNodeWithFullPath[] = [
+        { depth: 0, fullPath: 'foo', hasChildren: true, name: 'foo', type: WorkspaceContentType.Directory },
+        { depth: 0, fullPath: 'foobar', hasChildren: true, name: 'foobar', type: WorkspaceContentType.Directory },
+      ];
+
+      const result = removeRedundantNodes(nodes);
+
+      expect(result).toHaveLength(2);
+      expect(result.map(n => n.fullPath)).toContain('foo');
+      expect(result.map(n => n.fullPath)).toContain('foobar');
+    });
+
+    test('Should handle mixed selection of files and directories', () => {
+      const nodes: WorkspaceTreeNodeWithFullPath[] = [
+        { depth: 0, fullPath: 'folder', hasChildren: true, name: 'folder', type: WorkspaceContentType.Directory },
+        { depth: 1, fullPath: 'folder/child.txt', hasChildren: false, name: 'child.txt', type: WorkspaceContentType.Text },
+        { depth: 0, fullPath: 'root.txt', hasChildren: false, name: 'root.txt', type: WorkspaceContentType.Text },
+      ];
+
+      const result = removeRedundantNodes(nodes);
+
+      expect(result).toHaveLength(2);
+      expect(result.map(n => n.fullPath)).toContain('folder');
+      expect(result.map(n => n.fullPath)).toContain('root.txt');
+      expect(result.map(n => n.fullPath)).not.toContain('folder/child.txt');
+    });
+
+    test('Should handle unsorted input correctly', () => {
+      // Input with child before parent
+      const nodes: WorkspaceTreeNodeWithFullPath[] = [
+        { depth: 2, fullPath: 'a/b/c.txt', hasChildren: false, name: 'c.txt', type: WorkspaceContentType.Text },
+        { depth: 0, fullPath: 'a', hasChildren: true, name: 'a', type: WorkspaceContentType.Directory },
+      ];
+
+      const result = removeRedundantNodes(nodes);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].fullPath).toBe('a');
+    });
+  });
+
+  describe('getCommonPathPrefix', () => {
+    test('Should return empty string for empty array', () => {
+      const result = getCommonPathPrefix([]);
+      expect(result).toBe('');
+    });
+
+    test('Should return parent directory for single path', () => {
+      const result = getCommonPathPrefix(['folder/file.txt']);
+      expect(result).toBe('folder');
+    });
+
+    test('Should return empty string for single root-level path', () => {
+      const result = getCommonPathPrefix(['file.txt']);
+      expect(result).toBe('');
+    });
+
+    test('Should return empty string for single root-level directory', () => {
+      const result = getCommonPathPrefix(['myFolder']);
+      expect(result).toBe('');
+    });
+
+    test('Should return common prefix for paths with shared parent', () => {
+      const result = getCommonPathPrefix(['folder/file1.txt', 'folder/file2.txt']);
+      expect(result).toBe('folder');
+    });
+
+    test('Should return deeper common prefix for nested paths', () => {
+      const result = getCommonPathPrefix(['a/b/c/file1.txt', 'a/b/c/file2.txt']);
+      expect(result).toBe('a/b/c');
+    });
+
+    test('Should return empty string when paths have no common prefix', () => {
+      const result = getCommonPathPrefix(['folder1/file.txt', 'folder2/file.txt']);
+      expect(result).toBe('');
+    });
+
+    test('Should handle paths of different depths', () => {
+      const result = getCommonPathPrefix(['a/b/file.txt', 'a/file.txt']);
+      expect(result).toBe('a');
+    });
+
+    test('Should not match partial directory names', () => {
+      const result = getCommonPathPrefix(['foo/file.txt', 'foobar/file.txt']);
+      expect(result).toBe('');
+    });
+
+    test('Should handle multiple paths with varying common depths', () => {
+      const result = getCommonPathPrefix(['a/b/c/file1.txt', 'a/b/file2.txt', 'a/b/d/file3.txt']);
+      expect(result).toBe('a/b');
     });
   });
 });

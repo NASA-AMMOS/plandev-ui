@@ -1,4 +1,5 @@
 import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
+import JSZip from 'jszip';
 import { PATH_DELIMITER } from '../constants/workspaces';
 import { WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
@@ -441,4 +442,143 @@ export function shouldNodeBeVisible(
   }
 
   return true;
+}
+
+/**
+ * Removes nodes whose paths are already covered by a selected parent directory.
+ * For example, if `/foo` and `/foo/bar.txt` are both selected, `/foo/bar.txt` is redundant.
+ */
+export function removeRedundantNodes(nodes: WorkspaceTreeNodeWithFullPath[]): WorkspaceTreeNodeWithFullPath[] {
+  // Sort by path length so parents come before children
+  const sorted = [...nodes].sort((a, b) => a.fullPath.length - b.fullPath.length);
+  const keptPaths: string[] = [];
+
+  return sorted.filter(node => {
+    // Check if any already-kept path is a parent of this node
+    const isRedundant = keptPaths.some(parentPath => node.fullPath.startsWith(parentPath + '/'));
+    if (!isRedundant) {
+      keptPaths.push(node.fullPath);
+    }
+    return !isRedundant;
+  });
+}
+
+/**
+ * Gets the common directory prefix from a list of paths.
+ */
+export function getCommonPathPrefix(paths: string[]): string {
+  if (paths.length === 0) {
+    return '';
+  }
+  if (paths.length === 1) {
+    // For a single path, return its parent directory
+    const parts = paths[0].split('/');
+    return parts.slice(0, -1).join('/');
+  }
+
+  const splitPaths = paths.map(p => p.split('/'));
+  const minLength = Math.min(...splitPaths.map(p => p.length));
+  const commonParts: string[] = [];
+
+  for (let i = 0; i < minLength; i++) {
+    const segment = splitPaths[0][i];
+    if (splitPaths.every(p => p[i] === segment)) {
+      commonParts.push(segment);
+    } else {
+      break;
+    }
+  }
+
+  return commonParts.join('/');
+}
+
+/**
+ * Downloads multiple workspace nodes as a zip file, preserving folder structure.
+ * Removes redundant nodes (children of selected parents) before downloading.
+ */
+export async function downloadWorkspaceNodesAsZip(options: {
+  allFiles: WorkspaceTreeNodeWithFullPath[];
+  nodes: WorkspaceTreeNodeWithFullPath[];
+  onError?: (message: string) => void;
+  user: User | null;
+  workspaceId: number;
+}): Promise<void> {
+  const { allFiles, nodes, onError, user, workspaceId } = options;
+
+  // Compute the minimal set of nodes to zip
+  const minimalNodes = removeRedundantNodes(nodes);
+
+  // Collect all file paths to include in the zip
+  const filesToZip: string[] = [];
+  for (const node of minimalNodes) {
+    if (node.type === WorkspaceContentType.Directory) {
+      // Add all files under this directory
+      const filesUnderDir = allFiles.filter(
+        file => file.fullPath.startsWith(node.fullPath + '/') && file.type !== WorkspaceContentType.Directory,
+      );
+      filesToZip.push(...filesUnderDir.map(f => f.fullPath));
+    } else {
+      filesToZip.push(node.fullPath);
+    }
+  }
+
+  if (filesToZip.length === 0) {
+    return;
+  }
+
+  // Determine common prefix to strip from paths in the zip
+  const commonPrefix = getCommonPathPrefix(minimalNodes.map(n => n.fullPath));
+
+  // Create zip and add files
+  const zip = new JSZip();
+  let failedFiles = 0;
+
+  const fetchPromises = filesToZip.map(async filePath => {
+    try {
+      const blob = await WorkspaceApi.getFileContentBlob(workspaceId, filePath, user);
+      if (blob) {
+        // Strip common prefix to get relative path in zip, preserving folder structure
+        let relativePath: string;
+        if (commonPrefix && filePath.startsWith(commonPrefix + '/')) {
+          relativePath = filePath.slice(commonPrefix.length + 1);
+        } else if (!commonPrefix) {
+          // No common prefix (root-level selection), keep the full path
+          relativePath = filePath;
+        } else {
+          // Fallback for edge cases
+          relativePath = filePath;
+        }
+        zip.file(relativePath, blob);
+      } else {
+        failedFiles++;
+      }
+    } catch {
+      failedFiles++;
+    }
+  });
+
+  await Promise.all(fetchPromises);
+
+  // Check if we have any files to download
+  if (Object.keys(zip.files).length === 0) {
+    onError?.('Failed to download files');
+    return;
+  }
+
+  if (failedFiles > 0) {
+    onError?.(`${failedFiles} file${failedFiles > 1 ? 's' : ''} could not be included in the download`);
+  }
+
+  // Generate and download the zip
+  const zippedContent = await zip.generateAsync({ type: 'blob' });
+  // Use the common prefix folder name, or the first selected node's name, or 'download'
+  const zipName = commonPrefix.split('/').pop() || minimalNodes[0]?.fullPath.split('/')[0] || 'download';
+
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(zippedContent);
+  link.download = `${zipName}.zip`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
 }

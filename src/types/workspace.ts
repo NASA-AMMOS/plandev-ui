@@ -34,7 +34,10 @@ export type WorkspaceNodeEvent = {
 
 export type ActionParameterPair = { action: ActionDefinition; parameter: string };
 
-export type WorkspaceNodeRunActionEvent = {
-  actionParameterPair: ActionParameterPair;
+export type WorkspaceNodesEvent = {
   treeNodes: WorkspaceTreeNodeWithFullPath[];
+};
+
+export type WorkspaceNodeRunActionEvent = WorkspaceNodesEvent & {
+  actionParameterPair: ActionParameterPair;
 };

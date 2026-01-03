@@ -228,10 +228,10 @@
                         {workspace}
                         {user}
                         on:nodeDelete
-                        on:nodeDownload
                         on:nodeMove
                         on:nodeRename
                         on:newSequence
+                        on:download
                         on:newFolder
                         on:openInNewTab
                         on:importFile

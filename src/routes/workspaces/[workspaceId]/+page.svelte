@@ -55,6 +55,7 @@
     WorkspaceMetadata,
     WorkspaceNodeEvent,
     WorkspaceNodeRunActionEvent,
+    WorkspaceNodesEvent,
   } from '../../../types/workspace';
   import type {
     WorkspaceTreeMap,
@@ -73,6 +74,7 @@
   import { pluralize } from '../../../utilities/text';
   import { showFailureToast } from '../../../utilities/toast';
   import {
+    downloadWorkspaceNodesAsZip,
     flattenWorkspaceTreeWithPaths,
     getAvailableActionsForNodes,
     mapWorkspaceTreePaths,
@@ -474,7 +476,7 @@
     }
   }
 
-  async function onDownload(filePath: string) {
+  async function onDownloadFile(filePath: string) {
     if ($workspace && user) {
       const blob = await effects.getWorkspaceFileContentBlob($workspace, filePath, user);
       if (blob !== null) {
@@ -524,8 +526,20 @@
     }
   }
 
-  async function onNodeDownload({ detail: { treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
-    onDownload(treeNodePath);
+  async function onDownloadNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
+    // Download if just a single file
+    if (treeNodes.length === 1 && treeNodes[0].type !== WorkspaceContentType.Directory) {
+      onDownloadFile(treeNodes[0].fullPath);
+      return;
+    }
+
+    await downloadWorkspaceNodesAsZip({
+      allFiles: workspaceFileList,
+      nodes: treeNodes,
+      onError: showFailureToast,
+      user,
+      workspaceId: $workspaceId,
+    });
   }
 
   async function onNodeMove({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
@@ -734,9 +748,9 @@
       on:actionsClick={onActionsClicked}
       on:addCollaborator={onAddCollaborator}
       on:deleteCollaborator={onDeleteCollaborator}
+      on:download={onDownloadNodes}
       on:nodeDelete={onNodeDelete}
       on:nodeMove={onNodeMove}
-      on:nodeDownload={onNodeDownload}
       on:nodeRename={onNodeRename}
       on:newFolder={onNewFolder}
       on:newSequence={onNewSequence}
@@ -833,7 +847,7 @@
             is not displayed in the editor because is either binary or an unsupported extension.
           </p>
           <div>
-            <Button variant="secondary" on:click={() => onDownload($activeDocumentPath)}>Download</Button>
+            <Button variant="secondary" on:click={() => onDownloadFile($activeDocumentPath)}>Download</Button>
           </div>
         </div>
       {/if}

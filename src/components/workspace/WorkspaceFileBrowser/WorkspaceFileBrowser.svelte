@@ -15,6 +15,7 @@
     Workspace,
     WorkspaceNodeEvent,
     WorkspaceNodeRunActionEvent,
+    WorkspaceNodesEvent,
   } from '../../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
   import { featurePermissions } from '../../../utilities/permissions';
@@ -52,12 +53,12 @@
   const dispatch = createEventDispatcher<{
     copyFileLocation: string;
     copyFullPath: string;
+    download: WorkspaceNodesEvent;
     importFile: string;
     moveToWorkspace: string;
     newFolder: string;
     newSequence: string;
     nodeDelete: WorkspaceNodeEvent;
-    nodeDownload: WorkspaceNodeEvent;
     nodeMove: WorkspaceNodeEvent;
     nodeRename: WorkspaceNodeEvent;
     openInNewTab: string;
@@ -409,11 +410,8 @@
     });
   }
 
-  function onDownloadNode(node: WorkspaceTreeNodeWithFullPath) {
-    dispatch('nodeDownload', {
-      treeNode: node,
-      treeNodePath: node.fullPath,
-    });
+  function onDownload(nodes: WorkspaceTreeNodeWithFullPath[]) {
+    dispatch('download', { treeNodes: nodes });
   }
 
   function onMoveNode(node: WorkspaceTreeNodeWithFullPath) {
@@ -551,7 +549,7 @@
         on:rename={() => contextMenuNode && onRenameNode(contextMenuNode)}
         on:move={() => contextMenuNode && onMoveNode(contextMenuNode)}
         on:delete={() => contextMenuNode && onDeleteNode(contextMenuNode)}
-        on:download={() => contextMenuNode && onDownloadNode(contextMenuNode)}
+        on:download={() => onDownload(effectiveSelectedNodes)}
         on:copyFileLocation={() => contextMenuNode && onCopyFileLocation(contextMenuNode)}
         on:copyFullPath={() => contextMenuNode && onCopyFullPath(contextMenuNode)}
         on:moveToWorkspace={() => contextMenuNode && onMoveToWorkspace(contextMenuNode)}
