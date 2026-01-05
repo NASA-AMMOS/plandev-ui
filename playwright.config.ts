@@ -67,6 +67,7 @@ const config: PlaywrightTestConfig = {
       testMatch: /global\.teardown\.ts/,
     },
     // Seed/deseed utilities - run explicitly with --project=seed or --project=deseed
+    // These don't need a web server since they only use the API directly
     {
       name: 'seed',
       testDir: './e2e-tests/utilities',
@@ -96,17 +97,21 @@ const config: PlaywrightTestConfig = {
     trace: process.env.CI ? 'retain-on-failure' : 'off',
     video: process.env.CI ? 'retain-on-failure' : 'off',
   },
-  webServer: [
-    {
-      command: 'npm run preview',
-      port: 3000,
-      reuseExistingServer: !process.env.CI,
-    },
-    {
-      command: 'PUBLIC_COMMAND_EXPANSION_MODE=templating npm run preview',
-      port: 3001,
-    },
-  ],
+  webServer:
+    // Seed/deseed don't need a web server - check if we're running those projects
+    process.argv.includes('--project=seed') || process.argv.includes('--project=deseed')
+      ? undefined
+      : [
+          {
+            command: 'npm run preview',
+            port: 3000,
+            reuseExistingServer: !process.env.CI,
+          },
+          {
+            command: 'PUBLIC_COMMAND_EXPANSION_MODE=templating npm run preview',
+            port: 3001,
+          },
+        ],
 };
 
 export default config;
