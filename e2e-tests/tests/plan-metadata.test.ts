@@ -8,13 +8,7 @@ import { Plans } from '../fixtures/Plans.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
 import { User } from '../fixtures/User.js';
-import {
-  AerieApi,
-  getSharedTestData,
-  setupTest,
-  teardownTest,
-  type BrowserSetupResult,
-} from '../utilities/api.js';
+import { AerieApi, getSharedTestData, setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
 
 // Separate browser contexts for each user
 let setupA: BrowserSetupResult; // userA's browser context
