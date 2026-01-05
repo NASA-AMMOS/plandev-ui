@@ -1,7 +1,7 @@
-import * as v0 from './ui-view-schema-v0.json';
-import * as v1 from './ui-view-schema-v1.json';
-import * as v2 from './ui-view-schema-v2.json';
-import * as v3 from './ui-view-schema-v3.json';
+import v0 from './ui-view-schema-v0.json' assert { type: 'json' };
+import v1 from './ui-view-schema-v1.json' assert { type: 'json' };
+import v2 from './ui-view-schema-v2.json' assert { type: 'json' };
+import v3 from './ui-view-schema-v3.json' assert { type: 'json' };
 
 export default {
   v0,

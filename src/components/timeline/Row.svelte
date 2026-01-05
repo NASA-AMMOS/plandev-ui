@@ -524,7 +524,8 @@
           link => link.plan_id === plan?.id && !($derivationGroupVisibilityMap[link.derivation_group_name] ?? true),
         )
         .map(link => link.derivation_group_name);
-
+      // TODO seeing a bug here where if you load a plan from url with derivation groups associated and an external event row
+      // and then load a plan that doesn't have these and then go back to the first plan, the events don't show up / are filtered out for some reason...
       // Apply filter for hiding derivation groups
       let externalEventsFilteredByDG = externalEvents.filter(ee => {
         let derivationGroup =

@@ -41,7 +41,11 @@ const config: PlaywrightTestConfig = {
       name: 'e2e tests',
       teardown: 'teardown',
       testDir: './e2e-tests',
-      testIgnore: /.*\/sequence-templates\.test\.ts/,
+      testIgnore: [
+        /.*\/sequence-templates\.test\.ts/,
+        /.*\/utilities\/seed\.test\.ts/,
+        /.*\/utilities\/deseed\.test\.ts/,
+      ],
       use: {
         baseURL: MAIN_TEST_SUITE_BASE_URL,
         storageState: STORAGE_STATE,
@@ -61,6 +65,17 @@ const config: PlaywrightTestConfig = {
     {
       name: 'teardown',
       testMatch: /global\.teardown\.ts/,
+    },
+    // Seed/deseed utilities - run explicitly with --project=seed or --project=deseed
+    {
+      name: 'seed',
+      testDir: './e2e-tests/utilities',
+      testMatch: /(?<!de)seed\.test\.ts/,
+    },
+    {
+      name: 'deseed',
+      testDir: './e2e-tests/utilities',
+      testMatch: /deseed\.test\.ts/,
     },
   ],
   reportSlowTests: {
