@@ -7176,7 +7176,6 @@ const effects = {
           newFilePathContents.shift();
           newFilePath = newFilePathContents.join(PATH_DELIMITER);
         }
-        console.log(newFilePath);
         await WorkspaceApi.saveFile(workspaceId, newFilePath, expandedSequence, false, user);
 
         showSuccessToast('Workspace File Created Successfully');
