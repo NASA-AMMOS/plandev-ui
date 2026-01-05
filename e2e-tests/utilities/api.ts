@@ -495,9 +495,9 @@ export async function setupTest(browser: Browser, options: SetupOptions = {}): P
     return { context, page } as BrowserSetupResult;
   }
 
-  // Initialize API client and login
+  // Initialize API client and login with the same user as the browser context
   const api = new AerieApi();
-  await api.login('test', 'test');
+  await api.login(user, 'test');
 
   // Use pre-uploaded JAR from global setup
   const { jarId } = getSharedTestData();
