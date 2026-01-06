@@ -61,7 +61,6 @@
       setOpen(openState);
     }
     dispatch('nodeClicked', {
-      toggleState: openState,
       treeNode,
       treeNodePath,
     });
@@ -70,7 +69,6 @@
   function onNodeRightClicked(event: MouseEvent) {
     dispatch('nodeRightClicked', {
       data: {
-        toggleState: isOpen,
         treeNode,
         treeNodePath,
       },

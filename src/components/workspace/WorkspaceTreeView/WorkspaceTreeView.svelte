@@ -82,26 +82,19 @@
 
   function onDeleteNode() {
     if (contextMenuNode) {
-      dispatch('deleteNodes', {
-        toggleState: true,
-        treeNodes: [contextMenuNode],
-      });
+      dispatch('deleteNodes', { treeNodes: [contextMenuNode] });
     }
   }
 
   function onMoveNode() {
     if (contextMenuNode) {
-      dispatch('moveNodes', {
-        toggleState: true,
-        treeNodes: [contextMenuNode],
-      });
+      dispatch('moveNodes', { treeNodes: [contextMenuNode] });
     }
   }
 
   function onRenameNode() {
     if (contextMenuNode) {
       dispatch('renameNode', {
-        toggleState: true,
         treeNode: contextMenuNode,
         treeNodePath: contextMenuNode.fullPath,
       });

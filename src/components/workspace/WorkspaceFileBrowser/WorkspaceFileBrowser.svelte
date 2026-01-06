@@ -403,10 +403,7 @@
   }
 
   function onDeleteNodes(nodes: WorkspaceTreeNodeWithFullPath[]) {
-    dispatch('deleteNodes', {
-      toggleState: true,
-      treeNodes: nodes,
-    });
+    dispatch('deleteNodes', { treeNodes: nodes });
   }
 
   function onDeleteNode(node: WorkspaceTreeNodeWithFullPath) {
@@ -418,18 +415,11 @@
   }
 
   function onMoveNodes(nodes: WorkspaceTreeNodeWithFullPath[]) {
-    dispatch('moveNodes', {
-      toggleState: true,
-      treeNodes: nodes,
-    });
+    dispatch('moveNodes', { treeNodes: nodes });
   }
 
   function onRenameNode(node: WorkspaceTreeNodeWithFullPath) {
-    dispatch('renameNode', {
-      toggleState: true,
-      treeNode: node,
-      treeNodePath: node.fullPath,
-    });
+    dispatch('renameNode', { treeNode: node, treeNodePath: node.fullPath });
   }
 
   function onNewFolder(node?: WorkspaceTreeNode | WorkspaceTreeNodeWithFullPath | null) {
@@ -469,10 +459,7 @@
   }
 
   function onMoveNodesToWorkspace(nodes: WorkspaceTreeNodeWithFullPath[]) {
-    dispatch('moveNodesToWorkspace', {
-      toggleState: true,
-      treeNodes: nodes,
-    });
+    dispatch('moveNodesToWorkspace', { treeNodes: nodes });
   }
 
   function onContextMenuRunAction(event: CustomEvent<ActionParameterPair>, filePaths: RowId[]) {
