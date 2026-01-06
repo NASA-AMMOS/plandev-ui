@@ -492,14 +492,14 @@
     }
   }
 
-  async function onNewSequence(event: CustomEvent<string>) {
+  async function onNewFile(event: CustomEvent<string>) {
     if ($workspace != null && workspaceTree && user) {
       const { detail: startingPath } = event;
-      const newSequencePath = await effects.newWorkspaceSequence($workspace, workspaceTree, startingPath, '', user);
+      const newFilePath = await effects.newWorkspaceSequence($workspace, workspaceTree, startingPath, '', user);
 
-      if (newSequencePath !== null) {
+      if (newFilePath !== null) {
         // select & navigate to the new file
-        selectedFilePath = newSequencePath;
+        selectedFilePath = newFilePath;
         refreshWorkspaceContents();
       }
     }
@@ -543,12 +543,12 @@
 
   async function onDeleteNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if ($workspace) {
-      const shouldUpdateSelectedSequencePath = treeNodes.find(node => node.fullPath === $activeDocumentPath);
+      const shouldUpdateSelectedNode = treeNodes.find(node => node.fullPath === $activeDocumentPath);
 
       const didDelete = await effects.deleteWorkspaceItems($workspace, treeNodes, user);
       await refreshWorkspaceContents();
 
-      if (didDelete && shouldUpdateSelectedSequencePath) {
+      if (didDelete && shouldUpdateSelectedNode) {
         selectedFilePath = null;
         confirmAndNavigate(null);
       }
@@ -599,10 +599,10 @@
 
   async function onRenameNode({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
     if ($workspace) {
-      const shouldUpdateSelectedSequencePath = treeNodePath === $activeDocumentPath;
+      const shouldUpdateSelectedNode = treeNodePath === $activeDocumentPath;
 
       // Prompt to save unsaved changes before renaming
-      if (shouldUpdateSelectedSequencePath && $activeDocumentIsDirty) {
+      if (shouldUpdateSelectedNode && $activeDocumentIsDirty) {
         if (!(await saveBeforeOperation('renaming'))) {
           return;
         }
@@ -611,7 +611,7 @@
       const targetPath = await effects.renameWorkspaceItem($workspace, treeNode, treeNodePath, user);
       await refreshWorkspaceContents();
 
-      if (shouldUpdateSelectedSequencePath && typeof targetPath === 'string') {
+      if (shouldUpdateSelectedNode && typeof targetPath === 'string') {
         // Wait for tree to render before updating selection (ensures parent folders can expand)
         await tick();
         updateActiveFilePath(targetPath);
@@ -639,9 +639,9 @@
       effects.saveWorkspaceFile($workspaceId, $activeDocumentPath, content, user);
       activeDocument.markClean(content);
     } else if ($workspace && workspaceTree && content) {
-      const newSequencePath = await effects.newWorkspaceSequence($workspace, workspaceTree, '', content, user);
-      if (newSequencePath !== null) {
-        selectedFilePath = newSequencePath;
+      const newFilePath = await effects.newWorkspaceSequence($workspace, workspaceTree, '', content, user);
+      if (newFilePath !== null) {
+        selectedFilePath = newFilePath;
         activeDocument.markClean(content);
         refreshWorkspaceContents();
       }
@@ -798,7 +798,7 @@
       on:moveNodes={onMoveNodes}
       on:renameNode={onRenameNode}
       on:newFolder={onNewFolder}
-      on:newSequence={onNewSequence}
+      on:newFile={onNewFile}
       on:importFile={onImportFile}
       on:copyFileLocation={onCopyFileLocation}
       on:copyFullPath={onCopyFullPath}

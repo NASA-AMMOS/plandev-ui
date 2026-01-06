@@ -30,11 +30,11 @@
     copyFullPath: string;
     deleteCollaborator: string;
     importFile: string;
+    newFile: string;
     newFolder: string;
-    newSequence: string;
     refreshWorkspace: void;
     runAction: WorkspaceNodeRunActionEvent;
-    saveSequence: void;
+    saveFile: void;
     updateWorkspaceMetadata: Partial<WorkspaceMetadata>;
   }>();
 
@@ -95,8 +95,8 @@
     dispatch('newFolder', currentBreadcrumbPath);
   }
 
-  function onNewSequence() {
-    dispatch('newSequence', currentBreadcrumbPath);
+  function onNewFile() {
+    dispatch('newFile', currentBreadcrumbPath);
   }
 
   function onImportFile() {
@@ -208,7 +208,7 @@
                 {didWorkspaceUpdate}
                 {lastRefreshTime}
                 {hasEditWorkspacePermission}
-                on:newSequence={onNewSequence}
+                on:newFile={onNewFile}
                 on:newFolder={onNewFolder}
                 on:importFile={onImportFile}
                 on:refreshWorkspace={onRefreshWorkspace}
@@ -229,7 +229,7 @@
                         on:deleteNodes
                         on:moveNodes
                         on:renameNode
-                        on:newSequence
+                        on:newFile
                         on:download
                         on:newFolder
                         on:openInNewTab

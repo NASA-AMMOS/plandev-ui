@@ -16,8 +16,8 @@
 
   const dispatch = createEventDispatcher<{
     importFile: void;
+    newFile: void;
     newFolder: void;
-    newSequence: void;
     refreshWorkspace: void;
   }>();
 
@@ -25,8 +25,8 @@
     dispatch('refreshWorkspace');
   }
 
-  function onNewSequence() {
-    dispatch('newSequence');
+  function onNewFile() {
+    dispatch('newFile');
   }
 
   function onNewFolder() {
@@ -67,7 +67,7 @@
           on:keypress
           on:keydown
           on:keyup
-          on:click={onNewSequence}
+          on:click={onNewFile}
           use:permissionHandler={{
             hasPermission: hasEditWorkspacePermission,
             permissionError: 'You do not have permission to edit this workspace',

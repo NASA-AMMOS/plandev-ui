@@ -31,7 +31,6 @@
     openInNewTab: void;
     rename: void;
     runAction: ActionParameterPair;
-    saveSequence: void;
   }>();
 
   const editPermissionError = 'You do not have permission to edit this workspace';
