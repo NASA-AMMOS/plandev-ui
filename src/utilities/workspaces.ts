@@ -414,6 +414,7 @@ export const WorkspaceApi = {
       user,
       undefined,
       false,
+      false,
       { 'Content-Type': 'application/json' },
     );
   },
@@ -437,6 +438,7 @@ export const WorkspaceApi = {
       user,
       undefined,
       false,
+      false,
       { 'Content-Type': 'application/json' },
     );
   },
@@ -459,6 +461,7 @@ export const WorkspaceApi = {
       user,
       undefined,
       true,
+      false,
       { 'Content-Type': 'application/json' },
     );
   },
@@ -483,6 +486,7 @@ export const WorkspaceApi = {
       user,
       undefined,
       true,
+      false,
       { 'Content-Type': 'application/json' },
     );
   },
