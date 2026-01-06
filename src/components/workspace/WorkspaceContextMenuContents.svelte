@@ -45,7 +45,9 @@
       : '';
   }
 
-  $: canDownload = selectedWorkspaceNodes.map(node => node.type !== WorkspaceContentType.Directory).every(nodeType => nodeType === true);
+  $: canDownload = selectedWorkspaceNodes
+    .map(node => node.type !== WorkspaceContentType.Directory)
+    .every(nodeType => nodeType === true);
 </script>
 
 <ContextMenu.Group>
@@ -97,7 +99,8 @@
 {#if selectedWorkspaceNodes.length === 1}
   {#if canDownload}
     <div>
-      <ContextMenu.Item size="sm" on:click={() => dispatch('download')} aria-label="Download">Download</ContextMenu.Item>
+      <ContextMenu.Item size="sm" on:click={() => dispatch('download')} aria-label="Download">Download</ContextMenu.Item
+      >
     </div>
     <ContextMenu.Separator />
   {/if}
