@@ -474,6 +474,10 @@
     actionsMenuFocused = event.detail;
   }
 
+  $: if (selectedTreeNodePath) {
+    expandToPath(selectedTreeNodePath);
+  }
+
   onMount(() => {
     if (selectedTreeNodePath) {
       expandToPath(selectedTreeNodePath);

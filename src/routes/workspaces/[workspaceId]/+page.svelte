@@ -433,6 +433,35 @@
     return true;
   }
 
+  function updateActiveFilePath(newFilePath: string) {
+    const { filename } = separateFilenameFromPath(newFilePath);
+    const newType = workspaceTreeMap[newFilePath]?.type ?? null;
+    activeDocument.updatePath(newFilePath, filename ?? undefined, newType);
+    selectedFilePath = newFilePath;
+    // Manually update URL since reactive statement won't trigger (selectedFilePath === $activeDocumentPath)
+    replaceState(getWorkspacesUrl(base, $workspaceId, newFilePath), {});
+  }
+
+  async function saveBeforeOperation(operation: 'moving' | 'renaming'): Promise<boolean> {
+    const operationTitle = operation === 'moving' ? 'Moving' : 'Renaming';
+    const { confirm } = await showConfirmModal(
+      `Save Before ${operationTitle}`,
+      `The file you are ${operation} has unsaved changes. Would you like to save them before ${operation}?`,
+      `Save and ${operationTitle.slice(0, -3)}e`,
+      false,
+      `Cancel ${operationTitle.slice(0, -3)}e`,
+    );
+
+    if (!confirm) {
+      return false;
+    }
+
+    // Save the file before the operation
+    await effects.saveWorkspaceFile($workspaceId, $activeDocumentPath!, $activeDocument.currentContent, user);
+    activeDocument.markClean($activeDocument.currentContent);
+    return true;
+  }
+
   async function onAddCollaborator(event: CustomEvent<WorkspaceCollaborator[]>) {
     if ($workspace) {
       effects.createWorkspaceCollaborators($workspace, event.detail, user);
@@ -514,7 +543,7 @@
 
   async function onDeleteNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if ($workspace) {
-      const shouldUpdateSelectedSequencePath = treeNodePath === $activeDocumentPath;
+      const shouldUpdateSelectedSequencePath = treeNodes.find(node => node.fullPath === $activeDocumentPath);
 
       const didDelete = await effects.deleteWorkspaceItems($workspace, treeNodes, user);
       await refreshWorkspaceContents();
@@ -545,15 +574,25 @@
 
   async function onMoveNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if ($workspace && workspaceTree) {
-      const shouldUpdateSelectedSequencePath = treeNodePath === $activeDocumentPath;
+      const movedActiveNode = treeNodes.find(node => node.fullPath === $activeDocumentPath);
 
-      const targetPath = await effects.moveWorkspaceItems($workspace, workspaceTree, treeNodes, user);
+      // Prompt to save unsaved changes before moving
+      if (movedActiveNode && $activeDocumentIsDirty) {
+        if (!(await saveBeforeOperation('moving'))) {
+          return;
+        }
+      }
+
+      const targetDirectoryPath = await effects.moveWorkspaceItems($workspace, workspaceTree, treeNodes, user);
       await refreshWorkspaceContents();
 
-      if (shouldUpdateSelectedSequencePath && targetPath) {
-        const { filename } = separateFilenameFromPath(targetPath);
-        const newType = workspaceTreeMap[targetPath]?.type ?? null;
-        activeDocument.updatePath(targetPath, filename ?? undefined, newType);
+      if (movedActiveNode && typeof targetDirectoryPath === 'string') {
+        // Construct the new full file path: targetDirectory + originalFilename
+        const { filename } = separateFilenameFromPath(movedActiveNode.fullPath);
+        const newFilePath = targetDirectoryPath ? `${targetDirectoryPath}/${filename}` : (filename ?? '');
+        // Wait for tree to render before updating selection (ensures parent folders can expand)
+        await tick();
+        updateActiveFilePath(newFilePath);
       }
     }
   }
@@ -562,14 +601,20 @@
     if ($workspace) {
       const shouldUpdateSelectedSequencePath = treeNodePath === $activeDocumentPath;
 
+      // Prompt to save unsaved changes before renaming
+      if (shouldUpdateSelectedSequencePath && $activeDocumentIsDirty) {
+        if (!(await saveBeforeOperation('renaming'))) {
+          return;
+        }
+      }
+
       const targetPath = await effects.renameWorkspaceItem($workspace, treeNode, treeNodePath, user);
       await refreshWorkspaceContents();
 
-      if (shouldUpdateSelectedSequencePath && targetPath) {
-        const { filename } = separateFilenameFromPath(targetPath);
-        const newType = workspaceTreeMap[targetPath]?.type ?? null;
-        activeDocument.updatePath(targetPath, filename ?? undefined, newType);
-        selectedFilePath = targetPath;
+      if (shouldUpdateSelectedSequencePath && typeof targetPath === 'string') {
+        // Wait for tree to render before updating selection (ensures parent folders can expand)
+        await tick();
+        updateActiveFilePath(targetPath);
       }
     }
   }
