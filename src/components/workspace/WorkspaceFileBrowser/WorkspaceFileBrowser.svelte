@@ -245,25 +245,6 @@
     redrawScheduled = false;
   }
 
-  function getSelectionOrContext(
-    contextNode: WorkspaceTreeNodeWithFullPath | null,
-    selectedNodes: WorkspaceTreeNodeWithFullPath[],
-  ): WorkspaceTreeNodeWithFullPath[] {
-    if (selectedNodes.length) {
-      if (contextNode) {
-        if (selectedNodes.find(({ fullPath }) => contextNode.fullPath === fullPath) != null) {
-          return selectedNodes;
-        } else {
-          return [contextNode];
-        }
-      } else {
-        return selectedNodes;
-      }
-    }
-
-    return contextNode ? [contextNode] : [];
-  }
-
   // Create hierarchy-preserving sort comparator based on current sort state
   function createSortComparator(sorts: ColumnSort[]): TreeSortComparator {
     return (a: WorkspaceTreeNode, b: WorkspaceTreeNode) => {
@@ -443,10 +424,6 @@
     });
   }
 
-  function onMoveNode(node: WorkspaceTreeNodeWithFullPath) {
-    onMoveNodes([node]);
-  }
-
   function onRenameNode(node: WorkspaceTreeNodeWithFullPath) {
     dispatch('renameNode', {
       toggleState: true,
@@ -496,10 +473,6 @@
       toggleState: true,
       treeNodes: nodes,
     });
-  }
-
-  function onMoveNodeToWorkspace(node: WorkspaceTreeNodeWithFullPath) {
-    onMoveNodesToWorkspace([node]);
   }
 
   function onContextMenuRunAction(event: CustomEvent<ActionParameterPair>, filePaths: RowId[]) {
