@@ -53,15 +53,15 @@
   const dispatch = createEventDispatcher<{
     copyFileLocation: string;
     copyFullPath: string;
+    deleteNodes: WorkspaceNodesEvent;
     download: WorkspaceNodesEvent;
     importFile: string;
-    moveToWorkspace: string;
+    moveNodes: WorkspaceNodesEvent;
+    moveNodesToWorkspace: WorkspaceNodesEvent;
     newFolder: string;
     newSequence: string;
-    nodeDelete: WorkspaceNodeEvent;
-    nodeMove: WorkspaceNodeEvent;
-    nodeRename: WorkspaceNodeEvent;
     openInNewTab: string;
+    renameNode: WorkspaceNodeEvent;
     runAction: WorkspaceNodeRunActionEvent;
   }>();
 
@@ -170,44 +170,6 @@
     },
   ];
 
-  // Create hierarchy-preserving sort comparator based on current sort state
-  function createSortComparator(sorts: ColumnSort[]): TreeSortComparator {
-    return (a: WorkspaceTreeNode, b: WorkspaceTreeNode) => {
-      // Always sort directories first
-      const aIsDir = a.type === WorkspaceContentType.Directory;
-      const bIsDir = b.type === WorkspaceContentType.Directory;
-      if (aIsDir && !bIsDir) {
-        return -1;
-      }
-      if (!aIsDir && bIsDir) {
-        return 1;
-      }
-
-      // Apply each sort criterion in order
-      for (const { colId, direction } of sorts) {
-        const multiplier = direction === 'desc' ? -1 : 1;
-        let comparison = 0;
-
-        if (colId === 'name') {
-          const aName = a.name?.toLowerCase() ?? '';
-          const bName = b.name?.toLowerCase() ?? '';
-          comparison = aName.localeCompare(bName);
-        } else if (colId === 'fullPath') {
-          const aPath = a.name?.toLowerCase() ?? '';
-          const bPath = b.name?.toLowerCase() ?? '';
-          comparison = aPath.localeCompare(bPath);
-        } else if (colId === 'type') {
-          comparison = (a.type ?? '').localeCompare(b.type ?? '');
-        }
-        if (comparison !== 0) {
-          return multiplier * comparison;
-        }
-      }
-
-      return 0;
-    };
-  }
-
   // Get the contents to display based on current root path
   $: currentRootContents = (() => {
     if (!treeNode?.contents) {
@@ -281,6 +243,63 @@
     await tick();
     dataGrid?.redrawRows();
     redrawScheduled = false;
+  }
+
+  function getSelectionOrContext(
+    contextNode: WorkspaceTreeNodeWithFullPath | null,
+    selectedNodes: WorkspaceTreeNodeWithFullPath[],
+  ): WorkspaceTreeNodeWithFullPath[] {
+    if (selectedNodes.length) {
+      if (contextNode) {
+        if (selectedNodes.find(({ fullPath }) => contextNode.fullPath === fullPath) != null) {
+          return selectedNodes;
+        } else {
+          return [contextNode];
+        }
+      } else {
+        return selectedNodes;
+      }
+    }
+
+    return contextNode ? [contextNode] : [];
+  }
+
+  // Create hierarchy-preserving sort comparator based on current sort state
+  function createSortComparator(sorts: ColumnSort[]): TreeSortComparator {
+    return (a: WorkspaceTreeNode, b: WorkspaceTreeNode) => {
+      // Always sort directories first
+      const aIsDir = a.type === WorkspaceContentType.Directory;
+      const bIsDir = b.type === WorkspaceContentType.Directory;
+      if (aIsDir && !bIsDir) {
+        return -1;
+      }
+      if (!aIsDir && bIsDir) {
+        return 1;
+      }
+
+      // Apply each sort criterion in order
+      for (const { colId, direction } of sorts) {
+        const multiplier = direction === 'desc' ? -1 : 1;
+        let comparison = 0;
+
+        if (colId === 'name') {
+          const aName = a.name?.toLowerCase() ?? '';
+          const bName = b.name?.toLowerCase() ?? '';
+          comparison = aName.localeCompare(bName);
+        } else if (colId === 'fullPath') {
+          const aPath = a.name?.toLowerCase() ?? '';
+          const bPath = b.name?.toLowerCase() ?? '';
+          comparison = aPath.localeCompare(bPath);
+        } else if (colId === 'type') {
+          comparison = (a.type ?? '').localeCompare(b.type ?? '');
+        }
+        if (comparison !== 0) {
+          return multiplier * comparison;
+        }
+      }
+
+      return 0;
+    };
   }
 
   function toggleExpand(path: string) {
@@ -402,28 +421,34 @@
     navigateToBreadcrumb(-1);
   }
 
-  function onDeleteNode(node: WorkspaceTreeNodeWithFullPath) {
-    dispatch('nodeDelete', {
+  function onDeleteNodes(nodes: WorkspaceTreeNodeWithFullPath[]) {
+    dispatch('deleteNodes', {
       toggleState: true,
-      treeNode: node,
-      treeNodePath: node.fullPath,
+      treeNodes: nodes,
     });
+  }
+
+  function onDeleteNode(node: WorkspaceTreeNodeWithFullPath) {
+    onDeleteNodes([node]);
   }
 
   function onDownload(nodes: WorkspaceTreeNodeWithFullPath[]) {
     dispatch('download', { treeNodes: nodes });
   }
 
-  function onMoveNode(node: WorkspaceTreeNodeWithFullPath) {
-    dispatch('nodeMove', {
+  function onMoveNodes(nodes: WorkspaceTreeNodeWithFullPath[]) {
+    dispatch('moveNodes', {
       toggleState: true,
-      treeNode: node,
-      treeNodePath: node.fullPath,
+      treeNodes: nodes,
     });
   }
 
+  function onMoveNode(node: WorkspaceTreeNodeWithFullPath) {
+    onMoveNodes([node]);
+  }
+
   function onRenameNode(node: WorkspaceTreeNodeWithFullPath) {
-    dispatch('nodeRename', {
+    dispatch('renameNode', {
       toggleState: true,
       treeNode: node,
       treeNodePath: node.fullPath,
@@ -466,8 +491,15 @@
     dispatch('copyFullPath', node?.fullPath ?? '');
   }
 
-  function onMoveToWorkspace(node: WorkspaceTreeNodeWithFullPath) {
-    dispatch('moveToWorkspace', node?.fullPath ?? '');
+  function onMoveNodesToWorkspace(nodes: WorkspaceTreeNodeWithFullPath[]) {
+    dispatch('moveNodesToWorkspace', {
+      toggleState: true,
+      treeNodes: nodes,
+    });
+  }
+
+  function onMoveNodeToWorkspace(node: WorkspaceTreeNodeWithFullPath) {
+    onMoveNodesToWorkspace([node]);
   }
 
   function onContextMenuRunAction(event: CustomEvent<ActionParameterPair>, filePaths: RowId[]) {
@@ -547,12 +579,12 @@
         {hasCreateActionPermission}
         on:actionsMenuFocused={onActionsMenuFocused}
         on:rename={() => contextMenuNode && onRenameNode(contextMenuNode)}
-        on:move={() => contextMenuNode && onMoveNode(contextMenuNode)}
-        on:delete={() => contextMenuNode && onDeleteNode(contextMenuNode)}
+        on:move={() => onMoveNodes(effectiveSelectedNodes)}
+        on:delete={() => onDeleteNodes(effectiveSelectedNodes)}
         on:download={() => onDownload(effectiveSelectedNodes)}
         on:copyFileLocation={() => contextMenuNode && onCopyFileLocation(contextMenuNode)}
         on:copyFullPath={() => contextMenuNode && onCopyFullPath(contextMenuNode)}
-        on:moveToWorkspace={() => contextMenuNode && onMoveToWorkspace(contextMenuNode)}
+        on:moveToWorkspace={() => onMoveNodesToWorkspace(effectiveSelectedNodes)}
         on:runAction={event => onContextMenuRunAction(event, effectiveActionFilePaths)}
         on:newFile={() => contextMenuNode && onNewSequence(contextMenuNode)}
         on:newFolder={() => contextMenuNode && onNewFolder(contextMenuNode)}

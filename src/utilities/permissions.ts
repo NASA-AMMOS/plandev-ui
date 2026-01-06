@@ -1352,6 +1352,9 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
   deleteFile: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['delete_file_directory'], user, workspace);
   },
+  deleteFiles: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['delete_file_directory'], user, workspace);
+  },
   deleteWorkspace: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['delete_workspace'], user, workspace);
   },
@@ -1374,10 +1377,23 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
         getRoleWorkspacePermission(['write_file_directory'], user, workspaceTarget))
     );
   },
+  moveFiles: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
+  },
+  moveFilesToWorkspace: (user: User | null, workspaceSource: Workspace, workspaceTarget: Workspace): boolean => {
+    return (
+      isUserAdmin(user) ||
+      (getRoleWorkspacePermission(['read_file_directory'], user, workspaceSource) &&
+        getRoleWorkspacePermission(['write_file_directory'], user, workspaceTarget))
+    );
+  },
   saveFile: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
   uploadFile: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
+  },
+  uploadFiles: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
 };

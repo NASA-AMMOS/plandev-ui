@@ -30,7 +30,6 @@
     copyFullPath: string;
     deleteCollaborator: string;
     importFile: string;
-    moveToWorkspace: string;
     newFolder: string;
     newSequence: string;
     refreshWorkspace: void;
@@ -227,9 +226,9 @@
                         treeNode={workspaceTree}
                         {workspace}
                         {user}
-                        on:nodeDelete
-                        on:nodeMove
-                        on:nodeRename
+                        on:deleteNodes
+                        on:moveNodes
+                        on:renameNode
                         on:newSequence
                         on:download
                         on:newFolder
@@ -237,7 +236,7 @@
                         on:importFile
                         on:copyFileLocation
                         on:copyFullPath
-                        on:moveToWorkspace
+                        on:moveNodesToWorkspace
                         on:runAction
                       />
                     {:else}

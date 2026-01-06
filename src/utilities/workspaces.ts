@@ -9,6 +9,7 @@ import type { WorkspaceTreeMap, WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath
 import { filterEmpty } from './generic';
 import { pathMatchesExtensionPattern } from './parameters';
 import { reqWorkspace } from './requests';
+import { pluralize } from './text';
 
 export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
   let treeMap: WorkspaceTreeMap = {};
@@ -100,6 +101,86 @@ export function sortWorkspaceTree(
   });
 }
 
+export function getWorkspaceFileFolderDisplay(nodes: WorkspaceTreeNodeWithFullPath[]) {
+  const breakdown = nodes.reduce(
+    (previousBreakdown: { files: WorkspaceTreeNodeWithFullPath[]; folders: WorkspaceTreeNodeWithFullPath[] }, node) => {
+      if (node.type === WorkspaceContentType.Directory) {
+        return {
+          ...previousBreakdown,
+          folders: [...previousBreakdown.folders, node],
+        };
+      }
+
+      return {
+        ...previousBreakdown,
+        files: [...previousBreakdown.files, node],
+      };
+    },
+    {
+      files: [],
+      folders: [],
+    },
+  );
+
+  return [
+    `${breakdown.files.length ? `File${pluralize(breakdown.files.length)}` : ''}`,
+    `${breakdown.folders.length ? `Folder${pluralize(breakdown.folders.length)}` : ''}`,
+  ]
+    .filter(Boolean)
+    .join('/');
+}
+
+export function getSelectedFilesDisplay(filenames: string[], maxLength: number = 8) {
+  const displayedNames = filenames.slice(0, maxLength);
+  const remainingFiles = filenames.slice(maxLength);
+
+  const mainText = displayedNames.join(', ');
+  if (remainingFiles.length > 0) {
+    return `${mainText}... and ${remainingFiles.length} more file${pluralize(remainingFiles.length)}`;
+  }
+
+  return mainText;
+}
+
+/**
+ * Increments the trailing number in a filename (before the extension).
+ *
+ * @param filename - The full filename (e.g., "image.png" or "data(1).json")
+ * @returns The new filename with the incremented number
+ */
+export function incrementFilename(filename: string): string {
+  // 1. Identify the position of the last dot to separate name and extension.
+  // We use lastIndexOf because filenames can have multiple dots (e.g. .min.js)
+  const lastDotIndex = filename.indexOf('.');
+
+  let baseName = filename;
+  let extension = '';
+
+  // We only split if a dot exists AND it isn't the first character
+  // (to handle hidden files like .gitignore correctly as having no extension)
+  if (lastDotIndex > 0) {
+    baseName = filename.substring(0, lastDotIndex);
+    extension = filename.substring(lastDotIndex);
+  }
+
+  // 2. Regex checks the END of the baseName for (number)
+  const regex = /\((\d+)\)$/;
+  const match = baseName.match(regex);
+
+  if (match) {
+    // Increment existing number
+    const currentNumber = parseInt(match[1], 10);
+    const nextNumber = currentNumber + 1;
+    baseName = baseName.replace(regex, `(${nextNumber})`);
+  } else {
+    // Append (1) if no number exists
+    baseName = `${baseName} (1)`;
+  }
+
+  // 3. Rejoin base and extension
+  return baseName + extension;
+}
+
 /**
  * Recursively traverses a WorkspaceTreeNode tree structure, flattens it into an array,
  * includes the full path to each node, and uses memoization to cache results
@@ -137,6 +218,13 @@ export function flattenWorkspaceTreeWithPaths(
   });
 
   return flattenedArray;
+}
+
+export function findNodeInDirectory(nodeName: string, workspaceTreeNode: WorkspaceTreeNode[] = []) {
+  const { filename } = separateFilenameFromPath(nodeName);
+  return workspaceTreeNode.find(node => {
+    return filename === node.name;
+  });
 }
 
 /**
@@ -235,6 +323,28 @@ function createFormDataWithFile(filePath: string, fileContent: string, fileKey: 
   return body;
 }
 
+export type MoveFileOperation = {
+  path: string;
+  renameTo?: string;
+};
+
+type BulkOperationResponse = {
+  item: string;
+  response: string;
+  status: number;
+};
+export type BulkOperationResponses = BulkOperationResponse[];
+
+export function isBulkOperationSuccess(response: BulkOperationResponse) {
+  // Check if status is between 200 and 299 (inclusive)
+  return response.status >= 200 && response.status <= 299;
+}
+
+export function isFileConflictResponse(response: BulkOperationResponse) {
+  // Check if status is between 200 and 299 (inclusive)
+  return response.status === 409;
+}
+
 export const WorkspaceApi = {
   async createFolder(workspaceId: number, folderPath: string, user: User | null) {
     return reqWorkspace<Workspace>(`${workspaceId}/${folderPath}?type=directory`, 'PUT', null, user, undefined, false);
@@ -256,6 +366,20 @@ export const WorkspaceApi = {
   async deleteFile(workspaceId: number, filePath: string, user: User | null): Promise<void> {
     return reqWorkspace(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, false);
   },
+  async deleteFiles(workspaceId: number, filePaths: string[], user: User | null): Promise<BulkOperationResponses> {
+    return reqWorkspace(
+      joinPath(['bulk', workspaceId]),
+      'DELETE',
+      JSON.stringify(filePaths),
+      user,
+      undefined,
+      false,
+      false,
+      {
+        'Content-Type': 'application/json',
+      },
+    );
+  },
   async deleteWorkspace(workspaceId: number, user: User | null): Promise<void> {
     return reqWorkspace(`${workspaceId}`, 'DELETE', null, user, undefined, false);
   },
@@ -265,14 +389,19 @@ export const WorkspaceApi = {
   async getFileContentBlob(workspaceId: number, filePath: string, user: User | null): Promise<Blob | null> {
     return reqWorkspace<Blob>(joinPath([workspaceId, filePath]), 'GET', null, user, undefined, false, true);
   },
-  async getWorkspaceContents(workspaceId: number, user: User | null): Promise<WorkspaceTreeNode[] | null> {
-    return reqWorkspace<WorkspaceTreeNode[]>(`${workspaceId}`, 'GET', null, user);
+  async getWorkspaceContents(
+    workspaceId: number,
+    path: string = '',
+    user: User | null,
+  ): Promise<WorkspaceTreeNode[] | null> {
+    return reqWorkspace<WorkspaceTreeNode[]>(`${joinPath([workspaceId, path])}`, 'GET', null, user);
   },
   async moveFile(
     workspaceId: number,
     originalPath: string,
     targetPath: string,
     shouldCopy: boolean,
+    shouldOverwrite: boolean,
     user: User | null,
   ): Promise<void> {
     return reqWorkspace<void>(
@@ -280,10 +409,12 @@ export const WorkspaceApi = {
       'POST',
       JSON.stringify({
         [shouldCopy ? 'copyTo' : 'moveTo']: targetPath,
+        overwrite: shouldOverwrite,
       }),
       user,
       undefined,
       false,
+      { 'Content-Type': 'application/json' },
     );
   },
   async moveFileToWorkspace(
@@ -292,6 +423,7 @@ export const WorkspaceApi = {
     targetWorkspaceId: number,
     targetDirectory: string,
     shouldCopy: boolean,
+    shouldOverwrite: boolean,
     user: User | null,
   ): Promise<void> {
     return reqWorkspace<void>(
@@ -299,11 +431,59 @@ export const WorkspaceApi = {
       'POST',
       JSON.stringify({
         [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
+        overwrite: shouldOverwrite,
         toWorkspace: targetWorkspaceId,
       }),
       user,
       undefined,
       false,
+      { 'Content-Type': 'application/json' },
+    );
+  },
+  async moveFiles(
+    workspaceId: number,
+    items: MoveFileOperation[],
+    targetDirectory: string,
+    shouldCopy: boolean,
+    shouldOverwrite: boolean,
+    user: User | null,
+  ): Promise<BulkOperationResponses> {
+    return reqWorkspace<BulkOperationResponses>(
+      joinPath(['bulk', workspaceId]),
+      'POST',
+      JSON.stringify({
+        [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
+        items,
+        overwrite: shouldOverwrite,
+      }),
+      user,
+      undefined,
+      true,
+      { 'Content-Type': 'application/json' },
+    );
+  },
+  async moveFilesToWorkspace(
+    workspaceId: number,
+    items: MoveFileOperation[],
+    targetWorkspaceId: number,
+    targetDirectory: string,
+    shouldCopy: boolean,
+    shouldOverwrite: boolean,
+    user: User | null,
+  ): Promise<BulkOperationResponses> {
+    return reqWorkspace<BulkOperationResponses>(
+      joinPath(['bulk', workspaceId]),
+      'POST',
+      JSON.stringify({
+        [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
+        items,
+        overwrite: shouldOverwrite,
+        toWorkspace: targetWorkspaceId,
+      }),
+      user,
+      undefined,
+      true,
+      { 'Content-Type': 'application/json' },
     );
   },
   async saveFile(
@@ -328,17 +508,46 @@ export const WorkspaceApi = {
     targetDirectory: string,
     filename: string,
     file: File,
+    shouldOverwrite: boolean,
     user: User | null,
   ): Promise<void> {
     const body = new FormData();
     body.append('file', file, file.name);
     return reqWorkspace<void>(
-      `${joinPath([workspaceId, targetDirectory, filename])}?type=file`,
+      `${joinPath([workspaceId, targetDirectory, filename])}?type=file&overwrite=${shouldOverwrite}`,
       'PUT',
       body,
       user,
       undefined,
       false,
+    );
+  },
+  async uploadFiles(
+    workspaceId: number,
+    targetDirectory: string,
+    files: File[],
+    shouldOverwrite: boolean,
+    user: User | null,
+  ): Promise<BulkOperationResponses> {
+    const body = JSON.stringify(
+      files.map(file => ({
+        overwrite: shouldOverwrite,
+        path: `${joinPath([targetDirectory, file.name])}`,
+        type: 'file',
+      })),
+    );
+    const form = new FormData();
+    form.append('body', body);
+    files.forEach(file => {
+      form.append('files', file);
+    });
+    return reqWorkspace<BulkOperationResponses>(
+      `${joinPath(['bulk', workspaceId])}`,
+      'PUT',
+      form,
+      user,
+      undefined,
+      true,
     );
   },
 };

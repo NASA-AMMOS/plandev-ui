@@ -302,7 +302,7 @@
   async function getWorkspaceContents(workspace: Workspace | null) {
     if (workspace) {
       isWorkspaceLoading = true;
-      const workspaceContents = await effects.getWorkspaceContents(workspace.id, user);
+      const workspaceContents = await effects.getWorkspaceContents(workspace.id, '', user);
       if (workspaceContents) {
         workspaceTree = {
           contents: workspaceContents,
@@ -511,15 +511,15 @@
       }
     }
   }
-  async function onNodeDelete({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
+
+  async function onDeleteNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if ($workspace) {
       const shouldUpdateSelectedSequencePath = treeNodePath === $activeDocumentPath;
 
-      await effects.deleteWorkspaceItem($workspace, treeNode, treeNodePath, user);
-      refreshWorkspaceContents();
+      const didDelete = await effects.deleteWorkspaceItems($workspace, treeNodes, user);
+      await refreshWorkspaceContents();
 
-      if (shouldUpdateSelectedSequencePath) {
-        activeDocument.close();
+      if (didDelete && shouldUpdateSelectedSequencePath) {
         selectedFilePath = null;
         confirmAndNavigate(null);
       }
@@ -543,23 +543,22 @@
     });
   }
 
-  async function onNodeMove({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
+  async function onMoveNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if ($workspace && workspaceTree) {
       const shouldUpdateSelectedSequencePath = treeNodePath === $activeDocumentPath;
 
-      const targetPath = await effects.moveWorkspaceItem($workspace, workspaceTree, treeNode, treeNodePath, user);
+      const targetPath = await effects.moveWorkspaceItems($workspace, workspaceTree, treeNodes, user);
       await refreshWorkspaceContents();
 
       if (shouldUpdateSelectedSequencePath && targetPath) {
         const { filename } = separateFilenameFromPath(targetPath);
         const newType = workspaceTreeMap[targetPath]?.type ?? null;
         activeDocument.updatePath(targetPath, filename ?? undefined, newType);
-        selectedFilePath = targetPath;
       }
     }
   }
 
-  async function onNodeRename({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
+  async function onRenameNode({ detail: { treeNode, treeNodePath } }: CustomEvent<WorkspaceNodeEvent>) {
     if ($workspace) {
       const shouldUpdateSelectedSequencePath = treeNodePath === $activeDocumentPath;
 
@@ -617,9 +616,9 @@
     setClipboardContent(copyPath);
   }
 
-  async function onMoveToWorkspace({ detail: sourcePath }: CustomEvent<string>) {
+  async function onMoveNodesToWorkspace({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if (initialWorkspace) {
-      await effects.moveWorkspaceItemToWorkspace(initialWorkspace, workspaceTreeMap[sourcePath], sourcePath, user);
+      await effects.moveWorkspaceItemsToWorkspace(initialWorkspace, treeNodes, user);
       refreshWorkspaceContents();
     }
   }
@@ -750,15 +749,15 @@
       on:addCollaborator={onAddCollaborator}
       on:deleteCollaborator={onDeleteCollaborator}
       on:download={onDownloadNodes}
-      on:nodeDelete={onNodeDelete}
-      on:nodeMove={onNodeMove}
-      on:nodeRename={onNodeRename}
+      on:deleteNodes={onDeleteNodes}
+      on:moveNodes={onMoveNodes}
+      on:renameNode={onRenameNode}
       on:newFolder={onNewFolder}
       on:newSequence={onNewSequence}
       on:importFile={onImportFile}
       on:copyFileLocation={onCopyFileLocation}
       on:copyFullPath={onCopyFullPath}
-      on:moveToWorkspace={onMoveToWorkspace}
+      on:moveNodesToWorkspace={onMoveNodesToWorkspace}
       on:refreshWorkspace={refreshWorkspaceContents}
       on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
       on:runAction={onRunActionOnFileSelection}

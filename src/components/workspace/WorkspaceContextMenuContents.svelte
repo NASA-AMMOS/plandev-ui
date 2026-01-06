@@ -5,7 +5,7 @@
   import { createEventDispatcher } from 'svelte';
   import { WorkspaceContentType } from '../../enums/workspace';
   import type { ActionParameterPair } from '../../types/workspace';
-  import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
+  import type { WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { pluralize } from '../../utilities/text';
   import ActionMenuItem from '../ui/ActionMenuItem.svelte';
@@ -14,18 +14,18 @@
   export let hasEditPermission: boolean = false;
   export let hasDeletePermission: boolean = false;
   export let hasCreateActionPermission: boolean = false;
-  export let selectedWorkspaceNodes: (WorkspaceTreeNodeWithFullPath | WorkspaceTreeNode)[] = [];
+  export let selectedWorkspaceNodes: WorkspaceTreeNodeWithFullPath[] = [];
 
   const dispatch = createEventDispatcher<{
     actionsMenuFocused: boolean;
     copyFileLocation: void;
     copyFullPath: void;
-    delete: void;
     download: void;
+    delete: WorkspaceTreeNodeWithFullPath[];
     hide: void;
     importFile: void;
-    move: void;
-    moveToWorkspace: void;
+    move: WorkspaceTreeNodeWithFullPath[];
+    moveToWorkspace: WorkspaceTreeNodeWithFullPath[];
     newFile: void;
     newFolder: void;
     openInNewTab: void;
@@ -36,8 +36,6 @@
 
   const editPermissionError = 'You do not have permission to edit this workspace';
   const deletePermissionError = 'You do not have permission to delete files in this workspace';
-
-  const multiFileOperationError = 'Currently only supports single file operations';
 
   let areMultipleFilesSelected: boolean = false;
   let actionPhrase: string = '';
@@ -87,14 +85,14 @@
   {/if}
   <div
     use:permissionHandler={{
-      hasPermission: hasEditPermission && !areMultipleFilesSelected,
-      permissionError: areMultipleFilesSelected ? multiFileOperationError : editPermissionError,
+      hasPermission: hasEditPermission,
+      permissionError: editPermissionError,
     }}
   >
     <ContextMenu.Item
-      disabled={!(hasEditPermission && !areMultipleFilesSelected)}
+      disabled={!hasEditPermission}
       size="sm"
-      on:click={() => dispatch('move')}
+      on:click={() => dispatch('move', selectedWorkspaceNodes)}
       aria-label="Move/Copy"
     >
       Move/Copy {fileCountPhrase}
@@ -102,14 +100,14 @@
   </div>
   <div
     use:permissionHandler={{
-      hasPermission: hasDeletePermission && !areMultipleFilesSelected,
-      permissionError: areMultipleFilesSelected ? multiFileOperationError : deletePermissionError,
+      hasPermission: hasDeletePermission,
+      permissionError: deletePermissionError,
     }}
   >
     <ContextMenu.Item
-      disabled={!(hasDeletePermission && !areMultipleFilesSelected)}
+      disabled={!hasDeletePermission}
       size="sm"
-      on:click={() => dispatch('delete')}
+      on:click={() => dispatch('delete', selectedWorkspaceNodes)}
       aria-label="Delete"
     >
       Delete {fileCountPhrase}
@@ -130,14 +128,14 @@
 <ContextMenu.Separator />
 <div
   use:permissionHandler={{
-    hasPermission: hasEditPermission && !areMultipleFilesSelected,
-    permissionError: areMultipleFilesSelected ? multiFileOperationError : editPermissionError,
+    hasPermission: hasEditPermission,
+    permissionError: editPermissionError,
   }}
 >
   <ContextMenu.Item
     size="sm"
-    disabled={!(hasEditPermission && !areMultipleFilesSelected)}
-    on:click={() => dispatch('moveToWorkspace')}
+    disabled={!hasEditPermission}
+    on:click={() => dispatch('moveToWorkspace', selectedWorkspaceNodes)}
     aria-label="Move/Copy to Workspace"
   >
     Move/Copy {fileCountPhrase} to Workspace
