@@ -3,6 +3,7 @@
 <script lang="ts">
   import { ContextMenu } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
+  import { WorkspaceContentType } from '../../enums/workspace';
   import type { ActionParameterPair } from '../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -43,6 +44,8 @@
       ? `${selectedWorkspaceNodes.length} File${pluralize(selectedWorkspaceNodes.length)}`
       : '';
   }
+
+  $: canDownload = selectedWorkspaceNodes.map(node => node.type !== WorkspaceContentType.Directory).every(nodeType => nodeType === true);
 </script>
 
 <ContextMenu.Group>
@@ -92,10 +95,12 @@
 </ContextMenu.Group>
 <ContextMenu.Separator />
 {#if selectedWorkspaceNodes.length === 1}
-  <div>
-    <ContextMenu.Item size="sm" on:click={() => dispatch('download')} aria-label="Download">Download</ContextMenu.Item>
-  </div>
-  <ContextMenu.Separator />
+  {#if canDownload}
+    <div>
+      <ContextMenu.Item size="sm" on:click={() => dispatch('download')} aria-label="Download">Download</ContextMenu.Item>
+    </div>
+    <ContextMenu.Separator />
+  {/if}
 {/if}
 <div
   use:permissionHandler={{
