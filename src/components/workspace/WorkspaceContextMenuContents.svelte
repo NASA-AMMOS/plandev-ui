@@ -20,8 +20,8 @@
     actionsMenuFocused: boolean;
     copyFileLocation: void;
     copyFullPath: void;
-    download: void;
     delete: WorkspaceTreeNodeWithFullPath[];
+    download: void;
     hide: void;
     importFile: void;
     move: WorkspaceTreeNodeWithFullPath[];
