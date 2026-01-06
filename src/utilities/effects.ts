@@ -6107,6 +6107,26 @@ const effects = {
       }
 
       derivationGroupPlanLinkErrorStore.set(null);
+      if (plan !== null) {
+        const data = await reqHasura<PlanDerivationGroup>(
+          gql.CREATE_PLAN_DERIVATION_GROUP,
+          {
+            source: {
+              derivation_group_name: derivationGroupName,
+              plan_id: plan.id,
+            },
+          },
+          user,
+        );
+        const { planExternalSourceLink: sourceAssociation } = data;
+        // If the return was null, do nothing - only act on success or non-null
+        if (sourceAssociation !== null) {
+          logMessage(`Linked derivation group "${derivationGroupName}" to plan "${plan.name}" (ID=${plan.id}).`);
+          showSuccessToast('Derivation Group Linked Successfully');
+        }
+      } else {
+        throw Error('Plan is not defined.');
+      }
     } catch (e) {
       catchError('Derivation Group Linking Failed', e as Error);
       showFailureToast('Derivation Group Linking Failed');
