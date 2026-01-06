@@ -186,7 +186,7 @@ test.describe.serial('External Sources', () => {
 });
 
 test.describe.serial('External Source Error Handling', () => {
-  test('Duplicate keys is handled gracefully', async () => {
+  test('Duplicate keys are handled gracefully', async () => {
     await externalSources.createTypes(
       externalSources.exampleTypeSchema,
       externalSources.exampleTypeSchemaExpectedSourceTypes,

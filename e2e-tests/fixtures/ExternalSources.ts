@@ -317,7 +317,7 @@ export class ExternalSources {
   ) {
     await this.goto();
     // Wait for the page to stabilize - this appears to be necessary in order to eliminate flakiness with
-    // svelte's handling of the file iput
+    // svelte's handling of the file input
     await this.page.waitForTimeout(500);
     await this.fillInputFile(inputFilePath);
 
