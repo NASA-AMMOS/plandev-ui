@@ -58,8 +58,8 @@
     importFile: string;
     moveNodes: WorkspaceNodesEvent;
     moveNodesToWorkspace: WorkspaceNodesEvent;
+    newFile: string;
     newFolder: string;
-    newSequence: string;
     openInNewTab: string;
     renameNode: WorkspaceNodeEvent;
     runAction: WorkspaceNodeRunActionEvent;
@@ -430,12 +430,12 @@
     dispatch('newFolder', targetPath);
   }
 
-  function onNewSequence(node?: WorkspaceTreeNode | WorkspaceTreeNodeWithFullPath | null) {
+  function onNewFile(node?: WorkspaceTreeNode | WorkspaceTreeNodeWithFullPath | null) {
     let targetPath = (node as WorkspaceTreeNodeWithFullPath)?.fullPath ?? '';
     if (node?.type !== WorkspaceContentType.Directory) {
       targetPath = targetPath.split(PATH_DELIMITER).slice(0, -1).join(PATH_DELIMITER);
     }
-    dispatch('newSequence', targetPath);
+    dispatch('newFile', targetPath);
   }
 
   function onImportFile(node?: WorkspaceTreeNode | WorkspaceTreeNodeWithFullPath | null) {
@@ -550,7 +550,7 @@
         on:copyFullPath={() => contextMenuNode && onCopyFullPath(contextMenuNode)}
         on:moveToWorkspace={() => onMoveNodesToWorkspace(effectiveSelectedNodes)}
         on:runAction={event => onContextMenuRunAction(event, effectiveActionFilePaths)}
-        on:newFile={() => contextMenuNode && onNewSequence(contextMenuNode)}
+        on:newFile={() => contextMenuNode && onNewFile(contextMenuNode)}
         on:newFolder={() => contextMenuNode && onNewFolder(contextMenuNode)}
         on:importFile={() => contextMenuNode && onImportFile(contextMenuNode)}
         on:openInNewTab={() => contextMenuNode && onOpenInNewTab(contextMenuNode)}
