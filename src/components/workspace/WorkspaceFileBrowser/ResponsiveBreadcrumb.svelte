@@ -25,15 +25,17 @@
   /** Callback when navigating to a specific segment index */
   export let onNavigateToSegment: (index: number) => void = () => {};
 
-  // Derived from currentPath
-  $: segments = currentPath ? currentPath.split(PATH_DELIMITER) : [];
-
   // Responsive breadcrumb state
   let breadcrumbWrapper: HTMLDivElement | undefined = undefined;
+  let collapsedSegments: string[] = [];
   let maxVisibleSegments: number = Infinity;
+  let needsCollapsing: boolean = false;
   let resizeObserver: ResizeObserver | null = null;
+  let segments: string[] = []; // breadcrumb segments derived from currentPath
+  let visibleSegments: string[] = [];
+  let visibleStartIndex: number = 0;
 
-  // Compute which segments to show vs collapse
+  $: segments = currentPath ? currentPath.split(PATH_DELIMITER) : [];
   $: needsCollapsing = maxVisibleSegments !== Infinity && segments.length > maxVisibleSegments;
   $: collapsedSegments = needsCollapsing ? segments.slice(0, -maxVisibleSegments) : [];
   $: visibleSegments = needsCollapsing ? segments.slice(-maxVisibleSegments) : segments;
