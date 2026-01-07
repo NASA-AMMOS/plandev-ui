@@ -7,7 +7,12 @@
   import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
-  import { getSelectedFilesDisplay, getWorkspaceFileFolderDisplay } from '../../utilities/workspaces';
+  import {
+    getSelectedFilesDisplay,
+    getWorkspaceFileFolderDisplay,
+    joinPath,
+    separateFilenameFromPath,
+  } from '../../utilities/workspaces';
   import WorkspaceTreeView from '../workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
@@ -31,6 +36,12 @@
   let displayString: string = getWorkspaceFileFolderDisplay(originalNodes);
   let shouldOverwrite: boolean = false;
   let targetDirectory: string = currentWorkspace.name;
+
+  $: if (originalNodes.length === 1) {
+    targetDirectory = separateFilenameFromPath(joinPath([currentWorkspace.name, originalNodes[0].fullPath])).path;
+  } else {
+    targetDirectory = currentWorkspace.name;
+  }
 
   function onFolderClicked(event: CustomEvent<WorkspaceNodeEvent>) {
     targetDirectory = event.detail.treeNodePath;
