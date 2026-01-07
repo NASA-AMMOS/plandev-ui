@@ -34,6 +34,7 @@
   export let columnStates: ColumnState[] = [];
   export let columnsToForceRefreshOnDataUpdate: (keyof RowData)[] = [];
   export let dataGrid: DataGrid<RowData> | undefined = undefined;
+  export let filterExpression: string = '';
   export let hasDeletePermission: PermissionCheck<RowData> | boolean = true;
   export let hasDeletePermissionError: string = 'You do not have permission to delete.';
   export let headerHeight: number = 32;
@@ -56,7 +57,6 @@
   export let rowHeight: number = 33;
   export let tertiaryHighlightIds: RowId[] | null = null;
   export let user: User | null;
-  export let filterExpression: string = '';
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => parseInt(data[idKey]);
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
@@ -177,13 +177,13 @@
   {columnsToForceRefreshOnDataUpdate}
   {headerHeight}
   {idKey}
-  {rowHeight}
   {getRowId}
   {isRowSelectable}
   {isExternalFilterPresent}
   {doesExternalFilterPass}
   {noRowsOverlayText}
   useCustomContextMenu={showContextMenu}
+  {rowHeight}
   rowData={items}
   rowSelection="multiple"
   {scrollToSelection}

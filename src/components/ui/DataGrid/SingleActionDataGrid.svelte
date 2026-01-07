@@ -43,6 +43,7 @@
   export let hasEditPermission: PermissionCheck<RowData> | boolean = true;
   export let hasEditPermissionError: string | ((user: User, data: RowData) => string) | undefined =
     defaultEditPermissionError;
+  export let headerHeight: number = 32;
   export let idKey: keyof RowData = 'id';
   export let items: RowData[];
   export let itemDisplayText: string;
@@ -51,7 +52,11 @@
   export let selectedItemId: RowId | null = null;
   export let scrollToSelection: boolean = false;
   export let showLoadingSkeleton: boolean = false;
+  export let suppressContextMenuSelection: boolean = false;
+  export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
+  export let rowHeight: number = 33;
+  export let tertiaryHighlightIds: RowId[] | null = null;
   export let user: User | null;
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => parseInt(data[idKey]);
@@ -151,6 +156,7 @@
   {columnStates}
   {columnsToForceRefreshOnDataUpdate}
   {filterExpression}
+  {headerHeight}
   {idKey}
   {getRowId}
   {isRowSelectable}
@@ -158,12 +164,16 @@
   {doesExternalFilterPass}
   {noRowsOverlayText}
   useCustomContextMenu
+  {rowHeight}
   rowData={items}
   rowSelection="single"
   {scrollToSelection}
   {showLoadingSkeleton}
   {loading}
+  {suppressContextMenuSelection}
+  {suppressDragLeaveHidesColumns}
   {suppressRowClickSelection}
+  {tertiaryHighlightIds}
   on:blur={onBlur}
   on:cellContextMenu
   on:cellContextMenuHide
@@ -181,6 +191,7 @@
   on:rowDoubleClicked
   on:rowSelected
   on:selectionChanged
+  on:sortChanged
 >
   <svelte:fragment slot="context-menu">
     <slot name="context-menu" {selectedItemId} />
