@@ -1,7 +1,17 @@
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 
-export type SubscriptionManagerRecord = { error: string; loading: boolean; restart: () => void };
+export type SubscriptionManagerRecord = {
+  error: string;
+  loading: boolean;
+  query?: string; // Optional, for debugging
+  restart: () => void;
+};
 
+/**
+ * SSR Safety: This module-level store is safe because subscriptions
+ * only register in browser context (gqlSubscribable checks `if (browser)`).
+ * The store is never populated during server-side rendering.
+ */
 export const subscriptionManager: Writable<Record<string, SubscriptionManagerRecord>> = writable({});
 
 export const subscriptionsLoading: Readable<boolean> = derived(
@@ -23,9 +33,8 @@ export function updateSubscription(id: string, entry: Partial<SubscriptionManage
 }
 
 export function removeSubscription(id: string) {
-  const newSubscriptionManager = get(subscriptionManager);
-  delete newSubscriptionManager[id];
-  subscriptionManager.set(newSubscriptionManager);
+  const { [id]: _, ...rest } = get(subscriptionManager);
+  subscriptionManager.set(rest);
 }
 
 export function restartSubscriptions() {

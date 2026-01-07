@@ -7,5 +7,5 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
   if (!url.pathname.includes('login') && shouldRedirectToLogin(locals.user)) {
     redirect(302, base);
   }
-  return { ...locals };
+  return { user: locals.user };
 };
