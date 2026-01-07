@@ -434,6 +434,88 @@ test.describe.serial('Workspace', () => {
     await workspace.waitForToast('Workspace Collaborators Updated');
   });
 
+  test('Bulk workspace file operations', async () => {
+    await workspace.page.getByLabel('Files').click();
+
+    const sequence1 = await workspace.createSequence('', 'test1.txt');
+    const sequence2 = await workspace.createSequence('', 'test2.txt');
+    const sequence3 = await workspace.createSequence('', 'test3.txt');
+    const sequence4 = await workspace.createSequence('', 'test4.txt');
+    const sequence5 = await workspace.createSequence('', 'test5.txt');
+
+    expect(sequence1.sequenceName).toBeTruthy();
+    expect(sequence2.sequenceName).toBeTruthy();
+    expect(sequence3.sequenceName).toBeTruthy();
+    expect(sequence4.sequenceName).toBeTruthy();
+    expect(sequence5.sequenceName).toBeTruthy();
+
+    const folder1 = await workspace.createFolder('folder1');
+    const folder2 = await workspace.createFolder('folder2');
+
+    expect(folder1).toBeTruthy();
+    expect(folder2).toBeTruthy();
+
+    // Click on the workspace grid view
+    await workspace.page.getByLabel('Grid').click();
+
+    // Select 2 files for moving
+    await workspace.page.getByRole('gridcell', { name: sequence1.sequenceName }).click();
+    await workspace.page.getByRole('gridcell', { name: sequence2.sequenceName }).click({
+      modifiers: ['Shift'],
+    });
+    await workspace.page.getByRole('gridcell', { name: sequence1.sequenceName }).click({
+      button: 'right',
+    });
+    await workspace.page.getByLabel('Move/Copy').click();
+
+    await page.getByRole('menuitem', { name: workspace.workspaceName }).click();
+    await page.getByRole('menuitem', { name: folder1 }).click();
+
+    // Move the files to "folder1"
+    await page.getByRole('button', { name: 'Move Files' }).click();
+
+    // These files should no longer be visible in the workspace root because they've been moved
+    await expect(workspace.page.getByRole('gridcell', { name: sequence1.sequenceName })).not.toBeVisible();
+    await expect(workspace.page.getByRole('gridcell', { name: sequence2.sequenceName })).not.toBeVisible();
+
+    // Select 2 other files for copying
+    await workspace.page.getByRole('gridcell', { name: sequence3.sequenceName }).click();
+    await workspace.page.getByRole('gridcell', { name: sequence4.sequenceName }).click({
+      modifiers: ['Shift'],
+    });
+    await workspace.page.getByRole('gridcell', { name: sequence3.sequenceName }).click({
+      button: 'right',
+    });
+    await workspace.page.getByLabel('Move/Copy').click();
+
+    await page.getByRole('menuitem', { name: workspace.workspaceName }).click();
+    await page.getByRole('menuitem', { name: folder2 }).click();
+
+    // Move the files to "folder1"
+    await page.getByRole('button', { name: 'Copy Files' }).click();
+
+    // These files should still be visible in the workspace root because they've only been copied
+    await expect(workspace.page.getByRole('gridcell', { name: sequence3.sequenceName })).toBeVisible();
+    await expect(workspace.page.getByRole('gridcell', { name: sequence4.sequenceName })).toBeVisible();
+
+    // Select 2 other files for deletion
+    await workspace.page.getByRole('gridcell', { name: sequence3.sequenceName }).click();
+    await workspace.page.getByRole('gridcell', { name: sequence5.sequenceName }).click({
+      modifiers: ['ControlOrMeta'],
+    });
+
+    await page.getByRole('gridcell', { name: sequence3.sequenceName }).click({
+      button: 'right',
+    });
+
+    await workspace.page.getByRole('menuitem', { name: 'Delete' }).click();
+    await page.getByRole('button', { name: 'Delete' }).click();
+
+    // These files should still be visible in the workspace root because they've only been copied
+    await expect(workspace.page.getByRole('gridcell', { name: sequence3.sequenceName })).not.toBeVisible();
+    await expect(workspace.page.getByRole('gridcell', { name: sequence5.sequenceName })).not.toBeVisible();
+  });
+
   // Currently, switching users mid test causes a little bit of a race condition when multiple test workers are running tests
   // This test should be reenabled when we've figured out how to properly handle multiple users in one test run
   test.skip('Users not authorized to modify the workspace should not be able to', async ({ baseURL }) => {

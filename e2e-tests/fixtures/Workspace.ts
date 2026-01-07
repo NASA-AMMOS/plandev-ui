@@ -209,6 +209,10 @@ export class Workspace {
     await this.workspaceContextMenuButton.click();
     await this.workspaceHeaderMenu.waitFor({ state: 'attached' });
     await this.workspaceHeaderMenu.waitFor({ state: 'visible' });
+    await expect(this.workspaceHeaderMenu.getByRole('button', { name: 'New File' })).toBeVisible();
+    // This timeout seems to fix a race condition where the menu is mounted, but the CSS animation might be doing something to make it disappear prematurely
+    // The effect is that the menu opens, but then flashes and disappears
+    await this.page.waitForTimeout(1000);
   }
 
   async renameWorkspaceItem(oldName: string, newName: string, isFolder: boolean = false): Promise<void> {
