@@ -5,8 +5,29 @@
     <title>PlanDev</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" href="%sveltekit.assets%/favicon.ico" sizes="any" />
-    <link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" id="favicon" href="%sveltekit.assets%/favicon-light.svg" type="image/svg+xml" />
+    <script>
+      // Immediately update favicon based on system color scheme to prevent flash
+      (function() {
+        const favicon = document.getElementById('favicon');
+        const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+        function updateFavicon(isDark) {
+          const faviconPath = isDark ? '%sveltekit.assets%/favicon-dark.svg' : '%sveltekit.assets%/favicon-light.svg';
+          if (favicon) {
+            favicon.href = faviconPath;
+          }
+        }
+
+        // Set initial favicon
+        updateFavicon(darkModeMediaQuery.matches);
+
+        // Listen for changes to color scheme
+        darkModeMediaQuery.addEventListener('change', function(e) {
+          updateFavicon(e.matches);
+        });
+      })();
+    </script>
     %sveltekit.head%
   </head>
   <body class="bg-background font-sans text-xs text-foreground">

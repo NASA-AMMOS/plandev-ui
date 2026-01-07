@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
+  import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
   import { Button, Popover } from '@nasa-jpl/stellar-svelte';
   import {
@@ -23,10 +24,12 @@
     Tags,
   } from 'lucide-svelte';
   import { onMount } from 'svelte';
-  import AerieWordmarkDark from '../../assets/aerie-wordmark-dark.svg?component';
+  import PlanDevWordmarkDark from '../../assets/plandev-logo-dark.svg?component';
+  import SeqDevWordmarkDark from '../../assets/seqdev-logo-dark.svg?component';
   import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
   import { SequencingMode } from '../../enums/sequencing';
   import type { User, Version } from '../../types/app';
+  import { getAppBrand } from '../../utilities/branding';
   import effects from '../../utilities/effects';
   import { logout } from '../../utilities/login';
   import { showAboutModal } from '../../utilities/modal';
@@ -36,6 +39,7 @@
 
   export let user: User | null = null;
   let isOpen = false;
+  let isSeqDev = false;
   let version: Version = {
     branch: 'unknown',
     commit: 'unknown',
@@ -43,6 +47,8 @@
     date: new Date().toLocaleString(),
     name: 'aerie-ui',
   };
+
+  $: isSeqDev = getAppBrand($page.url.pathname) === 'SeqDev';
 
   onMount(async () => {
     version = await effects.getVersion();
@@ -60,10 +66,16 @@
         builders={[builder]}
         variant="ghost"
         size="lg"
-        class="flex gap-2 bg-[#110D3D] px-2 hover:bg-primary/30 dark:bg-secondary"
+        class="flex gap-2 bg-[#110D3D] px-2 hover:bg-[#2c2850] dark:bg-secondary"
         aria-label="Open Main Menu"
       >
-        <AerieWordmarkDark />
+        <div class="flex w-min [&_svg]:h-[18px] [&_svg]:w-auto">
+          {#if isSeqDev}
+            <SeqDevWordmarkDark />
+          {:else}
+            <PlanDevWordmarkDark />
+          {/if}
+        </div>
         <ChevronDown strokeWidth={2} size={16} class="text-white" />
       </Button>
     </Popover.Trigger>
