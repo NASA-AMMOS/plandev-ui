@@ -104,7 +104,7 @@ export const constraintVisibilityMap: Readable<ConstraintPlanSpecVisibilityMap> 
   ([$allowedConstraintPlanSpecMap, $constraintVisibilityMapWritable]) => {
     return Object.keys($allowedConstraintPlanSpecMap).reduce(
       (prevConstraintPlanSpecVisibilityMap: ConstraintPlanSpecVisibilityMap, constraintIdString: string) => {
-        const constraintId: number = parseInt(constraintIdString);
+        const constraintId: number = Number.parseInt(constraintIdString);
         const invocationPlanSpecMap = $allowedConstraintPlanSpecMap[constraintId];
         if (!prevConstraintPlanSpecVisibilityMap[constraintId]) {
           prevConstraintPlanSpecVisibilityMap[constraintId] = {};

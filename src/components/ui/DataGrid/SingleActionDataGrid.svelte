@@ -53,7 +53,7 @@
   export let suppressRowClickSelection: boolean = false;
   export let user: User | null;
 
-  export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => parseInt(data[idKey]);
+  export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => Number.parseInt(data[idKey]);
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
   export let isExternalFilterPresent: ((params: IsExternalFilterPresentParams<RowData, any>) => boolean) | undefined =
     undefined;

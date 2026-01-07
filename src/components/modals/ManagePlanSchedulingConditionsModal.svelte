@@ -225,7 +225,7 @@
           },
           selectedConditionId: string,
         ) => {
-          const conditionId = parseInt(selectedConditionId);
+          const conditionId = Number.parseInt(selectedConditionId);
           const isSelected = selectedConditions[conditionId];
           const conditionPlanSpec = allowedSchedulingConditionSpecsMap[conditionId];
 

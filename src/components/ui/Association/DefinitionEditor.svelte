@@ -66,7 +66,7 @@
     if (modelId === null) {
       dispatch('selectReferenceModel', modelId);
     } else {
-      dispatch('selectReferenceModel', parseInt(`${modelId}`));
+      dispatch('selectReferenceModel', Number.parseInt(`${modelId}`));
     }
   }
 </script>

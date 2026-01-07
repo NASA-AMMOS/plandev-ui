@@ -135,7 +135,7 @@ export function getActivityIdsFromError(error: BaseError): number[] {
     const errorWithIds = error as SchedulingError | SimulationDatasetError;
     if (errorWithIds.data?.errors) {
       return Object.keys(errorWithIds.data.errors)
-        .map(id => parseInt(id))
+        .map(id => Number.parseInt(id))
         .filter(id => !isNaN(id));
     }
   } else if (error.type === ErrorTypes.SIMULATION_EXCEPTION) {

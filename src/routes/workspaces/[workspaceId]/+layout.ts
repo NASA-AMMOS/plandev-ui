@@ -6,7 +6,7 @@ export const load: LayoutLoad = async ({ parent, params }) => {
 
   const { workspaceId } = params;
 
-  const initialWorkspace = await effects.getWorkspace(parseInt(workspaceId), user);
+  const initialWorkspace = await effects.getWorkspace(Number.parseInt(workspaceId), user);
 
   return {
     initialWorkspace,

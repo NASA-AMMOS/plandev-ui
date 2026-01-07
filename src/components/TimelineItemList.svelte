@@ -243,7 +243,10 @@
             <Tag
               tag={{
                 color: selectedFilter.color,
-                id: typeof selectedFilter.value === 'string' ? parseInt(selectedFilter.value) : selectedFilter.value,
+                id:
+                  typeof selectedFilter.value === 'string'
+                    ? Number.parseInt(selectedFilter.value)
+                    : selectedFilter.value,
                 name: selectedFilter.label,
               }}
               on:click={() => {

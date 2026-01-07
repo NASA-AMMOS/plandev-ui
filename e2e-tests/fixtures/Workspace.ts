@@ -96,8 +96,8 @@ export class Workspace {
    * Navigate to this specific workspace
    */
   async goto(workspaceId = this.workspaceId): Promise<void> {
-    await this.page.goto(getWorkspacesUrl(this.baseURL, parseInt(workspaceId)), { waitUntil: 'load' });
-    await this.page.waitForURL(getWorkspacesUrl(this.baseURL, parseInt(workspaceId)));
+    await this.page.goto(getWorkspacesUrl(this.baseURL, Number.parseInt(workspaceId)), { waitUntil: 'load' });
+    await this.page.waitForURL(getWorkspacesUrl(this.baseURL, Number.parseInt(workspaceId)));
     await this.pageLoadingLocatorWithData.waitFor({ state: 'detached' });
     await expect(this.page.locator('.workspace-title')).toBeVisible();
   }

@@ -148,8 +148,8 @@ export function compareEvents(a: RawSimulationEvent, b: RawSimulationEvent) {
   let i = 0;
   let isSequential = true;
   while (i < Math.min(aDenseTime.length, bDenseTime.length)) {
-    const aVal = parseInt(aDenseTime[i]);
-    const bVal = parseInt(bDenseTime[i]);
+    const aVal = Number.parseInt(aDenseTime[i]);
+    const bVal = Number.parseInt(bDenseTime[i]);
 
     if (aVal === bVal) {
       i = i + 1;

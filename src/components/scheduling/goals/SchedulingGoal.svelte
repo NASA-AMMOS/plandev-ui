@@ -85,7 +85,7 @@
     revision: number | string | null,
   ): Pick<SchedulingGoalDefinition, 'type' | 'revision' | 'analyses' | 'parameter_schema'> | undefined {
     if (revision != null && revision !== '') {
-      const revisionNumber = parseInt(`${revision}`);
+      const revisionNumber = Number.parseInt(`${revision}`);
       version = goalMetadata.versions.find(v => v.revision === revisionNumber);
     } else {
       // if the `goal_revision` is null, that means to use the latest version of the definition
@@ -136,7 +136,7 @@
       ...goalPlanSpec,
       arguments: cleansedArguments,
       files: [],
-      goal_revision: revision === '' ? null : parseInt(`${revision}`),
+      goal_revision: revision === '' ? null : Number.parseInt(`${revision}`),
     });
   }
 

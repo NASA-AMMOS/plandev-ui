@@ -46,7 +46,7 @@ export function timestamp(value: string): Promise<ValidationResult> {
 
       const daysInYear = getDaysInYear(Number.parseInt(year));
 
-      const dayOfYear = parseInt(doy, 10);
+      const dayOfYear = Number.parseInt(doy, 10);
       if (dayOfYear > 0 && dayOfYear <= daysInYear) {
         return resolve(null);
       } else {

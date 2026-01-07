@@ -17,11 +17,11 @@
 
   function getPixelHeight(value: string | number): number {
     if (typeof value === 'string' && /%/.test(value)) {
-      const valuePercentage = parseInt(value.replace('%', '')) / 100;
+      const valuePercentage = Number.parseInt(value.replace('%', '')) / 100;
       return valuePercentage * document.body.clientHeight;
     }
 
-    return parseInt(`${value}`);
+    return Number.parseInt(`${value}`);
   }
 
   function onMouseMove(event: MouseEvent): void {

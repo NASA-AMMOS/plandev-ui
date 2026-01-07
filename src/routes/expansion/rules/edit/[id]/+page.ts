@@ -9,7 +9,7 @@ export const load: PageLoad = async ({ parent, params }) => {
   const { id: ruleIdParam } = params;
 
   if (ruleIdParam !== null && ruleIdParam !== undefined) {
-    const ruleIdAsNumber = parseFloat(ruleIdParam);
+    const ruleIdAsNumber = Number.parseFloat(ruleIdParam);
 
     if (!Number.isNaN(ruleIdAsNumber)) {
       const initialRule = await effects.getExpansionRule(ruleIdAsNumber, user);

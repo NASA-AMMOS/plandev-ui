@@ -475,7 +475,7 @@
                 {
                   arguments: constraintSpecification.arguments,
                   constraint_revision: constraintSpecification.revision,
-                  invocation_id: parseInt(constraintSpecification.id),
+                  invocation_id: Number.parseInt(constraintSpecification.id),
                   order: constraintSpecification.priority,
                 } as ConstraintModelSpecSetInput,
               ],
@@ -490,7 +490,7 @@
       const constraintInvocationIdsToDelete = initialSelectedVisibleConstraintSpecificationsList.reduce(
         (prevConstraintIdsToDelete: number[], constraintSpecification: AssociationSpecification) => {
           if (!selectedConstraintSpecificationMap[constraintSpecification.id]) {
-            return [...prevConstraintIdsToDelete, parseInt(constraintSpecification.id)];
+            return [...prevConstraintIdsToDelete, Number.parseInt(constraintSpecification.id)];
           }
           return prevConstraintIdsToDelete;
         },
@@ -546,7 +546,7 @@
       const conditionIdsToDelete = initialSelectedVisibleConditionSpecificationsList.reduce(
         (prevConditionIdsToDelete: number[], conditionSpecification: AssociationSpecification) => {
           if (!selectedConditionSpecificationMap[conditionSpecification.id]) {
-            return [...prevConditionIdsToDelete, parseInt(conditionSpecification.id)];
+            return [...prevConditionIdsToDelete, Number.parseInt(conditionSpecification.id)];
           }
           return prevConditionIdsToDelete;
         },
@@ -592,7 +592,7 @@
                 ...prevGoalPlanSpecUpdates.goalModelSpecsToUpdate,
                 {
                   arguments: goalSpecification.arguments,
-                  goal_invocation_id: parseInt(goalSpecification.id),
+                  goal_invocation_id: Number.parseInt(goalSpecification.id),
                   goal_revision: goalSpecification.revision,
                   priority: goalSpecification.priority,
                 } as SchedulingGoalModelSpecificationSetInput,
@@ -608,7 +608,7 @@
       const goalInvocationIdsToDelete = initialSelectedVisibleGoalSpecificationsList.reduce(
         (prevGoalIdsToDelete: number[], goalSpecification: AssociationSpecification) => {
           if (!selectedGoalSpecificationMap[goalSpecification.id]) {
-            return [...prevGoalIdsToDelete, parseInt(goalSpecification.id)];
+            return [...prevGoalIdsToDelete, Number.parseInt(goalSpecification.id)];
           }
           return prevGoalIdsToDelete;
         },

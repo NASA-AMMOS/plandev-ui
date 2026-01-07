@@ -7,7 +7,7 @@ export const load: PageLoad = async ({ parent, params }) => {
   const { user } = await parent();
 
   const { id } = params;
-  const modelId = parseFloat(id);
+  const modelId = Number.parseFloat(id);
 
   if (!Number.isNaN(modelId)) {
     const initialModel = await effects.getModel(modelId, user);

@@ -1,5 +1,5 @@
 import { padStart } from 'lodash-es';
-import parseInterval from 'postgres-interval';
+import Number.parseInterval from 'postgres-interval';
 import { InvalidDate } from '../constants/time';
 import { TimeTypes } from '../enums/time';
 import type { ActivityDirectiveId, ActivityDirectivesMap } from '../types/activity';
@@ -75,7 +75,7 @@ export function isTimeMax(time: string, type: TimeTypes): boolean {
     case TimeTypes.EPOCH:
     case TimeTypes.RELATIVE: {
       const duration = parseDurationString(time);
-      const originalYear = parseInt(convertDurationToDoy(duration).slice(0, 4));
+      const originalYear = Number.parseInt(convertDurationToDoy(duration).slice(0, 4));
       const year = (
         parseDoyOrYmdTime(getDoyTime(new Date(getUnixEpochTime(convertDurationToDoy(duration))))) as ParsedDoyString
       )?.year;
@@ -219,14 +219,14 @@ export function parseDurationString(
     } = matches;
 
     return {
-      days: parseFloat(days),
-      hours: parseFloat(hours),
+      days: Number.parseFloat(days),
+      hours: Number.parseFloat(hours),
       isNegative: !!isNegative,
-      microseconds: parseFloat(microseconds),
-      milliseconds: parseFloat(milliseconds),
-      minutes: parseFloat(minutes),
-      seconds: parseFloat(seconds),
-      years: parseFloat(years),
+      microseconds: Number.parseFloat(microseconds),
+      milliseconds: Number.parseFloat(milliseconds),
+      minutes: Number.parseFloat(minutes),
+      seconds: Number.parseFloat(seconds),
+      years: Number.parseFloat(years),
     };
   }
 
@@ -246,8 +246,8 @@ export function parseDurationString(
     let day = 0;
     let year = 0;
 
-    const number = parseInt(int);
-    const decimalNum = decimal ? parseFloat(decimal) : 0;
+    const number = Number.parseInt(int);
+    const decimalNum = decimal ? Number.parseFloat(decimal) : 0;
 
     //shift everything based on units
     switch (units) {
@@ -701,7 +701,7 @@ export function getDoyTime(date: Date, includeMsecs = true): string {
  */
 export function getDoyTimeFromInterval(startTime: string, interval: string, includeMsecs = true): string {
   const startDate = new Date(startTime);
-  const parsedInterval = parseInterval(interval);
+  const parsedInterval = Number.parseInterval(interval);
   const { days, hours, milliseconds, minutes, seconds } = parsedInterval;
   const endDate = new Date(startDate.getTime());
   endDate.setUTCDate(endDate.getUTCDate() + days);
@@ -719,7 +719,7 @@ export function getDoyTimeFromInterval(startTime: string, interval: string, incl
  */
 export function getIntervalInMs(interval: string | null | undefined): number {
   if (interval !== null && interval !== undefined && interval !== '') {
-    const parsedInterval = parseInterval(interval);
+    const parsedInterval = Number.parseInterval(interval);
     const { days, hours, milliseconds, minutes, seconds } = parsedInterval;
     const daysInMs = days * 24 * 60 * 60 * 1000;
     const hoursInMs = hours * 60 * 60 * 1000;
@@ -808,25 +808,25 @@ export function parseDoyOrYmdTime(
       matches;
 
     const partialReturn = {
-      hour: parseInt(hour),
-      min: parseInt(min),
-      ms: parseFloat((parseFloat(dec) * msPerSecond).toFixed(numDecimals)),
-      sec: parseInt(sec),
+      hour: Number.parseInt(hour),
+      min: Number.parseInt(min),
+      ms: Number.parseFloat((Number.parseFloat(dec) * msPerSecond).toFixed(numDecimals)),
+      sec: Number.parseInt(sec),
       time: time,
-      year: parseInt(year),
+      year: Number.parseInt(year),
     };
 
     if (doy !== undefined) {
       return {
         ...partialReturn,
-        doy: parseInt(doy),
+        doy: Number.parseInt(doy),
       };
     }
 
     return {
       ...partialReturn,
-      day: parseInt(day),
-      month: parseInt(month),
+      day: Number.parseInt(day),
+      month: Number.parseInt(month),
     };
   }
 
@@ -845,13 +845,13 @@ function parseDOYDurationTime(doyTime: string): ParsedDurationString | null {
     if (matches) {
       const { groups: { sign = '', doy = '0', hr = '0', mins = '0', secs = '0', ms = '0' } = {} } = matches;
 
-      const hoursNum = parseInt(hr);
-      const minuteNum = parseInt(mins);
-      const secondsNum = parseInt(secs);
-      const millisecondNum = parseInt(ms);
+      const hoursNum = Number.parseInt(hr);
+      const minuteNum = Number.parseInt(mins);
+      const secondsNum = Number.parseInt(secs);
+      const millisecondNum = Number.parseInt(ms);
 
       return {
-        days: doy !== undefined ? parseInt(doy) : 0,
+        days: doy !== undefined ? Number.parseInt(doy) : 0,
         hours: hoursNum,
         isNegative: sign !== '' && sign !== '+',
         microseconds: 0,

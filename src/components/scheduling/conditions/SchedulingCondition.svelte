@@ -39,7 +39,7 @@
     const { value: revision } = getTarget(event);
     dispatch('updateConditionPlanSpec', {
       ...conditionPlanSpec,
-      condition_revision: revision === '' ? null : parseInt(`${revision}`),
+      condition_revision: revision === '' ? null : Number.parseInt(`${revision}`),
     });
   }
 </script>

@@ -213,7 +213,7 @@ function parseActivate(stepNode: SyntaxNode, sequence: string, order: number): s
 
 function parseEngine(stepNode: SyntaxNode, text: string): number | undefined {
   const engineNode = stepNode.getChild(ENGINE)?.getChild(NUMBER);
-  return engineNode ? parseInt(text.slice(engineNode.from, engineNode.to), 10) : undefined;
+  return engineNode ? Number.parseInt(text.slice(engineNode.from, engineNode.to), 10) : undefined;
 }
 
 function parseEpoch(stepNode: SyntaxNode, text: string): string | undefined {
@@ -337,7 +337,7 @@ function parseArg(
       return {
         name: dictionaryArg ? dictionaryArg.name : undefined,
         type: 'number',
-        value: parseFloat(nodeValue).toFixed(decimalCount),
+        value: Number.parseFloat(nodeValue).toFixed(decimalCount),
       };
     }
     case 'String': {

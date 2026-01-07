@@ -211,7 +211,7 @@
           },
           selectedConstraintId: string,
         ) => {
-          const constraintId = parseInt(selectedConstraintId);
+          const constraintId = Number.parseInt(selectedConstraintId);
           const isSelected = selectedConstraints[constraintId];
           // if we find at least one constraint invocation with the selected constraint_id, we don't want to insert this constraint_id into the plan spec
           // i.e. this constraint was already selected when we entered the modal, so we don't want to kick off an update, which would cause a duplicate invocation to appear

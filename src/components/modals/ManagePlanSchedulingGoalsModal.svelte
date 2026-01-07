@@ -219,7 +219,7 @@
           },
           selectedGoalId: string,
         ) => {
-          const goalId = parseInt(selectedGoalId);
+          const goalId = Number.parseInt(selectedGoalId);
           const isSelected = selectedGoals[goalId];
 
           // if we find at least one goal invocation with the selected goal_id, we don't want to insert this goal_id into the plan spec

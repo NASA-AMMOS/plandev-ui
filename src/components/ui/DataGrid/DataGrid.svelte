@@ -122,7 +122,7 @@
   export let useCustomContextMenu: boolean | undefined = undefined;
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): number => {
-    return parseInt(data[idKey]);
+    return Number.parseInt(data[idKey]);
   };
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
 

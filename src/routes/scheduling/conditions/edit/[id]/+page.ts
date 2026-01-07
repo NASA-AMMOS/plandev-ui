@@ -1,7 +1,7 @@
 import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
 import effects from '../../../../../utilities/effects';
-import { parseFloatOrNull } from '../../../../../utilities/generic';
+import { Number.parseFloatOrNull } from '../../../../../utilities/generic';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, params }) => {
@@ -10,7 +10,7 @@ export const load: PageLoad = async ({ parent, params }) => {
   const { id: conditionIdParam } = params;
 
   if (conditionIdParam !== null && conditionIdParam !== undefined) {
-    const conditionId = parseFloatOrNull(conditionIdParam);
+    const conditionId = Number.parseFloatOrNull(conditionIdParam);
 
     if (conditionId !== null) {
       const initialCondition = await effects.getSchedulingCondition(conditionId, user);

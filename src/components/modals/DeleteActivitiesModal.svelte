@@ -106,7 +106,7 @@
       'delete',
       Object.keys(activityDirectiveDeletionMap).reduce(
         (previousValue: ActivityDirectiveDeletionMap, directiveIdKey: string) => {
-          const directiveId: number = parseInt(directiveIdKey);
+          const directiveId: number = Number.parseInt(directiveIdKey);
           if (activityDirectivesToDeleteMap[directiveId]) {
             return {
               ...previousValue,

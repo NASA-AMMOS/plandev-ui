@@ -84,7 +84,7 @@
   async function onCreateNewWorkspace() {
     await effects.createWorkspace(
       $workspaceLocationField.value,
-      parseInt(`${$selectedParcelIdField.value}`),
+      Number.parseInt(`${$selectedParcelIdField.value}`),
       user,
       workspaceName,
     );

@@ -90,7 +90,7 @@
     revision: number | string | null,
   ): Pick<ConstraintDefinition, 'type' | 'revision' | 'parameter_schema'> | undefined {
     if (revision != null && revision !== '') {
-      const revisionNumber = parseInt(`${revision}`);
+      const revisionNumber = Number.parseInt(`${revision}`);
       version = constraintMetadata.versions.find(v => v.revision === revisionNumber);
     } else {
       // if the `goal_revision` is null, that means to use the latest version of the definition
@@ -176,7 +176,7 @@
     dispatch('updateConstraintPlanSpec', {
       ...constraintPlanSpec,
       arguments: cleansedArguments,
-      constraint_revision: revision === '' ? null : parseInt(`${revision}`),
+      constraint_revision: revision === '' ? null : Number.parseInt(`${revision}`),
     });
   }
 

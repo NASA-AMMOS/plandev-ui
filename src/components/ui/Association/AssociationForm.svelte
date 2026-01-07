@@ -291,7 +291,7 @@
   }
 
   function selectRevision(revision: number | string) {
-    dispatch('selectRevision', parseInt(`${revision}`));
+    dispatch('selectRevision', Number.parseInt(`${revision}`));
   }
 
   function onRevisionSelection(event: Event) {

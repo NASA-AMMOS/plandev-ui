@@ -61,7 +61,7 @@
       for (const columnGutter of Array.from(columnGutters)) {
         const track = columnGutter.getAttribute('data-track');
         if (track !== null) {
-          const trackAsNumber = parseFloat(track);
+          const trackAsNumber = Number.parseFloat(track);
           split.addColumnGutter(columnGutter, trackAsNumber);
         }
       }
@@ -69,7 +69,7 @@
       for (const rowGutter of Array.from(rowGutters)) {
         const track = rowGutter.getAttribute('data-track');
         if (track !== null) {
-          const trackAsNumber = parseFloat(track);
+          const trackAsNumber = Number.parseFloat(track);
           split.addRowGutter(rowGutter, trackAsNumber);
         }
       }

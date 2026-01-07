@@ -122,7 +122,7 @@ export function getTarget(event: Event) {
     const select = target as HTMLSelectElement;
     const type = select.getAttribute('data-type') ?? 'text';
     const { name, value: valueAsString } = select;
-    const valueAsNumber = parseFloatOrNull(valueAsString);
+    const valueAsNumber = Number.parseFloatOrNull(valueAsString);
     const value = type === 'number' ? valueAsNumber : valueAsString;
 
     return { name, value, valueAsNumber };
@@ -172,9 +172,9 @@ export function keyByBoolean(arr: string[] | undefined): Record<string, boolean>
 /**
  * Parses a string into a number. If string cannot be parsed just returns null.
  */
-export function parseFloatOrNull(value: string | null): number | null {
+export function Number.parseFloatOrNull(value: string | null): number | null {
   if (value !== null) {
-    const valueAsNumber: number = parseFloat(value);
+    const valueAsNumber: number = Number.parseFloat(value);
     return Number.isNaN(valueAsNumber) ? null : valueAsNumber;
   }
   return null;

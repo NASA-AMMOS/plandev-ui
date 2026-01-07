@@ -1,7 +1,7 @@
 import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
 import effects from '../../../../../utilities/effects';
-import { parseFloatOrNull } from '../../../../../utilities/generic';
+import { Number.parseFloatOrNull } from '../../../../../utilities/generic';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, params }) => {
@@ -10,7 +10,7 @@ export const load: PageLoad = async ({ parent, params }) => {
   const { id: goalIdParam } = params;
 
   if (goalIdParam !== null) {
-    const goalId = parseFloatOrNull(goalIdParam);
+    const goalId = Number.parseFloatOrNull(goalIdParam);
 
     if (goalId !== null) {
       const initialGoal = await effects.getSchedulingGoal(goalId, user);

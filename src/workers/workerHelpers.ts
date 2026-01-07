@@ -242,7 +242,7 @@ export function makeDiagnostic(
  */
 function isNumeric(name: string, str: string): ValidationReturn {
   // Both are needed: https://stackoverflow.com/a/175787
-  return isNaN(Number(str)) || isNaN(parseFloat(str)) ? CustomErrorCodes.InvalidNumber(name, str) : false;
+  return isNaN(Number(str)) || isNaN(Number.parseFloat(str)) ? CustomErrorCodes.InvalidNumber(name, str) : false;
 }
 
 /**

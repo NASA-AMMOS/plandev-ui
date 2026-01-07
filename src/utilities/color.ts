@@ -1,6 +1,6 @@
 const getChunksFromString = (st: string, chunkSize: number) => st.match(new RegExp(`.{${chunkSize}}`, 'g'));
 
-const convertHexUnitTo256 = (hexStr: string) => parseInt(hexStr.repeat(2 / hexStr.length), 16);
+const convertHexUnitTo256 = (hexStr: string) => Number.parseInt(hexStr.repeat(2 / hexStr.length), 16);
 
 const getAlphafloat = (a: number, alpha: number) => {
   if (typeof a !== 'undefined') {
@@ -44,9 +44,9 @@ export function hslToHex(h: number, s: number, l: number) {
 export function shadeColor(color: string, decimal: number): string {
   const base = color.startsWith('#') ? 1 : 0;
 
-  let r = parseInt(color.substring(base, 3), 16);
-  let g = parseInt(color.substring(base + 2, 5), 16);
-  let b = parseInt(color.substring(base + 4, 7), 16);
+  let r = Number.parseInt(color.substring(base, 3), 16);
+  let g = Number.parseInt(color.substring(base + 2, 5), 16);
+  let b = Number.parseInt(color.substring(base + 4, 7), 16);
 
   r = Math.round(r / decimal);
   g = Math.round(g / decimal);
@@ -80,9 +80,9 @@ export function generateRandomPastelColor(): string {
  */
 export function pickTextColorBasedOnBgColor(bgColor: string): 'dark' | 'light' {
   const color = bgColor.charAt(0) === '#' ? bgColor.substring(1, 7) : bgColor;
-  const r = parseInt(color.substring(0, 2), 16); // hexToR
-  const g = parseInt(color.substring(2, 4), 16); // hexToG
-  const b = parseInt(color.substring(4, 6), 16); // hexToB
+  const r = Number.parseInt(color.substring(0, 2), 16); // hexToR
+  const g = Number.parseInt(color.substring(2, 4), 16); // hexToG
+  const b = Number.parseInt(color.substring(4, 6), 16); // hexToB
   const uicolors = [r / 255, g / 255, b / 255];
   const c = uicolors.map(col => {
     if (col <= 0.03928) {

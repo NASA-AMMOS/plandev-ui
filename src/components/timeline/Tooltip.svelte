@@ -300,7 +300,7 @@
       .flat();
 
     flatPointsByLayer.forEach(({ point, layerId }, i) => {
-      const layerIdAsNumber = parseInt(layerId);
+      const layerIdAsNumber = Number.parseInt(layerId);
       if (point.type === 'line') {
         const text = textForLinePoint(point as LinePoint, layerIdAsNumber);
         tooltipText = `${tooltipText} ${text}`;

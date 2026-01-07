@@ -68,7 +68,7 @@ test.afterAll(async () => {
 test.describe.serial('Workspace', () => {
   test('Navigate to workspace should display workspace correctly', async () => {
     await expect(page.locator('.workspace-title')).toBeVisible();
-    await expect(page).toHaveURL(getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId)));
+    await expect(page).toHaveURL(getWorkspacesUrl(workspace.baseURL, Number.parseInt(workspace.workspaceId)));
     await workspace.pageLoadingLocatorWithData.waitFor({ state: 'detached' });
   });
 
@@ -104,7 +104,7 @@ test.describe.serial('Workspace', () => {
     await expect(page).toHaveURL(
       getWorkspacesUrl(
         workspace.baseURL,
-        parseInt(workspace.workspaceId),
+        Number.parseInt(workspace.workspaceId),
         `${sequence.sequencePath}/${sequence.sequenceName}`,
       ),
     );

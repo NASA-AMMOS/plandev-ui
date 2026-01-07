@@ -12,7 +12,7 @@ export const load: PageLoad = async ({ parent, params }) => {
   const { user } = await parent();
 
   const { id } = params;
-  const planId = parseFloat(id);
+  const planId = Number.parseFloat(id);
 
   if (!Number.isNaN(planId)) {
     const initialPlan = await effects.getPlan(planId, user);

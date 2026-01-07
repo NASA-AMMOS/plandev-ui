@@ -372,8 +372,8 @@
   onMount(() => {
     const queryModelId = $page.url.searchParams.get(SearchParameters.MODEL_ID);
     if (queryModelId) {
-      $modelIdField.value = parseFloat(queryModelId);
-      modelIdField.validateAndSet(parseFloat(queryModelId));
+      $modelIdField.value = Number.parseFloat(queryModelId);
+      modelIdField.validateAndSet(Number.parseFloat(queryModelId));
       removeQueryParam(SearchParameters.MODEL_ID);
       if (nameInputField) {
         // Access this element by ID since there is no focus mechanism for this input component

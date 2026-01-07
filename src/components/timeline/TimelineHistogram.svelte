@@ -130,7 +130,7 @@
 
   $: histogramHeight = (drawHeight / 5) * 2;
   $: selectorHandleHeight = drawHeight / 1.9;
-  $: numBins = Math.max(Math.min(numBinsMax, parseInt((drawWidth / 5).toString())), numBinsMin);
+  $: numBins = Math.max(Math.min(numBinsMax, Number.parseInt((drawWidth / 5).toString())), numBinsMin);
 
   $: if (mouseOver && mouseOver.e.offsetX >= 0 && mouseOver.e.offsetX <= drawWidth && xScaleView !== null) {
     const unixEpochTime = xScaleView.invert(mouseOver.e.offsetX).getTime();

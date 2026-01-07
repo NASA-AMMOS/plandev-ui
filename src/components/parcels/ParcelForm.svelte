@@ -96,7 +96,7 @@
    */
   function didParameterDictionariesChange(parameterDictionaryMap: Record<number, boolean>): boolean {
     for (const parameterDictionaryIdString of Object.keys(parameterDictionaryMap)) {
-      const parameterDictionaryId = parseInt(parameterDictionaryIdString);
+      const parameterDictionaryId = Number.parseInt(parameterDictionaryIdString);
 
       if (
         (selectedParmeterDictionaries[parameterDictionaryId] &&
@@ -134,7 +134,7 @@
     const parcelToParameterDictionaryIdsToDelete: number[] = [];
 
     Object.keys(selectedParmeterDictionaries).forEach(parameterDictionaryIdString => {
-      const parameterDictionaryId = parseInt(parameterDictionaryIdString);
+      const parameterDictionaryId = Number.parseInt(parameterDictionaryIdString);
       const isSelected = selectedParmeterDictionaries[parameterDictionaryId];
 
       if (!isSelected && savedParameterDictionaryIds[parameterDictionaryId]) {

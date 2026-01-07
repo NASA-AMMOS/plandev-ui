@@ -174,9 +174,9 @@ export function parseNumericArg(argText: string, dictArgType: 'float' | 'integer
   switch (dictArgType) {
     case 'float':
     case 'numeric':
-      return parseFloat(argText);
+      return Number.parseFloat(argText);
   }
-  return parseInt(argText);
+  return Number.parseInt(argText);
 }
 
 export function isHexValue(argText: string) {

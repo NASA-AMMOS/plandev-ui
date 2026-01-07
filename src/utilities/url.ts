@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 import type { SearchParameters } from '../enums/searchParameters';
-import { parseFloatOrNull } from './generic';
+import { Number.parseFloatOrNull } from './generic';
 
 export function getSearchParameterNumber(key: SearchParameters, searchParams?: URLSearchParams): number | null {
   let urlSearchParams: URLSearchParams | undefined = searchParams;
@@ -12,7 +12,7 @@ export function getSearchParameterNumber(key: SearchParameters, searchParams?: U
   if (urlSearchParams) {
     const numberSearchParam = urlSearchParams.get(key);
 
-    return parseFloatOrNull(numberSearchParam);
+    return Number.parseFloatOrNull(numberSearchParam);
   }
 
   return null;

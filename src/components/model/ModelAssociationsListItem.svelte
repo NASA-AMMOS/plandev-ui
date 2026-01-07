@@ -94,7 +94,7 @@
     revision: number | string | null,
   ): BaseDefinition | undefined {
     if (revision != null && revision !== '') {
-      const revisionNumber = parseInt(`${revision}`);
+      const revisionNumber = Number.parseInt(`${revision}`);
       return definitionVersions.find(v => v.revision === revisionNumber);
     } else {
       return definitionVersions[0];
@@ -149,7 +149,7 @@
 
   function onUpdateRevision(event: Event) {
     const { value } = getTarget(event);
-    const revision = value == null || value === '' ? null : parseInt(`${value}`);
+    const revision = value == null || value === '' ? null : Number.parseInt(`${value}`);
 
     const version = getSpecVersion(versions, revision as string | number | null);
     const schema = version?.parameter_schema;

@@ -295,7 +295,7 @@
 
     const querySimulationDatasetId = $page.url.searchParams.get(SearchParameters.SIMULATION_DATASET_ID);
     if (querySimulationDatasetId) {
-      $simulationDatasetId = parseInt(querySimulationDatasetId);
+      $simulationDatasetId = Number.parseInt(querySimulationDatasetId);
     } else if (data.initialPlanSnapshotId === null) {
       const latestSimulationDatasetId = data.initialPlan.simulations[0]?.simulation_datasets[0]?.id;
       $simulationDatasetId = latestSimulationDatasetId ?? -1;
