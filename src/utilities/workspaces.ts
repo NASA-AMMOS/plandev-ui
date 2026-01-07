@@ -677,6 +677,42 @@ export function removeRedundantNodes(nodes: WorkspaceTreeNodeWithFullPath[]): Wo
 }
 
 /**
+ * Computes the new file path after a move operation, accounting for when the file
+ * was moved as part of a parent folder rather than directly.
+ *
+ * @param originalFilePath - The original full path of the file being tracked
+ * @param movedNodes - The nodes that were actually moved (after removing redundant children)
+ * @param targetDirectoryPath - The target directory where nodes were moved to
+ * @returns The new full path where the file now resides
+ */
+export function computeMovedFilePath(
+  originalFilePath: string,
+  movedNodes: { fullPath: string }[],
+  targetDirectoryPath: string,
+): string {
+  // Find if the file was moved as part of a parent folder
+  const parentNode = movedNodes.find(
+    node => node.fullPath !== originalFilePath && originalFilePath.startsWith(node.fullPath + '/'),
+  );
+
+  if (parentNode) {
+    // File was inside a moved parent folder
+    // Get the relative path from the parent folder to the file
+    const relativePath = originalFilePath.slice(parentNode.fullPath.length + 1);
+    // Get the parent folder name
+    const { filename: parentFolderName } = separateFilenameFromPath(parentNode.fullPath);
+    // Construct: targetDir/parentFolder/relativePath
+    return targetDirectoryPath
+      ? `${targetDirectoryPath}/${parentFolderName}/${relativePath}`
+      : `${parentFolderName}/${relativePath}`;
+  }
+
+  // File was moved directly (not via parent)
+  const { filename } = separateFilenameFromPath(originalFilePath);
+  return targetDirectoryPath ? `${targetDirectoryPath}/${filename}` : (filename ?? '');
+}
+
+/**
  * Gets the common directory prefix from a list of paths.
  */
 export function getCommonPathPrefix(paths: string[]): string {

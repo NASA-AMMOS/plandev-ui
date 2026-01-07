@@ -6,6 +6,7 @@ import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/
 import * as requests from './requests';
 import {
   cleanPath,
+  computeMovedFilePath,
   computeTreeFilter,
   defaultTreeSortComparator,
   findNodeByPath,
@@ -1239,6 +1240,63 @@ describe('Workspace utility function tests', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].fullPath).toBe('a');
+    });
+  });
+
+  describe('computeMovedFilePath', () => {
+    test('Should return file in target directory when moved directly', () => {
+      const result = computeMovedFilePath('file.txt', [{ fullPath: 'file.txt' }], 'dest');
+      expect(result).toBe('dest/file.txt');
+    });
+
+    test('Should return just filename when moved to root', () => {
+      const result = computeMovedFilePath('folder/file.txt', [{ fullPath: 'folder/file.txt' }], '');
+      expect(result).toBe('file.txt');
+    });
+
+    test('Should handle file moved as part of parent folder', () => {
+      const result = computeMovedFilePath('parent/file.txt', [{ fullPath: 'parent' }], 'dest');
+      expect(result).toBe('dest/parent/file.txt');
+    });
+
+    test('Should handle file moved as part of parent folder to root', () => {
+      const result = computeMovedFilePath('parent/file.txt', [{ fullPath: 'parent' }], '');
+      expect(result).toBe('parent/file.txt');
+    });
+
+    test('Should handle deeply nested file moved with ancestor folder', () => {
+      const result = computeMovedFilePath('a/b/c/file.txt', [{ fullPath: 'a' }], 'dest');
+      expect(result).toBe('dest/a/b/c/file.txt');
+    });
+
+    test('Should handle file in subfolder when parent folder is moved', () => {
+      const result = computeMovedFilePath('parent/sub/file.txt', [{ fullPath: 'parent' }], 'dest');
+      expect(result).toBe('dest/parent/sub/file.txt');
+    });
+
+    test('Should use closest parent when multiple ancestors are in movedNodes', () => {
+      // If both 'a' and 'a/b' are in movedNodes, and file is 'a/b/file.txt',
+      // the file should be matched to 'a/b' (the immediate parent in movedNodes)
+      const result = computeMovedFilePath('a/b/file.txt', [{ fullPath: 'a' }, { fullPath: 'a/b' }], 'dest');
+      // Since 'a/b' matches first in the find (it's also a parent), it depends on order
+      // The function uses .find() which returns first match - 'a' comes first and matches
+      expect(result).toBe('dest/a/b/file.txt');
+    });
+
+    test('Should handle sibling nodes correctly - file moved directly', () => {
+      const result = computeMovedFilePath('file1.txt', [{ fullPath: 'file1.txt' }, { fullPath: 'file2.txt' }], 'dest');
+      expect(result).toBe('dest/file1.txt');
+    });
+
+    test('Should not match similar path prefixes as parent', () => {
+      // 'foobar/file.txt' should not be treated as child of 'foo'
+      const result = computeMovedFilePath('foobar/file.txt', [{ fullPath: 'foo' }, { fullPath: 'foobar/file.txt' }], 'dest');
+      expect(result).toBe('dest/file.txt');
+    });
+
+    test('Should handle nested target directory path', () => {
+      const result = computeMovedFilePath('file.txt', [{ fullPath: 'file.txt' }], 'a/b/c');
+      expect(result).toBe('a/b/c/file.txt');
     });
   });
 

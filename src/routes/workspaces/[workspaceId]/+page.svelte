@@ -74,10 +74,12 @@
   import { pluralize } from '../../../utilities/text';
   import { showFailureToast } from '../../../utilities/toast';
   import {
+    computeMovedFilePath,
     downloadWorkspaceNodesAsZip,
     flattenWorkspaceTreeWithPaths,
     getAvailableActionsForNodes,
     mapWorkspaceTreePaths,
+    removeRedundantNodes,
     separateFilenameFromPath,
   } from '../../../utilities/workspaces';
   import type { PageData } from './$types';
@@ -583,13 +585,14 @@
         }
       }
 
-      const targetDirectoryPath = await effects.moveWorkspaceItems($workspace, workspaceTree, treeNodes, user);
+      // Remove redundant nodes that would already be moved by a selected parent node
+      const minimalNodes = removeRedundantNodes(treeNodes);
+
+      const targetDirectoryPath = await effects.moveWorkspaceItems($workspace, workspaceTree, minimalNodes, user);
       await refreshWorkspaceContents();
 
       if (movedActiveNode && typeof targetDirectoryPath === 'string') {
-        // Construct the new full file path: targetDirectory + originalFilename
-        const { filename } = separateFilenameFromPath(movedActiveNode.fullPath);
-        const newFilePath = targetDirectoryPath ? `${targetDirectoryPath}/${filename}` : (filename ?? '');
+        const newFilePath = computeMovedFilePath(movedActiveNode.fullPath, minimalNodes, targetDirectoryPath);
         // Wait for tree to render before updating selection (ensures parent folders can expand)
         await tick();
         updateActiveFilePath(newFilePath);
