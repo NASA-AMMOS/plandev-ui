@@ -90,6 +90,10 @@
   // insert sequence - use sequenceFilePath as dependency to ensure editor updates when switching files
   // This handles the case where both old and new files have the same content (e.g., both empty)
   $: {
+    // note: this statement always runs when sequenceFilePath changes, regardless of value
+    // as opposed to the more common $: if (typeof sequenceFilePath === 'string') which will only
+    // trigger reactivity if sequenceFilePath is a string and not if it is null / undefined.
+    // In this case, we want to trigger reactivity on all possible values.
     void sequenceFilePath;
     editorSequenceView?.dispatch({
       changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
