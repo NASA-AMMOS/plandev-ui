@@ -9,6 +9,7 @@
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type { LibrarySequenceSignature, PhoenixContext, UserSequence } from '@nasa-jpl/aerie-sequence-languages';
   import { Button } from '@nasa-jpl/stellar-svelte';
+  import { capitalize } from 'lodash-es';
   import { Folder, LoaderCircle, TriangleAlert } from 'lucide-svelte';
   import { onDestroy, onMount, tick } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
@@ -444,14 +445,14 @@
     replaceState(getWorkspacesUrl(base, $workspaceId, newFilePath), {});
   }
 
-  async function saveBeforeOperation(operation: 'moving' | 'renaming'): Promise<boolean> {
-    const operationTitle = operation === 'moving' ? 'Moving' : 'Renaming';
+  async function saveBeforeOperation(operation: 'moving' | 'renaming' | 'downloading'): Promise<boolean> {
+    const operationVerb = operation === 'moving' ? 'Move' : operation === 'renaming' ? 'Rename' : 'Download';
     const { confirm } = await showConfirmModal(
-      `Save Before ${operationTitle}`,
+      `Save before ${capitalize(operation)}`,
       `The file you are ${operation} has unsaved changes. Would you like to save them before ${operation}?`,
-      `Save and ${operationTitle.slice(0, -3)}e`,
-      false,
-      `Cancel ${operationTitle.slice(0, -3)}e`,
+      `Save and ${operationVerb}`,
+      true,
+      `Cancel ${operationVerb}`,
     );
 
     if (!confirm) {
@@ -558,6 +559,16 @@
   }
 
   async function onDownloadNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
+    // Prompt user to save their active file if it is found within treeNodes
+    const containsActiveNode = treeNodes.find(node => node.fullPath === $activeDocumentPath);
+
+    // Prompt to save unsaved changes before moving
+    if (containsActiveNode && $activeDocumentIsDirty) {
+      if (!(await saveBeforeOperation('downloading'))) {
+        return;
+      }
+    }
+
     // Download if just a single file
     if (treeNodes.length === 1 && treeNodes[0].type !== WorkspaceContentType.Directory) {
       onDownloadFile(treeNodes[0].fullPath);
@@ -666,6 +677,15 @@
 
   async function onMoveNodesToWorkspace({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if (initialWorkspace) {
+      const movedActiveNode = treeNodes.find(node => node.fullPath === $activeDocumentPath);
+
+      // Prompt to save unsaved changes before moving
+      if (movedActiveNode && $activeDocumentIsDirty) {
+        if (!(await saveBeforeOperation('moving'))) {
+          return;
+        }
+      }
+
       await effects.moveWorkspaceItemsToWorkspace(initialWorkspace, treeNodes, user);
       refreshWorkspaceContents();
     }

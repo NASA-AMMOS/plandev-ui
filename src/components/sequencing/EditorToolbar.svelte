@@ -31,7 +31,7 @@
   // Download button
   export let showDownloadButton: boolean = false;
   export let downloadDisabled: boolean = false;
-  export let downloadTooltip: string = 'Download contents';
+  export let downloadTooltip: string = 'Download';
   export let onDownload: (() => void) | undefined = undefined;
 
   // Output formats dropdown
