@@ -210,18 +210,20 @@ test.describe.serial('Workspace', () => {
     const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
     const folderName = await workspace.createFolder(generateRandomName());
 
-    // Test file context menu - should have Download File
+    // Test file context menu - should have Download
     await workspace.searchForFileAndWait(sequenceName);
     await workspace.openFileContextMenu(sequenceName);
-    await expect(workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Download File' })).toBeVisible();
-    await expect(workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Copy Full Path' })).toBeVisible();
+    await expect(
+      workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Run Action on 1 File' }),
+    ).toBeVisible();
     await page.keyboard.press('Escape');
 
-    // Test folder context menu - should NOT have Download File
+    // Test folder context menu - should NOT have Download
     await workspace.searchForFileAndWait(folderName);
     await workspace.openFileContextMenu(folderName);
-    await expect(workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Download File' })).not.toBeVisible();
-    await expect(workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Copy Full Path' })).toBeVisible();
+    await expect(
+      workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Run Action on All Files within Selection' }),
+    ).toBeVisible();
     await page.keyboard.press('Escape');
 
     // Cleanup
@@ -455,8 +457,8 @@ test.describe.serial('Workspace', () => {
     expect(folder1).toBeTruthy();
     expect(folder2).toBeTruthy();
 
-    // Click on the workspace grid view
-    await workspace.page.getByLabel('Grid').click();
+    // Click on the workspace file view
+    await workspace.page.getByLabel('Files').click();
 
     // Select 2 files for moving
     await workspace.page.getByRole('gridcell', { name: sequence1.sequenceName }).click();
