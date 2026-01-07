@@ -26,9 +26,9 @@
   import type { Tag } from '../../types/tags';
   import { generateRandomPastelColor } from '../../utilities/color';
   import effects from '../../utilities/effects';
-  import { showConfirmModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import { showStellarConfirmModal } from '../../utilities/stellarModal';
   import { getShortISOForDate } from '../../utilities/time';
   import { hex, required } from '../../utilities/validators';
   import type { PageData } from './$types';
@@ -229,7 +229,7 @@
   }
 
   async function deleteTag(tag: Tag): Promise<void> {
-    const { confirm } = await showConfirmModal(
+    const { confirm } = await showStellarConfirmModal(
       'Delete',
       `Are you sure you want to delete "${tag.name}"? All occurrences of this tag will be removed from Plans, Activity Directives, Constraints, Scheduling Goals, and Expansion Rules.`,
       'Delete Tag',

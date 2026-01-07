@@ -21,7 +21,8 @@
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
-  import { showExpansionSequenceModal, showNewSequenceModal } from '../../utilities/modal';
+  import { showExpansionSequenceModal } from '../../utilities/modal';
+  import { showStellarNewSequenceModal } from '../../utilities/stellarModal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { tooltip } from '../../utilities/tooltip';
@@ -187,7 +188,7 @@
   }
 
   async function onShowSequenceCreate() {
-    const result = await showNewSequenceModal();
+    const result = await showStellarNewSequenceModal();
     if (result.confirm && result.value !== undefined && $simulationDatasetLatest !== null) {
       effects.createExpansionSequence(result.value.newSequenceName, $simulationDatasetLatest?.id, user);
     }

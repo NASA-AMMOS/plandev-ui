@@ -22,7 +22,7 @@
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
-  import { showActionCreationModal } from '../../../utilities/modal';
+  import { showStellarActionCreationModal } from '../../../utilities/stellarModal';
   import { getArguments, getFormParameters } from '../../../utilities/parameters';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { featurePermissions } from '../../../utilities/permissions';
@@ -145,7 +145,7 @@
       return;
     }
 
-    showActionCreationModal(user, workspaceId);
+    showStellarActionCreationModal(user, workspaceId);
   }
 
   function onActionRunClick(id: number) {

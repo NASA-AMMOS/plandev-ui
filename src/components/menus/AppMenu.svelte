@@ -29,8 +29,8 @@
   import type { User, Version } from '../../types/app';
   import effects from '../../utilities/effects';
   import { logout } from '../../utilities/login';
-  import { showAboutModal } from '../../utilities/modal';
   import { getWorkspacesUrl } from '../../utilities/routes';
+  import { showStellarAboutModal } from '../../utilities/stellarModal';
   import MenuItem from './MenuItem.svelte';
   import MenuLink from './MenuLink.svelte';
 
@@ -162,7 +162,7 @@
             on:click={e => {
               e.stopPropagation();
               isOpen = false;
-              showAboutModal();
+              showStellarAboutModal();
             }}
           >
             <Info size={16} />

@@ -58,10 +58,10 @@
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
   import { filterEmpty } from '../../../utilities/generic';
-  import { showConfirmModal } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
   import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
   import * as adaptationUtils from '../../../utilities/sequence-editor/adaptation-utils';
+  import { showStellarConfirmModal } from '../../../utilities/stellarModal';
   import { showFailureToast } from '../../../utilities/toast';
   import {
     flattenWorkspaceTreeWithPaths,
@@ -342,12 +342,11 @@
 
   async function goToSequence(filePath: string | null) {
     if (updatedSelectedFileContent !== initialSelectedFileContent && activeFilePath !== null) {
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Navigate Away',
         `There are unsaved changes. Are you sure you want navigate away from the current sequence?`,
         'Navigate to Sequence',
-        true,
-        'Keep Editing',
+        { actionCanBeUndone: true, cancelText: 'Keep Editing', confirmButtonVariant: 'default' },
       );
 
       if (!confirm) {

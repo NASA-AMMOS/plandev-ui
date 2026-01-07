@@ -258,35 +258,20 @@ import { ErrorTypes } from './errors';
 import { compare, convertToQuery } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
-  showBulkShiftActivitiesModal,
   showCancelActionRunModal,
-  showConfirmModal,
-  showCreatePlanBranchModal,
-  showCreatePlanSnapshotModal,
   showCreateViewModal,
   showDeleteActivitiesModal,
   showDeleteDerivationGroupModal,
   showDeleteExternalEventSourceTypeModal,
   showDeleteExternalSourceModal,
-  showEditViewModal,
   showImportWorkspaceFileModal,
-  showLibrarySequenceModel,
   showManagePlanConstraintsModal,
   showManagePlanDerivationGroups,
   showManagePlanSchedulingConditionsModal,
   showManagePlanSchedulingGoalsModal,
   showMoveItemToWorkspaceModal,
   showMoveWorkspaceItemModal,
-  showNewWorkspaceFolderModal,
-  showNewWorkspaceSequenceModal,
-  showPackActivitiesModal,
-  showPlanBranchRequestModal,
-  showRenameWorkspaceItemModal,
-  showRestorePlanSnapshotModal,
-  showRunActionModal,
   showRunActionResultsModal,
-  showTimeRangeModal,
-  showUpdatePlanMissionModelModal,
   showUploadViewModal,
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
@@ -294,6 +279,23 @@ import { CompoundError, reqActionServer, reqExtension, reqGateway, reqHasura } f
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
 import { compareEvents } from './simulation';
+import {
+  showStellarBulkShiftActivitiesModal,
+  showStellarConfirmModal,
+  showStellarCreatePlanBranchModal,
+  showStellarCreatePlanSnapshotModal,
+  showStellarEditViewModal,
+  showStellarLibrarySequenceModal,
+  showStellarNewWorkspaceFolderModal,
+  showStellarNewWorkspaceSequenceModal,
+  showStellarPackActivitiesModal,
+  showStellarPlanBranchRequestModal,
+  showStellarRenameWorkspaceItemModal,
+  showStellarRestorePlanSnapshotModal,
+  showStellarRunActionModal,
+  showStellarTimeRangeModal,
+  showStellarUpdatePlanMissionModelModal,
+} from './stellarModal';
 import { pluralize } from './text';
 import {
   convertDurationStringToUs,
@@ -332,7 +334,7 @@ const effects = {
     user: User | null,
   ): Promise<void> {
     try {
-      const { confirm: timeConfirmed, value } = await showTimeRangeModal(defaultStartTime, defaultEndtime);
+      const { confirm: timeConfirmed, value } = await showStellarTimeRangeModal(defaultStartTime, defaultEndtime);
 
       if (timeConfirmed && value !== undefined) {
         const { timeRangeEnd, timeRangeStart } = value;
@@ -390,7 +392,7 @@ const effects = {
       let confirm: boolean = true;
 
       if (numOfUserChanges > 0) {
-        ({ confirm } = await showConfirmModal(
+        ({ confirm } = await showStellarConfirmModal(
           'Apply Preset',
           `There ${
             numOfUserChanges > 1 ? 'are' : 'is'
@@ -438,7 +440,7 @@ const effects = {
 
       let confirm: boolean = true;
       if (numOfUserChanges > 0) {
-        ({ confirm } = await showConfirmModal(
+        ({ confirm } = await showStellarConfirmModal(
           'Apply Simulation Template',
           `There ${
             numOfUserChanges > 1 ? 'are' : 'is'
@@ -519,12 +521,11 @@ const effects = {
       if (!queryPermissions.CANCEL_SCHEDULING_REQUEST(user)) {
         throwPermissionError('cancel a scheduling request dataset');
       }
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Cancel Scheduling Request',
         `This will cancel the scheduling request with Analysis ID: ${analysisId}.`,
         'Cancel Scheduling Request',
-        true,
-        'Keep Scheduling',
+        { actionCanBeUndone: true, cancelText: 'Keep Scheduling' },
       );
 
       if (confirm) {
@@ -543,12 +544,11 @@ const effects = {
       if (!queryPermissions.CANCEL_SIMULATION(user)) {
         throwPermissionError('cancel a simulation');
       }
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Cancel Simulation',
         `This will cancel the simulation with ID: ${simulationDatasetId}. Once canceled, the simulation cannot be restarted.`,
         'Cancel Simulation',
-        true,
-        'Keep Simulating',
+        { actionCanBeUndone: true, cancelText: 'Keep Simulating' },
       );
 
       if (confirm) {
@@ -1543,7 +1543,7 @@ const effects = {
         throwPermissionError('create a branch');
       }
 
-      const { confirm, value = null } = await showCreatePlanBranchModal(plan);
+      const { confirm, value = null } = await showStellarCreatePlanBranchModal(plan);
 
       if (confirm && value) {
         const { name, plan: planToBranch } = value;
@@ -1570,7 +1570,7 @@ const effects = {
       if (!plan.model) {
         throw Error(`No model found for plan ${plan.id}, cannot create plan branch request`);
       }
-      const { confirm, value } = await showPlanBranchRequestModal(plan, action);
+      const { confirm, value } = await showStellarPlanBranchRequestModal(action, plan);
 
       if (confirm && value) {
         const { source_plan: sourcePlan, target_plan: targetPlan } = value;
@@ -1670,7 +1670,7 @@ const effects = {
         throwPermissionError('create a snapshot');
       }
 
-      const { confirm, value = null } = await showCreatePlanSnapshotModal(plan, user);
+      const { confirm, value = null } = await showStellarCreatePlanSnapshotModal(plan, user);
 
       if (confirm && value) {
         const { description, name, plan: planToSnapshot, tags } = value;
@@ -2590,7 +2590,7 @@ const effects = {
         throwPermissionError('delete an activity preset');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `This will permanently delete the preset for the mission model: ${modelName}`,
         'Delete Permanently',
@@ -2620,7 +2620,7 @@ const effects = {
         throwPermissionError('delete this channel dictionary');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete the dictionary with ID: "${id}"?`,
         'Delete Channel Dictionary',
@@ -2648,7 +2648,7 @@ const effects = {
         throwPermissionError('delete this command dictionary');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete the dictionary with ID: "${id}"?`,
         'Delete Command Dictionary',
@@ -2676,7 +2676,7 @@ const effects = {
         throwPermissionError('delete this constraint');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete "${constraint.name}"?`,
         'Delete Constraint',
@@ -2813,7 +2813,7 @@ const effects = {
         throwPermissionError('delete an expansion rule');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete "${rule.name}"?`,
         'Delete Expansion Rule',
@@ -2872,7 +2872,7 @@ const effects = {
         throwPermissionError('delete an expansion sequence');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete expansion sequence with sequence ID: "${sequence.seq_id}"?`,
         'Delete Expansion Sequence',
@@ -2936,7 +2936,7 @@ const effects = {
         throwPermissionError('delete an expansion set');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete "${set.name}"?`,
         'Delete Expansion Set',
@@ -3135,7 +3135,7 @@ const effects = {
         throwPermissionError('delete this model');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete "${model.name}" version ${model.version}?`,
         'Delete Model',
@@ -3165,7 +3165,7 @@ const effects = {
         throwPermissionError('delete this parameter dictionary');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete the dictionary with ID: "${id}"?`,
         'Delete Parameter Dictionary',
@@ -3193,7 +3193,7 @@ const effects = {
         throwPermissionError('delete this parcel');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete "${parcel.name}"?`,
         'Delete Parcel',
@@ -3270,7 +3270,7 @@ const effects = {
         throwPermissionError('delete this plan');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete "${plan.name}"?`,
         'Delete Plan',
@@ -3322,7 +3322,7 @@ const effects = {
         throwPermissionError('delete plan snapshot');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete the plan snapshot "${snapshot.snapshot_name}"?`,
         'Delete Plan Snapshot',
@@ -3374,7 +3374,7 @@ const effects = {
         throwPermissionError('delete this scheduling condition');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete "${condition.name}"?`,
         'Delete Scheduling Condition',
@@ -3409,7 +3409,7 @@ const effects = {
         throwPermissionError('delete this scheduling goal');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete "${goal.name}"?`,
         'Delete Scheduling Goal',
@@ -3474,7 +3474,7 @@ const effects = {
         throwPermissionError('delete this sequence adaptation');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete the sequence adaptation with ID: "${id}"?`,
         'Delete Sequence Adaptation',
@@ -3502,7 +3502,7 @@ const effects = {
         throwPermissionError('delete the sequence filters');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `This will permanently delete the sequence filters '${sequenceFilterIds}'`,
         'Delete Permanently',
@@ -3533,7 +3533,7 @@ const effects = {
         throwPermissionError('delete this sequence template');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `This will permanently delete the template ("${sequenceTemplate.name}") for the activity type: ${sequenceTemplate.activity_type}`,
         'Delete Permanently',
@@ -3571,7 +3571,7 @@ const effects = {
         throwPermissionError('delete this simulation template');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `This will permanently delete the template for the mission model: ${modelName}`,
         'Delete Permanently',
@@ -3617,11 +3617,11 @@ const effects = {
   },
 
   async deleteTimelineHorizontalGuides(timelineId?: number | null, rowId?: number | null) {
-    const { confirm } = await showConfirmModal(
+    const { confirm } = await showStellarConfirmModal(
       'Delete',
       `Are you sure you want to delete all horizontal guides for this row?`,
       'Delete Rows',
-      true,
+      { actionCanBeUndone: true },
     );
     if (confirm) {
       viewUpdateRow('horizontalGuides', [], timelineId, rowId);
@@ -3634,11 +3634,11 @@ const effects = {
     timelineId?: number | null,
     rowId?: number | null,
   ) {
-    const { confirm } = await showConfirmModal(
+    const { confirm } = await showStellarConfirmModal(
       'Delete',
       `Are you sure you want to delete all ${chartType} layers in this row?`,
       'Delete Rows',
-      true,
+      { actionCanBeUndone: true },
     );
     if (confirm) {
       const filteredLayers = layers.filter(l => {
@@ -3656,11 +3656,11 @@ const effects = {
   },
 
   async deleteTimelineRow(row: Row, rows: Row[], timelineId: number | null) {
-    const { confirm } = await showConfirmModal(
+    const { confirm } = await showStellarConfirmModal(
       'Delete',
       `Are you sure you want to delete timeline row: ${row.name}?`,
       'Delete Row',
-      true,
+      { actionCanBeUndone: true },
     );
     if (confirm) {
       const filteredRows = rows.filter(r => r.id !== row.id);
@@ -3669,11 +3669,11 @@ const effects = {
   },
 
   async deleteTimelineRows(timelineId: number | null) {
-    const { confirm } = await showConfirmModal(
+    const { confirm } = await showStellarConfirmModal(
       'Delete',
       `Are you sure you want to delete all timeline rows?`,
       'Delete Rows',
-      true,
+      { actionCanBeUndone: true },
     );
     if (confirm) {
       viewUpdateTimeline('rows', [], timelineId);
@@ -3681,11 +3681,11 @@ const effects = {
   },
 
   async deleteTimelineVerticalGuides(timelineId: number | null) {
-    const { confirm } = await showConfirmModal(
+    const { confirm } = await showStellarConfirmModal(
       'Delete',
       `Are you sure you want to delete all vertical guides?`,
       'Delete Rows',
-      true,
+      { actionCanBeUndone: true },
     );
     if (confirm) {
       viewUpdateTimeline('verticalGuides', [], timelineId);
@@ -3693,11 +3693,11 @@ const effects = {
   },
 
   async deleteTimelineYAxes(timelineId?: number | null, rowId?: number | null) {
-    const { confirm } = await showConfirmModal(
+    const { confirm } = await showStellarConfirmModal(
       'Delete',
       `Are you sure you want to delete all y axes for this row?`,
       'Delete Rows',
-      true,
+      { actionCanBeUndone: true },
     );
     if (confirm) {
       viewUpdateRow('yAxes', [], timelineId, rowId);
@@ -3710,7 +3710,7 @@ const effects = {
         throwPermissionError('delete this view');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete "${view.name}"?`,
         'Delete View',
@@ -3743,7 +3743,7 @@ const effects = {
         throwPermissionError('delete one or all of these views');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         'Are you sure you want to delete the selected views?',
         'Delete Views',
@@ -3784,10 +3784,11 @@ const effects = {
         throwPermissionError('delete this workspace');
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `Are you sure you want to delete "${workspace.name}"?`,
         'Delete Workspace',
+        { confirmButtonVariant: 'destructive' },
       );
 
       if (confirm) {
@@ -3841,7 +3842,7 @@ const effects = {
         throwPermissionError(`delete this workspace ${typeString.toLowerCase()}`);
       }
 
-      const { confirm } = await showConfirmModal(
+      const { confirm } = await showStellarConfirmModal(
         'Delete',
         `This will permanently delete the ${typeString.toLowerCase()} from the workspace: ${workspace.name}`,
         'Delete Permanently',
@@ -3882,7 +3883,7 @@ const effects = {
         throwPermissionError('edit this view');
       }
 
-      const { confirm, value = null } = await showEditViewModal();
+      const { confirm, value = null } = await showStellarEditViewModal(view.id, view.name);
       if (confirm && value) {
         const { id, name } = value;
         const viewUpdateInput: ViewUpdateInput = { definition: view.definition, name };
@@ -5531,14 +5532,14 @@ const effects = {
       showFailureToast("Library Import: Workspace doesn't exist");
       return undefined;
     }
-    const { confirm, value } = await showLibrarySequenceModel();
+    const { confirm, value } = await showStellarLibrarySequenceModal();
 
     if (!confirm || !value) {
       return undefined;
     }
 
     try {
-      const contents = await value.libraryFile.text();
+      const contents = await value.library[0].text();
       return { fileContents: contents, parcel: value.parcel };
     } catch (e) {
       showFailureToast('Library Import: Unable to open file');
@@ -6078,8 +6079,8 @@ const effects = {
     startingPath: string,
     user: User | null,
   ): Promise<string | null> {
-    const { confirm, value } = await showNewWorkspaceFolderModal(workspace, workspaceContents, startingPath, user);
-    if (confirm) {
+    const { confirm, value } = await showStellarNewWorkspaceFolderModal(workspace, workspaceContents, startingPath, user);
+    if (confirm && value) {
       const { folderPath } = value;
       try {
         await WorkspaceApi.createFolder(workspace.id, folderPath, user);
@@ -6103,8 +6104,8 @@ const effects = {
     sequenceDefinition: string,
     user: User | null,
   ): Promise<string | null> {
-    const { confirm, value } = await showNewWorkspaceSequenceModal(workspace, workspaceContents, startingPath, user);
-    if (confirm) {
+    const { confirm, value } = await showStellarNewWorkspaceSequenceModal(workspace, workspaceContents, startingPath, user);
+    if (confirm && value) {
       const { filePath } = value;
       try {
         await WorkspaceApi.saveFile(workspace.id, filePath, sequenceDefinition, false, user);
@@ -6187,7 +6188,7 @@ const effects = {
         throwPermissionError('update activity directives');
       }
 
-      const { confirm, value } = await showPackActivitiesModal();
+      const { confirm, value } = await showStellarPackActivitiesModal();
       if (!confirm || !value) {
         return false;
       }
@@ -6460,9 +6461,9 @@ const effects = {
       if (!featurePermissions.workspace.canUpdate(user, workspace, originalNode)) {
         throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);
       }
-      const { confirm, value } = await showRenameWorkspaceItemModal(originalNode, originalPath);
+      const { confirm, value } = await showStellarRenameWorkspaceItemModal(originalNode, originalPath);
 
-      if (confirm) {
+      if (confirm && value) {
         const { targetPath } = value;
         const cleanedTargetPath = cleanPath(targetPath);
         await WorkspaceApi.moveFile(workspace.id, originalPath, `./${cleanedTargetPath}`, false, user);
@@ -6516,9 +6517,9 @@ const effects = {
         throwPermissionError('restore plan snapshot');
       }
 
-      const { confirm, value } = await showRestorePlanSnapshotModal(
-        snapshot,
+      const { confirm, value } = await showStellarRestorePlanSnapshotModal(
         (get(activityDirectivesDBStore) || []).length,
+        snapshot,
         user,
       );
 
@@ -6604,7 +6605,7 @@ const effects = {
     parameters?: ArgumentsMap,
   ): Promise<number | null> {
     try {
-      const { confirm, value } = await showRunActionModal(
+      const { confirm, value } = await showStellarRunActionModal(
         actionDefinition,
         user,
         workspace,
@@ -6777,7 +6778,7 @@ const effects = {
         throwPermissionError('update activity directives');
       }
 
-      const { confirm, value } = await showBulkShiftActivitiesModal();
+      const { confirm, value } = await showStellarBulkShiftActivitiesModal();
       if (!confirm || !value) {
         return false;
       }
@@ -7331,8 +7332,8 @@ const effects = {
         throwPermissionError('create a snapshot');
       }
 
-      const { confirm, value } = await showUpdatePlanMissionModelModal(plan, user);
-      if (confirm) {
+      const { confirm, value } = await showStellarUpdatePlanMissionModelModal(plan, user);
+      if (confirm && value) {
         const data = await reqHasura(gql.MIGRATE_PLAN_TO_MODEL, { new_model_id: value.id, plan_id: plan.id }, user);
         if (data.migrate_plan_to_model?.result === 'success') {
           showSuccessToast('Model Migration Success');
