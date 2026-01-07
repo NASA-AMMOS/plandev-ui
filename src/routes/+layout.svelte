@@ -15,24 +15,28 @@
   import { restartSubscriptions, subscriptionsLoading } from '../stores/subscriptionsManager';
   import type { UserStore } from '../types/app';
   import { loadPluginCode } from '../utilities/plugins';
-  import type { PageData } from './$types';
+  import type { LayoutData } from './$types';
 
-  export let data: PageData;
+  export let data: LayoutData;
 
   const user: UserStore = writable(null);
 
   let pluginsEnabled = env.PUBLIC_TIME_PLUGIN_ENABLED === 'true';
+  let previousRole: string | null = null;
 
   $pluginsLoaded = pluginsEnabled ? false : true;
 
   $: {
-    // TODO resolve typing issue
     user.set(data.user || null);
   }
 
-  $: if ($user) {
-    // Restart subscriptions when user changes
-    restartSubscriptions();
+  // Only restart subscriptions when role actually changes, not on every navigation
+  $: {
+    const newRole = $user?.activeRole ?? null;
+    if (newRole !== previousRole && previousRole !== null) {
+      restartSubscriptions();
+    }
+    previousRole = newRole;
   }
 
   onMount(() => {

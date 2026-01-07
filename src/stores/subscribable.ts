@@ -35,7 +35,11 @@ export function gqlSubscribable<T>(
 
   let restartRequested = false;
   let restart: () => void = () => (restartRequested = true);
-  const id = uniqueId();
+
+  // Extract query name for descriptive subscription IDs (helps with debugging)
+  const queryMatch = query.match(/subscription\s+(\w+)/i);
+  const queryName = queryMatch?.[1] ?? 'unknown';
+  const id = `${queryName}-${uniqueId()}`;
 
   /**
    * Creates a subscription to the query within the web socket
@@ -149,7 +153,8 @@ export function gqlSubscribable<T>(
 
   function restartSocket() {
     loading = true;
-    updateSubscription(id, { loading });
+    error = ''; // Clear previous error on restart
+    updateSubscription(id, { error, loading });
     restart();
   }
 
@@ -192,12 +197,12 @@ export function gqlSubscribable<T>(
     // If we are in the browser and do not yet have a web socket client
     // we will create one and subscribe to variables
     if (browser && !client) {
-      const token = user?.token ?? getTokenFromUserCookie();
       const clientOptions: ClientOptions = {
+        // connectionParams is a function so it gets fresh token/role on each reconnect
         connectionParams: () => {
           return {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${user?.token ?? getTokenFromUserCookie()}`,
               'x-hasura-role': getRoleFromCookie(),
             },
           };
@@ -217,7 +222,7 @@ export function gqlSubscribable<T>(
             restart = () => {
               const ws = socket as WebSocket;
               if (ws.readyState === WebSocket.OPEN) {
-                // if the socket is still open for the restart, do the restart
+                // Custom close code (4205) for role-change restart - triggers reconnection
                 ws.close(4205, 'Client Restart');
               } else {
                 // otherwise the socket might've closed, indicate that you want
