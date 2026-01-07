@@ -20,7 +20,6 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
-  import { downloadBlob } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
@@ -48,6 +47,8 @@
   export let userSequenceEditorColumnsWithFormBuilder: string;
 
   const dispatch = createEventDispatcher<{
+    downloadInput: { filePath: string };
+    downloadOutput: { content: string; filePath: string; filename: string; outputLanguage: OutputLanguage };
     runAction: { action: ActionDefinition; parameter: string };
     save: string;
     sequence: { filePath: string; input: string; output?: string };
@@ -191,12 +192,20 @@
   }
 
   function downloadOutputFormat(outputLanguage: OutputLanguage): void {
-    const fileExtension = sequenceName.replace(sequenceAdaptation.input.fileExtension, outputLanguage.fileExtension);
-    downloadBlob(new Blob([editorOutputView.state.doc.toString()], { type: 'text/plain' }), fileExtension);
+    const content = editorOutputView.state.doc.toString();
+    // Remove any existing extension and add output extension
+    const outputExt = outputLanguage.fileExtension; // Keep the dot
+    const lastDotIndex = sequenceName.lastIndexOf('.');
+
+    // If there's a dot in the filename, remove everything after it; otherwise keep the whole name
+    const filenameWithoutExt = lastDotIndex > 0 ? sequenceName.slice(0, lastDotIndex) : sequenceName;
+    const filename = filenameWithoutExt + outputExt;
+
+    dispatch('downloadOutput', { content, filePath: sequenceFilePath, filename, outputLanguage });
   }
 
   function downloadInputFormat(): void {
-    downloadBlob(new Blob([editorSequenceView.state.doc.toString()], { type: 'text/plain' }), sequenceName); // TODO configure file extension to be customizable
+    dispatch('downloadInput', { filePath: sequenceFilePath });
   }
 
   async function copyOutputFormatToClipboard(): Promise<void> {

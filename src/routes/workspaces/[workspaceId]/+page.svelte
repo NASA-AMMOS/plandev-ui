@@ -7,7 +7,12 @@
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
-  import type { LibrarySequenceSignature, PhoenixContext, UserSequence } from '@nasa-jpl/aerie-sequence-languages';
+  import type {
+    LibrarySequenceSignature,
+    OutputLanguage,
+    PhoenixContext,
+    UserSequence,
+  } from '@nasa-jpl/aerie-sequence-languages';
   import { Button } from '@nasa-jpl/stellar-svelte';
   import { capitalize } from 'lodash-es';
   import { Folder, LoaderCircle, TriangleAlert } from 'lucide-svelte';
@@ -66,7 +71,7 @@
   import { openActionRun } from '../../../utilities/actions';
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
-  import { filterEmpty } from '../../../utilities/generic';
+  import { downloadBlob, filterEmpty } from '../../../utilities/generic';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { showConfirmModal } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
@@ -512,16 +517,14 @@
     if ($workspace && user) {
       const blob = await effects.getWorkspaceFileContentBlob($workspace, filePath, user);
       if (blob !== null) {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filePath.split('/').pop() || 'download';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        downloadBlob(blob, filePath.split('/').pop() || 'download');
       }
     }
+  }
+
+  function downloadFileContent(content: string, filename: string) {
+    const blob = new Blob([content], { type: 'text/plain' });
+    downloadBlob(blob, filename);
   }
 
   async function onImportFile(event: CustomEvent<string>) {
@@ -762,6 +765,36 @@
     window.open(`${base}/workspaces/${$workspaceId}?sequenceId=${encodeURIComponent(treeNodePath)}`, '_blank');
   }
 
+  async function onDownloadInput(event: CustomEvent<{ filePath: string }>) {
+    const { filePath } = event.detail;
+
+    // Check if downloading the active file with unsaved changes
+    if (filePath === $activeDocumentPath && $activeDocumentIsDirty) {
+      if (!(await saveBeforeOperation('downloading'))) {
+        return;
+      }
+    }
+
+    // Trigger the actual download
+    onDownloadFile(filePath);
+  }
+
+  async function onDownloadOutput(
+    event: CustomEvent<{ content: string; filePath: string; filename: string; outputLanguage: OutputLanguage }>,
+  ) {
+    const { content, filePath, filename } = event.detail;
+
+    // Check if downloading output for the active file with unsaved changes
+    if (filePath === $activeDocumentPath && $activeDocumentIsDirty) {
+      if (!(await saveBeforeOperation('downloading'))) {
+        return;
+      }
+    }
+
+    // Trigger the actual download with in-memory content
+    downloadFileContent(content, filename);
+  }
+
   function onGlobalKeydown(event: KeyboardEvent) {
     if (isSaveEvent(event)) {
       event.preventDefault();
@@ -862,6 +895,8 @@
             userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
             on:runAction={onRunActionOnActiveFile}
             on:save={onSaveWorkspaceFile}
+            on:downloadInput={onDownloadInput}
+            on:downloadOutput={onDownloadOutput}
             on:sequence={isSequenceFile ? onWorkspaceFileUpdated : undefined}
           />
         </div>
