@@ -12,7 +12,6 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
-  import { downloadBlob } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import EditorToolbar from '../sequencing/EditorToolbar.svelte';
@@ -30,6 +29,7 @@
   export let textFileName: string = '';
 
   const dispatch = createEventDispatcher<{
+    download: { filePath: string };
     runAction: { action: ActionDefinition; parameter: string };
     save: string;
     textContentUpdated: { filePath: string; input: string };
@@ -115,7 +115,7 @@
   }
 
   function downloadInputFormat(): void {
-    downloadBlob(new Blob([editorView.state.doc.toString()], { type: 'text/plain' }), `${textFileName}`);
+    dispatch('download', { filePath: textFilePath });
   }
 
   async function copyInputFormatToClipboard(): Promise<void> {

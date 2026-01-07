@@ -912,6 +912,7 @@
             textFileContent={!isSequenceFile ? $activeDocument.originalContent : ''}
             on:runAction={onRunActionOnActiveFile}
             on:save={onSaveWorkspaceFile}
+            on:download={onDownloadInput}
             on:textContentUpdated={!isSequenceFile ? onWorkspaceFileUpdated : undefined}
           />
         </div>
