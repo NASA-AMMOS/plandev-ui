@@ -206,7 +206,7 @@ function getRolePlanPermission(
   queries: string[],
   user: User | null,
   plan: PlanWithOwners,
-  model: ModelWithOwner,
+  model: ModelWithOwner | null,
   assetWithOwner?: AssetWithOwner,
 ): boolean {
   if (user && user.rolePermissions) {
@@ -247,7 +247,7 @@ function getRolePlanBranchPermission(
   user: User | null,
   sourcePlan: PlanWithOwners | undefined,
   targetPlan: PlanWithOwners | undefined,
-  model: Pick<Model, 'owner'>,
+  model: Pick<Model, 'owner'> | null,
 ): boolean {
   if (user && user.rolePermissions) {
     return queries.reduce((prevValue: boolean, queryName) => {
@@ -359,7 +359,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   APPLY_PRESET_TO_ACTIVITY: (
     user: User | null,
     plan: PlanWithOwners,
-    model: ModelWithOwner,
+    model: ModelWithOwner | null,
     preset: ActivityPreset,
   ): boolean => {
     const queries = [Queries.APPLY_PRESET_TO_ACTIVITY];
@@ -376,7 +376,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   CANCEL_SIMULATION: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.UPDATE_SIMULATION_DATASET], user);
   },
-  CHECK_CONSTRAINTS: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
+  CHECK_CONSTRAINTS: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
     const queries = [Queries.CONSTRAINT_VIOLATIONS];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
@@ -481,7 +481,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     user: User | null,
     sourcePlan: PlanWithOwners | undefined,
     targetPlan: PlanWithOwners,
-    model: ModelWithOwner,
+    model: ModelWithOwner | null,
   ): boolean => {
     const queries = [Queries.CREATE_MERGE_REQUEST];
     return (
@@ -489,7 +489,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
       (getPermission(queries, user) && getRolePlanBranchPermission(queries, user, sourcePlan, targetPlan, model))
     );
   },
-  CREATE_PLAN_SNAPSHOT: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
+  CREATE_PLAN_SNAPSHOT: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
     const queries = [Queries.CREATE_SNAPSHOT];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
@@ -562,7 +562,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   DELETE_ACTIVITY_DIRECTIVES_REANCHOR_PLAN_START: (
     user: User | null,
     plan: PlanWithOwners,
-    model: ModelWithOwner,
+    model: ModelWithOwner | null,
   ): boolean => {
     const queries = [Queries.DELETE_ACTIVITY_REANCHOR_PLAN_START_BULK];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
@@ -570,12 +570,16 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   DELETE_ACTIVITY_DIRECTIVES_REANCHOR_TO_ANCHOR: (
     user: User | null,
     plan: PlanWithOwners,
-    model: ModelWithOwner,
+    model: ModelWithOwner | null,
   ): boolean => {
     const queries = [Queries.DELETE_ACTIVITY_REANCHOR_TO_ANCHOR_BULK];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
-  DELETE_ACTIVITY_DIRECTIVES_SUBTREE: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
+  DELETE_ACTIVITY_DIRECTIVES_SUBTREE: (
+    user: User | null,
+    plan: PlanWithOwners,
+    model: ModelWithOwner | null,
+  ): boolean => {
     const queries = [Queries.DELETE_ACTIVITY_DELETE_SUBTREE_BULK];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
@@ -761,15 +765,15 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
         (isUserOwner(user, workspace) || isUserCollaborator(user, workspace)))
     );
   },
-  DUPLICATE_PLAN: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
+  DUPLICATE_PLAN: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
     const queries = [Queries.DUPLICATE_PLAN];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
-  EXPAND: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
+  EXPAND: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
     const queries = [Queries.EXPAND_ALL_ACTIVITIES];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
-  EXPAND_TEMPLATES: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
+  EXPAND_TEMPLATES: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
     const queries = [Queries.EXPAND_ALL_TEMPLATES];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
@@ -829,7 +833,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   INSERT_EXPANSION_SEQUENCE_TO_ACTIVITY: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_TO_SIMULATED_ACTIVITY], user);
   },
-  MIGRATE_PLAN_TO_MODEL: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
+  MIGRATE_PLAN_TO_MODEL: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
     const queries = [Queries.MIGRATE_PLAN_TO_MODEL];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
@@ -837,7 +841,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     user: User | null,
     sourcePlan: PlanWithOwners | undefined,
     targetPlan: PlanWithOwners | undefined,
-    model: ModelWithOwner,
+    model: ModelWithOwner | null,
   ): boolean => {
     const queries = [Queries.BEGIN_MERGE];
     return (
@@ -849,7 +853,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     user: User | null,
     sourcePlan: PlanWithOwners | undefined,
     targetPlan: PlanWithOwners | undefined,
-    model: ModelWithOwner,
+    model: ModelWithOwner | null,
   ): boolean => {
     const queries = [Queries.CANCEL_MERGE];
     return (
@@ -861,7 +865,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     user: User | null,
     sourcePlan: PlanWithOwners | undefined,
     targetPlan: PlanWithOwners | undefined,
-    model: ModelWithOwner,
+    model: ModelWithOwner | null,
   ): boolean => {
     const queries = [Queries.COMMIT_MERGE];
     return (
@@ -873,7 +877,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     user: User | null,
     sourcePlan: PlanWithOwners | undefined,
     targetPlan: PlanWithOwners | undefined,
-    model: ModelWithOwner,
+    model: ModelWithOwner | null,
   ): boolean => {
     const queries = [Queries.DENY_MERGE];
     return (
@@ -885,7 +889,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     user: User | null,
     sourcePlan: PlanWithOwners | undefined,
     targetPlan: PlanWithOwners | undefined,
-    model: ModelWithOwner,
+    model: ModelWithOwner | null,
   ): boolean => {
     const queries = [Queries.WITHDRAW_MERGE_REQUEST];
     return (
@@ -897,7 +901,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     user: User | null,
     sourcePlan: PlanWithOwners,
     targetPlan: PlanWithOwners,
-    model: ModelWithOwner,
+    model: ModelWithOwner | null,
   ): boolean => {
     const queries = [Queries.SET_RESOLUTIONS];
     return (
@@ -909,7 +913,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     user: User | null,
     sourcePlan: PlanWithOwners,
     targetPlan: PlanWithOwners,
-    model: ModelWithOwner,
+    model: ModelWithOwner | null,
   ): boolean => {
     const queries = [Queries.SET_RESOLUTION];
     return (
@@ -924,15 +928,15 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
-  RESTORE_PLAN_SNAPSHOT: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
+  RESTORE_PLAN_SNAPSHOT: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
     const queries = [Queries.RESTORE_FROM_SNAPSHOT];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
-  SCHEDULE: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
+  SCHEDULE: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
     const queries = [Queries.SCHEDULE];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
-  SIMULATE: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
+  SIMULATE: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
     const queries = [Queries.SIMULATE];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
@@ -1399,13 +1403,13 @@ type PlanAssetUpdatePermissionCheck<T = AssetWithOwner> = (
   asset?: T,
 ) => boolean;
 
-type RolePlanPermissionCheck = (user: User | null, plan: PlanWithOwners, model: ModelWithOwner) => boolean;
-type RoleModelPermissionCheck = (user: User | null, plans: PlanWithOwners[], model: ModelWithOwner) => boolean;
+type RolePlanPermissionCheck = (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null) => boolean;
+type RoleModelPermissionCheck = (user: User | null, plans: PlanWithOwners[], model: ModelWithOwner | null) => boolean;
 
 type RolePlanPermissionCheckWithAsset<T = AssetWithOwner> = (
   user: User | null,
   plan: PlanWithOwners,
-  model: ModelWithOwner,
+  model: ModelWithOwner | null,
   asset: T,
 ) => boolean;
 
@@ -1413,7 +1417,7 @@ type RolePlanBranchPermissionCheck = (
   user: User | null,
   sourcePlan: PlanWithOwners | undefined,
   targetPlan: PlanWithOwners | undefined,
-  model: ModelWithOwner,
+  model: ModelWithOwner | null,
 ) => boolean;
 
 interface BaseCRUDPermission<T = null> {
@@ -1480,7 +1484,7 @@ interface RunnableCRUDPermission<T = null> extends PlanAssetCRUDPermission<T> {
   canRun: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner) => boolean;
 }
 interface RunnableSpecificationCRUDPermission<T = null> extends PlanSpecificationCRUDPermission<T> {
-  canRun: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner) => boolean;
+  canRun: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null) => boolean;
 }
 
 interface PlanSnapshotCRUDPermission extends Omit<PlanAssetCRUDPermission<PlanSnapshot>, 'canCreate' | 'canDelete'> {
@@ -1503,7 +1507,7 @@ interface ExpansionSequenceCRUDPermission<T = null> extends CRUDPermission<T> {
 }
 
 interface SchedulingCRUDPermission<T = null> extends RunnableSpecificationCRUDPermission<T> {
-  canAnalyze: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner) => boolean;
+  canAnalyze: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null) => boolean;
 }
 
 interface SequenceTemplateCRUDPermission<T = null> extends CRUDPermission<T> {

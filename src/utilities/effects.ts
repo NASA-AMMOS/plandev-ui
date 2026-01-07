@@ -1744,6 +1744,9 @@ const effects = {
 
   async createPlanBranchRequest(plan: Plan, action: PlanBranchRequestAction, user: User | null): Promise<void> {
     try {
+      if (!plan.model) {
+        throw Error(`No model found for plan ${plan.id}, cannot create plan branch request`);
+      }
       const { confirm, value } = await showPlanBranchRequestModal(plan, action);
 
       if (confirm && value) {
@@ -1767,6 +1770,7 @@ const effects = {
       }
     } catch (e) {
       catchError('Create plan branch request failed', e as Error);
+      showFailureToast('Plan Branch Create Failed');
     }
   },
 
@@ -4152,6 +4156,10 @@ const effects = {
 
   async expandTemplates(seqIds: string[], simulationDatasetId: number, plan: Plan, user: User | null): Promise<void> {
     try {
+      if (!plan.model) {
+        throw Error(`No model found for plan ${plan.id}, cannot expand templates`);
+      }
+
       sequenceTemplateExpansionStatus.set(Status.Incomplete);
       if (!queryPermissions.EXPAND_TEMPLATES(user, plan, plan.model)) {
         throwPermissionError('expand a sequence template');

@@ -195,7 +195,7 @@
   function viewCondition({ id }: Pick<SchedulingConditionMetadata, 'id'>) {
     const condition = $schedulingConditions.find(c => c.id === id);
     window.open(
-      `${base}/scheduling/conditions/edit/${condition?.id}?${SearchParameters.REVISION}=${condition?.versions[0].revision}&${SearchParameters.MODEL_ID}=${$plan?.model.id}`,
+      `${base}/scheduling/conditions/edit/${condition?.id}?${SearchParameters.REVISION}=${condition?.versions[0].revision}&${SearchParameters.MODEL_ID}=${$plan?.model?.id}`,
     );
   }
 

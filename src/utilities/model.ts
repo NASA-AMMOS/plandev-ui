@@ -3,7 +3,7 @@ import type { ModelLog, ModelSlim, ModelStatus, ModelStatusRollup } from '../typ
 export function getModelStatusRollup(
   model?: Partial<
     Pick<ModelSlim, 'refresh_activity_type_logs' | 'refresh_model_parameter_logs' | 'refresh_resource_type_logs'>
-  >,
+  > | null,
 ): ModelStatusRollup {
   let activityLog: ModelLog | null = null;
   let activityLogStatus: ModelStatus = 'none';

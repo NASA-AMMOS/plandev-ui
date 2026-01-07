@@ -83,7 +83,7 @@
   let sourcePlan: PlanForMerging | undefined;
   let targetPlan: PlanForMerging;
 
-  $: if (initialPlan && initialMergeRequest && initialMergeRequest.plan_receiving_changes) {
+  $: if (initialPlan && initialMergeRequest && initialMergeRequest.plan_receiving_changes && initialPlan.model) {
     sourcePlan = initialMergeRequest.plan_snapshot_supplying_changes?.plan;
     targetPlan = initialMergeRequest.plan_receiving_changes;
 
@@ -642,7 +642,7 @@
                 activityMetadataDefinitions={$activityMetadataDefinitions}
                 activityTypes={$planModelActivityTypes}
                 highlightKeys={keysWithChanges}
-                modelId={initialPlan.model_id}
+                modelId={initialPlan.model_id ?? -1}
                 planId={initialPlan.id}
                 planStartTimeYmd={initialPlan.start_time}
                 {user}
@@ -710,7 +710,7 @@
                 activityTypes={$planModelActivityTypes}
                 editable={false}
                 highlightKeys={selectedConflictingActivity !== null ? keysWithChanges : []}
-                modelId={initialPlan.model_id}
+                modelId={initialPlan.model_id ?? -1}
                 planStartTimeYmd={initialPlan.start_time}
                 showActivityName
                 showHeader={false}

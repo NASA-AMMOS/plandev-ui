@@ -32,7 +32,7 @@ export async function getPlanForTransfer(
   }
 
   const activityTypes = unique(activitiesToQualify.map(a => a.type));
-  const defaultActivityArguments = await effects.getDefaultActivityArguments(plan?.model_id, activityTypes, user);
+  const defaultActivityArguments = await effects.getDefaultActivityArguments(plan?.model_id ?? -1, activityTypes, user);
   const argsMap: DefaultEffectiveArgumentsMap = {};
   const defaultActivityArgumentsMap = (defaultActivityArguments || []).reduce((map, { arguments: args, typeName }) => {
     map[typeName] = args;

@@ -181,7 +181,7 @@
   function viewConstraint({ id }: Pick<ConstraintMetadata, 'id'>) {
     const constraint = ($constraints || []).find(c => c.id === id);
     window.open(
-      `${base}/constraints/edit/${constraint?.id}?${SearchParameters.REVISION}=${constraint?.versions[0].revision}&${SearchParameters.MODEL_ID}=${$plan?.model.id}`,
+      `${base}/constraints/edit/${constraint?.id}?${SearchParameters.REVISION}=${constraint?.versions[0].revision}${typeof $plan?.model?.id === 'number' ? `&${SearchParameters.MODEL_ID}=${$plan.model.id}` : ''}`,
     );
   }
 
