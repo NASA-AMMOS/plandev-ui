@@ -13,8 +13,8 @@
   import type { User } from '../../types/app';
   import type { Plan } from '../../types/plan';
   import effects from '../../utilities/effects';
-  import { showPlanBranchesModal, showPlanMergeRequestsModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
+  import { showStellarPlanBranchesModal, showStellarPlanMergeRequestsModal } from '../../utilities/stellarModal';
   import { featurePermissions } from '../../utilities/permissions';
   import { exportPlan } from '../../utilities/plan';
   import Menu from '../menus/Menu.svelte';
@@ -74,11 +74,11 @@
   }
 
   function showPlanBranches() {
-    showPlanBranchesModal(plan);
+    showStellarPlanBranchesModal(plan);
   }
 
   function showPlanMergeRequests() {
-    showPlanMergeRequestsModal(user);
+    showStellarPlanMergeRequestsModal(user);
     planMenu.hide();
   }
 </script>

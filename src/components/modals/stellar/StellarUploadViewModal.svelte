@@ -1,0 +1,157 @@
+<svelte:options immutable={true} />
+
+<script lang="ts">
+  import CheckmarkIcon from '@nasa-jpl/stellar/icons/check.svg?component';
+  import { createEventDispatcher } from 'svelte';
+  import type { ViewDefinition } from '../../../types/view';
+  import effects from '../../../utilities/effects';
+  import { tooltip } from '../../../utilities/tooltip';
+  import Collapse from '../../Collapse.svelte';
+  import StellarDialog from './StellarDialog.svelte';
+
+  export let open: boolean = true;
+
+  const dispatch = createEventDispatcher<{
+    close: void;
+    resolve: {
+      confirm: boolean;
+      value?: {
+        definition: ViewDefinition;
+        name: string;
+      };
+    };
+  }>();
+
+  let fileInput: HTMLInputElement;
+  let errors: string[] = [];
+  let files: FileList;
+  let valid: boolean = false;
+  let viewDefinition: ViewDefinition | null;
+  let viewName: string;
+
+  $: valid = !errors.length && !!viewDefinition && !!viewName;
+
+  async function onChange() {
+    const { errors: validationErrors, definition: validViewDefinition } = await effects.loadViewFromFile(files);
+
+    errors = validationErrors ?? [];
+    viewDefinition = validViewDefinition;
+  }
+
+  function onClick() {
+    fileInput.value = '';
+    errors = [];
+  }
+
+  function onKeydown(event: KeyboardEvent) {
+    const { key } = event;
+    if (key === 'Enter' && valid) {
+      event.preventDefault();
+      upload();
+    }
+  }
+
+  function upload() {
+    if (!errors.length && viewDefinition) {
+      open = false;
+      dispatch('resolve', { confirm: true, value: { definition: viewDefinition, name: viewName } });
+    }
+  }
+
+  function handleCancel() {
+    open = false;
+  }
+</script>
+
+<svelte:window on:keydown={onKeydown} />
+
+<StellarDialog bind:open size="auto" className="w-[550px] h-[450px]" title="Upload View JSON" on:close>
+  <div class="overflow-auto p-0">
+    <fieldset>
+      <label for="name">View Name</label>
+      <input bind:value={viewName} autocomplete="off" class="st-input w-full" name="name" required />
+    </fieldset>
+    <fieldset>
+      <label for="file">View JSON File</label>
+      <input
+        bind:this={fileInput}
+        class="upload w-full"
+        class:error={!!errors.length}
+        name="file"
+        required
+        type="file"
+        accept="application/json"
+        bind:files
+        on:click={onClick}
+        on:change={onChange}
+        use:tooltip={{ content: errors.length ? 'Invalid view' : '', placement: 'bottom' }}
+      />
+      {#if errors.length}
+        <Collapse
+          title={`Validation Errors (${errors.length})`}
+          defaultExpanded={false}
+          className="upload-view-modal-collapse"
+          padContent={false}
+        >
+          {#each errors as error}
+            <div>
+              <pre>
+                {error}
+              </pre>
+            </div>
+          {/each}
+        </Collapse>
+      {/if}
+      {#if fileInput?.value && !errors.length}
+        <div class="st-typography-label valid-json">
+          <CheckmarkIcon />
+          View JSON valid
+        </div>
+      {/if}
+    </fieldset>
+  </div>
+  <svelte:fragment slot="footer">
+    <div class="flex w-full justify-end gap-2">
+      <button class="st-button secondary" on:click={handleCancel}>Cancel</button>
+      <button class="st-button" disabled={!valid} on:click={upload}>Upload View</button>
+    </div>
+  </svelte:fragment>
+</StellarDialog>
+
+<style>
+  .upload {
+    margin-bottom: 8px;
+  }
+
+  .error {
+    background-color: var(--st-input-error-background-color);
+    border: 1px solid var(--st-red);
+  }
+
+  :global(.upload-view-modal-collapse .collapse-header .title),
+  :global(.upload-view-modal-collapse .collapse-icon svg) {
+    color: var(--st-red);
+  }
+
+  :global(.upload-view-modal-collapse) {
+    padding-bottom: 16px;
+  }
+
+  pre {
+    background: var(--st-gray-10);
+    border: 1px solid var(--st-gray-20);
+    border-radius: 4px;
+    height: unset;
+    margin: 2px 16px;
+    padding: 8px;
+    white-space: unset;
+    word-break: break-word;
+    word-wrap: normal;
+  }
+
+  .valid-json {
+    color: #0eaf0a;
+    display: flex;
+    gap: 2px;
+  }
+</style>

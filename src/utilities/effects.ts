@@ -257,23 +257,7 @@ import {
 import { ErrorTypes } from './errors';
 import { compare, convertToQuery } from './generic';
 import gql, { convertToGQLArray } from './gql';
-import {
-  showCancelActionRunModal,
-  showCreateViewModal,
-  showDeleteActivitiesModal,
-  showDeleteDerivationGroupModal,
-  showDeleteExternalEventSourceTypeModal,
-  showDeleteExternalSourceModal,
-  showImportWorkspaceFileModal,
-  showManagePlanConstraintsModal,
-  showManagePlanDerivationGroups,
-  showManagePlanSchedulingConditionsModal,
-  showManagePlanSchedulingGoalsModal,
-  showMoveItemToWorkspaceModal,
-  showMoveWorkspaceItemModal,
-  showRunActionResultsModal,
-  showUploadViewModal,
-} from './modal';
+import { showCancelActionRunModal, showCreateViewModal } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
 import { CompoundError, reqActionServer, reqExtension, reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
@@ -284,8 +268,19 @@ import {
   showStellarConfirmModal,
   showStellarCreatePlanBranchModal,
   showStellarCreatePlanSnapshotModal,
+  showStellarDeleteActivitiesModal,
+  showStellarDeleteDerivationGroupModal,
+  showStellarDeleteExternalEventSourceTypeModal,
+  showStellarDeleteExternalSourceModal,
   showStellarEditViewModal,
+  showStellarImportWorkspaceFileModal,
   showStellarLibrarySequenceModal,
+  showStellarManagePlanConstraintsModal,
+  showStellarManagePlanDerivationGroupsModal,
+  showStellarManagePlanSchedulingConditionsModal,
+  showStellarManagePlanSchedulingGoalsModal,
+  showStellarMoveItemToWorkspaceModal,
+  showStellarMoveWorkspaceItemModal,
   showStellarNewWorkspaceFolderModal,
   showStellarNewWorkspaceSequenceModal,
   showStellarPackActivitiesModal,
@@ -293,8 +288,10 @@ import {
   showStellarRenameWorkspaceItemModal,
   showStellarRestorePlanSnapshotModal,
   showStellarRunActionModal,
+  showStellarRunActionResultsModal,
   showStellarTimeRangeModal,
   showStellarUpdatePlanMissionModelModal,
+  showStellarUploadViewModal,
 } from './stellarModal';
 import { pluralize } from './text';
 import {
@@ -697,7 +694,7 @@ const effects = {
 
   async confirmOpenActionRunResults(actionRunId: number): Promise<boolean | null> {
     try {
-      const { confirm } = await showRunActionResultsModal(actionRunId);
+      const { confirm } = await showStellarRunActionResultsModal(actionRunId);
       return confirm;
     } catch (e) {
       return null;
@@ -2401,7 +2398,7 @@ const effects = {
         [key in ActivityDeletionAction]?: ActivityDirectiveId[];
       };
 
-      const { confirm, value } = await showDeleteActivitiesModal(ids);
+      const { confirm, value } = await showStellarDeleteActivitiesModal(ids);
 
       if (confirm && value !== undefined) {
         const sortedActions = Object.keys(value)
@@ -2740,7 +2737,7 @@ const effects = {
 
         // Show confirmation modal prior to running deletion
         // TODO: Account for non-empty Derivation Groups which cannot be deleted
-        const { confirm } = await showDeleteDerivationGroupModal(derivationGroups);
+        const { confirm } = await showStellarDeleteDerivationGroupModal(derivationGroups);
         if (confirm) {
           const data = await reqHasura<{ name: string }>(
             gql.DELETE_DERIVATION_GROUPS,
@@ -2973,10 +2970,10 @@ const effects = {
 
       if (externalEventTypes !== null) {
         const associatedItems = externalEventTypesInUse.map(externalEventType => externalEventType.name);
-        const { confirm } = await showDeleteExternalEventSourceTypeModal(
+        const { confirm } = await showStellarDeleteExternalEventSourceTypeModal(
+          new Set(associatedItems),
           externalEventTypes,
           'External Event Type(s)',
-          new Set(associatedItems),
         );
 
         if (confirm) {
@@ -3035,7 +3032,7 @@ const effects = {
         }
 
         // Show confirmation modal prior to running deletion
-        const { confirm } = await showDeleteExternalSourceModal(currentlyLinked, externalSources, unassociatedSources);
+        const { confirm } = await showStellarDeleteExternalSourceModal(currentlyLinked, externalSources, unassociatedSources);
         if (confirm) {
           // cannot easily do composite keys in GraphQL, so we group by derivation group and send a query per group of keys
           const derivationGroups: { [derivationGroupName: string]: string[] } = {};
@@ -3090,10 +3087,10 @@ const effects = {
           return externalSourceTypes.includes(externalSource.source_type_name);
         });
 
-        const { confirm } = await showDeleteExternalEventSourceTypeModal(
+        const { confirm } = await showStellarDeleteExternalEventSourceTypeModal(
+          new Set(associatedItems.map(externalSource => externalSource.source_type_name)),
           externalSourceTypes,
           'External Source Type(s)',
-          new Set(associatedItems.map(externalSource => externalSource.source_type_name)),
         );
 
         if (confirm) {
@@ -5654,7 +5651,7 @@ const effects = {
       if (!featurePermissions.workspace.canUpdate(user, workspace)) {
         throwPermissionError(`upload to this workspace`);
       }
-      const { confirm, value } = await showImportWorkspaceFileModal(
+      const { confirm, value } = await showStellarImportWorkspaceFileModal(
         workspace,
         workspaceContents,
         sequenceAdaptation.input.name,
@@ -5949,7 +5946,7 @@ const effects = {
 
   async managePlanConstraints(user: User | null): Promise<void> {
     try {
-      await showManagePlanConstraintsModal(user);
+      await showStellarManagePlanConstraintsModal(user);
     } catch (e) {
       catchError('Constraint Unable To Be Applied To Plan', e as Error);
       showFailureToast('Constraint Application Failed');
@@ -5958,7 +5955,7 @@ const effects = {
 
   async managePlanDerivationGroups(user: User | null): Promise<void> {
     try {
-      await showManagePlanDerivationGroups(user);
+      await showStellarManagePlanDerivationGroupsModal(user);
     } catch (e) {
       catchError('Derivation Group Unable To Be Modified In Plan', e as Error);
       showFailureToast('Derivation Group Modification Failed');
@@ -5967,7 +5964,7 @@ const effects = {
 
   async managePlanSchedulingConditions(user: User | null): Promise<void> {
     try {
-      await showManagePlanSchedulingConditionsModal(user);
+      await showStellarManagePlanSchedulingConditionsModal(user);
     } catch (e) {
       catchError('Scheduling Condition Unable To Be Applied To Plan', e as Error);
       showFailureToast('Scheduling Condition Application Failed');
@@ -5976,7 +5973,7 @@ const effects = {
 
   async managePlanSchedulingGoals(user: User | null): Promise<void> {
     try {
-      await showManagePlanSchedulingGoalsModal(user);
+      await showStellarManagePlanSchedulingGoalsModal(user);
     } catch (e) {
       catchError('Scheduling Goal Unable To Be Applied To Plan', e as Error);
       showFailureToast('Scheduling Goal Application Failed');
@@ -5996,7 +5993,7 @@ const effects = {
         throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);
       }
 
-      const { confirm, value } = await showMoveWorkspaceItemModal(
+      const { confirm, value } = await showStellarMoveWorkspaceItemModal(
         workspace,
         workspaceContents,
         originalNode,
@@ -6004,7 +6001,7 @@ const effects = {
         workspace,
         user,
       );
-      if (confirm) {
+      if (confirm && value) {
         const { shouldCopy, targetPath } = value;
         const cleanedTargetPath = cleanPath(targetPath);
         try {
@@ -6037,9 +6034,9 @@ const effects = {
     user: User | null,
   ): Promise<string | null> {
     const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
-    const { confirm, value } = await showMoveItemToWorkspaceModal(workspace, originalNode, originalPath, user);
+    const { confirm, value } = await showStellarMoveItemToWorkspaceModal(workspace, originalNode, originalPath, user);
 
-    if (confirm) {
+    if (confirm && value) {
       const { shouldCopy, targetPath, targetWorkspace } = value;
       try {
         if (!featurePermissions.workspace.canUpdate(user, targetWorkspace)) {
@@ -8151,7 +8148,7 @@ const effects = {
         throwPermissionError('upload a new view');
       }
 
-      const { confirm, value = null } = await showUploadViewModal();
+      const { confirm, value = null } = await showStellarUploadViewModal();
       if (confirm && value) {
         const { name, definition } = value;
 

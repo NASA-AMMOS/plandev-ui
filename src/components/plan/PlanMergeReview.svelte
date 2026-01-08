@@ -27,8 +27,8 @@
   import effects from '../../utilities/effects';
   import { changedKeys, getTarget } from '../../utilities/generic';
   import gql from '../../utilities/gql';
-  import { showMergeReviewEndedModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
+  import { showStellarMergeReviewEndedModal } from '../../utilities/stellarModal';
   import { featurePermissions } from '../../utilities/permissions';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
@@ -290,7 +290,7 @@
   }
 
   $: if ($mergeRequestStatus !== 'in-progress' && !userInitiatedMergeRequestResolution) {
-    showMergeReviewEndedModal(initialPlan.id, $mergeRequestStatus);
+    showStellarMergeReviewEndedModal(initialPlan.id, $mergeRequestStatus);
   }
 
   async function onApproveChanges() {

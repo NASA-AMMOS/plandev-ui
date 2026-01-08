@@ -4,12 +4,29 @@ import StellarAboutModal from '../components/modals/stellar/StellarAboutModal.sv
 import StellarActionCreationModal from '../components/modals/stellar/StellarActionCreationModal.svelte';
 import StellarAlertDialog from '../components/modals/stellar/StellarAlertDialog.svelte';
 import StellarCancelActionRunModal from '../components/modals/stellar/StellarCancelActionRunModal.svelte';
+import StellarConfirmActivityCreationModal from '../components/modals/stellar/StellarConfirmActivityCreationModal.svelte';
 import StellarCreatePlanBranchModal from '../components/modals/stellar/StellarCreatePlanBranchModal.svelte';
+import StellarDeleteActivitiesModal from '../components/modals/stellar/StellarDeleteActivitiesModal.svelte';
+import StellarDeleteDerivationGroupModal from '../components/modals/stellar/StellarDeleteDerivationGroupModal.svelte';
+import StellarDeleteExternalEventSourceTypeModal from '../components/modals/stellar/StellarDeleteExternalEventSourceTypeModal.svelte';
+import StellarDeleteExternalSourceModal from '../components/modals/stellar/StellarDeleteExternalSourceModal.svelte';
 import StellarCreatePlanSnapshotModal from '../components/modals/stellar/StellarCreatePlanSnapshotModal.svelte';
 import StellarCreateViewModal from '../components/modals/stellar/StellarCreateViewModal.svelte';
 import StellarEditViewModal from '../components/modals/stellar/StellarEditViewModal.svelte';
 import StellarExpansionPanelModal from '../components/modals/stellar/StellarExpansionPanelModal.svelte';
+import StellarExpansionSequenceModal from '../components/modals/stellar/StellarExpansionSequenceModal.svelte';
+import StellarImportWorkspaceFileModal from '../components/modals/stellar/StellarImportWorkspaceFileModal.svelte';
 import StellarLibrarySequenceModal from '../components/modals/stellar/StellarLibrarySequenceModal.svelte';
+import StellarManagePlanConstraintsModal from '../components/modals/stellar/StellarManagePlanConstraintsModal.svelte';
+import StellarManagePlanDerivationGroupsModal from '../components/modals/stellar/StellarManagePlanDerivationGroupsModal.svelte';
+import StellarManagePlanSchedulingConditionsModal from '../components/modals/stellar/StellarManagePlanSchedulingConditionsModal.svelte';
+import StellarManagePlanSchedulingGoalsModal from '../components/modals/stellar/StellarManagePlanSchedulingGoalsModal.svelte';
+import StellarMergeReviewEndedModal from '../components/modals/stellar/StellarMergeReviewEndedModal.svelte';
+import StellarMoveItemToWorkspaceModal from '../components/modals/stellar/StellarMoveItemToWorkspaceModal.svelte';
+import StellarMoveWorkspaceItemModal from '../components/modals/stellar/StellarMoveWorkspaceItemModal.svelte';
+import StellarPlanBranchesModal from '../components/modals/stellar/StellarPlanBranchesModal.svelte';
+import StellarPlanBranchMergeDerivationGroupMessageModal from '../components/modals/stellar/StellarPlanBranchMergeDerivationGroupMessageModal.svelte';
+import StellarPlanMergeRequestsModal from '../components/modals/stellar/StellarPlanMergeRequestsModal.svelte';
 import StellarRestorePlanSnapshotModal from '../components/modals/stellar/StellarRestorePlanSnapshotModal.svelte';
 import StellarRunActionModal from '../components/modals/stellar/StellarRunActionModal.svelte';
 import StellarNewSequenceModal from '../components/modals/stellar/StellarNewSequenceModal.svelte';
@@ -17,17 +34,24 @@ import StellarNewWorkspaceFolderModal from '../components/modals/stellar/Stellar
 import StellarNewWorkspaceSequenceModal from '../components/modals/stellar/StellarNewWorkspaceSequenceModal.svelte';
 import StellarPlanBranchRequestModal from '../components/modals/stellar/StellarPlanBranchRequestModal.svelte';
 import StellarRenameWorkspaceItemModal from '../components/modals/stellar/StellarRenameWorkspaceItemModal.svelte';
+import StellarRunActionResultsModal from '../components/modals/stellar/StellarRunActionResultsModal.svelte';
+import StellarSavedViewsModal from '../components/modals/stellar/StellarSavedViewsModal.svelte';
 import StellarTimeRangeModal from '../components/modals/stellar/StellarTimeRangeModal.svelte';
 import StellarTransformActivitiesModal from '../components/modals/stellar/StellarTransformActivitiesModal.svelte';
 import StellarUpdatePlanMissionModelModal from '../components/modals/stellar/StellarUpdatePlanMissionModelModal.svelte';
+import StellarUploadViewModal from '../components/modals/stellar/StellarUploadViewModal.svelte';
+import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
 import type { User } from '../types/app';
+import type { DerivationGroup, ExternalSource, ExternalSourceSlim } from '../types/external-source';
+import type { ExpansionSequence } from '../types/expansion';
 import type { ModelSlim } from '../types/model';
 import type { ModalElement, ModalElementValue } from '../types/modal';
-import type { Plan, PlanBranchRequestAction, PlanForMerging, PlanSlim } from '../types/plan';
+import type { Plan, PlanBranchRequestAction, PlanForMerging, PlanMergeRequestTypeFilter, PlanSlim } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
 import type { StellarModalOptions } from '../types/stellar-modal';
 import type { Tag } from '../types/tags';
 import type { ActivityTransformDirection } from '../types/time';
+import type { ViewDefinition } from '../types/view';
 import type { ActionDefinition } from '../types/actions';
 import type { ArgumentsMap } from '../types/parameter';
 import type { Workspace } from '../types/workspace';
@@ -432,4 +456,283 @@ export function showStellarBulkShiftActivitiesModal(): Promise<
       title: 'Shift Directives',
     },
   );
+}
+
+/**
+ * Shows a Stellar manage plan constraints modal.
+ */
+export function showStellarManagePlanConstraintsModal(user: User | null): Promise<ModalElementValue<void>> {
+  return showStellarModal<void>(StellarManagePlanConstraintsModal, {
+    user,
+  });
+}
+
+/**
+ * Shows a Stellar manage plan scheduling conditions modal.
+ */
+export function showStellarManagePlanSchedulingConditionsModal(user: User | null): Promise<ModalElementValue<void>> {
+  return showStellarModal<void>(StellarManagePlanSchedulingConditionsModal, {
+    user,
+  });
+}
+
+/**
+ * Shows a Stellar manage plan scheduling goals modal.
+ */
+export function showStellarManagePlanSchedulingGoalsModal(user: User | null): Promise<ModalElementValue<void>> {
+  return showStellarModal<void>(StellarManagePlanSchedulingGoalsModal, {
+    user,
+  });
+}
+
+/**
+ * Shows a Stellar manage plan derivation groups modal.
+ */
+export function showStellarManagePlanDerivationGroupsModal(user: User | null): Promise<ModalElementValue<void>> {
+  return showStellarModal<void>(StellarManagePlanDerivationGroupsModal, {
+    user,
+  });
+}
+
+/**
+ * Shows a Stellar delete activities modal.
+ */
+export function showStellarDeleteActivitiesModal(
+  activityIds: ActivityDirectiveId[],
+): Promise<ModalElementValue<ActivityDirectiveDeletionMap>> {
+  return showStellarModal<ActivityDirectiveDeletionMap>(StellarDeleteActivitiesModal, {
+    activityIds,
+  });
+}
+
+/**
+ * Shows a Stellar import workspace file modal.
+ */
+export function showStellarImportWorkspaceFileModal(
+  currentWorkspace: Workspace,
+  currentWorkspaceContents: WorkspaceTreeNode,
+  inputLanguageName: string,
+  outputLanguageExtensions: string[],
+  startingPath: string,
+  workspace: Workspace | null | undefined,
+  user: User | null,
+): Promise<
+  ModalElementValue<{
+    filesToConvert: File[];
+    filesToUpload: File[];
+    shouldKeepOriginalFiles: boolean;
+    targetDirectory: string;
+  }>
+> {
+  return showStellarModal<{
+    filesToConvert: File[];
+    filesToUpload: File[];
+    shouldKeepOriginalFiles: boolean;
+    targetDirectory: string;
+  }>(StellarImportWorkspaceFileModal, {
+    currentWorkspace,
+    currentWorkspaceContents,
+    inputLanguageName,
+    outputLanguageExtensions,
+    startingPath,
+    user,
+    workspace,
+  });
+}
+
+/**
+ * Shows a Stellar move workspace item modal.
+ */
+export function showStellarMoveWorkspaceItemModal(
+  currentWorkspace: Workspace,
+  currentWorkspaceContents: WorkspaceTreeNode,
+  originalNode: WorkspaceTreeNode,
+  originalPath: string,
+  workspace: Workspace | null | undefined,
+  user: User | null,
+): Promise<
+  ModalElementValue<{
+    originalNode: WorkspaceTreeNode;
+    originalPath: string;
+    shouldCopy: boolean;
+    targetPath: string;
+  }>
+> {
+  return showStellarModal<{
+    originalNode: WorkspaceTreeNode;
+    originalPath: string;
+    shouldCopy: boolean;
+    targetPath: string;
+  }>(StellarMoveWorkspaceItemModal, {
+    currentWorkspace,
+    currentWorkspaceContents,
+    originalNode,
+    originalPath,
+    user,
+    workspace,
+  });
+}
+
+/**
+ * Shows a Stellar move item to workspace modal.
+ */
+export function showStellarMoveItemToWorkspaceModal(
+  currentWorkspace: Workspace,
+  originalNode: WorkspaceTreeNode,
+  originalPath: string,
+  user: User | null,
+): Promise<
+  ModalElementValue<{
+    shouldCopy: boolean;
+    targetPath: string;
+    targetWorkspace: Workspace;
+  }>
+> {
+  return showStellarModal<{
+    shouldCopy: boolean;
+    targetPath: string;
+    targetWorkspace: Workspace;
+  }>(StellarMoveItemToWorkspaceModal, {
+    currentWorkspace,
+    originalNode,
+    originalPath,
+    user,
+  });
+}
+
+/**
+ * Shows a Stellar confirm activity creation modal.
+ */
+export function showStellarConfirmActivityCreationModal(): Promise<ModalElementValue<{ addFilter: boolean }>> {
+  return showStellarModal<{ addFilter: boolean }>(StellarConfirmActivityCreationModal, {});
+}
+
+/**
+ * Shows a Stellar delete derivation group modal.
+ */
+export function showStellarDeleteDerivationGroupModal(
+  derivationGroups: DerivationGroup[],
+): Promise<ModalElementValue<void>> {
+  return showStellarModal<void>(StellarDeleteDerivationGroupModal, {
+    derivationGroups,
+  });
+}
+
+/**
+ * Shows a Stellar delete external source modal.
+ */
+export function showStellarDeleteExternalSourceModal(
+  linked: { pkey: { derivation_group_name: string; key: string }; plan_ids: number[] }[],
+  sources: ExternalSourceSlim[],
+  unassociatedSources: ExternalSourceSlim[],
+): Promise<ModalElementValue<{ deleteUnassociatedSources: boolean }>> {
+  return showStellarModal<{ deleteUnassociatedSources: boolean }>(StellarDeleteExternalSourceModal, {
+    linked,
+    sources,
+    unassociatedSources,
+  });
+}
+
+/**
+ * Shows a Stellar delete external event/source type modal.
+ */
+export function showStellarDeleteExternalEventSourceTypeModal(
+  associatedItems: Set<string>,
+  itemsToDelete: string[],
+  itemsToDeleteTypeName: 'External Event Type(s)' | 'External Source Type(s)',
+): Promise<ModalElementValue<void>> {
+  return showStellarModal<void>(StellarDeleteExternalEventSourceTypeModal, {
+    associatedItems,
+    itemsToDelete,
+    itemsToDeleteTypeName,
+  });
+}
+
+/**
+ * Shows a Stellar expansion sequence modal.
+ */
+export function showStellarExpansionSequenceModal(
+  expansionSequence: ExpansionSequence,
+  user: User | null,
+): Promise<ModalElementValue> {
+  return showStellarModal(StellarExpansionSequenceModal, {
+    expansionSequence,
+    user,
+  });
+}
+
+/**
+ * Shows a Stellar merge review ended modal.
+ */
+export function showStellarMergeReviewEndedModal(
+  planId: number,
+  status: 'pending' | 'in-progress' | 'accepted' | 'rejected' | 'withdrawn',
+): Promise<ModalElementValue> {
+  return showStellarModal(
+    StellarMergeReviewEndedModal,
+    { planId, status },
+    { closeOnEscape: false, closeOnOutsideClick: false },
+  );
+}
+
+/**
+ * Shows a Stellar plan branch merge derivation group message modal.
+ */
+export function showStellarPlanBranchMergeDerivationGroupMessageModal(): Promise<ModalElementValue> {
+  return showStellarModal(StellarPlanBranchMergeDerivationGroupMessageModal, {});
+}
+
+/**
+ * Shows a Stellar plan branches modal.
+ */
+export function showStellarPlanBranchesModal(plan: Plan): Promise<ModalElementValue> {
+  return showStellarModal(StellarPlanBranchesModal, {
+    plan,
+  });
+}
+
+/**
+ * Shows a Stellar plan merge requests modal.
+ */
+export function showStellarPlanMergeRequestsModal(
+  user: User | null,
+  selectedFilter: PlanMergeRequestTypeFilter = 'all',
+): Promise<ModalElementValue> {
+  return showStellarModal(StellarPlanMergeRequestsModal, {
+    selectedFilter,
+    user,
+  });
+}
+
+/**
+ * Shows a Stellar run action results modal.
+ */
+export function showStellarRunActionResultsModal(actionRunId: number): Promise<ModalElementValue<number>> {
+  return showStellarModal<number>(StellarRunActionResultsModal, {
+    actionRunId,
+  });
+}
+
+/**
+ * Shows a Stellar saved views modal.
+ */
+export function showStellarSavedViewsModal(user: User | null): Promise<ModalElementValue> {
+  return showStellarModal(StellarSavedViewsModal, {
+    user,
+  });
+}
+
+/**
+ * Shows a Stellar upload view modal.
+ */
+export function showStellarUploadViewModal(): Promise<
+  ModalElementValue<{
+    definition: ViewDefinition;
+    name: string;
+  }>
+> {
+  return showStellarModal<{
+    definition: ViewDefinition;
+    name: string;
+  }>(StellarUploadViewModal, {});
 }

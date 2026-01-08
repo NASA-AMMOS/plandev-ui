@@ -17,8 +17,8 @@
   import { view, viewIsModified } from '../../stores/views';
   import type { User } from '../../types/app';
   import type { View, ViewToggleType } from '../../types/view';
-  import { showSavedViewsModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
+  import { showStellarSavedViewsModal } from '../../utilities/stellarModal';
   import { downloadView } from '../../utilities/view';
   import PlanNavButton from '../plan/PlanNavButton.svelte';
   import ToggleableIcon from '../ui/ToggleableIcon.svelte';
@@ -188,7 +188,7 @@
       >
         Download view
       </MenuItem>
-      <MenuItem on:click={() => showSavedViewsModal(user)}>Browse saved views</MenuItem>
+      <MenuItem on:click={() => showStellarSavedViewsModal(user)}>Browse saved views</MenuItem>
       {#if $view?.name && $view.name !== defaultViewName}
         <hr />
         <MenuItem

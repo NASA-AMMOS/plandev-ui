@@ -21,8 +21,7 @@
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
-  import { showExpansionSequenceModal } from '../../utilities/modal';
-  import { showStellarNewSequenceModal } from '../../utilities/stellarModal';
+  import { showStellarExpansionSequenceModal, showStellarNewSequenceModal } from '../../utilities/stellarModal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { tooltip } from '../../utilities/tooltip';
@@ -176,7 +175,7 @@
   }
 
   function onShowExpandedSequence(sequence: ExpansionSequence) {
-    showExpansionSequenceModal(sequence, user);
+    showStellarExpansionSequenceModal(sequence, user);
   }
 
   function onShowFilter(sequenceFilter: SequenceFilter) {

@@ -1,0 +1,110 @@
+<svelte:options immutable={true} />
+
+<script lang="ts">
+  import { createEventDispatcher } from 'svelte';
+  import type { DerivationGroup } from '../../../types/external-source';
+  import StellarDialog from './StellarDialog.svelte';
+  import StellarDialogActionButtons from './StellarDialogActionButtons.svelte';
+
+  export let open: boolean = true;
+  export let derivationGroups: DerivationGroup[];
+
+  let derivationGroupsAreAllEmpty: boolean;
+
+  $: derivationGroupsAreAllEmpty = derivationGroups.reduce(
+    (isEmptyAcc: boolean, currentDerivationGroup: DerivationGroup) => {
+      return isEmptyAcc && currentDerivationGroup.sources.size === 0;
+    },
+    true,
+  );
+
+  const dispatch = createEventDispatcher<{
+    close: void;
+    resolve: { confirm: boolean };
+  }>();
+
+  function onKeydown(event: KeyboardEvent) {
+    const { key } = event;
+    if (key === 'Enter') {
+      event.preventDefault();
+      handleConfirm();
+    }
+  }
+
+  function handleCancel() {
+    open = false;
+  }
+
+  function handleConfirm() {
+    open = false;
+    dispatch('resolve', { confirm: true });
+  }
+</script>
+
+<svelte:window on:keydown={onKeydown} />
+
+<StellarDialog
+  bind:open
+  size="sm"
+  title={!derivationGroupsAreAllEmpty ? 'Derivation Group Cannot Be Deleted' : 'Delete Derivation Group'}
+  on:close
+>
+  <div class="modal-body py-2">
+    {#if !derivationGroupsAreAllEmpty}
+      <span class="st-typography-body">
+        These Derivation Groups still contain the following sources which must be deleted first:
+        {#each derivationGroups as derivationGroup}
+          {#each derivationGroup.sources as source}
+            <ul class="modal-content-text">
+              <li>
+                {source[0]}
+              </li>
+            </ul>
+          {/each}
+        {/each}
+      </span>
+    {:else}
+      <span class="st-typography-body modal-content-text">
+        Are you sure you want to delete the following Derivation Groups:
+        <ul class="modal-content-text">
+          {#each derivationGroups as derivationGroup}
+            <li>
+              {derivationGroup.name}
+            </li>
+          {/each}
+        </ul>
+        <br />
+        <i>This action cannot be undone.</i>
+      </span>
+    {/if}
+  </div>
+  <svelte:fragment slot="footer">
+    {#if !derivationGroupsAreAllEmpty}
+      <button class="st-button" on:click={handleCancel}>Close</button>
+    {:else}
+      <StellarDialogActionButtons
+        cancelText="Cancel"
+        confirmText="Delete"
+        on:cancel={handleCancel}
+        on:confirm={handleConfirm}
+      />
+    {/if}
+  </svelte:fragment>
+</StellarDialog>
+
+<style>
+  .modal-body {
+    height: 100%;
+    overflow: auto;
+  }
+
+  .modal-content-text {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .modal-content-text > li {
+    font-style: italic;
+  }
+</style>

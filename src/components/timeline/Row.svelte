@@ -65,8 +65,8 @@
   import effects from '../../utilities/effects';
   import { getExternalEventRowId } from '../../utilities/externalEvents';
   import { classNames } from '../../utilities/generic';
-  import { showConfirmActivityCreationModal } from '../../utilities/modal';
   import { sampleProfiles } from '../../utilities/resources';
+  import { showStellarConfirmActivityCreationModal } from '../../utilities/stellarModal';
   import { getSimulationStatus } from '../../utilities/simulation';
   import { pluralize } from '../../utilities/text';
   import { getDoyTime } from '../../utilities/time';
@@ -768,7 +768,7 @@
           // we prompt the user to ask if they would like to continue anyway,
           // continue and add the filter, or cancel the operation
           if (missingActivity) {
-            const { confirm, value } = await showConfirmActivityCreationModal();
+            const { confirm, value } = await showStellarConfirmActivityCreationModal();
             if (confirm) {
               if (value?.addFilter) {
                 viewAddFilterToRow(
