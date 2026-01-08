@@ -4,9 +4,12 @@
   import PlanWithDownArrowIcon from '@nasa-jpl/stellar/icons/plan_with_down_arrow.svg?component';
   import PlanWithUpArrowIcon from '@nasa-jpl/stellar/icons/plan_with_up_arrow.svg?component';
   import { planMergeRequestsIncoming, planMergeRequestsOutgoing } from '../../stores/plan';
+  import type { User } from '../../types/app';
   import { showPlanMergeRequestsModal } from '../../utilities/modal';
   import { getActivePlanMergeRequests } from '../../utilities/plan';
   import { tooltip } from '../../utilities/tooltip';
+
+  export let user: User | null = null;
 
   $: incomingPendingMergeRequests = getActivePlanMergeRequests($planMergeRequestsIncoming);
   $: outgoingPendingMergeRequests = getActivePlanMergeRequests($planMergeRequestsOutgoing);
@@ -19,7 +22,7 @@
   <button
     aria-label={label}
     class="plan-merge-requests-status-button st-button tertiary st-typography-medium"
-    on:click|stopPropagation={() => showPlanMergeRequestsModal()}
+    on:click|stopPropagation={() => showPlanMergeRequestsModal(undefined, user)}
     use:tooltip={{ content: label, placement: 'top' }}
   >
     <span class="status-icon" class:active={incomingPendingMergeRequestCount > 0}>

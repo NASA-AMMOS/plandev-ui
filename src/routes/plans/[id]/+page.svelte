@@ -744,7 +744,7 @@
             {/if}
           </div>
           <svelte:fragment slot="left">
-            <PlanMergeRequestsStatusButton />
+            <PlanMergeRequestsStatusButton user={$user} />
           </svelte:fragment>
           <svelte:fragment slot="right">
             <ActivityStatusMenu

@@ -1250,13 +1250,14 @@ export async function showPlanBranchesModal(plan: Plan): Promise<ModalElementVal
  */
 export async function showPlanMergeRequestsModal(
   selectedFilter?: PlanMergeRequestTypeFilter,
+  user?: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const planMergeRequestsModal = new PlanMergeRequestsModal({ props: { selectedFilter }, target });
+        const planMergeRequestsModal = new PlanMergeRequestsModal({ props: { selectedFilter, user }, target });
         target.resolve = resolve;
 
         planMergeRequestsModal.$on('close', () => {
