@@ -17,5 +17,4 @@
   initialPlan={data.initialPlan}
   initialMergeRequest={data.initialMergeRequest}
   initialNonConflictingActivities={data.initialNonConflictingActivities}
-  user={data.user}
 />

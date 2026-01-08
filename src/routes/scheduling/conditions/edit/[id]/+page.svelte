@@ -9,6 +9,7 @@
   import { SearchParameters } from '../../../../../enums/searchParameters';
   import { schedulingConditionMetadata, schedulingConditionMetadataId } from '../../../../../stores/scheduling';
   import { tags } from '../../../../../stores/tags';
+  import { getUserStore } from '../../../../../stores/user';
   import type {
     SchedulingConditionDefinition,
     SchedulingConditionMetadataVersionDefinition,
@@ -17,6 +18,8 @@
   import type { PageData } from './$types';
 
   export let data: PageData;
+
+  const user = getUserStore();
 
   let conditionRevision: number =
     getSearchParameterNumber(SearchParameters.REVISION, $page.url.searchParams) ??
@@ -98,7 +101,7 @@
   {conditionRevisions}
   tags={$tags}
   mode="edit"
-  user={data.user}
+  user={$user}
   on:selectRevision={onRevisionSelect}
   on:selectReferenceModel={onModelSelect}
 />

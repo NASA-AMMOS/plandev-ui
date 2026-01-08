@@ -8,16 +8,16 @@
   import type { ActionRun } from '../../../../../../types/actions';
   import type { Workspace } from '../../../../../../types/workspace';
   import { getActionsUrl, getWorkspacesUrl } from '../../../../../../utilities/routes';
-  import type { PageData } from './$types';
+  import type { LayoutData } from './$types';
 
-  export let data: PageData;
+  export let data: LayoutData;
 
   let workspace: Workspace | null = data.initialWorkspace;
   let actionRun: ActionRun | null = data.initialActionRun;
 </script>
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
-  <Nav user={data.user}>
+  <Nav>
     <div class="workspace-title" slot="title">
       <a class="app-icon link flex flex-nowrap" href={getWorkspacesUrl(base)}> Sequence Workspaces </a>
       {#if workspace}

@@ -3,12 +3,11 @@
 <script lang="ts">
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import ExternalTypeManager from '../../../components/external-source/ExternalTypeManager.svelte';
+  import { getUserStore } from '../../../stores/user';
 
-  import type { PageData } from './$types';
-
-  export let data: PageData;
+  const user = getUserStore();
 </script>
 
 <PageTitle title="External Source & Event Types" />
 
-<ExternalTypeManager user={data.user}></ExternalTypeManager>
+<ExternalTypeManager user={$user}></ExternalTypeManager>

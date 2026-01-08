@@ -655,20 +655,13 @@
       await effects.updatePlanMissionModel(selectedPlan, $user);
     }
   }
-
-  // function onRoleChange(event: CustomEvent<string>) {
-  //   // activeRole = event.detail;
-  //   if ($user) {
-  //     user.set({ ...$user, activeRole: event.detail });
-  //   }
-  // }
 </script>
 
 <PageTitle title="Plans" />
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
   <Nav>
-    <span slot="title">Plans / {$user?.activeRole}</span>
+    <span slot="title">Plans</span>
   </Nav>
 
   <CssGrid columns="20% auto">
