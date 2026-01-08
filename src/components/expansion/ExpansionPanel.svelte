@@ -36,11 +36,13 @@
 
   const deletePermissionSequenceError: string = 'You do not have permission to delete an expansion sequence.';
   const deletePermissionSequenceFilterError: string = 'You do not have permission to delete a sequence filter';
-  const selectExpansionSetMessage: string = 'No expansion set selected';
+  const createPermissionSequenceError: string = 'You do not have permission to create an expansion sequence.';
+  const createPermissionSequenceFilterError: string = 'You do not have permission to create a sequence filter';
 
   let filterText: string;
   let sequencesAndFilters: (ExpansionSequence | SequenceFilter)[] = [];
   let isExpansionDisabled: boolean = true;
+  let expansionDisabledMessage: string = '';
 
   let selectedExpansionSetId: number | null = null;
   let relevantSimulationDatasetIds: number[] | undefined = [];
@@ -54,10 +56,14 @@
 
   let hasDeletePermissionSequence: boolean = false;
   let hasDeletePermissionSequenceFilter: boolean = false;
+  let hasCreatePermissionSequence: boolean = false;
+  let hasCreatePermissionSequenceFilter: boolean = false;
 
   $: if (user !== null && $plan !== null && $plan.model) {
     hasDeletePermissionSequence = featurePermissions.expansionSequences.canDelete(user, $plan);
     hasDeletePermissionSequenceFilter = featurePermissions.sequenceFilter.canDelete(user, $plan.model);
+    hasCreatePermissionSequence = featurePermissions.expansionSequences.canCreate(user);
+    hasCreatePermissionSequenceFilter = featurePermissions.sequenceFilter.canCreate(user);
   }
 
   $: relevantSimulationDatasetIds = $simulationDatasetsPlan?.map(dataset => dataset.id);
@@ -67,6 +73,26 @@
   );
 
   $: sequencesAndFilters = [...relevantExpansionSequences, ...$sequenceFilters];
+
+  $: {
+    if ($simulationDatasetLatest) {
+      if (relevantExpansionSequences.length > 0) {
+        if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
+          isExpansionDisabled = false;
+          expansionDisabledMessage = 'Expansion not available for sequence templates';
+        } else {
+          isExpansionDisabled = selectedExpansionSetId === null;
+          expansionDisabledMessage = selectedExpansionSetId === null ? 'No expansion set selected' : '';
+        }
+      } else {
+        isExpansionDisabled = true;
+        expansionDisabledMessage = 'No relevant expansion sequences found';
+      }
+    } else {
+      isExpansionDisabled = true;
+      expansionDisabledMessage = 'Completed simulation required';
+    }
+  }
 
   $: isExpansionDisabled =
     $simulationDatasetLatest && relevantExpansionSequences.length > 0
@@ -271,19 +297,47 @@
           </DropdownMenu.Trigger>
           <DropdownMenu.Content class="w-56" align="start">
             <DropdownMenu.Label size="sm">Create new...</DropdownMenu.Label>
-            <DropdownMenu.Item size="sm" on:click={onShowSequenceCreate}>Sequence</DropdownMenu.Item>
-            <DropdownMenu.Item size="sm" on:click={onShowFilterCreate}>Sequence Filter</DropdownMenu.Item>
+            <div
+              use:permissionHandler={{
+                hasPermission: !!$simulationDatasetLatest && hasCreatePermissionSequence,
+                permissionError: !hasCreatePermissionSequence
+                  ? createPermissionSequenceError
+                  : !$simulationDatasetLatest
+                    ? 'Completed simulation required'
+                    : '',
+              }}
+            >
+              <DropdownMenu.Item
+                disabled={!$simulationDatasetLatest || !hasCreatePermissionSequence}
+                size="sm"
+                on:click={onShowSequenceCreate}
+              >
+                Sequence
+              </DropdownMenu.Item>
+            </div>
+            <div
+              use:permissionHandler={{
+                hasPermission: hasCreatePermissionSequenceFilter,
+                permissionError: createPermissionSequenceFilterError,
+              }}
+            >
+              <DropdownMenu.Item size="sm" on:click={onShowFilterCreate}>Sequence Filter</DropdownMenu.Item>
+            </div>
           </DropdownMenu.Content>
         </DropdownMenu.Root>
         <div
           use:tooltip={{
-            content: isExpansionDisabled ? selectExpansionSetMessage : 'Expand All Sequences',
+            content: isExpansionDisabled
+              ? expansionDisabledMessage
+              : $filteredExpansionSequences.length < 1
+                ? 'No sequences matching simulation'
+                : 'Expand All Sequences',
             placement: 'top',
           }}
         >
           <button
             class="st-button secondary expand-all-button"
-            disabled={isExpansionDisabled}
+            disabled={isExpansionDisabled || $filteredExpansionSequences.length < 1}
             on:click|stopPropagation={onExpandAll}
           >
             Expand All
@@ -358,7 +412,7 @@
               </div>
               <div
                 use:tooltip={{
-                  content: isExpansionDisabled ? selectExpansionSetMessage : 'Expand Sequence',
+                  content: isExpansionDisabled ? expansionDisabledMessage : 'Expand Sequence',
                   placement: 'top',
                 }}
               >
@@ -414,7 +468,12 @@
                   <FilterIcon />
                 </button>
               </div>
-              <div use:tooltip={{ content: 'Apply Filter', placement: 'top' }}>
+              <div
+                use:tooltip={{
+                  content: $simulationDatasetLatest ? 'Apply Filter' : 'Completed simulation required',
+                  placement: 'top',
+                }}
+              >
                 <button
                   disabled={!$simulationDatasetLatest}
                   aria-label={`Apply '${sequenceOrFilter.name}'`}
