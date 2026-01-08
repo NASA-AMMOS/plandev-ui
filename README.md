@@ -19,8 +19,8 @@ For the latest documentation, visit: [PlanDev Documentation](https://nasa-ammos.
 
 ## Need Help?
 
-- Join us on the [NASA-AMMOS Slack](https://join.slack.com/t/nasa-ammos/shared_invite/zt-1mlgmk5c2-MgqVSyKzVRUWrXy87FNqPw) (#aerie-users)
-- Contact aerie-support@googlegroups.com
+- Join us on the [NASA-AMMOS Slack](https://join.slack.com/t/nasa-ammos/shared_invite/zt-1mlgmk5c2-MgqVSyKzVRUWrXy87FNqPw) (#plandev-users)
+- Contact plandev-support@googlegroups.com
 
 ## Directory Structure
 
