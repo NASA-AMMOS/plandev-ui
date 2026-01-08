@@ -2,7 +2,7 @@
 
 # aerie-ui
 
-The client application for [Aerie](https://github.com/NASA-AMMOS/aerie).
+The client application for [PlanDev](https://github.com/NASA-AMMOS/aerie).
 
 ## Rebranding Notice
 

@@ -112,7 +112,7 @@ test.describe.serial('App Nav', () => {
     await consolePage.close();
   });
 
-  test(`Clicking on the app menu 'Documentation' option should open a new tab to the Aerie documentation`, async () => {
+  test(`Clicking on the app menu 'Documentation' option should open a new tab to the PlanDev documentation`, async () => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
