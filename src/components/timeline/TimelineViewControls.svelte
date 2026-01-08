@@ -15,6 +15,7 @@
   import TooltipLineIcon from '@nasa-jpl/stellar/icons/tooltip_line.svg?component';
   import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { activityDirectivesMap, selectedActivityDirective } from '../../stores/activities';
   import { plan, planReadOnly } from '../../stores/plan';
@@ -27,6 +28,7 @@
   } from '../../stores/simulation';
   import { timelineInteractionMode, timelineLockStatus, viewIsModified } from '../../stores/views';
   import type { TimeRange } from '../../types/timeline';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import { getActivityDirectiveStartTimeMs, getDoyTimeFromInterval, getUnixEpochTime } from '../../utilities/time';
   import { getTimeRangeAroundTime, TimelineLockStatus } from '../../utilities/timeline';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
@@ -432,6 +434,12 @@
             <HorizontalDragIcon />Drag and drop to move activities
           </label>
           <input
+            use:permissionHandler={{
+              hasPermission: hasUpdateDirectivePermission,
+              permissionError: $planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to update this timeline',
+            }}
             checked={$timelineLockStatus === TimelineLockStatus.Unlocked}
             id="lockTimeline"
             name="lockTimeline"
