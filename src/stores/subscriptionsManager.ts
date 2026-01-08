@@ -37,6 +37,11 @@ export function removeSubscription(id: string) {
   subscriptionManager.set(rest);
 }
 
+/**
+ * Restarts all subscriptions by calling each subscription's restart function.
+ * Each restart() call triggers restartSharedClient() which is debounced,
+ * so the shared WebSocket only restarts once even with many subscriptions.
+ */
 export function restartSubscriptions() {
-  Object.values(get(subscriptionManager)).map(({ restart }) => restart());
+  Object.values(get(subscriptionManager)).forEach(({ restart }) => restart());
 }
