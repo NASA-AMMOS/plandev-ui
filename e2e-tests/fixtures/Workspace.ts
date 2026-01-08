@@ -68,7 +68,7 @@ export class Workspace {
     sequencePath?: string,
     sequenceFileName?: string,
   ): Promise<{ sequenceName: string; sequencePath: string }> {
-    const seqPath = sequencePath || generateRandomName();
+    const seqPath = sequencePath ?? generateRandomName();
     const seqName = sequenceFileName || `${generateRandomName()}.seq`;
 
     await this.openWorkspaceContextMenu();
@@ -250,7 +250,7 @@ export class Workspace {
     this.navButtonSequences = page.locator('.nav-button:has-text("Sequences")');
     this.navButtonSequencesMenu = this.navButtonSequences.getByRole('menu');
     this.page = page;
-    this.pageLoadingLocatorWithData = page.getByRole('complementary').getByText('No workspace loaded').first();
+    this.pageLoadingLocatorWithData = page.getByRole('complementary').getByText('Loading workspace').first();
     this.saveSequenceButton = page.getByRole('button', { name: 'Save' });
     this.searchInput = page.getByPlaceholder('Search files and folders');
     this.sequenceEditor = page.locator('.cm-activeLine').first();

@@ -437,8 +437,6 @@ test.describe.serial('Workspace', () => {
   });
 
   test('Bulk workspace file operations', async () => {
-    await workspace.page.getByLabel('Files').click();
-
     const sequence1 = await workspace.createSequence('', 'test1.txt');
     const sequence2 = await workspace.createSequence('', 'test2.txt');
     const sequence3 = await workspace.createSequence('', 'test3.txt');
@@ -457,18 +455,15 @@ test.describe.serial('Workspace', () => {
     expect(folder1).toBeTruthy();
     expect(folder2).toBeTruthy();
 
-    // Click on the workspace file view
-    await workspace.page.getByLabel('Files').click();
-
     // Select 2 files for moving
     await workspace.page.getByRole('gridcell', { name: sequence1.sequenceName }).click();
     await workspace.page.getByRole('gridcell', { name: sequence2.sequenceName }).click({
-      modifiers: ['Shift'],
+      modifiers: ['ControlOrMeta'],
     });
     await workspace.page.getByRole('gridcell', { name: sequence1.sequenceName }).click({
       button: 'right',
     });
-    await workspace.page.getByLabel('Move/Copy').click();
+    await workspace.page.getByLabel('Move/Copy', { exact: true }).click();
 
     await page.getByRole('menuitem', { name: workspace.workspaceName }).click();
     await page.getByRole('menuitem', { name: folder1 }).click();
@@ -477,18 +472,28 @@ test.describe.serial('Workspace', () => {
     await page.getByRole('button', { name: 'Move Files' }).click();
 
     // These files should no longer be visible in the workspace root because they've been moved
-    await expect(workspace.page.getByRole('gridcell', { name: sequence1.sequenceName })).not.toBeVisible();
-    await expect(workspace.page.getByRole('gridcell', { name: sequence2.sequenceName })).not.toBeVisible();
+    await expect(
+      workspace.page.getByRole('complementary').getByTitle(sequence1.sequenceName, { exact: true }),
+    ).not.toBeVisible();
+    await expect(
+      workspace.page.getByRole('complementary').getByTitle(sequence2.sequenceName, { exact: true }),
+    ).not.toBeVisible();
+    await expect(
+      workspace.page.getByRole('complementary').getByTitle(`${folder1}/${sequence1.sequenceName}`, { exact: true }),
+    ).toBeVisible();
+    await expect(
+      workspace.page.getByRole('complementary').getByTitle(`${folder1}/${sequence2.sequenceName}`, { exact: true }),
+    ).toBeVisible();
 
     // Select 2 other files for copying
     await workspace.page.getByRole('gridcell', { name: sequence3.sequenceName }).click();
     await workspace.page.getByRole('gridcell', { name: sequence4.sequenceName }).click({
-      modifiers: ['Shift'],
+      modifiers: ['ControlOrMeta'],
     });
     await workspace.page.getByRole('gridcell', { name: sequence3.sequenceName }).click({
       button: 'right',
     });
-    await workspace.page.getByLabel('Move/Copy').click();
+    await workspace.page.getByLabel('Move/Copy', { exact: true }).click();
 
     await page.getByRole('menuitem', { name: workspace.workspaceName }).click();
     await page.getByRole('menuitem', { name: folder2 }).click();
@@ -497,16 +502,29 @@ test.describe.serial('Workspace', () => {
     await page.getByRole('button', { name: 'Copy Files' }).click();
 
     // These files should still be visible in the workspace root because they've only been copied
-    await expect(workspace.page.getByRole('gridcell', { name: sequence3.sequenceName })).toBeVisible();
-    await expect(workspace.page.getByRole('gridcell', { name: sequence4.sequenceName })).toBeVisible();
+    await expect(
+      workspace.page.getByRole('complementary').getByTitle(sequence3.sequenceName, { exact: true }),
+    ).toBeVisible();
+    await expect(
+      workspace.page.getByRole('complementary').getByTitle(sequence4.sequenceName, { exact: true }),
+    ).toBeVisible();
+    await expect(
+      workspace.page.getByRole('complementary').getByTitle(`${folder2}/${sequence3.sequenceName}`, { exact: true }),
+    ).toBeVisible();
+    await expect(
+      workspace.page.getByRole('complementary').getByTitle(`${folder2}/${sequence4.sequenceName}`, { exact: true }),
+    ).toBeVisible();
 
     // Select 2 other files for deletion
-    await workspace.page.getByRole('gridcell', { name: sequence3.sequenceName }).click();
-    await workspace.page.getByRole('gridcell', { name: sequence5.sequenceName }).click({
-      modifiers: ['ControlOrMeta'],
-    });
+    await workspace.page.getByRole('complementary').getByTitle(sequence3.sequenceName, { exact: true }).click();
+    await workspace.page
+      .getByRole('complementary')
+      .getByTitle(sequence5.sequenceName, { exact: true })
+      .click({
+        modifiers: ['ControlOrMeta'],
+      });
 
-    await page.getByRole('gridcell', { name: sequence3.sequenceName }).click({
+    await page.getByRole('complementary').getByTitle(sequence3.sequenceName, { exact: true }).click({
       button: 'right',
     });
 
@@ -514,8 +532,12 @@ test.describe.serial('Workspace', () => {
     await page.getByRole('button', { name: 'Delete' }).click();
 
     // These files should still be visible in the workspace root because they've only been copied
-    await expect(workspace.page.getByRole('gridcell', { name: sequence3.sequenceName })).not.toBeVisible();
-    await expect(workspace.page.getByRole('gridcell', { name: sequence5.sequenceName })).not.toBeVisible();
+    await expect(
+      workspace.page.getByRole('complementary').getByTitle(sequence3.sequenceName, { exact: true }),
+    ).not.toBeVisible();
+    await expect(
+      workspace.page.getByRole('complementary').getByTitle(sequence5.sequenceName, { exact: true }),
+    ).not.toBeVisible();
   });
 
   // Currently, switching users mid test causes a little bit of a race condition when multiple test workers are running tests
