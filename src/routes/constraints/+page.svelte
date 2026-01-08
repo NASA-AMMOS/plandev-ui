@@ -3,11 +3,11 @@
 <script lang="ts">
   import PageTitle from '../../components/app/PageTitle.svelte';
   import Constraints from '../../components/constraints/Constraints.svelte';
-  import type { PageData } from './$types';
+  import { getUserStore } from '../../stores/user';
 
-  export let data: PageData;
+  const user = getUserStore();
 </script>
 
 <PageTitle title="Constraints" />
 
-<Constraints user={data.user} />
+<Constraints user={$user} />

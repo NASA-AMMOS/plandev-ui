@@ -10,8 +10,8 @@
   import { activityMetadataDefinitions } from '../../stores/activities';
   import { planModelActivityTypes, planReadOnlyMergeRequest } from '../../stores/plan';
   import { gqlSubscribable } from '../../stores/subscribable';
+  import { getUserStore } from '../../stores/user';
   import type { ActivityDirectivesMap } from '../../types/activity';
-  import type { User } from '../../types/app';
   import type {
     Plan,
     PlanForMerging,
@@ -43,13 +43,14 @@
   export let initialMergeRequest: PlanMergeRequestSchema | null;
   export let initialNonConflictingActivities: PlanMergeNonConflictingActivity[] = [];
   export let initialPlan: Plan;
-  export let user: User | null;
+
+  const user = getUserStore();
 
   const conflictingMergeActivities = gqlSubscribable<PlanMergeConflictingActivity[]>(
     gql.SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES,
     { merge_request_id: initialMergeRequest?.id },
     initialConflictingActivities,
-    user,
+    $user,
   );
   const mergeRequestStatus = gqlSubscribable<PlanMergeRequestStatus>(
     gql.SUB_PLAN_MERGE_REQUEST_STATUS,
@@ -57,7 +58,7 @@
       mergeRequestId: initialMergeRequest?.id,
     },
     initialMergeRequest?.status,
-    user,
+    $user,
     ({ status }) => status,
   );
 
@@ -90,7 +91,7 @@
     let supplyingPlanId = sourcePlan?.id ?? -1;
 
     hasReviewPermission = featurePermissions.planBranch.canReviewRequest(
-      user,
+      $user,
       sourcePlan,
       targetPlan,
       initialPlan.model,
@@ -299,7 +300,7 @@
         initialMergeRequest.id,
         initialMergeRequest.plan_snapshot_supplying_changes.plan,
         initialMergeRequest.plan_receiving_changes,
-        user,
+        $user,
       );
       if (success) {
         $planReadOnlyMergeRequest = false;
@@ -315,7 +316,7 @@
         initialMergeRequest.id,
         initialMergeRequest.plan_snapshot_supplying_changes.plan,
         initialMergeRequest.plan_receiving_changes,
-        user,
+        $user,
       );
       if (success) {
         $planReadOnlyMergeRequest = false;
@@ -331,7 +332,7 @@
         initialMergeRequest.id,
         initialMergeRequest.plan_snapshot_supplying_changes.plan,
         initialMergeRequest.plan_receiving_changes,
-        user,
+        $user,
       );
       if (success) {
         $planReadOnlyMergeRequest = false;
@@ -350,7 +351,7 @@
         resolution,
         initialMergeRequest.plan_snapshot_supplying_changes.plan,
         initialMergeRequest.plan_receiving_changes,
-        user,
+        $user,
       );
 
       // Set resolutions for all conflicts
@@ -404,7 +405,7 @@
         resolution,
         initialMergeRequest.plan_snapshot_supplying_changes.plan,
         initialMergeRequest.plan_receiving_changes,
-        user,
+        $user,
       );
 
       conflictingMergeActivities.updateValue((activities: PlanMergeConflictingActivity[]) => {
@@ -420,7 +421,7 @@
 </script>
 
 <div class="flex">
-  <Nav {user}>
+  <Nav>
     <span class="" slot="title"
       >Merge Review:
       <a href={`${base}/plans/${initialMergeRequest?.plan_receiving_changes?.id}`} class="link">
@@ -645,7 +646,7 @@
                 modelId={initialPlan.model_id ?? -1}
                 planId={initialPlan.id}
                 planStartTimeYmd={initialPlan.start_time}
-                {user}
+                user={$user}
               />
             {:else if (selectedMergeType === 'delete' && !computedSourceActivity) || (selectedMergeType === 'conflict' && selectedConflictingActivity?.change_type_source === 'delete')}
               <div class="st-typography-label merge-review-comparison-empty-state">Activity Deleted</div>
@@ -714,7 +715,7 @@
                 planStartTimeYmd={initialPlan.start_time}
                 showActivityName
                 showHeader={false}
-                {user}
+                user={$user}
               />
             {:else if (selectedMergeType === 'delete' && !computedTargetActivity) || (selectedMergeType === 'conflict' && selectedConflictingActivity?.change_type_target === 'delete')}
               <div class="st-typography-label merge-review-comparison-empty-state">Activity Deleted</div>

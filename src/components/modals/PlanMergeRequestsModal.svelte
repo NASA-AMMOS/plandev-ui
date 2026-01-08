@@ -6,7 +6,7 @@
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { planMergeRequestsIncoming, planMergeRequestsOutgoing, planReadOnly } from '../../stores/plan';
-  import type { User } from '../../types/app';
+  import { getUserStore } from '../../stores/user';
   import type { PlanMergeRequest, PlanMergeRequestTypeFilter } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { classNames } from '../../utilities/generic';
@@ -22,8 +22,9 @@
 
   export let height: number = 550;
   export let selectedFilter: PlanMergeRequestTypeFilter = 'all';
-  export let user: User | null;
   export let width: number = 550;
+
+  const user = getUserStore();
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -85,7 +86,7 @@
         planMergeRequest.id,
         planMergeRequest.plan_snapshot_supplying_changes.plan,
         planMergeRequest.plan_receiving_changes,
-        user,
+        $user,
       );
       if (success) {
         dispatch('close');
@@ -96,7 +97,7 @@
         planMergeRequest.id,
         planMergeRequest.plan_snapshot_supplying_changes.plan,
         planMergeRequest.plan_receiving_changes,
-        user,
+        $user,
       );
     }
 
@@ -114,14 +115,14 @@
 
     if (planMergeRequest.type === 'outgoing') {
       return featurePermissions.planBranch.canDeleteRequest(
-        user,
+        $user,
         planMergeRequest.plan_snapshot_supplying_changes.plan,
         planMergeRequest.plan_receiving_changes,
         model,
       );
     }
     return featurePermissions.planBranch.canReviewRequest(
-      user,
+      $user,
       planMergeRequest.plan_snapshot_supplying_changes.plan,
       planMergeRequest.plan_receiving_changes,
       model,

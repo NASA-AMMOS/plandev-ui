@@ -702,7 +702,7 @@
 
   async function onSelectModel() {
     if ($plan) {
-      const success = await effects.updatePlanMissionModel($plan, data.user);
+      const success = await effects.updatePlanMissionModel($plan, $user);
       if (success) {
         // Clear active simulation
         $simulationDatasetId = -1;
@@ -740,7 +740,7 @@
             {/if}
           </div>
           <svelte:fragment slot="left">
-            <PlanMergeRequestsStatusButton user={data.user} />
+            <PlanMergeRequestsStatusButton />
           </svelte:fragment>
           <svelte:fragment slot="right">
             <ActivityStatusMenu
@@ -796,7 +796,7 @@
               progress={$simulationProgress}
               disabled={!$enableSimulation}
               showStatusInMenu={false}
-              on:click={() => effects.simulate($plan, false, data.user)}
+              on:click={() => effects.simulate($plan, false, $user)}
             >
               <PlaySquareIcon size={20} />
               <svelte:fragment slot="metadata">
@@ -839,7 +839,7 @@
                 {/if}
                 {#if selectedSimulationStatus === Status.Pending || selectedSimulationStatus === Status.Incomplete}
                   <button
-                    on:click={() => effects.cancelSimulation($simulationDatasetId, data.user)}
+                    on:click={() => effects.cancelSimulation($simulationDatasetId, $user)}
                     class="st-button danger"
                     disabled={$planReadOnly}>Cancel</button
                   >
@@ -859,7 +859,7 @@
                 : 'You do not have permission to run a constraint check'}
               status={$constraintsStatus !== Status.Failed ? $cachedConstraintsStatus : $constraintsStatus}
               showStatusInMenu={false}
-              on:click={() => $plan && effects.checkConstraints($plan, data.user, false)}
+              on:click={() => $plan && effects.checkConstraints($plan, $user, false)}
               indeterminate
             >
               <FlipHorizontal2 size={20} />
@@ -921,7 +921,7 @@
                 : 'You do not have permission to run a scheduling analysis'}
               status={$schedulingAnalysisStatus}
               statusText={schedulingStatusText}
-              on:click={() => effects.schedule(true, $plan, data.user)}
+              on:click={() => effects.schedule(true, $plan, $user)}
               indeterminate
             >
               <CalendarRange size={20} />
@@ -933,7 +933,7 @@
                 </div>
                 {#if $schedulingAnalysisStatus === Status.Pending || $schedulingAnalysisStatus === Status.Incomplete}
                   <button
-                    on:click={() => effects.cancelSchedulingRequest($latestSchedulingRequest.analysis_id, data.user)}
+                    on:click={() => effects.cancelSchedulingRequest($latestSchedulingRequest.analysis_id, $user)}
                     class="st-button cancel-button"
                     disabled={$planReadOnly}>Cancel</button
                   >
@@ -943,13 +943,13 @@
             <ExtensionMenu
               extensions={$extensions}
               title={!compactNavMode ? 'Extensions' : ''}
-              user={data.user}
+              user={$user}
               on:callExtension={onCallExtension}
             />
             <ViewMenu
               hasCreatePermission={hasCreateViewPermission}
               hasUpdatePermission={hasUpdateViewPermission}
-              user={data.user}
+              user={$user}
               on:createView={onCreateView}
               on:editView={onEditView}
               on:saveView={onSaveView}
@@ -989,7 +989,7 @@
         {/if}
         <PlanGrid
           {...$view?.definition.plan.grid}
-          user={data.user}
+          user={$user}
           on:changeColumnSizes={onChangeColumnSizes}
           on:changeLeftRowSizes={onChangeLeftRowSizes}
           on:changeMiddleRowSizes={onChangeMiddleRowSizes}

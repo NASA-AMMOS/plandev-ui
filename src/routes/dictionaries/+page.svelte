@@ -11,12 +11,12 @@
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
   import { sequenceAdaptations } from '../../stores/sequence-adaptation';
   import { channelDictionaries, commandDictionaries, parameterDictionaries } from '../../stores/sequencing';
+  import { getUserStore } from '../../stores/user';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import type { PageData } from './$types';
 
-  export let data: PageData;
+  const user = getUserStore();
 
   const createPermissionError = 'You do not have permission to create Command Dictionaries';
 
@@ -31,10 +31,10 @@
   let sequenceAdaptationName: string;
 
   $: hasCreatePermission =
-    featurePermissions.channelDictionary.canCreate(data.user) &&
-    featurePermissions.commandDictionary.canCreate(data.user) &&
-    featurePermissions.parameterDictionary.canCreate(data.user) &&
-    featurePermissions.sequenceAdaptation.canCreate(data.user);
+    featurePermissions.channelDictionary.canCreate($user) &&
+    featurePermissions.commandDictionary.canCreate($user) &&
+    featurePermissions.parameterDictionary.canCreate($user) &&
+    featurePermissions.sequenceAdaptation.canCreate($user);
   $: createButtonDisabled = !files || files?.length === 0 || (isSequenceAdaptation && sequenceAdaptationName === '');
   $: {
     if (files && files.length > 0) {
@@ -52,7 +52,7 @@
     try {
       await effects.uploadDictionaryOrAdaptation(
         file,
-        data.user,
+        $user,
         sequenceAdaptationName,
         persistDictionaryToFilesystem,
       );
@@ -70,26 +70,26 @@
   }
 
   function deleteChannelDictionary(event: CustomEvent) {
-    effects.deleteChannelDictionary(event.detail.id, data.user);
+    effects.deleteChannelDictionary(event.detail.id, $user);
   }
 
   function deleteCommandDictionary(event: CustomEvent) {
-    effects.deleteCommandDictionary(event.detail.id, data.user);
+    effects.deleteCommandDictionary(event.detail.id, $user);
   }
 
   function deleteParameterDictionary(event: CustomEvent) {
-    effects.deleteParameterDictionary(event.detail.id, data.user);
+    effects.deleteParameterDictionary(event.detail.id, $user);
   }
 
   function deleteSequenceAdaptation(event: CustomEvent) {
-    effects.deleteSequenceAdaptation(event.detail.id, data.user);
+    effects.deleteSequenceAdaptation(event.detail.id, $user);
   }
 </script>
 
 <PageTitle title="Dictionaries" />
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
-  <Nav user={data.user}>
+  <Nav>
     <span slot="title">Dictionaries</span>
   </Nav>
 
@@ -169,37 +169,37 @@
     <div class="table-container">
       <DictionaryTable
         dictionaries={$commandDictionaries}
-        hasDeletePermission={featurePermissions.commandDictionary.canDelete(data.user)}
+        hasDeletePermission={featurePermissions.commandDictionary.canDelete($user)}
         isEditingDictionaries={true}
         type={'Command'}
-        user={data.user}
+        user={$user}
         on:delete={deleteCommandDictionary}
       />
 
       <DictionaryTable
         dictionaries={$channelDictionaries}
-        hasDeletePermission={featurePermissions.channelDictionary.canDelete(data.user)}
+        hasDeletePermission={featurePermissions.channelDictionary.canDelete($user)}
         isEditingDictionaries={true}
         type={'Channel'}
-        user={data.user}
+        user={$user}
         on:delete={deleteChannelDictionary}
       />
 
       <DictionaryTable
         dictionaries={$parameterDictionaries}
-        hasDeletePermission={featurePermissions.parameterDictionary.canDelete(data.user)}
+        hasDeletePermission={featurePermissions.parameterDictionary.canDelete($user)}
         isEditingDictionaries={true}
         type={'Parameter'}
-        user={data.user}
+        user={$user}
         on:delete={deleteParameterDictionary}
       />
 
       <DictionaryTable
         dictionaries={$sequenceAdaptations}
-        hasDeletePermission={featurePermissions.sequenceAdaptation.canDelete(data.user)}
+        hasDeletePermission={featurePermissions.sequenceAdaptation.canDelete($user)}
         isEditingDictionaries={true}
         type={'Sequence'}
-        user={data.user}
+        user={$user}
         on:delete={deleteSequenceAdaptation}
       />
     </div>
