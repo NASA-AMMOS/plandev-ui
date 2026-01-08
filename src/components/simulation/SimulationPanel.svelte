@@ -43,6 +43,7 @@
   import Loading from '../Loading.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Parameters from '../parameters/Parameters.svelte';
+  import AlertError from '../ui/AlertError.svelte';
   import DatePickerActionButton from '../ui/DatePicker/DatePickerActionButton.svelte';
   import FilterToggleButton from '../ui/FilterToggleButton.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -71,6 +72,7 @@
   let startTimeField: FieldStore<string>;
   let modelParametersMap: ParametersMap = {};
   let filteredSimulationDatasets: SimulationDataset[] = [];
+  let { loading: simulationDatasetsPlanLoading, error: simulationDatasetsPlanError } = simulationDatasetsPlan;
 
   function validateStartTimeField(startTime: string) {
     const startTimeDate = $plugins.time.primary.parse(startTime);
@@ -480,7 +482,14 @@
           {/if}
         </svelte:fragment>
         <div class="simulation-history">
-          {#if !$simulationDatasetsPlan}
+          {#if $simulationDatasetsPlanError}
+            <AlertError
+              error="Error loading simulation datasets"
+              fullError={$simulationDatasetsPlanError}
+              class="mb-3"
+            />
+          {:else if $simulationDatasetsPlanLoading}
+            <!-- TODO would be nice to have an overall component here that does loading + error -->
             <div class="loading-wrapper">
               <Loading />
             </div>

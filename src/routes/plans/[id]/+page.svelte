@@ -14,6 +14,7 @@
     ChevronsLeftRight,
     FlipHorizontal2,
     ListX,
+    LoaderCircle,
     PlaySquareIcon,
   } from 'lucide-svelte';
   import type { PaneAPI } from 'paneforge';
@@ -130,6 +131,7 @@
     simulationStatus,
     spans,
   } from '../../../stores/simulation';
+  import { subscriptionsLoading } from '../../../stores/subscriptionsManager';
   import { getUserStore } from '../../../stores/user';
   import {
     initializeView,
@@ -1050,6 +1052,11 @@
                 <Button variant="ghost" size="icon" on:click={onClearConsole}>
                   <ListX size={16} />
                 </Button>
+              </div>
+            {/if}
+            {#if $subscriptionsLoading}
+              <div class="mr-2 flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+                <LoaderCircle class="animate-spin" size={14} />Populating sockets...
               </div>
             {/if}
           </svelte:fragment>
