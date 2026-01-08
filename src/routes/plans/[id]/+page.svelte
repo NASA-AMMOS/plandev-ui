@@ -14,11 +14,11 @@
     ChevronsLeftRight,
     FlipHorizontal2,
     ListX,
-    LoaderCircle,
     PlaySquareIcon,
   } from 'lucide-svelte';
   import type { PaneAPI } from 'paneforge';
   import { onDestroy } from 'svelte';
+  import { get } from 'svelte/store';
   import Nav from '../../../components/app/Nav.svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import Console from '../../../components/console/Console.svelte';
@@ -130,7 +130,6 @@
     simulationStatus,
     spans,
   } from '../../../stores/simulation';
-  import { subscriptionsLoading } from '../../../stores/subscriptionsManager';
   import { getUserStore } from '../../../stores/user';
   import {
     initializeView,
@@ -410,7 +409,7 @@
         $initialPlan.id,
         $simulationDatasetId > -1 ? $simulationDatasetId : null,
         $initialPlan.start_time,
-        $user,
+        get(user),
         resourcesExternalAbortController.signal,
       )
       .then(({ aborted, resources }) => {
@@ -435,7 +434,7 @@
       .getSpans(
         datasetId,
         $simulationDataset.simulation_start_time ?? $initialPlan.start_time,
-        $user,
+        get(user),
         simulationDataAbortController.signal,
       )
       .then(newSpans => {
@@ -443,7 +442,7 @@
         $initialSpansLoading = false;
       });
     effects
-      .getEvents(datasetId, $user, simulationDataAbortController.signal)
+      .getEvents(datasetId, get(user), simulationDataAbortController.signal)
       .then(newEvents => ($simulationEvents = newEvents));
   } else {
     simulationDataAbortController?.abort();
@@ -489,7 +488,7 @@
   $: if (typeof $planModelId === 'number' && browser) {
     // Asynchronously fetch resource types
     $resourceTypesLoading = true;
-    effects.getResourceTypes($planModelId, $user).then(initialResourceTypes => {
+    effects.getResourceTypes($planModelId, get(user)).then(initialResourceTypes => {
       $resourceTypes = initialResourceTypes;
       $resourceTypesLoading = false;
     });
@@ -1050,11 +1049,6 @@
                 <Button variant="ghost" size="icon" on:click={onClearConsole}>
                   <ListX size={16} />
                 </Button>
-              </div>
-            {/if}
-            {#if $subscriptionsLoading}
-              <div class="mr-2 flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-                <LoaderCircle class="animate-spin" size={14} />Populating sockets...
               </div>
             {/if}
           </svelte:fragment>
