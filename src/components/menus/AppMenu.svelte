@@ -28,7 +28,7 @@
   import SeqDevWordmarkDark from '../../assets/seqdev-logo-dark.svg?component';
   import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
   import { SequencingMode } from '../../enums/sequencing';
-  import type { User, Version } from '../../types/app';
+  import type { User } from '../../types/app';
   import { getAppBrand } from '../../utilities/branding';
   import effects from '../../utilities/effects';
   import { logout } from '../../utilities/login';
@@ -40,13 +40,6 @@
   export let user: User | null = null;
   let isOpen = false;
   let isSeqDev = false;
-  let version: Version = {
-    branch: 'unknown',
-    commit: 'unknown',
-    commitUrl: '',
-    date: new Date().toLocaleString(),
-    name: 'aerie-ui',
-  };
 
   $: isSeqDev = getAppBrand($page.url.pathname) === 'SeqDev';
 
@@ -197,9 +190,6 @@
           {:else}
             Logged out
           {/if}
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-muted-foreground">{version.name}</span>
         </div>
       </div>
     </Popover.Content>
