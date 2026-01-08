@@ -28,6 +28,45 @@ export function gqlSubscribable<T>(
   let loading: boolean = true;
   let error: string = '';
 
+  // Subscribers for the _loading and _error stores
+  const loadingSubscribers: Set<Subscriber<boolean>> = new Set();
+  const errorSubscribers: Set<Subscriber<string>> = new Set();
+
+  function setLoading(newLoading: boolean) {
+    if (loading !== newLoading) {
+      loading = newLoading;
+      loadingSubscribers.forEach(subscriber => subscriber(loading));
+    }
+  }
+
+  function setError(newError: string) {
+    if (error !== newError) {
+      error = newError;
+      errorSubscribers.forEach(subscriber => subscriber(error));
+    }
+  }
+
+  // Create readable stores for loading and error
+  const loadingStore: Readable<boolean> = {
+    subscribe: (subscriber: Subscriber<boolean>) => {
+      loadingSubscribers.add(subscriber);
+      subscriber(loading);
+      return () => {
+        loadingSubscribers.delete(subscriber);
+      };
+    },
+  };
+
+  const errorStore: Readable<string> = {
+    subscribe: (subscriber: Subscriber<string>) => {
+      errorSubscribers.add(subscriber);
+      subscriber(error);
+      return () => {
+        errorSubscribers.delete(subscriber);
+      };
+    },
+  };
+
   // Debounce clientSubscribe calls within the same call stack so that the last subscribe call is the
   // only one within the stack that actually executes, otherwise we end up with duplicative subscriptions
   // with potentially stale data that the underyling graphql-ws library does not immediately cancel.
@@ -59,13 +98,15 @@ export function gqlSubscribable<T>(
             if ('reason' in err && err.reason.includes(EXPIRED_JWT)) {
               await logout(EXPIRED_JWT);
             } else {
+              let newError: string;
               if (Array.isArray(err)) {
-                error = err.map(e => e.message ?? 'Unknown socket error').join(', ');
+                newError = err.map(e => e.message ?? 'Unknown socket error').join(', ');
               } else if ('message' in err) {
-                error = err.message;
+                newError = err.message;
               } else {
-                error = 'Unknown socket error';
+                newError = 'Unknown socket error';
               }
+              setError(newError);
               updateSubscription(id, { error });
               subscribers.forEach(({ next }) => {
                 next(initialValue as T);
@@ -152,8 +193,8 @@ export function gqlSubscribable<T>(
   }
 
   function restartSocket() {
-    loading = true;
-    error = ''; // Clear previous error on restart
+    setLoading(true);
+    setError(''); // Clear previous error on restart
     updateSubscription(id, { error, loading });
     restart();
   }
@@ -209,12 +250,12 @@ export function gqlSubscribable<T>(
         },
         on: {
           error: (err: unknown) => {
-            error = err ? err.toString() : 'Unknown socket error';
+            setError(err ? err.toString() : 'Unknown socket error');
             updateSubscription(id, { error });
           },
           message: (message: Message) => {
             if (loading && message.type === 'next') {
-              loading = false;
+              setLoading(false);
               updateSubscription(id, { loading });
             }
           },
@@ -280,7 +321,9 @@ export function gqlSubscribable<T>(
   }
 
   return {
+    error: errorStore,
     filterValueById,
+    loading: loadingStore,
     restartSocket,
     setVariables,
     subscribe,
