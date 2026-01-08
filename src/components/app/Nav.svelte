@@ -4,6 +4,7 @@
   import type { Writable } from 'svelte/store';
   import type { User, UserRole } from '../../types/app';
   import { changeUserRole } from '../../utilities/permissions';
+  import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import AppMenu from '../menus/AppMenu.svelte';
 
   const user: Writable<User | null> = getContext('user');
@@ -15,6 +16,11 @@
   async function changeRole(value: string) {
     const updatedUser = await changeUserRole(value as string);
     user.set(updatedUser || null);
+    if (updatedUser) {
+      showSuccessToast('Changed Role Successfully');
+    } else {
+      showFailureToast('Failed to Change Role');
+    }
   }
 </script>
 
