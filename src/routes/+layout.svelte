@@ -8,11 +8,12 @@
   import { mergeWith } from 'lodash-es';
   import { onMount, setContext } from 'svelte';
   import { writable } from 'svelte/store';
+  import ConnectionStatusBanner from '../components/app/ConnectionStatusBanner.svelte';
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
   import { clearLogs } from '../stores/errors';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
-  import { restartSubscriptions, subscriptionsLoading } from '../stores/subscriptionsManager';
+  import { restartSubscriptions } from '../stores/subscriptionsManager';
   import type { UserStore } from '../types/app';
   import { loadPluginCode } from '../utilities/plugins';
   import type { LayoutData } from './$types';
@@ -66,6 +67,7 @@
   setContext('user', user);
 </script>
 
+<ConnectionStatusBanner />
 {#if !pluginsEnabled || ($pluginsLoaded && !$pluginsError)}
   <slot />
 {:else}
@@ -87,10 +89,6 @@
 {/if}
 
 <div id="svelte-modal" />
-
-{#if !$subscriptionsLoading}
-  <div class="hidden" aria-hidden="true" data-testid="subscription-loading-complete" />
-{/if}
 
 <!-- Disable theme switching for now to prevent user OS/browser dark mode from changing the app which does not yet fully support dark mode -->
 <ModeWatcher track={false} defaultMode="light" />

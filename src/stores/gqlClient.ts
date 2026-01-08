@@ -1,9 +1,45 @@
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
 import { createClient, type Client, type ClientOptions } from 'graphql-ws';
+import { writable, type Readable } from 'svelte/store';
 import type { BaseUser } from '../types/app';
 import { logout } from '../utilities/login';
 import { EXPIRED_JWT } from '../utilities/permissions';
+
+/**
+ * Connection state for the shared WebSocket client.
+ * - 'disconnected': No connection (client not created or disposed)
+ * - 'connecting': Connection in progress
+ * - 'connected': Successfully connected
+ * - 'reconnecting': Connection lost, attempting to reconnect
+ */
+export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
+
+// Connection state store - exposed as readonly to consumers
+const connectionStateStore = writable<ConnectionState>('disconnected');
+export const connectionState: Readable<ConnectionState> = connectionStateStore;
+
+// Track current state value for internal checks
+let currentConnectionState: ConnectionState = 'disconnected';
+connectionStateStore.subscribe(state => {
+  currentConnectionState = state;
+});
+
+// Listen for browser offline/online events for immediate feedback
+if (browser) {
+  window.addEventListener('offline', () => {
+    if (currentConnectionState === 'connected') {
+      connectionStateStore.set('reconnecting');
+    }
+  });
+
+  window.addEventListener('online', () => {
+    // When coming back online, restart the connection to reconnect faster
+    if (client && currentConnectionState === 'reconnecting') {
+      doRestart();
+    }
+  });
+}
 
 /**
  * Shared GraphQL WebSocket client module.
@@ -99,6 +135,8 @@ function createSharedClient(): Client {
     on: {
       closed: (event: unknown) => {
         activeSocket = null;
+        // Update state to reconnecting (graphql-ws will auto-retry)
+        connectionStateStore.set('reconnecting');
         // Check for auth-related close codes
         if (event && typeof event === 'object' && 'code' in event) {
           const closeEvent = event as CloseEvent;
@@ -109,10 +147,18 @@ function createSharedClient(): Client {
       },
       connected: (socket: unknown) => {
         activeSocket = socket as WebSocket;
+        connectionStateStore.set('connected');
         // Handle pending restart request
         if (restartRequested) {
           restartRequested = false;
           doRestart();
+        }
+      },
+      connecting: () => {
+        // Only set 'connecting' if we're not already reconnecting
+        // (reconnecting state should persist until connected)
+        if (currentConnectionState !== 'reconnecting') {
+          connectionStateStore.set('connecting');
         }
       },
       error: (err: unknown) => {
@@ -233,6 +279,7 @@ export function unregisterSubscription(): void {
         client = null;
         activeSocket = null;
         restartRequested = false;
+        connectionStateStore.set('disconnected');
       }
     }, 5000);
   }
@@ -273,5 +320,6 @@ export function disposeSharedClient(): void {
     activeSocket = null;
     restartRequested = false;
     refCount = 0;
+    connectionStateStore.set('disconnected');
   }
 }
