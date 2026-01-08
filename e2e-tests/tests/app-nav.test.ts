@@ -120,7 +120,7 @@ test.describe.serial('App Nav', () => {
       page.waitForEvent('popup'),
       appNav.appMenuItemDocumentation.click(),
     ]);
-    await expect(documentationPage).toHaveURL(/\/aerie-docs\//);
+    await expect(documentationPage).toHaveURL(/\/plandev-docs\//);
     await documentationPage.close();
   });
 

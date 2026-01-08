@@ -139,7 +139,7 @@
             on:click={closeMenu}
             target="_blank"
             className="text-sm py-1.5"
-            href="https://nasa-ammos.github.io/aerie-docs/"
+            href="https://nasa-ammos.github.io/plandev-docs/"
           >
             <BookOpen size={16} />
             Documentation

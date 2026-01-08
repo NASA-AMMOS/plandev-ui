@@ -108,7 +108,7 @@ function getPermission(queries: string[], user: User | null): boolean {
 }
 
 /**
- * This map is an implementation of https://nasa-ammos.github.io/aerie-docs/deployment/advanced-permissions/#action-and-function-permissions
+ * This map is an implementation of https://nasa-ammos.github.io/plandev-docs/deployment/advanced-permissions/#action-and-function-permissions
  */
 type QueryString = string;
 type FunctionString = string;

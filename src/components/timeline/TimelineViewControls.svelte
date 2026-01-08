@@ -397,7 +397,7 @@
               on:click|capture={event => {
                 openDoc(
                   event,
-                  'https://nasa-ammos.github.io/aerie-docs/planning/timeline-controls/#line-layer-decimation',
+                  'https://nasa-ammos.github.io/plandev-docs/planning/timeline-controls/#line-layer-decimation',
                 );
               }}
             >
@@ -414,7 +414,7 @@
               on:click|capture={event => {
                 openDoc(
                   event,
-                  'https://nasa-ammos.github.io/aerie-docs/planning/timeline-controls/#cursor-value-interpolation',
+                  'https://nasa-ammos.github.io/plandev-docs/planning/timeline-controls/#cursor-value-interpolation',
                 );
               }}
             >
