@@ -78,7 +78,7 @@
   }
 
   function showPlanMergeRequests() {
-    showPlanMergeRequestsModal();
+    showPlanMergeRequestsModal(undefined, user);
     planMenu.hide();
   }
 </script>
