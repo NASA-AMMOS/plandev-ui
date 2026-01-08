@@ -229,6 +229,7 @@ export enum Queries {
   UPDATE_CONSTRAINT_MODEL_SPECIFICATION = 'update_constraint_model_specification_by_pk',
   UPDATE_DERIVATION_GROUP_ACKNOWLEDGED = 'update_plan_derivation_group_by_pk',
   UPDATE_EXPANSION_RULE = 'update_expansion_rule_by_pk',
+  UPDATE_EXTERNAL_SOURCE = 'update_external_source_by_pk',
   UPDATE_MISSION_MODEL = 'update_mission_model_by_pk',
   UPDATE_PARCEL = 'update_parcel_by_pk',
   UPDATE_PLAN_SNAPSHOT = 'update_plan_snapshot_by_pk',

@@ -32,6 +32,12 @@ export const derivationGroups = gqlSubscribable<DerivationGroup[]>(
 );
 export const planDerivationGroupLinks = gqlSubscribable<PlanDerivationGroup[]>(
   gql.SUB_PLAN_DERIVATION_GROUP,
+  {},
+  [],
+  null,
+);
+export const planDerivationGroupLinksByPlan = gqlSubscribable<PlanDerivationGroup[]>(
+  gql.SUB_PLAN_DERIVATION_GROUP_BY_PLAN,
   {
     plan_id: planId,
   },
@@ -68,7 +74,7 @@ export const externalSourceTypeAssociations: Readable<ExternalSourceTypeAssociat
 
 // Reorganization of unacknowledged planDerivationGroupLinks so that it is easy to the derivation groups and when their updates were last acknowledged
 export const derivationGroupsAcknowledged: Readable<Record<string, { last_acknowledged_at: string }>> = derived(
-  planDerivationGroupLinks,
+  planDerivationGroupLinksByPlan,
   $planDerivationGroupLinks => {
     const result: Record<string, { last_acknowledged_at: string }> = {};
     for (const entry of $planDerivationGroupLinks) {
@@ -82,7 +88,7 @@ export const derivationGroupsAcknowledged: Readable<Record<string, { last_acknow
 );
 
 export const selectedPlanDerivationGroupNames: Readable<string[]> = derived(
-  [planDerivationGroupLinks],
+  [planDerivationGroupLinksByPlan],
   ([$planDerivationGroupLinks]) => $planDerivationGroupLinks.map(link => link.derivation_group_name),
 );
 
@@ -91,7 +97,7 @@ export function resetExternalSourceStores(): void {
   createExternalSourceError.set(null);
   createDerivationGroupError.set(null);
   derivationGroupPlanLinkError.set(null);
-  planDerivationGroupLinks.updateValue(() => []);
+  planDerivationGroupLinksByPlan.updateValue(() => []);
 }
 
 function transformDerivationGroups(

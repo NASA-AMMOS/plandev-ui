@@ -2875,7 +2875,18 @@ const gql = {
   `,
 
   SUB_PLAN_DERIVATION_GROUP: `#graphql
-    subscription SubPlanExternalSource($plan_id: Int!) {
+    subscription SubPlanDerivationGroups {
+      links: ${Queries.PLAN_DERIVATION_GROUP}(order_by: { plan_id: asc }) {
+        derivation_group_name
+        plan_id
+        acknowledged
+        last_acknowledged_at
+      }
+    }
+  `,
+
+  SUB_PLAN_DERIVATION_GROUP_BY_PLAN: `#graphql
+    subscription SubPlanDerivationGroupByPlan($plan_id: Int!) {
       links: ${Queries.PLAN_DERIVATION_GROUP}(order_by: { plan_id: asc }, where: {plan_id: {_eq: $plan_id}}) {
         derivation_group_name
         plan_id
@@ -4155,6 +4166,34 @@ const gql = {
         arguments
         id
         description
+      }
+    }
+  `,
+
+  UPDATE_SOURCE_DERIVATION_GROUP: `#graphql
+    mutation UpdateSourceDerivationGroup(
+      $externalSourceKey: String!,
+      $originalDerivationGroup: String!,
+      $newDerivationGroup: String!
+    ) {
+      ${Queries.UPDATE_EXTERNAL_SOURCE} (
+        pk_columns: {
+          derivation_group_name: $originalDerivationGroup,
+          key: $externalSourceKey
+        },
+        _set: {
+          derivation_group_name: $newDerivationGroup
+        }
+      ) {
+        attributes
+        created_at
+        derivation_group_name
+        end_time
+        key
+        owner
+        source_type_name
+        start_time
+        valid_at
       }
     }
   `,

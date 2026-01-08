@@ -6,7 +6,7 @@
     derivationGroups,
     derivationGroupsAcknowledged,
     externalSources,
-    planDerivationGroupLinks,
+    planDerivationGroupLinksByPlan,
   } from '../../stores/external-source';
   import { plan } from '../../stores/plan';
   import type { User } from '../../types/app';
@@ -50,7 +50,7 @@
     }
   }
 
-  $: linkedDerivationGroupNames = $planDerivationGroupLinks.map(
+  $: linkedDerivationGroupNames = $planDerivationGroupLinksByPlan.map(
     planDerivationGroup => planDerivationGroup.derivation_group_name,
   );
   $: filteredDerivationGroups = $derivationGroups
@@ -66,7 +66,7 @@
       const includesName = group.name.toLocaleLowerCase().includes(filterTextLowerCase);
       return includesName;
     });
-  $: if ($planDerivationGroupLinks) {
+  $: if ($planDerivationGroupLinksByPlan) {
     mappedDerivationGroups = filteredDerivationGroups.reduce(
       (aggMappedDerivationGroups: { [key: string]: DerivationGroup[] }, group) => {
         if (

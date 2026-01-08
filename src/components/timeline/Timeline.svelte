@@ -7,7 +7,7 @@
   import { afterUpdate, createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { SOURCES, TRIGGERS, dndzone } from 'svelte-dnd-action';
   import { InvalidDate } from '../../constants/time';
-  import { planDerivationGroupLinks } from '../../stores/external-source';
+  import { planDerivationGroupLinksByPlan } from '../../stores/external-source';
   import { plugins } from '../../stores/plugins';
   import { viewAddTimelineRow, viewUpdateTimeline } from '../../stores/views';
   import type { ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
@@ -127,7 +127,7 @@
   });
 
   $: activityDirectives = activityDirectivesMap ? Object.values(activityDirectivesMap) : null;
-  $: derivationGroups = $planDerivationGroupLinks
+  $: derivationGroups = $planDerivationGroupLinksByPlan
     .filter(link => link.plan_id === plan?.id)
     .map(link => link.derivation_group_name);
   $: externalEventsFilteredByDG = externalEvents.filter(externalEvent =>

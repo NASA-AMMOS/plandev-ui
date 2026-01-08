@@ -1005,6 +1005,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_PLANS_USER_WRITABLE: () => true,
   SUB_PLAN_DATASET: () => true,
   SUB_PLAN_DERIVATION_GROUP: () => true,
+  SUB_PLAN_DERIVATION_GROUP_BY_PLAN: () => true,
   SUB_PLAN_EXTERNAL_EVENTS_DERIVATION_GROUP: () => true,
   SUB_PLAN_LOCKED: () => true,
   SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES: () => true,
@@ -1292,6 +1293,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   UPDATE_SIMULATION_TEMPLATE: (user: User | null, plan: PlanWithOwners): boolean => {
     return isUserAdmin(user) || (getPermission([Queries.UPDATE_SIMULATION_TEMPLATE], user) && isUserOwner(user, plan));
+  },
+  UPDATE_SOURCE_DERIVATION_GROUP: (user: User | null) => {
+    return isUserAdmin(user) || getPermission([getFunctionPermission(Queries.UPDATE_EXTERNAL_SOURCE)], user);
   },
   UPDATE_TAG: (user: User | null, tag: AssetWithOwner<Tag>): boolean => {
     return isUserAdmin(user) || (getPermission([Queries.UPDATE_TAGS], user) && isUserOwner(user, tag));

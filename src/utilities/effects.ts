@@ -8404,6 +8404,58 @@ const effects = {
     }
   },
 
+  async updateSourceDerivationGroup(
+    externalSource: ExternalSourceSlim,
+    newDerivationGroupName: string,
+    planDerivationGroupLinks: PlanDerivationGroup[],
+    user: User | null,
+  ): Promise<ExternalSourceSlim> {
+    try {
+      // if (!queryPermissions.UPDATE_DERIVATION_GROUP(user, plan)) { throwPermissionError("update this source's derivation group"); }
+
+      // Check if any plans are using the derivation group this source is a part of
+      const plansUsingDerivationGroup = planDerivationGroupLinks.filter(
+        planDerivationGroupLink =>
+          planDerivationGroupLink.derivation_group_name === externalSource.derivation_group_name,
+      );
+      // If any plans are using this derivation group, warn the user
+      if (plansUsingDerivationGroup.length > 0) {
+        const { confirm } = await showConfirmModal(
+          'Confirm',
+          `There ${plansUsingDerivationGroup.length > 1 ? 'are' : 'is'} currently ${plansUsingDerivationGroup.length}${
+            plansUsingDerivationGroup.length > 1 ? 'plans' : 'plan'
+          } using the derivation group this source is a part of. The events of this source will no longer be included in the current derivation group.`,
+          'Change Derivation Group',
+          true,
+        );
+        if (!confirm) {
+          return externalSource;
+        }
+      }
+
+      const updateVariables = {
+        externalSourceKey: externalSource.key,
+        newDerivationGroup: newDerivationGroupName,
+        originalDerivationGroup: externalSource.derivation_group_name,
+      };
+      const { updated_external_source_by_pk: updatedExternalSource } = await reqHasura<ExternalSourceSlim>(
+        gql.UPDATE_SOURCE_DERIVATION_GROUP,
+        updateVariables,
+        user,
+      );
+      if (!updatedExternalSource) {
+        throw new Error('Derivation Group Update Failed');
+      } else {
+        showSuccessToast('Derivation Group Updated Successfully');
+        return updatedExternalSource;
+      }
+    } catch (e) {
+      catchError('Derivation Group Update Failed', e as Error);
+      showFailureToast('Derivation Group Update Failed');
+      return externalSource;
+    }
+  },
+
   async updateTag(
     id: number,
     tagSetInput: TagsSetInput,

@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
+  import { Label, Select } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { X } from 'lucide-svelte';
   import ExternalEventIcon from '../../assets/external-event-box-with-arrow.svg?component';
@@ -10,9 +11,11 @@
     createDerivationGroupError,
     createExternalSourceError,
     creatingExternalSource,
+    derivationGroups,
     externalSources,
     externalSourceTypes,
     planDerivationGroupLinks,
+    planDerivationGroupLinksByPlan,
   } from '../../stores/external-source';
   import { field } from '../../stores/form';
   import { plans } from '../../stores/plans';
@@ -131,6 +134,8 @@
   let selectedSourceTypeParametersMap: ParametersMap = {};
   let selectedSourceId: string | null = null;
   let selectedSourceEventTypes: ExternalEventType[] = [];
+  let selectedSourceDerivationGroup: string | undefined;
+  let selectedSourceTypeDerivationGroups: string[];
 
   // Selected element variables
   let selectedEvent: ExternalEvent | null = null;
@@ -166,6 +171,12 @@
       selectedSource,
     ]);
   }
+
+  $: selectedSourceDerivationGroup = selectedSource?.derivation_group_name;
+
+  $: selectedSourceTypeDerivationGroups = $derivationGroups
+    .filter(derivationGroup => derivationGroup.source_type_name === selectedSource?.source_type_name)
+    .map(derivationGroup => derivationGroup.name);
 
   $: if (selectedSource !== null && Object.keys(selectedSource.attributes).length > 0) {
     // Create an ArgumentsMap for the External Source
@@ -309,7 +320,7 @@
     )
     .then(fetched => (selectedSourceEventTypes = fetched));
 
-  $: selectedSourceLinkedDerivationGroupsPlans = $planDerivationGroupLinks.filter(planDerivationGroupLink => {
+  $: selectedSourceLinkedDerivationGroupsPlans = $planDerivationGroupLinksByPlan.filter(planDerivationGroupLink => {
     return planDerivationGroupLink.derivation_group_name === selectedSource?.derivation_group_name;
   });
 
@@ -318,11 +329,19 @@
   // Permissions
   $: hasCreatePermission = featurePermissions.externalSource.canCreate(user);
 
+  async function changeDerivationGroup(newDerivationGroup: string | undefined) {
+    if (!selectedSource || !newDerivationGroup) {
+      return;
+    }
+    await effects.updateSourceDerivationGroup(selectedSource, newDerivationGroup, $planDerivationGroupLinks, user);
+    deselectSource(); // Would actually like this to stay selected, but the table un-selects due to data change
+  }
+
   async function onDeleteExternalSource(selectedSources: ExternalSourceSlim[] | null | undefined) {
     if (selectedSources !== null && selectedSources !== undefined) {
       const deleteExternalSourceResult = await effects.deleteExternalSource(
         selectedSources,
-        $planDerivationGroupLinks,
+        $planDerivationGroupLinksByPlan,
         user,
       );
       if (deleteExternalSourceResult !== undefined && deleteExternalSourceResult !== null) {
@@ -449,16 +468,50 @@
                 value={selectedSource.source_type_name}
               />
             </Input>
-
-            <Input layout="inline">
-              Derivation Group
-              <input
-                class="st-input w-full"
-                disabled={true}
-                name="derivation-group"
-                value={selectedSource.derivation_group_name}
-              />
-            </Input>
+            <div class="grid">
+              <Field field={derivationGroupField}>
+                <Label size="sm" for="derivationGroup">Derivation Group</Label>
+                <div>
+                  <Select.Root
+                    selected={{ label: selectedSourceDerivationGroup, value: selectedSourceDerivationGroup }}
+                    disabled={false}
+                    onSelectedChange={value => {
+                      if (value) {
+                        changeDerivationGroup(value.value);
+                      }
+                    }}
+                  >
+                    <Select.Trigger
+                      value={selectedSourceDerivationGroup}
+                      size="xs"
+                      aria-label="Change Derivation Group"
+                      aria-labelledby={null}
+                      id="derivationGroup"
+                    >
+                      <Select.Value placeholder="Change derivation group" />
+                    </Select.Trigger>
+                    <Select.Content
+                      class="min-w-[240px] overflow-auto p-0"
+                      sameWidth={false}
+                      align="start"
+                      datatype="text"
+                      fitViewport
+                    >
+                      {#each selectedSourceTypeDerivationGroups as derivationGroup}
+                        <Select.Item size="xs" value={derivationGroup} label={derivationGroup} class="flex gap-1">
+                          {derivationGroup}
+                        </Select.Item>
+                      {/each}
+                    </Select.Content>
+                    <Select.Input
+                      type="text"
+                      name="derivationGroup"
+                      aria-label="Change Derivation Group hidden input"
+                    />
+                  </Select.Root>
+                </div>
+              </Field>
+            </div>
 
             <Input layout="inline">
               Owner

@@ -13,7 +13,7 @@
   import {
     derivationGroupVisibilityMap,
     externalSources,
-    planDerivationGroupLinks,
+    planDerivationGroupLinksByPlan,
   } from '../../stores/external-source';
   import { planModelActivityTypes } from '../../stores/plan';
   import {
@@ -519,7 +519,7 @@
       filteredExternalEvents = [];
 
       // Filter what LINKED Derivation Groups are to be shown
-      let filteredDerivationGroups = $planDerivationGroupLinks
+      let filteredDerivationGroups = $planDerivationGroupLinksByPlan
         .filter(
           link => link.plan_id === plan?.id && !($derivationGroupVisibilityMap[link.derivation_group_name] ?? true),
         )
