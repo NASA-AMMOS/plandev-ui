@@ -4,14 +4,17 @@
 
 The client application for [PlanDev](https://github.com/NASA-AMMOS/aerie).
 
-## Rebranding Notice
+## Aerie -> PlanDev Rebrand
 
-**Aerie has been rebranded to PlanDev and SeqDev.**
+This product was **formerly known as Aerie and is now named PlanDev**. While we've updated most documentation and external references, some legacy mentions of the old product name may remain as we complete the transition.
 
-- **PlanDev**: The planning, scheduling, and constraint-checking components
-- **SeqDev**: The sequencing, command dictionary, and workspace components
+What to know:
 
-This repository contains the UI for both PlanDev and SeqDev. The name of this repository, code, and internal documentation will remain branded as Aerie for the time being.
+* The planning product, including modeling, simulation, scheduling and constraint-checking, is now named PlanDev
+* The sequencing product, including the sequence editor, workspaces, and actions, is now named SeqDev
+* All features and functionality remain the same
+* Currently, repository names, package names and other internal code references will retain their existing names, and deployment/migration procedures have not changed
+* In a future release, our repository and/or package names may change. If so, this will be communicated to users via release notes and normal communication channels
 
 For the latest documentation, visit: [PlanDev Documentation](https://nasa-ammos.github.io/plandev-docs/)
 
