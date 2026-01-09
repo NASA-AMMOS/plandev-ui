@@ -8486,6 +8486,33 @@ const effects = {
     return null;
   },
 
+  async uploadActivities(plan: Plan, files: FileList, user: User | null): Promise<number | null> {
+    try {
+      if (!gatewayPermissions.ADD_ACTIVITIES(user, plan)) {
+        throwPermissionError('add activities');
+      }
+
+      const file: File = files[0];
+
+      const body = new FormData();
+      body.append('plan_id', `${plan.id}`);
+      body.append('activity_file', file, file.name);
+
+      const uploadedActivities = await reqGateway<number | null>('/uploadActivities', 'POST', body, user, true);
+
+      if (uploadedActivities != null) {
+        showSuccessToast('Activities Uploaded Successfully');
+        logMessage(`Uploaded activites from file '${file.name}'`);
+        return uploadedActivities;
+      }
+      throw Error('Uploaded activities not found');
+    } catch (e) {
+      catchError('Unable to upload activities', e as Error);
+      showFailureToast('Activity Upload Failed');
+      return null;
+    }
+  },
+
   async uploadDictionary(
     dictionary: string,
     user: User | null,
