@@ -5,9 +5,13 @@ import * as cmView from '@codemirror/view';
 
 import type { PhoenixAdaptation } from '@nasa-jpl/aerie-sequence-languages';
 import type { User } from '../../types/app';
+import type { SequenceAdaptationMetadata } from '../../types/sequencing';
 import effects from '../effects';
 
-export async function loadSequenceAdaptation(id: number, user: User | null): Promise<PhoenixAdaptation> {
+export async function loadSequenceAdaptation(
+  id: number,
+  user: User | null,
+): Promise<{ adaptation: PhoenixAdaptation; metadata: SequenceAdaptationMetadata }> {
   const adaptationRow = await effects.getSequenceAdaptation(id, user);
   if (!adaptationRow) {
     throw new Error(`Got empty adaptation row from DB for adaptation id ${id}`);
@@ -40,8 +44,23 @@ export async function loadSequenceAdaptation(id: number, user: User | null): Pro
 
   if (!adaptation || typeof adaptation !== 'object') {
     console.error('Missing adaptation', adaptation);
-    throw new Error('No adaptation export found - ensure that your adaptation sets `exports.adaptation`');
+    throw new Error(
+      `No adaptation export found for "${adaptationRow.name}" - ensure that your adaptation sets \`exports.adaptation\``,
+    );
   }
 
-  return adaptation;
+  // Validate required properties
+  if (!adaptation.input || typeof adaptation.input !== 'object') {
+    console.error('Invalid adaptation - missing input', adaptation);
+    throw new Error(`Invalid adaptation "${adaptationRow.name}": missing required \`input\` property`);
+  }
+
+  if (!Array.isArray(adaptation.outputs) || adaptation.outputs.length === 0) {
+    console.error('Invalid adaptation - missing outputs', adaptation);
+    throw new Error(
+      `Invalid adaptation "${adaptationRow.name}": missing required \`outputs\` array (must have at least one output format)`,
+    );
+  }
+
+  return { adaptation, metadata: adaptationRow };
 }

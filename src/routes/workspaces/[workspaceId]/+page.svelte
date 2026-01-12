@@ -13,11 +13,15 @@
     PhoenixContext,
     UserSequence,
   } from '@nasa-jpl/aerie-sequence-languages';
-  import { Button } from '@nasa-jpl/stellar-svelte';
+  import { Button, Resizable, Select } from '@nasa-jpl/stellar-svelte';
   import { capitalize } from 'lodash-es';
-  import { Folder, LoaderCircle, TriangleAlert } from 'lucide-svelte';
+  import { Folder, ListX, LoaderCircle, TriangleAlert } from 'lucide-svelte';
+  import type { PaneAPI } from 'paneforge';
   import { getContext, onDestroy, onMount, tick } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
+  import Console from '../../../components/console/Console.svelte';
+  import ConsoleTab from '../../../components/console/ConsoleTab.svelte';
+  import ConsoleLogs from '../../../components/console/views/ConsoleLogs.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import CssGridGutter from '../../../components/ui/CssGridGutter.svelte';
@@ -33,6 +37,7 @@
     activeDocumentIsLoading,
     activeDocumentPath,
   } from '../../../stores/activeDocument';
+  import { clearLogs, errorLogs, logMessage } from '../../../stores/errors';
   import { sequenceAdaptation, setSequenceLanguages } from '../../../stores/sequence-adaptation';
   import {
     channelDictionaries,
@@ -46,9 +51,23 @@
     userSequenceEditorColumnsWithFormBuilder,
   } from '../../../stores/sequencing';
   import { initialUsersLoading, users } from '../../../stores/user';
+  import {
+    addWorkspaceAdaptationError,
+    allWorkspaceProblems,
+    clearWorkspaceAdaptationErrors,
+    clearWorkspaceLintErrors,
+    resetWorkspaceErrorStores,
+    setWorkspaceLintErrors,
+    workspaceActionErrors,
+    workspaceActionRuns,
+    workspaceAdaptationErrors,
+    workspaceLintErrors,
+    workspaceLogs,
+  } from '../../../stores/workspaceErrors';
   import { parcel, parcels, workspace, workspaceColumns, workspaceId, workspaces } from '../../../stores/workspaces';
   import type { ActionDefinition } from '../../../types/actions';
   import type { UserStore } from '../../../types/app';
+  import type { LintDiagnostic, LogLevel } from '../../../types/errors';
   import type { ArgumentsMap } from '../../../types/parameter';
   import type {
     ChannelDictionaryMetadata,
@@ -72,6 +91,7 @@
   import { openActionRun } from '../../../utilities/actions';
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
+  import { ErrorTypes } from '../../../utilities/errors';
   import { downloadBlob, filterEmpty } from '../../../utilities/generic';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { showConfirmModal } from '../../../utilities/modal';
@@ -156,6 +176,22 @@
     }
     showLoadingSpinner = false;
   }
+  let sequenceEditorRef: SequenceEditor;
+
+  // Console state
+  type WorkspaceConsoleTab = 'all' | 'actions' | 'adaptation' | 'linting' | 'logs';
+  const defaultLogLevels: LogLevel[] = ['error', 'warn', 'info'];
+  let consolePaneApi: PaneAPI;
+  let isConsoleExpanded: boolean = false;
+  let selectedConsoleTab: WorkspaceConsoleTab = 'all';
+  let logLevels: LogLevel[] = defaultLogLevels;
+
+  $: logLevelLabel =
+    logLevels.length === defaultLogLevels.length
+      ? 'Default levels'
+      : logLevels.length === 0
+        ? 'None'
+        : logLevels.map(l => capitalize(l)).join(', ');
 
   $: if (initialWorkspace) {
     $workspaceId = initialWorkspace.id;
@@ -272,6 +308,12 @@
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
 
+    if (initialWorkspace) {
+      $workspaceId = initialWorkspace.id;
+      selectedFilePath = $page.url.searchParams.get(SearchParameters.SEQUENCE_ID);
+      getWorkspaceContents(initialWorkspace);
+    }
+
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
@@ -291,6 +333,12 @@
       selectedFilePath = $activeDocumentPath;
       return;
     }
+
+    // Clear lint errors for the previous file when switching files
+    if ($activeDocumentPath && $activeDocumentPath !== nextPath) {
+      clearWorkspaceLintErrors($activeDocumentPath);
+    }
+
     // successfully navigated, start loading the file contents
     if (nextPath && workspaceTreeMap[nextPath]) {
       const { filename } = separateFilenameFromPath(nextPath);
@@ -385,11 +433,20 @@
     }
 
     try {
-      const adaptation = await adaptationUtils.loadSequenceAdaptation(id, $user);
+      const startTime = performance.now();
+      const { adaptation, metadata } = await adaptationUtils.loadSequenceAdaptation(id, $user);
       setSequenceLanguages(adaptation);
+      logMessage(`Loaded adaptation "${metadata.name}" (ID=${id}).`, '', performance.now() - startTime);
     } catch (e) {
       console.error(e);
       showFailureToast('Invalid sequence adaptation');
+      addWorkspaceAdaptationError({
+        cause: (e as Error).message,
+        message: `Failed to load sequence adaptation (ID: ${id})`,
+        timestamp: new Date().toISOString(),
+        trace: (e as Error).stack,
+        type: ErrorTypes.WORKSPACE_ADAPTATION_ERROR,
+      });
     }
   }
 
@@ -826,17 +883,57 @@
     }
   }
 
-  onMount(() => {
-    if (initialWorkspace) {
-      $workspaceId = initialWorkspace.id;
-      selectedFilePath = $page.url.searchParams.get(SearchParameters.SEQUENCE_ID);
-      getWorkspaceContents(initialWorkspace);
+  // Console handlers
+  function onConsoleToggle(event: CustomEvent<boolean>) {
+    isConsoleExpanded = event.detail;
+    if (isConsoleExpanded) {
+      consolePaneApi?.expand();
+    } else {
+      consolePaneApi?.collapse();
     }
-  });
+  }
+
+  function onSelectConsoleTab(event: CustomEvent<{ expand: boolean; tab: string }>) {
+    selectedConsoleTab = event.detail.tab as WorkspaceConsoleTab;
+    isConsoleExpanded = true;
+    consolePaneApi?.expand();
+  }
+
+  function onClearConsole() {
+    if (selectedConsoleTab === 'logs') {
+      clearLogs();
+    } else if (selectedConsoleTab === 'adaptation') {
+      clearWorkspaceAdaptationErrors();
+    }
+  }
+
+  function onLintChange(event: CustomEvent<{ diagnostics: LintDiagnostic[]; filePath: string }>) {
+    const { diagnostics, filePath } = event.detail;
+    setWorkspaceLintErrors(filePath, diagnostics);
+  }
+
+  function onAdaptationError(event: CustomEvent<{ error: Error; filePath: string }>) {
+    const { error, filePath } = event.detail;
+    addWorkspaceAdaptationError({
+      cause: error.message,
+      message: `Adaptation error while processing "${filePath}"`,
+      timestamp: new Date().toISOString(),
+      trace: error.stack,
+      type: ErrorTypes.WORKSPACE_ADAPTATION_ERROR,
+    });
+  }
+
+  function onGotoLine(event: CustomEvent<{ column: number; line: number }>) {
+    const { column, line } = event.detail;
+    if (sequenceEditorRef) {
+      sequenceEditorRef.gotoLine(line, column);
+    }
+  }
 
   onDestroy(() => {
     resetSequenceAdaptation();
     activeDocument.reset();
+    resetWorkspaceErrorStores();
 
     if (refreshInterval !== null) {
       clearInterval(refreshInterval);
@@ -852,138 +949,270 @@
 
 <PageTitle title="Workspace: {$workspace?.name}" />
 
-<CssGrid bind:columns={$workspaceColumns} columnMinSizes={{ 0: SIDEBAR_MIN_WIDTH, 2: CONTENT_MIN_WIDTH }}>
-  <Sidebar.Provider bind:open={sidebarPanelOpen} style="--sidebar-width: auto" className="min-h-0">
-    <WorkspaceSidebar
-      bind:selectedFilePath
-      bind:panelOpen={sidebarPanelOpen}
-      actions={allActionsForWorkspace}
-      {workspaceTree}
-      {isWorkspaceLoading}
-      {hasEditWorkspacePermission}
-      {hasEditWorkspaceCollaboratorsPermission}
-      parcels={$parcels ?? []}
-      user={$user}
-      users={$users ?? []}
-      usersLoading={$initialUsersLoading}
-      workspace={$workspace}
-      workspaces={$workspaces}
-      on:actionsClick={onActionsClicked}
-      on:addCollaborator={onAddCollaborator}
-      on:deleteCollaborator={onDeleteCollaborator}
-      on:download={onDownloadNodes}
-      on:deleteNodes={onDeleteNodes}
-      on:moveNodes={onMoveNodes}
-      on:renameNode={onRenameNode}
-      on:newFolder={onNewFolder}
-      on:newFile={onNewFile}
-      on:importFile={onImportFile}
-      on:copyFileLocation={onCopyFileLocation}
-      on:copyFullPath={onCopyFullPath}
-      on:moveNodesToWorkspace={onMoveNodesToWorkspace}
-      on:refreshWorkspace={refreshWorkspaceContents}
-      on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
-      on:runAction={onRunActionOnFileSelection}
-      on:openInNewTab={onOpenInNewTab}
-    />
-  </Sidebar.Provider>
-  {#if sidebarPanelOpen}
-    <CssGridGutter track={1} type="column" />
-  {/if}
-  <Sidebar.Inset className="min-h-0">
-    {@const isTextOrEmpty = $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
-    {@const isSequenceFile = $activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence}
-    <div class="relative grid h-full grid-cols-1 grid-rows-1">
-      {#if showLoadingSpinner && isTextOrEmpty}
-        <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50">
-          <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
-        </div>
+<Resizable.PaneGroup direction="vertical" autoSaveId="workspace-console">
+  <Resizable.Pane defaultSize={84}>
+    <CssGrid bind:columns={$workspaceColumns} columnMinSizes={{ 0: SIDEBAR_MIN_WIDTH, 2: CONTENT_MIN_WIDTH }} class="h-full">
+      <Sidebar.Provider bind:open={sidebarPanelOpen} style="--sidebar-width: auto" className="min-h-0">
+        <WorkspaceSidebar
+          bind:selectedFilePath
+          bind:panelOpen={sidebarPanelOpen}
+          actions={allActionsForWorkspace}
+          {workspaceTree}
+          {isWorkspaceLoading}
+          {hasEditWorkspacePermission}
+          {hasEditWorkspaceCollaboratorsPermission}
+          parcels={$parcels ?? []}
+          user={$user}
+          users={$users ?? []}
+          usersLoading={$initialUsersLoading}
+          workspace={$workspace}
+          workspaces={$workspaces}
+          on:actionsClick={onActionsClicked}
+          on:addCollaborator={onAddCollaborator}
+          on:deleteCollaborator={onDeleteCollaborator}
+          on:download={onDownloadNodes}
+          on:deleteNodes={onDeleteNodes}
+          on:moveNodes={onMoveNodes}
+          on:renameNode={onRenameNode}
+          on:newFolder={onNewFolder}
+          on:newFile={onNewFile}
+          on:importFile={onImportFile}
+          on:copyFileLocation={onCopyFileLocation}
+          on:copyFullPath={onCopyFullPath}
+          on:moveNodesToWorkspace={onMoveNodesToWorkspace}
+          on:refreshWorkspace={refreshWorkspaceContents}
+          on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
+          on:runAction={onRunActionOnFileSelection}
+          on:openInNewTab={onOpenInNewTab}
+        />
+      </Sidebar.Provider>
+      {#if sidebarPanelOpen}
+        <CssGridGutter track={1} type="column" />
       {/if}
-      {#if isTextOrEmpty && isSequenceFile}
-        <div class="flex h-full">
-          <SequenceEditor
-            {phoenixContext}
-            availableActions={availableActionsForActiveFile}
-            includeActions
-            isLoading={$activeDocumentIsLoading}
-            previewOnly={!hasEditFilePermission}
-            sequenceAdaptation={$sequenceAdaptation}
-            sequenceDefinition={$activeDocument.originalContent}
-            sequenceName={$activeDocument.fileName ?? undefined}
-            sequenceFilePath={$activeDocumentPath ?? ''}
-            sequenceOutput={selectedSequenceOutput}
-            shouldListenForKeyboardSave={false}
-            showCommandFormBuilder
-            userSequenceEditorColumns={$userSequenceEditorColumns}
-            userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
-            on:runAction={onRunActionOnActiveFile}
-            on:save={onSaveWorkspaceFile}
-            on:downloadInput={onDownloadInput}
-            on:downloadOutput={onDownloadOutput}
-            on:sequenceInputUpdate={onWorkspaceInputFileUpdated}
-            on:sequenceOutputUpdate={onWorkspaceOutputFileUpdated}
-          />
-        </div>
-      {:else if isTextOrEmpty}
-        <div class="flex h-full">
-          <TextEditor
-            availableActions={availableActionsForActiveFile}
-            includeActions={true}
-            isJSON={$activeDocument.type === WorkspaceContentType.Json}
-            isLoading={$activeDocumentIsLoading}
-            previewOnly={!hasEditFilePermission}
-            shouldListenForKeyboardSave={false}
-            textFileName={$activeDocument.fileName ?? undefined}
-            textFilePath={$activeDocumentPath ?? ''}
-            textFileContent={$activeDocument.originalContent}
-            on:runAction={onRunActionOnActiveFile}
-            on:save={onSaveWorkspaceFile}
-            on:download={onDownloadInput}
-            on:textContentUpdated={onWorkspaceInputFileUpdated}
-          />
-        </div>
-      {:else if $activeDocument.type === WorkspaceContentType.Directory && $activeDocumentPath}
-        {@const folderNode = workspaceTreeMap[$activeDocumentPath]}
-        {@const folderFiles =
-          (folderNode?.contents || []).filter(node => node.type !== WorkspaceContentType.Directory) ?? []}
-        {@const folderSubfolders =
-          (folderNode?.contents || []).filter(node => node.type === WorkspaceContentType.Directory) ?? []}
-        <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
-          <Folder size={70} class="text-muted-foreground" />
-          <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
-            The selected folder
-            <code class="font-bold">
-              {$activeDocumentPath}
-            </code>
-            {#if folderFiles.length === 0 && folderSubfolders.length === 0}
-              is empty.
-            {:else}
-              contains{folderFiles.length ? ` ${folderFiles.length} file${pluralize(folderFiles.length)}` : ''}
-              {`${folderFiles.length && folderSubfolders.length ? ' and' : ''}`}
-              {folderSubfolders.length
-                ? ` ${folderSubfolders.length} subfolder${pluralize(folderSubfolders.length)}`
-                : ''}.
+      <Sidebar.Inset className="min-h-0">
+        <div class="relative grid h-full grid-cols-1 grid-rows-1">
+          {#if $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
+            {@const isSequenceFile =
+              $activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence}
+            {#if showLoadingSpinner}
+              <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50">
+                <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
+              </div>
             {/if}
-          </p>
+            <div class="flex h-full" class:hidden={!isSequenceFile}>
+              <SequenceEditor
+                bind:this={sequenceEditorRef}
+                {phoenixContext}
+                availableActions={availableActionsForActiveFile}
+                includeActions
+                isLoading={$activeDocumentIsLoading}
+                previewOnly={!hasEditFilePermission}
+                sequenceAdaptation={$sequenceAdaptation}
+                sequenceDefinition={isSequenceFile ? $activeDocument.originalContent : ''}
+                sequenceName={$activeDocument.fileName ?? undefined}
+                sequenceFilePath={$activeDocumentPath ?? ''}
+                sequenceOutput={selectedSequenceOutput}
+                shouldListenForKeyboardSave={false}
+                showCommandFormBuilder
+                userSequenceEditorColumns={$userSequenceEditorColumns}
+                userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
+                on:adaptationError={onAdaptationError}
+                on:lintChange={onLintChange}
+                on:runAction={onRunActionOnActiveFile}
+                on:save={onSaveWorkspaceFile}
+                on:downloadInput={onDownloadInput}
+                on:downloadOutput={onDownloadOutput}
+                on:sequenceInputUpdate={onWorkspaceInputFileUpdated}
+                on:sequenceOutputUpdate={onWorkspaceOutputFileUpdated}
+              />
+            </div>
+            <div class="flex h-full" class:hidden={isSequenceFile}>
+              <TextEditor
+                availableActions={availableActionsForActiveFile}
+                includeActions={true}
+                isJSON={$activeDocument.type === WorkspaceContentType.Json}
+                isLoading={$activeDocumentIsLoading}
+                previewOnly={!hasEditFilePermission}
+                shouldListenForKeyboardSave={false}
+                textFileName={$activeDocument.fileName ?? undefined}
+                textFilePath={$activeDocumentPath ?? ''}
+                textFileContent={!isSequenceFile ? $activeDocument.originalContent : ''}
+                on:runAction={onRunActionOnActiveFile}
+                on:save={onSaveWorkspaceFile}
+                on:download={onDownloadInput}
+                on:textContentUpdated={onWorkspaceInputFileUpdated}
+              />
+            </div>
+          {:else if $activeDocument.type === WorkspaceContentType.Directory}
+            {@const folderNode = workspaceTreeMap[$activeDocumentPath]}
+            {@const folderFiles =
+              (folderNode?.contents || []).filter(node => node.type !== WorkspaceContentType.Directory) ?? []}
+            {@const folderSubfolders =
+              (folderNode?.contents || []).filter(node => node.type === WorkspaceContentType.Directory) ?? []}
+            <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
+              <Folder size={70} class="text-muted-foreground" />
+              <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
+                The selected folder
+                <code class="font-bold">
+                  {$activeDocumentPath}
+                </code>
+                {#if folderFiles.length === 0 && folderSubfolders.length === 0}
+                  is empty.
+                {:else}
+                  contains{folderFiles.length ? ` ${folderFiles.length} file${pluralize(folderFiles.length)}` : ''}
+                  {`${folderFiles.length && folderSubfolders.length ? ' and' : ''}`}
+                  {folderSubfolders.length
+                    ? ` ${folderSubfolders.length} subfolder${pluralize(folderSubfolders.length)}`
+                    : ''}.
+                {/if}
+              </p>
+            </div>
+          {:else}
+            <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
+              <TriangleAlert size={70} class="text-muted-foreground" />
+              <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
+                The selected file
+                <code class="font-bold">
+                  {$activeDocumentPath}
+                </code>
+                is not displayed in the editor because it is either binary or an unsupported extension.
+              </p>
+              <div>
+                <Button variant="secondary" on:click={() => onDownloadFile($activeDocumentPath)}>Download</Button>
+              </div>
+            </div>
+          {/if}
         </div>
-      {:else if !isTextOrEmpty}
-        <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
-          <TriangleAlert size={70} class="text-muted-foreground" />
-          <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
-            The selected file
-            <code class="font-bold">
-              {$activeDocumentPath}
-            </code>
-            is not displayed in the editor because it is either binary or an unsupported extension.
-          </p>
-          <div>
-            <Button variant="secondary" on:click={() => onDownloadFile($activeDocumentPath)}>Download</Button>
+      </Sidebar.Inset>
+    </CssGrid>
+  </Resizable.Pane>
+
+  <Resizable.Handle
+    class="hover:after:bg-neutral-300 hover:after:transition-all hover:after:delay-[400ms] data-[active]:after:bg-neutral-300 data-[active]:after:transition-all"
+  />
+
+  <Resizable.Pane
+    defaultSize={!isConsoleExpanded ? 0 : 16}
+    minSize={10}
+    collapsible
+    collapsedSize={0}
+    onCollapse={() => (isConsoleExpanded = false)}
+    onExpand={() => (isConsoleExpanded = true)}
+    bind:pane={consolePaneApi}
+    class="h-full min-h-[36px]"
+  >
+    <div class="h-full min-h-6 overflow-hidden">
+      <Console
+        expanded={isConsoleExpanded}
+        selectedTab={selectedConsoleTab}
+        on:toggle={onConsoleToggle}
+        on:selectTab={onSelectConsoleTab}
+      >
+        <svelte:fragment slot="console-actions">
+          {#if isConsoleExpanded && selectedConsoleTab === 'logs'}
+            <Select.Root
+              multiple
+              typeahead={false}
+              selected={logLevels.map(l => ({ label: capitalize(l), value: l }))}
+              onSelectedChange={values => {
+                if (values) {
+                  logLevels = values.map(v => v.value);
+                }
+              }}
+            >
+              <Select.Trigger size="xs" class="w-[120px] flex-shrink-0">{logLevelLabel}</Select.Trigger>
+              <Select.Content size="xs">
+                <Select.Item size="xs" value="info" label="Info">Info</Select.Item>
+                <Select.Item size="xs" value="warn" label="Warning">Warning</Select.Item>
+                <Select.Item size="xs" value="error" label="Error">Error</Select.Item>
+              </Select.Content>
+            </Select.Root>
+          {/if}
+          {#if isConsoleExpanded && (selectedConsoleTab === 'logs' || selectedConsoleTab === 'adaptation')}
+            <Button variant="ghost" size="icon" on:click={onClearConsole}>
+              <ListX size={16} />
+            </Button>
+          {/if}
+        </svelte:fragment>
+
+        <svelte:fragment slot="console-tabs">
+          <div class="flex items-center overflow-x-hidden py-0.5">
+            <ConsoleTab value="all" numberOfErrors={$allWorkspaceProblems.length}>All Problems</ConsoleTab>
+            <ConsoleTab value="actions" numberOfErrors={$workspaceActionErrors.length}>Actions</ConsoleTab>
+            <ConsoleTab value="adaptation" numberOfErrors={$workspaceAdaptationErrors.length}>Adaptation</ConsoleTab>
+            <ConsoleTab value="linting" numberOfErrors={$workspaceLintErrors.filter(e => e.level === 'error').length}>
+              Linting
+            </ConsoleTab>
+            <div
+              class="pointer-events-none mx-2 flex h-4 w-0 items-center justify-center border-r border-black border-opacity-20 px-0"
+            />
+            <ConsoleTab value="logs" numberOfErrors={$errorLogs.length}>
+              Logs
+              <svelte:fragment slot="badge">
+                {#if $errorLogs.length}
+                  <span class="flex items-center gap-0.5 px-0.5">
+                    <TriangleAlert size={13} />
+                    {$errorLogs.length}
+                  </span>
+                {/if}
+              </svelte:fragment>
+            </ConsoleTab>
           </div>
-        </div>
-      {/if}
+        </svelte:fragment>
+
+        <ConsoleLogs
+          value="all"
+          showTimestamp={false}
+          showLevel={false}
+          logs={$allWorkspaceProblems}
+          on:gotoLine={onGotoLine}
+        />
+        <ConsoleLogs
+          value="actions"
+          showTimestamp
+          showType={false}
+          logs={$workspaceActionRuns.map(run => {
+            const actionDef = allActionsForWorkspace.find(a => a.id === run.action_definition_id);
+            const actionName = actionDef?.name ?? `Action #${run.action_definition_id}`;
+            return {
+              cause: run.error?.message,
+              data: { actionName, actionRunId: run.id, error: run.error, status: run.status },
+              level: run.status === 'failed' ? 'error' : 'info',
+              message: run.status === 'failed' ? `${actionName} failed` : `${actionName}: ${run.status}`,
+              timestamp: run.requested_at,
+              trace: run.error?.stack,
+              type: ErrorTypes.WORKSPACE_ACTION_RUN,
+            };
+          })}
+          emptyStateMessage="No action runs"
+        />
+        <ConsoleLogs
+          value="adaptation"
+          showTimestamp={false}
+          logs={$workspaceAdaptationErrors}
+          emptyStateMessage="No adaptation errors"
+        />
+        <ConsoleLogs
+          value="linting"
+          showTimestamp={false}
+          showType={false}
+          logs={$workspaceLintErrors}
+          emptyStateMessage="No linting errors"
+          on:gotoLine={onGotoLine}
+        />
+        <ConsoleLogs
+          value="logs"
+          logs={$workspaceLogs}
+          {logLevels}
+          emptyStateMessage="No logs"
+          noMatchingResultsMessage="No matching logs"
+          autoScroll
+          showType={false}
+        />
+      </Console>
     </div>
-  </Sidebar.Inset>
-</CssGrid>
+  </Resizable.Pane>
+</Resizable.PaneGroup>
 
 <style>
 </style>

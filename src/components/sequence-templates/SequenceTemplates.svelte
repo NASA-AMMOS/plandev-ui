@@ -104,7 +104,7 @@
     }
 
     try {
-      const adaptation = await adaptationUtils.loadSequenceAdaptation(id, user);
+      const { adaptation } = await adaptationUtils.loadSequenceAdaptation(id, user);
       setSequenceLanguages(adaptation);
     } catch (e) {
       console.error(e);
