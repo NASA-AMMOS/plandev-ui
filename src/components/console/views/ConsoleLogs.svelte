@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { Tabs } from '@nasa-jpl/stellar-svelte';
-  import { getContext } from 'svelte';
+  import { createEventDispatcher, getContext } from 'svelte';
   import type { BaseError, LogLevel } from '../../../types/errors';
   import { isLogMessage } from '../../../utilities/errors';
   import { ConsoleContextKey, type ConsoleContext } from '../Console.svelte';
@@ -18,6 +18,10 @@
   export let showTimestamp: boolean = true;
   export let showType: boolean = true;
   export let value: string = '';
+
+  const dispatch = createEventDispatcher<{
+    gotoLine: { column: number; line: number };
+  }>();
 
   const consoleContext = getContext<ConsoleContext>(ConsoleContextKey);
   const filterStore = consoleContext?.filter;
@@ -111,7 +115,7 @@
           <div class="mb-1 ml-4 italic text-muted-foreground">{logs.length - filteredLogs.length} hidden</div>
         {/if}
         {#each filteredLogs as log}
-          <ConsoleLog {showLevel} {showTimestamp} {showType} {log} />
+          <ConsoleLog {showLevel} {showTimestamp} {showType} {log} on:gotoLine={e => dispatch('gotoLine', e.detail)} />
         {/each}
       </div>
     </div>

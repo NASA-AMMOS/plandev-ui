@@ -3,8 +3,8 @@
 <script lang="ts">
   import { standardKeymap } from '@codemirror/commands';
   import { syntaxTree } from '@codemirror/language';
-  import { lintGutter, openLintPanel } from '@codemirror/lint';
-  import { Compartment, EditorState, type Extension } from '@codemirror/state';
+  import { forEachDiagnostic, lintGutter, openLintPanel } from '@codemirror/lint';
+  import { Compartment, EditorSelection, EditorState, type Extension } from '@codemirror/state';
   import { keymap, type ViewUpdate } from '@codemirror/view';
   import type { SyntaxNode } from '@lezer/common';
   import type {
@@ -19,6 +19,7 @@
   import { FileBracesCorner, PanelBottomClose, PanelBottomOpen } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
+  import type { LintDiagnostic } from '../../types/errors';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
@@ -48,8 +49,10 @@
   export let userSequenceEditorColumnsWithFormBuilder: string;
 
   const dispatch = createEventDispatcher<{
+    adaptationError: { error: Error; filePath: string };
     downloadInput: { filePath: string };
     downloadOutput: { content: string; filePath: string; filename: string; outputLanguage: OutputLanguage };
+    lintChange: { diagnostics: LintDiagnostic[]; filePath: string };
     runAction: { action: ActionDefinition; parameter: string };
     save: string;
     sequence: { filePath: string; input: string; output?: string };
@@ -166,10 +169,20 @@
   async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
     const sequence = viewUpdate.state.doc.toString();
     disableCopyAndExport = sequence === '';
-    let output =
-      sequenceName === undefined
-        ? undefined
-        : selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
+    let output: string | undefined;
+
+    try {
+      output =
+        sequenceName === undefined
+          ? undefined
+          : selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
+    } catch (e) {
+      console.error('Adaptation toOutputFormat error:', e);
+      if (sequenceName) {
+        dispatch('adaptationError', { error: e as Error, filePath: sequenceName });
+      }
+      output = `// Error in adaptation toOutputFormat:\n// ${(e as Error).message}`;
+    }
 
     editorOutputView.dispatch({ changes: { from: 0, insert: output ?? '', to: editorOutputView.state.doc.length } });
 
@@ -191,6 +204,30 @@
       selectedNode = updatedSelectionNode;
     }
   }
+
+  function getLintDiagnostics(view: EditorView): LintDiagnostic[] {
+    const diagnostics: LintDiagnostic[] = [];
+    forEachDiagnostic(view.state, (d, from, to) => {
+      const fromLine = view.state.doc.lineAt(from);
+      const toLine = view.state.doc.lineAt(to);
+      diagnostics.push({
+        from: { column: from - fromLine.from, line: fromLine.number },
+        message: d.message,
+        severity: d.severity,
+        to: { column: to - toLine.from, line: toLine.number },
+      });
+    });
+    return diagnostics;
+  }
+
+  const dispatchLintChange = debounce((view: EditorView) => {
+    if (sequenceName) {
+      dispatch('lintChange', {
+        diagnostics: getLintDiagnostics(view),
+        filePath: sequenceName,
+      });
+    }
+  }, 300);
 
   function downloadOutputFormat(outputLanguage: OutputLanguage): void {
     const content = editorOutputView.state.doc.toString();
@@ -254,6 +291,22 @@
     return true;
   }
 
+  // Exported function to allow parent to navigate to a specific line/column
+  export function gotoLine(line: number, column: number = 0): void {
+    if (editorSequenceView) {
+      const doc = editorSequenceView.state.doc;
+      if (line > 0 && line <= doc.lines) {
+        const lineInfo = doc.line(line);
+        const pos = Math.min(lineInfo.from + column, lineInfo.to);
+        editorSequenceView.dispatch({
+          effects: EditorView.scrollIntoView(pos, { y: 'center' }),
+          selection: EditorSelection.cursor(pos),
+        });
+        editorSequenceView.focus();
+      }
+    }
+  }
+
   onMount(() => {
     compartmentReadonly = new Compartment();
     compartmentAdaptation = new Compartment();
@@ -269,6 +322,7 @@
         lintGutter(),
         EditorView.updateListener.of(debouncedSequenceUpdateListener),
         EditorView.updateListener.of(selectedCommandUpdateListener),
+        EditorView.updateListener.of(viewUpdate => dispatchLintChange(viewUpdate.view)),
         blockTheme,
         compartmentAdaptation.of(inputEditorExtension),
         compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
