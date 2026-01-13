@@ -96,12 +96,7 @@ export type ExpandedSequence = {
 
 export type ExpansionRunSlim = {
   created_at: string;
-  expansion_set: {
-    created_at: string;
-    id: number;
-    name: string;
-    parcel_id: number;
-  };
+  expansion_set: Pick<ExpansionSet, 'created_at' | 'id' | 'name' | 'parcel_id'>;
   id: number;
   simulation_dataset: {
     dataset_id: number;
