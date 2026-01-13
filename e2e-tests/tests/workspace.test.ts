@@ -437,107 +437,84 @@ test.describe.serial('Workspace', () => {
   });
 
   test('Bulk workspace file operations', async () => {
-    const sequence1 = await workspace.createSequence('', 'test1.txt');
-    const sequence2 = await workspace.createSequence('', 'test2.txt');
-    const sequence3 = await workspace.createSequence('', 'test3.txt');
-    const sequence4 = await workspace.createSequence('', 'test4.txt');
-    const sequence5 = await workspace.createSequence('', 'test5.txt');
+    await workspace.workspaceFileBrowserButton.click();
 
-    expect(sequence1.sequenceName).toBeTruthy();
-    expect(sequence2.sequenceName).toBeTruthy();
-    expect(sequence3.sequenceName).toBeTruthy();
-    expect(sequence4.sequenceName).toBeTruthy();
-    expect(sequence5.sequenceName).toBeTruthy();
+    // Create test files and folders
+    const { sequenceName: file1 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
+    const { sequenceName: file2 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
+    const { sequenceName: file3 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
+    const { sequenceName: file4 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
+    const { sequenceName: file5 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
+    const folder1 = await workspace.createFolder(generateRandomName());
+    const folder2 = await workspace.createFolder(generateRandomName());
 
-    const folder1 = await workspace.createFolder('folder1');
-    const folder2 = await workspace.createFolder('folder2');
+    // Clear search to see all files
+    await workspace.clearSearch();
 
-    expect(folder1).toBeTruthy();
-    expect(folder2).toBeTruthy();
+    // Select 2 files for moving using Ctrl+click
+    await workspace.getFileRow(file1).click();
+    await workspace.getFileRow(file2).click({ modifiers: ['ControlOrMeta'] });
 
-    // Select 2 files for moving
-    await workspace.page.getByRole('gridcell', { name: sequence1.sequenceName }).click();
-    await workspace.page.getByRole('gridcell', { name: sequence2.sequenceName }).click({
-      modifiers: ['ControlOrMeta'],
-    });
-    await workspace.page.getByRole('gridcell', { name: sequence1.sequenceName }).click({
-      button: 'right',
-    });
-    await workspace.page.getByLabel('Move/Copy', { exact: true }).click();
-
+    // Open context menu and move files
+    await workspace.openFileContextMenu(file1);
+    await workspace.workspaceFileContextMenu.getByRole('menuitem', { exact: true, name: 'Move/Copy' }).click();
     await page.getByRole('menuitem', { name: workspace.workspaceName }).click();
     await page.getByRole('menuitem', { name: folder1 }).click();
-
-    // Move the files to "folder1"
     await page.getByRole('button', { name: 'Move Files' }).click();
 
-    // These files should no longer be visible in the workspace root because they've been moved
-    await expect(
-      workspace.page.getByRole('complementary').getByTitle(sequence1.sequenceName, { exact: true }),
-    ).not.toBeVisible();
-    await expect(
-      workspace.page.getByRole('complementary').getByTitle(sequence2.sequenceName, { exact: true }),
-    ).not.toBeVisible();
-    await expect(
-      workspace.page.getByRole('complementary').getByTitle(`${folder1}/${sequence1.sequenceName}`, { exact: true }),
-    ).toBeVisible();
-    await expect(
-      workspace.page.getByRole('complementary').getByTitle(`${folder1}/${sequence2.sequenceName}`, { exact: true }),
-    ).toBeVisible();
+    // Verify files were moved (no longer in root, now in folder1)
+    await workspace.clearSearch();
+    const sidebar = page.getByRole('complementary');
+    // Files should NOT be at root path (just filename)
+    await expect(sidebar.getByTitle(file1, { exact: true })).not.toBeVisible();
+    await expect(sidebar.getByTitle(file2, { exact: true })).not.toBeVisible();
+    // Files SHOULD be at folder1 path
+    await expect(sidebar.getByTitle(`${folder1}/${file1}`, { exact: true })).toBeVisible();
+    await expect(sidebar.getByTitle(`${folder1}/${file2}`, { exact: true })).toBeVisible();
 
     // Select 2 other files for copying
-    await workspace.page.getByRole('gridcell', { name: sequence3.sequenceName }).click();
-    await workspace.page.getByRole('gridcell', { name: sequence4.sequenceName }).click({
-      modifiers: ['ControlOrMeta'],
-    });
-    await workspace.page.getByRole('gridcell', { name: sequence3.sequenceName }).click({
-      button: 'right',
-    });
-    await workspace.page.getByLabel('Move/Copy', { exact: true }).click();
+    await workspace.getFileRow(file3).click();
+    await workspace.getFileRow(file4).click({ modifiers: ['ControlOrMeta'] });
 
+    // Open context menu and copy files
+    await workspace.openFileContextMenu(file3);
+    await workspace.workspaceFileContextMenu.getByRole('menuitem', { exact: true, name: 'Move/Copy' }).click();
     await page.getByRole('menuitem', { name: workspace.workspaceName }).click();
     await page.getByRole('menuitem', { name: folder2 }).click();
-
-    // Move the files to "folder1"
     await page.getByRole('button', { name: 'Copy Files' }).click();
 
-    // These files should still be visible in the workspace root because they've only been copied
-    await expect(
-      workspace.page.getByRole('complementary').getByTitle(sequence3.sequenceName, { exact: true }),
-    ).toBeVisible();
-    await expect(
-      workspace.page.getByRole('complementary').getByTitle(sequence4.sequenceName, { exact: true }),
-    ).toBeVisible();
-    await expect(
-      workspace.page.getByRole('complementary').getByTitle(`${folder2}/${sequence3.sequenceName}`, { exact: true }),
-    ).toBeVisible();
-    await expect(
-      workspace.page.getByRole('complementary').getByTitle(`${folder2}/${sequence4.sequenceName}`, { exact: true }),
-    ).toBeVisible();
+    // Verify files still exist in root (copy, not move)
+    await workspace.clearSearch();
+    // Files SHOULD still be at root path (just filename)
+    await expect(sidebar.getByTitle(file3, { exact: true })).toBeVisible();
+    await expect(sidebar.getByTitle(file4, { exact: true })).toBeVisible();
+    // Copies SHOULD also exist at folder2 path
+    await expect(sidebar.getByTitle(`${folder2}/${file3}`, { exact: true })).toBeVisible();
+    await expect(sidebar.getByTitle(`${folder2}/${file4}`, { exact: true })).toBeVisible();
 
-    // Select 2 other files for deletion
-    await workspace.page.getByRole('complementary').getByTitle(sequence3.sequenceName, { exact: true }).click();
-    await workspace.page
-      .getByRole('complementary')
-      .getByTitle(sequence5.sequenceName, { exact: true })
-      .click({
-        modifiers: ['ControlOrMeta'],
-      });
+    // Select 2 files for deletion (use row-id to select specifically the root files, not the copies)
+    await workspace.workspaceFileGrid.locator(`[row-id="${file3}"]`).click();
+    await workspace.workspaceFileGrid.locator(`[row-id="${file5}"]`).click({ modifiers: ['ControlOrMeta'] });
 
-    await page.getByRole('complementary').getByTitle(sequence3.sequenceName, { exact: true }).click({
-      button: 'right',
-    });
-
-    await workspace.page.getByRole('menuitem', { name: 'Delete' }).click();
+    // Open context menu and delete files
+    await workspace.workspaceFileGrid.locator(`[row-id="${file3}"]`).click({ button: 'right' });
+    await workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Delete' }).click();
     await page.getByRole('button', { name: 'Delete' }).click();
 
-    // These files should still be visible in the workspace root because they've only been copied
-    await expect(
-      workspace.page.getByRole('complementary').getByTitle(sequence3.sequenceName, { exact: true }),
-    ).not.toBeVisible();
-    await expect(
-      workspace.page.getByRole('complementary').getByTitle(sequence5.sequenceName, { exact: true }),
-    ).not.toBeVisible();
+    // Verify files were deleted from root
+    await workspace.clearSearch();
+    await expect(sidebar.getByTitle(file3, { exact: true })).not.toBeVisible();
+    await expect(sidebar.getByTitle(file5, { exact: true })).not.toBeVisible();
+
+    // Cleanup remaining files and folders
+    // Delete folders first (which deletes their contents including copied files)
+    await workspace.searchForFileAndWait(folder1);
+    await workspace.deleteFolder(folder1);
+    await workspace.searchForFileAndWait(folder2);
+    await workspace.deleteFolder(folder2);
+    // Now file4 only exists at root, so searchForFileAndWait won't have duplicates
+    await workspace.searchForFileAndWait(file4);
+    await workspace.deleteFile(file4);
   });
 
   // Currently, switching users mid test causes a little bit of a race condition when multiple test workers are running tests

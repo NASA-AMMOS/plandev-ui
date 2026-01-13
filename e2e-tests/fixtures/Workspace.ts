@@ -24,6 +24,7 @@ export class Workspace {
   workspaceFileGrid: Locator;
   workspaceHeaderMenu: Locator;
   workspaceSettingsButton: Locator;
+  workspaceFileBrowserButton: Locator;
   workspaceSidebar: Locator;
 
   constructor(
@@ -266,6 +267,7 @@ export class Workspace {
       })
       .first();
     this.workspaceSettingsButton = page.getByRole('button', { name: 'Settings' });
+    this.workspaceFileBrowserButton = page.getByRole('button', { name: 'Files' });
     this.workspaceCollaboratorInput = page.getByPlaceholder('Search collaborators or workspaces');
   }
 
