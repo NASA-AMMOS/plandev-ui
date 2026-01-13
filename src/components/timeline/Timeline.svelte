@@ -96,6 +96,7 @@
   let contextMenu: MouseOver | null;
   let contextMenuComponent: TimelineContextMenu;
   let dpr: number = 1;
+  let externalEventsFilteredByDG: ExternalEvent[] = [];
   let tooltip: Tooltip;
   let cursorEnabled: boolean = true;
   let cursorHeaderHeight: number = 0;
@@ -129,7 +130,7 @@
   $: derivationGroups = $planDerivationGroupLinks
     .filter(link => link.plan_id === plan?.id)
     .map(link => link.derivation_group_name);
-  $: externalEvents = externalEvents.filter(externalEvent =>
+  $: externalEventsFilteredByDG = externalEvents.filter(externalEvent =>
     derivationGroups.includes(externalEvent.pkey.derivation_group_name),
   );
   $: rows = timeline?.rows || [];
@@ -399,7 +400,7 @@
       <TimelineHistogram
         activityDirectives={activityDirectives || []}
         loading={initialActivityDirectivesLoading || initialSpansLoading || initialConstraintsLoading}
-        {externalEvents}
+        externalEvents={externalEventsFilteredByDG}
         {constraintResults}
         {cursorEnabled}
         drawHeight={timelineHistogramDrawHeight}
@@ -470,7 +471,7 @@
           <TimelineRow
             {activityDirectives}
             {activityDirectivesMap}
-            {externalEvents}
+            externalEvents={externalEventsFilteredByDG}
             discreteTreeExpansionMap={discreteTreeExpansionMapByRow[row.id]}
             on:discreteTreeExpansionChange={event => {
               discreteTreeExpansionMapByRow = { ...discreteTreeExpansionMapByRow, [row.id]: event.detail };
