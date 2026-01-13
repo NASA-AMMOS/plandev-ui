@@ -221,6 +221,7 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         false,
+        false,
         {
           'Content-Type': 'application/json',
         },
@@ -257,6 +258,7 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         false,
+        false,
         {
           'Content-Type': 'application/json',
         },
@@ -274,6 +276,7 @@ describe('Workspace utility function tests', () => {
         }),
         null,
         undefined,
+        false,
         false,
         {
           'Content-Type': 'application/json',
@@ -294,6 +297,7 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         false,
+        false,
         {
           'Content-Type': 'application/json',
         },
@@ -312,6 +316,7 @@ describe('Workspace utility function tests', () => {
         }),
         null,
         undefined,
+        false,
         false,
         {
           'Content-Type': 'application/json',
@@ -332,6 +337,7 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        false,
         {
           'Content-Type': 'application/json',
         },
@@ -351,6 +357,7 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        false,
         {
           'Content-Type': 'application/json',
         },
@@ -370,6 +377,7 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        false,
         {
           'Content-Type': 'application/json',
         },
@@ -389,6 +397,7 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        false,
         {
           'Content-Type': 'application/json',
         },
@@ -409,6 +418,7 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        false,
         {
           'Content-Type': 'application/json',
         },
@@ -429,6 +439,7 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        false,
         {
           'Content-Type': 'application/json',
         },
@@ -449,6 +460,7 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        false,
         {
           'Content-Type': 'application/json',
         },
@@ -469,6 +481,7 @@ describe('Workspace utility function tests', () => {
         null,
         undefined,
         true,
+        false,
         {
           'Content-Type': 'application/json',
         },
@@ -1290,7 +1303,11 @@ describe('Workspace utility function tests', () => {
 
     test('Should not match similar path prefixes as parent', () => {
       // 'foobar/file.txt' should not be treated as child of 'foo'
-      const result = computeMovedFilePath('foobar/file.txt', [{ fullPath: 'foo' }, { fullPath: 'foobar/file.txt' }], 'dest');
+      const result = computeMovedFilePath(
+        'foobar/file.txt',
+        [{ fullPath: 'foo' }, { fullPath: 'foobar/file.txt' }],
+        'dest',
+      );
       expect(result).toBe('dest/file.txt');
     });
 
