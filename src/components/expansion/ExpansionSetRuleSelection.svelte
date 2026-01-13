@@ -7,9 +7,11 @@
   export let expansionRules: ExpansionRuleSlim[];
   export let selectedExpansionRules: Record<string, number> = {};
   export let selectExpansionRule: ((name: string, rule: ExpansionRuleSlim) => void) | undefined = undefined;
+
+  $: sortedExpansionRules = [...expansionRules].sort((a, b) => a.id - b.id);
 </script>
 
-{#each expansionRules as rule}
+{#each sortedExpansionRules as rule}
   <div
     class="expansion-rule-selection"
     role="none"
