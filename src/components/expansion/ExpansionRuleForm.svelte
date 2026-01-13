@@ -84,7 +84,7 @@
     tags: (ruleTags || []).map(tag => ({ tag })),
   });
   $: saveButtonClass = ruleModified && saveButtonEnabled ? 'primary' : 'secondary';
-  $: saveButtonEnabled = ruleActivityType !== null && ruleLogic !== '' && ruleName !== '';
+  $: saveButtonEnabled = parcelId !== null && ruleActivityType !== null && ruleLogic !== '' && ruleName !== '';
   $: saveButtonText = mode === 'edit' && !ruleModified ? 'Saved' : 'Save';
   $: {
     hasAuthoringPermission = mode === 'edit' ? isUserAdmin(user) : true;
