@@ -272,6 +272,7 @@ export async function reqWorkspace<T = any>(
   user: BaseUser | User | null,
   signal?: AbortSignal,
   asJson: boolean = true,
+  headerOverrides: HeadersInit = {},
 ): Promise<T> {
   const WORKSPACE_URL = env.PUBLIC_WORKSPACE_CLIENT_URL;
 
@@ -279,6 +280,7 @@ export async function reqWorkspace<T = any>(
     Authorization: `Bearer ${user?.token ?? ''}`,
     'x-hasura-role': (user as User)?.activeRole ?? '',
     'x-hasura-user-id': user?.id ?? '',
+    ...headerOverrides,
   };
   const options: RequestInit = {
     headers,

@@ -36,7 +36,7 @@ export class Workspace {
     const path = folderPath || uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
     await this.openWorkspaceContextMenu();
-    await this.workspaceContextMenu.getByRole('menuitem', { name: 'New Folder' }).click();
+    await this.workspaceContextMenu.getByRole('button', { name: 'New Folder' }).click();
     await this.page.locator('#modal-container').getByRole('menuitem', { name: this.workspaceName }).click();
     await this.fillFolderPath(path);
     await this.page.getByRole('button', { name: 'Confirm' }).click();
@@ -50,11 +50,11 @@ export class Workspace {
     sequencePath?: string,
     sequenceFileName?: string,
   ): Promise<{ sequenceName: string; sequencePath: string }> {
-    const seqPath = sequencePath || uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+    const seqPath = sequencePath ?? uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
     const seqName = sequenceFileName || `${uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })}.seq`;
 
     await this.openWorkspaceContextMenu();
-    await this.workspaceContextMenu.getByRole('menuitem', { name: 'New File' }).click();
+    await this.workspaceContextMenu.getByRole('button', { name: 'New File' }).click();
     await this.page.locator('#modal-container').getByRole('menuitem', { name: this.workspaceName }).click();
 
     await this.fillSequenceName(seqName, seqPath);
@@ -67,7 +67,7 @@ export class Workspace {
 
   async deleteSequence(sequenceName: string): Promise<void> {
     await this.page.getByRole('menuitem', { name: sequenceName }).click({ button: 'right' });
-    await this.page.getByRole('menuitem', { name: 'Delete' }).click();
+    await this.page.getByLabel('Delete').click();
     await this.page.locator('#modal-container').getByRole('button', { name: 'Delete' }).click();
 
     await this.waitForToast('Workspace File Deleted Successfully');
@@ -104,7 +104,7 @@ export class Workspace {
 
   async importSeqJson(filePath: string = this.jsonPath): Promise<void> {
     await this.openWorkspaceContextMenu();
-    await this.workspaceContextMenu.getByRole('menuitem', { name: 'Upload File' }).click();
+    await this.workspaceContextMenu.getByRole('button', { name: 'Upload File' }).click();
     await this.page.locator('#modal-container').getByRole('menuitem', { name: this.workspaceName }).click();
 
     const file = readFileSync(filePath);
@@ -128,6 +128,10 @@ export class Workspace {
     await this.workspaceContextMenuButton.click();
     await this.workspaceContextMenu.waitFor({ state: 'attached' });
     await this.workspaceContextMenu.waitFor({ state: 'visible' });
+    await expect(this.workspaceContextMenu.getByRole('button', { name: 'New File' })).toBeVisible();
+    // This timeout seems to fix a race condition where the menu is mounted, but the CSS animation might be doing something to make it disappear prematurely
+    // The effect is that the menu opens, but then flashes and disappears
+    await this.page.waitForTimeout(1000);
   }
 
   async saveSequence(): Promise<void> {

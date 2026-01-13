@@ -27,6 +27,7 @@
     Workspace,
     WorkspaceNodeEvent,
     WorkspaceNodeRunActionEvent,
+    WorkspaceNodesEvent,
   } from '../../../types/workspace';
   import type {
     WorkspaceTreeMap,
@@ -38,6 +39,7 @@
   import {
     flattenWorkspaceTreeWithPaths,
     getAvailableActionsForNodes,
+    joinPath,
     mapWorkspaceTreePaths,
   } from '../../../utilities/workspaces';
   import BulkActionDataGrid from '../../ui/DataGrid/BulkActionDataGrid.svelte';
@@ -65,13 +67,13 @@
 
   const dispatch = createEventDispatcher<{
     copyFileLocation: string;
+    deleteNodes: WorkspaceNodesEvent;
     importFile: string;
-    moveToWorkspace: string;
+    moveNodes: WorkspaceNodesEvent;
+    moveNodesToWorkspace: WorkspaceNodesEvent;
     newFolder: string;
     newSequence: string;
-    nodeDelete: WorkspaceNodeEvent;
-    nodeMove: WorkspaceNodeEvent;
-    nodeRename: WorkspaceNodeEvent;
+    renameNode: WorkspaceNodeEvent;
     runAction: WorkspaceNodeRunActionEvent;
   }>();
 
@@ -195,6 +197,25 @@
     treeNodeBreadcrumbDisplay = treeNodeBreadcrumbs;
   }
 
+  function getSelectionOrContext(
+    contextNode: WorkspaceTreeNodeWithFullPath | null,
+    selectedNodes: WorkspaceTreeNodeWithFullPath[],
+  ): WorkspaceTreeNodeWithFullPath[] {
+    if (selectedNodes.length) {
+      if (contextNode) {
+        if (selectedNodes.find(({ fullPath }) => contextNode.fullPath === fullPath) != null) {
+          return selectedNodes;
+        } else {
+          return [contextNode];
+        }
+      } else {
+        return selectedNodes;
+      }
+    }
+
+    return contextNode ? [contextNode] : [];
+  }
+
   function hasContextMenuUpdatePermission(user: User | null, selectedId: RowId | null) {
     const selectedTreeNode = selectedId ? workspaceTreeMap[selectedId] : undefined;
     if (workspace) {
@@ -276,26 +297,34 @@
     }
   }
 
-  function onDeleteNode(node: WorkspaceTreeNodeWithFullPath) {
-    dispatch('nodeDelete', {
+  function onDeleteNodes(nodes: WorkspaceTreeNodeWithFullPath[]) {
+    dispatch('deleteNodes', {
       toggleState: true,
-      treeNode: node,
-      treeNodePath: node.fullPath,
+      treeNodes: nodes,
+    });
+    closeBreadcrumbMenu();
+  }
+
+  function onDeleteNode(node: WorkspaceTreeNodeWithFullPath) {
+    onDeleteNodes([node]);
+    closeBreadcrumbMenu();
+  }
+
+  function onMoveNodes(nodes: WorkspaceTreeNodeWithFullPath[]) {
+    dispatch('moveNodes', {
+      toggleState: true,
+      treeNodes: nodes,
     });
     closeBreadcrumbMenu();
   }
 
   function onMoveNode(node: WorkspaceTreeNodeWithFullPath) {
-    dispatch('nodeMove', {
-      toggleState: true,
-      treeNode: node,
-      treeNodePath: node.fullPath,
-    });
+    onMoveNodes([node]);
     closeBreadcrumbMenu();
   }
 
   function onRenameNode(node: WorkspaceTreeNodeWithFullPath) {
-    dispatch('nodeRename', {
+    dispatch('renameNode', {
       toggleState: true,
       treeNode: node,
       treeNodePath: node.fullPath,
@@ -336,9 +365,15 @@
     closeBreadcrumbMenu();
   }
 
-  function onMoveToWorkspace(node: WorkspaceTreeNodeWithFullPath) {
-    let targetPath = node?.fullPath ?? '';
-    dispatch('moveToWorkspace', targetPath);
+  function onMoveNodesToWorkspace(nodes: WorkspaceTreeNodeWithFullPath[]) {
+    dispatch('moveNodesToWorkspace', {
+      toggleState: true,
+      treeNodes: nodes,
+    });
+  }
+
+  function onMoveNodeToWorkspace(node: WorkspaceTreeNodeWithFullPath) {
+    onMoveNodesToWorkspace([node]);
     closeBreadcrumbMenu();
   }
 
@@ -348,10 +383,8 @@
     }
   }
 
-  function onTableMenuMoveNode() {
-    if (contextMenuNode) {
-      onMoveNode(contextMenuNode);
-    }
+  function onTableMenuMoveNode({ detail: selectedNodes }: CustomEvent<WorkspaceTreeNodeWithFullPath[]>) {
+    onMoveNodes(getSelectionOrContext(contextMenuNode, selectedNodes));
   }
 
   function onTableNewFolder() {
@@ -378,16 +411,12 @@
     }
   }
 
-  function onTableMoveToWorkspace() {
-    if (contextMenuNode) {
-      onMoveToWorkspace(contextMenuNode);
-    }
+  function onTableMoveNodesToWorkspace({ detail: selectedNodes }: CustomEvent<WorkspaceTreeNodeWithFullPath[]>) {
+    onMoveNodesToWorkspace(getSelectionOrContext(contextMenuNode, selectedNodes));
   }
 
-  function onTableDeleteNode() {
-    if (contextMenuNode) {
-      onDeleteNode(contextMenuNode);
-    }
+  function onTableDeleteNodes({ detail: selectedNodes }: CustomEvent<WorkspaceTreeNodeWithFullPath[]>) {
+    onDeleteNodes(getSelectionOrContext(contextMenuNode, selectedNodes));
   }
 
   function onTableRunAction(event: CustomEvent<ActionParameterPair>, filePaths: RowId[]) {
@@ -523,7 +552,7 @@
               </div>
             </DropdownMenu.Item>
             <DropdownMenu.Separator />
-            <DropdownMenu.Item size="sm" on:click={() => onMoveToWorkspace(breadcrumb)}>
+            <DropdownMenu.Item size="sm" on:click={() => onMoveNodeToWorkspace(breadcrumb)}>
               <div class="flex items-center gap-2" aria-label="Move to Workspace">
                 <FileOutput size={14} /> Move to Workspace
               </div>
@@ -611,7 +640,12 @@
     on:cellContextMenuHide={onContextMenuHide}
   >
     <svelte:fragment slot="context-menu" let:selectedItemIds>
-      {@const selectedWorkspaceNodes = selectedItemIds ? selectedItemIds.map(id => workspaceTreeMap[id]) : []}
+      {@const selectedWorkspaceNodes = selectedItemIds
+        ? selectedItemIds.map(id => ({
+            ...workspaceTreeMap[id],
+            fullPath: `${joinPath([treeNodeBreadcrumbPath, workspaceTreeMap[id].name ?? ''])}`,
+          }))
+        : []}
       {@const actionsForSelection = getAvailableActionsForNodes(actions, selectedWorkspaceNodes)}
       <WorkspaceContextMenuContents
         {actionsForSelection}
@@ -621,9 +655,9 @@
         {hasCreateActionPermission}
         on:rename={onTableMenuRenameNode}
         on:move={onTableMenuMoveNode}
-        on:delete={onTableDeleteNode}
+        on:delete={onTableDeleteNodes}
         on:copyFileLocation={onTableCopyFileLocation}
-        on:moveToWorkspace={onTableMoveToWorkspace}
+        on:moveToWorkspace={onTableMoveNodesToWorkspace}
         on:runAction={event => onTableRunAction(event, selectedItemIds)}
         on:newFile={onTableNewSequence}
         on:newFolder={onTableNewFolder}

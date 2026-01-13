@@ -30,7 +30,6 @@
     copyFileLocation: string;
     deleteCollaborator: string;
     importFile: string;
-    moveToWorkspace: string;
     newFolder: string;
     newSequence: string;
     refreshWorkspace: void;
@@ -213,14 +212,14 @@
                         {workspace}
                         {user}
                         on:nodeClicked
-                        on:nodeDelete
-                        on:nodeMove
-                        on:nodeRename
+                        on:deleteNodes
+                        on:moveNodes
+                        on:renameNode
                         on:newFolder
                         on:newSequence
                         on:importFile
                         on:copyFileLocation
-                        on:moveToWorkspace
+                        on:moveNodesToWorkspace
                         on:runAction
                       />
                     {:else}
@@ -260,14 +259,14 @@
                         {workspace}
                         {user}
                         {isRowSelectable}
-                        on:nodeDelete
-                        on:nodeMove
-                        on:nodeRename
+                        on:deleteNodes
+                        on:moveNodes
+                        on:renameNode
                         on:newSequence
                         on:newFolder
                         on:importFile
                         on:copyFileLocation
-                        on:moveToWorkspace
+                        on:moveNodesToWorkspace
                         on:runAction
                       />
                     {:else}

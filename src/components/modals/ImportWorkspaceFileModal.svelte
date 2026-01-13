@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Checkbox } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import * as Sidebar from '../../components/ui/Sidebar/index.js';
   import type { User } from '../../types/app';
@@ -30,12 +31,11 @@
       filesToConvert: File[];
       filesToUpload: File[];
       shouldKeepOriginalFiles: boolean;
+      shouldOverwrite: boolean;
       targetDirectory: string;
     };
   }>();
 
-  let targetDirectory: string = joinPath([currentWorkspace?.name ?? '', startingPath]);
-  let uploadButtonDisabled: boolean = true;
   let files: FileList | undefined;
   let selectedFileGroupings: { convertableFiles: File[]; uploadableFiles: File[] } = {
     convertableFiles: [],
@@ -43,6 +43,9 @@
   };
   let shouldConvert: boolean = false;
   let shouldKeepOriginalFiles: boolean = false;
+  let shouldOverwrite: boolean = false;
+  let targetDirectory: string = joinPath([currentWorkspace?.name ?? '', startingPath]);
+  let uploadButtonDisabled: boolean = true;
 
   $: {
     uploadButtonDisabled = files === undefined || files.length === 0;
@@ -86,6 +89,7 @@
         filesToConvert,
         filesToUpload,
         shouldKeepOriginalFiles,
+        shouldOverwrite,
         targetDirectory: cleanPath(joinPath([targetDirectory.replace(new RegExp(`^${currentWorkspace.name}`), '')])),
       });
     }
@@ -154,6 +158,10 @@
             {/if}
           </div>
         {/if}
+        <div class="flex flex-row-reverse items-center gap-x-2">
+          <Checkbox name="shouldOverwrite" id="shouldOverwrite" bind:checked={shouldOverwrite} />
+          <label class="select-none" for="shouldOverwrite">Overwrite Existing Files</label>
+        </div>
       </div>
     </div>
   </ModalContent>

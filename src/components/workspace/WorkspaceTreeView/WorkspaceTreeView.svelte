@@ -11,6 +11,7 @@
     Workspace,
     WorkspaceNodeEvent,
     WorkspaceNodeRunActionEvent,
+    WorkspaceNodesEvent,
   } from '../../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
   import { featurePermissions } from '../../../utilities/permissions';
@@ -30,14 +31,14 @@
 
   const dispatch = createEventDispatcher<{
     copyFileLocation: string;
+    deleteNodes: WorkspaceNodesEvent;
     importFile: string;
-    moveToWorkspace: string;
+    moveNodes: WorkspaceNodesEvent;
+    moveNodesToWorkspace: WorkspaceNodesEvent;
     newFolder: string;
     newSequence: string;
     nodeClicked: WorkspaceNodeEvent;
-    nodeDelete: WorkspaceNodeEvent;
-    nodeMove: WorkspaceNodeEvent;
-    nodeRename: WorkspaceNodeEvent;
+    renameNode: WorkspaceNodeEvent;
     runAction: WorkspaceNodeRunActionEvent;
   }>();
 
@@ -80,27 +81,25 @@
 
   function onDeleteNode() {
     if (contextMenuNode) {
-      dispatch('nodeDelete', {
+      dispatch('deleteNodes', {
         toggleState: true,
-        treeNode: contextMenuNode,
-        treeNodePath: contextMenuNode.fullPath,
+        treeNodes: [contextMenuNode],
       });
     }
   }
 
   function onMoveNode() {
     if (contextMenuNode) {
-      dispatch('nodeMove', {
+      dispatch('moveNodes', {
         toggleState: true,
-        treeNode: contextMenuNode,
-        treeNodePath: contextMenuNode.fullPath,
+        treeNodes: [contextMenuNode],
       });
     }
   }
 
   function onRenameNode() {
     if (contextMenuNode) {
-      dispatch('nodeRename', {
+      dispatch('renameNode', {
         toggleState: true,
         treeNode: contextMenuNode,
         treeNodePath: contextMenuNode.fullPath,
@@ -137,9 +136,13 @@
     dispatch('copyFileLocation', targetPath);
   }
 
-  function onMoveToWorkspace() {
-    let targetPath = contextMenuNode?.fullPath ?? '';
-    dispatch('moveToWorkspace', targetPath);
+  function onMoveNodesToWorkspace() {
+    if (contextMenuNode) {
+      dispatch('moveNodesToWorkspace', {
+        toggleState: true,
+        treeNodes: [contextMenuNode],
+      });
+    }
   }
 
   function onRunAction(event: CustomEvent<ActionParameterPair>) {
@@ -163,7 +166,7 @@
         on:move={onMoveNode}
         on:delete={onDeleteNode}
         on:copyFileLocation={onCopyFileLocation}
-        on:moveToWorkspace={onMoveToWorkspace}
+        on:moveToWorkspace={onMoveNodesToWorkspace}
         on:runAction={onRunAction}
         on:newFile={onNewSequence}
         on:newFolder={onNewFolder}

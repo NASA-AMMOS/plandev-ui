@@ -9,7 +9,7 @@
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
   import { parcels } from '../../stores/sequencing';
   import type { User } from '../../types/app';
-  import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
+  import type { DataGridColumnDef, DataGridRowDoubleClick, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { Parcel } from '../../types/sequencing';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -121,6 +121,10 @@
     editParcel({ id: event.detail[0] as number });
   }
 
+  function onParcelDoubleClick(event: CustomEvent<DataGridRowDoubleClick<Parcel>>) {
+    editParcel(event.detail.data);
+  }
+
   function hasDeletePermission(user: User | null, parcel: Parcel) {
     return featurePermissions.parcels.canDelete(user, parcel);
   }
@@ -174,6 +178,7 @@
         on:deleteItem={deleteParcelContext}
         on:editItem={editParcelContext}
         on:rowSelected={toggleParcel}
+        on:rowDoubleClicked={onParcelDoubleClick}
       />
     {:else}
       <div class="p1 st-typography-label">No Parcels Found</div>
