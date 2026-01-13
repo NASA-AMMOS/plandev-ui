@@ -299,7 +299,7 @@ export class Plan {
     await this.panelActivityForm.getByPlaceholder('Enter preset name').blur();
   }
 
-  async fillExternalDatasetFileInput(importFilePath: string) {
+  async fillFileInput(importFilePath: string) {
     const inputFile = this.page.locator('input[name="file"]');
     await setFileInputByFilepath(this.page, inputFile, importFilePath);
   }
@@ -620,10 +620,18 @@ export class Plan {
     this.sequenceExpansionOutputModal = page.locator(`.modal:has-text("Sequence ID")`);
   }
 
+  async uploadActivities(importFilePath: string) {
+    await this.panelActivityTypes.getByRole('tab', { exact: true, name: 'Activities' }).click();
+    await this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload Activities' }).click();
+    await this.fillFileInput(importFilePath);
+    await expect(this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload' })).toBeEnabled();
+    await this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload' }).click();
+  }
+
   async uploadExternalDatasets(importFilePath: string) {
     await this.panelActivityTypes.getByRole('tab', { exact: true, name: 'Resources' }).click();
     await this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload Resources' }).click();
-    await this.fillExternalDatasetFileInput(importFilePath);
+    await this.fillFileInput(importFilePath);
     await expect(this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload' })).toBeEnabled();
     await this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload' }).click();
   }
