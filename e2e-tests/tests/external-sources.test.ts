@@ -201,7 +201,13 @@ test.describe.serial('External Source Error Handling', () => {
     await expect(setup.page.getByLabel('Uniqueness violation.')).toBeVisible({ timeout: 10000 });
     await externalSources.waitForToast('External Source Create Failed');
     await expect(setup.page.getByRole('gridcell', { name: externalSources.externalSourceFileName })).toHaveCount(1);
+
+    // Wait for failure toast to disappear before proceeding with delete (toasts auto-hide after 3s)
+    await setup.page
+      .locator('.toastify:has-text("External Source Create Failed")')
+      .waitFor({ state: 'hidden', timeout: 5000 });
+
     await externalSources.deleteSource(externalSources.externalSourceFileName);
-    await externalSources.waitForToast('External Source Deleted Successfully');
+    await externalSources.waitForToast('External Source Deleted Successfully', 15000);
   });
 });
