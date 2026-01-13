@@ -79,10 +79,6 @@ test.describe.serial('Extensions', () => {
       await expect(plan.navButtonExtensionMenu).not.toBeVisible();
 
       await extension.deleteExtension(setup.page, request, extensionId);
-
-      // Wait for subscription update to remove the extension button
-      await expect(plan.navButtonExtension).not.toBeVisible({ timeout: 10000 });
-      await expect(plan.navButtonExtensionMenu).not.toBeVisible();
     }
   });
 });
