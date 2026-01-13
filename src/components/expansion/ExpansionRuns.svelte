@@ -21,13 +21,14 @@
   } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
-  import type { ActivityInstanceJoin, ExpandedSequence, ExpansionRun } from '../../types/expansion';
+  import type { ActivityInstanceJoin, ExpandedSequence, ExpansionRun, ExpansionRunSlim } from '../../types/expansion';
   import type {
     ChannelDictionaryMetadata,
     CommandDictionaryMetadata,
     ParameterDictionaryMetadata,
     Parcel,
   } from '../../types/sequencing';
+  import effects from '../../utilities/effects';
   import { filterEmpty } from '../../utilities/generic';
   import SequenceEditor from '../sequencing/SequenceEditor.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -37,16 +38,19 @@
   import SectionTitle from '../ui/SectionTitle.svelte';
   import ExpandedSequencesDownloadButton from './ExpandedSequencesDownloadButton.svelte';
 
-  export let expansionRuns: ExpansionRun[] = [];
+  export let expansionRuns: ExpansionRunSlim[] = [];
   export let user: User | null;
 
   let channelDictionary: ChannelDictionary | null = null;
   let commandDictionary: CommandDictionary | null = null;
+  let fetchAbortController: AbortController | null = null;
+  let loadingExpansionRunDetails: boolean = false;
   let parameterDictionaries: ParameterDictionary[] = [];
   let parcel: Parcel | null;
+  let selectedExpansionRun: ExpansionRun | null = null;
+  let selectedExpansionRunId: number | null = null;
   let selectedSequence: ExpandedSequence | null = null;
   let selectedSequenceIds: number[] = [];
-  let selectedExpansionRun: ExpansionRun | null = null;
   let sequenceDefinition: string;
   let phoenixContext: PhoenixContext;
 
@@ -194,17 +198,34 @@
   $: parcel = $parcels.find(p => p.id === selectedExpansionRun?.expansion_set.parcel_id) ?? null;
   $: selectedSequenceIds = selectedSequence ? [selectedSequence.id] : [];
 
-  function toggleRun(event: CustomEvent<DataGridRowSelection<ExpansionRun>>) {
+  async function fetchExpansionRunDetails(id: number): Promise<void> {
+    // Abort any in-flight request
+    if (fetchAbortController) {
+      fetchAbortController.abort();
+    }
+
+    fetchAbortController = new AbortController();
+    loadingExpansionRunDetails = true;
+    selectedExpansionRun = null;
+
+    const { aborted, expansionRun } = await effects.getExpansionRun(id, user, fetchAbortController.signal);
+
+    if (!aborted) {
+      selectedExpansionRun = expansionRun;
+      loadingExpansionRunDetails = false;
+      fetchAbortController = null;
+    }
+  }
+
+  function selectRun(event: CustomEvent<DataGridRowSelection<ExpansionRunSlim>>) {
     const {
       detail: { data: clickedRun, isSelected },
     } = event;
 
-    selectedSequence = null;
-
-    if (isSelected) {
-      selectedExpansionRun = clickedRun;
-    } else if (selectedExpansionRun?.id === clickedRun.id) {
-      selectedExpansionRun = null;
+    if (isSelected && selectedExpansionRunId !== clickedRun.id) {
+      selectedSequence = null;
+      selectedExpansionRunId = clickedRun.id;
+      fetchExpansionRunDetails(clickedRun.id);
     }
   }
 
@@ -215,8 +236,6 @@
 
     if (isSelected) {
       selectedSequence = clickedSequence;
-    } else if (selectedSequence?.id === clickedSequence.id) {
-      selectedSequence = null;
     }
   }
 </script>
@@ -229,11 +248,7 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        {#if expansionRuns.length}
-          <DataGrid {columnDefs} rowSelection="single" rowData={expansionRuns} on:rowSelected={toggleRun} />
-        {:else}
-          No Expansion Runs Found
-        {/if}
+        <DataGrid {columnDefs} rowSelection="single" rowData={expansionRuns} on:rowSelected={selectRun} />
       </svelte:fragment>
     </Panel>
 
@@ -242,27 +257,28 @@
     <Panel>
       <svelte:fragment slot="header">
         <SectionTitle>Expanded Sequences</SectionTitle>
-        {#if selectedExpansionRun}
+        {#if selectedExpansionRun && !loadingExpansionRunDetails}
           <div class="right">
             <ExpandedSequencesDownloadButton
-              expandedSequences={selectedExpansionRun?.expanded_sequences}
-              filename={`expanded_sequences_${selectedExpansionRun?.created_at.split('.')[0]}`}
+              expandedSequences={selectedExpansionRun.expanded_sequences}
+              filename={`expanded_sequences_${selectedExpansionRun.created_at.split('.')[0]}`}
             />
           </div>
         {/if}
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        {#if selectedExpansionRun}
+        {#if selectedExpansionRunId !== null}
           <DataGrid
             columnDefs={sequenceColumnDefs}
-            rowData={selectedExpansionRun?.expanded_sequences}
+            loading={loadingExpansionRunDetails}
+            rowData={selectedExpansionRun?.expanded_sequences ?? []}
             rowSelection="single"
             selectedRowIds={selectedSequenceIds}
             on:rowSelected={toggleSequence}
           />
         {:else}
-          No Expansion Run Selected
+          <div class="text-muted-foreground">No Expansion Run Selected</div>
         {/if}
       </svelte:fragment>
     </Panel>
