@@ -20,11 +20,11 @@ export class Workspace {
   textEditor: Locator;
   workspaceCollaboratorInput: Locator;
   workspaceContextMenuButton: Locator;
+  workspaceFileBrowserButton: Locator;
   workspaceFileContextMenu: Locator;
   workspaceFileGrid: Locator;
   workspaceHeaderMenu: Locator;
   workspaceSettingsButton: Locator;
-  workspaceFileBrowserButton: Locator;
   workspaceSidebar: Locator;
 
   constructor(
