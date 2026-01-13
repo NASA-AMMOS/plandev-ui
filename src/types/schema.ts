@@ -4,6 +4,7 @@ type ValueSchemaMetadata = {
     description?: {
       value: string;
     };
+    item_order?: string[];
     unit?: {
       value: string;
     };

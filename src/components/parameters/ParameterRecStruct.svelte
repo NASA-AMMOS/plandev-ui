@@ -12,6 +12,7 @@
   import ParameterName from './ParameterName.svelte';
   import ParameterRec from './ParameterRec.svelte';
   import ParameterUnits from './ParameterUnits.svelte';
+  import { compare } from '../../utilities/generic';
 
   export let disabled: boolean = false;
   export let expanded: boolean = false;
@@ -33,21 +34,29 @@
 
   function getSubFormParameters(formParameter: FormParameter<ValueSchemaStruct>): FormParameter[] {
     const { schema, value = [] } = formParameter;
-    const { items: keys } = schema;
+    const { items: keys, metadata } = schema;
+    const order = metadata?.item_order;
     const structKeys = Object.keys(keys).sort();
+
+    const structOrderMap = new Map<string, number>();
+    order?.forEach((structKey, index) => {
+      structOrderMap.set(structKey, index);
+    });
 
     const subFormParameters = structKeys.map((key, index) => {
       let subFormParameter: FormParameter = {
         errors: null,
         key,
         name: key,
-        order: index,
+        order: structOrderMap.get(key) ?? index,
         schema: schema.items[key],
         value: value !== null ? value[key] : null,
         valueSource: formParameter.valueSource,
       };
       return subFormParameter;
     });
+
+    subFormParameters.sort((a, b) => compare(a.order, b.order));
 
     return subFormParameters;
   }
