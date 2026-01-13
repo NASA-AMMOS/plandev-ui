@@ -2461,7 +2461,7 @@ const effects = {
     parcelId: number,
     user: User | null,
     name?: string | null,
-  ): Promise<Workspace | null> {
+  ): Promise<number | null> {
     try {
       if (!featurePermissions.workspaces.canCreate(user)) {
         throwPermissionError('create a workspace');
@@ -2469,7 +2469,7 @@ const effects = {
 
       creatingWorkspace.set(true);
 
-      const newWorkspace: Workspace = await WorkspaceApi.createWorkspace(location, parcelId, user, name);
+      const newWorkspace = await WorkspaceApi.createWorkspace(location, parcelId, user, name);
 
       creatingWorkspace.set(false);
 
