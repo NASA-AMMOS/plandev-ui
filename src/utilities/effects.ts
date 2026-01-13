@@ -8502,7 +8502,7 @@ const effects = {
 
       if (uploadedActivities != null) {
         showSuccessToast('Activities Uploaded Successfully');
-        logMessage(`Uploaded activites from file '${file.name}'`);
+        logMessage(`Uploaded ${uploadedActivities} activites from file '${file.name}'`);
         return uploadedActivities;
       }
       throw Error('Uploaded activities not found');
