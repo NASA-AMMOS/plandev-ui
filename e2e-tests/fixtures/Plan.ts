@@ -640,8 +640,8 @@ export class Plan {
     await expect(this.page.locator(this.simulationStatusSelector(status))).toBeVisible();
   }
 
-  async waitForToast(message: string) {
-    await this.page.waitForSelector(`.toastify:has-text("${message}")`, { timeout: 10000 });
+  async waitForToast(message: string, timeout: number = 10000) {
+    await this.page.waitForSelector(`.toastify:has-text("${message}")`, { timeout });
   }
 }
 

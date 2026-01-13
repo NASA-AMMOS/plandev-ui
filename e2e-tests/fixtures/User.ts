@@ -29,8 +29,9 @@ export class User {
   }
 
   /**
-   * Navigate to a URL with retry logic for ERR_ABORTED errors.
+   * Navigate to a URL with retry logic for navigation errors.
    * Use this after switchRole() since role changes can cause navigation instability.
+   * Handles ERR_ABORTED and "interrupted by another navigation" errors.
    */
   async gotoWithRetry(
     url: string,
@@ -45,8 +46,9 @@ export class User {
         return;
       } catch (e) {
         const isLastAttempt = i === maxRetries - 1;
-        const isAbortError = e instanceof Error && e.message.includes('ERR_ABORTED');
-        if (isLastAttempt || !isAbortError) {
+        const isRetryableError =
+          e instanceof Error && (e.message.includes('ERR_ABORTED') || e.message.includes('interrupted by another'));
+        if (isLastAttempt || !isRetryableError) {
           throw e;
         }
       }

@@ -74,9 +74,15 @@ test.describe.serial('Extensions', () => {
 
   test(`Delete an extension`, async ({ request }) => {
     if (extensionId !== undefined) {
-      await extension.deleteExtension(setup.page, request, extensionId);
+      // Move mouse away from extension menu first
+      await plan.planTitle.hover();
       await expect(plan.navButtonExtensionMenu).not.toBeVisible();
-      await expect(plan.navButtonExtension).not.toBeVisible();
+
+      await extension.deleteExtension(setup.page, request, extensionId);
+
+      // Wait for subscription update to remove the extension button
+      await expect(plan.navButtonExtension).not.toBeVisible({ timeout: 10000 });
+      await expect(plan.navButtonExtensionMenu).not.toBeVisible();
     }
   });
 });
