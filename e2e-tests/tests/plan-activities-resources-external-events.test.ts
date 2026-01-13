@@ -12,7 +12,7 @@ test.afterAll(async () => {
   await teardownTest(setup);
 });
 
-test.describe.serial('Plan Resources', () => {
+test.describe.serial('Plan Activities, Resources, External Events', () => {
   test('Uploading external plan dataset file - JSON', async () => {
     await setup.plan.uploadExternalDatasets('e2e-tests/data/external-dataset.json');
     await expect(setup.plan.panelActivityTypes.getByText('/awake')).toBeVisible();
@@ -24,5 +24,14 @@ test.describe.serial('Plan Resources', () => {
     await expect(setup.plan.panelActivityTypes.getByText('TotalPower')).toBeVisible();
     await expect(setup.plan.panelActivityTypes.getByText('BatteryStateOfCharge')).toBeVisible();
     await expect(setup.plan.panelActivityTypes.getByText('Temperature')).toBeVisible();
+  });
+
+  test('Uploading activities', async () => {
+    await plan.uploadActivities('e2e-tests/data/activities.json');
+    await expect(plan.panelActivityDirectivesTable.getByRole('row', { name: 'BananaNap' })).toHaveCount(2);
+    await expect(plan.panelActivityDirectivesTable.getByRole('row', { name: 'ChangeProducer' })).toHaveCount(2);
+    await expect(
+      plan.panelActivityDirectivesTable.getByRole('row', { name: 'ControllableDurationActivity' }),
+    ).toHaveCount(2);
   });
 });
