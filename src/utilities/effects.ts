@@ -118,6 +118,7 @@ import type {
   ExpansionRuleInsertInput,
   ExpansionRuleSetInput,
   ExpansionRun,
+  ExpansionRunSlim,
   ExpansionSequence,
   ExpansionSequenceInsertInput,
   ExpansionSequenceToActivityInsertInput,
@@ -4451,9 +4452,33 @@ const effects = {
     }
   },
 
-  async getExpansionRuns(user: User | null): Promise<ExpansionRun[]> {
+  async getExpansionRun(
+    id: number,
+    user: User | null,
+    signal?: AbortSignal,
+  ): Promise<{ aborted: boolean; expansionRun: ExpansionRun | null }> {
     try {
-      const data = await reqHasura<ExpansionRun[]>(gql.GET_EXPANSION_RUNS, {}, user);
+      const data = await reqHasura<ExpansionRun>(gql.GET_EXPANSION_RUN, { id }, user, signal);
+      const { expansionRun } = data;
+      if (expansionRun) {
+        logMessage(`Retrieved expansion run (ID=${id}).`);
+        return { aborted: false, expansionRun };
+      } else {
+        return { aborted: false, expansionRun: null };
+      }
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') {
+        return { aborted: true, expansionRun: null };
+      }
+      catchError('Failed to get expansion run', e as Error);
+      showFailureToast('Expansion Run Details Retrieval Failed');
+      return { aborted: false, expansionRun: null };
+    }
+  },
+
+  async getExpansionRuns(user: User | null): Promise<ExpansionRunSlim[]> {
+    try {
+      const data = await reqHasura<ExpansionRunSlim[]>(gql.GET_EXPANSION_RUNS, {}, user);
       const { expansionRuns } = data;
       if (expansionRuns) {
         logMessage(`Retrieved ${expansionRuns.length} expansion run${pluralize(expansionRuns.length)}.`);
@@ -4463,6 +4488,7 @@ const effects = {
       }
     } catch (e) {
       catchError('Failed to get expansion runs', e as Error);
+      showFailureToast('Expansion Runs Retrieval Failed');
       return [];
     }
   },

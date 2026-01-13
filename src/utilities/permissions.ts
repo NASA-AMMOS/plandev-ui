@@ -783,6 +783,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   GET_EFFECTIVE_MODEL_ARGUMENTS: () => true,
   GET_EVENTS: () => true,
   GET_EXPANSION_RULE: () => true,
+  GET_EXPANSION_RUN: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.EXPANSION_RUNS], user);
+  },
   GET_EXPANSION_RUNS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.EXPANSION_RUNS], user);
   },
