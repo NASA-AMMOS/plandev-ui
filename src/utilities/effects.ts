@@ -343,7 +343,7 @@ async function bulkMoveWorkspaceItems(
   targetPath: string,
   user: User | null,
   targetWorkspace?: Workspace,
-): Promise<Record<string, string>> {
+): Promise<{ renamedFiles: Record<string, string>; skippedFiles: Set<string> }> {
   const cleanedTargetPath = cleanPath(targetPath);
   const finalTargetPath = `./${cleanedTargetPath}`;
 
@@ -372,6 +372,7 @@ async function bulkMoveWorkspaceItems(
 
   const failedFileOperations: BulkOperationResponses = [];
   const renamedFiles: Record<string, string> = {};
+  const skippedFiles = new Set<string>();
 
   while (responses.length > 0) {
     const response = responses.shift();
@@ -488,6 +489,8 @@ async function bulkMoveWorkspaceItems(
               });
             }
           } else {
+            // User selected "Skip" - track skipped files
+            retryResponses.forEach(({ item }) => skippedFiles.add(item));
             continue;
           }
         }
@@ -502,7 +505,7 @@ async function bulkMoveWorkspaceItems(
     });
   }
 
-  return renamedFiles;
+  return { renamedFiles, skippedFiles };
 }
 
 /**
@@ -6349,7 +6352,7 @@ const effects = {
     workspaceContents: WorkspaceTreeNode,
     originalNodes: WorkspaceTreeNodeWithFullPath[],
     user: User | null,
-  ): Promise<{ renamedFiles: Record<string, string>; targetPath: string } | null> {
+  ): Promise<{ renamedFiles: Record<string, string>; skippedFiles: Set<string>; targetPath: string } | null> {
     const displayString: string = getWorkspaceFileFolderDisplay(originalNodes);
     try {
       if (!featurePermissions.workspace.canUpdate(user, workspace)) {
@@ -6362,7 +6365,7 @@ const effects = {
 
         const cleanedTargetPath = cleanPath(targetPath);
         try {
-          const renamedFiles = await bulkMoveWorkspaceItems(
+          const { renamedFiles, skippedFiles } = await bulkMoveWorkspaceItems(
             workspace,
             originalNodes.map(({ fullPath }) => fullPath),
             shouldCopy,
@@ -6376,7 +6379,7 @@ const effects = {
             `${shouldCopy ? 'Copied' : 'Moved'} workspace ${displayString.toLowerCase()} to "${cleanedTargetPath}".`,
           );
 
-          return { renamedFiles, targetPath: cleanedTargetPath };
+          return { renamedFiles, skippedFiles, targetPath: cleanedTargetPath };
         } catch (e) {
           throw Error(
             `Workspace ${displayString.toLowerCase()} unable to be ${shouldCopy ? 'copied' : 'moved'}`,

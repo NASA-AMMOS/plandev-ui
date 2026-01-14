@@ -614,11 +614,14 @@
       await refreshWorkspaceContents();
 
       if (movedActiveNode && result) {
-        const { renamedFiles, targetPath } = result;
-        const newFilePath = computeMovedFilePath(movedActiveNode.fullPath, minimalNodes, targetPath, renamedFiles);
-        // Wait for tree to render before updating selection (ensures parent folders can expand)
-        await tick();
-        updateActiveFilePath(newFilePath);
+        const { renamedFiles, skippedFiles, targetPath } = result;
+        // Don't update selection if the file was skipped
+        if (!skippedFiles.has(movedActiveNode.fullPath)) {
+          const newFilePath = computeMovedFilePath(movedActiveNode.fullPath, minimalNodes, targetPath, renamedFiles);
+          // Wait for tree to render before updating selection (ensures parent folders can expand)
+          await tick();
+          updateActiveFilePath(newFilePath);
+        }
       }
     }
   }
