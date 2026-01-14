@@ -272,6 +272,7 @@ export async function reqWorkspace<T = any>(
   user: BaseUser | User | null,
   signal?: AbortSignal,
   asJson: boolean = true,
+  asBlob: boolean = false,
   headerOverrides: HeadersInit = {},
 ): Promise<T> {
   const WORKSPACE_URL = env.PUBLIC_WORKSPACE_CLIENT_URL;
@@ -296,6 +297,10 @@ export async function reqWorkspace<T = any>(
 
   if (!response.ok) {
     throw new Error(response.statusText);
+  }
+
+  if (asBlob) {
+    return (await response.blob()) as T;
   }
 
   if (asJson) {

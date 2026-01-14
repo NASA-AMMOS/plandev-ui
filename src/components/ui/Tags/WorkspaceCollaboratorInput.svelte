@@ -73,6 +73,7 @@
 </script>
 
 <UserInput
+  className="w-full"
   placeholder="Search collaborators or workspaces"
   selectedUsers={collaborators.map(({ collaborator }) => collaborator)}
   tagDisplayName="collaborator"

@@ -343,7 +343,7 @@ async function bulkMoveWorkspaceItems(
   targetPath: string,
   user: User | null,
   targetWorkspace?: Workspace,
-) {
+): Promise<{ renamedFiles: Record<string, string>; skippedFiles: Set<string> }> {
   const cleanedTargetPath = cleanPath(targetPath);
   const finalTargetPath = `./${cleanedTargetPath}`;
 
@@ -371,6 +371,8 @@ async function bulkMoveWorkspaceItems(
   }
 
   const failedFileOperations: BulkOperationResponses = [];
+  const renamedFiles: Record<string, string> = {};
+  const skippedFiles = new Set<string>();
 
   while (responses.length > 0) {
     const response = responses.shift();
@@ -439,7 +441,8 @@ async function bulkMoveWorkspaceItems(
               const targetDirectoryNodeContents = [...contents];
 
               const newItems: MoveFileOperation[] = retryResponses.map(({ item }) => {
-                let newFilename = item;
+                const { filename } = separateFilenameFromPath(item);
+                let newFilename = filename;
                 while (findNodeInDirectory(newFilename, targetDirectoryNodeContents)) {
                   newFilename = incrementFilename(newFilename);
                 }
@@ -447,9 +450,13 @@ async function bulkMoveWorkspaceItems(
                   name: newFilename,
                   type: WorkspaceContentType.Unknown,
                 });
+                // Track renamed files
+                if (newFilename !== filename) {
+                  renamedFiles[item] = newFilename;
+                }
                 return {
                   path: item,
-                  ...(newFilename ? { renameTo: newFilename } : {}),
+                  ...(newFilename !== filename ? { renameTo: newFilename } : {}),
                 };
               });
 
@@ -482,6 +489,8 @@ async function bulkMoveWorkspaceItems(
               });
             }
           } else {
+            // User selected "Skip" - track skipped files
+            retryResponses.forEach(({ item }) => skippedFiles.add(item));
             continue;
           }
         }
@@ -495,6 +504,8 @@ async function bulkMoveWorkspaceItems(
       cause: failedFileOperations,
     });
   }
+
+  return { renamedFiles, skippedFiles };
 }
 
 /**
@@ -4013,7 +4024,7 @@ const effects = {
     originalPath: string,
     user: User | null,
   ): Promise<boolean> {
-    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
+    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Folder' : 'File';
     try {
       if (!featurePermissions.workspace.canDelete(user, workspace, originalNode)) {
         throwPermissionError(`delete this workspace ${typeString.toLowerCase()}`);
@@ -5718,6 +5729,28 @@ const effects = {
     return null;
   },
 
+  async getWorkspaceFileContentBlob(workspace: Workspace, filePath: string, user: User | null): Promise<Blob | null> {
+    try {
+      if (!featurePermissions.workspace.canRead(user, workspace)) {
+        throwPermissionError('download this file');
+      }
+
+      const fileContents = await WorkspaceApi.getFileContentBlob(workspace.id, filePath, user);
+
+      if (fileContents != null) {
+        logMessage(`Retrieved workspace file "${filePath}" for workspace ID=${workspace.id}.`);
+        return fileContents;
+      } else {
+        throw Error(`Workspace file contents not found`);
+      }
+    } catch (e) {
+      catchError('Unable to retrieve workspace file', e as Error);
+      showFailureToast('Workspace File Retrieval Failed');
+    }
+
+    return null;
+  },
+
   async getWorkspaceFilesList(workspaceId: number, user: User | null): Promise<WorkspaceTreeNodeWithFullPath[]> {
     const workspaceContents = await effects.getWorkspaceContents(workspaceId, '', user);
     return flattenWorkspaceTreeWithPaths(workspaceContents ?? []);
@@ -6319,7 +6352,7 @@ const effects = {
     workspaceContents: WorkspaceTreeNode,
     originalNodes: WorkspaceTreeNodeWithFullPath[],
     user: User | null,
-  ): Promise<string | null> {
+  ): Promise<{ renamedFiles: Record<string, string>; skippedFiles: Set<string>; targetPath: string } | null> {
     const displayString: string = getWorkspaceFileFolderDisplay(originalNodes);
     try {
       if (!featurePermissions.workspace.canUpdate(user, workspace)) {
@@ -6332,7 +6365,7 @@ const effects = {
 
         const cleanedTargetPath = cleanPath(targetPath);
         try {
-          await bulkMoveWorkspaceItems(
+          const { renamedFiles, skippedFiles } = await bulkMoveWorkspaceItems(
             workspace,
             originalNodes.map(({ fullPath }) => fullPath),
             shouldCopy,
@@ -6346,7 +6379,7 @@ const effects = {
             `${shouldCopy ? 'Copied' : 'Moved'} workspace ${displayString.toLowerCase()} to "${cleanedTargetPath}".`,
           );
 
-          return cleanedTargetPath;
+          return { renamedFiles, skippedFiles, targetPath: cleanedTargetPath };
         } catch (e) {
           throw Error(
             `Workspace ${displayString.toLowerCase()} unable to be ${shouldCopy ? 'copied' : 'moved'}`,
@@ -6789,7 +6822,7 @@ const effects = {
     originalPath: string,
     user: User | null,
   ): Promise<string | null> {
-    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
+    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Folder' : 'File';
     try {
       if (!featurePermissions.workspace.canUpdate(user, workspace, originalNode)) {
         throwPermissionError(`update this workspace ${typeString.toLowerCase()}`);

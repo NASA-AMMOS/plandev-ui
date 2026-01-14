@@ -27,19 +27,16 @@ export type WorkspaceInsertInput = {
 };
 
 export type WorkspaceNodeEvent = {
-  toggleState?: boolean;
   treeNode: WorkspaceTreeNode;
   treeNodePath: string;
 };
 
 export type WorkspaceNodesEvent = {
-  toggleState?: boolean;
   treeNodes: WorkspaceTreeNodeWithFullPath[];
 };
 
 export type ActionParameterPair = { action: ActionDefinition; parameter: string };
 
-export type WorkspaceNodeRunActionEvent = {
+export type WorkspaceNodeRunActionEvent = WorkspaceNodesEvent & {
   actionParameterPair: ActionParameterPair;
-  treeNodes: WorkspaceTreeNodeWithFullPath[];
 };

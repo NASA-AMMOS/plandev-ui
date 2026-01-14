@@ -144,7 +144,13 @@ export function isEmpty(value: any): boolean {
  * Returns true if the current browser is running on MacOS
  */
 export function isMacOs(): boolean {
-  return /mac/i.test(window.navigator.platform);
+  if (!browser) {
+    return false;
+  }
+  // userAgentData is not yet in TypeScript's Navigator type (only supported in Chromium browsers)
+  const nav = navigator as Navigator & { userAgentData?: { platform: string } };
+  const platform = nav.userAgentData?.platform ?? navigator.platform;
+  return /mac/i.test(platform);
 }
 
 /**
@@ -287,10 +293,14 @@ export function addPageFocusListener(onChange: (string: 'out' | 'in') => void): 
  * @param filename - file extension should be provided
  */
 export function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  a.href = url;
   a.download = filename;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 /**

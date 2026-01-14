@@ -31,6 +31,7 @@
 
   const dispatch = createEventDispatcher<{
     copyFileLocation: string;
+    copyFullPath: string;
     deleteNodes: WorkspaceNodesEvent;
     importFile: string;
     moveNodes: WorkspaceNodesEvent;
@@ -67,8 +68,8 @@
         fullPath: data.treeNodePath,
       };
       if (workspace) {
-        hasEditPermission = featurePermissions.workspace.canUpdate(user, workspace, contextMenuNode);
-        hasDeletePermission = featurePermissions.workspace.canDelete(user, workspace, contextMenuNode);
+        hasEditPermission = featurePermissions.workspace.canUpdate(user, workspace, contextMenuNode ?? undefined);
+        hasDeletePermission = featurePermissions.workspace.canDelete(user, workspace, contextMenuNode ?? undefined);
         hasCreateActionPermission = featurePermissions.actionRun.canCreate(user, workspace);
       }
       contextMenu.show(event);
@@ -81,26 +82,19 @@
 
   function onDeleteNode() {
     if (contextMenuNode) {
-      dispatch('deleteNodes', {
-        toggleState: true,
-        treeNodes: [contextMenuNode],
-      });
+      dispatch('deleteNodes', { treeNodes: [contextMenuNode] });
     }
   }
 
   function onMoveNode() {
     if (contextMenuNode) {
-      dispatch('moveNodes', {
-        toggleState: true,
-        treeNodes: [contextMenuNode],
-      });
+      dispatch('moveNodes', { treeNodes: [contextMenuNode] });
     }
   }
 
   function onRenameNode() {
     if (contextMenuNode) {
       dispatch('renameNode', {
-        toggleState: true,
         treeNode: contextMenuNode,
         treeNodePath: contextMenuNode.fullPath,
       });
@@ -136,20 +130,9 @@
     dispatch('copyFileLocation', targetPath);
   }
 
-  function onMoveNodesToWorkspace() {
-    if (contextMenuNode) {
-      dispatch('moveNodesToWorkspace', {
-        toggleState: true,
-        treeNodes: [contextMenuNode],
-      });
-    }
-  }
-
-  function onRunAction(event: CustomEvent<ActionParameterPair>) {
-    if (contextMenuNode) {
-      const actionParameterPair = event.detail;
-      dispatch('runAction', { actionParameterPair, treeNodes: [contextMenuNode] });
-    }
+  function onCopyFullPath() {
+    let targetPath = contextMenuNode?.fullPath ?? '';
+    dispatch('copyFullPath', targetPath);
   }
 </script>
 
@@ -166,8 +149,7 @@
         on:move={onMoveNode}
         on:delete={onDeleteNode}
         on:copyFileLocation={onCopyFileLocation}
-        on:moveToWorkspace={onMoveNodesToWorkspace}
-        on:runAction={onRunAction}
+        on:copyFullPath={onCopyFullPath}
         on:newFile={onNewSequence}
         on:newFolder={onNewFolder}
         on:importFile={onImportFile}

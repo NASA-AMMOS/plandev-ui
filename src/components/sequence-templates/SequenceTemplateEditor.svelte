@@ -23,8 +23,8 @@
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
-  import { tooltip } from '../../utilities/tooltip';
   import CommandPanel from '../sequencing/CommandPanel/CommandPanel.svelte';
+  import EditorToolbar from '../sequencing/EditorToolbar.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -177,40 +177,18 @@
     <Panel>
       <svelte:fragment slot="header">
         <SectionTitle>{title}</SectionTitle>
-        <div class="right">
-          <button
-            use:tooltip={{ content: 'Show Error Panel', placement: 'top' }}
-            class="st-button icon-button secondary ellipsis"
-            on:click={showErrorPanel}
-          >
-            Error Panel
-          </button>
-
-          <button
-            use:tooltip={{ content: 'Format sequence whitespace', placement: 'top' }}
-            class="st-button icon-button secondary ellipsis"
-            on:click={formatDocument}
-          >
-            Format
-          </button>
-
-          <button
-            use:tooltip={{ content: 'Download sequence template', placement: 'top' }}
-            class="st-button icon-button secondary ellipsis"
-            on:click={() => dispatch('download', { template })}
-          >
-            Download
-          </button>
-
-          <button
-            use:tooltip={{ content: 'Save sequence template', placement: 'top' }}
-            class="st-button icon-button secondary ellipsis"
-            on:click|stopPropagation={saveSequenceTemplate}
-            disabled={template === null}
-          >
-            Save
-          </button>
-        </div>
+        <EditorToolbar
+          showErrorPanelButton
+          onShowErrorPanel={showErrorPanel}
+          showFormatButton
+          onFormat={formatDocument}
+          showDownloadButton
+          downloadTooltip="Download sequence template"
+          onDownload={() => dispatch('download', { template })}
+          showSaveButton
+          saveDisabled={template === null}
+          onSave={saveSequenceTemplate}
+        />
       </svelte:fragment>
 
       <svelte:fragment slot="body">
@@ -224,38 +202,15 @@
     {#if commandDictionary !== null}
       <CommandPanel {phoenixContext} {commandInfoMapper} {editorSequenceView} />
     {:else}
-      <Panel overflowYBody="hidden" padBody={true}>
+      <Panel overflowYBody="hidden" padBody>
         <svelte:fragment slot="header">
-          <SectionTitle><span class="command-title">Selected Command</span></SectionTitle>
+          <SectionTitle><span class="p-2">Selected Command</span></SectionTitle>
         </svelte:fragment>
 
         <svelte:fragment slot="body">
-          <div class="st-typography-body no-selected-parcel">Select a parcel to enable the Selected Command panel.</div>
+          <div class="st-typography-body p-2">Select a parcel to enable the Selected Command panel.</div>
         </svelte:fragment>
       </Panel>
     {/if}
   {/if}
 </CssGrid>
-
-<style>
-  .no-selected-parcel {
-    padding: 8px;
-  }
-
-  .right {
-    align-items: center;
-    display: flex;
-    justify-content: space-around;
-  }
-
-  .icon-button {
-    align-items: center;
-    column-gap: 5px;
-    display: flex;
-    margin: 2px;
-  }
-
-  .command-title {
-    padding: 8px;
-  }
-</style>

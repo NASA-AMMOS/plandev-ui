@@ -27,6 +27,7 @@
   };
   export let creatable: boolean = true;
   export let compareTags = (tagA: Tag, tagB: Tag) => tagA.id === tagB.id;
+  export let className: string = '';
   export let disabled: boolean = false;
   export let getTagName = (tag: Tag) => tag.name;
   export let id: string = '';
@@ -235,6 +236,7 @@
   class={classNames(
     'flex max-h-[40vh] gap-2 overflow-hidden rounded-md border border-input bg-background p-[2px] focus-within:ring-2 focus-within:ring-ring',
     {
+      [className]: !!className,
       'cursor-not-allowed opacity-50': disabled,
     },
   )}

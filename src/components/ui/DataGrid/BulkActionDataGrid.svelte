@@ -34,11 +34,14 @@
   export let columnStates: ColumnState[] = [];
   export let columnsToForceRefreshOnDataUpdate: (keyof RowData)[] = [];
   export let dataGrid: DataGrid<RowData> | undefined = undefined;
+  export let filterExpression: string = '';
   export let hasDeletePermission: PermissionCheck<RowData> | boolean = true;
   export let hasDeletePermissionError: string = 'You do not have permission to delete.';
+  export let headerHeight: number = 32;
   export let idKey: keyof RowData = 'id';
   export let items: RowData[];
   export let loading: boolean = false;
+  export let noRowsOverlayText: string = 'No Rows To Show';
   export let pluralItemDisplayText: string = '';
   export let scrollToSelection: boolean = false;
   export let selectedItemId: RowId | null = null;
@@ -48,10 +51,12 @@
   export let showDeleteMenu: boolean = true;
   export let showLoadingSkeleton: boolean = false;
   export let singleItemDisplayText: string = '';
+  export let suppressContextMenuSelection: boolean = false;
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
+  export let rowHeight: number = 33;
+  export let tertiaryHighlightIds: RowId[] | null = null;
   export let user: User | null;
-  export let filterExpression: string = '';
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => parseInt(data[idKey]);
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
@@ -170,18 +175,23 @@
   {columnDefs}
   {columnStates}
   {columnsToForceRefreshOnDataUpdate}
+  {headerHeight}
   {idKey}
   {getRowId}
   {isRowSelectable}
   {isExternalFilterPresent}
   {doesExternalFilterPass}
+  {noRowsOverlayText}
   useCustomContextMenu={showContextMenu}
+  {rowHeight}
   rowData={items}
   rowSelection="multiple"
   {scrollToSelection}
   {showLoadingSkeleton}
+  {suppressContextMenuSelection}
   {suppressDragLeaveHidesColumns}
   {suppressRowClickSelection}
+  {tertiaryHighlightIds}
   {filterExpression}
   {loading}
   on:blur={onBlur}
@@ -202,6 +212,7 @@
   on:rowDoubleClicked
   on:rowSelected
   on:selectionChanged
+  on:sortChanged
 >
   <svelte:fragment slot="context-menu">
     {#if showContextMenu}

@@ -23,7 +23,7 @@
   let originalDirectory: string = '';
   let originalName: string = '';
   let targetName: string = '';
-  let typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Directory' : 'File';
+  let typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Folder' : 'File';
 
   $: {
     const pathParts = originalPath.split(PATH_DELIMITER);

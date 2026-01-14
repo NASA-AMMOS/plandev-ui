@@ -1,12 +1,13 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Button, DropdownMenu, Tooltip } from '@nasa-jpl/stellar-svelte';
+  import { Button, DropdownMenu } from '@nasa-jpl/stellar-svelte';
   import { ArrowUpFromLine, Check, FilePlus, FolderPlus, Plus, RefreshCw } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { getTimeAgo } from '../../utilities/time';
   import SectionTitle from '../ui/SectionTitle.svelte';
+  import Tooltip from '../ui/Tooltip.svelte';
 
   export let title: string;
   export let didWorkspaceUpdate: boolean;
@@ -15,8 +16,8 @@
 
   const dispatch = createEventDispatcher<{
     importFile: void;
+    newFile: void;
     newFolder: void;
-    newSequence: void;
     refreshWorkspace: void;
   }>();
 
@@ -24,8 +25,8 @@
     dispatch('refreshWorkspace');
   }
 
-  function onNewSequence() {
-    dispatch('newSequence');
+  function onNewFile() {
+    dispatch('newFile');
   }
 
   function onNewFolder() {
@@ -37,46 +38,36 @@
   }
 </script>
 
-<div class="flex items-center justify-between gap-0 border-b border-border bg-background p-[6px]">
+<div class="flex h-[48px] items-center justify-between gap-0 border-b border-border bg-background p-[6px]">
   <SectionTitle>{title}</SectionTitle>
   <div class="flex gap-1">
-    <Tooltip.Root>
-      <Tooltip.Trigger>
-        {#if didWorkspaceUpdate}
-          <Button variant="ghost" size="icon">
-            <Check size={16} />
-          </Button>
-        {:else}
-          <Button variant="ghost" size="icon" on:click={onRefreshWorkspace}>
-            <RefreshCw size={16} />
-          </Button>
-        {/if}
-      </Tooltip.Trigger>
-      <Tooltip.Content>
-        <div class="text-xs">Refresh (last refreshed {getTimeAgo(lastRefreshTime, new Date())})</div>
-      </Tooltip.Content>
-    </Tooltip.Root>
+    <Tooltip content={`Refresh (last refreshed ${getTimeAgo(lastRefreshTime, new Date())})`}>
+      {#if didWorkspaceUpdate}
+        <Button variant="ghost" size="icon">
+          <Check size={16} />
+        </Button>
+      {:else}
+        <Button variant="ghost" size="icon" on:click={onRefreshWorkspace}>
+          <RefreshCw size={16} />
+        </Button>
+      {/if}
+    </Tooltip>
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild let:builder>
-        <Tooltip.Root>
-          <Tooltip.Trigger>
-            <Button builders={[builder]} variant="ghost" size="icon" aria-label="New Workspace Item">
-              <Plus size={16} />
-            </Button>
-          </Tooltip.Trigger>
-          <Tooltip.Content>
-            <div class="text-xs">New Workspace Item</div>
-          </Tooltip.Content>
-        </Tooltip.Root>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Content>
+      <Tooltip content="New Workspace Item">
+        <DropdownMenu.Trigger asChild let:builder>
+          <Button builders={[builder]} variant="ghost" size="icon" aria-label="New Workspace Item">
+            <Plus size={16} />
+          </Button>
+        </DropdownMenu.Trigger>
+      </Tooltip>
+      <DropdownMenu.Content data-testid="workspace-header-menu">
         <div
           role="button"
           tabindex={0}
           on:keypress
           on:keydown
           on:keyup
-          on:click={onNewSequence}
+          on:click={onNewFile}
           use:permissionHandler={{
             hasPermission: hasEditWorkspacePermission,
             permissionError: 'You do not have permission to edit this workspace',

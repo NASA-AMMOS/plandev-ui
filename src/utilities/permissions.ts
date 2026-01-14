@@ -1364,6 +1364,9 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
   getFileContent: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
   },
+  getFileContentBlob: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
+  },
   getWorkspaceContents: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['list_workspace_contents'], user, workspace);
   },

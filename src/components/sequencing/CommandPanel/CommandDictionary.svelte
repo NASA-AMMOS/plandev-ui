@@ -180,7 +180,7 @@
     display: grid;
     grid-template-rows: min-content auto;
     height: 100%;
-    overflow: hidden;
+    overflow: auto;
   }
 
   .dictionary-name {

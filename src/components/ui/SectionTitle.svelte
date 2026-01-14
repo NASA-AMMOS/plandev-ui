@@ -1,12 +1,14 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  export let alt: string = '';
   export let overflow: 'visible' | 'hidden' = 'visible';
 </script>
 
 <div
   class="flex h-6 items-center justify-center gap-1 whitespace-nowrap rounded py-4 pl-0 pr-2 text-[13px] font-medium leading-6 text-foreground"
   style:overflow
+  title={alt}
 >
   {#if $$slots.icon}
     <div class="flex shrink-0 items-center justify-center opacity-30">

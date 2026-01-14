@@ -93,6 +93,12 @@
     gridApi?.onFilterChanged();
   }
 
+  export function showContextMenu(event: MouseEvent) {
+    if (useCustomContextMenu) {
+      contextMenu.show(event);
+    }
+  }
+
   export let autoSizeColumnsToFit: boolean = true;
   export { className as class };
   export let columnDefs: ColDef[];
@@ -101,6 +107,7 @@
   export let columnStates: ColumnState[] = [];
   export let currentSelectedRowId: RowId | null = null;
   export let filterExpression: string = '';
+  export let headerHeight: number = 32;
   export let highlightOnSelection: boolean = true;
   export let doesExternalFilterPass: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
   export let idKey: keyof RowData = 'id';
@@ -117,30 +124,36 @@
   export let shouldMultiSelectUpdatePrimarySelection: boolean = false;
   export let showLoadingSkeleton: boolean = false;
   export let suppressCellFocus: boolean = true;
+  export let suppressContextMenuSelection: boolean = false;
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
+  export let tertiaryHighlightIds: RowId[] | null = null;
   export let useCustomContextMenu: boolean | undefined = undefined;
+  export let noRowsOverlayText: string = 'No Rows To Show';
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): number => {
     return parseInt(data[idKey]);
   };
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
 
-  type RowIdRef = {
-    value: RowId | null;
-  };
+  // Ref type for values that AG Grid's rowClassRules need to access without triggering re-renders
+  type Ref<T> = { value: T };
 
   const CURRENT_SELECTED_ROW_CLASS = 'ag-current-row-selected';
   const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
-  // This is used so that the current instance of ag-grid always has a pointer to the latest current selected row id
-  // without having to call anything on the ag-grid instance that results in a full rerender
-  const currentSelectedRowIdRef: RowIdRef = { value: null };
+  // These refs allow AG Grid's rowClassRules to access current values without triggering full re-renders
+  const contextMenuOpenRef: Ref<boolean> = { value: false };
+  const contextMenuTargetRowIdRef: Ref<RowId | null> = { value: null };
+  const currentSelectedRowIdRef: Ref<RowId | null> = { value: null };
+  const selectedRowIdsRef: Ref<RowId[]> = { value: [] };
   const onColumnStateChangeDebounced = debounce(onColumnStateChange, 500);
   const onWindowResizedDebounced = debounce(sizeColumnsToFit, 50);
 
   let className: string = '';
   let contextMenu: ContextMenuInternal;
+  let contextMenuOpen: boolean = false;
+  let contextMenuTargetRowId: RowId | null = null;
   let gridOptions: GridOptions<RowData>;
   let gridApi: GridApi<RowData> | undefined;
   let gridDiv: HTMLDivElement;
@@ -221,7 +234,10 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     currentSelectedRowId = selectedRowIds[0];
   }
 
+  $: contextMenuOpenRef.value = contextMenuOpen;
+  $: contextMenuTargetRowIdRef.value = contextMenuTargetRowId;
   $: currentSelectedRowIdRef.value = currentSelectedRowId;
+  $: selectedRowIdsRef.value = selectedRowIds;
 
   /**
    * Manually manipulate the old and newly selected row classes instead of invoking `redrawRows`
@@ -242,9 +258,27 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     previousSelectedRowId = currentSelectedRowId;
   }
 
+  // Redraw rows when context menu state changes to apply rowClassRules
+  $: contextMenuOpen, contextMenuTargetRowId, tertiaryHighlightIds, gridApi?.redrawRows();
+
   $: {
-    // TODO verify
     gridApi?.setGridOption('quickFilterText', filterExpression);
+  }
+
+  // Update overlay text when noRowsOverlayText prop changes
+  $: if (gridApi && noRowsOverlayText) {
+    gridApi.setGridOption(
+      'overlayNoRowsTemplate',
+      `<span class="ag-overlay-no-rows-center">${noRowsOverlayText}</span>`,
+    );
+    // Re-show overlay if no visible rows, to reflect the updated text
+    let visibleRowCount = 0;
+    gridApi.forEachNodeAfterFilter(() => {
+      visibleRowCount++;
+    });
+    if (visibleRowCount === 0 && !loading) {
+      gridApi.showNoRowsOverlay();
+    }
   }
 
   $: if (loading) {
@@ -285,8 +319,18 @@ This has been seen to result in unintended and often glitchy behavior, which oft
 
   function onCellContextMenu(event: CellContextMenuEvent<RowData>) {
     if (useCustomContextMenu) {
+      // Call show() first - this triggers hideAllMenus() which may dispatch 'hide' event
+      // and reset our state variables. We set them after to ensure they persist.
+      contextMenu.show(event.event as MouseEvent);
+
       const { data: clickedRow } = event;
-      if (
+
+      if (suppressContextMenuSelection) {
+        // Track the context menu target without changing selection
+        if (clickedRow) {
+          contextMenuTargetRowId = getRowId(clickedRow);
+        }
+      } else if (
         clickedRow &&
         selectedRowIds.length <= 1 &&
         (!isRowSelectable || isRowSelectable(event.node)) &&
@@ -296,12 +340,14 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         selectedRowIds = [currentSelectedRowId];
       }
 
-      contextMenu.show(event.event as MouseEvent);
+      contextMenuOpen = true;
     }
     dispatch('cellContextMenu', event);
   }
 
   function onCellContextMenuHide() {
+    contextMenuOpen = false;
+    contextMenuTargetRowId = null;
     dispatch('cellContextMenuHide');
   }
 
@@ -312,6 +358,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       animateRows: false,
       columnDefs,
       doesExternalFilterPass,
+      headerHeight,
       includeHiddenColumnsInQuickFilter: true,
       ...(shouldAutoGenerateId ? {} : { getRowId: (params: { data: RowData }) => `${getRowId(params.data)}` }),
       isExternalFilterPresent,
@@ -349,12 +396,21 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       },
       onFilterChanged() {
         const selectedRows: RowData[] = [];
+        let visibleRowCount = 0;
 
         gridApi?.forEachNodeAfterFilter((rowNode: IRowNode<RowData>) => {
+          visibleRowCount++;
           if (rowNode.data && rowNode.isSelected()) {
             selectedRows.push(rowNode.data);
           }
         });
+
+        // Show/hide the no rows overlay based on visible row count after filtering
+        if (visibleRowCount === 0 && !isLoading()) {
+          gridApi?.showNoRowsOverlay();
+        } else if (visibleRowCount > 0) {
+          gridApi?.hideOverlay();
+        }
 
         dispatch('filterChanged', gridApi?.getFilterModel());
 
@@ -439,10 +495,24 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         dispatch('sortChanged', event);
         onColumnStateChangeDebounced();
       },
+      overlayNoRowsTemplate: `<span class="ag-overlay-no-rows-center">${noRowsOverlayText}</span>`,
       preventDefaultOnContextMenu: useCustomContextMenu,
       rowClassRules: {
-        CURRENT_SELECTED_ROW_CLASS: (params: RowClassParams<RowData>) => {
+        [CURRENT_SELECTED_ROW_CLASS]: (params: RowClassParams<RowData>) => {
           return !!params.data && currentSelectedRowIdRef.value === getRowId(params.data);
+        },
+        'ag-context-menu-target': (params: RowClassParams<RowData>) => {
+          if (!params.data || !contextMenuOpenRef.value) {
+            return false;
+          }
+          const rowId = getRowId(params.data);
+          const targetId = contextMenuTargetRowIdRef.value;
+          // If target is in selection, highlight all selected rows; otherwise just the target
+          const targetInSelection = targetId !== null && selectedRowIdsRef.value.includes(targetId);
+          if (targetInSelection) {
+            return selectedRowIdsRef.value.includes(rowId);
+          }
+          return rowId === targetId;
         },
         'ag-selectable-row': (params: RowClassParams<RowData>) => {
           if (isRowSelectable) {
@@ -453,6 +523,13 @@ This has been seen to result in unintended and often glitchy behavior, which oft
             return true;
           }
           return false;
+        },
+        'ag-tertiary-highlight': (params: RowClassParams<RowData>) => {
+          if (!params.data || !tertiaryHighlightIds) {
+            return false;
+          }
+          const rowId = getRowId(params.data);
+          return tertiaryHighlightIds.includes(rowId);
         },
       },
       rowData,

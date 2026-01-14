@@ -13,52 +13,47 @@
     PhoenixAdaptation,
     PhoenixContext,
   } from '@nasa-jpl/aerie-sequence-languages';
-  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
-  import CollapseIcon from 'bootstrap-icons/icons/arrow-bar-down.svg?component';
-  import ExpandIcon from 'bootstrap-icons/icons/arrow-bar-up.svg?component';
-  import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
-  import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
+  import { Button, Label } from '@nasa-jpl/stellar-svelte';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
-  import { SquareCode } from 'lucide-svelte';
+  import { FileBracesCorner, PanelBottomClose, PanelBottomOpen } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
-  import { downloadBlob } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
-  import { pluralize } from '../../utilities/text';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
-  import { tooltip } from '../../utilities/tooltip';
-  import Menu from '../menus/Menu.svelte';
-  import MenuItem from '../menus/MenuItem.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
+  import Tooltip from '../ui/Tooltip.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
+  import EditorToolbar from './EditorToolbar.svelte';
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
   export let phoenixContext: PhoenixContext;
   export let includeActions: boolean = false;
+  export let isLoading: boolean = false;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let sequenceAdaptation: PhoenixAdaptation;
   export let sequenceName: string = '';
+  export let sequenceFilePath: string = '';
   export let sequenceDefinition: string = '';
   export let sequenceOutput: string = '';
   export let showCommandFormBuilder: boolean = false;
-  export let title: string = 'Sequence - Definition Editor';
   export let userSequenceEditorColumns: string;
   export let userSequenceEditorColumnsWithFormBuilder: string;
 
   const dispatch = createEventDispatcher<{
+    downloadInput: { filePath: string };
+    downloadOutput: { content: string; filePath: string; filename: string; outputLanguage: OutputLanguage };
     runAction: { action: ActionDefinition; parameter: string };
     save: string;
-    sequence: { input: string; output?: string };
+    sequence: { filePath: string; input: string; output?: string };
   }>();
 
-  let actionMenu: Menu;
   let compartmentAdaptation: Compartment;
   let compartmentOutputAdaptation: Compartment;
   let compartmentReadonly: Compartment;
@@ -68,7 +63,6 @@
   let editorOutputView: EditorView;
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
-  let menu: Menu;
   let selectedNode: SyntaxNode | null;
   let selectedOutputFormat: OutputLanguage | undefined;
   let showOutputs: boolean = true;
@@ -79,6 +73,10 @@
   let commandInfoMapper: CommandInfoMapper;
   let inputEditorExtension: Extension = [];
   let outputEditorExtension: Extension = [];
+  let previousSequenceFilePath: string = sequenceFilePath;
+
+  // Create debounced listener at component level so we can cancel it when file changes
+  const debouncedSequenceUpdateListener = debounce(sequenceUpdateListener, 250);
 
   $: commandInfoMapper = sequenceAdaptation.input.commandInfoMapper;
 
@@ -90,10 +88,18 @@
     outputEditorExtension = selectedOutputFormat.getEditorExtension(phoenixContext, phoenixResources);
   }
 
-  // insert sequence
-  $: editorSequenceView?.dispatch({
-    changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
-  });
+  // insert sequence - use sequenceFilePath as dependency to ensure editor updates when switching files
+  // This handles the case where both old and new files have the same content (e.g., both empty)
+  $: {
+    // note: this statement always runs when sequenceFilePath changes, regardless of value
+    // as opposed to the more common $: if (typeof sequenceFilePath === 'string') which will only
+    // trigger reactivity if sequenceFilePath is a string and not if it is null / undefined.
+    // In this case, we want to trigger reactivity on all possible values.
+    void sequenceFilePath;
+    editorSequenceView?.dispatch({
+      changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
+    });
+  }
 
   $: commandFormBuilderGrid = showCommandFormBuilder
     ? userSequenceEditorColumnsWithFormBuilder
@@ -109,7 +115,7 @@
   }
 
   $: editorSequenceView?.dispatch({
-    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly)]),
+    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
   });
 
   $: {
@@ -149,6 +155,13 @@
   $: updatedSequenceDefinition = sequenceDefinition;
   $: isSequenceDefinitionUpdated = updatedSequenceDefinition !== sequenceDefinition;
 
+  // Cancel pending debounced events when file path changes to prevent stale events
+  // from being dispatched with the wrong file path
+  $: if (sequenceFilePath !== previousSequenceFilePath) {
+    debouncedSequenceUpdateListener.cancel();
+    previousSequenceFilePath = sequenceFilePath;
+  }
+
   async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
     const sequence = viewUpdate.state.doc.toString();
     disableCopyAndExport = sequence === '';
@@ -161,7 +174,7 @@
 
     updatedSequenceDefinition = sequence;
     if (output !== undefined) {
-      dispatch('sequence', { input: sequence, output });
+      dispatch('sequence', { filePath: sequenceFilePath, input: sequence, output });
     }
   }
 
@@ -179,12 +192,20 @@
   }
 
   function downloadOutputFormat(outputLanguage: OutputLanguage): void {
-    const fileExtension = sequenceName.replace(sequenceAdaptation.input.fileExtension, outputLanguage.fileExtension);
-    downloadBlob(new Blob([editorOutputView.state.doc.toString()], { type: 'text/plain' }), fileExtension);
+    const content = editorOutputView.state.doc.toString();
+    // Remove any existing extension and add output extension
+    const outputExt = outputLanguage.fileExtension; // Keep the dot
+    const lastDotIndex = sequenceName.lastIndexOf('.');
+
+    // If there's a dot in the filename, remove everything after it; otherwise keep the whole name
+    const filenameWithoutExt = lastDotIndex > 0 ? sequenceName.slice(0, lastDotIndex) : sequenceName;
+    const filename = filenameWithoutExt + outputExt;
+
+    dispatch('downloadOutput', { content, filePath: sequenceFilePath, filename, outputLanguage });
   }
 
   function downloadInputFormat(): void {
-    downloadBlob(new Blob([editorSequenceView.state.doc.toString()], { type: 'text/plain' }), sequenceName); // TODO configure file extension to be customizable
+    dispatch('downloadInput', { filePath: sequenceFilePath });
   }
 
   async function copyOutputFormatToClipboard(): Promise<void> {
@@ -220,7 +241,8 @@
     }
   }
 
-  function onRunAction(action: ActionDefinition, parameter: string) {
+  function onRunAction(event: CustomEvent<{ action: ActionDefinition; parameter: string }>) {
+    const { action, parameter } = event.detail;
     dispatch('runAction', { action, parameter });
   }
 
@@ -244,11 +266,11 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
-        EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
+        EditorView.updateListener.of(debouncedSequenceUpdateListener),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
         compartmentAdaptation.of(inputEditorExtension),
-        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
+        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
       ],
       parent: editorSequenceDiv,
     });
@@ -269,135 +291,43 @@
   });
 </script>
 
-<CssGrid class="w-full" bind:columns={commandFormBuilderGrid} minHeight={'0'}>
+<CssGrid class="z-0 w-full" bind:columns={commandFormBuilderGrid} minHeight={'0'} columnMinSizes={{ 0: 400, 2: 292 }}>
   <CssGrid rows={editorHeights} minHeight={'0'}>
     <Panel>
       <svelte:fragment slot="header">
-        <SectionTitle>{title}{readOnly ? ' (Read-only)' : ''}{previewOnly ? ' (Preview-only)' : ''}</SectionTitle>
+        <SectionTitle alt={sequenceFilePath} overflow="hidden">
+          <FileBracesCorner size={16} slot="icon" />
+          {sequenceName || 'Untitled'}{readOnly ? ' (Read-only)' : ''}{previewOnly && !isLoading
+            ? ' (Preview-only)'
+            : ''}
+        </SectionTitle>
 
-        <div class="right">
-          {#if includeActions}
-            <div class="app-menu" role="none" on:click|stopPropagation={() => actionMenu.toggle()}>
-              <button
-                disabled={sequenceName === '' || availableActions.length === 0}
-                class="st-button icon-button secondary"
-              >
-                {#if availableActions.length > 0}
-                  <div class="actions-chip">{availableActions.length}</div>
-                {/if}
-                Action{pluralize(availableActions.length)}
-                <ChevronDownIcon />
-              </button>
-              <Menu bind:this={actionMenu}>
-                {#each availableActions as actionInfo}
-                  <MenuItem
-                    use={[
-                      [
-                        permissionHandler,
-                        {
-                          hasPermission: !readOnly,
-                          permissionError: 'You do not have permission to run this action.',
-                        },
-                      ],
-                    ]}
-                    on:click={() => {
-                      onRunAction(actionInfo?.action, actionInfo?.parameter);
-                      actionMenu.toggle();
-                    }}
-                  >
-                    <SquareCode size={16} />
-                    {actionInfo?.action?.name}
-                  </MenuItem>
-                {/each}
-              </Menu>
-            </div>
-          {/if}
-
-          <button
-            use:tooltip={{ content: 'Show Error Panel', placement: 'top' }}
-            class="st-button icon-button secondary"
-            on:click={showErrorPanel}
-          >
-            Error Panel
-          </button>
-
-          <button
-            use:tooltip={{ content: 'Format sequence whitespace', placement: 'top' }}
-            class="st-button icon-button secondary"
-            on:click={formatDocument}
-          >
-            Format
-          </button>
-
-          <button
-            use:tooltip={{ content: `Copy sequence contents`, placement: 'top' }}
-            class="st-button icon-button secondary"
-            on:click={copyInputFormatToClipboard}
-            disabled={disableCopyAndExport}
-          >
-            <ClipboardIcon />
-            Copy
-          </button>
-          <button
-            use:tooltip={{
-              content: `Download sequence contents`,
-              placement: 'top',
-            }}
-            class="st-button icon-button secondary"
-            on:click|stopPropagation={downloadInputFormat}
-            disabled={disableCopyAndExport}
-          >
-            <DownloadIcon />
-            Download
-          </button>
-
-          {#if showOutputs}
-            <div class="app-menu" role="none" on:click|stopPropagation={() => menu.toggle()}>
-              <button class="st-button icon-button secondary">
-                Output
-                <ChevronDownIcon />
-              </button>
-
-              <Menu bind:this={menu}>
-                {#each sequenceAdaptation.outputs as outputFormatItem}
-                  <div
-                    use:tooltip={{
-                      content: `Copy sequence contents as ${outputFormatItem?.name} to clipboard`,
-                      placement: 'top',
-                    }}
-                  >
-                    <MenuItem on:click={copyOutputFormatToClipboard} disabled={disableCopyAndExport}>
-                      <ClipboardIcon />
-                      {outputFormatItem?.name}
-                    </MenuItem>
-                  </div>
-
-                  <div
-                    use:tooltip={{
-                      content: `Download sequence contents as ${outputFormatItem?.name}`,
-                      placement: 'top',
-                    }}
-                  >
-                    <MenuItem on:click={() => downloadOutputFormat(outputFormatItem)} disabled={disableCopyAndExport}>
-                      <DownloadIcon />
-                      {outputFormatItem?.name}
-                    </MenuItem>
-                  </div>
-                {/each}
-              </Menu>
-            </div>
-          {/if}
-          {#if !(readOnly || previewOnly)}
-            <button
-              class="st-button icon-button"
-              class:secondary={!isSequenceDefinitionUpdated}
-              disabled={!isSequenceDefinitionUpdated}
-              on:click={onSave}
-            >
-              Save
-            </button>
-          {/if}
-        </div>
+        <EditorToolbar
+          actions={availableActions}
+          actionsDisabled={sequenceName === '' || availableActions.length === 0}
+          showActions={includeActions}
+          showErrorPanelButton
+          onShowErrorPanel={showErrorPanel}
+          showFormatButton
+          onFormat={formatDocument}
+          showCopyButton
+          copyDisabled={disableCopyAndExport}
+          copyTooltip="Copy sequence contents"
+          onCopy={copyInputFormatToClipboard}
+          showDownloadButton
+          downloadDisabled={disableCopyAndExport}
+          downloadTooltip="Download sequence contents"
+          onDownload={downloadInputFormat}
+          outputFormats={showOutputs ? sequenceAdaptation.outputs : []}
+          outputDisabled={disableCopyAndExport}
+          onCopyOutput={copyOutputFormatToClipboard}
+          onDownloadOutput={downloadOutputFormat}
+          showSaveButton={!(readOnly || previewOnly || isLoading)}
+          saveDisabled={!isSequenceDefinitionUpdated}
+          saveHighlighted={isSequenceDefinitionUpdated}
+          {onSave}
+          on:runAction={onRunAction}
+        />
       </svelte:fragment>
 
       <svelte:fragment slot="body">
@@ -418,9 +348,11 @@
           <SectionTitle>{selectedOutputFormat?.name} (Read-only)</SectionTitle>
 
           <div class="right">
-            {#if sequenceAdaptation.outputs.length > 0}
-              <div class="output-format">
-                <label class="text-xs text-muted-foreground" for="outputFormat">Output Format</label>
+            <div class="flex items-center gap-2">
+              {#if sequenceAdaptation.outputs.length > 0}
+                <Label size="sm" class="mr-1 whitespace-nowrap  text-muted-foreground" for="outputFormat">
+                  Output Format
+                </Label>
                 <select bind:value={selectedOutputFormat} class="st-select w-full" name="outputFormat">
                   {#each sequenceAdaptation.outputs as outputFormatItem}
                     <option value={outputFormatItem}>
@@ -428,20 +360,18 @@
                     </option>
                   {/each}
                 </select>
-              </div>
-            {/if}
-
-            <button
-              use:tooltip={{ content: toggleSeqJsonPreview ? `Collapse Editor` : `Expand Editor`, placement: 'top' }}
-              class="st-button icon"
-              on:click={toggleSeqJsonEditor}
-            >
-              {#if toggleSeqJsonPreview}
-                <CollapseIcon />
-              {:else}
-                <ExpandIcon />
               {/if}
-            </button>
+
+              <Tooltip content={toggleSeqJsonPreview ? `Collapse Editor` : `Expand Editor`}>
+                <Button size="icon" variant="ghost" on:click={toggleSeqJsonEditor}>
+                  {#if toggleSeqJsonPreview}
+                    <PanelBottomClose size={16} />
+                  {:else}
+                    <PanelBottomOpen size={16} />
+                  {/if}
+                </Button>
+              </Tooltip>
+            </div>
           </div>
         </svelte:fragment>
 
@@ -457,64 +387,15 @@
     {#if phoenixContext.commandDictionary !== null}
       <CommandPanel {phoenixContext} {commandInfoMapper} {editorSequenceView} />
     {:else}
-      <Panel overflowYBody="hidden" padBody={true}>
+      <Panel overflowYBody="hidden" padBody>
         <svelte:fragment slot="header">
-          <SectionTitle><span class="command-title">Selected Command</span></SectionTitle>
+          <SectionTitle><span class="p-2">Selected Command</span></SectionTitle>
         </svelte:fragment>
 
         <svelte:fragment slot="body">
-          <div class="st-typography-body no-selected-parcel">Select a parcel to enable the Selected Command panel.</div>
+          <div class="p-2 text-muted-foreground">Select a parcel to enable the Selected Command panel.</div>
         </svelte:fragment>
       </Panel>
     {/if}
   {/if}
 </CssGrid>
-
-<style>
-  .app-menu {
-    align-items: center;
-    cursor: pointer;
-    display: flex;
-    gap: 5px;
-    justify-content: center;
-    position: relative;
-  }
-
-  .actions-chip {
-    background-color: var(--st-gray-15);
-    border-radius: 40px;
-    color: black;
-    min-width: 16px;
-    padding: 0px 4px;
-  }
-
-  .no-selected-parcel {
-    padding: 8px;
-  }
-
-  .right {
-    align-items: center;
-    display: flex;
-    justify-content: space-around;
-  }
-
-  .icon-button {
-    align-items: center;
-    column-gap: 5px;
-    display: flex;
-    margin: 2px;
-  }
-
-  .output-format {
-    align-items: center;
-    display: flex;
-  }
-
-  .output-format label {
-    width: 10rem;
-  }
-
-  .command-title {
-    padding: 8px;
-  }
-</style>

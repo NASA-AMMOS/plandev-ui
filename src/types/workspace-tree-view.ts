@@ -7,7 +7,9 @@ export type WorkspaceTreeNode = {
 };
 
 export type WorkspaceTreeNodeWithFullPath = WorkspaceTreeNode & {
+  depth?: number;
   fullPath: string;
+  hasChildren?: boolean;
 };
 
 export type WorkspaceTreeMap = Record<string, WorkspaceTreeNode>;

@@ -129,6 +129,8 @@ export class Plan {
   async addPlanCollaborator(name: string, isUsername = true) {
     await this.showPanel(PanelNames.PLAN_METADATA, true);
     await this.waitForPlanCollaboratorLoad();
+    // Click input first to trigger focus and open dropdown
+    await this.planCollaboratorInput.click();
     await this.planCollaboratorInput.fill(name);
     await this.page.getByRole('option', { name }).click();
     // If the name is a username then check for the existence of the username in selected items
