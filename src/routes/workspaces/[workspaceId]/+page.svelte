@@ -948,7 +948,7 @@
             <code class="font-bold">
               {$activeDocumentPath}
             </code>
-            is not displayed in the editor because is either binary or an unsupported extension.
+            is not displayed in the editor because it is either binary or an unsupported extension.
           </p>
           <div>
             <Button variant="secondary" on:click={() => onDownloadFile($activeDocumentPath)}>Download</Button>
