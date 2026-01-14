@@ -540,8 +540,9 @@ test.describe.serial('Workspace', () => {
     await userB.switchRole('user');
 
     // Navigate to workspace using retry helper (role switch can cause ERR_ABORTED)
+    // Use 'load' instead of 'networkidle' to avoid conflicts with SvelteKit client-side routing
     const workspaceUrl = getWorkspacesUrl(workspaceForUnauthorized.baseURL, parseInt(workspaceId));
-    await userB.gotoWithRetry(workspaceUrl);
+    await userB.gotoWithRetry(workspaceUrl, { waitUntil: 'load' });
     await workspaceForUnauthorized.pageLoadingLocatorWithData.waitFor({ state: 'detached' });
 
     await workspaceForUnauthorized.openWorkspaceContextMenu();
