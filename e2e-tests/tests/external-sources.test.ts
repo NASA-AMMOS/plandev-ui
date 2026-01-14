@@ -208,6 +208,10 @@ test.describe.serial('External Source Error Handling', () => {
     await expect(setup.page.getByRole('gridcell', { name: externalSources.externalSourceFileName })).toHaveCount(1);
 
     // Clean up via API (more reliable than UI delete which can be flaky)
-    await setup.api.deleteExternalSources(externalSources.exampleDerivationGroup, [externalSources.externalSourceKey]);
+    try {
+      await setup.api.deleteExternalSources(externalSources.exampleDerivationGroup, [externalSources.externalSourceKey]);
+    } catch {
+      // Source may already be deleted by another parallel test
+    }
   });
 });

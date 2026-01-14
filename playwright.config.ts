@@ -68,7 +68,8 @@ const config: PlaywrightTestConfig = {
     threshold: 60000,
   },
   reporter: [
-    [process.env.CI ? 'github' : 'list'],
+    ['list'],
+    ...(process.env.CI ? [['github'] as const] : []),
     ['html', { open: 'never', outputFile: 'index.html', outputFolder: 'e2e-test-results' }],
     ['json', { outputFile: 'e2e-test-results/json-results.json' }],
     ['junit', { outputFile: 'e2e-test-results/junit-results.xml' }],
