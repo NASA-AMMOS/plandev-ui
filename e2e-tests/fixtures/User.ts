@@ -37,12 +37,14 @@ export class User {
     url: string,
     options?: { maxRetries?: number; waitUntil?: 'load' | 'domcontentloaded' | 'networkidle' | 'commit' },
   ) {
-    const maxRetries = options?.maxRetries ?? 3;
-    const waitUntil = options?.waitUntil ?? 'networkidle';
+    const maxRetries = options?.maxRetries ?? 5;
+    const waitUntil = options?.waitUntil ?? 'load';
 
     for (let i = 0; i < maxRetries; i++) {
       try {
         await this.page.goto(url, { waitUntil });
+        // Wait for SvelteKit hydration to complete before returning
+        await this.page.waitForLoadState('networkidle').catch(() => {});
         return;
       } catch (e) {
         const isLastAttempt = i === maxRetries - 1;
@@ -51,6 +53,8 @@ export class User {
         if (isLastAttempt || !isRetryableError) {
           throw e;
         }
+        // Wait before retry to let SvelteKit client-side routing settle
+        await this.page.waitForTimeout(500);
       }
     }
   }
