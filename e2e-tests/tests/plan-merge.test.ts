@@ -60,7 +60,7 @@ test.describe.serial('Plan Merge', () => {
     await planLink.waitFor({ state: 'visible' });
     await planLink.click();
     // Wait for the page to load after navigation
-    await setup.page.locator('.layer-message.loading').waitFor({ state: 'hidden', timeout: 10000 });
+    await setup.plan.waitForTimelineLoading();
   });
 
   test('Start a merge review', async ({ baseURL }) => {

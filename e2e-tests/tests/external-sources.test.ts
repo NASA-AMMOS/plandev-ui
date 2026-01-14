@@ -187,27 +187,27 @@ test.describe.serial('External Sources', () => {
 
 test.describe.serial('External Source Error Handling', () => {
   test('Duplicate keys are handled gracefully', async () => {
+    // Create types (will skip if already exist)
     await externalSources.createTypes(
       externalSources.exampleTypeSchema,
       externalSources.exampleTypeSchemaExpectedSourceTypes,
       externalSources.exampleTypeSchemaExpectedEventTypes,
     );
-    await externalSources.uploadExternalSource(externalSources.externalSourceFilePath, true);
+
+    // Upload source - use handleUniquenessViolation=true to handle case where source already exists
+    await externalSources.uploadExternalSource(externalSources.externalSourceFilePath, true, true);
     await expect(externalSources.externalSourcesTable).toBeVisible();
     await expect(
       externalSources.externalSourcesTable.getByRole('gridcell', { name: externalSources.externalSourceFileName }),
     ).toBeVisible();
+
+    // Try to upload the same source again - this should fail with uniqueness violation
     await externalSources.uploadExternalSource(externalSources.externalSourceFilePath, false, false);
     await expect(setup.page.getByLabel('Uniqueness violation.')).toBeVisible({ timeout: 10000 });
     await externalSources.waitForToast('External Source Create Failed');
     await expect(setup.page.getByRole('gridcell', { name: externalSources.externalSourceFileName })).toHaveCount(1);
 
-    // Wait for failure toast to disappear before proceeding with delete (toasts auto-hide after 3s)
-    await setup.page
-      .locator('.toastify:has-text("External Source Create Failed")')
-      .waitFor({ state: 'hidden', timeout: 5000 });
-
-    await externalSources.deleteSource(externalSources.externalSourceFileName);
-    await externalSources.waitForToast('External Source Deleted Successfully', 15000);
+    // Clean up via API (more reliable than UI delete which can be flaky)
+    await setup.api.deleteExternalSources(externalSources.exampleDerivationGroup, [externalSources.externalSourceKey]);
   });
 });

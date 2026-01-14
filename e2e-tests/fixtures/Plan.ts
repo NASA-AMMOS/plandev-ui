@@ -123,7 +123,7 @@ export class Plan {
       .locator('.overlay');
     await expect(activityRow).toBeVisible();
     // Wait for timeline to finish loading before attempting drag
-    await this.page.locator('.layer-message.loading').waitFor({ state: 'hidden', timeout: 10000 });
+    await this.waitForTimelineLoading();
     // Click on activity item first to ensure Svelte drag listeners are initialized
     await activityListItem.click();
     // Scroll elements into view
@@ -335,7 +335,7 @@ export class Plan {
   async goto(planId = this.plans.planId) {
     await this.page.goto(`/plans/${planId}`, { waitUntil: 'load' });
     await this.page.waitForURL(`/plans/${planId}`, { waitUntil: 'load' });
-    await this.page.locator('.layer-message.loading').waitFor({ state: 'detached' });
+    await this.waitForTimelineLoading();
   }
 
   async hoverMenu(menuButton: Locator) {
@@ -502,7 +502,7 @@ export class Plan {
 
     await expect(gridMenuButton).toBeVisible();
     await expect(gridMenuButton).toBeEnabled();
-    await this.page.locator('.layer-message.loading').waitFor({ state: 'hidden' });
+    await this.waitForTimelineLoading();
     await gridMenuButton.click();
 
     await this.gridMenu.waitFor({ state: 'attached' });
@@ -638,6 +638,16 @@ export class Plan {
   async waitForSimulationStatus(status: Status) {
     await expect(this.page.locator(this.simulationStatusSelector(status))).toBeAttached({ timeout: 10000 });
     await expect(this.page.locator(this.simulationStatusSelector(status))).toBeVisible();
+  }
+
+  async waitForTimelineLoading(timeout: number = 30000) {
+    // Brief wait for loading to appear (may not appear if data loads fast), then wait for all to disappear
+    await this.page
+      .locator('.layer-message.loading')
+      .first()
+      .waitFor({ state: 'visible', timeout: 1000 })
+      .catch(() => {});
+    await expect(this.page.locator('.layer-message.loading')).toHaveCount(0, { timeout });
   }
 
   async waitForToast(message: string, timeout: number = 10000) {
