@@ -99,7 +99,7 @@ test.describe.serial('App Nav', () => {
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
     const [gatewayPage] = await Promise.all([page.waitForEvent('popup'), appNav.appMenuItemGateway.click()]);
-    expect(await gatewayPage.title()).toEqual('PlanDev Gateway');
+    expect(await gatewayPage.title()).toEqual('Aerie Gateway');
     await gatewayPage.close();
   });
 
