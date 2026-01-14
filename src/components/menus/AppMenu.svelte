@@ -23,14 +23,12 @@
     Network,
     Tags,
   } from 'lucide-svelte';
-  import { onMount } from 'svelte';
   import PlanDevWordmarkDark from '../../assets/plandev-logo-dark.svg?component';
   import SeqDevWordmarkDark from '../../assets/seqdev-logo-dark.svg?component';
   import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
   import { SequencingMode } from '../../enums/sequencing';
   import type { User } from '../../types/app';
   import { getAppBrand } from '../../utilities/branding';
-  import effects from '../../utilities/effects';
   import { logout } from '../../utilities/login';
   import { showAboutModal } from '../../utilities/modal';
   import { getWorkspacesUrl } from '../../utilities/routes';
@@ -42,10 +40,6 @@
   let isSeqDev = false;
 
   $: isSeqDev = getAppBrand($page.url.pathname) === 'SeqDev';
-
-  onMount(async () => {
-    version = await effects.getVersion();
-  });
 
   function closeMenu() {
     isOpen = false;
