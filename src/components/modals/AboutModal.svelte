@@ -31,8 +31,8 @@
   <ModalContent>
     <div class="text-sm leading-relaxed">
       <div>
-        PlanDev (formerly Aerie) is open source, extensible software for planning, scheduling, and commanding space missions. SeqDev provides the sequencing tools within this platform.
-        Learn more by visiting our <a
+        PlanDev (formerly Aerie) is open source, extensible software for planning, scheduling, and commanding space
+        missions. SeqDev provides the sequencing tools within this platform. Learn more by visiting our <a
           href="https://nasa-ammos.github.io/plandev-docs/"
           target="_blank"
           rel="noreferrer"

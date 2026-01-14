@@ -8,7 +8,7 @@
     <link rel="icon" id="favicon" href="%sveltekit.assets%/favicon-light.svg" type="image/svg+xml" />
     <script>
       // Immediately update favicon based on system color scheme to prevent flash
-      (function() {
+      (function () {
         const favicon = document.getElementById('favicon');
         const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
@@ -23,7 +23,7 @@
         updateFavicon(darkModeMediaQuery.matches);
 
         // Listen for changes to color scheme
-        darkModeMediaQuery.addEventListener('change', function(e) {
+        darkModeMediaQuery.addEventListener('change', function (e) {
           updateFavicon(e.matches);
         });
       })();

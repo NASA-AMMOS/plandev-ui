@@ -10,11 +10,11 @@ This product was **formerly known as Aerie and is now named PlanDev**. While we'
 
 What to know:
 
-* The planning product, including modeling, simulation, scheduling and constraint-checking, is now named PlanDev
-* The sequencing product, including the sequence editor, workspaces, and actions, is now named SeqDev
-* All features and functionality remain the same
-* Currently, repository names, package names and other internal code references will retain their existing names, and deployment/migration procedures have not changed
-* In a future release, our repository and/or package names may change. If so, this will be communicated to users via release notes and normal communication channels
+- The planning product, including modeling, simulation, scheduling and constraint-checking, is now named PlanDev
+- The sequencing product, including the sequence editor, workspaces, and actions, is now named SeqDev
+- All features and functionality remain the same
+- Currently, repository names, package names and other internal code references will retain their existing names, and deployment/migration procedures have not changed
+- In a future release, our repository and/or package names may change. If so, this will be communicated to users via release notes and normal communication channels
 
 For the latest documentation, visit: [PlanDev Documentation](https://nasa-ammos.github.io/plandev-docs/)
 
