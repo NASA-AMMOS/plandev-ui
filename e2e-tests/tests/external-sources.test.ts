@@ -209,7 +209,9 @@ test.describe.serial('External Source Error Handling', () => {
 
     // Clean up via API (more reliable than UI delete which can be flaky)
     try {
-      await setup.api.deleteExternalSources(externalSources.exampleDerivationGroup, [externalSources.externalSourceKey]);
+      await setup.api.deleteExternalSources(externalSources.exampleDerivationGroup, [
+        externalSources.externalSourceKey,
+      ]);
     } catch {
       // Source may already be deleted by another parallel test
     }

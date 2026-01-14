@@ -50,7 +50,9 @@ test.describe.serial('Simulation', async () => {
 
   test(`Plans with activities should simulate and result in simulated activities`, async () => {
     await setup.plan.showPanel(PanelNames.SIMULATED_ACTIVITIES_TABLE, true);
-    await expect(setup.plan.panelSimulatedActivitiesTable.getByRole('gridcell', { name: 'GrowBanana' })).not.toBeVisible();
+    await expect(
+      setup.plan.panelSimulatedActivitiesTable.getByRole('gridcell', { name: 'GrowBanana' }),
+    ).not.toBeVisible();
     await setup.plan.showPanel(PanelNames.SIMULATION, true);
     await setup.plan.addActivity('GrowBanana');
     await setup.plan.runSimulation();

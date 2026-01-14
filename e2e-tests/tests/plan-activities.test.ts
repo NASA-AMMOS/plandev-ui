@@ -23,7 +23,9 @@ test.describe.serial('Plan Activities', () => {
     await setup.plan.addActivity('PickBanana');
     await setup.plan.addActivity('ThrowBanana');
     await setup.plan.panelActivityDirectivesTable.getByRole('row', { name: 'PickBanana' }).first().click();
-    await setup.plan.panelActivityForm.getByRole('button', { name: 'Is Relative To Another Activity Directive' }).click();
+    await setup.plan.panelActivityForm
+      .getByRole('button', { name: 'Is Relative To Another Activity Directive' })
+      .click();
     await setup.plan.selectActivityAnchorByIndex(1);
 
     await setup.plan.panelActivityDirectivesTable.getByRole('row', { name: 'GrowBanana' }).first().click();
@@ -34,7 +36,9 @@ test.describe.serial('Plan Activities', () => {
       .getByRole('row', { name: 'GrowBanana' })
       .waitFor({ state: 'detached', timeout: 2000 });
     await setup.plan.panelActivityDirectivesTable.getByRole('row', { name: 'PickBanana' }).first().click();
-    await setup.plan.panelActivityForm.getByRole('button', { name: 'Is Relative To Another Activity Directive' }).click();
+    await setup.plan.panelActivityForm
+      .getByRole('button', { name: 'Is Relative To Another Activity Directive' })
+      .click();
     await setup.page.waitForFunction(
       () => document.querySelector('.anchor-form .selected-display-value')?.innerHTML === 'To Plan',
     );
@@ -47,7 +51,9 @@ test.describe.serial('Plan Activities', () => {
     await setup.plan.addActivity('PickBanana');
     await setup.plan.addActivity('ThrowBanana');
     await setup.plan.panelActivityDirectivesTable.getByRole('row', { name: 'PickBanana' }).first().click();
-    await setup.plan.panelActivityForm.getByRole('button', { name: 'Is Relative To Another Activity Directive' }).click();
+    await setup.plan.panelActivityForm
+      .getByRole('button', { name: 'Is Relative To Another Activity Directive' })
+      .click();
     await setup.plan.selectActivityAnchorByIndex(1);
 
     await setup.plan.panelActivityDirectivesTable.getByRole('row', { name: 'ThrowBanana' }).first().click();
@@ -109,7 +115,9 @@ test.describe.serial('Plan Activities', () => {
     await tbSugar.fill('100');
     await tbSugar.evaluate(e => e.blur());
     await expect(
-      setup.plan.panelActivityForm.locator('.parameter', { hasText: 'tbSugar' }).getByLabel('Parameter not explicitly set'),
+      setup.plan.panelActivityForm
+        .locator('.parameter', { hasText: 'tbSugar' })
+        .getByLabel('Parameter not explicitly set'),
     ).not.toBeVisible();
     await setup.plan.panelActivityForm.locator('.parameter', { hasText: 'glutenFree' }).getByRole('checkbox').click();
     await expect(

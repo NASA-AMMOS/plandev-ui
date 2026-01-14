@@ -11,8 +11,8 @@ import { PanelNames, Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
-import { getOptionValueFromText } from '../utilities/selectors.js';
 import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
+import { getOptionValueFromText } from '../utilities/selectors.js';
 
 const sequenceFilterName: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
@@ -84,7 +84,11 @@ test.describe.serial('Expansion', () => {
     await setup.page.waitForSelector(`option:has-text("${expansionSets.expansionSetName}")`, {
       state: 'attached',
     });
-    const value = await getOptionValueFromText(setup.page, 'select[name="expansionSetId"]', expansionSets.expansionSetName);
+    const value = await getOptionValueFromText(
+      setup.page,
+      'select[name="expansionSetId"]',
+      expansionSets.expansionSetName,
+    );
     await setup.page.locator('select[name="expansionSetId"]').focus();
     await setup.page.locator('select[name="expansionSetId"]').selectOption(value);
     await setup.page.locator('select[name="expansionSetId"]').evaluate(e => e.blur());

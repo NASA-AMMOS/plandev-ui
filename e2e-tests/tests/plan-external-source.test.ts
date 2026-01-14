@@ -34,8 +34,20 @@ test.beforeAll(async ({ browser }) => {
   setupB = await setupTest(browser, { model: false, user: 'userB' });
 
   // Create Plan fixtures for each user context (they'll access the same plan by ID)
-  planForUserA = new Plan(setupA.page, setup.plans, setup.constraints, setup.schedulingGoals, setup.schedulingConditions);
-  planForUserB = new Plan(setupB.page, setup.plans, setup.constraints, setup.schedulingGoals, setup.schedulingConditions);
+  planForUserA = new Plan(
+    setupA.page,
+    setup.plans,
+    setup.constraints,
+    setup.schedulingGoals,
+    setup.schedulingConditions,
+  );
+  planForUserB = new Plan(
+    setupB.page,
+    setup.plans,
+    setup.constraints,
+    setup.schedulingGoals,
+    setup.schedulingConditions,
+  );
 
   await externalSources.goto();
   await externalSources.createTypes(
@@ -54,9 +66,7 @@ test.afterAll(async () => {
   // Order matters: sources -> derivation groups -> source types -> event types
   try {
     // Delete sources (grouped by derivation group)
-    await setup.api.deleteExternalSources(externalSources.exampleDerivationGroup, [
-      externalSources.externalSourceKey,
-    ]);
+    await setup.api.deleteExternalSources(externalSources.exampleDerivationGroup, [externalSources.externalSourceKey]);
     await setup.api.deleteExternalSources(externalSources.derivationTestGroupName, [
       externalSources.derivationTestFileKey1,
       externalSources.derivationTestFileKey2,
