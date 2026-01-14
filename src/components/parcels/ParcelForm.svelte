@@ -64,7 +64,8 @@
   );
 
   $: saveButtonClass = parcelModified && saveButtonEnabled ? 'primary' : 'secondary';
-  $: saveButtonEnabled = parcelCommandDictionaryId !== null && parcelName !== undefined && parcelName !== '';
+  $: saveButtonEnabled =
+    hasPermission && parcelCommandDictionaryId !== null && parcelName !== undefined && parcelName !== '';
   $: parcelModified =
     parcelChannelDictionaryId !== savedParcelChannelDictionaryId ||
     parcelCommandDictionaryId !== savedParcelCommandDictionaryId ||
