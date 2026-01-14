@@ -163,6 +163,10 @@
    * @param event
    */
   function onRowClicked(event: CustomEvent<DataGridRowSelection<DictionaryMetadata>>) {
+    if (!hasEditPermission) {
+      return;
+    }
+
     const currentValue = selectedDictionaryIds[event.detail.data.id];
 
     selectRow(event.detail.data.id, currentValue === undefined ? true : !currentValue);
