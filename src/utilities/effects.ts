@@ -343,7 +343,7 @@ async function bulkMoveWorkspaceItems(
   targetPath: string,
   user: User | null,
   targetWorkspace?: Workspace,
-) {
+): Promise<Record<string, string>> {
   const cleanedTargetPath = cleanPath(targetPath);
   const finalTargetPath = `./${cleanedTargetPath}`;
 
@@ -371,6 +371,7 @@ async function bulkMoveWorkspaceItems(
   }
 
   const failedFileOperations: BulkOperationResponses = [];
+  const renamedFiles: Record<string, string> = {};
 
   while (responses.length > 0) {
     const response = responses.shift();
@@ -439,7 +440,8 @@ async function bulkMoveWorkspaceItems(
               const targetDirectoryNodeContents = [...contents];
 
               const newItems: MoveFileOperation[] = retryResponses.map(({ item }) => {
-                let newFilename = item;
+                const { filename } = separateFilenameFromPath(item);
+                let newFilename = filename;
                 while (findNodeInDirectory(newFilename, targetDirectoryNodeContents)) {
                   newFilename = incrementFilename(newFilename);
                 }
@@ -447,9 +449,13 @@ async function bulkMoveWorkspaceItems(
                   name: newFilename,
                   type: WorkspaceContentType.Unknown,
                 });
+                // Track renamed files
+                if (newFilename !== filename) {
+                  renamedFiles[item] = newFilename;
+                }
                 return {
                   path: item,
-                  ...(newFilename ? { renameTo: newFilename } : {}),
+                  ...(newFilename !== filename ? { renameTo: newFilename } : {}),
                 };
               });
 
@@ -495,6 +501,8 @@ async function bulkMoveWorkspaceItems(
       cause: failedFileOperations,
     });
   }
+
+  return renamedFiles;
 }
 
 /**
@@ -6341,7 +6349,7 @@ const effects = {
     workspaceContents: WorkspaceTreeNode,
     originalNodes: WorkspaceTreeNodeWithFullPath[],
     user: User | null,
-  ): Promise<string | null> {
+  ): Promise<{ renamedFiles: Record<string, string>; targetPath: string } | null> {
     const displayString: string = getWorkspaceFileFolderDisplay(originalNodes);
     try {
       if (!featurePermissions.workspace.canUpdate(user, workspace)) {
@@ -6354,7 +6362,7 @@ const effects = {
 
         const cleanedTargetPath = cleanPath(targetPath);
         try {
-          await bulkMoveWorkspaceItems(
+          const renamedFiles = await bulkMoveWorkspaceItems(
             workspace,
             originalNodes.map(({ fullPath }) => fullPath),
             shouldCopy,
@@ -6368,7 +6376,7 @@ const effects = {
             `${shouldCopy ? 'Copied' : 'Moved'} workspace ${displayString.toLowerCase()} to "${cleanedTargetPath}".`,
           );
 
-          return cleanedTargetPath;
+          return { renamedFiles, targetPath: cleanedTargetPath };
         } catch (e) {
           throw Error(
             `Workspace ${displayString.toLowerCase()} unable to be ${shouldCopy ? 'copied' : 'moved'}`,

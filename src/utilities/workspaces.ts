@@ -689,6 +689,7 @@ export function computeMovedFilePath(
   originalFilePath: string,
   movedNodes: { fullPath: string }[],
   targetDirectoryPath: string,
+  renamedFiles: Record<string, string> = {},
 ): string {
   // Find if the file was moved as part of a parent folder
   const parentNode = movedNodes.find(
@@ -708,8 +709,11 @@ export function computeMovedFilePath(
   }
 
   // File was moved directly (not via parent)
+  // Check if the file was renamed due to "keep both" conflict resolution
+  const renamedFilename = renamedFiles[originalFilePath];
   const { filename } = separateFilenameFromPath(originalFilePath);
-  return targetDirectoryPath ? `${targetDirectoryPath}/${filename}` : (filename ?? '');
+  const finalFilename = renamedFilename ?? filename;
+  return targetDirectoryPath ? `${targetDirectoryPath}/${finalFilename}` : (finalFilename ?? '');
 }
 
 /**

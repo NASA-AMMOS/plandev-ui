@@ -121,6 +121,14 @@
 
   const CONTENT_MIN_WIDTH = 700;
   const SIDEBAR_MIN_WIDTH = 100;
+  const DEFAULT_WORKSPACE_COLUMNS = '1fr 3px 3fr';
+
+  // Ensure columns are consistent with sidebar state on mount.
+  // The workspaceColumns store persists across navigations, but sidebarPanelOpen resets to true.
+  // If the store has 2-column layout (sidebar closed) but sidebarPanelOpen is true, reset to default.
+  if (sidebarPanelOpen && $workspaceColumns.split(' ').length === 2) {
+    $workspaceColumns = DEFAULT_WORKSPACE_COLUMNS;
+  }
 
   $: if (sidebarPanelOpen !== previousSidebarPanelOpen) {
     if (sidebarPanelOpen) {
@@ -602,11 +610,12 @@
       // Remove redundant nodes that would already be moved by a selected parent node
       const minimalNodes = removeRedundantNodes(treeNodes);
 
-      const targetDirectoryPath = await effects.moveWorkspaceItems($workspace, workspaceTree, minimalNodes, user);
+      const result = await effects.moveWorkspaceItems($workspace, workspaceTree, minimalNodes, user);
       await refreshWorkspaceContents();
 
-      if (movedActiveNode && typeof targetDirectoryPath === 'string') {
-        const newFilePath = computeMovedFilePath(movedActiveNode.fullPath, minimalNodes, targetDirectoryPath);
+      if (movedActiveNode && result) {
+        const { renamedFiles, targetPath } = result;
+        const newFilePath = computeMovedFilePath(movedActiveNode.fullPath, minimalNodes, targetPath, renamedFiles);
         // Wait for tree to render before updating selection (ensures parent folders can expand)
         await tick();
         updateActiveFilePath(newFilePath);

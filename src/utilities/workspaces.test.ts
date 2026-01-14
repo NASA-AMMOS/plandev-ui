@@ -1315,6 +1315,18 @@ describe('Workspace utility function tests', () => {
       const result = computeMovedFilePath('file.txt', [{ fullPath: 'file.txt' }], 'a/b/c');
       expect(result).toBe('a/b/c/file.txt');
     });
+
+    test('Should use renamed filename when file was renamed due to "Keep Both" conflict resolution', () => {
+      const renamedFiles = { 'folder/test.txt': 'test (1).txt' };
+      const result = computeMovedFilePath('folder/test.txt', [{ fullPath: 'folder/test.txt' }], 'dest', renamedFiles);
+      expect(result).toBe('dest/test (1).txt');
+    });
+
+    test('Should use renamed filename when moved to root with "Keep Both"', () => {
+      const renamedFiles = { 'folder/test.txt': 'test (1).txt' };
+      const result = computeMovedFilePath('folder/test.txt', [{ fullPath: 'folder/test.txt' }], '', renamedFiles);
+      expect(result).toBe('test (1).txt');
+    });
   });
 
   describe('getCommonPathPrefix', () => {
