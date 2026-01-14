@@ -21,6 +21,15 @@ vi.mock('$env/dynamic/public', () => {
     },
   };
 }); // https://github.com/sveltejs/kit/issues/8180
+vi.mock('$app/stores', () => {
+  const page = {
+    subscribe: vi.fn((callback: (value: { url: URL }) => void) => {
+      callback({ url: new URL('http://localhost/plans') });
+      return () => {};
+    }),
+  };
+  return { page };
+});
 vi.spyOn(effects, 'getVersion').mockResolvedValue({
   branch: 'unknown',
   commit: 'unknown',
