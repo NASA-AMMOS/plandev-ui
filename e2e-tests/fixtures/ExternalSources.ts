@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+import { setFileInputByFilepath } from '../utilities/helpers';
 
 export class ExternalSources {
   deleteSourceButton: Locator;
@@ -90,11 +91,12 @@ export class ExternalSources {
     }
 
     const schemaFileInput = this.page.getByLabel('Type JSON Schema File');
+    const uploadButton = this.page.getByLabel('Upload External Source & Event Type(s)');
     await expect(schemaFileInput).toBeVisible({ timeout: 10000 });
-    await schemaFileInput.setInputFiles(typeSchema);
+    await setFileInputByFilepath(this.page, schemaFileInput, typeSchema, uploadButton);
 
     // Wait for schema to be parsed
-    await expect(this.page.getByText('Source & Event Type Attribute Schema Parsed')).toBeVisible({ timeout: 10000 });
+    await expect(uploadButton).toBeVisible({ timeout: 10000 });
 
     for (const expectedSourceType of expectedSourceTypes) {
       await expect(this.page.locator(`li:text("${expectedSourceType}")`)).toBeVisible({ timeout: 5000 });
@@ -103,7 +105,7 @@ export class ExternalSources {
       await expect(this.page.locator(`li:text("${expectedEventType}")`)).toBeVisible({ timeout: 5000 });
     }
 
-    await this.page.getByLabel('Upload External Source & Event Type(s)').click();
+    await uploadButton.click();
 
     // Wait for types to appear in tables with longer timeout
     for (const expectedSourceType of expectedSourceTypes) {
@@ -224,10 +226,7 @@ export class ExternalSources {
   }
 
   async fillInputFile(externalSourceFilePath: string) {
-    await this.inputFile.waitFor({ state: 'attached' });
-    await this.inputFile.focus();
-    await this.inputFile.setInputFiles(externalSourceFilePath);
-    await this.inputFile.evaluate(e => e.blur());
+    await setFileInputByFilepath(this.page, this.inputFile, externalSourceFilePath);
   }
 
   async getCanvasPixelData() {

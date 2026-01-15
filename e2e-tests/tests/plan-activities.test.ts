@@ -1,6 +1,7 @@
 import test, { expect } from '@playwright/test';
 import { Status } from '../../src/enums/status.js';
 import { setupTest, teardownTest, type FullSetupResult } from '../utilities/api.js';
+import { setFileInputByFilepath } from '../utilities/helpers.js';
 
 let setup: FullSetupResult;
 
@@ -78,8 +79,11 @@ test.describe.serial('Plan Activities', () => {
   test('Setting an input path successfully uploads the corresponding file', async () => {
     await setup.plan.addActivity('LineCount');
 
-    await setup.page.locator('input[type="file"]').click();
-    await setup.page.locator('input[type="file"]').setInputFiles('./e2e-tests/data/valid-view.json');
+    await setFileInputByFilepath(
+      setup.page,
+      setup.page.locator('input[type="file"]'),
+      './e2e-tests/data/valid-view.json',
+    );
 
     const errorBadge = await setup.page.locator('.input-error-badge-root');
 
