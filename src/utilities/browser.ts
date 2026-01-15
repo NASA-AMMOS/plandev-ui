@@ -1,6 +1,19 @@
 import { browser } from '$app/environment';
 
 /**
+ * Returns true if the current browser is running on MacOS
+ */
+export function isMacOs(): boolean {
+  if (!browser) {
+    return false;
+  }
+  // userAgentData is not yet in TypeScript's Navigator type (only supported in Chromium browsers)
+  const nav = navigator as Navigator & { userAgentData?: { platform: string } };
+  const platform = nav.userAgentData?.platform ?? navigator.platform;
+  return /mac/i.test(platform);
+}
+
+/**
  * Adds event listeners to document and window to track if the page is in focus.
  * Returns a function that when called will remove the listeners.
  *

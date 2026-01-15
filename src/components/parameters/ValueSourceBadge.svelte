@@ -4,7 +4,8 @@
   import { browser } from '$app/environment';
   import { createEventDispatcher } from 'svelte';
   import type { ParameterType, ValueSource } from '../../types/parameter';
-  import { classNames, isMacOs } from '../../utilities/generic';
+  import { isMacOs } from '../../utilities/browser';
+  import { classNames } from '../../utilities/generic';
   import { isMetaOrCtrlPressed } from '../../utilities/keyboardEvents';
   import { tooltip } from '../../utilities/tooltip';
   import { useActions, type ActionArray } from '../../utilities/useActions';

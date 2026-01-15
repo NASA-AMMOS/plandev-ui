@@ -1,4 +1,4 @@
-import { isMacOs } from './generic';
+import { isMacOs } from './browser';
 
 export function isMetaOrCtrlPressed(event: KeyboardEvent | MouseEvent) {
   return isMacOs() ? event.metaKey : event.ctrlKey;
