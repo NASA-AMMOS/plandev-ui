@@ -5,7 +5,8 @@ import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
   if (!url.pathname.includes('login') && shouldRedirectToLogin(locals.user)) {
-    redirect(302, base);
+    const redirectTo = encodeURIComponent(url.pathname + url.search);
+    redirect(302, `${base}/login?redirectTo=${redirectTo}`);
   }
   return { ...locals };
 };

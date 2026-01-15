@@ -1,8 +1,9 @@
 export enum SearchParameters {
   ACTIVITY_ID = 'activityId',
-  MODEL_ID = 'modelId',
   CONSTRAINT_ID = 'constraintId',
+  MODEL_ID = 'modelId',
   REASON = 'reason',
+  REDIRECT_TO = 'redirectTo',
   SIMULATION_DATASET_ID = 'simulationDatasetId',
   SNAPSHOT_ID = 'snapshotId',
   SPAN_ID = 'spanId',
