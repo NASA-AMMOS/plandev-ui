@@ -4,7 +4,7 @@ This document describes how to deploy aerie-ui via Docker. All of these instruct
 
 ## Dependencies
 
-The deployment of Aerie UI depends on other Aerie containers on the same Docker network in order to work properly. See the complete Aerie [deployment documentation](https://github.com/NASA-AMMOS/aerie/tree/develop/deployment) for examples on how to deploy these other required containers.
+The deployment of PlanDev UI depends on other PlanDev containers on the same Docker network in order to work properly. See the complete PlanDev [deployment documentation](https://github.com/NASA-AMMOS/aerie/tree/develop/deployment) for examples on how to deploy these other required containers.
 
 ## Remote Docker Image
 

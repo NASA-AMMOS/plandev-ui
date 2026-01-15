@@ -99,7 +99,7 @@ test.describe.serial('App Nav', () => {
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
     const [gatewayPage] = await Promise.all([page.waitForEvent('popup'), appNav.appMenuItemGateway.click()]);
-    expect(await gatewayPage.title()).toEqual('Aerie Gateway');
+    expect(await gatewayPage.title()).toContain('Gateway');
     await gatewayPage.close();
   });
 
@@ -112,7 +112,7 @@ test.describe.serial('App Nav', () => {
     await consolePage.close();
   });
 
-  test(`Clicking on the app menu 'Documentation' option should open a new tab to the Aerie documentation`, async () => {
+  test(`Clicking on the app menu 'Documentation' option should open a new tab to the PlanDev documentation`, async () => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
@@ -120,7 +120,7 @@ test.describe.serial('App Nav', () => {
       page.waitForEvent('popup'),
       appNav.appMenuItemDocumentation.click(),
     ]);
-    await expect(documentationPage).toHaveURL(/\/aerie-docs\//);
+    await expect(documentationPage).toHaveURL(/\/plandev-docs\//);
     await documentationPage.close();
   });
 
