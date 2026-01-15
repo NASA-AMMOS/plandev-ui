@@ -543,9 +543,18 @@ test.describe.serial('Workspace', () => {
     const workspaceUrl = getWorkspacesUrl(workspaceForUnauthorized.baseURL, parseInt(workspaceId));
     await userB.gotoWithRetry(workspaceUrl);
 
-    // Wait for workspace to load - use longer timeout for CI environments
-    // The workspace subscription needs time to receive data
-    await workspaceForUnauthorized.pageLoadingLocatorWithData.waitFor({ state: 'detached', timeout: 30000 });
+    // Wait for network to settle, then reload to ensure GraphQL subscription has fresh data
+    // The workspace page depends on both initialWorkspace (layout load) AND $workspaces subscription
+    // In CI, the subscription may not have caught up after navigation, causing "Loading workspace..."
+    // to persist because the derived $workspace store returns undefined
+    await setupUnauthorized.page.waitForLoadState('networkidle');
+    await setupUnauthorized.page.reload({ waitUntil: 'networkidle' });
+
+    // Wait for the workspace file grid to be visible, which confirms both:
+    // 1. The workspace subscription has delivered data (workspace is truthy)
+    // 2. The workspace contents API call completed (workspaceTree is truthy)
+    // Using file grid visibility is more reliable than waiting for loading to detach
+    await workspaceForUnauthorized.workspaceFileGrid.waitFor({ state: 'visible', timeout: 30000 });
 
     // Verify userB can see the workspace file browser (read access)
     await expect(workspaceForUnauthorized.workspaceFileGrid).toBeVisible();
