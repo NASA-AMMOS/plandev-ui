@@ -7149,7 +7149,7 @@ const effects = {
         throwPermissionError('upload to the selected workspace');
       }
 
-      const workspaceContents = await effects.getWorkspaceContents(workspaceId, user);
+      const workspaceContents = await effects.getWorkspaceContents(workspaceId, '', user);
       if (!workspaceContents) {
         throw new Error('Unable To Find The Specified Workspace');
       }
