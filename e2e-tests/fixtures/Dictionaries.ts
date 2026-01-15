@@ -2,6 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { readFile } from 'fs/promises';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { setFileInputByBuffer } from '../utilities/helpers';
 
 export enum DictionaryType {
   CommandDictionary = 'Command Dictionary',
@@ -237,34 +238,7 @@ export class Dictionaries {
       name = dictionaryName + '.xml';
     }
 
-    // Retry mechanism for file upload - sometimes Svelte's reactivity doesn't trigger on first attempt
-    const maxAttempts = 3;
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      await this.inputFile.waitFor({ state: 'attached' });
-      await this.inputFile.focus();
-      await this.inputFile.setInputFiles({
-        buffer: dictionaryBuffer,
-        mimeType: mimeType,
-        name: name,
-      });
-      await this.inputFile.evaluate(e => e.blur());
-
-      // Verify the file was set by checking if the button becomes enabled
-      // For sequence adaptations, also need to wait for the name field
-      if (type !== DictionaryType.SequenceAdaptation) {
-        const isEnabled = await this.createButton.isEnabled().catch(() => false);
-        if (isEnabled) {
-          return;
-        }
-        // Wait a bit before retry
-        if (attempt < maxAttempts) {
-          await this.page.waitForTimeout(500);
-        }
-      } else {
-        // For sequence adaptations, just return - we'll fill in the name field and then check
-        return;
-      }
-    }
+    await setFileInputByBuffer(this.page, this.inputFile, dictionaryBuffer, mimeType, name, this.createButton);
   }
 
   private async filterTable(table: Locator, dictionaryName: string, type: DictionaryType) {
@@ -291,7 +265,19 @@ export class Dictionaries {
 
   async goto() {
     await this.page.goto('/dictionaries', { waitUntil: 'load' });
-    await expect(this.createButton).toBeVisible();
+    await Promise.all([
+      this.channelDictionaryTable.waitFor({ state: 'visible' }),
+      this.commandDictionaryTable.waitFor({ state: 'visible' }),
+      this.parameterDictionaryTable.waitFor({ state: 'visible' }),
+      this.sequenceAdaptationTable.waitFor({ state: 'visible' }),
+    ]);
+
+    await Promise.all([
+      this.channelDictionaryTable.getByText('loading...', { exact: true }).waitFor({ state: 'hidden' }),
+      this.commandDictionaryTable.getByText('loading...', { exact: true }).waitFor({ state: 'hidden' }),
+      this.parameterDictionaryTable.getByText('loading...', { exact: true }).waitFor({ state: 'hidden' }),
+      this.sequenceAdaptationTable.getByText('loading...', { exact: true }).waitFor({ state: 'hidden' }),
+    ]);
   }
 
   async readDictionary(dictionaryName: string, dictionaryPath: string): Promise<Buffer> {

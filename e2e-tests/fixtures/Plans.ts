@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { setFileInputByFilepath } from '../utilities/helpers.js';
 import { Models } from './Models.js';
 
 export class Plans {
@@ -91,10 +92,7 @@ export class Plans {
   }
 
   async fillInputFile(importFilePath: string = this.importFilePath) {
-    await this.inputFile.waitFor({ state: 'attached' });
-    await this.inputFile.focus();
-    await this.inputFile.setInputFiles(importFilePath);
-    await this.inputFile.evaluate(e => e.blur());
+    await setFileInputByFilepath(this.page, this.inputFile, importFilePath);
   }
 
   async fillInputName(planName = this.planName) {

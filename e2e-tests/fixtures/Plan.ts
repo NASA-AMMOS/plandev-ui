@@ -2,6 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { Status } from '../../src/enums/status';
+import { setFileInputByFilepath } from '../utilities/helpers.js';
 import { Constraints } from './Constraints.js';
 import { Plans } from './Plans.js';
 import { SchedulingConditions } from './SchedulingConditions.js';
@@ -300,10 +301,7 @@ export class Plan {
 
   async fillExternalDatasetFileInput(importFilePath: string) {
     const inputFile = this.page.locator('input[name="file"]');
-    await inputFile.waitFor({ state: 'attached' });
-    await inputFile.focus();
-    await inputFile.setInputFiles(importFilePath);
-    await inputFile.evaluate(e => e.blur());
+    await setFileInputByFilepath(this.page, inputFile, importFilePath);
   }
 
   async fillPlanName(name: string) {

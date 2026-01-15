@@ -46,3 +46,66 @@ export async function hoverRowAndWaitForButton(page: Page, row: Locator, buttonL
     }
   }
 }
+
+export async function setFileInputByBuffer(
+  page: Page,
+  fileInput: Locator,
+  buffer: Buffer,
+  mimeType: string,
+  name: string,
+  uploadButton?: Locator,
+) {
+  // Retry mechanism for file upload - sometimes Svelte's reactivity doesn't trigger on first attempt
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    await fileInput.waitFor({ state: 'attached' });
+    await fileInput.focus();
+    await fileInput.setInputFiles({
+      buffer,
+      mimeType,
+      name,
+    });
+    await fileInput.evaluate(e => e.blur());
+
+    // Verify the file was set by checking if the button becomes enabled
+    // For sequence adaptations, also need to wait for the name field
+    if (uploadButton) {
+      const isEnabled = await uploadButton.isEnabled().catch(() => false);
+      if (isEnabled) {
+        return;
+      }
+      // Wait a bit before retry
+      if (attempt < maxAttempts) {
+        await page.waitForTimeout(1000);
+      }
+    } else {
+      return;
+    }
+  }
+}
+
+export async function setFileInputByFilepath(page: Page, fileInput: Locator, filePath: string, uploadButton?: Locator) {
+  // Retry mechanism for file upload - sometimes Svelte's reactivity doesn't trigger on first attempt
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    await fileInput.waitFor({ state: 'attached' });
+    await fileInput.focus();
+    await fileInput.setInputFiles(filePath);
+    await fileInput.evaluate(e => e.blur());
+
+    // Verify the file was set by checking if the button becomes enabled
+    // For sequence adaptations, also need to wait for the name field
+    if (uploadButton) {
+      const isEnabled = await uploadButton.isEnabled().catch(() => false);
+      if (isEnabled) {
+        return;
+      }
+      // Wait a bit before retry
+      if (attempt < maxAttempts) {
+        await page.waitForTimeout(1000);
+      }
+    } else {
+      return;
+    }
+  }
+}

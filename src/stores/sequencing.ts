@@ -32,31 +32,31 @@ export const selectedSequence: Writable<string | null> = writable(null);
 export const creatingWorkspace: Writable<boolean> = writable(false);
 
 /* Subscriptions. */
-export const channelDictionaries = gqlSubscribable<ChannelDictionaryMetadata[]>(
+export const channelDictionaries = gqlSubscribable<ChannelDictionaryMetadata[] | null>(
   gql.SUB_CHANNEL_DICTIONARIES,
   {},
-  [],
+  null,
   null,
 );
 
-export const commandDictionaries = gqlSubscribable<CommandDictionaryMetadata[]>(
+export const commandDictionaries = gqlSubscribable<CommandDictionaryMetadata[] | null>(
   gql.SUB_COMMAND_DICTIONARIES,
   {},
-  [],
+  null,
   null,
 );
 
-export const parameterDictionaries = gqlSubscribable<ParameterDictionaryMetadata[]>(
+export const parameterDictionaries = gqlSubscribable<ParameterDictionaryMetadata[] | null>(
   gql.SUB_PARAMETER_DICTIONARIES,
   {},
-  [],
+  null,
   null,
 );
 
-export const parcelToParameterDictionaries = gqlSubscribable<ParcelToParameterDictionary[]>(
+export const parcelToParameterDictionaries = gqlSubscribable<ParcelToParameterDictionary[] | null>(
   gql.SUB_PARCEL_TO_PARAMETER_DICTIONARIES,
   {},
-  [],
+  null,
   null,
 );
 
@@ -73,7 +73,7 @@ export const parcelBundles: Readable<ParcelBundle[]> = derived(
         .filter(parcelToParameterDictionary => parcelToParameterDictionary.parcel_id === parcel.id)
         .map(parcelToParameterDictionary => parcelToParameterDictionary.parameter_dictionary_id);
 
-      const commandDictionary = $commandDictionaries.find(
+      const commandDictionary = $commandDictionaries?.find(
         commandDictionary => commandDictionary.id === parcel.command_dictionary_id,
       )?.id;
 
