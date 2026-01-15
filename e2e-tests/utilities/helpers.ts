@@ -67,8 +67,8 @@ export async function setFileInputByBuffer(
     await fileInput.focus();
     await fileInput.setInputFiles({
       buffer,
-      mimeType: mimeType,
-      name: name,
+      mimeType,
+      name,
     });
     await fileInput.evaluate(e => e.blur());
 
