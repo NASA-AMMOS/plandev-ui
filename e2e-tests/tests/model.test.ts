@@ -1,73 +1,44 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
-import { Constraints } from '../fixtures/Constraints.js';
 import { Model } from '../fixtures/Model.js';
-import { Models } from '../fixtures/Models.js';
-import { Plan } from '../fixtures/Plan.js';
-import { Plans } from '../fixtures/Plans.js';
-import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
-import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
-import { View } from '../fixtures/View.js';
+import { cleanupApiResources, closeBrowserResources, setupTest, type FullSetupResult } from '../utilities/api.js';
 
-let constraints: Constraints;
-let context: BrowserContext;
-let models: Models;
+let setup: FullSetupResult;
 let model: Model;
-let page: Page;
-let plan: Plan;
-let plans: Plans;
-let schedulingConditions: SchedulingConditions;
-let schedulingGoals: SchedulingGoals;
 let schedulingGoalName: string;
-let view: View;
 let viewName: string;
 
 const checkboxSelector = 'Press SPACE to toggle cell';
 
 test.beforeAll(async ({ baseURL, browser }) => {
-  context = await browser.newContext();
-  page = await context.newPage();
-
-  models = new Models(page);
-  plans = new Plans(page, models);
-  constraints = new Constraints(page);
-  schedulingConditions = new SchedulingConditions(page);
-  schedulingGoals = new SchedulingGoals(page);
-  plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
-  view = new View(page);
-  model = new Model(page, models, constraints, schedulingGoals, schedulingConditions);
+  setup = await setupTest(browser);
+  model = new Model(setup.page, setup.models, setup.constraints, setup.schedulingGoals, setup.schedulingConditions);
   schedulingGoalName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
-  await constraints.gotoNew();
-  await constraints.createConstraint(baseURL);
-  await schedulingConditions.gotoNew();
-  await schedulingConditions.createSchedulingCondition(baseURL);
-  await schedulingGoals.gotoNew();
-  await schedulingGoals.createSchedulingGoal(baseURL, schedulingGoalName);
-  await models.goto();
-  await models.createModel(baseURL);
-  await plans.goto();
-  await plans.createPlan();
-  await plan.goto();
-  viewName = view.createViewName();
-  await view.createView(viewName);
+
+  await setup.constraints.gotoNew();
+  await setup.constraints.createConstraint(baseURL);
+  await setup.schedulingConditions.gotoNew();
+  await setup.schedulingConditions.createSchedulingCondition(baseURL);
+  await setup.schedulingGoals.gotoNew();
+  await setup.schedulingGoals.createSchedulingGoal(baseURL, schedulingGoalName);
+
+  await setup.plan.goto();
+  viewName = setup.view.createViewName();
+  await setup.view.createView(viewName);
   await model.goto();
 });
 
 test.afterAll(async () => {
-  await plan.goto();
-  await view.deleteView(viewName);
-  await plans.goto();
-  await plans.deletePlan();
-  await models.goto();
-  await models.deleteModel();
-  await constraints.goto();
-  await constraints.deleteConstraint();
-  await schedulingConditions.goto();
-  await schedulingConditions.deleteSchedulingCondition();
-  await schedulingGoals.goto();
-  await schedulingGoals.deleteSchedulingGoal(schedulingGoalName);
-  await page.close();
-  await context.close();
+  await setup.plan.goto();
+  await setup.view.deleteView(viewName);
+  await cleanupApiResources(setup);
+  await setup.constraints.goto();
+  await setup.constraints.deleteConstraint();
+  await setup.schedulingConditions.goto();
+  await setup.schedulingConditions.deleteSchedulingCondition();
+  await setup.schedulingGoals.goto();
+  await setup.schedulingGoals.deleteSchedulingGoal(schedulingGoalName);
+  await closeBrowserResources(setup);
 });
 
 test.describe.serial('Model', () => {
@@ -96,13 +67,13 @@ test.describe.serial('Model', () => {
       .getByLabel(checkboxSelector)
       .click();
     await model.switchToModelView();
-    await expect(page.getByRole('button', { name: model.constraints.constraintName })).toBeVisible();
+    await expect(setup.page.getByRole('button', { name: model.constraints.constraintName })).toBeVisible();
     await expect(
-      page.getByRole('button', { name: model.constraints.constraintName }).getByRole('combobox'),
+      setup.page.getByRole('button', { name: model.constraints.constraintName }).getByRole('combobox'),
     ).toHaveValue('');
-    page.getByRole('button', { name: model.constraints.constraintName }).getByRole('combobox').selectOption('0');
+    setup.page.getByRole('button', { name: model.constraints.constraintName }).getByRole('combobox').selectOption('0');
     await expect(
-      page.getByRole('button', { name: model.constraints.constraintName }).getByRole('combobox'),
+      setup.page.getByRole('button', { name: model.constraints.constraintName }).getByRole('combobox'),
     ).toHaveValue('0');
   });
 
@@ -115,16 +86,16 @@ test.describe.serial('Model', () => {
       .getByLabel(checkboxSelector)
       .click();
     await model.switchToModelView();
-    await expect(page.getByRole('button', { name: model.schedulingConditions.conditionName })).toBeVisible();
+    await expect(setup.page.getByRole('button', { name: model.schedulingConditions.conditionName })).toBeVisible();
     await expect(
-      page.getByRole('button', { name: model.schedulingConditions.conditionName }).getByRole('combobox'),
+      setup.page.getByRole('button', { name: model.schedulingConditions.conditionName }).getByRole('combobox'),
     ).toHaveValue('');
-    page
+    setup.page
       .getByRole('button', { name: model.schedulingConditions.conditionName })
       .getByRole('combobox')
       .selectOption('0');
     await expect(
-      page.getByRole('button', { name: model.schedulingConditions.conditionName }).getByRole('combobox'),
+      setup.page.getByRole('button', { name: model.schedulingConditions.conditionName }).getByRole('combobox'),
     ).toHaveValue('0');
   });
 
@@ -134,10 +105,10 @@ test.describe.serial('Model', () => {
     await model.filterTable(schedulingGoalName);
     await model.associationTable.getByRole('row', { name: schedulingGoalName }).getByLabel(checkboxSelector).click();
     await model.switchToModelView();
-    await expect(page.getByRole('button', { name: schedulingGoalName })).toBeVisible();
-    await expect(page.getByRole('button', { name: schedulingGoalName }).getByRole('combobox')).toHaveValue('');
-    page.getByRole('button', { name: schedulingGoalName }).getByRole('combobox').selectOption('0');
-    await expect(page.getByRole('button', { name: schedulingGoalName }).getByRole('combobox')).toHaveValue('0');
+    await expect(setup.page.getByRole('button', { name: schedulingGoalName })).toBeVisible();
+    await expect(setup.page.getByRole('button', { name: schedulingGoalName }).getByRole('combobox')).toHaveValue('');
+    setup.page.getByRole('button', { name: schedulingGoalName }).getByRole('combobox').selectOption('0');
+    await expect(setup.page.getByRole('button', { name: schedulingGoalName }).getByRole('combobox')).toHaveValue('0');
   });
 
   test('Should successfully save the model changes', async () => {

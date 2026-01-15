@@ -100,7 +100,6 @@ export class SchedulingConditions {
 
   async goto() {
     await this.page.goto('/scheduling/conditions', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(250);
     await this.page.waitForSelector(`input[placeholder="Filter conditions"]`, { state: 'attached' });
   }
 

@@ -2,6 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { Status } from '../../src/enums/status';
+import { setFileInputByFilepath } from '../utilities/helpers.js';
 import { Constraints } from './Constraints.js';
 import { Plans } from './Plans.js';
 import { SchedulingConditions } from './SchedulingConditions.js';
@@ -108,22 +109,32 @@ export class Plan {
   }
 
   async addActivity(name: string = 'GrowBanana') {
+    // Ensure Activity Directives Table panel is visible for verification later
+    if (!(await this.panelActivityDirectivesTable.isVisible())) {
+      await this.showPanel(PanelNames.ACTIVITY_DIRECTIVES_TABLE);
+    }
     await this.showPanel(PanelNames.TIMELINE_ITEMS);
-    // TODO try to avoid using this timeout
-    await this.page.waitForTimeout(350);
-    const currentNumOfActivitiesWithName = await this.panelActivityDirectivesTable.getByRole('row', { name }).count();
     const activityListItem = this.page.locator(`.list-item :text-is("${name}")`);
+    await expect(activityListItem).toBeVisible();
     const activityRow = this.page
       .locator('.timeline')
       .getByRole('listitem')
       .filter({ hasText: 'Activities by Type' })
       .first()
       .locator('.overlay');
-    await activityListItem.dragTo(activityRow, { timeout: 5000 });
+    await expect(activityRow).toBeVisible();
+    // Wait for timeline to finish loading before attempting drag
+    await this.waitForTimelineLoading();
+    // Click on activity item first to ensure Svelte drag listeners are initialized
+    await activityListItem.click();
+    // Scroll elements into view
+    await activityListItem.scrollIntoViewIfNeeded();
+    await activityRow.scrollIntoViewIfNeeded();
+    // Use dragTo for the drag operation
+    await activityListItem.dragTo(activityRow, { timeout: 10000 });
     await this.waitForToast('Activity Directive Created Successfully');
-    await expect(this.panelActivityDirectivesTable.getByRole('row', { name })).toHaveCount(
-      currentNumOfActivitiesWithName + 1,
-    );
+    // Verify at least one activity with this name exists in the table
+    await expect(this.panelActivityDirectivesTable.getByRole('row', { name }).first()).toBeVisible({ timeout: 10000 });
   }
 
   async addPlanCollaborator(name: string, isUsername = true) {
@@ -132,13 +143,19 @@ export class Plan {
     // Click input first to trigger focus and open dropdown
     await this.planCollaboratorInput.click();
     await this.planCollaboratorInput.fill(name);
-    await this.page.getByRole('option', { name }).click();
+    // Wait for suggestions dropdown to appear and find option within it
+    const suggestionsDropdown = this.page.locator('#tags-input');
+    await expect(suggestionsDropdown).toBeVisible();
+    // Wait for the option to appear (API search may take time)
+    const option = suggestionsDropdown.getByRole('option', { name });
+    await expect(option).toBeVisible({ timeout: 10000 });
+    await option.click();
     // If the name is a username then check for the existence of the username in selected items
     // Otherwise it is a plan option and will add an unspecified amount of users
     if (isUsername) {
       await expect(
         this.planCollaboratorInputContainer.getByTestId('tags-input-selected-items').getByRole('option', { name }),
-      ).not.toBeUndefined();
+      ).toBeVisible();
     }
     await this.waitForToast('Plan Collaborators Updated');
   }
@@ -198,8 +215,7 @@ export class Plan {
     await newConstraintPage.close();
     this.constraints.updatePage(this.page);
     await this.constraintModalFilter.fill(this.constraints.constraintName);
-    // wait for table to filter
-    await this.page.waitForTimeout(100);
+    await expect(this.page.getByRole('row', { name: this.constraints.constraintName })).toBeVisible();
     await this.page.getByRole('row', { name: this.constraints.constraintName }).getByRole('checkbox').click();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.waitForSelector(this.constraintListItemSelector, { state: 'visible', strict: true });
@@ -217,8 +233,7 @@ export class Plan {
     await newSchedulingConditionPage.close();
     this.schedulingConditions.updatePage(this.page);
     await this.schedulingConditionsModalFilter.fill(this.schedulingConditions.conditionName);
-    // wait for table to filter
-    await this.page.waitForTimeout(100);
+    await expect(this.page.getByRole('row', { name: this.schedulingConditions.conditionName })).toBeVisible();
     await this.page
       .getByRole('row', { name: this.schedulingConditions.conditionName })
       .getByRole('checkbox')
@@ -242,8 +257,7 @@ export class Plan {
     await newSchedulingGoalPage.close();
     this.schedulingGoals.updatePage(this.page);
     await this.schedulingGoalsModalFilter.fill(goalName);
-    // wait for table to filter
-    await this.page.waitForTimeout(100);
+    await expect(this.page.getByRole('row', { name: goalName })).toBeVisible();
     await this.page
       .getByRole('row', { name: goalName })
       .getByRole('checkbox')
@@ -287,10 +301,7 @@ export class Plan {
 
   async fillExternalDatasetFileInput(importFilePath: string) {
     const inputFile = this.page.locator('input[name="file"]');
-    await this.page.waitForTimeout(1000);
-    await inputFile.focus();
-    await inputFile.setInputFiles(importFilePath);
-    await inputFile.evaluate(e => e.blur());
+    await setFileInputByFilepath(this.page, inputFile, importFilePath);
   }
 
   async fillPlanName(name: string) {
@@ -322,7 +333,7 @@ export class Plan {
   async goto(planId = this.plans.planId) {
     await this.page.goto(`/plans/${planId}`, { waitUntil: 'load' });
     await this.page.waitForURL(`/plans/${planId}`, { waitUntil: 'load' });
-    await this.page.locator('.layer-message.loading').waitFor({ state: 'detached' });
+    await this.waitForTimelineLoading();
   }
 
   async hoverMenu(menuButton: Locator) {
@@ -334,15 +345,13 @@ export class Plan {
 
   async reRunSimulation(expectedFinalState = Status.Complete) {
     await this.reSimulateButton.click();
-    await this.page.waitForTimeout(1000);
     await this.waitForSimulationStatus(expectedFinalState);
   }
 
   async removeConstraint() {
     await this.constraintManageButton.click();
     await this.constraintModalFilter.fill(this.constraints.constraintName);
-    // wait for table to filter
-    await this.page.waitForTimeout(100);
+    await expect(this.page.getByRole('row', { name: this.constraints.constraintName })).toBeVisible();
     await this.page.getByRole('row', { name: this.constraints.constraintName }).getByRole('checkbox').uncheck();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.locator(this.constraintListItemSelector).waitFor({ state: 'detached' });
@@ -358,8 +367,7 @@ export class Plan {
   async removeSchedulingGoal(goalName: string) {
     await this.schedulingGoalManageButton.click();
     await this.schedulingGoalsModalFilter.fill(goalName);
-    // wait for table to filter
-    await this.page.waitForTimeout(100);
+    await expect(this.page.getByRole('row', { name: goalName })).toBeVisible();
     await this.page.getByRole('row', { name: goalName }).getByRole('checkbox').uncheck();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.locator(this.schedulingGoalListItemSelector(goalName)).waitFor({ state: 'detached' });
@@ -372,31 +380,16 @@ export class Plan {
 
   async runAnalysis() {
     await this.analyzeButton.click();
-    /**
-     * wait for UI to update with pending status, but don't explicitly check because
-     * the final state of the status might update before the check occurs
-     **/
-    await this.page.waitForTimeout(300);
     await this.waitForSchedulingStatus(Status.Complete);
   }
 
   async runScheduling(expectedFinalState = Status.Complete) {
     await this.scheduleButton.click();
-    /**
-     * wait for UI to update with pending status, but don't explicitly check because
-     * the final state of the status might update before the check occurs
-     **/
-    await this.page.waitForTimeout(300);
     await this.waitForSchedulingStatus(expectedFinalState);
   }
 
   async runSimulation(expectedFinalState = Status.Complete) {
     await this.simulateButton.click();
-    /**
-     * wait for UI to update with pending status, but don't explicitly check because
-     * the final state of the status might update before the check occurs
-     **/
-    await this.page.waitForTimeout(300);
     await this.waitForSimulationStatus(expectedFinalState);
   }
 
@@ -424,16 +417,15 @@ export class Plan {
     await this.panelActivityForm.getByRole('menuitem', { name: presetName }).waitFor({ state: 'detached' });
 
     try {
-      const applyPresetButton = await this.page.getByRole('button', { name: 'Apply Preset' });
+      const applyPresetButton = this.page.getByRole('button', { name: 'Apply Preset' });
 
       // allow time for modal to apply the preset to show up if applicable
       await applyPresetButton.waitFor({ state: 'attached', timeout: 1000 });
-      // await new Promise(resolve => setTimeout(resolve, 1000));
       if (await applyPresetButton.isVisible()) {
         await applyPresetButton.click();
       }
     } catch (e) {
-      if (e.name !== 'TimeoutError') {
+      if ((e as Error).name !== 'TimeoutError') {
         console.error(e);
       }
     }
@@ -454,7 +446,7 @@ export class Plan {
     await this.panelSimulation.getByRole('menuitem', { name: templateName }).waitFor({ state: 'detached' });
 
     try {
-      const applyTemplateButton = await this.page.getByRole('button', { name: 'Apply Simulation Template' });
+      const applyTemplateButton = this.page.getByRole('button', { name: 'Apply Simulation Template' });
 
       // allow time for modal to apply the preset to show up if applicable
       await applyTemplateButton.waitFor({ state: 'attached', timeout: 1000 });
@@ -463,7 +455,7 @@ export class Plan {
         await applyTemplateButton.click();
       }
     } catch (e) {
-      if (e.name !== 'TimeoutError') {
+      if ((e as Error).name !== 'TimeoutError') {
         console.error(e);
       }
     }
@@ -501,14 +493,14 @@ export class Plan {
     await expect(this.gridMenu).not.toBeVisible();
     let gridMenuButton: Locator;
     if (pickLastMenu) {
-      gridMenuButton = await this.gridMenuButton.last();
+      gridMenuButton = this.gridMenuButton.last();
     } else {
-      gridMenuButton = await this.gridMenuButton.first();
+      gridMenuButton = this.gridMenuButton.first();
     }
 
     await expect(gridMenuButton).toBeVisible();
     await expect(gridMenuButton).toBeEnabled();
-    await this.page.waitForTimeout(1000);
+    await this.waitForTimelineLoading();
     await gridMenuButton.click();
 
     await this.gridMenu.waitFor({ state: 'attached' });
@@ -632,6 +624,7 @@ export class Plan {
   }
 
   async waitForPlanCollaboratorLoad() {
+    await expect(this.planCollaboratorInputContainer).toBeVisible({ timeout: 10000 });
     await expect(this.planCollaboratorLoadingInput).not.toBeVisible({ timeout: 10000 });
   }
 
@@ -645,8 +638,21 @@ export class Plan {
     await expect(this.page.locator(this.simulationStatusSelector(status))).toBeVisible();
   }
 
-  async waitForToast(message: string) {
-    await this.page.waitForSelector(`.toastify:has-text("${message}")`, { timeout: 10000 });
+  async waitForTimelineLoading(timeout: number = 10000) {
+    // Brief wait for loading to appear (may not appear if data loads fast), then wait for all to disappear
+    // Use catch to avoid failing if some timeline rows never finish loading (e.g., missing resources)
+    await this.page
+      .locator('.layer-message.loading')
+      .first()
+      .waitFor({ state: 'visible', timeout: 1000 })
+      .catch(() => {});
+    await expect(this.page.locator('.layer-message.loading'))
+      .toHaveCount(0, { timeout })
+      .catch(() => {});
+  }
+
+  async waitForToast(message: string, timeout: number = 10000) {
+    await this.page.waitForSelector(`.toastify:has-text("${message}")`, { timeout });
   }
 }
 

@@ -1,4 +1,4 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
@@ -6,14 +6,14 @@ import { PanelNames, Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
+import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
 
+let setup: BrowserSetupResult;
 let constraints: Constraints;
-let context: BrowserContext;
 let models: Models;
 let modelA: string;
 let modelB: string;
 let modelC: string;
-let page: Page;
 let plan: Plan;
 let plans: Plans;
 let schedulingConditions: SchedulingConditions;
@@ -21,15 +21,14 @@ let schedulingGoals: SchedulingGoals;
 
 test.beforeAll(async ({ browser, baseURL }) => {
   test.setTimeout(120000);
-  context = await browser.newContext();
-  page = await context.newPage();
+  setup = await setupTest(browser, { model: false });
 
-  models = new Models(page);
-  plans = new Plans(page, models);
-  constraints = new Constraints(page);
-  schedulingConditions = new SchedulingConditions(page);
-  schedulingGoals = new SchedulingGoals(page);
-  plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
+  models = new Models(setup.page);
+  plans = new Plans(setup.page, models);
+  constraints = new Constraints(setup.page);
+  schedulingConditions = new SchedulingConditions(setup.page);
+  schedulingGoals = new SchedulingGoals(setup.page);
+  plan = new Plan(setup.page, plans, constraints, schedulingGoals, schedulingConditions);
 
   await models.goto();
   modelA = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
@@ -60,8 +59,7 @@ test.afterAll(async () => {
   await models.deleteModel(modelA);
   await models.deleteModel(modelB);
   await models.deleteModel(modelC);
-  await page.close();
-  await context.close();
+  await teardownTest(setup);
 });
 
 test.describe.serial('Plan Model Migration', () => {
@@ -92,12 +90,12 @@ test.describe.serial('Plan Model Migration', () => {
     await plan.waitForToast('Model Migration Success');
   });
   test('Plan has the expected number of validation errors', async () => {
-    await expect(page.getByRole('tab', { name: 'activity' })).toHaveText('Activity Validation 3');
+    await expect(setup.page.getByRole('tab', { name: 'activity' })).toHaveText('Activity Validation 3');
   });
   test('BakeBananaBread temperature parameter is a struct', async () => {
     await plan.showPanel(PanelNames.SELECTED_ACTIVITY);
     await plan.panelActivityDirectivesTable.getByRole('row', { name: 'BakeBananaBread' }).first().click();
-    await expect(page.getByRole('group', { name: 'temperature-collapse' })).toBeAttached();
+    await expect(setup.page.getByRole('group', { name: 'temperature-collapse' })).toBeAttached();
   });
   test('Can migrate back to ModelB', async () => {
     await plan.showChangeModelModal();
@@ -107,7 +105,7 @@ test.describe.serial('Plan Model Migration', () => {
     await plan.changeMissionModelTableRows.getByRole('row', { name: modelB }).click();
     await plan.changeMissionModelMigrateButton.click();
     await plan.waitForToast('Model Migration Success');
-    await expect(page.getByRole('tab', { name: 'activity' })).toHaveText('Activity Validation 3');
-    await expect(page.getByLabel('temperature', { exact: true })).toBeAttached();
+    await expect(setup.page.getByRole('tab', { name: 'activity' })).toHaveText('Activity Validation 3');
+    await expect(setup.page.getByLabel('temperature', { exact: true })).toBeAttached();
   });
 });

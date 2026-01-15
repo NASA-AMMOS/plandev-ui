@@ -1,4 +1,4 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import { getWorkspacesUrl } from '../../src/utilities/routes.js';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
@@ -6,35 +6,34 @@ import { Parcels } from '../fixtures/Parcels.js';
 import { User } from '../fixtures/User.js';
 import { Workspace } from '../fixtures/Workspace.js';
 import { Workspaces } from '../fixtures/Workspaces.js';
+import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
 import { generateRandomName } from '../utilities/helpers.js';
 
-let context: BrowserContext;
+// Main setup (uses default 'test' user)
+let setup: BrowserSetupResult;
 let dictionaries: Dictionaries;
-let page: Page;
 let parcels: Parcels;
 let sequence: { sequenceName: string; sequencePath: string };
-let testUser: User;
-let userAuthorized: User;
-let userUnauthorized: User;
 let workspace: Workspace;
 let workspaces: Workspaces;
 let workspaceId: string;
 let workspaceName: string;
 
+let workspaceForUnauthorized: Workspace;
+// Separate browser contexts for multi-user tests
+let setupAuthorized: BrowserSetupResult; // userA - will be added as collaborator
+let setupUnauthorized: BrowserSetupResult; // userB - not a collaborator
+
 test.beforeAll(async ({ baseURL, browser }) => {
   // Increase global timeout to prevent early test termination
-  test.setTimeout(90000); // 90 seconds
+  test.setTimeout(60000); // 60 seconds
 
-  context = await browser.newContext({ acceptDownloads: true });
-  page = await context.newPage();
+  // TODO need to accept downloads in context, used to be await browser.newContext({ acceptDownloads: true });
+  setup = await setupTest(browser, { model: false });
 
-  dictionaries = new Dictionaries(page);
-  parcels = new Parcels(page);
-  workspaces = new Workspaces(page, parcels, baseURL);
-
-  testUser = new User(page, 'test');
-  userAuthorized = new User(page, 'userA');
-  userUnauthorized = new User(page, 'userB');
+  dictionaries = new Dictionaries(setup.page);
+  parcels = new Parcels(setup.page);
+  workspaces = new Workspaces(setup.page, parcels, baseURL);
 
   // Setup dependencies: dictionary and parcel
   await dictionaries.goto();
@@ -48,8 +47,15 @@ test.beforeAll(async ({ baseURL, browser }) => {
   workspaceName = workspaces.workspaceName;
 
   // Initialize workspace fixture
-  workspace = new Workspace(page, workspaceId, workspaceName, baseURL);
-  workspace.updatePage(page);
+  workspace = new Workspace(setup.page, workspaceId, workspaceName, baseURL);
+  workspace.updatePage(setup.page);
+
+  // Create separate browser contexts for multi-user tests (pre-authenticated)
+  setupAuthorized = await setupTest(browser, { model: false, user: 'userA' });
+  setupUnauthorized = await setupTest(browser, { model: false, user: 'userB' });
+  workspaceForUnauthorized = new Workspace(setupUnauthorized.page, workspaceId, workspaceName, baseURL);
+
+  // Create workspace fixture for unauthorized user
 
   await workspace.goto();
 });
@@ -63,14 +69,17 @@ test.afterAll(async () => {
   await dictionaries.goto();
   await dictionaries.deleteCommandDictionary();
 
-  await page.close();
-  await context.close();
+  await teardownTest(setup);
+
+  // Close additional user browser contexts
+  await teardownTest(setupAuthorized);
+  await teardownTest(setupUnauthorized);
 });
 
 test.describe.serial('Workspace', () => {
   test('Navigate to workspace should display workspace correctly', async () => {
-    await expect(page.locator('.workspace-title')).toBeVisible();
-    await expect(page).toHaveURL(getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId)));
+    await expect(setup.page.locator('.workspace-title')).toBeVisible();
+    await expect(setup.page).toHaveURL(getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId)));
     await workspace.pageLoadingLocatorWithData.waitFor({ state: 'detached' });
   });
 
@@ -83,7 +92,7 @@ test.describe.serial('Workspace', () => {
     await expect(workspace.workspaceHeaderMenu.getByRole('menuitem', { name: 'New File' })).toBeVisible();
 
     // Close menu by pressing Escape
-    await page.keyboard.press('Escape');
+    await setup.page.keyboard.press('Escape');
     await expect(workspace.workspaceHeaderMenu).not.toBeVisible();
   });
 
@@ -106,7 +115,7 @@ test.describe.serial('Workspace', () => {
     await workspace.searchForFileAndWait(sequence.sequenceName);
     await workspace.clickFile(sequence.sequenceName);
 
-    await expect(page).toHaveURL(
+    await expect(setup.page).toHaveURL(
       getWorkspacesUrl(
         workspace.baseURL,
         parseInt(workspace.workspaceId),
@@ -216,7 +225,7 @@ test.describe.serial('Workspace', () => {
     await expect(
       workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Run Action on 1 File' }),
     ).toBeVisible();
-    await page.keyboard.press('Escape');
+    await setup.page.keyboard.press('Escape');
 
     // Test folder context menu - should NOT have Download
     await workspace.searchForFileAndWait(folderName);
@@ -224,7 +233,7 @@ test.describe.serial('Workspace', () => {
     await expect(
       workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Run Action on All Files within Selection' }),
     ).toBeVisible();
-    await page.keyboard.press('Escape');
+    await setup.page.keyboard.press('Escape');
 
     // Cleanup
     await workspace.searchForFileAndWait(sequenceName);
@@ -273,12 +282,12 @@ test.describe.serial('Workspace', () => {
     await workspace.clickFile(file2);
 
     // Should show confirmation modal
-    const modal = page.locator('#modal-container');
+    const modal = setup.page.locator('#modal-container');
     await modal.waitFor({ state: 'attached' });
     await expect(modal).toContainText('unsaved changes');
 
     // Cancel navigation
-    await page.getByRole('button', { name: 'Keep Editing' }).click();
+    await setup.page.getByRole('button', { name: 'Keep Editing' }).click();
 
     // Should still be on first file with unsaved changes
     await expect(workspace.saveSequenceButton).toBeEnabled();
@@ -302,8 +311,8 @@ test.describe.serial('Workspace', () => {
     await workspace.workspaceFileContextMenu.getByRole('menuitem', { exact: true, name: 'Move/Copy' }).click();
 
     // Select destination folder
-    await page.locator('#modal-container').getByRole('menuitem', { name: folderName }).click();
-    await page.getByRole('button', { name: 'Move' }).click();
+    await setup.page.locator('#modal-container').getByRole('menuitem', { name: folderName }).click();
+    await setup.page.getByRole('button', { name: 'Move' }).click();
 
     await workspace.waitForToast('Workspace File Moved Successfully');
 
@@ -323,7 +332,7 @@ test.describe.serial('Workspace', () => {
     // Open context menu and click Open in New Tab
     await workspace.openFileContextMenu(sequenceName);
     const [newPage] = await Promise.all([
-      page.context().waitForEvent('page'),
+      setup.page.context().waitForEvent('page'),
       workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Open in New Tab' }).click(),
     ]);
 
@@ -357,30 +366,30 @@ test.describe.serial('Workspace', () => {
     await workspace.clickFile(testFile);
 
     // Verify URL contains the full path (slashes are URL-encoded as %2F)
-    await expect(page).toHaveURL(new RegExp(`${parentFolder}%2F${childFolder}%2F${testFile}`));
+    await expect(setup.page).toHaveURL(new RegExp(`${parentFolder}%2F${childFolder}%2F${testFile}`));
 
     // Click the parent breadcrumb to navigate back
     // Given the generated names, this means clicking on the ellipses (...) breadcrumb in order
     // to select the parent folder
-    await page.getByRole('button', { name: 'Show hidden folders' }).click();
-    await page.getByRole('menuitem', { name: parentFolder }).click();
+    await setup.page.getByRole('button', { name: 'Show hidden folders' }).click();
+    await setup.page.getByRole('menuitem', { name: parentFolder }).click();
 
     // Select the folder to change the url
     await workspace.searchForFileAndWait(childFolder);
     await workspace.clickFile(childFolder);
 
     // Verify breadcrumb navigation worked - URL should now point to parent folder level
-    await expect(page).toHaveURL(new RegExp(`${parentFolder}(?!%2F${childFolder}%2F${testFile})`));
+    await expect(setup.page).toHaveURL(new RegExp(`${parentFolder}(?!%2F${childFolder}%2F${testFile})`));
 
     // Navigate back to root to delete the parent folder
-    await page.getByRole('button', { name: workspaceName }).click();
+    await setup.page.getByRole('button', { name: workspaceName }).click();
     await workspace.searchForFileAndWait(parentFolder);
     await workspace.deleteFolder(parentFolder);
   });
 
   test('Copy full path to clipboard', async () => {
     // Grant clipboard permissions for this test
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await setup.context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
     // Create a file
     const { sequenceName, sequencePath } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
@@ -391,7 +400,7 @@ test.describe.serial('Workspace', () => {
     await workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Copy Full Path' }).click();
 
     // Read from clipboard and verify
-    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+    const clipboardText = await setup.page.evaluate(() => navigator.clipboard.readText());
     expect(clipboardText).toContain(sequencePath);
     expect(clipboardText).toContain(sequenceName);
 
@@ -402,7 +411,7 @@ test.describe.serial('Workspace', () => {
 
   test('Workspace panel toggling', async () => {
     // Get the sidebar wrapper (has data-state) and the inner sidebar (has the button)
-    const sidebarWrapper = page.locator('[data-slot="sidebar"]');
+    const sidebarWrapper = setup.page.locator('[data-slot="sidebar"]');
 
     // Verify sidebar is initially expanded
     await expect(sidebarWrapper).toHaveAttribute('data-state', 'expanded');
@@ -430,8 +439,12 @@ test.describe.serial('Workspace', () => {
 
   test('Add collaborator to workspace', async () => {
     await workspace.workspaceCollaboratorInput.click();
-    await workspace.workspaceCollaboratorInput.fill(userAuthorized.username);
-    await page.getByRole('option', { exact: true, name: userAuthorized.username }).click();
+    await workspace.workspaceCollaboratorInput.fill('userA');
+
+    // Wait for suggestions dropdown to appear and find option within it
+    const suggestionsDropdown = setup.page.locator('#tags-input');
+    await expect(suggestionsDropdown).toBeVisible();
+    await suggestionsDropdown.getByRole('option', { exact: true, name: 'userA' }).click();
 
     await workspace.waitForToast('Workspace Collaborators Updated');
   });
@@ -458,13 +471,13 @@ test.describe.serial('Workspace', () => {
     // Open context menu and move files
     await workspace.openFileContextMenu(file1);
     await workspace.workspaceFileContextMenu.getByRole('menuitem', { exact: true, name: 'Move/Copy' }).click();
-    await page.getByRole('menuitem', { name: workspace.workspaceName }).click();
-    await page.getByRole('menuitem', { name: folder1 }).click();
-    await page.getByRole('button', { name: 'Move Files' }).click();
+    await setup.page.getByRole('menuitem', { name: workspace.workspaceName }).click();
+    await setup.page.getByRole('menuitem', { name: folder1 }).click();
+    await setup.page.getByRole('button', { name: 'Move Files' }).click();
 
     // Verify files were moved (no longer in root, now in folder1)
     await workspace.clearSearch();
-    const sidebar = page.getByRole('complementary');
+    const sidebar = setup.page.getByRole('complementary');
     // Files should NOT be at root path (just filename)
     await expect(sidebar.getByTitle(file1, { exact: true })).not.toBeVisible();
     await expect(sidebar.getByTitle(file2, { exact: true })).not.toBeVisible();
@@ -479,9 +492,9 @@ test.describe.serial('Workspace', () => {
     // Open context menu and copy files
     await workspace.openFileContextMenu(file3);
     await workspace.workspaceFileContextMenu.getByRole('menuitem', { exact: true, name: 'Move/Copy' }).click();
-    await page.getByRole('menuitem', { name: workspace.workspaceName }).click();
-    await page.getByRole('menuitem', { name: folder2 }).click();
-    await page.getByRole('button', { name: 'Copy Files' }).click();
+    await setup.page.getByRole('menuitem', { name: workspace.workspaceName }).click();
+    await setup.page.getByRole('menuitem', { name: folder2 }).click();
+    await setup.page.getByRole('button', { name: 'Copy Files' }).click();
 
     // Verify files still exist in root (copy, not move)
     await workspace.clearSearch();
@@ -499,7 +512,7 @@ test.describe.serial('Workspace', () => {
     // Open context menu and delete files
     await workspace.workspaceFileGrid.locator(`[row-id="${file3}"]`).click({ button: 'right' });
     await workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Delete' }).click();
-    await page.getByRole('button', { name: 'Delete' }).click();
+    await setup.page.getByRole('button', { name: 'Delete' }).click();
 
     // Verify files were deleted from root
     await workspace.clearSearch();
@@ -517,20 +530,40 @@ test.describe.serial('Workspace', () => {
     await workspace.deleteFile(file4);
   });
 
-  // Currently, switching users mid test causes a little bit of a race condition when multiple test workers are running tests
-  // This test should be reenabled when we've figured out how to properly handle multiple users in one test run
-  test.skip('Users not authorized to modify the workspace should not be able to', async ({ baseURL }) => {
-    await userAuthorized.logout(baseURL);
-    await userUnauthorized.login(baseURL);
+  test('Users not authorized to modify the workspace should not be able to', async () => {
+    // Use userB's separate browser context - no login/logout needed!
+    // userB is NOT a collaborator on this workspace
 
-    await userUnauthorized.switchRole('user');
+    // Switch to 'user' role which has limited permissions
+    const userB = new User(setupUnauthorized.page, 'userB');
+    await userB.gotoWithRetry('/plans');
+    await userB.switchRole('user');
 
-    await workspace.goto();
-    await workspace.openWorkspaceContextMenu();
-    await workspace.workspaceHeaderMenu.getByRole('menuitem', { name: 'New File' }).click();
-    await expect(workspace.page.locator('#modal-container')).not.toBeVisible();
+    // Navigate to workspace using retry helper (role switch can cause ERR_ABORTED)
+    const workspaceUrl = getWorkspacesUrl(workspaceForUnauthorized.baseURL, parseInt(workspaceId));
+    await userB.gotoWithRetry(workspaceUrl);
 
-    await userUnauthorized.logout(baseURL);
-    await testUser.login(baseURL);
+    await setupUnauthorized.page.waitForLoadState('networkidle');
+
+    // Wait for the workspace file grid to be visible, which confirms both:
+    // 1. The workspace subscription has delivered data (workspace is truthy)
+    // 2. The workspace contents API call completed (workspaceTree is truthy)
+    // Using file grid visibility is more reliable than waiting for loading to detach
+    await workspaceForUnauthorized.workspaceFileGrid.waitFor({ state: 'visible', timeout: 30000 });
+
+    // Verify userB can see the workspace file browser (read access)
+    await expect(workspaceForUnauthorized.workspaceFileGrid).toBeVisible();
+
+    // As a non-collaborator with 'user' role, the 'New File' option should be disabled
+    // or the modal should not appear when clicked
+    await workspaceForUnauthorized.openWorkspaceContextMenu();
+    const newFileMenuItem = workspaceForUnauthorized.workspaceHeaderMenu.getByRole('menuitem', { name: 'New File' });
+
+    // Check if menu item is disabled (preferred) or if clicking does nothing
+    const isDisabled = await newFileMenuItem.isDisabled();
+    if (!isDisabled) {
+      await newFileMenuItem.click();
+      await expect(setupUnauthorized.page.locator('#modal-container')).not.toBeVisible();
+    }
   });
 });

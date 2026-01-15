@@ -1,18 +1,13 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+import { setFileInputByFilepath } from '../utilities/helpers';
 
 export class ExternalSources {
-  alertError: Locator;
-  closeButton: Locator;
   deleteSourceButton: Locator;
   deleteSourceButtonConfirmation: Locator;
   derivationATypeName: string = 'DerivationA';
-  derivationATypeSchema: string = 'e2e-tests/data/Schema_DerivationA.json';
   derivationBTypeName: string = 'DerivationB';
-  derivationBTypeSchema: string = 'e2e-tests/data/Schema_DerivationB.json';
   derivationCTypeName: string = 'DerivationC';
-  derivationCTypeSchema: string = 'e2e-tests/data/Schema_DerivationC.json';
   derivationDTypeName: string = 'DerivationD';
-  derivationDTypeSchema: string = 'e2e-tests/data/Schema_DerivationD.json';
   derivationTestFile1: string = 'e2e-tests/data/external-event-derivation-1.json';
   derivationTestFile2: string = 'e2e-tests/data/external-event-derivation-2.json';
   derivationTestFile3: string = 'e2e-tests/data/external-event-derivation-3.json';
@@ -24,11 +19,6 @@ export class ExternalSources {
   derivationTestGroupName: string = 'DerivationTest Default';
   derivationTestSourceType: string = 'DerivationTest';
   derivationTestSourceTypeName: string = 'DerivationTest';
-  derivationTestTypeSchema: string = 'e2e-tests/data/Schema_Example_Derivation.json';
-  derivationTestTypeSchemaExpectedEventTypes: string[] = ['DerivationA', 'DerivationB', 'DerivationC', 'DerivationD'];
-  derivationTestTypeSchemaExpectedSourceTypes: string[] = ['DerivationTest'];
-  deselectEventButton: Locator;
-  deselectSourceButton: Locator;
   exampleDerivationGroup: string = 'Example External Source Default';
   exampleEmptyDerivationGroup: string = 'Empty External Source Default';
   exampleEmptyEventType: string = 'EmptyEvent';
@@ -41,122 +31,202 @@ export class ExternalSources {
   externalEventSelectedForm: Locator;
   externalEventTableHeaderDuration: Locator;
   externalEventTableHeaderEventType: Locator;
-  externalEventTableRow: Locator;
-  externalEventTypeName: string = 'ExampleEvent';
   externalSourceEmptyAttributeFilePath: string = 'e2e-tests/data/example-external-source_empty-attr.json';
-  externalSourceEmptyAttributeKey: string = 'ExampleExternalSource:example-external-source_no-attr.json';
+  externalSourceEmptyAttributeKey: string = 'EmptyExternalSource:example-external-source_empty-attr.json';
   externalSourceFileName: string = 'example-external-source.json';
   externalSourceFilePath: string = 'e2e-tests/data/example-external-source.json';
   externalSourceFilePathMissingField: string = 'e2e-tests/data/example-external-source-missing-field.json';
   externalSourceFilePathSyntaxError: string = 'e2e-tests/data/example-external-source-syntax-error.json';
+  externalSourceKey: string = 'ExampleExternalSource:example-external-source.json';
   externalSourceNoAttributeFilePath: string = 'e2e-tests/data/example-external-source_no-attr.json';
   externalSourceNoAttributeKey: string = 'NoAttrSource:example-external-source_no-attr.json';
   externalSourceSelectedForm: Locator;
-  externalSourceTypeName: string = 'Example External Source';
-  externalSourceUpload: Locator;
   externalSourcesTable: Locator;
   inputFile: Locator;
-  nameInput: Locator;
-  panelExternalEventsTable: Locator;
-  saveButton: Locator;
-  selectEventTableView: Locator;
-  toastTimeout: number = 5500; // How long to wait for a toast to disappear - they should take 5000ms, 500 extra for buffer
+  noAttrDerivationGroup: string = 'NoAttrSource Default';
+  noAttrEventType: string = 'NoAttrEvent';
+  noAttrSourceType: string = 'NoAttrSource';
   uploadButton: Locator;
   viewContainedEventTypes: Locator;
-  viewEventSourceMetadata: Locator;
 
   constructor(public page: Page) {
     this.updatePage(page);
   }
 
-  async close() {
-    await this.closeButton.click();
-  }
-
+  // Public methods in alphabetical order
   async createTypes(typeSchema: string, expectedSourceTypes: string[], expectedEventTypes: string[]) {
     await this.gotoTypeManager();
 
-    const externalSourceTypeTable = await this.page.locator('.external-source-type-table');
-    const externalEventTypeTable = await this.page.locator('.external-event-type-table');
+    const externalSourceTypeTable = this.page.locator('.external-source-type-table');
+    const externalEventTypeTable = this.page.locator('.external-event-type-table');
 
-    await this.page.getByRole('textbox').isVisible();
-    await this.page.getByRole('textbox').focus();
-    await this.page.getByRole('textbox').setInputFiles(typeSchema);
-    await this.page.getByRole('textbox').evaluate(e => e.blur());
+    // Check if all types already exist - if so, skip creation
+    let allTypesExist = true;
+    for (const expectedSourceType of expectedSourceTypes) {
+      const exists = await externalSourceTypeTable
+        .getByRole('gridcell', { name: expectedSourceType })
+        .isVisible()
+        .catch(() => false);
+      if (!exists) {
+        allTypesExist = false;
+        break;
+      }
+    }
+    if (allTypesExist) {
+      for (const expectedEventType of expectedEventTypes) {
+        const exists = await externalEventTypeTable
+          .getByRole('gridcell', { name: expectedEventType })
+          .isVisible()
+          .catch(() => false);
+        if (!exists) {
+          allTypesExist = false;
+          break;
+        }
+      }
+    }
 
-    await this.page.getByText('Source & Event Type Attribute Schema Parsed').isVisible();
+    // If all types exist, just verify and return
+    if (allTypesExist) {
+      return;
+    }
+
+    const schemaFileInput = this.page.getByLabel('Type JSON Schema File');
+    const uploadButton = this.page.getByLabel('Upload External Source & Event Type(s)');
+    await expect(schemaFileInput).toBeVisible({ timeout: 10000 });
+    await setFileInputByFilepath(this.page, schemaFileInput, typeSchema, uploadButton);
+
+    // Wait for schema to be parsed
+    await expect(uploadButton).toBeVisible({ timeout: 10000 });
 
     for (const expectedSourceType of expectedSourceTypes) {
-      await expect(this.page.locator(`li:text("${expectedSourceType}")`)).toBeVisible();
+      await expect(this.page.locator(`li:text("${expectedSourceType}")`)).toBeVisible({ timeout: 5000 });
     }
     for (const expectedEventType of expectedEventTypes) {
-      await expect(this.page.locator(`li:text("${expectedEventType}")`)).toBeVisible();
+      await expect(this.page.locator(`li:text("${expectedEventType}")`)).toBeVisible({ timeout: 5000 });
     }
 
-    await this.page.getByLabel('Upload External Source & Event Type(s)').click();
+    await uploadButton.click();
 
+    // Wait for types to appear in tables with longer timeout
     for (const expectedSourceType of expectedSourceTypes) {
-      await expect(externalSourceTypeTable.getByRole('gridcell', { name: expectedSourceType })).toBeVisible();
+      await expect(externalSourceTypeTable.getByRole('gridcell', { name: expectedSourceType })).toBeVisible({
+        timeout: 10000,
+      });
     }
     for (const expectedEventType of expectedEventTypes) {
-      await expect(externalEventTypeTable.getByRole('gridcell', { name: expectedEventType })).toBeVisible();
+      await expect(externalEventTypeTable.getByRole('gridcell', { name: expectedEventType })).toBeVisible({
+        timeout: 10000,
+      });
     }
   }
 
   async deleteDerivationGroup(derivationGroupName: string) {
-    const derivationGroupTable = await this.page.locator('.derivation-group-table');
-    if (await derivationGroupTable.getByRole('row', { name: derivationGroupName }).isVisible()) {
-      await derivationGroupTable.getByRole('row', { name: derivationGroupName }).hover();
-      await derivationGroupTable
-        .getByRole('row', { name: derivationGroupName })
-        .getByLabel('Delete Derivation Group')
-        .click();
-      await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
-      await expect(derivationGroupTable.getByRole('row', { name: derivationGroupName })).not.toBeVisible();
-    }
+    await this.deleteFromTable('derivation-group-table', derivationGroupName, 'Delete Derivation Group');
   }
 
   async deleteExternalEventType(eventTypeName: string) {
-    const externalEventTypeTable = await this.page.locator('.external-event-type-table');
-    if (await externalEventTypeTable.getByRole('row', { name: eventTypeName }).isVisible()) {
-      await externalEventTypeTable.getByRole('row', { name: eventTypeName }).hover();
-      await externalEventTypeTable
-        .getByRole('row', { name: eventTypeName })
-        .getByLabel('Delete External Event Type')
-        .click();
-      await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
-      await expect(externalEventTypeTable.getByRole('row', { name: eventTypeName })).not.toBeVisible();
-    }
+    await this.deleteFromTable('external-event-type-table', eventTypeName, 'Delete External Event Type');
   }
 
   async deleteExternalSourceType(sourceTypeName: string) {
-    const externalSourceTypeTable = await this.page.locator('.external-source-type-table');
-    if (await externalSourceTypeTable.getByRole('row', { name: sourceTypeName }).isVisible()) {
-      await externalSourceTypeTable.getByRole('row', { name: sourceTypeName }).hover();
-      await externalSourceTypeTable
-        .getByRole('row', { name: sourceTypeName })
-        .getByLabel('Delete External Source Type')
-        .click();
-      await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
-      await expect(externalSourceTypeTable.getByRole('row', { name: sourceTypeName })).not.toBeVisible();
+    await this.deleteFromTable('external-source-type-table', sourceTypeName, 'Delete External Source Type');
+  }
+
+  /**
+   * Generic helper to delete an item from a table with confirmation modal.
+   */
+  private async deleteFromTable(tableCssClass: string, itemName: string, deleteButtonLabel: string) {
+    // Close any open modals first
+    await this.page.keyboard.press('Escape').catch(() => {});
+    await this.page
+      .locator('.modal')
+      .waitFor({ state: 'hidden', timeout: 2000 })
+      .catch(() => {});
+
+    const table = this.page.locator(`.${tableCssClass}`);
+    const row = table.getByRole('row', { name: itemName });
+
+    if (!(await row.isVisible().catch(() => false))) {
+      return;
+    }
+
+    await row.hover();
+    const deleteButton = row.getByLabel(deleteButtonLabel);
+    if (!(await deleteButton.isVisible().catch(() => false))) {
+      return; // Can't delete, no permission or button not shown
+    }
+
+    await deleteButton.click();
+    const modal = this.page.locator('.modal');
+    await modal.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+
+    const confirmButton = this.page.getByRole('button', { exact: true, name: 'Delete' });
+    if (await confirmButton.isVisible().catch(() => false)) {
+      await confirmButton.click();
+      await row.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
+    } else {
+      // Item has dependencies - close the modal instead
+      await this.page
+        .getByRole('button', { exact: true, name: 'Close' })
+        .click()
+        .catch(() => {});
     }
   }
 
   async deleteSource(sourceKey: string) {
-    // Only delete a source if its visible in the table
-
-    if (await this.externalSourcesTable.getByRole('gridcell', { name: sourceKey }).isVisible()) {
-      await this.selectSource(sourceKey);
-      await this.deleteSourceButton.click();
-      await this.deleteSourceButtonConfirmation.click();
-      await expect(this.externalSourcesTable.getByRole('gridcell', { name: sourceKey })).not.toBeVisible();
+    // Only delete a source if it's visible in the table
+    const tableVisible = await this.externalSourcesTable.isVisible().catch(() => false);
+    if (!tableVisible) {
+      return;
+    }
+    const cell = this.externalSourcesTable.getByRole('gridcell', { name: sourceKey });
+    const isVisible = await cell.isVisible().catch(() => false);
+    if (isVisible) {
+      await cell.click();
+      // Wait for selection to complete
+      await this.page
+        .getByText('Selected External Source')
+        .waitFor({ state: 'visible', timeout: 5000 })
+        .catch(() => {});
+      const deleteButtonVisible = await this.deleteSourceButton.isVisible().catch(() => false);
+      if (deleteButtonVisible) {
+        await this.deleteSourceButton.click();
+        const confirmVisible = await this.deleteSourceButtonConfirmation.isVisible().catch(() => false);
+        if (confirmVisible) {
+          await this.deleteSourceButtonConfirmation.click();
+          // Wait for deletion to complete
+          await cell.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
+        }
+      }
     }
   }
 
+  /**
+   * Delete a source if it exists. Useful for test setup to ensure clean state.
+   */
+  async deleteSourceIfExists(sourceKey: string) {
+    await this.goto();
+    await this.deleteSource(sourceKey);
+  }
+
+  /**
+   * Assert that no source or event is selected (upload form should be visible).
+   */
+  async expectNoSelection() {
+    await expect(this.externalEventSelectedForm).not.toBeVisible();
+    await expect(this.externalSourceSelectedForm).not.toBeVisible();
+    await expect(this.inputFile).toBeVisible();
+  }
+
+  /**
+   * Assert that an external source is currently selected.
+   */
+  async expectSourceSelected() {
+    await expect(this.page.locator('.external-source-header')).toBeVisible({ timeout: 10000 });
+  }
+
   async fillInputFile(externalSourceFilePath: string) {
-    await this.inputFile.focus();
-    await this.inputFile.setInputFiles(externalSourceFilePath);
-    await this.inputFile.evaluate(e => e.blur());
+    await setFileInputByFilepath(this.page, this.inputFile, externalSourceFilePath);
   }
 
   async getCanvasPixelData() {
@@ -175,12 +245,12 @@ export class ExternalSources {
 
   async goto() {
     await this.page.goto('/external-sources', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(250);
+    await this.page.waitForLoadState('domcontentloaded');
   }
 
   async gotoTypeManager() {
     await this.page.goto('/external-sources/types', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(250);
+    await this.page.waitForLoadState('domcontentloaded');
   }
 
   async linkDerivationGroup(derivationGroupName: string, sourceTypeName: string) {
@@ -200,8 +270,15 @@ export class ExternalSources {
 
   async selectSource(sourceName: string = 'example-external-source.json') {
     await this.goto();
-    await this.page.getByRole('gridcell', { name: sourceName }).click();
-    await expect(this.page.getByText('Selected External Source')).toBeVisible();
+    // Wait for table to be visible and the specific source row to be ready
+    await this.externalSourcesTable.waitFor({ state: 'visible', timeout: 10000 });
+    const sourceRow = this.page.getByRole('gridcell', { name: sourceName });
+    await sourceRow.waitFor({ state: 'visible', timeout: 10000 });
+    // Small delay to ensure table rendering is complete (prevents click during re-render)
+    await this.page.waitForLoadState('networkidle');
+    await sourceRow.click();
+    // Use exact match to avoid matching "No external sources matching the selected external..."
+    await expect(this.page.getByText('Selected External Source', { exact: true })).toBeVisible({ timeout: 10000 });
   }
 
   async unlinkDerivationGroup(derivationGroupName: string, sourceTypeName: string) {
@@ -220,37 +297,72 @@ export class ExternalSources {
   }
 
   async updatePage(page: Page): Promise<void> {
-    this.inputFile = page.locator('input[name="file"]');
-    this.uploadButton = page.getByRole('button', { name: 'Upload' });
-    this.externalEventSelectedForm = page.locator('.external-event-form-container');
-    this.externalSourceSelectedForm = page.locator('.selected-external-source-details');
-    this.alertError = page.locator('.alert-error');
-    this.deselectEventButton = page.locator('[name="DeselectEvent"]');
-    this.deselectSourceButton = page.getByLabel('Deselect Source');
     this.deleteSourceButton = page.getByRole('button', { exact: true, name: 'Delete external source' });
     this.deleteSourceButtonConfirmation = page.getByRole('button', { exact: true, name: 'Delete' });
-    this.selectEventTableView = page.locator('[name="SelectEventViewType"]');
-    this.externalEventTableHeaderEventType = page.getByText('Event Type', { exact: true });
+    this.externalEventSelectedForm = page.locator('.external-event-form-container');
     this.externalEventTableHeaderDuration = page.getByText('Duration');
-    this.viewContainedEventTypes = page.getByRole('button', { name: 'View Contained Event Types' });
-    this.viewEventSourceMetadata = page.getByRole('button', { name: 'View Event Source Metadata' });
-    this.panelExternalEventsTable = page.locator('[data-component-name="ExternalEventsTablePanel"]');
+    this.externalEventTableHeaderEventType = page.getByText('Event Type', { exact: true });
+    this.externalSourceSelectedForm = page.locator('.selected-source-forms');
     this.externalSourcesTable = page.locator('#external-sources-table');
+    this.inputFile = page.locator('input[name="file"]');
+    this.uploadButton = page.getByRole('button', { name: 'Upload' });
+    this.viewContainedEventTypes = page.getByRole('button', { name: 'View Contained Event Types' });
   }
 
-  async uploadExternalSource(inputFilePath: string = this.externalSourceFilePath, validateUpload: boolean = true) {
+  async uploadExternalSource(
+    inputFilePath: string = this.externalSourceFilePath,
+    validateUpload: boolean = true,
+    handleUniquenessViolation: boolean = true,
+  ) {
     await this.goto();
+    // Wait for the page to stabilize - this appears to be necessary in order to eliminate flakiness with
+    // svelte's handling of the file input
+    await this.page.waitForTimeout(500);
     await this.fillInputFile(inputFilePath);
-    // Wait for all errors to disappear, assuming stores are just taking time to load
-    await this.page.getByLabel('please create one before uploading an external source').waitFor({ state: 'hidden' });
-    await this.page.getByLabel('Please create it!').waitFor({ state: 'hidden' });
+
+    // Wait for upload button to be enabled
+    await expect(this.uploadButton).toBeEnabled({ timeout: 10000 });
     await this.uploadButton.click();
+
+    // Wait a moment for the response to come back
+    await this.page.waitForTimeout(500);
+
+    // Check if a uniqueness violation occurred (source already exists)
+    const uniquenessViolation = this.page.getByLabel('Uniqueness violation.');
+    const hasUniquenessViolation = await uniquenessViolation
+      .waitFor({ state: 'visible', timeout: 3000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (hasUniquenessViolation && handleUniquenessViolation) {
+      // Source already exists - find it in the table and select it
+      // Extract the source key from the JSON file content by reading the filename pattern
+      const filename = inputFilePath.split('/').pop() || inputFilePath;
+      // Wait for table to be visible first
+      await this.externalSourcesTable.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+      // Try to find the source by filename substring in the table (the key contains the filename)
+      const sourceCell = this.externalSourcesTable.getByRole('gridcell', { name: filename });
+      const sourceExists = await sourceCell
+        .first()
+        .isVisible()
+        .catch(() => false);
+      if (sourceExists) {
+        await sourceCell.first().click();
+        // Wait for selection to complete
+        await this.page
+          .locator('.external-source-header')
+          .waitFor({ state: 'visible', timeout: 5000 })
+          .catch(() => {});
+      }
+    }
+
     if (validateUpload) {
-      await expect(this.page.getByText('Selected External Source')).toBeVisible();
+      // Wait for the source to be selected by checking for the source header div
+      await expect(this.page.locator('.external-source-header')).toBeVisible({ timeout: 10000 });
     }
   }
 
-  async waitForToast(message: string) {
-    await this.page.waitForSelector(`.toastify:has-text("${message}")`, { timeout: 10000 });
+  async waitForToast(message: string, timeout: number = 10000) {
+    await this.page.waitForSelector(`.toastify:has-text("${message}")`, { timeout });
   }
 }

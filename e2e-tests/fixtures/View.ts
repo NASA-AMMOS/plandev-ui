@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { setFileInputByFilepath } from '../utilities/helpers';
 
 export class View {
   confirmModal: Locator;
@@ -60,9 +61,7 @@ export class View {
 
   async fillViewInputFile(planFilePath: string = this.validViewFilePath) {
     const viewFileInput = this.page.locator('.modal-content input[name="file"]');
-    await viewFileInput.focus();
-    await viewFileInput.setInputFiles(planFilePath);
-    await viewFileInput.evaluate(e => e.blur());
+    await setFileInputByFilepath(this.page, viewFileInput, planFilePath);
   }
 
   async fillViewInputName(viewName: string = this.createViewName()) {
@@ -109,9 +108,8 @@ export class View {
   }
 
   async openViewMenu() {
-    this.navButtonView.hover();
+    await this.navButtonView.hover();
     await expect(this.navButtonViewMenu).toBeVisible();
-    await this.page.waitForTimeout(100);
   }
 
   async renameView(viewName: string) {

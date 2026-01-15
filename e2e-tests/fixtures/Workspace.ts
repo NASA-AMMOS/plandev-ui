@@ -3,7 +3,7 @@ import { expect } from '@playwright/test';
 
 import { readFileSync } from 'fs';
 import { getWorkspacesUrl } from '../../src/utilities/routes';
-import { generateRandomName, hoverRowAndWaitForButton } from '../utilities/helpers';
+import { generateRandomName, hoverRowAndWaitForButton, setFileInputByBuffer } from '../utilities/helpers';
 
 export class Workspace {
   editSequenceButton: Locator;
@@ -180,19 +180,10 @@ export class Workspace {
     const file = readFileSync(filePath);
     const fileBuffer = Buffer.from(file);
 
-    // Wait for file input to be ready instead of fixed timeout
-    await this.fileInput.waitFor({ state: 'visible' });
-    await this.fileInput.focus();
-    await this.fileInput.setInputFiles({
-      buffer: fileBuffer,
-      mimeType: 'application/json',
-      name: 'json',
-    });
-    await this.fileInput.evaluate(e => e.blur());
-
-    // Wait for upload button to be enabled (not just visible) - file must be processed first
     const uploadButton = this.page.locator('#modal-container').getByRole('button', { exact: true, name: 'Upload' });
-    await expect(uploadButton).toBeEnabled({ timeout: 10000 });
+
+    await setFileInputByBuffer(this.page, this.fileInput, fileBuffer, 'application/json', 'json', uploadButton);
+
     await uploadButton.click();
 
     await this.waitForToast('Workspace File Uploaded Successfully');
@@ -279,19 +270,10 @@ export class Workspace {
     const file = readFileSync(filePath);
     const fileBuffer = Buffer.from(file);
 
-    // Wait for file input to be ready instead of fixed timeout
-    await this.fileInput.waitFor({ state: 'visible' });
-    await this.fileInput.focus();
-    await this.fileInput.setInputFiles({
-      buffer: fileBuffer,
-      mimeType: 'application/json',
-      name: fileName,
-    });
-    await this.fileInput.evaluate(e => e.blur());
-
-    // Wait for upload button to be enabled (not just visible) - file must be processed first
     const uploadButton = this.page.locator('#modal-container').getByRole('button', { exact: true, name: 'Upload' });
-    await expect(uploadButton).toBeEnabled({ timeout: 10000 });
+
+    await setFileInputByBuffer(this.page, this.fileInput, fileBuffer, 'application/json', fileName, uploadButton);
+
     await uploadButton.click();
     await this.waitForToast('Workspace File Uploaded Successfully');
   }

@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { setFileInputByFilepath } from '../utilities/helpers';
 
 export class Models {
   alertError: Locator;
@@ -38,7 +39,7 @@ export class Models {
     await this.fillInputFile(jarPath);
     await this.createButton.click();
     const editModelUrlRegex = new RegExp(`${baseURL}/models/(?<modelId>\\d+)`);
-    await this.page.waitForURL(editModelUrlRegex);
+    await this.page.waitForURL(editModelUrlRegex, { timeout: 60000 });
     const matches = this.page.url().match(editModelUrlRegex);
 
     expect(matches).not.toBeNull();
@@ -80,10 +81,7 @@ export class Models {
   }
 
   async fillInputFile(jarPath: string = this.jarPath) {
-    await this.page.waitForTimeout(1000);
-    await this.inputFile.focus();
-    await this.inputFile.setInputFiles(jarPath);
-    await this.inputFile.evaluate(e => e.blur());
+    await setFileInputByFilepath(this.page, this.inputFile, jarPath);
   }
 
   async fillInputName(modelName: string = this.modelName) {

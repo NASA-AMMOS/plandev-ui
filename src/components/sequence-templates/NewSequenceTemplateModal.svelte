@@ -168,7 +168,7 @@
         <Select.Trigger class="min-w-[124px]" value={selectedLanguage} size="xs" aria-labelledby={null}>
           <Select.Value aria-label="Select a language" placeholder="Select a language" />
         </Select.Trigger>
-        <Select.Content size="xs" class="z-[10000]">
+        <Select.Content size="xs" class="z-[10000] max-h-60 overflow-y-auto" fitViewport>
           {#each Object.values(SequencingLanguages) as language}
             <Select.Item size="xs" value={language} label={language} class="flex gap-1">
               {language}
@@ -185,7 +185,7 @@
         <Select.Trigger class="min-w-[124px]" value={selectedParcel?.id} size="xs" aria-labelledby={null}>
           <Select.Value aria-label="Select a parcel" placeholder="Select a parcel" />
         </Select.Trigger>
-        <Select.Content size="xs" class="z-[10000]">
+        <Select.Content size="xs" class="z-[10000] max-h-60 overflow-y-auto" fitViewport>
           {#each $parcels as parcel}
             <Select.Item size="xs" value={parcel.id} label={getDisplayNameForParcel(parcel)} class="flex gap-1">
               {parcel.name}

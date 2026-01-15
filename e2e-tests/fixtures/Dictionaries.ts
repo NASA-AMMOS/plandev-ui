@@ -2,6 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { readFile } from 'fs/promises';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { setFileInputByBuffer } from '../utilities/helpers';
 
 export enum DictionaryType {
   CommandDictionary = 'Command Dictionary',
@@ -106,6 +107,15 @@ export class Dictionaries {
       await this.sequenceAdaptationNameInputField.fill(this.sequenceAdaptationName);
     }
 
+    // Check for any error alerts that might explain why button stays disabled
+    const errorAlert = this.page.locator('.alert-error');
+    const hasError = await errorAlert.isVisible().catch(() => false);
+    if (hasError) {
+      const errorText = await errorAlert.textContent();
+      throw new Error(`Dictionary creation form has error: ${errorText}`);
+    }
+
+    await expect(this.createButton).toBeEnabled({ timeout: 15000 });
     await this.createButton.click();
     await this.filterTable(table, dictionaryName, type);
     await tableRow.waitFor({ state: 'attached' });
@@ -228,14 +238,7 @@ export class Dictionaries {
       name = dictionaryName + '.xml';
     }
 
-    await this.page.waitForTimeout(1000);
-    await this.inputFile.focus();
-    await this.inputFile.setInputFiles({
-      buffer: dictionaryBuffer,
-      mimeType,
-      name,
-    });
-    await this.inputFile.blur();
+    await setFileInputByBuffer(this.page, this.inputFile, dictionaryBuffer, mimeType, name, this.createButton);
   }
 
   private async filterTable(table: Locator, dictionaryName: string, type: DictionaryType) {
@@ -257,12 +260,24 @@ export class Dictionaries {
     await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(dictionaryName);
     await expect(table.getByRole('row', { name: dictionaryName })).toBeVisible();
     await this.page.keyboard.press('Escape');
-    await this.page.waitForTimeout(250);
+    await this.page.locator('.ag-popup').waitFor({ state: 'hidden' });
   }
 
   async goto() {
     await this.page.goto('/dictionaries', { waitUntil: 'load' });
-    await this.page.waitForTimeout(250);
+    await Promise.all([
+      this.channelDictionaryTable.waitFor({ state: 'visible' }),
+      this.commandDictionaryTable.waitFor({ state: 'visible' }),
+      this.parameterDictionaryTable.waitFor({ state: 'visible' }),
+      this.sequenceAdaptationTable.waitFor({ state: 'visible' }),
+    ]);
+
+    await Promise.all([
+      this.channelDictionaryTable.getByText('loading...', { exact: true }).waitFor({ state: 'hidden' }),
+      this.commandDictionaryTable.getByText('loading...', { exact: true }).waitFor({ state: 'hidden' }),
+      this.parameterDictionaryTable.getByText('loading...', { exact: true }).waitFor({ state: 'hidden' }),
+      this.sequenceAdaptationTable.getByText('loading...', { exact: true }).waitFor({ state: 'hidden' }),
+    ]);
   }
 
   async readDictionary(dictionaryName: string, dictionaryPath: string): Promise<Buffer> {

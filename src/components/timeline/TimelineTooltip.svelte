@@ -12,7 +12,7 @@
   import type { ExternalEvent } from '../../types/external-event';
   import type { ResourceType, Span } from '../../types/simulation';
   import type { LineLayer, LinePoint, MouseOver, Point, Row, XRangePoint } from '../../types/timeline';
-  import { addPageFocusListener } from '../../utilities/generic';
+  import { addPageFocusListener } from '../../utilities/browser';
   import { convertUsToDurationString, formatDate, getDoyTime } from '../../utilities/time';
   import { getResourceForLayer } from '../../utilities/timeline';
 

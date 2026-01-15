@@ -2461,7 +2461,7 @@ const effects = {
     parcelId: number,
     user: User | null,
     name?: string | null,
-  ): Promise<Workspace | null> {
+  ): Promise<number | null> {
     try {
       if (!featurePermissions.workspaces.canCreate(user)) {
         throwPermissionError('create a workspace');
@@ -2469,16 +2469,16 @@ const effects = {
 
       creatingWorkspace.set(true);
 
-      const newWorkspace: Workspace = await WorkspaceApi.createWorkspace(location, parcelId, user, name);
+      const newWorkspaceId = await WorkspaceApi.createWorkspace(location, parcelId, user, name);
 
       creatingWorkspace.set(false);
 
-      if (newWorkspace != null) {
+      if (newWorkspaceId != null) {
         showSuccessToast('Workspace Created Successfully');
         logMessage(
-          `Created ${name ? `workspace "${name}"` : 'unnamed workspace'} (ID=${newWorkspace.id}) in ${location} for parcel ID=${parcelId}.`,
+          `Created ${name ? `workspace "${name}"` : 'unnamed workspace'} (ID=${newWorkspaceId}) in ${location} for parcel ID=${parcelId}.`,
         );
-        return newWorkspace;
+        return newWorkspaceId;
       } else {
         throw Error(`Unable to create workspace at "${location}"`);
       }

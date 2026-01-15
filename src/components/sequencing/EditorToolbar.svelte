@@ -5,7 +5,7 @@
   import { Braces, Bug, Clipboard, Download, FileOutput } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
-  import { isMacOs } from '../../utilities/generic';
+  import { isMacOs } from '../../utilities/browser';
   import Tooltip from '../ui/Tooltip.svelte';
   import SequenceActionCombobox from './SequenceActionCombobox.svelte';
 
