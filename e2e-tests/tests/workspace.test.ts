@@ -542,10 +542,24 @@ test.describe.serial('Workspace', () => {
     // Navigate to workspace using retry helper (role switch can cause ERR_ABORTED)
     const workspaceUrl = getWorkspacesUrl(workspaceForUnauthorized.baseURL, parseInt(workspaceId));
     await userB.gotoWithRetry(workspaceUrl);
-    await workspaceForUnauthorized.pageLoadingLocatorWithData.waitFor({ state: 'detached' });
 
+    // Wait for workspace to load - use longer timeout for CI environments
+    // The workspace subscription needs time to receive data
+    await workspaceForUnauthorized.pageLoadingLocatorWithData.waitFor({ state: 'detached', timeout: 30000 });
+
+    // Verify userB can see the workspace file browser (read access)
+    await expect(workspaceForUnauthorized.workspaceFileGrid).toBeVisible();
+
+    // As a non-collaborator with 'user' role, the 'New File' option should be disabled
+    // or the modal should not appear when clicked
     await workspaceForUnauthorized.openWorkspaceContextMenu();
-    await workspaceForUnauthorized.workspaceHeaderMenu.getByRole('menuitem', { name: 'New File' }).click();
-    await expect(setupUnauthorized.page.locator('#modal-container')).not.toBeVisible();
+    const newFileMenuItem = workspaceForUnauthorized.workspaceHeaderMenu.getByRole('menuitem', { name: 'New File' });
+
+    // Check if menu item is disabled (preferred) or if clicking does nothing
+    const isDisabled = await newFileMenuItem.isDisabled();
+    if (!isDisabled) {
+      await newFileMenuItem.click();
+      await expect(setupUnauthorized.page.locator('#modal-container')).not.toBeVisible();
+    }
   });
 });
