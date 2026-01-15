@@ -51,7 +51,7 @@
     save: { parcelId: number };
   }>();
 
-  $: selectedParmeterDictionaries = savedParameterDictionaryIds = $parcelToParameterDictionaries.reduce(
+  $: selectedParmeterDictionaries = savedParameterDictionaryIds = ($parcelToParameterDictionaries || []).reduce(
     (prevBooleanMap: Record<number, boolean>, parcelToParameterDictionary: ParcelToParameterDictionary) => {
       return parcelToParameterDictionary.parcel_id === parcelId
         ? {
@@ -159,7 +159,7 @@
 
       for (const paramDictionaryId of parcelToParameterDictionaryIdsToDelete) {
         const parcelToParameterDictionary: ParcelToParameterDictionary | undefined =
-          $parcelToParameterDictionaries.find(
+          $parcelToParameterDictionaries?.find(
             p => p.parameter_dictionary_id === paramDictionaryId && p.parcel_id === parcelId,
           );
 

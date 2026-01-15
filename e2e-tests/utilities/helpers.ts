@@ -55,11 +55,6 @@ export async function setFileInputByBuffer(
   name: string,
   uploadButton?: Locator,
 ) {
-  // Ensure that the page has finished loading responses
-  // This is necessary because any new data loaded into the page will trigger Svelte's reactivity
-  // which may cause the file input to reset
-  await page.waitForLoadState('networkidle');
-
   // Retry mechanism for file upload - sometimes Svelte's reactivity doesn't trigger on first attempt
   const maxAttempts = 3;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -90,11 +85,6 @@ export async function setFileInputByBuffer(
 }
 
 export async function setFileInputByFilepath(page: Page, fileInput: Locator, filePath: string, uploadButton?: Locator) {
-  // Ensure that the page has finished loading responses
-  // This is necessary because any new data loaded into the page will trigger Svelte's reactivity
-  // which may cause the file input to reset
-  await page.waitForLoadState('networkidle');
-
   // Retry mechanism for file upload - sometimes Svelte's reactivity doesn't trigger on first attempt
   const maxAttempts = 3;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {

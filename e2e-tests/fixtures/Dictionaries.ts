@@ -265,7 +265,19 @@ export class Dictionaries {
 
   async goto() {
     await this.page.goto('/dictionaries', { waitUntil: 'load' });
-    await expect(this.createButton).toBeVisible();
+    await Promise.all([
+      this.channelDictionaryTable.waitFor({ state: 'visible' }),
+      this.commandDictionaryTable.waitFor({ state: 'visible' }),
+      this.parameterDictionaryTable.waitFor({ state: 'visible' }),
+      this.sequenceAdaptationTable.waitFor({ state: 'visible' }),
+    ]);
+
+    await Promise.all([
+      this.channelDictionaryTable.getByText('loading...', { exact: true }).waitFor({ state: 'hidden' }),
+      this.commandDictionaryTable.getByText('loading...', { exact: true }).waitFor({ state: 'hidden' }),
+      this.parameterDictionaryTable.getByText('loading...', { exact: true }).waitFor({ state: 'hidden' }),
+      this.sequenceAdaptationTable.getByText('loading...', { exact: true }).waitFor({ state: 'hidden' }),
+    ]);
   }
 
   async readDictionary(dictionaryName: string, dictionaryPath: string): Promise<Buffer> {
