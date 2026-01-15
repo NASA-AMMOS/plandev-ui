@@ -192,15 +192,28 @@
     const {
       detail: { name, value },
     } = event;
-
     const schema = version?.parameter_schema;
     if (formParameters.length) {
       let cleansedArguments: Argument = getCleansedStructArguments(constraintPlanSpec.arguments, schema);
-
+      if (value !== null) {
+        cleansedArguments = { ...cleansedArguments, [name]: value };
+      } else {
+        delete cleansedArguments[name];
+      }
       dispatch('updateConstraintPlanSpec', {
         ...constraintPlanSpec,
-        arguments: { ...cleansedArguments, [name]: value },
+        arguments: cleansedArguments,
       });
+
+      // When clearing a value (value === null), immediately update local formParameters.
+      // This is needed because the constraint subscription may not trigger if arguments don't change.
+      // Note that this is NOT the same for scheduling goals which do trigger scheduling goal subscription updates
+      // when repeated identical payloads are sent.
+      if (value === null && schema) {
+        const defaultArg = defaultArguments[name];
+        const { value: newValue, valueSource } = getArgument(undefined, schema, undefined, defaultArg);
+        formParameters = formParameters.map(fp => (fp.name === name ? { ...fp, value: newValue, valueSource } : fp));
+      }
     }
   }
 
@@ -210,10 +223,22 @@
     } = event;
     const schema = version?.parameter_schema;
     let cleansedArguments: Argument = getCleansedStructArguments(constraintPlanSpec.arguments, schema);
+    delete cleansedArguments[name];
     dispatch('updateConstraintPlanSpec', {
       ...constraintPlanSpec,
-      arguments: { ...cleansedArguments, [name]: null },
+      arguments: cleansedArguments,
     });
+
+    // Immediately update local formParameters to reflect the reset value.
+    // This is necessary because the constraint subscription may not trigger
+    // if the arguments object value doesn't actually change (e.g., both old and new are empty objects).
+    // Unlike scheduling goals which subscribe to the parent spec, constraints subscribe directly
+    // to the list of constraint specs, so Hasura won't push an update if the data is unchanged.
+    if (schema) {
+      const defaultArg = defaultArguments[name];
+      const { value, valueSource } = getArgument(undefined, schema, undefined, defaultArg);
+      formParameters = formParameters.map(fp => (fp.name === name ? { ...fp, value, valueSource } : fp));
+    }
   }
 </script>
 

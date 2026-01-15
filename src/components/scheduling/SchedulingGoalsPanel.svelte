@@ -19,8 +19,12 @@
     setSchedulingGoalArgumentDefaults,
   } from '../../stores/scheduling';
   import type { User } from '../../types/app';
-  import type { ArgumentsMap } from '../../types/parameter';
-  import type { SchedulingGoalPlanSpecification, SchedulingGoalPlanSpecificationUpdate } from '../../types/scheduling';
+  import type { ArgumentsMap, SchedulingGoalEffectiveArgumentsMap } from '../../types/parameter';
+  import type {
+    SchedulingGoalMetadata,
+    SchedulingGoalPlanSpecification,
+    SchedulingGoalPlanSpecificationUpdate,
+  } from '../../types/scheduling';
   import type { ValueSchemaStruct } from '../../types/schema';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
@@ -116,7 +120,7 @@
             id: goalMetadata.id,
             revision: effectiveRevision,
           });
-          goalInvocationMap.set(`${goalMetadata.id}_${effectiveRevision}`, {
+          goalInvocationMap.set(getSchedulingGoalDefaultsKey(goalMetadata.id, effectiveRevision), {
             invocationId: spec.goal_invocation_id,
             revision: effectiveRevision,
           });
@@ -136,8 +140,12 @@
     }
   }
 
-  function getDefaultArgumentsForGoal(spec: SchedulingGoalPlanSpecification): ArgumentsMap {
-    const goalMetadata = $schedulingGoalsMap[spec.goal_id];
+  function computeDefaultArgumentsForGoal(
+    spec: SchedulingGoalPlanSpecification,
+    goalsMapValue: Record<string, SchedulingGoalMetadata>,
+    defaultsMapValue: SchedulingGoalEffectiveArgumentsMap,
+  ): ArgumentsMap {
+    const goalMetadata = goalsMapValue[spec.goal_id];
     if (!goalMetadata) {
       return {};
     }
@@ -152,8 +160,22 @@
     }
 
     const key = getSchedulingGoalDefaultsKey(spec.goal_invocation_id, effectiveRevision);
-    return $schedulingGoalArgumentDefaultsMap[key] ?? {};
+    return defaultsMapValue[key] ?? {};
   }
+
+  // Reactively compute default arguments lookup keyed by invocation_id
+  // This ensures the template re-renders when $schedulingGoalArgumentDefaultsMap changes
+  $: goalDefaultArgumentsLookup = ($allowedSchedulingGoalSpecs || []).reduce(
+    (acc, spec) => {
+      acc[spec.goal_invocation_id] = computeDefaultArgumentsForGoal(
+        spec,
+        $schedulingGoalsMap,
+        $schedulingGoalArgumentDefaultsMap,
+      );
+      return acc;
+    },
+    {} as Record<number, ArgumentsMap>,
+  );
 
   function onManageGoals() {
     effects.managePlanSchedulingGoals(user);
@@ -323,7 +345,7 @@
         {#each filteredSchedulingGoalSpecs as specGoal, specIndex (specGoal.goal_invocation_id)}
           {#if $schedulingGoalsMap[specGoal.goal_id]}
             <SchedulingGoal
-              defaultArguments={getDefaultArgumentsForGoal(specGoal)}
+              defaultArguments={goalDefaultArgumentsLookup[specGoal.goal_invocation_id] ?? {}}
               editPermissionError={$planReadOnly
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to edit scheduling goals for this plan.'}

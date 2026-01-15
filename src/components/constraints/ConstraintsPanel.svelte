@@ -40,8 +40,8 @@
     ConstraintPlanSpecification,
     ConstraintResponse,
   } from '../../types/constraint';
-  import type { ArgumentsMap, ConstraintEffectiveArgumentsMap } from '../../types/parameter';
   import type { FieldStore } from '../../types/form';
+  import type { ArgumentsMap, ConstraintEffectiveArgumentsMap } from '../../types/parameter';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -159,7 +159,7 @@
 
       // Get the effective revision (selected or latest)
       const effectiveRevision =
-        spec.constraint_revision !== null ? spec.constraint_revision : constraintMetadata.versions[0]?.revision ?? 0;
+        spec.constraint_revision !== null ? spec.constraint_revision : (constraintMetadata.versions[0]?.revision ?? 0);
 
       // Find the version to check if it's JAR type
       const version =
@@ -187,11 +187,9 @@
       const results = await effects.getConstraintProcedureEffectiveArguments(constraintsToFetch, user);
 
       for (const result of results) {
-        if (!result.errors?.length) {
-          const mapping = constraintInvocationMap.get(`${result.id}_${result.revision}`);
-          if (mapping) {
-            setConstraintArgumentDefaults(mapping.invocationId, mapping.revision, result.arguments);
-          }
+        const mapping = constraintInvocationMap.get(getConstraintDefaultsKey(result.id, result.revision));
+        if (mapping) {
+          setConstraintArgumentDefaults(mapping.invocationId, mapping.revision, result.arguments);
         }
       }
     }
@@ -225,7 +223,11 @@
   // This ensures the template re-renders when $constraintArgumentDefaultsMap changes
   $: constraintDefaultArgumentsLookup = $allowedConstraintPlanSpecs.reduce(
     (acc, spec) => {
-      acc[spec.invocation_id] = computeDefaultArgumentsForConstraint(spec, $constraintsMap, $constraintArgumentDefaultsMap);
+      acc[spec.invocation_id] = computeDefaultArgumentsForConstraint(
+        spec,
+        $constraintsMap,
+        $constraintArgumentDefaultsMap,
+      );
       return acc;
     },
     {} as Record<number, ArgumentsMap>,

@@ -188,9 +188,14 @@
     if (formParameters.length) {
       const schema = version?.parameter_schema;
       let cleansedArguments: Argument = getCleansedStructArguments(goalPlanSpec.arguments, schema);
+      if (value !== null) {
+        cleansedArguments = { ...cleansedArguments, [name]: value };
+      } else {
+        delete cleansedArguments[name];
+      }
       dispatch('updateGoalPlanSpec', {
         ...goalPlanSpec,
-        arguments: { ...cleansedArguments, [name]: value },
+        arguments: cleansedArguments,
         files: file ? [file] : [],
       });
     }
@@ -202,9 +207,10 @@
     } = event;
     const schema = version?.parameter_schema;
     let cleansedArguments: Argument = getCleansedStructArguments(goalPlanSpec.arguments, schema);
+    delete cleansedArguments[name];
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
-      arguments: { ...cleansedArguments, [name]: null },
+      arguments: cleansedArguments,
       files: file ? [file] : [],
     });
   }
