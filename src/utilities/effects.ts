@@ -142,11 +142,13 @@ import type { DslTypeScriptResponse, TypeScriptFile } from '../types/monaco';
 import type {
   Argument,
   ArgumentsMap,
+  ConstraintEffectiveArguments,
   DefaultEffectiveArguments,
   EffectiveArguments,
   ParametersMap,
   ParameterValidationError,
   ParameterValidationResponse,
+  SchedulingGoalEffectiveArguments,
 } from '../types/parameter';
 import type {
   PermissibleQueriesMap,
@@ -4358,6 +4360,37 @@ const effects = {
     }
   },
 
+  async getConstraintProcedureEffectiveArguments(
+    constraints: Array<{
+      arguments: ArgumentsMap;
+      id: number;
+      revision: number;
+    }>,
+    user: User | null,
+  ): Promise<ConstraintEffectiveArguments[]> {
+    try {
+      if (constraints.length === 0) {
+        return [];
+      }
+      const data = await reqHasura<ConstraintEffectiveArguments[]>(
+        gql.GET_CONSTRAINT_PROCEDURE_EFFECTIVE_ARGUMENTS_BULK,
+        {
+          arguments: constraints,
+        },
+        user,
+      );
+      const { constraintProcedureEffectiveArgumentsBulk } = data;
+      if (constraintProcedureEffectiveArgumentsBulk !== null) {
+        logMessage(`Retrieved effective arguments for ${constraints.length} procedural constraints.`);
+        return constraintProcedureEffectiveArgumentsBulk;
+      }
+      return [];
+    } catch (e) {
+      catchError('Failed to retrieve procedural constraint effective arguments', e as Error);
+      return [];
+    }
+  },
+
   async getDefaultActivityArguments(
     modelId: number,
     activityTypes: string[],
@@ -5250,6 +5283,37 @@ const effects = {
     } catch (e) {
       catchError('Unable to retrieve scheduling goal', e as Error);
       return null;
+    }
+  },
+
+  async getSchedulingProcedureEffectiveArguments(
+    goals: Array<{
+      arguments: ArgumentsMap;
+      id: number;
+      revision: number;
+    }>,
+    user: User | null,
+  ): Promise<SchedulingGoalEffectiveArguments[]> {
+    try {
+      if (goals.length === 0) {
+        return [];
+      }
+      const data = await reqHasura<SchedulingGoalEffectiveArguments[]>(
+        gql.GET_SCHEDULING_PROCEDURE_EFFECTIVE_ARGUMENTS_BULK,
+        {
+          arguments: goals,
+        },
+        user,
+      );
+      const { schedulingProcedureEffectiveArgumentsBulk } = data;
+      if (schedulingProcedureEffectiveArgumentsBulk !== null) {
+        logMessage(`Retrieved effective arguments for ${goals.length} procedural scheduling goals.`);
+        return schedulingProcedureEffectiveArgumentsBulk;
+      }
+      return [];
+    } catch (e) {
+      catchError('Failed to retrieve procedural scheduling goal effective arguments', e as Error);
+      return [];
     }
   },
 

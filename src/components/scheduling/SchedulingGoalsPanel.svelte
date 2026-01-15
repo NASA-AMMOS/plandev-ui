@@ -4,17 +4,22 @@
   import ChecklistIcon from '@nasa-jpl/stellar/icons/checklist.svg?component';
   import { afterUpdate, beforeUpdate } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { SchedulingDefinitionType } from '../../enums/scheduling';
   import { Status } from '../../enums/status';
   import { plan, planReadOnly } from '../../stores/plan';
   import {
     allowedSchedulingGoalSpecs,
     enableScheduling,
+    getSchedulingGoalDefaultsKey,
     schedulingAnalysisStatus,
+    schedulingGoalArgumentDefaultsMap,
     schedulingGoalSpecifications,
     schedulingGoalsLoading,
     schedulingGoalsMap,
+    setSchedulingGoalArgumentDefaults,
   } from '../../stores/scheduling';
   import type { User } from '../../types/app';
+  import type { ArgumentsMap } from '../../types/parameter';
   import type { SchedulingGoalPlanSpecification, SchedulingGoalPlanSpecificationUpdate } from '../../types/scheduling';
   import type { ValueSchemaStruct } from '../../types/schema';
   import type { ViewGridSection } from '../../types/view';
@@ -76,6 +81,79 @@
     hasRunPermission = featurePermissions.schedulingGoalsPlanSpec.canRun(user, $plan, $plan.model) && !$planReadOnly;
   }
   $: status = $schedulingAnalysisStatus;
+
+  // Fetch effective arguments for JAR type goals when specs and metadata are available
+  // Need to depend on both visibleSchedulingGoalSpecs and $schedulingGoalsMap to avoid race condition
+  $: if (visibleSchedulingGoalSpecs.length > 0 && Object.keys($schedulingGoalsMap).length > 0) {
+    fetchJarGoalEffectiveArguments(visibleSchedulingGoalSpecs);
+  }
+
+  async function fetchJarGoalEffectiveArguments(specs: SchedulingGoalPlanSpecification[]) {
+    // Collect JAR type goals that need defaults fetched
+    const goalsToFetch: Array<{ arguments: Record<string, unknown>; id: number; revision: number }> = [];
+    const goalInvocationMap: Map<string, { invocationId: number; revision: number }> = new Map();
+
+    for (const spec of specs) {
+      const goalMetadata = $schedulingGoalsMap[spec.goal_id];
+      if (!goalMetadata) {
+        continue;
+      }
+
+      // Get the effective revision (selected or latest)
+      const effectiveRevision =
+        spec.goal_revision !== null ? spec.goal_revision : (goalMetadata.versions[0]?.revision ?? 0);
+
+      // Find the version to check if it's JAR type
+      const version = goalMetadata.versions.find(v => v.revision === effectiveRevision) ?? goalMetadata.versions[0];
+
+      if (version?.type === SchedulingDefinitionType.JAR) {
+        const key = getSchedulingGoalDefaultsKey(spec.goal_invocation_id, effectiveRevision);
+
+        // Only fetch if not already cached
+        if (!$schedulingGoalArgumentDefaultsMap[key]) {
+          goalsToFetch.push({
+            arguments: {},
+            id: goalMetadata.id,
+            revision: effectiveRevision,
+          });
+          goalInvocationMap.set(`${goalMetadata.id}_${effectiveRevision}`, {
+            invocationId: spec.goal_invocation_id,
+            revision: effectiveRevision,
+          });
+        }
+      }
+    }
+
+    if (goalsToFetch.length > 0) {
+      const results = await effects.getSchedulingProcedureEffectiveArguments(goalsToFetch, user);
+
+      for (const result of results) {
+        const mapping = goalInvocationMap.get(`${result.id}_${result.revision}`);
+        if (mapping) {
+          setSchedulingGoalArgumentDefaults(mapping.invocationId, mapping.revision, result.arguments);
+        }
+      }
+    }
+  }
+
+  function getDefaultArgumentsForGoal(spec: SchedulingGoalPlanSpecification): ArgumentsMap {
+    const goalMetadata = $schedulingGoalsMap[spec.goal_id];
+    if (!goalMetadata) {
+      return {};
+    }
+
+    const effectiveRevision =
+      spec.goal_revision !== null ? spec.goal_revision : (goalMetadata.versions[0]?.revision ?? 0);
+    const version = goalMetadata.versions.find(v => v.revision === effectiveRevision) ?? goalMetadata.versions[0];
+
+    // Only JAR type goals have procedural defaults
+    if (version?.type !== SchedulingDefinitionType.JAR) {
+      return {};
+    }
+
+    const key = getSchedulingGoalDefaultsKey(spec.goal_invocation_id, effectiveRevision);
+    return $schedulingGoalArgumentDefaultsMap[key] ?? {};
+  }
 
   function onManageGoals() {
     effects.managePlanSchedulingGoals(user);
@@ -245,6 +323,7 @@
         {#each filteredSchedulingGoalSpecs as specGoal, specIndex (specGoal.goal_invocation_id)}
           {#if $schedulingGoalsMap[specGoal.goal_id]}
             <SchedulingGoal
+              defaultArguments={getDefaultArgumentsForGoal(specGoal)}
               editPermissionError={$planReadOnly
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to edit scheduling goals for this plan.'}
@@ -253,8 +332,8 @@
               goal={$schedulingGoalsMap[specGoal.goal_id]}
               goalPlanSpec={specGoal}
               modelId={$plan?.model?.id}
-              shouldShowUpButton={(specGoal?.priority ?? 0) > 0}
               shouldShowDownButton={specIndex < filteredSchedulingGoalSpecs.length - 1}
+              shouldShowUpButton={(specGoal?.priority ?? 0) > 0}
               on:updateGoalPlanSpec={onUpdateGoal}
               on:duplicateGoalInvocation={onDuplicateGoalInvocation}
               on:deleteGoalInvocation={onDeleteGoalInvocation}

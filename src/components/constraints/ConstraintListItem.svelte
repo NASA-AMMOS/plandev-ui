@@ -19,9 +19,9 @@
     ConstraintPlanSpecification,
     ConstraintResponse,
   } from '../../types/constraint';
-  import type { Argument, FormParameter } from '../../types/parameter';
+  import type { Argument, ArgumentsMap, FormParameter } from '../../types/parameter';
   import { getTarget } from '../../utilities/generic';
-  import { getCleansedStructArguments } from '../../utilities/parameters';
+  import { getArgument, getCleansedStructArguments } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { pluralize } from '../../utilities/text';
   import { tooltip } from '../../utilities/tooltip';
@@ -33,15 +33,16 @@
   export let constraint: ConstraintMetadata;
   export let constraintPlanSpec: ConstraintPlanSpecification;
   export let constraintResponse: ConstraintResponse | undefined;
+  export let defaultArguments: ArgumentsMap = {};
   export let deletePermissionError: string = 'You do not have permission to delete constraints for this plan.';
   export let editPermissionError: string = 'You do not have permission to edit constraints for this plan.';
-  export let modelId: number | undefined;
   export let hasDeletePermission: boolean = false;
   export let hasEditPermission: boolean = false;
   export let hasReadPermission: boolean = false;
+  export let modelId: number | undefined;
   export let readPermissionError: string = 'You do not have permission to view this constraint.';
-  export let shouldShowUpButton: boolean | undefined = false;
   export let shouldShowDownButton: boolean | undefined = false;
+  export let shouldShowUpButton: boolean | undefined = false;
   export let totalViolationCount: number = 0;
   export let visible: boolean = true;
 
@@ -57,7 +58,8 @@
   let order: number;
   let orderInput: HTMLInputElement;
   let revisions: number[] = [];
-  let version: Pick<ConstraintDefinition, 'type' | 'revision' | 'parameter_schema'> | undefined = undefined;
+  let version: Pick<ConstraintDefinition, 'type' | 'revision' | 'parameter_schema' | 'uploaded_jar_id'> | undefined =
+    undefined;
 
   $: revisions = constraint.versions.map(({ revision }) => revision);
   $: violationCount = constraintResponse?.results?.violations?.length;
@@ -68,18 +70,24 @@
 
     const schema = version?.parameter_schema;
     if (schema && schema.type === 'struct') {
-      formParameters = Object.entries(schema.items).map(([name, subschema], i) => ({
-        errors: null,
-        name,
-        order: i,
-        required: true,
-        schema: subschema,
-        value:
+      formParameters = Object.entries(schema.items).map(([name, subschema], i) => {
+        // Use undefined instead of empty string so getArgument can fall back to defaultArg
+        const arg =
           constraintPlanSpec && constraintPlanSpec.arguments && constraintPlanSpec.arguments[name] != null
             ? constraintPlanSpec.arguments[name]
-            : '',
-        valueSource: 'none',
-      }));
+            : undefined;
+        const defaultArg = defaultArguments[name];
+        const { value, valueSource } = getArgument(arg, schema, undefined, defaultArg);
+        return {
+          errors: null,
+          name,
+          order: i,
+          required: true,
+          schema: subschema,
+          value,
+          valueSource,
+        };
+      });
     } else {
       formParameters = [];
     }
@@ -88,13 +96,13 @@
   function getSpecVersion(
     constraintMetadata: ConstraintMetadata,
     revision: number | string | null,
-  ): Pick<ConstraintDefinition, 'type' | 'revision' | 'parameter_schema'> | undefined {
+  ): Pick<ConstraintDefinition, 'type' | 'revision' | 'parameter_schema' | 'uploaded_jar_id'> | undefined {
     if (revision != null && revision !== '') {
       const revisionNumber = parseInt(`${revision}`);
       version = constraintMetadata.versions.find(v => v.revision === revisionNumber);
     } else {
-      // if the `goal_revision` is null, that means to use the latest version of the definition
-      // the query for this goal returns the versions in descending order, so the first entry in the array should correspond to the latest version
+      // if the `constraint_revision` is null, that means to use the latest version of the definition
+      // the query for this constraint returns the versions in descending order, so the first entry in the array should correspond to the latest version
       version = constraintMetadata.versions[0];
     }
     return version;
@@ -169,8 +177,8 @@
   function onUpdateRevision(event: Event) {
     const { value: revision } = getTarget(event);
 
-    const version = getSpecVersion(constraint, revision as string | number | null);
-    const schema = version?.parameter_schema;
+    const newVersion = getSpecVersion(constraint, revision as string | number | null);
+    const schema = newVersion?.parameter_schema;
 
     let cleansedArguments: Argument = getCleansedStructArguments(constraintPlanSpec.arguments, schema);
     dispatch('updateConstraintPlanSpec', {
@@ -194,6 +202,18 @@
         arguments: { ...cleansedArguments, [name]: value },
       });
     }
+  }
+
+  function onResetFormParameters(event: CustomEvent<FormParameter>) {
+    const {
+      detail: { name },
+    } = event;
+    const schema = version?.parameter_schema;
+    let cleansedArguments: Argument = getCleansedStructArguments(constraintPlanSpec.arguments, schema);
+    dispatch('updateConstraintPlanSpec', {
+      ...constraintPlanSpec,
+      arguments: { ...cleansedArguments, [name]: null },
+    });
   }
 </script>
 
@@ -319,7 +339,13 @@
 
     {#if formParameters.length > 0}
       <Collapse title="Parameters" className="constraint-parameters" defaultExpanded={true}>
-        <Parameters disabled={false} expanded={true} {formParameters} on:change={onChangeFormParameters} />
+        <Parameters
+          expanded
+          {formParameters}
+          parameterType="constraint"
+          on:change={onChangeFormParameters}
+          on:reset={onResetFormParameters}
+        />
       </Collapse>
     {/if}
 

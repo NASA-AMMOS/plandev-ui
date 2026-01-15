@@ -35,6 +35,8 @@
   // Ensure browser is available so that isMacOs can be called
   $: if (browser) {
     const presetText = parameterType === 'activity' ? 'Activity Preset' : 'Simulation Template';
+    const defaultText =
+      parameterType === 'goal' ? 'Default' : parameterType === 'constraint' ? 'Default' : 'Mission Model';
     showButton = false;
     switch (source) {
       case 'user on model':
@@ -42,7 +44,7 @@
         showButton = true;
         tooltipContent = 'Modified';
         tooltipShortcut = `${isMacOs() ? '⌘' : 'CTRL'} Click`;
-        tooltipShortcutLabel = `Reset to ${source === 'user on preset' ? presetText : 'Model'}`;
+        tooltipShortcutLabel = `Reset to ${source === 'user on preset' ? presetText : defaultText}`;
         break;
       case 'preset':
         tooltipContent = `${presetText} Value`;
@@ -51,7 +53,7 @@
         break;
       case 'mission':
       default:
-        tooltipContent = 'Mission Model';
+        tooltipContent = defaultText;
         tooltipShortcut = '';
         tooltipShortcutLabel = '';
     }
@@ -65,7 +67,7 @@
         break;
       case 'mission':
       default:
-        status = 'Mission Model';
+        status = defaultText;
     }
   }
 

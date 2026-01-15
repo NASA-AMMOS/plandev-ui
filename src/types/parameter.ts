@@ -7,6 +7,19 @@ export type DefaultEffectiveArguments = {
 
 export type DefaultEffectiveArgumentsMap = Record<string, ArgumentsMap>;
 
+export type ProcedureEffectiveArgumentsResponse = {
+  arguments: ArgumentsMap;
+  errors?: string[];
+  id: number;
+  revision: number;
+};
+
+export type SchedulingGoalEffectiveArguments = ProcedureEffectiveArgumentsResponse;
+export type ConstraintEffectiveArguments = ProcedureEffectiveArgumentsResponse;
+
+export type SchedulingGoalEffectiveArgumentsMap = Record<string, ArgumentsMap>;
+export type ConstraintEffectiveArgumentsMap = Record<string, ArgumentsMap>;
+
 export type EffectiveArguments = {
   arguments: ArgumentsMap;
   errors: ParametersErrorMap;
@@ -55,5 +68,5 @@ export type ParameterValidationResponse = {
   success: boolean;
 };
 
-export type ParameterType = 'action' | 'activity' | 'simulation';
+export type ParameterType = 'action' | 'activity' | 'constraint' | 'goal' | 'simulation';
 export type ValueSource = 'user on model' | 'user on preset' | 'preset' | 'mission' | 'none';

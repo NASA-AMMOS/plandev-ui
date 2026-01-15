@@ -7,7 +7,7 @@
   import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
-  import type { Argument, FormParameter } from '../../../types/parameter';
+  import type { Argument, ArgumentsMap, FormParameter } from '../../../types/parameter';
   import type {
     SchedulingGoalDefinition,
     SchedulingGoalMetadata,
@@ -15,7 +15,7 @@
     SchedulingGoalPlanSpecificationUpdate,
   } from '../../../types/scheduling';
   import { getTarget } from '../../../utilities/generic';
-  import { getCleansedStructArguments } from '../../../utilities/parameters';
+  import { getArgument, getCleansedStructArguments } from '../../../utilities/parameters';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { tooltip } from '../../../utilities/tooltip';
   import Collapse from '../../Collapse.svelte';
@@ -23,6 +23,7 @@
   import SchedulingGoalAnalysesActivities from './SchedulingGoalAnalysesActivities.svelte';
   import SchedulingGoalAnalysesBadge from './SchedulingGoalAnalysesBadge.svelte';
 
+  export let defaultArguments: ArgumentsMap = {};
   export let editPermissionError: string = 'You do not have permission to edit scheduling goals for this plan.';
   export let goal: SchedulingGoalMetadata;
   export let goalPlanSpec: SchedulingGoalPlanSpecification;
@@ -30,8 +31,8 @@
   export let hasReadPermission: boolean = false;
   export let modelId: number | undefined;
   export let readPermissionError: string = 'You do not have permission to view this scheduling goal.';
-  export let shouldShowUpButton: boolean | undefined = false;
   export let shouldShowDownButton: boolean | undefined = false;
+  export let shouldShowUpButton: boolean | undefined = false;
 
   const dispatch = createEventDispatcher<{
     deleteGoalInvocation: SchedulingGoalPlanSpecification;
@@ -45,8 +46,9 @@
   let schedulingGoalInput: HTMLInputElement;
   let simulateGoal: boolean = false;
   let formParameters: FormParameter[] = [];
-  let version: Pick<SchedulingGoalDefinition, 'type' | 'revision' | 'analyses' | 'parameter_schema'> | undefined =
-    undefined;
+  let version:
+    | Pick<SchedulingGoalDefinition, 'type' | 'revision' | 'analyses' | 'parameter_schema' | 'uploaded_jar_id'>
+    | undefined = undefined;
 
   $: revisions = goal.versions.map(({ revision }) => revision);
   $: {
@@ -70,17 +72,21 @@
       });
 
       formParameters = Object.entries(items).map(([name, subschema], i) => {
+        // Use undefined instead of empty string so getArgument can fall back to defaultArg
+        const arg =
+          goalPlanSpec && goalPlanSpec.arguments && goalPlanSpec.arguments[name] != null
+            ? goalPlanSpec.arguments[name]
+            : undefined;
+        const defaultArg = defaultArguments[name];
+        const { value, valueSource } = getArgument(arg, schema, undefined, defaultArg);
         return {
           errors: null,
           name,
           order: structOrderMap.get(name) ?? i,
           required: true,
           schema: subschema,
-          value:
-            goalPlanSpec && goalPlanSpec.arguments && goalPlanSpec.arguments[name] != null
-              ? goalPlanSpec.arguments[name]
-              : '',
-          valueSource: 'none',
+          value,
+          valueSource,
         };
       });
     } else {
@@ -91,7 +97,9 @@
   function getSpecVersion(
     goalMetadata: SchedulingGoalMetadata,
     revision: number | string | null,
-  ): Pick<SchedulingGoalDefinition, 'type' | 'revision' | 'analyses' | 'parameter_schema'> | undefined {
+  ):
+    | Pick<SchedulingGoalDefinition, 'type' | 'revision' | 'analyses' | 'parameter_schema' | 'uploaded_jar_id'>
+    | undefined {
     if (revision != null && revision !== '') {
       const revisionNumber = parseInt(`${revision}`);
       version = goalMetadata.versions.find(v => v.revision === revisionNumber);
@@ -136,8 +144,8 @@
   function onUpdateRevision(event: Event) {
     const { value: revision } = getTarget(event);
 
-    const version = getSpecVersion(goal, revision as string | number | null);
-    const schema = version?.parameter_schema;
+    const newVersion = getSpecVersion(goal, revision as string | number | null);
+    const schema = newVersion?.parameter_schema;
 
     let cleansedArguments: Argument = getCleansedStructArguments(goalPlanSpec.arguments, schema);
     dispatch('updateGoalPlanSpec', {
@@ -186,6 +194,19 @@
         files: file ? [file] : [],
       });
     }
+  }
+
+  function onResetFormParameters(event: CustomEvent<FormParameter>) {
+    const {
+      detail: { name, file },
+    } = event;
+    const schema = version?.parameter_schema;
+    let cleansedArguments: Argument = getCleansedStructArguments(goalPlanSpec.arguments, schema);
+    dispatch('updateGoalPlanSpec', {
+      ...goalPlanSpec,
+      arguments: { ...cleansedArguments, [name]: null },
+      files: file ? [file] : [],
+    });
   }
 </script>
 
@@ -279,7 +300,14 @@
 
     {#if formParameters.length > 0}
       <Collapse title="Parameters" className="scheduling-goal-analysis-activities" defaultExpanded={true}>
-        <Parameters disabled={false} expanded={true} {formParameters} on:change={onChangeFormParameters} />
+        <Parameters
+          disabled={false}
+          expanded={true}
+          {formParameters}
+          parameterType="goal"
+          on:change={onChangeFormParameters}
+          on:reset={onResetFormParameters}
+        />
       </Collapse>
     {/if}
 

@@ -8,21 +8,25 @@
   import RefreshIcon from '@nasa-jpl/stellar/icons/refresh.svg?component';
   import VisibleHideIcon from '@nasa-jpl/stellar/icons/visible_hide.svg?component';
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
+  import { ConstraintDefinitionType } from '../../enums/constraint';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { Status } from '../../enums/status';
   import {
     allowedConstraintPlanSpecs,
     cachedConstraintsStatus,
+    constraintArgumentDefaultsMap,
     constraintPlanSpecs,
     constraintResponseMap,
     constraintResponses,
     constraintVisibilityMap,
     constraintsMap,
     constraintsStatus,
+    getConstraintDefaultsKey,
     initialConstraintPlanSpecsLoading,
     initialConstraintsLoading,
     resetConstraintStores,
     setAllConstraintsVisible,
+    setConstraintArgumentDefaults,
     setConstraintVisibility,
   } from '../../stores/constraints';
   import { field } from '../../stores/form';
@@ -32,9 +36,11 @@
   import type { User } from '../../types/app';
   import type {
     ConstraintInvocationMap,
+    ConstraintMetadata,
     ConstraintPlanSpecification,
     ConstraintResponse,
   } from '../../types/constraint';
+  import type { ArgumentsMap, ConstraintEffectiveArgumentsMap } from '../../types/parameter';
   import type { FieldStore } from '../../types/form';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
@@ -57,6 +63,7 @@
   export let user: User | null;
 
   let constraintToConstraintResponseMap: ConstraintInvocationMap<ConstraintResponse> = {};
+  let constraintDefaultArgumentsLookup: Record<number, ArgumentsMap> = {};
   let deletePermissionError: string;
   let editPermissionError: string;
   let endTime: string;
@@ -132,6 +139,97 @@
     showConstraintsWithNoViolations,
   );
   $: numOfPrivateConstraints = ($constraintPlanSpecs || []).length - $allowedConstraintPlanSpecs.length;
+
+  // Fetch effective arguments for JAR type constraints when specs and metadata are available
+  // Need to depend on both $allowedConstraintPlanSpecs and $constraintsMap to avoid race condition
+  $: if ($allowedConstraintPlanSpecs.length > 0 && Object.keys($constraintsMap).length > 0) {
+    fetchJarConstraintEffectiveArguments($allowedConstraintPlanSpecs);
+  }
+
+  async function fetchJarConstraintEffectiveArguments(specs: ConstraintPlanSpecification[]) {
+    // Collect JAR type constraints that need defaults fetched
+    const constraintsToFetch: Array<{ arguments: Record<string, unknown>; id: number; revision: number }> = [];
+    const constraintInvocationMap: Map<string, { invocationId: number; revision: number }> = new Map();
+
+    for (const spec of specs) {
+      const constraintMetadata = $constraintsMap[spec.constraint_id];
+      if (!constraintMetadata) {
+        continue;
+      }
+
+      // Get the effective revision (selected or latest)
+      const effectiveRevision =
+        spec.constraint_revision !== null ? spec.constraint_revision : constraintMetadata.versions[0]?.revision ?? 0;
+
+      // Find the version to check if it's JAR type
+      const version =
+        constraintMetadata.versions.find(v => v.revision === effectiveRevision) ?? constraintMetadata.versions[0];
+
+      if (version?.type === ConstraintDefinitionType.JAR) {
+        const key = getConstraintDefaultsKey(spec.invocation_id, effectiveRevision);
+
+        // Only fetch if not already cached
+        if (!$constraintArgumentDefaultsMap[key]) {
+          constraintsToFetch.push({
+            arguments: {},
+            id: constraintMetadata.id,
+            revision: effectiveRevision,
+          });
+          constraintInvocationMap.set(`${constraintMetadata.id}_${effectiveRevision}`, {
+            invocationId: spec.invocation_id,
+            revision: effectiveRevision,
+          });
+        }
+      }
+    }
+
+    if (constraintsToFetch.length > 0) {
+      const results = await effects.getConstraintProcedureEffectiveArguments(constraintsToFetch, user);
+
+      for (const result of results) {
+        if (!result.errors?.length) {
+          const mapping = constraintInvocationMap.get(`${result.id}_${result.revision}`);
+          if (mapping) {
+            setConstraintArgumentDefaults(mapping.invocationId, mapping.revision, result.arguments);
+          }
+        }
+      }
+    }
+  }
+
+  function computeDefaultArgumentsForConstraint(
+    spec: ConstraintPlanSpecification,
+    constraintsMapValue: Record<string, ConstraintMetadata>,
+    defaultsMapValue: ConstraintEffectiveArgumentsMap,
+  ): ArgumentsMap {
+    const constraintMetadata = constraintsMapValue[spec.constraint_id];
+    if (!constraintMetadata) {
+      return {};
+    }
+
+    const effectiveRevision =
+      spec.constraint_revision !== null ? spec.constraint_revision : (constraintMetadata.versions[0]?.revision ?? 0);
+    const version =
+      constraintMetadata.versions.find(v => v.revision === effectiveRevision) ?? constraintMetadata.versions[0];
+
+    // Only JAR type constraints have procedural defaults
+    if (version?.type !== ConstraintDefinitionType.JAR) {
+      return {};
+    }
+
+    const key = getConstraintDefaultsKey(spec.invocation_id, effectiveRevision);
+    return defaultsMapValue[key] ?? {};
+  }
+
+  // Reactively compute default arguments lookup keyed by invocation_id
+  // This ensures the template re-renders when $constraintArgumentDefaultsMap changes
+  $: constraintDefaultArgumentsLookup = $allowedConstraintPlanSpecs.reduce(
+    (acc, spec) => {
+      acc[spec.invocation_id] = computeDefaultArgumentsForConstraint(spec, $constraintsMap, $constraintArgumentDefaultsMap);
+      return acc;
+    },
+    {} as Record<number, ArgumentsMap>,
+  );
 
   $: totalViolationCount = getViolationCount($constraintResponses);
   $: filteredViolationCount = getViolationCount(
@@ -451,14 +549,15 @@
               constraintResponse={constraintToConstraintResponseMap[constraintPlanSpec.constraint_id]?.[
                 constraintPlanSpec.invocation_id
               ]}
+              defaultArguments={constraintDefaultArgumentsLookup[constraintPlanSpec.invocation_id] ?? {}}
               {deletePermissionError}
               {editPermissionError}
-              hasEditPermission={hasSpecEditPermission}
               hasDeletePermission={hasSpecEditPermission}
+              hasEditPermission={hasSpecEditPermission}
               hasReadPermission={featurePermissions.constraints.canRead(user)}
               modelId={$planModelId}
-              shouldShowUpButton={(constraintPlanSpec?.order ?? 0) > 0}
               shouldShowDownButton={specIndex < filteredConstraintPlanSpecifications.length - 1}
+              shouldShowUpButton={(constraintPlanSpec?.order ?? 0) > 0}
               totalViolationCount={$constraintResponseMap[constraintPlanSpec.constraint_id]?.[
                 constraintPlanSpec.invocation_id
               ]?.results.violations?.length || 0}
