@@ -543,12 +543,7 @@ test.describe.serial('Workspace', () => {
     const workspaceUrl = getWorkspacesUrl(workspaceForUnauthorized.baseURL, parseInt(workspaceId));
     await userB.gotoWithRetry(workspaceUrl);
 
-    // Wait for network to settle, then reload to ensure GraphQL subscription has fresh data
-    // The workspace page depends on both initialWorkspace (layout load) AND $workspaces subscription
-    // In CI, the subscription may not have caught up after navigation, causing "Loading workspace..."
-    // to persist because the derived $workspace store returns undefined
     await setupUnauthorized.page.waitForLoadState('networkidle');
-    await setupUnauthorized.page.reload({ waitUntil: 'networkidle' });
 
     // Wait for the workspace file grid to be visible, which confirms both:
     // 1. The workspace subscription has delivered data (workspace is truthy)
