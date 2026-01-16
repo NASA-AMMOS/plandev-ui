@@ -135,7 +135,6 @@ const mockInitialPlan: Plan = {
   updated_by: 'redshirt',
 };
 
-
 describe('PlanMergeReview component', () => {
   beforeAll(() => {
     activityMetadataDefinitions.updateValue(() => []);
