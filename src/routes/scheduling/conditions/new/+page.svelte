@@ -9,9 +9,6 @@
   import { tags } from '../../../../stores/tags';
   import { getUserStore } from '../../../../stores/user';
   import { getSearchParameterNumber } from '../../../../utilities/url';
-  import type { PageData } from './$types';
-
-  export let data: PageData;
 
   const user = getUserStore();
 
