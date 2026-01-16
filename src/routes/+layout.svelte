@@ -13,7 +13,7 @@
   import Loading from '../components/Loading.svelte';
   import { clearLogs } from '../stores/errors';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
-  import { restartSubscriptions } from '../stores/subscriptionsManager';
+  import { restartSharedClient } from '../stores/gqlClient';
   import type { UserStore } from '../types/app';
   import { loadPluginCode } from '../utilities/plugins';
   import type { LayoutData } from './$types';
@@ -31,11 +31,12 @@
     user.set(data.user || null);
   }
 
-  // Only restart subscriptions when role actually changes, not on every navigation
+  // Only restart WebSocket when role actually changes, not on every navigation
+  // graphql-ws automatically re-subscribes all active subscriptions when reconnected
   $: {
     const newRole = $user?.activeRole ?? null;
     if (newRole !== previousRole && previousRole !== null) {
-      restartSubscriptions();
+      restartSharedClient();
     }
     previousRole = newRole;
   }
