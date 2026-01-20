@@ -539,7 +539,7 @@ test.describe.serial('Workspace', () => {
     await userB.gotoWithRetry('/plans');
     await userB.switchRole('user');
 
-    // Navigate to workspace using retry helper (role switch can cause ERR_ABORTED)
+    // Navigate to workspace
     const workspaceUrl = getWorkspacesUrl(workspaceForUnauthorized.baseURL, parseInt(workspaceId));
     await userB.gotoWithRetry(workspaceUrl);
 
@@ -555,15 +555,12 @@ test.describe.serial('Workspace', () => {
     await expect(workspaceForUnauthorized.workspaceFileGrid).toBeVisible();
 
     // As a non-collaborator with 'user' role, the 'New File' option should be disabled
-    // or the modal should not appear when clicked
+    // via the permissionHandler (adds 'permission-disabled' class and blocks clicks)
     await workspaceForUnauthorized.openWorkspaceContextMenu();
-    const newFileMenuItem = workspaceForUnauthorized.workspaceHeaderMenu.getByRole('menuitem', { name: 'New File' });
+    // The wrapper div[role="button"] receives the permission-disabled class from permissionHandler
+    const newFileMenuItemWrapper = workspaceForUnauthorized.workspaceHeaderMenu.locator('div[role="button"]').filter({ hasText: 'New File' });
 
-    // Check if menu item is disabled (preferred) or if clicking does nothing
-    const isDisabled = await newFileMenuItem.isDisabled();
-    if (!isDisabled) {
-      await newFileMenuItem.click();
-      await expect(setupUnauthorized.page.locator('#modal-container')).not.toBeVisible();
-    }
+    // The permissionHandler directive adds 'permission-disabled' class when user lacks permission
+    await expect(newFileMenuItemWrapper).toHaveClass(/permission-disabled/);
   });
 });

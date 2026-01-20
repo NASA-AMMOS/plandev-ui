@@ -30,7 +30,6 @@ export class User {
 
   /**
    * Navigate to a URL with retry logic for navigation errors.
-   * Use this after switchRole() since role changes can cause navigation instability.
    * Handles ERR_ABORTED and "interrupted by another navigation" errors.
    */
   async gotoWithRetry(
@@ -74,7 +73,8 @@ export class User {
   async switchRole(role: string = 'aerie_admin') {
     await this.page.getByRole('navigation').getByRole('combobox').click();
     await this.page.getByRole('listbox').getByRole('option', { name: role }).click();
-    await this.page.waitForLoadState('networkidle');
+    // Wait for success toast confirming the role change completed
+    await expect(this.page.getByText('Changed Role Successfully')).toBeVisible();
     await expect(this.page.getByRole('navigation').getByRole('combobox')).toHaveText(role);
   }
 }

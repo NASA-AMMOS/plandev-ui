@@ -179,8 +179,6 @@ test.describe.serial('Plan Metadata', () => {
     await userB.gotoWithRetry('/plans');
     await userB.switchRole('user');
 
-    // Use retry helper after role switch (can cause ERR_ABORTED)
-    await userB.gotoWithRetry('/plans');
     await userB.gotoWithRetry(`/plans/${planAId}`);
     await planAForUserB.showPanel(PanelNames.PLAN_METADATA, true);
     await planAForUserB.waitForPlanCollaboratorLoad();
@@ -200,8 +198,6 @@ test.describe.serial('Plan Metadata', () => {
     await userB.gotoWithRetry('/plans');
     await userB.switchRole('user');
 
-    // Use retry helper after role switch (can cause ERR_ABORTED)
-    await userB.gotoWithRetry('/plans');
     await userB.gotoWithRetry(`/plans/${planAId}`);
 
     await planAForUserB.showPanel(PanelNames.PLAN_METADATA, true);
@@ -223,12 +219,12 @@ test.describe.serial('Plan Metadata', () => {
     await expect(
       planB.planCollaboratorInputContainer
         .getByTestId('tags-input-selected-items')
-        .getByRole('option', { name: 'userA' }),
+        .getByRole('option', { exact: true, name: 'userA' }),
     ).toBeDefined();
     await expect(
       planB.planCollaboratorInputContainer
         .getByTestId('tags-input-selected-items')
-        .getByRole('option', { name: 'userB' }),
+        .getByRole('option', { exact: true, name: 'userB' }),
     ).toBeDefined();
   });
 });
