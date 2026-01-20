@@ -16,7 +16,8 @@ import PlanMergeReview from './PlanMergeReview.svelte';
 
 // Mock the user store context
 vi.mock('svelte', async () => {
-  const actual = await vi.importActual('svelte');
+  const actual = (await vi.importActual('svelte')) as typeof import('svelte');
+  const actualGetContext = actual.getContext;
   return {
     ...actual,
     getContext: vi.fn((key: string) => {
@@ -31,7 +32,8 @@ vi.mock('svelte', async () => {
           token: '',
         });
       }
-      return undefined;
+      // Fall through to actual getContext for other keys (e.g., bits-ui internal contexts)
+      return actualGetContext(key);
     }),
   };
 });
