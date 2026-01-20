@@ -43,7 +43,7 @@
   import Loading from '../Loading.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Parameters from '../parameters/Parameters.svelte';
-  import AlertError from '../ui/AlertError.svelte';
+  import AsyncContentState from '../ui/AsyncContentState.svelte';
   import DatePickerActionButton from '../ui/DatePicker/DatePickerActionButton.svelte';
   import FilterToggleButton from '../ui/FilterToggleButton.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -482,21 +482,14 @@
           {/if}
         </svelte:fragment>
         <div class="simulation-history">
-          {#if $simulationDatasetsPlanError}
-            <AlertError
-              error="Error loading simulation datasets"
-              fullError={$simulationDatasetsPlanError}
-              class="mb-3"
-            />
-          {:else if $simulationDatasetsPlanLoading}
-            <!-- TODO would be nice to have an overall component here that does loading + error -->
-            <div class="loading-wrapper">
-              <Loading />
-            </div>
-          {:else if !filteredSimulationDatasets || !filteredSimulationDatasets.length}
-            <div>No Simulation Datasets</div>
-          {:else}
-            {#each filteredSimulationDatasets as simDataset (simDataset.id)}
+          <AsyncContentState
+            loading={$simulationDatasetsPlanLoading}
+            error={$simulationDatasetsPlanError}
+            errorMessage="Error loading simulation datasets"
+            empty={!filteredSimulationDatasets?.length}
+            emptyMessage="No Simulation Datasets"
+          >
+            {#each filteredSimulationDatasets ?? [] as simDataset (simDataset.id)}
               <SimulationHistoryDataset
                 {modelParametersMap}
                 {defaultSimulationArguments}
@@ -514,7 +507,7 @@
                 on:cancel={onCancelSimulation}
               />
             {/each}
-          {/if}
+          </AsyncContentState>
         </div>
       </Collapse>
     </fieldset>
@@ -530,9 +523,5 @@
 
   :global(.simulation-collapse.collapse-root .content) {
     margin: 0;
-  }
-
-  .loading-wrapper {
-    margin-left: 32px;
   }
 </style>
