@@ -78,6 +78,15 @@
   export let showTimelineTooltip: boolean = false;
   export let limitTooltipToLine: boolean = false;
 
+  // Optional props for standalone usage (bypasses store dependencies)
+  // Pass these when using Timeline outside of the main plan view
+  export let standaloneMode: boolean = false;
+  export let standaloneIdToColorMaps: {
+    directives: Record<ActivityDirectiveId, string>;
+    external_events: Record<ExternalEventId, string>;
+    spans: Record<number, string>;
+  } | null = null;
+
   const dispatch = createEventDispatcher<{
     mouseDown: MouseDown;
     toggleRowExpansion: { expanded: boolean; rowId: number };
@@ -127,12 +136,12 @@
   });
 
   $: activityDirectives = activityDirectivesMap ? Object.values(activityDirectivesMap) : null;
-  $: derivationGroups = $planDerivationGroupLinks
-    .filter(link => link.plan_id === plan?.id)
-    .map(link => link.derivation_group_name);
-  $: externalEventsFilteredByDG = externalEvents.filter(externalEvent =>
-    derivationGroups.includes(externalEvent.pkey.derivation_group_name),
-  );
+  $: derivationGroups = standaloneMode
+    ? []
+    : $planDerivationGroupLinks.filter(link => link.plan_id === plan?.id).map(link => link.derivation_group_name);
+  $: externalEventsFilteredByDG = standaloneMode
+    ? []
+    : externalEvents.filter(externalEvent => derivationGroups.includes(externalEvent.pkey.derivation_group_name));
   $: rows = timeline?.rows || [];
   $: drawWidth = clientWidth > 0 ? clientWidth - (timeline?.marginLeft ?? 0) - (timeline?.marginRight ?? 0) : 0;
   $: xAxisDrawHeight = 48 + 16 * ($plugins.time.additional.length ? Math.max($plugins.time.additional.length, 1) : 1);
@@ -512,6 +521,8 @@
             {xTicksView}
             yAxes={row.yAxes}
             {timelineZoomTransform}
+            {standaloneMode}
+            {standaloneIdToColorMaps}
             on:contextMenu={e => onContextMenu(e, row)}
             on:dblClick
             on:deleteActivityDirective

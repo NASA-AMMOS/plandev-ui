@@ -809,6 +809,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     return isUserAdmin(user) || getPermission([Queries.MISSION_MODELS, Queries.PLANS], user);
   },
   GET_PLAN_EVENT_TYPES: () => true,
+  GET_PLAN_FOR_COMPARISON: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.PLAN, Queries.ACTIVITY_DIRECTIVES], user);
+  },
   GET_PLAN_MERGE_NON_CONFLICTING_ACTIVITIES: () => true,
   GET_PLAN_SNAPSHOT_ACTIVITY_DIRECTIVES: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.PLAN_SNAPSHOT_ACTIVITIES], user);
@@ -822,6 +825,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   GET_SCHEDULING_SPEC_GOALS_FOR_GOAL: () => true,
   GET_SEQUENCE_ADAPTATION: () => true,
   GET_SIMULATION_DATASET_ID: () => true,
+  GET_SNAPSHOT_FOR_COMPARISON: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.PLAN_SNAPSHOTS, Queries.PLAN_SNAPSHOT_ACTIVITIES], user);
+  },
   GET_SPANS: () => true,
   GET_TYPESCRIPT_ACTIVITY_TYPE: () => true,
   GET_TYPESCRIPT_COMMAND_DICTIONARY: () => true,

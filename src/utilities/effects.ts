@@ -173,6 +173,13 @@ import type {
   PlanSlim,
 } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
+import {
+  rawToComparisonActivity,
+  type ComparisonActivity,
+  type ComparisonActivityRaw,
+  type PlanForComparison,
+  type SnapshotForComparison,
+} from '../types/plan-comparison';
 import type {
   SchedulingConditionDefinition,
   SchedulingConditionDefinitionInsertInput,
@@ -4932,6 +4939,43 @@ const effects = {
     }
   },
 
+  async getPlanForComparison(
+    planId: number,
+    user: User | null,
+  ): Promise<{
+    activities: ComparisonActivity[];
+    duration: string;
+    modelId: number;
+    name: string;
+    startTime: string;
+  } | null> {
+    try {
+      if (!queryPermissions.GET_PLAN_FOR_COMPARISON(user)) {
+        throwPermissionError('get plan for comparison');
+      }
+
+      const data = (await reqHasura(gql.GET_PLAN_FOR_COMPARISON, { planId }, user)) as { plan: PlanForComparison };
+      const { plan } = data;
+
+      if (plan) {
+        const activities = plan.activity_directives.map(rawToComparisonActivity);
+        logMessage(`Retrieved plan "${plan.name}" (ID=${planId}) for comparison with ${activities.length} activities.`);
+        return {
+          activities,
+          duration: plan.duration,
+          modelId: plan.model_id,
+          name: plan.name,
+          startTime: plan.start_time,
+        };
+      }
+
+      throw Error(`Plan not found: ID=${planId}`);
+    } catch (e) {
+      catchError('Failed to retrieve plan for comparison', e as Error);
+      return null;
+    }
+  },
+
   async getPlanLatestSimulation(planId: number, user: User | null): Promise<Simulation | null> {
     const query = convertToQuery(gql.SUB_SIMULATION);
     const data = await reqHasura<Simulation[]>(query, { planId }, user);
@@ -5386,6 +5430,50 @@ const effects = {
     }
 
     return null;
+  },
+
+  async getSnapshotForComparison(
+    snapshotId: number,
+    user: User | null,
+  ): Promise<{
+    activities: ComparisonActivity[];
+    duration: string;
+    modelId: number;
+    name: string;
+    planId: number;
+    startTime: string;
+  } | null> {
+    try {
+      if (!queryPermissions.GET_SNAPSHOT_FOR_COMPARISON(user)) {
+        throwPermissionError('get snapshot for comparison');
+      }
+
+      const data = (await reqHasura(gql.GET_SNAPSHOT_FOR_COMPARISON, { snapshotId }, user)) as {
+        activities: ComparisonActivityRaw[];
+        snapshot: SnapshotForComparison[];
+      };
+      const { activities: rawActivities, snapshot: snapshots } = data;
+
+      if (snapshots && snapshots.length > 0) {
+        const snapshot = snapshots[0];
+        const activities = (rawActivities || []).map(rawToComparisonActivity);
+        const name = snapshot.snapshot_name || `Snapshot of ${snapshot.plan.name} (rev ${snapshot.revision})`;
+        logMessage(`Retrieved snapshot "${name}" (ID=${snapshotId}) for comparison with ${activities.length} activities.`);
+        return {
+          activities,
+          duration: snapshot.plan.duration,
+          modelId: snapshot.model_id,
+          name,
+          planId: snapshot.plan_id,
+          startTime: snapshot.plan.start_time,
+        };
+      }
+
+      throw Error(`Snapshot not found: ID=${snapshotId}`);
+    } catch (e) {
+      catchError('Failed to retrieve snapshot for comparison', e as Error);
+      return null;
+    }
   },
 
   async getSpans(

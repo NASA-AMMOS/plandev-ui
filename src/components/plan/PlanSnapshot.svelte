@@ -33,6 +33,7 @@
 
   const dispatch = createEventDispatcher<{
     click: void;
+    compare: void;
     delete: void;
     restore: void;
   }>();
@@ -73,6 +74,7 @@
               </DropdownMenu.Item>
             </div>
             <DropdownMenu.Item size="sm" on:click={() => dispatch('restore')}>Restore</DropdownMenu.Item>
+            <DropdownMenu.Item size="sm" on:click={() => dispatch('compare')}>Compare with Plan</DropdownMenu.Item>
             <DropdownMenu.Separator />
             <DropdownMenu.Item disabled size="sm" on:click={() => () => dispatch('delete')}>Delete</DropdownMenu.Item>
           </DropdownMenu.Content>

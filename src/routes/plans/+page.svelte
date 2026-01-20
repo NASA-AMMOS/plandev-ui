@@ -665,6 +665,11 @@
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
   <Nav {user}>
     <span slot="title">Plans</span>
+    <svelte:fragment slot="right">
+      <Button variant="secondary" class="flex gap-1" on:click={() => goto(`${base}/plans/compare`)}>
+        <ArrowLeftRight size={16} /> Compare
+      </Button>
+    </svelte:fragment>
   </Nav>
 
   <CssGrid columns="20% auto">

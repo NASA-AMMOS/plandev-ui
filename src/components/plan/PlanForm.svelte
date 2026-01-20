@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { Button, cn } from '@nasa-jpl/stellar-svelte';
   import { ArrowLeftRight, FileUp } from 'lucide-svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
@@ -413,6 +415,7 @@
                 }}
                 on:restore={() => plan && effects.restorePlanSnapshot(planSnapshot, plan, user)}
                 on:delete={() => effects.deletePlanSnapshot(planSnapshot, user)}
+                on:compare={() => plan && goto(`${base}/plans/compare?left=plan:${plan.id}&right=snapshot:${planSnapshot.snapshot_id}`)}
               />
             {/each}
             {#if !$initialPlanSnapshotsLoading && filteredPlanSnapshots.length < 1}

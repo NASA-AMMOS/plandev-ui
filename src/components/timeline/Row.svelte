@@ -140,6 +140,17 @@
   export let yAxes: Axis[] = [];
   export let user: User | null;
 
+  // Optional props for standalone usage (bypasses store dependencies)
+  // When these are provided, the component won't read from stores
+  export let standaloneMode: boolean = false;
+  export let standaloneActivityTypes: ActivityType[] | null = null;
+  export let standaloneActivityArgumentDefaults: Record<string, Record<string, unknown>> | null = null;
+  export let standaloneIdToColorMaps: {
+    directives: Record<ActivityDirectiveId, string>;
+    external_events: Record<ExternalEventId, string>;
+    spans: Record<SpanId, string>;
+  } | null = null;
+
   const dispatch = createEventDispatcher<{
     discreteTreeExpansionChange: DiscreteTreeExpansionMap;
     mouseDown: MouseDown;
@@ -220,7 +231,7 @@
     }
   });
 
-  $: if (plan && simulationDataset !== null && layers && $externalResources && !$resourceTypesLoading) {
+  $: if (!standaloneMode && plan && simulationDataset !== null && layers && $externalResources && !$resourceTypesLoading) {
     const simulationDatasetId = simulationDataset.dataset_id;
     const resourceNamesSet = new Set<string>();
     layers.map(layer => {
@@ -450,72 +461,86 @@
         let directives: ActivityDirective[] = [];
         let spans: Span[] = [];
 
-        // track directives and spans that have been seen to avoid double counting
-        // if more than one layer matches a type
-        let seenDirectiveIds: Record<number, boolean> = {};
-        let seenSpanIds: Record<number, boolean> = {};
-        activityLayers.forEach(layer => {
-          if (layer.filter) {
-            const { directives: matchingDirectives, spans: matchingSpans } = applyActivityLayerFilter(
-              layer.filter.activity,
-              activityDirectives || [],
-              spansList,
-              $planModelActivityTypes,
-              $activityArgumentDefaultsMap,
-            );
-            const uniqueDirectives: ActivityDirective[] = [];
-            matchingDirectives.forEach(directive => {
-              if (!seenDirectiveIds[directive.id]) {
-                idToColorMaps.directives[directive.id] = layer.activityColor;
-                seenDirectiveIds[directive.id] = true;
-                uniqueDirectives.push(directive);
-
-                // Gather spans for directive since we always show all spans for a directive
-                const childSpans = getAllSpansForActivityDirective(directive.id, spansMap || {}, spanUtilityMaps);
-                childSpans.forEach(span => {
-                  seenSpanIds[span.span_id] = true;
-                  idToColorMaps.spans[span.span_id] = layer.activityColor;
-                });
-                spans = spans.concat(childSpans);
-              }
-            });
-            directives = directives.concat(uniqueDirectives);
-
-            const uniqueSpans: Span[] = [];
-            matchingSpans.forEach(span => {
-              if (!seenSpanIds[span.span_id]) {
-                idToColorMaps.spans[span.span_id] = layer.activityColor;
-                seenSpanIds[span.span_id] = true;
-                uniqueSpans.push(span);
-              }
-            });
-            spans = spans.concat(uniqueSpans);
-          }
-        });
-        directives.sort((a, b) => ((a.start_time_ms ?? 0) < (b.start_time_ms ?? 0) ? -1 : 1));
-        spans.sort((a, b) => (a.startMs < b.startMs ? -1 : 1));
-        if (directives.length || spans.length) {
-          // Populate both sets of directive and span lists in order to more precisely
-          // react to the filterActivitiesByTime variable later and avoid unnecessary activity tree
-          // regeneration upon viewTimeRange change when not in filterActivitiesByTime mode.
+        // In standalone mode with color maps, skip filtering and use all activities directly
+        if (standaloneMode && standaloneIdToColorMaps) {
+          idToColorMaps = standaloneIdToColorMaps;
+          directives = activityDirectives || [];
+          directives.sort((a, b) => ((a.start_time_ms ?? 0) < (b.start_time_ms ?? 0) ? -1 : 1));
           filteredActivityDirectives = directives;
-          filteredSpans = spans;
-          timeFilteredActivityDirectives = directives;
-          timeFilteredSpans = spans;
-        } else {
-          filteredActivityDirectives = [];
           filteredSpans = [];
-          timeFilteredActivityDirectives = [];
+          timeFilteredActivityDirectives = directives;
           timeFilteredSpans = [];
-        }
+          hasActivityLayer = directives.length > 0;
+        } else {
+          // track directives and spans that have been seen to avoid double counting
+          // if more than one layer matches a type
+          let seenDirectiveIds: Record<number, boolean> = {};
+          let seenSpanIds: Record<number, boolean> = {};
+          const activityTypes = standaloneActivityTypes ?? $planModelActivityTypes;
+          const argumentDefaults = standaloneActivityArgumentDefaults ?? $activityArgumentDefaultsMap;
+          activityLayers.forEach(layer => {
+            if (layer.filter) {
+              const { directives: matchingDirectives, spans: matchingSpans } = applyActivityLayerFilter(
+                layer.filter.activity,
+                activityDirectives || [],
+                spansList,
+                activityTypes,
+                argumentDefaults,
+              );
+              const uniqueDirectives: ActivityDirective[] = [];
+              matchingDirectives.forEach(directive => {
+                if (!seenDirectiveIds[directive.id]) {
+                  idToColorMaps.directives[directive.id] = layer.activityColor;
+                  seenDirectiveIds[directive.id] = true;
+                  uniqueDirectives.push(directive);
 
-        hasActivityLayer = timeFilteredActivityDirectives.length > 0 || timeFilteredActivityDirectives.length > 0;
+                  // Gather spans for directive since we always show all spans for a directive
+                  const childSpans = getAllSpansForActivityDirective(directive.id, spansMap || {}, spanUtilityMaps);
+                  childSpans.forEach(span => {
+                    seenSpanIds[span.span_id] = true;
+                    idToColorMaps.spans[span.span_id] = layer.activityColor;
+                  });
+                  spans = spans.concat(childSpans);
+                }
+              });
+              directives = directives.concat(uniqueDirectives);
+
+              const uniqueSpans: Span[] = [];
+              matchingSpans.forEach(span => {
+                if (!seenSpanIds[span.span_id]) {
+                  idToColorMaps.spans[span.span_id] = layer.activityColor;
+                  seenSpanIds[span.span_id] = true;
+                  uniqueSpans.push(span);
+                }
+              });
+              spans = spans.concat(uniqueSpans);
+            }
+          });
+          directives.sort((a, b) => ((a.start_time_ms ?? 0) < (b.start_time_ms ?? 0) ? -1 : 1));
+          spans.sort((a, b) => (a.startMs < b.startMs ? -1 : 1));
+          if (directives.length || spans.length) {
+            // Populate both sets of directive and span lists in order to more precisely
+            // react to the filterActivitiesByTime variable later and avoid unnecessary activity tree
+            // regeneration upon viewTimeRange change when not in filterActivitiesByTime mode.
+            filteredActivityDirectives = directives;
+            filteredSpans = spans;
+            timeFilteredActivityDirectives = directives;
+            timeFilteredSpans = spans;
+          } else {
+            filteredActivityDirectives = [];
+            filteredSpans = [];
+            timeFilteredActivityDirectives = [];
+            timeFilteredSpans = [];
+          }
+
+          hasActivityLayer = timeFilteredActivityDirectives.length > 0 || timeFilteredActivityDirectives.length > 0;
+        }
       } else {
         hasActivityLayer = false;
       }
     }
 
-    if (hasExternalEventsLayer) {
+    if (hasExternalEventsLayer && !standaloneMode) {
       filteredExternalEvents = [];
 
       // Filter what LINKED Derivation Groups are to be shown

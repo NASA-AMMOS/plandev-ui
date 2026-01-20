@@ -1629,6 +1629,35 @@ const gql = {
     }
   `,
 
+  GET_PLAN_FOR_COMPARISON: `#graphql
+    query GetPlanForComparison($planId: Int!) {
+      plan: ${Queries.PLAN}(id: $planId) {
+        duration
+        id
+        model_id
+        name
+        start_time
+        activity_directives(order_by: { start_offset: asc }) {
+          anchor_id
+          anchored_to_start
+          arguments
+          id
+          metadata
+          name
+          start_offset
+          tags {
+            tag {
+              color
+              id
+              name
+            }
+          }
+          type
+        }
+      }
+    }
+  `,
+
   GET_PLAN_MERGE_NON_CONFLICTING_ACTIVITIES: `#graphql
     query GetPlanMergeNonConflictingActivities($merge_request_id: Int!) {
       nonConflictingActivities: ${Queries.GET_NON_CONFLICTING_ACTIVITIES}(args: { _merge_request_id: $merge_request_id } ) {
@@ -1780,6 +1809,41 @@ const gql = {
     query GetSimulationDatasetId($datasetId: Int!) {
       ${Queries.SIMULATION_DATASETS}(where: {dataset_id: {_eq: $datasetId}}) {
         id
+      }
+    }
+  `,
+
+  GET_SNAPSHOT_FOR_COMPARISON: `#graphql
+    query GetSnapshotForComparison($snapshotId: Int!) {
+      snapshot: ${Queries.PLAN_SNAPSHOTS}(where: { snapshot_id: { _eq: $snapshotId } }) {
+        model_id
+        plan {
+          duration
+          name
+          start_time
+        }
+        plan_id
+        revision
+        snapshot_id
+        snapshot_name
+        taken_at
+      }
+      activities: ${Queries.PLAN_SNAPSHOT_ACTIVITIES}(where: { snapshot_id: { _eq: $snapshotId } }, order_by: { start_offset: asc }) {
+        anchor_id
+        anchored_to_start
+        arguments
+        id
+        metadata
+        name
+        start_offset
+        tags {
+          tag {
+            color
+            id
+            name
+          }
+        }
+        type
       }
     }
   `,
