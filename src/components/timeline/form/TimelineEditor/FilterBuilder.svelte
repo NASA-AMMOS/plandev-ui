@@ -485,7 +485,10 @@
             <div class="resulting-types-title st-typography-medium">
               Resulting Types
               <div class="resulting-types-info-container">
-                <div class="resulting-types-info"><svelte:component this={TypeIcon} /> {matchingTypes.length} types</div>
+                <div class="resulting-types-info">
+                  <svelte:component this={TypeIcon} />
+                  {matchingTypes.length} types
+                </div>
                 <div class="resulting-types-info">
                   <svelte:component this={InstanceIcon} />{instanceCount} instance{pluralize(instanceCount)}
                 </div>

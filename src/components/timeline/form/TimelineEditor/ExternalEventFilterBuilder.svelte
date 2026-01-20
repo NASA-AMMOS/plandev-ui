@@ -34,12 +34,14 @@
     filterBuilder?.hide();
   }
 
-  $: dirtyFilter = filter ? structuredClone(filter) : {
-    dynamic_type_filters: [],
-    other_filters: [],
-    static_types: [],
-    type_subfilters: {},
-  };
+  $: dirtyFilter = filter
+    ? structuredClone(filter)
+    : {
+        dynamic_type_filters: [],
+        other_filters: [],
+        static_types: [],
+        type_subfilters: {},
+      };
 
   $: externalEvents = Object.values($externalEventsMap || {});
   $: appliedFilter = applyExternalEventLayerFilter(dirtyFilter, externalEvents);

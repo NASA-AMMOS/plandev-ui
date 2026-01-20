@@ -10,10 +10,7 @@
   import type { ValueSchemaVariant } from '../../../../types/schema';
   import type { ActivityLayerFilter, ActivityLayerFilterSubfieldSchema } from '../../../../types/timeline';
   import { compare } from '../../../../utilities/generic';
-  import {
-    applyActivityLayerFilter,
-    getMatchingTypesForActivityLayerFilter,
-  } from '../../../../utilities/timeline';
+  import { applyActivityLayerFilter, getMatchingTypesForActivityLayerFilter } from '../../../../utilities/timeline';
   import FilterBuilder from './FilterBuilder.svelte';
 
   export let filter: ActivityLayerFilter | undefined = undefined;
@@ -43,12 +40,14 @@
 
   $: activityDirectives = Object.values($activityDirectivesMap || {});
 
-  $: dirtyFilter = filter ? structuredClone(filter) : {
-    dynamic_type_filters: [],
-    other_filters: [],
-    static_types: [],
-    type_subfilters: {},
-  };
+  $: dirtyFilter = filter
+    ? structuredClone(filter)
+    : {
+        dynamic_type_filters: [],
+        other_filters: [],
+        static_types: [],
+        type_subfilters: {},
+      };
 
   $: appliedFilter = applyActivityLayerFilter(
     dirtyFilter,
