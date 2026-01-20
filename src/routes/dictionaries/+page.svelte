@@ -50,12 +50,7 @@
     creatingDictionary = true;
 
     try {
-      await effects.uploadDictionaryOrAdaptation(
-        file,
-        $user,
-        sequenceAdaptationName,
-        persistDictionaryToFilesystem,
-      );
+      await effects.uploadDictionaryOrAdaptation(file, $user, sequenceAdaptationName, persistDictionaryToFilesystem);
 
       // Set files to undefined to reset the input form and set the value to empty string to clear the uploaded file.
       files = undefined;
