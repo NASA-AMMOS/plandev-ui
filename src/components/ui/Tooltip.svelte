@@ -35,6 +35,7 @@
     group?: TooltipProps['group'];
     openDelay?: number;
     shortcut?: string;
+    wrapperClass?: string;
   }
 
   /** The tooltip content text */
@@ -49,6 +50,8 @@
   export let openDelay: number = 700;
   /** Delay in ms before hiding tooltip */
   export let closeDelay: number = 300;
+  /** Class to add to wrapping span element */
+  export let wrapperClass: string = '';
 
   let className: string = '';
   export { className as class };
@@ -74,7 +77,10 @@
   <Tooltip.Root {group} {openDelay} {closeDelay} bind:open>
     <Tooltip.Trigger asChild let:builder>
       <span
-        class="inline-flex has-[[aria-disabled=true]]:pointer-events-none has-[[disabled]]:pointer-events-none"
+        class={cn(
+          'inline-flex has-[[aria-disabled=true]]:pointer-events-none has-[[disabled]]:pointer-events-none',
+          wrapperClass,
+        )}
         {...builder}
         use:builder.action
         on:focusin={handleFocusIn}
