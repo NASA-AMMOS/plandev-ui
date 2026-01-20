@@ -9,6 +9,11 @@ import effects from './utilities/effects';
 import { reqGatewayForwardCookies } from './utilities/requests';
 
 export const handle: Handle = async ({ event, resolve }) => {
+  // Ignore Chrome DevTools requests to prevent noisy 404 logs
+  if (event.url.pathname.startsWith('/.well-known/appspecific/com.chrome.')) {
+    return new Response(null, { status: 404 });
+  }
+
   try {
     if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
       return await handleSSOAuth({ event, resolve });
