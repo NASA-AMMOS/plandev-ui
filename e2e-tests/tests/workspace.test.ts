@@ -558,7 +558,9 @@ test.describe.serial('Workspace', () => {
     // via the permissionHandler (adds 'permission-disabled' class and blocks clicks)
     await workspaceForUnauthorized.openWorkspaceContextMenu();
     // The wrapper div[role="button"] receives the permission-disabled class from permissionHandler
-    const newFileMenuItemWrapper = workspaceForUnauthorized.workspaceHeaderMenu.locator('div[role="button"]').filter({ hasText: 'New File' });
+    const newFileMenuItemWrapper = workspaceForUnauthorized.workspaceHeaderMenu
+      .locator('div[role="button"]')
+      .filter({ hasText: 'New File' });
 
     // The permissionHandler directive adds 'permission-disabled' class when user lacks permission
     await expect(newFileMenuItemWrapper).toHaveClass(/permission-disabled/);
