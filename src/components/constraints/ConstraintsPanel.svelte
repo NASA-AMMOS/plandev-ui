@@ -175,7 +175,7 @@
             id: constraintMetadata.id,
             revision: effectiveRevision,
           });
-          constraintInvocationMap.set(`${constraintMetadata.id}_${effectiveRevision}`, {
+          constraintInvocationMap.set(getConstraintDefaultsKey(constraintMetadata.id, effectiveRevision), {
             invocationId: spec.invocation_id,
             revision: effectiveRevision,
           });
