@@ -382,6 +382,7 @@
         }}
       >
         <ContextMenu.Item
+          size="sm"
           on:click={() =>
             window.open(
               `${base}/constraints/edit/${constraint.id}${
