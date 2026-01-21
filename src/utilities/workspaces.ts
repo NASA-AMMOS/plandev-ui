@@ -56,6 +56,19 @@ export function joinPath(pathParts: (string | number | boolean)[]) {
   return pathParts.filter(filterEmpty).join(PATH_DELIMITER);
 }
 
+/**
+ * Removes the first path segment (typically the workspace name) from a full path.
+ * Use this when converting UI paths (which include workspace name) to API paths (which are relative to workspace root).
+ *
+ * @param fullPath - Path with workspace name as first segment (e.g., "My Workspace (1)/folder/file.txt")
+ * @returns Path without the first segment (e.g., "folder/file.txt")
+ */
+export function removeFirstPathSegment(fullPath: string): string {
+  const parts = fullPath.split(PATH_DELIMITER);
+  parts.shift();
+  return parts.join(PATH_DELIMITER);
+}
+
 export type TreeSortComparator = (a: WorkspaceTreeNode, b: WorkspaceTreeNode) => number;
 
 /**

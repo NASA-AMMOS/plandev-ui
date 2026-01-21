@@ -7,7 +7,7 @@
   import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
-  import { cleanPath, joinPath } from '../../utilities/workspaces.js';
+  import { joinPath, removeFirstPathSegment } from '../../utilities/workspaces.js';
   import InputInternal from '../form/Input.svelte';
   import WorkspaceTreeView from '../workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
   import Modal from './Modal.svelte';
@@ -85,12 +85,14 @@
         filesToUpload = [...selectedFileGroupings.convertableFiles, ...selectedFileGroupings.uploadableFiles];
       }
 
+      // targetDirectory includes workspace name as first segment (e.g., "workspace/folder/subfolder")
+      // Remove it since the API expects paths relative to the workspace root
       dispatch('confirm', {
         filesToConvert,
         filesToUpload,
         shouldKeepOriginalFiles,
         shouldOverwrite,
-        targetDirectory: cleanPath(joinPath([targetDirectory.replace(new RegExp(`^${currentWorkspace.name}`), '')])),
+        targetDirectory: removeFirstPathSegment(targetDirectory),
       });
     }
   }

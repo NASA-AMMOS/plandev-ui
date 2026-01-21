@@ -19,6 +19,7 @@ import {
   incrementFilename,
   joinPath,
   mapWorkspaceTreePaths,
+  removeFirstPathSegment,
   removeRedundantNodes,
   separateFilenameFromPath,
   shouldNodeBeVisible,
@@ -96,6 +97,27 @@ describe('Workspace utility function tests', () => {
       expect(joinPath(['foo', '', 'bar'])).toEqual('foo/bar');
       expect(joinPath(['', 'foo', 'bar'])).toEqual('foo/bar');
       expect(joinPath(['', 'foo', 'bar', ''])).toEqual('foo/bar');
+    });
+  });
+
+  describe('removeFirstPathSegment', () => {
+    test('Should remove the first segment from a path', () => {
+      expect(removeFirstPathSegment('workspace/folder/file.txt')).toEqual('folder/file.txt');
+      expect(removeFirstPathSegment('workspace/file.txt')).toEqual('file.txt');
+    });
+
+    test('Should handle workspace names with special characters like parentheses', () => {
+      expect(removeFirstPathSegment('My Workspace (1)/folder/file.txt')).toEqual('folder/file.txt');
+      expect(removeFirstPathSegment('Test (copy)/subfolder')).toEqual('subfolder');
+      expect(removeFirstPathSegment('Project [v2.0]/src/index.ts')).toEqual('src/index.ts');
+    });
+
+    test('Should return empty string when path has only one segment', () => {
+      expect(removeFirstPathSegment('workspace')).toEqual('');
+    });
+
+    test('Should handle empty string', () => {
+      expect(removeFirstPathSegment('')).toEqual('');
     });
   });
 
