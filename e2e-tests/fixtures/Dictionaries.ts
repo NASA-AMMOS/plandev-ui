@@ -1,8 +1,7 @@
-import type { Locator, Page } from '@playwright/test';
-import { expect } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { readFile } from 'fs/promises';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
-import { setFileInputByBuffer } from '../utilities/helpers';
+import { filterAgGridTable, setFileInputByBuffer } from '../utilities/helpers';
 
 export enum DictionaryType {
   CommandDictionary = 'Command Dictionary',
@@ -242,25 +241,8 @@ export class Dictionaries {
   }
 
   private async filterTable(table: Locator, dictionaryName: string, type: DictionaryType) {
-    await table.waitFor({ state: 'attached' });
-    await table.waitFor({ state: 'visible' });
-    let nameColumnHeader: Locator | undefined = undefined;
-
-    if (type === DictionaryType.SequenceAdaptation) {
-      nameColumnHeader = table.getByRole('columnheader', { name: 'Name' });
-    } else {
-      nameColumnHeader = table.getByRole('columnheader', { name: 'Mission' });
-    }
-
-    await nameColumnHeader.hover();
-
-    const filterIcon = await nameColumnHeader.locator('.ag-icon-filter');
-    await expect(filterIcon).toBeVisible();
-    await filterIcon.click();
-    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(dictionaryName);
-    await expect(table.getByRole('row', { name: dictionaryName })).toBeVisible();
-    await this.page.keyboard.press('Escape');
-    await this.page.locator('.ag-popup').waitFor({ state: 'hidden' });
+    const columnName = type === DictionaryType.SequenceAdaptation ? 'Name' : 'Mission';
+    await filterAgGridTable(this.page, table, dictionaryName, { columnName });
   }
 
   async goto() {

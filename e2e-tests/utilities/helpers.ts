@@ -1,4 +1,4 @@
-import { Cookie, Locator, Page } from '@playwright/test';
+import { expect, type Cookie, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
 export function getUserCookieValue(cookies: Cookie[]): string | undefined {
@@ -108,4 +108,45 @@ export async function setFileInputByFilepath(page: Page, fileInput: Locator, fil
       return;
     }
   }
+}
+
+/**
+ * Filter an AG Grid table by a value in a specific column.
+ * Opens the column filter popup, enters the filter value, waits for the row to appear,
+ * then closes the popup by clicking outside it.
+ *
+ * @param page - The Playwright page object
+ * @param table - The AG Grid table locator
+ * @param filterValue - The value to filter by
+ * @param options - Optional configuration
+ * @param options.columnName - The column header name to filter on (default: 'Name')
+ * @param options.exactColumnMatch - Whether to use exact matching for column header (default: false)
+ */
+export async function filterAgGridTable(
+  page: Page,
+  table: Locator,
+  filterValue: string,
+  options: { columnName?: string; exactColumnMatch?: boolean } = {},
+): Promise<void> {
+  const { columnName = 'Name', exactColumnMatch = false } = options;
+
+  await table.waitFor({ state: 'attached' });
+  await table.waitFor({ state: 'visible' });
+
+  const columnHeader = table.getByRole('columnheader', { exact: exactColumnMatch, name: columnName });
+  await columnHeader.hover();
+
+  const filterIcon = columnHeader.locator('.ag-icon-filter');
+  await expect(filterIcon).toBeVisible();
+  await filterIcon.click();
+
+  // Wait for the filter input to be visible in the popup
+  const filterInput = page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first();
+  await filterInput.waitFor({ state: 'visible', timeout: 10000 });
+  await filterInput.fill(filterValue);
+  await expect(table.getByRole('row', { name: filterValue })).toBeVisible({ timeout: 10000 });
+
+  // Close the filter popup by clicking outside of it
+  await table.click({ position: { x: 5, y: 5 } });
+  await page.locator('.ag-popup').waitFor({ state: 'hidden', timeout: 5000 });
 }

@@ -1,7 +1,6 @@
-import type { Locator, Page } from '@playwright/test';
-import { expect } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
-import { setFileInputByFilepath } from '../utilities/helpers.js';
+import { filterAgGridTable, setFileInputByFilepath } from '../utilities/helpers.js';
 import { Models } from './Models.js';
 
 export class Plans {
@@ -109,19 +108,7 @@ export class Plans {
   }
 
   async filterTable(planName: string) {
-    await this.table.waitFor({ state: 'attached' });
-    await this.table.waitFor({ state: 'visible' });
-
-    const nameColumnHeader = this.table.getByRole('columnheader', { exact: true, name: 'Name' });
-    await nameColumnHeader.hover();
-
-    const filterIcon = nameColumnHeader.locator('.ag-icon-filter');
-    await expect(filterIcon).toBeVisible();
-    await filterIcon.click();
-    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(planName);
-    // Allow more time for AG Grid to filter the data
-    await expect(this.table.getByRole('row', { name: planName })).toBeVisible({ timeout: 10000 });
-    await this.page.keyboard.press('Escape');
+    await filterAgGridTable(this.page, this.table, planName, { exactColumnMatch: true });
   }
 
   async getPlanId(planName = this.planName) {

@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { fillEditorText } from '../utilities/editor.js';
+import { filterAgGridTable } from '../utilities/helpers.js';
 
 export class Constraints {
   closeButton: Locator;
@@ -84,18 +85,7 @@ export class Constraints {
   }
 
   private async filterTable(constraintName: string) {
-    await this.table.waitFor({ state: 'attached' });
-    await this.table.waitFor({ state: 'visible' });
-
-    const nameColumnHeader = await this.table.getByRole('columnheader', { name: 'Name' });
-    await nameColumnHeader.hover();
-
-    const filterIcon = await nameColumnHeader.locator('.ag-icon-filter');
-    await expect(filterIcon).toBeVisible();
-    await filterIcon.click();
-    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(constraintName);
-    await expect(this.table.getByRole('row', { name: constraintName })).toBeVisible();
-    await this.page.keyboard.press('Escape');
+    await filterAgGridTable(this.page, this.table, constraintName);
   }
 
   async goto() {

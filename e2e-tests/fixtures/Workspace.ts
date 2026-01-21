@@ -237,7 +237,9 @@ export class Workspace {
 
   updatePage(page: Page): void {
     this.editSequenceButton = page.getByRole('button', { name: 'Edit Sequence' });
-    this.fileInput = page.getByRole('textbox', { name: 'File(s)' });
+    // File input is detected as a button in Chrome for Testing (Playwright 1.57+)
+    // Use locator chain: find by aria-label within the modal
+    this.fileInput = page.locator('#modal-container input[type="file"][aria-label="File(s)"]');
     this.folderNameInput = page.locator('#modal-container').getByRole('textbox', { name: 'Folder Name' });
     this.navButtonSequences = page.locator('.nav-button:has-text("Sequences")');
     this.navButtonSequencesMenu = this.navButtonSequences.getByRole('menu');

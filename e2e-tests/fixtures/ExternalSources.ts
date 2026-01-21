@@ -255,9 +255,15 @@ export class ExternalSources {
 
   async linkDerivationGroup(derivationGroupName: string, sourceTypeName: string) {
     // Assumes the Manage Derivation Groups modal is already showing
-    await this.page.getByRole('row', { name: derivationGroupName }).getByRole('checkbox').check();
-    await expect(this.page.getByRole('row', { name: derivationGroupName }).getByRole('checkbox')).toBeChecked();
-    await this.page.getByRole('button', { name: 'Update' }).click();
+    const row = this.page.getByRole('row', { name: derivationGroupName });
+    // Use click with force for AG Grid checkboxes - check/uncheck fails with Chrome for Testing
+    const checkbox = row.getByRole('checkbox');
+    const isAlreadyChecked = await checkbox.isChecked();
+    if (!isAlreadyChecked) {
+      await checkbox.click({ force: true });
+      await expect(checkbox).toBeChecked();
+      await this.page.getByRole('button', { name: 'Update' }).click();
+    }
     await this.page.getByRole('button', { name: 'Close' }).click();
     await expect(this.page.getByRole('button', { exact: true, name: sourceTypeName })).toBeVisible();
   }
