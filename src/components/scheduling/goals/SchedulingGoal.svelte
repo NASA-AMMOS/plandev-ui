@@ -297,7 +297,7 @@
           }}
         >
           <option value={null}>Always use latest</option>
-          {#each revisions as revision, index}
+          {#each revisions as revision, index (revision)}
             <option value={revision}>{revision}{index === 0 ? ' (Latest)' : ''}</option>
           {/each}
         </select>
