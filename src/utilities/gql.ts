@@ -1177,6 +1177,19 @@ const gql = {
     }
   `,
 
+  GET_CONSTRAINT_PROCEDURE_EFFECTIVE_ARGUMENTS_BULK: `#graphql
+    query GetConstraintProcedureEffectiveArgumentsBulk($arguments: [ProcedureEffectiveArgumentsInput!]!) {
+      constraintProcedureEffectiveArgumentsBulk: ${Queries.GET_CONSTRAINT_PROCEDURE_EFFECTIVE_ARGUMENTS_BULK}(
+        arguments: $arguments
+      ) {
+        arguments
+        errors
+        id
+        revision
+      }
+    }
+  `,
+
   GET_EFFECTIVE_ACTIVITY_ARGUMENTS_BULK: `#graphql
     query GetEffectiveActivityArgumentsBulk($modelId: Int!, $activities: [EffectiveArgumentsInput!]!) {
       effectiveActivityArgumentsBulk: ${Queries.GET_ACTIVITY_EFFECTIVE_ARGUMENTS_BULK}(
@@ -1715,6 +1728,19 @@ const gql = {
         action_permissions
         function_permissions
         workspace_permissions
+      }
+    }
+  `,
+
+  GET_SCHEDULING_PROCEDURE_EFFECTIVE_ARGUMENTS_BULK: `#graphql
+    query GetSchedulingProcedureEffectiveArgumentsBulk($arguments: [ProcedureEffectiveArgumentsInput!]!) {
+      schedulingProcedureEffectiveArgumentsBulk: ${Queries.GET_SCHEDULING_PROCEDURE_EFFECTIVE_ARGUMENTS_BULK}(
+        arguments: $arguments
+      ) {
+        arguments
+        errors
+        id
+        revision
       }
     }
   `,

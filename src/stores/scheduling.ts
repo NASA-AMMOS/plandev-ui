@@ -2,6 +2,7 @@ import { keyBy } from 'lodash-es';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import { Status } from '../enums/status';
 import { plan, planRevision } from '../stores/plan';
+import type { ArgumentsMap, SchedulingGoalEffectiveArgumentsMap } from '../types/parameter';
 import type {
   SchedulingConditionDefinition,
   SchedulingConditionMetadata,
@@ -297,4 +298,20 @@ export const enableScheduling: Readable<boolean> = derived(
 
 export function resetPlanSchedulingStores() {
   schedulingPlanSpecification.updateValue(() => null);
+}
+
+/* Procedural scheduling goal effective arguments */
+
+// Store keyed by "invocationId_revision" -> ArgumentsMap for direct lookup
+export const schedulingGoalArgumentDefaultsMap: Writable<SchedulingGoalEffectiveArgumentsMap> = writable({});
+
+export function getSchedulingGoalDefaultsKey(invocationId: number, revision: number): string {
+  return `${invocationId}_${revision}`;
+}
+
+export function setSchedulingGoalArgumentDefaults(invocationId: number, revision: number, args: ArgumentsMap): void {
+  schedulingGoalArgumentDefaultsMap.update(current => ({
+    ...current,
+    [getSchedulingGoalDefaultsKey(invocationId, revision)]: args,
+  }));
 }

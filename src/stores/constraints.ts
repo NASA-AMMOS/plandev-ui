@@ -10,6 +10,7 @@ import type {
   ConstraintResultWithName,
   ConstraintRun,
 } from '../types/constraint';
+import type { ArgumentsMap, ConstraintEffectiveArgumentsMap } from '../types/parameter';
 import gql from '../utilities/gql';
 import { planId, planStartTimeMs } from './plan';
 import { simulationDatasetLatestId } from './simulation';
@@ -334,4 +335,20 @@ export function resetConstraintStores(): void {
 
 export function resetConstraintStoresForSimulation(): void {
   checkConstraintsQueryStatus.set(Status.Unchecked);
+}
+
+/* Procedural constraint effective arguments */
+
+// Store keyed by "invocationId_revision" -> ArgumentsMap for direct lookup
+export const constraintArgumentDefaultsMap: Writable<ConstraintEffectiveArgumentsMap> = writable({});
+
+export function getConstraintDefaultsKey(invocationId: number, revision: number): string {
+  return `${invocationId}_${revision}`;
+}
+
+export function setConstraintArgumentDefaults(invocationId: number, revision: number, args: ArgumentsMap): void {
+  constraintArgumentDefaultsMap.update(current => ({
+    ...current,
+    [getConstraintDefaultsKey(invocationId, revision)]: args,
+  }));
 }
