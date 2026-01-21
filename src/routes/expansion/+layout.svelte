@@ -10,11 +10,10 @@
   import Nav from '../../components/app/Nav.svelte';
   import NavButton from '../../components/app/NavButton.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
-  import { userStore } from '../../lib/stores/auth';
 </script>
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
-  <Nav user={$userStore}>
+  <Nav>
     <span class="expansion-title" slot="title">Expansion</span>
 
     <svelte:fragment slot="right">

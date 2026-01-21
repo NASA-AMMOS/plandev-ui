@@ -48,7 +48,7 @@
     ),
   ]);
 
-  $: hasPermission = featurePermissions.sequences.canCreate(user);
+  $: hasPermission = featurePermissions.workspaces.canCreate(user);
 
   $: createButtonEnabled =
     $workspaces !== null &&

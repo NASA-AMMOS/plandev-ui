@@ -1,5 +1,6 @@
+import { getContext } from 'svelte';
 import { derived, type Readable } from 'svelte/store';
-import type { UserId } from '../types/app';
+import type { UserId, UserStore } from '../types/app';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
 
@@ -20,3 +21,6 @@ export const users = gqlSubscribable<UserId[] | null>(gql.SUB_USERS, {}, null, u
 
 /* Loading stores. */
 export const initialUsersLoading: Readable<boolean> = derived([users], ([$users]) => !$users);
+
+/* Context helpers. */
+export const getUserStore = (): UserStore => getContext('user');

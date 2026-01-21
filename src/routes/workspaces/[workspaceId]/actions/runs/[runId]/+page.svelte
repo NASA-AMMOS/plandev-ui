@@ -3,12 +3,14 @@
 <script lang="ts">
   import PageTitle from '../../../../../../components/app/PageTitle.svelte';
   import ActionRun from '../../../../../../components/sequencing/actions/ActionRun.svelte';
-  import { userStore } from '../../../../../../lib/stores/auth';
+  import { getUserStore } from '../../../../../../stores/user';
   import type { PageData } from './$types';
 
   export let data: PageData;
+
+  const user = getUserStore();
 </script>
 
 <PageTitle title="Workspace: {data.initialWorkspace?.name} - Actions - Run {data.initialActionRun?.id}" />
 
-<ActionRun user={$userStore} initialActionRun={data.initialActionRun} workspaceId={data.initialWorkspace?.id ?? null} />
+<ActionRun user={$user} initialActionRun={data.initialActionRun} workspaceId={data.initialWorkspace?.id ?? null} />

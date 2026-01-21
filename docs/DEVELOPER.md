@@ -33,6 +33,8 @@ Before you can run aerie-ui you must install and configure the following product
   nvm use
   ```
 
+  **Note**: Ensure that you have your shell loading your profile settings (e.g. .bashrc_profile, .profile, etc), otherwise the VSCode tasks won't be starting the terminal up with the correct settings
+
 - [OpenJDK Temurin LTS](https://adoptium.net/temurin/) which is used to build the Java-based Aerie services. If you're on OSX you can use [brew](https://brew.sh/):
 
   ```shell

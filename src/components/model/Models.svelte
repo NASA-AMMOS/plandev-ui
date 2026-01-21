@@ -105,6 +105,7 @@
         filter: 'number',
         headerName: 'ID',
         resizable: true,
+        sort: 'desc',
         sortable: true,
         suppressAutoSize: true,
         suppressSizeToFit: true,
@@ -220,9 +221,15 @@
       };
       selectedModel = {
         ...selectedModel,
-        refresh_activity_type_logs: [{ error: null, error_message: null, pending: true, success: false }],
-        refresh_model_parameter_logs: [{ error: null, error_message: null, pending: true, success: false }],
-        refresh_resource_type_logs: [{ error: null, error_message: null, pending: true, success: false }],
+        refresh_activity_type_logs: [
+          { created_at: new Date().toISOString(), error: null, error_message: null, pending: true, success: false },
+        ],
+        refresh_model_parameter_logs: [
+          { created_at: new Date().toISOString(), error: null, error_message: null, pending: true, success: false },
+        ],
+        refresh_resource_type_logs: [
+          { created_at: new Date().toISOString(), error: null, error_message: null, pending: true, success: false },
+        ],
       };
 
       // introduce delay to allow users to see a transition in case retriggering is instantaneous

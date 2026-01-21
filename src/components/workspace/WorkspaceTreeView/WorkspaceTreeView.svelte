@@ -1,28 +1,26 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
-  import {
-    ArrowUpFromLine,
-    Copy,
-    FileOutput,
-    FilePlus,
-    FolderOutput,
-    FolderPlus,
-    PencilLine,
-    Trash2,
-  } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { WorkspaceContentType } from '../../../enums/workspace';
+  import type { ActionDefinition } from '../../../types/actions';
   import type { User } from '../../../types/app';
-  import type { Workspace, WorkspaceNodeEvent } from '../../../types/workspace';
+  import type {
+    ActionParameterPair,
+    Workspace,
+    WorkspaceNodeEvent,
+    WorkspaceNodeRunActionEvent,
+    WorkspaceNodesEvent,
+  } from '../../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
-  import { permissionHandler } from '../../../utilities/permissionHandler';
   import { featurePermissions } from '../../../utilities/permissions';
+  import { getAvailableActionsForNodes } from '../../../utilities/workspaces';
   import ContextMenuInternal from '../../context-menu/ContextMenu.svelte';
+  import WorkspaceContextMenuContents from '../WorkspaceContextMenuContents.svelte';
   import WorkspaceTreeViewNode from './WorkspaceTreeViewNode.svelte';
 
+  export let actions: ActionDefinition[] = [];
   export let enableContextMenu: boolean = true;
   export let selectedTreeNodePath: string | null | undefined = undefined;
   export let showFiles: boolean = true;
@@ -33,20 +31,28 @@
 
   const dispatch = createEventDispatcher<{
     copyFileLocation: string;
+    copyFullPath: string;
+    deleteNodes: WorkspaceNodesEvent;
     importFile: string;
-    moveToWorkspace: string;
+    moveNodes: WorkspaceNodesEvent;
+    moveNodesToWorkspace: WorkspaceNodesEvent;
     newFolder: string;
     newSequence: string;
     nodeClicked: WorkspaceNodeEvent;
-    nodeDelete: WorkspaceNodeEvent;
-    nodeMove: WorkspaceNodeEvent;
-    nodeRename: WorkspaceNodeEvent;
+    renameNode: WorkspaceNodeEvent;
+    runAction: WorkspaceNodeRunActionEvent;
   }>();
 
+  let actionsForSelection: ActionParameterPair[] = [];
   let contextMenu: ContextMenuInternal;
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
   let hasEditPermission: boolean = false;
   let hasDeletePermission: boolean = false;
+  let hasCreateActionPermission: boolean = false;
+
+  $: if (contextMenuNode) {
+    actionsForSelection = getAvailableActionsForNodes(actions, [contextMenuNode]);
+  }
 
   function onNodeRightClicked({
     detail,
@@ -62,8 +68,9 @@
         fullPath: data.treeNodePath,
       };
       if (workspace) {
-        hasEditPermission = featurePermissions.workspace.canUpdate(user, workspace, contextMenuNode);
-        hasDeletePermission = featurePermissions.workspace.canDelete(user, workspace, contextMenuNode);
+        hasEditPermission = featurePermissions.workspace.canUpdate(user, workspace, contextMenuNode ?? undefined);
+        hasDeletePermission = featurePermissions.workspace.canDelete(user, workspace, contextMenuNode ?? undefined);
+        hasCreateActionPermission = featurePermissions.actionRun.canCreate(user, workspace);
       }
       contextMenu.show(event);
     }
@@ -75,28 +82,19 @@
 
   function onDeleteNode() {
     if (contextMenuNode) {
-      dispatch('nodeDelete', {
-        toggleState: true,
-        treeNode: contextMenuNode,
-        treeNodePath: contextMenuNode.fullPath,
-      });
+      dispatch('deleteNodes', { treeNodes: [contextMenuNode] });
     }
   }
 
   function onMoveNode() {
     if (contextMenuNode) {
-      dispatch('nodeMove', {
-        toggleState: true,
-        treeNode: contextMenuNode,
-        treeNodePath: contextMenuNode.fullPath,
-      });
+      dispatch('moveNodes', { treeNodes: [contextMenuNode] });
     }
   }
 
   function onRenameNode() {
     if (contextMenuNode) {
-      dispatch('nodeRename', {
-        toggleState: true,
+      dispatch('renameNode', {
         treeNode: contextMenuNode,
         treeNodePath: contextMenuNode.fullPath,
       });
@@ -132,109 +130,30 @@
     dispatch('copyFileLocation', targetPath);
   }
 
-  function onMoveToWorkspace() {
+  function onCopyFullPath() {
     let targetPath = contextMenuNode?.fullPath ?? '';
-    dispatch('moveToWorkspace', targetPath);
+    dispatch('copyFullPath', targetPath);
   }
 </script>
 
 <div class="h-auto pt-1">
   {#if enableContextMenu}
     <ContextMenuInternal bind:this={contextMenu} on:hide={onContextMenuHide}>
-      <ContextMenu.Group>
-        <ContextMenu.Item size="sm" on:click={onRenameNode} aria-label="Rename">
-          <div
-            class="flex items-center gap-2"
-            use:permissionHandler={{
-              hasPermission: hasEditPermission,
-              permissionError: 'You do not have permission to edit this workspace',
-            }}
-          >
-            <PencilLine size={14} />
-            Rename
-          </div>
-        </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onMoveNode} aria-label="Move/Copy">
-          <div
-            class="flex items-center gap-2"
-            use:permissionHandler={{
-              hasPermission: hasEditPermission,
-              permissionError: 'You do not have permission to edit this workspace',
-            }}
-          >
-            <FolderOutput size={14} />
-            Move/Copy
-          </div>
-        </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onDeleteNode} aria-label="Delete">
-          <div
-            class="flex items-center gap-2"
-            use:permissionHandler={{
-              hasPermission: hasDeletePermission,
-              permissionError: 'You do not have permission to delete this workspace',
-            }}
-          >
-            <Trash2 size={14} />
-            Delete
-          </div>
-        </ContextMenu.Item>
-      </ContextMenu.Group>
-      <ContextMenu.Separator />
-      <ContextMenu.Item size="sm" on:click={onCopyFileLocation} aria-label="Copy Link to">
-        <div
-          class="flex items-center gap-2"
-          use:permissionHandler={{
-            hasPermission: hasEditPermission,
-            permissionError: 'You do not have permission to edit this workspace',
-          }}
-        >
-          <Copy size={14} /> Copy {contextMenuNode?.type === WorkspaceContentType.Directory
-            ? 'Link to Directory'
-            : 'Download Link to File'}
-        </div>
-      </ContextMenu.Item>
-      <ContextMenu.Separator />
-      <ContextMenu.Item size="sm" on:click={onMoveToWorkspace} aria-label="Move to Workspace">
-        <div class="flex items-center gap-2">
-          <FileOutput size={14} /> Move to Workspace
-        </div>
-      </ContextMenu.Item>
-      <ContextMenu.Separator />
-      <ContextMenu.Group>
-        <ContextMenu.Item size="sm" on:click={onNewSequence} aria-label="New File">
-          <div
-            class="flex items-center gap-2"
-            use:permissionHandler={{
-              hasPermission: hasEditPermission,
-              permissionError: 'You do not have permission to edit this workspace',
-            }}
-          >
-            <FilePlus size={14} /> New File
-          </div>
-        </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onNewFolder} aria-label="New Folder">
-          <div
-            class="flex items-center gap-2"
-            use:permissionHandler={{
-              hasPermission: hasEditPermission,
-              permissionError: 'You do not have permission to edit this workspace',
-            }}
-          >
-            <FolderPlus size={14} /> New Folder
-          </div>
-        </ContextMenu.Item>
-        <ContextMenu.Item size="sm" on:click={onImportFile} aria-label="Upload File">
-          <div
-            class="flex items-center gap-2"
-            use:permissionHandler={{
-              hasPermission: hasEditPermission,
-              permissionError: 'You do not have permission to edit this workspace',
-            }}
-          >
-            <ArrowUpFromLine size={14} /> Upload File
-          </div>
-        </ContextMenu.Item>
-      </ContextMenu.Group>
+      <WorkspaceContextMenuContents
+        {actionsForSelection}
+        {hasEditPermission}
+        {hasDeletePermission}
+        {hasCreateActionPermission}
+        selectedWorkspaceNodes={contextMenuNode ? [contextMenuNode] : []}
+        on:rename={onRenameNode}
+        on:move={onMoveNode}
+        on:delete={onDeleteNode}
+        on:copyFileLocation={onCopyFileLocation}
+        on:copyFullPath={onCopyFullPath}
+        on:newFile={onNewSequence}
+        on:newFolder={onNewFolder}
+        on:importFile={onImportFile}
+      />
     </ContextMenuInternal>
   {/if}
   {#if showRootNode && treeNode}

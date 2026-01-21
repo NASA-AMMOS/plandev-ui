@@ -1,10 +1,9 @@
+import { browser } from '$app/environment';
 import { jwtDecode } from 'jwt-decode';
-import { derived, get, type Readable } from 'svelte/store';
-import type { BaseUser, User } from '../../types/app';
-import { computeRolesFromJWT } from '../../utilities/auth';
+import { derived, get, writable, type Readable } from 'svelte/store';
+import { restartSharedClient } from '../../stores/gqlClient';
 import { showFailureToast } from '../../utilities/toast';
 import type { MaybeToken } from '../types/oidc';
-import { userStore } from './auth';
 
 type CookieChanged = {
   domain: string;
@@ -35,6 +34,19 @@ declare global {
   }
 }
 
+// Store for the current access token (read from cookie)
+// Used only for computing refresh timing, not for user state
+const accessToken = writable<string | null>(null);
+
+// Initialize from cookie on load
+if (browser && document?.cookie) {
+  const cookies = document.cookie.split(/\s*;\s*/);
+  const tokenCookie = cookies.find(entry => entry.startsWith('accessToken='));
+  if (tokenCookie) {
+    accessToken.set(tokenCookie.split('accessToken=')[1]);
+  }
+}
+
 export function cookieStoreListener() {
   if (window && 'cookieStore' in window) {
     window.cookieStore.addEventListener('change', handleCookieStoreChange);
@@ -43,12 +55,9 @@ export function cookieStoreListener() {
     console.error('Cookie store is not available in this environment. It is *required* for automatic refresh of JWT.');
   }
 
-  // Delay is a `derived` value, ultimately from the user store... (see below).
+  // Delay is a `derived` value from the access token.
   // Whenever the delay changes, any prior timeout is cancelled and a new timeout
   // is created (using the new value of delay).
-  //
-  // We track an unsubscribe function to remove the cookie store change listener
-  // when the component is unmounted.
   const unsubscribe = delay.subscribe(value => {
     if (value) {
       console.debug(`Scheduling token refresh in ${value}ms`);
@@ -65,11 +74,14 @@ export function cookieStoreListener() {
   };
 }
 
-// The decoded access token contains a timestamp that indicates when
-// it will expire.
-export const accessTokenDecoded: Readable<MaybeToken> = derived(userStore, $userStore => {
-  if ($userStore && $userStore.token) {
-    return jwtDecode($userStore.token) as MaybeToken;
+// The decoded access token contains a timestamp that indicates when it will expire.
+export const accessTokenDecoded: Readable<MaybeToken> = derived(accessToken, $accessToken => {
+  if ($accessToken) {
+    try {
+      return jwtDecode($accessToken) as MaybeToken;
+    } catch {
+      return null;
+    }
   }
   return null;
 });
@@ -131,7 +143,17 @@ function reschedule(fn: () => Promise<void>, delay: number, prior: number | null
 /**
  * Handles changes and deletions to the cookie store.
  *
- * @param event: CookieChangeEvent - The event containing the changed or deleted cookies.
+ * Token refresh: Only restarts WebSocket to pick up new credentials from cookies.
+ * The user data (username, permissions) hasn't changed, so no need to invalidate page data.
+ *
+ * Role change: No action needed here. Role changes are initiated by Nav.svelte which:
+ * 1. Calls changeUserRole() -> POSTs to /auth/changeRole
+ * 2. Receives updated user with new permissions from server
+ * 3. Directly updates the user store via user.set(updatedUser)
+ * 4. The +layout.svelte reactive statement detects the role change and restarts WebSocket
+ *
+ * This handler just observes the cookie change as a side effect - the actual user state
+ * update has already happened through the proper channel (Nav.svelte -> API -> store).
  */
 const handleCookieStoreChange = async (ev: Event) => {
   const event = ev as CookieChangeEvent;
@@ -144,34 +166,24 @@ const handleCookieStoreChange = async (ev: Event) => {
     'deleted:',
     event.deleted.map(c => c.name),
   );
-  event.changed.forEach(async ({ name, value }) => {
+
+  let tokenRefreshed = false;
+
+  event.changed.forEach(({ name, value }) => {
     if (name === 'accessToken') {
-      // set user store
-      const baseUser: BaseUser = { id: null, token: value }; // id can be null because any time this function is used, its in the context of oidc, and we specifically catch id being null for oidc in computeRolesFromJWT
-      const user: User | null = await computeRolesFromJWT(baseUser, null); // null role because if after a refresh a user has been demoted, wouldn't want to retain an invalid role
-      userStore.set(user);
+      // Update internal store for refresh timing
+      accessToken.set(value);
+      tokenRefreshed = true;
     }
-    if (name === 'idToken') {
-      const decoded = jwtDecode(value);
-      // update user store
-      userStore.update(user => {
-        if (user && decoded.sub) {
-          return {
-            ...user,
-            id: decoded.sub,
-          };
-        }
-        return user;
-      });
-    }
-    if (name === 'activeRole') {
-      // update the user store
-      userStore.update(user => {
-        if (user) {
-          user.activeRole = value;
-        }
-        return user;
-      });
-    }
+    // Note: activeRole changes are handled by Nav.svelte which updates the user store
+    // directly after receiving the updated user from the server. The +layout.svelte
+    // reactive statement then detects the role change and restarts the WebSocket.
   });
+
+  if (tokenRefreshed) {
+    // Token refresh only - user data hasn't changed, just restart WebSocket
+    // to pick up new credentials from cookies on next connection
+    console.debug('Token refreshed, restarting WebSocket with new credentials...');
+    restartSharedClient();
+  }
 };

@@ -9,13 +9,13 @@
   import TimelineLineLayerIcon from '../../../../assets/timeline-line-layer.svg?component';
   import TimelineXRangeLayerIcon from '../../../../assets/timeline-x-range-layer.svg?component';
   import { ViewDiscreteLayerColorPresets, ViewLineLayerColorPresets } from '../../../../constants/view';
-  import { externalEventTypes } from '../../../../stores/external-event';
   import { externalResourceNames, resourceTypes } from '../../../../stores/simulation';
   import type { RadioButtonId } from '../../../../types/radio-buttons';
   import type {
     ActivityLayer,
     Axis,
     ChartType,
+    ExternalEventLayer,
     ExternalEventLayerFilter,
     Layer,
     ResourceLayerFilter,
@@ -29,13 +29,15 @@
   import SearchableDropdown from '../../../ui/SearchableDropdown.svelte';
   import TimelineEditorLayerSettings from '../TimelineEditorLayerSettings.svelte';
   import ActivityFilterBuilder from './ActivityFilterBuilder.svelte';
+  import ExternalEventFilterBuilder from './ExternalEventFilterBuilder.svelte';
 
   export let layer: Layer;
   export let yAxes: Axis[] = [];
 
-  let filterMenu: ActivityFilterBuilder;
+  let activityFilterMenu: ActivityFilterBuilder;
   let color: string = '';
   let colorPresets: string[] = [];
+  let externalEventFilterMenu: ExternalEventFilterBuilder;
   let isColorScheme: boolean = false;
   let name: string = '';
 
@@ -88,8 +90,12 @@
     return name;
   }
 
-  function toggleFilterMenu() {
-    filterMenu.toggle();
+  function toggleActivityFilterMenu() {
+    activityFilterMenu.toggle();
+  }
+
+  function toggleExternalEventFilterMenu() {
+    externalEventFilterMenu.toggle();
   }
 
   function getActivityLayerFilterCount(layer: ActivityLayer) {
@@ -98,6 +104,17 @@
       (layer.filter.activity?.dynamic_type_filters?.length ?? 0) +
       (layer.filter.activity?.other_filters?.length ?? 0) +
       (layer.filter.activity?.type_subfilters ? Object.keys(layer.filter.activity?.type_subfilters).length : 0)
+    );
+  }
+
+  function getExternalEventLayerFilterCount(layer: ExternalEventLayer) {
+    return (
+      (layer.filter.externalEvent?.static_types?.length ?? 0) +
+      (layer.filter.externalEvent?.dynamic_type_filters?.length ?? 0) +
+      (layer.filter.externalEvent?.other_filters?.length ?? 0) +
+      (layer.filter.externalEvent?.type_subfilters
+        ? Object.keys(layer.filter.externalEvent?.type_subfilters).length
+        : 0)
     );
   }
 
@@ -130,12 +147,12 @@
         filter={layer.filter.activity}
         on:filterChange
         on:rename={({ detail: { name: newName } }) => dispatch('updateLayer', { property: 'name', value: newName })}
-        bind:this={filterMenu}
+        bind:this={activityFilterMenu}
       >
         <button
           aria-label="Toggle activity filter builder modal"
           slot="trigger"
-          on:click|stopPropagation={toggleFilterMenu}
+          on:click|stopPropagation={toggleActivityFilterMenu}
           class="st-button icon w-full"
           style:position="relative"
           use:tooltip={{
@@ -143,11 +160,11 @@
             placement: 'top',
           }}
         >
-          <div class="activity-layer-name st-select">
-            <div class="activity-layer-name-text">
+          <div class="layer-name st-select">
+            <div class="layer-name-text">
               {name || 'Activity Layer'}
             </div>
-            <div class="activity-layer-name-badge">
+            <div class="layer-name-badge">
               {#if filterCount > 0}
                 <div>{filterCount}</div>
               {/if}
@@ -172,20 +189,38 @@
         <ChevronDownIcon slot="icon" />
       </SearchableDropdown>
     {:else if isExternalEventLayer(layer)}
-      <SearchableDropdown
-        allowMultiple
-        selectedOptionLabel={layer.name}
-        showPlaceholderOption={false}
-        className="w-full"
-        placeholder="Select Event Types"
-        selectTooltip="Select Event Types"
-        searchPlaceholder="Filter event types"
-        selectedOptionValues={layer.filter.externalEvent?.event_types ?? []}
-        options={$externalEventTypes.map(type => ({ display: type.name, value: type.name }))}
-        on:change={({ detail: values }) => dispatch('filterChange', { filter: { event_types: values } })}
+      {@const filterCount = getExternalEventLayerFilterCount(layer)}
+      <ExternalEventFilterBuilder
+        layerName={layer.name}
+        filter={layer.filter.externalEvent}
+        on:filterChange
+        on:rename={({ detail: { name: newName } }) => dispatch('updateLayer', { property: 'name', value: newName })}
+        bind:this={externalEventFilterMenu}
       >
-        <ChevronDownIcon slot="icon" />
-      </SearchableDropdown>
+        <button
+          aria-label="Toggle external event filter builder modal"
+          slot="trigger"
+          on:click|stopPropagation={toggleExternalEventFilterMenu}
+          class="st-button icon w-full"
+          style:position="relative"
+          use:tooltip={{
+            content: `Filter External Events${filterCount > 0 ? ` (${filterCount} applied)` : ''}`,
+            placement: 'top',
+          }}
+        >
+          <div class="layer-name st-select">
+            <div class="layer-name-text">
+              {name || 'External Event Layer'}
+            </div>
+            <div class="layer-name-badge">
+              {#if filterCount > 0}
+                <div>{filterCount}</div>
+              {/if}
+              <FilterIcon />
+            </div>
+          </div></button
+        >
+      </ExternalEventFilterBuilder>
     {/if}
   </div>
   <div class="actions">
@@ -199,7 +234,7 @@
         </RadioButton>
       </RadioButtons>
     {/if}
-    {#if !isActivityLayer(layer)}
+    {#if !isActivityLayer(layer) && !isExternalEventLayer(layer)}
       <TimelineEditorLayerSettings
         {layer}
         on:input={event => dispatch('updateLayer', { property: event.detail.name, value: event.detail.value })}
@@ -258,7 +293,7 @@
     height: min-content;
   }
 
-  .activity-layer-name {
+  .layer-name {
     align-items: center;
     display: flex;
     flex: 1;
@@ -268,19 +303,19 @@
     padding: 0px 4px;
   }
 
-  .activity-layer-name-text {
+  .layer-name-text {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .activity-layer-name-badge {
+  .layer-name-badge {
     align-items: center;
     display: flex;
     gap: 4px;
   }
 
-  .activity-layer-name-badge > div {
+  .layer-name-badge > div {
     background: var(--st-gray-15);
     border-radius: 2px;
     min-width: 16px;

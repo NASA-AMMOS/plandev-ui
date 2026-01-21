@@ -10,6 +10,10 @@ export type AssetWithAuthor<T = any> = Partial<T> & {
   author: UserId;
 };
 
+export type AssetWithCollaborators<T = any> = Partial<T> & {
+  collaborators: (Record<string, any> & { collaborator: UserId })[];
+};
+
 export type ModelWithOwner = Pick<Model, 'id' | 'owner'>;
 
 export type PermissibleQueriesMap = Record<string, true>;
@@ -45,6 +49,8 @@ export type UpdatePermissionCheck<T = AssetWithOwner> = (user: User | null, asse
 export type RolePermission =
   | 'NO_CHECK'
   | 'OWNER'
+  | 'COLLABORATOR'
+  | 'OWNER_COLLABORATOR'
   | 'MISSION_MODEL_OWNER'
   | 'PLAN_OWNER'
   | 'PLAN_COLLABORATOR'
@@ -60,6 +66,7 @@ export type RolePermissionResponse = {
   action_permissions: Record<string, RolePermission>;
   function_permissions: Record<string, RolePermission>;
   role: UserRole;
+  workspace_permissions: Record<string, RolePermission>;
 };
 
 export type RolePermissionsMap = Record<string, RolePermission>;

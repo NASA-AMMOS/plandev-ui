@@ -1,8 +1,10 @@
 type ValueSchemaMetadata = {
+  description?: string; // TODO: This action specific, we should split this out into its own type and set of components
   metadata?: {
     description?: {
       value: string;
     };
+    item_order?: string[];
     unit?: {
       value: string;
     };
@@ -54,6 +56,7 @@ export type ValueSchemaVariant = {
 
 export type ValueSchemaOption = {
   display: string;
+  type?: string;
   value: string;
 };
 

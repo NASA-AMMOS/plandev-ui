@@ -3,25 +3,21 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import ChevronRightIcon from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
-  import PhoenixIcon from '../../../../assets/aerie-phoenix-logo.svg?component';
   import Nav from '../../../../components/app/Nav.svelte';
   import CssGrid from '../../../../components/ui/CssGrid.svelte';
-  import { userStore } from '../../../../lib/stores/auth';
   import type { Workspace } from '../../../../types/workspace';
   import { getWorkspacesUrl } from '../../../../utilities/routes';
-  import type { PageData } from './$types';
+  import type { LayoutData } from './$types';
 
-  export let data: PageData;
+  export let data: LayoutData;
 
   let workspace: Workspace | null = data.initialWorkspace;
 </script>
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
-  <Nav user={$userStore}>
+  <Nav>
     <div class="workspace-title" slot="title">
-      <a class="app-icon link flex flex-nowrap" href={getWorkspacesUrl(base)}>
-        <PhoenixIcon height={16} />Sequence Workspaces
-      </a>
+      <a class="app-icon link flex flex-nowrap" href={getWorkspacesUrl(base)}> Sequence Workspaces </a>
       {#if workspace}
         <span class="icon-wrapper">
           <ChevronRightIcon />

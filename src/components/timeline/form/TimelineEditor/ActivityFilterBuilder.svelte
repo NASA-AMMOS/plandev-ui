@@ -27,7 +27,7 @@
   import MenuItem from '../../../menus/MenuItem.svelte';
   import CssGrid from '../../../ui/CssGrid.svelte';
   import CssGridGutter from '../../../ui/CssGridGutter.svelte';
-  import ActivityTypeResult from './ActivityTypeResult.svelte';
+  import ActivityTypeResult from './FilterTypeResult.svelte';
   import Draggable from './Draggable.svelte';
   import DynamicFilter from './DynamicFilter.svelte';
 

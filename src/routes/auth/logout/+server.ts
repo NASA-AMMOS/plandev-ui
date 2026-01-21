@@ -10,7 +10,9 @@ export const POST: RequestHandler = async event => {
       ? await reqGatewayForwardCookies<boolean>('/auth/logoutSSO', event.request.headers.get('cookie') ?? '', base)
       : true;
 
-  event.cookies.delete('activeRole', { path: '/' });
-  event.cookies.delete('user', { path: '/' });
+// Use event.cookies.delete() for consistent cookie handling
+  event.cookies.delete('activeRole', { path: `${base}/` });
+  event.cookies.delete('user', { path: `${base}/` });
+
   return json({ message: 'Logout successful', success: invalidated });
 };

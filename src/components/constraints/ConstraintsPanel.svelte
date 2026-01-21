@@ -26,7 +26,7 @@
     setConstraintVisibility,
   } from '../../stores/constraints';
   import { field } from '../../stores/form';
-  import { plan, planReadOnly, viewTimeRange } from '../../stores/plan';
+  import { plan, planModelId, planReadOnly, viewTimeRange } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import { simulationStatus } from '../../stores/simulation';
   import type { User } from '../../types/app';
@@ -120,7 +120,6 @@
                 ),
               })) ?? null,
           },
-          success: constraintResponse.success,
           type: constraintResponse.type,
         };
       }
@@ -457,7 +456,7 @@
               hasEditPermission={hasSpecEditPermission}
               hasDeletePermission={hasSpecEditPermission}
               hasReadPermission={featurePermissions.constraints.canRead(user)}
-              modelId={$plan?.model.id}
+              modelId={$planModelId}
               shouldShowUpButton={(constraintPlanSpec?.order ?? 0) > 0}
               shouldShowDownButton={specIndex < filteredConstraintPlanSpecifications.length - 1}
               totalViolationCount={$constraintResponseMap[constraintPlanSpec.constraint_id]?.[

@@ -92,7 +92,6 @@
   import Panel from '../../../components/ui/Panel.svelte';
   import SectionTitle from '../../../components/ui/SectionTitle.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
-  import { userStore } from '../../../lib/stores/auth';
   import { constraints, constraintsMap, initialConstraintsLoading } from '../../../stores/constraints';
   import { initialModel, model, resetModelStores } from '../../../stores/model';
   import {
@@ -103,7 +102,7 @@
     schedulingGoals,
     schedulingGoalsMap,
   } from '../../../stores/scheduling';
-  import { initialUsersLoading, users } from '../../../stores/user';
+  import { getUserStore, initialUsersLoading, users } from '../../../stores/user';
   import { initialViewsLoading, views } from '../../../stores/views';
   import type { User, UserId } from '../../../types/app';
   import type {
@@ -137,6 +136,8 @@
   import type { PageData } from './$types';
 
   export let data: PageData;
+
+  const user = getUserStore();
 
   let hasCreatePermission: boolean = false;
   let hasEditSpecPermission: boolean = false;
@@ -173,7 +174,6 @@
   let selectedSpecificationsList: AssociationSpecification[] = [];
   let selectedAssociation: Association = 'constraint';
   let selectedNumberOfPrivateAssociations: number = 0;
-  let user: User | null = null;
   let newConstraintCounter: number = 0;
   let newConditionCounter: number = 0;
   let newGoalCounter: number = 0;
@@ -181,7 +181,6 @@
   let numPrivateConditions: number = 0;
   let numPrivateGoals: number = 0;
 
-  $: user = $userStore;
   $: if (data.initialModel) {
     $initialModel = data.initialModel;
     model.updateValue(() => data.initialModel);
@@ -277,10 +276,10 @@
   $: switch (selectedAssociation) {
     case 'goal': {
       loading = !$schedulingGoalResponses;
-      hasCreatePermission = featurePermissions.schedulingGoals.canCreate(user);
-      hasEditSpecPermission = featurePermissions.schedulingGoalsModelSpec.canUpdate(user);
+      hasCreatePermission = featurePermissions.schedulingGoals.canCreate($user);
+      hasEditSpecPermission = featurePermissions.schedulingGoalsModelSpec.canUpdate($user);
       metadataList = getMetadata($schedulingGoals, $model, 'scheduling_specification_goals').filter(goalMetadata =>
-        isMetadataViewable(goalMetadata, user),
+        isMetadataViewable(goalMetadata, $user),
       );
 
       selectedMetadata = selectedGoalMetadataMap;
@@ -290,10 +289,10 @@
     }
     case 'condition':
       loading = !$schedulingConditionResponses;
-      hasCreatePermission = featurePermissions.schedulingConditions.canCreate(user);
-      hasEditSpecPermission = featurePermissions.schedulingConditionsModelSpec.canUpdate(user);
+      hasCreatePermission = featurePermissions.schedulingConditions.canCreate($user);
+      hasEditSpecPermission = featurePermissions.schedulingConditionsModelSpec.canUpdate($user);
       metadataList = getMetadata($schedulingConditions, $model, 'scheduling_specification_conditions').filter(
-        conditionMetadata => isMetadataViewable(conditionMetadata, user),
+        conditionMetadata => isMetadataViewable(conditionMetadata, $user),
       );
 
       selectedMetadata = selectedConditionMetadataMap;
@@ -303,8 +302,8 @@
     case 'constraint':
     default: {
       loading = $initialConstraintsLoading;
-      hasCreatePermission = featurePermissions.constraints.canCreate(user);
-      hasEditSpecPermission = featurePermissions.constraintsModelSpec.canUpdate(user);
+      hasCreatePermission = featurePermissions.constraints.canCreate($user);
+      hasEditSpecPermission = featurePermissions.constraintsModelSpec.canUpdate($user);
       metadataList = getMetadata($constraints || [], $model, 'constraint_specification');
 
       selectedMetadata = selectedConstraintMetadataMap;
@@ -404,7 +403,7 @@
 
   async function onDeleteModel() {
     if ($model) {
-      await effects.deleteModel($model, user);
+      await effects.deleteModel($model, $user);
 
       onClose();
     }
@@ -440,7 +439,7 @@
 
   async function onSave() {
     if ($model && modelMetadata) {
-      await effects.updateModel($model.id, modelMetadata, user);
+      await effects.updateModel($model.id, modelMetadata, $user);
       const constraintModelSpecUpdates: {
         constraintModelSpecsToAdd: ConstraintModelSpecInsertInput[];
         constraintModelSpecsToUpdate: ConstraintModelSpecSetInput[];
@@ -500,13 +499,13 @@
       await effects.updateConstraintModelSpecifications(
         constraintModelSpecUpdates.constraintModelSpecsToAdd,
         constraintInvocationIdsToDelete,
-        user,
+        $user,
       );
 
       for (let i = 0; i < constraintModelSpecUpdates.constraintModelSpecsToUpdate.length; i++) {
         const constraintSpecToUpdate = constraintModelSpecUpdates.constraintModelSpecsToUpdate[i];
 
-        await effects.updateConstraintModelSpecification(constraintSpecToUpdate, user);
+        await effects.updateConstraintModelSpecification(constraintSpecToUpdate, $user);
       }
 
       const conditionModelSpecUpdates: (
@@ -557,7 +556,7 @@
         $model,
         conditionModelSpecUpdates,
         conditionIdsToDelete,
-        user,
+        $user,
       );
       const goalModelSpecUpdates: {
         goalModelSpecsToAdd: SchedulingGoalModelSpecificationInsertInput[];
@@ -618,12 +617,12 @@
       await effects.updateSchedulingGoalModelSpecifications(
         goalModelSpecUpdates.goalModelSpecsToAdd,
         goalInvocationIdsToDelete,
-        user,
+        $user,
       );
 
       for (let i = 0; i < goalModelSpecUpdates.goalModelSpecsToUpdate.length; i++) {
         const goalSpecUpdate = goalModelSpecUpdates.goalModelSpecsToUpdate[i];
-        await effects.updateSchedulingGoalModelSpecification(goalSpecUpdate, user);
+        await effects.updateSchedulingGoalModelSpecification(goalSpecUpdate, $user);
       }
     }
   }
@@ -928,7 +927,7 @@
         resourceTypeLogs={$model?.refresh_resource_type_logs}
         modelId={$model?.id}
         createdAt={$model?.created_at}
-        user={$userStore}
+        user={$user}
         users={$users}
         usersLoading={$initialUsersLoading}
         views={$views}

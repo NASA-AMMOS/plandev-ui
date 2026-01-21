@@ -150,13 +150,15 @@ describe('Errors Util', () => {
               type: ErrorTypes.VALIDATION_NOTICES,
             },
             {
-              activityId: 5,
+              data: {
+                activityId: 5,
+              },
               message: 'end-time anchor out of bounds',
               timestamp: '',
               type: ErrorTypes.ANCHOR_VALIDATION_ERROR,
             },
             {
-              activityId: 4,
+              data: { activityId: 4 },
               message: 'anchor comes before plan start',
               timestamp: '',
               type: ErrorTypes.ANCHOR_VALIDATION_ERROR,
@@ -217,7 +219,9 @@ describe('Errors Util', () => {
   test('getActivityIdsFromError - Should return specified ID for ANCHOR_VALIDATION_ERROR', () => {
     expect(
       getActivityIdsFromError({
-        activityId: 1,
+        data: {
+          activityId: 1,
+        },
         type: ErrorTypes.ANCHOR_VALIDATION_ERROR,
       } as AnchorValidationError),
     ).deep.eq([1]);

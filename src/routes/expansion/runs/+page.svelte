@@ -7,10 +7,12 @@
     TYPESCRIPT_EXPANSION_NOT_AVAILABLE_MESSAGE,
   } from '../../../constants/command-expansion';
   import { SequencingMode } from '../../../enums/sequencing';
-  import { userStore } from '../../../lib/stores/auth';
+  import { getUserStore } from '../../../stores/user';
   import type { PageData } from './$types';
 
   export let data: PageData;
+
+  const user = getUserStore();
 </script>
 
 {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING}
@@ -18,5 +20,5 @@
     {TYPESCRIPT_EXPANSION_NOT_AVAILABLE_MESSAGE}
   </span>
 {:else}
-  <ExpansionRuns expansionRuns={data.expansionRuns} user={$userStore} />
+  <ExpansionRuns expansionRuns={data.expansionRuns} user={$user} />
 {/if}

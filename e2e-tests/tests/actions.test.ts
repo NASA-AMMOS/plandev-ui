@@ -1,14 +1,14 @@
-import test, { type BrowserContext, type Page } from '@playwright/test';
+import test from '@playwright/test';
 import { Action } from '../fixtures/Action.js';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
 import { Parcels } from '../fixtures/Parcels.js';
 import { Workspace } from '../fixtures/Workspace.js';
 import { Workspaces } from '../fixtures/Workspaces.js';
+import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
 
+let setup: BrowserSetupResult;
 let action: Action;
 let dictionaries: Dictionaries;
-let context: BrowserContext;
-let page: Page;
 let parcels: Parcels;
 let workspace: Workspace;
 let workspaces: Workspaces;
@@ -19,12 +19,11 @@ test.beforeAll(async ({ baseURL, browser }) => {
   // Increase global timeout to prevent early test termination
   test.setTimeout(90000); // 90 seconds
 
-  context = await browser.newContext();
-  page = await context.newPage();
+  setup = await setupTest(browser, { model: false });
 
-  dictionaries = new Dictionaries(page);
-  parcels = new Parcels(page);
-  workspaces = new Workspaces(page, parcels, baseURL);
+  dictionaries = new Dictionaries(setup.page);
+  parcels = new Parcels(setup.page);
+  workspaces = new Workspaces(setup.page, parcels, baseURL);
 
   await dictionaries.goto();
   await dictionaries.createCommandDictionary();
@@ -35,22 +34,23 @@ test.beforeAll(async ({ baseURL, browser }) => {
   workspaceId = await workspaces.createWorkspace();
   workspaceName = workspaces.workspaceName;
 
-  workspace = new Workspace(page, workspaceId, workspaceName, baseURL);
-  action = new Action(page, workspaceId);
+  workspace = new Workspace(setup.page, workspaceId, workspaceName, baseURL);
+  action = new Action(setup.page, workspaceId);
 
-  workspace.updatePage(page);
+  workspace.updatePage(setup.page);
   await workspace.goto();
 });
 
 test.afterAll(async () => {
-  await page.close();
-  await context.close();
+  await teardownTest(setup);
 });
 
 test.describe.serial('Actions', () => {
   test('Navigate to workspace actions from sidebar', async () => {
-    await page.getByRole('complementary').getByRole('button', { name: 'Actions' }).click();
-    const newTab = await page.waitForEvent('popup');
+    const newPagePromise = setup.context.waitForEvent('page');
+    await setup.page.getByRole('complementary').getByRole('button', { name: 'Actions' }).click();
+    const newTab = await newPagePromise;
+    await newTab.waitForLoadState();
     await newTab.getByText('Loading...').first().waitFor({ state: 'hidden' });
     await newTab.waitForURL(`/workspaces/${workspaceId}/actions`);
     await action.updatePage(newTab);

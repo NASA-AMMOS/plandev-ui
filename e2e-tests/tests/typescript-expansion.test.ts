@@ -1,4 +1,4 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { Constraints } from '../fixtures/Constraints.js';
 import { COMMAND_DICTIONARY_PATH, Dictionaries } from '../fixtures/Dictionaries.js';
@@ -11,17 +11,17 @@ import { PanelNames, Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
+import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
 import { getOptionValueFromText } from '../utilities/selectors.js';
 
 const sequenceFilterName: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
-let context: BrowserContext;
+let setup: BrowserSetupResult;
 let constraints: Constraints;
 let dictionaries: Dictionaries;
 let expansionRules: ExpansionRules;
 let expansionSets: ExpansionSets;
 let models: Models;
-let page: Page;
 let parcels: Parcels;
 let plan: Plan;
 let plans: Plans;
@@ -30,20 +30,19 @@ let schedulingGoals: SchedulingGoals;
 let expansionRuns: ExpansionRuns;
 
 test.beforeAll(async ({ baseURL, browser }) => {
-  context = await browser.newContext();
-  page = await context.newPage();
+  setup = await setupTest(browser, { model: false });
 
-  models = new Models(page);
-  plans = new Plans(page, models);
-  constraints = new Constraints(page);
-  schedulingConditions = new SchedulingConditions(page);
-  schedulingGoals = new SchedulingGoals(page);
-  plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
-  dictionaries = new Dictionaries(page);
-  parcels = new Parcels(page);
-  expansionRules = new ExpansionRules(page, parcels, models);
-  expansionSets = new ExpansionSets(page, parcels, models, expansionRules);
-  expansionRuns = new ExpansionRuns(page, plan, sequenceFilterName);
+  models = new Models(setup.page);
+  plans = new Plans(setup.page, models);
+  constraints = new Constraints(setup.page);
+  schedulingConditions = new SchedulingConditions(setup.page);
+  schedulingGoals = new SchedulingGoals(setup.page);
+  plan = new Plan(setup.page, plans, constraints, schedulingGoals, schedulingConditions);
+  dictionaries = new Dictionaries(setup.page);
+  parcels = new Parcels(setup.page);
+  expansionRules = new ExpansionRules(setup.page, parcels, models);
+  expansionSets = new ExpansionSets(setup.page, parcels, models, expansionRules);
+  expansionRuns = new ExpansionRuns(setup.page, plan, sequenceFilterName);
 
   const dictionaryName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
@@ -55,7 +54,6 @@ test.beforeAll(async ({ baseURL, browser }) => {
   await plan.addActivity('PeelBanana');
   await plan.showPanel(PanelNames.SIMULATION, true);
   await plan.runSimulation();
-  await page.waitForTimeout(1000); // wait for sim results
 
   await dictionaries.goto();
   await dictionaries.createCommandDictionary(dictionaryName, COMMAND_DICTIONARY_PATH);
@@ -70,8 +68,7 @@ test.afterAll(async () => {
   await models.goto();
   await models.deleteModel();
   await parcels.goto();
-  await page.close();
-  await context.close();
+  await teardownTest(setup);
 });
 
 test.describe.serial('Expansion', () => {
@@ -84,25 +81,28 @@ test.describe.serial('Expansion', () => {
   test('Typescript Expansion can be run', async () => {
     await plan.goto();
     await plan.showPanel(PanelNames.EXPANSION);
-    await page.waitForSelector(`option:has-text("${expansionSets.expansionSetName}")`, {
+    await setup.page.waitForSelector(`option:has-text("${expansionSets.expansionSetName}")`, {
       state: 'attached',
     });
-    const value = await getOptionValueFromText(page, 'select[name="expansionSetId"]', expansionSets.expansionSetName);
-    await page.locator('select[name="expansionSetId"]').focus();
-    await page.locator('select[name="expansionSetId"]').selectOption(value);
-    await page.locator('select[name="expansionSetId"]').evaluate(e => e.blur());
+    const value = await getOptionValueFromText(
+      setup.page,
+      'select[name="expansionSetId"]',
+      expansionSets.expansionSetName,
+    );
+    await setup.page.locator('select[name="expansionSetId"]').focus();
+    await setup.page.locator('select[name="expansionSetId"]').selectOption(value);
+    await setup.page.locator('select[name="expansionSetId"]').evaluate(e => e.blur());
     await plan.createSequenceFilter(sequenceFilterName);
     await plan.applySequenceFilter(sequenceFilterName, plans.planId);
-    const expansionSequenceItem = page.locator('.sne-items').getByText(`${sequenceFilterName} Sequence`);
+    const expansionSequenceItem = setup.page.locator('.sne-items').getByText(`${sequenceFilterName} Sequence`);
     await expansionSequenceItem.hover();
-    await page.getByLabel('Expand Sequence').waitFor({ state: 'visible' });
-    await page.waitForTimeout(1000); // wait for expansion results
-    await page.getByLabel('Expand Sequence').click();
+    await setup.page.getByLabel('Expand Sequence').waitFor({ state: 'visible' });
+    await setup.page.getByLabel('Expand Sequence').click();
     await plan.waitForToast('Plan Expanded Successfully');
-    await page.getByLabel('Show Expanded Sequence').click();
+    await setup.page.getByLabel('Show Expanded Sequence').click();
     await plan.sequenceExpansionOutputModal.waitFor({ state: 'attached' });
     await plan.sequenceExpansionOutputModal.waitFor({ state: 'visible' });
-    await page.getByText('Loading Editor...').waitFor({ state: 'detached' });
+    await setup.page.getByText('Loading Editor...').waitFor({ state: 'detached' });
     await expect(plan.sequenceExpansionOutputModal.getByText('steps')).toBeVisible();
     await expansionRuns.goto();
     await expansionRuns.selectSequence();

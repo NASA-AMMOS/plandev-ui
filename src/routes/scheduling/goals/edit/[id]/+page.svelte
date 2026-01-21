@@ -7,9 +7,9 @@
   import PageTitle from '../../../../../components/app/PageTitle.svelte';
   import SchedulingGoalForm from '../../../../../components/scheduling/goals/SchedulingGoalForm.svelte';
   import { SearchParameters } from '../../../../../enums/searchParameters';
-  import { userStore } from '../../../../../lib/stores/auth';
   import { schedulingGoalMetadata, schedulingGoalMetadataId } from '../../../../../stores/scheduling';
   import { tags } from '../../../../../stores/tags';
+  import { getUserStore } from '../../../../../stores/user';
   import type {
     SchedulingGoalDefinition,
     SchedulingGoalMetadataVersionDefinition,
@@ -19,6 +19,8 @@
   import type { PageData } from './$types';
 
   export let data: PageData;
+
+  const user = getUserStore();
 
   let goalRevision: number =
     getSearchParameterNumber(SearchParameters.REVISION, $page.url.searchParams) ??
@@ -56,7 +58,7 @@
         goalDefinitionCode = goalDefinition?.definition;
         goalDefinitionTags = goalDefinition?.tags.map(({ tag }) => tag);
         if (goalDefinition.uploaded_jar_id !== null) {
-          goalDefinitionFilename = await effects.getFileName(goalDefinition.uploaded_jar_id, $userStore);
+          goalDefinitionFilename = await effects.getFileName(goalDefinition.uploaded_jar_id, $user);
         } else {
           goalDefinitionFilename = null;
         }
@@ -114,7 +116,7 @@
   {goalRevisions}
   tags={$tags}
   mode="edit"
-  user={$userStore}
+  user={$user}
   on:selectRevision={onRevisionSelect}
   on:selectReferenceModel={onModelSelect}
 />

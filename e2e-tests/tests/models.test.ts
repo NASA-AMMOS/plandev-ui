@@ -1,22 +1,20 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
+import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
 
 test.describe.serial('Models', () => {
-  let context: BrowserContext;
+  let setup: BrowserSetupResult;
   let models: Models;
-  let page: Page;
 
   test.beforeAll(async ({ browser }) => {
-    context = await browser.newContext();
-    page = await context.newPage();
-    models = new Models(page);
+    setup = await setupTest(browser, { model: false });
+    models = new Models(setup.page);
     await models.goto();
   });
 
   test.afterAll(async () => {
-    await page.close();
-    await context.close();
+    await teardownTest(setup);
   });
 
   test('Create model button should be disabled with no errors', async () => {
@@ -59,20 +57,17 @@ test.describe.serial('Models', () => {
 });
 
 test.describe('Model navigation', () => {
-  let context: BrowserContext;
+  let setup: BrowserSetupResult;
   let models: Models;
-  let page: Page;
 
   test.beforeAll(async ({ browser }) => {
-    context = await browser.newContext();
-    page = await context.newPage();
-    models = new Models(page);
+    setup = await setupTest(browser, { model: false });
+    models = new Models(setup.page);
     await models.goto();
   });
 
   test.afterAll(async () => {
-    await page.close();
-    await context.close();
+    await teardownTest(setup);
   });
 
   test('Successfully creating a model should navigate to the model edit page', async ({ baseURL }) => {
@@ -84,7 +79,7 @@ test.describe('Model navigation', () => {
     await models.createButton.click();
 
     const editModelUrlRegex = new RegExp(`${baseURL}/models/(?<modelId>\\d+)`);
-    await page.waitForURL(editModelUrlRegex);
+    await setup.page.waitForURL(editModelUrlRegex);
 
     // App now navigates away after model creation
     await models.goto();
@@ -101,22 +96,19 @@ test.describe('Model navigation', () => {
 });
 
 test.describe('Model creation error clearing', () => {
-  let context: BrowserContext;
+  let setup: BrowserSetupResult;
   let models: Models;
   let constraints: Constraints;
-  let page: Page;
 
   test.beforeAll(async ({ browser }) => {
-    context = await browser.newContext();
-    page = await context.newPage();
-    constraints = new Constraints(page);
-    models = new Models(page);
+    setup = await setupTest(browser, { model: false });
+    constraints = new Constraints(setup.page);
+    models = new Models(setup.page);
     await models.goto();
   });
 
   test.afterAll(async () => {
-    await page.close();
-    await context.close();
+    await teardownTest(setup);
   });
 
   test('Model creation errors should clear on page destroy', async ({ baseURL }) => {

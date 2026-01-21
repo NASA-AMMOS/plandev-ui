@@ -1,37 +1,74 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { SyntaxNode } from '@lezer/common';
+  import { syntaxTree } from '@codemirror/language';
+  import { StateEffect } from '@codemirror/state';
+  import type { SyntaxNode, Tree } from '@lezer/common';
   import type { CommandDictionary, FswCommand, HwCommand } from '@nasa-jpl/aerie-ampcs';
-  import type { EditorView } from 'codemirror';
-  import type { ArgTextDef, TimeTagInfo } from '../../../types/sequencing';
-  import type { CommandInfoMapper } from '../../../utilities/sequence-editor/command-info-mapper';
+  import type { CommandInfoMapper, PhoenixContext } from '@nasa-jpl/aerie-sequence-languages';
+  import { EditorView } from 'codemirror';
+  import { unquoteUnescape } from '../../../utilities/sequence-editor/sequence-utils';
   import Tab from '../../ui/Tabs/Tab.svelte';
   import TabPanel from '../../ui/Tabs/TabPanel.svelte';
   import Tabs from '../../ui/Tabs/Tabs.svelte';
   import CommandDictionaryComponent from './CommandDictionary.svelte';
   import SelectedCommand from './SelectedCommand.svelte';
 
-  export let argInfoArray: ArgTextDef[] = [];
-  export let commandDef: FswCommand | null = null;
-  export let commandDictionary: CommandDictionary;
+  export let phoenixContext: PhoenixContext;
   export let commandInfoMapper: CommandInfoMapper;
-  export let commandName: string | null = null;
-  export let commandNameNode: SyntaxNode | null = null;
-  export let commandNode: SyntaxNode | null = null;
   export let editorSequenceView: EditorView;
-  export let timeTagNode: TimeTagInfo | null = null;
-  export let variablesInScope: string[] = [];
 
   enum CommandPanelTabs {
     COMMAND = 'command',
     DEFINITION = 'definition',
   }
 
+  const emptyCommandDictionary: CommandDictionary = {
+    enumMap: {},
+    enums: [],
+    fswCommandMap: {},
+    fswCommands: [],
+    header: {
+      mission_name: '',
+      schema_version: '',
+      spacecraft_ids: [],
+      version: '',
+    },
+    hwCommandMap: {},
+    hwCommands: [],
+    id: '',
+    path: null,
+  };
   const tabContextKey: string = 'command-panel';
 
   let commandPanelTabs: Tabs;
+  let currentTree: Tree;
+  let listenerAttached: boolean = false;
   let selectedCommandDefinition: (FswCommand | HwCommand) | null;
+  let selectedNode: SyntaxNode | null = null;
+
+  $: commandDictionary = phoenixContext.commandDictionary ?? emptyCommandDictionary;
+
+  $: commandNode = commandInfoMapper.getContainingCommand(selectedNode);
+  $: commandNameNode = commandInfoMapper.getNameNode(commandNode);
+  $: commandName =
+    commandNameNode && unquoteUnescape(editorSequenceView.state.sliceDoc(commandNameNode.from, commandNameNode.to));
+  $: timeTagNode = commandInfoMapper.getTimeTagInfo(editorSequenceView, commandNode);
+  $: argInfoArray = commandInfoMapper.getArgumentInfo(
+    commandDef,
+    editorSequenceView,
+    commandInfoMapper.getArgumentNodeContainer(commandNode),
+    commandDef?.arguments,
+    undefined,
+    phoenixContext,
+  );
+  $: commandDef = commandInfoMapper.getCommandDef(
+    commandDictionary,
+    phoenixContext.librarySequences,
+    commandName ?? '',
+  );
+
+  $: variablesInScope = commandInfoMapper.getVariablesInScope(editorSequenceView, currentTree, commandNode?.from);
 
   function formatTypeName(s: string) {
     // add spaces to CamelCase names, 'GroundEvent' -> 'Ground Event'
@@ -42,6 +79,27 @@
     const { detail } = event;
     selectedCommandDefinition = detail;
     commandPanelTabs.selectTab(CommandPanelTabs.DEFINITION);
+  }
+
+  $: if (editorSequenceView && !listenerAttached) {
+    listenerAttached = true;
+    editorSequenceView.dispatch({
+      effects: StateEffect.appendConfig.of([
+        EditorView.updateListener.of(viewUpdate => {
+          // This is broken out into a different listener as debouncing this can cause cursor to move around
+          const tree = syntaxTree(viewUpdate.state);
+          // Command Node includes trailing newline and white space, move to next command
+          const selectionLine = viewUpdate.state.doc.lineAt(viewUpdate.state.selection.asSingle().main.from);
+          const leadingWhiteSpaceLength = selectionLine.text.length - selectionLine.text.trimStart().length;
+          const updatedSelectionNode = tree.resolveInner(selectionLine.from + leadingWhiteSpaceLength, 1);
+          // minimize triggering selected command view
+          if (selectedNode !== updatedSelectionNode) {
+            selectedNode = updatedSelectionNode;
+            currentTree = tree;
+          }
+        }),
+      ]),
+    });
   }
 </script>
 
@@ -99,15 +157,13 @@
     border-bottom: 1px solid var(--st-gray-20);
   }
 
-  :global(.command-items-tab) {
+  :global(button.command-items-tab) {
     align-items: center;
     display: flex;
     font-size: 13px;
-    gap: 5px;
-    height: 24px;
     justify-content: center;
     line-height: 24px;
-    padding: 4px 8px 4px 0px;
+    padding: 4px 8px;
     white-space: nowrap;
   }
 </style>

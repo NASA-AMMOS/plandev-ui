@@ -82,6 +82,7 @@ export enum Queries {
   DELETE_USER_SEQUENCE = 'delete_user_sequence_by_pk',
   DELETE_VIEW = 'delete_view_by_pk',
   DELETE_VIEWS = 'delete_view',
+  DELETE_WORKSPACE_COLLABORATOR = 'delete_workspace_collaborators_by_pk',
   DENY_MERGE = 'deny_merge',
   DUPLICATE_PLAN = 'duplicate_plan',
   EVENT = 'event',
@@ -171,7 +172,7 @@ export enum Queries {
   INSERT_TAGS = 'insert_tags',
   INSERT_USER_SEQUENCE = 'insert_user_sequence_one',
   INSERT_VIEW = 'insert_view_one',
-  INSERT_WORKSPACE = 'insert_workspace_one',
+  INSERT_WORKSPACE_COLLABORATORS = 'insert_workspace_collaborators',
   MERGE_REQUEST = 'merge_request_by_pk',
   MERGE_REQUESTS = 'merge_request',
   MIGRATE_PLAN_TO_MODEL = 'migrate_plan_to_model',
@@ -262,4 +263,8 @@ export enum Queries {
   WORKSPACE = 'workspace_by_pk',
   WORKSPACES = 'workspace',
   WITHDRAW_MERGE_REQUEST = 'withdraw_merge_request',
+}
+
+export enum WorkspaceActions {
+  CREATE_WORKSPACE = 'create_workspace',
 }

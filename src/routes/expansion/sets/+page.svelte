@@ -7,7 +7,9 @@
     TYPESCRIPT_EXPANSION_NOT_AVAILABLE_MESSAGE,
   } from '../../../constants/command-expansion';
   import { SequencingMode } from '../../../enums/sequencing';
-  import { userStore } from '../../../lib/stores/auth';
+  import { getUserStore } from '../../../stores/user';
+
+  const user = getUserStore();
 </script>
 
 {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING}
@@ -15,5 +17,5 @@
     {TYPESCRIPT_EXPANSION_NOT_AVAILABLE_MESSAGE}
   </span>
 {:else}
-  <ExpansionSets user={$userStore} />
+  <ExpansionSets user={$user} />
 {/if}

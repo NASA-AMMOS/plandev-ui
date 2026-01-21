@@ -3,6 +3,7 @@ import type {
   CommandDictionary as AmpcsCommandDictionary,
   ParameterDictionary as AmpcsParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
+import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 import type { User } from '../types/app';
 import type { SequenceFilter } from '../types/expansion';
@@ -13,7 +14,6 @@ import {
   type Parcel,
   type ParcelBundle,
   type ParcelToParameterDictionary,
-  type UserSequence,
 } from '../types/sequencing';
 import effects from '../utilities/effects';
 import gql from '../utilities/gql';
@@ -32,20 +32,28 @@ export const selectedSequence: Writable<string | null> = writable(null);
 export const creatingWorkspace: Writable<boolean> = writable(false);
 
 /* Subscriptions. */
-export const channelDictionaries = gqlSubscribable<ChannelDictionaryMetadata[]>(gql.SUB_CHANNEL_DICTIONARIES, {}, []);
-
-export const commandDictionaries = gqlSubscribable<CommandDictionaryMetadata[]>(gql.SUB_COMMAND_DICTIONARIES, {}, []);
-
-export const parameterDictionaries = gqlSubscribable<ParameterDictionaryMetadata[]>(
-  gql.SUB_PARAMETER_DICTIONARIES,
+export const channelDictionaries = gqlSubscribable<ChannelDictionaryMetadata[] | null>(
+  gql.SUB_CHANNEL_DICTIONARIES,
   {},
-  [],
+  null,
 );
 
-export const parcelToParameterDictionaries = gqlSubscribable<ParcelToParameterDictionary[]>(
+export const commandDictionaries = gqlSubscribable<CommandDictionaryMetadata[] | null>(
+  gql.SUB_COMMAND_DICTIONARIES,
+  {},
+  null,
+);
+
+export const parameterDictionaries = gqlSubscribable<ParameterDictionaryMetadata[] | null>(
+  gql.SUB_PARAMETER_DICTIONARIES,
+  {},
+  null,
+);
+
+export const parcelToParameterDictionaries = gqlSubscribable<ParcelToParameterDictionary[] | null>(
   gql.SUB_PARCEL_TO_PARAMETER_DICTIONARIES,
   {},
-  [],
+  null,
 );
 
 export const parcels = gqlSubscribable<Parcel[]>(gql.SUB_PARCELS, {}, []);
@@ -61,7 +69,7 @@ export const parcelBundles: Readable<ParcelBundle[]> = derived(
         .filter(parcelToParameterDictionary => parcelToParameterDictionary.parcel_id === parcel.id)
         .map(parcelToParameterDictionary => parcelToParameterDictionary.parameter_dictionary_id);
 
-      const commandDictionary = $commandDictionaries.find(
+      const commandDictionary = $commandDictionaries?.find(
         commandDictionary => commandDictionary.id === parcel.command_dictionary_id,
       )?.id;
 
@@ -93,7 +101,7 @@ export const userSequenceFormColumns: Writable<string> = writable('1fr 3px 2fr')
 
 export const userSequenceEditorColumns: Writable<string> = writable('3fr 3px');
 
-export const userSequenceEditorColumnsWithFormBuilder: Writable<string> = writable('3fr 3px 1fr');
+export const userSequenceEditorColumnsWithFormBuilder: Writable<string> = writable('3fr 3px 1.125fr');
 
 /* Helper Functions */
 

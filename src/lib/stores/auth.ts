@@ -1,7 +1,6 @@
-import { type Client } from 'graphql-ws';
-import { writable, type Writable } from 'svelte/store';
-import type { User } from '../../types/app';
-
-// no need for id token because that's only used serverside. no need for activeRole cookie because that's part of the user...we just need to make sure that when it is updated, it is reflected in user store
-export const userStore: Writable<User | null> = writable<User | null>();
-export const gqlWsClient: Writable<Client | undefined> = writable<Client | undefined>(); // TODO: add more robust handling for if this is null
+// NOTE: This file is kept for backwards compatibility but is largely deprecated.
+// User state is now managed via Svelte context (see +layout.svelte and stores/user.ts).
+// WebSocket client is now managed via the shared singleton in stores/gqlClient.ts.
+//
+// The OIDC token refresh functionality has been moved to lib/stores/oidc.ts,
+// which uses cookies directly instead of a module-level store.

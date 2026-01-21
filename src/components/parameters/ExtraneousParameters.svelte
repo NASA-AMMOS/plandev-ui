@@ -6,7 +6,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { ActivityErrorCategories } from '../../types/errors';
   import type { ArgumentsMap } from '../../types/parameter';
-  import { isMacOs } from '../../utilities/generic';
+  import { isMacOs } from '../../utilities/browser';
   import { isMetaOrCtrlPressed } from '../../utilities/keyboardEvents';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { pluralize } from '../../utilities/text';

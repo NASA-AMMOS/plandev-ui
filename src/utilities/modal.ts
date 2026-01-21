@@ -38,6 +38,7 @@ import TimeRangeModal from '../components/modals/TimeRangeModal.svelte';
 import TransformActivitiesModal from '../components/modals/TransformActivitiesModal.svelte';
 import UpdatePlanMissionModelModal from '../components/modals/UpdatePlanMissionModelModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
+import WorkspaceBulkOperationConflictModal from '../components/modals/WorkspaceBulkOperationConflictModal.svelte';
 import NewSequenceTemplateModal from '../components/sequence-templates/NewSequenceTemplateModal.svelte';
 import { type ActionDefinition } from '../types/actions';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
@@ -55,12 +56,11 @@ import type {
   PlanSlim,
 } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
-import type { UserSequence } from '../types/sequencing';
 import type { Tag } from '../types/tags';
 import type { ActivityTransformDirection } from '../types/time';
 import type { ViewDefinition } from '../types/view';
 import type { Workspace } from '../types/workspace';
-import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
+import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 
 /**
  * Closes the active modal if found and resolve nothing
@@ -310,10 +310,10 @@ export async function showImportWorkspaceFileModal(
           'confirm',
           (
             e: CustomEvent<{
-              convertedFileExtension: string;
               filesToConvert: File[];
               filesToUpload: File[];
               shouldKeepOriginalFiles: boolean;
+              shouldOverwrite: boolean;
               targetDirectory: string;
             }>,
           ) => {
@@ -508,8 +508,7 @@ export async function showMergeReviewEndedModal(
  */
 export async function showMoveItemToWorkspaceModal(
   currentWorkspace: Workspace,
-  originalNode: WorkspaceTreeNode,
-  originalPath: string,
+  originalNodes: WorkspaceTreeNodeWithFullPath[],
   user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
@@ -518,14 +517,21 @@ export async function showMoveItemToWorkspaceModal(
 
       if (target) {
         const moveWorkspaceFileToWorkspaceModal = new MoveItemToWorkspaceModal({
-          props: { currentWorkspace, originalNode, originalPath, user },
+          props: { currentWorkspace, originalNodes, user },
           target,
         });
         target.resolve = resolve;
 
         moveWorkspaceFileToWorkspaceModal.$on(
           'confirm',
-          (e: CustomEvent<{ shouldCopy: boolean; targetPath: string; targetWorkspace: Workspace }>) => {
+          (
+            e: CustomEvent<{
+              shouldCopy: boolean;
+              shouldOverwrite: boolean;
+              targetPath: string;
+              targetWorkspace: Workspace;
+            }>,
+          ) => {
             target.replaceChildren();
             target.resolve = null;
             resolve({ confirm: true, value: e.detail });
@@ -552,9 +558,7 @@ export async function showMoveItemToWorkspaceModal(
 export async function showMoveWorkspaceItemModal(
   currentWorkspace: Workspace,
   currentWorkspaceContents: WorkspaceTreeNode,
-  originalNode: WorkspaceTreeNode,
-  originalPath: string,
-  workspace: Workspace | null | undefined,
+  originalNodes: WorkspaceTreeNodeWithFullPath[],
   user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
@@ -566,10 +570,8 @@ export async function showMoveWorkspaceItemModal(
           props: {
             currentWorkspace,
             currentWorkspaceContents,
-            originalNode,
-            originalPath,
+            originalNodes,
             user,
-            workspace,
           },
           target,
         });
@@ -577,7 +579,7 @@ export async function showMoveWorkspaceItemModal(
 
         moveWorkspaceItemModal.$on(
           'confirm',
-          (e: CustomEvent<{ originalNode: WorkspaceTreeNode; targetPath: string }>) => {
+          (e: CustomEvent<{ shouldCopy: boolean; shouldOverwrite: boolean; targetPath: string }>) => {
             target.replaceChildren();
             target.resolve = null;
             resolve({ confirm: true, value: e.detail });
@@ -722,6 +724,61 @@ export async function showRenameWorkspaceItemModal(
           resolve({ confirm: false });
           renameWorkspaceItemModal.$destroy();
         });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a modal to handle file/folder name collisions in workspaces
+ */
+export async function showWorkspaceBulkOperationConflictModal(targetPath: string): Promise<
+  ModalElementValue<{
+    allFiles?: boolean;
+    shouldOverwrite?: boolean;
+  }>
+> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const workspaceBulkOperationConflictModal = new WorkspaceBulkOperationConflictModal({
+          props: { targetPath },
+          target,
+        });
+        target.resolve = resolve;
+
+        workspaceBulkOperationConflictModal.$on(
+          'skip',
+          (
+            e: CustomEvent<{
+              allFiles?: boolean;
+            }>,
+          ) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: false, value: e.detail });
+            workspaceBulkOperationConflictModal.$destroy();
+          },
+        );
+
+        workspaceBulkOperationConflictModal.$on(
+          'confirm',
+          (
+            e: CustomEvent<{
+              allFiles?: boolean;
+              shouldOverwrite?: boolean;
+            }>,
+          ) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: true, value: e.detail });
+            workspaceBulkOperationConflictModal.$destroy();
+          },
+        );
       }
     } else {
       resolve({ confirm: false });
@@ -1150,20 +1207,12 @@ export async function showPlanBranchRequestModal(
           planModal.$destroy();
         });
 
-        planModal.$on(
-          'create',
-          (
-            e: CustomEvent<{
-              source_plan: PlanForMerging;
-              target_plan: PlanForMerging;
-            }>,
-          ) => {
-            target.replaceChildren();
-            target.resolve = null;
-            resolve({ confirm: true, value: e.detail });
-            planModal.$destroy();
-          },
-        );
+        planModal.$on('create', e => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          planModal.$destroy();
+        });
       }
     } else {
       resolve({ confirm: false });
@@ -1200,8 +1249,8 @@ export async function showPlanBranchesModal(plan: Plan): Promise<ModalElementVal
  * Shows a PlanMergeRequestsModal with the supplied arguments.
  */
 export async function showPlanMergeRequestsModal(
-  user: User | null,
   selectedFilter?: PlanMergeRequestTypeFilter,
+  user?: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
@@ -1288,7 +1337,8 @@ export async function showRestorePlanSnapshotModal(
 export async function showRunActionModal(
   actionDefinition: ActionDefinition,
   user: User | null,
-  workspaceSequences: UserSequence[],
+  workspace: Workspace,
+  workspaceFiles: WorkspaceTreeNodeWithFullPath[],
   parameters: ArgumentsMap | undefined,
 ): Promise<ModalElementValue<{ id: number | null }>> {
   return new Promise(resolve => {
@@ -1297,7 +1347,7 @@ export async function showRunActionModal(
 
       if (target) {
         const runActionModal = new RunActionModal({
-          props: { actionDefinition, parameters, user, workspaceSequences },
+          props: { actionDefinition, parameters, user, workspace, workspaceFiles },
           target,
         });
         target.resolve = resolve;
@@ -1554,13 +1604,13 @@ export async function showUpdatePlanMissionModelModal(plan: PlanSlim, user: User
 /**
  * Shows an ExpansionPanelModal.
  */
-export async function showExpansionPanelModal(): Promise<ModalElementValue> {
+export async function showExpansionPanelModal(user: User | null): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const expansionPanelModal = new ExpansionPanelModal({ props: {}, target });
+        const expansionPanelModal = new ExpansionPanelModal({ props: { user }, target });
         target.resolve = resolve;
 
         expansionPanelModal.$on('close', () => {
@@ -1570,7 +1620,7 @@ export async function showExpansionPanelModal(): Promise<ModalElementValue> {
           expansionPanelModal.$destroy();
         });
 
-        expansionPanelModal.$on('save', (e: CustomEvent<{ parcelId: number; workspaceId: number }>) => {
+        expansionPanelModal.$on('save', (e: CustomEvent<{ workspaceId: number; workspaceName: string }>) => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });

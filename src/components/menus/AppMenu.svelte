@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
+  import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
   import { Button, Popover } from '@nasa-jpl/stellar-svelte';
   import {
@@ -22,12 +23,12 @@
     Network,
     Tags,
   } from 'lucide-svelte';
-  import { onMount } from 'svelte';
-  import AerieWordmarkDark from '../../assets/aerie-wordmark-dark.svg?component';
+  import PlanDevWordmarkDark from '../../assets/plandev-logo-dark.svg?component';
+  import SeqDevWordmarkDark from '../../assets/seqdev-logo-dark.svg?component';
   import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
   import { SequencingMode } from '../../enums/sequencing';
-  import type { User, Version } from '../../types/app';
-  import effects from '../../utilities/effects';
+  import type { User } from '../../types/app';
+  import { getAppBrand } from '../../utilities/branding';
   import { logout } from '../../utilities/login';
   import { showAboutModal } from '../../utilities/modal';
   import { getWorkspacesUrl } from '../../utilities/routes';
@@ -36,17 +37,9 @@
 
   export let user: User | null = null;
   let isOpen = false;
-  let version: Version = {
-    branch: 'unknown',
-    commit: 'unknown',
-    commitUrl: '',
-    date: new Date().toLocaleString(),
-    name: 'aerie-ui',
-  };
+  let isSeqDev = false;
 
-  onMount(async () => {
-    version = await effects.getVersion();
-  });
+  $: isSeqDev = getAppBrand($page.url.pathname) === 'SeqDev';
 
   function closeMenu() {
     isOpen = false;
@@ -60,10 +53,16 @@
         builders={[builder]}
         variant="ghost"
         size="lg"
-        class="flex gap-2 bg-[#110D3D] px-2 hover:bg-primary/30 dark:bg-secondary"
+        class="flex gap-2 bg-[#110D3D] px-2 hover:bg-[#2c2850] dark:bg-secondary"
         aria-label="Open Main Menu"
       >
-        <AerieWordmarkDark />
+        <div class="flex w-min [&_svg]:h-[18px] [&_svg]:w-auto">
+          {#if isSeqDev}
+            <SeqDevWordmarkDark />
+          {:else}
+            <PlanDevWordmarkDark />
+          {/if}
+        </div>
         <ChevronDown strokeWidth={2} size={16} class="text-white" />
       </Button>
     </Popover.Trigger>
@@ -103,7 +102,7 @@
           <h3 class="px-3 pb-2 pt-2 text-sm font-medium text-muted-foreground">Sequencing</h3>
           <MenuLink on:click={closeMenu} className="text-sm py-1.5" href={getWorkspacesUrl(base)}>
             <FileCode2 size={16} />
-            Sequence Editor
+            Workspaces
           </MenuLink>
           <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/dictionaries">
             <BookA size={16} />
@@ -134,7 +133,7 @@
             on:click={closeMenu}
             target="_blank"
             className="text-sm py-1.5"
-            href="https://nasa-ammos.github.io/aerie-docs/"
+            href="https://nasa-ammos.github.io/plandev-docs/"
           >
             <BookOpen size={16} />
             Documentation
@@ -185,9 +184,6 @@
           {:else}
             Logged out
           {/if}
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-muted-foreground">{version.name}</span>
         </div>
       </div>
     </Popover.Content>

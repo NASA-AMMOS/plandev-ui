@@ -112,7 +112,6 @@ export class ExpansionRules {
 
   async goto() {
     await this.page.goto('/expansion/rules', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(250);
     await expect(this.rulesNavButton).toHaveClass(/selected/);
   }
 

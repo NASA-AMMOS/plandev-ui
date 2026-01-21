@@ -19,5 +19,5 @@ export const load: LayoutServerLoad = async event => {
       redirect(302, `${base}/login`);
     }
   }
-  return { ...event.locals };
+return { user: event.locals.user };
 };

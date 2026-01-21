@@ -42,16 +42,16 @@ export const load: PageLoad = async ({ parent, params, url }) => {
           scheduling_specification: schedulingSpec ? schedulingSpec : null,
         };
       }
-
-      const initialActivityTypes = await effects.getActivityTypes(initialPlan.model_id, user);
+      const modelId = initialPlan.model_id ?? -1;
+      const initialActivityTypes = await effects.getActivityTypes(modelId, user);
       const [initialActivityArguments, initialResourceTypes, initialExternalEventTypes, initialPlanTags] =
         await Promise.all([
           await effects.getDefaultActivityArguments(
-            initialPlan.model_id,
+            modelId,
             initialActivityTypes.map(type => type.name),
             user,
           ),
-          await effects.getResourceTypes(initialPlan.model_id, user, ViewTimelineResourceRowsLimit),
+          await effects.getResourceTypes(modelId, user, ViewTimelineResourceRowsLimit),
           await effects.getExternalEventTypes(planId, user),
           await effects.getPlanTags(initialPlan.id, user),
         ]);
@@ -61,7 +61,7 @@ export const load: PageLoad = async ({ parent, params, url }) => {
         true,
         initialResourceTypes,
         initialExternalEventTypes,
-        initialPlan.model.view,
+        initialPlan.model?.view,
       );
 
       const initialPlanSnapshotId = getSearchParameterNumber(SearchParameters.SNAPSHOT_ID, url.searchParams);

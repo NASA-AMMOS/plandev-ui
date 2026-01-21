@@ -18,7 +18,6 @@ export class ExpansionRuns {
 
   async goto() {
     await this.page.goto('/expansion/runs', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(250);
     await expect(this.runsNavButton).toHaveClass(/selected/);
   }
 

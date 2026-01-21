@@ -1,3 +1,4 @@
+import type { Writable } from 'svelte/store';
 import type { PermissibleQueriesMap, RolePermissionsMap } from './permissions';
 
 export type UserId = string | null;
@@ -16,6 +17,8 @@ export type User = BaseUser & {
   permissibleQueries: PermissibleQueriesMap | null;
   rolePermissions: RolePermissionsMap | null;
 };
+
+export type UserStore = Writable<User | null>;
 
 export type ParsedUserToken = {
   email: string;

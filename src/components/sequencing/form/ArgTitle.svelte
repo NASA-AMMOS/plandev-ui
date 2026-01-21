@@ -4,7 +4,7 @@
   import type { FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
   import { isArray } from 'lodash-es';
   import { getTarget } from '../../../utilities/generic';
-  import type { CommandInfoMapper } from '../../../utilities/sequence-editor/command-info-mapper';
+  import type { CommandInfoMapper } from '@nasa-jpl/aerie-sequence-languages';
   import {
     isFswCommandArgumentFloat,
     isFswCommandArgumentInteger,

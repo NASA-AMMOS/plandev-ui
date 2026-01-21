@@ -51,7 +51,7 @@ export class SequenceTemplates {
 
   async goto() {
     await this.page.goto('/sequence-templates', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(250);
+    await expect(this.sequenceTemplateTable).toBeVisible();
   }
 
   async selectActivityType() {
@@ -60,7 +60,7 @@ export class SequenceTemplates {
     await this.page.getByRole('option', { name: this.sequenceTemplateActivityType }).click();
   }
 
-  async selectLanguage(language) {
+  async selectLanguage(language: string) {
     await this.newSequenceTemplateLanguageInput.click();
     await expect(this.page.getByRole('option', { name: language })).toBeVisible();
     await this.page.getByRole('option', { name: language }).click();
@@ -76,8 +76,9 @@ export class SequenceTemplates {
   async selectParcel() {
     const { parcelName } = this.parcels;
     await this.newSequenceTemplateParcelIdInput.click();
-    await expect(this.page.getByRole('option', { name: parcelName })).toBeVisible();
-    await this.page.getByRole('option', { name: parcelName }).click();
+    const option = this.page.getByRole('option', { name: parcelName });
+    await option.scrollIntoViewIfNeeded();
+    await option.click();
   }
 
   async updatePage(page: Page) {
@@ -92,7 +93,7 @@ export class SequenceTemplates {
     this.createNewSequenceTemplateButton = page.getByRole('button', { name: 'Create Template' });
     this.sequenceTemplateTable = page.locator('#sequence-templates-table');
     this.sequenceTemplateEditorActiveLine = page.locator('.cm-activeLine');
-    this.saveSequenceTemplateButton = page.getByLabel('Save sequence template');
+    this.saveSequenceTemplateButton = page.getByRole('button', { name: 'Save' });
     this.deleteSequenceTemplateButton = page.getByRole('button', { name: 'Delete Template' });
     this.confirmDeleteSequenceTemplateButton = page.getByRole('button', { exact: true, name: 'Delete' });
     this.editor = page.locator('.cm-activeLine').first();

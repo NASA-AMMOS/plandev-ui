@@ -27,7 +27,7 @@
   let sequenceOptions: ValueSchemaOption[] = [];
 
   $: if (workspaceId != null) {
-    getUserSequenceOptions(workspaceId);
+    getWorkspaceFileOptions(workspaceId);
   }
 
   $: updateActionSettingsAndParameters(); //update on any change
@@ -43,9 +43,9 @@
     initialActionRun,
   );
 
-  async function getUserSequenceOptions(idOfWorkspace: number): Promise<void> {
-    const workspaceSequences = await effects.getWorkspaceSequences(idOfWorkspace, null, false, user);
-    sequenceOptions = getUserSequenceValueSchemaOptions(workspaceSequences, workspaceId);
+  async function getWorkspaceFileOptions(idOfWorkspace: number): Promise<void> {
+    const workspaceFileList = await effects.getWorkspaceFilesList(idOfWorkspace, user);
+    sequenceOptions = getUserSequenceValueSchemaOptions(workspaceFileList, workspaceId);
   }
 
   async function onCancelAction(id: number) {
@@ -62,6 +62,9 @@
         undefined,
         sequenceOptions,
         'sequence',
+        undefined,
+        false,
+        false,
       );
 
       actionParameters = getFormParameters(
@@ -72,6 +75,9 @@
         undefined,
         sequenceOptions,
         'sequence',
+        undefined,
+        false,
+        false,
       );
     }
   }
@@ -115,9 +121,21 @@
         {/if}
         <div class="st-typography-medium action-run-label">Action Settings</div>
         <div class="action-run-parameters">
-          <Parameters formParameters={actionSettings} parameterType="action" hideRightAdornments hideInfo disabled />
+          <Parameters
+            formParameters={actionSettings}
+            parameterType="action"
+            hideRightAdornments
+            hideInfo={false}
+            disabled
+          />
           <div class="st-typography-medium action-run-label">Action Parameters</div>
-          <Parameters formParameters={actionParameters} parameterType="action" hideRightAdornments hideInfo disabled />
+          <Parameters
+            formParameters={actionParameters}
+            parameterType="action"
+            hideRightAdornments
+            hideInfo={false}
+            disabled
+          />
         </div>
       </div>
     {/if}

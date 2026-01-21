@@ -1,13 +1,15 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  export let message: string;
+  export let messages: string[];
 </script>
 
 <div class="sequence-tooltip">
-  <div class="container">
-    {message}
-  </div>
+  {#each messages as message}
+    <div class="container">
+      {message}
+    </div>
+  {/each}
 </div>
 
 <style>

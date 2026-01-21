@@ -49,7 +49,11 @@ export function generateDefaultView(
   //     return type, so they can be checked as well).
   if (externalEventTypes.length) {
     const externalEventLayer = createTimelineExternalEventLayer(timelines, {
-      filter: { externalEvent: { event_types: externalEventTypes.map(e => e.name) } },
+      filter: {
+        externalEvent: {
+          static_types: externalEventTypes.map(externalEventType => externalEventType.name),
+        },
+      },
     });
     const externalEventRow = createRow(timelines, {
       autoAdjustHeight: false,
@@ -521,6 +525,7 @@ export function applyViewDefinitionMigrations(viewDefinition: ViewDefinition): {
     const upMigrations: Record<number, (view: ViewDefinition) => ViewDefinition> = {
       0: migrateViewDefinitionV0toV1,
       1: migrateViewDefinitionV1toV2,
+      2: migrateViewDefinitionV2toV3,
     };
 
     // Iterate through versions between view version and latest view version
@@ -660,5 +665,38 @@ export function migrateViewDefinitionV1toV2(viewDefinition: ViewDefinition) {
       }),
     },
     version: 2,
+  };
+}
+
+export function migrateViewDefinitionV2toV3(viewDefinition: ViewDefinition) {
+  /*
+    Summary of migrations:
+    - Convert prior 'event_types' filter field for External Event layers to 'static_types'
+  */
+  return {
+    ...viewDefinition,
+    plan: {
+      ...viewDefinition.plan,
+      timelines: viewDefinition.plan.timelines.map(timeline => {
+        return {
+          ...timeline,
+          rows: timeline.rows.map(row => {
+            const newRow = structuredClone(row);
+            newRow.layers = newRow.layers.map(layer => {
+              const newLayer = structuredClone(layer);
+              if (newLayer.filter.externalEvent) {
+                // @ts-expect-error deprecated type def
+                newLayer.filter.externalEvent.static_types = newLayer.filter.externalEvent.event_types;
+                // @ts-expect-error deprecated type def
+                delete newLayer.filter.externalEvent.event_types;
+              }
+              return newLayer;
+            });
+            return newRow;
+          }),
+        };
+      }),
+    },
+    version: 3,
   };
 }

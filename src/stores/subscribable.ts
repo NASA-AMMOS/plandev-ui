@@ -1,49 +1,23 @@
 import { browser } from '$app/environment';
-import { env } from '$env/dynamic/public';
-import { type ClientOptions } from 'graphql-ws';
 import { debounce, isEqual } from 'lodash-es';
-import { get, type Readable, type Subscriber, type Unsubscriber, type Updater } from 'svelte/store';
-import { gqlWsClient, userStore } from '../lib/stores/auth';
+import { type Readable, type Subscriber, type Unsubscriber, type Updater } from 'svelte/store';
 import type { GqlSubscribable, NextValue, QueryVariables, Subscription } from '../types/subscribable';
+import { logout } from '../utilities/login';
 import { EXPIRED_JWT } from '../utilities/permissions';
-
-export function getClientOptions(): ClientOptions {
-  if (!browser) {
-    throw new Error('getClientOptions() is being called on the server');
-  }
-
-  const clientOptions: ClientOptions = {
-    connectionParams: async () => {
-      // NOTE: provably keeps restarting and not reuisng same connection, but since
-      // this is slightly better than error handling and we also know we can piggyback
-      // multiple connections, we are going with it. ideally we could reuse the same
-      // connection the whole time but it retains the access token and ignores all
-      // other connection_inits. if there's a way to make hasura NOT ignore that or
-      // something else that would be cool but it seems the graphql-ws protocol is
-      // not written to support that :/
-      return {
-        headers: {
-          Authorization: `Bearer ${get(userStore)?.token}`,
-        },
-      };
-    },
-    on: {
-      closed: (socket: unknown) => {
-        console.log('WebSocket closed.');
-        console.debug(socket as WebSocket);
-      },
-      connected: (_: unknown) => {
-        console.log('WebSocket connected.');
-      },
-    },
-    url: env.PUBLIC_HASURA_WEB_SOCKET_URL,
-    webSocketImpl: WebSocket,
-  };
-  return clientOptions;
-}
+import {
+  clearPendingQueryName,
+  getSharedClient,
+  registerSubscription,
+  restartSharedClient,
+  setPendingQueryName,
+  unregisterSubscription,
+} from './gqlClient';
+import { addSubscription, removeSubscription, updateSubscription } from './subscriptionsManager';
 
 /**
  * Returns a Svelte store that listens to GraphQL subscriptions via graphql-ws.
+ * All subscriptions share a single WebSocket connection via the gqlClient module.
+ * Authentication is handled by the shared client (reads from cookies).
  */
 export function gqlSubscribable<T>(
   query: string,
@@ -52,55 +26,120 @@ export function gqlSubscribable<T>(
   transformer: (v: any) => T = v => v,
 ): GqlSubscribable<T> {
   const subscribers: Set<Subscription<T>> = new Set();
-  let unsubscribe: Unsubscriber = () => undefined;
+  let subscriptionCleanup: (() => void) | null = null;
+  let subscriptionActive = false;
   let value: T | null = initialValue;
   let variableUnsubscribers: Unsubscriber[] = [];
   let variables: QueryVariables | null = initialVariables;
+  let loading: boolean = true;
+  let error: string = '';
+
+  // Subscribers for the _loading and _error stores
+  const loadingSubscribers: Set<Subscriber<boolean>> = new Set();
+  const errorSubscribers: Set<Subscriber<string>> = new Set();
+
+  function setLoading(newLoading: boolean) {
+    if (loading !== newLoading) {
+      loading = newLoading;
+      loadingSubscribers.forEach(subscriber => subscriber(loading));
+    }
+  }
+
+  function setError(newError: string) {
+    if (error !== newError) {
+      error = newError;
+      errorSubscribers.forEach(subscriber => subscriber(error));
+    }
+  }
+
+  // Create readable stores for loading and error
+  const loadingStore: Readable<boolean> = {
+    subscribe: (subscriber: Subscriber<boolean>) => {
+      loadingSubscribers.add(subscriber);
+      subscriber(loading);
+      return () => {
+        loadingSubscribers.delete(subscriber);
+      };
+    },
+  };
+
+  const errorStore: Readable<string> = {
+    subscribe: (subscriber: Subscriber<string>) => {
+      errorSubscribers.add(subscriber);
+      subscriber(error);
+      return () => {
+        errorSubscribers.delete(subscriber);
+      };
+    },
+  };
+
   // Debounce clientSubscribe calls within the same call stack so that the last subscribe call is the
   // only one within the stack that actually executes, otherwise we end up with duplicative subscriptions
   // with potentially stale data that the underyling graphql-ws library does not immediately cancel.
   const debouncedClientSubscribe = debounce(clientSubscribe, 0, { trailing: true });
 
+  // Extract query name for descriptive subscription IDs (helps with debugging)
+  const queryMatch = query.match(/subscription\s+(\w+)/i);
+  const queryName = queryMatch?.[1] ?? 'unknown';
+
+  // Subscription ID - will be set when first subscriber connects
+  let id: string = '';
+
   /**
-   * Creates a subscription to the query within the web socket
+   * Creates a subscription to the query within the shared web socket
    */
   function clientSubscribe() {
-    const client = get(gqlWsClient);
+    const client = getSharedClient();
+    if (browser && client && subscriptionActive) {
+      // Clean up any existing subscription before creating new one
+      if (subscriptionCleanup) {
+        subscriptionCleanup();
+        subscriptionCleanup = null;
+      }
 
-    if (browser && client) {
-      unsubscribe = client.subscribe<NextValue<T>>(
+      // Set pending query name for generateID (ref count already handled in subscribe())
+      setPendingQueryName(queryName);
+
+      let receivedFirstMessage = false;
+
+      subscriptionCleanup = client.subscribe<NextValue<T>>(
         {
           query,
           variables,
         },
         {
-          complete: () => {},
-          error: async (error: Error | CloseEvent) => {
-            console.log('subscribe error');
-            console.log(error);
+          complete: () => {
+            // Subscription completed normally
+          },
+          error: async (err: Error | CloseEvent) => {
+            console.error('Socket subscribe error', err);
 
-            if ('reason' in error && error.reason.includes(EXPIRED_JWT)) {
-              // An access token is expected to expire, the connection will self-heal though
-              //    if it uses a function to provide connection parameters that can dynamically
-              //    set the access token.
-              // That being said, this should never be triggered in the OIDC case because we
-              //    have refreshes.
-              console.error(
-                'Expired JWT in subscribe. Query, variables, and user in question:',
-                query,
-                variables,
-                JSON.stringify(get(userStore)),
-              );
-              console.error('Throwing error...');
-
-              throw new Error(`JWT Expired in gqlSubscribable.\nCited Reason: ${error.reason}\nFor query: ${query}.`);
+            if ('reason' in err && err.reason.includes(EXPIRED_JWT)) {
+              await logout(EXPIRED_JWT);
             } else {
+              let newError: string;
+              if (Array.isArray(err)) {
+                newError = err.map(e => e.message ?? 'Unknown socket error').join(', ');
+              } else if ('message' in err) {
+                newError = err.message;
+              } else {
+                newError = 'Unknown socket error';
+              }
+              setError(newError);
+              updateSubscription(id, { error: newError });
               subscribers.forEach(({ next }) => {
                 next(initialValue as T);
               });
             }
           },
           next: ({ data }) => {
+            // Track first message to update loading state
+            if (!receivedFirstMessage) {
+              receivedFirstMessage = true;
+              setLoading(false);
+              updateSubscription(id, { loading: false });
+            }
+
             if (data != null) {
               const [key] = Object.keys(data);
               const { [key]: newValue } = data;
@@ -114,23 +153,37 @@ export function gqlSubscribable<T>(
           },
         },
       );
-    } else {
-      unsubscribe = () => undefined;
+
+      // Clear the pending query name after subscription is created
+      clearPendingQueryName();
     }
   }
 
-  function filterValueById(id: number): void {
+  function filterValueById(filterId: number): void {
     updateValue(currentValue => {
       if (Array.isArray(currentValue)) {
-        return currentValue.filter(v => v?.id !== id) as unknown as T;
+        return currentValue.filter(v => v?.id !== filterId) as unknown as T;
       }
       return currentValue;
     });
   }
 
   function resubscribe() {
-    unsubscribe();
+    if (subscriptionCleanup) {
+      subscriptionCleanup();
+      subscriptionCleanup = null;
+    }
     debouncedClientSubscribe();
+  }
+
+  function restartSocket() {
+    setLoading(true);
+    setError(''); // Clear previous error on restart
+    updateSubscription(id, { error: '', loading: true });
+    // Restart the shared client - debounced so only restarts once
+    restartSharedClient();
+    // Resubscribe to reset internal state (receivedFirstMessage flag)
+    resubscribe();
   }
 
   function setVariables(newVariables: QueryVariables): void {
@@ -147,12 +200,12 @@ export function gqlSubscribable<T>(
    * Subscribe to the variables passed into the store.
    * These variables could be stores themselves or plain values.
    */
-  function subscribeToVariables(initialVariables: QueryVariables | null): void {
+  function subscribeToVariables(initialVars: QueryVariables | null): void {
     variableUnsubscribers.forEach(variableUnsubscribe => variableUnsubscribe());
     variableUnsubscribers = [];
 
-    if (initialVariables !== null) {
-      for (const [name, variable] of Object.entries(initialVariables)) {
+    if (initialVars !== null) {
+      for (const [name, variable] of Object.entries(initialVars)) {
         if (typeof variable === 'object' && variable?.subscribe !== undefined) {
           // If this variable is a store, subscribe to the store and when the store
           // updates, update our local cache of all of the variables from all of the stores
@@ -169,17 +222,27 @@ export function gqlSubscribable<T>(
   }
 
   function subscribe(next: Subscriber<T>): Unsubscriber {
-    // If we are in the browser and do not yet have a web socket client
-    // we will create one and subscribe to variables
-    subscribeToVariables(initialVariables); // should not be harmful if this runs every time subscribe is called
+    // If we are in the browser and subscription is not yet active,
+    // activate it using the shared client
+    if (browser && !subscriptionActive) {
+      // Generate a unique ID for this subscription instance
+      id = registerSubscription(queryName);
+      subscriptionActive = true;
 
-    // Subscribe within the WS to the GQL query
-    // Note that subscribeToVariables may immediately result in a resubscription if
-    // any of the variables are stores since the stores will call next(value) on
-    // initial subscription. This call below covers the case where no stores are passed
-    // in as variables. If resubscribe is called by subscribeToVariables then the debounce
-    // should take care of the duplication.
-    debouncedClientSubscribe();
+      // Register with the subscription manager for tracking/restart
+      addSubscription(id, { error, loading, query, restart: restartSocket });
+
+      // Subscribe to variable stores
+      subscribeToVariables(initialVariables);
+
+      // Subscribe to the GraphQL query via the shared client
+      // Note that subscribeToVariables may immediately result in a resubscription if
+      // any of the variables are stores since the stores will call next(value) on
+      // initial subscription. This call below covers the case where no stores are passed
+      // in as variables. If resubscribe is called by subscribeToVariables then the debounce
+      // should take care of the duplication.
+      debouncedClientSubscribe();
+    }
 
     const subscriber: Subscription<T> = { next };
     subscribers.add(subscriber);
@@ -188,10 +251,24 @@ export function gqlSubscribable<T>(
     return () => {
       subscribers.delete(subscriber);
 
-      if (subscribers.size === 0) {
-        unsubscribe();
+      if (subscribers.size === 0 && subscriptionActive) {
+        // Clean up the GraphQL subscription
+        if (subscriptionCleanup) {
+          subscriptionCleanup();
+          subscriptionCleanup = null;
+        }
+
+        // Clean up variable subscriptions
         variableUnsubscribers.forEach(variableUnsubscribe => variableUnsubscribe());
         variableUnsubscribers = [];
+
+        // Unregister from shared client (for reference counting)
+        unregisterSubscription();
+
+        // Remove from subscription manager
+        removeSubscription(id);
+
+        subscriptionActive = false;
       }
     };
   }
@@ -204,7 +281,10 @@ export function gqlSubscribable<T>(
   }
 
   return {
+    error: errorStore,
     filterValueById,
+    loading: loadingStore,
+    restartSocket,
     setVariables,
     subscribe,
     updateValue,

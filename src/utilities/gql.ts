@@ -622,14 +622,10 @@ const gql = {
     }
   `,
 
-  CREATE_WORKSPACE: `#graphql
-    mutation CreateWorkspace($workspace: workspace_insert_input!) {
-      createWorkspace: ${Queries.INSERT_WORKSPACE}(object: $workspace) {
-        created_at
-        id
-        name
-        owner
-        updated_at
+  CREATE_WORKSPACE_COLLABORATORS: `#graphql
+    mutation CreateWorkspaceCollaborators($collaborators: [workspace_collaborators_insert_input!]!) {
+      ${Queries.INSERT_WORKSPACE_COLLABORATORS}(objects: $collaborators){
+        affected_rows
       }
     }
   `,
@@ -1105,6 +1101,14 @@ const gql = {
     }
   `,
 
+  DELETE_WORKSPACE_COLLABORATOR: `#graphql
+    mutation DeleteWorkspaceCollaborator($collaborator: String!, $workspaceId: Int!) {
+      deleteWorkspaceCollaborator: ${Queries.DELETE_WORKSPACE_COLLABORATOR}(collaborator: $collaborator, workspace_id: $workspaceId) {
+        collaborator
+      }
+    }
+  `,
+
   DUPLICATE_PLAN: `#graphql
     mutation DuplicatePlan($plan_id: Int!, $new_plan_name: String!) {
       ${Queries.DUPLICATE_PLAN}(args: { new_plan_name: $new_plan_name, plan_id: $plan_id }) {
@@ -1241,9 +1245,9 @@ const gql = {
     }
   `,
 
-  GET_EXPANSION_RUNS: `#graphql
-    query GetExpansionRuns {
-      expansionRuns: ${Queries.EXPANSION_RUNS}(order_by: { id: desc }) {
+  GET_EXPANSION_RUN: `#graphql
+    query GetExpansionRun($id: Int!) {
+      expansionRun: ${Queries.EXPANSION_RUNS}_by_pk(id: $id) {
         created_at
         expansion_set {
           created_at
@@ -1263,6 +1267,30 @@ const gql = {
               }
             }
           }
+        }
+        simulation_dataset {
+          dataset_id
+          simulation {
+            plan {
+              id
+              name
+            }
+          }
+        }
+        id
+      }
+    }
+  `,
+
+  GET_EXPANSION_RUNS: `#graphql
+    query GetExpansionRuns {
+      expansionRuns: ${Queries.EXPANSION_RUNS}(order_by: { id: desc }) {
+        created_at
+        expansion_set {
+          created_at
+          id
+          name
+          parcel_id
         }
         simulation_dataset {
           dataset_id
@@ -1517,18 +1545,21 @@ const gql = {
           id
         }
         refresh_activity_type_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
           success
         }
         refresh_resource_type_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
           success
         }
         refresh_model_parameter_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
@@ -1683,6 +1714,7 @@ const gql = {
         role
         action_permissions
         function_permissions
+        workspace_permissions
       }
     }
   `,
@@ -2574,18 +2606,21 @@ const gql = {
           id
         }
         refresh_activity_type_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
           success
         }
         refresh_resource_type_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
           success
         }
         refresh_model_parameter_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
@@ -2641,18 +2676,21 @@ const gql = {
         }
         owner
         refresh_activity_type_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
           success
         }
         refresh_resource_type_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
           success
         }
         refresh_model_parameter_logs(order_by: { created_at: desc }, limit: 1) {
+          created_at
           error
           error_message
           pending
@@ -3543,6 +3581,9 @@ const gql = {
   SUB_WORKSPACE: `#graphql
     subscription SubWorkspace($workspaceId: Int!) {
       workspace: ${Queries.WORKSPACE}(id: $workspaceId) {
+        collaborators {
+          collaborator
+        }
         created_at
         disk_location
         id
@@ -3557,6 +3598,9 @@ const gql = {
   SUB_WORKSPACES: `#graphql
     subscription SubWorkspaces {
       ${Queries.WORKSPACES}(order_by: { id: desc }) {
+        collaborators {
+          collaborator
+        }
         created_at
         disk_location
         id

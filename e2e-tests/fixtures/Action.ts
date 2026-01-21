@@ -1,5 +1,6 @@
 import { expect, Locator, Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { setFileInputByFilepath } from '../utilities/helpers';
 
 export class Action {
   actionDefinitionButton: Locator;
@@ -33,14 +34,16 @@ export class Action {
   }
 
   async createAction(): Promise<string> {
+    const createButton = this.page.getByRole('button', { name: 'Create' });
     await this.createActionButton.click();
     await expect(this.createModal).toBeVisible();
-    await expect(this.page.getByRole('button', { name: 'Create' })).toBeDisabled();
+    await expect(createButton).toBeDisabled();
     await this.actionFormName.fill(this.actionName);
     await this.actionFormDescription.fill(this.actionDescription);
-    await this.page.waitForTimeout(1000);
-    await this.actionFormPath.setInputFiles(this.actionPath);
-    await this.page.getByRole('button', { name: 'Create' }).click();
+    await this.actionFormPath.waitFor({ state: 'attached' });
+    await setFileInputByFilepath(this.page, this.actionFormPath, this.actionPath, createButton);
+    await expect(createButton).toBeEnabled();
+    await createButton.click();
     await this.waitForToast('Action Created Successfully');
     await this.page.getByRole('button', { name: this.actionName });
     await expect(this.actionDefinitionButton).toBeVisible();

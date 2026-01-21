@@ -1,106 +1,73 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { Status } from '../../src/enums/status.js';
-import { Constraints } from '../fixtures/Constraints.js';
-import { Models } from '../fixtures/Models.js';
-import { PanelNames, Plan } from '../fixtures/Plan.js';
-import { Plans } from '../fixtures/Plans.js';
-import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
-import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
+import { PanelNames } from '../fixtures/Plan.js';
+import { setupTest, teardownTest, type FullSetupResult } from '../utilities/api.js';
 
-let constraints: Constraints;
-let context: BrowserContext;
-let models: Models;
-let page: Page;
-let plan: Plan;
-let plans: Plans;
-let schedulingConditions: SchedulingConditions;
-let schedulingGoals: SchedulingGoals;
+let setup: FullSetupResult;
 
-test.beforeAll(async ({ baseURL, browser }) => {
-  context = await browser.newContext();
-  page = await context.newPage();
-
-  models = new Models(page);
-  plans = new Plans(page, models);
-  constraints = new Constraints(page);
-  schedulingConditions = new SchedulingConditions(page);
-  schedulingGoals = new SchedulingGoals(page);
-  plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
-
-  await models.goto();
-  await models.createModel(baseURL);
-  await plans.goto();
-  await plans.createPlan();
-  await plan.goto();
-
-  await plan.showPanel(PanelNames.SIMULATION, true);
+test.beforeAll(async ({ browser }) => {
+  setup = await setupTest(browser);
+  await setup.plan.goto();
+  await setup.plan.showPanel(PanelNames.SIMULATION, true);
 });
 
 test.afterAll(async () => {
-  await plans.goto();
-  await plans.deletePlan();
-  await models.goto();
-  await models.deleteModel();
-  await page.close();
-  await context.close();
+  await teardownTest(setup);
 });
 
 test.describe.serial('Simulation', async () => {
   test(`Plans with no simulation runs should display a relevant message and simulation should be enabled`, async () => {
-    await expect(plan.navButtonSimulationMenuStatus).not.toBeVisible();
-    await plan.navButtonSimulation.hover();
-    await expect(plan.navButtonSimulationMenu).toBeVisible();
-    await expect(plan.navButtonSimulationMenu).toContainText('Simulation not run');
-    await expect(plan.navButtonSimulationMenu.getByRole('button', { name: 'Simulate' })).toBeEnabled();
-    await expect(plan.simulateButton).toBeEnabled();
-    await expect(plan.reSimulateButton).not.toBeVisible();
+    await expect(setup.plan.navButtonSimulationMenuStatus).not.toBeVisible();
+    await setup.plan.navButtonSimulation.hover();
+    await expect(setup.plan.navButtonSimulationMenu).toBeVisible();
+    await expect(setup.plan.navButtonSimulationMenu).toContainText('Simulation not run');
+    await expect(setup.plan.navButtonSimulationMenu.getByRole('button', { name: 'Simulate' })).toBeEnabled();
+    await expect(setup.plan.simulateButton).toBeEnabled();
+    await expect(setup.plan.reSimulateButton).not.toBeVisible();
 
     // Expect no simulation runs to be visible
-    const simHistoryLength = await plan.getSimulationHistoryListLength();
+    const simHistoryLength = await setup.plan.getSimulationHistoryListLength();
     await expect(simHistoryLength).toBe(0);
   });
 
   test(`Plans with no activities should simulate`, async () => {
-    const simHistoryLength = await plan.getSimulationHistoryListLength();
-    await plan.runSimulation();
-    await page.waitForTimeout(1000); // wait for sim dataset to appear
+    const simHistoryLength = await setup.plan.getSimulationHistoryListLength();
+    await setup.plan.runSimulation();
 
     // Expect a new dataset to be added to simulation history
-    const newSimHistoryLength = await plan.getSimulationHistoryListLength();
-    await expect(newSimHistoryLength).toEqual(simHistoryLength + 1);
+    await expect.poll(() => setup.plan.getSimulationHistoryListLength()).toEqual(simHistoryLength + 1);
 
     // Expect re-simulate button to be enabled and simulation button disabled
-    await expect(plan.reSimulateButton).toBeEnabled();
-    await expect(plan.simulateButton).toBeDisabled();
+    await expect(setup.plan.reSimulateButton).toBeEnabled();
+    await expect(setup.plan.simulateButton).toBeDisabled();
   });
 
   test(`Re-simulating should re-run simulation`, async () => {
-    const simHistoryLength = await plan.getSimulationHistoryListLength();
-    await plan.reRunSimulation();
-    await page.waitForTimeout(1000); // wait for sim dataset to appear
-    const newSimHistoryLength = await plan.getSimulationHistoryListLength();
-    await expect(newSimHistoryLength).toEqual(simHistoryLength + 1);
+    const simHistoryLength = await setup.plan.getSimulationHistoryListLength();
+    await setup.plan.reRunSimulation();
+    await expect.poll(() => setup.plan.getSimulationHistoryListLength()).toEqual(simHistoryLength + 1);
   });
 
   test(`Plans with activities should simulate and result in simulated activities`, async () => {
-    await plan.showPanel(PanelNames.SIMULATED_ACTIVITIES_TABLE, true);
-    await expect(plan.panelSimulatedActivitiesTable.getByRole('gridcell', { name: 'GrowBanana' })).not.toBeVisible();
-    await plan.showPanel(PanelNames.SIMULATION, true);
-    await plan.addActivity('GrowBanana');
-    await plan.runSimulation();
-    await page.waitForTimeout(1000); // wait for sim results
-    await plan.showPanel(PanelNames.SIMULATED_ACTIVITIES_TABLE, true);
-    await expect(plan.panelSimulatedActivitiesTable.getByRole('gridcell', { name: 'GrowBanana' })).toBeVisible();
-    await plan.showPanel(PanelNames.SIMULATION, true);
+    await setup.plan.showPanel(PanelNames.SIMULATED_ACTIVITIES_TABLE, true);
+    await expect(
+      setup.plan.panelSimulatedActivitiesTable.getByRole('gridcell', { name: 'GrowBanana' }),
+    ).not.toBeVisible();
+    await setup.plan.showPanel(PanelNames.SIMULATION, true);
+    await setup.plan.addActivity('GrowBanana');
+    await setup.plan.runSimulation();
+    await setup.plan.showPanel(PanelNames.SIMULATED_ACTIVITIES_TABLE, true);
+    await expect(setup.plan.panelSimulatedActivitiesTable.getByRole('gridcell', { name: 'GrowBanana' })).toBeVisible();
+    await setup.plan.showPanel(PanelNames.SIMULATION, true);
   });
 
   test(`Plans with an invalid activity should fail simulation`, async () => {
-    await plan.addActivity('BakeBananaBread');
-    await plan.runSimulation(Status.Failed);
+    await setup.plan.addActivity('BakeBananaBread');
+    await setup.plan.runSimulation(Status.Failed);
   });
 
   test(`Modified plans should indicate that simulation is out of date`, async () => {
-    await plan.addActivity();
-    await plan.waitForSimulationStatus(Status.Modified);
+    await setup.plan.addActivity();
+    await setup.plan.waitForSimulationStatus(Status.Modified);
   });
 });

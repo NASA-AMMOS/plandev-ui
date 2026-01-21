@@ -9,12 +9,14 @@
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
-  import { userStore } from '../../lib/stores/auth';
   import { sequenceAdaptations } from '../../stores/sequence-adaptation';
   import { channelDictionaries, commandDictionaries, parameterDictionaries } from '../../stores/sequencing';
+  import { getUserStore } from '../../stores/user';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+
+  const user = getUserStore();
 
   const createPermissionError = 'You do not have permission to create Command Dictionaries';
 
@@ -29,10 +31,10 @@
   let sequenceAdaptationName: string;
 
   $: hasCreatePermission =
-    featurePermissions.channelDictionary.canCreate($userStore) &&
-    featurePermissions.commandDictionary.canCreate($userStore) &&
-    featurePermissions.parameterDictionary.canCreate($userStore) &&
-    featurePermissions.sequenceAdaptation.canCreate($userStore);
+    featurePermissions.channelDictionary.canCreate($user) &&
+    featurePermissions.commandDictionary.canCreate($user) &&
+    featurePermissions.parameterDictionary.canCreate($user) &&
+    featurePermissions.sequenceAdaptation.canCreate($user);
   $: createButtonDisabled = !files || files?.length === 0 || (isSequenceAdaptation && sequenceAdaptationName === '');
   $: {
     if (files && files.length > 0) {
@@ -48,12 +50,7 @@
     creatingDictionary = true;
 
     try {
-      await effects.uploadDictionaryOrAdaptation(
-        file,
-        $userStore,
-        sequenceAdaptationName,
-        persistDictionaryToFilesystem,
-      );
+      await effects.uploadDictionaryOrAdaptation(file, $user, sequenceAdaptationName, persistDictionaryToFilesystem);
 
       // Set files to undefined to reset the input form and set the value to empty string to clear the uploaded file.
       files = undefined;
@@ -68,26 +65,26 @@
   }
 
   function deleteChannelDictionary(event: CustomEvent) {
-    effects.deleteChannelDictionary(event.detail.id, $userStore);
+    effects.deleteChannelDictionary(event.detail.id, $user);
   }
 
   function deleteCommandDictionary(event: CustomEvent) {
-    effects.deleteCommandDictionary(event.detail.id, $userStore);
+    effects.deleteCommandDictionary(event.detail.id, $user);
   }
 
   function deleteParameterDictionary(event: CustomEvent) {
-    effects.deleteParameterDictionary(event.detail.id, $userStore);
+    effects.deleteParameterDictionary(event.detail.id, $user);
   }
 
   function deleteSequenceAdaptation(event: CustomEvent) {
-    effects.deleteSequenceAdaptation(event.detail.id, $userStore);
+    effects.deleteSequenceAdaptation(event.detail.id, $user);
   }
 </script>
 
 <PageTitle title="Dictionaries" />
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
-  <Nav user={$userStore}>
+  <Nav>
     <span slot="title">Dictionaries</span>
   </Nav>
 
@@ -167,37 +164,37 @@
     <div class="table-container">
       <DictionaryTable
         dictionaries={$commandDictionaries}
-        hasDeletePermission={featurePermissions.commandDictionary.canDelete($userStore)}
+        hasDeletePermission={featurePermissions.commandDictionary.canDelete($user)}
         isEditingDictionaries={true}
         type={'Command'}
-        user={$userStore}
+        user={$user}
         on:delete={deleteCommandDictionary}
       />
 
       <DictionaryTable
         dictionaries={$channelDictionaries}
-        hasDeletePermission={featurePermissions.channelDictionary.canDelete($userStore)}
+        hasDeletePermission={featurePermissions.channelDictionary.canDelete($user)}
         isEditingDictionaries={true}
         type={'Channel'}
-        user={$userStore}
+        user={$user}
         on:delete={deleteChannelDictionary}
       />
 
       <DictionaryTable
         dictionaries={$parameterDictionaries}
-        hasDeletePermission={featurePermissions.parameterDictionary.canDelete($userStore)}
+        hasDeletePermission={featurePermissions.parameterDictionary.canDelete($user)}
         isEditingDictionaries={true}
         type={'Parameter'}
-        user={$userStore}
+        user={$user}
         on:delete={deleteParameterDictionary}
       />
 
       <DictionaryTable
         dictionaries={$sequenceAdaptations}
-        hasDeletePermission={featurePermissions.sequenceAdaptation.canDelete($userStore)}
+        hasDeletePermission={featurePermissions.sequenceAdaptation.canDelete($user)}
         isEditingDictionaries={true}
         type={'Sequence'}
-        user={$userStore}
+        user={$user}
         on:delete={deleteSequenceAdaptation}
       />
     </div>

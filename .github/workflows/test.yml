@@ -47,7 +47,7 @@ jobs:
       - name: Setup Node (UI)
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
+          node-version-file: '.nvmrc'
           cache: npm
       - name: Install Dependencies (UI)
         run: npm ci
@@ -73,19 +73,19 @@ jobs:
         with:
           node-version: '22.17.1'
           cache: npm
-      - name: Extract Aerie backend docker tag from PR body
+      - name: Extract PlanDev backend docker tag from PR body
         # look in the PR body for eg. the string ___REQUIRES_AERIE_PR___=9999, extract the number & save to env var
         # if backend PR is labeled correctly, it will publish a docker tag called 'pr-9999' to use in tests
         if: ${{ contains(env.PR_BODY, '___REQUIRES_AERIE_PR___=') }}
         run: |
           echo "AERIE_IMAGE_TAG=pr-$(echo $PR_BODY | sed -n 's/.*___REQUIRES_AERIE_PR___=\"\([0-9]\+\)\".*/\1/p')" >> $GITHUB_ENV
-      - name: Extract Aerie gateway docker tag from PR body
+      - name: Extract PlanDev gateway docker tag from PR body
         # look in the PR body for eg. the string ___REQUIRES_AERIE_PR___=9999, extract the number & save to env var
         # if backend PR is labeled correctly, it will publish a docker tag called 'pr-9999' to use in tests
         if: ${{ contains(env.PR_BODY, '___REQUIRES_GATEWAY_PR___=') }}
         run: |
           echo "GATEWAY_IMAGE_TAG=pr-$(echo $PR_BODY | sed -n 's/.*___REQUIRES_GATEWAY_PR___=\"\([0-9]\+\)\".*/\1/p')" >> $GITHUB_ENV
-      - name: Start Services (Aerie)
+      - name: Start Services (PlanDev)
         run: |
           echo "AERIE_IMAGE_TAG: $AERIE_IMAGE_TAG"
           echo "GATEWAY_IMAGE_TAG: $GATEWAY_IMAGE_TAG"
@@ -107,15 +107,15 @@ jobs:
           name: E2E Test Results
           path: |
             **/e2e-test-results
-      - name: Print Logs for Services (Aerie)
+      - name: Print Logs for Services (PlanDev)
         if: always()
         run: docker compose -f docker-compose-test.yml logs -t
-      - name: Stop Services (Aerie)
+      - name: Stop Services (PlanDev)
         if: always()
         run: |
           docker ps -a
           docker compose -f docker-compose-test.yml down
           docker ps -a
-      - name: Prune Volumes (Aerie)
+      - name: Prune Volumes (PlanDev)
         if: always()
         run: docker volume prune --force

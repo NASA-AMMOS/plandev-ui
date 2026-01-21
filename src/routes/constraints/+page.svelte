@@ -3,9 +3,11 @@
 <script lang="ts">
   import PageTitle from '../../components/app/PageTitle.svelte';
   import Constraints from '../../components/constraints/Constraints.svelte';
-  import { userStore } from '../../lib/stores/auth';
+  import { getUserStore } from '../../stores/user';
+
+  const user = getUserStore();
 </script>
 
 <PageTitle title="Constraints" />
 
-<Constraints user={$userStore} />
+<Constraints user={$user} />

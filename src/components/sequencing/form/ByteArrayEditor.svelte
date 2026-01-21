@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import type { SyntaxNode } from '@lezer/common';
-  import type { CommandInfoMapper } from '../../../utilities/sequence-editor/command-info-mapper';
+  import type { CommandInfoMapper } from '@nasa-jpl/aerie-sequence-languages';
   import { decodeInt32Array } from '../../../utilities/sequence-editor/sequence-utils';
 
   export let argNode: SyntaxNode;

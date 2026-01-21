@@ -2,7 +2,6 @@
 
 <script lang="ts">
   import PlanMergeReview from '../../../../components/plan/PlanMergeReview.svelte';
-  import { userStore } from '../../../../lib/stores/auth';
   import { initialPlan } from '../../../../stores/plan';
   import type { PageData } from './$types';
 
@@ -18,5 +17,4 @@
   initialPlan={data.initialPlan}
   initialMergeRequest={data.initialMergeRequest}
   initialNonConflictingActivities={data.initialNonConflictingActivities}
-  user={$userStore}
 />

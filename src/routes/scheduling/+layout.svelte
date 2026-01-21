@@ -3,11 +3,10 @@
 <script lang="ts">
   import Nav from '../../components/app/Nav.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
-  import { userStore } from '../../lib/stores/auth';
 </script>
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
-  <Nav user={$userStore}>
+  <Nav>
     <span class="scheduling-title" slot="title">Scheduling</span>
   </Nav>
 

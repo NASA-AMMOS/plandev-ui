@@ -43,7 +43,7 @@ export type ExternalEventJson = {
 // no analogue to ExternalSourceSlim as we have no subevents or anything of the sort that we may elect to exclude
 
 export type ExternalEvent = {
-  attributes: object;
+  attributes: { [name: string]: any };
   duration: string;
   duration_ms: number;
   pkey: ExternalEventPkey;

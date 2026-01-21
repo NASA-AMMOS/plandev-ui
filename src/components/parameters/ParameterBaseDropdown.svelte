@@ -33,7 +33,7 @@
     reset: FormParameter;
   }>();
 
-  $: columns = `calc(${labelColumnWidth}px - ${level * levelPadding}px) auto`;
+  $: columns = `calc(${labelColumnWidth}px - ${level * levelPadding}px) auto min-content`;
 
   $: if (!disabled && isParameterWithOptions(formParameter.schema)) {
     dropdownOptions = formParameter.schema.options.map(option => ({ display: option.display, value: option.value }));
@@ -95,17 +95,16 @@
       on:change={onChange}
     />
   {/if}
-</div>
-
-<div class="parameter-right items-center">
-  <ParameterBaseRightAdornments
-    {disabled}
-    {formParameter}
-    hidden={false}
-    hideValueSource={true}
-    {parameterType}
-    {use}
-  />
+  <div class="parameter-right items-center">
+    <ParameterBaseRightAdornments
+      {disabled}
+      {formParameter}
+      hidden={false}
+      hideValueSource={true}
+      {parameterType}
+      {use}
+    />
+  </div>
 </div>
 
 <style>

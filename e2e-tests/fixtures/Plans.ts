@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { setFileInputByFilepath } from '../utilities/helpers.js';
 import { Models } from './Models.js';
 
 export class Plans {
@@ -91,10 +92,7 @@ export class Plans {
   }
 
   async fillInputFile(importFilePath: string = this.importFilePath) {
-    await this.page.waitForTimeout(1000);
-    await this.inputFile.focus();
-    await this.inputFile.setInputFiles(importFilePath);
-    await this.inputFile.evaluate(e => e.blur());
+    await setFileInputByFilepath(this.page, this.inputFile, importFilePath);
   }
 
   async fillInputName(planName = this.planName) {
@@ -114,14 +112,15 @@ export class Plans {
     await this.table.waitFor({ state: 'attached' });
     await this.table.waitFor({ state: 'visible' });
 
-    const nameColumnHeader = await this.table.getByRole('columnheader', { exact: true, name: 'Name' });
+    const nameColumnHeader = this.table.getByRole('columnheader', { exact: true, name: 'Name' });
     await nameColumnHeader.hover();
 
-    const filterIcon = await nameColumnHeader.locator('.ag-icon-filter');
+    const filterIcon = nameColumnHeader.locator('.ag-icon-filter');
     await expect(filterIcon).toBeVisible();
     await filterIcon.click();
     await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(planName);
-    await expect(this.table.getByRole('row', { name: planName })).toBeVisible();
+    // Allow more time for AG Grid to filter the data
+    await expect(this.table.getByRole('row', { name: planName })).toBeVisible({ timeout: 10000 });
     await this.page.keyboard.press('Escape');
   }
 

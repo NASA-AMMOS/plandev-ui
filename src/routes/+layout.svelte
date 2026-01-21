@@ -1,20 +1,46 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { beforeNavigate } from '$app/navigation';
   import { env } from '$env/dynamic/public';
   import { cookieStoreListener } from '$lib/stores/oidc';
   import { ModeWatcher } from '@nasa-jpl/stellar-svelte';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { mergeWith } from 'lodash-es';
-  import { onMount } from 'svelte';
+  import { onMount, setContext } from 'svelte';
+  import { writable } from 'svelte/store';
+  import ConnectionStatusBanner from '../components/app/ConnectionStatusBanner.svelte';
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
-  import { gqlWsClient } from '../lib/stores/auth';
+  import { clearLogs } from '../stores/errors';
+  import { disposeSharedClient, restartSharedClient } from '../stores/gqlClient';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
+  import type { UserStore } from '../types/app';
   import { loadPluginCode } from '../utilities/plugins';
+  import type { LayoutData } from './$types';
+
+  export let data: LayoutData;
+
+  const user: UserStore = writable(null);
 
   let pluginsEnabled = env.PUBLIC_TIME_PLUGIN_ENABLED === 'true';
+  let previousRole: string | null = null;
+
   $pluginsLoaded = pluginsEnabled ? false : true;
+
+  $: {
+    user.set(data.user || null);
+  }
+
+  // Only restart WebSocket when role actually changes, not on every navigation
+  // graphql-ws automatically re-subscribes all active subscriptions when reconnected
+  $: {
+    const newRole = $user?.activeRole ?? null;
+    if (newRole !== previousRole && previousRole !== null) {
+      restartSharedClient();
+    }
+    previousRole = newRole;
+  }
 
   onMount(() => {
     let unsubscribe = () => {};
@@ -28,15 +54,14 @@
 
     return () => {
       unsubscribe();
-      console.log('Unsubscribed from cookie store changes.');
-
-      // dispose of the client on dismount
-      gqlWsClient.update(client => {
-        client?.dispose();
-        return client;
-      });
-      console.log('Disposed of graphql-ws client.');
+      // Dispose of the shared WebSocket client on layout unmount
+      disposeSharedClient();
     };
+  });
+
+  beforeNavigate(() => {
+    // Clear logs on page change
+    clearLogs();
   });
 
   async function loadPlugins() {
@@ -51,13 +76,16 @@
       $pluginsError = `Unable to load plugin: ${err}`;
     }
   }
+
+  setContext('user', user);
 </script>
 
+<ConnectionStatusBanner />
 {#if !pluginsEnabled || ($pluginsLoaded && !$pluginsError)}
   <slot />
 {:else}
   <div class="plans-layout">
-    <Nav user={null} />
+    <Nav />
     <div class="message st-typography-header">
       {#if $pluginsError}
         <div class="error">

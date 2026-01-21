@@ -132,13 +132,14 @@ const handleOIDCAuth: Handle = async ({ event, resolve }) => {
 };
 
 const handleJWTAuth: Handle = async ({ event, resolve }) => {
+  const activeRoleHeader = event.request.headers.get('Active-Role');
   const cookieHeader = event.request.headers.get('cookie') ?? '';
   const cookies = parse(cookieHeader);
   const { activeRole: activeRoleCookie = null, user: userCookie } = cookies;
 
   // try to get role with current JWT
   if (userCookie) {
-    const user = await computeRolesFromCookies(userCookie, activeRoleCookie);
+    const user = await computeRolesFromCookies(userCookie, activeRoleHeader ?? activeRoleCookie);
     if (user) {
       event.locals.user = user;
       return await resolve(event);
@@ -163,6 +164,8 @@ const handleSSOAuth: Handle = async ({ event, resolve }) => {
   const cookieHeader = event.request.headers.get('cookie') ?? '';
   const cookies = parse(cookieHeader);
   const { activeRole: activeRoleCookie = null } = cookies;
+  const activeRoleHeader = event.request.headers.get('Active-Role');
+  const activeRole = activeRoleHeader ?? activeRoleCookie;
 
   // pass all cookies to the gateway, who can determine if we have any valid SSO tokens
   const validationData = await reqGatewayForwardCookies<ReqValidateSSOResponse>(
@@ -188,7 +191,7 @@ const handleSSOAuth: Handle = async ({ event, resolve }) => {
     token: validationData.token ?? '',
   };
 
-  const roles = await computeRolesFromJWT(user, activeRoleCookie);
+  const roles = await computeRolesFromJWT(user, activeRole);
 
   // create and set activeRole cookie
   if (roles) {

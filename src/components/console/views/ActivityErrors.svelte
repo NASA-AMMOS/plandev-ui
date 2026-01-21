@@ -3,16 +3,22 @@
 <script lang="ts">
   import { Tabs } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, IRowNode } from 'ag-grid-community';
+  import { getContext } from 'svelte';
   import type { DataGridColumnDef } from '../../../types/data-grid';
   import type { ActivityErrorCategories, ActivityErrorCounts, ActivityErrorRollup } from '../../../types/errors';
   import EmptyState from '../../console/EmptyState.svelte';
   import ActivityErrorsRollup from '../../ui/ActivityErrorsRollup.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
+  import { ConsoleContextKey, type ConsoleContext } from '../Console.svelte';
 
   type ActivityErrorsRollupRendererParams = ICellRendererParams<ActivityErrorRollup>;
 
   export let activityValidationErrorRollups: ActivityErrorRollup[] = [];
   export let activityValidationErrorTotalRollup: ActivityErrorCounts;
+
+  // Get state from context
+  const consoleContext = getContext<ConsoleContext>(ConsoleContextKey);
+  const filterStore = consoleContext?.filter;
 
   $: hasErrors = activityValidationErrorRollups.length > 0;
 
@@ -125,7 +131,7 @@
   {#if hasErrors}
     <div class="flex h-full flex-col overflow-hidden">
       <div class="grid min-h-0 flex-1 grid-cols-[240px_1fr] overflow-hidden bg-[var(--st-gray-15)]">
-        <div class="overflow-y-auto border-r border-[var(--st-gray-20)] pt-4">
+        <div class="overflow-y-auto pt-4">
           <ActivityErrorsRollup
             counts={activityValidationErrorTotalRollup}
             selectable
@@ -135,6 +141,7 @@
         </div>
         <div class="h-full min-h-0 overflow-hidden">
           <DataGrid
+            filterExpression={$filterStore}
             bind:this={dataGrid}
             {columnDefs}
             rowData={activityValidationErrorRollups}

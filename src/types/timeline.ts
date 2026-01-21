@@ -1,10 +1,10 @@
 import type { Selection } from 'd3-selection';
+import type { ActivityFilterField, ExternalEventFilterField } from '../enums/filter';
 import type { ActivityDirective, ActivityDirectiveId, ActivityType } from './activity';
 import type { ConstraintResultWithName } from './constraint';
 import type { ExternalEvent, ExternalEventId, ExternalEventType } from './external-event';
 import type { DynamicFilter, DynamicFilterDataType } from './filter';
 import type { ResourceType, Span, SpanId } from './simulation';
-import type { ActivityFilterField } from '../enums/filter';
 
 export type DiscreteTree = DiscreteTreeNode[];
 
@@ -41,13 +41,26 @@ export type ActivityLayerFilter = {
     DynamicFilter<Pick<typeof ActivityFilterField, 'Tags' | 'Parameter' | 'SchedulingGoalId' | 'Name'>>[]
   >;
 };
+
 export type ExternalEventLayerFilter = {
-  event_types: string[];
+  dynamic_type_filters?: DynamicFilter<Pick<typeof ExternalEventFilterField, 'Type'>>[];
+  other_filters?: DynamicFilter<Pick<typeof ExternalEventFilterField, 'Attribute' | 'Name'>>[];
+  static_types?: string[];
+  type_subfilters?: Record<string, DynamicFilter<Pick<typeof ExternalEventFilterField, 'Attribute' | 'Name'>>[]>;
 };
 
 export type ActivityLayerFilterSubfield = { name: string; type: DynamicFilterDataType };
 export type ActivityLayerFilterSubfieldSchema = ActivityLayerFilterSubfield & {
   activityTypes: string[];
+  label: string;
+  unit?: string;
+  values?: string[];
+};
+
+// TODO: Is this still valid for External Events?
+export type ExternalEventLayerFilterSubfield = { name: string; type: DynamicFilterDataType };
+export type ExternalEventLayerFilterSubfieldSchema = ExternalEventLayerFilterSubfield & {
+  externalEventTypes: string[];
   label: string;
   unit?: string;
   values?: string[];

@@ -5,17 +5,26 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
-  import { Button, Resizable } from '@nasa-jpl/stellar-svelte';
-  import { CalendarRange, ChevronsLeftRight, FlipHorizontal2, ListX, PlaySquareIcon } from 'lucide-svelte';
+  import { Button, Resizable, Select } from '@nasa-jpl/stellar-svelte';
+  import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
+  import { capitalize } from 'lodash-es';
+  import {
+    AlertTriangle,
+    CalendarRange,
+    ChevronsLeftRight,
+    FlipHorizontal2,
+    ListX,
+    PlaySquareIcon,
+  } from 'lucide-svelte';
   import type { PaneAPI } from 'paneforge';
   import { onDestroy } from 'svelte';
+  import { get } from 'svelte/store';
   import Nav from '../../../components/app/Nav.svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import Console from '../../../components/console/Console.svelte';
   import ConsoleTab from '../../../components/console/ConsoleTab.svelte';
   import ConsoleActivityErrors from '../../../components/console/views/ActivityErrors.svelte';
-  import ConsoleGenericErrors from '../../../components/console/views/GenericErrors.svelte';
-  import ConsoleModelErrors from '../../../components/console/views/ModelErrors.svelte';
+  import ConsoleLogs from '../../../components/console/views/ConsoleLogs.svelte';
   import ActivityStatusMenu from '../../../components/menus/ActivityStatusMenu.svelte';
   import ExtensionMenu from '../../../components/menus/ExtensionMenu.svelte';
   import PlanMenu from '../../../components/menus/PlanMenu.svelte';
@@ -32,7 +41,6 @@
   import { SearchParameters } from '../../../enums/searchParameters';
   import { SequencingMode } from '../../../enums/sequencing';
   import { Status } from '../../../enums/status';
-  import { userStore } from '../../../lib/stores/auth';
   import {
     activityArgumentDefaults,
     activityArgumentDefaultsModelId,
@@ -52,10 +60,14 @@
   } from '../../../stores/constraints';
   import {
     activityErrorRollups,
-    allErrors,
-    anchorValidationErrors,
-    clearAllErrors,
+    allLogs,
+    allProblems,
+    clearLogs,
     clearSchedulingErrors,
+    constraintRunErrors,
+    errorLogs,
+    modelErrors,
+    resetErrorStores,
     schedulingErrors,
     simulationDatasetErrors,
   } from '../../../stores/errors';
@@ -118,6 +130,7 @@
     simulationStatus,
     spans,
   } from '../../../stores/simulation';
+  import { getUserStore } from '../../../stores/user';
   import {
     initializeView,
     resetOriginalView,
@@ -126,7 +139,7 @@
     viewTogglePanel,
     viewUpdateGrid,
   } from '../../../stores/views';
-  import type { ActivityErrorCounts } from '../../../types/errors';
+  import type { ActivityErrorCounts, LogLevel } from '../../../types/errors';
   import type { Extension } from '../../../types/extension';
   import type { PlanSnapshot } from '../../../types/plan-snapshot';
   import type { View, ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
@@ -156,7 +169,11 @@
 
   export let data: PageData;
 
-  type PlanConsoleTab = 'all' | 'anchor' | 'scheduling' | 'simulation' | 'activity' | 'model';
+  type PlanConsoleTab = 'all' | 'scheduling' | 'simulation' | 'activity' | 'model' | 'constraints' | 'logs';
+
+  const defaultLogLevels: LogLevel[] = ['error', 'warn', 'info'];
+
+  const user = getUserStore();
 
   let activityErrorCounts: ActivityErrorCounts = {
     all: 0,
@@ -169,7 +186,6 @@
     wrongType: 0,
   };
   let compactNavMode = false;
-  let errorConsole: Console;
   let constraintsStatusText: string | undefined;
   let hasCreateViewPermission: boolean = false;
   let hasUpdateViewPermission: boolean = false;
@@ -189,6 +205,33 @@
   let consolePaneApi: PaneAPI;
   let isConsoleExpanded: boolean = false;
   let selectedConsoleTab: PlanConsoleTab = 'all';
+  let logLevels: LogLevel[] = defaultLogLevels;
+  let logLevelLabel: string = 'Default levels';
+  let logLevelCounts: { error: number; info: number; warn: number } = { error: 0, info: 0, warn: 0 };
+
+  $: if (logLevels) {
+    if (logLevels.sort().toString() === defaultLogLevels.sort().toString()) {
+      logLevelLabel = 'Default levels';
+    } else if (logLevels.length === 1) {
+      logLevelLabel = `${capitalize(logLevels[0])} only`;
+    } else if (logLevels.length === 0) {
+      logLevelLabel = 'Hide all';
+    } else {
+      logLevelLabel = 'Custom levels';
+    }
+  }
+
+  $: if ($allLogs) {
+    logLevelCounts = $allLogs.reduce(
+      (counts, log) => {
+        if (log.level) {
+          counts[log.level]++;
+        }
+        return counts;
+      },
+      { error: 0, info: 0, warn: 0 },
+    );
+  }
 
   $: ({ invalidActivityCount, ...activityErrorCounts } = $activityErrorRollups.reduce(
     (prevCounts, activityErrorRollup) => {
@@ -234,18 +277,17 @@
       wrongType: 0,
     },
   ));
-  $: hasCreateViewPermission = featurePermissions.view.canCreate($userStore);
-  $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate($userStore, $view) : false;
-  $: if ($initialPlan) {
+  $: hasCreateViewPermission = featurePermissions.view.canCreate($user);
+  $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate($user, $view) : false;
+  $: if ($initialPlan && $initialPlan.model) {
     hasCheckConstraintsPermission =
-      featurePermissions.constraintRuns.canCreate($userStore, $initialPlan, $initialPlan.model) && !$planReadOnly;
+      featurePermissions.constraintRuns.canCreate($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasExpandPermission =
-      featurePermissions.expansionSequences.canExpand($userStore, $initialPlan, $initialPlan.model) && !$planReadOnly;
+      featurePermissions.expansionSequences.canExpand($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasScheduleAnalysisPermission =
-      featurePermissions.schedulingGoalsPlanSpec.canAnalyze($userStore, $initialPlan, $initialPlan.model) &&
-      !$planReadOnly;
+      featurePermissions.schedulingGoalsPlanSpec.canAnalyze($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasSimulatePermission =
-      featurePermissions.simulation.canRun($userStore, $initialPlan, $initialPlan.model) && !$planReadOnly;
+      featurePermissions.simulation.canRun($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
   }
   $: if (data.initialPlan) {
     $initialPlan = data.initialPlan;
@@ -296,7 +338,7 @@
 
     planModelActivityTypes.updateValue(() => data.initialActivityTypes);
     activityArgumentDefaults.set(data.initialActivityArguments);
-    activityArgumentDefaultsModelId.set(data.initialPlan.model_id);
+    activityArgumentDefaultsModelId.set(data.initialPlan.model_id ?? -1);
     planTags.updateValue(() => data.initialPlanTags);
   }
 
@@ -307,7 +349,7 @@
         .getDefaultActivityArguments(
           $planModelId,
           $planModelActivityTypes.map(type => type.name),
-          $userStore,
+          $user,
         )
         .then(argumentDefaults => {
           activityArgumentDefaults.set(argumentDefaults);
@@ -324,7 +366,7 @@
     $planReadOnlySnapshot = true;
   }
   $: if ($planSnapshot !== null) {
-    effects.getPlanSnapshotActivityDirectives($planSnapshot, $userStore).then(directives => {
+    effects.getPlanSnapshotActivityDirectives($planSnapshot, $user).then(directives => {
       if (directives !== null) {
         $planSnapshotActivityDirectives = directives;
       }
@@ -367,7 +409,7 @@
         $initialPlan.id,
         $simulationDatasetId > -1 ? $simulationDatasetId : null,
         $initialPlan.start_time,
-        $userStore,
+        get(user),
         resourcesExternalAbortController.signal,
       )
       .then(({ aborted, resources }) => {
@@ -392,7 +434,7 @@
       .getSpans(
         datasetId,
         $simulationDataset.simulation_start_time ?? $initialPlan.start_time,
-        $userStore,
+        get(user),
         simulationDataAbortController.signal,
       )
       .then(newSpans => {
@@ -400,7 +442,7 @@
         $initialSpansLoading = false;
       });
     effects
-      .getEvents(datasetId, $userStore, simulationDataAbortController.signal)
+      .getEvents(datasetId, get(user), simulationDataAbortController.signal)
       .then(newEvents => ($simulationEvents = newEvents));
   } else {
     simulationDataAbortController?.abort();
@@ -446,12 +488,13 @@
   $: if (typeof $planModelId === 'number' && browser) {
     // Asynchronously fetch resource types
     $resourceTypesLoading = true;
-    effects.getResourceTypes($planModelId, $userStore).then(initialResourceTypes => {
+    effects.getResourceTypes($planModelId, get(user)).then(initialResourceTypes => {
       $resourceTypes = initialResourceTypes;
       $resourceTypesLoading = false;
     });
   }
-  $: if ($plan) {
+
+  $: if ($plan && $plan.model) {
     const { activityLogStatus, parameterLogStatus, resourceLogStatus } = getModelStatusRollup($plan.model);
     modelErrorCount = 0;
     if (activityLogStatus === 'error') {
@@ -478,6 +521,7 @@
     resetPlanStores();
     resetPlanSnapshotStores();
     resetSimulationStores();
+    resetErrorStores();
     closeActiveModal();
   });
 
@@ -487,9 +531,9 @@
     $simulationDatasetId = $simulationDatasetLatest?.id ?? -1;
   }
 
-  function onClearErrorsClick(selectedConsoleTab: PlanConsoleTab) {
-    if (selectedConsoleTab === 'all') {
-      clearAllErrors();
+  function onClearConsole() {
+    if (selectedConsoleTab === 'logs') {
+      clearLogs();
     } else if (selectedConsoleTab === 'scheduling') {
       clearSchedulingErrors();
     }
@@ -504,7 +548,7 @@
   function onKeydown(event: KeyboardEvent): void {
     if (isSaveEvent(event)) {
       event.preventDefault();
-      effects.simulate($plan, false, $userStore);
+      effects.simulate($plan, false, $user);
     }
   }
 
@@ -516,7 +560,7 @@
     const { detail } = event;
     const { definition } = detail;
     if (definition && hasCreateViewPermission) {
-      const success = await effects.createView(definition, $userStore);
+      const success = await effects.createView(definition, $user);
       if (success) {
         resetOriginalView();
       }
@@ -526,7 +570,7 @@
   async function onEditView(event: CustomEvent<View>) {
     const { detail: updatedView } = event;
     if (updatedView && hasUpdateViewPermission) {
-      const success = await effects.editView(updatedView, $userStore);
+      const success = await effects.editView(updatedView, $user);
       if (success) {
         resetOriginalView();
       }
@@ -536,11 +580,11 @@
   async function onHandleExpansion() {
     if (SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT) {
       if ($selectedExpansionSetId != null && $plan) {
-        effects.expand($selectedExpansionSetId, $simulationDatasetLatest?.id || -1, $plan, $userStore);
+        effects.expand($selectedExpansionSetId, $simulationDatasetLatest?.id || -1, $plan, $user);
       }
     } else if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
       if ($selectedSequence !== null && $plan !== null && $simulationDatasetLatest !== null) {
-        effects.expandTemplates([$selectedSequence], $simulationDatasetLatest.dataset_id, $plan, $userStore);
+        effects.expandTemplates([$selectedSequence], $simulationDatasetLatest.dataset_id, $plan, $user);
       }
     }
   }
@@ -548,7 +592,7 @@
   async function onRestoreSnapshot(event: CustomEvent<PlanSnapshot>) {
     const { detail: snapshotToRestore } = event;
     if ($plan) {
-      const success = await effects.restorePlanSnapshot(snapshotToRestore, $plan, $userStore);
+      const success = await effects.restorePlanSnapshot(snapshotToRestore, $plan, $user);
 
       if (success) {
         clearSnapshot();
@@ -564,14 +608,14 @@
       url: event.detail.url,
     };
 
-    effects.callExtension(event.detail, payload, $userStore);
+    effects.callExtension(event.detail, payload, $user);
   }
 
   async function onSaveView(event: CustomEvent<ViewSaveEvent>) {
     const { detail } = event;
     const { definition, id, name, owner } = detail;
     if (id != null && hasUpdateViewPermission) {
-      const success = await effects.updateView(id, { definition, name, owner }, null, $userStore);
+      const success = await effects.updateView(id, { definition, name, owner }, null, $user);
       if (success) {
         resetOriginalView();
       }
@@ -588,15 +632,17 @@
   }
 
   function onResetViewToDefault() {
-    const defaultView = data.initialPlan.model.view || generateDefaultView($resourceTypes, $externalEventTypes);
-    initializeView(defaultView);
-    removeQueryParam(SearchParameters.VIEW_ID);
-    showSuccessToast('View Reset to Default');
+    if (data.initialPlan.model) {
+      const defaultView = data.initialPlan.model.view || generateDefaultView($resourceTypes, $externalEventTypes);
+      initializeView(defaultView);
+      removeQueryParam(SearchParameters.VIEW_ID);
+      showSuccessToast('View Reset to Default');
+    }
   }
 
   async function onUploadView() {
     if (hasCreateViewPermission) {
-      const success = await effects.uploadView($userStore);
+      const success = await effects.uploadView($user);
       if (success) {
         resetOriginalView();
       }
@@ -654,6 +700,16 @@
   function openConsoleTab(tab: PlanConsoleTab) {
     openConsole(tab);
   }
+
+  async function onSelectModel() {
+    if ($plan) {
+      const success = await effects.updatePlanMissionModel($plan, $user);
+      if (success) {
+        // Clear active simulation
+        $simulationDatasetId = -1;
+      }
+    }
+  }
 </script>
 
 <svelte:window on:keydown={onKeydown} bind:innerWidth={windowWidth} />
@@ -664,10 +720,10 @@
   <Resizable.PaneGroup direction="vertical" autoSaveId="console">
     <Resizable.Pane>
       <div class="plan-content">
-        <Nav user={$userStore}>
+        <Nav>
           <div class="title" slot="title">
             {#if $plan}
-              <PlanMenu plan={$plan} user={$userStore} />
+              <PlanMenu plan={$plan} user={$user} />
             {/if}
 
             {#if $planReadOnlyMergeRequest || data.initialPlan.parent_plan?.is_locked}
@@ -685,7 +741,7 @@
             {/if}
           </div>
           <svelte:fragment slot="left">
-            <PlanMergeRequestsStatusButton user={$userStore} />
+            <PlanMergeRequestsStatusButton user={$user} />
           </svelte:fragment>
           <svelte:fragment slot="right">
             <ActivityStatusMenu
@@ -741,7 +797,7 @@
               progress={$simulationProgress}
               disabled={!$enableSimulation}
               showStatusInMenu={false}
-              on:click={() => effects.simulate($plan, false, $userStore)}
+              on:click={() => effects.simulate($plan, false, $user)}
             >
               <PlaySquareIcon size={20} />
               <svelte:fragment slot="metadata">
@@ -784,7 +840,7 @@
                 {/if}
                 {#if selectedSimulationStatus === Status.Pending || selectedSimulationStatus === Status.Incomplete}
                   <button
-                    on:click={() => effects.cancelSimulation($simulationDatasetId, $userStore)}
+                    on:click={() => effects.cancelSimulation($simulationDatasetId, $user)}
                     class="st-button danger"
                     disabled={$planReadOnly}>Cancel</button
                   >
@@ -804,7 +860,7 @@
                 : 'You do not have permission to run a constraint check'}
               status={$constraintsStatus !== Status.Failed ? $cachedConstraintsStatus : $constraintsStatus}
               showStatusInMenu={false}
-              on:click={() => $plan && effects.checkConstraints($plan, $userStore, false)}
+              on:click={() => $plan && effects.checkConstraints($plan, $user, false)}
               indeterminate
             >
               <FlipHorizontal2 size={20} />
@@ -866,7 +922,7 @@
                 : 'You do not have permission to run a scheduling analysis'}
               status={$schedulingAnalysisStatus}
               statusText={schedulingStatusText}
-              on:click={() => effects.schedule(true, $plan, $userStore)}
+              on:click={() => effects.schedule(true, $plan, $user)}
               indeterminate
             >
               <CalendarRange size={20} />
@@ -878,7 +934,7 @@
                 </div>
                 {#if $schedulingAnalysisStatus === Status.Pending || $schedulingAnalysisStatus === Status.Incomplete}
                   <button
-                    on:click={() => effects.cancelSchedulingRequest($latestSchedulingRequest.analysis_id, $userStore)}
+                    on:click={() => effects.cancelSchedulingRequest($latestSchedulingRequest.analysis_id, $user)}
                     class="st-button cancel-button"
                     disabled={$planReadOnly}>Cancel</button
                   >
@@ -888,13 +944,13 @@
             <ExtensionMenu
               extensions={$extensions}
               title={!compactNavMode ? 'Extensions' : ''}
-              user={$userStore}
+              user={$user}
               on:callExtension={onCallExtension}
             />
             <ViewMenu
               hasCreatePermission={hasCreateViewPermission}
               hasUpdatePermission={hasUpdateViewPermission}
-              user={$userStore}
+              user={$user}
               on:createView={onCreateView}
               on:editView={onEditView}
               on:saveView={onSaveView}
@@ -913,19 +969,28 @@
             on:restore={onRestoreSnapshot}
           />
         {/if}
-        {#if modelErrorCount}
+        {#if modelErrorCount && $plan?.model}
           <PlanModelErrorBar
+            action="View errors in console"
             modelName={$plan?.model.name}
-            hasErrors={modelErrorCount > 0}
             on:close={onCloseSnapshotPreview}
-            on:viewModelErrors={() => {
+            hasErrors={modelErrorCount > 0}
+            on:action={() => {
               openConsoleTab('model');
             }}
           />
         {/if}
+        {#if $plan && !$plan.model}
+          <PlanModelErrorBar action="Select model" hasErrors on:action={onSelectModel}>
+            <div class="flex gap-1">
+              <WarningIcon class="red-icon" />Cannot find the model associated with this plan. This plan may not work
+              correctly.
+            </div>
+          </PlanModelErrorBar>
+        {/if}
         <PlanGrid
           {...$view?.definition.plan.grid}
-          user={$userStore}
+          user={$user}
           on:changeColumnSizes={onChangeColumnSizes}
           on:changeLeftRowSizes={onChangeLeftRowSizes}
           on:changeMiddleRowSizes={onChangeMiddleRowSizes}
@@ -944,73 +1009,97 @@
       onCollapse={() => (isConsoleExpanded = false)}
       onExpand={() => (isConsoleExpanded = true)}
       bind:pane={consolePaneApi}
-      class="min-h-[28px]"
+      class="min-h-[36px]"
     >
       <div class="h-full min-h-6 overflow-hidden">
         <Console
-          bind:this={errorConsole}
           expanded={isConsoleExpanded}
           selectedTab={selectedConsoleTab}
           on:toggle={onConsoleToggle}
           on:selectTab={onSelectConsoleTab}
         >
           <svelte:fragment slot="console-actions">
-            {#if selectedConsoleTab === 'all' || selectedConsoleTab === 'scheduling'}
-              <div use:tooltip={{ content: 'Clear Errors', placement: 'top' }}>
-                <Button variant="ghost" size="icon" on:click={() => onClearErrorsClick(selectedConsoleTab)}>
-                  <ListX size={16} /></Button
-                >
+            {#if isConsoleExpanded && selectedConsoleTab === 'logs'}
+              <Select.Root
+                multiple
+                typeahead={false}
+                selected={logLevels.map(l => ({ label: capitalize(l), value: l }))}
+                onSelectedChange={values => {
+                  if (values) {
+                    logLevels = values.map(v => v.value);
+                  }
+                }}
+              >
+                <Select.Trigger size="xs" class="w-[120px] flex-shrink-0">{logLevelLabel}</Select.Trigger>
+                <Select.Content size="xs">
+                  <Select.Item size="xs" value="info" label="Info">
+                    Info <div class="ml-1 text-muted-foreground">({logLevelCounts.info})</div>
+                  </Select.Item>
+                  <Select.Item size="xs" value="warn" label="Warning">
+                    Warning <div class="ml-1 text-muted-foreground">({logLevelCounts.warn})</div>
+                  </Select.Item>
+                  <Select.Item size="xs" value="error" label="Error">
+                    Error <div class="ml-1 text-muted-foreground">({logLevelCounts.error})</div>
+                  </Select.Item>
+                </Select.Content>
+              </Select.Root>
+            {/if}
+            {#if (isConsoleExpanded && selectedConsoleTab === 'logs') || selectedConsoleTab === 'scheduling'}
+              <div use:tooltip={{ content: 'Clear', placement: 'top' }}>
+                <Button variant="ghost" size="icon" on:click={onClearConsole}>
+                  <ListX size={16} />
+                </Button>
               </div>
             {/if}
           </svelte:fragment>
           <svelte:fragment slot="console-tabs">
             <div class="console-tabs overflow-x-hidden">
               <div>
-                <ConsoleTab value="all" numberOfErrors={$allErrors?.length} title="All Errors">All Errors</ConsoleTab>
+                <ConsoleTab value="all" numberOfErrors={$allProblems.length}>All Problems</ConsoleTab>
               </div>
-              <div class="pointer-events-none mx-0 flex w-2 justify-center px-0 text-[8px] opacity-50">|</div>
-              <div class="flex py-0.5">
-                <ConsoleTab
-                  value="anchor"
-                  numberOfErrors={$anchorValidationErrors?.length}
-                  title="Anchor Validation Errors"
-                >
-                  Anchor Validation
-                </ConsoleTab>
-                <ConsoleTab value="scheduling" numberOfErrors={$schedulingErrors?.length} title="Scheduling Errors">
-                  Scheduling
-                </ConsoleTab>
-                <ConsoleTab
-                  value="simulation"
-                  numberOfErrors={$simulationDatasetErrors?.length}
-                  title="Simulation Errors"
-                >
-                  Simulation
-                </ConsoleTab>
-                <ConsoleTab
-                  value="activity"
-                  numberOfErrors={activityErrorCounts.all}
-                  title="Activity Validation Errors"
-                >
-                  Activity Validation
-                </ConsoleTab>
-                <ConsoleTab value="model" numberOfErrors={modelErrorCount} title="Mission Model Errors">
-                  Mission Model
+              <div class="flex items-center py-0.5">
+                <ConsoleTab value="scheduling" numberOfErrors={$schedulingErrors?.length}>Scheduling</ConsoleTab>
+                <ConsoleTab value="simulation" numberOfErrors={$simulationDatasetErrors?.length}>Simulation</ConsoleTab>
+                <ConsoleTab value="constraints" numberOfErrors={$constraintRunErrors?.length}>Constraints</ConsoleTab>
+                <ConsoleTab value="activity" numberOfErrors={activityErrorCounts.all}>Activity Validation</ConsoleTab>
+                <ConsoleTab value="model" numberOfErrors={$modelErrors.length}>Mission Model</ConsoleTab>
+                <div
+                  class="pointer-events-none mx-2 flex h-4 w-0 items-center justify-center border-r border-black border-opacity-20 px-0"
+                />
+                <ConsoleTab value="logs" numberOfErrors={$errorLogs.length}>
+                  Logs
+                  <svelte:fragment slot="badge">
+                    {#if $errorLogs.length}
+                      <span class="flex items-center gap-0.5 px-0.5">
+                        <AlertTriangle size={13} />
+                        {$errorLogs.length}
+                      </span>
+                    {/if}
+                  </svelte:fragment>
                 </ConsoleTab>
               </div>
             </div>
           </svelte:fragment>
 
-          <ConsoleGenericErrors value="all" errors={$allErrors} />
-          <ConsoleGenericErrors value="anchor" errors={$anchorValidationErrors} />
-          <ConsoleGenericErrors value="scheduling" errors={$schedulingErrors} />
-          <ConsoleGenericErrors value="simulation" errors={$simulationDatasetErrors} />
+          <ConsoleLogs value="all" showTimestamp={false} showLevel={false} logs={$allProblems} />
+          <ConsoleLogs value="scheduling" showTimestamp={false} logs={$schedulingErrors} />
+          <ConsoleLogs value="simulation" showTimestamp={false} logs={$simulationDatasetErrors} />
+          <ConsoleLogs value="constraints" showTimestamp={false} logs={$constraintRunErrors} />
           <ConsoleActivityErrors
             activityValidationErrorTotalRollup={activityErrorCounts}
             activityValidationErrorRollups={$activityErrorRollups}
             on:selectionChanged={onActivityValidationSelected}
           />
-          <ConsoleModelErrors model={$plan?.model} title="Mission Model Errors" />
+          <ConsoleLogs value="model" showTimestamp={false} showType={false} logs={$modelErrors} />
+          <ConsoleLogs
+            value="logs"
+            logs={$allLogs}
+            {logLevels}
+            emptyStateMessage="No logs"
+            noMatchingResultsMessage="No matching logs"
+            autoScroll
+            showType={false}
+          />
         </Console>
       </div>
     </Resizable.Pane>

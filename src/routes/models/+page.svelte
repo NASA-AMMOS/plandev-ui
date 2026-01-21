@@ -3,12 +3,14 @@
 <script lang="ts">
   import PageTitle from '../../components/app/PageTitle.svelte';
   import Models from '../../components/model/Models.svelte';
-  import { userStore } from '../../lib/stores/auth';
+  import { getUserStore } from '../../stores/user';
   import type { PageData } from './$types';
 
   export let data: PageData;
+
+  const user = getUserStore();
 </script>
 
 <PageTitle title="Models" />
 
-<Models user={$userStore} initialModels={data.initialModels} />
+<Models user={$user} initialModels={data.initialModels} />

@@ -21,7 +21,7 @@
 
   type CellRendererParams = {
     deleteParcel?: (parcel: Parcel) => void;
-    editParcel?: (parcel: Parcel) => void;
+    viewParcel?: (parcel: Parcel) => void;
   };
   type ParcelCellRendererParams = ICellRendererParams<Parcel> & CellRendererParams;
 
@@ -58,14 +58,13 @@
               content: 'Delete Parcel',
               placement: 'bottom',
             },
-            editCallback: params.editParcel,
-            editTooltip: {
-              content: 'Edit Parcel',
+            hasDeletePermission: params.data ? hasDeletePermission(user, params.data) : false,
+            rowData: params.data,
+            viewCallback: params.viewParcel,
+            viewTooltip: {
+              content: 'Open Parcel',
               placement: 'bottom',
             },
-            hasDeletePermission: params.data ? hasDeletePermission(user, params.data) : false,
-            hasEditPermission: params.data ? hasEditPermission(user, params.data) : false,
-            rowData: params.data,
           },
           target: actionsDiv,
         });
@@ -74,7 +73,7 @@
       },
       cellRendererParams: {
         deleteParcel,
-        editParcel,
+        viewParcel,
       } as CellRendererParams,
       field: 'actions',
       headerName: '',
@@ -113,20 +112,12 @@
     }
   }
 
-  function editParcel({ id }: Pick<Parcel, 'id'>) {
+  function viewParcel({ id }: Pick<Parcel, 'id'>) {
     goto(`${base}/parcels/edit/${id}`);
-  }
-
-  function editParcelContext(event: CustomEvent<RowId[]>) {
-    editParcel({ id: event.detail[0] as number });
   }
 
   function hasDeletePermission(user: User | null, parcel: Parcel) {
     return featurePermissions.parcels.canDelete(user, parcel);
-  }
-
-  function hasEditPermission(user: User | null, parcel: Parcel) {
-    return featurePermissions.parcels.canUpdate(user, parcel);
   }
 
   async function toggleParcel(event: CustomEvent<DataGridRowSelection<Parcel>>) {
@@ -165,15 +156,13 @@
         showLoadingSkeleton
         loading={$parcels === null}
         {columnDefs}
-        hasEdit={true}
-        {hasEditPermission}
         {hasDeletePermission}
         itemDisplayText="Parcel"
         items={filteredParcels}
         {user}
         on:deleteItem={deleteParcelContext}
-        on:editItem={editParcelContext}
         on:rowSelected={toggleParcel}
+        on:rowDoubleClicked={event => viewParcel(event.detail.data)}
       />
     {:else}
       <div class="p1 st-typography-label">No Parcels Found</div>

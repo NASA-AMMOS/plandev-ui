@@ -78,7 +78,7 @@
   }
 
   function showPlanMergeRequests() {
-    showPlanMergeRequestsModal(user);
+    showPlanMergeRequestsModal(undefined, user);
     planMenu.hide();
   }
 </script>
@@ -116,6 +116,7 @@
       {#if plan.parent_plan !== null}
         <MenuDivider />
         <MenuItem
+          disabled={!plan.model}
           on:click={createMergePlanBranchRequest}
           use={[
             [

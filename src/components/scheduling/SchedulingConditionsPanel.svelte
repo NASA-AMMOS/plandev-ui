@@ -145,7 +145,7 @@
               conditionPlanSpec={specCondition}
               hasEditPermission={hasSpecEditPermission}
               hasReadPermission={featurePermissions.schedulingConditions.canRead(user)}
-              modelId={$plan?.model.id}
+              modelId={$plan?.model?.id}
               editPermissionError={$planReadOnly
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to edit scheduling conditions for this plan.'}

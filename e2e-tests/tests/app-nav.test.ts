@@ -1,22 +1,20 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { AppNav } from '../fixtures/AppNav.js';
+import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
 
+let setup: BrowserSetupResult;
 let appNav: AppNav;
-let context: BrowserContext;
-let page: Page;
 
 test.beforeAll(async ({ browser }) => {
-  context = await browser.newContext();
-  page = await context.newPage();
-  appNav = new AppNav(page);
+  setup = await setupTest(browser, { model: false });
+  appNav = new AppNav(setup.page);
 });
 
 test.afterAll(async () => {
-  await page.close();
-  await context.close();
+  await teardownTest(setup);
 });
 
-test.describe.serial('App Nav', () => {
+test.describe('App Nav', () => {
   test.beforeEach(async () => {
     await appNav.goto();
   });
@@ -46,12 +44,12 @@ test.describe.serial('App Nav', () => {
   });
 
   test(`Clicking on the app menu 'Plans' option should route to the plans page`, async ({ baseURL }) => {
-    await page.goto('/models', { waitUntil: 'networkidle' });
+    await setup.page.goto('/models', { waitUntil: 'networkidle' });
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
     await appNav.appMenuItemPlans.click();
-    await expect(page).toHaveURL(`${baseURL}/plans`);
+    await expect(setup.page).toHaveURL(`${baseURL}/plans`);
   });
 
   test(`Clicking on the app menu 'Models' option should route to the models page`, async ({ baseURL }) => {
@@ -59,15 +57,15 @@ test.describe.serial('App Nav', () => {
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
     await appNav.appMenuItemModels.click();
-    await expect(page).toHaveURL(`${baseURL}/models`);
+    await expect(setup.page).toHaveURL(`${baseURL}/models`);
   });
 
-  test(`Clicking on the app menu 'Sequence Editor' option should route to the workspaces page`, async ({ baseURL }) => {
+  test(`Clicking on the app menu 'Workspaces' option should route to the workspaces page`, async ({ baseURL }) => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
     await appNav.appMenuItemSequenceWorkspace.click();
-    await expect(page).toHaveURL(`${baseURL}/workspaces`);
+    await expect(setup.page).toHaveURL(`${baseURL}/workspaces`);
   });
 
   test(`Clicking on the app menu 'Dictionaries' option should route to the dictionaries page`, async ({ baseURL }) => {
@@ -75,7 +73,7 @@ test.describe.serial('App Nav', () => {
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
     await appNav.appMenuItemDictionaries.click();
-    await expect(page).toHaveURL(`${baseURL}/dictionaries`);
+    await expect(setup.page).toHaveURL(`${baseURL}/dictionaries`);
   });
 
   test(`Clicking on the app menu 'Expansion' option should route to the expansion/rules page`, async ({ baseURL }) => {
@@ -83,7 +81,7 @@ test.describe.serial('App Nav', () => {
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
     await appNav.appMenuItemExpansion.click();
-    await expect(page).toHaveURL(`${baseURL}/expansion/rules`);
+    await expect(setup.page).toHaveURL(`${baseURL}/expansion/rules`);
   });
 
   test(`Clicking on the app menu 'Scheduling' option should route to the scheduling page`, async ({ baseURL }) => {
@@ -91,15 +89,15 @@ test.describe.serial('App Nav', () => {
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
     await appNav.appMenuItemScheduling.click();
-    await expect(page).toHaveURL(`${baseURL}/scheduling`);
+    await expect(setup.page).toHaveURL(`${baseURL}/scheduling`);
   });
 
   test(`Clicking on the app menu 'Gateway' option should open a new tab to the gateway page`, async () => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
-    const [gatewayPage] = await Promise.all([page.waitForEvent('popup'), appNav.appMenuItemGateway.click()]);
-    expect(await gatewayPage.title()).toEqual('Aerie Gateway');
+    const [gatewayPage] = await Promise.all([setup.page.waitForEvent('popup'), appNav.appMenuItemGateway.click()]);
+    expect(await gatewayPage.title()).toContain('Gateway');
     await gatewayPage.close();
   });
 
@@ -107,20 +105,23 @@ test.describe.serial('App Nav', () => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
-    const [consolePage] = await Promise.all([page.waitForEvent('popup'), appNav.appMenuItemGraphQLPlayground.click()]);
+    const [consolePage] = await Promise.all([
+      setup.page.waitForEvent('popup'),
+      appNav.appMenuItemGraphQLPlayground.click(),
+    ]);
     await expect(consolePage).toHaveURL(/\/api-playground\//);
     await consolePage.close();
   });
 
-  test(`Clicking on the app menu 'Documentation' option should open a new tab to the Aerie documentation`, async () => {
+  test(`Clicking on the app menu 'Documentation' option should open a new tab to the PlanDev documentation`, async () => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
     const [documentationPage] = await Promise.all([
-      page.waitForEvent('popup'),
+      setup.page.waitForEvent('popup'),
       appNav.appMenuItemDocumentation.click(),
     ]);
-    await expect(documentationPage).toHaveURL(/\/aerie-docs\//);
+    await expect(documentationPage).toHaveURL(/\/plandev-docs\//);
     await documentationPage.close();
   });
 
@@ -138,12 +139,16 @@ test.describe.serial('App Nav', () => {
     await appNav.aboutModal.waitFor({ state: 'hidden' });
     await expect(appNav.aboutModal).not.toBeVisible();
   });
+});
 
+// Logout test in separate serial block - must run last as it invalidates the session
+test.describe.serial('App Nav - Logout', () => {
   test(`Clicking on the app menu 'Logout' option should route to the login page`, async ({ baseURL }) => {
+    await appNav.goto();
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
     await appNav.appMenuItemLogout.click();
-    await expect(page).toHaveURL(`${baseURL}/login`);
+    await expect(setup.page).toHaveURL(`${baseURL}/login`);
   });
 });

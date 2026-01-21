@@ -2,13 +2,15 @@ import { expect, type Page } from '@playwright/test';
 import { adjectives, names, uniqueNamesGenerator } from 'unique-names-generator';
 import { AppNav } from './AppNav.js';
 
-export async function performLogin(page, baseURL, username = 'test') {
-  await page.goto(`${baseURL}/login`, { waitUntil: 'networkidle' });
-  await page.waitForTimeout(1000);
-  await page.locator('input[name="username"]').fill(username);
+export async function performLogin(page: Page, baseURL?: string, username: string = 'test') {
+  await page.goto(`${baseURL ?? ''}/login`, { waitUntil: 'networkidle' });
+  // Wait for the login form to be ready
+  const usernameInput = page.locator('input[name="username"]');
+  await usernameInput.waitFor({ state: 'visible' });
+  await usernameInput.fill(username);
   await page.locator('input[name="password"]').fill('test');
   await page.getByRole('button', { name: 'Login' }).click();
-  await page.waitForURL(`${baseURL}/plans`);
+  await page.waitForURL(`${baseURL ?? ''}/plans`);
 }
 
 export class User {
@@ -26,6 +28,36 @@ export class User {
     return uniqueNamesGenerator({ dictionaries: [names, adjectives] });
   }
 
+  /**
+   * Navigate to a URL with retry logic for navigation errors.
+   * Handles ERR_ABORTED and "interrupted by another navigation" errors.
+   */
+  async gotoWithRetry(
+    url: string,
+    options?: { maxRetries?: number; waitUntil?: 'load' | 'domcontentloaded' | 'networkidle' | 'commit' },
+  ) {
+    const maxRetries = options?.maxRetries ?? 5;
+    const waitUntil = options?.waitUntil ?? 'load';
+
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        await this.page.goto(url, { waitUntil });
+        // Wait for SvelteKit hydration to complete before returning
+        await this.page.waitForLoadState('networkidle').catch(() => {});
+        return;
+      } catch (e) {
+        const isLastAttempt = i === maxRetries - 1;
+        const isRetryableError =
+          e instanceof Error && (e.message.includes('ERR_ABORTED') || e.message.includes('interrupted by another'));
+        if (isLastAttempt || !isRetryableError) {
+          throw e;
+        }
+        // Wait before retry to let SvelteKit client-side routing settle
+        await this.page.waitForTimeout(500);
+      }
+    }
+  }
+
   async login(baseURL: string | undefined, username = this.username) {
     await performLogin(this.page, baseURL, username);
   }
@@ -41,8 +73,8 @@ export class User {
   async switchRole(role: string = 'aerie_admin') {
     await this.page.getByRole('navigation').getByRole('combobox').click();
     await this.page.getByRole('listbox').getByRole('option', { name: role }).click();
-    await this.page.waitForLoadState('networkidle');
-    await this.page.waitForTimeout(1000);
+    // Wait for success toast confirming the role change completed
+    await expect(this.page.getByText('Changed Role Successfully')).toBeVisible();
     await expect(this.page.getByRole('navigation').getByRole('combobox')).toHaveText(role);
   }
 }

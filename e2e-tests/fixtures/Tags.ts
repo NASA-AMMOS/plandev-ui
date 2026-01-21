@@ -81,7 +81,7 @@ export class Tags {
 
   async goto() {
     await this.page.goto('/tags', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(250);
+    await expect(this.createButton).toBeVisible();
   }
 
   updatePage(page: Page): void {

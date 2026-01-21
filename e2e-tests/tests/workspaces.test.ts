@@ -1,24 +1,23 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
 import { Parcels } from '../fixtures/Parcels.js';
 import { Workspaces } from '../fixtures/Workspaces.js';
+import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
 
-let context: BrowserContext;
+let setup: BrowserSetupResult;
 let dictionaries: Dictionaries;
 let parcels: Parcels;
-let page: Page;
 let workspaces: Workspaces;
 
 test.beforeAll(async ({ baseURL, browser }) => {
   // Increase global timeout to prevent early test termination
   test.setTimeout(90000); // 90 seconds
 
-  context = await browser.newContext();
-  page = await context.newPage();
+  setup = await setupTest(browser, { model: false });
 
-  dictionaries = new Dictionaries(page);
-  parcels = new Parcels(page);
-  workspaces = new Workspaces(page, parcels, baseURL);
+  dictionaries = new Dictionaries(setup.page);
+  parcels = new Parcels(setup.page);
+  workspaces = new Workspaces(setup.page, parcels, baseURL);
 
   await dictionaries.goto();
   await dictionaries.createCommandDictionary();
@@ -31,11 +30,11 @@ test.afterAll(async () => {
   await parcels.deleteParcel();
   await dictionaries.goto();
   await dictionaries.deleteCommandDictionary();
-  await page.close();
-  await context.close();
+  await teardownTest(setup);
 });
 
-test.describe.serial('Workspaces', () => {
+// Form validation tests - independent, can run in parallel
+test.describe('Workspaces - Form Validation', () => {
   test.beforeEach(async () => {
     await workspaces.goto();
   });
@@ -60,31 +59,39 @@ test.describe.serial('Workspaces', () => {
     await workspaces.fillInputLocation();
     await expect(workspaces.createButton).not.toBeDisabled();
   });
+});
 
+// CRUD operations - dependent, must run serially
+test.describe.serial('Workspaces - CRUD Operations', () => {
   test('Create workspace', async () => {
+    await workspaces.goto();
     const workspaceId = await workspaces.createWorkspace();
     expect(workspaceId).toBeTruthy();
     expect(workspaces.workspaceId).toEqual(workspaceId);
   });
 
   test('Get workspace ID should return the correct ID', async () => {
+    await workspaces.goto();
     const workspaceId = await workspaces.getWorkspaceId();
     expect(workspaceId).toBeTruthy();
     expect(workspaceId).toEqual(workspaces.workspaceId);
   });
 
   test('Filter table should show only the filtered workspace', async () => {
+    await workspaces.goto();
     await workspaces.filterTable(workspaces.workspaceName);
     await expect(workspaces.tableRow(workspaces.workspaceName)).toBeVisible();
   });
 
   test('Table row should display workspace name correctly', async () => {
+    await workspaces.goto();
     await workspaces.filterTable(workspaces.workspaceName);
     const tableRow = workspaces.tableRow(workspaces.workspaceName);
     await expect(tableRow).toContainText(workspaces.workspaceName);
   });
 
   test('Delete workspace', async () => {
+    await workspaces.goto();
     await workspaces.deleteWorkspace();
     await expect(workspaces.tableRow(workspaces.workspaceName)).not.toBeVisible();
   });

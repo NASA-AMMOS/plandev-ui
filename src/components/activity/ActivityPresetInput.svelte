@@ -12,6 +12,7 @@
     DropdownOptions,
     SelectedDropdownOptionValue,
   } from '../../types/dropdown';
+  import type { Model } from '../../types/model';
   import type { Plan } from '../../types/plan';
   import type { GqlSubscribable } from '../../types/subscribable';
   import gql from '../../utilities/gql';
@@ -49,13 +50,13 @@
   $: if (activityDirective != null) {
     activityPresets.setVariables({ activityTypeName: activityDirective.type, modelId });
   }
-  $: if (plan !== null) {
+  $: if (plan !== null && plan.model) {
     options = $activityPresets.map((activityPreset: ActivityPreset) => ({
       display: activityPreset.name,
       hasSelectPermission: featurePermissions.activityPresets.canAssign(
         user,
-        plan as Plan,
-        (plan as Plan).model,
+        plan,
+        plan.model as Model,
         activityPreset,
       ),
       value: activityPreset.id,

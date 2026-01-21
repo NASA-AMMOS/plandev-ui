@@ -20,7 +20,7 @@ import {
   getUnixEpochTime,
   usToOffset,
 } from './time';
-import { showFailureToast, showSuccessToast } from './toast';
+import { showFailureToast } from './toast';
 
 /**
  * Updates activity metadata with a new key/value and removes any empty values.
@@ -204,11 +204,7 @@ export function copyActivityDirectivesToClipboard(sourcePlan: Plan, activities: 
   };
 
   const noun = `Activity Directive${activities.length === 1 ? '' : 's'}`;
-  setClipboardContent(
-    clipboard,
-    () => showSuccessToast(`Copied ${activities.length} ${noun}`),
-    () => showFailureToast(`Failed to copy ${activities.length} ${noun}`),
-  );
+  setClipboardContent(clipboard, `Copied ${activities.length} ${noun}`, `Failed to copy ${activities.length} ${noun}`);
 }
 
 export function getPasteActivityDirectivesText(count: number): string {

@@ -6,9 +6,11 @@
   import PageTitle from '../../../../components/app/PageTitle.svelte';
   import SchedulingGoalForm from '../../../../components/scheduling/goals/SchedulingGoalForm.svelte';
   import { SearchParameters } from '../../../../enums/searchParameters';
-  import { userStore } from '../../../../lib/stores/auth';
   import { tags } from '../../../../stores/tags';
+  import { getUserStore } from '../../../../stores/user';
   import { getSearchParameterNumber } from '../../../../utilities/url';
+
+  const user = getUserStore();
 
   let referenceModelId: number | null = null;
 
@@ -31,6 +33,6 @@
   initialReferenceModelId={referenceModelId}
   tags={$tags}
   mode="create"
-  user={$userStore}
+  user={$user}
   on:selectReferenceModel={onModelSelect}
 />

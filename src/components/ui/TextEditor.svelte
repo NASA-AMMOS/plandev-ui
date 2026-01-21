@@ -6,29 +6,33 @@
   import { linter, lintGutter } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate, keymap } from '@codemirror/view';
-  import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
-  import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
+  import { File } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
+  import type { ActionDefinition } from '../../types/actions';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
-  import { downloadBlob } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
-  import { tooltip } from '../../utilities/tooltip';
+  import EditorToolbar from '../sequencing/EditorToolbar.svelte';
   import Panel from './Panel.svelte';
   import SectionTitle from './SectionTitle.svelte';
 
+  export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
+  export let includeActions: boolean = false;
   export let isJSON: boolean = false;
+  export let isLoading: boolean = false;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let textFileContent: string = '';
+  export let textFilePath: string = '';
   export let textFileName: string = '';
-  export let title: string = 'Text Editor';
 
   const dispatch = createEventDispatcher<{
+    download: { filePath: string };
+    runAction: { action: ActionDefinition; parameter: string };
     save: string;
-    textContentUpdated: { input: string };
+    textContentUpdated: { filePath: string; input: string };
   }>();
   const jsonLinter = linter(jsonParseLinter());
 
@@ -39,17 +43,32 @@
   let updatedTextContent: string = textFileContent;
   let isTextContentUpdated: boolean = false;
   let previousIsJSON: boolean = isJSON;
+  let previousTextFilePath: string = textFilePath;
 
+  // Create debounced listener at component level so we can cancel it when file changes
+  const debouncedTextContentUpdateListener = debounce(textContentUpdateListener, 250);
+
+  // Insert text content - use textFilePath as dependency to ensure editor updates when switching files
+  // This handles the case where both old and new files have the same content (e.g., both empty)
   $: if (editorView) {
+    void textFilePath;
     editorView.dispatch({
       changes: { from: 0, insert: textFileContent, to: editorView.state.doc.length },
     });
   }
   $: editorView?.dispatch({
-    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly)]),
+    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
   });
   $: updatedTextContent = textFileContent;
   $: isTextContentUpdated = updatedTextContent !== textFileContent;
+
+  // Cancel pending debounced events when file path changes to prevent stale events
+  // from being dispatched with the wrong file path
+  $: if (textFilePath !== previousTextFilePath) {
+    debouncedTextContentUpdateListener.cancel();
+    previousTextFilePath = textFilePath;
+  }
+
   $: if (previousIsJSON !== isJSON && editorDiv) {
     if (editorView) {
       editorView.destroy();
@@ -65,8 +84,8 @@
           lintGutter(),
           json(),
           jsonLinter,
-          EditorView.updateListener.of(debounce(textContentUpdateListener, 250)),
-          compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
+          EditorView.updateListener.of(debouncedTextContentUpdateListener),
+          compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
         ],
         parent: editorDiv,
       });
@@ -79,8 +98,8 @@
           EditorView.lineWrapping,
           EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
           lintGutter(),
-          EditorView.updateListener.of(debounce(textContentUpdateListener, 250)),
-          compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
+          EditorView.updateListener.of(debouncedTextContentUpdateListener),
+          compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
         ],
         parent: editorDiv,
       });
@@ -92,11 +111,11 @@
     disableCopyAndExport = updatedText === '';
 
     updatedTextContent = updatedText;
-    dispatch('textContentUpdated', { input: updatedText });
+    dispatch('textContentUpdated', { filePath: textFilePath, input: updatedText });
   }
 
   function downloadInputFormat(): void {
-    downloadBlob(new Blob([editorView.state.doc.toString()], { type: 'text/plain' }), `${textFileName}`);
+    dispatch('download', { filePath: textFilePath });
   }
 
   async function copyInputFormatToClipboard(): Promise<void> {
@@ -115,6 +134,10 @@
     return true;
   }
 
+  function onRunAction(action: ActionDefinition, parameter: string) {
+    dispatch('runAction', { action, parameter });
+  }
+
   onMount(() => {
     compartmentReadonly = new Compartment();
 
@@ -126,9 +149,9 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
-        EditorView.updateListener.of(debounce(textContentUpdateListener, 250)),
+        EditorView.updateListener.of(debouncedTextContentUpdateListener),
         blockTheme,
-        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly)]),
+        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
       ],
       parent: editorDiv,
     });
@@ -137,41 +160,27 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <SectionTitle>{title}</SectionTitle>
+    <SectionTitle alt={textFilePath}>
+      <File size={16} slot="icon" />
+      {textFileName || 'Untitled'}{readOnly ? ' (Read-only)' : ''}{previewOnly && !isLoading ? ' (Preview-only)' : ''}
+    </SectionTitle>
 
-    <div class="right">
-      <button
-        use:tooltip={{ content: `Copy sequence contents`, placement: 'top' }}
-        class="st-button icon-button secondary"
-        on:click={copyInputFormatToClipboard}
-        disabled={disableCopyAndExport}
-      >
-        <ClipboardIcon />
-        Copy
-      </button>
-      <button
-        use:tooltip={{
-          content: `Download sequence contents`,
-          placement: 'top',
-        }}
-        class="st-button icon-button secondary"
-        on:click|stopPropagation={downloadInputFormat}
-        disabled={disableCopyAndExport}
-      >
-        <DownloadIcon />
-        Download
-      </button>
-      {#if !readOnly}
-        <button
-          class="st-button icon-button"
-          class:secondary={!isTextContentUpdated}
-          disabled={!isTextContentUpdated}
-          on:click={onSave}
-        >
-          Save
-        </button>
-      {/if}
-    </div>
+    <EditorToolbar
+      actions={availableActions}
+      actionsDisabled={textFileName === '' || availableActions.length === 0}
+      showActions={includeActions}
+      showCopyButton
+      copyDisabled={disableCopyAndExport}
+      onCopy={copyInputFormatToClipboard}
+      showDownloadButton
+      downloadDisabled={disableCopyAndExport}
+      onDownload={downloadInputFormat}
+      showSaveButton={!(readOnly || previewOnly || isLoading)}
+      saveDisabled={!isTextContentUpdated}
+      saveHighlighted={isTextContentUpdated}
+      {onSave}
+      on:runAction={e => onRunAction(e.detail.action, e.detail.parameter)}
+    />
   </svelte:fragment>
 
   <svelte:fragment slot="body">
@@ -184,18 +193,3 @@
     />
   </svelte:fragment>
 </Panel>
-
-<style>
-  .right {
-    align-items: center;
-    display: flex;
-    justify-content: space-around;
-  }
-
-  .icon-button {
-    align-items: center;
-    column-gap: 5px;
-    display: flex;
-    margin: 2px;
-  }
-</style>

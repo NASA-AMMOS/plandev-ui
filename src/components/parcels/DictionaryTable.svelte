@@ -11,7 +11,7 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
 
-  export let dictionaries: DictionaryMetadata[];
+  export let dictionaries: DictionaryMetadata[] | null;
   export let selectedDictionaryIds: Record<number, boolean> = {};
   export let isEditingDictionaries: boolean = false;
   export let isEditingParcel: boolean = false;
@@ -163,6 +163,10 @@
    * @param event
    */
   function onRowClicked(event: CustomEvent<DataGridRowSelection<DictionaryMetadata>>) {
+    if (!hasEditPermission) {
+      return;
+    }
+
     const currentValue = selectedDictionaryIds[event.detail.data.id];
 
     selectRow(event.detail.data.id, currentValue === undefined ? true : !currentValue);
@@ -198,22 +202,18 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    {#if dictionaries.length}
-      <SingleActionDataGrid
-        bind:this={dictionaryDataGrid}
-        {columnDefs}
-        {hasDeletePermission}
-        itemDisplayText={displayText}
-        items={dictionaries}
-        {user}
-        on:rowClicked={onRowClicked}
-        on:cellEditingStopped={onToggle}
-        on:deleteItem={deleteDictionaryContext}
-      />
-    {:else}
-      <div class="flex flex-1 items-center justify-center text-xs text-muted-foreground">
-        No {displayTextPlural} Found
-      </div>
-    {/if}
+    <SingleActionDataGrid
+      bind:this={dictionaryDataGrid}
+      {columnDefs}
+      {hasDeletePermission}
+      itemDisplayText={displayText}
+      items={dictionaries || []}
+      loading={dictionaries === null}
+      noRowsOverlayText={`No ${displayTextPlural} Found`}
+      {user}
+      on:rowClicked={onRowClicked}
+      on:cellEditingStopped={onToggle}
+      on:deleteItem={deleteDictionaryContext}
+    />
   </svelte:fragment>
 </Panel>

@@ -6,9 +6,9 @@
   import { onMount } from 'svelte';
   import ConstraintForm from '../../../../components/constraints/ConstraintForm.svelte';
   import { SearchParameters } from '../../../../enums/searchParameters';
-  import { userStore } from '../../../../lib/stores/auth';
   import { constraintMetadata, constraintMetadataId } from '../../../../stores/constraints';
   import { tags } from '../../../../stores/tags';
+  import { getUserStore } from '../../../../stores/user';
   import type {
     ConstraintDefinition,
     ConstraintMetadata,
@@ -19,6 +19,8 @@
   import type { PageData } from './$types';
 
   export let data: PageData;
+
+  const user = getUserStore();
 
   let constraintRevision: number =
     getSearchParameterNumber(SearchParameters.REVISION, $page.url.searchParams) ??
@@ -58,7 +60,7 @@
         constraintDefinitionCode = constraintDefinition?.definition;
         constraintDefinitionTags = constraintDefinition?.tags.map(({ tag }) => tag);
         if (constraintDefinition.uploaded_jar_id !== null) {
-          constraintDefinitionFilename = await effects.getFileName(constraintDefinition.uploaded_jar_id, $userStore);
+          constraintDefinitionFilename = await effects.getFileName(constraintDefinition.uploaded_jar_id, $user);
         } else {
           constraintDefinitionFilename = null;
         }
@@ -114,7 +116,7 @@
   {constraintRevisions}
   tags={$tags}
   mode="edit"
-  user={$userStore}
+  user={$user}
   on:selectRevision={onRevisionSelect}
   on:selectReferenceModel={onModelSelect}
 />

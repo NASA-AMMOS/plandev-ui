@@ -1,133 +1,126 @@
-import test, { expect, type BrowserContext, type Page } from '@playwright/test';
-import { Models } from '../fixtures/Models.js';
-import { Plans } from '../fixtures/Plans.js';
-let context: BrowserContext;
-let models: Models;
-let page: Page;
-let plans: Plans;
+import test, { expect } from '@playwright/test';
+import { setupTest, teardownTest, type ModelSetupResult } from '../utilities/api.js';
 
-test.beforeAll(async ({ baseURL, browser }) => {
-  context = await browser.newContext();
-  page = await context.newPage();
+let setup: ModelSetupResult;
 
-  models = new Models(page);
-  plans = new Plans(page, models);
-
-  await models.goto();
-  await models.createModel(baseURL);
+test.beforeAll(async ({ browser }) => {
+  setup = await setupTest(browser, { plan: false });
 });
 
 test.afterAll(async () => {
-  await models.goto();
-  await models.deleteModel();
-  await page.close();
-  await context.close();
+  await teardownTest(setup);
 });
 
-test.describe.serial('Plans', () => {
+// Form validation tests - independent, can run in parallel
+test.describe('Plans - Form Validation', () => {
   test.beforeEach(async () => {
-    await plans.goto();
+    await setup.plans.goto();
   });
 
   test('Create plan button should be disabled with no errors', async () => {
-    await expect(plans.alertError).not.toBeVisible();
-    await expect(plans.createButton).toBeDisabled();
+    await expect(setup.plans.alertError).not.toBeVisible();
+    await expect(setup.plans.createButton).toBeDisabled();
   });
 
   test('Clicking on the "New plan with model" button should route you to the plans page with that model selected', async ({
     baseURL,
   }) => {
-    await models.goto();
-    await models.filterTable(models.modelName);
-    await models.tableRow().click();
-    await models.createPlanButton.click();
-    await expect(page).toHaveURL(`${baseURL}/plans`);
-    const text = await plans.selectedModel();
-    expect(text).toEqual(`${models.modelName} (Version: ${models.modelVersion})`);
+    await setup.models.goto();
+    await setup.models.filterTable(setup.models.modelName);
+    await setup.models.tableRow().click();
+    await setup.models.createPlanButton.click();
+    await expect(setup.page).toHaveURL(`${baseURL}/plans`);
+    const text = await setup.plans.selectedModel();
+    expect(text).toEqual(`${setup.models.modelName} (Version: ${setup.models.modelVersion})`);
   });
 
   test('Create plan button should be disabled after only entering a name', async () => {
-    await plans.fillInputName();
-    await expect(plans.createButton).toBeDisabled();
+    await setup.plans.fillInputName();
+    await expect(setup.plans.createButton).toBeDisabled();
   });
 
   test('Create plan button should be disabled after only entering a start time', async () => {
-    await plans.fillInputStartTime();
-    await expect(plans.createButton).toBeDisabled();
+    await setup.plans.fillInputStartTime();
+    await expect(setup.plans.createButton).toBeDisabled();
   });
 
   test('Create plan button should be disabled after only entering an end time', async () => {
-    await plans.fillInputEndTime();
-    await expect(plans.createButton).toBeDisabled();
+    await setup.plans.fillInputEndTime();
+    await expect(setup.plans.createButton).toBeDisabled();
   });
 
   test('Entering an invalid start time should display an error, and the create button should be disabled', async () => {
-    await plans.inputStartTime.fill('2022-');
-    await page.keyboard.press('Tab');
-    await expect(plans.inputStartTime).toHaveAttribute('aria-invalid', 'true');
-    await expect(plans.createButton).toBeDisabled();
+    await setup.plans.inputStartTime.fill('2022-');
+    await setup.page.keyboard.press('Tab');
+    await expect(setup.plans.inputStartTime).toHaveAttribute('aria-invalid', 'true');
+    await expect(setup.plans.createButton).toBeDisabled();
   });
 
   test('Entering an invalid end time should display an error, and the create button should be disabled', async () => {
-    await plans.inputEndTime.fill('2022-');
-    await page.keyboard.press('Tab');
-    await expect(plans.inputEndTime).toHaveAttribute('aria-invalid', 'true');
-    await expect(plans.createButton).toBeDisabled();
+    await setup.plans.inputEndTime.fill('2022-');
+    await setup.page.keyboard.press('Tab');
+    await expect(setup.plans.inputEndTime).toHaveAttribute('aria-invalid', 'true');
+    await expect(setup.plans.createButton).toBeDisabled();
   });
 
   test('Entering a valid start and end time should display the appropriate duration text', async () => {
-    await plans.fillInputStartTime();
-    await plans.fillInputEndTime();
-    await expect(plans.durationDisplay).toHaveValue('5d');
+    await setup.plans.fillInputStartTime();
+    await setup.plans.fillInputEndTime();
+    await expect(setup.plans.durationDisplay).toHaveValue('5d');
   });
 
   test('Entering a valid start should prepopulate the end time correctly', async () => {
-    await plans.fillInputStartTime();
+    await setup.plans.fillInputStartTime();
 
-    const endTime = await plans.inputEndTime.inputValue();
+    const endTime = await setup.plans.inputEndTime.inputValue();
     expect(endTime).toEqual('2022-002T00:00:00');
   });
 
   test('Entering an invalid start should not prepopulate the end time', async () => {
-    await plans.inputStartTime.fill('2022-');
-    await page.keyboard.press('Tab');
+    await setup.plans.inputStartTime.fill('2022-');
+    await setup.page.keyboard.press('Tab');
 
-    const endTime = await plans.inputEndTime.inputValue();
+    const endTime = await setup.plans.inputEndTime.inputValue();
     expect(endTime).toEqual('');
   });
 
   test('Entering an invalid start time should display "None" in the duration text', async () => {
-    await plans.inputStartTime.fill('2022-');
-    await page.keyboard.press('Tab');
-    await plans.fillInputEndTime();
-    await expect(plans.durationDisplay).toHaveValue('None');
+    await setup.plans.inputStartTime.fill('2022-');
+    await setup.page.keyboard.press('Tab');
+    await setup.plans.fillInputEndTime();
+    await expect(setup.plans.durationDisplay).toHaveValue('None');
   });
 
   test('Entering an invalid end time should display "None" in the duration text', async () => {
-    await plans.fillInputStartTime();
-    await plans.inputEndTime.fill('2022-');
-    await page.keyboard.press('Tab');
-    await expect(plans.durationDisplay).toHaveValue('None');
+    await setup.plans.fillInputStartTime();
+    await setup.plans.inputEndTime.fill('2022-');
+    await setup.page.keyboard.press('Tab');
+    await expect(setup.plans.durationDisplay).toHaveValue('None');
   });
 
   test('Create button should be enabled after selecting a model, entering a name, entering a start time, and entering an end time ', async () => {
-    await plans.selectInputModel();
-    await plans.fillInputName();
-    await plans.fillInputStartTime();
-    await plans.fillInputEndTime();
-    await expect(plans.createButton).not.toBeDisabled();
+    await setup.plans.selectInputModel();
+    await setup.plans.fillInputName();
+    await setup.plans.fillInputStartTime();
+    await setup.plans.fillInputEndTime();
+    await expect(setup.plans.createButton).not.toBeDisabled();
   });
+});
 
+// CRUD operations - dependent, must run serially
+test.describe.serial('Plans - CRUD Operations', () => {
   test('Create plan', async () => {
-    await plans.createPlan();
+    await setup.plans.goto();
+    await setup.plans.createPlan();
   });
 
   test('Delete plan', async () => {
-    await plans.deletePlan();
+    await setup.plans.deletePlan();
   });
 
   test('Import plan', async () => {
-    await plans.importPlan();
-    await plans.deletePlan();
+    await setup.plans.goto();
+    await setup.plans.importPlan();
+    await setup.plans.deletePlan();
   });
 });

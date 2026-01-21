@@ -7,16 +7,21 @@ import type {
   ActivityValidationErrors,
   AnchorValidationError,
   BaseError,
+  LogMessage,
   SchedulingError,
   SimulationDatasetError,
 } from '../types/errors';
 
 export enum ErrorTypes {
+  ACTIVITY_VALIDATION_ERROR = 'ACTIVITY_VALIDATION_ERROR', // TODO this is made up by client, is that ok?
   ANCHOR_VALIDATION_ERROR = 'ANCHOR_VALIDATION_ERROR',
   CAUGHT_ERROR = 'CAUGHT_ERROR',
+  CONSTRAINT_RUN_ERROR = 'CONSTRAINT_RUN_ERROR', // TODO this is made up by client, is that ok?
   GLOBAL_SCHEDULING_CONDITIONS_FAILED = 'GLOBAL_SCHEDULING_CONDITIONS_FAILED',
   IO_EXCEPTION = 'IO_EXCEPTION',
   INSTANTIATION_ERRORS = 'INSTANTIATION_ERRORS',
+  LOG = 'LOG',
+  MISSION_MODEL_ERROR = 'MISSION_MODEL_ERROR', // TODO this is made up by client, is that ok?
   NO_SUCH_ACTIVITY_TYPE = 'NO_SUCH_ACTIVITY_TYPE',
   NO_SUCH_MISSION_MODEL = 'NO_SUCH_MISSION_MODEL',
   NO_SUCH_PLAN = 'NO_SUCH_PLAN',
@@ -25,6 +30,7 @@ export enum ErrorTypes {
   PLAN_SERVICE_EXCEPTION = 'PLAN_SERVICE_EXCEPTION',
   RESULTS_PROTOCOL_FAILURE = 'RESULTS_PROTOCOL_FAILURE',
   SCHEDULING_GOALS_FAILED = 'SCHEDULING_GOALS_FAILED',
+  SIMULATION_EXCEPTION = 'SIMULATION_EXCEPTION',
   SIMULATION_REQUEST_NOT_RELEVANT = 'SIMULATION_REQUEST_NOT_RELEVANT',
   SPECIFICATION_LOAD_EXCEPTION = 'SPECIFICATION_LOAD_EXCEPTION',
   UNEXPECTED_SCHEDULER_EXCEPTION = 'UNEXPECTED_SCHEDULER_EXCEPTION',
@@ -48,6 +54,10 @@ export function isValidationNoticesError(
   validation: ActivityDirectiveValidationFailures | AnchorValidationError,
 ): validation is ActivityDirectiveValidationNoticesFailure {
   return (validation as ActivityDirectiveValidationNoticesFailure).type === ErrorTypes.VALIDATION_NOTICES;
+}
+
+export function isLogMessage(log: BaseError): log is LogMessage {
+  return log.type === ErrorTypes.LOG || log.type === ErrorTypes.CAUGHT_ERROR;
 }
 
 export function generateActivityValidationErrorRollups(
@@ -115,8 +125,8 @@ export function generateActivityValidationErrorRollups(
  * Extract activity IDs from different error types
  */
 export function getActivityIdsFromError(error: BaseError): number[] {
-  if (error.type === ErrorTypes.ANCHOR_VALIDATION_ERROR) {
-    return [(error as AnchorValidationError).activityId];
+  if (error.type === ErrorTypes.ANCHOR_VALIDATION_ERROR || error.type === ErrorTypes.ACTIVITY_VALIDATION_ERROR) {
+    return [(error as AnchorValidationError).data.activityId];
   } else if (
     error.type === ErrorTypes.GLOBAL_SCHEDULING_CONDITIONS_FAILED ||
     error.type === ErrorTypes.SCHEDULING_GOALS_FAILED ||
@@ -127,6 +137,11 @@ export function getActivityIdsFromError(error: BaseError): number[] {
       return Object.keys(errorWithIds.data.errors)
         .map(id => parseInt(id))
         .filter(id => !isNaN(id));
+    }
+  } else if (error.type === ErrorTypes.SIMULATION_EXCEPTION) {
+    const id = (error as SimulationDatasetError).data.executingDirectiveId;
+    if (typeof id === 'number') {
+      return [id];
     }
   }
   return [];

@@ -22,7 +22,7 @@
 
   export let height: number = 550;
   export let selectedFilter: PlanMergeRequestTypeFilter = 'all';
-  export let user: User | null;
+  export let user: User | null = null;
   export let width: number = 550;
 
   const dispatch = createEventDispatcher<{

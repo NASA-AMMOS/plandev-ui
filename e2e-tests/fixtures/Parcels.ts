@@ -23,15 +23,15 @@ export class Parcels {
 
   async changeSelectedCommandDictionary(firstCommandDictionaryName: string, secondCommandDictionaryName: string) {
     const parcelTableRow = this.page.locator(`.ag-row:has-text("${this.parcelName}")`);
-    const parcelTableRowEditButton = await this.page.locator(
-      `.ag-row:has-text("${this.parcelName}") >> button[aria-label="Edit Parcel"]`,
+    const parcelTableRowOpenButton = await this.page.locator(
+      `.ag-row:has-text("${this.parcelName}") >> button[aria-label="Open Parcel"]`,
     );
 
     parcelTableRow.hover();
-    await parcelTableRowEditButton.waitFor({ state: 'attached' });
-    await parcelTableRowEditButton.waitFor({ state: 'visible' });
-    await expect(parcelTableRowEditButton).toBeVisible();
-    parcelTableRowEditButton.click();
+    await parcelTableRowOpenButton.waitFor({ state: 'attached' });
+    await parcelTableRowOpenButton.waitFor({ state: 'visible' });
+    await expect(parcelTableRowOpenButton).toBeVisible();
+    parcelTableRowOpenButton.click();
 
     this.updatePage(this.page);
     await expect(this.tableRow(this.parcelName)).toBeVisible();
@@ -98,6 +98,7 @@ export class Parcels {
     await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(parcelName);
     await expect(this.table.getByRole('row', { name: parcelName })).toBeVisible();
     await this.page.keyboard.press('Escape');
+    await this.page.locator('.ag-popup').waitFor({ state: 'hidden' });
   }
 
   async goto() {

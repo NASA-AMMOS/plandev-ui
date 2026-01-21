@@ -4,11 +4,14 @@
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import { ActivityFilterField, FilterOperator } from '../../../../enums/filter';
+  import { ActivityFilterField, ExternalEventFilterField, FilterOperator } from '../../../../enums/filter';
   import type { SelectedDropdownOptionValue } from '../../../../types/dropdown';
   import type { DynamicFilter, DynamicFilterDataType } from '../../../../types/filter';
   import type { TagsChangeEvent } from '../../../../types/tags';
-  import { type ActivityLayerFilterSubfieldSchema } from '../../../../types/timeline';
+  import {
+    type ActivityLayerFilterSubfieldSchema,
+    type ExternalEventLayerFilterSubfieldSchema,
+  } from '../../../../types/timeline';
   import { getTarget } from '../../../../utilities/generic';
   import { tooltip } from '../../../../utilities/tooltip';
   import Input from '../../../form/Input.svelte';
@@ -23,6 +26,7 @@
 
   export let filter: DynamicFilter<any>;
   export let schema: Partial<Record<keyof typeof ActivityFilterField, Partial<OperatorSchema>>> & {
+    Attribute?: { subfields: ExternalEventLayerFilterSubfieldSchema[] };
     Parameter?: { subfields: ActivityLayerFilterSubfieldSchema[] };
   } = {};
   export let verb: string = 'Where';
@@ -33,11 +37,16 @@
   }>();
 
   let dirtyFilter: DynamicFilter<any> = structuredClone(filter);
-  let currentField: keyof typeof ActivityFilterField = dirtyFilter.field as keyof typeof ActivityFilterField;
+  let currentField: keyof typeof ActivityFilterField | ExternalEventFilterField = dirtyFilter.field as
+    | keyof typeof ActivityFilterField
+    | ExternalEventFilterField;
   let currentOperator: keyof typeof FilterOperator | null = dirtyFilter.operator;
-  let subfields: ActivityLayerFilterSubfieldSchema[] | undefined = undefined;
+  let subfields: Array<ActivityLayerFilterSubfieldSchema | ExternalEventLayerFilterSubfieldSchema> | undefined =
+    undefined;
   let currentSubfieldLabel =
-    dirtyFilter.field === 'Parameter' ? `${dirtyFilter.subfield?.name} (${dirtyFilter.subfield?.type})` : '';
+    dirtyFilter.field === 'Parameter' || dirtyFilter.field === 'Attribute'
+      ? `${dirtyFilter.subfield?.name} (${dirtyFilter.subfield?.type})`
+      : '';
   let currentType: DynamicFilterDataType = 'string';
   let currentValue = dirtyFilter.value;
   let currentValueAsStringOrNumber: string | number = '';
@@ -46,9 +55,9 @@
   let currentValuePossibilities: Array<any> = [];
 
   $: dirtyFilter = structuredClone(filter);
-  $: subfields = schema.Parameter?.subfields;
+  $: subfields = 'Parameter' in schema ? schema.Parameter?.subfields : schema.Attribute?.subfields;
 
-  $: if (currentField !== 'Parameter') {
+  $: if (currentField !== 'Parameter' && currentField !== 'Attribute') {
     currentSubfieldLabel = '';
     currentUnit = '';
     const schemaField = schema[currentField];
@@ -68,7 +77,11 @@
     }
   }
 
-  $: if (currentField === 'Parameter' && currentSubfieldLabel !== undefined && subfields) {
+  $: if (
+    (currentField === 'Attribute' || currentField === 'Parameter') &&
+    currentSubfieldLabel !== undefined &&
+    subfields
+  ) {
     const matchingSubfield = subfields.find(subfield => subfield.label === currentSubfieldLabel);
     if (matchingSubfield) {
       // Map subfield type to filter type
@@ -168,6 +181,10 @@
     return s as keyof typeof ActivityFilterField;
   }
 
+  function asExternalEventFilterField(s: string): keyof typeof ExternalEventFilterField {
+    return s as keyof typeof ExternalEventFilterField;
+  }
+
   function getDefaultCurrentValue() {
     if (currentOperator === 'is_within' || currentOperator === 'is_not_within') {
       return [];
@@ -182,15 +199,20 @@
   {/if}
   <select aria-label="field" class="st-select" on:change={onFieldChange} value={currentField}>
     {#each Object.keys(schema) as key}
-      <option value={key}>{ActivityFilterField[asActivityLayerFilterField(key)]}</option>
+      {#if key in ActivityFilterField}
+        <option value={key}>{ActivityFilterField[asActivityLayerFilterField(key)]}</option>
+      {:else}
+        <option value={key}>{ExternalEventFilterField[asExternalEventFilterField(key)]}</option>
+      {/if}
     {/each}
   </select>
-  {#if currentField === 'Parameter' && subfields}
+  {#if (currentField === 'Parameter' || currentField === 'Attribute') && subfields}
+    {@const parameterOrAttribute = currentField === 'Parameter' ? 'Parameter' : 'Attribute'}
     <SearchableDropdown
       className="dynamic-filter-searchable-dropdown-hide-overflow"
-      placeholder="Select Parameter"
-      selectTooltip="Select Parameter"
-      searchPlaceholder="Filter parameters"
+      placeholder={`Select ${parameterOrAttribute}`}
+      selectTooltip={`Select ${parameterOrAttribute}`}
+      searchPlaceholder={`Filter ${parameterOrAttribute}`}
       on:change={onSelectParameter}
       selectedOptionValues={[currentSubfieldLabel]}
       options={subfields.map(subfield => ({ display: subfield.label, value: subfield.label }))}

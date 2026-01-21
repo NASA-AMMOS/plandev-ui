@@ -4,6 +4,7 @@
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { createEventDispatcher } from 'svelte';
 
+  export let action: string = '';
   export let modelName: string = '';
   export let hasErrors: boolean = false;
 
@@ -12,11 +13,11 @@
   $: isVisible = hasErrors;
 
   const dispatch = createEventDispatcher<{
-    viewModelErrors: void;
+    action: void;
   }>();
 
-  function onClickViewConsole() {
-    dispatch('viewModelErrors');
+  function onActionClick() {
+    dispatch('action');
   }
 
   function onDismiss() {
@@ -27,12 +28,15 @@
 {#if isVisible}
   <div class="model-error-bar">
     <div class="info">
-      Mission model <span class="model-name"><WarningIcon class="red-icon" />{modelName}</span> has extraction errors and
-      this plan may not work correctly
+      <slot />
+      {#if !$$slots.default}
+        Mission model <span class="model-name"><WarningIcon class="red-icon" />{modelName}</span> has extraction errors and
+        this plan may not work correctly
+      {/if}
     </div>
 
     <div class="buttons">
-      <button on:click={onClickViewConsole} class="st-button view-button">View errors in console</button>
+      <button on:click={onActionClick} class="st-button view-button">{action}</button>
       <button class="st-button secondary" on:click={onDismiss}>Dismiss</button>
     </div>
   </div>

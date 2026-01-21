@@ -1,7 +1,14 @@
+import type { ActionDefinition } from './actions';
 import type { UserId } from './app';
-import type { WorkspaceTreeNode } from './workspace-tree-view';
+import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from './workspace-tree-view';
+
+export type WorkspaceCollaborator = {
+  collaborator: UserId;
+  workspace_id: number;
+};
 
 export type Workspace = {
+  collaborators: WorkspaceCollaborator[];
   created_at: string;
   disk_location: string;
   id: number;
@@ -11,6 +18,8 @@ export type Workspace = {
   updated_at: string;
 };
 
+export type WorkspaceMetadata = Pick<Workspace, 'name' | 'owner' | 'parcel_id'>;
+
 export type WorkspaceInsertInput = {
   parcelId: number;
   workspaceLocation: string;
@@ -18,7 +27,16 @@ export type WorkspaceInsertInput = {
 };
 
 export type WorkspaceNodeEvent = {
-  toggleState?: boolean;
   treeNode: WorkspaceTreeNode;
   treeNodePath: string;
+};
+
+export type WorkspaceNodesEvent = {
+  treeNodes: WorkspaceTreeNodeWithFullPath[];
+};
+
+export type ActionParameterPair = { action: ActionDefinition; parameter: string };
+
+export type WorkspaceNodeRunActionEvent = WorkspaceNodesEvent & {
+  actionParameterPair: ActionParameterPair;
 };

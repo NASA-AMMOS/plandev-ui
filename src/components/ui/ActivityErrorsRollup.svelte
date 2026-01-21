@@ -15,7 +15,7 @@
   import OutsideBoundsIcon from '../../assets/out-of-bounds.svg?component';
   import type { Dispatcher } from '../../types/component';
   import type { ActivityErrorCategories, ActivityErrorCounts } from '../../types/errors';
-  import { isMacOs } from '../../utilities/generic';
+  import { isMacOs } from '../../utilities/browser';
   import { isMetaOrCtrlPressed } from '../../utilities/keyboardEvents';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { pluralize } from '../../utilities/text';

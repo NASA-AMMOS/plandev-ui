@@ -17,3 +17,9 @@ export enum ActivityFilterField {
   Parameter = 'Parameter',
   SchedulingGoalId = 'Scheduling Goal Id',
 }
+
+export enum ExternalEventFilterField {
+  Type = 'Type',
+  Name = 'Name',
+  Attribute = 'Attribute',
+}

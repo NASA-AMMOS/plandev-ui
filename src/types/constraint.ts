@@ -113,7 +113,7 @@ export type ConstraintRequest = {
 };
 
 export type CheckConstraintResponse = {
-  constraintsRun: ConstraintResponse[];
+  constraintsRun: (ConstraintResponse & { success: boolean })[];
   requestId: number;
 };
 
@@ -121,9 +121,8 @@ export type ConstraintResponse = {
   constraintId: ConstraintMetadata['id'];
   constraintInvocationId: ConstraintRun['constraint_invocation_id'];
   constraintName: ConstraintMetadata['name'];
-  errors: UserCodeError[];
+  errors: UserCodeError[] | Record<PropertyKey, never>;
   results: ConstraintResult;
-  success: boolean;
   type: ConstraintType;
 };
 
@@ -132,8 +131,11 @@ export type ConstraintRun = {
   constraint_id: number;
   constraint_invocation_id: number;
   constraint_revision: number;
+  errors: UserCodeError[];
+  id: number;
+  requested_at: string;
   results: ConstraintResultWithName;
-  simulation_data_id: number;
+  simulation_dataset_id: number;
 };
 
 export type ConstraintInvocationMap<T> = Record<
