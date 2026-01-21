@@ -12,7 +12,6 @@ vi.mock('../RowVirtualizerFixed.svelte', async () => {
 });
 
 describe('Searchable Dropdown component', () => {
-
   const options: DropdownOptions = [
     {
       display: 'Option 1',

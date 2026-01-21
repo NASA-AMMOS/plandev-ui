@@ -259,7 +259,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   }
 
   // Redraw rows when context menu state changes to apply rowClassRules
-  $: contextMenuOpen, contextMenuTargetRowId, tertiaryHighlightIds, gridApi?.redrawRows();
+  $: (contextMenuOpen, contextMenuTargetRowId, tertiaryHighlightIds, gridApi?.redrawRows());
 
   $: {
     gridApi?.setGridOption('quickFilterText', filterExpression);
