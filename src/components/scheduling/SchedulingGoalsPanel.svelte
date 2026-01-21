@@ -132,7 +132,7 @@
       const results = await effects.getSchedulingProcedureEffectiveArguments(goalsToFetch, user);
 
       for (const result of results) {
-        const mapping = goalInvocationMap.get(`${result.id}_${result.revision}`);
+        const mapping = goalInvocationMap.get(getSchedulingGoalDefaultsKey(result.id, result.revision));
         if (mapping) {
           setSchedulingGoalArgumentDefaults(mapping.invocationId, mapping.revision, result.arguments);
         }
