@@ -41,14 +41,18 @@ const handleJWTAuth: Handle = async ({ event, resolve }) => {
 
   // if we're already on the login page, don't redirect
   // otherwise we get stuck in a redirect loop
-  return event.url.pathname.includes('/login') || event.url.pathname.includes('/auth')
-    ? await resolve(event)
-    : new Response(null, {
-        headers: {
-          location: `${base}/login`,
-        },
-        status: 307,
-      });
+  if (event.url.pathname.includes('/login') || event.url.pathname.includes('/auth')) {
+    return await resolve(event);
+  }
+
+  // Capture the original URL to redirect back after login
+  const redirectTo = encodeURIComponent(event.url.pathname + event.url.search);
+  return new Response(null, {
+    headers: {
+      location: `${base}/login?redirectTo=${redirectTo}`,
+    },
+    status: 307,
+  });
 };
 
 const handleSSOAuth: Handle = async ({ event, resolve }) => {

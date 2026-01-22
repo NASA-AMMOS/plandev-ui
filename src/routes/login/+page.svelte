@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { goto, invalidateAll } from '$app/navigation';
+  import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { Button, Input, Label } from '@nasa-jpl/stellar-svelte';
@@ -54,8 +54,9 @@
       const { message, success } = loginResponse;
 
       if (success) {
-        await invalidateAll();
-        await goto(`${base}/plans`);
+        const redirectTo = $page.url.searchParams.get(SearchParameters.REDIRECT_TO);
+        const destination = redirectTo ? decodeURIComponent(redirectTo) : `${base}/plans`;
+        await goto(destination, { invalidateAll: true });
       } else {
         console.log(message);
         error = message ?? null;
