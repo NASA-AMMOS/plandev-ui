@@ -9,6 +9,12 @@ import effects from './utilities/effects';
 import { reqGatewayForwardCookies } from './utilities/requests';
 
 export const handle: Handle = async ({ event, resolve }) => {
+  // Ignore Chrome DevTools requests to prevent noisy 404 logs
+  // See https://svelte.dev/docs/cli/devtools-json#Alternatives
+  if (event.url.pathname.startsWith('/.well-known/appspecific/com.chrome.')) {
+    return new Response(null, { status: 404 });
+  }
+
   try {
     if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
       return await handleSSOAuth({ event, resolve });
