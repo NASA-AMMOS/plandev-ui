@@ -94,13 +94,6 @@
     }
   }
 
-  $: isExpansionDisabled =
-    $simulationDatasetLatest && relevantExpansionSequences.length > 0
-      ? SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING
-        ? false
-        : selectedExpansionSetId === null
-      : true;
-
   function onApplyFilter(sequenceFilter: SequenceFilter) {
     if ($simulationDatasetLatest !== null && $plan !== null) {
       effects.applyActivitiesByFilter(
