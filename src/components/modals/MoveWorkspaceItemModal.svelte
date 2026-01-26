@@ -11,6 +11,7 @@
     getSelectedFilesDisplay,
     getWorkspaceFileFolderDisplay,
     joinPath,
+    removeFirstPathSegment,
     separateFilenameFromPath,
   } from '../../utilities/workspaces';
   import WorkspaceTreeView from '../workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
@@ -48,18 +49,22 @@
   }
 
   function onMove() {
+    // targetDirectory includes workspace name as first segment (e.g., "workspace/folder/subfolder")
+    // Remove it since the API expects paths relative to the workspace root
     dispatch('confirm', {
       shouldCopy: false,
       shouldOverwrite,
-      targetPath: targetDirectory.replace(new RegExp(`^${currentWorkspace.name}`), ''),
+      targetPath: removeFirstPathSegment(targetDirectory),
     });
   }
 
   function onDuplicate() {
+    // targetDirectory includes workspace name as first segment (e.g., "workspace/folder/subfolder")
+    // Remove it since the API expects paths relative to the workspace root
     dispatch('confirm', {
       shouldCopy: true,
       shouldOverwrite,
-      targetPath: targetDirectory.replace(new RegExp(`^${currentWorkspace.name}`), ''),
+      targetPath: removeFirstPathSegment(targetDirectory),
     });
   }
 </script>
