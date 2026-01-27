@@ -14,8 +14,6 @@
    * this component replaces the content area entirely based on the current state.
    */
 
-  const dispatch = createEventDispatcher<{ retry: void }>();
-
   // State props - evaluated in priority order: error > loading > empty > content
   export let loading: boolean = false;
   export let error: string | null = null;
@@ -31,6 +29,8 @@
   // Styling
   let className: string = '';
   export { className as class };
+
+  const dispatch = createEventDispatcher<{ retry: void }>();
 
   function handleRetry() {
     dispatch('retry');
