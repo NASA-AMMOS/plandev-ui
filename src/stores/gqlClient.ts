@@ -140,6 +140,8 @@ function createSharedClient(): Client {
         // Check for auth-related close codes
         if (event && typeof event === 'object' && 'code' in event) {
           const closeEvent = event as CloseEvent;
+          // 4401 = Unauthorized
+          // 4403 = Forbidden
           if (closeEvent.code === 4401 || closeEvent.code === 4403) {
             logout('Session expired');
           }
