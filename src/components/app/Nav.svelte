@@ -15,10 +15,11 @@
 
   async function changeRole(value: string) {
     const updatedUser = await changeUserRole(value as string);
-    user.set(updatedUser || null);
     if (updatedUser) {
+      user.set(updatedUser || null);
       showSuccessToast('Changed Role Successfully');
     } else {
+      user.set($user);
       showFailureToast('Failed to Change Role');
     }
   }
