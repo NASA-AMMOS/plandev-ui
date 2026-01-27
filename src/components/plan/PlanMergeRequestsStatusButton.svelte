@@ -22,7 +22,7 @@
   <button
     aria-label={label}
     class="plan-merge-requests-status-button st-button tertiary st-typography-medium"
-    on:click|stopPropagation={() => showPlanMergeRequestsModal(undefined, user)}
+    on:click|stopPropagation={() => showPlanMergeRequestsModal(user)}
     use:tooltip={{ content: label, placement: 'top' }}
   >
     <span class="status-icon" class:active={incomingPendingMergeRequestCount > 0}>
