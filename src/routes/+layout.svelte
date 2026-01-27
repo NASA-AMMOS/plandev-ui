@@ -12,8 +12,8 @@
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
   import { clearLogs } from '../stores/errors';
-  import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
   import { restartSharedClient } from '../stores/gqlClient';
+  import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
   import type { UserStore } from '../types/app';
   import { loadPluginCode } from '../utilities/plugins';
   import type { LayoutData } from './$types';
