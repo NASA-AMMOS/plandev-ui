@@ -16,7 +16,7 @@
   async function changeRole(value: string) {
     const updatedUser = await changeUserRole(value as string);
     if (updatedUser) {
-      user.set(updatedUser || null);
+      user.set(updatedUser);
       showSuccessToast('Changed Role Successfully');
     } else {
       user.set($user);
