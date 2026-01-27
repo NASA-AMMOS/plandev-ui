@@ -10,8 +10,8 @@ export const workspaceColumns: Writable<string> = writable('1fr 3px 3fr');
 export const workspaceId: Writable<number> = writable(-1);
 
 /* Subscriptions. */
-export const parcels = gqlSubscribable<Parcel[]>(gql.SUB_PARCELS, {}, [], null);
-export const workspaces = gqlSubscribable<Workspace[]>(gql.SUB_WORKSPACES, {}, [], null);
+export const parcels = gqlSubscribable<Parcel[]>(gql.SUB_PARCELS, {}, []);
+export const workspaces = gqlSubscribable<Workspace[]>(gql.SUB_WORKSPACES, {}, []);
 
 /* Derived. */
 export const workspace: Readable<Workspace | undefined> = derived(

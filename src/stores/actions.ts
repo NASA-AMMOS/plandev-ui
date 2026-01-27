@@ -10,10 +10,9 @@ export const actionDefinitions = gqlSubscribable<ActionDefinition[] | null>(
   gql.SUB_ACTION_DEFINITIONS,
   null,
   null,
-  null,
 );
 
-export const actionRuns = gqlSubscribable<ActionRunSlim[] | null>(gql.SUB_ACTION_RUNS, {}, null, null);
+export const actionRuns = gqlSubscribable<ActionRunSlim[] | null>(gql.SUB_ACTION_RUNS, {}, null);
 
 /* Derived */
 export const actionDefinitionsByWorkspace: Readable<Record<number, Record<number, ActionDefinition>>> = derived(

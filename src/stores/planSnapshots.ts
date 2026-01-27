@@ -8,7 +8,7 @@ import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
 
-export const planSnapshots = gqlSubscribable<PlanSnapshot[] | null>(gql.SUB_PLAN_SNAPSHOTS, { planId }, null, null);
+export const planSnapshots = gqlSubscribable<PlanSnapshot[] | null>(gql.SUB_PLAN_SNAPSHOTS, { planId }, null);
 
 /* Writeable. */
 

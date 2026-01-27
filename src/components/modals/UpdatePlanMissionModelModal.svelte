@@ -91,7 +91,6 @@
     gql.SUB_PLAN_MERGE_REQUESTS_INCOMING,
     { planId: plan.id },
     null,
-    null,
     incoming => getActivePlanMergeRequests(incoming),
   );
   $: previewMissionModelMigration(selectedMissionModel);

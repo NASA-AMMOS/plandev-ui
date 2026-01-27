@@ -21,7 +21,6 @@
     gql.SUB_PLANS_USER_WRITABLE,
     { userId: user?.id },
     null,
-    null,
   );
 </script>
 

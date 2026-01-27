@@ -50,7 +50,6 @@ export const simulation = gqlSubscribable<Simulation | null>(
   gql.SUB_SIMULATION,
   { planId },
   null,
-  null,
   (simulations: Simulation[]): Simulation => simulations[0],
 );
 
@@ -58,13 +57,11 @@ export const simulationDataset = gqlSubscribable<SimulationDataset | null>(
   gql.SUB_SIMULATION_DATASET,
   { simulationDatasetId },
   null,
-  null,
 );
 
 export const simulationDatasetLatest = gqlSubscribable<SimulationDataset | null>(
   gql.SUB_SIMULATION_DATASET_LATEST,
   { planId },
-  null,
   null,
   (simulations: { simulation_datasets: SimulationDataset[] }[]): SimulationDataset | null => {
     if (simulations.length && simulations[0].simulation_datasets.length) {
@@ -78,13 +75,11 @@ export const simulationDatasetsPlan = gqlSubscribable<SimulationDataset[] | null
   gql.SUB_SIMULATION_DATASETS,
   { planId },
   null,
-  null,
   v => v[0]?.simulation_datasets || [],
 );
 
 export const simulationDatasetsAll = gqlSubscribable<SimulationDatasetSlim[] | null>(
   gql.SUB_SIMULATION_DATASETS_ALL,
-  null,
   null,
   null,
 );
@@ -93,7 +88,6 @@ export const simulationTemplates = gqlSubscribable<SimulationTemplate[]>(
   gql.SUB_SIMULATION_TEMPLATES,
   { modelId: planModelId },
   [],
-  null,
 );
 
 export const selectedSpanId: Writable<SpanId | null> = writable(null);

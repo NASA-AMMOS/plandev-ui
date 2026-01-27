@@ -14,13 +14,13 @@ export const sequenceTemplateExpansionStatus: Writable<Status | null> = writable
 export const sequenceTemplateExpansionError: Writable<string | null> = writable(null);
 
 /* Subscriptions. */
-export const expandedTemplates = gqlSubscribable<ExpandedTemplate[]>(gql.SUB_EXPANDED_TEMPLATES, {}, [], null);
+export const expandedTemplates = gqlSubscribable<ExpandedTemplate[]>(gql.SUB_EXPANDED_TEMPLATES, {}, []);
 
-export const sequenceTemplates = gqlSubscribable<SequenceTemplate[]>(gql.SUB_SEQUENCE_TEMPLATES, {}, [], null);
+export const sequenceTemplates = gqlSubscribable<SequenceTemplate[]>(gql.SUB_SEQUENCE_TEMPLATES, {}, []);
 
 export const allTemplates = gqlSubscribable<
   { expanded_template: string; seq_id: string; simulation_dataset_id: number }[]
->(gql.SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_TEMPS, {}, null, null);
+>(gql.SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_TEMPS, {}, null);
 
 /* Derived */
 export const lastTemplatedSimulationDatasetId = derived(

@@ -35,7 +35,6 @@ export const sequenceAdaptations = gqlSubscribable<SequenceAdaptationMetadata[]>
   gql.SUB_SEQUENCE_ADAPTATIONS,
   {},
   [],
-  null,
 );
 
 /* Derived */

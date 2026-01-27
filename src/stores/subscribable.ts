@@ -1,7 +1,6 @@
 import { browser } from '$app/environment';
 import { debounce, isEqual } from 'lodash-es';
 import { type Readable, type Subscriber, type Unsubscriber, type Updater } from 'svelte/store';
-import type { User } from '../types/app';
 import type { GqlSubscribable, NextValue, QueryVariables, Subscription } from '../types/subscribable';
 import { logout } from '../utilities/login';
 import { EXPIRED_JWT } from '../utilities/permissions';
@@ -22,7 +21,6 @@ export function gqlSubscribable<T>(
   query: string,
   initialVariables: QueryVariables | null = null,
   initialValue: T | null = null,
-  _user: User | null, // Kept for API compatibility, auth now handled by gqlClient
   transformer: (v: any) => T = v => v,
 ): GqlSubscribable<T> {
   const subscribers: Set<Subscription<T>> = new Set();

@@ -16,9 +16,9 @@ export const modelId: Readable<number> = derived(initialModel, $model => ($model
 
 /* Subscriptions. */
 
-export const model = gqlSubscribable<Model | null>(gql.SUB_MODEL, { id: modelId }, null, null);
+export const model = gqlSubscribable<Model | null>(gql.SUB_MODEL, { id: modelId }, null);
 
-export const models = gqlSubscribable<ModelSlim[]>(gql.SUB_MODELS, {}, [], null);
+export const models = gqlSubscribable<ModelSlim[]>(gql.SUB_MODELS, {}, []);
 
 /* Helper Functions. */
 
