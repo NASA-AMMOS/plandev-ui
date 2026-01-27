@@ -13,7 +13,6 @@ import {
   setPendingQueryName,
   unregisterSubscription,
 } from './gqlClient';
-import { addSubscription, removeSubscription, updateSubscription } from './subscriptionsManager';
 
 /**
  * Returns a Svelte store that listens to GraphQL subscriptions via graphql-ws.
@@ -83,9 +82,6 @@ export function gqlSubscribable<T>(
   const queryMatch = query.match(/subscription\s+(\w+)/i);
   const queryName = queryMatch?.[1] ?? 'unknown';
 
-  // Subscription ID - will be set when first subscriber connects
-  let id: string = '';
-
   /**
    * Creates a subscription to the query within the shared web socket
    */
@@ -127,7 +123,6 @@ export function gqlSubscribable<T>(
                 newError = 'Unknown socket error';
               }
               setError(newError);
-              updateSubscription(id, { error: newError });
               subscribers.forEach(({ next }) => {
                 next(initialValue as T);
               });
@@ -138,7 +133,6 @@ export function gqlSubscribable<T>(
             if (!receivedFirstMessage) {
               receivedFirstMessage = true;
               setLoading(false);
-              updateSubscription(id, { loading: false });
             }
 
             if (data != null) {
@@ -180,7 +174,6 @@ export function gqlSubscribable<T>(
   function restartSocket() {
     setLoading(true);
     setError(''); // Clear previous error on restart
-    updateSubscription(id, { error: '', loading: true });
     // Restart the shared client - debounced so only restarts once
     restartSharedClient();
     // Resubscribe to reset internal state (receivedFirstMessage flag)
@@ -227,11 +220,8 @@ export function gqlSubscribable<T>(
     // activate it using the shared client
     if (browser && !subscriptionActive) {
       // Generate a unique ID for this subscription instance
-      id = registerSubscription(queryName);
+      registerSubscription(queryName);
       subscriptionActive = true;
-
-      // Register with the subscription manager for tracking/restart
-      addSubscription(id, { error, loading, query, restart: restartSocket });
 
       // Subscribe to variable stores
       subscribeToVariables(initialVariables);
@@ -253,23 +243,28 @@ export function gqlSubscribable<T>(
       subscribers.delete(subscriber);
 
       if (subscribers.size === 0 && subscriptionActive) {
-        // Clean up the GraphQL subscription
-        if (subscriptionCleanup) {
-          subscriptionCleanup();
-          subscriptionCleanup = null;
-        }
+        subscriptionActive = false;
 
-        // Clean up variable subscriptions
-        variableUnsubscribers.forEach(variableUnsubscribe => variableUnsubscribe());
+        // Capture cleanup function before it might be reassigned
+        const cleanup = subscriptionCleanup;
+        const varUnsubs = [...variableUnsubscribers];
+        subscriptionCleanup = null;
         variableUnsubscribers = [];
 
-        // Unregister from shared client (for reference counting)
-        unregisterSubscription();
+        // Defer cleanup to allow new subscriptions to fully establish first
+        // This prevents Hasura from closing the connection during subscription churn
+        setTimeout(() => {
+          // Clean up the GraphQL subscription
+          if (cleanup) {
+            cleanup();
+          }
 
-        // Remove from subscription manager
-        removeSubscription(id);
+          // Clean up variable subscriptions
+          varUnsubs.forEach(variableUnsubscribe => variableUnsubscribe());
 
-        subscriptionActive = false;
+          // Unregister from shared client (for reference counting)
+          unregisterSubscription();
+        }, 100);
       }
     };
   }
