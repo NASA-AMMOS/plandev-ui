@@ -1,3 +1,4 @@
+#!/usr/bin/env npx tsx
 /**
  * Aerie Seed Script
  *
@@ -26,20 +27,16 @@
  * - 1 extension (demo plan analyzer, requires local extension server)
  */
 
-import { test } from '@playwright/test';
 import fs from 'fs';
 import { animals, uniqueNamesGenerator } from 'unique-names-generator';
-import { ConstraintDefinitionType } from '../../src/enums/constraint.js';
-import { SchedulingDefinitionType } from '../../src/enums/scheduling.js';
-import type { ActivityDirectiveInsertInput } from '../../src/types/activity.js';
-import type { SchedulingConditionInsertInput } from '../../src/types/scheduling.js';
-import { ResourceType } from '../../src/types/simulation.js';
-import { getIntervalFromDoyRange, getUnixEpochTime } from '../../src/utilities/time.js';
-import { generateDefaultView } from '../../src/utilities/view.js';
-import { AerieApi } from './api.js';
-
-// Run with single worker and no retries
-test.describe.configure({ mode: 'serial', retries: 0, timeout: 300000 });
+import { ConstraintDefinitionType } from '../src/enums/constraint.js';
+import { SchedulingDefinitionType } from '../src/enums/scheduling.js';
+import type { ActivityDirectiveInsertInput } from '../src/types/activity.js';
+import type { SchedulingConditionInsertInput } from '../src/types/scheduling.js';
+import { ResourceType } from '../src/types/simulation.js';
+import { getIntervalFromDoyRange, getUnixEpochTime } from '../src/utilities/time.js';
+import { generateDefaultView } from '../src/utilities/view.js';
+import { AerieApi } from '../e2e-tests/utilities/api.js';
 
 // Generate unique suffix for this seed run
 const uniqueSuffix = uniqueNamesGenerator({ dictionaries: [animals], separator: '-' });
@@ -309,7 +306,10 @@ const MINUTE_US = 60_000_000;
 
 // Generate external dataset profiles with semi-random data and gaps
 function generateExternalDataset(startTime: string, durationHours: number) {
-  const segmentMinutes = 10;
+  // Scale segment duration based on plan length to keep total segments reasonable
+  // Target ~150 segments per profile regardless of plan duration
+  const targetSegments = 150;
+  const segmentMinutes = Math.max(10, Math.ceil((durationHours * 60) / targetSegments));
   const segmentCount = Math.floor((durationHours * 60) / segmentMinutes);
 
   const ripenessStates = ['green', 'yellow-green', 'yellow', 'spotted', 'brown', 'overripe'];
@@ -374,7 +374,7 @@ function generateExternalDataset(startTime: string, durationHours: number) {
   };
 }
 
-test('seed Aerie with sample data', async () => {
+async function seed() {
   console.log(`Starting Aerie seed (${uniqueSuffix})...\n`);
 
   const api = new AerieApi();
@@ -996,4 +996,10 @@ test('seed Aerie with sample data', async () => {
   console.log(`  Action: ${actionName} (ID: ${action.id})`);
   console.log(`  Extension: ${extensionName} (ID: ${extension.id})`);
   console.log('\nYou can now view these in the Aerie UI at http://localhost:3000');
+}
+
+// Run the seed script
+seed().catch(error => {
+  console.error('Seed failed:', error);
+  process.exit(1);
 });

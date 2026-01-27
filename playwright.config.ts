@@ -41,11 +41,7 @@ const config: PlaywrightTestConfig = {
       name: 'e2e tests',
       teardown: 'teardown',
       testDir: './e2e-tests',
-      testIgnore: [
-        /.*\/sequence-templates\.test\.ts/,
-        /.*\/utilities\/seed\.test\.ts/,
-        /.*\/utilities\/deseed\.test\.ts/,
-      ],
+      testIgnore: [/.*\/sequence-templates\.test\.ts/],
       use: {
         baseURL: MAIN_TEST_SUITE_BASE_URL,
         storageState: STORAGE_STATE,
@@ -66,18 +62,6 @@ const config: PlaywrightTestConfig = {
       name: 'teardown',
       testMatch: /global\.teardown\.ts/,
     },
-    // Seed/deseed utilities - run explicitly with --project=seed or --project=deseed
-    // These don't need a web server since they only use the API directly
-    {
-      name: 'seed',
-      testDir: './e2e-tests/utilities',
-      testMatch: /(?<!de)seed\.test\.ts/,
-    },
-    {
-      name: 'deseed',
-      testDir: './e2e-tests/utilities',
-      testMatch: /deseed\.test\.ts/,
-    },
   ],
   reportSlowTests: {
     max: 0,
@@ -97,21 +81,17 @@ const config: PlaywrightTestConfig = {
     trace: process.env.CI ? 'retain-on-failure' : 'off',
     video: process.env.CI ? 'retain-on-failure' : 'off',
   },
-  webServer:
-    // Seed/deseed don't need a web server - check if we're running those projects
-    process.argv.includes('--project=seed') || process.argv.includes('--project=deseed')
-      ? undefined
-      : [
-          {
-            command: 'npm run preview',
-            port: 3000,
-            reuseExistingServer: !process.env.CI,
-          },
-          {
-            command: 'PUBLIC_COMMAND_EXPANSION_MODE=templating npm run preview',
-            port: 3001,
-          },
-        ],
+  webServer: [
+    {
+      command: 'npm run preview',
+      port: 3000,
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: 'PUBLIC_COMMAND_EXPANSION_MODE=templating npm run preview',
+      port: 3001,
+    },
+  ],
 };
 
 export default config;

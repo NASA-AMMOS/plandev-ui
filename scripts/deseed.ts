@@ -1,3 +1,4 @@
+#!/usr/bin/env npx tsx
 /**
  * Aerie De-Seed Script
  *
@@ -8,11 +9,7 @@
  * Deletes in reverse order to respect foreign key constraints.
  */
 
-import { test } from '@playwright/test';
-import { AerieApi } from './api.js';
-
-// Run with single worker and no retries
-test.describe.configure({ mode: 'serial', retries: 0, timeout: 120000 });
+import { AerieApi } from '../e2e-tests/utilities/api.js';
 
 // Pattern to identify seeded items: name contains " (" indicating unique suffix
 const isSeedItem = (name: string): boolean => name.includes(' (') && name.includes(')');
@@ -23,7 +20,7 @@ const SEED_EXTERNAL_EVENT_TYPE_PREFIX = 'BananaDelivery_';
 // Dictionary mission name prefix from seed script
 const SEED_DICTIONARY_MISSION_PREFIX = 'Seed_';
 
-test('remove all seeded Aerie data', async () => {
+async function deseed() {
   console.log('Starting Aerie de-seed...\n');
 
   const api = new AerieApi();
@@ -499,4 +496,10 @@ test('remove all seeded Aerie data', async () => {
   console.log(`  Plans: ${seededPlans.length}`);
   console.log(`  Models: ${seededModels.length}`);
   console.log(`  Tags: ${seededTags.length}`);
+}
+
+// Run the deseed script
+deseed().catch(error => {
+  console.error('De-seed failed:', error);
+  process.exit(1);
 });
