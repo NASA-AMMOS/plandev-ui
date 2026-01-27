@@ -40,6 +40,11 @@
   export let opacity: number = 0.8;
   export let resources: Resource[] = [];
   export let xScaleView: ScaleTime<number, number> | null = null;
+  // External cursor time for synchronized tooltip display across multiple timelines
+  export let externalCursorTime: Date | null = null;
+
+  // Track the last external cursor time to detect when it changes
+  let lastExternalCursorTime: Date | null = null;
 
   const dispatch = createEventDispatcher<{
     contextMenu: MouseOver;
@@ -271,6 +276,45 @@
   function onMouseout(e: MouseEvent | undefined): void {
     if (e) {
       dispatch('mouseOver', { e, layerId: id, points: [] });
+    }
+  }
+
+  // Handle external cursor time - compute and dispatch mouseOver for synchronized tooltips
+  // This is used when another timeline is being hovered and we need to show what's at that time here
+  $: {
+    // Only process if externalCursorTime actually changed
+    if (externalCursorTime !== lastExternalCursorTime) {
+      lastExternalCursorTime = externalCursorTime;
+
+      if (externalCursorTime && xScaleView && canvas) {
+        const offsetX = xScaleView(externalCursorTime);
+        const offsetY = drawHeight / 2;
+        const matchingPoints = searchQuadtreeRect<XRangePoint>(
+          quadtree,
+          offsetX,
+          offsetY,
+          drawHeight,
+          maxXWidth,
+          visiblePointsById,
+        );
+
+        const rect = canvas.getBoundingClientRect();
+        const syntheticEvent = {
+          pageX: rect.left + offsetX,
+          pageY: rect.top + offsetY,
+        } as MouseEvent;
+
+        dispatch('mouseOver', { e: syntheticEvent, layerId: id, points: matchingPoints });
+      } else if (!externalCursorTime && canvas) {
+        // External cursor cleared - clear our synthetic mouseOver
+        const rect = canvas.getBoundingClientRect();
+        const syntheticEvent = {
+          pageX: rect.left,
+          pageY: rect.top,
+        } as MouseEvent;
+
+        dispatch('mouseOver', { e: syntheticEvent, layerId: id, points: [] });
+      }
     }
   }
 

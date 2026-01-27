@@ -43,8 +43,12 @@
         [0, 0],
         [drawWidth, drawHeight],
       ])
-      .filter((e: WheelEvent) => {
-        return timelineInteractionMode === TimelineInteractionMode.Navigate || e.button === 1;
+      .filter((e: WheelEvent | MouseEvent) => {
+        // In Navigate mode, always handle events
+        if (timelineInteractionMode === TimelineInteractionMode.Navigate) {
+          return true;
+        }
+        return e.button === 1;
       })
       .wheelDelta((e: WheelEvent) => {
         // Override default d3 wheelDelta function to remove ctrl key for modifying zoom amount
@@ -53,6 +57,26 @@
       });
     svgSelection.call(zoom.transform, timelineZoomTransform || zoomIdentity);
     svgSelection.call(zoom);
+
+    // Add native wheel event listener for shift+scroll vertical scrolling
+    // Must be added after d3 zoom setup to ensure we can intercept before d3
+    svg?.addEventListener(
+      'wheel',
+      (e: WheelEvent) => {
+        if (timelineInteractionMode === TimelineInteractionMode.Navigate && e.shiftKey) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          const timeline = svg?.closest('.timeline');
+          const rowsContainer = timeline?.querySelector('.rows') as HTMLElement | null;
+          if (rowsContainer) {
+            // On macOS, shift+scroll swaps axes, so deltaX contains the scroll value
+            const delta = e.deltaY !== 0 ? e.deltaY : e.deltaX;
+            rowsContainer.scrollTop += delta;
+          }
+        }
+      },
+      { capture: true },
+    );
   }
 
   $: if (timelineZoomTransform && svgSelection) {
@@ -74,6 +98,7 @@
     const labels = [tick.label].concat(tick.additionalLabels);
     return Math.max(...labels.map(label => label.length * 6));
   }
+
 </script>
 
 <div

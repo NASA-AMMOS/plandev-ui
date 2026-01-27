@@ -26,82 +26,82 @@
   }
 </script>
 
-<div class="activity-detail" class:empty={!activity}>
+<div class="flex flex-col p-4 {!activity ? 'items-center flex-1 justify-center' : ''}">
   {#if activity}
-    <div class="detail-section">
+    <div class="border-b border-border mb-3 pb-3">
       <Highlight highlight={isFieldChanged('name')}>
-        <div class="detail-field">
-          <span class="field-label">Name</span>
-          <span class="field-value">{activity.name}</span>
+        <div class="flex flex-col gap-1">
+          <span class="text-muted-foreground text-xs font-medium uppercase">Name</span>
+          <span class="text-sm break-words">{activity.name}</span>
         </div>
       </Highlight>
 
       <Highlight highlight={isFieldChanged('type')}>
-        <div class="detail-field">
-          <span class="field-label">Type</span>
-          <span class="field-value">{activity.type}</span>
+        <div class="flex flex-col gap-1 mt-3">
+          <span class="text-muted-foreground text-xs font-medium uppercase">Type</span>
+          <span class="text-sm break-words">{activity.type}</span>
         </div>
       </Highlight>
 
       <Highlight highlight={isFieldChanged('start_offset')}>
-        <div class="detail-field">
-          <span class="field-label">Start Offset</span>
-          <span class="field-value">{activity.start_offset}</span>
+        <div class="flex flex-col gap-1 mt-3">
+          <span class="text-muted-foreground text-xs font-medium uppercase">Start Offset</span>
+          <span class="text-sm break-words">{activity.start_offset}</span>
         </div>
       </Highlight>
 
       <Highlight highlight={isFieldChanged('anchor_id')}>
-        <div class="detail-field">
-          <span class="field-label">Anchor ID</span>
-          <span class="field-value">{activity.anchor_id ?? 'None (Plan Start)'}</span>
+        <div class="flex flex-col gap-1 mt-3">
+          <span class="text-muted-foreground text-xs font-medium uppercase">Anchor ID</span>
+          <span class="text-sm break-words">{activity.anchor_id ?? 'None (Plan Start)'}</span>
         </div>
       </Highlight>
 
       <Highlight highlight={isFieldChanged('anchored_to_start')}>
-        <div class="detail-field">
-          <span class="field-label">Anchored To Start</span>
-          <span class="field-value">{activity.anchored_to_start ? 'Yes' : 'No'}</span>
+        <div class="flex flex-col gap-1 mt-3">
+          <span class="text-muted-foreground text-xs font-medium uppercase">Anchored To Start</span>
+          <span class="text-sm break-words">{activity.anchored_to_start ? 'Yes' : 'No'}</span>
         </div>
       </Highlight>
     </div>
 
-    <div class="detail-section">
+    <div class="border-b border-border mb-3 pb-3">
       <Highlight highlight={isFieldChanged('arguments')}>
-        <div class="detail-field">
-          <span class="field-label">Arguments</span>
-          <pre class="field-value code">{formatArguments(activity.arguments)}</pre>
+        <div class="flex flex-col gap-1">
+          <span class="text-muted-foreground text-xs font-medium uppercase">Arguments</span>
+          <pre class="text-xs bg-muted border border-border rounded p-2 max-h-[200px] overflow-auto whitespace-pre-wrap font-mono">{formatArguments(activity.arguments)}</pre>
         </div>
       </Highlight>
     </div>
 
-    <div class="detail-section">
+    <div class="border-b border-border mb-3 pb-3">
       <Highlight highlight={isFieldChanged('metadata')}>
-        <div class="detail-field">
-          <span class="field-label">Metadata</span>
-          <pre class="field-value code">{formatMetadata(activity.metadata)}</pre>
+        <div class="flex flex-col gap-1">
+          <span class="text-muted-foreground text-xs font-medium uppercase">Metadata</span>
+          <pre class="text-xs bg-muted border border-border rounded p-2 max-h-[200px] overflow-auto whitespace-pre-wrap font-mono">{formatMetadata(activity.metadata)}</pre>
         </div>
       </Highlight>
     </div>
 
-    <div class="detail-section">
+    <div class="border-b border-border mb-3 pb-3">
       <Highlight highlight={isFieldChanged('tags')}>
-        <div class="detail-field">
-          <span class="field-label">Tags</span>
-          <span class="field-value">{formatTags(activity.tags)}</span>
+        <div class="flex flex-col gap-1">
+          <span class="text-muted-foreground text-xs font-medium uppercase">Tags</span>
+          <span class="text-sm break-words">{formatTags(activity.tags)}</span>
         </div>
       </Highlight>
     </div>
 
-    <div class="detail-section">
-      <div class="detail-field">
-        <span class="field-label">Activity ID</span>
-        <span class="field-value id">{activity.id}</span>
+    <div>
+      <div class="flex flex-col gap-1">
+        <span class="text-muted-foreground text-xs font-medium uppercase">Activity ID</span>
+        <span class="text-xs font-mono text-muted-foreground">{activity.id}</span>
       </div>
     </div>
 
   {:else}
-    <div class="no-activity">
-      <span class="st-typography-label">
+    <div class="text-muted-foreground text-center">
+      <span class="text-sm">
         {#if side === 'left'}
           Activity does not exist in left source
         {:else}
@@ -111,70 +111,3 @@
     </div>
   {/if}
 </div>
-
-<style>
-  .activity-detail {
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-  }
-
-  .activity-detail.empty {
-    align-items: center;
-    flex: 1;
-    justify-content: center;
-  }
-
-  .detail-section {
-    border-bottom: 1px solid var(--st-gray-15);
-    margin-bottom: 12px;
-    padding-bottom: 12px;
-  }
-
-  .detail-section:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-  }
-
-  .detail-field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .field-label {
-    color: var(--st-gray-50);
-    font-size: 12px;
-    font-weight: 500;
-    text-transform: uppercase;
-  }
-
-  .field-value {
-    font-size: 14px;
-    word-break: break-word;
-  }
-
-  .field-value.code {
-    background: var(--st-gray-10);
-    border: 1px solid var(--st-gray-20);
-    border-radius: 4px;
-    font-family: var(--st-font-mono);
-    font-size: 12px;
-    max-height: 200px;
-    overflow: auto;
-    padding: 8px;
-    white-space: pre-wrap;
-  }
-
-  .field-value.id {
-    color: var(--st-gray-50);
-    font-family: var(--st-font-mono);
-    font-size: 12px;
-  }
-
-  .no-activity {
-    color: var(--st-gray-50);
-    text-align: center;
-  }
-</style>

@@ -26,9 +26,11 @@
     yAxesWithScaleDomainsCache,
   } from '../../stores/simulation';
   import {
+    selectedRowId,
     timelineInteractionMode,
     timelineLockStatus,
     view,
+    viewAddTimelineRow,
     viewSetSelectedRow,
     viewTogglePanel,
     viewUpdateRow,
@@ -177,6 +179,28 @@
     } = event;
     $yAxesWithScaleDomainsCache = { ...$yAxesWithScaleDomainsCache, [id]: axes };
   }
+
+  function onAddRow(event: CustomEvent<{ timelineId: number | undefined }>) {
+    viewAddTimelineRow(event.detail.timelineId, true);
+  }
+
+  function onUpdateRowHeaderWidth(event: CustomEvent<{ newWidth: number; timelineId: number | undefined }>) {
+    viewUpdateTimeline('marginLeft', event.detail.newWidth, event.detail.timelineId);
+  }
+
+  function onActivityDirectiveUpdate(
+    event: CustomEvent<{ activityDirectiveId: number; changes: { start_offset: string } }>,
+  ) {
+    if ($plan) {
+      effects.updateActivityDirective(
+        $plan,
+        event.detail.activityDirectiveId,
+        event.detail.changes,
+        null,
+        user,
+      );
+    }
+  }
 </script>
 
 <Panel padBody={false}>
@@ -249,6 +273,9 @@
       timelineLockStatus={$timelineLockStatus}
       {user}
       viewTimeRange={$viewTimeRange}
+      selectedRowId={$selectedRowId}
+      on:activityDirectiveUpdate={onActivityDirectiveUpdate}
+      on:addRow={onAddRow}
       on:deleteActivityDirective={deleteActivityDirective}
       on:dblClick={openSelectedPanel}
       on:jumpToActivityDirective={jumpToActivityDirective}
@@ -274,6 +301,7 @@
       on:deleteRow={onDeleteRow}
       on:duplicateRow={onDuplicateRow}
       on:insertRow={onInsertRow}
+      on:updateRowHeaderWidth={onUpdateRowHeaderWidth}
       on:updateYAxes={onUpdateYAxes}
     />
   </svelte:fragment>

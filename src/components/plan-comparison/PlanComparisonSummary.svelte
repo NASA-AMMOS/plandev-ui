@@ -8,26 +8,26 @@
   export let summary: Summary | null;
 </script>
 
-<div class="comparison-summary">
-  <div class="sources">
-    <div class="source left">
-      <span class="st-typography-label">Left</span>
-      <span class="st-typography-medium source-name">
+<div class="flex flex-col gap-4">
+  <div class="flex flex-col items-center gap-2">
+    <div class="flex flex-col items-center gap-1">
+      <span class="text-xs font-medium uppercase text-muted-foreground">Left</span>
+      <span class="break-words text-center text-sm font-medium">
         {#if leftSource}
           {leftSource.name}
-          <span class="source-type">({leftSource.type})</span>
+          <span class="text-xs text-muted-foreground">({leftSource.type})</span>
         {:else}
           Not selected
         {/if}
       </span>
     </div>
-    <div class="vs">vs</div>
-    <div class="source right">
-      <span class="st-typography-label">Right</span>
-      <span class="st-typography-medium source-name">
+    <div class="text-sm text-muted-foreground">vs</div>
+    <div class="flex flex-col items-center gap-1">
+      <span class="text-xs font-medium uppercase text-muted-foreground">Right</span>
+      <span class="break-words text-center text-sm font-medium">
         {#if rightSource}
           {rightSource.name}
-          <span class="source-type">({rightSource.type})</span>
+          <span class="text-xs text-muted-foreground">({rightSource.type})</span>
         {:else}
           Not selected
         {/if}
@@ -36,176 +36,63 @@
   </div>
 
   {#if summary}
-    <div class="statistics">
-      <div class="stat-row">
-        <span class="stat-label">Total Activities</span>
-        <span class="stat-value">{summary.total}</span>
+    <div class="flex flex-col gap-1 rounded border border-border p-3">
+      <div class="flex items-center justify-between">
+        <span class="text-[13px] text-muted-foreground">Total Activities</span>
+        <span class="font-mono text-[13px] font-medium">{summary.total}</span>
       </div>
 
-      <div class="stat-row added">
-        <span class="stat-label">Added</span>
-        <span class="stat-value">+{summary.added}</span>
+      <div class="flex items-center justify-between">
+        <span class="text-[13px] text-muted-foreground">Added</span>
+        <span class="font-mono text-[13px] font-medium text-green-600">+{summary.added}</span>
       </div>
 
-      <div class="stat-row deleted">
-        <span class="stat-label">Deleted</span>
-        <span class="stat-value">-{summary.deleted}</span>
+      <div class="flex items-center justify-between">
+        <span class="text-[13px] text-muted-foreground">Deleted</span>
+        <span class="font-mono text-[13px] font-medium text-red-600">-{summary.deleted}</span>
       </div>
 
-      <div class="stat-row modified">
-        <span class="stat-label">Modified</span>
-        <span class="stat-value">~{summary.modified}</span>
+      <div class="flex items-center justify-between">
+        <span class="text-[13px] text-muted-foreground">Modified</span>
+        <span class="font-mono text-[13px] font-medium text-orange-600">~{summary.modified}</span>
       </div>
 
-      <div class="stat-row unchanged">
-        <span class="stat-label">Unchanged</span>
-        <span class="stat-value">{summary.matched.unchanged}</span>
+      <div class="flex items-center justify-between">
+        <span class="text-[13px] text-muted-foreground">Unchanged</span>
+        <span class="font-mono text-[13px] font-medium">{summary.matched.unchanged}</span>
       </div>
 
       {#if summary.matched.ambiguous > 0}
-        <div class="stat-row ambiguous">
-          <span class="stat-label">Possibly Related</span>
-          <span class="stat-value">{summary.matched.ambiguous}</span>
+        <div class="flex items-center justify-between">
+          <span class="text-[13px] text-muted-foreground">Possibly Related</span>
+          <span class="font-mono text-[13px] font-medium text-yellow-600">{summary.matched.ambiguous}</span>
         </div>
       {/if}
     </div>
 
-    <div class="match-breakdown">
-      <span class="st-typography-label">Match Types</span>
-      <div class="match-types">
+    <div class="flex flex-col gap-2">
+      <span class="text-xs font-medium uppercase text-muted-foreground">Match Types</span>
+      <div class="flex flex-wrap gap-2">
         {#if summary.matched.exact > 0}
-          <span class="match-type exact">Exact: {summary.matched.exact}</span>
+          <span class="rounded bg-green-500/10 px-2 py-1 text-xs font-medium text-green-600"
+            >Exact: {summary.matched.exact}</span
+          >
         {/if}
         {#if summary.matched.moved > 0}
-          <span class="match-type moved">Moved: {summary.matched.moved}</span>
+          <span class="rounded bg-orange-500/10 px-2 py-1 text-xs font-medium text-orange-600"
+            >Moved: {summary.matched.moved}</span
+          >
         {/if}
         {#if summary.matched.fuzzy > 0}
-          <span class="match-type fuzzy">Fuzzy: {summary.matched.fuzzy}</span>
+          <span class="rounded bg-yellow-500/10 px-2 py-1 text-xs font-medium text-yellow-600"
+            >Fuzzy: {summary.matched.fuzzy}</span
+          >
         {/if}
       </div>
     </div>
   {:else}
-    <div class="no-summary">
-      <span class="st-typography-label">No comparison data</span>
+    <div class="p-4 text-center text-muted-foreground">
+      <span class="text-xs font-medium uppercase">No comparison data</span>
     </div>
   {/if}
 </div>
-
-<style>
-  .comparison-summary {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .sources {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .source {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .source-name {
-    text-align: center;
-    word-break: break-word;
-  }
-
-  .source-type {
-    color: var(--st-gray-50);
-    font-size: 12px;
-  }
-
-  .vs {
-    color: var(--st-gray-50);
-    font-size: 14px;
-  }
-
-  .statistics {
-    border: 1px solid var(--st-gray-20);
-    border-radius: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 12px;
-  }
-
-  .stat-row {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .stat-label {
-    color: var(--st-gray-60);
-    font-size: 13px;
-  }
-
-  .stat-value {
-    font-family: var(--st-font-mono);
-    font-size: 13px;
-    font-weight: 500;
-  }
-
-  .stat-row.added .stat-value {
-    color: var(--st-green);
-  }
-
-  .stat-row.deleted .stat-value {
-    color: var(--st-red);
-  }
-
-  .stat-row.modified .stat-value {
-    color: var(--st-orange);
-  }
-
-  .stat-row.ambiguous .stat-value {
-    color: var(--st-yellow);
-  }
-
-  .match-breakdown {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .match-types {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .match-type {
-    background: var(--st-gray-10);
-    border-radius: 4px;
-    font-size: 12px;
-    padding: 4px 8px;
-  }
-
-  .match-type.exact {
-    background: rgba(0, 200, 83, 0.1);
-    color: var(--st-green);
-  }
-
-  .match-type.moved {
-    background: rgba(255, 165, 0, 0.1);
-    color: var(--st-orange);
-  }
-
-  .match-type.fuzzy {
-    background: rgba(255, 237, 72, 0.1);
-    color: var(--st-yellow);
-  }
-
-  .no-summary {
-    color: var(--st-gray-50);
-    padding: 16px;
-    text-align: center;
-  }
-</style>

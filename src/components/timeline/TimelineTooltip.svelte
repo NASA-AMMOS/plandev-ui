@@ -20,6 +20,10 @@
   export let hidden: boolean = false;
   export let mouseOver: MouseOver | null;
   export let resourceTypes: ResourceType[] = [];
+  // Optional unique identifier for the tooltip element (allows multiple tooltips on the page)
+  export let tooltipId: string = 'tooltip';
+  // Optional position override - when provided, uses these coordinates instead of mouseOver.e
+  export let positionOverride: { x: number; y: number } | null = null;
 
   let activityDirectives: ActivityDirective[] = [];
   let externalEvents: ExternalEvent[] = [];
@@ -69,7 +73,7 @@
     }
   }
 
-  function onMouseOver(event: MouseOver | undefined) {
+  function onMouseOver(event: MouseOver | null | undefined) {
     if (event && !hidden) {
       activityDirectives = event.activityDirectives || [];
       externalEvents = event.externalEvents || [];
@@ -84,7 +88,7 @@
   }
 
   export function hide() {
-    select('.tooltip').style('opacity', 0).style('z-index', -1).html('');
+    select(`.${tooltipId}`).style('opacity', 0).style('z-index', -1).html('');
     visible = false;
   }
 
@@ -103,10 +107,12 @@
 
     if (showTooltip) {
       const text = tooltipText();
-      const tooltipDiv = tooltip();
+      const tooltipDiv = getTooltipDiv();
       tooltipDiv.html(text); // Set html so we can calculate the true tooltip width.
 
-      const { pageX, pageY } = event;
+      // Use position override if provided, otherwise use mouse event coordinates
+      const pageX = positionOverride?.x ?? event.pageX;
+      const pageY = positionOverride?.y ?? event.pageY;
       const pointerOffset = 10;
 
       let xPosition = pageX + pointerOffset;
@@ -134,11 +140,11 @@
     }
   }
 
-  function tooltip() {
-    const tooltipDiv = select(`.tooltip`);
+  function getTooltipDiv() {
+    const tooltipDiv = select(`.${tooltipId}`);
     if (tooltipDiv.empty()) {
       const body = select('body');
-      return body.append('div').attr('class', 'tooltip');
+      return body.append('div').attr('class', `tooltip ${tooltipId}`);
     } else {
       return tooltipDiv;
     }

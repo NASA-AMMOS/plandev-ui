@@ -7,6 +7,7 @@ import type {
   PlanComparisonResult,
   PlanComparisonSummary,
 } from '../types/plan-comparison';
+import type { ResourceType, SimulationDataset } from '../types/simulation';
 import { compareActivities } from '../utilities/plan-comparison';
 
 /**
@@ -54,6 +55,22 @@ export const comparisonRightStartTime: Writable<string> = writable('');
  */
 export const comparisonLeftModelId: Writable<number | null> = writable(null);
 export const comparisonRightModelId: Writable<number | null> = writable(null);
+
+/**
+ * Simulation datasets for resource visualization
+ */
+export const comparisonLeftSimulationDataset: Writable<SimulationDataset | null> = writable(null);
+export const comparisonRightSimulationDataset: Writable<SimulationDataset | null> = writable(null);
+
+/**
+ * Resource types available for the compared plans (from the model)
+ */
+export const comparisonResourceTypes: Writable<ResourceType[]> = writable([]);
+
+/**
+ * Selected resource names to display in the timeline
+ */
+export const comparisonSelectedResources: Writable<string[]> = writable([]);
 
 /**
  * Whether a comparison is currently loading
@@ -137,29 +154,15 @@ export const comparisonResults: Readable<PlanComparisonResult | null> = derived(
       return null;
     }
 
-    // Determine matching strategy based on comparison type
-    let strategy = $options.strategy;
-
-    // If comparing snapshot vs snapshot from same plan, use ID-based matching
-    if (
-      $leftSource.type === 'snapshot' &&
-      $rightSource.type === 'snapshot' &&
-      $leftSource.planId === $rightSource.planId
-    ) {
-      strategy = 'id';
-    }
-
-    // If comparing plan vs its own snapshot, use ID-based matching
-    if (
-      ($leftSource.type === 'plan' && $rightSource.type === 'snapshot' && $leftSource.planId === $rightSource.planId) ||
-      ($leftSource.type === 'snapshot' && $rightSource.type === 'plan' && $leftSource.planId === $rightSource.planId)
-    ) {
-      strategy = 'id';
-    }
-
+    // Always use content-based matching.
+    // ID-based matching is unreliable because:
+    // 1. Scheduling goals can regenerate activities with new IDs
+    // 2. Activities could be deleted and recreated
+    // 3. Different plans have separate ID sequences
+    // 4. Snapshot activity IDs may not match the original plan's IDs
     const effectiveOptions: ComparisonOptions = {
       ...$options,
-      strategy,
+      strategy: 'content',
     };
 
     const planDurationMs = parseDurationToMs($leftDuration);
@@ -194,6 +197,14 @@ export const activityComparisonResults: Readable<ActivityComparisonResult[]> = d
  * Filter to show only changes (exclude unchanged activities)
  */
 export const showOnlyChanges: Writable<boolean> = writable(false);
+
+/**
+ * Visibility toggles for each change type in the timeline
+ */
+export const showAddedActivities: Writable<boolean> = writable(true);
+export const showDeletedActivities: Writable<boolean> = writable(true);
+export const showModifiedActivities: Writable<boolean> = writable(true);
+export const showUnchangedActivities: Writable<boolean> = writable(true);
 
 /**
  * Filtered results based on showOnlyChanges toggle
@@ -247,8 +258,16 @@ export function resetComparisonStores(): void {
   comparisonRightStartTime.set('');
   comparisonLeftModelId.set(null);
   comparisonRightModelId.set(null);
+  comparisonLeftSimulationDataset.set(null);
+  comparisonRightSimulationDataset.set(null);
+  comparisonResourceTypes.set([]);
+  comparisonSelectedResources.set([]);
   comparisonLoading.set(false);
   comparisonError.set(null);
   selectedComparisonActivityId.set(null);
   showOnlyChanges.set(false);
+  showAddedActivities.set(true);
+  showDeletedActivities.set(true);
+  showModifiedActivities.set(true);
+  showUnchangedActivities.set(true);
 }

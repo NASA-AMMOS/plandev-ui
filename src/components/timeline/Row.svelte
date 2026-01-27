@@ -22,7 +22,7 @@
     resourceTypes,
     resourceTypesLoading,
   } from '../../stores/simulation';
-  import { selectedRow, viewAddFilterToRow } from '../../stores/views';
+  import { viewAddFilterToRow } from '../../stores/views';
   import type {
     ActivityDirective,
     ActivityDirectiveId,
@@ -136,6 +136,9 @@
   export let timelineZoomTransform: ZoomTransform | null;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
+  // External cursor time for synchronized tooltip display across multiple timelines
+  export let externalCursorTime: Date | null = null;
+  export let externalCursorYOffset: number | null = null;
   export let xTicksView: XAxisTick[] = [];
   export let yAxes: Axis[] = [];
   export let user: User | null;
@@ -150,6 +153,12 @@
     external_events: Record<ExternalEventId, string>;
     spans: Record<SpanId, string>;
   } | null = null;
+  // Pre-loaded resources for standalone mode (bypasses resource fetching)
+  export let standaloneResources: Resource[] | null = null;
+
+  // Selected row ID - passed from parent instead of reading from store
+  // This enables Timeline to be used in contexts without global view state
+  export let selectedRowId: number | null = null;
 
   const dispatch = createEventDispatcher<{
     discreteTreeExpansionChange: DiscreteTreeExpansionMap;
@@ -215,9 +224,6 @@
   let hasActivityLayerFilters: boolean = false;
   let hasExternalEventsLayer: boolean = false;
   let hasResourceLayer: boolean = false;
-  let selectedRowId: number | undefined = undefined;
-
-  $: selectedRowId = $selectedRow?.id;
 
   $: if (selectedRowId === id && rowRef) {
     rowRef.scrollIntoView({ block: 'nearest' });
@@ -231,7 +237,13 @@
     }
   });
 
-  $: if (!standaloneMode && plan && simulationDataset !== null && layers && $externalResources && !$resourceTypesLoading) {
+  // Resource fetching logic - works in both normal mode and standalone mode
+  // In standalone mode, we skip external resources (not subscribed) and use planStartTimeYmd directly
+  $: if (
+    simulationDataset !== null &&
+    layers &&
+    (standaloneMode || (plan && $externalResources && !$resourceTypesLoading))
+  ) {
     const simulationDatasetId = simulationDataset.dataset_id;
     const resourceNamesSet = new Set<string>();
     layers.map(layer => {
@@ -249,7 +261,7 @@
       if (
         resourceNames.indexOf(key) < 0 ||
         value.simulationDatasetId !== simulationDatasetId ||
-        (value.type === 'external' && !$resourceTypes.find(type => type.name === name))
+        (!standaloneMode && value.type === 'external' && !$resourceTypes.find(type => type.name === key))
       ) {
         value.controller?.abort();
         delete resourceRequestMap[key];
@@ -262,10 +274,12 @@
       getSimulationStatus(simulationDataset) === Status.Complete ||
       getSimulationStatus(simulationDataset) === Status.Canceled
     ) {
-      const startTimeYmd = simulationDataset?.simulation_start_time ?? plan.start_time;
+      // In standalone mode, use planStartTimeYmd; otherwise fall back through simulation to plan
+      const startTimeYmd =
+        simulationDataset?.simulation_start_time ?? (standaloneMode ? planStartTimeYmd : plan?.start_time) ?? '';
       resourceNames.forEach(async name => {
-        // Check if resource is external
-        const isExternal = !$resourceTypes.find(type => type.name === name);
+        // Check if resource is external (in standalone mode, treat all as internal since we don't have external resources loaded)
+        const isExternal = !standaloneMode && !$resourceTypes.find(type => type.name === name);
         if (isExternal) {
           // Handle external datasets separately as they are globally loaded and subscribed to
           let resource = null;
@@ -392,7 +406,12 @@
   }
 
   // Track resource loading status for this Row
-  $: if (resourceRequestMap) {
+  // In standalone mode with pre-loaded resources, use those directly
+  $: if (standaloneMode && standaloneResources !== null) {
+    loadedResources = standaloneResources;
+    resourceLoadingErrors = [];
+    anyResourcesLoading = false;
+  } else if (resourceRequestMap) {
     const newLoadedResources: Resource[] = [];
     const newLoadingErrors: string[] = [];
     Object.values(resourceRequestMap).forEach(resourceRequest => {
@@ -426,8 +445,13 @@
         [0, 0],
         [drawWidth, drawHeight],
       ])
-      .filter((e: WheelEvent) => {
-        return timelineInteractionMode === TimelineInteractionMode.Navigate || e.button === 1;
+      .filter((e: WheelEvent | MouseEvent) => {
+        // In Navigate mode, always handle events
+        if (timelineInteractionMode === TimelineInteractionMode.Navigate) {
+          return true;
+        }
+        // Middle mouse button always enables zoom/pan
+        return e.button === 1;
       })
       .wheelDelta((e: WheelEvent) => {
         // Override default d3 wheelDelta function to remove ctrl key for modifying zoom amount
@@ -436,6 +460,25 @@
       });
     overlaySvgSelection.call(zoom.transform, timelineZoomTransform || zoomIdentity);
     overlaySvgSelection.call(zoom);
+
+    // Add native wheel event listener for shift+scroll vertical scrolling
+    // Must be added after d3 zoom setup to ensure we can intercept before d3
+    overlaySvg?.addEventListener(
+      'wheel',
+      (e: WheelEvent) => {
+        if (timelineInteractionMode === TimelineInteractionMode.Navigate && e.shiftKey) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          const rowsContainer = overlaySvg?.closest('.rows') as HTMLElement | null;
+          if (rowsContainer) {
+            // On macOS, shift+scroll swaps axes, so deltaX contains the scroll value
+            const delta = e.deltaY !== 0 ? e.deltaY : e.deltaX;
+            rowsContainer.scrollTop += delta;
+          }
+        }
+      },
+      { capture: true },
+    );
   }
 
   $: if (timelineZoomTransform && overlaySvgSelection) {
@@ -906,12 +949,7 @@
   }
 </script>
 
-<div
-  class="row-root"
-  class:active-row={$selectedRow ? $selectedRow.id === id : false}
-  class:expanded
-  class:auto-height={autoAdjustHeight}
->
+<div class="row-root" class:active-row={selectedRowId === id} class:expanded class:auto-height={autoAdjustHeight}>
   {#if index === 0}
     <RowDividerDropTarget
       width={drawWidth + marginLeft}
@@ -1036,6 +1074,7 @@
             {mouseout}
             resources={getResourcesForLayer(layer, resourceRequestMap)}
             {xScaleView}
+            {externalCursorTime}
             on:mouseOver={onMouseOver}
             on:contextMenu
           />
@@ -1079,6 +1118,9 @@
             {user}
             {viewTimeRange}
             {xScaleView}
+            {externalCursorTime}
+            {externalCursorYOffset}
+            on:activityDirectiveUpdate
             on:contextMenu
             on:deleteActivityDirective
             on:dblClick
@@ -1116,6 +1158,7 @@
             resources={getResourcesForLayer(layer, resourceRequestMap)}
             {viewTimeRange}
             {xScaleView}
+            {externalCursorTime}
             yAxes={yAxesWithScaleDomains}
             on:mouseOver={onMouseOver}
             on:contextMenu

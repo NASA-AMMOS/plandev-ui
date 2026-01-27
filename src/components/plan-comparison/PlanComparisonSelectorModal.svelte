@@ -61,21 +61,22 @@
 </script>
 
 <Modal width={500} height="auto" on:close={handleClose}>
-  <ModalHeader on:close={handleClose}>
-    Compare Plans
-  </ModalHeader>
+  <ModalHeader on:close={handleClose}>Compare Plans</ModalHeader>
 
   <ModalContent>
-    <div class="selector-content">
+    <div class="flex min-h-[200px] flex-col gap-4 p-4">
       {#if loading}
-        <div class="loading">Loading plans...</div>
+        <div class="flex flex-1 items-center justify-center">Loading plans...</div>
       {:else if error}
-        <div class="error">{error}</div>
+        <div class="flex flex-1 items-center justify-center text-destructive">{error}</div>
       {:else}
-        <div class="source-selector">
-          <label class="selector-label">
-            <span class="st-typography-label">Left Source</span>
-            <select bind:value={leftSource} class="st-select">
+        <div class="flex flex-col gap-3">
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-muted-foreground">Left Source</span>
+            <select
+              bind:value={leftSource}
+              class="w-full rounded border border-border bg-muted px-3 py-2 text-sm focus:border-primary focus:outline-none"
+            >
               <option value="">Select a plan...</option>
               {#each sourceOptions as option (option.id)}
                 <option value={option.id}>{option.label}</option>
@@ -83,11 +84,14 @@
             </select>
           </label>
 
-          <div class="vs-label">vs</div>
+          <div class="text-center text-muted-foreground">vs</div>
 
-          <label class="selector-label">
-            <span class="st-typography-label">Right Source</span>
-            <select bind:value={rightSource} class="st-select">
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-muted-foreground">Right Source</span>
+            <select
+              bind:value={rightSource}
+              class="w-full rounded border border-border bg-muted px-3 py-2 text-sm focus:border-primary focus:outline-none"
+            >
               <option value="">Select a plan...</option>
               {#each sourceOptions as option (option.id)}
                 <option value={option.id}>{option.label}</option>
@@ -97,15 +101,15 @@
         </div>
 
         {#if !modelsMatch}
-          <div class="model-warning">
-            <span class="warning-icon">⚠</span>
+          <div class="flex items-start gap-2 rounded border border-orange-500/30 bg-orange-500/10 p-3">
+            <span class="flex-shrink-0 text-orange-500">⚠</span>
             <span>Selected plans use different mission models. Some activities may not be directly comparable.</span>
           </div>
         {/if}
 
         {#if leftSource && rightSource && leftSource === rightSource}
-          <div class="same-plan-warning">
-            <span class="warning-icon">⚠</span>
+          <div class="flex items-start gap-2 rounded border border-orange-500/30 bg-orange-500/10 p-3">
+            <span class="flex-shrink-0 text-orange-500">⚠</span>
             <span>Please select two different plans to compare.</span>
           </div>
         {/if}
@@ -114,84 +118,7 @@
   </ModalContent>
 
   <ModalFooter>
-    <button class="st-button secondary" on:click={handleClose}>
-      Cancel
-    </button>
-    <button
-      class="st-button primary"
-      disabled={!canCompare}
-      on:click={handleCompare}
-    >
-      Compare
-    </button>
+    <button class="st-button secondary" on:click={handleClose}> Cancel </button>
+    <button class="st-button primary" disabled={!canCompare} on:click={handleCompare}> Compare </button>
   </ModalFooter>
 </Modal>
-
-<style>
-  .selector-content {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    min-height: 200px;
-    padding: 16px;
-  }
-
-  .loading,
-  .error {
-    align-items: center;
-    display: flex;
-    flex: 1;
-    justify-content: center;
-  }
-
-  .error {
-    color: var(--st-red);
-  }
-
-  .source-selector {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .selector-label {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .vs-label {
-    color: var(--st-gray-50);
-    text-align: center;
-  }
-
-  .st-select {
-    background-color: var(--st-gray-10);
-    border: 1px solid var(--st-gray-20);
-    border-radius: 4px;
-    font-size: 14px;
-    padding: 8px 12px;
-    width: 100%;
-  }
-
-  .st-select:focus {
-    border-color: var(--st-primary);
-    outline: none;
-  }
-
-  .model-warning,
-  .same-plan-warning {
-    align-items: flex-start;
-    background: rgba(255, 165, 0, 0.1);
-    border: 1px solid rgba(255, 165, 0, 0.3);
-    border-radius: 4px;
-    display: flex;
-    gap: 8px;
-    padding: 12px;
-  }
-
-  .warning-icon {
-    color: var(--st-orange);
-    flex-shrink: 0;
-  }
-</style>

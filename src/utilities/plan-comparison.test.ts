@@ -246,8 +246,16 @@ describe('getChangedFields', () => {
   });
 
   it('should detect tag changes', () => {
-    const a1 = createActivity({ id: 1, tags: [{ color: '#ff0000', id: 1, name: 'Tag1' }], type: 'TypeA' });
-    const a2 = createActivity({ id: 2, tags: [{ color: '#00ff00', id: 2, name: 'Tag2' }], type: 'TypeA' });
+    const a1 = createActivity({
+      id: 1,
+      tags: [{ color: '#ff0000', created_at: '2024-01-01', id: 1, name: 'Tag1', owner: 'user1' }],
+      type: 'TypeA',
+    });
+    const a2 = createActivity({
+      id: 2,
+      tags: [{ color: '#00ff00', created_at: '2024-01-01', id: 2, name: 'Tag2', owner: 'user1' }],
+      type: 'TypeA',
+    });
     expect(getChangedFields(a1, a2)).toContain('tags');
   });
 

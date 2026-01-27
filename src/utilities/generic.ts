@@ -28,6 +28,8 @@ export function changedKeys<T>(objA: T, objB: T, ignoreKeys: (keyof T)[] = []): 
           typeof valueB === 'string' ||
           typeof valueA === 'number' ||
           typeof valueB === 'number' ||
+          typeof valueA === 'boolean' ||
+          typeof valueB === 'boolean' ||
           valueA === null ||
           valueB === null ||
           valueA === undefined ||

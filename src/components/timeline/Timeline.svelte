@@ -9,13 +9,13 @@
   import { InvalidDate } from '../../constants/time';
   import { planDerivationGroupLinks } from '../../stores/external-source';
   import { plugins } from '../../stores/plugins';
-  import { viewAddTimelineRow, viewUpdateTimeline } from '../../stores/views';
   import type { ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { ConstraintResultWithName } from '../../types/constraint';
   import type { ExternalEvent, ExternalEventId } from '../../types/external-event';
   import type { Plan } from '../../types/plan';
   import type {
+    Resource,
     ResourceType,
     Simulation,
     SimulationDataset,
@@ -86,20 +86,48 @@
     external_events: Record<ExternalEventId, string>;
     spans: Record<number, string>;
   } | null = null;
+  // Pre-loaded resources for standalone mode (bypasses resource fetching)
+  export let standaloneResources: Resource[] | null = null;
+
+  // Selected row ID - passed as prop to enable event-driven architecture
+  // Parent can read from store and pass down, or provide custom value
+  export let selectedRowId: number | null = null;
+
+  // External cursor info - when provided, shows a cursor at this time on the specified row
+  // Used for syncing cursors between multiple timeline instances
+  export let externalCursorTime: Date | null = null;
+  export let externalCursorRowIndex: number | null = null;
+  export let externalCursorYOffset: number | null = null;
+
+  // Unique identifier for the tooltip element (allows multiple tooltips on the page)
+  export let tooltipId: string = 'tooltip';
+
+  // External vertical scroll position - when provided, syncs scroll with another timeline
+  export let externalScrollTop: number | null = null;
 
   const dispatch = createEventDispatcher<{
+    activityDirectiveUpdate: {
+      activityDirectiveId: number;
+      changes: { start_offset: string };
+    };
+    addRow: { timelineId: number | undefined };
+    cursorTimeChanged: { rowIndex: number | null; time: Date | null; yOffset: number | null };
     mouseDown: MouseDown;
+    mouseOver: MouseOver | null;
     toggleRowExpansion: { expanded: boolean; rowId: number };
+    updateRowHeaderWidth: { newWidth: number; timelineId: number | undefined };
     updateRowHeight: {
       newHeight: number;
       rowId: number;
       wasAutoAdjusted?: boolean;
     };
     updateRows: Row[];
+    verticalScrollChanged: number;
     viewTimeRangeChanged: TimeRange;
   }>();
 
   let discreteTreeExpansionMapByRow: Record<string, DiscreteTreeExpansionMap> = {};
+  let rowsDiv: HTMLDivElement;
   let timelineZoomTransform: ZoomTransform | null = null;
   let clientWidth: number = 0;
   let contextMenu: MouseOver | null;
@@ -245,7 +273,7 @@
   }
 
   function handleScroll(event: WheelEvent) {
-    // Prevent default scroll behavior when meta key is pressed
+    // Prevent default scroll behavior when meta key is pressed or in Navigate mode
     // as to not interfere with certain zoom scenarios
     if (event.metaKey || timelineInteractionMode === TimelineInteractionMode.Navigate) {
       event.preventDefault();
@@ -260,6 +288,46 @@
 
   function onMouseDown(event: CustomEvent<MouseDown>) {
     dispatch('mouseDown', { ...event.detail, timelineId: timeline?.id });
+  }
+
+  function onMouseOver(event: CustomEvent<MouseOver>, row: Row, rowIndex: number) {
+    mouseOver = { ...event.detail, row };
+    dispatch('mouseOver', mouseOver);
+    if (xScaleView && event.detail.e) {
+      const target = event.detail.e.currentTarget as HTMLElement | null;
+      const rect = target?.getBoundingClientRect();
+      if (rect) {
+        const x = event.detail.e.clientX - rect.left;
+        const y = event.detail.e.clientY - rect.top;
+        const cursorTime = xScaleView.invert(x);
+        dispatch('cursorTimeChanged', { rowIndex, time: cursorTime, yOffset: y });
+      }
+    }
+  }
+
+  function clearMouseState() {
+    mouseOver = null;
+    dispatch('mouseOver', null);
+    dispatch('cursorTimeChanged', { rowIndex: null, time: null, yOffset: null });
+  }
+
+  // Track if we're programmatically setting scroll to avoid feedback loops
+  let isSettingScroll = false;
+
+  function onVerticalScroll() {
+    if (rowsDiv && !isSettingScroll) {
+      dispatch('verticalScrollChanged', rowsDiv.scrollTop);
+    }
+  }
+
+  // Sync scroll position from external source
+  $: if (rowsDiv && externalScrollTop !== null && rowsDiv.scrollTop !== externalScrollTop) {
+    isSettingScroll = true;
+    rowsDiv.scrollTop = externalScrollTop;
+    // Reset flag after the scroll event would have fired
+    requestAnimationFrame(() => {
+      isSettingScroll = false;
+    });
   }
 
   function onMouseDownRowMove(event: Event) {
@@ -298,7 +366,7 @@
   async function onHistogramViewTimeRangeChanged(event: CustomEvent<TimeRange>) {
     await tick();
     viewTimeRangeChanged(event.detail);
-    mouseOver = null;
+    clearMouseState();
     histogramCursorTime = null;
   }
 
@@ -313,8 +381,8 @@
 
   function onUpdateRowHeaderWidth(event: CustomEvent<{ newWidth: number }>) {
     const { newWidth } = event.detail;
-    viewUpdateTimeline('marginLeft', newWidth, timeline?.id);
-    mouseOver = null;
+    dispatch('updateRowHeaderWidth', { newWidth, timelineId: timeline?.id });
+    clearMouseState();
     histogramCursorTime = null;
   }
 
@@ -373,12 +441,14 @@
     const newScale = e.detail.transform.rescaleX(xScaleMax).domain();
     let [start, end] = newScale;
 
-    // Clear timeline and histogram cursor if this is a pan event
-    const isPanEvent = e.detail.sourceEvent.type === 'mousemove';
+    const sourceEvent = e.detail.sourceEvent;
+    const isPanEvent = sourceEvent?.type === 'mousemove';
+
     if (isPanEvent) {
-      mouseOver = null;
+      clearMouseState();
       histogramCursorTime = null;
     }
+
     viewTimeRangeChanged({ end: end.getTime(), start: start.getTime() }, e.detail.transform);
 
     // Hide context menu and tooltip
@@ -386,7 +456,7 @@
     if (contextMenuComponent.isShown()) {
       contextMenuComponent.hide();
     }
-    mouseOver = null;
+    clearMouseState();
     if (tooltip.isShown()) {
       tooltip.hide();
     }
@@ -397,7 +467,7 @@
 
 <div bind:this={timelineDiv} bind:clientWidth class="timeline" id={`timeline-${timeline?.id}`}>
   <div bind:this={timelineHistogramDiv} class="timeline-time-row">
-    {#if plan}
+    {#if plan || standaloneMode}
       <TimelineTimeDisplay
         planStartTime={formattedPlanStartTime}
         planEndTime={formattedPlanEndTime}
@@ -459,7 +529,7 @@
       {cursorHeaderHeight}
       {cursorEnabled}
       {drawWidth}
-      {histogramCursorTime}
+      histogramCursorTime={histogramCursorTime ?? externalCursorTime}
       marginLeft={timeline?.marginLeft}
       {mouseOver}
       verticalGuides={timeline?.verticalGuides}
@@ -467,11 +537,15 @@
       on:updateVerticalGuides
     />
 
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div
+      bind:this={rowsDiv}
       class="rows"
       style="max-height: {rowsMaxHeight}px"
       on:consider={handleDndConsiderRows}
       on:finalize={handleDndFinalizeRows}
+      on:mouseleave={clearMouseState}
+      on:scroll={onVerticalScroll}
       on:wheel={handleScroll}
       use:dndzone={{ dragDisabled: rowDragMoveDisabled, items: rows, type: 'rows' }}
     >
@@ -523,30 +597,44 @@
             {timelineZoomTransform}
             {standaloneMode}
             {standaloneIdToColorMaps}
+            externalCursorTime={externalCursorRowIndex === i ? externalCursorTime : null}
+            externalCursorYOffset={externalCursorRowIndex === i ? externalCursorYOffset : null}
+            {standaloneResources}
+            {selectedRowId}
             on:contextMenu={e => onContextMenu(e, row)}
             on:dblClick
             on:deleteActivityDirective
             on:mouseDown={onMouseDown}
             on:mouseDownRowMove={onMouseDownRowMove}
             on:mouseUpRowMove={onMouseUpRowMove}
-            on:mouseOver={e => (mouseOver = { ...e.detail, row })}
+            on:mouseOver={e => onMouseOver(e, row, i)}
             on:toggleRowExpansion={onToggleRowExpansion}
             on:updateRowHeight={onUpdateRowHeight}
             on:updateYAxes
             on:zoom={throttledZoom}
+            on:activityDirectiveUpdate
           />
         </div>
       {/each}
-      <div class="new-row">
-        <button on:click={_ => viewAddTimelineRow(timeline?.id, true)} class="st-button tertiary w-full">
-          New Row +
-        </button>
-      </div>
+      {#if !standaloneMode}
+        <div class="new-row">
+          <button on:click={_ => dispatch('addRow', { timelineId: timeline?.id })} class="st-button tertiary w-full">
+            New Row +
+          </button>
+        </div>
+      {/if}
     </div>
   </div>
 
   <!-- Timeline Tooltip. -->
-  <Tooltip bind:this={tooltip} {mouseOver} {interpolateHoverValue} hidden={!showTimelineTooltip} {resourceTypes} />
+  <Tooltip
+    bind:this={tooltip}
+    {mouseOver}
+    {interpolateHoverValue}
+    hidden={!showTimelineTooltip}
+    {resourceTypes}
+    {tooltipId}
+  />
 
   <!-- Timeline Context Menu. -->
   <TimelineContextMenu

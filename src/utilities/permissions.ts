@@ -1045,6 +1045,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_SIMULATION_DATASET: () => true,
   SUB_SIMULATION_DATASETS: () => true,
   SUB_SIMULATION_DATASETS_ALL: () => true,
+  SUB_SIMULATION_DATASET_BY_PLAN_REVISION: () => true,
   SUB_SIMULATION_DATASET_LATEST: () => true,
   SUB_SIMULATION_TEMPLATES: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.SIMULATION_TEMPLATES], user);

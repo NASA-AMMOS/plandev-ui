@@ -18,6 +18,27 @@
   $: modified = results.filter(r => r.changeType === 'matched' && r.changedFields.length > 0);
   $: unchanged = results.filter(r => r.changeType === 'matched' && r.changedFields.length === 0);
 
+  // Build a set of selected activity IDs for reactive selection checks
+  $: selectedIds = buildSelectedIds(results, selectedActivityId);
+
+  function buildSelectedIds(allResults: ActivityComparisonResult[], selId: number | null): Set<number> {
+    const ids = new Set<number>();
+    if (selId === null) {
+      return ids;
+    }
+    for (const result of allResults) {
+      if (result.changeType === 'matched') {
+        if (result.leftActivity.id === selId || result.rightActivity.id === selId) {
+          ids.add(result.leftActivity.id);
+          ids.add(result.rightActivity.id);
+        }
+      } else if (result.activity.id === selId) {
+        ids.add(result.activity.id);
+      }
+    }
+    return ids;
+  }
+
   function getActivityId(result: ActivityComparisonResult): number {
     if (result.changeType === 'matched') {
       return result.leftActivity.id;
@@ -43,35 +64,39 @@
     dispatch('select', { activityId: getActivityId(result) });
   }
 
-  function isSelected(result: ActivityComparisonResult): boolean {
-    if (selectedActivityId === null) {return false;}
-    if (result.changeType === 'matched') {
-      return result.leftActivity.id === selectedActivityId || result.rightActivity.id === selectedActivityId;
+  function isAmbiguous(result: ActivityComparisonResult): boolean {
+    if (result.changeType !== 'matched') {
+      return false;
     }
-    return result.activity.id === selectedActivityId;
-  }
-
-  function getConfidenceClass(result: ActivityComparisonResult): string {
-    if (result.changeType !== 'matched') {return '';}
-    if (result.confidenceLevel === 'medium') {return 'possibly-related';}
-    if (result.matchType === 'ambiguous') {return 'ambiguous';}
-    return '';
+    return result.confidenceLevel === 'medium' || result.matchType === 'ambiguous';
   }
 </script>
 
-<div class="activity-list">
+<div class="flex min-h-0 flex-1 flex-col overflow-y-auto">
   {#if added.length > 0}
-    <Collapse title="Added ({added.length})" defaultExpanded={true}>
-      <div class="activity-group added">
+    <Collapse
+      className="[&_.collapse-header]:ml-2"
+      padContent={false}
+      title="Added ({added.length})"
+      defaultExpanded={true}
+    >
+      <div class="flex flex-col">
         {#each added as result (getActivityId(result))}
           <button
-            class="activity-item"
-            class:selected={isSelected(result)}
+            class="flex w-full cursor-pointer items-center gap-2 border-0 border-b border-border bg-transparent px-4 py-2 text-left transition-colors duration-150
+                   {selectedIds.has(getActivityId(result)) ? 'bg-primary/10' : 'hover:bg-muted/50'}"
             on:click={() => handleSelect(result)}
           >
-            <span class="activity-indicator added">+</span>
-            <span class="activity-name">{getActivityName(result)}</span>
-            <span class="activity-type">{getActivityType(result)}</span>
+            <span
+              class="h-[18px] min-w-[18px] rounded-sm bg-green-500/20 text-center font-mono text-xs font-bold leading-[18px] text-green-600"
+              >+</span
+            >
+            <span class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]"
+              >{getActivityName(result)}</span
+            >
+            <span class="overflow-hidden text-ellipsis whitespace-nowrap text-xs text-muted-foreground"
+              >{getActivityType(result)}</span
+            >
           </button>
         {/each}
       </div>
@@ -79,17 +104,29 @@
   {/if}
 
   {#if deleted.length > 0}
-    <Collapse title="Deleted ({deleted.length})" defaultExpanded={true}>
-      <div class="activity-group deleted">
+    <Collapse
+      className="[&_.collapse-header]:ml-2"
+      padContent={false}
+      title="Deleted ({deleted.length})"
+      defaultExpanded={true}
+    >
+      <div class="flex flex-col">
         {#each deleted as result (getActivityId(result))}
           <button
-            class="activity-item"
-            class:selected={isSelected(result)}
+            class="flex w-full cursor-pointer items-center gap-2 border-0 border-b border-border bg-transparent px-4 py-2 text-left transition-colors duration-150
+                   {selectedIds.has(getActivityId(result)) ? 'bg-primary/10' : 'hover:bg-muted/50'}"
             on:click={() => handleSelect(result)}
           >
-            <span class="activity-indicator deleted">-</span>
-            <span class="activity-name">{getActivityName(result)}</span>
-            <span class="activity-type">{getActivityType(result)}</span>
+            <span
+              class="h-[18px] min-w-[18px] rounded-sm bg-red-500/20 text-center font-mono text-xs font-bold leading-[18px] text-red-600"
+              >-</span
+            >
+            <span class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]"
+              >{getActivityName(result)}</span
+            >
+            <span class="overflow-hidden text-ellipsis whitespace-nowrap text-xs text-muted-foreground"
+              >{getActivityType(result)}</span
+            >
           </button>
         {/each}
       </div>
@@ -97,23 +134,36 @@
   {/if}
 
   {#if modified.length > 0}
-    <Collapse title="Modified ({modified.length})" defaultExpanded={true}>
-      <div class="activity-group modified">
+    <Collapse
+      className="[&_.collapse-header]:ml-2"
+      padContent={false}
+      title="Modified ({modified.length})"
+      defaultExpanded={true}
+    >
+      <div class="flex flex-col">
         {#each modified as result (getActivityId(result))}
           <button
-            class="activity-item {getConfidenceClass(result)}"
-            class:selected={isSelected(result)}
+            class="flex w-full cursor-pointer items-center gap-2 border-0 border-b border-border bg-transparent px-4 py-2 text-left transition-colors duration-150
+                   {selectedIds.has(getActivityId(result)) ? 'bg-yellow-500/30' : '!hover:bg-yellow-500'}
+                   {isAmbiguous(result) ? 'bg-yellow-500/5 hover:bg-yellow-500/10' : ''}"
             on:click={() => handleSelect(result)}
           >
-            <span class="activity-indicator modified">~</span>
-            <span class="activity-name">{getActivityName(result)}</span>
-            <span class="activity-type">{getActivityType(result)}</span>
+            <span
+              class="h-[18px] min-w-[18px] rounded-sm bg-orange-500/20 text-center font-mono text-xs font-bold leading-[18px] text-orange-600"
+              >~</span
+            >
+            <span class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]"
+              >{getActivityName(result)}</span
+            >
+            <span class="overflow-hidden text-ellipsis whitespace-nowrap text-xs text-muted-foreground"
+              >{getActivityType(result)}</span
+            >
             {#if result.changeType === 'matched'}
-              <span class="change-count">{result.changedFields.length} change{result.changedFields.length !== 1 ? 's' : ''}</span>
+              <span class="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                {result.changedFields.length} change{result.changedFields.length !== 1 ? 's' : ''}
+              </span>
               {#if result.confidenceLevel === 'medium' || result.matchType === 'ambiguous'}
-                <span class="warning-icon" title="Possibly related - match confidence is medium">
-                  ⚠
-                </span>
+                <span class="text-sm text-yellow-500" title="Possibly related - match confidence is medium">⚠</span>
               {/if}
             {/if}
           </button>
@@ -123,17 +173,29 @@
   {/if}
 
   {#if unchanged.length > 0}
-    <Collapse title="Unchanged ({unchanged.length})" defaultExpanded={false}>
-      <div class="activity-group unchanged">
+    <Collapse
+      className="[&_.collapse-header]:ml-2"
+      padContent={false}
+      title="Unchanged ({unchanged.length})"
+      defaultExpanded={false}
+    >
+      <div class="flex flex-col">
         {#each unchanged as result (getActivityId(result))}
           <button
-            class="activity-item"
-            class:selected={isSelected(result)}
+            class="flex w-full cursor-pointer items-center gap-2 border-0 border-b border-border bg-transparent px-4 py-2 text-left transition-colors duration-150
+                   {selectedIds.has(getActivityId(result)) ? 'bg-primary/10' : 'hover:bg-muted/50'}"
             on:click={() => handleSelect(result)}
           >
-            <span class="activity-indicator unchanged">=</span>
-            <span class="activity-name">{getActivityName(result)}</span>
-            <span class="activity-type">{getActivityType(result)}</span>
+            <span
+              class="h-[18px] min-w-[18px] rounded-sm bg-muted text-center font-mono text-xs font-bold leading-[18px] text-muted-foreground"
+              >=</span
+            >
+            <span class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]"
+              >{getActivityName(result)}</span
+            >
+            <span class="overflow-hidden text-ellipsis whitespace-nowrap text-xs text-muted-foreground"
+              >{getActivityType(result)}</span
+            >
           </button>
         {/each}
       </div>
@@ -141,119 +203,8 @@
   {/if}
 
   {#if results.length === 0}
-    <div class="empty-list">
-      <span class="st-typography-label">No activities to compare</span>
+    <div class="p-8 text-center text-muted-foreground">
+      <span class="text-sm">No activities to compare</span>
     </div>
   {/if}
 </div>
-
-<style>
-  .activity-list {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .activity-group {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .activity-item {
-    align-items: center;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid var(--st-gray-15);
-    cursor: pointer;
-    display: flex;
-    gap: 8px;
-    padding: 8px 16px;
-    text-align: left;
-    transition: background-color 0.15s ease;
-    width: 100%;
-  }
-
-  .activity-item:hover {
-    background: var(--st-gray-10);
-  }
-
-  .activity-item.selected {
-    background: var(--st-primary-10);
-  }
-
-  .activity-item.possibly-related,
-  .activity-item.ambiguous {
-    background: rgba(255, 237, 72, 0.05);
-  }
-
-  .activity-item.possibly-related:hover,
-  .activity-item.ambiguous:hover {
-    background: rgba(255, 237, 72, 0.1);
-  }
-
-  .activity-indicator {
-    border-radius: 2px;
-    font-family: var(--st-font-mono);
-    font-size: 12px;
-    font-weight: bold;
-    height: 18px;
-    line-height: 18px;
-    min-width: 18px;
-    text-align: center;
-  }
-
-  .activity-indicator.added {
-    background: rgba(0, 200, 83, 0.2);
-    color: var(--st-green);
-  }
-
-  .activity-indicator.deleted {
-    background: rgba(255, 59, 48, 0.2);
-    color: var(--st-red);
-  }
-
-  .activity-indicator.modified {
-    background: rgba(255, 165, 0, 0.2);
-    color: var(--st-orange);
-  }
-
-  .activity-indicator.unchanged {
-    background: var(--st-gray-15);
-    color: var(--st-gray-50);
-  }
-
-  .activity-name {
-    flex: 1;
-    font-size: 13px;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .activity-type {
-    color: var(--st-gray-50);
-    font-size: 12px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .change-count {
-    background: var(--st-gray-15);
-    border-radius: 10px;
-    color: var(--st-gray-60);
-    font-size: 11px;
-    padding: 2px 8px;
-  }
-
-  .warning-icon {
-    color: var(--st-yellow);
-    font-size: 14px;
-  }
-
-  .empty-list {
-    color: var(--st-gray-50);
-    padding: 32px;
-    text-align: center;
-  }
-</style>

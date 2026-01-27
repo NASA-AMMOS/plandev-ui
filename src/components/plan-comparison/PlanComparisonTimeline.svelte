@@ -1,79 +1,45 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { scaleTime, type ScaleTime } from 'd3-scale';
-  import { select, type Selection } from 'd3-selection';
-  import { zoom as d3Zoom, type D3ZoomEvent, type ZoomBehavior } from 'd3-zoom';
-  import { quadtree as d3Quadtree, type Quadtree } from 'd3-quadtree';
-  import { onMount, tick } from 'svelte';
+  import {
+    comparisonSelectedResources,
+    showAddedActivities,
+    showDeletedActivities,
+    showModifiedActivities,
+    showUnchangedActivities,
+  } from '../../stores/planComparison';
+  import type { ActivityDirective, ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
+  import type { ActivityMetadata } from '../../types/activity-metadata';
+  import type { User } from '../../types/app';
+  import type { DropdownOptions, SelectedDropdownOptionValue } from '../../types/dropdown';
+  import type { ExternalEventId } from '../../types/external-event';
   import type { ActivityComparisonResult, ComparisonActivity, ComparisonSource } from '../../types/plan-comparison';
-  import type { TimeRange } from '../../types/timeline';
-  import { hexToRgba, shadeColor } from '../../utilities/color';
+  import type { ResourceType, SimulationDataset } from '../../types/simulation';
+  import type { Row, Timeline as TimelineType, TimeRange } from '../../types/timeline';
+  import { createTimelineResourceLayer, TimelineInteractionMode, TimelineLockStatus } from '../../utilities/timeline';
+  import Timeline from '../timeline/Timeline.svelte';
+  import SearchableDropdown from '../ui/SearchableDropdown.svelte';
 
   export let leftSource: ComparisonSource | null;
   export let rightSource: ComparisonSource | null;
   export let leftActivities: ComparisonActivity[];
   export let rightActivities: ComparisonActivity[];
+  export let leftSimulationDataset: SimulationDataset | null;
+  export let rightSimulationDataset: SimulationDataset | null;
   export let results: ActivityComparisonResult[];
   export let planStartTime: string;
   export let planDuration: string;
-
-  // View state
-  let containerWidth = 0;
-  let containerHeight = 0;
-  let leftCanvasEl: HTMLCanvasElement;
-  let rightCanvasEl: HTMLCanvasElement;
-  let leftOverlaySvg: SVGSVGElement;
-  let rightOverlaySvg: SVGSVGElement;
-  let leftCtx: CanvasRenderingContext2D | null = null;
-  let rightCtx: CanvasRenderingContext2D | null = null;
-
-  // Timeline configuration
-  const ROW_HEIGHT = 20;
-  const ROW_PADDING = 3;
-  const LABEL_PADDING = 4;
-  const HEADER_HEIGHT = 40;
-  const MIN_RECT_WIDTH = 2;
-  const DEFAULT_ACTIVITY_DURATION = 60 * 60 * 1000; // 1 hour for visualization
+  // Resource types available for selection
+  export let resourceTypes: ResourceType[] = [];
+  export let user: User | null = null;
 
   // Colors for different change types
   const COLORS = {
     added: '#00C853',
     deleted: '#FF3B30',
     modified: '#FFA500',
-    unchanged: '#6B7280',
+    unchanged: '#f9f9f9', // Light gray to dim unchanged activities
   };
-
-  // Build color maps based on comparison results
-  type ActivityColorMap = Map<number, { color: string; status: 'added' | 'deleted' | 'modified' | 'unchanged' }>;
-
-  $: leftColorMap = buildColorMap(results, 'left');
-  $: rightColorMap = buildColorMap(results, 'right');
-
-  function buildColorMap(comparisonResults: ActivityComparisonResult[], side: 'left' | 'right'): ActivityColorMap {
-    const colorMap: ActivityColorMap = new Map();
-
-    for (const result of comparisonResults) {
-      if (result.changeType === 'added') {
-        if (side === 'right') {
-          colorMap.set(result.activity.id, { color: COLORS.added, status: 'added' });
-        }
-      } else if (result.changeType === 'deleted') {
-        if (side === 'left') {
-          colorMap.set(result.activity.id, { color: COLORS.deleted, status: 'deleted' });
-        }
-      } else if (result.changeType === 'matched') {
-        const activityId = side === 'left' ? result.leftActivity.id : result.rightActivity.id;
-        if (result.changedFields.length > 0) {
-          colorMap.set(activityId, { color: COLORS.modified, status: 'modified' });
-        } else {
-          colorMap.set(activityId, { color: COLORS.unchanged, status: 'unchanged' });
-        }
-      }
-    }
-
-    return colorMap;
-  }
 
   // Parse plan times
   $: planStart = planStartTime ? new Date(planStartTime).getTime() : Date.now();
@@ -101,459 +67,459 @@
     viewTimeRange = { end: planEnd, start: planStart };
   }
 
-  // D3 zoom state
-  let leftZoom: ZoomBehavior<SVGSVGElement, unknown>;
-  let rightZoom: ZoomBehavior<SVGSVGElement, unknown>;
-  let leftSvgSelection: Selection<SVGSVGElement, unknown, null, undefined>;
-  let rightSvgSelection: Selection<SVGSVGElement, unknown, null, undefined>;
-  let isZoomingSynchronized = true;
-
-  // Create X scale for positioning activities
-  function createXScale(width: number, timeRange: TimeRange): ScaleTime<number, number> | null {
-    if (width <= 0 || !timeRange.start || !timeRange.end) {
-      return null;
-    }
-    return scaleTime()
-      .domain([timeRange.start, timeRange.end])
-      .range([0, width]);
-  }
-
-  $: panelWidth = containerWidth > 0 ? (containerWidth - 12) / 2 : 0;
-  $: xScaleView = createXScale(panelWidth, viewTimeRange);
-  $: xScaleMax = createXScale(panelWidth, maxTimeRange);
-
-  // Parse activity start offset to absolute time
-  function getActivityStartTime(activity: ComparisonActivity): number {
+  // Convert ComparisonActivity to ActivityDirective
+  function toActivityDirective(activity: ComparisonActivity, planStartMs: number): ActivityDirective {
     const offsetMs = parseDurationToMs(activity.start_offset);
-    return planStart + offsetMs;
-  }
-
-  // Convert ComparisonActivity to drawable format with start_time_ms
-  function prepareActivitiesForDrawing(activities: ComparisonActivity[]): (ComparisonActivity & { start_time_ms: number })[] {
-    return activities.map(activity => ({
-      ...activity,
-      start_time_ms: getActivityStartTime(activity),
-    })).sort((a, b) => a.start_time_ms - b.start_time_ms);
-  }
-
-  $: leftDrawableActivities = prepareActivitiesForDrawing(leftActivities);
-  $: rightDrawableActivities = prepareActivitiesForDrawing(rightActivities);
-
-  // Quadtrees for hit detection
-  type QuadtreeRect = { height: number; id: number; width: number; x: number; y: number };
-  let leftQuadtree: Quadtree<QuadtreeRect>;
-  let rightQuadtree: Quadtree<QuadtreeRect>;
-
-  // Row packing algorithm - place activities in rows to avoid overlaps
-  function packActivitiesIntoRows(
-    activities: (ComparisonActivity & { start_time_ms: number })[],
-    xScale: ScaleTime<number, number>,
-    colorMap: ActivityColorMap,
-  ): { activity: ComparisonActivity & { start_time_ms: number }; color: string; row: number; status: string }[] {
-    const result: { activity: ComparisonActivity & { start_time_ms: number }; color: string; row: number; status: string }[] = [];
-    const rowEndTimes: number[] = [];
-
-    for (const activity of activities) {
-      const colorInfo = colorMap.get(activity.id);
-      const color = colorInfo?.color ?? COLORS.unchanged;
-      const status = colorInfo?.status ?? 'unchanged';
-
-      const startX = xScale(activity.start_time_ms);
-      const endX = xScale(activity.start_time_ms + DEFAULT_ACTIVITY_DURATION);
-      const activityEndX = Math.max(startX + MIN_RECT_WIDTH + 50, endX); // Include label width estimate
-
-      // Find first row where activity fits
-      let row = 0;
-      while (row < rowEndTimes.length && rowEndTimes[row] > startX) {
-        row++;
-      }
-
-      rowEndTimes[row] = activityEndX;
-      result.push({ activity, color, row, status });
-    }
-
-    return result;
-  }
-
-  // Text measurement cache
-  const textMetricsCache: Record<string, TextMetrics> = {};
-
-  function measureText(ctx: CanvasRenderingContext2D, text: string): TextMetrics {
-    let metrics = textMetricsCache[text];
-    if (!metrics) {
-      metrics = ctx.measureText(text);
-      textMetricsCache[text] = metrics;
-    }
-    return metrics;
-  }
-
-  // Draw activities on canvas
-  function drawTimeline(
-    ctx: CanvasRenderingContext2D,
-    activities: (ComparisonActivity & { start_time_ms: number })[],
-    colorMap: ActivityColorMap,
-    width: number,
-    height: number,
-    dpr: number,
-    quadtree: Quadtree<QuadtreeRect>,
-  ) {
-    if (!xScaleView) {
-      return;
-    }
-
-    // Clear canvas
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, width * dpr, height * dpr);
-    ctx.restore();
-
-    ctx.scale(dpr, dpr);
-
-    // Pack activities into rows
-    const packedActivities = packActivitiesIntoRows(activities, xScaleView, colorMap);
-
-    // Reset quadtree
-    quadtree = d3Quadtree<QuadtreeRect>()
-      .x(d => d.x)
-      .y(d => d.y);
-
-    // Draw each activity
-    for (const { activity, color, row, status } of packedActivities) {
-      const startX = xScaleView(activity.start_time_ms);
-      const endX = xScaleView(activity.start_time_ms + DEFAULT_ACTIVITY_DURATION);
-
-      // Skip if out of view
-      if (endX < 0 || startX > width) {
-        continue;
-      }
-
-      const x = Math.max(0, startX);
-      const rectWidth = Math.max(MIN_RECT_WIDTH, Math.min(endX, width) - x);
-      const y = HEADER_HEIGHT + row * (ROW_HEIGHT + ROW_PADDING);
-
-      // Draw activity rectangle
-      const fillColor = hexToRgba(color, status === 'unchanged' ? 0.4 : 0.7);
-      ctx.fillStyle = fillColor;
-      ctx.beginPath();
-      ctx.roundRect(x, y, rectWidth, ROW_HEIGHT, 3);
-      ctx.fill();
-
-      // Draw border for added/deleted/modified
-      if (status !== 'unchanged') {
-        ctx.strokeStyle = color;
-        ctx.lineWidth = status === 'deleted' ? 1.5 : 2;
-        if (status === 'deleted') {
-          ctx.setLineDash([4, 2]);
-        }
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-
-      // Draw activity label
-      ctx.fillStyle = status === 'unchanged' ? '#4b5563' : shadeColor(color, 2.5);
-      ctx.font = '11px system-ui, -apple-system, sans-serif';
-      const label = activity.name.length > 20 ? activity.name.substring(0, 20) + '...' : activity.name;
-      const textMetrics = measureText(ctx, label);
-      if (textMetrics.width + LABEL_PADDING * 2 < rectWidth) {
-        ctx.fillText(label, x + LABEL_PADDING, y + ROW_HEIGHT / 2 + 4);
-      }
-
-      // Add to quadtree for hit detection
-      quadtree.add({
-        height: ROW_HEIGHT,
-        id: activity.id,
-        width: Math.max(rectWidth, textMetrics.width + LABEL_PADDING * 2),
-        x,
-        y,
-      });
-    }
-
-    // Reset transform
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-  }
-
-  // Draw time axis
-  function drawTimeAxis(ctx: CanvasRenderingContext2D, width: number, dpr: number) {
-    if (!xScaleView) {
-      return;
-    }
-
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(dpr, dpr);
-
-    // Background
-    ctx.fillStyle = 'var(--st-gray-10, #f3f4f6)';
-    ctx.fillRect(0, 0, width, HEADER_HEIGHT);
-
-    // Draw axis line
-    ctx.strokeStyle = 'var(--st-gray-30, #d1d5db)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, HEADER_HEIGHT - 1);
-    ctx.lineTo(width, HEADER_HEIGHT - 1);
-    ctx.stroke();
-
-    // Draw tick marks
-    const ticks = xScaleView.ticks(6);
-    ctx.fillStyle = 'var(--st-gray-60, #4b5563)';
-    ctx.font = '10px system-ui, -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-
-    ticks.forEach(tick => {
-      const x = xScaleView!(tick);
-
-      // Tick line
-      ctx.beginPath();
-      ctx.moveTo(x, HEADER_HEIGHT - 8);
-      ctx.lineTo(x, HEADER_HEIGHT - 1);
-      ctx.stroke();
-
-      // Format time label
-      const date = new Date(tick);
-      const hours = date.getUTCHours().toString().padStart(2, '0');
-      const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-      ctx.fillText(`${hours}:${minutes}`, x, HEADER_HEIGHT - 14);
-    });
-
-    ctx.restore();
-  }
-
-  // Redraw both timelines
-  function redraw() {
-    if (!leftCtx || !rightCtx || panelWidth <= 0) {
-      return;
-    }
-
-    const dpr = window.devicePixelRatio || 1;
-    const canvasHeight = containerHeight - 100; // Account for header and legend
-
-    // Set canvas dimensions
-    [leftCanvasEl, rightCanvasEl].forEach(canvas => {
-      canvas.width = panelWidth * dpr;
-      canvas.height = canvasHeight * dpr;
-      canvas.style.width = `${panelWidth}px`;
-      canvas.style.height = `${canvasHeight}px`;
-    });
-
-    // Initialize quadtrees
-    leftQuadtree = d3Quadtree<QuadtreeRect>().x(d => d.x).y(d => d.y);
-    rightQuadtree = d3Quadtree<QuadtreeRect>().x(d => d.x).y(d => d.y);
-
-    // Draw both timelines
-    drawTimeAxis(leftCtx, panelWidth, dpr);
-    drawTimeline(leftCtx, leftDrawableActivities, leftColorMap, panelWidth, canvasHeight, dpr, leftQuadtree);
-
-    drawTimeAxis(rightCtx, panelWidth, dpr);
-    drawTimeline(rightCtx, rightDrawableActivities, rightColorMap, panelWidth, canvasHeight, dpr, rightQuadtree);
-  }
-
-  // Zoom handler
-  function onZoom(event: D3ZoomEvent<SVGSVGElement, unknown>, source: 'left' | 'right') {
-    if (!xScaleMax || !panelWidth) {
-      return;
-    }
-
-    const transform = event.transform;
-
-    // Calculate new view time range from zoom transform
-    const newViewStart = xScaleMax.invert(-transform.x / transform.k).getTime();
-    const newViewEnd = xScaleMax.invert((panelWidth - transform.x) / transform.k).getTime();
-
-    viewTimeRange = {
-      end: Math.min(newViewEnd, maxTimeRange.end),
-      start: Math.max(newViewStart, maxTimeRange.start),
+    return {
+      anchor_id: activity.anchor_id,
+      anchored_to_start: activity.anchored_to_start,
+      arguments: activity.arguments,
+      created_at: '',
+      created_by: '',
+      id: activity.id,
+      last_modified_arguments_at: '',
+      last_modified_at: '',
+      metadata: activity.metadata as ActivityMetadata,
+      name: activity.name,
+      plan_id: 0,
+      source_scheduling_goal_id: null,
+      start_offset: activity.start_offset,
+      start_time_ms: planStartMs + offsetMs,
+      tags: activity.tags.map(tag => ({ tag })),
+      type: activity.type,
     };
+  }
 
-    // Synchronize zoom to other timeline
-    if (isZoomingSynchronized) {
-      const otherSelection = source === 'left' ? rightSvgSelection : leftSvgSelection;
-      const otherZoom = source === 'left' ? rightZoom : leftZoom;
-      if (otherSelection && otherZoom) {
-        otherSelection.call(otherZoom.transform, transform);
+  // Convert ComparisonActivity[] to ActivityDirectivesMap
+  function toActivityDirectivesMap(activities: ComparisonActivity[], planStartMs: number): ActivityDirectivesMap {
+    const map: ActivityDirectivesMap = {};
+    for (const activity of activities) {
+      map[activity.id] = toActivityDirective(activity, planStartMs);
+    }
+    return map;
+  }
+
+  // Build color maps based on comparison results
+  function buildColorMap(
+    comparisonResults: ActivityComparisonResult[],
+    side: 'left' | 'right',
+  ): Record<ActivityDirectiveId, string> {
+    const colorMap: Record<ActivityDirectiveId, string> = {};
+
+    for (const result of comparisonResults) {
+      if (result.changeType === 'added') {
+        if (side === 'right') {
+          colorMap[result.activity.id] = COLORS.added;
+        }
+      } else if (result.changeType === 'deleted') {
+        if (side === 'left') {
+          colorMap[result.activity.id] = COLORS.deleted;
+        }
+      } else if (result.changeType === 'matched') {
+        const activityId = side === 'left' ? result.leftActivity.id : result.rightActivity.id;
+        if (result.changedFields.length > 0) {
+          colorMap[activityId] = COLORS.modified;
+        } else {
+          colorMap[activityId] = COLORS.unchanged;
+        }
       }
     }
+
+    return colorMap;
   }
 
-  // Setup zoom behaviors
-  function setupZoom() {
-    if (!leftOverlaySvg || !rightOverlaySvg || !panelWidth) {
-      return;
+  // Get the set of activity IDs to hide based on visibility toggles
+  function getHiddenActivityIds(
+    comparisonResults: ActivityComparisonResult[],
+    side: 'left' | 'right',
+    showAdded: boolean,
+    showDeleted: boolean,
+    showModified: boolean,
+    showUnchanged: boolean,
+  ): Set<number> {
+    const hiddenIds = new Set<number>();
+
+    for (const result of comparisonResults) {
+      if (result.changeType === 'added' && !showAdded) {
+        if (side === 'right') {
+          hiddenIds.add(result.activity.id);
+        }
+      } else if (result.changeType === 'deleted' && !showDeleted) {
+        if (side === 'left') {
+          hiddenIds.add(result.activity.id);
+        }
+      } else if (result.changeType === 'matched') {
+        const isModified = result.changedFields.length > 0;
+        const activityId = side === 'left' ? result.leftActivity.id : result.rightActivity.id;
+        if (isModified && !showModified) {
+          hiddenIds.add(activityId);
+        } else if (!isModified && !showUnchanged) {
+          hiddenIds.add(activityId);
+        }
+      }
     }
 
-    leftSvgSelection = select(leftOverlaySvg);
-    rightSvgSelection = select(rightOverlaySvg);
-
-    const zoomBehavior = (source: 'left' | 'right') =>
-      d3Zoom<SVGSVGElement, unknown>()
-        .scaleExtent([1, 100])
-        .translateExtent([
-          [0, 0],
-          [panelWidth, containerHeight],
-        ])
-        .on('zoom', (event) => onZoom(event, source));
-
-    leftZoom = zoomBehavior('left');
-    rightZoom = zoomBehavior('right');
-
-    leftSvgSelection.call(leftZoom);
-    rightSvgSelection.call(rightZoom);
+    return hiddenIds;
   }
 
-  onMount(() => {
-    leftCtx = leftCanvasEl?.getContext('2d');
-    rightCtx = rightCanvasEl?.getContext('2d');
-  });
-
-  // Reactive redraw
-  $: if (leftCtx && rightCtx && panelWidth > 0 && leftActivities && rightActivities && viewTimeRange.start > 0) {
-    tick().then(redraw);
+  // Filter activity directives map to exclude hidden activities
+  function filterActivityDirectivesMap(map: ActivityDirectivesMap, hiddenIds: Set<number>): ActivityDirectivesMap {
+    const filtered: ActivityDirectivesMap = {};
+    for (const [id, directive] of Object.entries(map)) {
+      if (!hiddenIds.has(Number(id))) {
+        filtered[Number(id)] = directive;
+      }
+    }
+    return filtered;
   }
 
-  // Setup zoom when panel width is ready
-  $: if (panelWidth > 0 && leftOverlaySvg && rightOverlaySvg) {
-    setupZoom();
+  // Create activity directives maps
+  $: leftActivityDirectivesMapFull = toActivityDirectivesMap(leftActivities, planStart);
+  $: rightActivityDirectivesMapFull = toActivityDirectivesMap(rightActivities, planStart);
+
+  // Get hidden IDs based on visibility toggles
+  $: leftHiddenIds = getHiddenActivityIds(
+    results,
+    'left',
+    $showAddedActivities,
+    $showDeletedActivities,
+    $showModifiedActivities,
+    $showUnchangedActivities,
+  );
+  $: rightHiddenIds = getHiddenActivityIds(
+    results,
+    'right',
+    $showAddedActivities,
+    $showDeletedActivities,
+    $showModifiedActivities,
+    $showUnchangedActivities,
+  );
+
+  // Filter the maps
+  $: leftActivityDirectivesMap = filterActivityDirectivesMap(leftActivityDirectivesMapFull, leftHiddenIds);
+  $: rightActivityDirectivesMap = filterActivityDirectivesMap(rightActivityDirectivesMapFull, rightHiddenIds);
+
+  // Create color maps for standalone mode
+  $: leftIdToColorMaps = {
+    directives: buildColorMap(results, 'left'),
+    external_events: {} as Record<ExternalEventId, string>,
+    spans: {} as Record<number, string>,
+  };
+  $: rightIdToColorMaps = {
+    directives: buildColorMap(results, 'right'),
+    external_events: {} as Record<ExternalEventId, string>,
+    spans: {} as Record<number, string>,
+  };
+
+  // Get selected resource types based on selected resource names
+  $: selectedResourceTypes = resourceTypes.filter(rt => $comparisonSelectedResources.includes(rt.name));
+
+  // Convert resource types to dropdown options
+  $: resourceDropdownOptions = resourceTypes.map(rt => ({
+    display: rt.name,
+    value: rt.name,
+  })) as DropdownOptions;
+
+  // Handle resource selection change from dropdown
+  function handleResourceSelectionChange(event: CustomEvent<SelectedDropdownOptionValue[]>) {
+    const selectedValues = event.detail.filter((v): v is string => v !== null);
+    comparisonSelectedResources.set(selectedValues);
+  }
+
+  // Create timeline configuration with activity row and optional resource rows
+  function createTimelineConfig(selectedTypes: ResourceType[]): TimelineType {
+    const rows: Row[] = [];
+    let rowId = 1;
+    let layerId = 1;
+
+    // Activity row
+    const activityRow: Row = {
+      autoAdjustHeight: true,
+      discreteOptions: {
+        activityOptions: {
+          composition: 'directives',
+          hierarchyMode: 'flat',
+        },
+        displayMode: 'grouped',
+        height: 20,
+        labelVisibility: 'auto',
+      },
+      expanded: true,
+      height: 200,
+      horizontalGuides: [],
+      id: rowId++,
+      layers: [
+        {
+          chartType: 'activity',
+          filter: {
+            activity: {},
+          },
+          id: layerId++,
+          name: 'Activities',
+          yAxisId: null,
+        },
+      ],
+      name: 'Activities',
+      yAxes: [],
+    };
+    rows.push(activityRow);
+
+    // Resource rows - use createTimelineResourceLayer for proper chart type mapping
+    // We need a fake timelines array to generate IDs
+    const fakeTimelines: TimelineType[] = [{ id: 1, marginLeft: 230, marginRight: 16, rows: [], verticalGuides: [] }];
+
+    for (const resourceType of selectedTypes) {
+      const { layer, yAxis } = createTimelineResourceLayer(fakeTimelines, resourceType);
+
+      if (layer) {
+        // Override the generated IDs with our sequential IDs
+        layer.id = layerId++;
+        yAxis.id = rowId;
+        layer.yAxisId = rowId;
+
+        const resourceRow: Row = {
+          autoAdjustHeight: false,
+          discreteOptions: {
+            activityOptions: {
+              composition: 'directives',
+              hierarchyMode: 'flat',
+            },
+            displayMode: 'grouped',
+            height: 20,
+            labelVisibility: 'auto',
+          },
+          expanded: true,
+          height: 120,
+          horizontalGuides: [],
+          id: rowId++,
+          layers: [layer],
+          name: resourceType.name,
+          yAxes: [yAxis],
+        };
+        rows.push(resourceRow);
+      }
+    }
+
+    return {
+      id: 1,
+      marginLeft: 230,
+      marginRight: 16,
+      rows,
+      verticalGuides: [],
+    };
+  }
+
+  $: timeline = createTimelineConfig(selectedResourceTypes);
+
+  // Handle view time range changes - keep both timelines synced
+  // Cursor time state for syncing between timelines
+  let leftCursorTime: Date | null = null;
+  let leftCursorRowIndex: number | null = null;
+  let leftCursorYOffset: number | null = null;
+  let rightCursorTime: Date | null = null;
+  let rightCursorRowIndex: number | null = null;
+  let rightCursorYOffset: number | null = null;
+
+  // Vertical scroll state for syncing between timelines
+  let leftScrollTop: number | null = null;
+  let rightScrollTop: number | null = null;
+
+  function handleLeftViewTimeRangeChanged(event: CustomEvent<TimeRange>) {
+    viewTimeRange = event.detail;
+  }
+
+  function handleRightViewTimeRangeChanged(event: CustomEvent<TimeRange>) {
+    viewTimeRange = event.detail;
+  }
+
+  function handleLeftCursorTimeChanged(
+    event: CustomEvent<{ rowIndex: number | null; time: Date | null; yOffset: number | null }>,
+  ) {
+    leftCursorTime = event.detail.time;
+    leftCursorRowIndex = event.detail.rowIndex;
+    leftCursorYOffset = event.detail.yOffset;
+  }
+
+  function handleRightCursorTimeChanged(
+    event: CustomEvent<{ rowIndex: number | null; time: Date | null; yOffset: number | null }>,
+  ) {
+    rightCursorTime = event.detail.time;
+    rightCursorRowIndex = event.detail.rowIndex;
+    rightCursorYOffset = event.detail.yOffset;
+  }
+
+  function handleLeftVerticalScrollChanged(event: CustomEvent<number>) {
+    leftScrollTop = event.detail;
+  }
+
+  function handleRightVerticalScrollChanged(event: CustomEvent<number>) {
+    rightScrollTop = event.detail;
   }
 </script>
 
-<div class="comparison-timeline" bind:clientWidth={containerWidth} bind:clientHeight={containerHeight}>
-  <div class="timeline-header">
-    <div class="timeline-legend">
-      <span class="legend-item added"><span class="legend-color"></span> Added</span>
-      <span class="legend-item deleted"><span class="legend-color"></span> Deleted</span>
-      <span class="legend-item modified"><span class="legend-color"></span> Modified</span>
-      <span class="legend-item unchanged"><span class="legend-color"></span> Unchanged</span>
+<div class="flex h-full min-h-0 flex-col overflow-hidden">
+  <div class="flex items-center justify-between pr-2">
+    <div class="flex gap-4 px-2 py-2">
+      <button
+        class="flex cursor-pointer items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-opacity hover:bg-accent {$showAddedActivities
+          ? ''
+          : 'opacity-40'}"
+        on:click={() => showAddedActivities.update(v => !v)}
+        title="Toggle added activities"
+      >
+        <span class="h-3 w-3 rounded-sm bg-green-500"></span> Added
+      </button>
+      <button
+        class="flex cursor-pointer items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-opacity hover:bg-accent {$showDeletedActivities
+          ? ''
+          : 'opacity-40'}"
+        on:click={() => showDeletedActivities.update(v => !v)}
+        title="Toggle deleted activities"
+      >
+        <span class="h-3 w-3 rounded-sm bg-red-500"></span> Deleted
+      </button>
+      <button
+        class="flex cursor-pointer items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-opacity hover:bg-accent {$showModifiedActivities
+          ? ''
+          : 'opacity-40'}"
+        on:click={() => showModifiedActivities.update(v => !v)}
+        title="Toggle modified activities"
+      >
+        <span class="h-3 w-3 rounded-sm bg-orange-500"></span> Modified
+      </button>
+      <button
+        class="flex cursor-pointer items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-opacity hover:bg-accent {$showUnchangedActivities
+          ? ''
+          : 'opacity-40'}"
+        on:click={() => showUnchangedActivities.update(v => !v)}
+        title="Toggle unchanged activities"
+      >
+        <span class="h-3 w-3 rounded-sm bg-gray-500"></span> Unchanged
+      </button>
+
+      <!-- Resource selector dropdown -->
+      {#if resourceTypes.length > 0}
+        <div class="resource-dropdown-container ml-4 border-l border-border pl-4">
+          <SearchableDropdown
+            allowMultiple={true}
+            options={resourceDropdownOptions}
+            selectedOptionValues={$comparisonSelectedResources}
+            selectedOptionLabel="Resources ({$comparisonSelectedResources.length})"
+            placeholder="Select resources"
+            searchPlaceholder="Search resources"
+            scrollToSelection={false}
+            on:change={handleResourceSelectionChange}
+          >
+            <div slot="dropdown-header" class="flex w-full items-center justify-between">
+              <span class="text-xs text-muted-foreground">Select resources to display</span>
+              {#if $comparisonSelectedResources.length > 0}
+                <button
+                  class="text-xs text-primary hover:underline"
+                  on:click|stopPropagation={() => comparisonSelectedResources.set([])}
+                >
+                  Clear all
+                </button>
+              {/if}
+            </div>
+          </SearchableDropdown>
+        </div>
+      {/if}
     </div>
-    <div class="zoom-hint">
-      <span>Scroll to zoom • Drag to pan</span>
+    <div class="text-[11px] text-muted-foreground">
+      <span>Scroll to zoom | Shift+Scroll to scroll vertically | Drag to pan</span>
     </div>
   </div>
 
-  <div class="timelines-container">
+  <div class="flex min-h-0 flex-1 gap-2">
     <!-- Left Timeline -->
-    <div class="timeline-panel">
-      <div class="timeline-label">{leftSource?.name ?? 'Left'}</div>
-      <div class="timeline-canvas-wrapper">
-        <canvas bind:this={leftCanvasEl} class="timeline-canvas"></canvas>
-        <svg bind:this={leftOverlaySvg} class="timeline-overlay"></svg>
+    <div class="flex min-w-0 flex-1 flex-col">
+      <div class="border-b border-border bg-muted p-2 font-medium">{leftSource?.name ?? 'Left'}</div>
+      <div class="relative flex-1 overflow-hidden border border-border bg-background">
+        <Timeline
+          standaloneMode={true}
+          standaloneIdToColorMaps={leftIdToColorMaps}
+          activityDirectivesMap={leftActivityDirectivesMap}
+          {maxTimeRange}
+          {viewTimeRange}
+          {timeline}
+          planEndTimeDoy=""
+          planStartTimeYmd={planStartTime}
+          plan={null}
+          resourceTypes={[]}
+          selectedActivityDirectiveId={null}
+          selectedExternalEventId={null}
+          selectedSpanId={null}
+          simulation={null}
+          simulationDataset={leftSimulationDataset}
+          spanUtilityMaps={{ directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} }}
+          spansMap={{}}
+          spans={[]}
+          timelineInteractionMode={TimelineInteractionMode.Navigate}
+          timelineLockStatus={TimelineLockStatus.Unlocked}
+          {user}
+          hasUpdateDirectivePermission={false}
+          hasUpdateSimulationPermission={false}
+          decimate={true}
+          interpolateHoverValue={false}
+          showTimelineTooltip={true}
+          limitTooltipToLine={false}
+          externalCursorTime={rightCursorTime}
+          externalCursorRowIndex={rightCursorRowIndex}
+          externalCursorYOffset={rightCursorYOffset}
+          externalScrollTop={rightScrollTop}
+          tooltipId="tooltip-left"
+          on:viewTimeRangeChanged={handleLeftViewTimeRangeChanged}
+          on:cursorTimeChanged={handleLeftCursorTimeChanged}
+          on:verticalScrollChanged={handleLeftVerticalScrollChanged}
+        />
       </div>
     </div>
 
     <!-- Divider -->
-    <div class="timeline-divider"></div>
+    <div class="w-0.5 bg-border"></div>
 
     <!-- Right Timeline -->
-    <div class="timeline-panel">
-      <div class="timeline-label">{rightSource?.name ?? 'Right'}</div>
-      <div class="timeline-canvas-wrapper">
-        <canvas bind:this={rightCanvasEl} class="timeline-canvas"></canvas>
-        <svg bind:this={rightOverlaySvg} class="timeline-overlay"></svg>
+    <div class="flex min-w-0 flex-1 flex-col">
+      <div class="border-b border-border bg-muted p-2 font-medium">{rightSource?.name ?? 'Right'}</div>
+      <div class="relative flex-1 overflow-hidden border border-border bg-background">
+        <Timeline
+          standaloneMode={true}
+          standaloneIdToColorMaps={rightIdToColorMaps}
+          activityDirectivesMap={rightActivityDirectivesMap}
+          {maxTimeRange}
+          {viewTimeRange}
+          {timeline}
+          planEndTimeDoy=""
+          planStartTimeYmd={planStartTime}
+          plan={null}
+          resourceTypes={[]}
+          selectedActivityDirectiveId={null}
+          selectedExternalEventId={null}
+          selectedSpanId={null}
+          simulation={null}
+          simulationDataset={rightSimulationDataset}
+          spanUtilityMaps={{ directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} }}
+          spansMap={{}}
+          spans={[]}
+          timelineInteractionMode={TimelineInteractionMode.Navigate}
+          timelineLockStatus={TimelineLockStatus.Unlocked}
+          {user}
+          hasUpdateDirectivePermission={false}
+          hasUpdateSimulationPermission={false}
+          decimate={true}
+          interpolateHoverValue={false}
+          showTimelineTooltip={true}
+          limitTooltipToLine={false}
+          externalCursorTime={leftCursorTime}
+          externalCursorRowIndex={leftCursorRowIndex}
+          externalCursorYOffset={leftCursorYOffset}
+          externalScrollTop={leftScrollTop}
+          tooltipId="tooltip-right"
+          on:viewTimeRangeChanged={handleRightViewTimeRangeChanged}
+          on:cursorTimeChanged={handleRightCursorTimeChanged}
+          on:verticalScrollChanged={handleRightVerticalScrollChanged}
+        />
       </div>
     </div>
   </div>
 </div>
-
-<style>
-  .comparison-timeline {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-    padding: 16px;
-  }
-
-  .timeline-header {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
-
-  .timeline-legend {
-    display: flex;
-    gap: 16px;
-  }
-
-  .legend-item {
-    align-items: center;
-    display: flex;
-    font-size: 12px;
-    gap: 4px;
-  }
-
-  .legend-color {
-    border-radius: 2px;
-    height: 12px;
-    width: 12px;
-  }
-
-  .legend-item.added .legend-color {
-    background: #00C853;
-  }
-
-  .legend-item.deleted .legend-color {
-    background: #FF3B30;
-  }
-
-  .legend-item.modified .legend-color {
-    background: #FFA500;
-  }
-
-  .legend-item.unchanged .legend-color {
-    background: #6B7280;
-  }
-
-  .zoom-hint {
-    color: var(--st-gray-50);
-    font-size: 11px;
-  }
-
-  .timelines-container {
-    display: flex;
-    flex: 1;
-    gap: 8px;
-    min-height: 0;
-  }
-
-  .timeline-panel {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    min-width: 0;
-  }
-
-  .timeline-label {
-    background: var(--st-gray-10);
-    border-bottom: 1px solid var(--st-gray-20);
-    font-weight: 500;
-    padding: 8px;
-  }
-
-  .timeline-canvas-wrapper {
-    background: var(--st-gray-05);
-    border: 1px solid var(--st-gray-20);
-    flex: 1;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .timeline-canvas {
-    display: block;
-    height: 100%;
-    width: 100%;
-  }
-
-  .timeline-overlay {
-    height: 100%;
-    left: 0;
-    position: absolute;
-    top: 0;
-    width: 100%;
-  }
-
-  .timeline-divider {
-    background: var(--st-gray-30);
-    width: 2px;
-  }
-</style>

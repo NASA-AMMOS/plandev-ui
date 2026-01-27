@@ -191,6 +191,40 @@ export function toComparisonActivity(activity: ActivityDirective): ComparisonAct
 }
 
 /**
+ * Normalize a start_offset string to ensure consistent comparison.
+ * Removes trailing microseconds/nanoseconds precision that may differ between sources.
+ * "00:00:00.000000" -> "00:00:00"
+ * "01:30:00.123456" -> "01:30:00.123"
+ */
+function normalizeStartOffset(offset: string): string {
+  if (!offset) {
+    return offset;
+  }
+
+  // If there's no decimal point, return as-is
+  const dotIndex = offset.indexOf('.');
+  if (dotIndex === -1) {
+    return offset;
+  }
+
+  // Get the fractional part
+  const fractionalPart = offset.slice(dotIndex + 1);
+
+  // If fractional part is all zeros, remove it entirely
+  if (/^0+$/.test(fractionalPart)) {
+    return offset.slice(0, dotIndex);
+  }
+
+  // Otherwise, trim to 3 decimal places (milliseconds) for consistency
+  // and remove trailing zeros
+  const trimmedFraction = fractionalPart.slice(0, 3).replace(/0+$/, '');
+  if (trimmedFraction === '') {
+    return offset.slice(0, dotIndex);
+  }
+  return `${offset.slice(0, dotIndex)}.${trimmedFraction}`;
+}
+
+/**
  * Convert a raw GraphQL activity response to a ComparisonActivity
  */
 export function rawToComparisonActivity(activity: ComparisonActivityRaw): ComparisonActivity {
@@ -201,7 +235,7 @@ export function rawToComparisonActivity(activity: ComparisonActivityRaw): Compar
     id: activity.id,
     metadata: activity.metadata,
     name: activity.name,
-    start_offset: activity.start_offset,
+    start_offset: normalizeStartOffset(activity.start_offset),
     tags: activity.tags.map(t => t.tag),
     type: activity.type,
   };

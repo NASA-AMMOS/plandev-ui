@@ -172,7 +172,6 @@ import type {
   PlanSchema,
   PlanSlim,
 } from '../types/plan';
-import type { PlanSnapshot } from '../types/plan-snapshot';
 import {
   rawToComparisonActivity,
   type ComparisonActivity,
@@ -180,6 +179,7 @@ import {
   type PlanForComparison,
   type SnapshotForComparison,
 } from '../types/plan-comparison';
+import type { PlanSnapshot } from '../types/plan-snapshot';
 import type {
   SchedulingConditionDefinition,
   SchedulingConditionDefinitionInsertInput,
@@ -226,6 +226,7 @@ import type {
   ResourceType,
   SimulateResponse,
   Simulation,
+  SimulationDataset,
   SimulationEvent,
   SimulationInitialUpdateInput,
   SimulationTemplate,
@@ -4990,6 +4991,57 @@ const effects = {
     return null;
   },
 
+  async getLatestSimulationDatasetForPlan(planId: number, user: User | null): Promise<SimulationDataset | null> {
+    try {
+      // Reuse existing SUB_SIMULATION_DATASET_LATEST subscription as a query
+      const query = convertToQuery(gql.SUB_SIMULATION_DATASET_LATEST);
+      const data = await reqHasura<{ simulation_datasets: SimulationDataset[] }[]>(query, { planId }, user);
+      const { simulation: simulations } = data;
+
+      if (simulations && simulations.length > 0 && simulations[0].simulation_datasets.length > 0) {
+        const dataset = simulations[0].simulation_datasets[0];
+        logMessage(`Retrieved latest simulation dataset (ID=${dataset.id}) for plan ID=${planId}.`);
+        return dataset;
+      }
+
+      logMessage(`No simulation dataset found for plan ID=${planId}.`);
+      return null;
+    } catch (e) {
+      catchError('Failed to retrieve simulation dataset for plan', e as Error);
+      return null;
+    }
+  },
+
+  async getSimulationDatasetByPlanRevision(
+    planId: number,
+    planRevision: number,
+    user: User | null,
+  ): Promise<SimulationDataset | null> {
+    try {
+      const query = convertToQuery(gql.SUB_SIMULATION_DATASET_BY_PLAN_REVISION);
+      const data = await reqHasura<{ simulation_datasets: SimulationDataset[] }[]>(
+        query,
+        { planId, planRevision },
+        user,
+      );
+      const { simulation: simulations } = data;
+
+      if (simulations && simulations.length > 0 && simulations[0].simulation_datasets.length > 0) {
+        const dataset = simulations[0].simulation_datasets[0];
+        logMessage(
+          `Retrieved simulation dataset (ID=${dataset.id}) for plan ID=${planId} at revision ${planRevision}.`,
+        );
+        return dataset;
+      }
+
+      logMessage(`No simulation dataset found for plan ID=${planId} at revision ${planRevision}.`);
+      return null;
+    } catch (e) {
+      catchError('Failed to retrieve simulation dataset for plan revision', e as Error);
+      return null;
+    }
+  },
+
   async getPlanMergeConflictingActivities(
     mergeRequestId: number,
     user: User | null,
@@ -5441,6 +5493,7 @@ const effects = {
     modelId: number;
     name: string;
     planId: number;
+    revision: number;
     startTime: string;
   } | null> {
     try {
@@ -5458,13 +5511,16 @@ const effects = {
         const snapshot = snapshots[0];
         const activities = (rawActivities || []).map(rawToComparisonActivity);
         const name = snapshot.snapshot_name || `Snapshot of ${snapshot.plan.name} (rev ${snapshot.revision})`;
-        logMessage(`Retrieved snapshot "${name}" (ID=${snapshotId}) for comparison with ${activities.length} activities.`);
+        logMessage(
+          `Retrieved snapshot "${name}" (ID=${snapshotId}) for comparison with ${activities.length} activities.`,
+        );
         return {
           activities,
           duration: snapshot.plan.duration,
           modelId: snapshot.model_id,
           name,
           planId: snapshot.plan_id,
+          revision: snapshot.revision,
           startTime: snapshot.plan.start_time,
         };
       }

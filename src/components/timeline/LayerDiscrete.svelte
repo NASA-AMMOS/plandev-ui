@@ -27,7 +27,6 @@
     TimeRange,
   } from '../../types/timeline';
   import { hexToRgba, shadeColor } from '../../utilities/color';
-  import effects from '../../utilities/effects';
   import { getExternalEventRowId } from '../../utilities/externalEvents';
   import { isRightClick } from '../../utilities/generic';
   import { isDeleteEvent } from '../../utilities/keyboardEvents';
@@ -97,8 +96,15 @@
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let spans: Span[] = [];
+  // External cursor time for synchronized tooltip display across multiple timelines
+  export let externalCursorTime: Date | null = null;
+  export let externalCursorYOffset: number | null = null;
 
   const dispatch = createEventDispatcher<{
+    activityDirectiveUpdate: {
+      activityDirectiveId: number;
+      changes: { start_offset: string };
+    };
     contextMenu: MouseOver;
     dblClick: MouseOver;
     deleteActivityDirective: number;
@@ -250,9 +256,12 @@
 
   function dragActivityEnd(): void {
     if (dragActivityDirectiveActive !== null && dragStartX !== null && dragCurrentX !== null) {
-      if (dragStartX !== dragCurrentX && plan) {
+      if (dragStartX !== dragCurrentX) {
         const start_offset = getIntervalUnixEpochTime(planStartTimeMs, dragCurrentX);
-        effects.updateActivityDirective(plan, dragActivityDirectiveActive.id, { start_offset }, null, user);
+        dispatch('activityDirectiveUpdate', {
+          activityDirectiveId: dragActivityDirectiveActive.id,
+          changes: { start_offset },
+        });
       }
 
       dragActivityDirectiveActive = null;
@@ -357,6 +366,54 @@
   function onMouseout(e: MouseEvent | undefined): void {
     if (e) {
       dispatch('mouseOver', { activityDirectives: [], e, externalEvents: [], spans: [] });
+    }
+  }
+
+  // Track the last external cursor time to detect when it changes
+  let lastExternalCursorTime: Date | null = null;
+  let lastExternalCursorYOffset: number | null = null;
+
+  // Handle external cursor time - compute and dispatch mouseOver for synchronized tooltips
+  // This is used when another timeline is being hovered and we need to show what's at that time here
+  $: {
+    // Only process if externalCursorTime or yOffset actually changed
+    if (externalCursorTime !== lastExternalCursorTime || externalCursorYOffset !== lastExternalCursorYOffset) {
+      lastExternalCursorTime = externalCursorTime;
+      lastExternalCursorYOffset = externalCursorYOffset;
+
+      if (externalCursorTime && xScaleView && canvas) {
+        const offsetX = xScaleView(externalCursorTime);
+        // Use the synced Y offset if available, otherwise use middle
+        const offsetY = externalCursorYOffset ?? drawHeight / 2;
+        const hits = getItemsForOffset(offsetX, offsetY);
+
+        const rect = canvas.getBoundingClientRect();
+        const syntheticEvent = {
+          pageX: rect.left + offsetX,
+          pageY: rect.top + offsetY,
+        } as MouseEvent;
+
+        dispatch('mouseOver', {
+          activityDirectives: hits.activityDirectives,
+          e: syntheticEvent,
+          externalEvents: hits.externalEvents,
+          spans: hits.spans,
+        });
+      } else if (!externalCursorTime && canvas) {
+        // External cursor cleared - clear our synthetic mouseOver
+        const rect = canvas.getBoundingClientRect();
+        const syntheticEvent = {
+          pageX: rect.left,
+          pageY: rect.top,
+        } as MouseEvent;
+
+        dispatch('mouseOver', {
+          activityDirectives: [],
+          e: syntheticEvent,
+          externalEvents: [],
+          spans: [],
+        });
+      }
     }
   }
 

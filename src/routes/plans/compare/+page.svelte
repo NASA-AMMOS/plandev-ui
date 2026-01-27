@@ -3,6 +3,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
+  import { Button } from '@nasa-jpl/stellar-svelte';
   import { onDestroy } from 'svelte';
   import Nav from '../../../components/app/Nav.svelte';
   import PlanComparisonSelectorModal from '../../../components/plan-comparison/PlanComparisonSelectorModal.svelte';
@@ -12,13 +13,16 @@
     comparisonLeftActivities,
     comparisonLeftDuration,
     comparisonLeftModelId,
+    comparisonLeftSimulationDataset,
     comparisonLeftSource,
     comparisonLeftStartTime,
     comparisonLoading,
     comparisonModelsCompatible,
+    comparisonResourceTypes,
     comparisonRightActivities,
     comparisonRightDuration,
     comparisonRightModelId,
+    comparisonRightSimulationDataset,
     comparisonRightSource,
     comparisonRightStartTime,
     resetComparisonStores,
@@ -27,7 +31,7 @@
 
   export let data: PageData;
 
-  $: ({ leftData, rightData, user } = data);
+  $: ({ leftData, resourceTypes, rightData, user } = data);
 
   let showSelectorModal = false;
 
@@ -44,6 +48,9 @@
       comparisonRightStartTime.set(rightData.startTime);
       comparisonLeftModelId.set(leftData.modelId);
       comparisonRightModelId.set(rightData.modelId);
+      comparisonLeftSimulationDataset.set(leftData.simulationDataset);
+      comparisonRightSimulationDataset.set(rightData.simulationDataset);
+      comparisonResourceTypes.set(resourceTypes ?? []);
       showSelectorModal = false;
     } else {
       // No data loaded - show selector
@@ -80,9 +87,7 @@
       {/if}
     </span>
     <svelte:fragment slot="right">
-      <button class="st-button secondary" on:click={handleNewComparison}>
-        New Comparison
-      </button>
+      <Button variant="secondary" on:click={handleNewComparison}>New Comparison</Button>
     </svelte:fragment>
   </Nav>
 
@@ -94,9 +99,7 @@
     {:else if $comparisonError}
       <div class="error-state">
         <span class="error-message">{$comparisonError}</span>
-        <button class="st-button secondary" on:click={handleNewComparison}>
-          Try Again
-        </button>
+        <button class="st-button secondary" on:click={handleNewComparison}> Try Again </button>
       </div>
     {:else if !$comparisonModelsCompatible}
       <div class="warning-state">
@@ -104,15 +107,13 @@
           Warning: The selected plans use different mission models. Some activities may not be directly comparable.
         </span>
       </div>
-      <PlanComparisonView />
+      <PlanComparisonView {user} />
     {:else if $comparisonLeftSource && $comparisonRightSource}
-      <PlanComparisonView />
+      <PlanComparisonView {user} />
     {:else}
       <div class="empty-state">
         <span>Select two plans or snapshots to compare</span>
-        <button class="st-button primary" on:click={() => (showSelectorModal = true)}>
-          Select Plans to Compare
-        </button>
+        <button class="st-button primary" on:click={() => (showSelectorModal = true)}> Select Plans to Compare </button>
       </div>
     {/if}
   </div>

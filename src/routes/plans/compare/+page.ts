@@ -1,6 +1,7 @@
 import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
 import type { ComparisonActivity, ComparisonSource } from '../../../types/plan-comparison';
+import type { ResourceType, SimulationDataset } from '../../../types/simulation';
 import effects from '../../../utilities/effects';
 import type { PageLoad } from './$types';
 
@@ -9,7 +10,8 @@ type ComparisonData = {
   duration: string;
   modelId: number;
   name: string;
-  planId?: number;
+  planId: number;
+  simulationDataset: SimulationDataset | null;
   source: ComparisonSource;
   startTime: string;
 };
@@ -18,7 +20,9 @@ type ComparisonData = {
  * Parse a source parameter (e.g., "plan:123" or "snapshot:456")
  */
 function parseSourceParam(param: string | null): { id: number; type: 'plan' | 'snapshot' } | null {
-  if (!param) {return null;}
+  if (!param) {
+    return null;
+  }
 
   const [type, idStr] = param.split(':');
   const id = parseInt(idStr, 10);
@@ -38,13 +42,19 @@ async function loadSourceData(
   user: App.Locals['user'],
 ): Promise<ComparisonData | null> {
   if (sourceParam.type === 'plan') {
-    const planData = await effects.getPlanForComparison(sourceParam.id, user);
+    // Fetch plan data and simulation dataset in parallel
+    const [planData, simulationDataset] = await Promise.all([
+      effects.getPlanForComparison(sourceParam.id, user),
+      effects.getLatestSimulationDatasetForPlan(sourceParam.id, user),
+    ]);
     if (planData) {
       return {
         activities: planData.activities,
         duration: planData.duration,
         modelId: planData.modelId,
         name: planData.name,
+        planId: sourceParam.id,
+        simulationDataset,
         source: {
           name: planData.name,
           planId: sourceParam.id,
@@ -56,12 +66,20 @@ async function loadSourceData(
   } else {
     const snapshotData = await effects.getSnapshotForComparison(sourceParam.id, user);
     if (snapshotData) {
+      // For snapshots, fetch simulation dataset that matches the snapshot's plan revision
+      // This ensures we show simulation results from the time the snapshot was taken
+      const simulationDataset = await effects.getSimulationDatasetByPlanRevision(
+        snapshotData.planId,
+        snapshotData.revision,
+        user,
+      );
       return {
         activities: snapshotData.activities,
         duration: snapshotData.duration,
         modelId: snapshotData.modelId,
         name: snapshotData.name,
         planId: snapshotData.planId,
+        simulationDataset,
         source: {
           name: snapshotData.name,
           planId: snapshotData.planId,
@@ -92,18 +110,22 @@ export const load: PageLoad = async ({ parent, url }) => {
   }
 
   // Load both sources in parallel
-  const [leftData, rightData] = await Promise.all([
-    loadSourceData(leftParam, user),
-    loadSourceData(rightParam, user),
-  ]);
+  const [leftData, rightData] = await Promise.all([loadSourceData(leftParam, user), loadSourceData(rightParam, user)]);
 
   // If either source failed to load, redirect to plans list
   if (!leftData || !rightData) {
     redirect(302, `${base}/plans`);
   }
 
+  // Fetch resource types for the model (use left model, since both should be same for meaningful comparison)
+  let resourceTypes: ResourceType[] = [];
+  if (leftData.modelId) {
+    resourceTypes = await effects.getResourceTypes(leftData.modelId, user);
+  }
+
   return {
     leftData,
+    resourceTypes,
     rightData,
     user,
   };

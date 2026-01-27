@@ -44,6 +44,7 @@
   export let selectedOptionValues: SelectedDropdownOptionValue[] = [];
   export let showPlaceholderOption: boolean = true;
   export let searchPlaceholder: string = 'Search Items';
+  export let scrollToSelection: boolean = true;
   export let selectTooltip: string = '';
   export let selectTooltipPlacement: string = 'top';
 
@@ -232,7 +233,7 @@
           overscan={100}
           maxHeight={maxListHeight}
           minWidth="{maxWidth}px"
-          selectedIndex={selectedOptions.length
+          selectedIndex={scrollToSelection && selectedOptions.length
             ? displayedOptions.findIndex(o => o.value === selectedOptions[0].value)
             : undefined}
           let:index

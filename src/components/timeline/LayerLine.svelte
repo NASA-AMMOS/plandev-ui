@@ -37,6 +37,11 @@
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let yAxes: Axis[] = [];
   export let yAxisId: number | null = null;
+  // External cursor time for synchronized tooltip display across multiple timelines
+  export let externalCursorTime: Date | null = null;
+
+  // Track the last external cursor time to detect when it changes
+  let lastExternalCursorTime: Date | null = null;
 
   const dispatch = createEventDispatcher<{
     contextMenu: MouseOver;
@@ -490,6 +495,177 @@
       dispatch('mouseOver', { e, layerId: id, points: [] });
       if (interactionCtx) {
         interactionCtx.clearRect(0, 0, drawWidth, drawHeight);
+      }
+    }
+  }
+
+  // Draw the hover indicator (circles + triangle) at the given point
+  function drawHoverIndicator(
+    point: LinePoint,
+    yScale: ReturnType<typeof computeYScale>,
+    leftNeighbor: LinePoint | null = null,
+    rightNeighbor: LinePoint | null = null,
+  ) {
+    if (!interactionCtx) return;
+
+    interactionCtx.resetTransform();
+    interactionCtx.scale(dpr, dpr);
+    interactionCtx.clearRect(0, 0, drawWidth, drawHeight);
+
+    const { x, y } = processPoint(point, yScale);
+    if (y !== null && typeof y === 'number') {
+      const fill = lineColor;
+      const scalar = pointRadius || 1;
+
+      // Draw the point using 3 circles
+      const circle3 = new Path2D();
+      circle3.arc(x, y, scalar + 3, 0, 2 * Math.PI);
+      interactionCtx.fillStyle = fill;
+      interactionCtx.fill(circle3);
+
+      const circle2 = new Path2D();
+      circle2.arc(x, y, scalar + 2, 0, 2 * Math.PI);
+      interactionCtx.fillStyle = 'white';
+      interactionCtx.fill(circle2);
+
+      const circle1 = new Path2D();
+      interactionCtx.fillStyle = fill;
+      interactionCtx.lineWidth = lineWidth;
+      circle1.arc(x, y, scalar + 1, 0, 2 * Math.PI);
+      interactionCtx.fill(circle1);
+
+      const maxY = scalar + 3;
+
+      // Draw triangles for left and right values used in interpolation
+      if (interpolateHoverValue) {
+        if (leftNeighbor && leftNeighbor.y !== null) {
+          const processedLeftPoint = processPoint(leftNeighbor, yScale);
+          if (processedLeftPoint.y !== null) {
+            drawTriangle(processedLeftPoint.x, processedLeftPoint.y as number, maxY, interactionCtx, '#ffacac');
+          }
+        }
+        if (rightNeighbor && rightNeighbor.y !== null) {
+          const processedRightPoint = processPoint(rightNeighbor, yScale);
+          if (processedRightPoint.y !== null) {
+            drawTriangle(processedRightPoint.x, processedRightPoint.y as number, maxY, interactionCtx, '#ffacac');
+          }
+        }
+      }
+      // Draw the main triangle
+      drawTriangle(x, y, maxY, interactionCtx);
+    }
+  }
+
+  // Handle external cursor time - compute and dispatch mouseOver for synchronized tooltips
+  // This is used when another timeline is being hovered and we need to show what's at that time here
+  $: {
+    // Only process if externalCursorTime actually changed
+    if (externalCursorTime !== lastExternalCursorTime) {
+      lastExternalCursorTime = externalCursorTime;
+
+      if (externalCursorTime && xScaleView && canvas) {
+        const offsetX = xScaleView(externalCursorTime);
+        const xDate = externalCursorTime.getTime();
+        const yScale = computeYScale(yAxes);
+
+        // Find points that neighbor the external cursor X position
+        let leftPoint: LinePoint | null = null;
+        let rightPoint: LinePoint | null = null;
+
+        for (let i = 0; i < points.length; i++) {
+          const point = points[i];
+          if (point.x <= xDate) {
+            if (!leftPoint) {
+              leftPoint = point;
+            } else {
+              if (Math.abs(point.x - xDate) <= Math.abs(leftPoint.x - xDate)) {
+                leftPoint = point;
+              }
+            }
+          } else {
+            if (!rightPoint) {
+              rightPoint = point;
+              break;
+            }
+          }
+        }
+
+        let mouseOverPoints: LinePoint[] = [];
+        let drawPoint: LinePoint | null = null;
+
+        if (leftPoint !== null) {
+          mouseOverPoints.push(leftPoint);
+        }
+        if (rightPoint !== null) {
+          mouseOverPoints.push(rightPoint);
+        }
+
+        // Compute the final point to use for tooltip
+        if (mouseOverPoints.length > 0) {
+          if (mouseOverPoints.length === 1) {
+            drawPoint = mouseOverPoints[0];
+          } else if (mouseOverPoints.length === 2) {
+            const leftX = mouseOverPoints[0].x;
+            const rightX = mouseOverPoints[1].x;
+            const leftY = mouseOverPoints[0].y;
+            const rightY = mouseOverPoints[1].y;
+            const percent = (xDate - leftX) / (rightX - leftX);
+
+            // Bail if one of the neighboring values is a gap
+            if (leftY !== null && rightY !== null) {
+              if (interpolateHoverValue) {
+                if (ordinalScale) {
+                  drawPoint = {
+                    ...mouseOverPoints[0],
+                    x: xDate,
+                    y: mouseOverPoints[0].y,
+                  };
+                } else {
+                  const interpY = (1 - percent) * (leftY as number) + percent * (rightY as number);
+                  drawPoint = {
+                    ...mouseOverPoints[0],
+                    x: xDate,
+                    y: interpY,
+                  };
+                }
+              } else {
+                // Snap to nearest point
+                if (percent < 0.5) {
+                  drawPoint = mouseOverPoints[0];
+                } else {
+                  drawPoint = mouseOverPoints[1];
+                }
+              }
+            }
+          }
+        }
+
+        if (drawPoint && drawPoint.y !== null && drawPoint.y !== undefined) {
+          // Draw the visual hover indicator
+          drawHoverIndicator(drawPoint, yScale, leftPoint, rightPoint);
+
+          const rect = canvas.getBoundingClientRect();
+          const scaledDrawY = getScaledYValue(drawPoint.y, yScale) ?? drawHeight / 2;
+          const syntheticEvent = {
+            pageX: rect.left + offsetX,
+            pageY: rect.top + scaledDrawY,
+          } as MouseEvent;
+
+          dispatch('mouseOver', { e: syntheticEvent, layerId: id, points: [drawPoint] });
+        }
+      } else if (!externalCursorTime && canvas) {
+        // External cursor cleared - clear our synthetic mouseOver and visual indicator
+        if (interactionCtx) {
+          interactionCtx.clearRect(0, 0, drawWidth, drawHeight);
+        }
+
+        const rect = canvas.getBoundingClientRect();
+        const syntheticEvent = {
+          pageX: rect.left,
+          pageY: rect.top,
+        } as MouseEvent;
+
+        dispatch('mouseOver', { e: syntheticEvent, layerId: id, points: [] });
       }
     }
   }

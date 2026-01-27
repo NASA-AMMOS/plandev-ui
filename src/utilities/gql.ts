@@ -3609,6 +3609,32 @@ const gql = {
     }
   `,
 
+  SUB_SIMULATION_DATASET_BY_PLAN_REVISION: `#graphql
+    subscription SubSimulationDatasetByPlanRevision($planId: Int!, $planRevision: Int!) {
+      ${Queries.SIMULATIONS}(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
+        simulation_datasets(where: { plan_revision: { _eq: $planRevision } }, order_by: { id: desc }, limit: 1) {
+          dataset_id
+          canceled
+          id
+          model_id
+          model_revision
+          plan_revision
+          reason
+          requested_at
+          requested_by
+          simulation_end_time
+          simulation_revision
+          simulation_start_time
+          status
+          extent {
+            extent
+          }
+          reason
+        }
+      }
+    }
+  `,
+
   SUB_SIMULATION_TEMPLATES: `#graphql
     subscription SubSimTemplates($modelId: Int!) {
       templates: ${Queries.SIMULATION_TEMPLATES}(where: { model_id: { _eq: $modelId } }) {

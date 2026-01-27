@@ -1,12 +1,16 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Tabs } from '@nasa-jpl/stellar-svelte';
   import {
     comparisonLeftActivities,
     comparisonLeftDuration,
+    comparisonLeftSimulationDataset,
     comparisonLeftSource,
     comparisonLeftStartTime,
+    comparisonResourceTypes,
     comparisonRightActivities,
+    comparisonRightSimulationDataset,
     comparisonRightSource,
     comparisonSummary,
     filteredComparisonResults,
@@ -14,6 +18,7 @@
     selectedComparisonResult,
     showOnlyChanges,
   } from '../../stores/planComparison';
+  import type { User } from '../../types/app';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import PlanComparisonActivityDetail from './PlanComparisonActivityDetail.svelte';
@@ -21,8 +26,7 @@
   import PlanComparisonSummary from './PlanComparisonSummary.svelte';
   import PlanComparisonTimeline from './PlanComparisonTimeline.svelte';
 
-  type ViewMode = 'list' | 'timeline';
-  let viewMode: ViewMode = 'list';
+  export let user: User | null = null;
 
   let comparisonLeftDiv: HTMLElement | null = null;
   let comparisonRightDiv: HTMLElement | null = null;
@@ -52,49 +56,45 @@
   $: selectedResult = $selectedComparisonResult;
 </script>
 
-<div class="plan-comparison-view">
-  <!-- View mode tabs -->
-  <div class="view-mode-tabs">
-    <button
-      class="view-mode-tab"
-      class:active={viewMode === 'list'}
-      on:click={() => (viewMode = 'list')}
+<Tabs.Root value="list" class="flex h-full flex-col">
+  <Tabs.List
+    class="flex h-[36px] shrink-0 items-center justify-start rounded-none border-b border-border bg-secondary/50 px-1 py-0"
+  >
+    <Tabs.Trigger
+      value="list"
+      class="h-6 border bg-transparent px-2 text-xs data-[state=active]:border data-[state=inactive]:border-transparent"
     >
       List View
-    </button>
-    <button
-      class="view-mode-tab"
-      class:active={viewMode === 'timeline'}
-      on:click={() => (viewMode = 'timeline')}
+    </Tabs.Trigger>
+    <Tabs.Trigger
+      value="timeline"
+      class="h-6 border bg-transparent px-2 text-xs data-[state=active]:border data-[state=inactive]:border-transparent"
     >
       Timeline View
-    </button>
-  </div>
+    </Tabs.Trigger>
+  </Tabs.List>
 
-  {#if viewMode === 'list'}
-    <CssGrid columns="0.5fr 3px 1fr 3px 1fr 3px 1fr">
+  <Tabs.Content value="list" class="flex-1 overflow-hidden">
+    <CssGrid columns="0.5fr 3px 1fr 3px 1fr 3px 1fr" rows="1fr" class="h-full overflow-hidden">
       <!-- Column 0: Summary -->
-      <div class="comparison-summary-column">
+      <div class="flex flex-col gap-4 overflow-y-auto p-4">
         <PlanComparisonSummary
           leftSource={$comparisonLeftSource}
           rightSource={$comparisonRightSource}
           summary={$comparisonSummary}
         />
-        <div class="filter-controls">
-          <label class="st-checkbox">
-            <input
-              type="checkbox"
-              bind:checked={$showOnlyChanges}
-            />
+        <div class="border-t border-border pt-4">
+          <label class="flex cursor-pointer items-center gap-2">
+            <input type="checkbox" bind:checked={$showOnlyChanges} class="cursor-pointer" />
             <span>Show changes only</span>
           </label>
         </div>
       </div>
 
-      <CssGridGutter />
+      <CssGridGutter track={1} />
 
       <!-- Column 2: Activity list -->
-      <div class="comparison-activity-list">
+      <div class="flex min-h-0 flex-col overflow-hidden">
         <PlanComparisonActivityList
           results={$filteredComparisonResults}
           selectedActivityId={$selectedComparisonActivityId}
@@ -102,170 +102,87 @@
         />
       </div>
 
-      <CssGridGutter />
+      <CssGridGutter track={3} />
 
       <!-- Column 4: Left activity detail -->
       <div
-        class="comparison-detail-column"
+        class="flex min-h-0 flex-col overflow-y-auto"
         bind:this={comparisonLeftDiv}
         on:mouseenter={() => setScrollOrigin('left')}
-        on:scroll={(e) => onComparisonScroll(e, 'left')}
+        on:scroll={e => onComparisonScroll(e, 'left')}
         role="region"
         aria-label="Left activity details"
       >
         {#if selectedResult}
-          <div class="detail-header">
-            <span class="st-typography-medium">{$comparisonLeftSource?.name ?? 'Left'}</span>
-          </div>
-          <PlanComparisonActivityDetail
-            activity={selectedResult.changeType === 'matched' ? selectedResult.leftActivity : selectedResult.changeType === 'deleted' ? selectedResult.activity : null}
-            changedFields={selectedResult.changeType === 'matched' ? selectedResult.changedFields : []}
-            side="left"
-          />
+          {#key $selectedComparisonActivityId}
+            <div class="sticky top-0 z-10 border-b border-border bg-muted px-4 py-2">
+              <span class="font-medium">{$comparisonLeftSource?.name ?? 'Left'}</span>
+            </div>
+            <PlanComparisonActivityDetail
+              activity={selectedResult.changeType === 'matched'
+                ? selectedResult.leftActivity
+                : selectedResult.changeType === 'deleted'
+                  ? selectedResult.activity
+                  : null}
+              changedFields={selectedResult.changeType === 'matched' ? selectedResult.changedFields : []}
+              side="left"
+            />
+          {/key}
         {:else}
-          <div class="empty-detail">
-            <span class="st-typography-label">Select an activity to view details</span>
+          <div class="flex flex-1 items-center justify-center text-muted-foreground">
+            <span class="text-sm">Select an activity to view details</span>
           </div>
         {/if}
       </div>
 
-      <CssGridGutter />
+      <CssGridGutter track={5} />
 
       <!-- Column 6: Right activity detail -->
       <div
-        class="comparison-detail-column"
+        class="flex min-h-0 flex-col overflow-y-auto"
         bind:this={comparisonRightDiv}
         on:mouseenter={() => setScrollOrigin('right')}
-        on:scroll={(e) => onComparisonScroll(e, 'right')}
+        on:scroll={e => onComparisonScroll(e, 'right')}
         role="region"
         aria-label="Right activity details"
       >
         {#if selectedResult}
-          <div class="detail-header">
-            <span class="st-typography-medium">{$comparisonRightSource?.name ?? 'Right'}</span>
-          </div>
-          <PlanComparisonActivityDetail
-            activity={selectedResult.changeType === 'matched' ? selectedResult.rightActivity : selectedResult.changeType === 'added' ? selectedResult.activity : null}
-            changedFields={selectedResult.changeType === 'matched' ? selectedResult.changedFields : []}
-            side="right"
-          />
+          {#key $selectedComparisonActivityId}
+            <div class="sticky top-0 z-10 border-b border-border bg-muted px-4 py-2">
+              <span class="font-medium">{$comparisonRightSource?.name ?? 'Right'}</span>
+            </div>
+            <PlanComparisonActivityDetail
+              activity={selectedResult.changeType === 'matched'
+                ? selectedResult.rightActivity
+                : selectedResult.changeType === 'added'
+                  ? selectedResult.activity
+                  : null}
+              changedFields={selectedResult.changeType === 'matched' ? selectedResult.changedFields : []}
+              side="right"
+            />
+          {/key}
         {:else}
-          <div class="empty-detail">
-            <span class="st-typography-label">Select an activity to view details</span>
+          <div class="flex flex-1 items-center justify-center text-muted-foreground">
+            <span class="text-sm">Select an activity to view details</span>
           </div>
         {/if}
       </div>
     </CssGrid>
-  {:else}
+  </Tabs.Content>
+
+  <Tabs.Content value="timeline" class="flex-1 overflow-hidden">
     <PlanComparisonTimeline
       leftSource={$comparisonLeftSource}
       rightSource={$comparisonRightSource}
       leftActivities={$comparisonLeftActivities}
       rightActivities={$comparisonRightActivities}
+      leftSimulationDataset={$comparisonLeftSimulationDataset}
+      rightSimulationDataset={$comparisonRightSimulationDataset}
       results={$filteredComparisonResults}
       planStartTime={$comparisonLeftStartTime}
       planDuration={$comparisonLeftDuration}
+      resourceTypes={$comparisonResourceTypes}
+      {user}
     />
-  {/if}
-</div>
-
-<style>
-  .plan-comparison-view {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .plan-comparison-view :global(.css-grid) {
-    flex: 1;
-    min-height: 0;
-  }
-
-  .comparison-summary-column {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow-y: auto;
-    padding: 16px;
-  }
-
-  .comparison-activity-list {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow-y: auto;
-  }
-
-  .comparison-detail-column {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow-y: auto;
-  }
-
-  .detail-header {
-    background: var(--st-gray-10);
-    border-bottom: 1px solid var(--st-gray-20);
-    padding: 8px 16px;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-  }
-
-  .empty-detail {
-    align-items: center;
-    color: var(--st-gray-50);
-    display: flex;
-    flex: 1;
-    justify-content: center;
-  }
-
-  .filter-controls {
-    border-top: 1px solid var(--st-gray-20);
-    padding-top: 16px;
-  }
-
-  .st-checkbox {
-    align-items: center;
-    cursor: pointer;
-    display: flex;
-    gap: 8px;
-  }
-
-  .st-checkbox input {
-    cursor: pointer;
-  }
-
-  .view-mode-tabs {
-    background: var(--st-gray-10);
-    border-bottom: 1px solid var(--st-gray-20);
-    display: flex;
-    gap: 4px;
-    padding: 8px 16px;
-  }
-
-  .view-mode-tab {
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    color: var(--st-gray-60);
-    cursor: pointer;
-    font-size: 13px;
-    padding: 6px 12px;
-    transition: all 0.15s ease;
-  }
-
-  .view-mode-tab:hover {
-    background: var(--st-gray-15);
-    color: var(--st-gray-80);
-  }
-
-  .view-mode-tab.active {
-    background: var(--st-white);
-    border-color: var(--st-gray-20);
-    color: var(--st-gray-90);
-    font-weight: 500;
-  }
-</style>
+  </Tabs.Content>
+</Tabs.Root>
