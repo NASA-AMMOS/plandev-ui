@@ -20,7 +20,7 @@
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
   import TagChip from '../../components/ui/Tags/Tag.svelte';
   import { field } from '../../stores/form';
-  import { createTagError, tags as tagsStore } from '../../stores/tags';
+  import { createTagError, tagsStore } from '../../stores/tags';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { Tag } from '../../types/tags';
@@ -110,7 +110,8 @@
   let creatingTag: boolean = false;
   let updatingTag: boolean = false;
 
-  $: tags = $tagsStore || data.initialTags; // TODO no way to tell if tags store is still loading since an [] is a valid value so can't make use of initialTags.
+  $: tagsStore.updateValue(() => data.initialTags);
+  $: tags = $tagsStore ?? [];
   $: nameField = field<string>('', [required]);
   $: colorField = field<string>('', [required, hex]);
   $: {
@@ -187,8 +188,8 @@
     };
     const newTag = await effects.createTag(tag, user);
     resetTagFields();
-    if (newTag) {
-      tags = tags.concat(newTag);
+    if (newTag && !($tagsStore || []).find(({ id }) => newTag.id === id)) {
+      tagsStore.updateValue(tags => [...(tags ?? []), newTag]);
     }
     creatingTag = false;
   }
@@ -235,7 +236,10 @@
       'Delete Tag',
     );
     if (confirm) {
-      await effects.deleteTag(tag, user);
+      const success = await effects.deleteTag(tag, user);
+      if (success) {
+        tagsStore.updateValue(tags => (tags || []).filter(t => t.id !== tag.id));
+      }
       // Stop editing if the selected tag is the one being deleted
       if (selectedTag?.id === tag.id) {
         exitEditing(false);
@@ -448,24 +452,20 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        {#if filteredTags.length}
-          <SingleActionDataGrid
-            bind:this={dataGrid}
-            {columnDefs}
-            hasDeletePermission={featurePermissions.tags.canDelete}
-            itemDisplayText="Tag"
-            items={filteredTags}
-            {user}
-            on:deleteItem={deleteTagContext}
-            on:rowClicked={({ detail }) => {
-              showTag(detail.data);
-            }}
-          />
-        {:else}
-          <div class="flex h-full w-full items-center justify-center">
-            <span class="text-sm">No Tags Found</span>
-          </div>
-        {/if}
+        <SingleActionDataGrid
+          bind:this={dataGrid}
+          {columnDefs}
+          hasDeletePermission={featurePermissions.tags.canDelete}
+          itemDisplayText="Tag"
+          items={filteredTags}
+          {user}
+          loading={$tagsStore === null}
+          noRowsOverlayText="No Tags Found"
+          on:deleteItem={deleteTagContext}
+          on:rowClicked={({ detail }) => {
+            showTag(detail.data);
+          }}
+        />
       </svelte:fragment>
     </Panel>
   </CssGrid>

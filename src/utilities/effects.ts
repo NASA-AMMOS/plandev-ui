@@ -2376,7 +2376,7 @@ const effects = {
         if (notify) {
           showSuccessToast('Tag Created Successfully');
         }
-        logMessage(`Created tag "${tag.name}" (ID=${insertTagsOne.id}).`);
+        logMessage(`Created tag "${insertTagsOne.name}" (ID=${insertTagsOne.id}).`);
         createTagErrorStore.set(null);
         return insertTagsOne;
       } else {
