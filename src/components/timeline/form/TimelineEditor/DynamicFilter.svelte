@@ -88,15 +88,33 @@
       currentType = matchingSubfield.type;
       currentUnit = matchingSubfield.unit || '';
       if (matchingSubfield.type === 'string' || matchingSubfield.type === 'path') {
-        operatorKeys = ['includes', 'does_not_include', 'equals', 'does_not_equal'];
+        operatorKeys = ['includes', 'does_not_include', 'equals', 'does_not_equal', 'exists', 'does_not_exist'];
       } else if (matchingSubfield.type === 'int' || matchingSubfield.type === 'real') {
-        operatorKeys = ['equals', 'does_not_equal', 'is_greater_than', 'is_less_than', 'is_within', 'is_not_within'];
+        operatorKeys = [
+          'equals',
+          'does_not_equal',
+          'is_greater_than',
+          'is_less_than',
+          'is_within',
+          'is_not_within',
+          'exists',
+          'does_not_exist',
+        ];
       } else if (matchingSubfield.type === 'duration') {
-        operatorKeys = ['equals', 'does_not_equal', 'is_greater_than', 'is_less_than', 'is_within', 'is_not_within'];
+        operatorKeys = [
+          'equals',
+          'does_not_equal',
+          'is_greater_than',
+          'is_less_than',
+          'is_within',
+          'is_not_within',
+          'exists',
+          'does_not_exist',
+        ];
       } else if (matchingSubfield.type === 'boolean') {
-        operatorKeys = ['equals'];
+        operatorKeys = ['equals', 'exists', 'does_not_exist'];
       } else if (matchingSubfield.type === 'variant') {
-        operatorKeys = ['equals', 'does_not_equal'];
+        operatorKeys = ['equals', 'does_not_equal', 'exists', 'does_not_exist'];
         currentValuePossibilities = matchingSubfield.values || [];
       } else {
         operatorKeys = [];
@@ -226,7 +244,9 @@
     {/each}
   </select>
   <div class="dynamic-filter-value">
-    {#if currentType === 'string' || currentType === 'path'}
+    {#if currentOperator === 'exists' || currentOperator === 'does_not_exist'}
+      <!-- No value input needed for exists/does_not_exist operators -->
+    {:else if currentType === 'string' || currentType === 'path'}
       <input
         name="filter-value"
         aria-label="value"

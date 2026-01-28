@@ -7,6 +7,8 @@ export enum FilterOperator {
   is_less_than = 'is less than',
   is_within = 'is within',
   is_not_within = 'is not within',
+  exists = 'exists',
+  does_not_exist = 'does not exist',
 }
 
 export enum ActivityFilterField {

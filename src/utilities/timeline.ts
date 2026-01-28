@@ -1815,6 +1815,10 @@ export function matchesDynamicFilter(
         return itemValue < filterValue[0] || itemValue > filterValue[1];
       }
       return false;
+    case 'exists':
+      return rawItemValue !== undefined && rawItemValue !== null;
+    case 'does_not_exist':
+      return rawItemValue === undefined || rawItemValue === null;
     default:
       return false;
   }
