@@ -31,11 +31,7 @@ export const sequenceAdaptation: Writable<PhoenixAdaptation> = writable(defaultA
 
 /* Subscriptions. */
 
-export const sequenceAdaptations = gqlSubscribable<SequenceAdaptationMetadata[]>(
-  gql.SUB_SEQUENCE_ADAPTATIONS,
-  {},
-  [],
-);
+export const sequenceAdaptations = gqlSubscribable<SequenceAdaptationMetadata[]>(gql.SUB_SEQUENCE_ADAPTATIONS, {}, []);
 
 /* Derived */
 
