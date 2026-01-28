@@ -902,6 +902,7 @@
             sequenceName={$activeDocument.fileName ?? undefined}
             sequenceFilePath={$activeDocumentPath ?? ''}
             sequenceOutput={selectedSequenceOutput}
+            shouldListenForKeyboardSave={false}
             showCommandFormBuilder
             userSequenceEditorColumns={$userSequenceEditorColumns}
             userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
@@ -919,6 +920,7 @@
             isJSON={$activeDocument.type === WorkspaceContentType.Json}
             isLoading={$activeDocumentIsLoading}
             previewOnly={!hasEditFilePermission}
+            shouldListenForKeyboardSave={false}
             textFileName={$activeDocument.fileName ?? undefined}
             textFilePath={$activeDocumentPath ?? ''}
             textFileContent={!isSequenceFile ? $activeDocument.originalContent : ''}
