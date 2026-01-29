@@ -504,11 +504,49 @@
         let directives: ActivityDirective[] = [];
         let spans: Span[] = [];
 
-        // In standalone mode with color maps, skip filtering and use all activities directly
+        // In standalone mode with color maps, apply layer filters but use standalone colors
         if (standaloneMode && standaloneIdToColorMaps) {
           idToColorMaps = standaloneIdToColorMaps;
-          directives = activityDirectives || [];
-          directives.sort((a, b) => ((a.start_time_ms ?? 0) < (b.start_time_ms ?? 0) ? -1 : 1));
+
+          // Check if any activity layer has filters defined
+          const hasLayerFilters = activityLayers.some(
+            layer =>
+              layer.filter?.activity?.static_types?.length ||
+              layer.filter?.activity?.dynamic_type_filters?.length ||
+              layer.filter?.activity?.other_filters?.length ||
+              layer.filter?.activity?.type_subfilters?.length,
+          );
+
+          if (hasLayerFilters) {
+            // Apply layer filters to determine which activities to show
+            let seenDirectiveIds: Record<number, boolean> = {};
+            const activityTypes = standaloneActivityTypes ?? $planModelActivityTypes;
+            const argumentDefaults = standaloneActivityArgumentDefaults ?? $activityArgumentDefaultsMap;
+
+            activityLayers.forEach(layer => {
+              if (layer.filter) {
+                const { directives: matchingDirectives } = applyActivityLayerFilter(
+                  layer.filter.activity,
+                  activityDirectives || [],
+                  spansList,
+                  activityTypes,
+                  argumentDefaults,
+                );
+                matchingDirectives.forEach(directive => {
+                  if (!seenDirectiveIds[directive.id]) {
+                    seenDirectiveIds[directive.id] = true;
+                    directives.push(directive);
+                  }
+                });
+              }
+            });
+            directives.sort((a, b) => ((a.start_time_ms ?? 0) < (b.start_time_ms ?? 0) ? -1 : 1));
+          } else {
+            // No filters defined, use all activities
+            directives = activityDirectives || [];
+            directives.sort((a, b) => ((a.start_time_ms ?? 0) < (b.start_time_ms ?? 0) ? -1 : 1));
+          }
+
           filteredActivityDirectives = directives;
           filteredSpans = [];
           timeFilteredActivityDirectives = directives;
