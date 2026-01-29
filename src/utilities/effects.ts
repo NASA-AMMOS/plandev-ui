@@ -6349,12 +6349,11 @@ const effects = {
       }
     } catch (e) {
       catchError('Unable to load view from file', e as Error);
+      return {
+        definition: null,
+        errors: [(e as Error).message],
+      };
     }
-
-    return {
-      definition: null,
-      errors: [],
-    };
   },
 
   async login(username: string, password: string): Promise<ReqAuthResponse> {
