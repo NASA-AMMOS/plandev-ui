@@ -8,6 +8,7 @@
     showModifiedActivities,
     showUnchangedActivities,
   } from '../../stores/planComparison';
+  import { views } from '../../stores/views';
   import type { ActivityDirective, ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
   import type { ActivityMetadata } from '../../types/activity-metadata';
   import type { User } from '../../types/app';
@@ -16,6 +17,9 @@
   import type { ActivityComparisonResult, ComparisonActivity, ComparisonSource } from '../../types/plan-comparison';
   import type { ResourceType, SimulationDataset } from '../../types/simulation';
   import type { Row, Timeline as TimelineType, TimeRange } from '../../types/timeline';
+  import type { View } from '../../types/view';
+  import gql from '../../utilities/gql';
+  import { reqHasura } from '../../utilities/requests';
   import { createTimelineResourceLayer, TimelineInteractionMode, TimelineLockStatus } from '../../utilities/timeline';
   import Timeline from '../timeline/Timeline.svelte';
   import SearchableDropdown from '../ui/SearchableDropdown.svelte';
@@ -41,6 +45,59 @@
     unchanged: '#f9f9f9', // Light gray to dim unchanged activities
   };
 
+  // View selection state
+  const DEFAULT_VIEW_VALUE = '__default__';
+  let selectedViewId: string = DEFAULT_VIEW_VALUE;
+  let loadedViewTimeline: TimelineType | null = null;
+  let isLoadingView = false;
+
+  // Build dropdown options from available views
+  $: viewDropdownOptions = [
+    { display: 'Default View', value: DEFAULT_VIEW_VALUE },
+    ...($views ?? []).map(v => ({ display: v.name, value: String(v.id) })),
+  ] as DropdownOptions;
+
+  // Handle view selection change
+  async function handleViewSelectionChange(event: CustomEvent<SelectedDropdownOptionValue[]>) {
+    const values = event.detail;
+    const value = values[0];
+    if (value === null || value === undefined || value === selectedViewId) {
+      return;
+    }
+
+    selectedViewId = String(value);
+
+    if (selectedViewId === DEFAULT_VIEW_VALUE) {
+      // Reset to default generated view
+      loadedViewTimeline = null;
+      // Reset computed heights when switching views
+      leftComputedHeights = {};
+      rightComputedHeights = {};
+      return;
+    }
+
+    // Fetch the full view to get its timeline definition
+    isLoadingView = true;
+    try {
+      const viewId = parseInt(selectedViewId, 10);
+      const data = await reqHasura<View>(gql.GET_VIEW, { id: viewId }, user);
+      const { view: fetchedView } = data;
+
+      if (fetchedView && fetchedView.definition?.plan?.timelines?.length > 0) {
+        // Use the first timeline from the view
+        loadedViewTimeline = fetchedView.definition.plan.timelines[0];
+        // Reset computed heights when switching views
+        leftComputedHeights = {};
+        rightComputedHeights = {};
+      }
+    } catch (error) {
+      console.error('Failed to load view:', error);
+      loadedViewTimeline = null;
+    } finally {
+      isLoadingView = false;
+    }
+  }
+
   // Parse plan times
   $: planStart = planStartTime ? new Date(planStartTime).getTime() : Date.now();
   $: planEnd = planStart + parseDurationToMs(planDuration);
@@ -60,6 +117,11 @@
   // View time range (shared between both timelines for synchronization)
   let viewTimeRange: TimeRange = { end: 0, start: 0 };
   let maxTimeRange: TimeRange = { end: 0, start: 0 };
+
+  // Track computed heights from each timeline to use max of both
+  // This avoids infinite loops while allowing proper shrinking
+  let leftComputedHeights: Record<number, number> = {};
+  let rightComputedHeights: Record<number, number> = {};
 
   // Initialize time ranges when plan data changes
   $: if (planStart && planEnd && viewTimeRange.start === 0) {
@@ -309,7 +371,9 @@
     };
   }
 
-  $: timeline = createTimelineConfig(selectedResourceTypes);
+  // Use loaded view timeline if available, otherwise generate default
+  $: defaultTimeline = createTimelineConfig(selectedResourceTypes);
+  $: timeline = loadedViewTimeline ?? defaultTimeline;
 
   // Handle view time range changes - keep both timelines synced
   // Cursor time state for syncing between timelines
@@ -354,6 +418,50 @@
 
   function handleRightVerticalScrollChanged(event: CustomEvent<number>) {
     rightScrollTop = event.detail;
+  }
+
+  function updateRowHeightFromBoth(rowId: number) {
+    // Use the maximum height from both timelines to ensure both can fit their content
+    const leftHeight = leftComputedHeights[rowId] ?? 0;
+    const rightHeight = rightComputedHeights[rowId] ?? 0;
+    const maxHeight = Math.max(leftHeight, rightHeight);
+
+    const currentRow = timeline.rows.find(row => row.id === rowId);
+    if (currentRow && maxHeight > 0 && currentRow.height !== maxHeight) {
+      timeline = {
+        ...timeline,
+        rows: timeline.rows.map(row => (row.id === rowId ? { ...row, height: maxHeight } : row)),
+      };
+    }
+  }
+
+  function handleLeftUpdateRowHeight(
+    event: CustomEvent<{ newHeight: number; rowId: number; wasAutoAdjusted?: boolean }>,
+  ) {
+    const { newHeight, rowId } = event.detail;
+    leftComputedHeights[rowId] = newHeight;
+    updateRowHeightFromBoth(rowId);
+  }
+
+  function handleRightUpdateRowHeight(
+    event: CustomEvent<{ newHeight: number; rowId: number; wasAutoAdjusted?: boolean }>,
+  ) {
+    const { newHeight, rowId } = event.detail;
+    rightComputedHeights[rowId] = newHeight;
+    updateRowHeightFromBoth(rowId);
+  }
+
+  // Handle row expansion toggle - syncs between both timelines
+  function handleToggleRowExpansion(event: CustomEvent<{ expanded: boolean; rowId: number }>) {
+    const { rowId, expanded } = event.detail;
+    // Update the timeline config to sync both timelines
+    timeline = {
+      ...timeline,
+      rows: timeline.rows.map(row => (row.id === rowId ? { ...row, expanded } : row)),
+    };
+    // Reset computed heights for this row when expanding/collapsing
+    leftComputedHeights = { ...leftComputedHeights, [rowId]: 0 };
+    rightComputedHeights = { ...rightComputedHeights, [rowId]: 0 };
   }
 </script>
 
@@ -424,6 +532,21 @@
           </SearchableDropdown>
         </div>
       {/if}
+
+      <!-- View selector dropdown -->
+      <div class="view-dropdown-container ml-4 border-l border-border pl-4">
+        <SearchableDropdown
+          options={viewDropdownOptions}
+          selectedOptionValues={[selectedViewId]}
+          selectedOptionLabel={isLoadingView
+            ? 'Loading...'
+            : `View: ${viewDropdownOptions.find(o => o.value === selectedViewId)?.display ?? 'Default'}`}
+          placeholder="Select a view"
+          searchPlaceholder="Search views"
+          scrollToSelection={false}
+          on:change={handleViewSelectionChange}
+        />
+      </div>
     </div>
     <div class="text-[11px] text-muted-foreground">
       <span>Scroll to zoom | Shift+Scroll to scroll vertically | Drag to pan</span>
@@ -471,6 +594,8 @@
           on:viewTimeRangeChanged={handleLeftViewTimeRangeChanged}
           on:cursorTimeChanged={handleLeftCursorTimeChanged}
           on:verticalScrollChanged={handleLeftVerticalScrollChanged}
+          on:updateRowHeight={handleLeftUpdateRowHeight}
+          on:toggleRowExpansion={handleToggleRowExpansion}
         />
       </div>
     </div>
@@ -518,6 +643,8 @@
           on:viewTimeRangeChanged={handleRightViewTimeRangeChanged}
           on:cursorTimeChanged={handleRightCursorTimeChanged}
           on:verticalScrollChanged={handleRightVerticalScrollChanged}
+          on:updateRowHeight={handleRightUpdateRowHeight}
+          on:toggleRowExpansion={handleToggleRowExpansion}
         />
       </div>
     </div>
