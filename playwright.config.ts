@@ -41,7 +41,7 @@ const config: PlaywrightTestConfig = {
       name: 'e2e tests',
       teardown: 'teardown',
       testDir: './e2e-tests',
-      testIgnore: [/.*\/sequence-templates\.test\.ts/],
+      testIgnore: /.*\/sequence-templates\.test\.ts/,
       use: {
         baseURL: MAIN_TEST_SUITE_BASE_URL,
         storageState: STORAGE_STATE,
