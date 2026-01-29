@@ -24,6 +24,7 @@
   export let isLoading: boolean = false;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
+  export let shouldListenForKeyboardSave: boolean = true;
   export let textFileContent: string = '';
   export let textFilePath: string = '';
   export let textFileName: string = '';
@@ -78,7 +79,10 @@
         doc: textFileContent,
         extensions: [
           basicSetup,
-          keymap.of([...standardKeymap, { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave }]),
+          keymap.of([
+            ...standardKeymap,
+            shouldListenForKeyboardSave ? { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave } : {},
+          ]),
           EditorView.lineWrapping,
           EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
           lintGutter(),
@@ -94,7 +98,10 @@
         doc: textFileContent,
         extensions: [
           basicSetup,
-          keymap.of([...standardKeymap, { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave }]),
+          keymap.of([
+            ...standardKeymap,
+            shouldListenForKeyboardSave ? { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave } : {},
+          ]),
           EditorView.lineWrapping,
           EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
           lintGutter(),
@@ -145,7 +152,7 @@
       doc: textFileContent,
       extensions: [
         basicSetup,
-        keymap.of([...standardKeymap, { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave }]),
+        keymap.of([...standardKeymap, shouldListenForKeyboardSave ? { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave } : {}]),
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),

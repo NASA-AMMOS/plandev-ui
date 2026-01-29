@@ -42,6 +42,7 @@
   export let sequenceFilePath: string = '';
   export let sequenceDefinition: string = '';
   export let sequenceOutput: string = '';
+  export let shouldListenForKeyboardSave: boolean = true;
   export let showCommandFormBuilder: boolean = false;
   export let userSequenceEditorColumns: string;
   export let userSequenceEditorColumnsWithFormBuilder: string;
@@ -140,7 +141,7 @@
       doc: sequenceOutput,
       extensions: [
         basicSetup,
-        keymap.of([...standardKeymap, { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave }]),
+        keymap.of([...standardKeymap, shouldListenForKeyboardSave ? { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave } : {}]),
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         EditorView.editable.of(false),
@@ -262,7 +263,7 @@
       doc: sequenceDefinition,
       extensions: [
         basicSetup,
-        keymap.of([...standardKeymap, { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave }]),
+        keymap.of([...standardKeymap, shouldListenForKeyboardSave ? { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave } : {}]),
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
