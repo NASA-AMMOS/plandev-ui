@@ -2370,16 +2370,15 @@ const effects = {
         throwPermissionError('create tags');
       }
 
-      const data = await reqHasura<{ affected_row: number; tag: Tag }>(gql.CREATE_TAG, { tag }, user);
+      const data = await reqHasura<Tag>(gql.CREATE_TAG, { tag }, user);
       const { insert_tags_one: insertTagsOne } = data;
       if (insertTagsOne != null) {
-        const { tag: insertedTag } = insertTagsOne;
         if (notify) {
           showSuccessToast('Tag Created Successfully');
         }
-        logMessage(`Created tag "${tag.name}" (ID=${insertedTag.id}).`);
+        logMessage(`Created tag "${insertTagsOne.name}" (ID=${insertTagsOne.id}).`);
         createTagErrorStore.set(null);
-        return insertedTag;
+        return insertTagsOne;
       } else {
         throw Error(`Unable to create tag "${tag.name}"`);
       }

@@ -39,9 +39,9 @@ test.describe.serial('Tags', () => {
   test('Create button should be disabled after submitting once', async () => {
     // Setup the test
     await expect(tags.tableRow).not.toBeVisible();
-    await tags.fillInputName();
-    await tags.createButton.click();
-    // The create button shouldn't be there
+    await tags.createTag();
+
+    // The create button shouldn't be enabled
     await expect(tags.createButton).toBeDisabled();
 
     // Cleanup
