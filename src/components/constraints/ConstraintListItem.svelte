@@ -66,7 +66,7 @@
   $: order = constraintPlanSpec.order;
 
   $: {
-    const version = getSpecVersion(constraint, constraintPlanSpec.constraint_revision);
+    version = getSpecVersion(constraint, constraintPlanSpec.constraint_revision);
 
     const schema = version?.parameter_schema;
     if (schema && schema.type === 'struct') {
@@ -99,13 +99,12 @@
   ): Pick<ConstraintDefinition, 'type' | 'revision' | 'parameter_schema' | 'uploaded_jar_id'> | undefined {
     if (revision != null && revision !== '') {
       const revisionNumber = parseInt(`${revision}`);
-      version = constraintMetadata.versions.find(v => v.revision === revisionNumber);
+      return constraintMetadata.versions.find(v => v.revision === revisionNumber);
     } else {
       // if the `constraint_revision` is null, that means to use the latest version of the definition
-      // the query for this constraint returns the versions in descending order, so the first entry in the array should correspond to the latest version
-      version = constraintMetadata.versions[0];
+      // the query for this goal returns the versions in descending order, so the first entry in the array should correspond to the latest version
+      return constraintMetadata.versions[0];
     }
-    return version;
   }
 
   function focusInput() {
@@ -354,7 +353,7 @@
             }}
           >
             <option value={null}>Always use latest</option>
-            {#each revisions as revision, index}
+            {#each revisions as revision, index (revision)}
               <option value={revision}>{revision}{index === 0 ? ' (Latest)' : ''}</option>
             {/each}
           </select>
@@ -382,6 +381,7 @@
         }}
       >
         <ContextMenu.Item
+          size="sm"
           on:click={() =>
             window.open(
               `${base}/constraints/edit/${constraint.id}${

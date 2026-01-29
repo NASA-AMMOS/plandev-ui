@@ -1219,7 +1219,7 @@ const effects = {
         type: definitionType,
         uploaded_jar_id: jarId,
       };
-      const data = await reqHasura<ConstraintDefinition>(
+      const data = await reqHasura<Pick<ConstraintDefinition, 'constraint_id' | 'definition' | 'revision'> | null>(
         gql.CREATE_CONSTRAINT_DEFINITION,
         { constraintDefinition: constraintDefinitionInsertInput },
         user,
@@ -1228,7 +1228,7 @@ const effects = {
       if (constraintDefinition != null) {
         showSuccessToast('New Constraint Revision Created Successfully');
         logMessage(
-          `Created new constraint revision ${constraintDefinition.revision} for constraint "${constraintDefinition.metadata.name}" (ID=${constraintId}).`,
+          `Created new constraint revision ${constraintDefinition.revision} for constraint ID=${constraintId}.`,
         );
         return constraintDefinition;
       } else {

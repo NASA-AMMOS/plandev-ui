@@ -58,7 +58,7 @@
   }
 
   $: {
-    const version = getSpecVersion(goal, goalPlanSpec.goal_revision);
+    version = getSpecVersion(goal, goalPlanSpec.goal_revision);
 
     const schema = version?.parameter_schema;
 
@@ -102,13 +102,12 @@
     | undefined {
     if (revision != null && revision !== '') {
       const revisionNumber = parseInt(`${revision}`);
-      version = goalMetadata.versions.find(v => v.revision === revisionNumber);
+      return goalMetadata.versions.find(v => v.revision === revisionNumber);
     } else {
       // if the `goal_revision` is null, that means to use the latest version of the definition
       // the query for this goal returns the versions in descending order, so the first entry in the array should correspond to the latest version
-      version = goalMetadata.versions[0];
+      return goalMetadata.versions[0];
     }
-    return version;
   }
 
   function focusInput() {
@@ -297,7 +296,7 @@
           }}
         >
           <option value={null}>Always use latest</option>
-          {#each revisions as revision, index}
+          {#each revisions as revision, index (revision)}
             <option value={revision}>{revision}{index === 0 ? ' (Latest)' : ''}</option>
           {/each}
         </select>
