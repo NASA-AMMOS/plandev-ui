@@ -27,6 +27,7 @@
   import effects from '../../utilities/effects';
   import { changedKeys, getTarget } from '../../utilities/generic';
   import gql from '../../utilities/gql';
+  import { getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { showMergeReviewEndedModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -81,6 +82,14 @@
   let userInitiatedMergeRequestResolution: boolean = false;
   let sourcePlan: PlanForMerging | undefined;
   let targetPlan: PlanForMerging;
+
+  /**
+   * Computes start_time_ms from an activity's start_offset relative to plan start.
+   * This is needed because merge activities come from the DB without the computed start_time_ms.
+   */
+  function computeStartTimeMs(activity: PlanMergeActivityDirectiveSource | PlanMergeActivityDirectiveTarget): number {
+    return getUnixEpochTimeFromInterval(initialPlan.start_time, activity.start_offset);
+  }
 
   $: if (initialPlan && initialMergeRequest && initialMergeRequest.plan_receiving_changes && initialPlan.model) {
     sourcePlan = initialMergeRequest.plan_snapshot_supplying_changes?.plan;
@@ -213,25 +222,29 @@
     const targetTags = selectedNonConflictingActivity.target_tags.map(tag => ({ tag }));
 
     if (selectedNonConflictingActivity.change_type === 'delete') {
+      const target = selectedNonConflictingActivity.target;
       computedTargetActivity =
-        selectedNonConflictingActivity.target !== null
-          ? { ...selectedNonConflictingActivity.target, tags: targetTags }
+        target !== null
+          ? { ...target, start_time_ms: computeStartTimeMs(target), tags: targetTags }
           : null;
       computedSourceActivity = null;
     } else if (selectedNonConflictingActivity.change_type === 'add') {
+      const source = selectedNonConflictingActivity.source;
       computedSourceActivity =
-        selectedNonConflictingActivity.source !== null
-          ? { ...selectedNonConflictingActivity.source, tags: sourceTags }
+        source !== null
+          ? { ...source, start_time_ms: computeStartTimeMs(source), tags: sourceTags }
           : null;
       computedTargetActivity = null;
     } else {
+      const target = selectedNonConflictingActivity.target;
+      const source = selectedNonConflictingActivity.source;
       computedTargetActivity =
-        selectedNonConflictingActivity.target !== null
-          ? { ...selectedNonConflictingActivity.target, tags: targetTags }
+        target !== null
+          ? { ...target, start_time_ms: computeStartTimeMs(target), tags: targetTags }
           : null;
       computedSourceActivity =
-        selectedNonConflictingActivity.source !== null
-          ? { ...selectedNonConflictingActivity.source, tags: sourceTags }
+        source !== null
+          ? { ...source, start_time_ms: computeStartTimeMs(source), tags: sourceTags }
           : null;
     }
 
@@ -246,6 +259,7 @@
     if (selectedConflictingActivity.source) {
       computedSourceActivity = {
         ...selectedConflictingActivity.source,
+        start_time_ms: computeStartTimeMs(selectedConflictingActivity.source),
         tags: selectedConflictingActivity.source_tags.map(tag => ({ tag })),
       };
     } else {
@@ -254,6 +268,7 @@
     if (selectedConflictingActivity.target) {
       computedTargetActivity = {
         ...selectedConflictingActivity.target,
+        start_time_ms: computeStartTimeMs(selectedConflictingActivity.target),
         tags: selectedConflictingActivity.target_tags.map(tag => ({ tag })),
       };
     } else {
