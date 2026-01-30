@@ -1,7 +1,10 @@
 import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
+import { keyBy } from 'lodash-es';
+import type { User } from '../../../types/app';
 import type { ComparisonActivity, ComparisonSource } from '../../../types/plan-comparison';
-import type { ResourceType, SimulationDataset } from '../../../types/simulation';
+import type { ResourceType, SimulationDataset, Span, SpansMap, SpanUtilityMaps } from '../../../types/simulation';
+import { createSpanUtilityMaps } from '../../../utilities/activities';
 import effects from '../../../utilities/effects';
 import type { PageLoad } from './$types';
 
@@ -13,6 +16,9 @@ type ComparisonData = {
   planId: number;
   simulationDataset: SimulationDataset | null;
   source: ComparisonSource;
+  spans: Span[];
+  spansMap: SpansMap;
+  spanUtilityMaps: SpanUtilityMaps;
   startTime: string;
 };
 
@@ -35,11 +41,38 @@ function parseSourceParam(param: string | null): { id: number; type: 'plan' | 's
 }
 
 /**
+ * Load spans and build utility maps for a simulation dataset
+ */
+async function loadSpansData(
+  simulationDataset: SimulationDataset | null,
+  startTime: string,
+  user: User,
+): Promise<{ spans: Span[]; spansMap: SpansMap; spanUtilityMaps: SpanUtilityMaps }> {
+  if (!simulationDataset) {
+    return {
+      spans: [],
+      spansMap: {},
+      spanUtilityMaps: {
+        directiveIdToSpanIdMap: {},
+        spanIdToChildIdsMap: {},
+        spanIdToDirectiveIdMap: {},
+      },
+    };
+  }
+
+  const spans = await effects.getSpans(simulationDataset.dataset_id, startTime, user);
+  const spansMap: SpansMap = keyBy(spans, 'span_id');
+  const spanUtilityMaps = createSpanUtilityMaps(spans);
+
+  return { spans, spansMap, spanUtilityMaps };
+}
+
+/**
  * Load comparison data for a source
  */
 async function loadSourceData(
   sourceParam: { id: number; type: 'plan' | 'snapshot' },
-  user: App.Locals['user'],
+  user: User,
 ): Promise<ComparisonData | null> {
   if (sourceParam.type === 'plan') {
     // Fetch plan data and simulation dataset in parallel
@@ -48,6 +81,8 @@ async function loadSourceData(
       effects.getLatestSimulationDatasetForPlan(sourceParam.id, user),
     ]);
     if (planData) {
+      // Load spans from simulation dataset
+      const { spans, spansMap, spanUtilityMaps } = await loadSpansData(simulationDataset, planData.startTime, user);
       return {
         activities: planData.activities,
         duration: planData.duration,
@@ -60,6 +95,9 @@ async function loadSourceData(
           planId: sourceParam.id,
           type: 'plan',
         },
+        spans,
+        spansMap,
+        spanUtilityMaps,
         startTime: planData.startTime,
       };
     }
@@ -73,6 +111,8 @@ async function loadSourceData(
         snapshotData.revision,
         user,
       );
+      // Load spans from simulation dataset
+      const { spans, spansMap, spanUtilityMaps } = await loadSpansData(simulationDataset, snapshotData.startTime, user);
       return {
         activities: snapshotData.activities,
         duration: snapshotData.duration,
@@ -86,6 +126,9 @@ async function loadSourceData(
           snapshotId: sourceParam.id,
           type: 'snapshot',
         },
+        spans,
+        spansMap,
+        spanUtilityMaps,
         startTime: snapshotData.startTime,
       };
     }
@@ -107,6 +150,11 @@ export const load: PageLoad = async ({ parent, url }) => {
       rightData: null,
       user,
     };
+  }
+
+  // If no user, redirect to plans list
+  if (!user) {
+    redirect(302, `${base}/plans`);
   }
 
   // Load both sources in parallel

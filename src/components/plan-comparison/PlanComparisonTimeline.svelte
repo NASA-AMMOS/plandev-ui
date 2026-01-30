@@ -2,6 +2,10 @@
 
 <script lang="ts">
   import {
+    comparisonLeftSpansMap,
+    comparisonLeftSpanUtilityMaps,
+    comparisonRightSpansMap,
+    comparisonRightSpanUtilityMaps,
     comparisonSelectedResources,
     showAddedActivities,
     showDeletedActivities,
@@ -15,11 +19,12 @@
   import type { DropdownOptions, SelectedDropdownOptionValue } from '../../types/dropdown';
   import type { ExternalEventId } from '../../types/external-event';
   import type { ActivityComparisonResult, ComparisonActivity, ComparisonSource } from '../../types/plan-comparison';
-  import type { ResourceType, SimulationDataset } from '../../types/simulation';
+  import type { ResourceType, SimulationDataset, SpansMap, SpanUtilityMaps } from '../../types/simulation';
   import type { Row, Timeline as TimelineType, TimeRange } from '../../types/timeline';
   import type { View } from '../../types/view';
   import gql from '../../utilities/gql';
   import { reqHasura } from '../../utilities/requests';
+  import { getActivityDirectiveStartTimeMs, getDoyTimeFromInterval } from '../../utilities/time';
   import { createTimelineResourceLayer, TimelineInteractionMode, TimelineLockStatus } from '../../utilities/timeline';
   import Timeline from '../timeline/Timeline.svelte';
   import SearchableDropdown from '../ui/SearchableDropdown.svelte';
@@ -101,6 +106,8 @@
   // Parse plan times
   $: planStart = planStartTime ? new Date(planStartTime).getTime() : Date.now();
   $: planEnd = planStart + parseDurationToMs(planDuration);
+  // Compute plan end time in DOY format for anchor chain resolution
+  $: planEndTimeDoy = planStartTime && planDuration ? getDoyTimeFromInterval(planStartTime, planDuration) : '';
 
   function parseDurationToMs(duration: string): number {
     if (!duration) {
@@ -129,9 +136,8 @@
     viewTimeRange = { end: planEnd, start: planStart };
   }
 
-  // Convert ComparisonActivity to ActivityDirective
-  function toActivityDirective(activity: ComparisonActivity, planStartMs: number): ActivityDirective {
-    const offsetMs = parseDurationToMs(activity.start_offset);
+  // Convert ComparisonActivity to ActivityDirective (without start_time_ms - computed separately)
+  function toActivityDirective(activity: ComparisonActivity): ActivityDirective {
     return {
       anchor_id: activity.anchor_id,
       anchored_to_start: activity.anchored_to_start,
@@ -146,18 +152,48 @@
       plan_id: 0,
       source_scheduling_goal_id: null,
       start_offset: activity.start_offset,
-      start_time_ms: planStartMs + offsetMs,
+      start_time_ms: 0, // Will be computed using getActivityDirectiveStartTimeMs
       tags: activity.tags.map(tag => ({ tag })),
       type: activity.type,
     };
   }
 
-  // Convert ComparisonActivity[] to ActivityDirectivesMap
-  function toActivityDirectivesMap(activities: ComparisonActivity[], planStartMs: number): ActivityDirectivesMap {
+  // Convert ComparisonActivity[] to ActivityDirectivesMap with proper anchor chain resolution
+  function toActivityDirectivesMap(
+    activities: ComparisonActivity[],
+    planStartTimeYmd: string,
+    planEndTimeDoy: string,
+    spansMap: SpansMap,
+    spanUtilityMaps: SpanUtilityMaps,
+  ): ActivityDirectivesMap {
     const map: ActivityDirectivesMap = {};
+    const cachedStartTimes: { [id: number]: number } = {};
+
+    // First pass: convert all activities to directives
     for (const activity of activities) {
-      map[activity.id] = toActivityDirective(activity, planStartMs);
+      map[activity.id] = toActivityDirective(activity);
     }
+
+    // Second pass: compute start times using the proper anchor chain resolution
+    for (const activity of activities) {
+      try {
+        const startTimeMs = getActivityDirectiveStartTimeMs(
+          activity.id,
+          planStartTimeYmd,
+          planEndTimeDoy,
+          map,
+          spansMap,
+          spanUtilityMaps,
+          cachedStartTimes,
+        );
+        map[activity.id].start_time_ms = startTimeMs;
+      } catch (e) {
+        // Handle cycle detection or other errors
+        console.warn(`Failed to compute start time for activity ${activity.id}:`, e);
+        map[activity.id].start_time_ms = new Date(planStartTimeYmd).getTime();
+      }
+    }
+
     return map;
   }
 
@@ -235,9 +271,21 @@
     return filtered;
   }
 
-  // Create activity directives maps
-  $: leftActivityDirectivesMapFull = toActivityDirectivesMap(leftActivities, planStart);
-  $: rightActivityDirectivesMapFull = toActivityDirectivesMap(rightActivities, planStart);
+  // Create activity directives maps with proper anchor chain resolution using spans data
+  $: leftActivityDirectivesMapFull = toActivityDirectivesMap(
+    leftActivities,
+    planStartTime,
+    planEndTimeDoy,
+    $comparisonLeftSpansMap,
+    $comparisonLeftSpanUtilityMaps,
+  );
+  $: rightActivityDirectivesMapFull = toActivityDirectivesMap(
+    rightActivities,
+    planStartTime,
+    planEndTimeDoy,
+    $comparisonRightSpansMap,
+    $comparisonRightSpanUtilityMaps,
+  );
 
   // Get hidden IDs based on visibility toggles
   $: leftHiddenIds = getHiddenActivityIds(

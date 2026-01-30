@@ -93,7 +93,7 @@
       headerName: 'Tags',
       resizable: true,
       sortable: false,
-      width: 220,
+      width: 100,
     },
   ];
   const permissionError = 'You do not have permission to add this constraint.';
@@ -270,7 +270,7 @@
   }
 </script>
 
-<Modal height={500} width={750} on:close closeOnEscape={false} closeOnOutsideClick={false}>
+<Modal height="60vh" width="60vw" on:close closeOnEscape={false} closeOnOutsideClick={false}>
   <ModalHeader on:close>Manage Scheduling Goals</ModalHeader>
   <ModalContent style="padding:0">
     <div class="goals-modal-container">

@@ -7,7 +7,7 @@ import type {
   PlanComparisonResult,
   PlanComparisonSummary,
 } from '../types/plan-comparison';
-import type { ResourceType, SimulationDataset } from '../types/simulation';
+import type { ResourceType, SimulationDataset, SpansMap, SpanUtilityMaps } from '../types/simulation';
 import { compareActivities } from '../utilities/plan-comparison';
 
 /**
@@ -61,6 +61,26 @@ export const comparisonRightModelId: Writable<number | null> = writable(null);
  */
 export const comparisonLeftSimulationDataset: Writable<SimulationDataset | null> = writable(null);
 export const comparisonRightSimulationDataset: Writable<SimulationDataset | null> = writable(null);
+
+/**
+ * Spans maps for computing activity start times with anchor chains
+ */
+export const comparisonLeftSpansMap: Writable<SpansMap> = writable({});
+export const comparisonRightSpansMap: Writable<SpansMap> = writable({});
+
+/**
+ * Span utility maps for computing activity start times with anchor chains
+ */
+export const comparisonLeftSpanUtilityMaps: Writable<SpanUtilityMaps> = writable({
+  directiveIdToSpanIdMap: {},
+  spanIdToChildIdsMap: {},
+  spanIdToDirectiveIdMap: {},
+});
+export const comparisonRightSpanUtilityMaps: Writable<SpanUtilityMaps> = writable({
+  directiveIdToSpanIdMap: {},
+  spanIdToChildIdsMap: {},
+  spanIdToDirectiveIdMap: {},
+});
 
 /**
  * Resource types available for the compared plans (from the model)
@@ -260,6 +280,18 @@ export function resetComparisonStores(): void {
   comparisonRightModelId.set(null);
   comparisonLeftSimulationDataset.set(null);
   comparisonRightSimulationDataset.set(null);
+  comparisonLeftSpansMap.set({});
+  comparisonRightSpansMap.set({});
+  comparisonLeftSpanUtilityMaps.set({
+    directiveIdToSpanIdMap: {},
+    spanIdToChildIdsMap: {},
+    spanIdToDirectiveIdMap: {},
+  });
+  comparisonRightSpanUtilityMaps.set({
+    directiveIdToSpanIdMap: {},
+    spanIdToChildIdsMap: {},
+    spanIdToDirectiveIdMap: {},
+  });
   comparisonResourceTypes.set([]);
   comparisonSelectedResources.set([]);
   comparisonLoading.set(false);

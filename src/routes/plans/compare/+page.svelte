@@ -15,6 +15,8 @@
     comparisonLeftModelId,
     comparisonLeftSimulationDataset,
     comparisonLeftSource,
+    comparisonLeftSpansMap,
+    comparisonLeftSpanUtilityMaps,
     comparisonLeftStartTime,
     comparisonLoading,
     comparisonModelsCompatible,
@@ -24,6 +26,8 @@
     comparisonRightModelId,
     comparisonRightSimulationDataset,
     comparisonRightSource,
+    comparisonRightSpansMap,
+    comparisonRightSpanUtilityMaps,
     comparisonRightStartTime,
     resetComparisonStores,
   } from '../../../stores/planComparison';
@@ -50,6 +54,10 @@
       comparisonRightModelId.set(rightData.modelId);
       comparisonLeftSimulationDataset.set(leftData.simulationDataset);
       comparisonRightSimulationDataset.set(rightData.simulationDataset);
+      comparisonLeftSpansMap.set(leftData.spansMap);
+      comparisonRightSpansMap.set(rightData.spansMap);
+      comparisonLeftSpanUtilityMaps.set(leftData.spanUtilityMaps);
+      comparisonRightSpanUtilityMaps.set(rightData.spanUtilityMaps);
       comparisonResourceTypes.set(resourceTypes ?? []);
       showSelectorModal = false;
     } else {
