@@ -601,6 +601,8 @@
   .timeline-padded-content {
     background: white;
     border-radius: 4px;
+    display: grid;
+    grid-template-columns: auto;
     position: relative;
   }
 
