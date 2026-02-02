@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
+  import { Download } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
   import { SequencingMode } from '../../enums/sequencing';
@@ -70,7 +70,7 @@
     </div>
   </ModalContent>
   <ModalFooter>
-    <button class="st-button secondary download-btn" on:click={onDownload}><DownloadIcon /> Download</button>
+    <button class="st-button secondary download-btn" on:click={onDownload}><Download size={16} /> Download</button>
     <button class="st-button" on:click={() => dispatch('close')}> Close </button>
   </ModalFooter>
 </Modal>

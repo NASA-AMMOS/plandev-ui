@@ -3,7 +3,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import XIcon from 'bootstrap-icons/icons/x.svg?component';
+  import { X } from 'lucide-svelte';
   import { field } from '../../stores/form';
   import { creatingWorkspace, parcels } from '../../stores/sequencing';
   import { workspaces } from '../../stores/workspaces';
@@ -138,7 +138,7 @@
             on:click={deselectWorkspace}
             use:tooltip={{ content: 'Deselect workspace', placement: 'top' }}
           >
-            <XIcon />
+            <X size={16} />
           </button>
         </div>
       {:else}

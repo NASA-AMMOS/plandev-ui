@@ -5,7 +5,7 @@
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import DuplicateIcon from '@nasa-jpl/stellar/icons/duplicate.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
-  import GripVerticalIcon from 'bootstrap-icons/icons/grip-vertical.svg?component';
+  import { GripVertical } from 'lucide-svelte';
   import { dndzone } from 'svelte-dnd-action';
   import {
     default as ExternalEventIcon,
@@ -608,7 +608,7 @@
                 <div>
                   <div class="st-typography-body timeline-row timeline-element">
                     <span class="drag-icon">
-                      <GripVerticalIcon />
+                      <GripVertical size={16} />
                     </span>
                     <span class="timeline-row-name">
                       {row.name}
@@ -1024,7 +1024,7 @@
                   <div class="timeline-y-axis timeline-element">
                     <CssGrid columns="1fr 56px 24px 24px" gap="8px" class="editor-section-grid">
                       <span class="drag-icon">
-                        <GripVerticalIcon />
+                        <GripVertical size={16} />
                       </span>
                       <div class="w-full">
                         <Input layout="stacked" class="editor-input">
@@ -1238,7 +1238,7 @@
   .drag-icon {
     color: var(--st-gray-50);
     display: none;
-    margin-left: -15px;
+    margin-left: -16px;
     margin-top: 0px;
     position: absolute;
   }

@@ -5,9 +5,7 @@
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
-  import CodeSquareIcon from 'bootstrap-icons/icons/code-square.svg?component';
-  import DownloadIcon from 'bootstrap-icons/icons/download.svg?component';
-  import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
+  import { Download, FileCode2, SquareCode } from 'lucide-svelte';
   import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
   import { SequencingMode } from '../../enums/sequencing';
   import { expansionSequences, expansionSets, filteredExpansionSequences } from '../../stores/expansion';
@@ -343,7 +341,7 @@
         {#if isExpansionSequence(sequenceOrFilter)}
           <ListItem>
             <span slot="prefix" class="overflow-hidden text-ellipsis whitespace-nowrap align-middle">
-              <JournalCodeIcon size={16} class="inline" />
+              <FileCode2 size={16} class="inline" />
               {sequenceOrFilter.seq_id}
             </span>
             <span slot="suffix">
@@ -374,7 +372,7 @@
                     }
                   }}
                 >
-                  <JournalCodeIcon />
+                  <FileCode2 size={16} />
                 </button>
               </div>
               <div use:tooltip={{ content: 'Send Expanded Sequence To Workspace', placement: 'top' }}>
@@ -387,7 +385,7 @@
                     }
                   }}
                 >
-                  <CodeSquareIcon />
+                  <SquareCode size={16} />
                 </button>
               </div>
               <div use:tooltip={{ content: 'Download Expanded Sequence', placement: 'top' }}>
@@ -400,7 +398,7 @@
                     }
                   }}
                 >
-                  <DownloadIcon />
+                  <Download size={16} />
                 </button>
               </div>
               <div

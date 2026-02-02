@@ -1,5 +1,5 @@
 <script lang="ts">
-  import XIcon from 'bootstrap-icons/icons/x.svg?component';
+  import { X } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
 
   export let showClose: boolean = true;
@@ -13,7 +13,7 @@
   <slot />
   {#if showClose}
     <button class="st-button icon fs-6" on:click|stopPropagation={() => dispatch('close')}>
-      <XIcon />
+      <X size={16} />
     </button>
   {/if}
 </div>

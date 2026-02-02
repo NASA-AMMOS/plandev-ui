@@ -13,7 +13,7 @@
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import RotateCounterClockwiseIcon from '@nasa-jpl/stellar/icons/rotate_counter_clockwise.svg?component';
   import TooltipLineIcon from '@nasa-jpl/stellar/icons/tooltip_line.svg?component';
-  import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
+  import { Clipboard } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
@@ -482,7 +482,7 @@
           <button
             use:tooltip={{ content: `Copy to clipboard`, placement: 'top' }}
             class="st-button icon"
-            on:click={copyViewToClipboard}><ClipboardIcon /></button
+            on:click={copyViewToClipboard}><Clipboard size={16} /></button
           >
           <input readonly class="st-input" value={viewURL?.href} />
         </div>

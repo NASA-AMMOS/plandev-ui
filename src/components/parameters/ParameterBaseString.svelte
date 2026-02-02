@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import CopyIcon from 'bootstrap-icons/icons/copy.svg?component';
+  import { Copy } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ParameterType } from '../../types/parameter';
   import { setClipboardContent } from '../../utilities/clipboard';
@@ -58,7 +58,7 @@
           setClipboardContent(formParameter.value);
         }}
       >
-        <CopyIcon />
+        <Copy size={16} />
       </button>
       <ParameterBaseRightAdornments
         {disabled}

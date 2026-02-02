@@ -8,8 +8,7 @@
   import VisibleHideIcon from '@nasa-jpl/stellar/icons/visible_hide.svg?component';
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
-  import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
-  import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
+  import { ChevronDown, ChevronUp } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { SearchParameters } from '../../enums/searchParameters';
   import { Status } from '../../enums/status';
@@ -313,7 +312,7 @@
                 tabindex={shouldShowUpButton ? -1 : 0}
                 on:click={onIncreaseOrder}
               >
-                <CaretUpFillIcon />
+                <ChevronUp size={16} />
               </button>
               <button
                 use:tooltip={{ content: 'Decrease order', placement: 'top' }}
@@ -322,7 +321,7 @@
                 tabindex={shouldShowDownButton ? -1 : 0}
                 on:click={onDecreaseOrder}
               >
-                <CaretDownFillIcon />
+                <ChevronDown size={16} />
               </button>
             </div>
           {/if}

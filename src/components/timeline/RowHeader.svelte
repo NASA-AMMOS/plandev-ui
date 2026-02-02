@@ -3,7 +3,7 @@
 <script lang="ts">
   import CaretDownIcon from '@nasa-jpl/stellar/icons/caret_down.svg?component';
   import CaretRightIcon from '@nasa-jpl/stellar/icons/caret_right.svg?component';
-  import GripVerticalIcon from 'bootstrap-icons/icons/grip-vertical.svg?component';
+  import { GripVertical } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import TimelineLineLayerIcon from '../../assets/timeline-line-layer.svg?component';
   import TimelineXRangeLayerIcon from '../../assets/timeline-x-range-layer.svg?component';
@@ -119,7 +119,7 @@
             role="none"
             style={rowDragMoveDisabled ? 'cursor: grab' : 'cursor: grabbing'}
           >
-            <GripVerticalIcon />
+            <GripVertical size={16} />
           </div>
         {/if}
 

@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
-  import XIcon from 'bootstrap-icons/icons/x.svg?component';
+  import { X } from 'lucide-svelte';
   import { sequenceAdaptation, setSequenceLanguages } from '../../stores/sequence-adaptation';
   import { selectedSequenceTemplateId, sequenceTemplates } from '../../stores/sequence-template';
   import {
@@ -245,7 +245,7 @@
               on:click={() => ($selectedSequenceTemplateId = null)}
               use:tooltip={{ content: 'Deselect sequence template', placement: 'top' }}
             >
-              <XIcon />
+              <X size={16} />
             </button>
           </slot>
         </svelte:fragment>

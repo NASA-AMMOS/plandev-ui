@@ -3,9 +3,8 @@
 <script lang="ts">
   import { Button } from '@nasa-jpl/stellar-svelte';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
-  import GripVerticalIcon from 'bootstrap-icons/icons/grip-vertical.svg?component';
   import { capitalize } from 'lodash-es';
-  import { CirclePlus } from 'lucide-svelte';
+  import { CirclePlus, GripVertical } from 'lucide-svelte';
   import { view, viewAddFilterToRow } from '../stores/views';
   import type {
     ChartType,
@@ -258,7 +257,7 @@
         {/if}
       </div>
       <div class="drag">
-        <GripVerticalIcon />
+        <GripVertical size={16} />
       </div>
     </div>
   </div>
@@ -305,7 +304,7 @@
               </LayerPicker>
             </div>
             <div class="drag">
-              <GripVerticalIcon />
+              <GripVertical size={16} />
             </div>
           </span>
         </ListItem>

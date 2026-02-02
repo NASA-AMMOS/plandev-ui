@@ -1,15 +1,13 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import PlayBtnIcon from 'bootstrap-icons/icons/play-btn.svg?component';
-  import StopwatchIcon from 'bootstrap-icons/icons/stopwatch.svg?component';
-  import BanIcon from 'bootstrap-icons/icons/ban.svg?component';
+  import { Ban, SquarePlay, Timer } from 'lucide-svelte';
+  import { createEventDispatcher } from 'svelte';
   import { Status } from '../../../enums/status';
   import type { ActionDefinition, ActionRunSlim } from '../../../types/actions';
   import { formatMS } from '../../../utilities/time';
-  import StatusBadge from '../../ui/StatusBadge.svelte';
   import { tooltip } from '../../../utilities/tooltip';
-  import { createEventDispatcher } from 'svelte';
+  import StatusBadge from '../../ui/StatusBadge.svelte';
 
   export let actionRun: ActionRunSlim;
   export let actionDefinition: ActionDefinition | null;
@@ -59,10 +57,10 @@
     </div>
     <div>@{actionRun.requested_by}</div>
     <div class="action-run-cell">
-      <PlayBtnIcon />{new Date(actionRun.requested_at).toLocaleString()}
+      <SquarePlay size={16} />{new Date(actionRun.requested_at).toLocaleString()}
     </div>
     <div class="action-run-cell">
-      <StopwatchIcon />{formatMS(actionRun.duration)}
+      <Timer size={16} />{formatMS(actionRun.duration)}
     </div>
 
     {#if actionRun.status === 'pending' || actionRun.status === 'incomplete'}
@@ -72,7 +70,7 @@
         on:click|stopPropagation={() => dispatch('cancelAction', { id: actionRun.id })}
         use:tooltip={{ content: 'Cancel Action Run', placement: 'top' }}
       >
-        <BanIcon />
+        <Ban size={16} />
       </button>
     {/if}
   </div>

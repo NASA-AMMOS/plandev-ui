@@ -3,8 +3,7 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import { ContextMenu } from '@nasa-jpl/stellar-svelte';
-  import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
-  import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
+  import { ChevronDown, ChevronUp } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import type { Argument, ArgumentsMap, FormParameter } from '../../../types/parameter';
@@ -271,7 +270,7 @@
                 tabindex={shouldShowUpButton ? -1 : 0}
                 on:click={() => focusInput() && updatePriority(priority - 1)}
               >
-                <CaretUpFillIcon />
+                <ChevronUp size={16} />
               </button>
               <button
                 use:tooltip={{ content: 'Decrease Priority', placement: 'top' }}
@@ -280,7 +279,7 @@
                 tabindex={shouldShowDownButton ? -1 : 0}
                 on:click={() => focusInput() && updatePriority(priority + 1)}
               >
-                <CaretDownFillIcon />
+                <ChevronDown size={16} />
               </button>
             </div>
           {/if}

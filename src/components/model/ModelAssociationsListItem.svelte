@@ -2,8 +2,7 @@
 
 <script lang="ts">
   import { ContextMenu } from '@nasa-jpl/stellar-svelte';
-  import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
-  import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
+  import { ChevronDown, ChevronUp } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { DefinitionType } from '../../enums/association';
   import type { Association, BaseDefinition } from '../../types/metadata';
@@ -241,7 +240,7 @@
                   tabindex={shouldShowUpButton ? -1 : 0}
                   on:click={onIncreasePriority}
                 >
-                  <CaretUpFillIcon />
+                  <ChevronUp size={16} />
                 </button>
                 <button
                   use:tooltip={{ content: `Decrease ${priorityLabel}`, placement: 'top' }}
@@ -250,7 +249,7 @@
                   tabindex={shouldShowDownButton ? -1 : 0}
                   on:click={onDecreasePriority}
                 >
-                  <CaretDownFillIcon />
+                  <ChevronDown size={16} />
                 </button>
               </div>
             </div>
@@ -305,7 +304,7 @@
                 tabindex={shouldShowUpButton ? -1 : 0}
                 on:click={onIncreasePriority}
               >
-                <CaretUpFillIcon />
+                <ChevronUp size={16} />
               </button>
               <button
                 use:tooltip={{ content: `Decrease ${priorityLabel}`, placement: 'top' }}
@@ -314,7 +313,7 @@
                 tabindex={shouldShowDownButton ? -1 : 0}
                 on:click={onDecreasePriority}
               >
-                <CaretDownFillIcon />
+                <ChevronDown size={16} />
               </button>
             </div>
           {/if}

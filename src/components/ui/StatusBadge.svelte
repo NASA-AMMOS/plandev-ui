@@ -6,7 +6,7 @@
   import MinusIcon from '@nasa-jpl/stellar/icons/minus.svg?component';
   import ThreeDotsIcon from '@nasa-jpl/stellar/icons/three_dot_horizontal.svg?component';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
-  import HourglassIcon from 'bootstrap-icons/icons/hourglass-top.svg?component';
+  import { Hourglass } from 'lucide-svelte';
   import { Status } from '../../enums/status';
   import { getColorForStatus, statusColors } from '../../utilities/status';
   import { tooltip } from '../../utilities/tooltip';
@@ -42,7 +42,7 @@
       {:else if status === Status.Incomplete}
         {#if indeterminate}
           <span class="status-badge--incomplete-indeterminate">
-            <HourglassIcon />
+            <Hourglass size={16} />
           </span>
         {:else}
           <ProgressRadial {progress} />
@@ -96,7 +96,7 @@
     padding: 0.5px 5px;
   }
 
-  .status-badge--incomplete-indeterminate :global(svg.st-icon) {
+  .status-badge--incomplete-indeterminate :global(svg.lucide-icon) {
     display: flex;
     height: 11px;
     width: 11px;
