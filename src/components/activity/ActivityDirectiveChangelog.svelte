@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import HistoryIcon from '@nasa-jpl/stellar/icons/history.svg?component';
+  import { History } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
   import { plan } from '../../stores/plan';
@@ -233,7 +233,7 @@
         on:click|stopPropagation={() => dispatch('closeChangelog')}
         use:tooltip={{ content: 'Close Activity Changelog', placement: 'top' }}
       >
-        <HistoryIcon />
+        <History size={16} />
       </button>
     </div>
   </div>
