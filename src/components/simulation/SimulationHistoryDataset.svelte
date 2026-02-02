@@ -43,6 +43,7 @@
   }>();
   const planDuration = planEndTimeMs - planStartTimeMs;
 
+  let argumentsExpanded: boolean = false;
   let endTimeText: string = '';
   let extent: string | null = '';
   let formParameters: FormParameter[] = [];
@@ -109,8 +110,10 @@
         }
       }
     }
+  }
 
-    // get the complete set of parameters and their defaults
+  // Load parameters only when arguments are expanded for performance
+  $: if (argumentsExpanded) {
     formParameters = getFormParameters(
       modelParametersMap,
       simulationDataset.arguments,
@@ -200,11 +203,14 @@
       defaultExpanded={false}
       title="Arguments"
       tooltipContent="Arguments for this simulation"
+      on:collapse={e => (argumentsExpanded = !e.detail)}
     >
-      {#if formParameters.length}
-        <Parameters {formParameters} parameterType="simulation" disabled={true} />
-      {:else}
-        <div class="p-1">No simulation arguments found</div>
+      {#if argumentsExpanded}
+        {#if formParameters.length}
+          <Parameters {formParameters} parameterType="simulation" disabled={true} />
+        {:else}
+          <div class="p-1">No simulation arguments found</div>
+        {/if}
       {/if}
     </Collapse>
     {#if !simulationLoadable}

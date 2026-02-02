@@ -61,6 +61,7 @@
     border: 1px solid var(--st-gray-20);
     border-radius: 4px;
     color: var(--st-gray-70);
+    contain: layout style paint;
     cursor: pointer;
     display: flex;
     flex-direction: column;
