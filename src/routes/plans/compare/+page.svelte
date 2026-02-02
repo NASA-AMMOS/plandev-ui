@@ -15,6 +15,7 @@
     comparisonLeftModelId,
     comparisonLeftSimulationDataset,
     comparisonLeftSource,
+    comparisonLeftSpans,
     comparisonLeftSpansMap,
     comparisonLeftSpanUtilityMaps,
     comparisonLeftStartTime,
@@ -26,6 +27,7 @@
     comparisonRightModelId,
     comparisonRightSimulationDataset,
     comparisonRightSource,
+    comparisonRightSpans,
     comparisonRightSpansMap,
     comparisonRightSpanUtilityMaps,
     comparisonRightStartTime,
@@ -54,6 +56,8 @@
       comparisonRightModelId.set(rightData.modelId);
       comparisonLeftSimulationDataset.set(leftData.simulationDataset);
       comparisonRightSimulationDataset.set(rightData.simulationDataset);
+      comparisonLeftSpans.set(leftData.spans);
+      comparisonRightSpans.set(rightData.spans);
       comparisonLeftSpansMap.set(leftData.spansMap);
       comparisonRightSpansMap.set(rightData.spansMap);
       comparisonLeftSpanUtilityMaps.set(leftData.spanUtilityMaps);

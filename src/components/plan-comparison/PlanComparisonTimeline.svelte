@@ -2,8 +2,10 @@
 
 <script lang="ts">
   import {
+    comparisonLeftSpans,
     comparisonLeftSpansMap,
     comparisonLeftSpanUtilityMaps,
+    comparisonRightSpans,
     comparisonRightSpansMap,
     comparisonRightSpanUtilityMaps,
     comparisonSelectedResources,
@@ -197,33 +199,51 @@
     return map;
   }
 
-  // Build color maps based on comparison results
-  function buildColorMap(
+  // Build color maps based on comparison results for both directives and spans
+  function buildColorMaps(
     comparisonResults: ActivityComparisonResult[],
     side: 'left' | 'right',
-  ): Record<ActivityDirectiveId, string> {
-    const colorMap: Record<ActivityDirectiveId, string> = {};
+    spanUtilityMaps: SpanUtilityMaps,
+  ): { directives: Record<ActivityDirectiveId, string>; spans: Record<number, string> } {
+    const directiveColorMap: Record<ActivityDirectiveId, string> = {};
+    const spanColorMap: Record<number, string> = {};
 
     for (const result of comparisonResults) {
+      let activityId: number;
+      let color: string;
+
       if (result.changeType === 'added') {
         if (side === 'right') {
-          colorMap[result.activity.id] = COLORS.added;
+          activityId = result.activity.id;
+          color = COLORS.added;
+        } else {
+          continue;
         }
       } else if (result.changeType === 'deleted') {
         if (side === 'left') {
-          colorMap[result.activity.id] = COLORS.deleted;
+          activityId = result.activity.id;
+          color = COLORS.deleted;
+        } else {
+          continue;
         }
       } else if (result.changeType === 'matched') {
-        const activityId = side === 'left' ? result.leftActivity.id : result.rightActivity.id;
-        if (result.changedFields.length > 0) {
-          colorMap[activityId] = COLORS.modified;
-        } else {
-          colorMap[activityId] = COLORS.unchanged;
-        }
+        activityId = side === 'left' ? result.leftActivity.id : result.rightActivity.id;
+        color = result.changedFields.length > 0 ? COLORS.modified : COLORS.unchanged;
+      } else {
+        continue;
+      }
+
+      // Set directive color
+      directiveColorMap[activityId] = color;
+
+      // Set span color using the directiveIdToSpanIdMap
+      const spanId = spanUtilityMaps.directiveIdToSpanIdMap[activityId];
+      if (spanId !== undefined) {
+        spanColorMap[spanId] = color;
       }
     }
 
-    return colorMap;
+    return { directives: directiveColorMap, spans: spanColorMap };
   }
 
   // Get the set of activity IDs to hide based on visibility toggles
@@ -309,16 +329,19 @@
   $: leftActivityDirectivesMap = filterActivityDirectivesMap(leftActivityDirectivesMapFull, leftHiddenIds);
   $: rightActivityDirectivesMap = filterActivityDirectivesMap(rightActivityDirectivesMapFull, rightHiddenIds);
 
-  // Create color maps for standalone mode
+  // Create color maps for standalone mode (directives and spans)
+  $: leftColorMaps = buildColorMaps(results, 'left', $comparisonLeftSpanUtilityMaps);
+  $: rightColorMaps = buildColorMaps(results, 'right', $comparisonRightSpanUtilityMaps);
+
   $: leftIdToColorMaps = {
-    directives: buildColorMap(results, 'left'),
+    directives: leftColorMaps.directives,
     external_events: {} as Record<ExternalEventId, string>,
-    spans: {} as Record<number, string>,
+    spans: leftColorMaps.spans,
   };
   $: rightIdToColorMaps = {
-    directives: buildColorMap(results, 'right'),
+    directives: rightColorMaps.directives,
     external_events: {} as Record<ExternalEventId, string>,
-    spans: {} as Record<number, string>,
+    spans: rightColorMaps.spans,
   };
 
   // Get selected resource types based on selected resource names
@@ -347,7 +370,7 @@
       autoAdjustHeight: true,
       discreteOptions: {
         activityOptions: {
-          composition: 'directives',
+          composition: 'both',
           hierarchyMode: 'flat',
         },
         displayMode: 'grouped',
@@ -622,9 +645,9 @@
           selectedSpanId={null}
           simulation={null}
           simulationDataset={leftSimulationDataset}
-          spanUtilityMaps={{ directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} }}
-          spansMap={{}}
-          spans={[]}
+          spanUtilityMaps={$comparisonLeftSpanUtilityMaps}
+          spansMap={$comparisonLeftSpansMap}
+          spans={$comparisonLeftSpans}
           timelineInteractionMode={TimelineInteractionMode.Navigate}
           timelineLockStatus={TimelineLockStatus.Unlocked}
           {user}
@@ -671,9 +694,9 @@
           selectedSpanId={null}
           simulation={null}
           simulationDataset={rightSimulationDataset}
-          spanUtilityMaps={{ directiveIdToSpanIdMap: {}, spanIdToChildIdsMap: {}, spanIdToDirectiveIdMap: {} }}
-          spansMap={{}}
-          spans={[]}
+          spanUtilityMaps={$comparisonRightSpanUtilityMaps}
+          spansMap={$comparisonRightSpansMap}
+          spans={$comparisonRightSpans}
           timelineInteractionMode={TimelineInteractionMode.Navigate}
           timelineLockStatus={TimelineLockStatus.Unlocked}
           {user}

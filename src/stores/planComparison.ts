@@ -7,7 +7,7 @@ import type {
   PlanComparisonResult,
   PlanComparisonSummary,
 } from '../types/plan-comparison';
-import type { ResourceType, SimulationDataset, SpansMap, SpanUtilityMaps } from '../types/simulation';
+import type { ResourceType, SimulationDataset, Span, SpansMap, SpanUtilityMaps } from '../types/simulation';
 import { compareActivities } from '../utilities/plan-comparison';
 
 /**
@@ -61,6 +61,12 @@ export const comparisonRightModelId: Writable<number | null> = writable(null);
  */
 export const comparisonLeftSimulationDataset: Writable<SimulationDataset | null> = writable(null);
 export const comparisonRightSimulationDataset: Writable<SimulationDataset | null> = writable(null);
+
+/**
+ * Spans arrays for timeline visualization
+ */
+export const comparisonLeftSpans: Writable<Span[]> = writable([]);
+export const comparisonRightSpans: Writable<Span[]> = writable([]);
 
 /**
  * Spans maps for computing activity start times with anchor chains
@@ -280,6 +286,8 @@ export function resetComparisonStores(): void {
   comparisonRightModelId.set(null);
   comparisonLeftSimulationDataset.set(null);
   comparisonRightSimulationDataset.set(null);
+  comparisonLeftSpans.set([]);
+  comparisonRightSpans.set([]);
   comparisonLeftSpansMap.set({});
   comparisonRightSpansMap.set({});
   comparisonLeftSpanUtilityMaps.set({
