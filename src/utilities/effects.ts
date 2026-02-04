@@ -8488,7 +8488,7 @@ const effects = {
 
   async uploadActivities(plan: Plan, files: FileList, user: User | null): Promise<number | null> {
     try {
-      if (!gatewayPermissions.ADD_ACTIVITIES(user, plan)) {
+      if (!gatewayPermissions.CREATE_ACTIVITY_DIRECTIVES(user, plan)) {
         throwPermissionError('add activities');
       }
 
