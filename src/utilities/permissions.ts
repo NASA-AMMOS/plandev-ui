@@ -1311,14 +1311,14 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
 };
 
 const gatewayPermissions = {
-  ADD_ACTIVITIES: (user: User | null, plan: PlanWithOwners): boolean => {
-    const queries = [getFunctionPermission(Queries.INSERT_ACTIVITY_DIRECTIVES)];
+  ADD_EXTERNAL_DATASET: (user: User | null, plan: PlanWithOwners): boolean => {
+    const queries = [getFunctionPermission(Queries.ADD_EXTERNAL_DATASET)];
     return (
       isUserAdmin(user) || (getPermission(queries, user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
-  ADD_EXTERNAL_DATASET: (user: User | null, plan: PlanWithOwners): boolean => {
-    const queries = [getFunctionPermission(Queries.ADD_EXTERNAL_DATASET)];
+  CREATE_ACTIVITY_DIRECTIVES: (user: User | null, plan: PlanWithOwners): boolean => {
+    const queries = [getFunctionPermission(Queries.INSERT_ACTIVITY_DIRECTIVES)];
     return (
       isUserAdmin(user) || (getPermission(queries, user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
@@ -1909,3 +1909,4 @@ export {
   isUserViewer,
   queryPermissions,
 };
+
