@@ -224,28 +224,20 @@
     if (selectedNonConflictingActivity.change_type === 'delete') {
       const target = selectedNonConflictingActivity.target;
       computedTargetActivity =
-        target !== null
-          ? { ...target, start_time_ms: computeStartTimeMs(target), tags: targetTags }
-          : null;
+        target !== null ? { ...target, start_time_ms: computeStartTimeMs(target), tags: targetTags } : null;
       computedSourceActivity = null;
     } else if (selectedNonConflictingActivity.change_type === 'add') {
       const source = selectedNonConflictingActivity.source;
       computedSourceActivity =
-        source !== null
-          ? { ...source, start_time_ms: computeStartTimeMs(source), tags: sourceTags }
-          : null;
+        source !== null ? { ...source, start_time_ms: computeStartTimeMs(source), tags: sourceTags } : null;
       computedTargetActivity = null;
     } else {
       const target = selectedNonConflictingActivity.target;
       const source = selectedNonConflictingActivity.source;
       computedTargetActivity =
-        target !== null
-          ? { ...target, start_time_ms: computeStartTimeMs(target), tags: targetTags }
-          : null;
+        target !== null ? { ...target, start_time_ms: computeStartTimeMs(target), tags: targetTags } : null;
       computedSourceActivity =
-        source !== null
-          ? { ...source, start_time_ms: computeStartTimeMs(source), tags: sourceTags }
-          : null;
+        source !== null ? { ...source, start_time_ms: computeStartTimeMs(source), tags: sourceTags } : null;
     }
 
     // Reset comparison scroll positions
