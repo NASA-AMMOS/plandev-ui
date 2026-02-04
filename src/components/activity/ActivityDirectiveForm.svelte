@@ -3,9 +3,9 @@
 <script lang="ts">
   import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
-  import HistoryIcon from '@nasa-jpl/stellar/icons/history.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import { keyBy } from 'lodash-es';
+  import { History } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
@@ -510,7 +510,7 @@
           on:click|stopPropagation={() => dispatch('viewChangelog')}
           use:tooltip={{ content: 'View Activity Changelog', placement: 'top' }}
         >
-          <HistoryIcon />
+          <History size={16} />
         </button>
       </div>
     </div>
