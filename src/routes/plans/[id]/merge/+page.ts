@@ -1,8 +1,8 @@
 import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
 import type {
-  PlanMergeConflictingActivity,
-  PlanMergeNonConflictingActivity,
+  PlanMergeConflictingActivityDB,
+  PlanMergeNonConflictingActivityDB,
   PlanMergeRequestSchema,
 } from '../../../../types/plan';
 import effects from '../../../../utilities/effects';
@@ -27,8 +27,8 @@ export const load: PageLoad = async ({ parent, params }) => {
         user,
       );
 
-      let initialConflictingActivities: PlanMergeConflictingActivity[] = [];
-      let initialNonConflictingActivities: PlanMergeNonConflictingActivity[] = [];
+      let initialConflictingActivities: PlanMergeConflictingActivityDB[] = [];
+      let initialNonConflictingActivities: PlanMergeNonConflictingActivityDB[] = [];
 
       if (initialMergeRequest) {
         const { id: mergeRequestId } = initialMergeRequest;

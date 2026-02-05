@@ -1,4 +1,4 @@
-import type { ActivityDirective } from './activity';
+import type { ActivityDirective, ActivityDirectiveDB } from './activity';
 import type { UserId } from './app';
 import type { ConstraintPlanSpecification } from './constraint';
 import type { Model } from './model';
@@ -18,10 +18,35 @@ export type PlanInsertInput = Pick<PlanSchema, 'duration' | 'model_id' | 'name' 
 
 export type PlanMergeActivityOutcome = 'add' | 'delete' | 'modify' | 'none';
 
-export type PlanMergeActivityDirective = ActivityDirective & { snapshot_id: number };
+// DB types (what GraphQL returns, without start_time_ms)
+export type PlanMergeActivityDirectiveDB = ActivityDirectiveDB & { snapshot_id: number };
+export type PlanMergeActivityDirectiveSourceDB = Omit<PlanMergeActivityDirectiveDB, 'plan_id'>;
+export type PlanMergeActivityDirectiveTargetDB = PlanMergeActivityDirectiveDB;
 
+export type PlanMergeConflictingActivityDB = {
+  activity_id: number;
+  change_type_source: PlanMergeActivityOutcome;
+  change_type_target: PlanMergeActivityOutcome;
+  merge_base: PlanMergeActivityDirectiveDB;
+  resolution: PlanMergeResolution;
+  source: PlanMergeActivityDirectiveSourceDB | null;
+  source_tags: Tag[];
+  target: PlanMergeActivityDirectiveTargetDB | null;
+  target_tags: Tag[];
+};
+
+export type PlanMergeNonConflictingActivityDB = {
+  activity_id: number;
+  change_type: PlanMergeActivityOutcome;
+  source: PlanMergeActivityDirectiveSourceDB | null;
+  source_tags: Tag[];
+  target: PlanMergeActivityDirectiveTargetDB | null;
+  target_tags: Tag[];
+};
+
+// Computed types (with start_time_ms)
+export type PlanMergeActivityDirective = PlanMergeActivityDirectiveDB & { start_time_ms: number };
 export type PlanMergeActivityDirectiveTarget = PlanMergeActivityDirective;
-
 export type PlanMergeActivityDirectiveSource = Omit<PlanMergeActivityDirective, 'plan_id'>;
 
 export type PlanMergeConflictingActivity = {
@@ -53,7 +78,7 @@ export type PlanMergeRequest = PlanMergeRequestSchema & { pending: boolean; type
 
 export type PlanMergeRequestStatus = 'accepted' | 'in-progress' | 'pending' | 'rejected' | 'withdrawn';
 
-export type PlanForMerging = Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collaborators' | 'model_id'> & {
+export type PlanForMerging = Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collaborators' | 'model_id' | 'start_time'> & {
   model: Pick<Model, 'id' | 'name' | 'owner' | 'version'>;
 };
 
@@ -84,7 +109,7 @@ export type PlanSchema = {
   name: string;
   owner: UserId;
   parent_plan:
-    | (Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collaborators' | 'is_locked' | 'model_id'> & {
+    | (Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collaborators' | 'is_locked' | 'model_id' | 'start_time'> & {
         model: Pick<Model, 'id' | 'name' | 'owner' | 'version'>;
       })
     | null;

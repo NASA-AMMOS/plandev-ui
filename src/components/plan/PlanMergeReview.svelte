@@ -19,15 +19,20 @@
     PlanMergeActivityDirectiveSource,
     PlanMergeActivityDirectiveTarget,
     PlanMergeConflictingActivity,
+    PlanMergeConflictingActivityDB,
     PlanMergeNonConflictingActivity,
+    PlanMergeNonConflictingActivityDB,
     PlanMergeRequestSchema,
     PlanMergeRequestStatus,
     PlanMergeResolution,
   } from '../../types/plan';
+  import {
+    transformPlanMergeConflictingActivities,
+    transformPlanMergeNonConflictingActivities,
+  } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { changedKeys, getTarget } from '../../utilities/generic';
   import gql from '../../utilities/gql';
-  import { getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { showMergeReviewEndedModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -40,17 +45,21 @@
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import PlanMergeReviewUserInfo from './PlanMergeReviewUserInfo.svelte';
 
-  export let initialConflictingActivities: PlanMergeConflictingActivity[] = [];
+  export let initialConflictingActivities: PlanMergeConflictingActivityDB[] = [];
   export let initialMergeRequest: PlanMergeRequestSchema | null;
-  export let initialNonConflictingActivities: PlanMergeNonConflictingActivity[] = [];
+  export let initialNonConflictingActivities: PlanMergeNonConflictingActivityDB[] = [];
   export let initialPlan: Plan;
 
   const user = getUserStore();
 
+  let sourcePlanStartTime: string = initialPlan.start_time;
+  let targetPlanStartTime: string = initialPlan.start_time;
+
   const conflictingMergeActivities = gqlSubscribable<PlanMergeConflictingActivity[]>(
     gql.SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES,
     { merge_request_id: initialMergeRequest?.id },
-    initialConflictingActivities,
+    transformPlanMergeConflictingActivities(initialConflictingActivities, sourcePlanStartTime, targetPlanStartTime),
+    data => transformPlanMergeConflictingActivities(data, sourcePlanStartTime, targetPlanStartTime),
   );
   const mergeRequestStatus = gqlSubscribable<PlanMergeRequestStatus>(
     gql.SUB_PLAN_MERGE_REQUEST_STATUS,
@@ -72,6 +81,7 @@
   let mergeComparisonTargetDiv: HTMLElement | null = null;
   let mergeComparisonScrollOrigin: 'source' | 'target' | null = null;
   let modifications: PlanMergeNonConflictingActivity[] = [];
+  let nonConflictingActivities: PlanMergeNonConflictingActivity[] = [];
   let receivingPlanActivitiesMap: ActivityDirectivesMap = {};
   let selectedActivityId: number | null;
   let selectedConflictingActivity: PlanMergeConflictingActivity | null;
@@ -83,17 +93,20 @@
   let sourcePlan: PlanForMerging | undefined;
   let targetPlan: PlanForMerging;
 
-  /**
-   * Computes start_time_ms from an activity's start_offset relative to plan start.
-   * This is needed because merge activities come from the DB without the computed start_time_ms.
-   */
-  function computeStartTimeMs(activity: PlanMergeActivityDirectiveSource | PlanMergeActivityDirectiveTarget): number {
-    return getUnixEpochTimeFromInterval(initialPlan.start_time, activity.start_offset);
-  }
-
   $: if (initialPlan && initialMergeRequest && initialMergeRequest.plan_receiving_changes && initialPlan.model) {
     sourcePlan = initialMergeRequest.plan_snapshot_supplying_changes?.plan;
     targetPlan = initialMergeRequest.plan_receiving_changes;
+
+    // Set plan start times for activity transformations
+    sourcePlanStartTime = sourcePlan?.start_time ?? initialPlan.start_time;
+    targetPlanStartTime = targetPlan?.start_time ?? initialPlan.start_time;
+
+    // Transform non-conflicting activities with correct start times
+    nonConflictingActivities = transformPlanMergeNonConflictingActivities(
+      initialNonConflictingActivities,
+      sourcePlanStartTime,
+      targetPlanStartTime,
+    );
 
     let supplyingPlanId = sourcePlan?.id ?? -1;
 
@@ -105,7 +118,7 @@
     );
 
     // build up the complete array of snapshotted receiving and supplying directives
-    let { receivingPlanDirectives, supplyingPlanDirectives } = initialConflictingActivities.reduce(
+    let { receivingPlanDirectives, supplyingPlanDirectives } = $conflictingMergeActivities.reduce(
       (
         previous: {
           receivingPlanDirectives: PlanMergeActivityDirective[];
@@ -133,7 +146,7 @@
       { receivingPlanDirectives: [], supplyingPlanDirectives: [] },
     );
 
-    ({ receivingPlanDirectives, supplyingPlanDirectives } = initialNonConflictingActivities.reduce(
+    ({ receivingPlanDirectives, supplyingPlanDirectives } = nonConflictingActivities.reduce(
       (previous, nonConflictingActivity: PlanMergeNonConflictingActivity) => {
         const { source, target } = nonConflictingActivity;
 
@@ -155,11 +168,11 @@
     receivingPlanActivitiesMap = keyBy(receivingPlanDirectives, 'id');
   }
 
-  $: if (initialNonConflictingActivities) {
+  $: if (nonConflictingActivities) {
     // Updated selectedNonConflictingActivity with the refreshed version if needed
     if (selectedNonConflictingActivity) {
       const { activity_id: activityId } = selectedNonConflictingActivity;
-      const selectedActivity = initialNonConflictingActivities.find(merge => merge.activity_id === activityId);
+      const selectedActivity = nonConflictingActivities.find(merge => merge.activity_id === activityId);
       if (selectedActivity) {
         selectedNonConflictingActivity = selectedActivity;
       }
@@ -169,7 +182,7 @@
     additions = [];
     deletions = [];
     modifications = [];
-    initialNonConflictingActivities
+    nonConflictingActivities
       .slice()
       .sort((a, b) => {
         return (a.source?.name || a.target?.name || '').localeCompare(b.source?.name || b.target?.name || '');
@@ -223,21 +236,17 @@
 
     if (selectedNonConflictingActivity.change_type === 'delete') {
       const target = selectedNonConflictingActivity.target;
-      computedTargetActivity =
-        target !== null ? { ...target, start_time_ms: computeStartTimeMs(target), tags: targetTags } : null;
+      computedTargetActivity = target !== null ? { ...target, tags: targetTags } : null;
       computedSourceActivity = null;
     } else if (selectedNonConflictingActivity.change_type === 'add') {
       const source = selectedNonConflictingActivity.source;
-      computedSourceActivity =
-        source !== null ? { ...source, start_time_ms: computeStartTimeMs(source), tags: sourceTags } : null;
+      computedSourceActivity = source !== null ? { ...source, tags: sourceTags } : null;
       computedTargetActivity = null;
     } else {
       const target = selectedNonConflictingActivity.target;
       const source = selectedNonConflictingActivity.source;
-      computedTargetActivity =
-        target !== null ? { ...target, start_time_ms: computeStartTimeMs(target), tags: targetTags } : null;
-      computedSourceActivity =
-        source !== null ? { ...source, start_time_ms: computeStartTimeMs(source), tags: sourceTags } : null;
+      computedTargetActivity = target !== null ? { ...target, tags: targetTags } : null;
+      computedSourceActivity = source !== null ? { ...source, tags: sourceTags } : null;
     }
 
     // Reset comparison scroll positions
@@ -247,11 +256,10 @@
   $: if (selectedConflictingActivity) {
     selectedActivityId = selectedConflictingActivity.activity_id;
     selectedMergeType = 'conflict';
-    // Derive source and target activities
+    // Derive source and target activities (start_time_ms already computed)
     if (selectedConflictingActivity.source) {
       computedSourceActivity = {
         ...selectedConflictingActivity.source,
-        start_time_ms: computeStartTimeMs(selectedConflictingActivity.source),
         tags: selectedConflictingActivity.source_tags.map(tag => ({ tag })),
       };
     } else {
@@ -260,7 +268,6 @@
     if (selectedConflictingActivity.target) {
       computedTargetActivity = {
         ...selectedConflictingActivity.target,
-        start_time_ms: computeStartTimeMs(selectedConflictingActivity.target),
         tags: selectedConflictingActivity.target_tags.map(tag => ({ tag })),
       };
     } else {

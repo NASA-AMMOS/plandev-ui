@@ -1519,6 +1519,7 @@ const gql = {
             collaborator
           }
           is_locked
+          start_time
         }
         revision
         scheduling_specification {
@@ -2942,6 +2943,7 @@ const gql = {
           collaborators {
             collaborator
           }
+          start_time
         }
         plan_snapshot_supplying_changes {
           plan {
@@ -2957,6 +2959,7 @@ const gql = {
             collaborators {
               collaborator
             }
+            start_time
           }
           snapshot_id
         }
@@ -2984,6 +2987,7 @@ const gql = {
           collaborators {
             collaborator
           }
+          start_time
         }
         plan_snapshot_supplying_changes {
           plan {
@@ -2999,6 +3003,7 @@ const gql = {
             collaborators {
               collaborator
             }
+            start_time
           }
           snapshot_id
         }
@@ -3025,6 +3030,7 @@ const gql = {
           collaborators {
             collaborator
           }
+          start_time
         }
         plan_snapshot_supplying_changes {
           plan {
@@ -3040,6 +3046,7 @@ const gql = {
             collaborators {
               collaborator
             }
+            start_time
           }
           snapshot_id
         }
