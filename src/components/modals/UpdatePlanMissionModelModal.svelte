@@ -11,7 +11,7 @@
   import { gqlSubscribable } from '../../stores/subscribable';
   import type { ActivityDirective } from '../../types/activity';
   import type { User } from '../../types/app';
-  import type { DataGridRowSelection, RowId } from '../../types/data-grid';
+  import type { DataGridRowDoubleClick, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { Model, ModelSlim } from '../../types/model';
   import type { ModelCompatabilityForPlan, PlanMergeRequestSchema, PlanSlim } from '../../types/plan';
   import effects from '../../utilities/effects';
@@ -74,6 +74,7 @@
     confirm: ModelSlim;
   }>();
 
+  let changeMissionModelDisabled: boolean = false;
   let modifiedDirectivesTypes: Record<string, ActivityDirective[]> = {};
   let modifiedDirectivesCount: number = 0;
   let filterExpression: string = '';
@@ -96,6 +97,15 @@
   $: previewMissionModelMigration(selectedMissionModel);
   $: otherModels = $models.filter(m => m.id !== plan.model_id);
 
+  $: changeMissionModelDisabled = computeChangeButtonDisabled(selectedMissionModel, $planMergeRequestsIncoming);
+
+  function computeChangeButtonDisabled(
+    selectedModel: ModelSlim | null,
+    mergeRequestsIncoming: PlanMergeRequestSchema[] | null,
+  ) {
+    return !selectedModel || !mergeRequestsIncoming || mergeRequestsIncoming.length > 0;
+  }
+
   function onFiltering(event: Event) {
     const { value } = getTarget(event);
     filterExpression = value as string;
@@ -107,6 +117,17 @@
     } = event;
     if (isSelected) {
       selectedMissionModel = model;
+    }
+  }
+
+  function onDblClickMissionModel(event: CustomEvent<DataGridRowDoubleClick<ModelSlim>>) {
+    const {
+      detail: { data: model },
+    } = event;
+    selectedMissionModel = model;
+    const disabled = computeChangeButtonDisabled(model, $planMergeRequestsIncoming);
+    if (!disabled) {
+      confirm();
     }
   }
 
@@ -183,6 +204,7 @@
           rowData={otherModels}
           rowSelection="single"
           on:rowSelected={onClickMissionModel}
+          on:rowDoubleClicked={onDblClickMissionModel}
           {isRowSelectable}
           {filterExpression}
         />
@@ -315,12 +337,6 @@
   <ModalFooter>
     <div class="text-muted">Snapshot will be automatically created</div>
     <button class="st-button secondary" on:click={close}>Cancel</button>
-    <button
-      class="st-button"
-      on:click={confirm}
-      disabled={!selectedMissionModel || !$planMergeRequestsIncoming || $planMergeRequestsIncoming.length > 0}
-    >
-      Change Mission Model
-    </button>
+    <button class="st-button" on:click={confirm} disabled={changeMissionModelDisabled}> Change Mission Model </button>
   </ModalFooter>
 </Modal>
