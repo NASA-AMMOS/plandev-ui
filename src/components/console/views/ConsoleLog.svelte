@@ -148,21 +148,22 @@
         {#if log.message}
           {@const activityIds = getActivityIdsFromError(log)}
           <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
-            {#if log.type === ErrorTypes.WORKSPACE_LINT_ERROR && log.data?.line}
-              {@const locationMatch = log.message.match(/^(.+?:\d+:\d+)(\s*-\s*)(.*)$/)}
-              {#if locationMatch}
-                <button
-                  class="cursor-pointer text-left text-amber-700 underline decoration-amber-400/50 underline-offset-2 hover:text-amber-900 hover:decoration-amber-600"
-                  on:click={e => {
-                    e.stopPropagation();
-                    handleGotoLine(log.data?.line, log.data?.column ?? 0);
-                  }}
-                >
-                  {locationMatch[1]}
-                </button><span class="text-muted-foreground">{locationMatch[2]}</span>{locationMatch[3]}
-              {:else}
-                {log.message}
-              {/if}
+            {#if log.type === ErrorTypes.WORKSPACE_LINT_ERROR && typeof log.data?.line === 'number' && log.data?.filePath}
+              {@const location = `${log.data.filePath}:${log.data.line}:${log.data.column ?? 0}`}
+              {@const messagePrefix = `${location} - `}
+              {@const messageBody = log.message.startsWith(messagePrefix)
+                ? log.message.slice(messagePrefix.length)
+                : log.message}
+              <button
+                class="mr-1 cursor-pointer text-left text-amber-700 underline decoration-amber-400/50 underline-offset-2 hover:text-amber-900 hover:decoration-amber-600"
+                on:click={e => {
+                  e.stopPropagation();
+                  handleGotoLine(log.data?.line, log.data?.column ?? 0);
+                }}
+              >
+                {location}
+              </button>
+              {messageBody}
             {:else if log.type === ErrorTypes.WORKSPACE_ACTION_RUN && log.data?.actionRunId && log.data?.actionName}
               <button
                 class="inline-flex cursor-pointer items-center gap-0.5 text-violet-700 underline decoration-violet-400/50 underline-offset-2 hover:text-violet-900 hover:decoration-violet-600"
@@ -173,19 +174,27 @@
               >
                 {log.data.actionName}•
                 <span class="">Run #{log.data.actionRunId}</span>
-              </button>{#if log.data.status === 'failed'}<span class="ml-0.5">failed</span>{:else}<span
-                  class="text-muted-foreground">: {log.data.status}</span
-                >{/if}
+              </button>
+              {#if log.data.status === 'failed'}
+                <span class="ml-0.5"> failed</span>
+              {:else}
+                <span class="ml-0.5 text-muted-foreground"> {log.data.status}</span>
+              {/if}
             {:else if activityIds.length === 1 && log.message}
               {@const activityId = activityIds[0]}
               {@const activityMatch = log.message.match(/^(.*?)(Activity Directive \d+)(.*)$/)}
               {#if activityMatch}
-                {activityMatch[1]}<button
+                {activityMatch[1]}
+                <button
                   class="cursor-pointer text-blue-700 underline decoration-blue-400/50 underline-offset-2 hover:text-blue-900 hover:decoration-blue-600"
                   on:click={e => {
                     e.stopPropagation();
                     handleActivityClick(activityId);
-                  }}>{activityMatch[2]}</button>{activityMatch[3]}
+                  }}
+                >
+                  {activityMatch[2]}
+                </button>
+                {activityMatch[3]}
               {:else}
                 {log.message}
                 <button

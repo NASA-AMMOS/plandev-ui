@@ -164,3 +164,11 @@ export interface LintError extends BaseError {
   level: LogLevel;
   type: ErrorTypes.WORKSPACE_LINT_ERROR;
 }
+
+export interface AdaptationLog extends BaseError {
+  data: {
+    args: any[];
+  };
+  level: LogLevel;
+  type: ErrorTypes.WORKSPACE_ADAPTATION_LOG;
+}

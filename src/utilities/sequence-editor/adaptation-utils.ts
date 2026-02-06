@@ -8,9 +8,13 @@ import type { User } from '../../types/app';
 import type { SequenceAdaptationMetadata } from '../../types/sequencing';
 import effects from '../effects';
 
+export type AdaptationLog = { args: any[]; level: string };
+export type AdaptationLogHandler = (log: AdaptationLog) => void;
+
 export async function loadSequenceAdaptation(
   id: number,
   user: User | null,
+  onLog?: AdaptationLogHandler,
 ): Promise<{ adaptation: PhoenixAdaptation; metadata: SequenceAdaptationMetadata }> {
   const adaptationRow = await effects.getSequenceAdaptation(id, user);
   if (!adaptationRow) {
@@ -22,8 +26,38 @@ export async function loadSequenceAdaptation(
   }
 
   const adaptationCode: string = adaptationRow.adaptation;
-  // create a function wrapping the adaptation which takes `require` and `exports` args
-  const runAdaptation = new Function('require', 'exports', adaptationCode);
+  // create a function wrapping the adaptation which takes `require`, `exports`, and `console` args
+  // passing `console` allows us to capture logs from the adaptation code
+  const runAdaptation = new Function('require', 'exports', 'console', adaptationCode);
+
+  // Create a custom console that extends the original but also forwards logs to the onLog callback
+  const customConsole = {
+    ...console,
+    debug: (...args: any[]) => {
+      console.debug(...args);
+      onLog?.({ args, level: 'error' });
+    },
+    error: (...args: any[]) => {
+      console.error(...args);
+      onLog?.({ args, level: 'error' });
+    },
+    info: (...args: any[]) => {
+      console.info(...args);
+      onLog?.({ args, level: 'info' });
+    },
+    log: (...args: any[]) => {
+      console.log(...args);
+      onLog?.({ args, level: 'info' });
+    },
+    trace: (...args: any[]) => {
+      console.error(...args);
+      onLog?.({ args, level: 'error' });
+    },
+    warn: (...args: any[]) => {
+      console.warn(...args);
+      onLog?.({ args, level: 'warn' });
+    },
+  };
   // the adaptation code is expected to be a commonjs module which calls `require(...)`
   // to load its Codemirror dependencies. It *must* use the same Codemirror instance/globals as the
   // outer page context, rather than bundling its own, due to the way CM uses shared internal state fields.
@@ -39,7 +73,7 @@ export async function loadSequenceAdaptation(
   // adaptation code will set `exports.adaptation = adaptation;`
   const moduleExports = {} as any; // todo better typing
   // run the adaptation code & get the exported result - moduleExports gets mutated by the function
-  runAdaptation(moduleRequire, moduleExports);
+  runAdaptation(moduleRequire, moduleExports, customConsole);
   const adaptation: PhoenixAdaptation | null | undefined = moduleExports.adaptation;
 
   if (!adaptation || typeof adaptation !== 'object') {

@@ -53,14 +53,17 @@
   import { initialUsersLoading, users } from '../../../stores/user';
   import {
     addWorkspaceAdaptationError,
+    addWorkspaceAdaptationLog,
     allWorkspaceProblems,
-    clearWorkspaceAdaptationErrors,
+    clearWorkspaceAdaptationMessages,
     clearWorkspaceLintErrors,
     resetWorkspaceErrorStores,
     setWorkspaceLintErrors,
+    userInitiatedActionRunIds,
     workspaceActionErrors,
-    workspaceActionRuns,
+    workspaceActionRunsForSession,
     workspaceAdaptationErrors,
+    workspaceAdaptationMessages,
     workspaceLintErrors,
     workspaceLogs,
   } from '../../../stores/workspaceErrors';
@@ -433,7 +436,10 @@
 
     try {
       const startTime = performance.now();
-      const { adaptation, metadata } = await adaptationUtils.loadSequenceAdaptation(id, $user);
+      const { adaptation, metadata } = await adaptationUtils.loadSequenceAdaptation(id, $user, log => {
+        // Forward adaptation console output to the workspace log
+        addWorkspaceAdaptationLog(log.level as LogLevel, log.args);
+      });
       setSequenceLanguages(adaptation);
       logMessage(`Loaded adaptation "${metadata.name}" (ID=${id}).`, '', performance.now() - startTime);
     } catch (e) {
@@ -786,6 +792,7 @@
     if ($workspace) {
       const actionRunId = await effects.runAction(action, $workspace, workspaceFileList, $user, parameters);
       if (actionRunId !== null) {
+        userInitiatedActionRunIds.update(ids => new Set(ids).add(actionRunId));
         const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
         if (goToRun === true) {
           openActionRun($workspaceId, actionRunId, true);
@@ -819,6 +826,7 @@
     if ($workspace) {
       const actionRunId = await effects.runAction(action, $workspace, workspaceFileList, $user, parameters);
       if (actionRunId !== null) {
+        userInitiatedActionRunIds.update(ids => new Set(ids).add(actionRunId));
         const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
         if (goToRun === true) {
           openActionRun($workspaceId, actionRunId, true);
@@ -890,7 +898,7 @@
     if (selectedConsoleTab === 'logs') {
       clearLogs();
     } else if (selectedConsoleTab === 'adaptation') {
-      clearWorkspaceAdaptationErrors();
+      clearWorkspaceAdaptationMessages();
     }
   }
 
@@ -946,7 +954,11 @@
 
 <Resizable.PaneGroup direction="vertical" autoSaveId="workspace-console">
   <Resizable.Pane defaultSize={84}>
-    <CssGrid bind:columns={$workspaceColumns} columnMinSizes={{ 0: SIDEBAR_MIN_WIDTH, 2: CONTENT_MIN_WIDTH }} class="h-full">
+    <CssGrid
+      bind:columns={$workspaceColumns}
+      columnMinSizes={{ 0: SIDEBAR_MIN_WIDTH, 2: CONTENT_MIN_WIDTH }}
+      class="h-full"
+    >
       <Sidebar.Provider bind:open={sidebarPanelOpen} style="--sidebar-width: auto" className="min-h-0">
         <WorkspaceSidebar
           bind:selectedFilePath
@@ -1103,7 +1115,7 @@
         on:selectTab={onSelectConsoleTab}
       >
         <svelte:fragment slot="console-actions">
-          {#if isConsoleExpanded && selectedConsoleTab === 'logs'}
+          {#if isConsoleExpanded}
             <Select.Root
               multiple
               typeahead={false}
@@ -1156,16 +1168,17 @@
 
         <ConsoleLogs
           value="all"
+          showType
           showTimestamp={false}
-          showLevel={false}
           logs={$allWorkspaceProblems}
+          {logLevels}
           on:gotoLine={onGotoLine}
         />
         <ConsoleLogs
           value="actions"
           showTimestamp
           showType={false}
-          logs={$workspaceActionRuns.map(run => {
+          logs={$workspaceActionRunsForSession.map(run => {
             const actionDef = allActionsForWorkspace.find(a => a.id === run.action_definition_id);
             const actionName = actionDef?.name ?? `Action #${run.action_definition_id}`;
             return {
@@ -1182,8 +1195,10 @@
         />
         <ConsoleLogs
           value="adaptation"
-          showTimestamp={false}
-          logs={$workspaceAdaptationErrors}
+          showTimestamp
+          showType={false}
+          logs={$workspaceAdaptationMessages}
+          {logLevels}
           emptyStateMessage="No adaptation errors"
         />
         <ConsoleLogs
@@ -1191,6 +1206,7 @@
           showTimestamp={false}
           showType={false}
           logs={$workspaceLintErrors}
+          {logLevels}
           emptyStateMessage="No linting errors"
           on:gotoLine={onGotoLine}
         />
