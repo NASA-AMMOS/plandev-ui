@@ -79,7 +79,6 @@
   } from '../../../stores/expansion';
   import { extensions } from '../../../stores/extensions';
   import { externalEventTypes } from '../../../stores/external-event';
-  import { resetExternalSourceStores } from '../../../stores/external-source';
   import {
     initialPlan,
     maxTimeRange,
@@ -515,7 +514,6 @@
 
   onDestroy(() => {
     resetActivityStores();
-    resetExternalSourceStores();
     resetPlanConstraintStores();
     resetConstraintStores();
     resetPlanSchedulingStores();

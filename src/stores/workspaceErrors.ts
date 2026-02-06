@@ -1,6 +1,7 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import type { LogLevel } from 'vite';
 import type { ActionRunSlim } from '../types/actions';
-import type { BaseError, LintDiagnostic, LintError, LogMessage } from '../types/errors';
+import type { AdaptationLog, BaseError, LintDiagnostic, LintError, LogMessage } from '../types/errors';
 import { ErrorTypes } from '../utilities/errors';
 import { actionDefinitionsByWorkspace, actionRunsByWorkspace } from './actions';
 import { allLogs } from './errors';
@@ -8,11 +9,19 @@ import { workspaceId } from './workspaces';
 
 /* Writable Stores */
 
-// Adaptation errors (sequence adaptation loading failures)
-export const workspaceAdaptationErrors: Writable<BaseError[]> = writable([]);
+// Adaptation messages (errors from loading failures + console logs from adaptation code)
+export type AdaptationMessage = AdaptationLog | BaseError;
+export const workspaceAdaptationMessages: Writable<AdaptationMessage[]> = writable([]);
+
+export const workspaceAdaptationErrors: Readable<AdaptationMessage[]> = derived(
+  [workspaceAdaptationMessages],
+  ([$workspaceAdaptationMessages]) => $workspaceAdaptationMessages.filter(isWorkspaceAdaptationError),
+);
 
 // Linting errors (individual CodeMirror diagnostics, grouped by file)
 export const workspaceLintErrors: Writable<LintError[]> = writable([]);
+
+export const userInitiatedActionRunIds: Writable<Set<number>> = writable(new Set());
 
 /* Derived Stores */
 
@@ -20,14 +29,17 @@ export const workspaceLintErrors: Writable<LintError[]> = writable([]);
 export const workspaceLogs: Readable<LogMessage[]> = derived([allLogs], ([$allLogs]) => $allLogs);
 
 // Action runs for current workspace
-export const workspaceActionRuns: Readable<ActionRunSlim[]> = derived(
-  [actionRunsByWorkspace, workspaceId],
-  ([$actionRunsByWorkspace, $workspaceId]) => $actionRunsByWorkspace[$workspaceId] ?? [],
+export const workspaceActionRunsForSession: Readable<ActionRunSlim[]> = derived(
+  [actionRunsByWorkspace, workspaceId, userInitiatedActionRunIds],
+  ([$actionRunsByWorkspace, $workspaceId, $userInitiatedActionRunIds]) => {
+    const runs = $actionRunsByWorkspace[$workspaceId] ?? [];
+    return runs.filter(run => $userInitiatedActionRunIds.has(run.id));
+  },
 );
 
 // Failed/errored action runs only (for error counts)
 export const workspaceActionErrors: Readable<BaseError[]> = derived(
-  [workspaceActionRuns, actionDefinitionsByWorkspace, workspaceId],
+  [workspaceActionRunsForSession, actionDefinitionsByWorkspace, workspaceId],
   ([$workspaceActionRuns, $actionDefinitionsByWorkspace, $workspaceId]) => {
     const actionDefs = $actionDefinitionsByWorkspace[$workspaceId] ?? {};
     return $workspaceActionRuns
@@ -49,17 +61,38 @@ export const workspaceActionErrors: Readable<BaseError[]> = derived(
 
 // Aggregate all workspace problems for "All Problems" tab
 export const allWorkspaceProblems: Readable<BaseError[]> = derived(
-  [workspaceAdaptationErrors, workspaceLintErrors, workspaceActionErrors],
-  ([$adaptationErrors, $lintErrors, $actionErrors]) =>
-    [...$adaptationErrors, ...$lintErrors, ...$actionErrors].sort(
+  [workspaceAdaptationMessages, workspaceLintErrors, workspaceActionErrors],
+  ([$adaptationMessages, $lintErrors, $actionErrors]) =>
+    [...$adaptationMessages.filter(isWorkspaceAdaptationError), ...$lintErrors, ...$actionErrors].sort(
       (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     ),
 );
 
 /* Helper Functions */
 
+function isWorkspaceAdaptationError(message: AdaptationLog | BaseError) {
+  return (
+    message.type === ErrorTypes.WORKSPACE_ADAPTATION_ERROR ||
+    (message as AdaptationLog).level === 'error' ||
+    (message as AdaptationLog).level === 'warn'
+  );
+}
+
 export function addWorkspaceAdaptationError(error: BaseError): void {
-  workspaceAdaptationErrors.update(errors => [...errors, error]);
+  workspaceAdaptationMessages.update(messages => [...messages, error]);
+}
+
+export function addWorkspaceAdaptationLog(level: LogLevel, args: any[]): void {
+  workspaceAdaptationMessages.update(messages => [
+    ...messages,
+    {
+      data: args,
+      level,
+      message: args.map(arg => String(arg)).join(' '),
+      timestamp: new Date().toISOString(),
+      type: ErrorTypes.WORKSPACE_ADAPTATION_LOG,
+    },
+  ]);
 }
 
 export function setWorkspaceLintErrors(filePath: string, diagnostics: LintDiagnostic[]): void {
@@ -90,11 +123,12 @@ export function clearWorkspaceLintErrors(filePath?: string): void {
   }
 }
 
-export function clearWorkspaceAdaptationErrors(): void {
-  workspaceAdaptationErrors.set([]);
+export function clearWorkspaceAdaptationMessages(): void {
+  workspaceAdaptationMessages.set([]);
 }
 
 export function resetWorkspaceErrorStores(): void {
-  clearWorkspaceAdaptationErrors();
+  clearWorkspaceAdaptationMessages();
   clearWorkspaceLintErrors();
+  userInitiatedActionRunIds.set(new Set());
 }
