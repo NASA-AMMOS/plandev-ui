@@ -1909,4 +1909,3 @@ export {
   isUserViewer,
   queryPermissions,
 };
-
