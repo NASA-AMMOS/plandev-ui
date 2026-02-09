@@ -7,11 +7,16 @@
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { mergeWith } from 'lodash-es';
   import { onMount } from 'svelte';
+  import CommandPalette from '../components/app/CommandPalette.svelte';
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
+  import { closeCommandPalette } from '../stores/commandPalette';
   import { clearLogs } from '../stores/errors';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
   import { loadPluginCode } from '../utilities/plugins';
+  import type { LayoutData } from './$types';
+
+  export let data: LayoutData;
 
   let pluginsEnabled = env.PUBLIC_TIME_PLUGIN_ENABLED === 'true';
   $pluginsLoaded = pluginsEnabled ? false : true;
@@ -25,6 +30,7 @@
   beforeNavigate(() => {
     // Clear logs on page change
     clearLogs();
+    closeCommandPalette();
   });
 
   async function loadPlugins() {
@@ -61,6 +67,7 @@
   </div>
 {/if}
 
+<CommandPalette user={data.user} />
 <div id="svelte-modal" />
 
 <!-- Disable theme switching for now to prevent user OS/browser dark mode from changing the app which does not yet fully support dark mode -->

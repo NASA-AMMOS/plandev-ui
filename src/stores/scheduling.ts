@@ -32,7 +32,7 @@ export const schedulingColumns: Writable<string> = writable('1fr 3px 1fr');
 
 /* Derived. */
 
-export const selectedSchedulingSpecId = derived(plan, $plan => $plan?.scheduling_specification?.id ?? null);
+export const selectedSchedulingSpecId = derived(plan, $plan => $plan?.scheduling_specification?.id ?? -1);
 
 /* Subscriptions. */
 
