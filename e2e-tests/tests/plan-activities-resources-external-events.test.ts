@@ -27,11 +27,11 @@ test.describe.serial('Plan Activities, Resources, External Events', () => {
   });
 
   test('Uploading activities', async () => {
-    await plan.uploadActivities('e2e-tests/data/activities.json');
-    await expect(plan.panelActivityDirectivesTable.getByRole('row', { name: 'BananaNap' })).toHaveCount(2);
-    await expect(plan.panelActivityDirectivesTable.getByRole('row', { name: 'ChangeProducer' })).toHaveCount(2);
+    await setup.plan.uploadActivities('e2e-tests/data/activities.json');
+    await expect(setup.plan.panelActivityDirectivesTable.getByRole('row', { name: 'BananaNap' })).toHaveCount(2);
+    await expect(setup.plan.panelActivityDirectivesTable.getByRole('row', { name: 'ChangeProducer' })).toHaveCount(2);
     await expect(
-      plan.panelActivityDirectivesTable.getByRole('row', { name: 'ControllableDurationActivity' }),
+      setup.plan.panelActivityDirectivesTable.getByRole('row', { name: 'ControllableDurationActivity' }),
     ).toHaveCount(2);
   });
 });
