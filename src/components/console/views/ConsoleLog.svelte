@@ -232,7 +232,7 @@
       </div>
     </div>
   </summary>
-  {#if expandable}
+  {#if expandable && open}
     <div class="bg-neutral-200/50 px-4 py-2" style={`padding-left: ${expansionPadding}px`}>
       {#if log.timestamp}
         <div class="mb-3 flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
