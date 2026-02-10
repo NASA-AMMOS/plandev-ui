@@ -54,7 +54,6 @@
   import {
     addWorkspaceAdaptationError,
     addWorkspaceAdaptationLog,
-    allWorkspaceProblems,
     clearWorkspaceAdaptationMessages,
     clearWorkspaceLintErrors,
     resetWorkspaceErrorStores,
@@ -1149,7 +1148,6 @@
 
         <svelte:fragment slot="console-tabs">
           <div class="flex items-center overflow-x-hidden py-0.5">
-            <ConsoleTab value="all" numberOfErrors={$allWorkspaceProblems.length}>All Problems</ConsoleTab>
             <ConsoleTab value="actions" numberOfErrors={$workspaceActionErrors.length}>Actions</ConsoleTab>
             <ConsoleTab value="adaptation" numberOfErrors={$workspaceAdaptationErrors.length}>Adaptation</ConsoleTab>
             <ConsoleTab value="linting" numberOfErrors={$workspaceLintErrors.filter(e => e.level === 'error').length}>
@@ -1172,14 +1170,6 @@
           </div>
         </svelte:fragment>
 
-        <ConsoleLogs
-          value="all"
-          showType
-          showTimestamp={false}
-          logs={$allWorkspaceProblems}
-          {logLevels}
-          on:gotoLine={onGotoLine}
-        />
         <ConsoleLogs
           value="actions"
           showTimestamp
