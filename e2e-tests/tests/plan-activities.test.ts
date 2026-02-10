@@ -81,7 +81,7 @@ test.describe.serial('Plan Activities', () => {
 
     await setFileInputByFilepath(
       setup.page,
-      setup.page.locator('input[type="file"]'),
+      setup.page.locator('.parameter-base-path').locator('input[type="file"]'),
       './e2e-tests/data/valid-view.json',
     );
 

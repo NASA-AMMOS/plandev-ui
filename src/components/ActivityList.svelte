@@ -68,7 +68,7 @@
       <label class="st-typography-body" for="file">Activity File</label>
       <input
         class="w-full text-xs"
-        name="file"
+        name="activity-file"
         type="file"
         accept="application/json,.csv,.txt"
         bind:files={uploadFiles}
