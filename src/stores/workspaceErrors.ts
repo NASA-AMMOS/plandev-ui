@@ -1,7 +1,6 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import type { LogLevel } from 'vite';
 import type { ActionRunSlim } from '../types/actions';
-import type { AdaptationLog, BaseError, LintDiagnostic, LintError, LogMessage } from '../types/errors';
+import type { AdaptationLog, BaseError, LintDiagnostic, LintError, LogLevel, LogMessage } from '../types/errors';
 import { ErrorTypes } from '../utilities/errors';
 import { actionDefinitionsByWorkspace, actionRunsByWorkspace } from './actions';
 import { allLogs } from './errors';
@@ -10,7 +9,8 @@ import { workspaceId } from './workspaces';
 /* Writable Stores */
 
 // Adaptation messages (errors from loading failures + console logs from adaptation code)
-export type AdaptationMessage = AdaptationLog | BaseError;
+export type AdaptationError = BaseError & { level: LogLevel };
+export type AdaptationMessage = AdaptationLog | AdaptationError;
 export const workspaceAdaptationMessages: Writable<AdaptationMessage[]> = writable([]);
 
 export const workspaceAdaptationErrors: Readable<AdaptationMessage[]> = derived(
@@ -79,7 +79,7 @@ function isWorkspaceAdaptationError(message: AdaptationLog | BaseError) {
 }
 
 export function addWorkspaceAdaptationError(error: BaseError): void {
-  workspaceAdaptationMessages.update(messages => [...messages, error]);
+  workspaceAdaptationMessages.update(messages => [...messages, { ...error, level: 'error' as LogLevel }]);
 }
 
 export function addWorkspaceAdaptationLog(level: LogLevel, args: any[]): void {
