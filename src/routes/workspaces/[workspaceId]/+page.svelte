@@ -13,7 +13,7 @@
     PhoenixContext,
     UserSequence,
   } from '@nasa-jpl/aerie-sequence-languages';
-  import { Button, Resizable, Select } from '@nasa-jpl/stellar-svelte';
+  import { Button, Checkbox, Resizable, Select } from '@nasa-jpl/stellar-svelte';
   import { capitalize } from 'lodash-es';
   import { Folder, ListX, LoaderCircle, TriangleAlert } from 'lucide-svelte';
   import type { PaneAPI } from 'paneforge';
@@ -189,6 +189,7 @@
   let isConsoleExpanded: boolean = false;
   let selectedConsoleTab: WorkspaceConsoleTab = 'all';
   let logLevels: LogLevel[] = defaultLogLevels;
+  let preserveAdaptationLog: boolean = false;
 
   $: logLevelLabel =
     logLevels.length === defaultLogLevels.length
@@ -1012,6 +1013,7 @@
                 availableActions={availableActionsForActiveFile}
                 includeActions
                 isLoading={$activeDocumentIsLoading}
+                {preserveAdaptationLog}
                 previewOnly={!hasEditFilePermission}
                 sequenceAdaptation={$sequenceAdaptation}
                 sequenceDefinition={isSequenceFile ? $activeDocument.originalContent : ''}
@@ -1137,6 +1139,12 @@
             <Button variant="ghost" size="icon" on:click={onClearConsole}>
               <ListX size={16} />
             </Button>
+          {/if}
+          {#if isConsoleExpanded && selectedConsoleTab === 'adaptation'}
+            <div class="flex items-center gap-1.5 text-xs">
+              <Checkbox name="preserveAdaptationLog" id="preserveAdaptationLog" bind:checked={preserveAdaptationLog} />
+              <label class="select-none" for="preserveAdaptationLog">Preserve log</label>
+            </div>
           {/if}
         </svelte:fragment>
 
