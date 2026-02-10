@@ -1141,16 +1141,23 @@
               </Select.Content>
             </Select.Root>
           {/if}
+          {#if isConsoleExpanded && selectedConsoleTab === 'adaptation'}
+            <div class="mx-1.5 flex items-center gap-1.5 border-l border-r border-border px-2 text-xs">
+              <Checkbox
+                size="sm"
+                name="preserveAdaptationLog"
+                id="preserveAdaptationLog"
+                bind:checked={preserveAdaptationLog}
+              />
+              <label class="select-none whitespace-nowrap text-muted-foreground" for="preserveAdaptationLog">
+                Preserve logs
+              </label>
+            </div>
+          {/if}
           {#if isConsoleExpanded && (selectedConsoleTab === 'logs' || selectedConsoleTab === 'adaptation')}
             <Button variant="ghost" size="icon" on:click={onClearConsole}>
               <ListX size={16} />
             </Button>
-          {/if}
-          {#if isConsoleExpanded && selectedConsoleTab === 'adaptation'}
-            <div class="flex items-center gap-1.5 text-xs">
-              <Checkbox name="preserveAdaptationLog" id="preserveAdaptationLog" bind:checked={preserveAdaptationLog} />
-              <label class="select-none" for="preserveAdaptationLog">Preserve log</label>
-            </div>
           {/if}
         </svelte:fragment>
 
