@@ -21,6 +21,7 @@
   import type { ActionDefinition } from '../../types/actions';
   import type { LintDiagnostic } from '../../types/errors';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
+  import { clearWorkspaceAdaptationMessages } from '../../stores/workspaceErrors';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
@@ -35,6 +36,7 @@
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
   export let phoenixContext: PhoenixContext;
   export let includeActions: boolean = false;
+  export let preserveAdaptationLog: boolean = false;
   export let isLoading: boolean = false;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
@@ -184,6 +186,10 @@
 
   function updateOutputFormat(sequence: string): void {
     let output: string | undefined;
+
+    if (!preserveAdaptationLog) {
+      clearWorkspaceAdaptationMessages();
+    }
 
     try {
       output =
