@@ -54,21 +54,20 @@
   $: commandName =
     commandNameNode && unquoteUnescape(editorSequenceView.state.sliceDoc(commandNameNode.from, commandNameNode.to));
   $: timeTagNode = commandInfoMapper?.getTimeTagInfo?.(editorSequenceView, commandNode) ?? null;
-  $: argInfoArray = commandInfoMapper?.getArgumentInfo?.(
-    commandDef,
-    editorSequenceView,
-    commandInfoMapper?.getArgumentNodeContainer?.(commandNode),
-    commandDef?.arguments,
-    undefined,
-    phoenixContext,
-  ) ?? [];
-  $: commandDef = commandInfoMapper?.getCommandDef?.(
-    commandDictionary,
-    phoenixContext?.librarySequences,
-    commandName ?? '',
-  ) ?? null;
+  $: argInfoArray =
+    commandInfoMapper?.getArgumentInfo?.(
+      commandDef,
+      editorSequenceView,
+      commandInfoMapper?.getArgumentNodeContainer?.(commandNode),
+      commandDef?.arguments,
+      undefined,
+      phoenixContext,
+    ) ?? [];
+  $: commandDef =
+    commandInfoMapper?.getCommandDef?.(commandDictionary, phoenixContext?.librarySequences, commandName ?? '') ?? null;
 
-  $: variablesInScope = commandInfoMapper?.getVariablesInScope?.(editorSequenceView, currentTree, commandNode?.from) ?? [];
+  $: variablesInScope =
+    commandInfoMapper?.getVariablesInScope?.(editorSequenceView, currentTree, commandNode?.from) ?? [];
 
   function formatTypeName(s: string) {
     // add spaces to CamelCase names, 'GroundEvent' -> 'Ground Event'
