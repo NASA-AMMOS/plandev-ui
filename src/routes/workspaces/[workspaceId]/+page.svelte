@@ -653,9 +653,9 @@
     }
   }
 
-  function onWorkspaceFileUpdated({
-    detail: { filePath, input, output },
-  }: CustomEvent<{ filePath: string; input: string; output?: string }>) {
+  function onWorkspaceInputFileUpdated({
+    detail: { filePath, input },
+  }: CustomEvent<{ filePath: string; input: string }>) {
     // Ignore stale events from a file that is no longer active
     // Note: editors receive ($activeDocumentPath ?? '') so we normalize the comparison
     if (filePath !== ($activeDocumentPath ?? '')) {
@@ -663,6 +663,17 @@
     }
 
     activeDocument.updateContent(input);
+  }
+
+  function onWorkspaceOutputFileUpdated({
+    detail: { filePath, output },
+  }: CustomEvent<{ filePath: string; output?: string }>) {
+    // Ignore stale events from a file that is no longer active
+    // Note: editors receive ($activeDocumentPath ?? '') so we normalize the comparison
+    if (filePath !== ($activeDocumentPath ?? '')) {
+      return;
+    }
+
     if (output) {
       selectedSequenceOutput = output;
     }
@@ -886,16 +897,17 @@
     <CssGridGutter track={1} type="column" />
   {/if}
   <Sidebar.Inset className="min-h-0">
+    {@const isTextOrEmpty = $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
+    {@const isSequenceFile =
+      $activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence}
     <div class="relative grid h-full grid-cols-1 grid-rows-1">
-      {#if $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
-        {@const isSequenceFile =
-          $activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence}
-        {#if showLoadingSpinner}
-          <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50">
-            <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
-          </div>
-        {/if}
-        <div class="flex h-full" class:hidden={!isSequenceFile}>
+      {#if showLoadingSpinner && isTextOrEmpty}
+        <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50">
+          <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
+        </div>
+      {/if}
+      {#if isTextOrEmpty && isSequenceFile}
+        <div class="flex h-full">
           <SequenceEditor
             {phoenixContext}
             availableActions={availableActionsForActiveFile}
@@ -903,7 +915,7 @@
             isLoading={$activeDocumentIsLoading}
             previewOnly={!hasEditFilePermission}
             sequenceAdaptation={$sequenceAdaptation}
-            sequenceDefinition={isSequenceFile ? $activeDocument.originalContent : ''}
+            sequenceDefinition={$activeDocument.originalContent}
             sequenceName={$activeDocument.fileName ?? undefined}
             sequenceFilePath={$activeDocumentPath ?? ''}
             sequenceOutput={selectedSequenceOutput}
@@ -915,10 +927,12 @@
             on:save={onSaveWorkspaceFile}
             on:downloadInput={onDownloadInput}
             on:downloadOutput={onDownloadOutput}
-            on:sequence={isSequenceFile ? onWorkspaceFileUpdated : undefined}
+            on:sequenceInputUpdate={onWorkspaceInputFileUpdated}
+            on:sequenceOutputUpdate={onWorkspaceOutputFileUpdated}
           />
         </div>
-        <div class="flex h-full" class:hidden={isSequenceFile}>
+      {:else if isTextOrEmpty}
+        <div class="flex h-full">
           <TextEditor
             availableActions={availableActionsForActiveFile}
             includeActions={true}
@@ -928,14 +942,14 @@
             shouldListenForKeyboardSave={false}
             textFileName={$activeDocument.fileName ?? undefined}
             textFilePath={$activeDocumentPath ?? ''}
-            textFileContent={!isSequenceFile ? $activeDocument.originalContent : ''}
+            textFileContent={$activeDocument.originalContent}
             on:runAction={onRunActionOnActiveFile}
             on:save={onSaveWorkspaceFile}
             on:download={onDownloadInput}
-            on:textContentUpdated={!isSequenceFile ? onWorkspaceFileUpdated : undefined}
+            on:textContentUpdated={onWorkspaceInputFileUpdated}
           />
         </div>
-      {:else if $activeDocument.type === WorkspaceContentType.Directory}
+      {:else if $activeDocument.type === WorkspaceContentType.Directory && $activeDocumentPath}
         {@const folderNode = workspaceTreeMap[$activeDocumentPath]}
         {@const folderFiles =
           (folderNode?.contents || []).filter(node => node.type !== WorkspaceContentType.Directory) ?? []}
@@ -959,7 +973,7 @@
             {/if}
           </p>
         </div>
-      {:else}
+      {:else if !isTextOrEmpty}
         <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
           <TriangleAlert size={70} class="text-muted-foreground" />
           <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">

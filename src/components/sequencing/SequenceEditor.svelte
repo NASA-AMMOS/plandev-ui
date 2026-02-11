@@ -17,7 +17,7 @@
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { FileBracesCorner, PanelBottomClose, PanelBottomOpen } from 'lucide-svelte';
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -52,7 +52,8 @@
     downloadOutput: { content: string; filePath: string; filename: string; outputLanguage: OutputLanguage };
     runAction: { action: ActionDefinition; parameter: string };
     save: string;
-    sequence: { filePath: string; input: string; output?: string };
+    sequenceInputUpdate: { filePath: string; input: string };
+    sequenceOutputUpdate: { filePath: string; output?: string };
   }>();
 
   let compartmentAdaptation: Compartment;
@@ -76,8 +77,8 @@
   let outputEditorExtension: Extension = [];
   let previousSequenceFilePath: string = sequenceFilePath;
 
-  // Create debounced listener at component level so we can cancel it when file changes
-  const debouncedSequenceUpdateListener = debounce(sequenceUpdateListener, 250);
+  // Debounce only the expensive output format computation, not the state sync
+  const debouncedOutputUpdate = debounce(updateOutputFormat, 250);
 
   $: commandInfoMapper = sequenceAdaptation.input.commandInfoMapper;
 
@@ -164,13 +165,21 @@
   // Cancel pending debounced events when file path changes to prevent stale events
   // from being dispatched with the wrong file path
   $: if (sequenceFilePath !== previousSequenceFilePath) {
-    debouncedSequenceUpdateListener.cancel();
+    debouncedOutputUpdate.cancel();
     previousSequenceFilePath = sequenceFilePath;
   }
 
-  async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
+  function sequenceUpdateListener(viewUpdate: ViewUpdate): void {
     const sequence = viewUpdate.state.doc.toString();
     disableCopyAndExport = sequence === '';
+    updatedSequenceDefinition = sequence;
+
+    dispatch('sequenceInputUpdate', { filePath: sequenceFilePath, input: sequence });
+
+    debouncedOutputUpdate(sequence);
+  }
+
+  function updateOutputFormat(sequence: string): void {
     let output =
       sequenceName === undefined
         ? undefined
@@ -178,9 +187,8 @@
 
     editorOutputView.dispatch({ changes: { from: 0, insert: output ?? '', to: editorOutputView.state.doc.length } });
 
-    updatedSequenceDefinition = sequence;
     if (output !== undefined) {
-      dispatch('sequence', { filePath: sequenceFilePath, input: sequence, output });
+      dispatch('sequenceOutputUpdate', { filePath: sequenceFilePath, output });
     }
   }
 
@@ -253,8 +261,10 @@
   }
 
   function onSave(): boolean {
-    if (isSequenceDefinitionUpdated) {
-      dispatch('save', updatedSequenceDefinition);
+    const currentSequence = editorSequenceView.state.doc.toString();
+    if (currentSequence !== sequenceDefinition) {
+      updatedSequenceDefinition = currentSequence;
+      dispatch('save', currentSequence);
     }
     return true;
   }
@@ -272,7 +282,11 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
-        EditorView.updateListener.of(debouncedSequenceUpdateListener),
+        EditorView.updateListener.of(viewUpdate => {
+          if (viewUpdate.docChanged) {
+            sequenceUpdateListener(viewUpdate);
+          }
+        }),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
         compartmentAdaptation.of(inputEditorExtension),
@@ -294,6 +308,12 @@
       ],
       parent: editorOutputDiv,
     });
+  });
+
+  onDestroy(() => {
+    editorSequenceView?.destroy();
+    editorOutputView?.destroy();
+    debouncedOutputUpdate.cancel();
   });
 </script>
 
