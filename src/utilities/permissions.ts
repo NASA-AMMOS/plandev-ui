@@ -1477,10 +1477,8 @@ interface ModelSpecificationCRUDPermission {
   canUpdate: (user: User | null) => boolean;
 }
 
-interface PlanActivityPresetsCRUDPermission extends Omit<
-  PlanAssetCRUDPermission<ActivityPreset>,
-  'canDelete' | 'canUpdate'
-> {
+interface PlanActivityPresetsCRUDPermission
+  extends Omit<PlanAssetCRUDPermission<ActivityPreset>, 'canDelete' | 'canUpdate'> {
   canAssign: RolePlanPermissionCheckWithAsset<ActivityPreset>;
   canDelete: (user: User | null, plan: PlanWithOwners, asset: ActivityPreset) => boolean;
   canUnassign: (user: User | null, plan: PlanWithOwners) => boolean;

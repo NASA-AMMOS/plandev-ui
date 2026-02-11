@@ -39,6 +39,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
 1. In GitHub, send a pull request to `aerie-ui:develop`.
 
 - If we suggest changes, then:
+
   - Make the required updates.
   - Follow our [Coding Rules](#rules).
   - [Rebase your branch][rebase] and force push to your branch to GitHub (this will update your Pull Request):
@@ -49,6 +50,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
     ```
 
 - If your PR branch gets out of date, please rebase off of the latest on the `develop` branch using one of two following ways:
+
   - Via git commands (this is no different from the above step), [rebase your branch][rebase] and force push to your branch to GitHub:
 
     ```shell

@@ -74,6 +74,7 @@ Before you can run aerie-ui you must install and configure the following product
   Next build Aerie, and start the services via Docker:
 
   Via VSCode tasks: (refer to to the [development section](#development))
+
   - Run the `Build Aerie` task to build Aerie
   - Run the `Aerie Containers` task, to bring up all the containers
 
