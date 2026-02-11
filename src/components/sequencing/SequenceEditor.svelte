@@ -97,9 +97,14 @@
     // trigger reactivity if sequenceFilePath is a string and not if it is null / undefined.
     // In this case, we want to trigger reactivity on all possible values.
     void sequenceFilePath;
-    editorSequenceView?.dispatch({
-      changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
-    });
+    // Skip the dispatch if the editor already has the correct content (e.g., after save),
+    // to avoid resetting the cursor position. Still dispatch on file path changes since
+    // both files could have identical content.
+    if (editorSequenceView?.state.doc.toString() !== sequenceDefinition) {
+      editorSequenceView?.dispatch({
+        changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
+      });
+    }
   }
 
   $: commandFormBuilderGrid = showCommandFormBuilder
