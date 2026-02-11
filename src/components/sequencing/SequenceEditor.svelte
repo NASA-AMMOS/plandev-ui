@@ -90,6 +90,10 @@
     outputEditorExtension = selectedOutputFormat.getEditorExtension(phoenixContext, phoenixResources);
   }
 
+  $: commandFormBuilderGrid = showCommandFormBuilder
+    ? userSequenceEditorColumnsWithFormBuilder
+    : userSequenceEditorColumns;
+
   // insert sequence - use sequenceFilePath as dependency to ensure editor updates when switching files
   // This handles the case where both old and new files have the same content (e.g., both empty)
   $: {
@@ -98,22 +102,21 @@
     // trigger reactivity if sequenceFilePath is a string and not if it is null / undefined.
     // In this case, we want to trigger reactivity on all possible values.
     void sequenceFilePath;
-    editorSequenceView?.dispatch({
-      changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
-    });
+    // Skip the dispatch if the editor already has the correct content (e.g., after save),
+    // to avoid resetting the cursor position. Still dispatch on file path changes since
+    // both files could have identical content.
+    if (editorSequenceView?.state.doc.toString() !== sequenceDefinition) {
+      editorSequenceView?.dispatch({
+        changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
+      });
+    }
   }
-
-  $: commandFormBuilderGrid = showCommandFormBuilder
-    ? userSequenceEditorColumnsWithFormBuilder
-    : userSequenceEditorColumns;
 
   $: {
     // Configure sequence editor.
-    if (editorSequenceView) {
-      editorSequenceView.dispatch({
-        effects: [compartmentAdaptation.reconfigure(inputEditorExtension)],
-      });
-    }
+    editorSequenceView?.dispatch({
+      effects: [compartmentAdaptation.reconfigure(inputEditorExtension)],
+    });
   }
 
   $: editorSequenceView?.dispatch({
