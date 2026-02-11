@@ -36,13 +36,11 @@ export const channelDictionaries = gqlSubscribable<ChannelDictionaryMetadata[] |
   gql.SUB_CHANNEL_DICTIONARIES,
   {},
   null,
-  null,
 );
 
 export const commandDictionaries = gqlSubscribable<CommandDictionaryMetadata[] | null>(
   gql.SUB_COMMAND_DICTIONARIES,
   {},
-  null,
   null,
 );
 
@@ -50,17 +48,15 @@ export const parameterDictionaries = gqlSubscribable<ParameterDictionaryMetadata
   gql.SUB_PARAMETER_DICTIONARIES,
   {},
   null,
-  null,
 );
 
 export const parcelToParameterDictionaries = gqlSubscribable<ParcelToParameterDictionary[] | null>(
   gql.SUB_PARCEL_TO_PARAMETER_DICTIONARIES,
   {},
   null,
-  null,
 );
 
-export const parcels = gqlSubscribable<Parcel[]>(gql.SUB_PARCELS, {}, [], null);
+export const parcels = gqlSubscribable<Parcel[]>(gql.SUB_PARCELS, {}, []);
 
 export const parcelBundles: Readable<ParcelBundle[]> = derived(
   [parcels, parcelToParameterDictionaries, commandDictionaries],
@@ -91,11 +87,11 @@ export const parcelBundles: Readable<ParcelBundle[]> = derived(
   },
 );
 
-export const sequenceFilters = gqlSubscribable<SequenceFilter[]>(gql.SUB_SEQUENCE_FILTERS, {}, [], null);
+export const sequenceFilters = gqlSubscribable<SequenceFilter[]>(gql.SUB_SEQUENCE_FILTERS, {}, []);
 
 export const userParcelColumns: Writable<string> = writable('2fr 3px 1fr');
 
-export const userSequences = gqlSubscribable<UserSequence[]>(gql.SUB_USER_SEQUENCES, {}, [], null);
+export const userSequences = gqlSubscribable<UserSequence[]>(gql.SUB_USER_SEQUENCES, {}, []);
 
 /* Writeable. */
 

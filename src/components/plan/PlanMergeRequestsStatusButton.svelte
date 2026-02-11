@@ -9,7 +9,7 @@
   import { getActivePlanMergeRequests } from '../../utilities/plan';
   import { tooltip } from '../../utilities/tooltip';
 
-  export let user: User | null;
+  export let user: User | null = null;
 
   $: incomingPendingMergeRequests = getActivePlanMergeRequests($planMergeRequestsIncoming);
   $: outgoingPendingMergeRequests = getActivePlanMergeRequests($planMergeRequestsOutgoing);

@@ -8,5 +8,5 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
     const redirectTo = encodeURIComponent(url.pathname + url.search);
     redirect(302, `${base}/login?redirectTo=${redirectTo}`);
   }
-  return { ...locals };
+  return { user: locals.user };
 };

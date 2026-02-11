@@ -4,13 +4,13 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import ParcelForm from '../../../components/parcels/ParcelForm.svelte';
-  import type { PageData } from './$types';
+  import { getUserStore } from '../../../stores/user';
 
-  export let data: PageData;
+  const user = getUserStore();
 
   function onParcelSave(event: CustomEvent<{ parcelId: number }>) {
     goto(`${base}/parcels/edit/${event.detail.parcelId}`);
   }
 </script>
 
-<ParcelForm mode="create" user={data.user} on:save={onParcelSave} />
+<ParcelForm mode="create" user={$user} on:save={onParcelSave} />

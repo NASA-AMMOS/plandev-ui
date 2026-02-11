@@ -47,14 +47,7 @@ import type { ExpansionSequence } from '../types/expansion';
 import type { DerivationGroup, ExternalSourcePkey, ExternalSourceSlim } from '../types/external-source';
 import type { ModalElement, ModalElementValue } from '../types/modal';
 import type { ArgumentsMap } from '../types/parameter';
-import type {
-  Plan,
-  PlanBranchRequestAction,
-  PlanForMerging,
-  PlanMergeRequestStatus,
-  PlanMergeRequestTypeFilter,
-  PlanSlim,
-} from '../types/plan';
+import type { Plan, PlanBranchRequestAction, PlanForMerging, PlanMergeRequestStatus, PlanSlim } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
 import type { Tag } from '../types/tags';
 import type { ActivityTransformDirection } from '../types/time';
@@ -1248,16 +1241,13 @@ export async function showPlanBranchesModal(plan: Plan): Promise<ModalElementVal
 /**
  * Shows a PlanMergeRequestsModal with the supplied arguments.
  */
-export async function showPlanMergeRequestsModal(
-  user: User | null,
-  selectedFilter?: PlanMergeRequestTypeFilter,
-): Promise<ModalElementValue> {
+export async function showPlanMergeRequestsModal(user?: User | null): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const planMergeRequestsModal = new PlanMergeRequestsModal({ props: { selectedFilter, user }, target });
+        const planMergeRequestsModal = new PlanMergeRequestsModal({ props: { user }, target });
         target.resolve = resolve;
 
         planMergeRequestsModal.$on('close', () => {

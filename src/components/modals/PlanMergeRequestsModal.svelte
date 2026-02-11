@@ -21,8 +21,8 @@
   import ModalHeader from './ModalHeader.svelte';
 
   export let height: number = 550;
-  export let selectedFilter: PlanMergeRequestTypeFilter = 'all';
-  export let user: User | null;
+
+  export let user: User | null = null;
   export let width: number = 550;
 
   const dispatch = createEventDispatcher<{
@@ -31,6 +31,7 @@
 
   let combinedPlanMergeRequests: PlanMergeRequest[] = [];
   let filteredPlanMergeRequests: PlanMergeRequest[] = [];
+  let selectedFilter: PlanMergeRequestTypeFilter = 'all';
   let showPending = true;
   let showInProgress = true;
   let showAccepted = true;

@@ -1,8 +1,8 @@
 import { cleanup, render } from '@testing-library/svelte';
+import { writable } from 'svelte/store';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { activityMetadataDefinitions } from '../../stores/activities';
 import { planModelActivityTypes } from '../../stores/plan';
-import type { User } from '../../types/app';
 import type { Model } from '../../types/model';
 import type {
   Plan,
@@ -13,6 +13,30 @@ import type {
 import effects from '../../utilities/effects';
 import { ADMIN_ROLE } from '../../utilities/permissions';
 import PlanMergeReview from './PlanMergeReview.svelte';
+
+// Mock the user store context
+vi.mock('svelte', async () => {
+  const actual = (await vi.importActual('svelte')) as typeof import('svelte');
+  const actualGetContext = actual.getContext;
+  return {
+    ...actual,
+    getContext: vi.fn((key: string) => {
+      if (key === 'user') {
+        return writable({
+          activeRole: ADMIN_ROLE,
+          allowedRoles: [ADMIN_ROLE],
+          defaultRole: ADMIN_ROLE,
+          id: 'foo',
+          permissibleQueries: {},
+          rolePermissions: {},
+          token: '',
+        });
+      }
+      // Fall through to actual getContext for other keys (e.g., bits-ui internal contexts)
+      return actualGetContext(key);
+    }),
+  };
+});
 
 vi.mock('$env/dynamic/public', () => {
   return {
@@ -113,16 +137,6 @@ const mockInitialPlan: Plan = {
   updated_by: 'redshirt',
 };
 
-const user: User = {
-  activeRole: ADMIN_ROLE,
-  allowedRoles: [ADMIN_ROLE],
-  defaultRole: ADMIN_ROLE,
-  id: 'foo',
-  permissibleQueries: {},
-  rolePermissions: {},
-  token: '',
-};
-
 describe('PlanMergeReview component', () => {
   beforeAll(() => {
     activityMetadataDefinitions.updateValue(() => []);
@@ -144,7 +158,6 @@ describe('PlanMergeReview component', () => {
       initialMergeRequest: { ...mockMergeRequest },
       initialNonConflictingActivities: [],
       initialPlan: { ...mockInitialPlan },
-      user,
     });
 
     expect(component).toBeTruthy();
@@ -209,7 +222,6 @@ describe('PlanMergeReview component', () => {
       initialMergeRequest: { ...mockMergeRequest },
       initialNonConflictingActivities,
       initialPlan: { ...mockInitialPlan },
-      user,
     });
 
     expect(component).toBeTruthy();
@@ -273,7 +285,6 @@ describe('PlanMergeReview component', () => {
       initialMergeRequest: { ...mockMergeRequest },
       initialNonConflictingActivities,
       initialPlan: { ...mockInitialPlan },
-      user,
     });
 
     expect(component).toBeTruthy();
@@ -387,7 +398,6 @@ describe('PlanMergeReview component', () => {
       initialMergeRequest: { ...mockMergeRequest },
       initialNonConflictingActivities,
       initialPlan: { ...mockInitialPlan },
-      user,
     });
 
     expect(component).toBeTruthy();

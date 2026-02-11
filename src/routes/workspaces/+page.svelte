@@ -3,11 +3,11 @@
 <script lang="ts">
   import PageTitle from '../../components/app/PageTitle.svelte';
   import Workspaces from '../../components/workspace/Workspaces.svelte';
-  import type { PageData } from './$types';
+  import { getUserStore } from '../../stores/user';
 
-  export let data: PageData;
+  const user = getUserStore();
 </script>
 
 <PageTitle title="Workspaces" />
 
-<Workspaces user={data.user} />
+<Workspaces user={$user} />

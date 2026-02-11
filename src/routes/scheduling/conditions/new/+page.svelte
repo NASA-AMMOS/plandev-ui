@@ -7,10 +7,10 @@
   import SchedulingConditionForm from '../../../../components/scheduling/conditions/SchedulingConditionForm.svelte';
   import { SearchParameters } from '../../../../enums/searchParameters';
   import { tags } from '../../../../stores/tags';
+  import { getUserStore } from '../../../../stores/user';
   import { getSearchParameterNumber } from '../../../../utilities/url';
-  import type { PageData } from './$types';
 
-  export let data: PageData;
+  const user = getUserStore();
 
   let referenceModelId: number | null = null;
 
@@ -33,6 +33,6 @@
   initialReferenceModelId={referenceModelId}
   tags={$tags}
   mode="create"
-  user={data.user}
+  user={$user}
   on:selectReferenceModel={onModelSelect}
 />

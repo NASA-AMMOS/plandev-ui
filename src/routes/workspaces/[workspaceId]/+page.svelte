@@ -16,7 +16,7 @@
   import { Button } from '@nasa-jpl/stellar-svelte';
   import { capitalize } from 'lodash-es';
   import { Folder, LoaderCircle, TriangleAlert } from 'lucide-svelte';
-  import { onDestroy, onMount, tick } from 'svelte';
+  import { getContext, onDestroy, onMount, tick } from 'svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
@@ -48,6 +48,7 @@
   import { initialUsersLoading, users } from '../../../stores/user';
   import { parcel, parcels, workspace, workspaceColumns, workspaceId, workspaces } from '../../../stores/workspaces';
   import type { ActionDefinition } from '../../../types/actions';
+  import type { UserStore } from '../../../types/app';
   import type { ArgumentsMap } from '../../../types/parameter';
   import type {
     ChannelDictionaryMetadata,
@@ -93,7 +94,8 @@
 
   export let data: PageData;
 
-  const { initialWorkspace, user } = data;
+  const { initialWorkspace } = data;
+  const user: UserStore = getContext('user');
 
   let availableActionsForActiveFile: ActionParameterPair[] = [];
   let allActionsForWorkspace: ActionDefinition[] = [];
@@ -241,18 +243,19 @@
     }
   }
 
-  $: if (initialWorkspace || $workspace) {
+  // Re-compute permissions when user, workspace, or active document changes
+  $: if ($user && (initialWorkspace || $workspace)) {
     const ws: Workspace = $workspace ?? (initialWorkspace as Workspace);
 
-    hasEditWorkspacePermission = featurePermissions.workspace.canUpdate(user, ws);
-    hasEditWorkspaceCollaboratorsPermission = featurePermissions.workspaceCollaborators.canCreate(user, ws);
+    hasEditWorkspacePermission = featurePermissions.workspace.canUpdate($user, ws);
+    hasEditWorkspaceCollaboratorsPermission = featurePermissions.workspaceCollaborators.canCreate($user, ws);
     if ($activeDocumentPath && workspaceTreeMap[$activeDocumentPath]) {
-      hasEditFilePermission = featurePermissions.workspace.canUpdate(user, ws, workspaceTreeMap[$activeDocumentPath]);
+      hasEditFilePermission = featurePermissions.workspace.canUpdate($user, ws, workspaceTreeMap[$activeDocumentPath]);
       availableActionsForActiveFile = getAvailableActionsForNodes(allActionsForWorkspace, [
         workspaceTreeMap[$activeDocumentPath],
       ]);
     } else {
-      hasEditFilePermission = featurePermissions.workspace.canUpdate(user, ws);
+      hasEditFilePermission = featurePermissions.workspace.canUpdate($user, ws);
       availableActionsForActiveFile = [];
     }
   }
@@ -318,7 +321,7 @@
   async function getWorkspaceContents(workspace: Workspace | null) {
     if (workspace) {
       isWorkspaceLoading = true;
-      const workspaceContents = await effects.getWorkspaceContents(workspace.id, '', user);
+      const workspaceContents = await effects.getWorkspaceContents(workspace.id, '', $user);
       if (workspaceContents) {
         workspaceTree = {
           contents: workspaceContents,
@@ -334,7 +337,7 @@
         workspace.id,
         workspaceTreeMap,
         librarySequencesEnabled,
-        user,
+        $user,
       );
 
       if (librarySequencesEnabled) {
@@ -365,10 +368,10 @@
   async function getSelectedFileContent(filePath: string) {
     let content = '';
 
-    if (user) {
+    if ($user) {
       const node = workspaceTreeMap[filePath];
       if (node?.type !== WorkspaceContentType.Directory) {
-        content = (await effects.getWorkspaceFileContent($workspaceId, filePath, user)) ?? '';
+        content = (await effects.getWorkspaceFileContent($workspaceId, filePath, $user)) ?? '';
       }
     }
 
@@ -387,7 +390,7 @@
     }
 
     try {
-      const adaptation = await adaptationUtils.loadSequenceAdaptation(id, user);
+      const adaptation = await adaptationUtils.loadSequenceAdaptation(id, $user);
       setSequenceLanguages(adaptation);
     } catch (e) {
       console.error(e);
@@ -396,7 +399,7 @@
   }
 
   async function loadCommandDictionary(unparsedCommandDictionary: CommandDictionaryMetadata) {
-    const parsedDictionary = await getParsedCommandDictionary(unparsedCommandDictionary, user);
+    const parsedDictionary = await getParsedCommandDictionary(unparsedCommandDictionary, $user);
     if (parsedDictionary) {
       commandDictionary = parsedDictionary;
     } else {
@@ -406,7 +409,7 @@
 
   async function loadChannelDictionary(unparsedChannelDictionary?: ChannelDictionaryMetadata) {
     if (unparsedChannelDictionary) {
-      const parsedDictionary = await getParsedChannelDictionary(unparsedChannelDictionary, user);
+      const parsedDictionary = await getParsedChannelDictionary(unparsedChannelDictionary, $user);
       if (parsedDictionary) {
         channelDictionary = parsedDictionary;
       }
@@ -419,7 +422,7 @@
     parameterDictionaries = (
       await Promise.all(
         unparsedParameterDictionaries.map(unparsedParameterDictionary => {
-          return getParsedParameterDictionary(unparsedParameterDictionary, user);
+          return getParsedParameterDictionary(unparsedParameterDictionary, $user);
         }),
       )
     ).filter(filterEmpty);
@@ -473,33 +476,33 @@
     }
 
     // Save the file before the operation
-    await effects.saveWorkspaceFile($workspaceId, $activeDocumentPath!, $activeDocument.currentContent, user);
+    await effects.saveWorkspaceFile($workspaceId, $activeDocumentPath!, $activeDocument.currentContent, $user);
     activeDocument.markClean($activeDocument.currentContent);
     return true;
   }
 
   async function onAddCollaborator(event: CustomEvent<WorkspaceCollaborator[]>) {
     if ($workspace) {
-      effects.createWorkspaceCollaborators($workspace, event.detail, user);
+      effects.createWorkspaceCollaborators($workspace, event.detail, $user);
     }
   }
 
   async function onDeleteCollaborator(event: CustomEvent<string>) {
     if ($workspace) {
-      effects.deleteWorkspaceCollaborator($workspace, event.detail, user);
+      effects.deleteWorkspaceCollaborator($workspace, event.detail, $user);
     }
   }
 
   async function onUpdateWorkspaceMetadata(event: CustomEvent<Partial<WorkspaceMetadata>>) {
     if ($workspace) {
-      effects.updateWorkspace($workspace, event.detail, user);
+      effects.updateWorkspace($workspace, event.detail, $user);
     }
   }
 
   async function onNewFolder(event: CustomEvent<string>) {
-    if ($workspace && workspaceTree && user) {
+    if ($workspace && workspaceTree && $user) {
       const { detail: startingPath } = event;
-      const newFolderPath = await effects.newWorkspaceFolder($workspace, workspaceTree, startingPath, user);
+      const newFolderPath = await effects.newWorkspaceFolder($workspace, workspaceTree, startingPath, $user);
       if (newFolderPath !== null) {
         // select & navigate to the new file
         selectedFilePath = newFolderPath;
@@ -509,9 +512,9 @@
   }
 
   async function onNewFile(event: CustomEvent<string>) {
-    if ($workspace != null && workspaceTree && user) {
+    if ($workspace != null && workspaceTree && $user) {
       const { detail: startingPath } = event;
-      const newFilePath = await effects.newWorkspaceSequence($workspace, workspaceTree, startingPath, '', user);
+      const newFilePath = await effects.newWorkspaceSequence($workspace, workspaceTree, startingPath, '', $user);
 
       if (newFilePath !== null) {
         // select & navigate to the new file
@@ -522,8 +525,8 @@
   }
 
   async function onDownloadFile(filePath: string) {
-    if ($workspace && user) {
-      const blob = await effects.getWorkspaceFileContentBlob($workspace, filePath, user);
+    if ($workspace && $user) {
+      const blob = await effects.getWorkspaceFileContentBlob($workspace, filePath, $user);
       if (blob !== null) {
         downloadBlob(blob, filePath.split('/').pop() || 'download');
       }
@@ -536,7 +539,7 @@
   }
 
   async function onImportFile(event: CustomEvent<string>) {
-    if ($workspace != null && workspaceTree && user) {
+    if ($workspace != null && workspaceTree && $user) {
       const { detail: startingPath } = event;
       const targetPath = await effects.importWorkspaceFile(
         $workspace,
@@ -544,7 +547,7 @@
         startingPath,
         $sequenceAdaptation,
         phoenixContext,
-        user,
+        $user,
       );
       refreshWorkspaceContents();
 
@@ -559,7 +562,7 @@
     if ($workspace) {
       const shouldUpdateSelectedNode = treeNodes.find(node => node.fullPath === $activeDocumentPath);
 
-      const didDelete = await effects.deleteWorkspaceItems($workspace, treeNodes, user);
+      const didDelete = await effects.deleteWorkspaceItems($workspace, treeNodes, $user);
       await refreshWorkspaceContents();
 
       if (didDelete && shouldUpdateSelectedNode) {
@@ -590,7 +593,7 @@
       allFiles: workspaceFileList,
       nodes: treeNodes,
       onError: showFailureToast,
-      user,
+      user: $user,
       workspaceId: $workspaceId,
       workspaceName: $workspace?.name,
     });
@@ -610,7 +613,7 @@
       // Remove redundant nodes that would already be moved by a selected parent node
       const minimalNodes = removeRedundantNodes(treeNodes);
 
-      const result = await effects.moveWorkspaceItems($workspace, workspaceTree, minimalNodes, user);
+      const result = await effects.moveWorkspaceItems($workspace, workspaceTree, minimalNodes, $user);
       await refreshWorkspaceContents();
 
       if (movedActiveNode && result) {
@@ -637,7 +640,7 @@
         }
       }
 
-      const targetPath = await effects.renameWorkspaceItem($workspace, treeNode, treeNodePath, user);
+      const targetPath = await effects.renameWorkspaceItem($workspace, treeNode, treeNodePath, $user);
       await refreshWorkspaceContents();
 
       if (shouldUpdateSelectedNode && typeof targetPath === 'string') {
@@ -665,10 +668,10 @@
 
   async function saveCurrentFile(content: string) {
     if ($activeDocumentPath) {
-      effects.saveWorkspaceFile($workspaceId, $activeDocumentPath, content, user);
+      effects.saveWorkspaceFile($workspaceId, $activeDocumentPath, content, $user);
       activeDocument.markClean(content);
     } else if ($workspace && workspaceTree && content) {
-      const newFilePath = await effects.newWorkspaceSequence($workspace, workspaceTree, '', content, user);
+      const newFilePath = await effects.newWorkspaceSequence($workspace, workspaceTree, '', content, $user);
       if (newFilePath !== null) {
         selectedFilePath = newFilePath;
         activeDocument.markClean(content);
@@ -701,7 +704,7 @@
         }
       }
 
-      await effects.moveWorkspaceItemsToWorkspace(initialWorkspace, treeNodes, user);
+      await effects.moveWorkspaceItemsToWorkspace(initialWorkspace, treeNodes, $user);
       refreshWorkspaceContents();
     }
   }
@@ -730,7 +733,7 @@
     }
 
     if ($workspace) {
-      const actionRunId = await effects.runAction(action, $workspace, workspaceFileList, user, parameters);
+      const actionRunId = await effects.runAction(action, $workspace, workspaceFileList, $user, parameters);
       if (actionRunId !== null) {
         const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
         if (goToRun === true) {
@@ -763,7 +766,7 @@
     }
 
     if ($workspace) {
-      const actionRunId = await effects.runAction(action, $workspace, workspaceFileList, user, parameters);
+      const actionRunId = await effects.runAction(action, $workspace, workspaceFileList, $user, parameters);
       if (actionRunId !== null) {
         const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
         if (goToRun === true) {
@@ -853,7 +856,7 @@
       {hasEditWorkspacePermission}
       {hasEditWorkspaceCollaboratorsPermission}
       parcels={$parcels ?? []}
-      {user}
+      user={$user}
       users={$users ?? []}
       usersLoading={$initialUsersLoading}
       workspace={$workspace}

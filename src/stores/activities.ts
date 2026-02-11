@@ -22,28 +22,24 @@ export const activityDirectivesDB = gqlSubscribable<ActivityDirectiveDB[] | null
   gql.SUB_ACTIVITY_DIRECTIVES,
   { planId },
   null,
-  null,
 );
 
 export const anchorValidationStatuses = gqlSubscribable<AnchorValidationStatus[]>(
   gql.SUB_ANCHOR_VALIDATION_STATUS,
   { planId },
   [],
-  null,
 );
 
 export const activityMetadataDefinitions = gqlSubscribable<ActivityMetadataDefinition[]>(
   gql.SUB_ACTIVITY_DIRECTIVE_METADATA_SCHEMAS,
   {},
   [],
-  null,
 );
 
 export const activityDirectiveValidationStatuses = gqlSubscribable<ActivityDirectiveValidationStatus[]>(
   gql.SUB_ACTIVITY_DIRECTIVE_VALIDATIONS,
   { planId },
   [],
-  null,
 );
 
 /* Writeable. */

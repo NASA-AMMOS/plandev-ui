@@ -43,6 +43,7 @@
   import Loading from '../Loading.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Parameters from '../parameters/Parameters.svelte';
+  import AsyncContentState from '../ui/AsyncContentState.svelte';
   import DatePickerActionButton from '../ui/DatePicker/DatePickerActionButton.svelte';
   import FilterToggleButton from '../ui/FilterToggleButton.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -71,6 +72,7 @@
   let startTimeField: FieldStore<string>;
   let modelParametersMap: ParametersMap = {};
   let filteredSimulationDatasets: SimulationDataset[] = [];
+  let { loading: simulationDatasetsPlanLoading, error: simulationDatasetsPlanError } = simulationDatasetsPlan;
 
   function validateStartTimeField(startTime: string) {
     const startTimeDate = $plugins.time.primary.parse(startTime);
@@ -480,14 +482,14 @@
           {/if}
         </svelte:fragment>
         <div class="simulation-history">
-          {#if !$simulationDatasetsPlan}
-            <div class="loading-wrapper">
-              <Loading />
-            </div>
-          {:else if !filteredSimulationDatasets || !filteredSimulationDatasets.length}
-            <div>No Simulation Datasets</div>
-          {:else}
-            {#each filteredSimulationDatasets as simDataset (simDataset.id)}
+          <AsyncContentState
+            loading={$simulationDatasetsPlanLoading}
+            error={$simulationDatasetsPlanError}
+            errorMessage="Error loading simulation datasets"
+            empty={!filteredSimulationDatasets?.length}
+            emptyMessage="No Simulation Datasets"
+          >
+            {#each filteredSimulationDatasets ?? [] as simDataset (simDataset.id)}
               <SimulationHistoryDataset
                 {modelParametersMap}
                 {defaultSimulationArguments}
@@ -505,7 +507,7 @@
                 on:cancel={onCancelSimulation}
               />
             {/each}
-          {/if}
+          </AsyncContentState>
         </div>
       </Collapse>
     </fieldset>
@@ -521,9 +523,5 @@
 
   :global(.simulation-collapse.collapse-root .content) {
     margin: 0;
-  }
-
-  .loading-wrapper {
-    margin-left: 32px;
   }
 </style>

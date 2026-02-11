@@ -17,12 +17,7 @@
   export let gridSection: ViewGridSection;
   export let user: User | null;
 
-  $: userWritablePlans = gqlSubscribable<PlanSlim[] | null>(
-    gql.SUB_PLANS_USER_WRITABLE,
-    { userId: user?.id },
-    null,
-    null,
-  );
+  $: userWritablePlans = gqlSubscribable<PlanSlim[] | null>(gql.SUB_PLANS_USER_WRITABLE, { userId: user?.id }, null);
 </script>
 
 <Panel padBody={false}>
