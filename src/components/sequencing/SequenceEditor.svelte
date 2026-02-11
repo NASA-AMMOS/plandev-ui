@@ -17,7 +17,7 @@
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { FileBracesCorner, PanelBottomClose, PanelBottomOpen } from 'lucide-svelte';
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import type { LintDiagnostic } from '../../types/errors';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
@@ -165,6 +165,7 @@
   // from being dispatched with the wrong file path
   $: if (sequenceFilePath !== previousSequenceFilePath) {
     debouncedSequenceUpdateListener.cancel();
+    dispatchLintChange.cancel();
     previousSequenceFilePath = sequenceFilePath;
   }
 
@@ -312,6 +313,11 @@
       }
     }
   }
+
+  onDestroy(() => {
+    debouncedSequenceUpdateListener.cancel();
+    dispatchLintChange.cancel();
+  });
 
   onMount(() => {
     compartmentReadonly = new Compartment();

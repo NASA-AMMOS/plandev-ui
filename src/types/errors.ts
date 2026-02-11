@@ -166,9 +166,7 @@ export interface LintError extends BaseError {
 }
 
 export interface AdaptationLog extends BaseError {
-  data: {
-    args: any[];
-  };
+  data: any[];
   level: LogLevel;
   type: ErrorTypes.WORKSPACE_ADAPTATION_LOG;
 }
