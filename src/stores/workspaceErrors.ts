@@ -1,9 +1,8 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActionRunSlim } from '../types/actions';
-import type { AdaptationLog, BaseError, LintDiagnostic, LintError, LogLevel, LogMessage } from '../types/errors';
+import type { AdaptationLog, BaseError, LintDiagnostic, LintError, LogLevel } from '../types/errors';
 import { ErrorTypes } from '../utilities/errors';
 import { actionDefinitionsByWorkspace, actionRunsByWorkspace } from './actions';
-import { allLogs } from './errors';
 import { workspaceId } from './workspaces';
 
 /* Writable Stores */
@@ -25,9 +24,6 @@ export const userInitiatedActionRunIds: Writable<Set<number>> = writable(new Set
 
 /* Derived Stores */
 
-// Filter global logs for workspace-relevant entries (file ops, dictionary errors, general logs)
-export const workspaceLogs: Readable<LogMessage[]> = derived([allLogs], ([$allLogs]) => $allLogs);
-
 // Action runs for current workspace
 export const workspaceActionRunsForSession: Readable<ActionRunSlim[]> = derived(
   [actionRunsByWorkspace, workspaceId, userInitiatedActionRunIds],
@@ -37,35 +33,32 @@ export const workspaceActionRunsForSession: Readable<ActionRunSlim[]> = derived(
   },
 );
 
-// Failed/errored action runs only (for error counts)
-export const workspaceActionErrors: Readable<BaseError[]> = derived(
+// All session action runs mapped to BaseError format (for console display)
+export const workspaceActionRunMessages: Readable<(BaseError & { level: LogLevel })[]> = derived(
   [workspaceActionRunsForSession, actionDefinitionsByWorkspace, workspaceId],
   ([$workspaceActionRuns, $actionDefinitionsByWorkspace, $workspaceId]) => {
     const actionDefs = $actionDefinitionsByWorkspace[$workspaceId] ?? {};
-    return $workspaceActionRuns
-      .filter(run => run.status === 'failed' || run.error?.message)
-      .map(run => {
-        const actionDef = actionDefs[run.action_definition_id];
-        const actionName = actionDef?.name ?? `Action #${run.action_definition_id}`;
-        return {
-          cause: run.error?.message,
-          data: { actionName, actionRunId: run.id, error: run.error, status: run.status },
-          message: `${actionName} failed`,
-          timestamp: run.requested_at,
-          trace: run.error?.stack,
-          type: ErrorTypes.WORKSPACE_ACTION_RUN,
-        };
-      });
+    return $workspaceActionRuns.map(run => {
+      const actionDef = actionDefs[run.action_definition_id];
+      const actionName = actionDef?.name ?? `Action #${run.action_definition_id}`;
+      const failed = run.status === 'failed';
+      return {
+        cause: run.error?.message,
+        data: { actionName, actionRunId: run.id, error: run.error, status: run.status },
+        level: (failed ? 'error' : 'info') as LogLevel,
+        message: failed ? `${actionName} failed` : `${actionName}: ${run.status}`,
+        timestamp: run.requested_at,
+        trace: run.error?.stack,
+        type: ErrorTypes.WORKSPACE_ACTION_RUN,
+      };
+    });
   },
 );
 
-// Aggregate all workspace problems for "All Problems" tab
-export const allWorkspaceProblems: Readable<BaseError[]> = derived(
-  [workspaceAdaptationMessages, workspaceLintErrors, workspaceActionErrors],
-  ([$adaptationMessages, $lintErrors, $actionErrors]) =>
-    [...$adaptationMessages.filter(isWorkspaceAdaptationError), ...$lintErrors, ...$actionErrors].sort(
-      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-    ),
+// Failed/errored action runs only (for error counts)
+export const workspaceActionErrors: Readable<BaseError[]> = derived(
+  [workspaceActionRunMessages],
+  ([$workspaceActionRunMessages]) => $workspaceActionRunMessages.filter(m => m.level === 'error'),
 );
 
 /* Helper Functions */

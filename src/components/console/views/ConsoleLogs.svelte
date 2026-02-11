@@ -51,6 +51,8 @@
         }
 
         if (logLevels) {
+          // Filter by selected log levels when the log has a level property.
+          // Items without a level (plain BaseError) always pass through.
           if (Object.hasOwn(log, 'level')) {
             return logLevelSet.has((log as LogMessage).level);
           } else {

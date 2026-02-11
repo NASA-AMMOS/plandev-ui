@@ -37,7 +37,7 @@
     activeDocumentIsLoading,
     activeDocumentPath,
   } from '../../../stores/activeDocument';
-  import { clearLogs, errorLogs, logMessage } from '../../../stores/errors';
+  import { allLogs, clearLogs, errorLogs, logMessage } from '../../../stores/errors';
   import { sequenceAdaptation, setSequenceLanguages } from '../../../stores/sequence-adaptation';
   import {
     channelDictionaries,
@@ -60,11 +60,10 @@
     setWorkspaceLintErrors,
     userInitiatedActionRunIds,
     workspaceActionErrors,
-    workspaceActionRunsForSession,
+    workspaceActionRunMessages,
     workspaceAdaptationErrors,
     workspaceAdaptationMessages,
     workspaceLintErrors,
-    workspaceLogs,
   } from '../../../stores/workspaceErrors';
   import { parcel, parcels, workspace, workspaceColumns, workspaceId, workspaces } from '../../../stores/workspaces';
   import type { ActionDefinition } from '../../../types/actions';
@@ -1189,19 +1188,7 @@
           value="actions"
           showTimestamp
           showType={false}
-          logs={$workspaceActionRunsForSession.map(run => {
-            const actionDef = allActionsForWorkspace.find(a => a.id === run.action_definition_id);
-            const actionName = actionDef?.name ?? `Action #${run.action_definition_id}`;
-            return {
-              cause: run.error?.message,
-              data: { actionName, actionRunId: run.id, error: run.error, status: run.status },
-              level: run.status === 'failed' ? 'error' : 'info',
-              message: run.status === 'failed' ? `${actionName} failed` : `${actionName}: ${run.status}`,
-              timestamp: run.requested_at,
-              trace: run.error?.stack,
-              type: ErrorTypes.WORKSPACE_ACTION_RUN,
-            };
-          })}
+          logs={$workspaceActionRunMessages}
           emptyStateMessage="No action runs"
         />
         <ConsoleLogs
@@ -1223,7 +1210,7 @@
         />
         <ConsoleLogs
           value="logs"
-          logs={$workspaceLogs}
+          logs={$allLogs}
           {logLevels}
           emptyStateMessage="No logs"
           noMatchingResultsMessage="No matching logs"

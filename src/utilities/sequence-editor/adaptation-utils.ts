@@ -8,13 +8,13 @@ import type { User } from '../../types/app';
 import type { SequenceAdaptationMetadata } from '../../types/sequencing';
 import effects from '../effects';
 
-export type AdaptationLog = { args: any[]; level: string };
-export type AdaptationLogHandler = (log: AdaptationLog) => void;
+export type AdaptationLogEntry = { args: any[]; level: string };
+export type AdaptationLogEntryHandler = (log: AdaptationLogEntry) => void;
 
 export async function loadSequenceAdaptation(
   id: number,
   user: User | null,
-  onLog?: AdaptationLogHandler,
+  onLog?: AdaptationLogEntryHandler,
 ): Promise<{ adaptation: PhoenixAdaptation; metadata: SequenceAdaptationMetadata }> {
   const adaptationRow = await effects.getSequenceAdaptation(id, user);
   if (!adaptationRow) {
@@ -35,7 +35,7 @@ export async function loadSequenceAdaptation(
     ...console,
     debug: (...args: any[]) => {
       console.debug(...args);
-      onLog?.({ args, level: 'error' });
+      onLog?.({ args, level: 'info' });
     },
     error: (...args: any[]) => {
       console.error(...args);
