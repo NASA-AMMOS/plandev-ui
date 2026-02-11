@@ -651,9 +651,9 @@
     }
   }
 
-  function onWorkspaceFileUpdated({
-    detail: { filePath, input, output },
-  }: CustomEvent<{ filePath: string; input: string; output?: string }>) {
+  function onWorkspaceInputFileUpdated({
+    detail: { filePath, input },
+  }: CustomEvent<{ filePath: string; input: string }>) {
     // Ignore stale events from a file that is no longer active
     // Note: editors receive ($activeDocumentPath ?? '') so we normalize the comparison
     if (filePath !== ($activeDocumentPath ?? '')) {
@@ -661,6 +661,17 @@
     }
 
     activeDocument.updateContent(input);
+  }
+
+  function onWorkspaceOutputFileUpdated({
+    detail: { filePath, output },
+  }: CustomEvent<{ filePath: string; output?: string }>) {
+    // Ignore stale events from a file that is no longer active
+    // Note: editors receive ($activeDocumentPath ?? '') so we normalize the comparison
+    if (filePath !== ($activeDocumentPath ?? '')) {
+      return;
+    }
+
     if (output) {
       selectedSequenceOutput = output;
     }
@@ -913,7 +924,8 @@
             on:save={onSaveWorkspaceFile}
             on:downloadInput={onDownloadInput}
             on:downloadOutput={onDownloadOutput}
-            on:sequence={isSequenceFile ? onWorkspaceFileUpdated : undefined}
+            on:sequenceInputUpdate={isSequenceFile ? onWorkspaceInputFileUpdated : undefined}
+            on:sequenceOutputUpdate={isSequenceFile ? onWorkspaceOutputFileUpdated : undefined}
           />
         </div>
         <div class="flex h-full" class:hidden={isSequenceFile}>
@@ -930,7 +942,7 @@
             on:runAction={onRunActionOnActiveFile}
             on:save={onSaveWorkspaceFile}
             on:download={onDownloadInput}
-            on:textContentUpdated={!isSequenceFile ? onWorkspaceFileUpdated : undefined}
+            on:textContentUpdated={!isSequenceFile ? onWorkspaceInputFileUpdated : undefined}
           />
         </div>
       {:else if $activeDocument.type === WorkspaceContentType.Directory}

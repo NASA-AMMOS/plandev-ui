@@ -52,7 +52,8 @@
     downloadOutput: { content: string; filePath: string; filename: string; outputLanguage: OutputLanguage };
     runAction: { action: ActionDefinition; parameter: string };
     save: string;
-    sequence: { filePath: string; input: string; output?: string };
+    sequenceInputUpdate: { filePath: string; input: string };
+    sequenceOutputUpdate: { filePath: string; output?: string };
   }>();
 
   let compartmentAdaptation: Compartment;
@@ -69,7 +70,7 @@
   let showOutputs: boolean = true;
   let previousShowOutputs: boolean = showOutputs;
   let toggleSeqJsonPreview: boolean = false;
-  let updatedSequenceDefinition: string = sequenceDefinition;
+  let updatedSequenceDefinition: string;
   let isSequenceDefinitionUpdated: boolean = false;
   let commandInfoMapper: CommandInfoMapper;
   let inputEditorExtension: Extension = [];
@@ -77,7 +78,7 @@
   let previousSequenceFilePath: string = sequenceFilePath;
 
   // Create debounced listener at component level so we can cancel it when file changes
-  const debouncedSequenceUpdateListener = debounce(sequenceUpdateListener, 250);
+  const debouncedBroadcastSequenceUpdate = debounce(broadcastSequenceUpdate, 250);
 
   $: commandInfoMapper = sequenceAdaptation.input.commandInfoMapper;
 
@@ -159,13 +160,11 @@
   // Cancel pending debounced events when file path changes to prevent stale events
   // from being dispatched with the wrong file path
   $: if (sequenceFilePath !== previousSequenceFilePath) {
-    debouncedSequenceUpdateListener.cancel();
+    debouncedBroadcastSequenceUpdate.cancel();
     previousSequenceFilePath = sequenceFilePath;
   }
 
-  async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
-    const sequence = viewUpdate.state.doc.toString();
-    disableCopyAndExport = sequence === '';
+  function broadcastSequenceUpdate(sequence: string) {
     let output =
       sequenceName === undefined
         ? undefined
@@ -173,9 +172,20 @@
 
     editorOutputView.dispatch({ changes: { from: 0, insert: output ?? '', to: editorOutputView.state.doc.length } });
 
-    updatedSequenceDefinition = sequence;
     if (output !== undefined) {
-      dispatch('sequence', { filePath: sequenceFilePath, input: sequence, output });
+      dispatch('sequenceOutputUpdate', { filePath: sequenceFilePath, output });
+    }
+  }
+
+  function sequenceUpdateListener(viewUpdate: ViewUpdate): void {
+    if (viewUpdate.docChanged) {
+      const sequence = viewUpdate.state.doc.toString();
+      disableCopyAndExport = sequence === '';
+      updatedSequenceDefinition = sequence;
+
+      dispatch('sequenceInputUpdate', { filePath: sequenceFilePath, input: sequence });
+
+      debouncedBroadcastSequenceUpdate(sequence);
     }
   }
 
@@ -267,7 +277,7 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
-        EditorView.updateListener.of(debouncedSequenceUpdateListener),
+        EditorView.updateListener.of(sequenceUpdateListener),
         EditorView.updateListener.of(selectedCommandUpdateListener),
         blockTheme,
         compartmentAdaptation.of(inputEditorExtension),
