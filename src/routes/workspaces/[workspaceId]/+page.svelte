@@ -90,7 +90,6 @@
     separateFilenameFromPath,
   } from '../../../utilities/workspaces';
   import type { PageData } from './$types';
-  // codemirror dependencies to be injected into the adaptation
 
   export let data: PageData;
 
@@ -145,102 +144,21 @@
   }
 
   // Show loading spinner after a delay to avoid flashing for fast loads
-  $: {
-    if ($activeDocumentIsLoading) {
-      loadingSpinnerTimeout = setTimeout(() => {
-        showLoadingSpinner = true;
-      }, 200);
-    } else {
-      if (loadingSpinnerTimeout) {
-        clearTimeout(loadingSpinnerTimeout);
-        loadingSpinnerTimeout = null;
-      }
-      showLoadingSpinner = false;
+  $: if ($activeDocumentIsLoading) {
+    loadingSpinnerTimeout = setTimeout(() => {
+      showLoadingSpinner = true;
+    }, 200);
+  } else {
+    if (loadingSpinnerTimeout) {
+      clearTimeout(loadingSpinnerTimeout);
+      loadingSpinnerTimeout = null;
     }
+    showLoadingSpinner = false;
   }
 
   $: if (initialWorkspace) {
     $workspaceId = initialWorkspace.id;
     allActionsForWorkspace = Object.values($actionDefinitionsByWorkspace[$workspaceId] || {});
-  }
-
-  const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-    if ($activeDocumentIsDirty) {
-      event.preventDefault(); // Triggers the native browser confirmation
-      event.returnValue = ''; // Required for some older browser compatibility
-    }
-  };
-
-  // Prevent in-app navigation to other routes when there are unsaved changes
-  beforeNavigate(({ cancel, to }) => {
-    if (!$activeDocumentIsDirty) {
-      return;
-    }
-    // Allow navigation within the same workspace page (file selection is handled by confirmAndNavigate)
-    if (to?.route.id === $page.route.id) {
-      return;
-    }
-    // Skip for external navigation (tab close, refresh) - handled by beforeunload
-    if (to === null) {
-      return;
-    }
-    // Cancel navigation first, then show async modal and navigate if confirmed
-    cancel();
-    showConfirmModal(
-      'Leave Page',
-      'There are unsaved changes. Are you sure you want to leave this page?',
-      'Leave Page',
-      true,
-      'Stay on Page',
-    ).then(({ confirm }) => {
-      if (confirm && to?.url) {
-        // Reset content to allow navigation without re-triggering the modal
-        activeDocument.markClean();
-        goto(to.url);
-      }
-    });
-  });
-
-  onMount(() => {
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  });
-
-  $: if (!isWorkspaceLoading && selectedFilePath !== $activeDocumentPath) {
-    // the UI's selected file doesn't match our actively loaded file, try to navigate to selected
-    maybeNavigate(selectedFilePath);
-  }
-
-  async function maybeNavigate(nextPath: string | null) {
-    // treat `null` as a navigable path so we can intentionally unload the editor file rather than skipping
-    if (nextPath === null) {
-      // wait a tick then revert selected UI to the existing active path
-      await tick();
-      selectedFilePath = $activeDocumentPath;
-      return;
-    }
-    const didNavigate = await confirmAndNavigate(nextPath);
-    if (!didNavigate) {
-      // user decided not to navigate away due to unsaved changes, set selected UI back to active file
-      selectedFilePath = $activeDocumentPath;
-      return;
-    }
-    // successfully navigated, start loading the file contents
-    if (nextPath && workspaceTreeMap[nextPath]) {
-      const { filename } = separateFilenameFromPath(nextPath);
-      const fileType = workspaceTreeMap[nextPath]?.type ?? null;
-      activeDocument.startLoad(nextPath, filename ?? null, fileType);
-      await getSelectedFileContent(nextPath);
-    } else {
-      // navigated to a null/empty file, reset the editor contents
-      activeDocument.close();
-      if (nextPath && !workspaceTreeMap[nextPath]) {
-        showFailureToast('The selected file does not exist in the workspace.');
-      }
-    }
   }
 
   // Re-compute permissions when user, workspace, or active document changes
@@ -303,11 +221,89 @@
     parameterDictionaries,
   };
 
-  $: {
-    if (!commandDictionary) {
-      commandDictionary = null;
-      channelDictionary = null;
-      parameterDictionaries = [];
+  $: if (!isWorkspaceLoading && selectedFilePath !== $activeDocumentPath) {
+    // the UI's selected file doesn't match our actively loaded file, try to navigate to selected
+    maybeNavigate(selectedFilePath);
+  }
+
+  $: if (!commandDictionary) {
+    commandDictionary = null;
+    channelDictionary = null;
+    parameterDictionaries = [];
+  }
+
+  $: console.log('object :>> ', $activeDocument.type);
+
+  // Prevent in-app navigation to other routes when there are unsaved changes
+  beforeNavigate(({ cancel, to }) => {
+    if (!$activeDocumentIsDirty) {
+      return;
+    }
+    // Allow navigation within the same workspace page (file selection is handled by confirmAndNavigate)
+    if (to?.route.id === $page.route.id) {
+      return;
+    }
+    // Skip for external navigation (tab close, refresh) - handled by beforeunload
+    if (to === null) {
+      return;
+    }
+    // Cancel navigation first, then show async modal and navigate if confirmed
+    cancel();
+    showConfirmModal(
+      'Leave Page',
+      'There are unsaved changes. Are you sure you want to leave this page?',
+      'Leave Page',
+      true,
+      'Stay on Page',
+    ).then(({ confirm }) => {
+      if (confirm && to?.url) {
+        // Reset content to allow navigation without re-triggering the modal
+        activeDocument.markClean();
+        goto(to.url);
+      }
+    });
+  });
+
+  onMount(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if ($activeDocumentIsDirty) {
+        event.preventDefault(); // Triggers the native browser confirmation
+        event.returnValue = ''; // Required for some older browser compatibility
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  });
+
+  async function maybeNavigate(nextPath: string | null) {
+    // treat `null` as a navigable path so we can intentionally unload the editor file rather than skipping
+    if (nextPath === null) {
+      // wait a tick then revert selected UI to the existing active path
+      await tick();
+      selectedFilePath = $activeDocumentPath;
+      return;
+    }
+    const didNavigate = await confirmAndNavigate(nextPath);
+    if (!didNavigate) {
+      // user decided not to navigate away due to unsaved changes, set selected UI back to active file
+      selectedFilePath = $activeDocumentPath;
+      return;
+    }
+    // successfully navigated, start loading the file contents
+    if (nextPath && workspaceTreeMap[nextPath]) {
+      const { filename } = separateFilenameFromPath(nextPath);
+      const fileType = workspaceTreeMap[nextPath]?.type ?? null;
+      activeDocument.startLoad(nextPath, filename ?? null, fileType);
+      await getSelectedFileContent(nextPath);
+    } else {
+      // navigated to a null/empty file, reset the editor contents
+      activeDocument.close();
+      if (nextPath && !workspaceTreeMap[nextPath]) {
+        showFailureToast('The selected file does not exist in the workspace.');
+      }
     }
   }
 
