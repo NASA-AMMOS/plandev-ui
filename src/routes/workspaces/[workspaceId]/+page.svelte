@@ -182,11 +182,11 @@
   let sequenceEditorRef: SequenceEditor;
 
   // Console state
-  type WorkspaceConsoleTab = 'all' | 'actions' | 'adaptation' | 'linting' | 'logs';
+  type WorkspaceConsoleTab = 'actions' | 'adaptation' | 'linting' | 'logs';
   const defaultLogLevels: LogLevel[] = ['error', 'warn', 'info'];
   let consolePaneApi: PaneAPI;
   let isConsoleExpanded: boolean = false;
-  let selectedConsoleTab: WorkspaceConsoleTab = 'all';
+  let selectedConsoleTab: WorkspaceConsoleTab = 'actions';
   let logLevels: LogLevel[] = defaultLogLevels;
   let preserveAdaptationLog: boolean = false;
 
