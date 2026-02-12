@@ -1,5 +1,6 @@
-import { Locator, Page, expect } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { filterAgGridTable } from '../utilities/helpers.js';
 
 export class Parcels {
   closeButton: Locator;
@@ -86,19 +87,7 @@ export class Parcels {
   }
 
   async filterTable(parcelName: string) {
-    await this.table.waitFor({ state: 'attached' });
-    await this.table.waitFor({ state: 'visible' });
-
-    const nameColumnHeader = await this.table.getByRole('columnheader', { name: 'Name' });
-    await nameColumnHeader.hover();
-
-    const filterIcon = await nameColumnHeader.locator('.ag-icon-filter');
-    await expect(filterIcon).toBeVisible();
-    await filterIcon.click();
-    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(parcelName);
-    await expect(this.table.getByRole('row', { name: parcelName })).toBeVisible();
-    await this.page.keyboard.press('Escape');
-    await this.page.locator('.ag-popup').waitFor({ state: 'hidden' });
+    await filterAgGridTable(this.page, this.table, parcelName);
   }
 
   async goto() {

@@ -351,8 +351,13 @@ export class Plan {
   async removeConstraint() {
     await this.constraintManageButton.click();
     await this.constraintModalFilter.fill(this.constraints.constraintName);
-    await expect(this.page.getByRole('row', { name: this.constraints.constraintName })).toBeVisible();
-    await this.page.getByRole('row', { name: this.constraints.constraintName }).getByRole('checkbox').uncheck();
+    const row = this.page.getByRole('row', { name: this.constraints.constraintName });
+    await expect(row).toBeVisible();
+    // Use click with force for AG Grid checkboxes - check/uncheck fails with Chrome for Testing
+    const checkbox = row.getByRole('checkbox');
+    await expect(checkbox).toBeChecked();
+    await checkbox.click({ force: true });
+    await expect(checkbox).not.toBeChecked();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.locator(this.constraintListItemSelector).waitFor({ state: 'detached' });
   }
@@ -367,8 +372,13 @@ export class Plan {
   async removeSchedulingGoal(goalName: string) {
     await this.schedulingGoalManageButton.click();
     await this.schedulingGoalsModalFilter.fill(goalName);
-    await expect(this.page.getByRole('row', { name: goalName })).toBeVisible();
-    await this.page.getByRole('row', { name: goalName }).getByRole('checkbox').uncheck();
+    const row = this.page.getByRole('row', { name: goalName });
+    await expect(row).toBeVisible();
+    // Use click with force for AG Grid checkboxes - check/uncheck fails with Chrome for Testing
+    const checkbox = row.getByRole('checkbox');
+    await expect(checkbox).toBeChecked();
+    await checkbox.click({ force: true });
+    await expect(checkbox).not.toBeChecked();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.locator(this.schedulingGoalListItemSelector(goalName)).waitFor({ state: 'detached' });
   }
