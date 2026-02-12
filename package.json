@@ -93,7 +93,7 @@
     "toastify-js": "^1.12.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.57.0",
+    "@playwright/test": "1.58.2",
     "@poppanator/sveltekit-svg": "^4.2.1",
     "@sveltejs/vite-plugin-svelte": "^3.0.0",
     "@testing-library/svelte": "^4.0.2",
