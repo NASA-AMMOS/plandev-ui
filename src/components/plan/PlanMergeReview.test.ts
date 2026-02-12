@@ -6,8 +6,8 @@ import { planModelActivityTypes } from '../../stores/plan';
 import type { Model } from '../../types/model';
 import type {
   Plan,
-  PlanMergeConflictingActivity,
-  PlanMergeNonConflictingActivity,
+  PlanMergeConflictingActivityDB,
+  PlanMergeNonConflictingActivityDB,
   PlanMergeRequestSchema,
 } from '../../types/plan';
 import effects from '../../utilities/effects';
@@ -73,6 +73,7 @@ const mockMergeRequest: PlanMergeRequestSchema = {
     model_id: 1,
     name: 'Demo Plan',
     owner: 'unknown',
+    start_time: '2024-01-01T00:00:00Z',
   },
   plan_snapshot_supplying_changes: {
     plan: {
@@ -84,6 +85,7 @@ const mockMergeRequest: PlanMergeRequestSchema = {
       model_id: 1,
       name: 'Branch 1',
       owner: 'unknown',
+      start_time: '2024-01-01T00:00:00Z',
     },
     snapshot_id: 2,
   },
@@ -164,7 +166,7 @@ describe('PlanMergeReview component', () => {
   });
 
   it('PlanMergeReview component should not throw with conflicting activities when source is delete and target is modify', () => {
-    const initialConflictingActivities: PlanMergeConflictingActivity[] = [
+    const initialConflictingActivities: PlanMergeConflictingActivityDB[] = [
       {
         activity_id: 1,
         change_type_source: 'delete',
@@ -185,7 +187,6 @@ describe('PlanMergeReview component', () => {
           snapshot_id: 1,
           source_scheduling_goal_id: -1,
           start_offset: '23:06:17.622',
-          start_time_ms: 1715731443696,
           tags: [],
           type: 'A_Activity',
         },
@@ -208,14 +209,13 @@ describe('PlanMergeReview component', () => {
           snapshot_id: 1,
           source_scheduling_goal_id: -1,
           start_offset: '36:25:10.489',
-          start_time_ms: 1715731443696,
           tags: [],
           type: 'A_Activity',
         },
         target_tags: [],
       },
     ];
-    const initialNonConflictingActivities: PlanMergeNonConflictingActivity[] = [];
+    const initialNonConflictingActivities: PlanMergeNonConflictingActivityDB[] = [];
 
     const { component } = render(PlanMergeReview, {
       initialConflictingActivities,
@@ -228,7 +228,7 @@ describe('PlanMergeReview component', () => {
   });
 
   it('PlanMergeReview component should not throw with conflicting activities when source is modify and target is delete', () => {
-    const initialConflictingActivities: PlanMergeConflictingActivity[] = [
+    const initialConflictingActivities: PlanMergeConflictingActivityDB[] = [
       {
         activity_id: 1,
         change_type_source: 'modify',
@@ -249,7 +249,6 @@ describe('PlanMergeReview component', () => {
           snapshot_id: 1,
           source_scheduling_goal_id: -1,
           start_offset: '23:06:17.622',
-          start_time_ms: 1715731443696,
           tags: [],
           type: 'A_Activity',
         },
@@ -269,7 +268,6 @@ describe('PlanMergeReview component', () => {
           snapshot_id: 2,
           source_scheduling_goal_id: -1,
           start_offset: '36:25:10.489',
-          start_time_ms: 1715731443696,
           tags: [],
           type: 'A_Activity',
         },
@@ -278,7 +276,7 @@ describe('PlanMergeReview component', () => {
         target_tags: [],
       },
     ];
-    const initialNonConflictingActivities: PlanMergeNonConflictingActivity[] = [];
+    const initialNonConflictingActivities: PlanMergeNonConflictingActivityDB[] = [];
 
     const { component } = render(PlanMergeReview, {
       initialConflictingActivities,
@@ -291,8 +289,8 @@ describe('PlanMergeReview component', () => {
   });
 
   it('PlanMergeReview component should not throw with non-conflicting activities', () => {
-    const initialConflictingActivities: PlanMergeConflictingActivity[] = [];
-    const initialNonConflictingActivities: PlanMergeNonConflictingActivity[] = [
+    const initialConflictingActivities: PlanMergeConflictingActivityDB[] = [];
+    const initialNonConflictingActivities: PlanMergeNonConflictingActivityDB[] = [
       {
         activity_id: 6,
         change_type: 'add',
@@ -311,7 +309,6 @@ describe('PlanMergeReview component', () => {
           snapshot_id: 6,
           source_scheduling_goal_id: -1,
           start_offset: '46:33:39.909',
-          start_time_ms: 1715731443696,
           tags: [],
           type: 'B_Activity',
         },
@@ -340,7 +337,6 @@ describe('PlanMergeReview component', () => {
           snapshot_id: 6,
           source_scheduling_goal_id: -1,
           start_offset: '53:35:33.936',
-          start_time_ms: 1715731443696,
           tags: [],
           type: 'C_Activity',
         },
@@ -364,7 +360,6 @@ describe('PlanMergeReview component', () => {
           snapshot_id: 6,
           source_scheduling_goal_id: -1,
           start_offset: '23:22:32.036',
-          start_time_ms: 1715731443696,
           tags: [],
           type: 'A_Activity',
         },
@@ -385,7 +380,6 @@ describe('PlanMergeReview component', () => {
           snapshot_id: 6,
           source_scheduling_goal_id: -1,
           start_offset: '23:22:32.036',
-          start_time_ms: 1715731443696,
           tags: [],
           type: 'A_Activity',
         },

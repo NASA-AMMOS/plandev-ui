@@ -6,7 +6,14 @@ import type {
   ActivityDirectivesMap,
 } from '../types/activity';
 import type { ActivityMetadata, ActivityMetadataKey, ActivityMetadataValue } from '../types/activity-metadata';
-import type { Plan } from '../types/plan';
+import type {
+  Plan,
+  PlanMergeActivityDirectiveDB,
+  PlanMergeConflictingActivity,
+  PlanMergeConflictingActivityDB,
+  PlanMergeNonConflictingActivity,
+  PlanMergeNonConflictingActivityDB,
+} from '../types/plan';
 import type { Span, SpanId, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type { ActivityTransformDirection } from '../types/time';
 import { getClipboardContent, setClipboardContent } from './clipboard';
@@ -18,6 +25,7 @@ import {
   getIntervalFromDoyRange,
   getIntervalInMs,
   getUnixEpochTime,
+  getUnixEpochTimeFromInterval,
   usToOffset,
 } from './time';
 import { showFailureToast } from './toast';
@@ -178,6 +186,53 @@ export function preprocessActivityDirectiveDB(
     );
   }
   return { ...activityDirectiveDB, start_time_ms };
+}
+
+/**
+ * Transforms a PlanMergeActivityDirectiveDB to PlanMergeActivityDirective by computing start_time_ms.
+ * Works with both source (without plan_id) and target (with plan_id) activity directives.
+ */
+export function transformPlanMergeActivityDirective<T extends Omit<PlanMergeActivityDirectiveDB, 'plan_id'>>(
+  activity: T,
+  planStartTime: string,
+): T & { start_time_ms: number } {
+  return {
+    ...activity,
+    start_time_ms: getUnixEpochTimeFromInterval(planStartTime, activity.start_offset),
+  };
+}
+
+/**
+ * Transforms PlanMergeConflictingActivityDB array to PlanMergeConflictingActivity array
+ * by computing start_time_ms for each activity using their respective plan's start_time.
+ */
+export function transformPlanMergeConflictingActivities(
+  activities: PlanMergeConflictingActivityDB[],
+  sourcePlanStartTime: string,
+  targetPlanStartTime: string,
+): PlanMergeConflictingActivity[] {
+  return activities.map(activity => ({
+    ...activity,
+    merge_base: transformPlanMergeActivityDirective(activity.merge_base, targetPlanStartTime),
+    source: activity.source ? transformPlanMergeActivityDirective(activity.source, sourcePlanStartTime) : null,
+    target: activity.target ? transformPlanMergeActivityDirective(activity.target, targetPlanStartTime) : null,
+  }));
+}
+
+/**
+ * Transforms PlanMergeNonConflictingActivityDB array to PlanMergeNonConflictingActivity array
+ * by computing start_time_ms for each activity using their respective plan's start_time.
+ */
+export function transformPlanMergeNonConflictingActivities(
+  activities: PlanMergeNonConflictingActivityDB[],
+  sourcePlanStartTime: string,
+  targetPlanStartTime: string,
+): PlanMergeNonConflictingActivity[] {
+  return activities.map(activity => ({
+    ...activity,
+    source: activity.source ? transformPlanMergeActivityDirective(activity.source, sourcePlanStartTime) : null,
+    target: activity.target ? transformPlanMergeActivityDirective(activity.target, targetPlanStartTime) : null,
+  }));
 }
 
 export function copyActivityDirectivesToClipboard(sourcePlan: Plan, activities: ActivityDirective[]) {

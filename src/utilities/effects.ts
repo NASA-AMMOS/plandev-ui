@@ -164,8 +164,8 @@ import type {
   PlanCollaborator,
   PlanForMerging,
   PlanInsertInput,
-  PlanMergeConflictingActivity,
-  PlanMergeNonConflictingActivity,
+  PlanMergeConflictingActivityDB,
+  PlanMergeNonConflictingActivityDB,
   PlanMergeRequestSchema,
   PlanMergeResolution,
   PlanMetadata,
@@ -4948,10 +4948,10 @@ const effects = {
   async getPlanMergeConflictingActivities(
     mergeRequestId: number,
     user: User | null,
-  ): Promise<PlanMergeConflictingActivity[]> {
+  ): Promise<PlanMergeConflictingActivityDB[]> {
     try {
       const query = convertToQuery(gql.SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES);
-      const data = await reqHasura<PlanMergeConflictingActivity[]>(query, { merge_request_id: mergeRequestId }, user);
+      const data = await reqHasura<PlanMergeConflictingActivityDB[]>(query, { merge_request_id: mergeRequestId }, user);
       const { conflictingActivities } = data;
       if (conflictingActivities != null) {
         logMessage(
@@ -4970,9 +4970,9 @@ const effects = {
   async getPlanMergeNonConflictingActivities(
     mergeRequestId: number,
     user: User | null,
-  ): Promise<PlanMergeNonConflictingActivity[]> {
+  ): Promise<PlanMergeNonConflictingActivityDB[]> {
     try {
-      const data = await reqHasura<PlanMergeNonConflictingActivity[]>(
+      const data = await reqHasura<PlanMergeNonConflictingActivityDB[]>(
         gql.GET_PLAN_MERGE_NON_CONFLICTING_ACTIVITIES,
         {
           merge_request_id: mergeRequestId,
