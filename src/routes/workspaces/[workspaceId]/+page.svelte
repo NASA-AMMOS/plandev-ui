@@ -232,8 +232,6 @@
     parameterDictionaries = [];
   }
 
-  $: console.log('object :>> ', $activeDocument.type);
-
   // Prevent in-app navigation to other routes when there are unsaved changes
   beforeNavigate(({ cancel, to }) => {
     if (!$activeDocumentIsDirty) {

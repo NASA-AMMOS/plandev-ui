@@ -42,7 +42,7 @@
   let editorView: EditorView;
   let updatedTextContent: string = textFileContent;
   let isTextContentUpdated: boolean = false;
-  let previousIsJSON: boolean = isJSON;
+  let previousIsJSON: boolean | null = null;
 
   // Insert text content - use textFilePath as dependency to ensure editor updates when switching files
   // This handles the case where both old and new files have the same content (e.g., both empty)
@@ -63,12 +63,13 @@
   $: isTextContentUpdated = updatedTextContent !== textFileContent;
 
   $: if (previousIsJSON !== isJSON && editorDiv) {
+    previousIsJSON = isJSON;
+
     if (editorView) {
       editorView.destroy();
     }
     if (isJSON) {
       editorView = new EditorView({
-        doc: textFileContent,
         extensions: [
           basicSetup,
           keymap.of([
@@ -91,7 +92,6 @@
       });
     } else {
       editorView = new EditorView({
-        doc: textFileContent,
         extensions: [
           basicSetup,
           keymap.of([
