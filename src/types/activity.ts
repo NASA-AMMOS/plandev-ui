@@ -137,6 +137,7 @@ export interface ActivityDirectiveSearchResult {
   applied_preset: AppliedPreset['preset_applied']['name'] | null;
   arguments: ArgumentsMap;
   directive_id: number;
+  last_modified_at: string;
   name: string;
   plan: Pick<PlanSchema, 'model_id' | 'name'>;
   plan_id: number;

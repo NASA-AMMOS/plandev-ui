@@ -949,6 +949,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     const queries = [Queries.SCHEDULE];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
+  SEARCH_ACTIVITIES: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.SEARCH_ACTIVITIES], user);
+  },
   SIMULATE: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
     const queries = [Queries.SIMULATE];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));

@@ -24,6 +24,14 @@
       field: 'plan.name',
       headerName: 'Plan Name',
     },
+    {
+      field: 'applied_preset.preset_applied.name',
+      headerName: 'Applied Preset',
+    },
+    {
+      field: 'last_modified_at',
+      headerName: 'Last Modified',
+    },
   ];
 
   function getUrlForActivity(activity: ActivityDirectiveSearchResult): string {

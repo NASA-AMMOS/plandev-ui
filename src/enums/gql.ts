@@ -204,6 +204,7 @@ export enum Queries {
   SCHEDULING_SPECIFICATION = 'scheduling_specification_by_pk',
   SCHEDULING_SPECIFICATION_CONDITIONS = 'scheduling_specification_conditions',
   SCHEDULING_SPECIFICATION_GOALS = 'scheduling_specification_goals',
+  SEARCH_ACTIVITIES = 'search_activities',
   SEEN_SOURCES = 'seen_sources',
   SEQUENCE = 'sequence',
   SEQUENCE_ADAPTATION = 'sequence_adaptation',

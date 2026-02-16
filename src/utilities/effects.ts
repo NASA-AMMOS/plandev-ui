@@ -7286,7 +7286,7 @@ const effects = {
 
       const data = await reqHasura<ActivityDirectiveSearchResult[]>(
         gql.SEARCH_ACTIVITIES,
-        { searchFilter: { _and: clauses } },
+        { limit: 500, searchFilter: { _and: clauses } },
         user,
       );
       if (data.activity_directive) {
