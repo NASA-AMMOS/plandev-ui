@@ -86,6 +86,7 @@ import type {
   ActivityDirectiveId,
   ActivityDirectiveInsertInput,
   ActivityDirectiveRevision,
+  ActivityDirectiveSearchResult,
   ActivityDirectiveSetInput,
   ActivityPreset,
   ActivityPresetId,
@@ -7197,6 +7198,105 @@ const effects = {
       catchError('Unable to schedule', e as Error);
       showFailureToast('Scheduling failed');
     }
+  },
+
+  async searchActivities(
+    filterArgType: string,
+    filterActName: string,
+    filterArgs: [name: string, value: string | number | boolean][],
+    filterTagValue: string,
+    user: User | null,
+  ): Promise<ActivityDirectiveSearchResult[] | null> {
+    try {
+      const clauses = [];
+      if (filterArgType) {
+        clauses.push({
+          type: {
+            _eq: filterArgType,
+          },
+        });
+      }
+      if (filterActName) {
+        clauses.push({
+          name: {
+            _ilike: `%${filterActName}%`,
+          },
+        });
+      }
+      if (filterTagValue) {
+        clauses.push({
+          tags: {
+            tag: {
+              name: {
+                _eq: filterTagValue,
+              },
+            },
+          },
+        });
+      }
+
+      for (const [argName, argValue] of filterArgs) {
+        if (argName === '' && argValue === '') {
+          continue;
+        } else if (argName === '') {
+          clauses.push({
+            arguments: {
+              _cast: {
+                String: {
+                  _ilike: `%${argValue}%`,
+                },
+              },
+            },
+          });
+        } else if (argValue === '') {
+          clauses.push({
+            arguments: {
+              _has_key: argName,
+            },
+          });
+        } else if (typeof argValue === 'string') {
+          clauses.push({
+            arguments: {
+              _contains: {
+                [argName]: argValue,
+              },
+            },
+          });
+        } else if (typeof argValue === 'number' || typeof argValue === 'boolean') {
+          clauses.push({
+            _or: [
+              {
+                arguments: {
+                  _contains: {
+                    [argName]: argValue,
+                  },
+                },
+              },
+              {
+                arguments: {
+                  _contains: {
+                    [argName]: argValue.toString(),
+                  },
+                },
+              },
+            ],
+          });
+        }
+      }
+
+      const data = await reqHasura<ActivityDirectiveSearchResult[]>(
+        gql.SEARCH_ACTIVITIES,
+        { searchFilter: { _and: clauses } },
+        user,
+      );
+      if (data.activity_directive) {
+        return data.activity_directive;
+      }
+    } catch (e) {
+      catchError('Search Failed', e as Error);
+      showFailureToast('Search Failed');
+    }
+    return null;
   },
 
   async sendActionSecretParameters(

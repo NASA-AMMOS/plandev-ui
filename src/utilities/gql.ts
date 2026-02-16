@@ -2052,6 +2052,33 @@ const gql = {
     }
   `,
 
+  SEARCH_ACTIVITIES: `#graphql
+    query SearchActivities($searchFilter: activity_directive_bool_exp!) {
+      ${Queries.ACTIVITY_DIRECTIVES}(where: $searchFilter) {
+        name
+        directive_id: id
+        type
+        plan_id
+        plan {
+          name
+          model_id
+        }
+        arguments
+        tags {
+          tag {
+            name
+            color
+          }
+        }
+        applied_preset {
+          preset_applied {
+            name
+          }
+        }
+      }
+    }
+  `,
+
   SIMULATE: `#graphql
     query Simulate($planId: Int!, $force: Boolean!) {
       ${Queries.SIMULATE}(planId: $planId, force: $force) {

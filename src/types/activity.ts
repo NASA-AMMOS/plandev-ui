@@ -4,8 +4,9 @@ import type { PartialWith, UserId } from './app';
 import type { ActivityDirectiveValidationFailures } from './errors';
 import type { ExpansionRuleSlim } from './expansion';
 import type { ArgumentsMap, ParametersMap } from './parameter';
+import type { PlanSchema } from './plan';
 import type { ValueSchema } from './schema';
-import type { Tag } from './tags';
+import type { Tag, TagsInsertInput } from './tags';
 
 export type ActivityType = {
   computed_attributes_value_schema: ValueSchema;
@@ -131,3 +132,16 @@ export type PlanSnapshotActivity = Omit<ActivityDirective, 'anchor_validations' 
 export type PlanSnapshotActivityDB = Omit<ActivityDirectiveDB, 'anchor_validations' | 'applied_preset' | 'plan_id'> & {
   snapshot_id: number;
 };
+
+export interface ActivityDirectiveSearchResult {
+  applied_preset: AppliedPreset['preset_applied']['name'] | null;
+  arguments: ArgumentsMap;
+  directive_id: number;
+  name: string;
+  plan: Pick<PlanSchema, 'model_id' | 'name'>;
+  plan_id: number;
+  tags: {
+    tag: TagsInsertInput;
+  }[];
+  type: string;
+}
