@@ -1,10 +1,8 @@
 import { jwtDecode } from 'jwt-decode';
-import { derived, get, type Readable } from 'svelte/store';
-import type { BaseUser, User } from '../../types/app';
-import { computeRolesFromJWT } from '../../utilities/auth';
-import { showFailureToast } from '../../utilities/toast';
+import { derived, get, writable, type Readable } from 'svelte/store';
+import { restartSharedClient } from '../../stores/gqlClient';
+import { getCookieValue } from '../../utilities/browser';
 import type { MaybeToken } from '../types/oidc';
-import { userStore } from './auth';
 
 type CookieChanged = {
   domain: string;
@@ -31,8 +29,17 @@ type CookieStore = {
 declare global {
   interface Window {
     cookieStore: CookieStore;
-    addEventListener(type: string, listener: (this: Window, ev: CookieChangeEvent) => void, useCapture?: boolean): void;
   }
+}
+
+// Store for the current access token (read from cookie)
+// Used only for computing refresh timing, not for user state
+const accessToken = writable<string | null>(null);
+
+// Initialize from cookie on load
+const initialToken = getCookieValue('accessToken');
+if (initialToken) {
+  accessToken.set(initialToken);
 }
 
 export function cookieStoreListener() {
@@ -43,12 +50,9 @@ export function cookieStoreListener() {
     console.error('Cookie store is not available in this environment. It is *required* for automatic refresh of JWT.');
   }
 
-  // Delay is a `derived` value, ultimately from the user store... (see below).
+  // Delay is a `derived` value from the access token.
   // Whenever the delay changes, any prior timeout is cancelled and a new timeout
   // is created (using the new value of delay).
-  //
-  // We track an unsubscribe function to remove the cookie store change listener
-  // when the component is unmounted.
   const unsubscribe = delay.subscribe(value => {
     if (value) {
       console.debug(`Scheduling token refresh in ${value}ms`);
@@ -58,18 +62,32 @@ export function cookieStoreListener() {
 
   // Return a cleanup function to remove the cookie store change listener
   // and unsubscribe from the delay store.
-  return () => {
+  const cleanup = () => {
     console.debug('Removing cookie store change listener.');
-    window.cookieStore.removeEventListener('change', handleCookieStoreChange);
+    if ('cookieStore' in window) {
+      window.cookieStore.removeEventListener('change', handleCookieStoreChange);
+    }
     unsubscribe();
+    if (prior) {
+      clearTimeout(prior);
+      prior = null;
+    }
   };
+
+  // Store on window so HMR module re-evaluation can find and clean up the old listener
+  (window as any).__oidcCookieCleanup = cleanup;
+
+  return cleanup;
 }
 
-// The decoded access token contains a timestamp that indicates when
-// it will expire.
-export const accessTokenDecoded: Readable<MaybeToken> = derived(userStore, $userStore => {
-  if ($userStore && $userStore.token) {
-    return jwtDecode($userStore.token) as MaybeToken;
+// The decoded access token contains a timestamp that indicates when it will expire.
+export const accessTokenDecoded: Readable<MaybeToken> = derived(accessToken, $accessToken => {
+  if ($accessToken) {
+    try {
+      return jwtDecode($accessToken) as MaybeToken;
+    } catch {
+      return null;
+    }
   }
   return null;
 });
@@ -111,10 +129,10 @@ export async function refresh(): Promise<void> {
   }
 }
 
-function reschedule(fn: () => Promise<void>, delay: number, prior: number | null): any {
-  if (prior) {
+function reschedule(fn: () => Promise<void>, delay: number, previousTimeout: number | null): any {
+  if (previousTimeout) {
     console.debug(`Clearing previous timeout.`);
-    clearTimeout(prior);
+    clearTimeout(previousTimeout);
   }
   console.debug(`Scheduling ${fn.name} in ${delay}ms`);
   return setTimeout(async () => {
@@ -123,7 +141,10 @@ function reschedule(fn: () => Promise<void>, delay: number, prior: number | null
     } catch (err) {
       // Only log error message, not full object (may contain sensitive data)
       console.error('Error in scheduled refresh:', err instanceof Error ? err.message : 'Unknown error');
-      showFailureToast('Failed to refresh your credentials, please login again.');
+      // Retry after 5 seconds — network may have been temporarily unavailable.
+      // When it succeeds, the cookie update triggers the normal delay-based scheduling.
+      console.debug('Scheduling token refresh retry in 5000ms');
+      prior = reschedule(fn, 5000, prior);
     }
   }, delay);
 }
@@ -131,7 +152,12 @@ function reschedule(fn: () => Promise<void>, delay: number, prior: number | null
 /**
  * Handles changes and deletions to the cookie store.
  *
- * @param event: CookieChangeEvent - The event containing the changed or deleted cookies.
+ * Token refresh: Updates accessToken store, dispatches event to update user store,
+ * and restarts WebSocket. While Hasura validates JWT at connection_init, it also
+ * monitors expiration and kills connections when tokens expire.
+ *
+ * Role change: Handled by Nav.svelte → /auth/changeRole → user store update →
+ * +layout.svelte reactive block → WebSocket restart.
  */
 const handleCookieStoreChange = async (ev: Event) => {
   const event = ev as CookieChangeEvent;
@@ -144,34 +170,46 @@ const handleCookieStoreChange = async (ev: Event) => {
     'deleted:',
     event.deleted.map(c => c.name),
   );
-  event.changed.forEach(async ({ name, value }) => {
+
+  let tokenRefreshed = false;
+
+  event.changed.forEach(({ name, value }) => {
     if (name === 'accessToken') {
-      // set user store
-      const baseUser: BaseUser = { id: null, token: value }; // id can be null because any time this function is used, its in the context of oidc, and we specifically catch id being null for oidc in computeRolesFromJWT
-      const user: User | null = await computeRolesFromJWT(baseUser, null); // null role because if after a refresh a user has been demoted, wouldn't want to retain an invalid role
-      userStore.set(user);
+      // Update internal store for refresh timing
+      accessToken.set(value);
+      tokenRefreshed = true;
+
+      // Dispatch event so the layout can update the user store with the fresh token
+      window.dispatchEvent(new CustomEvent('oidc-token-refreshed', { detail: { token: value } }));
     }
-    if (name === 'idToken') {
-      const decoded = jwtDecode(value);
-      // update user store
-      userStore.update(user => {
-        if (user && decoded.sub) {
-          return {
-            ...user,
-            id: decoded.sub,
-          };
-        }
-        return user;
-      });
-    }
-    if (name === 'activeRole') {
-      // update the user store
-      userStore.update(user => {
-        if (user) {
-          user.activeRole = value;
-        }
-        return user;
-      });
-    }
+    // Note: activeRole changes are handled by Nav.svelte which updates the user store
+    // directly after receiving the updated user from the server. The +layout.svelte
+    // reactive statement then detects the role change and restarts the WebSocket.
   });
+
+  if (tokenRefreshed) {
+    // Restart WebSocket to pick up new credentials. While Hasura validates JWT only
+    // at connection_init, it ALSO monitors token expiration and closes connections
+    // when JWTs expire (observed in Hasura logs: "Could not verify JWT: JWTExpired").
+    // Restarting proactively with the fresh token prevents this abrupt 1006 close.
+    console.debug('Token refreshed, restarting WebSocket with fresh credentials.');
+    restartSharedClient();
+  }
 };
+
+// HMR resilience: when this module is re-evaluated during HMR, clean up the old listener
+// (which references stale handleCookieStoreChange closure) and immediately re-establish
+// with fresh module references. This keeps token refresh working during HMR.
+// Only re-establish if there's a valid accessToken (user is authenticated).
+if (typeof window !== 'undefined') {
+  const prevCleanup = (window as any).__oidcCookieCleanup as (() => void) | undefined;
+  if (prevCleanup) {
+    console.debug('HMR: cleaning up old OIDC listeners.');
+    prevCleanup();
+    // Only re-establish listener if we have a valid token (user is authenticated)
+    if (getCookieValue('accessToken')) {
+      console.debug('HMR: re-establishing OIDC listeners with fresh module references.');
+      cookieStoreListener();
+    }
+  }
+}

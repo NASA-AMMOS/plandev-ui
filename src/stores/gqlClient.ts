@@ -3,6 +3,7 @@ import { env } from '$env/dynamic/public';
 import { createClient, type Client, type ClientOptions } from 'graphql-ws';
 import { writable, type Readable } from 'svelte/store';
 import type { BaseUser } from '../types/app';
+import { getCookieValue } from '../utilities/browser';
 import { logout } from '../utilities/login';
 import { EXPIRED_JWT } from '../utilities/permissions';
 
@@ -73,26 +74,30 @@ let subscriptionCounter = 0;
 let pendingQueryName: string | null = null;
 
 /**
- * Helper that parses a user cookie to get a token.
+ * Helper that reads auth token from cookies.
+ * Supports both OIDC format (direct accessToken cookie) and
+ * standard JWT format (base64-encoded user cookie containing token).
  */
-function getTokenFromUserCookie(): string {
-  if (browser && document?.cookie) {
-    const cookies = document.cookie.split(/\s*;\s*/);
-    const userCookie = cookies.find(entry => entry.startsWith('user='));
-    if (userCookie) {
-      try {
-        const splitCookie = userCookie.split('user=')[1];
-        const decodedUserCookie = atob(decodeURIComponent(splitCookie));
-        const parsedUserCookie: BaseUser = JSON.parse(decodedUserCookie);
-        return parsedUserCookie.token;
-      } catch (e) {
-        console.log(e);
-        return '';
-      }
-    } else {
-      console.log(`No 'user' cookie found`);
+function getToken(): string {
+  // OIDC format: direct accessToken cookie
+  const accessToken = getCookieValue('accessToken');
+  if (accessToken) {
+    return accessToken;
+  }
+
+  // Standard JWT/SSO format: base64-encoded user cookie containing token
+  const userCookie = getCookieValue('user');
+  if (userCookie) {
+    try {
+      const decodedUserCookie = atob(decodeURIComponent(userCookie));
+      const parsedUserCookie: BaseUser = JSON.parse(decodedUserCookie);
+      return parsedUserCookie.token;
+    } catch (e) {
+      console.log('Error parsing user cookie:', e);
+      return '';
     }
   }
+
   return '';
 }
 
@@ -100,15 +105,11 @@ function getTokenFromUserCookie(): string {
  * Helper that parses a role cookie.
  */
 function getRoleFromCookie(): string {
-  if (browser && document?.cookie) {
-    const cookies = document.cookie.split(/\s*;\s*/);
-    const roleCookie = cookies.find(entry => entry.startsWith('activeRole='));
-    if (roleCookie) {
-      return roleCookie.split('activeRole=')[1];
-    } else {
-      console.log(`No 'role' cookie found`);
-    }
+  const role = getCookieValue('activeRole');
+  if (role) {
+    return role;
   }
+  console.log(`No 'role' cookie found`);
   return '';
 }
 
@@ -116,12 +117,15 @@ function getRoleFromCookie(): string {
  * Creates the shared graphql-ws client with configured options.
  */
 function createSharedClient(): Client {
+  // Capture reference so event handlers can detect if this client was replaced/disposed.
+  // When disposeSharedClient() sets client = null (or a new client is created),
+  // the old client's async close event won't corrupt shared state.
   const clientOptions: ClientOptions = {
     // connectionParams is a function so it gets fresh token/role on each reconnect
     connectionParams: () => {
       return {
         headers: {
-          Authorization: `Bearer ${getTokenFromUserCookie()}`,
+          Authorization: `Bearer ${getToken()}`,
           'x-hasura-role': getRoleFromCookie(),
         },
       };
@@ -134,6 +138,10 @@ function createSharedClient(): Client {
     },
     on: {
       closed: (event: unknown) => {
+        // Ignore events from a disposed/replaced client
+        if (newClient !== client) {
+          return;
+        }
         activeSocket = null;
         // Update state to reconnecting (graphql-ws will auto-retry)
         connectionStateStore.set('reconnecting');
@@ -148,6 +156,9 @@ function createSharedClient(): Client {
         }
       },
       connected: (socket: unknown) => {
+        if (newClient !== client) {
+          return;
+        }
         activeSocket = socket as WebSocket;
         connectionStateStore.set('connected');
         // Handle pending restart request
@@ -157,6 +168,9 @@ function createSharedClient(): Client {
         }
       },
       connecting: () => {
+        if (newClient !== client) {
+          return;
+        }
         // Only set 'connecting' if we're not already reconnecting
         // (reconnecting state should persist until connected)
         if (currentConnectionState !== 'reconnecting') {
@@ -164,6 +178,9 @@ function createSharedClient(): Client {
         }
       },
       error: (err: unknown) => {
+        if (newClient !== client) {
+          return;
+        }
         console.error('WebSocket connection error', err);
         // Check for JWT expiration in error
         if (err && typeof err === 'object' && 'message' in err) {
@@ -197,7 +214,11 @@ function createSharedClient(): Client {
     url: env.PUBLIC_HASURA_WEB_SOCKET_URL,
   };
 
-  return createClient(clientOptions);
+  // newClient is referenced in the `on` handler closures above.
+  // Those closures only execute asynchronously (on WebSocket events),
+  // so newClient is guaranteed to be assigned by the time they run.
+  const newClient = createClient(clientOptions);
+  return newClient;
 }
 
 /**
@@ -324,4 +345,29 @@ export function disposeSharedClient(): void {
     refCount = 0;
     connectionStateStore.set('disconnected');
   }
+}
+
+// HMR resilience: when this module is re-evaluated during HMR, the module-level
+// `client` resets to null but the old WebSocket client is still connected with
+// active subscriptions. Save state to window on connection changes (which follow
+// activeSocket updates in event handlers) and restore on re-evaluation.
+if (browser) {
+  const prev = (window as any).__gqlClientHmr as
+    | { activeSocket: WebSocket | null; client: Client; refCount: number }
+    | undefined;
+  if (prev?.client) {
+    console.debug('HMR: restoring shared GraphQL client reference.');
+    client = prev.client;
+    activeSocket = prev.activeSocket;
+    refCount = prev.refCount;
+    connectionStateStore.set('connected');
+  }
+
+  connectionStateStore.subscribe(() => {
+    if (client) {
+      (window as any).__gqlClientHmr = { activeSocket, client, refCount };
+    } else {
+      delete (window as any).__gqlClientHmr;
+    }
+  });
 }

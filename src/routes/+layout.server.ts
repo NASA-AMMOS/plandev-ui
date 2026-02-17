@@ -14,8 +14,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
   if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true' && !nonProtectedPage) {
     try {
       enforce(locals?.user, userIsDefined);
-    } catch (error) {
-      console.log(error);
+    } catch {
       const redirectTo = encodeURIComponent(url.pathname + url.search);
       redirect(302, `${base}/login?redirectTo=${redirectTo}`);
     }

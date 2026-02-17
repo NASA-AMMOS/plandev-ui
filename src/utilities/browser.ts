@@ -1,6 +1,17 @@
 import { browser } from '$app/environment';
 
 /**
+ * Reads a cookie value by name. Returns null if not found or not in a browser.
+ */
+export function getCookieValue(name: string): string | null {
+  if (!browser || !document?.cookie) {
+    return null;
+  }
+  const cookie = document.cookie.split(/\s*;\s*/).find(entry => entry.startsWith(`${name}=`));
+  return cookie ? cookie.split('=')[1] : null;
+}
+
+/**
  * Returns true if the current browser is running on MacOS
  */
 export function isMacOs(): boolean {

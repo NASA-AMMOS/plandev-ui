@@ -12,7 +12,7 @@ export function shouldRedirectToLogin(user: User | null) {
 export async function logout(reason?: string) {
   if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
     if (browser) {
-      await goto(`${base}/oidc/logout`);
+      window.location.href = `${base}/oidc/logout`;
     } else {
       console.error(
         `Logout triggered from server. NOTE - this is exceptional behavior and this logout handling exists to avoid a crash. Cited reason: ${reason}:`,
