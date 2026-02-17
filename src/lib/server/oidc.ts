@@ -1,4 +1,4 @@
-import { browser, dev } from '$app/environment';
+import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import type { MaybeToken, Rule } from '$lib/types/oidc';
 import { type Cookies, type RequestEvent } from '@sveltejs/kit';
@@ -51,10 +51,18 @@ function getSupportedAlgorithms(): jwt.Algorithm[] {
  *   - Your IdP's token mapper configuration
  */
 export const CLAIMS_CONFIG = {
-  get namespace() { return env.OIDC_CLAIMS_NAMESPACE || 'https://hasura.io/jwt/claims'; },
-  get userId() { return env.OIDC_CLAIMS_USER_ID || 'x-hasura-user-id'; },
-  get allowedRoles() { return env.OIDC_CLAIMS_ALLOWED_ROLES || 'x-hasura-allowed-roles'; },
-  get defaultRole() { return env.OIDC_CLAIMS_DEFAULT_ROLE || 'x-hasura-default-role'; },
+  get allowedRoles() {
+    return env.OIDC_CLAIMS_ALLOWED_ROLES || 'x-hasura-allowed-roles';
+  },
+  get defaultRole() {
+    return env.OIDC_CLAIMS_DEFAULT_ROLE || 'x-hasura-default-role';
+  },
+  get namespace() {
+    return env.OIDC_CLAIMS_NAMESPACE || 'https://hasura.io/jwt/claims';
+  },
+  get userId() {
+    return env.OIDC_CLAIMS_USER_ID || 'x-hasura-user-id';
+  },
 };
 
 /**
@@ -66,9 +74,9 @@ export const CLAIMS_CONFIG = {
  * @throws Error if required claims are missing
  */
 export function extractClaims(token: jwt.JwtPayload): {
-  userId: string;
   allowedRoles: string[];
   defaultRole: string;
+  userId: string;
 } {
   const namespace = token[CLAIMS_CONFIG.namespace];
   if (!namespace || typeof namespace !== 'object') {
@@ -88,10 +96,12 @@ export function extractClaims(token: jwt.JwtPayload): {
     );
   }
   if (!defaultRole || typeof defaultRole !== 'string') {
-    throw new Error(`JWT missing or invalid default role claim: ${CLAIMS_CONFIG.namespace}.${CLAIMS_CONFIG.defaultRole}`);
+    throw new Error(
+      `JWT missing or invalid default role claim: ${CLAIMS_CONFIG.namespace}.${CLAIMS_CONFIG.defaultRole}`,
+    );
   }
 
-  return { userId, allowedRoles, defaultRole };
+  return { allowedRoles, defaultRole, userId };
 }
 
 /**
@@ -240,8 +250,8 @@ export function verifyNonce(idToken: string, expectedNonce: string): void {
  *
  */
 export class Client {
-  private static _instance: Client;
   private static _initPromise: Promise<Client>;
+  private static _instance: Client;
 
   private authorizationEndpoint!: string;
   private client!: arctic.OAuth2Client;

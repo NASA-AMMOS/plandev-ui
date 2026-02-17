@@ -4,8 +4,8 @@ import type { BaseUser, User } from '../types/app';
 import type { BaseError, LogMessage } from '../types/errors';
 import type { ExtensionPayload, ExtensionResponse } from '../types/extension';
 import type { QueryVariables } from '../types/subscribable';
-import { INVALID_JWT } from '../utilities/permissions';
 import { ErrorTypes } from './errors';
+import { INVALID_JWT } from './permissions';
 
 /**
  * Used to make calls to application external to Aerie.
@@ -239,8 +239,16 @@ export async function reqHasura<T = any>(
           }
         }
       } else if (code === INVALID_JWT) {
-        // awaiting here only works if SSR is disabled
-        logout(error?.message);
+        // This should never be triggered in the OIDC case, because we have refreshes.
+        // In any case, we do the following:
+        //   * Display an error message.
+        //   * Tell the user they need to log in again
+        //   * Provide a way to do so.
+        // Don't automatically initiate logout.
+        console.error('Expired JWT in reqHasura for query:', query);
+        throw new Error(
+          `JWT Expired in reqHasura.\nCited Reason: ${json.errors[0]?.message ?? error?.message}\nFor query: ${query}.`,
+        );
       } else {
         errors.push({
           ...defaultError,

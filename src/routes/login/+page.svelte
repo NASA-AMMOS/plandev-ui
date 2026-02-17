@@ -8,10 +8,12 @@
   import { Button, Input, Label } from '@nasa-jpl/stellar-svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import { SearchParameters } from '../../enums/searchParameters';
-  import { userStore } from '../../lib/stores/auth';
+  import { getUserStore } from '../../stores/user';
   import type { LoginResponseBody } from '../../types/auth';
   import { EXPIRED_JWT, hasNoAuthorization } from '../../utilities/permissions';
   import { removeQueryParam } from '../../utilities/url';
+
+  const user = getUserStore();
 
   let error: string | null = null;
   let fullError: string | null = null;
@@ -20,7 +22,7 @@
   let reason = $page.url.searchParams.get(SearchParameters.REASON);
   let username = '';
 
-  $: if ($userStore?.permissibleQueries && hasNoAuthorization($userStore)) {
+  $: if ($user?.permissibleQueries && hasNoAuthorization($user)) {
     error = 'You are not authorized';
     fullError =
       'You are not authorized to access the page that you attempted to view. Please contact a tool administrator to request access.';
@@ -85,9 +87,7 @@
 
     {#if isOidcEnabled()}
       <fieldset class="pt-4">
-        <div>
-          <Button type="button" on:click={() => goto(`${base}/oidc/login`)}>Login Using OIDC</Button>
-        </div>
+        <Button size="lg" type="button" on:click={() => goto(`${base}/oidc/login`)}>Login Using OIDC</Button>
       </fieldset>
     {:else}
       <fieldset>
