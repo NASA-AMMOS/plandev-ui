@@ -577,8 +577,7 @@ export function findNodeAffectingPath(
   }
   return nodes.find(
     node =>
-      node.fullPath === path ||
-      (node.type === WorkspaceContentType.Directory && path.startsWith(node.fullPath + '/')),
+      node.fullPath === path || (node.type === WorkspaceContentType.Directory && path.startsWith(node.fullPath + '/')),
   );
 }
 
