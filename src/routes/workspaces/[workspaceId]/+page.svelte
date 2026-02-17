@@ -83,6 +83,7 @@
   import {
     computeMovedFilePath,
     downloadWorkspaceNodesAsZip,
+    findNodeAffectingPath,
     flattenWorkspaceTreeWithPaths,
     getAvailableActionsForNodes,
     mapWorkspaceTreePaths,
@@ -556,12 +557,13 @@
 
   async function onDeleteNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if ($workspace) {
-      const shouldUpdateSelectedNode = treeNodes.find(node => node.fullPath === $activeDocumentPath);
+      const affectedNode = findNodeAffectingPath(treeNodes, $activeDocumentPath);
 
       const didDelete = await effects.deleteWorkspaceItems($workspace, treeNodes, $user);
       await refreshWorkspaceContents();
 
-      if (didDelete && shouldUpdateSelectedNode) {
+      if (didDelete && affectedNode) {
+        activeDocument.close();
         selectedFilePath = null;
         confirmAndNavigate(null);
       }
@@ -570,7 +572,7 @@
 
   async function onDownloadNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     // Prompt user to save their active file if it is found within treeNodes
-    const containsActiveNode = treeNodes.find(node => node.fullPath === $activeDocumentPath);
+    const containsActiveNode = findNodeAffectingPath(treeNodes, $activeDocumentPath);
 
     // Prompt to save unsaved changes before moving
     if (containsActiveNode && $activeDocumentIsDirty) {
@@ -597,7 +599,7 @@
 
   async function onMoveNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if ($workspace && workspaceTree) {
-      const movedActiveNode = treeNodes.find(node => node.fullPath === $activeDocumentPath);
+      const movedActiveNode = findNodeAffectingPath(treeNodes, $activeDocumentPath);
 
       // Prompt to save unsaved changes before moving
       if (movedActiveNode && $activeDocumentIsDirty) {
@@ -615,8 +617,8 @@
       if (movedActiveNode && result) {
         const { renamedFiles, skippedFiles, targetPath } = result;
         // Don't update selection if the file was skipped
-        if (!skippedFiles.has(movedActiveNode.fullPath)) {
-          const newFilePath = computeMovedFilePath(movedActiveNode.fullPath, minimalNodes, targetPath, renamedFiles);
+        if (!skippedFiles.has($activeDocumentPath!)) {
+          const newFilePath = computeMovedFilePath($activeDocumentPath!, minimalNodes, targetPath, renamedFiles);
           // Wait for tree to render before updating selection (ensures parent folders can expand)
           await tick();
           updateActiveFilePath(newFilePath);
@@ -702,7 +704,7 @@
 
   async function onMoveNodesToWorkspace({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if (initialWorkspace) {
-      const movedActiveNode = treeNodes.find(node => node.fullPath === $activeDocumentPath);
+      const movedActiveNode = findNodeAffectingPath(treeNodes, $activeDocumentPath);
 
       // Prompt to save unsaved changes before moving
       if (movedActiveNode && $activeDocumentIsDirty) {
