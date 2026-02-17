@@ -14,9 +14,8 @@ import effects from '../../utilities/effects';
 import { ADMIN_ROLE } from '../../utilities/permissions';
 import PlanMergeReview from './PlanMergeReview.svelte';
 
-// Mock the user store context
-vi.mock('svelte', async () => {
-  const actual = (await vi.importActual('svelte')) as typeof import('svelte');
+vi.mock('svelte', async importOriginal => {
+  const actual = await importOriginal<typeof import('svelte')>();
   const actualGetContext = actual.getContext;
   return {
     ...actual,
@@ -35,6 +34,8 @@ vi.mock('svelte', async () => {
       // Fall through to actual getContext for other keys (e.g., bits-ui internal contexts)
       return actualGetContext(key);
     }),
+    // Explicitly define untrack function that might be used by SvelteKit
+    untrack: vi.fn(fn => fn()),
   };
 });
 
