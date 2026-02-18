@@ -300,7 +300,11 @@ export class Plan {
   }
 
   async fillFileInput(importFilePath: string) {
-    const inputFile = this.page.locator('input[name="file"]');
+    const inputFile = this.page
+      .getByRole('tabpanel')
+      .filter({ hasText: 'Activity, Resource, Event Types' })
+      .first()
+      .locator('input[name="file"]');
     await setFileInputByFilepath(this.page, inputFile, importFilePath);
   }
 
