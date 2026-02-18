@@ -81,12 +81,11 @@ test.describe.serial('Plan Activities', () => {
 
     await setFileInputByFilepath(
       setup.page,
-      setup.page.locator('input[type="file"]'),
+      setup.page.getByRole('tabpanel').filter({ hasText: 'Selected Activity' }).first().locator('input[type="file"]'),
       './e2e-tests/data/valid-view.json',
     );
 
     const errorBadge = await setup.page.locator('.input-error-badge-root');
-
     expect(errorBadge).not.toBeAttached();
   });
 

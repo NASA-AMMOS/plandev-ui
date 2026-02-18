@@ -1317,6 +1317,12 @@ const gatewayPermissions = {
       isUserAdmin(user) || (getPermission(queries, user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
+  CREATE_ACTIVITY_DIRECTIVES: (user: User | null, plan: PlanWithOwners): boolean => {
+    const queries = [getFunctionPermission(Queries.INSERT_ACTIVITY_DIRECTIVES)];
+    return (
+      isUserAdmin(user) || (getPermission(queries, user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
+    );
+  },
   CREATE_EXTERNAL_EVENT_TYPE: (user: User | null) => {
     return isUserAdmin(user) || getPermission([getFunctionPermission(Queries.INSERT_EXTERNAL_EVENT_TYPE)], user);
   },
