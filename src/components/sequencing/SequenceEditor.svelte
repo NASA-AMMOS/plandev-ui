@@ -137,6 +137,7 @@
     if (editorOutputView) {
       editorOutputView.destroy();
     }
+
     editorOutputView = new EditorView({
       doc: sequenceOutput,
       extensions: [
@@ -147,7 +148,7 @@
         EditorView.editable.of(false),
         lintGutter(),
         compartmentOutputAdaptation.of(outputEditorExtension),
-        EditorState.readOnly.of(readOnly),
+        EditorState.readOnly.of(readOnly)
       ],
       parent: editorOutputDiv,
     });
@@ -259,10 +260,28 @@
     compartmentAdaptation = new Compartment();
     compartmentOutputAdaptation = new Compartment();
 
+    const smartQuoteReplacer = EditorView.domEventHandlers({
+      paste(event, view) {
+        console.log('smartQuoteReplacer', event);
+        const text = event.clipboardData?.getData('text/plain');
+        if (!text) { return; }
+
+        // Replace curly quotes and apostrophes with straight ones
+        const cleanText = text
+          .replace(/[\u201C\u201D]/g, '"') // Double curly quotes
+          .replace(/[\u2018\u2019]/g, "'"); // Single curly quotes/apostrophes
+
+        // Prevent default paste and manually insert sanitized text
+        event.preventDefault();
+        view.dispatch(view.state.replaceSelection(cleanText));
+      },
+    });
+
     editorSequenceView = new EditorView({
       doc: sequenceDefinition,
       extensions: [
         basicSetup,
+        smartQuoteReplacer,
         keymap.of([...standardKeymap, shouldListenForKeyboardSave ? { key: 'Ctrl-s', mac: 'Cmd-s', run: onSave } : {}]),
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
