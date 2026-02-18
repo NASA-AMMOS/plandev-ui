@@ -564,6 +564,23 @@ export const WorkspaceApi = {
   },
 };
 
+/**
+ * Finds a node in the list that matches or contains the given path.
+ * A node "affects" a path if it is the path itself, or if it is a parent directory of the path.
+ */
+export function findNodeAffectingPath(
+  nodes: WorkspaceTreeNodeWithFullPath[],
+  path: string | null,
+): WorkspaceTreeNodeWithFullPath | undefined {
+  if (!path) {
+    return undefined;
+  }
+  return nodes.find(
+    node =>
+      node.fullPath === path || (node.type === WorkspaceContentType.Directory && path.startsWith(node.fullPath + '/')),
+  );
+}
+
 // Find a node in the tree by its path
 export function findNodeByPath(nodes: WorkspaceTreeNode[], targetPath: string): WorkspaceTreeNode | null {
   const pathParts = targetPath.split(PATH_DELIMITER);

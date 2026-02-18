@@ -7,9 +7,8 @@
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate, keymap } from '@codemirror/view';
   import { basicSetup, EditorView } from 'codemirror';
-  import { debounce } from 'lodash-es';
   import { File } from 'lucide-svelte';
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -43,19 +42,19 @@
   let editorView: EditorView;
   let updatedTextContent: string = textFileContent;
   let isTextContentUpdated: boolean = false;
-  let previousIsJSON: boolean = isJSON;
-  let previousTextFilePath: string = textFilePath;
-
-  // Create debounced listener at component level so we can cancel it when file changes
-  const debouncedTextContentUpdateListener = debounce(textContentUpdateListener, 250);
+  let previousIsJSON: boolean | null = null;
 
   // Insert text content - use textFilePath as dependency to ensure editor updates when switching files
   // This handles the case where both old and new files have the same content (e.g., both empty)
   $: if (editorView) {
     void textFilePath;
-    editorView.dispatch({
-      changes: { from: 0, insert: textFileContent, to: editorView.state.doc.length },
-    });
+    // Skip the dispatch if the editor already has the correct content (e.g., after save),
+    // to avoid resetting the cursor position.
+    if (editorView.state.doc.toString() !== textFileContent) {
+      editorView.dispatch({
+        changes: { from: 0, insert: textFileContent, to: editorView.state.doc.length },
+      });
+    }
   }
   $: editorView?.dispatch({
     effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
@@ -63,20 +62,14 @@
   $: updatedTextContent = textFileContent;
   $: isTextContentUpdated = updatedTextContent !== textFileContent;
 
-  // Cancel pending debounced events when file path changes to prevent stale events
-  // from being dispatched with the wrong file path
-  $: if (textFilePath !== previousTextFilePath) {
-    debouncedTextContentUpdateListener.cancel();
-    previousTextFilePath = textFilePath;
-  }
-
   $: if (previousIsJSON !== isJSON && editorDiv) {
+    previousIsJSON = isJSON;
+
     if (editorView) {
       editorView.destroy();
     }
     if (isJSON) {
       editorView = new EditorView({
-        doc: textFileContent,
         extensions: [
           basicSetup,
           keymap.of([
@@ -88,14 +81,17 @@
           lintGutter(),
           json(),
           jsonLinter,
-          EditorView.updateListener.of(debouncedTextContentUpdateListener),
+          EditorView.updateListener.of(viewUpdate => {
+            if (viewUpdate.docChanged) {
+              textContentUpdateListener(viewUpdate);
+            }
+          }),
           compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
         ],
         parent: editorDiv,
       });
     } else {
       editorView = new EditorView({
-        doc: textFileContent,
         extensions: [
           basicSetup,
           keymap.of([
@@ -105,7 +101,11 @@
           EditorView.lineWrapping,
           EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
           lintGutter(),
-          EditorView.updateListener.of(debouncedTextContentUpdateListener),
+          EditorView.updateListener.of(viewUpdate => {
+            if (viewUpdate.docChanged) {
+              textContentUpdateListener(viewUpdate);
+            }
+          }),
           compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
         ],
         parent: editorDiv,
@@ -113,10 +113,9 @@
     }
   }
 
-  async function textContentUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
+  function textContentUpdateListener(viewUpdate: ViewUpdate): void {
     const updatedText = viewUpdate.state.doc.toString();
     disableCopyAndExport = updatedText === '';
-
     updatedTextContent = updatedText;
     dispatch('textContentUpdated', { filePath: textFilePath, input: updatedText });
   }
@@ -135,8 +134,10 @@
   }
 
   function onSave(): boolean {
-    if (isTextContentUpdated) {
-      dispatch('save', updatedTextContent);
+    const currentText = editorView.state.doc.toString();
+    if (currentText !== textFileContent) {
+      updatedTextContent = currentText;
+      dispatch('save', currentText);
     }
     return true;
   }
@@ -156,12 +157,20 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
-        EditorView.updateListener.of(debouncedTextContentUpdateListener),
+        EditorView.updateListener.of(viewUpdate => {
+          if (viewUpdate.docChanged) {
+            textContentUpdateListener(viewUpdate);
+          }
+        }),
         blockTheme,
         compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
       ],
       parent: editorDiv,
     });
+  });
+
+  onDestroy(() => {
+    editorView?.destroy();
   });
 </script>
 

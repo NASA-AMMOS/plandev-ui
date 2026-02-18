@@ -1,5 +1,53 @@
-import { expect, test } from 'vitest';
-import { padNumber, pluralize } from './text';
+import { describe, expect, test } from 'vitest';
+import { padNumber, pluralize, sanitizeCmdkValue } from './text';
+
+describe('sanitizeCmdkValue', () => {
+  test('returns plain text unchanged', () => {
+    expect(sanitizeCmdkValue('hello world')).toBe('hello world');
+  });
+
+  test('strips double quotes', () => {
+    expect(sanitizeCmdkValue('call the "Store in Box" action')).toBe('call the Store in Box action');
+  });
+
+  test('strips single quotes', () => {
+    expect(sanitizeCmdkValue("it's a test")).toBe('its a test');
+  });
+
+  test('strips backslashes', () => {
+    expect(sanitizeCmdkValue('path\\to\\file')).toBe('pathtofile');
+  });
+
+  test('strips null bytes', () => {
+    expect(sanitizeCmdkValue('before\0after')).toBe('beforeafter');
+  });
+
+  test('replaces newlines with spaces', () => {
+    expect(sanitizeCmdkValue('line1\nline2')).toBe('line1 line2');
+  });
+
+  test('replaces carriage returns with spaces', () => {
+    expect(sanitizeCmdkValue('line1\r\nline2')).toBe('line1 line2');
+  });
+
+  test('replaces form feeds with spaces', () => {
+    expect(sanitizeCmdkValue('before\fafter')).toBe('before after');
+  });
+
+  test('collapses consecutive newlines into a single space', () => {
+    expect(sanitizeCmdkValue('line1\n\n\nline2')).toBe('line1 line2');
+  });
+
+  test('handles combined problematic characters', () => {
+    expect(sanitizeCmdkValue('Deliver files Generate a "File Delivery List".\nFiles must call "Store to OCS".')).toBe(
+      'Deliver files Generate a File Delivery List. Files must call Store to OCS.',
+    );
+  });
+
+  test('preserves special characters valid in CSS strings', () => {
+    expect(sanitizeCmdkValue('brackets []{}() and symbols @#$%^&*')).toBe('brackets []{}() and symbols @#$%^&*');
+  });
+});
 
 test('pluralize', () => {
   expect(pluralize(0)).toBe('s');
