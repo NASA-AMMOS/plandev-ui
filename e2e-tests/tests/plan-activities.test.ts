@@ -86,7 +86,6 @@ test.describe.serial('Plan Activities', () => {
     );
 
     const errorBadge = await setup.page.locator('.input-error-badge-root');
-
     expect(errorBadge).not.toBeAttached();
   });
 
