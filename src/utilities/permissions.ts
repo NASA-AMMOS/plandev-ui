@@ -1360,7 +1360,7 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
   createWorkspace: (user: User | null): boolean => {
-    return isUserAdmin(user) || getRoleWorkspacePermission(['create_permission'], user);
+    return isUserAdmin(user) || getRoleWorkspacePermission(['create_workspace'], user);
   },
   deleteFile: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['delete_file_directory'], user, workspace);
