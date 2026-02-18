@@ -9,6 +9,5 @@ export const load: PageLoad = async ({ parent }) => {
   return {
     models,
     plans,
-    user,
   };
 };

@@ -18,7 +18,6 @@ export const load: PageLoad = async ({ parent, params }) => {
       if (initialGoal !== null) {
         return {
           initialGoal,
-          user,
         };
       }
     }

@@ -114,6 +114,7 @@
   let hasEditFilePermission: boolean = false;
   let hasEditWorkspacePermission: boolean = false;
   let hasEditWorkspaceCollaboratorsPermission: boolean = false;
+  let hasRunActionPermission: boolean = false;
   let phoenixContext: PhoenixContext;
   let showLoadingSpinner: boolean = false;
   let loadingSpinnerTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -258,6 +259,7 @@
       hasEditFilePermission = featurePermissions.workspace.canUpdate($user, ws);
       availableActionsForActiveFile = [];
     }
+    hasRunActionPermission = featurePermissions.actionRun.canCreate($user, ws);
   }
 
   $: if ($parcel) {
@@ -897,7 +899,7 @@
           <SequenceEditor
             {phoenixContext}
             availableActions={availableActionsForActiveFile}
-            includeActions
+            includeActions={hasRunActionPermission}
             isLoading={$activeDocumentIsLoading}
             previewOnly={!hasEditFilePermission}
             sequenceAdaptation={$sequenceAdaptation}

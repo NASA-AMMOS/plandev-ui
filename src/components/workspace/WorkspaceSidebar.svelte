@@ -267,16 +267,24 @@
                         <label use:tooltip={{ content: 'Workspace Name', placement: 'top' }} for="name">
                           Workspace Name
                         </label>
-                        <InputStellar
-                          autocomplete="off"
-                          sizeVariant="xs"
+                        <div
+                          use:permissionHandler={{
+                            hasPermission: hasEditWorkspacePermission,
+                            permissionError,
+                          }}
                           class="w-full"
-                          name="name"
-                          id="name"
-                          aria-label="name"
-                          value={workspace?.name}
-                          on:change={onWorkspaceNameChange}
-                        />
+                        >
+                          <InputStellar
+                            autocomplete="off"
+                            sizeVariant="xs"
+                            class="w-full"
+                            name="name"
+                            id="name"
+                            aria-label="name"
+                            value={workspace?.name}
+                            on:change={onWorkspaceNameChange}
+                          />
+                        </div>
                       </Input>
                     </fieldset>
                     <fieldset>
