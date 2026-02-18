@@ -2,6 +2,7 @@ import { jwtDecode } from 'jwt-decode';
 import { derived, get, writable, type Readable } from 'svelte/store';
 import { restartSharedClient } from '../../stores/gqlClient';
 import { getCookieValue } from '../../utilities/browser';
+import { logout } from '../../utilities/login';
 import type { MaybeToken } from '../types/oidc';
 
 type CookieChanged = {
@@ -54,7 +55,7 @@ export function cookieStoreListener() {
   // Whenever the delay changes, any prior timeout is cancelled and a new timeout
   // is created (using the new value of delay).
   const unsubscribe = delay.subscribe(value => {
-    if (value) {
+    if (value !== null && value >= 0 && get(accessTokenDecoded)) {
       console.debug(`Scheduling token refresh in ${value}ms`);
       prior = reschedule(refresh, value, prior);
     }
@@ -115,6 +116,10 @@ export const delay = derived(refreshAt, $refreshAt => {
 // This number is the result of calling setTimeout.
 let prior: number | null = null;
 
+// Track consecutive refresh failures to detect expired refresh tokens
+let consecutiveFailures = 0;
+const MAX_REFRESH_FAILURES = 3;
+
 /// Private Helpers.
 
 export async function refresh(): Promise<void> {
@@ -122,9 +127,16 @@ export async function refresh(): Promise<void> {
   const res = await fetch('/oidc/refresh', { credentials: 'include', method: 'POST' });
   if (res.ok) {
     console.debug('Access token refresh succeeded.');
+    consecutiveFailures = 0; // Reset on success
+  } else if (res.status === 401) {
+    // 401 means the refresh token is expired/invalid at the IdP.
+    // No point retrying — log out immediately.
+    console.error('Token refresh returned 401 — refresh token is expired. Logging out.');
+    logout('Session expired - please log in again');
+    return;
   } else {
-    // Don't log or include response body - it may contain sensitive error details
-    console.error('Access token refresh failed, refresh token is probably expired.');
+    consecutiveFailures++;
+    console.error(`Token refresh failed (attempt ${consecutiveFailures}/${MAX_REFRESH_FAILURES}), status: ${res.status}`);
     throw new Error('Token refresh failed');
   }
 }
@@ -139,11 +151,17 @@ function reschedule(fn: () => Promise<void>, delay: number, previousTimeout: num
     try {
       await fn();
     } catch (err) {
-      // Only log error message, not full object (may contain sensitive data)
       console.error('Error in scheduled refresh:', err instanceof Error ? err.message : 'Unknown error');
-      // Retry after 5 seconds — network may have been temporarily unavailable.
-      // When it succeeds, the cookie update triggers the normal delay-based scheduling.
-      console.debug('Scheduling token refresh retry in 5000ms');
+
+      // After MAX_REFRESH_FAILURES consecutive failures, assume refresh token is expired
+      if (consecutiveFailures >= MAX_REFRESH_FAILURES) {
+        console.error(`Token refresh failed ${consecutiveFailures} times, refresh token likely expired. Logging out.`);
+        logout('Session expired - please log in again');
+        return;
+      }
+
+      // Retry after 5 seconds — network may have been temporarily unavailable
+      console.debug(`Scheduling token refresh retry in 5000ms`);
       prior = reschedule(fn, 5000, prior);
     }
   }, delay);

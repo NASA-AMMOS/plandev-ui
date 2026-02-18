@@ -174,9 +174,21 @@ async function refresh(evt: RequestEvent) {
     if (refreshToken) {
       // unconditionally clear refreshToken. if it was invalid, we don't want it, and if it's valid, it will be replaced!
       evt.cookies.delete('refreshToken', { path: '/' });
-      const client = await Client.instance;
-      const tokens = await client.refresh(refreshToken);
-      await updateWithNewTokens(evt.cookies, tokens);
+      try {
+        const client = await Client.instance;
+        const tokens = await client.refresh(refreshToken);
+        await updateWithNewTokens(evt.cookies, tokens);
+      } catch (err) {
+        // Refresh token is expired or invalid at the IdP.
+        // Clear remaining tokens and let the request proceed unauthenticated.
+        // The app's auth guards will redirect to login.
+        console.error(
+          'Token refresh failed (refresh token likely expired):',
+          err instanceof Error ? err.message : err,
+        );
+        evt.cookies.delete('accessToken', { path: '/' });
+        evt.cookies.delete('idToken', { path: '/' });
+      }
     }
   }
   return evt;
