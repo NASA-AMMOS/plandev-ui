@@ -17,7 +17,6 @@ export const load: PageLoad = async ({ parent, params }) => {
       if (initialCondition !== null) {
         return {
           initialCondition,
-          user,
         };
       }
     }

@@ -74,7 +74,6 @@ export const load: PageLoad = async ({ parent, params, url }) => {
         initialPlanSnapshotId,
         initialPlanTags,
         initialView,
-        user,
       };
     }
   }
