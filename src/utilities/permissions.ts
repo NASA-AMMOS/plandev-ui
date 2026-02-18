@@ -322,8 +322,10 @@ function getRoleWorkspacePermission(queries: string[], user: User | null, worksp
             permission = isUserOwner(user, workspace) || isUserCollaborator(user, workspace);
             break;
           case 'NO_CHECK':
-          default:
             permission = true;
+            break;
+          default:
+            permission = false;
         }
       }
       return prevValue && permission;
