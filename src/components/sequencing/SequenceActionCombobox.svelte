@@ -5,6 +5,7 @@
   import { Clapperboard } from 'lucide-svelte';
   import { createEventDispatcher, tick } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
+  import { sanitizeCmdkValue } from '../../utilities/text';
   import ActionMenuItem from '../ui/ActionMenuItem.svelte';
   import Tooltip from '../ui/Tooltip.svelte';
 
@@ -43,7 +44,7 @@
         <Command.Group class="max-h-[300px] overflow-y-auto">
           {#each actions as action}
             <Command.Item
-              value={`${action.action.name} ${action.action.description ?? ''}`}
+              value={sanitizeCmdkValue(`${action.action.name} ${action.action.description ?? ''}`)}
               onSelect={() => {
                 dispatch('runAction', { action: action.action, parameter: action.parameter });
                 closeAndFocusTrigger(ids.trigger);
