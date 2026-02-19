@@ -1135,8 +1135,8 @@
   />
 
   <Resizable.Pane
-    defaultSize={!isConsoleExpanded ? 0 : 16}
-    minSize={10}
+    defaultSize={!isConsoleExpanded ? 0 : 24}
+    minSize={16}
     collapsible
     collapsedSize={0}
     onCollapse={() => (isConsoleExpanded = false)}
@@ -1220,6 +1220,7 @@
           showTimestamp
           showType={false}
           logs={$workspaceActionRunMessages}
+          autoScroll
           emptyStateMessage="No action runs"
         />
         <ConsoleLogs
@@ -1228,6 +1229,7 @@
           showType={false}
           logs={$workspaceAdaptationMessages}
           {logLevels}
+          autoScroll
           emptyStateMessage="No adaptation errors"
         />
         <ConsoleLogs
