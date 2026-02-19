@@ -14,7 +14,7 @@
     UserSequence,
   } from '@nasa-jpl/aerie-sequence-languages';
   import { Button, Checkbox, Resizable, Select } from '@nasa-jpl/stellar-svelte';
-  import { capitalize } from 'lodash-es';
+  import { capitalize, startCase } from 'lodash-es';
   import { Folder, ListX, LoaderCircle, TriangleAlert } from 'lucide-svelte';
   import type { PaneAPI } from 'paneforge';
   import { getContext, onDestroy, onMount, tick } from 'svelte';
@@ -514,14 +514,23 @@
     replaceState(getWorkspacesUrl(base, $workspaceId, newFilePath), {});
   }
 
-  async function saveBeforeOperation(operation: 'moving' | 'renaming' | 'downloading'): Promise<boolean> {
-    const operationVerb = operation === 'moving' ? 'Move' : operation === 'renaming' ? 'Rename' : 'Download';
+  async function saveBeforeOperation(
+    operation: 'moving' | 'renaming' | 'downloading' | 'running action',
+  ): Promise<boolean> {
+    const operationVerb =
+      operation === 'moving'
+        ? 'Move'
+        : operation === 'renaming'
+          ? 'Rename'
+          : operation === 'downloading'
+            ? 'Download'
+            : 'Run';
     const { confirm } = await showConfirmModal(
-      `Save before ${capitalize(operation)}`,
-      `The file you are ${operation} has unsaved changes. Would you like to save them before ${operation}?`,
+      `Save before ${startCase(operation)}`,
+      `The file ${operation === 'running action' ? 'you are running this action on' : `you are ${operation}`} has unsaved changes. Would you like to save them before ${operation === 'running action' ? 'running the action' : operation}?`,
       `Save and ${operationVerb}`,
       true,
-      `Cancel ${operationVerb}`,
+      `Cancel ${operationVerb === 'Run' ? '' : operationVerb}`,
     );
 
     if (!confirm) {
@@ -783,6 +792,13 @@
       detail: { action, parameter: primaryParameter },
     } = event;
 
+    // Prompt to save unsaved changes before running action
+    if ($activeDocumentIsDirty) {
+      if (!(await saveBeforeOperation('running action'))) {
+        return;
+      }
+    }
+
     let parameters: ArgumentsMap = {};
     // the event will tell us which of the action's parameter is the primary, to be pre-filled with the file's path
     if (primaryParameter in action.parameter_schema) {
@@ -813,6 +829,15 @@
     const {
       detail: { actionParameterPair, treeNodes },
     } = event;
+
+    // Check if the active file is in the selection and has unsaved changes
+    const containsActiveNode = findNodeAffectingPath(treeNodes, $activeDocumentPath);
+
+    if (containsActiveNode && $activeDocumentIsDirty) {
+      if (!(await saveBeforeOperation('running action'))) {
+        return;
+      }
+    }
 
     const treeNodePaths: string[] = treeNodes.map(({ fullPath }) => fullPath);
     const { action, parameter: primaryParameter } = actionParameterPair;
