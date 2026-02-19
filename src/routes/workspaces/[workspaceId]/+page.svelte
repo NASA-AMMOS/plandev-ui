@@ -911,7 +911,6 @@
   }
 
   function onLintChange(event: CustomEvent<{ diagnostics: LintDiagnostic[]; filePath: string }>) {
-    console.log('OLC', event);
     const { diagnostics, filePath } = event.detail;
     setWorkspaceLintErrors(filePath, diagnostics);
   }
