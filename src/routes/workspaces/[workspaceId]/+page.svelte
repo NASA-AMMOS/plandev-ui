@@ -1032,7 +1032,8 @@
       <Sidebar.Inset className="min-h-0">
         {@const isTextOrEmpty = $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
         {@const isSequenceFile =
-          $activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence}
+          $activeDocumentPath === null ||
+          ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence)}
         <div class="relative grid h-full grid-cols-1 grid-rows-1">
           {#if showLoadingSpinner && isTextOrEmpty}
             <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50">
