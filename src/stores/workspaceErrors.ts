@@ -2,6 +2,7 @@ import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActionRunSlim } from '../types/actions';
 import type { AdaptationLog, BaseError, LintDiagnostic, LintError, LogLevel } from '../types/errors';
 import { ErrorTypes } from '../utilities/errors';
+import { compare } from '../utilities/generic';
 import { actionDefinitionsByWorkspace, actionRunsByWorkspace } from './actions';
 import { workspaceId } from './workspaces';
 
@@ -38,20 +39,22 @@ export const workspaceActionRunMessages: Readable<(BaseError & { level: LogLevel
   [workspaceActionRunsForSession, actionDefinitionsByWorkspace, workspaceId],
   ([$workspaceActionRuns, $actionDefinitionsByWorkspace, $workspaceId]) => {
     const actionDefs = $actionDefinitionsByWorkspace[$workspaceId] ?? {};
-    return $workspaceActionRuns.map(run => {
-      const actionDef = actionDefs[run.action_definition_id];
-      const actionName = actionDef?.name ?? `Action #${run.action_definition_id}`;
-      const failed = run.status === 'failed';
-      return {
-        cause: run.error?.message,
-        data: { actionName, actionRunId: run.id, error: run.error, status: run.status },
-        level: (failed ? 'error' : 'info') as LogLevel,
-        message: failed ? `${actionName} failed` : `${actionName}: ${run.status}`,
-        timestamp: run.requested_at,
-        trace: run.error?.stack,
-        type: ErrorTypes.WORKSPACE_ACTION_RUN,
-      };
-    });
+    return $workspaceActionRuns
+      .map(run => {
+        const actionDef = actionDefs[run.action_definition_id];
+        const actionName = actionDef?.name ?? `Action #${run.action_definition_id}`;
+        const failed = run.status === 'failed';
+        return {
+          cause: run.error?.message,
+          data: { actionName, actionRunId: run.id, error: run.error, status: run.status },
+          level: (failed ? 'error' : 'info') as LogLevel,
+          message: failed ? `${actionName} failed` : `${actionName}: ${run.status}`,
+          timestamp: run.requested_at,
+          trace: run.error?.stack,
+          type: ErrorTypes.WORKSPACE_ACTION_RUN,
+        };
+      })
+      .sort((a, b) => compare(`${new Date(a.timestamp)}`, `${new Date(b.timestamp)}`, true));
   },
 );
 
