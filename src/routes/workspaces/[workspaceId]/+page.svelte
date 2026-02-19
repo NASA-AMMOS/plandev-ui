@@ -55,7 +55,6 @@
     addWorkspaceAdaptationError,
     addWorkspaceAdaptationLog,
     clearWorkspaceAdaptationMessages,
-    clearWorkspaceLintErrors,
     resetWorkspaceErrorStores,
     setWorkspaceLintErrors,
     userInitiatedActionRunIds,
@@ -104,6 +103,7 @@
   import {
     computeMovedFilePath,
     downloadWorkspaceNodesAsZip,
+    findNodeAffectingPath,
     flattenWorkspaceTreeWithPaths,
     getAvailableActionsForNodes,
     mapWorkspaceTreePaths,
@@ -111,7 +111,6 @@
     separateFilenameFromPath,
   } from '../../../utilities/workspaces';
   import type { PageData } from './$types';
-  // codemirror dependencies to be injected into the adaptation
 
   export let data: PageData;
 
@@ -135,6 +134,7 @@
   let hasEditFilePermission: boolean = false;
   let hasEditWorkspacePermission: boolean = false;
   let hasEditWorkspaceCollaboratorsPermission: boolean = false;
+  let hasRunActionPermission: boolean = false;
   let phoenixContext: PhoenixContext;
   let showLoadingSpinner: boolean = false;
   let loadingSpinnerTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -166,18 +166,16 @@
   }
 
   // Show loading spinner after a delay to avoid flashing for fast loads
-  $: {
-    if ($activeDocumentIsLoading) {
-      loadingSpinnerTimeout = setTimeout(() => {
-        showLoadingSpinner = true;
-      }, 200);
-    } else {
-      if (loadingSpinnerTimeout) {
-        clearTimeout(loadingSpinnerTimeout);
-        loadingSpinnerTimeout = null;
-      }
-      showLoadingSpinner = false;
+  $: if ($activeDocumentIsLoading) {
+    loadingSpinnerTimeout = setTimeout(() => {
+      showLoadingSpinner = true;
+    }, 200);
+  } else {
+    if (loadingSpinnerTimeout) {
+      clearTimeout(loadingSpinnerTimeout);
+      loadingSpinnerTimeout = null;
     }
+    showLoadingSpinner = false;
   }
   let sequenceEditorRef: SequenceEditor;
 
@@ -202,91 +200,6 @@
     allActionsForWorkspace = Object.values($actionDefinitionsByWorkspace[$workspaceId] || {});
   }
 
-  const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-    if ($activeDocumentIsDirty) {
-      event.preventDefault(); // Triggers the native browser confirmation
-      event.returnValue = ''; // Required for some older browser compatibility
-    }
-  };
-
-  // Prevent in-app navigation to other routes when there are unsaved changes
-  beforeNavigate(({ cancel, to }) => {
-    if (!$activeDocumentIsDirty) {
-      return;
-    }
-    // Allow navigation within the same workspace page (file selection is handled by confirmAndNavigate)
-    if (to?.route.id === $page.route.id) {
-      return;
-    }
-    // Skip for external navigation (tab close, refresh) - handled by beforeunload
-    if (to === null) {
-      return;
-    }
-    // Cancel navigation first, then show async modal and navigate if confirmed
-    cancel();
-    showConfirmModal(
-      'Leave Page',
-      'There are unsaved changes. Are you sure you want to leave this page?',
-      'Leave Page',
-      true,
-      'Stay on Page',
-    ).then(({ confirm }) => {
-      if (confirm && to?.url) {
-        // Reset content to allow navigation without re-triggering the modal
-        activeDocument.markClean();
-        goto(to.url);
-      }
-    });
-  });
-
-  onMount(() => {
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  });
-
-  $: if (!isWorkspaceLoading && selectedFilePath !== $activeDocumentPath) {
-    // the UI's selected file doesn't match our actively loaded file, try to navigate to selected
-    maybeNavigate(selectedFilePath);
-  }
-
-  async function maybeNavigate(nextPath: string | null) {
-    // treat `null` as a navigable path so we can intentionally unload the editor file rather than skipping
-    if (nextPath === null) {
-      // wait a tick then revert selected UI to the existing active path
-      await tick();
-      selectedFilePath = $activeDocumentPath;
-      return;
-    }
-    const didNavigate = await confirmAndNavigate(nextPath);
-    if (!didNavigate) {
-      // user decided not to navigate away due to unsaved changes, set selected UI back to active file
-      selectedFilePath = $activeDocumentPath;
-      return;
-    }
-
-    // Clear lint errors for the previous file when switching files
-    if ($activeDocumentPath && $activeDocumentPath !== nextPath) {
-      clearWorkspaceLintErrors($activeDocumentPath);
-    }
-
-    // successfully navigated, start loading the file contents
-    if (nextPath && workspaceTreeMap[nextPath]) {
-      const { filename } = separateFilenameFromPath(nextPath);
-      const fileType = workspaceTreeMap[nextPath]?.type ?? null;
-      activeDocument.startLoad(nextPath, filename ?? null, fileType);
-      await getSelectedFileContent(nextPath);
-    } else {
-      // navigated to a null/empty file, reset the editor contents
-      activeDocument.close();
-      if (nextPath && !workspaceTreeMap[nextPath]) {
-        showFailureToast('The selected file does not exist in the workspace.');
-      }
-    }
-  }
-
   // Re-compute permissions when user, workspace, or active document changes
   $: if ($user && (initialWorkspace || $workspace)) {
     const ws: Workspace = $workspace ?? (initialWorkspace as Workspace);
@@ -302,6 +215,7 @@
       hasEditFilePermission = featurePermissions.workspace.canUpdate($user, ws);
       availableActionsForActiveFile = [];
     }
+    hasRunActionPermission = featurePermissions.actionRun.canCreate($user, ws);
   }
 
   $: if ($parcel) {
@@ -347,11 +261,87 @@
     parameterDictionaries,
   };
 
-  $: {
-    if (!commandDictionary) {
-      commandDictionary = null;
-      channelDictionary = null;
-      parameterDictionaries = [];
+  $: if (!isWorkspaceLoading && selectedFilePath !== $activeDocumentPath) {
+    // the UI's selected file doesn't match our actively loaded file, try to navigate to selected
+    maybeNavigate(selectedFilePath);
+  }
+
+  $: if (!commandDictionary) {
+    commandDictionary = null;
+    channelDictionary = null;
+    parameterDictionaries = [];
+  }
+
+  // Prevent in-app navigation to other routes when there are unsaved changes
+  beforeNavigate(({ cancel, to }) => {
+    if (!$activeDocumentIsDirty) {
+      return;
+    }
+    // Allow navigation within the same workspace page (file selection is handled by confirmAndNavigate)
+    if (to?.route.id === $page.route.id) {
+      return;
+    }
+    // Skip for external navigation (tab close, refresh) - handled by beforeunload
+    if (to === null) {
+      return;
+    }
+    // Cancel navigation first, then show async modal and navigate if confirmed
+    cancel();
+    showConfirmModal(
+      'Leave Page',
+      'There are unsaved changes. Are you sure you want to leave this page?',
+      'Leave Page',
+      true,
+      'Stay on Page',
+    ).then(({ confirm }) => {
+      if (confirm && to?.url) {
+        // Reset content to allow navigation without re-triggering the modal
+        activeDocument.markClean();
+        goto(to.url);
+      }
+    });
+  });
+
+  onMount(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if ($activeDocumentIsDirty) {
+        event.preventDefault(); // Triggers the native browser confirmation
+        event.returnValue = ''; // Required for some older browser compatibility
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  });
+
+  async function maybeNavigate(nextPath: string | null) {
+    // treat `null` as a navigable path so we can intentionally unload the editor file rather than skipping
+    if (nextPath === null) {
+      // wait a tick then revert selected UI to the existing active path
+      await tick();
+      selectedFilePath = $activeDocumentPath;
+      return;
+    }
+    const didNavigate = await confirmAndNavigate(nextPath);
+    if (!didNavigate) {
+      // user decided not to navigate away due to unsaved changes, set selected UI back to active file
+      selectedFilePath = $activeDocumentPath;
+      return;
+    }
+    // successfully navigated, start loading the file contents
+    if (nextPath && workspaceTreeMap[nextPath]) {
+      const { filename } = separateFilenameFromPath(nextPath);
+      const fileType = workspaceTreeMap[nextPath]?.type ?? null;
+      activeDocument.startLoad(nextPath, filename ?? null, fileType);
+      await getSelectedFileContent(nextPath);
+    } else {
+      // navigated to a null/empty file, reset the editor contents
+      activeDocument.close();
+      if (nextPath && !workspaceTreeMap[nextPath]) {
+        showFailureToast('The selected file does not exist in the workspace.');
+      }
     }
   }
 
@@ -616,12 +606,13 @@
 
   async function onDeleteNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if ($workspace) {
-      const shouldUpdateSelectedNode = treeNodes.find(node => node.fullPath === $activeDocumentPath);
+      const affectedNode = findNodeAffectingPath(treeNodes, $activeDocumentPath);
 
       const didDelete = await effects.deleteWorkspaceItems($workspace, treeNodes, $user);
       await refreshWorkspaceContents();
 
-      if (didDelete && shouldUpdateSelectedNode) {
+      if (didDelete && affectedNode) {
+        activeDocument.close();
         selectedFilePath = null;
         confirmAndNavigate(null);
       }
@@ -630,7 +621,7 @@
 
   async function onDownloadNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     // Prompt user to save their active file if it is found within treeNodes
-    const containsActiveNode = treeNodes.find(node => node.fullPath === $activeDocumentPath);
+    const containsActiveNode = findNodeAffectingPath(treeNodes, $activeDocumentPath);
 
     // Prompt to save unsaved changes before moving
     if (containsActiveNode && $activeDocumentIsDirty) {
@@ -657,7 +648,7 @@
 
   async function onMoveNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if ($workspace && workspaceTree) {
-      const movedActiveNode = treeNodes.find(node => node.fullPath === $activeDocumentPath);
+      const movedActiveNode = findNodeAffectingPath(treeNodes, $activeDocumentPath);
 
       // Prompt to save unsaved changes before moving
       if (movedActiveNode && $activeDocumentIsDirty) {
@@ -675,8 +666,8 @@
       if (movedActiveNode && result) {
         const { renamedFiles, skippedFiles, targetPath } = result;
         // Don't update selection if the file was skipped
-        if (!skippedFiles.has(movedActiveNode.fullPath)) {
-          const newFilePath = computeMovedFilePath(movedActiveNode.fullPath, minimalNodes, targetPath, renamedFiles);
+        if (!skippedFiles.has($activeDocumentPath!)) {
+          const newFilePath = computeMovedFilePath($activeDocumentPath!, minimalNodes, targetPath, renamedFiles);
           // Wait for tree to render before updating selection (ensures parent folders can expand)
           await tick();
           updateActiveFilePath(newFilePath);
@@ -707,9 +698,9 @@
     }
   }
 
-  function onWorkspaceFileUpdated({
-    detail: { filePath, input, output },
-  }: CustomEvent<{ filePath: string; input: string; output?: string }>) {
+  function onWorkspaceInputFileUpdated({
+    detail: { filePath, input },
+  }: CustomEvent<{ filePath: string; input: string }>) {
     // Ignore stale events from a file that is no longer active
     // Note: editors receive ($activeDocumentPath ?? '') so we normalize the comparison
     if (filePath !== ($activeDocumentPath ?? '')) {
@@ -717,6 +708,17 @@
     }
 
     activeDocument.updateContent(input);
+  }
+
+  function onWorkspaceOutputFileUpdated({
+    detail: { filePath, output },
+  }: CustomEvent<{ filePath: string; output?: string }>) {
+    // Ignore stale events from a file that is no longer active
+    // Note: editors receive ($activeDocumentPath ?? '') so we normalize the comparison
+    if (filePath !== ($activeDocumentPath ?? '')) {
+      return;
+    }
+
     if (output) {
       selectedSequenceOutput = output;
     }
@@ -751,7 +753,7 @@
 
   async function onMoveNodesToWorkspace({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if (initialWorkspace) {
-      const movedActiveNode = treeNodes.find(node => node.fullPath === $activeDocumentPath);
+      const movedActiveNode = findNodeAffectingPath(treeNodes, $activeDocumentPath);
 
       // Prompt to save unsaved changes before moving
       if (movedActiveNode && $activeDocumentIsDirty) {
@@ -953,11 +955,7 @@
 
 <Resizable.PaneGroup direction="vertical" autoSaveId="workspace-console">
   <Resizable.Pane defaultSize={84}>
-    <CssGrid
-      bind:columns={$workspaceColumns}
-      columnMinSizes={{ 0: SIDEBAR_MIN_WIDTH, 2: CONTENT_MIN_WIDTH }}
-      class="h-full"
-    >
+    <CssGrid bind:columns={$workspaceColumns} columnMinSizes={{ 0: SIDEBAR_MIN_WIDTH, 2: CONTENT_MIN_WIDTH }}>
       <Sidebar.Provider bind:open={sidebarPanelOpen} style="--sidebar-width: auto" className="min-h-0">
         <WorkspaceSidebar
           bind:selectedFilePath
@@ -996,26 +994,27 @@
         <CssGridGutter track={1} type="column" />
       {/if}
       <Sidebar.Inset className="min-h-0">
+        {@const isTextOrEmpty = $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
+        {@const isSequenceFile =
+          $activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence}
         <div class="relative grid h-full grid-cols-1 grid-rows-1">
-          {#if $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
-            {@const isSequenceFile =
-              $activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence}
-            {#if showLoadingSpinner}
-              <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50">
-                <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
-              </div>
-            {/if}
-            <div class="flex h-full" class:hidden={!isSequenceFile}>
+          {#if showLoadingSpinner && isTextOrEmpty}
+            <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50">
+              <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
+            </div>
+          {/if}
+          {#if isTextOrEmpty && isSequenceFile}
+            <div class="flex h-full">
               <SequenceEditor
                 bind:this={sequenceEditorRef}
                 {phoenixContext}
                 availableActions={availableActionsForActiveFile}
-                includeActions
+                includeActions={hasRunActionPermission}
                 isLoading={$activeDocumentIsLoading}
                 {preserveAdaptationLog}
                 previewOnly={!hasEditFilePermission}
                 sequenceAdaptation={$sequenceAdaptation}
-                sequenceDefinition={isSequenceFile ? $activeDocument.originalContent : ''}
+                sequenceDefinition={$activeDocument.originalContent}
                 sequenceName={$activeDocument.fileName ?? undefined}
                 sequenceFilePath={$activeDocumentPath ?? ''}
                 sequenceOutput={selectedSequenceOutput}
@@ -1029,10 +1028,12 @@
                 on:save={onSaveWorkspaceFile}
                 on:downloadInput={onDownloadInput}
                 on:downloadOutput={onDownloadOutput}
-                on:sequence={isSequenceFile ? onWorkspaceFileUpdated : undefined}
+                on:sequenceInputUpdate={onWorkspaceInputFileUpdated}
+                on:sequenceOutputUpdate={onWorkspaceOutputFileUpdated}
               />
             </div>
-            <div class="flex h-full" class:hidden={isSequenceFile}>
+          {:else if isTextOrEmpty}
+            <div class="flex h-full">
               <TextEditor
                 availableActions={availableActionsForActiveFile}
                 includeActions={true}
@@ -1042,14 +1043,14 @@
                 shouldListenForKeyboardSave={false}
                 textFileName={$activeDocument.fileName ?? undefined}
                 textFilePath={$activeDocumentPath ?? ''}
-                textFileContent={!isSequenceFile ? $activeDocument.originalContent : ''}
+                textFileContent={$activeDocument.originalContent}
                 on:runAction={onRunActionOnActiveFile}
                 on:save={onSaveWorkspaceFile}
                 on:download={onDownloadInput}
-                on:textContentUpdated={!isSequenceFile ? onWorkspaceFileUpdated : undefined}
+                on:textContentUpdated={onWorkspaceInputFileUpdated}
               />
             </div>
-          {:else if $activeDocument.type === WorkspaceContentType.Directory}
+          {:else if $activeDocument.type === WorkspaceContentType.Directory && $activeDocumentPath}
             {@const folderNode = workspaceTreeMap[$activeDocumentPath]}
             {@const folderFiles =
               (folderNode?.contents || []).filter(node => node.type !== WorkspaceContentType.Directory) ?? []}
@@ -1073,7 +1074,7 @@
                 {/if}
               </p>
             </div>
-          {:else}
+          {:else if !isTextOrEmpty}
             <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
               <TriangleAlert size={70} class="text-muted-foreground" />
               <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
@@ -1088,8 +1089,8 @@
               </div>
             </div>
           {/if}
-        </div>
-      </Sidebar.Inset>
+        </div></Sidebar.Inset
+      >
     </CssGrid>
   </Resizable.Pane>
 

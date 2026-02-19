@@ -205,6 +205,7 @@
     // Auto-expand ancestors of matching nodes so they're visible
     if (result.ancestorPaths.size > 0) {
       expandedPaths = new Set([...expandedPaths, ...result.ancestorPaths]);
+      scheduleRedraw();
     }
   }
 

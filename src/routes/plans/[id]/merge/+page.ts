@@ -41,7 +41,6 @@ export const load: PageLoad = async ({ parent, params }) => {
         initialMergeRequest,
         initialNonConflictingActivities,
         initialPlan,
-        user,
       };
     }
   }

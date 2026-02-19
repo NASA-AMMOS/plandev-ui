@@ -322,8 +322,10 @@ function getRoleWorkspacePermission(queries: string[], user: User | null, worksp
             permission = isUserOwner(user, workspace) || isUserCollaborator(user, workspace);
             break;
           case 'NO_CHECK':
-          default:
             permission = true;
+            break;
+          default:
+            permission = false;
         }
       }
       return prevValue && permission;
@@ -1317,6 +1319,12 @@ const gatewayPermissions = {
       isUserAdmin(user) || (getPermission(queries, user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
+  CREATE_ACTIVITY_DIRECTIVES: (user: User | null, plan: PlanWithOwners): boolean => {
+    const queries = [getFunctionPermission(Queries.INSERT_ACTIVITY_DIRECTIVES)];
+    return (
+      isUserAdmin(user) || (getPermission(queries, user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
+    );
+  },
   CREATE_EXTERNAL_EVENT_TYPE: (user: User | null) => {
     return isUserAdmin(user) || getPermission([getFunctionPermission(Queries.INSERT_EXTERNAL_EVENT_TYPE)], user);
   },
@@ -1354,7 +1362,7 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
   createWorkspace: (user: User | null): boolean => {
-    return isUserAdmin(user) || getRoleWorkspacePermission(['create_permission'], user);
+    return isUserAdmin(user) || getRoleWorkspacePermission(['create_workspace'], user);
   },
   deleteFile: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['delete_file_directory'], user, workspace);

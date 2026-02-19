@@ -70,7 +70,9 @@
   setContext('user', user);
 </script>
 
-<ConnectionStatusBanner />
+{#if $user}
+  <ConnectionStatusBanner />
+{/if}
 {#if !pluginsEnabled || ($pluginsLoaded && !$pluginsError)}
   <slot />
 {:else}

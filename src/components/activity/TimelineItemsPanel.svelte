@@ -32,7 +32,7 @@
         <Tab class="timeline-items-tab text-xs"><ExternalEventIcon /> Events</Tab>
       </svelte:fragment>
       <TabPanel>
-        <ActivityList />
+        <ActivityList {user} />
       </TabPanel>
       <TabPanel>
         <ResourceList {user} />

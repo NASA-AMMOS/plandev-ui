@@ -1,0 +1,78 @@
+{
+  "activities": [
+    {
+      "anchor_id": null,
+      "anchored_to_start": true,
+      "arguments": {},
+      "id": 3229,
+      "name": "BananaNap",
+      "start_offset": "03:28:50.386",
+      "start_time_ms": 1704079730386,
+      "tags": [],
+      "type": "BananaNap"
+    },
+    {
+      "anchor_id": null,
+      "anchored_to_start": true,
+      "arguments": {
+        "duration": 3154000000000000
+      },
+      "id": 3230,
+      "name": "ControllableDurationActivity",
+      "start_offset": "11:06:17.9",
+      "start_time_ms": 1704107177900,
+      "tags": [],
+      "type": "ControllableDurationActivity"
+    },
+    {
+      "anchor_id": null,
+      "anchored_to_start": true,
+      "arguments": {
+        "producer": "Testing"
+      },
+      "id": 3231,
+      "name": "ChangeProducer",
+      "start_offset": "08:23:12.265",
+      "start_time_ms": 1704097392265,
+      "tags": [],
+      "type": "ChangeProducer"
+    },
+    {
+      "anchor_id": null,
+      "anchored_to_start": true,
+      "arguments": {},
+      "id": 3232,
+      "name": "BananaNap",
+      "start_offset": "03:28:50.386",
+      "start_time_ms": 1704079730386,
+      "tags": [],
+      "type": "BananaNap"
+    },
+    {
+      "anchor_id": 3231,
+      "anchored_to_start": true,
+      "arguments": {
+        "duration": 3154000000000000
+      },
+      "id": 3233,
+      "name": "ControllableDurationActivity",
+      "start_offset": "11:06:17.9",
+      "start_time_ms": 1704137370165,
+      "tags": [],
+      "type": "ControllableDurationActivity"
+    },
+    {
+      "anchor_id": 3229,
+      "anchored_to_start": true,
+      "arguments": {
+        "producer": "Testing"
+      },
+      "id": 3234,
+      "name": "ChangeProducer",
+      "start_offset": "08:23:12.265",
+      "start_time_ms": 1704109922651,
+      "tags": [],
+      "type": "ChangeProducer"
+    }
+  ]
+}
