@@ -955,7 +955,11 @@
 
 <Resizable.PaneGroup direction="vertical" autoSaveId="workspace-console">
   <Resizable.Pane defaultSize={84}>
-    <CssGrid bind:columns={$workspaceColumns} columnMinSizes={{ 0: SIDEBAR_MIN_WIDTH, 2: CONTENT_MIN_WIDTH }}>
+    <CssGrid
+      bind:columns={$workspaceColumns}
+      columnMinSizes={{ 0: SIDEBAR_MIN_WIDTH, 2: CONTENT_MIN_WIDTH }}
+      class="h-full"
+    >
       <Sidebar.Provider bind:open={sidebarPanelOpen} style="--sidebar-width: auto" className="min-h-0">
         <WorkspaceSidebar
           bind:selectedFilePath
