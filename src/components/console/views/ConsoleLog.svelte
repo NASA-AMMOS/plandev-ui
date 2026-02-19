@@ -8,7 +8,7 @@
   import { workspaceId } from '../../../stores/workspaces';
   import type { BaseError, LogMessage } from '../../../types/errors';
   import { openActionRun } from '../../../utilities/actions';
-  import { ErrorTypes, getActivityIdsFromError, isLogMessage } from '../../../utilities/errors';
+  import { ErrorTypes, getActivityIdsFromError, isLogMessage, safeStringify } from '../../../utilities/errors';
 
   import { formatMS } from '../../../utilities/time';
 
@@ -239,8 +239,8 @@
           Timestamp: {formatLogLongTimestamp(log.timestamp)}
         </div>
       {/if}
-      {#if log.data && JSON.stringify(log.data) !== '{}'}
-        <pre class="m-0 whitespace-pre-wrap break-words">{JSON.stringify(log.data, undefined, 2)}</pre>
+      {#if log.data && safeStringify(log.data) !== '{}'}
+        <pre class="m-0 whitespace-pre-wrap break-words">{safeStringify(log.data, 2)}</pre>
       {/if}
       {#if log.cause}
         <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">

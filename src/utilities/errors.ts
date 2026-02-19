@@ -150,3 +150,34 @@ export function getActivityIdsFromError(error: BaseError): number[] {
   }
   return [];
 }
+
+/**
+ * Safely stringify an object that may contain circular references or other non-serializable values.
+ * Circular references are replaced with "[Circular]".
+ * Falls back to toString() if stringification fails.
+ * Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Cyclic_object_value
+ */
+export function safeStringify(value: unknown, space?: number): string {
+  const seen = new WeakSet();
+
+  const replacer = (_key: string, val: unknown) => {
+    if (val !== null && typeof val === 'object') {
+      if (seen.has(val)) {
+        return '[Circular]';
+      }
+      seen.add(val);
+    }
+    return val;
+  };
+
+  try {
+    return JSON.stringify(value, replacer, space);
+  } catch (error) {
+    // Fallback to toString() for any values that can't be stringified (BigInt, etc.)
+    try {
+      return String(value);
+    } catch {
+      return '[Unable to stringify]';
+    }
+  }
+}
