@@ -1093,8 +1093,8 @@
               </div>
             </div>
           {/if}
-        </div></Sidebar.Inset
-      >
+        </div>
+      </Sidebar.Inset>
     </CssGrid>
   </Resizable.Pane>
 
