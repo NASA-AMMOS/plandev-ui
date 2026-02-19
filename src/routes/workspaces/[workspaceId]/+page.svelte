@@ -55,6 +55,7 @@
     addWorkspaceAdaptationError,
     addWorkspaceAdaptationLog,
     clearWorkspaceAdaptationMessages,
+    clearWorkspaceLintErrors,
     resetWorkspaceErrorStores,
     setWorkspaceLintErrors,
     userInitiatedActionRunIds,
@@ -330,6 +331,12 @@
       selectedFilePath = $activeDocumentPath;
       return;
     }
+
+    // Clear lint errors for the previous file when switching files
+    if ($activeDocumentPath && $activeDocumentPath !== nextPath) {
+      clearWorkspaceLintErrors($activeDocumentPath);
+    }
+
     // successfully navigated, start loading the file contents
     if (nextPath && workspaceTreeMap[nextPath]) {
       const { filename } = separateFilenameFromPath(nextPath);
@@ -904,6 +911,7 @@
   }
 
   function onLintChange(event: CustomEvent<{ diagnostics: LintDiagnostic[]; filePath: string }>) {
+    console.log('OLC', event);
     const { diagnostics, filePath } = event.detail;
     setWorkspaceLintErrors(filePath, diagnostics);
   }
