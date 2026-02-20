@@ -64,6 +64,7 @@ export async function reqActionServer<T = any>(
   };
 
   const options: RequestInit = {
+    credentials: 'include',
     headers,
     method,
     signal,
