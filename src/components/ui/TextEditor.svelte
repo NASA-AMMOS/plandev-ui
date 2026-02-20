@@ -4,7 +4,7 @@
   import { standardKeymap } from '@codemirror/commands';
   import { json, jsonParseLinter } from '@codemirror/lang-json';
   import { linter, lintGutter } from '@codemirror/lint';
-  import { Compartment, EditorState } from '@codemirror/state';
+  import { Compartment, EditorState, Transaction } from '@codemirror/state';
   import { type ViewUpdate, keymap } from '@codemirror/view';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
@@ -57,6 +57,7 @@
     // to avoid resetting the cursor position.
     if (editorView.state.doc.toString() !== textFileContent) {
       editorView.dispatch({
+        annotations: [Transaction.addToHistory.of(false)], // Prevent this change from being added to the undo history
         changes: { from: 0, insert: textFileContent, to: editorView.state.doc.length },
       });
     }
