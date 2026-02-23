@@ -534,42 +534,42 @@ test.describe.serial('Workspace', () => {
   });
 
   test('Error console is visible with tabs', async () => {
-    const console = setup.page.getByTestId('console');
-    await expect(console).toBeVisible();
+    const consoleNode = setup.page.getByTestId('console');
+    await expect(consoleNode).toBeVisible();
 
     // Verify all expected console tabs are present
-    await expect(console.getByRole('tab', { name: 'Actions' })).toBeVisible();
-    await expect(console.getByRole('tab', { name: 'Adaptation' })).toBeVisible();
-    await expect(console.getByRole('tab', { name: 'Linting' })).toBeVisible();
-    await expect(console.getByRole('tab', { name: 'Logs' })).toBeVisible();
+    await expect(consoleNode.getByRole('tab', { name: 'Actions' })).toBeVisible();
+    await expect(consoleNode.getByRole('tab', { name: 'Adaptation' })).toBeVisible();
+    await expect(consoleNode.getByRole('tab', { name: 'Linting' })).toBeVisible();
+    await expect(consoleNode.getByRole('tab', { name: 'Logs' })).toBeVisible();
   });
 
   test('Error console can be expanded and collapsed', async () => {
-    const console = setup.page.getByTestId('console');
-    const toggleButton = console.getByRole('button', { name: /Collapse|Expand/ });
+    const consoleNode = setup.page.getByTestId('console');
+    const toggleButton = consoleNode.getByRole('button', { name: /Collapse|Expand/ });
 
     // Ensure the console starts expanded by clicking a tab (always expands regardless of initial state)
-    await console.getByRole('tab', { name: 'Actions' }).click();
+    await consoleNode.getByRole('tab', { name: 'Actions' }).click();
 
     // When expanded, the search input should be visible and the clicked tab should be active
-    await expect(console.getByPlaceholder('Search')).toBeVisible();
-    await expect(console.getByRole('tab', { name: 'Actions' })).toHaveAttribute('data-state', 'active');
+    await expect(consoleNode.getByPlaceholder('Search')).toBeVisible();
+    await expect(consoleNode.getByRole('tab', { name: 'Actions' })).toHaveAttribute('data-state', 'active');
 
     // Switch to another tab and verify it becomes active
-    await console.getByRole('tab', { name: 'Linting' }).click();
-    await expect(console.getByRole('tab', { name: 'Linting' })).toHaveAttribute('data-state', 'active');
-    await expect(console.getByRole('tab', { name: 'Actions' })).toHaveAttribute('data-state', 'inactive');
+    await consoleNode.getByRole('tab', { name: 'Linting' }).click();
+    await expect(consoleNode.getByRole('tab', { name: 'Linting' })).toHaveAttribute('data-state', 'active');
+    await expect(consoleNode.getByRole('tab', { name: 'Actions' })).toHaveAttribute('data-state', 'inactive');
 
     // Collapse the console using the chevron toggle button
     await toggleButton.click();
 
     // Search input should no longer be visible when collapsed
-    await expect(console.getByPlaceholder('Search')).not.toBeVisible();
+    await expect(consoleNode.getByPlaceholder('Search')).not.toBeVisible();
 
     // Expand again by clicking a tab
-    await console.getByRole('tab', { name: 'Adaptation' }).click();
-    await expect(console.getByPlaceholder('Search')).toBeVisible();
-    await expect(console.getByRole('tab', { name: 'Adaptation' })).toHaveAttribute('data-state', 'active');
+    await consoleNode.getByRole('tab', { name: 'Adaptation' }).click();
+    await expect(consoleNode.getByPlaceholder('Search')).toBeVisible();
+    await expect(consoleNode.getByRole('tab', { name: 'Adaptation' })).toHaveAttribute('data-state', 'active');
   });
 
   test('Users not authorized to modify the workspace should not be able to', async () => {
