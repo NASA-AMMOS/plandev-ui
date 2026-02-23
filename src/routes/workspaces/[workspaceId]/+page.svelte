@@ -115,43 +115,51 @@
 
   export let data: PageData;
 
+  type WorkspaceConsoleTab = 'actions' | 'adaptation' | 'linting' | 'logs';
+
   const { initialWorkspace } = data;
   const user: UserStore = getContext('user');
+  const defaultLogLevels: LogLevel[] = ['error', 'warn', 'info'];
+  const contentMinWidth = 700;
+  const sidebarMinWidth = 100;
+  const defaultWorkspaceColumns = '1fr 3px 3fr';
 
   let availableActionsForActiveFile: ActionParameterPair[] = [];
   let allActionsForWorkspace: ActionDefinition[] = [];
   let channelDictionary: ChannelDictionary | null = null;
   let commandDictionary: CommandDictionary | null = null;
-  let parameterDictionaries: ParameterDictionary[] = [];
-  let isWorkspaceLoading: boolean = false;
-  let refreshInterval: NodeJS.Timeout | null = null;
-  let selectedFilePath: string | null = null;
-  let selectedSequenceOutput: string | undefined = undefined;
-  let librarySequences: LibrarySequenceSignature[] = [];
-  let workspaceSequences: UserSequence[] = [];
-  let workspaceTree: WorkspaceTreeNode | null = null;
-  let workspaceTreeMap: WorkspaceTreeMap = {};
-  let workspaceFileList: WorkspaceTreeNodeWithFullPath[] = [];
+  let consolePaneApi: PaneAPI;
   let hasEditFilePermission: boolean = false;
   let hasEditWorkspacePermission: boolean = false;
   let hasEditWorkspaceCollaboratorsPermission: boolean = false;
   let hasRunActionPermission: boolean = false;
+  let isConsoleExpanded: boolean = false;
+  let parameterDictionaries: ParameterDictionary[] = [];
   let phoenixContext: PhoenixContext;
-  let showLoadingSpinner: boolean = false;
-  let loadingSpinnerTimeout: ReturnType<typeof setTimeout> | null = null;
+  let isWorkspaceLoading: boolean = false;
+  let refreshInterval: NodeJS.Timeout | null = null;
+  let selectedFilePath: string | null = null;
+  let selectedSequenceOutput: string | undefined = undefined;
   let sidebarPanelOpen: boolean = true;
+  let selectedConsoleTab: WorkspaceConsoleTab = 'actions';
+  let sequenceEditorRef: SequenceEditor;
+  let showLoadingSpinner: boolean = false;
+  let librarySequences: LibrarySequenceSignature[] = [];
+  let loadingSpinnerTimeout: ReturnType<typeof setTimeout> | null = null;
+  let logLevels: LogLevel[] = defaultLogLevels;
+  let preserveAdaptationLog: boolean = false;
   let previousSidebarPanelOpen: boolean = true;
   let previousWorkspaceColumns: string = '1fr 3px 3fr';
-
-  const CONTENT_MIN_WIDTH = 700;
-  const SIDEBAR_MIN_WIDTH = 100;
-  const DEFAULT_WORKSPACE_COLUMNS = '1fr 3px 3fr';
+  let workspaceSequences: UserSequence[] = [];
+  let workspaceTree: WorkspaceTreeNode | null = null;
+  let workspaceTreeMap: WorkspaceTreeMap = {};
+  let workspaceFileList: WorkspaceTreeNodeWithFullPath[] = [];
 
   // Ensure columns are consistent with sidebar state on mount.
   // The workspaceColumns store persists across navigations, but sidebarPanelOpen resets to true.
   // If the store has 2-column layout (sidebar closed) but sidebarPanelOpen is true, reset to default.
   if (sidebarPanelOpen && $workspaceColumns.split(' ').length === 2) {
-    $workspaceColumns = DEFAULT_WORKSPACE_COLUMNS;
+    $workspaceColumns = defaultWorkspaceColumns;
   }
 
   $: if (sidebarPanelOpen !== previousSidebarPanelOpen) {
@@ -178,16 +186,6 @@
     }
     showLoadingSpinner = false;
   }
-  let sequenceEditorRef: SequenceEditor;
-
-  // Console state
-  type WorkspaceConsoleTab = 'actions' | 'adaptation' | 'linting' | 'logs';
-  const defaultLogLevels: LogLevel[] = ['error', 'warn', 'info'];
-  let consolePaneApi: PaneAPI;
-  let isConsoleExpanded: boolean = false;
-  let selectedConsoleTab: WorkspaceConsoleTab = 'actions';
-  let logLevels: LogLevel[] = defaultLogLevels;
-  let preserveAdaptationLog: boolean = false;
 
   $: logLevelLabel =
     logLevels.length === defaultLogLevels.length
@@ -993,7 +991,7 @@
   <Resizable.Pane defaultSize={84}>
     <CssGrid
       bind:columns={$workspaceColumns}
-      columnMinSizes={{ 0: SIDEBAR_MIN_WIDTH, 2: CONTENT_MIN_WIDTH }}
+      columnMinSizes={{ 0: sidebarMinWidth, 2: contentMinWidth }}
       class="h-full"
     >
       <Sidebar.Provider bind:open={sidebarPanelOpen} style="--sidebar-width: auto" className="min-h-0">
@@ -1260,6 +1258,3 @@
     </div>
   </Resizable.Pane>
 </Resizable.PaneGroup>
-
-<style>
-</style>
