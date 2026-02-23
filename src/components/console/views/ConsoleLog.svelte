@@ -70,7 +70,8 @@
     }
   }
 
-  function handleActivityClick(activityId: number) {
+  function handleActivityClick(event: MouseEvent, activityId: number) {
+    event.stopPropagation();
     selectActivity(activityId, null);
   }
 
@@ -79,7 +80,8 @@
     openActionRun($workspaceId, actionRunId, true);
   }
 
-  function handleGotoLine(line: number, column: number) {
+  function handleGotoLine(event: MouseEvent, line: number, column: number) {
+    event.stopPropagation();
     dispatch('gotoLine', { column, line });
   }
 </script>
@@ -158,10 +160,7 @@
                 : log.message}
               <button
                 class="mr-1 cursor-pointer text-left text-amber-700 underline decoration-amber-400/50 underline-offset-2 hover:text-amber-900 hover:decoration-amber-600"
-                on:click={e => {
-                  e.stopPropagation();
-                  handleGotoLine(log.data?.line, log.data?.column ?? 0);
-                }}
+                on:click={e => handleGotoLine(e, log.data?.line, log.data?.column ?? 0)}
               >
                 {location}
               </button>
@@ -186,10 +185,7 @@
                 {activityMatch[1]}
                 <button
                   class="cursor-pointer text-blue-700 underline decoration-blue-400/50 underline-offset-2 hover:text-blue-900 hover:decoration-blue-600"
-                  on:click={e => {
-                    e.stopPropagation();
-                    handleActivityClick(activityId);
-                  }}
+                  on:click={e => handleActivityClick(e, activityId)}
                 >
                   {activityMatch[2]}
                 </button>
@@ -198,10 +194,7 @@
                 {log.message}
                 <button
                   class="cursor-pointer text-blue-700 underline decoration-blue-400/50 underline-offset-2 hover:text-blue-900 hover:decoration-blue-600"
-                  on:click={e => {
-                    e.stopPropagation();
-                    handleActivityClick(activityId);
-                  }}
+                  on:click={e => handleActivityClick(e, activityId)}
                 >
                   Activity {activityId}
                 </button>
@@ -212,10 +205,7 @@
                 {#if i > 0}<span class="text-muted-foreground">,</span>{/if}
                 <button
                   class="cursor-pointer text-blue-700 underline decoration-blue-400/50 underline-offset-2 hover:text-blue-900 hover:decoration-blue-600"
-                  on:click={e => {
-                    e.stopPropagation();
-                    handleActivityClick(activityId);
-                  }}
+                  on:click={e => handleActivityClick(e, activityId)}
                 >
                   Activity {activityId}
                 </button>
