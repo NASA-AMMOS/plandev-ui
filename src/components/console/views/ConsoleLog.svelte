@@ -8,8 +8,9 @@
   import { workspaceId } from '../../../stores/workspaces';
   import type { BaseError, LogMessage } from '../../../types/errors';
   import { openActionRun } from '../../../utilities/actions';
-  import { ErrorTypes, getActivityIdsFromError, isLogMessage, safeStringify } from '../../../utilities/errors';
+  import { ErrorTypes, getActivityIdsFromError, isLogMessage } from '../../../utilities/errors';
 
+  import { safeStringify } from '../../../utilities/text';
   import { formatMS } from '../../../utilities/time';
 
   export let log: BaseError;
